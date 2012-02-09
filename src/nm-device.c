@@ -59,6 +59,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-enum-types.h"
+#include "nm-settings-connection.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -4133,6 +4134,15 @@ nm_device_state_changed (NMDevice *device,
 
 	/* Cache the activation request for the dispatcher */
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
+
+	/* Update connection timestamps; do this before possibly deactivating the
+	 * device since that will clear the activation request and thus the
+	 * connection, which we need.
+	 */
+	if (state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_ACTIVATED) {
+		nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
+		                                         (guint64) time (NULL), TRUE);
+	}
 
 	/* Handle the new state here; but anything that could trigger
 	 * another state change should be done below.

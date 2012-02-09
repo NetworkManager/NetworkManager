@@ -350,7 +350,7 @@ vpn_manager_connection_activated_cb (NMVPNManager *manager,
 {
 	/* Update timestamp for the VPN connection */
 	nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_vpn_connection_get_connection (vpn)),
-	                                         (guint64) time (NULL));
+	                                         (guint64) time (NULL), TRUE);
 }
 
 static void
@@ -471,15 +471,6 @@ manager_device_state_changed (NMDevice *device,
 	}
 
 	nm_manager_update_state (manager);
-
-	if (new_state == NM_DEVICE_STATE_ACTIVATED) {
-		NMActRequest *req;
-
-		req = nm_device_get_act_request (device);
-		if (req)
-			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
-			                                         (guint64) time (NULL));
-	}
 }
 
 /* Removes a device from a device list; returns the start of the new device list */
@@ -3929,7 +3920,7 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 		req = nm_manager_get_act_request_by_path (manager, active_path, &device);
 		if (device && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
-			                                         (guint64) time (NULL));
+			                                         (guint64) time (NULL), FALSE);
 		else {
 			/* The connection is probably VPN */
 			NMVPNConnection *vpn_con;
@@ -3937,7 +3928,7 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 			vpn_con = nm_vpn_manager_get_vpn_connection_for_active (priv->vpn_manager, active_path);
 			if (vpn_con && nm_vpn_connection_get_vpn_state (vpn_con) == NM_VPN_CONNECTION_STATE_ACTIVATED)
 				nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_vpn_connection_get_connection (vpn_con)),
-				                                         (guint64) time (NULL));
+				                                         (guint64) time (NULL), FALSE);
 		}
 	}
 

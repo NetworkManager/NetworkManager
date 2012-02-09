@@ -1422,11 +1422,14 @@ nm_settings_connection_get_timestamp (NMSettingsConnection *connection)
  * @connection: the #NMSettingsConnection
  * @timestamp: timestamp to set into the connection and to store into
  * the timestamps database
+ * @flush_to_disk: if %TRUE, commit timestamp update to persistent storage
  *
  * Updates the connection and timestamps database with the provided timestamp.
  **/
 void
-nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint64 timestamp)
+nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
+                                         guint64 timestamp,
+                                         gboolean flush_to_disk)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
 	const char *connection_uuid;
@@ -1437,6 +1440,9 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint
 
 	/* Update timestamp in private storage */
 	priv->timestamp = timestamp;
+
+	if (flush_to_disk == FALSE)
+		return;
 
 	/* Save timestamp to timestamps database file */
 	timestamps_file = g_key_file_new ();

@@ -124,7 +124,9 @@ void nm_settings_connection_signal_remove (NMSettingsConnection *self);
 
 guint64 nm_settings_connection_get_timestamp (NMSettingsConnection *connection);
 
-void nm_settings_connection_update_timestamp (NMSettingsConnection *connection, guint64 timestamp);
+void nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
+                                              guint64 timestamp,
+                                              gboolean flush_to_disk);
 
 void nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection);
 
