@@ -236,6 +236,9 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
                                     const char **out_user,
                                     GError **error)
 {
+	if (!nm_session_uid_to_user (uid, out_user, error))
+		return FALSE;
+
 	return sd_uid_get_sessions (uid, FALSE, NULL) > 0;
 }
 
