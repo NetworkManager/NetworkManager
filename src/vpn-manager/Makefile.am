@@ -42,7 +42,6 @@ nm-vpn-plugin-bindings.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
 
 
 BUILT_SOURCES = \
-	nm-vpn-connection-base-glue.h \
 	nm-vpn-connection-glue.h \
 	nm-vpn-plugin-bindings.h
 
