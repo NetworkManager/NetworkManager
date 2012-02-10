@@ -24,9 +24,10 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
-#define FIREWALL_DBUS_SERVICE	"org.fedoraproject.FirewallD"
-#define FIREWALL_DBUS_PATH		"/org/fedoraproject/FirewallD"
-#define FIREWALL_DBUS_INTERFACE	"org.fedoraproject.FirewallD"
+#define FIREWALL_DBUS_SERVICE         "org.fedoraproject.FirewallD1"
+#define FIREWALL_DBUS_PATH            "/org/fedoraproject/FirewallD1"
+#define FIREWALL_DBUS_INTERFACE       "org.fedoraproject.FirewallD1"
+#define FIREWALL_DBUS_INTERFACE_ZONE  "org.fedoraproject.FirewallD1.zone"
 
 
 G_BEGIN_DECLS

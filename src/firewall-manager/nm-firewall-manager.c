@@ -194,7 +194,7 @@ nm_firewall_manager_init (NMFirewallManager * self)
 	priv->proxy = dbus_g_proxy_new_for_name (bus,
 	                                         FIREWALL_DBUS_SERVICE,
 	                                         FIREWALL_DBUS_PATH,
-	                                         FIREWALL_DBUS_INTERFACE);
+	                                         FIREWALL_DBUS_INTERFACE_ZONE);
 }
 
 static void
