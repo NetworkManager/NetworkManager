@@ -40,16 +40,16 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
-static GType nm_device_type_for_path (DBusGConnection *connection,
-                                      const char *path);
-static void nm_device_type_for_path_async (DBusGConnection *connection,
-                                           const char *path,
-                                           NMObjectTypeCallbackFunc callback,
-                                           gpointer user_data);
+static GType _nm_device_type_for_path (DBusGConnection *connection,
+                                       const char *path);
+static void _nm_device_type_for_path_async (DBusGConnection *connection,
+                                            const char *path,
+                                            NMObjectTypeCallbackFunc callback,
+                                            gpointer user_data);
 
 G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
-                         _nm_object_register_type_func (g_define_type_id, nm_device_type_for_path,
-                                                        nm_device_type_for_path_async);
+                         _nm_object_register_type_func (g_define_type_id, _nm_device_type_for_path,
+                                                        _nm_device_type_for_path_async);
                          )
 
 #define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
@@ -618,7 +618,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 }
 
 static GType
-nm_device_gtype_from_dtype (NMDeviceType dtype)
+_nm_device_gtype_from_dtype (NMDeviceType dtype)
 {
 	switch (dtype) {
 	case NM_DEVICE_TYPE_ETHERNET:
@@ -640,8 +640,8 @@ nm_device_gtype_from_dtype (NMDeviceType dtype)
 }
 
 static GType
-nm_device_type_for_path (DBusGConnection *connection,
-                         const char *path)
+_nm_device_type_for_path (DBusGConnection *connection,
+                          const char *path)
 {
 	DBusGProxy *proxy;
 	GError *err = NULL;
@@ -670,7 +670,7 @@ nm_device_type_for_path (DBusGConnection *connection,
 	g_object_unref (proxy);
 
 	nm_dtype = g_value_get_uint (&value);
-	return nm_device_gtype_from_dtype (nm_dtype);
+	return _nm_device_gtype_from_dtype (nm_dtype);
 }
 
 /**
@@ -691,7 +691,7 @@ nm_device_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	dtype = nm_device_type_for_path (connection, path);
+	dtype = _nm_device_type_for_path (connection, path);
 	if (dtype == G_TYPE_INVALID)
 		return NULL;
 
@@ -724,7 +724,7 @@ async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		NMDeviceType dtype;
 
 		dtype = g_value_get_uint (&value);
-		type = nm_device_gtype_from_dtype (dtype);
+		type = _nm_device_gtype_from_dtype (dtype);
 	} else {
 		g_warning ("%s: could not read properties for %s: %s", __func__, path, error->message);
 		g_error_free (error);
@@ -737,10 +737,10 @@ async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 }
 
 static void
-nm_device_type_for_path_async (DBusGConnection *connection,
-                               const char *path,
-                               NMObjectTypeCallbackFunc callback,
-                               gpointer user_data)
+_nm_device_type_for_path_async (DBusGConnection *connection,
+                                const char *path,
+                                NMObjectTypeCallbackFunc callback,
+                                gpointer user_data)
 {
 	NMDeviceAsyncData *async_data;
 	DBusGProxy *proxy;

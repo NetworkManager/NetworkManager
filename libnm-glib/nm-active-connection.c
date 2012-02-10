@@ -33,17 +33,17 @@
 #include "nm-vpn-connection.h"
 #include "nm-glib-compat.h"
 
-static GType nm_active_connection_type_for_path (DBusGConnection *connection,
-                                                 const char *path);
-static void  nm_active_connection_type_for_path_async (DBusGConnection *connection,
-                                                       const char *path,
-                                                       NMObjectTypeCallbackFunc callback,
-                                                       gpointer user_data);
+static GType _nm_active_connection_type_for_path (DBusGConnection *connection,
+                                                  const char *path);
+static void  _nm_active_connection_type_for_path_async (DBusGConnection *connection,
+                                                        const char *path,
+                                                        NMObjectTypeCallbackFunc callback,
+                                                        gpointer user_data);
 
 G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT,
                          _nm_object_register_type_func (g_define_type_id,
-                                                        nm_active_connection_type_for_path,
-                                                        nm_active_connection_type_for_path_async);
+                                                        _nm_active_connection_type_for_path,
+                                                        _nm_active_connection_type_for_path_async);
                          )
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
@@ -107,8 +107,8 @@ nm_active_connection_new (DBusGConnection *connection, const char *path)
 }
 
 static GType
-nm_active_connection_type_for_path (DBusGConnection *connection,
-                                    const char *path)
+_nm_active_connection_type_for_path (DBusGConnection *connection,
+                                     const char *path)
 {
 	DBusGProxy *proxy;
 	GError *error = NULL;
@@ -182,10 +182,10 @@ async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 }
 
 static void
-nm_active_connection_type_for_path_async (DBusGConnection *connection,
-                                          const char *path,
-                                          NMObjectTypeCallbackFunc callback,
-                                          gpointer user_data)
+_nm_active_connection_type_for_path_async (DBusGConnection *connection,
+                                           const char *path,
+                                           NMObjectTypeCallbackFunc callback,
+                                           gpointer user_data)
 {
 	NMActiveConnectionAsyncData *async_data;
 	DBusGProxy *proxy;
