@@ -1281,34 +1281,30 @@ nm_system_apply_bonding_config (NMSettingBond *s_bond)
 
 /**
  * nm_system_add_bonding_master:
- * @setting: bonding setting
+ * @iface: the interface name for the new bond master
  *
  * Adds a virtual bonding device if it does not exist yet.
  *
  * Returns: %TRUE on success, %FALSE on failure
  */
 gboolean
-nm_system_add_bonding_master (NMSettingBond *setting)
+nm_system_add_bonding_master (const char *iface)
 {
 	struct nl_sock *sock;
-	const char *name;
 	int err;
 
+	g_return_val_if_fail (iface != NULL, FALSE);
+
 	sock = nm_netlink_get_default_handle ();
-	name = nm_setting_bond_get_interface_name (setting);
-	g_assert (name);
 
 	/* Existing bonding devices with matching name will be reused */
-	err = rtnl_link_bond_add (sock, name, NULL);
+	err = rtnl_link_bond_add (sock, iface, NULL);
 	if (err < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error %d returned from "
 		            "rtnl_link_bond_add(): %s",
-		            name, err, nl_geterror (err));
+		            iface, err, nl_geterror (err));
 		return FALSE;
 	}
-
-	nm_system_apply_bonding_config (setting);
-
 	return TRUE;
 }
 

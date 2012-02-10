@@ -3563,7 +3563,11 @@ set_property (GObject *object, guint prop_id,
  
 	switch (prop_id) {
 	case PROP_UDI:
-		/* construct-only */
+		/* Only virtual interfaces can set UDI post-construction */
+		if (priv->initialized)
+			g_return_if_fail (nm_system_get_iface_type (priv->ifindex, NULL) != NM_IFACE_TYPE_UNSPEC);
+
+		g_free (priv->udi);
 		priv->udi = g_strdup (g_value_get_string (value));
 		break;
 	case PROP_IFACE:
@@ -3746,7 +3750,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                      "UDI",
 		                      "Unique Device Identifier",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	g_object_class_install_property
 		(object_class, PROP_IFACE,

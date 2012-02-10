@@ -888,6 +888,27 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 /* Settings stuff via NMSettings                                   */
 /*******************************************************************/
 
+/**
+ * get_virtual_iface_name:
+ * @self: the #NMManager
+ * @connection: the #NMConnection representing a virtual interface
+ *
+ * Given @connection, returns the interface name that the connection
+ * would represent.  If the interface name is not given by the connection,
+ * this may require constructing it based on information in the connection
+ * and existing network interfaces.
+ *
+ * Returns: the expected interface name (caller takes ownership), or %NULL
+ */
+static char *
+get_virtual_iface_name (NMManager *self, NMConnection *connection)
+{
+	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
+		return g_strdup (nm_connection_get_virtual_iface_name (connection));
+
+	return NULL;
+}
+
 static gboolean
 connection_needs_virtual_device (NMConnection *connection)
 {
@@ -897,36 +918,98 @@ connection_needs_virtual_device (NMConnection *connection)
 	return FALSE;
 }
 
-static gboolean
-system_update_virtual_device (NMConnection *connection)
+static char *
+get_virtual_iface_placeholder_udi (void)
 {
-	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-		NMSettingBond *s_bond;
+	static guint32 id = 0;
 
-		s_bond = nm_connection_get_setting_bond (connection);
-		g_assert (s_bond);
+	return g_strdup_printf ("/virtual/device/placeholder/%d", id++);
+}
 
-		return nm_system_add_bonding_master (s_bond);
+/**
+ * system_create_virtual_device:
+ * @self: the #NMManager
+ * @connection: the connection which might require a virtual device
+ *
+ * If @connection requires a virtual device and one does not yet exist for it,
+ * creates that device.
+ *
+ * Returns: the #NMDevice if successfully created, NULL if not
+ */
+static NMDevice *
+system_create_virtual_device (NMManager *self, NMConnection *connection)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	char *iface = NULL, *udi;
+	NMDevice *device = NULL;
+	int master_ifindex = -1;
+	const char *driver = NULL;
+
+	iface = get_virtual_iface_name (self, connection);
+	if (!iface) {
+		nm_log_warn (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
+		             nm_connection_get_id (connection));
+		return NULL;
 	}
 
-	return TRUE;
+	/* Make sure we didn't create a device for this connection already */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = iter->data;
+		GError *error = NULL;
+
+		if (   g_strcmp0 (nm_device_get_iface (candidate), iface) == 0
+		    || nm_device_check_connection_compatible (candidate, connection, &error)) {
+			g_clear_error (&error);
+			goto out;
+		}
+		g_clear_error (&error);
+	}
+
+	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
+		if (!nm_system_add_bonding_master (iface)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bonding master interface for '%s'",
+			             iface, nm_connection_get_id (connection));
+			goto out;
+		}
+		driver = "bonding";
+	}
+
+	if (driver) {
+		udi = get_virtual_iface_placeholder_udi ();
+		device = nm_device_ethernet_new (udi, iface, driver);
+		g_free (udi);
+		if (device)
+			add_device (self, device);
+		else
+			nm_log_warn (LOGD_DEVICE, "(%s) failed to add virtual interface device", iface);
+	}
+
+out:
+	g_free (iface);
+	return device;
 }
 
 static void
-system_create_virtual_devices (NMSettings *settings)
+system_create_virtual_devices (NMManager *self)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter, *connections;
 
-	nm_log_info (LOGD_CORE, "Creating virtual devices");
+	nm_log_dbg (LOGD_CORE, "creating virtual devices...");
 
-	connections = nm_settings_get_connections (settings);
+	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMConnection *connection = iter->data;
+		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 
-		if (connection_needs_virtual_device (connection))
-			system_update_virtual_device (connection);
+		g_assert (s_con);
+		if (connection_needs_virtual_device (connection)) {
+			/* We only create a virtual interface if the connection can autoconnect */
+			if (nm_setting_connection_get_autoconnect (s_con))
+				system_create_virtual_device (self, connection);
+		}
 	}
-
 	g_slist_free (connections);
 }
 
@@ -938,7 +1021,7 @@ connection_added (NMSettings *settings,
 	bluez_manager_resync_devices (manager);
 
 	if (connection_needs_virtual_device (NM_CONNECTION (connection)))
-		system_update_virtual_device (NM_CONNECTION (connection));
+		system_create_virtual_device (manager, NM_CONNECTION (connection));
 }
 
 static void
@@ -1540,6 +1623,11 @@ add_device (NMManager *self, NMDevice *device)
 	nm_settings_device_added (priv->settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 
+	/* New devices might be master interfaces for virtual interfaces; so we may
+	 * need to create new virtual interfaces now.
+	 */
+	system_create_virtual_devices (self);
+
 	/* If the device has a connection it can assume, do that now */
 	if (existing && managed && nm_device_is_available (device)) {
 		const char *ac_path;
@@ -1937,8 +2025,13 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	GError *error = NULL;
 
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
-	if (find_device_by_ifindex (self, ifindex))
+	device = find_device_by_ifindex (self, ifindex);
+	if (device) {
+		/* If it's a virtual device we may need to update its UDI */
+		if (nm_system_get_iface_type (ifindex, iface) != NM_IFACE_TYPE_UNSPEC)
+			g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
 		return;
+	}
 
 	/* Try registered device factories */
 	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
@@ -3046,7 +3139,7 @@ nm_manager_start (NMManager *self)
 	 * Connections added before the manager is started do not emit
 	 * connection-added signals thus devices have to be created manually.
 	 */
-	system_create_virtual_devices (priv->settings);
+	system_create_virtual_devices (self);
 }
 
 static gboolean
