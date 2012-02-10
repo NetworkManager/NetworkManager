@@ -63,7 +63,10 @@ gpointer nm_firewall_manager_add_to_zone (NMFirewallManager *mgr,
                                           FwAddToZoneFunc callback,
                                           gpointer user_data1,
                                           gpointer user_data2);
+gpointer nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
+                                               const char *iface,
+                                               const char *zone);
 
-void nm_firewall_manager_cancel_add (NMFirewallManager *mgr, gpointer fw_call);
+void nm_firewall_manager_cancel_call (NMFirewallManager *mgr, gpointer fw_call);
 
 #endif /* NM_FIREWALL_MANAGER_H */

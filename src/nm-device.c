@@ -3012,6 +3012,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	NMDevicePrivate *priv;
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	NMDevice *master;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con = NULL;
 	gboolean tried_ipv6 = FALSE;
 	int ifindex, family;
 
@@ -3028,8 +3030,17 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Clean up when device was deactivated during call to firewall */
 	if (priv->fw_call) {
-		nm_firewall_manager_cancel_add (priv->fw_manager, priv->fw_call);
+		nm_firewall_manager_cancel_call (priv->fw_manager, priv->fw_call);
 		priv->fw_call = NULL;
+	}
+
+	if (priv->act_request)
+		connection = nm_act_request_get_connection (priv->act_request);
+	if (connection) {
+		s_con = nm_connection_get_setting_connection (connection);
+		nm_firewall_manager_remove_from_zone (priv->fw_manager,
+		                                      nm_device_get_ip_iface (self),
+		                                      nm_setting_connection_get_zone (s_con));
 	}
 
 	/* Break the activation chain */
