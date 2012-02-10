@@ -1728,6 +1728,7 @@ error:
 static char *
 escape_id (const char *id)
 {
+	static const char const as_dash[] = "\\][|/=()!";
 	char *escaped = g_strdup (id);
 	char *p = escaped;
 
@@ -1735,9 +1736,7 @@ escape_id (const char *id)
 	while (*p) {
 		if (*p == ' ')
 			*p = '_';
-		else if (*p == '/')
-			*p = '-';
-		else if (*p == '\\')
+		else if (strchr (as_dash, *p))
 			*p = '-';
 		p++;
 	}
