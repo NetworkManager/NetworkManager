@@ -1979,7 +1979,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GObject *device = NULL;
+	NMDevice *device = NULL;
 	GSList *iter;
 	GError *error = NULL;
 
@@ -1992,15 +1992,17 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 		NMDeviceFactoryCreateFunc create_func = iter->data;
 
 		g_clear_error (&error);
-		device = create_func (udev_device, sysfs_path, iface, driver, &error);
-		if (device) {
+		device = (NMDevice *) create_func (udev_device, sysfs_path, iface, driver, &error);
+		if (device && NM_IS_DEVICE (device)) {
 			g_assert_no_error (error);
 			break;  /* success! */
 		}
 
 		if (error) {
 			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
-			             sysfs_path, error->code, error->message);
+			             sysfs_path,
+			             error ? error->code : -1,
+			             error ? error->message : "(unknown)");
 			g_clear_error (&error);
 			return;
 		}
@@ -2008,17 +2010,17 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 
 	if (device == NULL) {
 		if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
-			device = (GObject *) nm_device_olpc_mesh_new (sysfs_path, iface, driver);
+			device = nm_device_olpc_mesh_new (sysfs_path, iface, driver);
 		else if (is_wireless (udev_device))
-			device = (GObject *) nm_device_wifi_new (sysfs_path, iface, driver);
+			device = nm_device_wifi_new (sysfs_path, iface, driver);
 		else if (is_infiniband (udev_device))
-			device = (GObject *) nm_device_infiniband_new (sysfs_path, iface, driver);
+			device = nm_device_infiniband_new (sysfs_path, iface, driver);
 		else
-			device = (GObject *) nm_device_ethernet_new (sysfs_path, iface, driver);
+			device = nm_device_ethernet_new (sysfs_path, iface, driver);
 	}
 
 	if (device)
-		add_device (self, NM_DEVICE (device));
+		add_device (self, device);
 }
 
 static void
