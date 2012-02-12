@@ -1005,3 +1005,9 @@ nm_utils_is_uuid (const char *str)
 	return (num_dashes == 4) && (p - str == 36);
 }
 
+char *
+nm_utils_new_vlan_name (const char *master_iface, guint32 vlan_id)
+{
+	return g_strdup_printf ("%s.%d", master_iface, vlan_id);
+}
+

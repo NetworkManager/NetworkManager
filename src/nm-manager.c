@@ -888,10 +888,90 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 /* Settings stuff via NMSettings                                   */
 /*******************************************************************/
 
+static const char *
+get_iface_from_hwaddr (NMManager *self,
+                       NMConnection *connection,
+                       int *out_master_ifindex)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = iter->data;
+
+		if (nm_device_hwaddr_matches (candidate, connection, TRUE)) {
+			if (out_master_ifindex)
+				*out_master_ifindex = nm_device_get_ip_ifindex (candidate);
+			return nm_device_get_ip_iface (candidate);
+		}
+	}
+	return NULL;
+}
+
+static const char *
+find_master_iface (NMManager *self,
+                   NMConnection *connection,
+                   gboolean check_hwaddr,
+                   int *out_master_ifindex)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	const char *master;
+	NMConnection *master_connection;
+	GSList *iter;
+	NMDevice *device;
+
+	/* The 'master' property could be either an interface name, a connection
+	 * UUID, or even given by the MAC address of the connection's ethernet,
+	 * Infiniband, or WiFi setting.
+	 */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	master = nm_setting_connection_get_master (s_con);
+	if (!master)
+		return NULL;
+
+	device = find_device_by_ip_iface (self, master);
+	if (device) {
+		if (out_master_ifindex)
+			*out_master_ifindex = nm_device_get_ip_ifindex (device);
+		return master;
+	}
+
+	if (nm_utils_is_uuid (master)) {
+		/* Try as a connection UUID */
+		master_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, master);
+		if (master_connection) {
+			/* Check if the master connection is activated on some device already */
+			for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+				NMDevice *candidate = NM_DEVICE (iter->data);
+
+				if (nm_device_get_connection (candidate) == master_connection) {
+					if (out_master_ifindex)
+						*out_master_ifindex = nm_device_get_ip_ifindex (candidate);
+					return nm_device_get_iface (candidate);
+				}
+			}
+
+			/* Check the hardware address of the master connection */
+			if (check_hwaddr)
+				return get_iface_from_hwaddr (self, master_connection, out_master_ifindex);
+		}
+		return NULL;
+	}
+
+	/* Try the hardware address from the VLAN connection's hardware setting */
+	if (check_hwaddr)
+		return get_iface_from_hwaddr (self, connection, out_master_ifindex);
+
+	return NULL;
+}
+
 /**
  * get_virtual_iface_name:
  * @self: the #NMManager
  * @connection: the #NMConnection representing a virtual interface
+ * @out_master_ifindex: on success, the master interface index if any
  *
  * Given @connection, returns the interface name that the connection
  * would represent.  If the interface name is not given by the connection,
@@ -901,18 +981,48 @@ get_active_connections (NMManager *manager, NMConnection *filter)
  * Returns: the expected interface name (caller takes ownership), or %NULL
  */
 static char *
-get_virtual_iface_name (NMManager *self, NMConnection *connection)
+get_virtual_iface_name (NMManager *self,
+                        NMConnection *connection,
+                        int *out_master_ifindex)
 {
+	char *vname = NULL;
+
+	if (out_master_ifindex)
+		*out_master_ifindex = -1;
+
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
 		return g_strdup (nm_connection_get_virtual_iface_name (connection));
 
-	return NULL;
+	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
+		NMSettingVlan *s_vlan;
+		const char *ifname, *master;
+
+		s_vlan = nm_connection_get_setting_vlan (connection);
+		g_return_val_if_fail (s_vlan != NULL, NULL);
+
+		master = find_master_iface (self, connection, TRUE, out_master_ifindex);
+		if (master) {
+			/* If the connection doesn't specify the interface name for the VLAN
+			 * device, we create one for it using the VLAN ID and the master
+			 * interface's name.
+			 */
+			ifname = nm_connection_get_virtual_iface_name (connection);
+			if (ifname)
+				vname = g_strdup (ifname);
+			else
+				vname = nm_utils_new_vlan_name (master, nm_setting_vlan_get_id (s_vlan));
+		}
+	}
+
+	return vname;
 }
 
 static gboolean
 connection_needs_virtual_device (NMConnection *connection)
 {
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
+		return TRUE;
+	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
 		return TRUE;
 
 	return FALSE;
@@ -946,7 +1056,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	int master_ifindex = -1;
 	const char *driver = NULL;
 
-	iface = get_virtual_iface_name (self, connection);
+	iface = get_virtual_iface_name (self, connection, &master_ifindex);
 	if (!iface) {
 		nm_log_warn (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
 		             nm_connection_get_id (connection));
@@ -973,6 +1083,15 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			goto out;
 		}
 		driver = "bonding";
+	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
+		g_return_val_if_fail (master_ifindex >= 0, FALSE);
+
+		if (!nm_system_add_vlan_iface (connection, iface, master_ifindex)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
+			             iface, nm_connection_get_id (connection));
+			goto out;
+		}
+		driver = "8021q";
 	}
 
 	if (driver) {

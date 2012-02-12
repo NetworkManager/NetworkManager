@@ -94,4 +94,6 @@ void nm_utils_complete_generic (NMConnection *connection,
 
 gboolean nm_utils_is_uuid (const char *str);
 
+char *nm_utils_new_vlan_name (const char *master_iface, guint32 vlan_id);
+
 #endif /* NETWORK_MANAGER_UTILS_H */
