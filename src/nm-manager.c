@@ -2432,22 +2432,71 @@ nm_manager_activate_connection (NMManager *manager,
 			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn_connection));
 	} else {
 		NMDeviceState state;
+		char *iface;
+		int master_ifindex = -1;
 
 		/* Device-based connection */
-		device = nm_manager_get_device_by_path (manager, device_path);
-		if (!device) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "%s", "Device not found");
-			return NULL;
-		}
+		if (device_path) {
+			device = nm_manager_get_device_by_path (manager, device_path);
+			if (!device) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				                     "Device not found");
+				return NULL;
+			}
 
-		state = nm_device_get_state (device);
-		if (state < NM_DEVICE_STATE_DISCONNECTED) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-			             "%s", "Device not managed by NetworkManager or unavailable");
-			return NULL;
+			/* If it's a virtual interface make sure the device given by the
+			 * path matches the connection's interface details.
+			 */
+			if (connection_needs_virtual_device (connection)) {
+				iface = get_virtual_iface_name (manager, connection, NULL);
+				if (!iface) {
+					g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+						                 "Failed to determine connection's virtual interface name");
+					return NULL;
+				} else if (g_strcmp0 (iface, nm_device_get_ip_iface (device)) != 0) {
+					g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+						                 "Device given by path did not match connection's virtual interface name");
+					g_free (iface);
+					return NULL;
+				}
+				g_free (iface);
+			}
+
+			state = nm_device_get_state (device);
+			if (state < NM_DEVICE_STATE_DISCONNECTED) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
+					                 "Device not managed by NetworkManager or unavailable");
+				return NULL;
+			}
+		} else {
+			/* Virtual connections (VLAN, bond, etc) may not specify a device
+			 * path because the device may not be created yet, or it be given
+			 * by the connection's properties instead.  Find the device the
+			 * connection refers to, or create it if needed.
+			 */
+			if (!connection_needs_virtual_device (connection)) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+					                 "This connection requires an existing device.");
+				return NULL;
+			}
+
+			iface = get_virtual_iface_name (manager, connection, &master_ifindex);
+			if (!iface) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+					                 "Failed to determine connection's virtual interface name");
+				return NULL;
+			}
+
+			device = find_device_by_ip_iface (manager, iface);
+			if (!device) {
+				/* Create it */
+				device = system_create_virtual_device (manager, connection);
+				if (!device) {
+					g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+							             "Failed to create virtual interface");
+					return NULL;
+				}
+			}
 		}
 
 		path = internal_activate_device (manager,
