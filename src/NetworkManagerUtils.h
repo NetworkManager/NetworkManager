@@ -92,4 +92,6 @@ void nm_utils_complete_generic (NMConnection *connection,
                                 const char *preferred,
                                 gboolean default_enable_ipv6);
 
+gboolean nm_utils_is_uuid (const char *str);
+
 #endif /* NETWORK_MANAGER_UTILS_H */
