@@ -2927,6 +2927,27 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	return matched;
 }
 
+static gboolean
+hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	NMSettingWireless *s_wifi;
+	const GByteArray *mac = NULL;
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	if (s_wifi)
+		mac = nm_setting_wireless_get_mac_address (s_wifi);
+
+	if (mac) {
+		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
+		if (memcmp (mac->data, priv->hw_addr, mac->len) == 0)
+			return TRUE;
+	} else if (fail_if_no_hwaddr == FALSE)
+		return TRUE;
+
+	return FALSE;
+}
+
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -3235,6 +3256,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->deactivate = real_deactivate;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->spec_match_list = spec_match_list;
+	parent_class->hwaddr_matches = hwaddr_matches;
 
 	klass->scanning_allowed = scanning_allowed;
 

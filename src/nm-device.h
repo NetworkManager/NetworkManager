@@ -154,6 +154,10 @@ typedef struct {
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
 
 	NMConnection *  (* connection_match_config) (NMDevice *self, const GSList *connections);
+
+	gboolean        (* hwaddr_matches) (NMDevice *self,
+	                                    NMConnection *connection,
+	                                    gboolean fail_if_no_hwaddr);
 } NMDeviceClass;
 
 
@@ -206,6 +210,10 @@ gboolean nm_device_can_assume_connections (NMDevice *device);
 
 NMConnection * nm_device_connection_match_config (NMDevice *device,
                                                   const GSList *connections);
+
+gboolean nm_device_hwaddr_matches (NMDevice *device,
+                                   NMConnection *connection,
+                                   gboolean fail_if_no_hwaddr);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 

@@ -410,6 +410,27 @@ real_update_hw_address (NMDevice *dev)
 }
 
 static gboolean
+hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
+	NMSettingWimax *s_wimax;
+	const GByteArray *mac = NULL;
+
+	s_wimax = nm_connection_get_setting_wimax (connection);
+	if (s_wimax)
+		mac = nm_setting_wimax_get_mac_address (s_wimax);
+
+	if (mac) {
+		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
+		if (memcmp (mac->data, priv->hw_addr.ether_addr_octet, mac->len) == 0)
+			return TRUE;
+	} else if (fail_if_no_hwaddr == FALSE)
+		return TRUE;
+
+	return FALSE;
+}
+
+static gboolean
 real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
                                   GError **error)
@@ -1483,6 +1504,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->deactivate = real_deactivate;
     device_class->set_enabled = real_set_enabled;
+    device_class->hwaddr_matches = hwaddr_matches;
 
 	/* Properties */
 	g_object_class_install_property

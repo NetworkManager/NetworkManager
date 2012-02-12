@@ -45,6 +45,7 @@
 #include "nm-device-bt-glue.h"
 #include "NetworkManagerUtils.h"
 #include "nm-enum-types.h"
+#include "nm-utils.h"
 
 #define BLUETOOTH_DUN_UUID "dun"
 #define BLUETOOTH_NAP_UUID "nap"
@@ -371,6 +372,33 @@ static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
+}
+
+static gboolean
+hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMSettingBluetooth *s_bt;
+	const GByteArray *mac = NULL;
+	gboolean matches = FALSE;
+	GByteArray *devmac;
+
+	s_bt = nm_connection_get_setting_bluetooth (connection);
+	if (s_bt)
+		mac = nm_setting_bluetooth_get_bdaddr (s_bt);
+
+	if (mac) {
+		devmac = nm_utils_hwaddr_atoba (priv->bdaddr, ARPHRD_ETHER);
+		g_return_val_if_fail (devmac != NULL, FALSE);
+		g_return_val_if_fail (devmac->len == mac->len, FALSE);
+
+		matches = (memcmp (mac->data, devmac->data, mac->len) == 0) ? TRUE : FALSE;
+		g_byte_array_free (devmac, TRUE);
+		return matches;
+	} else if (fail_if_no_hwaddr == FALSE)
+		return TRUE;
+
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -1095,6 +1123,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 	device_class->complete_connection = real_complete_connection;
+	device_class->hwaddr_matches = hwaddr_matches;
 
 	/* Properties */
 	g_object_class_install_property

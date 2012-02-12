@@ -4323,6 +4323,19 @@ nm_device_connection_match_config (NMDevice *device, const GSList *connections)
 	return NULL;
 }
 
+gboolean
+nm_device_hwaddr_matches (NMDevice *device,
+                          NMConnection *connection,
+                          gboolean fail_if_no_hwaddr)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	if (NM_DEVICE_GET_CLASS (device)->hwaddr_matches)
+		return NM_DEVICE_GET_CLASS (device)->hwaddr_matches (device, connection, fail_if_no_hwaddr);
+	return FALSE;
+}
+
 void
 nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout)
 {

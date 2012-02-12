@@ -394,6 +394,32 @@ connection_match_config (NMDevice *self, const GSList *connections)
 	return match;
 }
 
+static gboolean
+hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+{
+	NMSettingInfiniband *s_ib;
+	const guint8 *devaddr;
+	const GByteArray *mac = NULL;
+	int devtype;
+
+	devtype = nm_device_wired_get_hwaddr_type (NM_DEVICE_WIRED (device));
+	devaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
+	g_return_val_if_fail (devaddr != NULL, FALSE);
+
+	s_ib = nm_connection_get_setting_infiniband (connection);
+	if (s_ib)
+		mac = nm_setting_infiniband_get_mac_address (s_ib);
+
+	if (mac) {
+		g_return_val_if_fail (mac->len == INFINIBAND_ALEN, FALSE);
+		if (memcmp (mac->data, devaddr, mac->len) == 0)
+			return TRUE;
+	} else if (fail_if_no_hwaddr == FALSE)
+		return TRUE;
+
+	return FALSE;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -448,6 +474,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->ip4_config_pre_commit = real_ip4_config_pre_commit;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
+	parent_class->hwaddr_matches = hwaddr_matches;
 
 	/* properties */
 	g_object_class_install_property

@@ -1526,6 +1526,32 @@ connection_match_config (NMDevice *self, const GSList *connections)
 	return match;
 }
 
+static gboolean
+hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+{
+	NMSettingWired *s_wired;
+	const guint8 *devaddr;
+	const GByteArray *mac = NULL;
+	int devtype;
+
+	devtype = nm_device_wired_get_hwaddr_type (NM_DEVICE_WIRED (device));
+	devaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
+	g_return_val_if_fail (devaddr != NULL, FALSE);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired)
+		mac = nm_setting_wired_get_mac_address (s_wired);
+
+	if (mac) {
+		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
+		if (memcmp (mac->data, devaddr, mac->len) == 0)
+			return TRUE;
+	} else if (fail_if_no_hwaddr == FALSE)
+		return TRUE;
+
+	return FALSE;
+}
+
 static void
 dispose (GObject *object)
 {
@@ -1611,6 +1637,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->deactivate = real_deactivate;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
+	parent_class->hwaddr_matches = hwaddr_matches;
 
 	/* properties */
 	g_object_class_install_property
