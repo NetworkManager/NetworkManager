@@ -241,6 +241,11 @@
           wireline data network.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="INFINIBAND" value="9">
+        <tp:docstring>
+          The device is an IP-capable Infiniband interface.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">

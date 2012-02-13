@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	nm-device-ethernet.xml \
 	nm-device-modem.xml \
 	nm-device-wimax.xml \
+	nm-device-infiniband.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \
 	nm-ip6-config.xml \
