@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
+#include <netinet/in.h>
 
 gboolean nm_netlink_find_address (int ifindex,
                                   int family,
