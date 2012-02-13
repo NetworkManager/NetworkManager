@@ -43,11 +43,16 @@ struct rtnl_route * nm_netlink_route_new (int ifindex,
                                           int mss,
                                           ...) __attribute__((__sentinel__));
 
-int nm_netlink_route_add (struct rtnl_route *route,
-                          int family,
-                          const void * dst, /* struct in_addr or struct in6_addr */
+int nm_netlink_route4_add (struct rtnl_route *route,
+                           guint32 *dst,
+                           int prefix,
+                           guint32 *gw,
+                           int flags);
+
+int nm_netlink_route6_add (struct rtnl_route *route,
+                          const struct in6_addr *dst,
                           int prefix,
-                          const void * gw, /* struct in_addr or struct in6_addr */
+                          const struct in6_addr *gw,
                           int flags);
 
 gboolean nm_netlink_route_delete (struct rtnl_route *route);

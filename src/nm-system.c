@@ -115,7 +115,7 @@ nm_system_device_set_ip4_route (int ifindex,
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Add the route */
-	err = nm_netlink_route_add(route, AF_INET, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
+	err = nm_netlink_route4_add (route, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
 	if (err == -NLE_OBJ_NOTFOUND && ip4_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
@@ -123,9 +123,9 @@ nm_system_device_set_ip4_route (int ifindex,
 		route2 = nm_netlink_route_new (ifindex, AF_INET, mss, NULL);
 		if (route2) {
 			/* Add route to gateway over bridge */
-			err = nm_netlink_route_add(route2, AF_INET, &ip4_gateway, 32, NULL, 0);
+			err = nm_netlink_route4_add (route2, &ip4_gateway, 32, NULL, 0);
 			if (!err) {
-				err = nm_netlink_route_add(route, AF_INET, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
+				err = nm_netlink_route4_add (route, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
 				if (err)
 					nm_netlink_route_delete (route2);
 			}
@@ -486,18 +486,18 @@ nm_system_set_ip6_route (int ifindex,
 	g_return_val_if_fail (route != NULL, -1);
 
 	/* Add the route */
-	err = nm_netlink_route_add(route, AF_INET6, &ip6_dest, ip6_prefix, &ip6_gateway, 0);
+	err = nm_netlink_route6_add (route, ip6_dest, ip6_prefix, ip6_gateway, 0);
 	if (err == -NLE_OBJ_NOTFOUND && ip6_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
 		route2 = nm_netlink_route_new (ifindex, AF_INET6, mss, NULL);
 		if (route2) {
-			err = nm_netlink_route_add(route, AF_INET6, &ip6_gateway, 128, NULL, 0);
+			err = nm_netlink_route6_add (route, ip6_gateway, 128, NULL, 0);
 			/* Add route to gateway over bridge */
 			if (!err) {
 				/* Try adding the route again */
-				err = nm_netlink_route_add(route, AF_INET6, &ip6_dest, ip6_prefix, &ip6_gateway, 0);
+				err = nm_netlink_route6_add (route, ip6_dest, ip6_prefix, ip6_gateway, 0);
 				if (err)
 					nm_netlink_route_delete (route2);
 			}
@@ -825,7 +825,7 @@ add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Add direct route to the gateway */
-	err = nm_netlink_route_add(route, AF_INET, &gw, 32, NULL, 0);
+	err = nm_netlink_route4_add (route, &gw, 32, NULL, 0);
 	if (err) {
 		char *iface = nm_netlink_index_to_iface (ifindex);
 
@@ -849,7 +849,7 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	struct rtnl_route *route = NULL;
 	struct nl_sock *nlh;
 	int err = -1;
-	int dst = 0;
+	guint32 dst = 0;
 
 	g_return_val_if_fail (ifindex > 0, -ENODEV);
 
@@ -863,7 +863,7 @@ replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
 	/* Add the new default route */
-	err = nm_netlink_route_add (route, AF_INET, &dst, 0, &gw, NLM_F_REPLACE);
+	err = nm_netlink_route4_add (route, &dst, 0, &gw, NLM_F_REPLACE);
 	if (err == -NLE_EXIST)
 		err = 0;
 
@@ -1000,7 +1000,7 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 	g_return_val_if_fail (route != NULL, NULL);
 
 	/* Add direct route to the gateway */
-	err = nm_netlink_route_add(route, AF_INET, gw, 128, NULL, 0);
+	err = nm_netlink_route6_add (route, gw, 128, NULL, 0);
 	if (err) {
 		char *iface = nm_netlink_index_to_iface (ifindex);
 
@@ -1035,7 +1035,7 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
 	/* Add the new default route */
-	err = nm_netlink_route_add (route, AF_INET6, NULL, 0, gw, NLM_F_REPLACE);
+	err = nm_netlink_route6_add (route, NULL, 0, gw, NLM_F_REPLACE);
 	if (err == -NLE_EXIST) {
 		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
 		 * the route if it's the same.  Should try to remove it first, then

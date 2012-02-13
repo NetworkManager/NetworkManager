@@ -165,17 +165,25 @@ nm_netlink_route_new (int ifindex,
 }
 
 /**
- * nm_netlink_route_add:
+ * _route_add:
  * @route: the route to add
+ * @family: address family, either %AF_INET or %AF_INET6
+ * @dest: the route destination address, either a struct in_addr or a struct
+ *   in6_addr depending on @family
+ * @dest_prefix: the CIDR prefix of @dest
+ * @gateway: the gateway through which to reach @dest, if any; given as a
+ *   struct in_addr or struct in6_addr depending on @family
+ * @flags: flags to pass to rtnl_route_add(), eg %NLM_F_REPLACE
  *
  * Returns: zero if succeeded or the netlink error otherwise.
  **/
-int nm_netlink_route_add (struct rtnl_route * route,
-			 int family,
-			 const void * dest, /* in_addr or in6_addr */
-			 int dest_prefix,
-			 const void * gateway, /* in_addr or in6_addr */
-			 int flags)
+static int
+_route_add (struct rtnl_route *route,
+            int family,
+            const void *dest, /* in_addr or in6_addr */
+            int dest_prefix,
+            const void *gateway, /* in_addr or in6_addr */
+            int flags)
 {
 	struct nl_sock * sk;
 	struct nl_addr * dest_addr, * gw_addr;
@@ -237,6 +245,50 @@ int nm_netlink_route_add (struct rtnl_route * route,
 		err = -NLE_OBJ_NOTFOUND;
 
 	return err;
+}
+
+/**
+ * nm_netlink_route4_add:
+ * @route: the route to add
+ * @dest: the route destination address in network byte order
+ * @dest_prefix: the CIDR prefix of @dest
+ * @gateway: the gateway through which to reach @dest, if any, in network byte order
+ * @flags: flags to pass to rtnl_route_add(), eg %NLM_F_REPLACE
+ *
+ * Adds an IPv4 route with the given parameters.
+ *
+ * Returns: zero if succeeded or the netlink error otherwise.
+ **/
+int
+nm_netlink_route4_add (struct rtnl_route *route,
+                       guint32 *dst,
+                       int prefix,
+                       guint32 *gw,
+                       int flags)
+{
+	return _route_add (route, AF_INET, dst, prefix, gw, flags);
+}
+
+/**
+ * nm_netlink_route6_add:
+ * @route: the route to add
+ * @dest: the route destination address
+ * @dest_prefix: the CIDR prefix of @dest
+ * @gateway: the gateway through which to reach @dest, if any
+ * @flags: flags to pass to rtnl_route_add(), eg %NLM_F_REPLACE
+ *
+ * Adds an IPv6 route with the given parameters.
+ *
+ * Returns: zero if succeeded or the netlink error otherwise.
+ **/
+int
+nm_netlink_route6_add (struct rtnl_route *route,
+                       const struct in6_addr *dst,
+                       int prefix,
+                       const struct in6_addr *gw,
+                       int flags)
+{
+	return _route_add (route, AF_INET6, dst, prefix, gw, flags);
 }
 
 /**
