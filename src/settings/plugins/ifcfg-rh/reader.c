@@ -3566,19 +3566,7 @@ handle_bond_option (NMSettingBond *s_bond,
                     const char *key,
                     const char *value)
 {
-	if (!g_strcmp0 (key, "mode"))
-		g_object_set (s_bond, NM_SETTING_BOND_MODE, value, NULL);
-	else if (!g_strcmp0 (key, "miimon"))
-		g_object_set (s_bond, NM_SETTING_BOND_MIIMON, strtoul(value, NULL, 0), NULL);
-	else if (!g_strcmp0 (key, "updelay"))
-		g_object_set (s_bond, NM_SETTING_BOND_UPDELAY, strtoul(value, NULL, 0), NULL);
-	else if (!g_strcmp0 (key, "downdelay"))
-		g_object_set (s_bond, NM_SETTING_BOND_DOWNDELAY, strtoul(value, NULL, 0), NULL);
-	else if (!g_strcmp0 (key, "arp_interval"))
-		g_object_set (s_bond, NM_SETTING_BOND_ARP_INTERVAL, strtoul(value, NULL, 0), NULL);
-	else if (!g_strcmp0 (key, "arp_ip_target"))
-		g_object_set (s_bond, NM_SETTING_BOND_ARP_IP_TARGET, value, NULL);
-	else
+	if (!nm_setting_bond_add_option (s_bond, key, value))
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid bonding option '%s'", key);
 }
 

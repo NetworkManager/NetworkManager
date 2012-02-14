@@ -11817,9 +11817,9 @@ test_read_bond_main (void)
 	        "bond-main", "failed to verify %s: DEVICE=%s does not match bond0",
 	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_interface_name (s_bond));
 
-	ASSERT (nm_setting_bond_get_miimon (s_bond) == 100,
-	        "bond-main", "failed to verify %s: miimon=%d does not match 100",
-	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_miimon (s_bond));
+	ASSERT (g_strcmp0 (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON), "100") == 0,
+	        "bond-main", "failed to verify %s: miimon=%s does not match 100",
+	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON));
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -11867,7 +11867,7 @@ test_read_bond_slave (void)
 	        "bond-slave-read", "failed to verify %s: master is not bond0",
 	        TEST_IFCFG_BOND_SLAVE);
 
-	ASSERT (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), "bond") == 0,
+	ASSERT (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_BOND_SETTING_NAME) == 0,
 	        "bond-slave-read", "failed to verify %s: slave-type is not bond",
 	        TEST_IFCFG_BOND_SLAVE);
 

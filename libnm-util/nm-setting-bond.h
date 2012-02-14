@@ -54,12 +54,15 @@ typedef enum {
 GQuark nm_setting_bond_error_quark (void);
 
 #define NM_SETTING_BOND_INTERFACE_NAME "interface-name"
-#define NM_SETTING_BOND_MODE "mode"
-#define NM_SETTING_BOND_MIIMON "miimon"
-#define NM_SETTING_BOND_DOWNDELAY "down-delay"
-#define NM_SETTING_BOND_UPDELAY "up-delay"
-#define NM_SETTING_BOND_ARP_INTERVAL "arp-interval"
-#define NM_SETTING_BOND_ARP_IP_TARGET "arp-ip-target"
+#define NM_SETTING_BOND_OPTIONS "options"
+
+/* Valid options for the 'options' property */
+#define NM_SETTING_BOND_OPTION_MODE          "mode"
+#define NM_SETTING_BOND_OPTION_MIIMON        "miimon"
+#define NM_SETTING_BOND_OPTION_DOWNDELAY     "downdelay"
+#define NM_SETTING_BOND_OPTION_UPDELAY       "updelay"
+#define NM_SETTING_BOND_OPTION_ARP_INTERVAL  "arp_interval"
+#define NM_SETTING_BOND_OPTION_ARP_IP_TARGET "arp_ip_target"
 
 typedef struct {
 	NMSetting parent;
@@ -79,12 +82,18 @@ GType nm_setting_bond_get_type (void);
 
 NMSetting *  nm_setting_bond_new                (void);
 const char * nm_setting_bond_get_interface_name (NMSettingBond *setting);
-const char * nm_setting_bond_get_mode           (NMSettingBond *setting);
-guint32      nm_setting_bond_get_miimon         (NMSettingBond *setting);
-guint32      nm_setting_bond_get_downdelay      (NMSettingBond *setting);
-guint32      nm_setting_bond_get_updelay        (NMSettingBond *setting);
-guint32      nm_setting_bond_get_arp_interval   (NMSettingBond *setting);
-const char * nm_setting_bond_get_arp_ip_target  (NMSettingBond *setting);
+guint32      nm_setting_bond_get_num_options    (NMSettingBond *setting);
+gboolean     nm_setting_bond_get_option         (NMSettingBond *setting,
+                                                 guint32 idx,
+                                                 const char **out_name,
+                                                 const char **out_value);
+const char * nm_setting_bond_get_option_by_name (NMSettingBond *setting,
+                                                 const char *name);
+gboolean     nm_setting_bond_add_option         (NMSettingBond *setting,
+                                                 const char *name,
+                                                 const char *item);
+gboolean     nm_setting_bond_remove_option      (NMSettingBond *setting,
+                                                 const char *name);
 
 G_END_DECLS
 

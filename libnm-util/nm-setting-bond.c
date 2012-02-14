@@ -64,24 +64,24 @@ G_DEFINE_TYPE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING)
 
 typedef struct {
 	char *	interface_name;
-	char *	mode;
-	guint32	miimon;
-	guint32	downdelay;
-	guint32	updelay;
-	guint32	arp_interval;
-	char *	arp_ip_target;
+	GHashTable *options;
 } NMSettingBondPrivate;
 
 enum {
 	PROP_0,
 	PROP_INTERFACE_NAME,
-	PROP_MODE,
-	PROP_MIIMON,
-	PROP_DOWNDELAY,
-	PROP_UPDELAY,
-	PROP_ARP_INTERVAL,
-	PROP_ARP_IP_TARGET,
+	PROP_OPTIONS,
 	LAST_PROP
+};
+
+static const char *valid_opts[] = {
+	NM_SETTING_BOND_OPTION_MODE,
+	NM_SETTING_BOND_OPTION_MIIMON,
+	NM_SETTING_BOND_OPTION_DOWNDELAY,
+	NM_SETTING_BOND_OPTION_UPDELAY,
+	NM_SETTING_BOND_OPTION_ARP_INTERVAL,
+	NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
+	NULL
 };
 
 /**
@@ -112,87 +112,159 @@ nm_setting_bond_get_interface_name (NMSettingBond *setting)
 }
 
 /**
- * nm_setting_bond_get_mode:
+ * nm_setting_bond_get_num_options:
  * @setting: the #NMSettingBond
  *
- * Returns: the #NMSettingBond:mode property of the setting
+ * Returns the number of options that should be set for this bond when it
+ * is activated. This can be used to retrieve each option individually
+ * using nm_setting_bond_get_option().
+ *
+ * Returns: the number of bonding options
+ **/
+guint32
+nm_setting_bond_get_num_options (NMSettingBond *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
+
+	return g_hash_table_size (NM_SETTING_BOND_GET_PRIVATE (setting)->options);
+}
+
+/**
+ * nm_setting_bond_get_option:
+ * @setting: the #NMSettingBond
+ * @idx: index of the desired option, from 0 to
+ * nm_setting_bond_get_num_options() - 1
+ * @out_name: (out): on return, the name of the bonding option; this
+ * value is owned by the setting and should not be modified
+ * @out_value: (out): on return, the value of the name of the bonding
+ * option; this value is owned by the setting and should not be modified
+ *
+ * Given an index, return the value of the bonding option at that index.  indexes
+ * are *not* guaranteed to be static across modifications to options done by
+ * nm_setting_bond_add_option() and nm_setting_bond_remove_option(),
+ * and should not be used to refer to options except for short periods of time
+ * such as during option iteration.
+ *
+ * Returns: %TRUE on success if the index was valid and an option was found,
+ * %FALSE if the index was invalid (ie, greater than the number of options
+ * currently held by the setting)
+ **/
+gboolean
+nm_setting_bond_get_option (NMSettingBond *setting,
+                            guint32 idx,
+                            const char **out_name,
+                            const char **out_value)
+{
+	NMSettingBondPrivate *priv;
+	guint32 num_keys;
+	GList *keys;
+	const char *_key = NULL, *_value = NULL;
+
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
+
+	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+
+	num_keys = nm_setting_bond_get_num_options (setting);
+	g_return_val_if_fail (idx < num_keys, FALSE);
+
+	keys = g_hash_table_get_keys (priv->options);
+	_key = g_list_nth_data (keys, idx);
+	_value = g_hash_table_lookup (priv->options, _key);
+
+	if (out_name)
+		*out_name = _key;
+	if (out_value)
+		*out_value = _value;
+
+	return TRUE;
+}
+
+static gboolean
+validate_option_name (const char *name)
+{
+	const char *p = name;
+	guint32 i = 0;
+
+	while (p && *p) {
+		if (isalnum (*p++) == FALSE || i++ > 200)
+			return FALSE;
+	}
+	return i > 0 ? TRUE : FALSE;  /* catch empty strings */
+}
+
+/**
+ * nm_setting_bond_get_option_by_name:
+ * @setting: the #NMSettingBond
+ * @name: the option name for which to retrieve the value
+ *
+ * Returns the value associated with the bonding option specified by
+ * @name, if it exists.
+ *
+ * Returns: the value, or %NULL if the key/value pair was never added to the
+ * setting; the value is owned by the setting and must not be modified
  **/
 const char *
-nm_setting_bond_get_mode (NMSettingBond *setting)
+nm_setting_bond_get_option_by_name (NMSettingBond *setting,
+                                    const char *name)
 {
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
+	g_return_val_if_fail (validate_option_name (name), NULL);
 
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->mode;
+	return g_hash_table_lookup (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
 }
 
 /**
- * nm_setting_bond_get_miimon:
+ * nm_setting_bond_add_option:
  * @setting: the #NMSettingBond
+ * @name: name for the option
+ * @value: value for the option
  *
- * Returns: the #NMSettingBond:miimon property of the setting
+ * Add an option to the table.  The option is compared to an internal list
+ * of allowed options.  Option names may contain only alphanumeric characters
+ * (ie [a-zA-Z0-9]).  Adding a new name replaces any existing name/value pair
+ * that may already exist.
+ *
+ * Returns: %TRUE if the option was valid and was added to the internal option
+ * list, %FALSE if it was not.
  **/
-guint32
-nm_setting_bond_get_miimon (NMSettingBond *setting)
+gboolean nm_setting_bond_add_option (NMSettingBond *setting,
+                                     const char *name,
+                                     const char *value)
 {
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
+	size_t value_len;
 
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->miimon;
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
+	g_return_val_if_fail (validate_option_name (name), FALSE);
+	g_return_val_if_fail (_nm_utils_string_in_list (name, valid_opts), FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	value_len = strlen (value);
+	g_return_val_if_fail (value_len > 0 && value_len < 200, FALSE);
+
+	g_hash_table_insert (NM_SETTING_BOND_GET_PRIVATE (setting)->options,
+	                     g_strdup (name), g_strdup (value));
+	return TRUE;
 }
 
 /**
- * nm_setting_bond_get_downdelay:
+ * nm_setting_bond_remove_options:
  * @setting: the #NMSettingBond
+ * @name: name of the option to remove
  *
- * Returns: the #NMSettingBond:downdelay property of the setting
- **/
-guint32
-nm_setting_bond_get_downdelay (NMSettingBond *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
-
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->downdelay;
-}
-
-/**
- * nm_setting_bond_get_updelay:
- * @setting: the #NMSettingBond
+ * Remove the bonding option referenced by @name from the internal option
+ * list.
  *
- * Returns: the #NMSettingBond:updelay property of the setting
+ * Returns: %TRUE if the option was found and removed from the internal option
+ * list, %FALSE if it was not.
  **/
-guint32
-nm_setting_bond_get_updelay (NMSettingBond *setting)
+gboolean
+nm_setting_bond_remove_option (NMSettingBond *setting,
+                               const char *name)
 {
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
+	g_return_val_if_fail (validate_option_name (name), FALSE);
 
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->updelay;
-}
-
-/**
- * nm_setting_bond_get_arp_interval:
- * @setting: the #NMSettingBond
- *
- * Returns: the #NMSettingBond:arp_interval property of the setting
- **/
-guint32
-nm_setting_bond_get_arp_interval (NMSettingBond *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
-
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->arp_interval;
-}
-
-/**
- * nm_setting_bond_get_arp_ip_target:
- * @setting: the #NMSettingBond
- *
- * Returns: the #NMSettingBond:arp_ip_target property of the setting
- **/
-const char *
-nm_setting_bond_get_arp_ip_target (NMSettingBond *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
-
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->arp_ip_target;
+	return g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
 }
 
 /*
@@ -224,6 +296,8 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+	GHashTableIter iter;
+	const char *key, *value;
 	const char *valid_modes[] = { "balance-rr",
 	                              "active-backup",
 	                              "balance-xor",
@@ -249,15 +323,29 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->mode && !_nm_utils_string_in_list (priv->mode, valid_modes)) {
-		g_set_error (error,
-		             NM_SETTING_BOND_ERROR,
-		             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BOND_MODE);
-		return FALSE;
-	}
+	g_hash_table_iter_init (&iter, priv->options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
+		if (   !_nm_utils_string_in_list (key, valid_opts)
+		    || !strlen (value)
+		    || (strlen (value) > 200)) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_BOND_OPTIONS);
+			return FALSE;
+		}
 
-	/* XXX: Validate arp-ip-target */
+		if (!g_strcmp0 (key, "mode")
+		    && !_nm_utils_string_in_list (value, valid_modes)) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_BOND_OPTIONS);
+			return FALSE;
+		}
+
+		/* XXX: Validate arp-ip-target */
+	}
 
 	return TRUE;
 }
@@ -273,9 +361,15 @@ get_virtual_iface_name (NMSetting *setting)
 static void
 nm_setting_bond_init (NMSettingBond *setting)
 {
+	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+
 	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_BOND_SETTING_NAME,
-	              NM_SETTING_BOND_MIIMON, 100, /* default: miimon=100 */
 	              NULL);
+
+	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+	/* Default values: */
+	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MIIMON, "100");
 }
 
 static void
@@ -284,10 +378,15 @@ finalize (GObject *object)
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
 
 	g_free (priv->interface_name);
-	g_free (priv->mode);
-	g_free (priv->arp_ip_target);
+	g_hash_table_destroy (priv->options);
 
 	G_OBJECT_CLASS (nm_setting_bond_parent_class)->finalize (object);
+}
+
+static void
+copy_hash (gpointer key, gpointer value, gpointer user_data)
+{
+	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
 }
 
 static void
@@ -295,29 +394,18 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
+	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
 		priv->interface_name = g_value_dup_string (value);
 		break;
-	case PROP_MODE:
-		priv->mode = g_value_dup_string (value);
-		break;
-	case PROP_MIIMON:
-		priv->miimon = g_value_get_uint (value);
-		break;
-	case PROP_DOWNDELAY:
-		priv->downdelay = g_value_get_uint (value);
-		break;
-	case PROP_UPDELAY:
-		priv->updelay = g_value_get_uint (value);
-		break;
-	case PROP_ARP_INTERVAL:
-		priv->arp_interval = g_value_get_uint (value);
-		break;
-	case PROP_ARP_IP_TARGET:
-		g_free (priv->arp_ip_target);
-		priv->arp_ip_target = g_value_dup_string (value);
+	case PROP_OPTIONS:
+		/* Must make a deep copy of the hash table here... */
+		g_hash_table_remove_all (priv->options);
+		new_hash = g_value_get_boxed (value);
+		if (new_hash)
+			g_hash_table_foreach (new_hash, copy_hash, priv->options);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -329,30 +417,16 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
+	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
 	NMSettingBond *setting = NM_SETTING_BOND (object);
 
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
 		g_value_set_string (value, nm_setting_bond_get_interface_name (setting));
 		break;
-	case PROP_MODE:
-		g_value_set_string (value, nm_setting_bond_get_mode (setting));
-		break;
-	case PROP_MIIMON:
-		g_value_set_uint (value, nm_setting_bond_get_miimon (setting));
-		break;
-	case PROP_DOWNDELAY:
-		g_value_set_uint (value, nm_setting_bond_get_downdelay (setting));
-		break;
-	case PROP_UPDELAY:
-		g_value_set_uint (value, nm_setting_bond_get_updelay (setting));
-		break;
-	case PROP_ARP_INTERVAL:
-		g_value_set_uint (value, nm_setting_bond_get_arp_interval (setting));
-		break;
-	case PROP_ARP_IP_TARGET:
-		g_value_set_string (value, nm_setting_bond_get_arp_ip_target (setting));
-		break;
+	case PROP_OPTIONS:
+		g_value_set_boxed (value, priv->options);
+        break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -389,159 +463,20 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
-	 * NMSettingBond:mode:
+	 * NMSettingBridge:options:
 	 *
-	 * Bonding policy
+	 * Dictionary of key/value pairs of bridging options.  Both keys
+	 * and values must be strings. Option names must contain only
+	 * alphanumeric characters (ie, [a-zA-Z0-9]).
 	 **/
-	g_object_class_install_property
-		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_SETTING_BOND_MODE,
-		                      "Mode",
-		                      "The bonding policy to use. One of 'balance-rr' (default), "
-		                      "'active-backup', 'balance-xor', 'broadcast', '802.3ad', "
-		                      "'balance-tlb', 'balance-alb'.",
-		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingBond:miimon:
-	 *
-	 * Specifies the MII link monitoring frequency in milliseconds.
-	 * This determines how often the link state of each slave is
-	 * inspected for link failures.  A value of zero disables MII
-	 * link monitoring.  A value of 100 is a good starting point.
-	 * The use_carrier option, below, affects how the link state is
-	 * determined.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_MIIMON,
-		 g_param_spec_uint (NM_SETTING_BOND_MIIMON,
-		                    "MiiMon",
-		                    "Specifies the MII link monitoring frequency in milliseconds. "
-		                    "This determines how often the link state of each slave is "
-		                    "inspected for link failures.  A value of zero disables MII "
-		                    "link monitoring.  A value of 100 is a good starting point. "
-		                    "The use_carrier option, below, affects how the link state is "
-		                    "determined. The default value is 0.",
-		                    0, G_MAXUINT32, 100,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingBond:downdelay:
-	 *
-	 * Specifies the time, in milliseconds, to wait before disabling
-	 * a slave after a link failure has been detected.  This option
-	 * is only valid for the miimon link monitor.  The downdelay
-	 * value should be a multiple of the miimon value; if not, it
-	 * will be rounded down to the nearest multiple.  The default
-	 * value is 0.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_DOWNDELAY,
-		 g_param_spec_uint (NM_SETTING_BOND_DOWNDELAY,
-		                    "DownDelay",
-		                    "Specifies the time, in milliseconds, to wait before disabling "
-		                    "a slave after a link failure has been detected.  This option "
-		                    "is only valid for the miimon link monitor.  The downdelay "
-		                    "value should be a multiple of the miimon value; if not, it "
-		                    "will be rounded down to the nearest multiple.  The default "
-		                    "value is 0.",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingBond:updelay:
-	 *
-	 * Specifies the time, in milliseconds, to wait before enabling a
-	 * slave after a link recovery has been detected.  This option is
-	 * only valid for the miimon link monitor.  The updelay value
-	 * should be a multiple of the miimon value; if not, it will be
-	 * rounded down to the nearest multiple.  The default value is 0.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_UPDELAY,
-		 g_param_spec_uint (NM_SETTING_BOND_UPDELAY,
-		                    "UpDelay",
-		                    "Specifies the time, in milliseconds, to wait before enabling a "
-		                    "slave after a link recovery has been detected.  This option is "
-		                    "only valid for the miimon link monitor.  The updelay value "
-		                    "should be a multiple of the miimon value; if not, it will be "
-		                    "rounded down to the nearest multiple.  The default value is 0.",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingBond:arp_interval:
-	 *
-	 * Specifies the ARP link monitoring frequency in milliseconds.
-	 *
-	 * The ARP monitor works by periodically checking the slave
-	 * devices to determine whether they have sent or received
-	 * traffic recently (the precise criteria depends upon the
-	 * bonding mode, and the state of the slave).  Regular traffic is
-	 * generated via ARP probes issued for the addresses specified by
-	 * the arp-ip-target option.
-	 *
-	 * This behavior can be modified by the arp-validate option.
-	 *
-	 * If ARP monitoring is used in an etherchannel compatible mode
-	 * (modes 0 and 2), the switch should be configured in a mode
-	 * that evenly distributes packets across all links. If the
-	 * switch is configured to distribute the packets in an XOR
-	 * fashion, all replies from the ARP targets will be received on
-	 * the same link which could cause the other team members to
-	 * fail.  ARP monitoring should not be used in conjunction with
-	 * miimon.  A value of 0 disables ARP monitoring.  The default
-	 * value is 0.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ARP_INTERVAL,
-		 g_param_spec_uint (NM_SETTING_BOND_ARP_INTERVAL,
-		                    "ArpInterval",
-		                    "Specifies the ARP link monitoring frequency in milliseconds. "
-		                    "The ARP monitor works by periodically checking the slave "
-		                    "devices to determine whether they have sent or received "
-		                    "traffic recently (the precise criteria depends upon the "
-		                    "bonding mode, and the state of the slave).  Regular traffic is "
-		                    "generated via ARP probes issued for the addresses specified by "
-		                    "the arp-ip-target option. "
-		                    "This behavior can be modified by the arp-validate option. "
-		                    "If ARP monitoring is used in an etherchannel compatible mode "
-		                    "(modes 0 and 2), the switch should be configured in a mode "
-		                    "that evenly distributes packets across all links. If the "
-		                    "switch is configured to distribute the packets in an XOR "
-		                    "fashion, all replies from the ARP targets will be received on "
-		                    "the same link which could cause the other team members to "
-		                    "fail.  ARP monitoring should not be used in conjunction with "
-		                    "miimon.  A value of 0 disables ARP monitoring.  The default "
-		                    "value is 0.",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingBond:arp_ip_target:
-	 *
-	 * Specifies the IP addresses to use as ARP monitoring peers when
-	 * arp_interval is > 0.  These are the targets of the ARP request
-	 * sent to determine the health of the link to the targets.
-	 * Specify these values in ddd.ddd.ddd.ddd format.  Multiple IP
-	 * addresses must be separated by a comma.  At least one IP
-	 * address must be given for ARP monitoring to function.  The
-	 * maximum number of targets that can be specified is 16.  The
-	 * default value is no IP addresses.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ARP_IP_TARGET,
-		 g_param_spec_string (NM_SETTING_BOND_ARP_IP_TARGET,
-		                      "ArpIpTarget",
-		                      "Specifies the IP addresses to use as ARP monitoring peers when "
-		                      "arp-interval is > 0.  These are the targets of the ARP request "
-		                      "sent to determine the health of the link to the targets. "
-		                      "Specify these values in ddd.ddd.ddd.ddd format.  Multiple IP "
-		                      "addresses must be separated by a comma.  At least one IP "
-		                      "address must be given for ARP monitoring to function.  The "
-		                      "maximum number of targets that can be specified is 16.  The "
-		                      "default value is no IP addresses.",
-		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+	 g_object_class_install_property
+		 (object_class, PROP_OPTIONS,
+		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS,
+		                             "Options",
+		                             "Dictionary of key/value pairs of bonding "
+		                             " options.  Both keys and values must be "
+		                             "strings.  Option namesmust contain only "
+		                             "alphanumeric characters (ie,[a-zA-Z0-9]).",
+		                             DBUS_TYPE_G_MAP_OF_STRING,
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

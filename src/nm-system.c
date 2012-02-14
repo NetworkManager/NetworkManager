@@ -1238,27 +1238,14 @@ set_bond_attr (const char *iface, const char *attr, const char *value)
 	return ret;
 }
 
-static gboolean
-set_bond_attr_int (const char *iface, const char *attr,
-                   guint32 value)
-{
-	char buf[128];
-
-	snprintf (buf, sizeof(buf), "%u", value);
-
-	return set_bond_attr (iface, attr, buf);
-}
-
 gboolean
 nm_system_apply_bonding_config (NMSettingBond *s_bond)
 {
-	const char *name, *val;
+	const char *name;
+	guint32 i;
 
 	name = nm_setting_bond_get_interface_name (s_bond);
 	g_assert (name);
-
-	if ((val = nm_setting_bond_get_mode (s_bond)))
-		set_bond_attr (name, "mode", val);
 
 	/*
 	 * FIXME:
@@ -1278,13 +1265,15 @@ nm_system_apply_bonding_config (NMSettingBond *s_bond)
 	 * Not sure if this is actually being used and it seems dangerous as
 	 * the result is pretty much unforeseeable.
 	 */
-	if ((val = nm_setting_bond_get_arp_ip_target (s_bond)))
-		set_bond_attr (name, "arp_ip_target", val);
 
-	set_bond_attr_int (name, "miimon", nm_setting_bond_get_miimon (s_bond));
-	set_bond_attr_int (name, "downdelay", nm_setting_bond_get_downdelay (s_bond));
-	set_bond_attr_int (name, "updelay", nm_setting_bond_get_updelay (s_bond));
-	set_bond_attr_int (name, "arp_interval", nm_setting_bond_get_arp_interval (s_bond));
+	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
+		const char *key, *value;
+
+		if (!nm_setting_bond_get_option (s_bond, i, &key, &value))
+			continue;
+
+		set_bond_attr (name, key, value);
+	}
 
 	return TRUE;
 }
