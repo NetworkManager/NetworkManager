@@ -11775,6 +11775,109 @@ test_read_vlan_interface (void)
 	g_free (route6file);
 }
 
+#define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"
+
+static void
+test_read_bond_main (void)
+{
+	NMConnection *connection;
+	NMSettingBond *s_bond;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_BOND_MAIN,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "bond-main-read", "unexpected failure reading %s", TEST_IFCFG_BOND_MAIN);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "bond-main-read", "failed to verify %s: %s", TEST_IFCFG_BOND_MAIN, error->message);
+
+	/* ===== Bonding SETTING ===== */
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	ASSERT (s_bond != NULL,
+	        "bond-main", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_BOND_MAIN,
+	        NM_SETTING_BOND_SETTING_NAME);
+
+	ASSERT (g_strcmp0 (nm_setting_bond_get_interface_name (s_bond), "bond0") == 0,
+	        "bond-main", "failed to verify %s: DEVICE=%s does not match bond0",
+	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_interface_name (s_bond));
+
+	ASSERT (nm_setting_bond_get_miimon (s_bond) == 100,
+	        "bond-main", "failed to verify %s: miimon=%d does not match 100",
+	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_miimon (s_bond));
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_BOND_SLAVE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-slave"
+
+static void
+test_read_bond_slave (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_BOND_SLAVE,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "bond-slave-read", "unexpected failure reading %s", TEST_IFCFG_BOND_MAIN);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "bond-slave-read", "failed to verify %s: %s", TEST_IFCFG_BOND_MAIN, error->message);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	ASSERT (s_con != NULL,
+	        "bond-slave-read", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_BOND_SLAVE, NM_SETTING_CONNECTION_SETTING_NAME);
+
+	ASSERT (g_strcmp0 (nm_setting_connection_get_master (s_con), "bond0") == 0,
+	        "bond-slave-read", "failed to verify %s: master is not bond0",
+	        TEST_IFCFG_BOND_SLAVE);
+
+	ASSERT (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), "bond") == 0,
+	        "bond-slave-read", "failed to verify %s: slave-type is not bond",
+	        TEST_IFCFG_BOND_SLAVE);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_INFINIBAND TEST_IFCFG_DIR"/network-scripts/ifcfg-test-infiniband"
 
 static void
@@ -12163,6 +12266,8 @@ int main (int argc, char **argv)
 	test_read_bridge_main ();
 	test_read_bridge_component ();
 	test_read_vlan_interface ();
+	test_read_bond_main ();
+	test_read_bond_slave ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
