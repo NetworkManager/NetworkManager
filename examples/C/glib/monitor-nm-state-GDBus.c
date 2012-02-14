@@ -34,6 +34,7 @@
 #include <string.h>
 #include <NetworkManager.h>
 
+#if GLIB_CHECK_VERSION(2,26,0)
 static const char *
 nm_state_to_string (NMState state)
 {
@@ -81,11 +82,13 @@ on_signal (GDBusProxy *proxy,
 		g_print ("NetworkManager state is: (%d) %s\n", new_state, nm_state_to_string ((NMState) new_state));
 	}
 }
+#endif
 
 
 int
 main (int argc, char *argv[])
 {
+#if GLIB_CHECK_VERSION(2,26,0)
 	GMainLoop *loop;
 	GError *error = NULL;
 	GDBusProxyFlags flags;
@@ -126,6 +129,9 @@ main (int argc, char *argv[])
 	g_main_loop_run (loop);
 
 	g_object_unref (proxy);
+#else
+	g_print ("Sorry, you need at least GLib 2.26 for GDBus.\n");
+#endif
 
 	return 0;
 }

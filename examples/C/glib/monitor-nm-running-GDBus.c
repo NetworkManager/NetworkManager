@@ -31,6 +31,7 @@
 
 #include <gio/gio.h>
 
+#if GLIB_CHECK_VERSION(2,26,0)
 static void
 on_name_appeared (GDBusConnection *connection,
                   const gchar     *name,
@@ -48,11 +49,13 @@ on_name_vanished (GDBusConnection *connection,
 {
 	g_print ("Name '%s' does not exist on the system bus => NM is not running\n", name);
 }
+#endif
 
 
 int
 main (int argc, char *argv[])
 {
+#if GLIB_CHECK_VERSION(2,26,0)
 	guint watcher_id;
 	GMainLoop *loop;
 	GBusNameWatcherFlags flags;
@@ -80,6 +83,9 @@ main (int argc, char *argv[])
 
 	/* Stop watching the name */
 	g_bus_unwatch_name (watcher_id);
+#else
+	g_print ("Sorry, you need at least GLib 2.26 for GDBus.\n");
+#endif
 
 	return 0;
 }
