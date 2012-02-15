@@ -135,6 +135,8 @@ NetworkManager_SOURCES = \
 		nm-device-modem.c \
 		nm-device-infiniband.c \
 		nm-device-infiniband.h \
+		nm-device-bond.c \
+		nm-device-bond.h \
 		nm-wifi-ap.c \
 		nm-wifi-ap.h \
 		nm-wifi-ap-utils.c \
@@ -222,6 +224,9 @@ nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
 nm-device-olpc-mesh-glue.h: $(top_srcdir)/introspection/nm-device-olpc-mesh.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
 
+nm-device-bond-glue.h: $(top_srcdir)/introspection/nm-device-bond.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bond --mode=glib-server --output=$@ $<
+
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
@@ -246,6 +251,7 @@ BUILT_SOURCES = \
 	nm-device-interface-glue.h \
 	nm-device-ethernet-glue.h \
 	nm-device-infiniband-glue.h \
+	nm-device-bond-glue.h \
 	nm-device-wifi-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \

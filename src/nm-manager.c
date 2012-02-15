@@ -44,6 +44,7 @@
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-modem.h"
 #include "nm-device-infiniband.h"
+#include "nm-device-bond.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -1054,7 +1055,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	char *iface = NULL, *udi;
 	NMDevice *device = NULL;
 	int master_ifindex = -1;
-	const char *driver = NULL;
 
 	iface = get_virtual_iface_name (self, connection, &master_ifindex);
 	if (!iface) {
@@ -1082,7 +1082,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			             iface, nm_connection_get_id (connection));
 			goto out;
 		}
-		driver = "bonding";
+
+		udi = get_virtual_iface_placeholder_udi ();
+		device = nm_device_bond_new (udi, iface);
+		g_free (udi);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		g_return_val_if_fail (master_ifindex >= 0, FALSE);
 
@@ -1091,18 +1094,13 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			             iface, nm_connection_get_id (connection));
 			goto out;
 		}
-		driver = "8021q";
+		udi = get_virtual_iface_placeholder_udi ();
+		device = nm_device_ethernet_new (udi, iface, "8021q");
+		g_free (udi);
 	}
 
-	if (driver) {
-		udi = get_virtual_iface_placeholder_udi ();
-		device = nm_device_ethernet_new (udi, iface, driver);
-		g_free (udi);
-		if (device)
-			add_device (self, device);
-		else
-			nm_log_warn (LOGD_DEVICE, "(%s) failed to add virtual interface device", iface);
-	}
+	if (device)
+		add_device (self, device);
 
 out:
 	g_free (iface);
@@ -2128,6 +2126,12 @@ is_infiniband (GUdevDevice *device)
 	return etype == ARPHRD_INFINIBAND;
 }
 
+static gboolean
+is_bond (int ifindex)
+{
+	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_BOND);
+}
+
 static void
 udev_device_added_cb (NMUdevManager *udev_mgr,
                       GUdevDevice *udev_device,
@@ -2180,6 +2184,8 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 			device = nm_device_wifi_new (sysfs_path, iface, driver);
 		else if (is_infiniband (udev_device))
 			device = nm_device_infiniband_new (sysfs_path, iface, driver);
+		else if (is_bond (ifindex))
+			device = nm_device_bond_new (sysfs_path, iface);
 		else
 			device = nm_device_ethernet_new (sysfs_path, iface, driver);
 	}

@@ -68,13 +68,6 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE_WIRED)
 
 #define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
 
-typedef enum
-{
-	NM_ETHERNET_TYPE_UNSPEC = 0,
-	NM_ETHERNET_TYPE_BOND,
-	NM_ETHERNET_TYPE_VLAN,
-} NMEthernetType;
-
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
@@ -104,8 +97,6 @@ typedef struct {
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
-
-	NMEthernetType      type;
 
 	/* VLAN stuff */
 	int                 vlan_id;
@@ -268,12 +259,10 @@ constructor (GType type,
 	// FIXME: Convert this into a no-export property so type can be specified
 	//        when the device is created.
 	itype = nm_system_get_iface_type (nm_device_get_ifindex (self), nm_device_get_iface (self));
-	if (itype == NM_IFACE_TYPE_BOND)
-		priv->type = NM_ETHERNET_TYPE_BOND;
-	else if (itype == NM_IFACE_TYPE_VLAN) {
+	if (itype == NM_IFACE_TYPE_UNSPEC) {
+		/* normal ethernet, pass */
+	} else if (itype == NM_IFACE_TYPE_VLAN) {
 		char *master_iface;
-
-		priv->type = NM_ETHERNET_TYPE_VLAN;
 
 		if (!nm_system_get_iface_vlan_info (nm_device_get_ifindex (self),
 		                                    &priv->vlan_master_ifindex,
@@ -300,8 +289,9 @@ constructor (GType type,
 		             master_iface ? master_iface : "(unknown)",
 		             priv->vlan_master_ifindex);
 		g_free (master_iface);
-	} else
-		priv->type = NM_ETHERNET_TYPE_UNSPEC;
+	} else {
+		g_assert_not_reached ();
+	}
 
 	nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (self)),
@@ -334,26 +324,12 @@ device_state_changed (NMDevice *device,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
 	switch (new_state) {
 	case NM_DEVICE_STATE_ACTIVATED:
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		clear_secrets_tries (device);
 		break;
-
-	case NM_DEVICE_STATE_UNAVAILABLE:
-		switch (priv->type) {
-		case NM_ETHERNET_TYPE_BOND:
-			/* Use NM_DEVICE_STATE_REASON_CARRIER to make sure num retries is reset */
-			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-			break;
-
-		default:
-			break;
-		}
 	default:
 		break;
 	}
@@ -631,8 +607,6 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 
 	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
 		/* NOP */
-	} else if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-		/* NOP */
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
@@ -642,7 +616,7 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 		g_assert (s_vlan);
 		g_assert (s_con);
 
-		if (priv->type != NM_ETHERNET_TYPE_VLAN) {
+		if (priv->vlan_id < 0) {
 			g_set_error (error, NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
 			             "The device was not a VLAN interface.");
 			return FALSE;

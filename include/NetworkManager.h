@@ -103,6 +103,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_MODEM: a modem supporting analog telephone, CDMA/EVDO,
  * GSM/UMTS, or LTE network access protocols
  * @NM_DEVICE_TYPE_INFINIBAND: an IP-over-Infiniband device
+ * @NM_DEVICE_TYPE_BOND: a bond master interface
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
@@ -118,6 +119,7 @@ typedef enum {
 	NM_DEVICE_TYPE_WIMAX      = 7,
 	NM_DEVICE_TYPE_MODEM      = 8,
 	NM_DEVICE_TYPE_INFINIBAND = 9,
+	NM_DEVICE_TYPE_BOND       = 10,
 } NMDeviceType;
 
 /**

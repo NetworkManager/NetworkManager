@@ -271,6 +271,10 @@ constructor (GType type,
 	} else if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_INFINIBAND) {
 		priv->hw_addr_type = ARPHRD_INFINIBAND;
 		priv->hw_addr_len = INFINIBAND_ALEN;
+	} else if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_BOND) {
+		/* We may not know the hardware address type until a slave is added */
+		priv->hw_addr_type = ARPHRD_ETHER;
+		priv->hw_addr_len = ETH_ALEN;
 	} else
 		g_assert_not_reached ();
 
