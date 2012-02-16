@@ -3712,6 +3712,18 @@ is_bond_device (const char *name, shvarFile *parsed)
 	return FALSE;
 }
 
+static gboolean
+is_vlan_device (const char *name, shvarFile *parsed)
+{
+	g_return_val_if_fail (name != NULL, FALSE);
+	g_return_val_if_fail (parsed != NULL, FALSE);
+
+	if (svTrueValue (parsed, "VLAN", FALSE))
+		return TRUE;
+
+	return FALSE;
+}
+
 static void
 parse_prio_map_list (NMSettingVlan *s_vlan,
                      shvarFile *ifcfg,
@@ -3977,6 +3989,8 @@ connection_from_file (const char *filename,
 		if (!test_type) {
 			if (is_bond_device (device, parsed))
 				type = g_strdup (TYPE_BOND);
+			else if (is_vlan_device (device, parsed))
+				type = g_strdup (TYPE_VLAN);
 			/* Test wireless extensions */
 			else if (is_wireless_device (device))
 				type = g_strdup (TYPE_WIRELESS);
