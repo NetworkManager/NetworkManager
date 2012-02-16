@@ -445,6 +445,11 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 	if (type_func)
 		type = type_func (connection, path);
 
+	if (type == G_TYPE_INVALID) {
+		g_warning ("Could not create object for %s: unknown object type", path);
+		return NULL;
+	}
+
 	object = g_object_new (type,
 	                       NM_OBJECT_DBUS_CONNECTION, connection,
 	                       NM_OBJECT_DBUS_PATH, path,
