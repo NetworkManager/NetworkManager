@@ -141,6 +141,7 @@ struct _NMDeviceWifiPrivate {
 	glong             scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
+	guint             scanlist_cull_id;
 
 	Supplicant        supplicant;
 	WifiData *        wifi_data;
@@ -180,7 +181,7 @@ static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
                                                  GParamSpec * pspec,
                                                  NMDeviceWifi * self);
 
-static void cull_scan_list (NMDeviceWifi *self);
+static void schedule_scanlist_cull (NMDeviceWifi *self);
 
 /*****************************************************************/
 
@@ -417,6 +418,11 @@ supplicant_interface_release (NMDeviceWifi *self)
 			g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.sig_ids[i]);
 	}
 	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
+
+	if (priv->scanlist_cull_id) {
+		g_source_remove (priv->scanlist_cull_id);
+		priv->scanlist_cull_id = 0;
+	}
 
 	if (priv->supplicant.iface) {
 		/* Tell the supplicant to disconnect from the current AP */
@@ -1555,15 +1561,10 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 	if (check_scanning_allowed (self))
 		schedule_scan (self, TRUE);
 
-#if 0
-	if (num_results == 0) {
-		/* ensure that old APs get culled, which otherwise only
-		 * happens when there are actual scan results to process.
-		 */
-		cull_scan_list (self);
-		ap_list_dump (self);
-	}
-#endif
+	/* Ensure that old APs get removed, which otherwise only
+	 * happens when there are new BSSes.
+	 */
+	schedule_scanlist_cull (self);
 }
 
 
@@ -1670,25 +1671,16 @@ merge_scanned_ap (NMDeviceWifi *self,
 	}
 }
 
-static void
+static gboolean
 cull_scan_list (NMDeviceWifi *self)
 {
-	NMDeviceWifiPrivate *priv;
-	GTimeVal cur_time;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GTimeVal now;
 	GSList *outdated_list = NULL;
 	GSList *elt;
-	NMActRequest *req;
-	const char *cur_ap_path = NULL;
 	guint32 removed = 0, total = 0;
 
-	g_return_if_fail (self != NULL);
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	g_get_current_time (&cur_time);
-
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	if (req)
-		cur_ap_path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
+	priv->scanlist_cull_id = 0;
 
 	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): checking scan list for outdated APs",
 	            nm_device_get_iface (NM_DEVICE (self)));
@@ -1696,19 +1688,16 @@ cull_scan_list (NMDeviceWifi *self)
 	/* Walk the access point list and remove any access points older than
 	 * three times the inactive scan interval.
 	 */
+	g_get_current_time (&now);
 	for (elt = priv->ap_list; elt; elt = g_slist_next (elt), total++) {
-		NMAccessPoint * ap = NM_AP (elt->data);
-		const glong     ap_time = nm_ap_get_last_seen (ap);
-		gboolean        keep = FALSE;
-		const guint     prune_interval_s = SCAN_INTERVAL_MAX * 3;
+		NMAccessPoint *ap = elt->data;
+		const guint prune_interval_s = SCAN_INTERVAL_MAX * 3;
 
-		/* Don't ever prune the AP we're currently associated with */
-		if (cur_ap_path && !strcmp (cur_ap_path, nm_ap_get_dbus_path (ap)))
-			keep = TRUE;
-		if (nm_ap_get_fake (ap))
-			keep = TRUE;
+		/* Don't cull the associated AP or manually created APs */
+		if (ap == priv->current_ap || nm_ap_get_fake (ap))
+			continue;
 
-		if (!keep && (ap_time + prune_interval_s < cur_time.tv_sec))
+		if (nm_ap_get_last_seen (ap) + prune_interval_s < now.tv_sec)
 			outdated_list = g_slist_append (outdated_list, ap);
 	}
 
@@ -1739,6 +1728,21 @@ cull_scan_list (NMDeviceWifi *self)
 	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): removed %d APs (of %d)",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            removed, total);
+
+	ap_list_dump (self);
+
+	return FALSE;
+}
+
+static void
+schedule_scanlist_cull (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	/* Cull the scan list after the last request for it has come in */
+	if (priv->scanlist_cull_id)
+		g_source_remove (priv->scanlist_cull_id);
+	priv->scanlist_cull_id = g_timeout_add_seconds (4, (GSourceFunc) cull_scan_list, self);
 }
 
 static void
@@ -1765,15 +1769,13 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		/* Add the AP to the device's AP list */
 		merge_scanned_ap (self, ap);
 		g_object_unref (ap);
-
-		/* Remove outdated access points */
-		cull_scan_list (self);
-
-		ap_list_dump (self);
 	} else {
 		nm_log_warn (LOGD_WIFI_SCAN, "(%s): invalid AP properties received",
 		             nm_device_get_iface (NM_DEVICE (self)));
 	}
+
+	/* Remove outdated access points */
+	schedule_scanlist_cull (self);
 }
 
 
