@@ -19,7 +19,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004 - 2012 Red Hat, Inc.
  * (C) Copyright 2005-2006 SuSE GmbH
  */
 
@@ -43,5 +43,10 @@ void nm_backend_update_dns (void)
 		nm_log_info (LOGD_DNS, "Clearing nscd hosts cache.");
 		nm_spawn_process ("/usr/sbin/nscd -i hosts");
 	}
+}
+
+int nm_backend_ipv6_use_tempaddr (void)
+{
+	return nm_generic_ipv6_use_tempaddr ();
 }
 

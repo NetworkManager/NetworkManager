@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 RedHat, Inc.
+ * (C) Copyright 2004 - 2012 RedHat, Inc.
  * (C) Copyright 2009 TUBITAK/UEKAE
  */
 
@@ -33,5 +33,10 @@ void nm_backend_enable_loopback (void)
 
 void nm_backend_update_dns (void)
 {
+}
+
+int nm_backend_ipv6_use_tempaddr (void)
+{
+	return nm_generic_ipv6_use_tempaddr ();
 }
 

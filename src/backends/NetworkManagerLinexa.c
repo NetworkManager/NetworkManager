@@ -21,7 +21,7 @@
  *
  * (C) Copyright 2004 Tom Parker
  * (C) Copyright 2004 Matthew Garrett
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004 - 2012 Red Hat, Inc.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -46,4 +46,8 @@ void nm_backend_update_dns (void)
 	}
 }
 
+int nm_backend_ipv6_use_tempaddr (void)
+{
+	return nm_generic_ipv6_use_tempaddr ();
+}
 

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_BACKEND_H
@@ -25,5 +25,6 @@
 
 void nm_backend_enable_loopback (void);
 void nm_backend_update_dns      (void);
+int nm_backend_ipv6_use_tempaddr (void);
 
 #endif  /* NM_BACKEND_H */

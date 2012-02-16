@@ -28,7 +28,7 @@
  *
  * (C) Copyright 2004 Tom Parker
  * (C) Copyright 2004 Matthew Garrett
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004 - 2012 Red Hat, Inc.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -51,5 +51,10 @@ void nm_backend_update_dns (void)
 	 */
 	if (g_file_test("/var/run/daemons/nscd", G_FILE_TEST_EXISTS))
 		nm_spawn_process ("/etc/rc.d/nscd restart");
+}
+
+int nm_backend_ipv6_use_tempaddr (void)
+{
+	return nm_generic_ipv6_use_tempaddr ();
 }
 

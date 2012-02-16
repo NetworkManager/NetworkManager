@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 - 2011 Red Hat, Inc.
+ * (C) Copyright 2004 - 2012 Red Hat, Inc.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -38,5 +38,10 @@ void nm_backend_update_dns (void)
 		nm_spawn_process ("/etc/init.d/nscd condrestart");
 		nm_spawn_process ("/usr/sbin/nscd -i hosts");
 	}
+}
+
+int nm_backend_ipv6_use_tempaddr (void)
+{
+	return nm_generic_ipv6_use_tempaddr ();
 }
 

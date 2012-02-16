@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 - 2010 Red Hat, Inc.
+ * (C) Copyright 2004 - 2012 Red Hat, Inc.
  * (C) Copyright 2006 Timothee Lecomte <timothee.lecomte@ens.fr>
  */
 
@@ -113,6 +113,51 @@ void nm_generic_update_dns (void)
 {
 }
 
+/*
+ * nm_generic_ipv6_use_tempaddr
+ *
+ * Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
+ * /lib/sysctl.d/sysctl.conf
+ *
+ */
+int nm_generic_ipv6_use_tempaddr (void)
+{
+	char *contents = NULL;
+	gsize len = 0;
+	const char *group_name = "[forged_group]\n";
+	char *sysctl_data = NULL;
+	GKeyFile *keyfile;
+	GError *error = NULL;
+	int tmp, ret = -1;
+
+	/* Read file contents to a string. */
+	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, &len, NULL))
+		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, &len, NULL))
+			return -1;
+
+	/* Prepend a group so that we can use GKeyFile parser. */
+	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
+
+	keyfile = g_key_file_new ();
+	if (keyfile == NULL)
+		goto done;
+
+	if (!g_key_file_load_from_data (keyfile, sysctl_data, len + strlen (group_name), G_KEY_FILE_NONE, NULL))
+		goto done;
+
+	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
+	if (error == NULL)
+		ret = tmp;
+
+done:
+	g_free (contents);
+	g_free (sysctl_data);
+	g_clear_error (&error);
+	g_key_file_free (keyfile);
+
+	return ret;
+}
+
 #ifdef TARGET_GENERIC
 void nm_backend_enable_loopback (void)
 {
@@ -122,6 +167,11 @@ void nm_backend_enable_loopback (void)
 void nm_backend_update_dns (void)
 {
 	nm_generic_update_dns ();
+}
+
+int nm_backend_ipv6_use_tempaddr (void)
+{
+	return nm_generic_ipv6_use_tempaddr ();
 }
 #endif
 
