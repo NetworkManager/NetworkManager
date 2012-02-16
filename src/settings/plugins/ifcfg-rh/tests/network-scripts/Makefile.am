@@ -84,7 +84,9 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-wep-agent-keys \
 	ifcfg-test-wifi-dynamic-wep-leap \
 	keys-test-wifi-dynamic-wep-leap \
-	ifcfg-test-infiniband
+	ifcfg-test-infiniband \
+	ifcfg-test-bond-main \
+	ifcfg-test-bond-slave
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
