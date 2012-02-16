@@ -20,6 +20,9 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Added basic support for IP-over-Infiniband interfaces
 * Added support for device plugins and converted WiMAX support to a plugin for
     easier packaging and simpler dependencies
+* Added support for VLAN interfaces
+* Added support for 802.1x EAP-FAST authentication
+* Added non-blocking mode and API to libnm-glib
 
 
 ==============================================
