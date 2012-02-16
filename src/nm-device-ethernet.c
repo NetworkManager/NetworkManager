@@ -594,24 +594,21 @@ static gboolean
 match_ethernet_connection (NMDevice *device, NMConnection *connection,
                            gboolean check_blacklist, GError **error)
 {
-	const char *iface;
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
 
 	s_wired = nm_connection_get_setting_wired (connection);
 
-	iface = nm_connection_get_virtual_iface_name (connection);
-	if (iface && strcmp (nm_device_get_iface (device), iface))
-		return FALSE;
-
 	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
 		/* NOP */
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
-		const char *master;
-		int con_master_ifindex;
+		const char *master, *iface = NULL;
+		char *tmp_iface = NULL;
+		int con_master_ifindex = -1;
+		gboolean iface_matches;
 
 		g_assert (s_vlan);
 		g_assert (s_con);
@@ -643,6 +640,7 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 			 * all active NMDevices to see if they are using the given
 			 * connection UUID.
 			 */
+			g_warn_if_reached ();
 		} else {
 			/* It's an interface name; match it against our master */
 			con_master_ifindex = nm_netlink_iface_to_index (master);
@@ -651,6 +649,26 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 					         "The connection's VLAN master did not match the device's VLAN master interface.");
 				return FALSE;
 			}
+		}
+
+		/* Ensure the interface name matches, if it's given */
+		iface = nm_connection_get_virtual_iface_name (connection);
+		if (!iface) {
+			/* If the connection doesn't specify an interface name for the
+			 * VLAN interface, we construct it from the master interface name
+			 * and the VLAN ID.
+			 */
+			if (con_master_ifindex >= 0)
+				iface = tmp_iface = nm_utils_new_vlan_name (master, nm_setting_vlan_get_id (s_vlan));
+		}
+
+		iface_matches = (g_strcmp0 (nm_device_get_ip_iface (device), iface) == 0);
+		g_free (tmp_iface);
+
+		if (!iface_matches) {
+			g_set_error (error, NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+				         "The VLAN connection virtual interface name did not match.");
+			return FALSE;
 		}
 	} else if (nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
 		if (!s_wired) {

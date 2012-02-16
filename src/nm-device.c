@@ -894,6 +894,8 @@ handle_slave_activation (NMDevice *slave, NMDevice *master)
 			return FALSE;
 
 		nm_device_hw_bring_up (slave, TRUE, NULL);
+	} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_VLAN_SETTING_NAME)) {
+		/* NOP */
 	} else {
 		nm_log_warn (LOGD_DEVICE, "(%s): Unable to enslave. Unknown slave type '%s'",
 		             nm_device_get_iface (slave), nm_setting_connection_get_slave_type (s_con));
