@@ -40,6 +40,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_DEVICE    "device"
 #define NM_MODEM_IFACE     "iface"
 #define NM_MODEM_IP_METHOD "ip-method"
+#define NM_MODEM_IP_TIMEOUT "ip-timeout"
 #define NM_MODEM_ENABLED   "enabled"
 
 #define NM_MODEM_PPP_STATS         "ppp-stats"

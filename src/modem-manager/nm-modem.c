@@ -42,6 +42,7 @@ enum {
 	PROP_IFACE,
 	PROP_PATH,
 	PROP_IP_METHOD,
+	PROP_IP_TIMEOUT,
 	PROP_ENABLED,
 
 	LAST_PROP
@@ -225,7 +226,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 	const char *ppp_name = NULL;
 	GError *error = NULL;
 	NMActStageReturn ret;
-	guint32 ip_timeout;
+	guint ip_timeout = 20;
 
 	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
@@ -247,8 +248,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 		nm_log_info (LOGD_PPP, "using modem-specified IP timeout: %u seconds",
 		             priv->mm_ip_timeout);
 		ip_timeout = priv->mm_ip_timeout;
-	} else
-		ip_timeout = 20;
+	}
 
 	priv->ppp_manager = nm_ppp_manager_new (priv->iface);
 	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, &error)) {
@@ -695,35 +695,6 @@ nm_modem_get_path (NMModem *self)
 }
 
 static void
-get_mm_ip_timeout_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
-{
-	NMModem *self = NM_MODEM (user_data);
-	GError *error = NULL;
-	GValue value = { 0, };
-
-	/* On error or if invalid value, just set 0 and we will use the default
-	 * configuration afterwards */
-	if (dbus_g_proxy_end_call (proxy, call_id, &error,
-	                           G_TYPE_VALUE, &value,
-	                           G_TYPE_INVALID) &&
-	    G_VALUE_HOLDS_UINT (&value)) {
-		NM_MODEM_GET_PRIVATE (self)->mm_ip_timeout = g_value_get_uint (&value);
-		g_value_unset (&value);
-	}
-}
-
-static void
-query_mm_ip_timeout (NMModem *self)
-{
-	dbus_g_proxy_begin_call (NM_MODEM_GET_PRIVATE (self)->props_proxy,
-	                         "Get", get_mm_ip_timeout_done,
-	                         self, NULL,
-	                         G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
-	                         G_TYPE_STRING, "IpTimeout",
-	                         G_TYPE_INVALID);
-}
-
-static void
 get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
@@ -892,7 +863,6 @@ constructor (GType type,
 	                             object,
 	                             NULL);
 
-	query_mm_ip_timeout (NM_MODEM (object));
 	query_mm_enabled (NM_MODEM (object));
 
 	return object;
@@ -920,6 +890,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP_METHOD:
 		g_value_set_uint (value, priv->ip_method);
+		break;
+	case PROP_IP_TIMEOUT:
+		g_value_set_uint (value, priv->mm_ip_timeout);
 		break;
 	case PROP_ENABLED:
 		g_value_set_boolean (value, priv->mm_enabled);
@@ -953,6 +926,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IP_METHOD:
 		/* Construct only */
 		priv->ip_method = g_value_get_uint (value);
+		break;
+	case PROP_IP_TIMEOUT:
+		priv->mm_ip_timeout = g_value_get_uint (value);
 		break;
 	case PROP_ENABLED:
 		break;
@@ -1035,6 +1011,14 @@ nm_modem_class_init (NMModemClass *klass)
 							MM_MODEM_IP_METHOD_DHCP,
 							MM_MODEM_IP_METHOD_PPP,
 							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_IP_TIMEOUT,
+		 g_param_spec_uint (NM_MODEM_IP_TIMEOUT,
+		                    "IP timeout",
+		                    "IP timeout",
+		                    0, 360, 20,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	g_object_class_install_property
 		(object_class, PROP_ENABLED,
