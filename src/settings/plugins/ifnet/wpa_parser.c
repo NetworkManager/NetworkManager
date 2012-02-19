@@ -279,16 +279,21 @@ wpa_parser_init (const char *wpa_supplicant_conf)
 			} else {
 				GHashTable *network =
 				    g_hash_table_new (g_str_hash, g_str_equal);
-				gchar *tmp;
 
 				do {
+					gchar *quote_start, *quote_end = NULL, *comment;
+
 					if (line[0] == '#' || line[0] == '\0') {
 						g_free (line);
 						continue;
 					}
-					/* ignore inline comments */
-					if ((tmp = strchr (line, '#')) != NULL)
-						*tmp = '\0';
+					/* ignore inline comments unless inside
+					   a double-quoted string */
+					if ((quote_start = strchr (line, '"')) != NULL)
+						quote_end = strrchr (quote_start + 1, '"');
+					if ((comment = strchr ((quote_end != NULL) ?
+					                       quote_end : line, '#')) != NULL)
+						*comment = '\0';
 					if (strstr (line, "}") != NULL)
 						complete = TRUE;
 					add_key_value (network, line);
