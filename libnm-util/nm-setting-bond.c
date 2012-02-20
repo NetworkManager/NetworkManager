@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 Red Hat, Inc.
+ * (C) Copyright 2011 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -139,7 +139,7 @@ nm_setting_bond_get_num_options (NMSettingBond *setting)
  * @out_value: (out): on return, the value of the name of the bonding
  * option; this value is owned by the setting and should not be modified
  *
- * Given an index, return the value of the bonding option at that index.  indexes
+ * Given an index, return the value of the bonding option at that index.  Indexes
  * are *not* guaranteed to be static across modifications to options done by
  * nm_setting_bond_add_option() and nm_setting_bond_remove_option(),
  * and should not be used to refer to options except for short periods of time
@@ -247,7 +247,7 @@ gboolean nm_setting_bond_add_option (NMSettingBond *setting,
 }
 
 /**
- * nm_setting_bond_remove_options:
+ * nm_setting_bond_remove_option:
  * @setting: the #NMSettingBond
  * @name: name of the option to remove
  *
@@ -452,7 +452,7 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	/**
 	 * NMSettingBond:interface-name:
 	 *
-	 * Name of virtual kernel interface
+	 * The name of the virtual in-kernel bonding nework interface
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
@@ -463,9 +463,9 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
-	 * NMSettingBridge:options:
+	 * NMSettingBond:options:
 	 *
-	 * Dictionary of key/value pairs of bridging options.  Both keys
+	 * Dictionary of key/value pairs of bonding options.  Both keys
 	 * and values must be strings. Option names must contain only
 	 * alphanumeric characters (ie, [a-zA-Z0-9]).
 	 **/
@@ -474,9 +474,9 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS,
 		                             "Options",
 		                             "Dictionary of key/value pairs of bonding "
-		                             " options.  Both keys and values must be "
-		                             "strings.  Option namesmust contain only "
-		                             "alphanumeric characters (ie,[a-zA-Z0-9]).",
+		                             "options.  Both keys and values must be "
+		                             "strings.  Option names must contain only "
+		                             "alphanumeric characters (ie, [a-zA-Z0-9]).",
 		                             DBUS_TYPE_G_MAP_OF_STRING,
 		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

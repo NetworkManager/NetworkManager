@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 Red Hat, Inc.
+ * (C) Copyright 2011 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_SETTING_BOND_H
@@ -91,7 +91,7 @@ const char * nm_setting_bond_get_option_by_name (NMSettingBond *setting,
                                                  const char *name);
 gboolean     nm_setting_bond_add_option         (NMSettingBond *setting,
                                                  const char *name,
-                                                 const char *item);
+                                                 const char *value);
 gboolean     nm_setting_bond_remove_option      (NMSettingBond *setting,
                                                  const char *name);
 
