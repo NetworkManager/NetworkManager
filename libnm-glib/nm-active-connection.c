@@ -438,6 +438,10 @@ register_properties (NMActiveConnection *connection)
 		{ NM_ACTIVE_CONNECTION_DEFAULT,             &priv->is_default },
 		{ NM_ACTIVE_CONNECTION_DEFAULT6,            &priv->is_default6 },
 		{ NM_ACTIVE_CONNECTION_MASTER,              &priv->master },
+
+		/* not tracked after construction time */
+		{ "vpn", NULL },
+
 		{ NULL },
 	};
 

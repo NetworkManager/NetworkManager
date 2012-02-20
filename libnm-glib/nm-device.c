@@ -160,10 +160,9 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_STATE_REASON,      &priv->state, demarshal_state_reason },
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 
-		/* The D-Bus interface has this property, but we don't; register
-		 * it so that handle_property_changed() doesn't complain.
-		 */
+		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
+		{ "device-type", NULL },
 
 		{ NULL },
 	};

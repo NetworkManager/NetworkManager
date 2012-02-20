@@ -580,18 +580,11 @@ typedef struct {
 } ObjectCreatedData;
 
 static void
-object_created (GObject *obj, gpointer user_data)
+object_property_complete (ObjectCreatedData *odata)
 {
-	ObjectCreatedData *odata = user_data;
 	NMObject *self = odata->self;
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	PropertyInfo *pi = odata->pi;
-
-	/* We assume that on error, the creator_func printed something */
-
-	odata->objects[--odata->remaining] = obj;
-	if (odata->remaining)
-		return;
 
 	if (odata->array) {
 		GPtrArray **array = pi->field;
@@ -621,6 +614,18 @@ object_created (GObject *obj, gpointer user_data)
 	g_object_unref (self);
 	g_free (odata->objects);
 	g_slice_free (ObjectCreatedData, odata);
+}
+
+static void
+object_created (GObject *obj, gpointer user_data)
+{
+	ObjectCreatedData *odata = user_data;
+
+	/* We assume that on error, the creator_func printed something */
+
+	odata->objects[--odata->remaining] = obj;
+	if (!odata->remaining)
+		object_property_complete (odata);
 }
 
 static gboolean
@@ -657,12 +662,12 @@ handle_object_property (NMObject *self, const char *property_name, GValue *value
 		obj = _nm_object_create (pi->object_type, priv->connection, path);
 		object_created (obj, odata);
 		return obj != NULL;
+	} else {
+		_nm_object_create_async (pi->object_type, priv->connection, path,
+		                         object_created, odata);
+		/* Assume success */
+		return TRUE;
 	}
-
-	_nm_object_create_async (pi->object_type, priv->connection, path,
-	                         object_created, odata);
-	/* Assume success */
-	return TRUE;
 }
 
 static gboolean
@@ -675,7 +680,6 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 	GPtrArray **array = pi->field;
 	const char *path;
 	ObjectCreatedData *odata;
-	gboolean add_to_reload = (priv->reload_results != NULL);
 	int i;
 
 	paths = g_value_get_boxed (value);
@@ -688,6 +692,14 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 	odata->array = TRUE;
 	odata->property_name = property_name;
 
+	if (priv->reload_results)
+		priv->reload_remaining++;
+
+	if (paths->len == 0) {
+		object_property_complete (odata);
+		return TRUE;
+	}
+
 	for (i = 0; i < paths->len; i++) {
 		path = paths->pdata[i];
 		if (!strcmp (path, "/")) {
@@ -695,23 +707,16 @@ handle_object_array_property (NMObject *self, const char *property_name, GValue 
 			continue;
 		}
 
-		if (add_to_reload) {
-			priv->reload_remaining++;
-			add_to_reload = FALSE;
-		}
-
 		obj = G_OBJECT (_nm_object_cache_get (path));
 		if (obj) {
 			object_created (obj, odata);
-			continue;
 		} else if (synchronously) {
 			obj = _nm_object_create (pi->object_type, priv->connection, path);
 			object_created (obj, odata);
-			continue;
+		} else {
+			_nm_object_create_async (pi->object_type, priv->connection, path,
+			                         object_created, odata);
 		}
-
-		_nm_object_create_async (pi->object_type, priv->connection, path,
-		                         object_created, odata);
 	}
 
 	if (!synchronously) {
