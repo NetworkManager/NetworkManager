@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2011 Caixa Magica Software.
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_NETLINK_COMPAT_H
@@ -246,6 +246,13 @@ rtnl_link_bond_release_ifindex (struct nl_sock *h, int slave_ifidx)
 
 static inline int
 rtnl_link_vlan_set_id (struct rtnl_link *l, int id)
+{
+	/* VLAN only in libnl3 */
+	return -NLE_OPNOTSUPP;
+}
+
+static inline int
+rtnl_link_vlan_get_id (struct rtnl_link *l)
 {
 	/* VLAN only in libnl3 */
 	return -NLE_OPNOTSUPP;
