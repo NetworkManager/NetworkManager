@@ -57,12 +57,16 @@ typedef struct {
 
 GType nm_ap_get_type (void);
 
-NMAccessPoint *	nm_ap_new				(void);
-NMAccessPoint * nm_ap_new_from_properties (GHashTable *properties);
+NMAccessPoint * nm_ap_new_from_properties (const char *supplicant_path,
+                                           GHashTable *properties);
 NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
 void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
 const char *		nm_ap_get_dbus_path (NMAccessPoint *ap);
+
+const char *        nm_ap_get_supplicant_path (NMAccessPoint *ap);
+void                nm_ap_set_supplicant_path (NMAccessPoint *ap,
+                                               const char *path);
 
 const GByteArray *	nm_ap_get_ssid (const NMAccessPoint * ap);
 void				nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);

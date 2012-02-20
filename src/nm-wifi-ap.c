@@ -42,6 +42,7 @@
 typedef struct
 {
 	char *dbus_path;
+	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
 
 	/* Scanned or cached values */
 	GByteArray *	ssid;
@@ -106,6 +107,7 @@ finalize (GObject *object)
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 
 	g_free (priv->dbus_path);
+	g_free (priv->supplicant_path);
 	if (priv->ssid)
 		g_byte_array_free (priv->ssid, TRUE);
 
@@ -345,15 +347,10 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
  * Create a new, blank user access point info structure
  *
  */
-NMAccessPoint *nm_ap_new (void)
+static NMAccessPoint *
+nm_ap_new (void)
 {
-	GObject *object;
-
-	object = g_object_new (NM_TYPE_AP, NULL);
-	if (!object)
-		return NULL;
-
-	return (NMAccessPoint *) object;
+	return (NMAccessPoint *) g_object_new (NM_TYPE_AP, NULL);
 }
 
 static NM80211ApSecurityFlags
@@ -509,7 +506,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 }
 
 NMAccessPoint *
-nm_ap_new_from_properties (GHashTable *properties)
+nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
 {
 	NMAccessPoint *ap;
 	GTimeVal cur_time;
@@ -523,6 +520,8 @@ nm_ap_new_from_properties (GHashTable *properties)
 
 	g_object_freeze_notify (G_OBJECT (ap));
 	g_hash_table_foreach (properties, foreach_property_cb, ap);
+
+	nm_ap_set_supplicant_path (ap, supplicant_path);
 
 	/* ignore APs with invalid BSSIDs */
 	addr = nm_ap_get_address (ap);
@@ -781,6 +780,24 @@ nm_ap_get_dbus_path (NMAccessPoint *ap)
 	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
 	return NM_AP_GET_PRIVATE (ap)->dbus_path;
+}
+
+const char *
+nm_ap_get_supplicant_path (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
+
+	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
+}
+
+void
+nm_ap_set_supplicant_path (NMAccessPoint *ap, const char *path)
+{
+	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (path != NULL);
+
+	g_free (NM_AP_GET_PRIVATE (ap)->supplicant_path);
+	NM_AP_GET_PRIVATE (ap)->supplicant_path = g_strdup (path);
 }
 
 /*

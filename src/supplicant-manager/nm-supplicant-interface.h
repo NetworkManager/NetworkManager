@@ -57,6 +57,7 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
 #define NM_SUPPLICANT_INTERFACE_REMOVED          "removed"
 #define NM_SUPPLICANT_INTERFACE_NEW_BSS          "new-bss"
+#define NM_SUPPLICANT_INTERFACE_BSS_UPDATED      "bss-updated"
 #define NM_SUPPLICANT_INTERFACE_SCAN_DONE        "scan-done"
 #define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
@@ -80,6 +81,12 @@ typedef struct {
 
 	/* interface saw a new BSS */
 	void (*new_bss)          (NMSupplicantInterface *iface,
+	                          const char *object_path,
+	                          GHashTable *props);
+
+	/* a BSS property changed */
+	void (*bss_updated)      (NMSupplicantInterface *iface,
+	                          const char *object_path,
 	                          GHashTable *props);
 
 	/* wireless scan is done */

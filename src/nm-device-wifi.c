@@ -170,8 +170,14 @@ static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        gpointer user_data);
 
 static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
+                                         const char *object_path,
                                          GHashTable *properties,
                                          NMDeviceWifi * self);
+
+static void supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
+                                             const char *object_path,
+                                             GHashTable *properties,
+                                             NMDeviceWifi *self);
 
 static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
                                            gboolean success,
@@ -359,6 +365,12 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	priv->supplicant.sig_ids[i++] = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
+	                       NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
+	                       G_CALLBACK (supplicant_iface_bss_updated_cb),
+	                       self);
+	priv->supplicant.sig_ids[i++] = id;
+
+	id = g_signal_connect (priv->supplicant.iface,
 	                       NM_SUPPLICANT_INTERFACE_SCAN_DONE,
 	                       G_CALLBACK (supplicant_iface_scan_done_cb),
 	                       self);
@@ -433,7 +445,6 @@ supplicant_interface_release (NMDeviceWifi *self)
 	}
 }
 
-
 static NMAccessPoint *
 get_ap_by_path (NMDeviceWifi *self, const char *path)
 {
@@ -442,6 +453,19 @@ get_ap_by_path (NMDeviceWifi *self, const char *path)
 
 	for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
 		if (strcmp (path, nm_ap_get_dbus_path (NM_AP (iter->data))) == 0)
+			return NM_AP (iter->data);
+	}
+	return NULL;
+}
+
+static NMAccessPoint *
+get_ap_by_supplicant_path (NMDeviceWifi *self, const char *path)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->ap_list; iter && path; iter = g_slist_next (iter)) {
+		if (strcmp (path, nm_ap_get_supplicant_path (NM_AP (iter->data))) == 0)
 			return NM_AP (iter->data);
 	}
 	return NULL;
@@ -1599,9 +1623,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	gboolean strict_match = TRUE;
 	NMAccessPoint *current_ap = NULL;
 
-	/* Let the manager try to fill in the SSID from seen-bssids lists
-	 * if it can
-	 */
+	/* Let the manager try to fill in the SSID from seen-bssids lists */
 	bssid = nm_ap_get_address (merge_ap);
 	ssid = nm_ap_get_ssid (merge_ap);
 	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
@@ -1634,7 +1656,9 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (current_ap && nm_ap_get_fake (current_ap))
 		strict_match = FALSE;
 
-	found_ap = nm_ap_match_in_list (merge_ap, priv->ap_list, strict_match);
+	found_ap = get_ap_by_supplicant_path (self, nm_ap_get_supplicant_path (merge_ap));
+	if (!found_ap)
+		found_ap = nm_ap_match_in_list (merge_ap, priv->ap_list, strict_match);
 	if (found_ap) {
 		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): merging AP '%s' " MAC_FMT " (%p) with existing (%p)",
 		            nm_device_get_iface (NM_DEVICE (self)),
@@ -1643,6 +1667,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		            merge_ap,
 		            found_ap);
 
+		nm_ap_set_supplicant_path (found_ap, nm_ap_get_supplicant_path (merge_ap));
 		nm_ap_set_flags (found_ap, nm_ap_get_flags (merge_ap));
 		nm_ap_set_wpa_flags (found_ap, nm_ap_get_wpa_flags (merge_ap));
 		nm_ap_set_rsn_flags (found_ap, nm_ap_get_rsn_flags (merge_ap));
@@ -1747,6 +1772,7 @@ schedule_scanlist_cull (NMDeviceWifi *self)
 
 static void
 supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
+                             const char *object_path,
                              GHashTable *properties,
                              NMDeviceWifi *self)
 {
@@ -1762,7 +1788,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
 		return;
 
-	ap = nm_ap_new_from_properties (properties);
+	ap = nm_ap_new_from_properties (object_path, properties);
 	if (ap) {
 		nm_ap_dump (ap, "New AP: ");
 
@@ -1772,6 +1798,35 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	} else {
 		nm_log_warn (LOGD_WIFI_SCAN, "(%s): invalid AP properties received",
 		             nm_device_get_iface (NM_DEVICE (self)));
+	}
+
+	/* Remove outdated access points */
+	schedule_scanlist_cull (self);
+}
+
+static void
+supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
+                                 const char *object_path,
+                                 GHashTable *properties,
+                                 NMDeviceWifi *self)
+{
+	NMDeviceState state;
+	NMAccessPoint *ap;
+	GTimeVal now;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (properties != NULL);
+
+	/* Ignore new APs when unavailable or unamnaged */
+	state = nm_device_get_state (NM_DEVICE (self));
+	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+		return;
+
+	/* Update the AP's last-seen property */
+	ap = get_ap_by_supplicant_path (self, object_path);
+	if (ap) {
+		g_get_current_time (&now);
+		nm_ap_set_last_seen (ap, now.tv_sec);
 	}
 
 	/* Remove outdated access points */
