@@ -1,0 +1,6 @@
+VLAN=yes
+TYPE=Vlan
+PHYSDEV=eth9
+VLAN_ID=43
+ONBOOT=yes
+

@@ -3744,13 +3744,27 @@ make_vlan_setting (shvarFile *ifcfg,
 	NMSettingVlan *s_vlan = NULL;
 	char *value = NULL;
 	char *iface_name = NULL;
-	char *master = NULL;
-	char *p = NULL;
-	guint32 vlan_id = 0;
+	char *parent = NULL;
+	const char *p = NULL, *w;
+	gboolean has_numbers = FALSE;
+	gint vlan_id = -1;
 	guint32 vlan_flags = 0;
 
+	value = svGetValue (ifcfg, "VLAN_ID", FALSE);
+	if (value) {
+		errno = 0;
+		vlan_id = (gint) g_ascii_strtoll (value, NULL, 10);
+		if (vlan_id < 0 || vlan_id > 4096 || errno) {
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Invalid VLAN_ID '%s'", value);
+			g_free (value);
+			return NULL;
+		}
+		g_free (value);
+	}
+
+	/* Need DEVICE if we don't have a separate VLAN_ID property */
 	iface_name = svGetValue (ifcfg, "DEVICE", FALSE);
-	if (!iface_name) {
+	if (!iface_name && vlan_id < 0) {
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
 		                     "Missing DEVICE property; cannot determine VLAN ID.");
 		return NULL;
@@ -3758,47 +3772,65 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	s_vlan = NM_SETTING_VLAN (nm_setting_vlan_new ());
 
-	g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, iface_name, NULL);
+	if (iface_name) {
+		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, iface_name, NULL);
 
-	p = strchr (iface_name, '.');
-	if (p) {
-		/* eth0.43; PHYSDEV is assumed from it */
-		master = g_strndup (iface_name, p - iface_name);
-		p++;
-	} else {
-		/* format like vlan43; PHYSDEV or MASTER must be set */
-		if (g_str_has_prefix (iface_name, "vlan"))
-			p = iface_name + 4;
+		p = strchr (iface_name, '.');
+		if (p) {
+			/* eth0.43; PHYSDEV is assumed from it */
+			parent = g_strndup (iface_name, p - iface_name);
+			p++;
+		} else {
+			/* format like vlan43; PHYSDEV or MASTER must be set */
+			if (g_str_has_prefix (iface_name, "vlan"))
+				p = iface_name + 4;
+		}
 
-		master = svGetValue (ifcfg, "PHYSDEV", FALSE);
-		if (master == NULL)
-			master = svGetValue (ifcfg, "MASTER", FALSE);
+		w = p;
+		while (*w && !has_numbers)
+			has_numbers = g_ascii_isdigit (*w);
+
+		/* Grab VLAN ID from interface name; this takes precedence over the
+		 * separate VLAN_ID property for backwards compat.
+		 */
+		if (has_numbers) {
+			errno = 0;
+			vlan_id = (gint) g_ascii_strtoll (p, NULL, 10);
+			if (vlan_id < 0 || vlan_id > 4095 || errno) {
+				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				             "Failed to determine VLAN ID from DEVICE '%s'",
+				             iface_name);
+				goto error;
+			}
+		}
 	}
 
-	if (master == NULL) {
+	if (vlan_id < 0) {
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
-				             "Failed to determine VLAN master from DEVICE, PHYSDEV, or MASTER");
+		                     "Failed to determine VLAN ID from DEVICE or VLAN_ID.");
 		goto error;
 	}
+	g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
 
-	vlan_id = g_ascii_strtoull (p, NULL, 10);
-	if (vlan_id >= 0 && vlan_id < 4096)
-		g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
-	else {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to determine VLAN ID from DEVICE '%s'",
-		             iface_name);
+	if (!parent)
+		parent = svGetValue (ifcfg, "PHYSDEV", FALSE);
+	if (parent == NULL) {
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		                     "Failed to determine VLAN parent from DEVICE or PHYSDEV");
 		goto error;
 	}
+	g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
 
 	if (svTrueValue (ifcfg, "REORDER_HDR", FALSE))
 		vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
 
 	value = svGetValue (ifcfg, "VLAN_FLAGS", FALSE);
-	if (g_strstr_len (value, -1, "GVRP"))
-		vlan_flags |= NM_VLAN_FLAG_GVRP;
-	if (g_strstr_len (value, -1, "LOOSE_BINDING"))
-		vlan_flags |= NM_VLAN_FLAG_LOOSE_BINDING;
+	if (value) {
+		if (g_strstr_len (value, -1, "GVRP"))
+			vlan_flags |= NM_VLAN_FLAG_GVRP;
+		if (g_strstr_len (value, -1, "LOOSE_BINDING"))
+			vlan_flags |= NM_VLAN_FLAG_LOOSE_BINDING;
+	}
 
 	g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, vlan_flags, NULL);
 	g_free (value);
@@ -3807,11 +3839,11 @@ make_vlan_setting (shvarFile *ifcfg,
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
 
 	if (out_master)
-		*out_master = master;
+		*out_master = svGetValue (ifcfg, "MASTER", FALSE);
 	return (NMSetting *) s_vlan;
 
 error:
-	g_free (master);
+	g_free (parent);
 	g_free (iface_name);
 	g_object_unref (s_vlan);
 	return NULL;
@@ -3858,12 +3890,7 @@ vlan_connection_from_ifcfg (const char *file,
 	nm_connection_add_setting (connection, vlan_setting);
 
 	/* Handle master interface or connection */
-	if (master == NULL) {
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
-		                     "No master interface or connection UUID specified.");
-		g_object_unref (connection);
-		return NULL;
-	} else {
+	if (master) {
 		g_object_set (con_setting, NM_SETTING_CONNECTION_MASTER, master, NULL);
 		g_object_set (con_setting,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_VLAN_SETTING_NAME,

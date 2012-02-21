@@ -1152,7 +1152,7 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingVlan *s_vlan;
 	NMSettingConnection *s_con;
-	const char *master = NULL;
+	char *tmp;
 	guint32 vlan_flags = 0;
 	GString *text = NULL;
 
@@ -1170,17 +1170,13 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	svSetValue (ifcfg, "VLAN", "yes", FALSE);
 	svSetValue (ifcfg, "TYPE", TYPE_VLAN, FALSE);
-
-	master = nm_setting_connection_get_master (s_con);
-	if (!master) {
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
-		                     "Missing VLAN master interface name or connection UUID");
-		return FALSE;
-	}
-	svSetValue (ifcfg, "PHYSDEV", master, FALSE);
-	svSetValue (ifcfg, "MASTER", master, FALSE);
-
 	svSetValue (ifcfg, "DEVICE", nm_setting_vlan_get_interface_name (s_vlan), FALSE);
+	svSetValue (ifcfg, "PHYSDEV", nm_setting_vlan_get_parent (s_vlan), FALSE);
+	svSetValue (ifcfg, "MASTER", nm_setting_connection_get_master (s_con), FALSE);
+
+	tmp = g_strdup_printf ("%d", nm_setting_vlan_get_id (s_vlan));
+	svSetValue (ifcfg, "VLAN_ID", tmp, FALSE);
+	g_free (tmp);
 
 	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
 	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
@@ -1188,27 +1184,24 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else
 		svSetValue (ifcfg, "REORDER_HDR", "0", FALSE);
 
+	svSetValue (ifcfg, "VLAN_FLAGS", NULL, FALSE);
 	if (vlan_flags & NM_VLAN_FLAG_GVRP) {
 		if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
 			svSetValue (ifcfg, "VLAN_FLAGS", "GVRP,LOOSE_BINDING", FALSE);
 		else
 			svSetValue (ifcfg, "VLAN_FLAGS", "GVRP", FALSE);
-	} else {
-		if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
-			svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
-	}
+	} else if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
+		svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
 
 	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
-	if (text != NULL)
-		svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", text->str, FALSE);
-	g_string_free (text, TRUE);
-	text = NULL;
+	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
+	if (text)
+		g_string_free (text, TRUE);
 
 	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_EGRESS_MAP);
-	if (text != NULL)
-		svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", text->str, FALSE);
-	g_string_free (text, TRUE);
-	text = NULL;
+	svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
+	if (text)
+		g_string_free (text, TRUE);
 
 	return TRUE;
 }

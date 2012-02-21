@@ -11756,7 +11756,6 @@ test_read_vlan_interface (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
-	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
 	guint32 from = 0, to = 0;
 
@@ -11778,16 +11777,11 @@ test_read_vlan_interface (void)
 	g_free (routefile);
 	g_free (route6file);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "eth9");
-	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_VLAN_SETTING_NAME);
-
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
 	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "vlan43");
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
 	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==,
 	                 NM_VLAN_FLAG_GVRP | NM_VLAN_FLAG_LOOSE_BINDING);
@@ -11817,6 +11811,90 @@ test_read_vlan_interface (void)
 	g_assert (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, 2, &from, &to));
 	g_assert_cmpint (from, ==, 3);
 	g_assert_cmpint (to, ==, 1);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_VLAN_ONLY_VLANID TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-only-vlanid"
+
+static void
+test_read_vlan_only_vlan_id (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+
+	connection = connection_from_file (TEST_IFCFG_VLAN_ONLY_VLANID,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert (nm_setting_vlan_get_interface_name (s_vlan) == NULL);
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_VLAN_ONLY_DEVICE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-only-device"
+
+static void
+test_read_vlan_only_device (void)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+
+	connection = connection_from_file (TEST_IFCFG_VLAN_ONLY_DEVICE,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "eth0.9");
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 9);
 
 	g_object_unref (connection);
 }
@@ -11859,6 +11937,79 @@ test_write_vlan (void)
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
+}
+
+static void
+test_write_vlan_only_vlanid (void)
+{
+	NMConnection *connection, *reread;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	char *written = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	connection = connection_from_file (TEST_IFCFG_VLAN_ONLY_VLANID,
+	                                   NULL,
+	                                   TYPE_VLAN,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	g_free (unmanaged);
+	unmanaged = NULL;
+	g_free (keyfile);
+	keyfile = NULL;
+	g_free (routefile);
+	routefile = NULL;
+	g_free (route6file);
+	route6file = NULL;
+
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &written,
+	                                 &error);
+	g_assert (success);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (written,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (written);
+	g_free (written);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+
+	g_assert_no_error (error);
+	g_assert (reread != NULL);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	g_object_unref (connection);
+	g_object_unref (reread);
 }
 
 #define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"
@@ -12541,6 +12692,9 @@ int main (int argc, char **argv)
 	test_read_permissions ();
 	test_read_wifi_wep_agent_keys ();
 	test_read_infiniband ();
+	test_read_vlan_interface ();
+	test_read_vlan_only_vlan_id ();
+	test_read_vlan_only_device ();
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();
@@ -12605,6 +12759,8 @@ int main (int argc, char **argv)
 	test_write_permissions ();
 	test_write_wifi_wep_agent_keys ();
 	test_write_infiniband ();
+	test_write_vlan ();
+	test_write_vlan_only_vlanid ();
 
 	/* iSCSI / ibft */
 	test_read_ibft_dhcp ();

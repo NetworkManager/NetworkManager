@@ -79,6 +79,8 @@ EXTRA_DIST = \
 	ifcfg-test-bridge-main \
 	ifcfg-test-bridge-component \
 	ifcfg-test-vlan-interface \
+	ifcfg-test-vlan-only-vlanid \
+	ifcfg-test-vlan-only-device \
 	ifcfg-test-wifi-wep-no-keys \
 	ifcfg-test-permissions \
 	ifcfg-test-wifi-wep-agent-keys \
