@@ -564,9 +564,9 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
  *
  * Get a device's hardware address
  *
- * Return value: (transfer none): @dev's hardware address
+ * Returns: (transfer none): @dev's hardware address
  */
-guint8 *
+const guint8 *
 nm_device_wired_get_hwaddr (NMDeviceWired *dev)
 {
 	NMDeviceWiredPrivate *priv;
@@ -578,12 +578,36 @@ nm_device_wired_get_hwaddr (NMDeviceWired *dev)
 }
 
 /**
+ * nm_device_wired_set_hwaddr:
+ * @dev: an #NMDeviceWired
+ * @addr: the new hardware address, @addrlen bytes in length
+ * @addrlen: the length in bytes of @addr
+ *
+ * Sets the device's hardware address.
+ */
+void
+nm_device_wired_set_hwaddr (NMDeviceWired *dev,
+                            const guint8 *addr,
+                            guint addrlen)
+{
+	NMDeviceWiredPrivate *priv;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (addr != NULL);
+
+	priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
+	g_return_if_fail (addrlen == priv->hw_addr_len);
+
+	memcpy (priv->hw_addr, addr, priv->hw_addr_len);
+}
+
+/**
  * nm_device_wired_get_hwaddr_type:
  * @dev: an #NMDeviceWired
  *
  * Get the type of a device's hardware address
  *
- * Return value: the type of @dev's hardware address
+ * Returns: the type of @dev's hardware address
  */
 int
 nm_device_wired_get_hwaddr_type (NMDeviceWired *dev)

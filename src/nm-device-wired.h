@@ -46,10 +46,13 @@ typedef struct {
 
 GType nm_device_wired_get_type (void);
 
-guint8     *nm_device_wired_get_hwaddr      (NMDeviceWired *dev);
-int         nm_device_wired_get_hwaddr_type (NMDeviceWired *dev);
-gboolean    nm_device_wired_get_carrier     (NMDeviceWired *dev);
-guint32     nm_device_wired_get_speed       (NMDeviceWired *dev);
+const guint8 *nm_device_wired_get_hwaddr      (NMDeviceWired *dev);
+void          nm_device_wired_set_hwaddr      (NMDeviceWired *dev,
+                                               const guint8 *addr,
+                                               guint addrlen);
+int           nm_device_wired_get_hwaddr_type (NMDeviceWired *dev);
+gboolean      nm_device_wired_get_carrier     (NMDeviceWired *dev);
+guint32       nm_device_wired_get_speed       (NMDeviceWired *dev);
 
 G_END_DECLS
 

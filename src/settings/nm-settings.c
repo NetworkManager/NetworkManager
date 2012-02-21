@@ -1508,7 +1508,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GByteArray *mac = NULL;
-	guint8 *hwaddr;
+	const guint8 *hwaddr;
 	int hwaddr_type;
 	NMDefaultWiredConnection *wired;
 	gboolean read_only = TRUE;

@@ -92,7 +92,8 @@ device_state_changed (NMDevice *device,
 static void
 real_update_hw_address (NMDevice *dev)
 {
-	guint8 *hw_addr, old_addr[NM_UTILS_HWADDR_LEN_MAX];
+	const guint8 *hw_addr;
+	guint8 old_addr[NM_UTILS_HWADDR_LEN_MAX];
 	int addrtype, addrlen;
 
 	addrtype = nm_device_wired_get_hwaddr_type (NM_DEVICE_WIRED (dev));
@@ -329,7 +330,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	guint8 *current_addr;
+	const guint8 *current_addr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

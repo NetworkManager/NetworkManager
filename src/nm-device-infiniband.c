@@ -124,7 +124,8 @@ nm_device_infiniband_new (const char *udi,
 static void
 real_update_hw_address (NMDevice *dev)
 {
-	guint8 *hw_addr, old_addr[INFINIBAND_ALEN];
+	const guint8 *hw_addr;
+	guint8 old_addr[INFINIBAND_ALEN];
 
 	hw_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
 	memcpy (old_addr, hw_addr, INFINIBAND_ALEN);
@@ -167,7 +168,7 @@ real_get_best_auto_connection (NMDevice *dev,
 			continue;
 
 		if (s_infiniband) {
-			guint8 *hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
+			const guint8 *hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
 			const GByteArray *mac;
 
 			mac = nm_setting_infiniband_get_mac_address (s_infiniband);
@@ -270,7 +271,7 @@ real_check_connection_compatible (NMDevice *device,
 	}
 
 	if (s_infiniband) {
-		guint8 *hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
+		const guint8 *hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
 
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 		if (mac && memcmp (mac->data, hwaddr, INFINIBAND_ALEN)) {
@@ -294,7 +295,7 @@ real_complete_connection (NMDevice *device,
 {
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *setting_mac;
-	guint8 *hwaddr;
+	const guint8 *hwaddr;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
@@ -424,7 +425,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	guint8 *current_addr;
+	const guint8 *current_addr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

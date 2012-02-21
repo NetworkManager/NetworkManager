@@ -397,14 +397,13 @@ nm_device_ethernet_new (const char *udi,
 static void
 _update_hw_addr (NMDeviceEthernet *self, const guint8 *addr)
 {
-	guint8 *current_addr;
+	const guint8 *current_addr;
 
 	g_return_if_fail (addr != NULL);
 
 	current_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (self));
-
 	if (memcmp (current_addr, addr, ETH_ALEN)) {
-		memcpy (current_addr, addr, ETH_ALEN);
+		nm_device_wired_set_hwaddr (NM_DEVICE_WIRED (self), addr, ETH_ALEN);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_ETHERNET_HW_ADDRESS);
 	}
 }
@@ -413,7 +412,7 @@ static gboolean
 _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 {
 	NMDevice *dev = NM_DEVICE (self);
-	guint8 *current_addr;
+	const guint8 *current_addr;
 	const char *iface;
 	char *mac_str = NULL;
 	gboolean success = FALSE;
@@ -454,7 +453,8 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 static void
 real_update_hw_address (NMDevice *dev)
 {
-	guint8 *hw_addr, old_addr[ETH_ALEN];
+	const guint8 *hw_addr;
+	guint8 old_addr[ETH_ALEN];
 
 	hw_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
 	memcpy (old_addr, hw_addr, ETH_ALEN);
@@ -493,7 +493,7 @@ real_update_permanent_hw_address (NMDevice *dev)
 	errno = 0;
 	ret = ioctl (fd, SIOCETHTOOL, &req);
 	if ((ret < 0) || !nm_ethernet_address_is_valid ((struct ether_addr *) epaddr->data)) {
-		guint8 *current_addr;
+		const guint8 *current_addr;
 
 		nm_log_err (LOGD_HW | LOGD_ETHER, "(%s): unable to read permanent MAC address (error %d)",
 		            nm_device_get_iface (dev), errno);
@@ -515,7 +515,7 @@ real_update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	guint8 *current_addr;
+	const guint8 *current_addr;
 	char *mac_str = NULL;
 	guint8 *addr = priv->initial_hw_addr;
 	guint8 zero[ETH_ALEN] = {0,0,0,0,0,0};
@@ -1564,7 +1564,7 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	guint8 *current_addr;
+	const guint8 *current_addr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
