@@ -60,6 +60,7 @@ G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)
 
 typedef struct {
 	char *iface_name;
+	char *parent;
 	guint32 id;
 	guint32 flags;
 	GSList *ingress_priority_map;
@@ -69,6 +70,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_IFACE_NAME,
+	PROP_PARENT,
 	PROP_ID,
 	PROP_FLAGS,
 	PROP_INGRESS_PRIORITY_MAP,
@@ -107,6 +109,19 @@ nm_setting_vlan_get_interface_name (NMSettingVlan *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), NULL);
 	return NM_SETTING_VLAN_GET_PRIVATE (setting)->iface_name;
+}
+
+/**
+ * nm_setting_vlan_get_parent:
+ * @setting: the #NMSettingVlan
+ *
+ * Returns: the #NMSettingVlan:parent property of the setting
+ **/
+const char *
+nm_setting_vlan_get_parent (NMSettingVlan *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), NULL);
+	return NM_SETTING_VLAN_GET_PRIVATE (setting)->parent;
 }
 
 /**
@@ -420,8 +435,6 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
-	const char *master = NULL;
-	GSList *iter;
 
 	if (priv->iface_name && !priv->iface_name[0]) {
 		g_set_error (error,
@@ -431,25 +444,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	/* We must have a "master" interface from the connection setting */
-	for (iter = all_settings; iter; iter = g_slist_next (iter)) {
-		if (NM_IS_SETTING_CONNECTION (iter->data)) {
-			master = nm_setting_connection_get_master (NM_SETTING_CONNECTION (iter->data));
-			break;
-		}
-	}
-
-	if (master == NULL) {
+	if (priv->parent && !priv->parent[0]) {
 		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_CONNECTION_MASTER);
-		return FALSE;
-	} else if (!master[0]) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_CONNECTION_MASTER);
+		             NM_SETTING_VLAN_ERROR,
+		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_VLAN_PARENT);
 		return FALSE;
 	}
 
@@ -507,6 +506,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->iface_name);
 		priv->iface_name = g_value_dup_string (value);
 		break;
+	case PROP_PARENT:
+		g_free (priv->parent);
+		priv->parent = g_value_dup_string (value);
+		break;
 	case PROP_ID:
 		priv->id = g_value_get_uint (value);
 		break;
@@ -553,6 +556,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IFACE_NAME:
 		g_value_set_string (value, priv->iface_name);
 		break;
+	case PROP_PARENT:
+		g_value_set_string (value, priv->parent);
+		break;
 	case PROP_ID:
 		g_value_set_uint (value, priv->id);
 		break;
@@ -578,6 +584,7 @@ finalize (GObject *object)
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
 	g_free (priv->iface_name);
+	g_free (priv->parent);
 	nm_utils_slist_free (priv->ingress_priority_map, g_free);
 	nm_utils_slist_free (priv->egress_priority_map, g_free);
 }
@@ -602,22 +609,48 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	/**
 	 * NMSettingVlan:interface-name:
 	 *
-	 * If given, specifies the kernel interface name of the VLAN connection.
-	 * If not given, a default name will be constructed from the interface
-	 * described by #NMSettingConnection:master interface and the
-	 * #NMSettingVlan:id , ex 'eth2.1'.
+	 * If given, specifies the kernel name of the VLAN interface. If not given,
+	 * a default name will be constructed from the interface described by the
+	 * parent interface and the #NMSettingVlan:id , ex 'eth2.1'. The parent
+	 * interface may be given by the #NMSettingVlan:parent property or by a
+	 * hardware address property, eg #NMSettingWired:mac-address or
+	 * #NMSettingInfiniband:mac-address.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IFACE_NAME,
 		g_param_spec_string (NM_SETTING_VLAN_INTERFACE_NAME,
 		                     "InterfaceName",
-		                     "If given, specifies the kernel interface name of "
-		                     "the VLAN connection. If not given, a default "
-		                     "name will be constructed from the interface "
-		                     "described by master interface (from the "
-		                     "'connection' setting's 'master' property) and the "
-		                     "VLAN ID given by the 'vlan' setting's 'id' "
-		                     "property.",
+		                     "If given, specifies the kernel name of the VLAN "
+		                     "interface. If not given, a default name will be "
+		                     "constructed from the interface described by the "
+		                     "parent interface and the 'id' property, ex "
+		                     "'eth2.1'. The parent interface may be given by "
+		                     "the 'parent' property or by a hardware address "
+		                     "property, eg the 'wired' or 'infiniband' "
+		                     "settings' 'mac-address' property.",
+		                     NULL,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingVlan:parent:
+	 *
+	 * If given, specifies the parent interface name or parent connection UUID
+	 * from which this VLAN interface should be created.  If this property is
+	 * not specified, the connection must contain a hardware address in a
+	 * hardware-specific setting, like #NMSettingWired:mac-address or
+	 * #NMSettingInfiniband:mac-address.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PARENT,
+		g_param_spec_string (NM_SETTING_VLAN_PARENT,
+		                     "Parent",
+		                     "If given, specifies the parent interface name or "
+		                     "parent connection UUID from which this VLAN "
+		                     "interface should be created.  If this property is "
+		                     "not specified, the connection must contain a "
+		                     "hardware address in a hardware-specific setting, "
+		                     "like the 'wired' or 'infiniband' settings' "
+		                     "'mac-address' property.",
 		                     NULL,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 

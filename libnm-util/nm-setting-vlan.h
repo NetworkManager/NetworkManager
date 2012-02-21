@@ -55,6 +55,7 @@ typedef enum {
 GQuark nm_setting_vlan_error_quark (void);
 
 #define NM_SETTING_VLAN_INTERFACE_NAME       "interface-name"
+#define NM_SETTING_VLAN_PARENT               "parent"
 #define NM_SETTING_VLAN_ID                   "id"
 #define NM_SETTING_VLAN_FLAGS                "flags"
 #define NM_SETTING_VLAN_INGRESS_PRIORITY_MAP "ingress-priority-map"
@@ -111,6 +112,7 @@ GType nm_setting_vlan_get_type (void);
 NMSetting *nm_setting_vlan_new (void);
 
 const char *nm_setting_vlan_get_interface_name (NMSettingVlan *setting);
+const char *nm_setting_vlan_get_parent         (NMSettingVlan *setting);
 guint32     nm_setting_vlan_get_id             (NMSettingVlan *setting);
 guint32     nm_setting_vlan_get_flags          (NMSettingVlan *setting);
 
