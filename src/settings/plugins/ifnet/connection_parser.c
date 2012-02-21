@@ -2156,7 +2156,6 @@ write_wireless_security_setting (NMConnection * connection,
 		wpa_set_data (conn_name, "auth_alg", NULL);
 
 	/* Default WEP TX key index */
-	wpa_set_data (conn_name, "wep_tx_keyidx", NULL);
 	if (wep) {
 		tmp =
 		    g_strdup_printf ("%d",
@@ -2164,7 +2163,8 @@ write_wireless_security_setting (NMConnection * connection,
 				     (s_wsec));
 		wpa_set_data (conn_name, "wep_tx_keyidx", tmp);
 		g_free (tmp);
-	}
+	} else
+		wpa_set_data (conn_name, "wep_tx_keyidx", NULL);
 
 	/* WEP keys */
 	for (i = 0; i < 4; i++) {
