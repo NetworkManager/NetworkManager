@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -38,6 +38,7 @@
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
+#include "backends/nm-backend.h"
 #include "NetworkManagerUtils.h"
 #include "nm-system.h"
 #include "nm-dhcp-manager.h"
@@ -206,6 +207,10 @@ typedef struct {
 	char *         ip6_accept_ra_path;
 	gint32         ip6_accept_ra_save;
 
+	/* IPv6 privacy extensions (RFC4941) */
+	char *         ip6_privacy_tempaddr_path;
+	gint32         ip6_privacy_tempaddr_save;
+
 	NMDHCPClient *  dhcp6_client;
 	guint32         dhcp6_mode;
 	gulong          dhcp6_state_sigid;
@@ -290,6 +295,41 @@ update_accept_ra_save (NMDevice *self)
 	}
 }
 
+static void
+update_ip6_privacy_save (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+	const char *ip_iface;
+	char *new_path;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	ip_iface = nm_device_get_ip_iface (self);
+
+	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/use_tempaddr", ip_iface);
+	g_assert (new_path);
+
+	if (priv->ip6_privacy_tempaddr_path) {
+		/* If the IP iface is different from before, use the new value */
+		if (!strcmp (new_path, priv->ip6_privacy_tempaddr_path)) {
+			g_free (new_path);
+			return;
+		}
+		g_free (priv->ip6_privacy_tempaddr_path);
+	}
+
+	/* Grab the original value of "use_tempaddr" so we can restore it when NM exits */
+	priv->ip6_privacy_tempaddr_path = new_path;
+	if (!nm_utils_get_proc_sys_net_value (priv->ip6_privacy_tempaddr_path,
+	                                      ip_iface,
+	                                      &priv->ip6_privacy_tempaddr_save)) {
+		g_free (priv->ip6_privacy_tempaddr_path);
+		priv->ip6_privacy_tempaddr_path = NULL;
+	}
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -329,6 +369,7 @@ constructor (GType type,
 	priv->fw_manager = nm_firewall_manager_get ();
 
 	update_accept_ra_save (dev);
+	update_ip6_privacy_save (dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -722,6 +763,14 @@ nm_device_complete_connection (NMDevice *self,
 	                                                           error);
 	if (success)
 		success = nm_connection_verify (connection, error);
+
+	/* If ip6-privacy is unknown, enable it with temporary address preferred */
+	if (success) {
+		NMSettingIP6Config *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6 && nm_setting_ip6_config_get_ip6_privacy (s_ip6) == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+			              NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR, NULL);
+	}
 
 	return success;
 }
@@ -2126,6 +2175,10 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 	const char *ip_iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
+	NMSettingIP6Config *s_ip6;
+	int conf_use_tempaddr;
+	NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	const char *ip6_privacy_str = "0\n";
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2135,6 +2188,7 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 	ip_iface = nm_device_get_ip_iface (self);
 
 	update_accept_ra_save (self);
+	update_ip6_privacy_save (self);
 
 	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
 
@@ -2174,6 +2228,36 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	/* Other methods (shared) aren't implemented yet */
+
+	/* Enable/disable IPv6 Privacy Extensions.
+	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
+	 * use that value instead of per-connection value.
+	 */
+	conf_use_tempaddr = nm_backend_ipv6_use_tempaddr ();
+	if (conf_use_tempaddr >= 0)
+		ip6_privacy = conf_use_tempaddr;
+	else {
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6)
+			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
+	}
+	ip6_privacy = ip6_privacy < -1 ? NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN : ip6_privacy;
+	ip6_privacy = ip6_privacy > 2 ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR : ip6_privacy;
+
+	switch (ip6_privacy) {
+	case NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN:
+	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
+		ip6_privacy_str = "0\n";
+	break;
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
+		ip6_privacy_str = "1\n";
+	break;
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
+		ip6_privacy_str = "2\n";
+	break;
+	}
+	if (priv->ip6_privacy_tempaddr_path)
+		nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, ip6_privacy_str);
 
 	return ret;
 }
@@ -3039,6 +3123,10 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	if (priv->ip6_accept_ra_path)
 		nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0\n");
 
+	/* Turn off IPv6 privacy extensions */
+	if (priv->ip6_privacy_tempaddr_path)
+		nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, "0\n");
+
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
@@ -3522,6 +3610,15 @@ dispose (GObject *object)
 		                    priv->ip6_accept_ra_save ? "1\n" : "0\n");
 	}
 	g_free (priv->ip6_accept_ra_path);
+
+	/* reset the saved use_tempaddr value */
+	if (priv->ip6_privacy_tempaddr_path) {
+		char tmp[16];
+
+		snprintf (tmp, sizeof (tmp), "%d\n", priv->ip6_privacy_tempaddr_save);
+		nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, tmp);
+	}
+	g_free (priv->ip6_privacy_tempaddr_path);
 
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
