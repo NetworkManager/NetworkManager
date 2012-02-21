@@ -452,13 +452,13 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	/**
 	 * NMSettingBond:interface-name:
 	 *
-	 * The name of the virtual in-kernel bonding nework interface
+	 * The name of the virtual in-kernel bonding network interface
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_BOND_INTERFACE_NAME,
 		                      "InterfaceName",
-		                      "The name of the virtual in-kernel bonding nework interface",
+		                      "The name of the virtual in-kernel bonding network interface",
 		                      NULL,
 		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
