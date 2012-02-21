@@ -1795,6 +1795,24 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	            nm_setting_ip6_config_get_may_fail (s_ip6) ? "no" : "yes",
 	            FALSE);
 
+	/* IPv6 Privacy Extensions */
+	svSetValue (ifcfg, "IPV6_PRIVACY", NULL, FALSE);
+	svSetValue (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", NULL, FALSE);
+	switch (nm_setting_ip6_config_get_ip6_privacy (s_ip6)){
+	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
+		svSetValue (ifcfg, "IPV6_PRIVACY", "no", FALSE);
+	break;
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
+		svSetValue (ifcfg, "IPV6_PRIVACY", "rfc3041", FALSE);
+		svSetValue (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", "yes", FALSE);
+	break;
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
+		svSetValue (ifcfg, "IPV6_PRIVACY", "rfc3041", FALSE);
+	break;
+	default:
+	break;
+	}
+
 	/* Static routes go to route6-<dev> file */
 	route6_path = utils_get_route6_path (ifcfg->fileName);
 	if (!route6_path) {

@@ -1434,6 +1434,9 @@ make_ip6_setting (shvarFile *ifcfg,
 	guint32 i;
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE, tmp_success;
+	gboolean ip6_privacy, ip6_privacy_prefer_public_ip;
+	char *ip6_privacy_str;
+	NMSettingIP6ConfigPrivacy ip6_privacy_val;
 
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
 	if (!s_ip6) {
@@ -1520,12 +1523,29 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 	/* TODO - handle other methods */
 
+	/* Read IPv6 Privacy Extensions configuration */
+	ip6_privacy_str = svGetValue (ifcfg, "IPV6_PRIVACY", FALSE);
+	if (ip6_privacy_str) {
+		ip6_privacy = svTrueValue (ifcfg, "IPV6_PRIVACY", FALSE);
+		if (!ip6_privacy)
+			ip6_privacy = g_strcmp0 (ip6_privacy_str, "rfc4941") == 0 ||
+			              g_strcmp0 (ip6_privacy_str, "rfc3041") == 0;
+	}
+	ip6_privacy_prefer_public_ip = svTrueValue (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
+	ip6_privacy_val = ip6_privacy_str ?
+	                      (ip6_privacy ?
+	                          (ip6_privacy_prefer_public_ip ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) :
+	                          NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED) :
+	                      NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	g_free (ip6_privacy_str);
+
 	g_object_set (s_ip6,
 	              NM_SETTING_IP6_CONFIG_METHOD, method,
 	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
 	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
 	              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, never_default,
 	              NM_SETTING_IP6_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 
 	/* Don't bother to read IP, DNS and routes when IPv6 is disabled */
