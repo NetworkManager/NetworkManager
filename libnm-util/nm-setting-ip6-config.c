@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -75,6 +75,7 @@ typedef struct {
 	gboolean ignore_auto_dns;
 	gboolean never_default;
 	gboolean may_fail;
+	NMSettingIP6ConfigPrivacy ip6_privacy;
 } NMSettingIP6ConfigPrivate;
 
 
@@ -89,6 +90,7 @@ enum {
 	PROP_IGNORE_AUTO_DNS,
 	PROP_NEVER_DEFAULT,
 	PROP_MAY_FAIL,
+	PROP_IP6_PRIVACY,
 
 	LAST_PROP
 };
@@ -617,6 +619,23 @@ nm_setting_ip6_config_get_may_fail (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->may_fail;
 }
 
+/**
+ * nm_setting_ip6_config_get_ip6_privacy:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:ip6-privacy
+ * property.
+ *
+ * Returns: IPv6 Privacy Extensions configuration value (#NMSettingIP6ConfigPrivacy).
+ **/
+NMSettingIP6ConfigPrivacy
+nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ip6_privacy;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -739,6 +758,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MAY_FAIL:
 		priv->may_fail = g_value_get_boolean (value);
 		break;
+	case PROP_IP6_PRIVACY:
+		priv->ip6_privacy = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -778,6 +800,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MAY_FAIL:
 		g_value_set_boolean (value, priv->may_fail);
+		break;
+	case PROP_IP6_PRIVACY:
+		g_value_set_int (value, priv->ip6_privacy);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1033,6 +1058,35 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "fails but IPv4 configuration completes successfully.",
 						   TRUE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingIP6Config:ip6-privacy:
+	 *
+	 * Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.
+	 * If enabled, it makes the kernel generate a temporary IPv6 address
+	 * in addition to the public one generated from MAC address via
+	 * modified EUI-64.  This enhances privacy, but could cause problems
+	 * in some applications, on the other hand.  The permitted values
+	 * are: 0: disabled, 1: enabled (prefer public address),
+	 * 2: enabled (prefer temporary addresses).
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IP6_PRIVACY,
+		 g_param_spec_int (NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+		                   "Configure IPv6 Privacy",
+		                   "Configure IPv6 Privacy Extensions for SLAAC, described "
+		                   "in RFC4941.  If enabled, it makes the kernel generate "
+		                   "a temporary IPv6 address in addition to the public one "
+		                   "generated from MAC address via modified EUI-64.  This "
+		                   "enhances privacy, but could cause problems in some "
+		                   "applications, on the other hand.  The permitted values "
+		                   "are: 0: disabled, 1: enabled (prefer public address), "
+		                   "2: enabled (prefer temporary addresses).",
+		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+		                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+
 }
 
 /********************************************************************/
