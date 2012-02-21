@@ -417,6 +417,34 @@ ifnet_get_data (const char *conn_name, const char *key)
 	return NULL;
 }
 
+/* format ip values for comparison */
+static gchar*
+format_ip_for_comparison (gchar * value)
+{
+	gchar **ipset;
+	guint length, i;
+	GString *formated_string = g_string_new (NULL);
+	gchar *formatted = NULL;
+
+	ipset = g_strsplit (value, "\"", 0);
+	length = g_strv_length (ipset);
+
+	for (i = 0; i < length; i++)
+	{
+		strip_string (ipset[i], ' ');
+		if (ipset[i][0] != '\0')
+			g_string_append_printf (formated_string,
+						"%s ", ipset[i]);
+	}
+	formatted = g_strdup (formated_string->str);
+	formatted[formated_string->len - 1] = '\0';
+
+	g_string_free (formated_string, TRUE);
+	g_strfreev (ipset);
+
+	return formatted;
+}
+
 void
 ifnet_set_data (const char *conn_name, const char *key, const char *value)
 {
@@ -434,6 +462,30 @@ ifnet_set_data (const char *conn_name, const char *key, const char *value)
 	}
 	/* Remove existing key value pair */
 	if (g_hash_table_lookup_extended (conn, key, &old_key, &old_value)) {
+
+		/* This ugly hack is due to baselayout compatibility. We have to
+		 * deal with different ip format. So sometimes we have the same ips
+		 * but different strings.
+		 */
+		if (stripped &&
+			(!strcmp (key, "config")
+			|| !strcmp (key, "routes")
+			|| !strcmp (key, "pppd")
+			|| !strcmp (key, "chat")))
+		{
+			gchar *old_ips = format_ip_for_comparison (old_value);
+			gchar *new_ips = format_ip_for_comparison (value);
+			if(!strcmp (old_ips, new_ips))
+			{
+				g_free (stripped);
+				g_free (old_ips);
+				g_free (new_ips);
+				return;
+			}
+			g_free (old_ips);
+			g_free (new_ips);
+		}
+
 		if (stripped && !strcmp (old_value, stripped)) {
 			g_free (stripped);
 			return;
