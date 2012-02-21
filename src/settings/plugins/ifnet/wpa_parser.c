@@ -124,7 +124,7 @@ add_key_value (GHashTable * network, gchar * line)
 	g_strstrip (key_value[0]);
 	g_strstrip (key_value[1]);
 
-	/* Reserve quotes for psk, wep_key, ssid 
+	/* Reserve quotes for psk, wep_key, ssid
 	 * Quotes will determine whether they are hex format */
 	if (strcmp (key_value[0], "psk") != 0
 	    && !g_str_has_prefix (key_value[0], "wep_key")
@@ -162,7 +162,7 @@ add_one_wep_key (GHashTable * table, int key_num, gchar * one_wep_key)
 	}
 }
 
-/* Reading wep security information from /etc/conf.d/net. 
+/* Reading wep security information from /etc/conf.d/net.
  * This should not be used in futre, use wpa_supplicant instead. */
 static void
 add_keys_from_net ()
@@ -375,6 +375,8 @@ wpa_flush_to_file (const char *config_file)
 		return TRUE;
 	if (!wsec_table || !wsec_global_table)
 		return FALSE;
+
+	backup_file (config_file);
 
 	channel = g_io_channel_new_file (config_file, "w", NULL);
 	if (!channel) {

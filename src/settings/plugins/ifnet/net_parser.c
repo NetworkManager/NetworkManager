@@ -576,6 +576,8 @@ ifnet_flush_to_file (const char *config_file)
 	if (!conn_table || !global_settings_table)
 		return FALSE;
 
+	backup_file (config_file);
+
 	channel = g_io_channel_new_file (config_file, "w", NULL);
 	if (!channel) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,

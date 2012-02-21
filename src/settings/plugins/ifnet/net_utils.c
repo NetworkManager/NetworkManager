@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <nm-utils.h>
 #include <nm-system-config-interface.h>
+#include <gio/gio.h>
 #include "net_utils.h"
 #include "wpa_parser.h"
 #include "net_parser.h"
@@ -948,4 +949,21 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 	}
 	g_strfreev (all_lines);
 	g_free (contents);
+}
+
+void backup_file (gchar* target)
+{
+	GFile *source, *backup;
+	gchar* backup_path;
+	GError **error;
+
+	source = g_file_new_for_path (target);
+	backup_path = g_strdup_printf ("%s.bak", target);
+	backup = g_file_new_for_path (backup_path);
+
+	g_file_copy (source, backup, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, error);
+	if (error && *error)
+		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Backup failed: %s", (*error)->message);
+
+	g_free (backup_path);
 }
