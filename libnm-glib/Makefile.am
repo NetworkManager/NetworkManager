@@ -61,6 +61,7 @@ libnminclude_HEADERS = \
 	nm-device-infiniband.h \
 	nm-device-wifi.h \
 	nm-device-bt.h \
+	nm-device-olpc-mesh.h \
 	nm-access-point.h \
 	nm-ip4-config.h \
 	nm-device-modem.h \
@@ -91,6 +92,7 @@ libnm_glib_la_csources = \
 	nm-device-infiniband.c \
 	nm-device-wifi.c \
 	nm-device-bt.c \
+	nm-device-olpc-mesh.c \
 	nm-access-point.c \
 	nm-ip4-config.c \
 	nm-device-modem.c \

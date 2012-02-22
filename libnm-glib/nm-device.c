@@ -30,6 +30,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-modem.h"
 #include "nm-device-bt.h"
+#include "nm-device-olpc-mesh.h"
 #include "nm-device-wimax.h"
 #include "nm-device-infiniband.h"
 #include "nm-device.h"
@@ -628,6 +629,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_MODEM;
 	case NM_DEVICE_TYPE_BT:
 		return NM_TYPE_DEVICE_BT;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return NM_TYPE_DEVICE_OLPC_MESH;
 	case NM_DEVICE_TYPE_WIMAX:
 		return NM_TYPE_DEVICE_WIMAX;
 	case NM_DEVICE_TYPE_INFINIBAND:
@@ -822,6 +825,8 @@ nm_device_get_device_type (NMDevice *self)
 			priv->device_type = NM_DEVICE_TYPE_MODEM;
 		else if (NM_IS_DEVICE_BT (self))
 			priv->device_type = NM_DEVICE_TYPE_BT;
+		else if (NM_IS_DEVICE_OLPC_MESH (self))
+			priv->device_type = NM_DEVICE_TYPE_OLPC_MESH;
 		else if (NM_IS_DEVICE_WIMAX (self))
 			priv->device_type = NM_DEVICE_TYPE_WIMAX;
 		else if (NM_IS_DEVICE_INFINIBAND (self))
