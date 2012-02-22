@@ -24,6 +24,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_builddir}/include \
            -I${top_srcdir}/src/generated \
+           -I${top_builddir}/src/generated \
            -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src/dns-manager \
            -I${top_srcdir}/src/vpn-manager \
@@ -36,6 +37,7 @@ INCLUDES = -I${top_srcdir} \
            -I$(top_srcdir)/src/firewall-manager \
            -I$(top_srcdir)/src/settings \
            -I${top_srcdir}/libnm-util \
+           -I${top_builddir}/libnm-util \
            -I${top_srcdir}/callouts
 
 ###########################################

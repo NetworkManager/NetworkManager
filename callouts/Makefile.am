@@ -60,6 +60,7 @@ nm_dispatcher_action_CPPFLAGS = \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
+	-I${top_builddir}/libnm-util \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
@@ -86,6 +87,7 @@ libtest_dispatcher_envp_la_CPPFLAGS = \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
+	-I${top_builddir}/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
