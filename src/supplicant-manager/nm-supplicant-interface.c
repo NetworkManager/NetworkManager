@@ -105,6 +105,28 @@ typedef struct {
 	gboolean              disposed;
 } NMSupplicantInterfacePrivate;
 
+/* FIXME: remove this and just store the standard D-Bus properties
+ * proxy object in bss_proxies when we drop support for wpa_supplicant
+ * 0.7.x.
+ */
+typedef struct {
+	/* Proxy for standard D-Bus Properties interface */
+	DBusGProxy *props;
+	/* Proxy for old wpa_supplicant-specific PropertiesChanged signal */
+	DBusGProxy *old_props;
+} BssProxies;
+
+static void
+bss_proxies_free (gpointer data)
+{
+	BssProxies *proxies = data;
+
+	g_object_unref (proxies->props);
+	g_object_unref (proxies->old_props);
+	memset (proxies, 0, sizeof (*proxies));
+	g_free (proxies);
+}
+
 static gboolean
 cancel_all_cb (GObject *object, gpointer call_id, gpointer user_data)
 {
@@ -234,12 +256,18 @@ bss_properties_changed (DBusGProxy *proxy,
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 
-	if (g_strcmp0 (interface, WPAS_DBUS_IFACE_BSS) != 0)
-		return;
+	if (g_strcmp0 (interface, WPAS_DBUS_IFACE_BSS) == 0)
+		g_signal_emit (self, signals[BSS_UPDATED], 0, dbus_g_proxy_get_path (proxy), props);
+}
 
-	g_signal_emit (self, signals[BSS_UPDATED], 0,
-	               dbus_g_proxy_get_path (proxy),
-	               props);
+static void
+old_bss_properties_changed (DBusGProxy *proxy,
+                            GHashTable *props,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+
+	g_signal_emit (self, signals[BSS_UPDATED], 0, dbus_g_proxy_get_path (proxy), props);
 }
 
 static void
@@ -248,39 +276,59 @@ handle_new_bss (NMSupplicantInterface *self,
                 GHashTable *props)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	DBusGProxy *bss_proxy;
 	NMSupplicantInfo *info;
 	DBusGProxyCall *call;
+	BssProxies *proxies;
 
 	g_return_if_fail (object_path != NULL);
 
 	if (g_hash_table_lookup (priv->bss_proxies, object_path))
 		return;
 
-	bss_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
-	                                       WPAS_DBUS_SERVICE,
-	                                       object_path,
-	                                       DBUS_INTERFACE_PROPERTIES);
+	proxies = g_malloc0 (sizeof (*proxies));
+	proxies->props = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
+	                                            WPAS_DBUS_SERVICE,
+	                                            object_path,
+	                                            DBUS_INTERFACE_PROPERTIES);
+	proxies->old_props = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
+	                                                WPAS_DBUS_SERVICE,
+	                                                object_path,
+	                                                WPAS_DBUS_IFACE_BSS);
 	g_hash_table_insert (priv->bss_proxies,
-	                     (gpointer) dbus_g_proxy_get_path (bss_proxy),
-	                     bss_proxy);
+	                     (gpointer) dbus_g_proxy_get_path (proxies->props),
+	                     proxies);
 
+	/* Standard D-Bus PropertiesChanged signal */
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED_BOXED,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_STRV,
 	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (bss_proxy, "PropertiesChanged",
+	dbus_g_proxy_add_signal (proxies->props, "PropertiesChanged",
 	                         G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_STRV,
 	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (bss_proxy, "PropertiesChanged",
+	dbus_g_proxy_connect_signal (proxies->props, "PropertiesChanged",
 	                             G_CALLBACK (bss_properties_changed),
+	                             self, NULL);
+
+	/* Old wpa_supplicant-specific PropertiesChanged signal; since it's using
+	 * a different interface, we have to use a different DBusGProxy
+	 */
+	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
+	                                   G_TYPE_NONE,
+	                                   DBUS_TYPE_G_MAP_OF_VARIANT,
+	                                   G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (proxies->old_props, "PropertiesChanged",
+	                         DBUS_TYPE_G_MAP_OF_VARIANT,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxies->old_props, "PropertiesChanged",
+	                             G_CALLBACK (old_bss_properties_changed),
 	                             self, NULL);
 
 	if (props) {
 		signal_new_bss (self, object_path, props);
 	} else {
-		info = nm_supplicant_info_new (self, bss_proxy, priv->other_pcalls);
-		call = dbus_g_proxy_begin_call (bss_proxy, "GetAll",
+		info = nm_supplicant_info_new (self, proxies->props, priv->other_pcalls);
+		call = dbus_g_proxy_begin_call (proxies->props, "GetAll",
 		                                bssid_properties_cb,
 		                                info,
 		                                nm_supplicant_info_destroy,
@@ -1256,7 +1304,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 	                                              WPAS_DBUS_PATH,
 	                                              WPAS_DBUS_INTERFACE);
 
-	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, bss_proxies_free);
 }
 
 static void
