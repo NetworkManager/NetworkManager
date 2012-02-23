@@ -256,10 +256,6 @@ bond_match_config (NMDevice *self, NMConnection *connection)
 	if (g_strcmp0 (ifname, nm_device_get_ip_iface (self)) != 0)
 		return FALSE;
 
-	/* MAC address check */
-	if (!nm_device_hwaddr_matches (self, connection, FALSE))
-		return FALSE;
-
 	return TRUE;
 }
 
