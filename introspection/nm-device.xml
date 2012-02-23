@@ -251,6 +251,11 @@
           The device is a bond master interface.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="VLAN" value="11">
+        <tp:docstring>
+          The device is a VLAN interface.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">

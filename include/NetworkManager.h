@@ -121,6 +121,7 @@ typedef enum {
 	NM_DEVICE_TYPE_MODEM      = 8,
 	NM_DEVICE_TYPE_INFINIBAND = 9,
 	NM_DEVICE_TYPE_BOND       = 10,
+	NM_DEVICE_TYPE_VLAN       = 11,
 } NMDeviceType;
 
 /**

@@ -26,6 +26,7 @@ src/nm-device-bt.c
 src/nm-device-ethernet.c
 src/nm-device-infiniband.c
 src/nm-device-olpc-mesh.c
+src/nm-device-vlan.c
 src/nm-manager.c
 src/nm-netlink-monitor.c
 src/settings/plugins/ifcfg-rh/reader.c

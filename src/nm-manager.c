@@ -47,6 +47,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
+#include "nm-device-vlan.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -914,38 +915,30 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 /* Settings stuff via NMSettings                                   */
 /*******************************************************************/
 
-static const char *
-get_iface_from_hwaddr (NMManager *self,
-                       NMConnection *connection,
-                       int *out_ifindex)
+static NMDevice *
+get_device_from_hwaddr (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (nm_device_hwaddr_matches (candidate, connection, NULL, 0, TRUE)) {
-			if (out_ifindex)
-				*out_ifindex = nm_device_get_ip_ifindex (candidate);
-			return nm_device_get_ip_iface (candidate);
-		}
+		if (nm_device_hwaddr_matches (NM_DEVICE (iter->data), connection, NULL, 0, TRUE))
+			return iter->data;
 	}
 	return NULL;
 }
 
-static const char *
-find_vlan_parent_iface (NMManager *self,
-                        NMConnection *connection,
-                        gboolean check_hwaddr,
-                        int *out_parent_ifindex)
+static NMDevice*
+find_vlan_parent (NMManager *self,
+                  NMConnection *connection,
+                  gboolean check_hwaddr)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingVlan *s_vlan;
-	const char *parent;
 	NMConnection *parent_connection;
+	const char *parent_iface;
+	NMDevice *parent = NULL;
 	GSList *iter;
-	NMDevice *device;
 
 	/* The 'parent' property could be either an interface name, a connection
 	 * UUID, or even given by the MAC address of the connection's ethernet,
@@ -954,33 +947,32 @@ find_vlan_parent_iface (NMManager *self,
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_return_val_if_fail (s_vlan != NULL, NULL);
 
-	parent = nm_setting_vlan_get_parent (s_vlan);
-	if (parent) {
-		device = find_device_by_ip_iface (self, parent);
-		if (device) {
-			if (out_parent_ifindex)
-				*out_parent_ifindex = nm_device_get_ip_ifindex (device);
+	parent_iface = nm_setting_vlan_get_parent (s_vlan);
+	if (parent_iface) {
+		parent = find_device_by_ip_iface (self, parent_iface);
+		if (parent)
 			return parent;
-		}
 
-		if (nm_utils_is_uuid (parent)) {
+		if (nm_utils_is_uuid (parent_iface)) {
 			/* Try as a connection UUID */
-			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, parent);
+			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, parent_iface);
 			if (parent_connection) {
 				/* Check if the parent connection is activated on some device already */
 				for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-					NMDevice *candidate = NM_DEVICE (iter->data);
+					NMActRequest *req;
+					NMConnection *candidate;
 
-					if (nm_device_get_connection (candidate) == parent_connection) {
-						if (out_parent_ifindex)
-							*out_parent_ifindex = nm_device_get_ip_ifindex (candidate);
-						return nm_device_get_iface (candidate);
+					req = nm_device_get_act_request (NM_DEVICE (iter->data));
+					if (req) {
+						candidate = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (req));
+						if (candidate == parent_connection)
+							return parent;
 					}
 				}
 
 				/* Check the hardware address of the parent connection */
 				if (check_hwaddr)
-					return get_iface_from_hwaddr (self, parent_connection, out_parent_ifindex);
+					return get_device_from_hwaddr (self, parent_connection);
 			}
 			return NULL;
 		}
@@ -988,7 +980,7 @@ find_vlan_parent_iface (NMManager *self,
 
 	/* Try the hardware address from the VLAN connection's hardware setting */
 	if (check_hwaddr)
-		return get_iface_from_hwaddr (self, connection, out_parent_ifindex);
+		return get_device_from_hwaddr (self, connection);
 
 	return NULL;
 }
@@ -997,7 +989,7 @@ find_vlan_parent_iface (NMManager *self,
  * get_virtual_iface_name:
  * @self: the #NMManager
  * @connection: the #NMConnection representing a virtual interface
- * @out_parent_ifindex: on success, the parent interface index if any
+ * @out_parent: on success, the parent device if any
  *
  * Given @connection, returns the interface name that the connection
  * would represent.  If the interface name is not given by the connection,
@@ -1009,24 +1001,25 @@ find_vlan_parent_iface (NMManager *self,
 static char *
 get_virtual_iface_name (NMManager *self,
                         NMConnection *connection,
-                        int *out_parent_ifindex)
+                        NMDevice **out_parent)
 {
 	char *vname = NULL;
+	NMDevice *parent = NULL;
 
-	if (out_parent_ifindex)
-		*out_parent_ifindex = -1;
+	if (out_parent)
+		*out_parent = NULL;
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
 		return g_strdup (nm_connection_get_virtual_iface_name (connection));
 
 	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan;
-		const char *ifname, *parent;
+		const char *ifname;
 
 		s_vlan = nm_connection_get_setting_vlan (connection);
 		g_return_val_if_fail (s_vlan != NULL, NULL);
 
-		parent = find_vlan_parent_iface (self, connection, TRUE, out_parent_ifindex);
+		parent = find_vlan_parent (self, connection, TRUE);
 		if (parent) {
 			/* If the connection doesn't specify the interface name for the VLAN
 			 * device, we create one for it using the VLAN ID and the parent
@@ -1035,8 +1028,12 @@ get_virtual_iface_name (NMManager *self,
 			ifname = nm_connection_get_virtual_iface_name (connection);
 			if (ifname)
 				vname = g_strdup (ifname);
-			else
-				vname = nm_utils_new_vlan_name (parent, nm_setting_vlan_get_id (s_vlan));
+			else {
+				vname = nm_utils_new_vlan_name (nm_device_get_ip_iface (parent),
+				                                nm_setting_vlan_get_id (s_vlan));
+			}
+			if (out_parent)
+				*out_parent = parent;
 		}
 	}
 
@@ -1078,10 +1075,9 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 	char *iface = NULL, *udi;
-	NMDevice *device = NULL;
-	int parent_ifindex = -1;
+	NMDevice *device = NULL, *parent = NULL;
 
-	iface = get_virtual_iface_name (self, connection, &parent_ifindex);
+	iface = get_virtual_iface_name (self, connection, &parent);
 	if (!iface) {
 		nm_log_warn (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
 		             nm_connection_get_id (connection));
@@ -1112,15 +1108,15 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_bond_new (udi, iface);
 		g_free (udi);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		g_return_val_if_fail (parent_ifindex >= 0, FALSE);
+		g_return_val_if_fail (parent != NULL, FALSE);
 
-		if (!nm_system_add_vlan_iface (connection, iface, parent_ifindex)) {
+		if (!nm_system_add_vlan_iface (connection, iface, nm_device_get_ip_ifindex (parent))) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto out;
 		}
 		udi = get_virtual_iface_placeholder_udi ();
-		device = nm_device_ethernet_new (udi, iface, "8021q");
+		device = nm_device_vlan_new (udi, iface, parent);
 		g_free (udi);
 	}
 
@@ -2456,7 +2452,7 @@ nm_manager_activate_connection (NMManager *manager,
 	} else {
 		NMDeviceState state;
 		char *iface;
-		int master_ifindex = -1;
+		NMDevice *parent = NULL;
 
 		/* Device-based connection */
 		if (device_path) {
@@ -2503,7 +2499,7 @@ nm_manager_activate_connection (NMManager *manager,
 				return NULL;
 			}
 
-			iface = get_virtual_iface_name (manager, connection, &master_ifindex);
+			iface = get_virtual_iface_name (manager, connection, &parent);
 			if (!iface) {
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 					                 "Failed to determine connection's virtual interface name");
