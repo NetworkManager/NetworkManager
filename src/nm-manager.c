@@ -925,7 +925,7 @@ get_iface_from_hwaddr (NMManager *self,
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = iter->data;
 
-		if (nm_device_hwaddr_matches (candidate, connection, TRUE)) {
+		if (nm_device_hwaddr_matches (candidate, connection, NULL, 0, TRUE)) {
 			if (out_ifindex)
 				*out_ifindex = nm_device_get_ip_ifindex (candidate);
 			return nm_device_get_ip_iface (candidate);

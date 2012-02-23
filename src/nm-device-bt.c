@@ -375,7 +375,11 @@ real_get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+hwaddr_matches (NMDevice *device,
+                NMConnection *connection,
+                const guint8 *other_hwaddr,
+                guint other_hwaddr_len,
+                gboolean fail_if_no_hwaddr)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingBluetooth *s_bt;
@@ -392,7 +396,12 @@ hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_
 		g_return_val_if_fail (devmac != NULL, FALSE);
 		g_return_val_if_fail (devmac->len == mac->len, FALSE);
 
-		matches = (memcmp (mac->data, devmac->data, mac->len) == 0) ? TRUE : FALSE;
+		if (other_hwaddr) {
+			g_return_val_if_fail (other_hwaddr_len == devmac->len, FALSE);
+			matches = (memcmp (mac->data, other_hwaddr, mac->len) == 0) ? TRUE : FALSE;
+		} else
+			matches = (memcmp (mac->data, devmac->data, mac->len) == 0) ? TRUE : FALSE;
+
 		g_byte_array_free (devmac, TRUE);
 		return matches;
 	} else if (fail_if_no_hwaddr == FALSE)

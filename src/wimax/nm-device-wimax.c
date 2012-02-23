@@ -410,7 +410,11 @@ real_update_hw_address (NMDevice *dev)
 }
 
 static gboolean
-hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+hwaddr_matches (NMDevice *device,
+                NMConnection *connection,
+                const guint8 *other_hwaddr,
+                guint other_hwaddr_len,
+                gboolean fail_if_no_hwaddr)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMSettingWimax *s_wimax;
@@ -422,7 +426,11 @@ hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_
 
 	if (mac) {
 		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
-		if (memcmp (mac->data, priv->hw_addr.ether_addr_octet, mac->len) == 0)
+		if (other_hwaddr) {
+			g_return_val_if_fail (other_hwaddr_len == ETH_ALEN, FALSE);
+			if (memcmp (mac->data, other_hwaddr, mac->len) == 0)
+				return TRUE;
+		} else if (memcmp (mac->data, priv->hw_addr.ether_addr_octet, mac->len) == 0)
 			return TRUE;
 	} else if (fail_if_no_hwaddr == FALSE)
 		return TRUE;

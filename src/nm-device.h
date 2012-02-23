@@ -157,6 +157,8 @@ typedef struct {
 
 	gboolean        (* hwaddr_matches) (NMDevice *self,
 	                                    NMConnection *connection,
+	                                    const guint8 *other_hwaddr,
+	                                    guint other_hwaddr_len,
 	                                    gboolean fail_if_no_hwaddr);
 } NMDeviceClass;
 
@@ -213,6 +215,8 @@ NMConnection * nm_device_connection_match_config (NMDevice *device,
 
 gboolean nm_device_hwaddr_matches (NMDevice *device,
                                    NMConnection *connection,
+                                   const guint8 *other_hwaddr,
+                                   guint other_hwaddr_len,
                                    gboolean fail_if_no_hwaddr);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);

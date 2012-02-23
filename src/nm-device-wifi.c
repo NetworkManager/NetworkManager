@@ -2983,7 +2983,11 @@ spec_match_list (NMDevice *device, const GSList *specs)
 }
 
 static gboolean
-hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+hwaddr_matches (NMDevice *device,
+                NMConnection *connection,
+                const guint8 *other_hwaddr,
+                guint other_hwaddr_len,
+                gboolean fail_if_no_hwaddr)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -2995,7 +2999,11 @@ hwaddr_matches (NMDevice *device, NMConnection *connection, gboolean fail_if_no_
 
 	if (mac) {
 		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
-		if (memcmp (mac->data, priv->hw_addr, mac->len) == 0)
+		if (other_hwaddr) {
+			g_return_val_if_fail (other_hwaddr_len == ETH_ALEN, FALSE);
+			if (memcmp (mac->data, other_hwaddr, mac->len) == 0)
+				return TRUE;
+		} else if (memcmp (mac->data, priv->hw_addr, mac->len) == 0)
 			return TRUE;
 	} else if (fail_if_no_hwaddr == FALSE)
 		return TRUE;

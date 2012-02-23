@@ -4522,16 +4522,43 @@ nm_device_connection_match_config (NMDevice *device, const GSList *connections)
 	return NULL;
 }
 
+/**
+ * nm_device_hwaddr_matches:
+ * @device: the device to use when matching the hardware address
+ * @connection: the connection which supplies the hardware address
+ * @other_hwaddr: if given, use this address instead of the device's actual
+ *   hardware address
+ * @other_hwaddr_len: length in bytes of @other_hwaddr
+ * @fail_if_no_hwaddr: whether to fail the match if @connection does not contain
+ *   a hardware address
+ *
+ * Matches a the devices hardware address (or @other_hwaddr if given) against
+ * the hardware-specific setting in @connection.  Allows for device-agnostic
+ * hardware address matching without having to know the internal details of
+ * the connection and which settings are used by each device subclass.
+ *
+ * Returns: %TRUE if the @device 's hardware address or @other_hwaddr matches
+ *  a hardware address in a hardware-specific setting in @connection
+ */
 gboolean
 nm_device_hwaddr_matches (NMDevice *device,
                           NMConnection *connection,
+                          const guint8 *other_hwaddr,
+                          guint other_hwaddr_len,
                           gboolean fail_if_no_hwaddr)
 {
 	g_return_val_if_fail (device != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	if (other_hwaddr)
+		g_return_val_if_fail (other_hwaddr_len > 0, FALSE);
 
-	if (NM_DEVICE_GET_CLASS (device)->hwaddr_matches)
-		return NM_DEVICE_GET_CLASS (device)->hwaddr_matches (device, connection, fail_if_no_hwaddr);
+	if (NM_DEVICE_GET_CLASS (device)->hwaddr_matches) {
+		return NM_DEVICE_GET_CLASS (device)->hwaddr_matches (device,
+		                                                     connection,
+		                                                     other_hwaddr,
+		                                                     other_hwaddr_len,
+		                                                     fail_if_no_hwaddr);
+	}
 	return FALSE;
 }
 
