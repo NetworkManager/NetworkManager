@@ -2366,6 +2366,57 @@ internal_activate_device (NMManager *manager,
 	return success ? NM_ACTIVE_CONNECTION (req) : NULL;
 }
 
+static NMActiveConnection *
+activate_vpn_connection (NMManager *self,
+                         NMConnection *connection,
+                         const char *specific_object,
+                         const char *device_path,
+                         gulong sender_uid,
+                         GError **error)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActRequest *parent_req = NULL;
+	NMDevice *device = NULL;
+	GSList *iter;
+
+	if (specific_object) {
+		/* Find the specifc connection the client requested we use */
+		parent_req = nm_manager_get_act_request_by_path (self, specific_object, &device);
+		if (!parent_req) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+			                     "Base connection for VPN connection not active.");
+			return NULL;
+		}
+	} else {
+		/* Just find the current default connection */
+		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+			NMDevice *candidate = NM_DEVICE (iter->data);
+			NMActRequest *candidate_req;
+
+			candidate_req = nm_device_get_act_request (candidate);
+			if (candidate_req && nm_active_connection_get_default (NM_ACTIVE_CONNECTION (candidate_req))) {
+				device = candidate;
+				parent_req = candidate_req;
+				break;
+			}
+		}
+	}
+
+	if (!device || !parent_req) {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "Could not find source connection, or the source connection had no active device.");
+		return NULL;
+	}
+
+	return nm_vpn_manager_activate_connection (priv->vpn_manager,
+	                                           connection,
+	                                           device,
+	                                           nm_active_connection_get_path (NM_ACTIVE_CONNECTION (parent_req)),
+	                                           TRUE,
+	                                           sender_uid,
+	                                           error);
+}
+
 NMActiveConnection *
 nm_manager_activate_connection (NMManager *manager,
                                 NMConnection *connection,
@@ -2376,9 +2427,11 @@ nm_manager_activate_connection (NMManager *manager,
 {
 	NMManagerPrivate *priv;
 	NMDevice *device = NULL;
-	NMSettingConnection *s_con;
 	gulong sender_uid = 0;
 	DBusError dbus_error;
+	NMDeviceState state;
+	char *iface;
+	NMDevice *parent = NULL;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2402,135 +2455,83 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 	}
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	/* VPN ? */
+	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
+		return activate_vpn_connection (manager, connection, specific_object, device_path, sender_uid, error);
 
-	if (!strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_VPN_SETTING_NAME)) {
-		NMActRequest *parent_req = NULL;
-
-		/* VPN connection */
-
-		if (specific_object) {
-			/* Find the specifc connection the client requested we use */
-			parent_req = nm_manager_get_act_request_by_path (manager, specific_object, &device);
-			if (!parent_req) {
-				g_set_error (error,
-				             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-				             "%s", "Base connection for VPN connection not active.");
-				return NULL;
-			}
-		} else {
-			GSList *iter;
-
-			/* Just find the current default connection */
-			for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-				NMDevice *candidate = NM_DEVICE (iter->data);
-				NMActRequest *candidate_req;
-
-				candidate_req = nm_device_get_act_request (candidate);
-				if (candidate_req && nm_active_connection_get_default (NM_ACTIVE_CONNECTION (candidate_req))) {
-					device = candidate;
-					parent_req = candidate_req;
-					break;
-				}
-			}
-		}
-
-		if (!device || !parent_req) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "%s", "Could not find source connection, or the source connection had no active device.");
+	/* Device-based connection */
+	if (device_path) {
+		device = nm_manager_get_device_by_path (manager, device_path);
+		if (!device) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			                     "Device not found");
 			return NULL;
 		}
 
-		return nm_vpn_manager_activate_connection (priv->vpn_manager,
-		                                           connection,
-		                                           device,
-		                                           nm_active_connection_get_path (NM_ACTIVE_CONNECTION (parent_req)),
-		                                           TRUE,
-		                                           sender_uid,
-		                                           error);
-	} else {
-		NMDeviceState state;
-		char *iface;
-		NMDevice *parent = NULL;
-
-		/* Device-based connection */
-		if (device_path) {
-			device = nm_manager_get_device_by_path (manager, device_path);
-			if (!device) {
-				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                     "Device not found");
-				return NULL;
-			}
-
-			/* If it's a virtual interface make sure the device given by the
-			 * path matches the connection's interface details.
-			 */
-			if (connection_needs_virtual_device (connection)) {
-				iface = get_virtual_iface_name (manager, connection, NULL);
-				if (!iface) {
-					g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-						                 "Failed to determine connection's virtual interface name");
-					return NULL;
-				} else if (g_strcmp0 (iface, nm_device_get_ip_iface (device)) != 0) {
-					g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-						                 "Device given by path did not match connection's virtual interface name");
-					g_free (iface);
-					return NULL;
-				}
-				g_free (iface);
-			}
-
-			state = nm_device_get_state (device);
-			if (state < NM_DEVICE_STATE_DISCONNECTED) {
-				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-					                 "Device not managed by NetworkManager or unavailable");
-				return NULL;
-			}
-		} else {
-			/* Virtual connections (VLAN, bond, etc) may not specify a device
-			 * path because the device may not be created yet, or it be given
-			 * by the connection's properties instead.  Find the device the
-			 * connection refers to, or create it if needed.
-			 */
-			if (!connection_needs_virtual_device (connection)) {
-				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-					                 "This connection requires an existing device.");
-				return NULL;
-			}
-
-			iface = get_virtual_iface_name (manager, connection, &parent);
+		/* If it's a virtual interface make sure the device given by the
+		 * path matches the connection's interface details.
+		 */
+		if (connection_needs_virtual_device (connection)) {
+			iface = get_virtual_iface_name (manager, connection, NULL);
 			if (!iface) {
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 					                 "Failed to determine connection's virtual interface name");
 				return NULL;
+			} else if (g_strcmp0 (iface, nm_device_get_ip_iface (device)) != 0) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+					                 "Device given by path did not match connection's virtual interface name");
+				g_free (iface);
+				return NULL;
 			}
-
-			device = find_device_by_ip_iface (manager, iface);
-			if (!device) {
-				/* Create it */
-				device = system_create_virtual_device (manager, connection);
-				if (!device) {
-					g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-							             "Failed to create virtual interface");
-					return NULL;
-				}
-			}
+			g_free (iface);
 		}
 
-		return internal_activate_device (manager,
-		                                 device,
-		                                 connection,
-		                                 specific_object,
-		                                 dbus_sender ? TRUE : FALSE,
-		                                 dbus_sender ? sender_uid : 0,
-		                                 FALSE,
-		                                 NULL,
-		                                 error);
+		state = nm_device_get_state (device);
+		if (state < NM_DEVICE_STATE_DISCONNECTED) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
+				                 "Device not managed by NetworkManager or unavailable");
+			return NULL;
+		}
+	} else {
+		/* Virtual connections (VLAN, bond, etc) may not specify a device
+		 * path because the device may not be created yet, or it be given
+		 * by the connection's properties instead.  Find the device the
+		 * connection refers to, or create it if needed.
+		 */
+		if (!connection_needs_virtual_device (connection)) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				                 "This connection requires an existing device.");
+			return NULL;
+		}
+
+		iface = get_virtual_iface_name (manager, connection, &parent);
+		if (!iface) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				                 "Failed to determine connection's virtual interface name");
+			return NULL;
+		}
+
+		device = find_device_by_ip_iface (manager, iface);
+		if (!device) {
+			/* Create it */
+			device = system_create_virtual_device (manager, connection);
+			if (!device) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+						             "Failed to create virtual interface");
+				return NULL;
+			}
+		}
 	}
 
-	return NULL;
+	return internal_activate_device (manager,
+	                                 device,
+	                                 connection,
+	                                 specific_object,
+	                                 dbus_sender ? TRUE : FALSE,
+	                                 dbus_sender ? sender_uid : 0,
+	                                 FALSE,
+	                                 NULL,
+	                                 error);
 }
 
 /* 
