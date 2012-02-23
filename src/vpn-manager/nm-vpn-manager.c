@@ -134,7 +134,7 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 	}
 }
 
-NMVPNConnection *
+NMActiveConnection *
 nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                     NMConnection *connection,
                                     NMDevice *device,
@@ -193,7 +193,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		                  manager);
 	}
 
-	return vpn;
+	return (NMActiveConnection *) vpn;
 }
 
 gboolean

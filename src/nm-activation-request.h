@@ -52,7 +52,8 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            gboolean user_requested,
                                            gulong user_uid,
                                            gboolean assumed,
-                                           gpointer *device);  /* An NMDevice */
+                                           gpointer *device,  /* An NMDevice */
+                                           NMActiveConnection *master);
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 

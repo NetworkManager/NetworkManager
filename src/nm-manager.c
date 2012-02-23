@@ -144,14 +144,15 @@ static void add_device (NMManager *self, NMDevice *device);
 
 static void hostname_provider_init (NMHostnameProvider *provider_class);
 
-static const char *internal_activate_device (NMManager *manager,
-                                             NMDevice *device,
-                                             NMConnection *connection,
-                                             const char *specific_object,
-                                             gboolean user_requested,
-                                             gulong sender_uid,
-                                             gboolean assumed,
-                                             GError **error);
+static NMActiveConnection *internal_activate_device (NMManager *manager,
+                                                     NMDevice *device,
+                                                     NMConnection *connection,
+                                                     const char *specific_object,
+                                                     gboolean user_requested,
+                                                     gulong sender_uid,
+                                                     gboolean assumed,
+                                                     NMActiveConnection *master,
+                                                     GError **error);
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
 
@@ -853,19 +854,21 @@ pending_activation_check_authorized (PendingActivation *pending,
 static void
 pending_activation_destroy (PendingActivation *pending,
                             GError *error,
-                            const char *ac_path)
+                            NMActiveConnection *ac)
 {
 	g_return_if_fail (pending != NULL);
 
 	if (error)
 		dbus_g_method_return_error (pending->context, error);
-	else if (ac_path) {
+	else if (ac) {
 		if (pending->connection) {
 			dbus_g_method_return (pending->context,
 			                      pending->connection_path,
-			                      ac_path);
-		} else
-			dbus_g_method_return (pending->context, ac_path);
+			                      nm_active_connection_get_path (ac));
+		} else {
+			dbus_g_method_return (pending->context,
+			                      nm_active_connection_get_path (ac));
+		}
 	}
 
 	g_free (pending->connection_path);
@@ -1768,14 +1771,14 @@ add_device (NMManager *self, NMDevice *device)
 
 	/* If the device has a connection it can assume, do that now */
 	if (existing && managed && nm_device_is_available (device)) {
-		const char *ac_path;
+		NMActiveConnection *ac;
 		GError *error = NULL;
 
 		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume existing connection",
 		            nm_device_get_iface (device));
 
-		ac_path = internal_activate_device (self, device, existing, NULL, FALSE, 0, TRUE, &error);
-		if (ac_path)
+		ac = internal_activate_device (self, device, existing, NULL, FALSE, 0, TRUE, NULL, &error);
+		if (ac)
 			g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 		else {
 			nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
@@ -2319,7 +2322,7 @@ nm_manager_get_act_request_by_path (NMManager *manager,
 	return NULL;
 }
 
-static const char *
+static NMActiveConnection *
 internal_activate_device (NMManager *manager,
                           NMDevice *device,
                           NMConnection *connection,
@@ -2327,6 +2330,7 @@ internal_activate_device (NMManager *manager,
                           gboolean user_requested,
                           gulong sender_uid,
                           gboolean assumed,
+                          NMActiveConnection *master,
                           GError **error)
 {
 	NMActRequest *req;
@@ -2354,14 +2358,15 @@ internal_activate_device (NMManager *manager,
 	                          user_requested,
 	                          sender_uid,
 	                          assumed,
-	                          (gpointer) device);
+	                          (gpointer) device,
+	                          master);
 	success = nm_device_activate (device, req, error);
 	g_object_unref (req);
 
-	return success ? nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)) : NULL;
+	return success ? NM_ACTIVE_CONNECTION (req) : NULL;
 }
 
-const char *
+NMActiveConnection *
 nm_manager_activate_connection (NMManager *manager,
                                 NMConnection *connection,
                                 const char *specific_object,
@@ -2372,8 +2377,6 @@ nm_manager_activate_connection (NMManager *manager,
 	NMManagerPrivate *priv;
 	NMDevice *device = NULL;
 	NMSettingConnection *s_con;
-	NMVPNConnection *vpn_connection;
-	const char *path = NULL;
 	gulong sender_uid = 0;
 	DBusError dbus_error;
 
@@ -2440,15 +2443,13 @@ nm_manager_activate_connection (NMManager *manager,
 			return NULL;
 		}
 
-		vpn_connection = nm_vpn_manager_activate_connection (priv->vpn_manager,
-		                                                     connection,
-		                                                     device,
-		                                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (parent_req)),
-		                                                     TRUE,
-		                                                     sender_uid,
-		                                                     error);
-		if (vpn_connection)
-			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn_connection));
+		return nm_vpn_manager_activate_connection (priv->vpn_manager,
+		                                           connection,
+		                                           device,
+		                                           nm_active_connection_get_path (NM_ACTIVE_CONNECTION (parent_req)),
+		                                           TRUE,
+		                                           sender_uid,
+		                                           error);
 	} else {
 		NMDeviceState state;
 		char *iface;
@@ -2518,17 +2519,18 @@ nm_manager_activate_connection (NMManager *manager,
 			}
 		}
 
-		path = internal_activate_device (manager,
+		return internal_activate_device (manager,
 		                                 device,
 		                                 connection,
 		                                 specific_object,
 		                                 dbus_sender ? TRUE : FALSE,
 		                                 dbus_sender ? sender_uid : 0,
 		                                 FALSE,
+		                                 NULL,
 		                                 error);
 	}
 
-	return path;
+	return NULL;
 }
 
 /* 
@@ -2542,7 +2544,7 @@ pending_activate (NMManager *self, PendingActivation *pending)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingsConnection *connection;
-	const char *path = NULL;
+	NMActiveConnection *ac = NULL;
 	GError *error = NULL;
 	char *sender;
 
@@ -2558,24 +2560,25 @@ pending_activate (NMManager *self, PendingActivation *pending)
 
 	sender = dbus_g_method_get_sender (pending->context);
 	g_assert (sender);
-	path = nm_manager_activate_connection (self,
-	                                       NM_CONNECTION (connection),
-	                                       pending->specific_object_path,
-	                                       pending->device_path,
-	                                       sender,
-	                                       &error);
+	ac = nm_manager_activate_connection (self,
+	                                     NM_CONNECTION (connection),
+	                                     pending->specific_object_path,
+	                                     pending->device_path,
+	                                     sender,
+	                                     &error);
 	g_free (sender);
 
-	if (!path) {
+	if (ac)
+		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+	else {
 		nm_log_warn (LOGD_CORE, "connection %s failed to activate: (%d) %s",
 		             pending->connection_path,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
-	} else
-		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+	}
 
 out:
-	pending_activation_destroy (pending, error, path);
+	pending_activation_destroy (pending, error, ac);
 	g_clear_error (&error);
 }
 

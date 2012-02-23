@@ -102,12 +102,12 @@ NMDevice *nm_manager_get_device_by_master (NMManager *manager,
 					   const char *master,
 					   const char *driver);
 
-const char * nm_manager_activate_connection (NMManager *manager,
-                                             NMConnection *connection,
-                                             const char *specific_object,
-                                             const char *device_path,
-                                             const char *dbus_sender, /* NULL if automatic */
-                                             GError **error);
+NMActiveConnection *nm_manager_activate_connection (NMManager *manager,
+                                                    NMConnection *connection,
+                                                    const char *specific_object,
+                                                    const char *device_path,
+                                                    const char *dbus_sender, /* NULL if automatic */
+                                                    GError **error);
 
 gboolean nm_manager_deactivate_connection (NMManager *manager,
                                            const char *connection_path,

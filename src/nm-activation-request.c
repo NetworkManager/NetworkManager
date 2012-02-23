@@ -351,13 +351,35 @@ device_state_changed (NMDevice *device,
 
 /********************************************************************/
 
+/**
+ * nm_act_request_new:
+ *
+ * @connection: the connection to activate @device with
+ * @specific_object: the object path of the specific object (ie, WiFi access point,
+ *    etc) that will be used to activate @connection and @device
+ * @user_requested: pass %TRUE if the activation was requested via D-Bus,
+ *    otherwise %FALSE if requested internally by NM (ie, autoconnect)
+ * @user_uid: if @user_requested is %TRUE, the Unix UID of the user that requested
+ *    the activation
+ * @assumed: pass %TRUE if the activation should "assume" (ie, taking over) an
+ *    existing connection made before this instance of NM started
+ * @device: the device/interface to configure according to @connection
+ * @master: if the activation depends on another device (ie, VLAN slave, bond
+ *    slave, etc) pass the #NMActiveConnection that this activation request
+ *    should wait for before proceeding
+ *
+ * Begins activation of @device using the given @connection and other details.
+ *
+ * Returns: the new activation request on success, %NULL on error.
+ */
 NMActRequest *
 nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
                     gboolean user_requested,
                     gulong user_uid,
                     gboolean assumed,
-                    gpointer *device)
+                    gpointer *device,
+                    NMActiveConnection *master)
 {
 	GObject *object;
 	NMActRequestPrivate *priv;

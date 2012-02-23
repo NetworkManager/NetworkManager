@@ -65,13 +65,13 @@ GType nm_vpn_manager_get_type (void);
 
 NMVPNManager *nm_vpn_manager_get (void);
 
-NMVPNConnection *nm_vpn_manager_activate_connection (NMVPNManager *manager,
-                                                     NMConnection *connection,
-                                                     NMDevice *device,
-                                                     const char *specific_object,
-                                                     gboolean user_requested,
-                                                     gulong user_uid,
-                                                     GError **error);
+NMActiveConnection *nm_vpn_manager_activate_connection (NMVPNManager *manager,
+                                                        NMConnection *connection,
+                                                        NMDevice *device,
+                                                        const char *specific_object,
+                                                        gboolean user_requested,
+                                                        gulong user_uid,
+                                                        GError **error);
 
 gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
                                                const char *path,
