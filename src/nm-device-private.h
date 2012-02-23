@@ -65,4 +65,6 @@ void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);
 
 gboolean nm_device_dhcp4_renew (NMDevice *device, gboolean release);
 
+gboolean nm_device_match_ip_config (NMDevice *device, NMConnection *connection);
+
 #endif	/* NM_DEVICE_PRIVATE_H */
