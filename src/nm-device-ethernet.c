@@ -804,7 +804,7 @@ build_supplicant_config (NMDeviceEthernet *self)
 	NMConnection *connection;
 
 	connection = nm_device_get_connection (NM_DEVICE (self));
-	g_return_val_if_fail (connection, NULL);
+	g_assert (connection);
 	con_uuid = nm_connection_get_uuid (connection);
 
 	config = nm_supplicant_config_new ();
@@ -1079,6 +1079,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	connection = nm_device_get_connection (NM_DEVICE (self));
+	g_assert (connection);
 	security = nm_connection_get_setting_802_1x (connection);
 	if (!security) {
 		nm_log_err (LOGD_DEVICE, "Invalid or missing 802.1X security");

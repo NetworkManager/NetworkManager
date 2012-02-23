@@ -854,8 +854,11 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMDBusManager *dbus_mgr;
 	DBusGConnection *g_connection;
 	gboolean dun = FALSE;
+	NMConnection *connection;
 
-	priv->bt_type = get_connection_bt_type (nm_device_get_connection (device));
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+	priv->bt_type = get_connection_bt_type (connection);
 	if (priv->bt_type == NM_BT_CAPABILITY_NONE) {
 		// FIXME: set a reason code
 		return NM_ACT_STAGE_RETURN_FAILURE;

@@ -632,12 +632,9 @@ nm_device_get_act_request (NMDevice *self)
 NMConnection *
 nm_device_get_connection (NMDevice *self)
 {
-	NMActRequest *req;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	req = nm_device_get_act_request (self);
-	g_assert (req);
-
-	return nm_act_request_get_connection (req);
+	return priv->act_request ? nm_act_request_get_connection (priv->act_request) : NULL;
 }
 
 gboolean
