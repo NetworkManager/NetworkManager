@@ -1574,6 +1574,216 @@ nm_system_get_iface_vlan_info (int ifindex,
 	return success;
 }
 
+static gboolean
+nm_system_iface_compat_set_name (const char *old_name, const char *new_name)
+{
+	int fd;
+	struct ifreq ifr;
+
+	if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -1;
+	}
+
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, old_name, sizeof (ifr.ifr_name));
+	strncpy (ifr.ifr_newname, new_name, sizeof (ifr.ifr_newname));
+
+	if (ioctl (fd, SIOCSIFNAME, &ifr) < 0) {
+		nm_log_err (LOGD_DEVICE, "cann't change %s with %s.", old_name, new_name);
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static gboolean
+nm_system_iface_compat_set_vlan_name_type (int name_type)
+{
+	int fd;
+	struct vlan_ioctl_args if_request;
+
+	if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -1;
+	}
+
+	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
+	if_request.cmd = SET_VLAN_NAME_TYPE_CMD;
+	if_request.u.name_type = name_type;
+
+	if (ioctl (fd, SIOCSIFVLAN, &if_request) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't set name type.");
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static gboolean
+nm_system_iface_compat_add_vlan_device (const char *master, int vid)
+{
+	int fd;
+	struct vlan_ioctl_args if_request;
+
+	g_return_val_if_fail (master, FALSE);
+	g_return_val_if_fail (vid < 4096, FALSE);
+
+	/*
+	 * use VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD as default,
+	 * we will overwrite it with rtnl_link_set_name() later.
+	 */
+	if (!nm_system_iface_compat_set_vlan_name_type (VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD))
+		return FALSE;
+
+	if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -1;
+	}
+
+	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
+	strcpy (if_request.device1, master);
+	if_request.cmd = ADD_VLAN_CMD;
+	if_request.u.VID = vid;
+
+	if (ioctl (fd, SIOCSIFVLAN, &if_request) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't add vlan device %s vid %d.", master, vid);
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static gboolean
+nm_system_iface_compat_rem_vlan_device (const char *iface)
+{
+	int fd;
+	struct vlan_ioctl_args if_request;
+
+	if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -1;
+	}
+
+	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
+        strcpy (if_request.device1, iface);
+	if_request.cmd = DEL_VLAN_CMD;
+
+	if (ioctl (fd, SIOCSIFVLAN, &if_request) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't rem vlan device %s.", iface);
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static gboolean
+nm_system_iface_compat_add_vlan (NMConnection *connection,
+				const char *iface,
+				int master_ifindex)
+{
+	NMSettingVlan *s_vlan;
+	int vlan_id;
+	guint32 vlan_flags = 0;
+	guint32 num, i, from, to;
+	int ifindex;
+	struct rtnl_link *new_link = NULL;
+	char *master = nm_netlink_index_to_iface (master_ifindex);
+	char *name = NULL;
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_return_val_if_fail (s_vlan, FALSE);
+
+	vlan_id = nm_setting_vlan_get_id (s_vlan);
+
+	if (!iface) {
+		iface = nm_connection_get_virtual_iface_name (connection);
+		g_return_val_if_fail (iface != NULL, FALSE);
+	}
+
+	/*
+	 * Use VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD as default,
+	 * we will overwrite it with rtnl_link_set_name() later.
+	 */
+	name = nm_utils_new_vlan_name(master, vlan_id);
+
+	/*
+	 * vconfig add
+	 */
+
+	if (!nm_system_iface_compat_add_vlan_device (master, vlan_id))
+		goto err_out;
+
+	/*
+	 * get corresponding rtnl_link
+	 */
+
+	if (!nm_system_iface_compat_set_name (name, iface))
+		goto err_out_delete_vlan_with_default_name;
+
+	ifindex = nm_netlink_iface_to_index (iface);
+	if (ifindex <= 0)
+		goto err_out;
+
+	new_link = nm_netlink_index_to_rtnl_link (ifindex);
+	if (!new_link)
+		goto err_out_delete_vlan_with_default_name;
+
+	/*
+	 * vconfig set_flag
+	 */
+	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
+	if (vlan_flags)
+		if (rtnl_link_vlan_set_flags (new_link, vlan_flags))
+			goto err_out_delete_vlan_with_new_name;
+
+	/*
+	 * vconfig set_ingress_map
+	 */
+	num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
+	for (i = 0; i < num; i++) {
+		if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to))
+			if (rtnl_link_vlan_set_ingress_map (new_link, from, to))
+				goto err_out_delete_vlan_with_new_name;
+	}
+
+	/*
+	 * vconfig set_egress_map
+	 */
+	num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP);
+	for (i = 0; i < num; i++) {
+		if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
+			if (rtnl_link_vlan_set_egress_map (new_link, from, to))
+				goto err_out_delete_vlan_with_new_name;
+	}
+
+	rtnl_link_put (new_link);
+	return TRUE;
+
+err_out:
+	g_free (name);
+	return FALSE;
+
+err_out_delete_vlan_with_default_name:
+	nm_system_iface_compat_rem_vlan_device (name);
+	g_free (name);
+	return FALSE;
+
+err_out_delete_vlan_with_new_name:
+	rtnl_link_put (new_link);
+	nm_system_iface_compat_rem_vlan_device (iface);
+	g_free (name);
+	return FALSE;
+}
+
 /**
  * nm_system_add_vlan_iface:
  * @connection: the #NMConnection that describes the VLAN interface
@@ -1620,8 +1830,15 @@ nm_system_add_vlan_iface (NMConnection *connection,
 	}
 
 	ret = rtnl_link_set_type (new_link, "vlan");
-	if (ret < 0)
+	if (ret == -NLE_OPNOTSUPP) {
+		/*
+		 * There is no linbl3, try ioctl.
+		 */
+		ret = -1;
+		if (nm_system_iface_compat_add_vlan (connection, iface, master_ifindex))
+			ret = 0;
 		goto out;
+	}
 
 	rtnl_link_set_link (new_link, master_ifindex);
 	rtnl_link_set_name (new_link, iface);
@@ -1693,9 +1910,17 @@ nm_system_del_vlan_iface (const char *iface)
 	new_link = rtnl_link_get_by_name (cache, iface);
 	if (new_link) {
 		ret = rtnl_link_delete (nlh, new_link);
-		rtnl_link_put (new_link);
+		if (ret == -NLE_OPNOTSUPP) {
+			/*
+			 * There is no linbl3, try ioctl.
+			 */
+			ret = -1;
+			if (nm_system_iface_compat_rem_vlan_device (iface))
+				ret = 0;
+		}
 	}
 
+	rtnl_link_put (new_link);
 	nl_cache_free (cache);
 	return (ret == 0) ? TRUE : FALSE;
 }

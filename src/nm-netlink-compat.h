@@ -251,33 +251,10 @@ rtnl_link_vlan_set_id (struct rtnl_link *l, int id)
 	return -NLE_OPNOTSUPP;
 }
 
-static inline int
-rtnl_link_vlan_get_id (struct rtnl_link *l)
-{
-	/* VLAN only in libnl3 */
-	return -NLE_OPNOTSUPP;
-}
-
-static inline int
-rtnl_link_vlan_set_flags (struct rtnl_link *l, unsigned int flags)
-{
-	/* VLAN only in libnl3 */
-	return -NLE_OPNOTSUPP;
-}
-
-static inline int
-rtnl_link_vlan_set_ingress_map (struct rtnl_link *l, int from, uint32_t to)
-{
-	/* VLAN only in libnl3 */
-	return -NLE_OPNOTSUPP;
-}
-
-static inline int
-rtnl_link_vlan_set_egress_map (struct rtnl_link *l, int from, uint32_t to)
-{
-	/* VLAN only in libnl3 */
-	return -NLE_OPNOTSUPP;
-}
+int rtnl_link_vlan_get_id (struct rtnl_link *l);
+int rtnl_link_vlan_set_flags (struct rtnl_link *l, unsigned int flags);
+int rtnl_link_vlan_set_ingress_map (struct rtnl_link *l, int from, uint32_t to);
+int rtnl_link_vlan_set_egress_map (struct rtnl_link *l, int from, uint32_t to);
 
 static inline int
 rtnl_link_set_type (struct rtnl_link *l, const char *type)
