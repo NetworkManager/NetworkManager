@@ -1788,7 +1788,7 @@ err_out_delete_vlan_with_new_name:
  * nm_system_add_vlan_iface:
  * @connection: the #NMConnection that describes the VLAN interface
  * @iface: the interface name of the new VLAN interface
- * @master_ifindex: the interface index of the new VLAN interface's master
+ * @parent_ifindex: the interface index of the new VLAN interface's master
  *  interface
  *
  * Add a VLAN device named @iface and specified in @connection.
@@ -1798,7 +1798,7 @@ err_out_delete_vlan_with_new_name:
 gboolean
 nm_system_add_vlan_iface (NMConnection *connection,
                           const char *iface,
-                          int master_ifindex)
+                          int parent_ifindex)
 {
 	NMSettingVlan *s_vlan;
 	int ret = -1;
@@ -1808,7 +1808,7 @@ nm_system_add_vlan_iface (NMConnection *connection,
 	guint32 vlan_flags = 0;
 	guint32 num, i, from, to;
 
-	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (parent_ifindex >= 0, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
@@ -1835,12 +1835,12 @@ nm_system_add_vlan_iface (NMConnection *connection,
 		 * There is no linbl3, try ioctl.
 		 */
 		ret = -1;
-		if (nm_system_iface_compat_add_vlan (connection, iface, master_ifindex))
+		if (nm_system_iface_compat_add_vlan (connection, iface, parent_ifindex))
 			ret = 0;
 		goto out;
 	}
 
-	rtnl_link_set_link (new_link, master_ifindex);
+	rtnl_link_set_link (new_link, parent_ifindex);
 	rtnl_link_set_name (new_link, iface);
 	rtnl_link_vlan_set_id (new_link, vlan_id);
 
