@@ -1213,11 +1213,63 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
+static gboolean
+write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingBond *s_bond;
+	const char *iface;
+	guint32 i, num_opts;
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	if (!s_bond) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Missing '%s' setting", NM_SETTING_BOND_SETTING_NAME);
+		return FALSE;
+	}
+
+	iface = nm_setting_bond_get_interface_name (s_bond);
+	if (!iface) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing interface name");
+		return FALSE;
+	}
+
+	svSetValue (ifcfg, "DEVICE", iface, FALSE);
+	svSetValue (ifcfg, "BONDING_OPTS", NULL, FALSE);
+
+	num_opts = nm_setting_bond_get_num_options (s_bond);
+	if (num_opts > 0) {
+		GString *str = g_string_sized_new (64);
+
+		for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
+			const char *key, *value;
+
+			if (!nm_setting_bond_get_option (s_bond, i, &key, &value))
+				continue;
+
+			if (str->len)
+				g_string_append_c (str, ' ');
+
+			g_string_append_printf (str, "%s=%s", key, value);
+		}
+
+		if (str->len)
+			svSetValue (ifcfg, "BONDING_OPTS", str->str, FALSE);
+
+		g_string_free (str, TRUE);
+	}
+
+	svSetValue (ifcfg, "TYPE", TYPE_BOND, FALSE);
+	svSetValue (ifcfg, "BONDING_MASTER", "yes", FALSE);
+
+	return TRUE;
+}
+
 static void
 write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
 	guint32 n, i;
 	GString *str;
+	const char *master;
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
@@ -1248,6 +1300,12 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	}
 
 	svSetValue (ifcfg, "ZONE", nm_setting_connection_get_zone(s_con), FALSE);
+
+	master = nm_setting_connection_get_master (s_con);
+	if (master) {
+		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
+			svSetValue (ifcfg, "MASTER", master, FALSE);
+	}
 }
 
 static gboolean
@@ -1945,6 +2003,9 @@ write_connection (NMConnection *connection,
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		if (!write_infiniband_setting (connection, ifcfg, error))
+			goto out;
+	} else if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME)) {
+		if (!write_bonding_setting (connection, ifcfg, error))
 			goto out;
 	} else {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
