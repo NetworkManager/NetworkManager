@@ -23,7 +23,7 @@ define _glib_make_genmarshal_rules
 $(if $(_glib_marshal_sources),,$(error Need to define $(_glib_marshal_sources_var) for $(1).[ch]))
 
 $(1).list.stamp: $(_glib_marshal_sources)
-	$$(_GLIB_V_GEN) sed -ne 's/.*_$(_glib_marshal_prefix)_\([_A-Z]*\).*/\1/p' $$^ | sort -u | sed -e 's/__/:/' -e 's/_/,/g' > $(1).list.tmp && \
+	$$(_GLIB_V_GEN) LC_ALL=C sed -ne 's/.*_$(_glib_marshal_prefix)_\([_A-Z]*\).*/\1/p' $$^ | sort -u | sed -e 's/__/:/' -e 's/_/,/g' > $(1).list.tmp && \
 	(cmp -s $(1).list.tmp $(1).list || cp $(1).list.tmp $(1).list) && \
 	rm -f $(1).list.tmp && \
 	echo timestamp > $$@
@@ -59,7 +59,7 @@ $(foreach f,$(_GLIB_MARSHAL_GENERATED),$(eval $(call _glib_make_genmarshal_rules
 _GLIB_ENUM_TYPES_GENERATED = $(subst .h,,$(filter %enum-types.h %enumtypes.h,$(GLIB_GENERATED)))
 
 _glib_enum_types_prefix = $(subst -,_,$(notdir $(1)))
-_glib_enum_types_guard = __$(shell echo $(_glib_enum_types_prefix) | tr 'a-z' 'A-Z')_H__
+_glib_enum_types_guard = __$(shell LC_ALL=C echo $(_glib_enum_types_prefix) | tr 'a-z' 'A-Z')_H__
 _glib_enum_types_sources_var = $(_glib_enum_types_prefix)_sources
 _glib_enum_types_sources = $(filter-out $(GLIB_GENERATED),$($(_glib_enum_types_sources_var)))
 _glib_enum_types_h_sources = $(filter %.h,$(_glib_enum_types_sources))
