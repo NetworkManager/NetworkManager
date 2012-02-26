@@ -419,7 +419,7 @@ ifnet_get_data (const char *conn_name, const char *key)
 
 /* format ip values for comparison */
 static gchar*
-format_ip_for_comparison (gchar * value)
+format_ip_for_comparison (const gchar * value)
 {
 	gchar **ipset;
 	guint length, i;

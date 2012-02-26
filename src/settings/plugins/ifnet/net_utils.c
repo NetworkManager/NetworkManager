@@ -951,11 +951,11 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 	g_free (contents);
 }
 
-void backup_file (gchar* target)
+void backup_file (const gchar* target)
 {
 	GFile *source, *backup;
 	gchar* backup_path;
-	GError **error;
+	GError **error = NULL;
 
 	source = g_file_new_for_path (target);
 	backup_path = g_strdup_printf ("%s.bak", target);
