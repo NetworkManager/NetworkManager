@@ -521,6 +521,11 @@
           Infiniband device does not support connected mode.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="DEPENDENCY_FAILED" value="50">
+        <tp:docstring>
+          A dependency of the connection failed.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

@@ -486,6 +486,9 @@ typedef enum {
 	/* Infiniband device does not support connected mode */
 	NM_DEVICE_STATE_REASON_INFINIBAND_MODE = 49,
 
+	/* A dependency of the connection failed */
+	NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED = 50,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

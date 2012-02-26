@@ -208,6 +208,12 @@ nm_act_request_get_assumed (NMActRequest *req)
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->assumed;
 }
 
+NMActiveConnection *
+nm_act_request_get_dependency (NMActRequest *req)
+{
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->dep;
+}
+
 static NMActRequestDependencyResult
 ac_state_to_dep_result (NMActiveConnection *ac)
 {

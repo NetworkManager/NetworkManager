@@ -164,6 +164,8 @@ typedef struct {
 	gpointer        act_source_func;
 	guint           act_source6_id;
 	gpointer        act_source6_func;
+	guint           act_dep_result_id;
+	guint           act_dep_timeout_id;
 	gulong          secrets_updated_id;
 	gulong          secrets_failed_id;
 
@@ -996,6 +998,11 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
+
+	if (priv->act_dep_timeout_id) {
+		g_source_remove (priv->act_dep_timeout_id);
+		priv->act_dep_timeout_id = 0;
+	}
 
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
@@ -3102,6 +3109,15 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
+	if (priv->act_dep_result_id) {
+		g_source_remove (priv->act_dep_result_id);
+		priv->act_dep_result_id = 0;
+	}
+	if (priv->act_dep_timeout_id) {
+		g_source_remove (priv->act_dep_timeout_id);
+		priv->act_dep_timeout_id = 0;
+	}
+
 	/* Clear any queued transitions */
 	queued_state_clear (self);
 
@@ -3175,6 +3191,61 @@ impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 	g_signal_emit (device, signals[DISCONNECT_REQUEST], 0, context);
 }
 
+static gboolean
+act_dep_timeout_cb (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+
+	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (priv->act_request));
+	nm_log_warn (LOGD_DEVICE,
+	             "Activation (%s) connection '%s' dependency timed out",
+	             nm_device_get_iface (self),
+	             nm_connection_get_id (connection));
+
+	nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+	return FALSE;
+}
+
+static void
+act_dep_result_cb (NMActRequest *req,
+                   NMActRequestDependencyResult result,
+                   NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+
+	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (priv->act_request));
+
+	switch (result) {
+	case NM_ACT_REQUEST_DEP_RESULT_FAILED:
+		g_source_remove (priv->act_dep_result_id);
+		priv->act_dep_result_id = 0;
+
+		nm_log_warn (LOGD_DEVICE,
+			         "Activation (%s) connection '%s' dependency failed",
+			         nm_device_get_iface (self),
+			         nm_connection_get_id (connection));
+		nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+		break;
+	case NM_ACT_REQUEST_DEP_RESULT_READY:
+		g_warn_if_fail (priv->state == NM_DEVICE_STATE_PREPARE);
+		if (priv->state == NM_DEVICE_STATE_PREPARE) {
+			nm_log_info (LOGD_DEVICE,
+					     "Activation (%s) connection '%s' dependency ready, continuing activation",
+					     nm_device_get_iface (self),
+					     nm_connection_get_id (connection));
+			nm_device_activate_schedule_stage1_device_prepare (self);
+		}
+		break;
+	case NM_ACT_REQUEST_DEP_RESULT_WAIT:
+	default:
+		g_assert_not_reached ();
+		break;
+	}
+}
+
 gboolean
 nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 {
@@ -3213,13 +3284,44 @@ nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 	priv->act_request = g_object_ref (req);
 
 	if (!nm_act_request_get_assumed (req)) {
+		NMActiveConnection *dep_ac;
+		NMConnection *dep_con;
+
 		/* HACK: update the state a bit early to avoid a race between the 
 		 * scheduled stage1 handler and nm_policy_device_change_check() thinking
 		 * that the activation request isn't deferred because the deferred bit
 		 * gets cleared a bit too early, when the connection becomes valid.
 		 */
 		nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
-		nm_device_activate_schedule_stage1_device_prepare (self);
+
+		/* Handle any dependencies this connection might have */
+		switch (nm_act_request_get_dependency_result (priv->act_request)) {
+		case NM_ACT_REQUEST_DEP_RESULT_FAILED:
+			nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			break;
+		case NM_ACT_REQUEST_DEP_RESULT_WAIT:
+			dep_ac = nm_act_request_get_dependency (priv->act_request);
+			g_assert (dep_ac);
+			dep_con = nm_active_connection_get_connection (dep_ac);
+			g_assert (dep_con);
+			nm_log_info (LOGD_DEVICE, "Activation (%s) connection '%s' waiting on dependency '%s'",
+						 nm_device_get_iface (self),
+						 nm_connection_get_id (connection),
+						 nm_connection_get_id (dep_con));
+
+			priv->act_dep_result_id = g_signal_connect (priv->act_request,
+					                                    NM_ACT_REQUEST_DEPENDENCY_RESULT,
+					                                    G_CALLBACK (act_dep_result_cb),
+					                                    self);
+			priv->act_dep_timeout_id = g_timeout_add_seconds (60, act_dep_timeout_cb, self);
+			break;
+		default:
+			g_warn_if_reached ();
+			/* fall through */
+		case NM_ACT_REQUEST_DEP_RESULT_READY:
+			nm_device_activate_schedule_stage1_device_prepare (self);
+			break;
+		}
 	} else {
 		/* If it's an assumed connection, let the device subclass short-circuit
 		 * the normal connection process and just copy its IP configs from the
@@ -4184,6 +4286,8 @@ reason_to_string (NMDeviceStateReason reason)
 		return "gsm-sim-wrong";
 	case NM_DEVICE_STATE_REASON_INFINIBAND_MODE:
 		return "infiniband-mode";
+	case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
+		return "dependency-failed";
 	default:
 		break;
 	}

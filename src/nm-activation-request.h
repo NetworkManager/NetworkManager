@@ -82,6 +82,8 @@ GObject *     nm_act_request_get_device (NMActRequest *req);
 
 gboolean      nm_act_request_get_assumed (NMActRequest *req);
 
+NMActiveConnection *         nm_act_request_get_dependency (NMActRequest *req);
+
 NMActRequestDependencyResult nm_act_request_get_dependency_result (NMActRequest *req);
 
 /* Secrets handling */
