@@ -60,6 +60,9 @@ typedef struct {
 	gboolean user_requested;
 	gulong user_uid;
 
+	NMActiveConnection *dep;
+	guint dep_state_id;
+
 	gboolean shared;
 	GSList *share_rules;
 
@@ -69,6 +72,13 @@ typedef struct {
 enum {
 	PROP_MASTER = 2000,
 };
+
+enum {
+	DEP_RESULT,
+
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
 
 /*******************************************************************/
 
@@ -196,6 +206,27 @@ nm_act_request_get_assumed (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->assumed;
+}
+
+static NMActRequestDependencyResult
+ac_state_to_dep_result (NMActiveConnection *ac)
+{
+	NMActiveConnectionState state = nm_active_connection_get_state (ac);
+
+	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+		return NM_ACT_REQUEST_DEP_RESULT_WAIT;
+	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		return NM_ACT_REQUEST_DEP_RESULT_READY;
+
+	return NM_ACT_REQUEST_DEP_RESULT_FAILED;
+}
+
+NMActRequestDependencyResult
+nm_act_request_get_dependency_result (NMActRequest *req)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+
+	return priv->dep ? ac_state_to_dep_result (priv->dep) : NM_ACT_REQUEST_DEP_RESULT_READY;
 }
 
 /********************************************************************/
@@ -351,6 +382,39 @@ device_state_changed (NMDevice *device,
 
 /********************************************************************/
 
+static void
+dep_gone (NMActRequest *self, GObject *ignored)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+
+	g_warn_if_fail (G_OBJECT (priv->dep) == ignored);
+
+	/* Dependent connection is gone; clean up and fail */
+	priv->dep = NULL;
+	priv->dep_state_id = 0;
+	g_signal_emit (self, signals[DEP_RESULT], 0, NM_ACT_REQUEST_DEP_RESULT_FAILED);
+}
+
+static void
+dep_state_changed (NMActiveConnection *dep,
+                   GParamSpec *pspec,
+                   NMActRequest *self)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+	NMActRequestDependencyResult result;
+
+	g_warn_if_fail (priv->dep == dep);
+
+	result = ac_state_to_dep_result (priv->dep);
+	if (result == NM_ACT_REQUEST_DEP_RESULT_FAILED) {
+		g_object_weak_unref (G_OBJECT (priv->dep), (GWeakNotify) dep_gone, self);
+		g_signal_handler_disconnect (priv->dep, priv->dep_state_id);
+		priv->dep = NULL;
+		priv->dep_state_id = 0;
+	}
+	g_signal_emit (self, signals[DEP_RESULT], 0, result);
+}
+
 /**
  * nm_act_request_new:
  *
@@ -364,8 +428,8 @@ device_state_changed (NMDevice *device,
  * @assumed: pass %TRUE if the activation should "assume" (ie, taking over) an
  *    existing connection made before this instance of NM started
  * @device: the device/interface to configure according to @connection
- * @master: if the activation depends on another device (ie, VLAN slave, bond
- *    slave, etc) pass the #NMActiveConnection that this activation request
+ * @dependency: if the activation depends on another device (ie, VLAN slave,
+ *    bond slave, etc) pass the #NMActiveConnection that this activation request
  *    should wait for before proceeding
  *
  * Begins activation of @device using the given @connection and other details.
@@ -379,7 +443,7 @@ nm_act_request_new (NMConnection *connection,
                     gulong user_uid,
                     gboolean assumed,
                     gpointer *device,
-                    NMActiveConnection *master)
+                    NMActiveConnection *dependency)
 {
 	GObject *object;
 	NMActRequestPrivate *priv;
@@ -404,6 +468,15 @@ nm_act_request_new (NMConnection *connection,
 	priv->user_uid = user_uid;
 	priv->user_requested = user_requested;
 	priv->assumed = assumed;
+
+	if (dependency) {
+		priv->dep = dependency;
+		g_object_weak_ref (G_OBJECT (dependency), (GWeakNotify) dep_gone, object);
+		priv->dep_state_id = g_signal_connect (dependency,
+		                                       "notify::" NM_ACTIVE_CONNECTION_STATE,
+		                                       G_CALLBACK (dep_state_changed),
+		                                       object);
+	}
 
 	if (!nm_active_connection_export (NM_ACTIVE_CONNECTION (object),
 	                                  connection,
@@ -467,6 +540,13 @@ dispose (GObject *object)
 
 	g_object_unref (priv->connection);
 
+	if (priv->dep) {
+		g_object_weak_unref (G_OBJECT (priv->dep), (GWeakNotify) dep_gone, object);
+		g_signal_handler_disconnect (priv->dep, priv->dep_state_id);
+		priv->dep = NULL;
+		priv->dep_state_id = 0;
+	}
+
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
 
@@ -491,5 +571,13 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 	object_class->finalize = finalize;
 
 	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
+
+	signals[DEP_RESULT] =
+		g_signal_new (NM_ACT_REQUEST_DEPENDENCY_RESULT,
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  0, NULL, NULL,
+					  g_cclosure_marshal_VOID__UINT,
+					  G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 

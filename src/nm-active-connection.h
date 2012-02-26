@@ -78,6 +78,8 @@ void          nm_active_connection_set_default6 (NMActiveConnection *self,
 
 gboolean      nm_active_connection_get_default6 (NMActiveConnection *self);
 
+NMActiveConnectionState nm_active_connection_get_state (NMActiveConnection *self);
+
 void          nm_active_connection_set_state (NMActiveConnection *self,
                                               NMActiveConnectionState state);
 

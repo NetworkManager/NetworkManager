@@ -71,6 +71,12 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /****************************************************************/
 
+NMActiveConnectionState
+nm_active_connection_get_state (NMActiveConnection *self)
+{
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->state;
+}
+
 void
 nm_active_connection_set_state (NMActiveConnection *self,
                                 NMActiveConnectionState new_state)
