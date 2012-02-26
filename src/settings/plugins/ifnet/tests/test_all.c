@@ -238,6 +238,9 @@ test_wpa_parser ()
 		"wep_key0 of static-wep-test should be abcde, find %s", value);
 	ASSERT (exist_ssid ("leap-example"), "get wsec",
 		"ssid leap-example is not found");
+
+	value = wpa_get_value ("test-with-hash-in-psk", "psk");
+	g_assert_cmpstr (value, ==, "\"xjtudlc3731###asdfasdfasdf\"");
 }
 
 static void
