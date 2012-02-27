@@ -689,7 +689,7 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 	                             self,
 	                             NULL);
 
-	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__STRING,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
 	                                   G_TYPE_NONE,
 	                                   DBUS_TYPE_G_OBJECT_PATH,
 	                                   G_TYPE_INVALID);
