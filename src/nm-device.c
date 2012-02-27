@@ -783,8 +783,6 @@ nm_device_check_connection_compatible (NMDevice *device,
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
 
 	if (NM_DEVICE_GET_CLASS (device)->check_connection_compatible)
 		return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
