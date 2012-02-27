@@ -452,7 +452,7 @@ get_ap_by_path (NMDeviceWifi *self, const char *path)
 	GSList *iter;
 
 	for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
-		if (strcmp (path, nm_ap_get_dbus_path (NM_AP (iter->data))) == 0)
+		if (g_strcmp0 (path, nm_ap_get_dbus_path (NM_AP (iter->data))) == 0)
 			return NM_AP (iter->data);
 	}
 	return NULL;
@@ -465,7 +465,7 @@ get_ap_by_supplicant_path (NMDeviceWifi *self, const char *path)
 	GSList *iter;
 
 	for (iter = priv->ap_list; iter && path; iter = g_slist_next (iter)) {
-		if (strcmp (path, nm_ap_get_supplicant_path (NM_AP (iter->data))) == 0)
+		if (g_strcmp0 (path, nm_ap_get_supplicant_path (NM_AP (iter->data))) == 0)
 			return NM_AP (iter->data);
 	}
 	return NULL;
