@@ -2241,8 +2241,7 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 		if (s_ip6)
 			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
 	}
-	ip6_privacy = ip6_privacy < -1 ? NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN : ip6_privacy;
-	ip6_privacy = ip6_privacy > 2 ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR : ip6_privacy;
+	ip6_privacy = CLAMP (ip6_privacy, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
 
 	switch (ip6_privacy) {
 	case NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN:
