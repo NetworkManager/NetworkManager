@@ -182,8 +182,16 @@ device_state_changed (DBusGProxy *proxy,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
-	if (old_state != new_state)
+	if (old_state != new_state) {
+		/* Update state here since the PropertyChanged signal for state
+		 * might come in a bit later, but a client might ask for the
+		 * state via nm_device_get_state() as a result of this signal.
+		 * When the PC signal does come in that will trigger the glib
+		 * property notify signal so we don't need to do that here.
+		 */
+		NM_DEVICE_GET_PRIVATE (self)->state = new_state;
 		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
+	}
 }
 
 static void
