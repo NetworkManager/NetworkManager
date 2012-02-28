@@ -241,6 +241,29 @@ carrier_off (NMNetlinkMonitor *monitor,
 	}
 }
 
+static gboolean
+get_carrier_sync (NMDeviceWired *self)
+{
+	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
+	GError *error = NULL;
+	guint32 ifflags = 0;
+
+	/* Get initial link state */
+	if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
+	                                        nm_device_get_ip_ifindex (NM_DEVICE (self)),
+	                                        &ifflags,
+	                                        &error)) {
+		nm_log_warn (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
+		             "(%s): couldn't get carrier state: (%d) %s",
+		             nm_device_get_ip_iface (NM_DEVICE (self)),
+		             error ? error->code : -1,
+		             (error && error->message) ? error->message : "unknown");
+		g_clear_error (&error);
+	}
+
+	return !!(ifflags & IFF_LOWER_UP);
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -280,9 +303,6 @@ constructor (GType type,
 
 	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
-		GError *error = NULL;
-		guint32 ifflags = 0;
-
 		/* Only listen to netlink for cards that support carrier detect */
 		priv->monitor = nm_netlink_monitor_get ();
 
@@ -293,19 +313,7 @@ constructor (GType type,
 		                                               G_CALLBACK (carrier_off),
 		                                               self);
 
-		/* Get initial link state */
-		if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
-		                                        nm_device_get_ifindex (NM_DEVICE (self)),
-		                                        &ifflags,
-		                                        &error)) {
-			nm_log_warn (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
-			             "(%s): couldn't get initial carrier state: (%d) %s",
-			             nm_device_get_iface (NM_DEVICE (self)),
-			             error ? error->code : -1,
-			             (error && error->message) ? error->message : "unknown");
-			g_clear_error (&error);
-		} else
-			priv->carrier = !!(ifflags & IFF_LOWER_UP);
+		priv->carrier = get_carrier_sync (NM_DEVICE_WIRED (self));
 
 		nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
 		             "(%s): carrier is %s",
@@ -341,7 +349,14 @@ real_hw_is_up (NMDevice *device)
 static gboolean
 real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	return nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
+	gboolean success, carrier;
+
+	success = nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
+	if (success) {
+		carrier = get_carrier_sync (NM_DEVICE_WIRED (dev));
+		set_carrier (NM_DEVICE_WIRED (dev), carrier, carrier ? FALSE : TRUE);
+	}
+	return success;
 }
 
 static void
