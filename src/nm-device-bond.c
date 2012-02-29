@@ -293,6 +293,34 @@ connection_match_config (NMDevice *self, const GSList *connections)
 
 /******************************************************************/
 
+static NMActStageReturn
+real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+{
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMConnection *connection;
+	NMSettingBond *s_bond;
+	gboolean no_firmware = FALSE;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (dev, reason);
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
+		connection = nm_device_get_connection (dev);
+		g_assert (connection);
+		s_bond = nm_connection_get_setting_bond (connection);
+		g_assert (s_bond);
+
+		/* Interface must be down to set bond options */
+		nm_device_hw_take_down (dev, TRUE);
+
+		if (!nm_system_apply_bonding_config (nm_device_get_ip_iface (dev), s_bond))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+
+		nm_device_hw_bring_up (dev, TRUE, &no_firmware);
+	}
+	return ret;
+}
+
 static void
 slave_state_changed (NMDevice *slave,
                      NMDeviceState new_state,
@@ -512,6 +540,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 
+	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
 
