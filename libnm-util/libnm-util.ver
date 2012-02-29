@@ -184,7 +184,9 @@ global:
 	nm_setting_bond_get_num_options;
 	nm_setting_bond_get_option;
 	nm_setting_bond_get_option_by_name;
+	nm_setting_bond_get_option_default;
 	nm_setting_bond_get_type;
+	nm_setting_bond_get_valid_options;
 	nm_setting_bond_new;
 	nm_setting_bond_remove_option;
 	nm_setting_cdma_error_get_type;

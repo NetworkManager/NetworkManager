@@ -63,7 +63,7 @@ G_DEFINE_TYPE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING)
 #define NM_SETTING_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BOND, NMSettingBondPrivate))
 
 typedef struct {
-	char *	interface_name;
+	char *interface_name;
 	GHashTable *options;
 } NMSettingBondPrivate;
 
@@ -74,14 +74,18 @@ enum {
 	LAST_PROP
 };
 
-static const char *valid_opts[] = {
-	NM_SETTING_BOND_OPTION_MODE,
-	NM_SETTING_BOND_OPTION_MIIMON,
-	NM_SETTING_BOND_OPTION_DOWNDELAY,
-	NM_SETTING_BOND_OPTION_UPDELAY,
-	NM_SETTING_BOND_OPTION_ARP_INTERVAL,
-	NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
-	NULL
+typedef struct {
+	const char *opt;
+	const char *val;
+} BondDefault;
+
+static const BondDefault defaults[] = {
+	{ NM_SETTING_BOND_OPTION_MODE,          "balance-rr" },
+	{ NM_SETTING_BOND_OPTION_MIIMON,        "100"        },
+	{ NM_SETTING_BOND_OPTION_DOWNDELAY,     "0"          },
+	{ NM_SETTING_BOND_OPTION_UPDELAY,       "0"          },
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,  "0"          },
+	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET, ""           },
 };
 
 /**
@@ -180,16 +184,18 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 }
 
 static gboolean
-validate_option_name (const char *name)
+validate_option (const char *name)
 {
-	const char *p = name;
-	guint32 i = 0;
+	guint i;
 
-	while (p && *p) {
-		if (isalnum (*p++) == FALSE || i++ > 200)
-			return FALSE;
+	g_return_val_if_fail (name != NULL, FALSE);
+	g_return_val_if_fail (name[0] != '\0', FALSE);
+
+	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
+		if (g_strcmp0 (defaults[i].opt, name) == 0)
+			return TRUE;
 	}
-	return i > 0 ? TRUE : FALSE;  /* catch empty strings */
+	return FALSE;
 }
 
 /**
@@ -208,7 +214,7 @@ nm_setting_bond_get_option_by_name (NMSettingBond *setting,
                                     const char *name)
 {
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
-	g_return_val_if_fail (validate_option_name (name), NULL);
+	g_return_val_if_fail (validate_option (name), NULL);
 
 	return g_hash_table_lookup (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
 }
@@ -234,8 +240,7 @@ gboolean nm_setting_bond_add_option (NMSettingBond *setting,
 	size_t value_len;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
-	g_return_val_if_fail (validate_option_name (name), FALSE);
-	g_return_val_if_fail (_nm_utils_string_in_list (name, valid_opts), FALSE);
+	g_return_val_if_fail (validate_option (name), FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
 	value_len = strlen (value);
@@ -262,9 +267,56 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
                                const char *name)
 {
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
-	g_return_val_if_fail (validate_option_name (name), FALSE);
+	g_return_val_if_fail (validate_option (name), FALSE);
 
 	return g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
+}
+
+/**
+ * nm_setting_bond_get_valid_options:
+ * @setting: the #NMSettingBond
+ *
+ * Returns a list of valid bond options.
+ *
+ * Returns: a NULL-terminated array of strings of valid bond options.
+ **/
+const char **
+nm_setting_bond_get_valid_options  (NMSettingBond *setting)
+{
+	static const char *array[G_N_ELEMENTS (defaults) + 1] = { NULL };
+	int i;
+
+	/* initialize the array once */
+	if (G_UNLIKELY (array[0] == NULL)) {
+		for (i = 0; i < G_N_ELEMENTS (defaults); i++)
+			array[i] = defaults[i].opt;
+		array[i] = NULL;
+	}
+	return array;
+}
+
+/**
+ * nm_setting_bond_get_option_default:
+ * @setting: the #NMSettingBond
+ * @name: the name of the option
+ *
+ * Returns: the value of the bond option if not overridden by an entry in
+ *   the #NMSettingBond:options property.
+ **/
+const char *
+nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
+	g_return_val_if_fail (validate_option (name), NULL);
+
+	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
+		if (g_strcmp0 (defaults[i].opt, name) == 0)
+			return defaults[i].val;
+	}
+	/* Any option that passes validate_option() should also be found in defaults */
+	g_assert_not_reached ();
 }
 
 /*
@@ -325,8 +377,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	g_hash_table_iter_init (&iter, priv->options);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
-		if (   !_nm_utils_string_in_list (key, valid_opts)
-		    || !strlen (value)
+		if (   !validate_option (key)
+		    || !value[0]
 		    || (strlen (value) > 200)) {
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
@@ -335,7 +387,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (!g_strcmp0 (key, "mode")
+		if (   (g_strcmp0 (key, "mode") == 0)
 		    && !_nm_utils_string_in_list (value, valid_modes)) {
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
