@@ -584,7 +584,9 @@ manager_device_state_changed (NMDevice *device,
                               gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
+#if WITH_CONCHECK
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+#endif
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
