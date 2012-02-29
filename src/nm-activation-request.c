@@ -504,10 +504,16 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
+	NMDevice *master;
 
 	switch (prop_id) {
 	case PROP_MASTER:
-		g_value_set_string (value, nm_device_get_master_path (priv->device));
+		if (priv->dep && NM_IS_ACT_REQUEST (priv->dep)) {
+			master = NM_DEVICE (nm_act_request_get_device (NM_ACT_REQUEST (priv->dep)));
+			g_assert (master);
+			g_value_set_boxed (value, nm_device_get_path (master));
+		} else
+			g_value_set_boxed (value, "/");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

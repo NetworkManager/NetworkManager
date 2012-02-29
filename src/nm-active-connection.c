@@ -353,11 +353,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *vpn_class)
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_MASTER,
-		g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER,
-		                     "Master",
-		                     "Path of master device",
-		                     NULL,
-		                     G_PARAM_READABLE));
+		g_param_spec_boxed (NM_ACTIVE_CONNECTION_MASTER,
+		                    "Master",
+		                    "Path of master device",
+		                    DBUS_TYPE_G_OBJECT_PATH,
+		                    G_PARAM_READABLE));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

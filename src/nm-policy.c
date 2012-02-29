@@ -729,39 +729,6 @@ activate_data_free (ActivateData *data)
 }
 
 static gboolean
-check_master_dependency (NMManager *manager, NMDevice *device, NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-	NMDevice *master_device;
-	const char *master;
-	NMActRequest *req;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	master = nm_setting_connection_get_master (s_con);
-
-	/* no master defined, proceed with activation */
-	if (!master)
-		return TRUE;
-
-	master_device = nm_manager_get_device_by_master (manager, master, NULL);
-
-	/* If master device is not yet present, postpone activation until later */
-	if (!master_device)
-		return FALSE;
-
-	/* Make all slaves wait for the master connection to activate. */
-	req = nm_device_get_act_request (master_device);
-	if (!req || !nm_act_request_get_connection (req))
-		return FALSE;
-
-	nm_device_set_master (device, master_device);
-
-	return TRUE;
-}
-
-static gboolean
 auto_activate_device (gpointer user_data)
 {
 	ActivateData *data = (ActivateData *) user_data;
@@ -817,12 +784,6 @@ auto_activate_device (gpointer user_data)
 	if (best_connection) {
 		GError *error = NULL;
 
-		if (!check_master_dependency (data->policy->manager, data->device, best_connection)) {
-			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation postponed: master not available",
-			             nm_connection_get_id (best_connection));
-			goto postpone;
-		}
-
 		nm_log_info (LOGD_DEVICE, "Auto-activating connection '%s'.",
 		             nm_connection_get_id (best_connection));
 		if (!nm_manager_activate_connection (policy->manager,
@@ -839,7 +800,6 @@ auto_activate_device (gpointer user_data)
 		}
 	}
 
- postpone:
 	g_slist_free (connections);
 
  out:

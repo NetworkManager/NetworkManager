@@ -585,38 +585,6 @@ nm_device_get_type_desc (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
 }
 
-NMDevice *
-nm_device_get_master (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->master;
-}
-
-const char *
-nm_device_get_master_path (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	if (NM_DEVICE_GET_PRIVATE (self)->master)
-		return nm_device_get_path (NM_DEVICE_GET_PRIVATE (self)->master);
-
-	return NULL;
-}
-
-void
-nm_device_set_master (NMDevice *self, NMDevice *master)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-
-	if (priv->master)
-		g_object_unref (priv->master);
-	priv->master = master ? g_object_ref (master) : NULL;
-
-	if (priv->act_request)
-		g_object_notify (G_OBJECT (priv->act_request), NM_ACTIVE_CONNECTION_MASTER);
-}
-
 /**
  * nm_device_enslave_slave:
  * @dev: the master device
@@ -3735,9 +3703,6 @@ finalize (GObject *object)
 	g_free (priv->type_desc);
 	if (priv->dhcp_anycast_address)
 		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
-
-	/* release master reference it still exists */
-	nm_device_set_master (self, NULL);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }

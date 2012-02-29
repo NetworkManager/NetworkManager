@@ -107,6 +107,7 @@ enum {
 	PROP_0,
 	PROP_VPN_STATE,
 	PROP_BANNER,
+	PROP_MASTER = 2000,
 
 	LAST_PROP
 };
@@ -1170,6 +1171,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_BANNER:
 		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
+	case PROP_MASTER:
+		g_value_set_boxed (value, nm_device_get_path (priv->parent_dev));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1188,6 +1192,8 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
 
 	/* properties */
 	g_object_class_install_property (object_class, PROP_VPN_STATE,
