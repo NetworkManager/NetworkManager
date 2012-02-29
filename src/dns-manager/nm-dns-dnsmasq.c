@@ -302,7 +302,7 @@ update (NMDnsPlugin *plugin,
 	argv[0] = find_dnsmasq ();
 	argv[1] = "--no-resolv";  /* Use only commandline */
 	argv[2] = "--keep-in-foreground";
-	argv[3] = "--strict-order";
+	argv[3] = "--no-hosts"; /* don't use /etc/hosts to resolve */
 	argv[4] = "--bind-interfaces";
 	argv[5] = "--pid-file=" PIDFILE;
 	argv[6] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
