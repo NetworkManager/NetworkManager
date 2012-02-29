@@ -1309,7 +1309,7 @@ nm_system_add_bonding_master (const char *iface)
 }
 
 static gboolean
-nm_system_iface_compat_enslave (NMDevice *slave, const char *master_name)
+nm_system_iface_compat_enslave (const char *master_iface, const char *slave_iface)
 {
 	struct ifreq ifr;
 	int fd;
@@ -1323,20 +1323,16 @@ nm_system_iface_compat_enslave (NMDevice *slave, const char *master_name)
 		return FALSE;
 	}
 
-	strncpy (ifr.ifr_name, master_name, IFNAMSIZ);
-	strncpy (ifr.ifr_slave, nm_device_get_iface (slave), IFNAMSIZ);
+	strncpy (ifr.ifr_name, master_iface, IFNAMSIZ);
+	strncpy (ifr.ifr_slave, slave_iface, IFNAMSIZ);
 
 	if (ioctl (fd, SIOCBONDENSLAVE, &ifr) < 0 &&
 	    ioctl (fd, BOND_ENSLAVE_OLD, &ifr) < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error enslaving %s: %d (%s)",
-		            master_name, nm_device_get_iface (slave),
-		            errno, strerror (errno));
-		goto errout;
-	}
+		            master_iface, slave_iface, errno, strerror (errno));
+	} else
+		ret = TRUE;
 
-	ret = TRUE;
-
-errout:
 	close (fd);
 
 	return ret;
@@ -1344,58 +1340,56 @@ errout:
 
 /**
  * nm_system_iface_enslave:
- * @slave: Slave device
- * @master: Master device
+ * @master_ifindex: master device interface index
+ * @master_iface: master device interface name
+ * @slave_ifindex: slave device interface index
+ * @slave_iface: slave device interface name
  *
  * Enslaves the 'slave' to 'master. This function targets implementing a
  * generic interface to attaching all kinds of slaves to masters. Currently
  * only bonding is properly supported due to the backwards compatibility
  * function being bonding specific.
  *
- * The slave device needs to be down as a prerequirement.
+ * The slave device needs to be down as a prerequisite.
  *
  * Returns: %TRUE on success, or %FALSE
  */
 gboolean
-nm_system_iface_enslave (NMDevice *slave, NMDevice *master)
+nm_system_iface_enslave (gint master_ifindex,
+                         const char *master_iface,
+                         gint slave_ifindex,
+                         const char *slave_iface)
 {
 	struct nl_sock *sock;
-	const char *master_name;
-	int err, master_ifindex, slave_ifindex;
+	int err;
 
-	master_name = nm_device_get_iface (master);
-	if (!master_name)
-		return FALSE;
+	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (master_iface != NULL, FALSE);
+	g_return_val_if_fail (slave_ifindex >= 0, FALSE);
+	g_return_val_if_fail (slave_iface != NULL, FALSE);
 
 	sock = nm_netlink_get_default_handle ();
 
-	master_ifindex = nm_netlink_iface_to_index (master_name);
-	g_assert (master_ifindex > 0);
-
 	if (!(nm_system_iface_get_flags (master_ifindex) & IFF_MASTER)) {
-		nm_log_err (LOGD_DEVICE, "(%s): interface is not a master", master_name);
+		nm_log_err (LOGD_DEVICE, "(%s): interface is not a master", master_iface);
 		return FALSE;
 	}
-
-	slave_ifindex = nm_device_get_ifindex (slave);
-	g_assert (slave_ifindex > 0);
 
 	g_assert (!nm_system_iface_is_up (slave_ifindex));
 
 	if (nm_system_iface_get_flags (slave_ifindex) & IFF_SLAVE) {
 		nm_log_err (LOGD_DEVICE, "(%s): %s is already a slave",
-		            master_name, nm_device_get_iface (slave));
+		            master_iface, slave_iface);
 		return FALSE;
 	}
 
 	err = rtnl_link_bond_enslave_ifindex (sock, master_ifindex, slave_ifindex);
 	if (err == -NLE_OPNOTSUPP)
-		return nm_system_iface_compat_enslave (slave, master_name);
+		return nm_system_iface_compat_enslave (master_iface, slave_iface);
 
 	if (err < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error enslaving %s: %d (%s)",
-		            master_name, nm_device_get_iface (slave),
-		            err, nl_geterror (err));
+		            master_iface, slave_iface, err, nl_geterror (err));
 		return FALSE;
 	}
 
@@ -1403,7 +1397,7 @@ nm_system_iface_enslave (NMDevice *slave, NMDevice *master)
 }
 
 static gboolean
-nm_system_iface_compat_release (NMDevice *device, const char *master_name)
+nm_system_iface_compat_release (const char *master_iface, const char *slave_iface)
 {
 	struct ifreq ifr;
 	int fd;
@@ -1417,29 +1411,26 @@ nm_system_iface_compat_release (NMDevice *device, const char *master_name)
 		return FALSE;
 	}
 
-	strncpy (ifr.ifr_name, master_name, IFNAMSIZ);
-	strncpy (ifr.ifr_slave, nm_device_get_iface (device), IFNAMSIZ);
+	strncpy (ifr.ifr_name, master_iface, IFNAMSIZ);
+	strncpy (ifr.ifr_slave, slave_iface, IFNAMSIZ);
 
 	if (ioctl (fd, SIOCBONDRELEASE, &ifr) < 0 &&
 	    ioctl (fd, BOND_RELEASE_OLD, &ifr) < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error releasing slave %s: %d (%s)",
-		            master_name, nm_device_get_iface (device),
-		            errno, strerror (errno));
-		goto errout;
-	}
+		            master_iface, slave_iface, errno, strerror (errno));
+	} else
+		ret = TRUE;
 
-	ret = TRUE;
-
-errout:
 	close (fd);
-
 	return ret;
 }
 
 /**
  * nm_system_iface_release:
- * @slave: Slave device
- * @maser: Master device
+ * @master_ifindex: master device interface index
+ * @master_iface: master device interface name
+ * @slave_ifindex: slave device interface index
+ * @slave_iface: slave device interface name
  *
  * Releases the 'slave' which is attached to 'master. This function targets
  * implementing a generic interface to releasing all kinds of slaves. Currently
@@ -1449,37 +1440,34 @@ errout:
  * Returns: %TRUE on success, or %FALSE
  */
 gboolean
-nm_system_iface_release (NMDevice *slave, NMDevice *master)
+nm_system_iface_release (gint master_ifindex,
+                         const char *master_iface,
+                         gint slave_ifindex,
+                         const char *slave_iface)
 {
 	struct nl_sock *sock;
-	const char *master_name;
-	int err, slave_ifindex;
+	int err;
 
-	master_name = nm_device_get_iface (master);
-	if (!master_name)
-		return TRUE;
+	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (master_iface != NULL, FALSE);
+	g_return_val_if_fail (slave_ifindex >= 0, FALSE);
+	g_return_val_if_fail (slave_iface != NULL, FALSE);
 
 	sock = nm_netlink_get_default_handle ();
 
-	slave_ifindex = nm_device_get_ifindex (slave);
-	g_assert (slave_ifindex > 0);
-
 	/* Only release if this is actually a slave */
 	if (!(nm_system_iface_get_flags (slave_ifindex) & IFF_SLAVE))
-		goto out;
+		return TRUE;
 
 	err = rtnl_link_bond_release_ifindex (sock, slave_ifindex);
 	if (err == -NLE_OPNOTSUPP)
-		return nm_system_iface_compat_release (slave, master_name);
-
-	if (err < 0) {
+		return nm_system_iface_compat_release (master_iface, slave_iface);
+	else if (err < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error releasing slave %s: %d (%s)",
-		            master_name, nm_device_get_iface (slave),
-		            err, nl_geterror (err));
+		            master_iface, slave_iface, err, nl_geterror (err));
 		return FALSE;
 	}
 
-out:
 	return TRUE;
 }
 

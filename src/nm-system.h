@@ -91,8 +91,15 @@ gboolean		nm_system_iface_set_mac                 (int ifindex, const struct eth
 
 gboolean		nm_system_apply_bonding_config          (NMSettingBond *s_bond);
 gboolean        nm_system_add_bonding_master            (const char *iface);
-gboolean		nm_system_iface_enslave		(NMDevice *slave, NMDevice *master);
-gboolean		nm_system_iface_release		(NMDevice *slave, NMDevice *master);
+
+gboolean        nm_system_iface_enslave                 (gint master_ifindex,
+                                                         const char *master_iface,
+                                                         gint slave_ifindex,
+                                                         const char *slave_iface);
+gboolean        nm_system_iface_release                 (gint master_ifindex,
+                                                         const char *master_iface,
+                                                         gint slave_ifindex,
+                                                         const char *slave_iface);
 
 enum {
 		NM_IFACE_TYPE_UNSPEC = 0,

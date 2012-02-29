@@ -617,6 +617,51 @@ nm_device_set_master (NMDevice *self, NMDevice *master)
 		g_object_notify (G_OBJECT (priv->act_request), NM_ACTIVE_CONNECTION_MASTER);
 }
 
+/**
+ * nm_device_enslave_slave:
+ * @dev: the master device
+ * @slave: the slave device to enslave
+ *
+ * If @dev is capable of enslaving other devices (ie it's a bridge, bond, etc)
+ * then this function enslaves @slave.
+ *
+ * Returns: %TRUE on success, %FALSE on failure or if this device cannot enslave
+ *  other devices.
+ */
+gboolean
+nm_device_enslave_slave (NMDevice *dev, NMDevice *slave)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (slave != NULL, FALSE);
+	g_return_val_if_fail (nm_device_get_state (slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
+
+	if (NM_DEVICE_GET_CLASS (dev)->enslave_slave)
+		return NM_DEVICE_GET_CLASS (dev)->enslave_slave (dev, slave);
+	return FALSE;
+}
+
+/**
+ * nm_device_release_slave:
+ * @dev: the master device
+ * @slave: the slave device to release
+ *
+ * If @dev is capable of enslaving other devices (ie it's a bridge, bond, etc)
+ * then this function releases the previously enslaved @slave.
+ *
+ * Returns: %TRUE on success, %FALSE on failure, if this device cannot enslave
+ *  other devices, or if @slave was never enslaved.
+ */
+gboolean
+nm_device_release_slave (NMDevice *dev, NMDevice *slave)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (slave != NULL, FALSE);
+
+	if (NM_DEVICE_GET_CLASS (dev)->release_slave)
+		return NM_DEVICE_GET_CLASS (dev)->release_slave (dev, slave);
+	return FALSE;
+}
+
 /*
  * nm_device_get_act_request
  *
@@ -914,68 +959,26 @@ ip6_method_matches (NMConnection *connection, const char *match)
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 {
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
+	NMActRequest *req;
+	NMActiveConnection *master_ac;
+	NMDevice *master;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
-static gboolean
-handle_slave_activation (NMDevice *slave, NMDevice *master)
-{
-	NMConnection *connection;
-	NMSettingConnection *s_con;
+	req = nm_device_get_act_request (self);
+	g_assert (req);
 
-	connection = nm_device_get_connection (slave);
-	g_assert (connection);
+	/* If the interface is going to be a slave, let the master enslave it here */
+	master_ac = nm_act_request_get_dependency (req);
+	if (master_ac && NM_IS_ACT_REQUEST (master_ac)) {
+		/* FIXME: handle VPNs here too */
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
-		/*
-		 * Bonding
-		 *
-		 * Kernel expects slaves to be down while the enslaving is
-		 * taking place.
-		 */
-		nm_device_hw_take_down (slave, TRUE);
-
-		if (!nm_system_iface_enslave (slave, master))
-			return FALSE;
-
-		nm_device_hw_bring_up (slave, TRUE, NULL);
-	} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_VLAN_SETTING_NAME)) {
-		/* NOP */
-	} else {
-		nm_log_warn (LOGD_DEVICE, "(%s): Unable to enslave. Unknown slave type '%s'",
-		             nm_device_get_iface (slave), nm_setting_connection_get_slave_type (s_con));
-
-		/* Abort activation */
-		return FALSE;
+		master = NM_DEVICE (nm_act_request_get_device (NM_ACT_REQUEST (master_ac)));
+		g_assert (master);
+		if (!nm_device_enslave_slave (master, self))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) enslaved to %s",
-	             nm_device_get_iface (slave),
-				 nm_device_get_iface (master));
-
-	return TRUE;
-}
-
-static void
-handle_slave_deactivation (NMDevice *slave, NMDevice *master)
-{
-	NMConnection *connection;
-	NMSettingConnection *s_con;
-
-	connection = nm_device_get_connection (slave);
-	g_assert (connection);
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
-		nm_system_iface_release (slave, master);
-		nm_log_info (LOGD_DEVICE, "Device %s released from master %s",
-			         nm_device_get_iface (slave), nm_device_get_iface (master));
-	}
+	return ret;
 }
 
 /*
@@ -992,7 +995,6 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	const char *iface;
 	NMActStageReturn ret;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	NMDevice *master;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -1007,13 +1009,6 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	iface = nm_device_get_iface (self);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
-
-	if ((master = nm_device_get_master (self))) {
-		if (!handle_slave_activation (self, master)) {
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-			goto out;
-		}
-	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
@@ -3071,7 +3066,6 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv;
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
-	NMDevice *master;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
 	gboolean tried_ipv6 = FALSE;
@@ -3140,9 +3134,6 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
-
-	if ((master = nm_device_get_master (self)))
-		handle_slave_deactivation (self, master);
 
 	/* Tear down an existing activation request */
 	clear_act_request (self);

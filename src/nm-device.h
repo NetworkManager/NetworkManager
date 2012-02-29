@@ -160,6 +160,12 @@ typedef struct {
 	                                    const guint8 *other_hwaddr,
 	                                    guint other_hwaddr_len,
 	                                    gboolean fail_if_no_hwaddr);
+
+	gboolean        (* enslave_slave) (NMDevice *self,
+	                                   NMDevice *slave);
+
+	gboolean        (* release_slave) (NMDevice *self,
+	                                   NMDevice *slave);
 } NMDeviceClass;
 
 
@@ -188,6 +194,9 @@ NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 NMDevice *	nm_device_get_master (NMDevice *self);
 const char *nm_device_get_master_path (NMDevice *self);
 void		nm_device_set_master (NMDevice *self, NMDevice *master);
+
+gboolean        nm_device_enslave_slave     (NMDevice *dev, NMDevice *slave);
+gboolean        nm_device_release_slave     (NMDevice *dev, NMDevice *slave);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
