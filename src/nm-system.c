@@ -1228,25 +1228,22 @@ set_bond_attr (const char *iface, const char *attr, const char *value)
 	char file[FILENAME_MAX];
 	gboolean ret;
 
-	snprintf (file, sizeof(file), "/sys/class/net/%s/bonding/%s",
-	          iface, attr);
-
+	snprintf (file, sizeof (file), "/sys/class/net/%s/bonding/%s", iface, attr);
 	ret = nm_utils_do_sysctl (file, value);
-	if (!ret)
+	if (!ret) {
 		nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
 		             "'%s' to '%s'", iface, attr, value);
+	}
 
 	return ret;
 }
 
 gboolean
-nm_system_apply_bonding_config (NMSettingBond *s_bond)
+nm_system_apply_bonding_config (const char *iface, NMSettingBond *s_bond)
 {
-	const char *name;
-	guint32 i;
+	const char **opts, **iter;
 
-	name = nm_setting_bond_get_interface_name (s_bond);
-	g_assert (name);
+	g_return_val_if_fail (iface != NULL, FALSE);
 
 	/*
 	 * FIXME:
@@ -1267,13 +1264,28 @@ nm_system_apply_bonding_config (NMSettingBond *s_bond)
 	 * the result is pretty much unforeseeable.
 	 */
 
-	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
-		const char *key, *value;
+	/* Set bonding options; if the setting didn't specify a value for the
+	 * option then use the default value to ensure there's no leakage of
+	 * options from any previous connections to this one.
+	 */
+	opts = nm_setting_bond_get_valid_options (s_bond);
+	for (iter = opts; iter && *iter; iter++) {
+		const char *value;
+		gboolean is_default = FALSE;
 
-		if (!nm_setting_bond_get_option (s_bond, i, &key, &value))
-			continue;
+		value = nm_setting_bond_get_option_by_name (s_bond, *iter);
+		if (!value) {
+			value = nm_setting_bond_get_option_default (s_bond, *iter);  /* use the default value */
+			is_default = TRUE;
+		}
 
-		set_bond_attr (name, key, value);
+		nm_log_dbg (LOGD_DEVICE, "(%s): setting bond option '%s' to %s'%s'",
+			        iface,
+			        *iter,
+			        is_default ? "default " : "",
+			        value);
+
+		set_bond_attr (iface, *iter, value);
 	}
 
 	return TRUE;
