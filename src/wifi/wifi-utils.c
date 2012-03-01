@@ -20,13 +20,17 @@
  */
 
 #include <config.h>
+#include <sys/stat.h>
+#include <stdio.h>
 #include <string.h>
 #include <glib.h>
 
 #include "wifi-utils.h"
 #include "wifi-utils-private.h"
-#include "wifi-utils-wext.h"
 #include "wifi-utils-nl80211.h"
+#if HAVE_WEXT
+#include "wifi-utils-wext.h"
+#endif
 
 gpointer
 wifi_data_new (const char *iface, int ifindex, gsize len)
@@ -58,10 +62,12 @@ wifi_utils_init (const char *iface, int ifindex, gboolean check_scan)
 	g_return_val_if_fail (ifindex > 0, NULL);
 
 	ret = wifi_nl80211_init (iface, ifindex);
-	if (ret != NULL)
-		return ret;
-
-	return wifi_wext_init (iface, ifindex, check_scan);
+	if (ret == NULL) {
+#if HAVE_WEXT
+		ret = wifi_wext_init (iface, ifindex, check_scan);
+#endif
+	}
+	return ret;
 }
 
 NMDeviceWifiCapabilities
@@ -151,12 +157,27 @@ wifi_utils_deinit (WifiData *data)
 }
 
 gboolean
-wifi_utils_is_wifi (const char *iface)
+wifi_utils_is_wifi (const char *iface, const char *sysfs_path)
 {
+	char phy80211_path[255];
+	struct stat s;
+
 	g_return_val_if_fail (iface != NULL, FALSE);
 
+	if (sysfs_path) {
+		/* Check for nl80211 sysfs paths */
+		snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", sysfs_path);
+		if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+			return TRUE;
+	}
+
+	if (wifi_nl80211_is_wifi (iface))
+		return TRUE;
+
+#if HAVE_WEXT
 	if (wifi_wext_is_wifi (iface))
 		return TRUE;
+#endif
 
 	return FALSE;
 }

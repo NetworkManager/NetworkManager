@@ -12,6 +12,7 @@ SUBDIRS= \
 	modem-manager \
 	bluez-manager \
 	firewall-manager \
+	wifi \
 	settings
 
 if WITH_WIMAX
@@ -36,6 +37,7 @@ INCLUDES = -I${top_srcdir} \
            -I$(top_srcdir)/src/bluez-manager \
            -I$(top_srcdir)/src/firewall-manager \
            -I$(top_srcdir)/src/settings \
+           -I$(top_srcdir)/src/wifi \
            -I${top_srcdir}/libnm-util \
            -I${top_builddir}/libnm-util \
            -I${top_srcdir}/callouts
@@ -118,13 +120,6 @@ NetworkManager_SOURCES = \
 		nm-device-private.h \
 		nm-device-ethernet.c \
 		nm-device-ethernet.h \
-		wifi-utils.c \
-		wifi-utils.h \
-		wifi-utils-private.h \
-		wifi-utils-wext.c \
-		wifi-utils-wext.h \
-		wifi-utils-nl80211.c \
-		wifi-utils-nl80211.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
 		nm-device-wired.c \
@@ -304,6 +299,7 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
+	./wifi/libwifi-utils.la \
 	./firewall-manager/libfirewall-manager.la \
 	./settings/libsettings.la \
 	./backends/libnmbackend.la \

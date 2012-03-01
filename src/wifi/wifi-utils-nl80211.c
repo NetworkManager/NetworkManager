@@ -73,17 +73,16 @@ static int error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err,
 	return NL_SKIP;
 }
 
-static struct nl_msg *nl80211_alloc_msg (WifiDataNl80211 *nl80211,
-					 guint32 cmd, guint32 flags)
+static struct nl_msg *
+_nl80211_alloc_msg (int id, int ifindex, guint32 cmd, guint32 flags)
 {
-	struct nl_msg *msg = nlmsg_alloc ();
-	if (!msg)
-		return NULL;
+	struct nl_msg *msg;
 
-	genlmsg_put (msg, 0, 0, nl80211->id, 0, flags, cmd, 0);
-
-	NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, nl80211->parent.ifindex);
-
+	msg = nlmsg_alloc ();
+	if (msg) {
+		genlmsg_put (msg, 0, 0, id, 0, flags, cmd, 0);
+		NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, ifindex);
+	}
 	return msg;
 
  nla_put_failure:
@@ -91,44 +90,59 @@ static struct nl_msg *nl80211_alloc_msg (WifiDataNl80211 *nl80211,
 	return NULL;
 }
 
-static int nl80211_send_and_recv (WifiDataNl80211 *nl80211,
-				  struct nl_msg *msg,
-				  int (*valid_handler)(struct nl_msg *, void *),
-				  void *valid_data)
+static struct nl_msg *
+nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
+{
+	return _nl80211_alloc_msg (nl80211->id, nl80211->parent.ifindex, cmd, flags);
+}
+
+/* NOTE: this function consumes 'msg' */
+static int
+_nl80211_send_and_recv (struct nl_sock *nl_sock, 
+                        struct nl_cb *nl_cb,
+                        struct nl_msg *msg,
+                        int (*valid_handler)(struct nl_msg *, void *),
+                        void *valid_data)
 {
 	struct nl_cb *cb;
 	int err;
 
-	if (msg == NULL)
-		return -ENOMEM;
-
+	g_return_val_if_fail (msg != NULL, -ENOMEM);
 	g_return_val_if_fail (valid_handler != NULL, -EINVAL);
 
-	cb = nl_cb_clone (nl80211->nl_cb);
+	cb = nl_cb_clone (nl_cb);
 	if (!cb) {
 		err = -ENOMEM;
 		goto out;
 	}
 
-	err = nl_send_auto_complete (nl80211->nl_sock, msg);
+	err = nl_send_auto_complete (nl_sock, msg);
 	if (err < 0)
 		goto out;
 
 	err = 1;
-
 	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &err);
 	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
 	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
 	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
 
 	while (err > 0)
-		nl_recvmsgs (nl80211->nl_sock, cb);
+		nl_recvmsgs (nl_sock, cb);
+
  out:
 	nl_cb_put (cb);
 	nlmsg_free (msg);
 	return err;
 }
 
+static int
+nl80211_send_and_recv (WifiDataNl80211 *nl80211,
+                       struct nl_msg *msg,
+                       int (*valid_handler)(struct nl_msg *, void *),
+                       void *valid_data)
+{
+	return _nl80211_send_and_recv (nl80211->nl_sock, nl80211->nl_cb, msg, valid_handler, valid_data);
+}
 
 static void
 wifi_nl80211_deinit (WifiData *parent)
@@ -186,9 +200,6 @@ wifi_nl80211_get_mode (WifiData *data)
 		return NM_802_11_MODE_UNKNOWN;
 
 	return iface_info.mode;
-	return NM_802_11_MODE_INFRA;
-	return NM_802_11_MODE_ADHOC;
-	return NM_802_11_MODE_UNKNOWN;
 }
 
 static gboolean
@@ -730,3 +741,69 @@ error:
 	wifi_utils_deinit ((WifiData *) nl80211);
 	return NULL;
 }
+
+static int
+iface_to_index (struct nl_sock *nl_sock, const char *iface)
+{
+	struct nl_cache *link_cache;
+	int err, ifindex;
+
+	/* name to index */
+	err = rtnl_link_alloc_cache (nl_sock, &link_cache);
+	if (err < 0) {
+		nm_log_warn (LOGD_HW, "failed to allocate link cache");
+		return -1;
+	}
+	nl_cache_mngt_provide (link_cache);
+	nl_cache_refill (nl_sock, link_cache);
+	ifindex = rtnl_link_name2i (link_cache, iface);
+	nl_cache_free (link_cache);
+
+	return ifindex;
+}
+
+gboolean
+wifi_nl80211_is_wifi (const char *iface)
+{
+	struct nl_sock *nl_sock;
+	struct nl_cb *nl_cb = NULL;
+	struct nl_msg *msg = NULL;
+	int id, ifindex;
+	struct nl80211_iface_info iface_info = {
+		.mode = NM_802_11_MODE_UNKNOWN,
+	};
+	gboolean is_wifi = FALSE;
+
+	nl_sock = nl_socket_alloc ();
+	if (nl_sock == NULL)
+		return FALSE;
+
+	ifindex = iface_to_index (nl_sock, iface);
+	if (index < 0)
+		return FALSE;
+
+	if (genl_connect (nl_sock))
+		goto error;
+
+	id = genl_ctrl_resolve (nl_sock, "nl80211");
+	if (id < 0)
+		goto error;
+
+	nl_cb = nl_cb_alloc (NL_CB_DEFAULT);
+	if (nl_cb) {
+		msg = _nl80211_alloc_msg (id, ifindex, NL80211_CMD_GET_INTERFACE, 0);
+		if (_nl80211_send_and_recv (nl_sock,
+			                        nl_cb,
+			                        msg,
+			                        nl80211_iface_info_handler,
+			                        &iface_info) >= 0)
+			is_wifi = (iface_info.mode != NM_802_11_MODE_UNKNOWN);
+	}
+
+ error:
+	if (nl_cb)
+		nl_cb_put (nl_cb);
+	nl_socket_free (nl_sock);
+	return is_wifi;
+}
+

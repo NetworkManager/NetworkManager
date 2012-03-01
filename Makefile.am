@@ -31,7 +31,8 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-docs=yes \
 	--enable-more-warnings=yes \
 	--with-udev-dir=$$dc_install_base/lib/udev \
-	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
+	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
+	--with-wext=no
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 

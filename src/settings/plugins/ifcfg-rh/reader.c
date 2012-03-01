@@ -32,7 +32,6 @@
 #include <unistd.h>
 #include <netinet/ether.h>
 #include <linux/if.h>
-#include <linux/wireless.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -47,6 +46,8 @@
 #include <nm-setting-8021x.h>
 #include <nm-setting-bond.h>
 #include <nm-utils.h>
+
+#include "wifi-utils.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -3544,47 +3545,6 @@ infiniband_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
-static gboolean
-is_wireless_device (const char *iface)
-{
-	int fd;
-	struct iw_range range;
-	struct iwreq wrq;
-	gboolean is_wireless = FALSE;
-
-	g_return_val_if_fail (iface != NULL, FALSE);
-
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (fd == -1)
-		return FALSE;
-
-	memset (&wrq, 0, sizeof (struct iwreq));
-	memset (&range, 0, sizeof (struct iw_range));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	wrq.u.data.pointer = (caddr_t) &range;
-	wrq.u.data.length = sizeof (struct iw_range);
-
-	if (ioctl (fd, SIOCGIWRANGE, &wrq) == 0)
-		is_wireless = TRUE;
-	else {
-		if (errno == EOPNOTSUPP)
-			is_wireless = FALSE;
-		else {
-			/* Sigh... some wired devices (kvm/qemu) return EINVAL when the
-			 * device is down even though it's not a wireless device.  So try
-			 * IWNAME as a fallback.
-			 */
-			memset (&wrq, 0, sizeof (struct iwreq));
-			strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-			if (ioctl (fd, SIOCGIWNAME, &wrq) == 0)
-				is_wireless = TRUE;
-		}
-	}
-
-	close (fd);
-	return is_wireless;
-}
-
 static void
 handle_bond_option (NMSettingBond *s_bond,
                     const char *key,
@@ -4012,7 +3972,7 @@ connection_from_file (const char *filename,
 			else if (is_vlan_device (device, parsed))
 				type = g_strdup (TYPE_VLAN);
 			/* Test wireless extensions */
-			else if (is_wireless_device (device))
+			else if (wifi_utils_is_wifi (device, NULL))
 				type = g_strdup (TYPE_WIRELESS);
 			else
 				type = g_strdup (TYPE_ETHERNET);

@@ -23,6 +23,7 @@ libifcfg_rh_io_la_SOURCES = \
 	utils.h
 
 INCLUDES = \
+	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -38,6 +39,7 @@ libifcfg_rh_io_la_CPPFLAGS = \
 	-DSBINDIR=\"$(sbindir)\"
 
 libifcfg_rh_io_la_LIBADD = \
+	$(top_builddir)/src/wifi/libwifi-utils.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(NSS_LIBS)

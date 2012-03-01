@@ -21,6 +21,7 @@ test_ifcfg_rh_CPPFLAGS = \
 test_ifcfg_rh_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/src/wifi/libwifi-utils.la \
 	$(builddir)/../libifcfg-rh-io.la \
 	$(DBUS_LIBS)
 

@@ -19,6 +19,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
+#include <config.h>
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
@@ -804,6 +805,12 @@ interface_add_cb (DBusGProxy *proxy,
 	}
 }
 
+#if HAVE_WEXT
+#define DEFAULT_WIFI_DRIVER "nl80211,wext"
+#else
+#define DEFAULT_WIFI_DRIVER "nl80211"
+#endif
+
 static void
 interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 {
@@ -832,7 +839,7 @@ interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 
 	driver = g_new0 (GValue, 1);
 	g_value_init (driver, G_TYPE_STRING);
-	g_value_set_string (driver, is_wireless ? "nl80211,wext" : "wired");
+	g_value_set_string (driver, is_wireless ? DEFAULT_WIFI_DRIVER : "wired");
 	g_hash_table_insert (hash, "Driver", driver);
 
 	ifname = g_new0 (GValue, 1);

@@ -213,25 +213,35 @@ if ! test x"$ac_distver" = x""; then
   AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
 fi
 
-AC_MSG_CHECKING([Linux kernel WEXT headers])
-AC_COMPILE_IFELSE(
-	[AC_LANG_PROGRAM(
-              [[#ifndef __user
-                #define __user
-                #endif
-                #include <sys/types.h>
-                #include <linux/types.h>
-                #include <sys/socket.h>
-                #include <linux/wireless.h>]],
-              [[#ifndef IWEVGENIE
-                #error "not found"
-                #endif]])],
-        [ac_have_iwevgenie=yes],
-        [ac_have_iwevgenie=no])
-AC_MSG_RESULT($ac_have_iwevgenie)
-if test "$ac_have_iwevgenie" = no; then
-	AC_MSG_ERROR(Linux kernel development header linux/wireless.h not installed or not functional)
+dnl
+dnl Default to using WEXT but allow it to be disabled
+dnl
+AC_ARG_WITH(wext, AS_HELP_STRING([--with-wext=yes], [Enable or disable Linux Wireless Extensions]), ac_with_wext=$withval, ac_with_wext="yes")
+if test x"$ac_with_wext" = x"yes"; then
+	AC_MSG_CHECKING([Linux kernel WEXT headers])
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM(
+		      [[#ifndef __user
+		        #define __user
+		        #endif
+		        #include <sys/types.h>
+		        #include <linux/types.h>
+		        #include <sys/socket.h>
+		        #include <linux/wireless.h>]],
+		      [[#ifndef IWEVGENIE
+		        #error "not found"
+		        #endif]])],
+		[ac_have_iwevgenie=yes],
+		[ac_have_iwevgenie=no])
+	AC_MSG_RESULT($ac_have_iwevgenie)
+	if test "$ac_have_iwevgenie" = no; then
+	       AC_MSG_ERROR(Linux kernel development header linux/wireless.h not installed or not functional)
+	fi
+	AC_DEFINE(HAVE_WEXT, 1, [Define if you have Linux Wireless Extensions support])
+else
+	AC_DEFINE(HAVE_WEXT, 0, [Define if you have Linux Wireless Extensions support])
 fi
+AM_CONDITIONAL(WITH_WEXT, test x"${ac_with_wext}" = x"yes")
 
 AC_MSG_CHECKING([Linux kernel nl80211 headers])
 AC_COMPILE_IFELSE(
@@ -709,6 +719,7 @@ src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
 src/bluez-manager/Makefile
+src/wifi/Makefile
 src/firewall-manager/Makefile
 src/settings/Makefile
 src/settings/plugins/Makefile
