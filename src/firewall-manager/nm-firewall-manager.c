@@ -47,6 +47,14 @@ typedef struct {
 	gboolean        disposed;
 } NMFirewallManagerPrivate;
 
+enum {
+	STARTED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 /********************************************************************/
 
 typedef struct {
@@ -204,6 +212,7 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 	if (!old_owner_good && new_owner_good) {
 		nm_log_dbg (LOGD_FIREWALL, "firewall started");
 		set_running (self, TRUE);
+		g_signal_emit (self, signals[STARTED], 0);
 	} else if (old_owner_good && !new_owner_good) {
 		nm_log_dbg (LOGD_FIREWALL, "firewall stopped");
 		set_running (self, FALSE);
@@ -306,5 +315,15 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 		                      "Available",
 		                      FALSE,
 		                      G_PARAM_READABLE));
+
+	signals[STARTED] =
+		g_signal_new ("started",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMFirewallManagerClass, started),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID,
+					  G_TYPE_NONE, 0);
+
 }
 

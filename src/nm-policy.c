@@ -55,6 +55,7 @@ struct NMPolicy {
 	gulong vpn_deactivated_id;
 
 	NMFirewallManager *fw_manager;
+	gulong fw_started_id;
 
 	NMSettings *settings;
 
@@ -1286,6 +1287,32 @@ inform_firewall_about_zone (NMPolicy *policy, NMConnection *connection)
 }
 
 static void
+firewall_started (NMFirewallManager *manager,
+                  gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	GSList *iter, *devices;
+
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+
+		connection = get_device_connection (dev);
+		s_con = nm_connection_get_setting_connection (connection);
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+			nm_firewall_manager_add_to_zone (policy->fw_manager,
+			                                 nm_device_get_ip_iface (dev),
+			                                 nm_setting_connection_get_zone (s_con),
+			                                 add_to_zone_cb,
+			                                 g_object_ref (dev),
+			                                 NULL);
+		}
+	}
+}
+
+static void
 connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
@@ -1416,6 +1443,9 @@ nm_policy_new (NMManager *manager,
 	policy->vpn_deactivated_id = id;
 
 	policy->fw_manager = nm_firewall_manager_get();
+	id = g_signal_connect (policy->fw_manager, "started",
+	                       G_CALLBACK (firewall_started), policy);
+	policy->fw_started_id = id;
 
 	_connect_manager_signal (policy, "state-changed", global_state_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
@@ -1461,6 +1491,7 @@ nm_policy_destroy (NMPolicy *policy)
 	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
 	g_object_unref (policy->vpn_manager);
 
+	g_signal_handler_disconnect (policy->fw_manager, policy->fw_started_id);
 	g_object_unref (policy->fw_manager);
 
 	for (iter = policy->manager_ids; iter; iter = g_slist_next (iter))

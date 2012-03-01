@@ -47,6 +47,9 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
+
+	/* Signals */
+	void (*started) (NMFirewallManager *manager);
 } NMFirewallManagerClass;
 
 GType nm_firewall_manager_get_type (void);
