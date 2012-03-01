@@ -73,7 +73,7 @@ cb_info_free (CBInfo *info)
 }
 
 static void
-add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	CBInfo *info = user_data;
 	GError *error = NULL;
@@ -83,7 +83,7 @@ add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	                            G_TYPE_STRING, &zone,
 	                            G_TYPE_INVALID)) {
 		g_assert (error);
-		nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add failed: (%d) %s",
+		nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed: (%d) %s",
 		             info->iface, error->code, error->message);
 	}
 
@@ -94,18 +94,19 @@ add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 }
 
 gpointer
-nm_firewall_manager_add_to_zone (NMFirewallManager *self,
-                                 const char *iface,
-                                 const char *zone,
-                                 FwAddToZoneFunc callback,
-                                 gpointer user_data1,
-                                 gpointer user_data2)
+nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
+                                        const char *iface,
+                                        const char *zone,
+                                        gboolean add, /* TRUE == add, FALSE == change */
+                                        FwAddToZoneFunc callback,
+                                        gpointer user_data1,
+                                        gpointer user_data2)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	CBInfo *info;
 
 	if (priv->running == FALSE) {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add skipped (not running)", iface);
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change skipped (not running)", iface);
 		callback (NULL, user_data1, user_data2);
 		return NULL;
 	}
@@ -116,10 +117,10 @@ nm_firewall_manager_add_to_zone (NMFirewallManager *self,
 	info->user_data1 = user_data1;
 	info->user_data2 = user_data2;
 
-	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add -> %s", iface, zone );
+	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s", iface, add ? "add" : "change", zone);
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                             "addInterface",
-	                                             add_cb,
+	                                             add ? "addInterface" : "changeZone",
+	                                             add_or_change_cb,
 	                                             info,
 	                                             (GDestroyNotify) cb_info_free,
 	                                             10000,      /* timeout */

@@ -1251,7 +1251,7 @@ connections_loaded (NMSettings *settings, gpointer user_data)
 }
 
 static void
-add_to_zone_cb (GError *error,
+add_or_change_zone_cb (GError *error,
                 gpointer user_data1,
                 gpointer user_data2)
 {
@@ -1265,23 +1265,25 @@ add_to_zone_cb (GError *error,
 }
 
 static void
-inform_firewall_about_zone (NMPolicy *policy, NMConnection *connection)
+firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 	GSList *iter, *devices;
 
 	devices = nm_manager_get_devices (policy->manager);
+	/* find dev with passed connection and change zone its interface belongs to */
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		if (   (get_device_connection (dev) == connection)
 		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)) {
-			nm_firewall_manager_add_to_zone (policy->fw_manager,
-			                                 nm_device_get_ip_iface (dev),
-			                                 nm_setting_connection_get_zone (s_con),
-			                                 add_to_zone_cb,
-			                                 g_object_ref (dev),
-			                                 NULL);
+			nm_firewall_manager_add_or_change_zone (policy->fw_manager,
+			                                        nm_device_get_ip_iface (dev),
+			                                        nm_setting_connection_get_zone (s_con),
+			                                        FALSE, /* change zone */
+			                                        add_or_change_zone_cb,
+			                                        g_object_ref (dev),
+			                                        NULL);
 		}
 	}
 }
@@ -1296,18 +1298,20 @@ firewall_started (NMFirewallManager *manager,
 	GSList *iter, *devices;
 
 	devices = nm_manager_get_devices (policy->manager);
+	/* add interface of each device to correct zone */
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		connection = get_device_connection (dev);
 		s_con = nm_connection_get_setting_connection (connection);
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-			nm_firewall_manager_add_to_zone (policy->fw_manager,
-			                                 nm_device_get_ip_iface (dev),
-			                                 nm_setting_connection_get_zone (s_con),
-			                                 add_to_zone_cb,
-			                                 g_object_ref (dev),
-			                                 NULL);
+			nm_firewall_manager_add_or_change_zone (policy->fw_manager,
+			                                        nm_device_get_ip_iface (dev),
+			                                        nm_setting_connection_get_zone (s_con),
+			                                        TRUE, /* add zone */
+			                                        add_or_change_zone_cb,
+			                                        g_object_ref (dev),
+			                                        NULL);
 		}
 	}
 }
@@ -1319,7 +1323,7 @@ connection_updated (NMSettings *settings,
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
-	inform_firewall_about_zone (policy, connection);
+	firewall_update_zone (policy, connection);
 
 	/* Reset auto retries back to default since connection was updated */
 	set_connection_auto_retries (connection, RETRIES_DEFAULT);

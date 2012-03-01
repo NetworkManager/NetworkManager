@@ -2742,9 +2742,10 @@ fw_add_to_zone (NMDevice *self, int family)
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 	s_con = nm_connection_get_setting_connection (connection);
-	priv->fw_call = nm_firewall_manager_add_to_zone (priv->fw_manager,
+	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_manager,
 	                                                 nm_device_get_ip_iface (self),
 	                                                 nm_setting_connection_get_zone (s_con),
+	                                                 TRUE,
 	                                                 fw_add_to_zone_cb,
 	                                                 self,
 	                                                 GINT_TO_POINTER (family));
