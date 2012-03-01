@@ -23,6 +23,7 @@ test_ifcfg_rh_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/src/wifi/libwifi-utils.la \
 	$(builddir)/../libifcfg-rh-io.la \
+	$(LIBM)
 	$(DBUS_LIBS)
 
 test_ifcfg_rh_utils_SOURCES = \

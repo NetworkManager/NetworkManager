@@ -56,6 +56,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/bluez-manager \
 	-I$(top_srcdir)/src/firewall-manager \
 	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/wimax \
 	-I$(top_srcdir)/libnm-util
 
