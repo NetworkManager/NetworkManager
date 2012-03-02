@@ -33,7 +33,7 @@
 #include <nm-device-wifi.h>
 #include <nm-device-modem.h>
 #include <nm-device-bt.h>
-//#include <nm-device-olpc-mesh.h>
+#include <nm-device-olpc-mesh.h>
 #if WITH_WIMAX
 #include <nm-device-wimax.h>
 #endif
@@ -446,8 +446,8 @@ device_type_to_string (NMDevice *device)
 		return _("Unknown");
 	case NM_DEVICE_TYPE_BT:
 		return NM_SETTING_BLUETOOTH_SETTING_NAME;
-//	case NM_DEVICE_TYPE_OLPC_MESH:
-//		return NM_SETTING_OLPC_MESH_SETTING_NAME;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return NM_SETTING_OLPC_MESH_SETTING_NAME;
 #if WITH_WIMAX
 	case NM_DEVICE_TYPE_WIMAX:
 		return NM_SETTING_WIMAX_SETTING_NAME;

@@ -39,7 +39,7 @@
 #endif
 #include <nm-device-modem.h>
 #include <nm-device-bt.h>
-//#include <nm-device-olpc-mesh.h>
+#include <nm-device-olpc-mesh.h>
 #include <nm-device-infiniband.h>
 #include <nm-remote-settings.h>
 #include <nm-vpn-connection.h>
@@ -1273,7 +1273,6 @@ check_bt_compatible (NMDeviceBt *device, NMConnection *connection, GError **erro
 	return addr_match;
 }
 
-#if 0
 static gboolean
 check_olpc_mesh_compatible (NMDeviceOlpcMesh *device, NMConnection *connection, GError **error)
 {
@@ -1300,7 +1299,6 @@ check_olpc_mesh_compatible (NMDeviceOlpcMesh *device, NMConnection *connection, 
 
 	return TRUE;
 }
-#endif
 
 #if WITH_WIMAX
 static gboolean
@@ -1458,8 +1456,8 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 		return check_wifi_compatible (NM_DEVICE_WIFI (device), connection, error);
 	else if (NM_IS_DEVICE_BT (device))
 		return check_bt_compatible (NM_DEVICE_BT (device), connection, error);
-//	else if (NM_IS_DEVICE_OLPC_MESH (device))
-//		return check_olpc_mesh_compatible (NM_DEVICE_OLPC_MESH (device), connection, error);
+	else if (NM_IS_DEVICE_OLPC_MESH (device))
+		return check_olpc_mesh_compatible (NM_DEVICE_OLPC_MESH (device), connection, error);
 #if WITH_WIMAX
 	else if (NM_IS_DEVICE_WIMAX (device))
 		return check_wimax_compatible (NM_DEVICE_WIMAX (device), connection, error);
