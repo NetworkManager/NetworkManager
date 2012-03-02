@@ -23,6 +23,11 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Added support for VLAN interfaces
 * Added support for 802.1x EAP-FAST authentication
 * Added non-blocking mode and API to libnm-glib
+* Linux Wireless Extensions (WEXT) support can be disabled at configure time
+    with --with-wext=no
+* IPv6 Privacy Extensions are now enabled by default for new connections
+* Support for checking Internet connectivity has been added
+* The ifnet system config plugin rewrites config files less often
 
 
 ==============================================
