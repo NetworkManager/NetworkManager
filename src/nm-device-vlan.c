@@ -23,6 +23,8 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include <sys/socket.h>
+#include <linux/if.h>
 #include <netinet/ether.h>
 
 #include "nm-device-vlan.h"
