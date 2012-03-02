@@ -160,7 +160,6 @@ nm_setting_bond_get_option (NMSettingBond *setting,
                             const char **out_value)
 {
 	NMSettingBondPrivate *priv;
-	guint32 num_keys;
 	GList *keys;
 	const char *_key = NULL, *_value = NULL;
 
@@ -168,8 +167,8 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 
-	num_keys = nm_setting_bond_get_num_options (setting);
-	g_return_val_if_fail (idx < num_keys, FALSE);
+	if (idx >= nm_setting_bond_get_num_options (setting))
+		return FALSE;
 
 	keys = g_hash_table_get_keys (priv->options);
 	_key = g_list_nth_data (keys, idx);
@@ -180,6 +179,7 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 	if (out_value)
 		*out_value = _value;
 
+	g_list_free (keys);
 	return TRUE;
 }
 
