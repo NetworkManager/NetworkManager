@@ -60,6 +60,7 @@ enum {
 	REMOVED,             /* interface was removed by the supplicant */
 	NEW_BSS,             /* interface saw a new access point from a scan */
 	BSS_UPDATED,         /* a BSS property changed */
+	BSS_REMOVED,         /* supplicant removed BSS from its scan list */
 	SCAN_DONE,           /* wifi scan is complete */
 	CONNECTION_ERROR,    /* an error occurred during a connection request */
 	CREDENTIALS_REQUEST, /* 802.1x identity or password requested */
@@ -355,6 +356,8 @@ wpas_iface_bss_removed (DBusGProxy *proxy,
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_signal_emit (self, signals[BSS_REMOVED], 0, object_path);
 
 	g_hash_table_remove (priv->bss_proxies, object_path);
 }
@@ -1449,6 +1452,15 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              NULL, NULL,
 		              _nm_marshal_VOID__STRING_POINTER,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_POINTER);
+
+	signals[BSS_REMOVED] =
+		g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, bss_removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__STRING,
+		              G_TYPE_NONE, 1, G_TYPE_STRING);
 
 	signals[SCAN_DONE] =
 		g_signal_new (NM_SUPPLICANT_INTERFACE_SCAN_DONE,

@@ -105,7 +105,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-#define SUP_SIG_ID_LEN 5
+#define SUP_SIG_ID_LEN 6
 
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
@@ -177,6 +177,10 @@ static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
 static void supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
                                              const char *object_path,
                                              GHashTable *properties,
+                                             NMDeviceWifi *self);
+
+static void supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
+                                             const char *object_path,
                                              NMDeviceWifi *self);
 
 static void supplicant_iface_scan_done_cb (NMSupplicantInterface * iface,
@@ -367,6 +371,12 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	id = g_signal_connect (priv->supplicant.iface,
 	                       NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
 	                       G_CALLBACK (supplicant_iface_bss_updated_cb),
+	                       self);
+	priv->supplicant.sig_ids[i++] = id;
+
+	id = g_signal_connect (priv->supplicant.iface,
+	                       NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
+	                       G_CALLBACK (supplicant_iface_bss_removed_cb),
 	                       self);
 	priv->supplicant.sig_ids[i++] = id;
 
@@ -1696,6 +1706,8 @@ merge_scanned_ap (NMDeviceWifi *self,
 	}
 }
 
+#define WPAS_REMOVED_TAG "supplicant-removed"
+
 static gboolean
 cull_scan_list (NMDeviceWifi *self)
 {
@@ -1720,6 +1732,17 @@ cull_scan_list (NMDeviceWifi *self)
 
 		/* Don't cull the associated AP or manually created APs */
 		if (ap == priv->current_ap || nm_ap_get_fake (ap))
+			continue;
+
+		/* Don't cull APs still known to the supplicant.  Since the supplicant
+		 * doesn't yet emit property updates for "last seen" we have to rely
+		 * on changing signal strength for updating "last seen".  But if the
+		 * AP's strength doesn't change we won't get any updates for the AP,
+		 * and we'll end up here even if the AP was still found by the
+		 * supplicant in the last scan.
+		 */
+		if (   nm_ap_get_supplicant_path (ap)
+		    && g_object_get_data (G_OBJECT (ap), WPAS_REMOVED_TAG) == NULL)
 			continue;
 
 		if (nm_ap_get_last_seen (ap) + prune_interval_s < now.tv_sec)
@@ -1815,6 +1838,7 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 	GTimeVal now;
 
 	g_return_if_fail (self != NULL);
+	g_return_if_fail (object_path != NULL);
 	g_return_if_fail (properties != NULL);
 
 	/* Ignore new APs when unavailable or unamnaged */
@@ -1831,6 +1855,21 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 
 	/* Remove outdated access points */
 	schedule_scanlist_cull (self);
+}
+
+static void
+supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
+                                 const char *object_path,
+                                 NMDeviceWifi *self)
+{
+	NMAccessPoint *ap;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (object_path != NULL);
+
+	ap = get_ap_by_supplicant_path (self, object_path);
+	if (ap)
+		g_object_set_data (G_OBJECT (ap), WPAS_REMOVED_TAG, GUINT_TO_POINTER (TRUE));
 }
 
 
