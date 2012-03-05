@@ -468,6 +468,26 @@ static NmcOutputField nmc_fields_setting_bond[] = {
                                         NM_SETTING_BOND_OPTIONS
 #define NMC_FIELDS_SETTING_BOND_COMMON  NMC_FIELDS_SETTING_BOND_ALL
 
+/* Available fields for NM_SETTING_VLAN_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_vlan[] = {
+	SETTING_FIELD ("name",  6),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_VLAN_INTERFACE_NAME, 15),                /* 1 */
+	SETTING_FIELD (NM_SETTING_VLAN_PARENT, 8),                         /* 2 */
+	SETTING_FIELD (NM_SETTING_VLAN_ID, 6),                             /* 3 */
+	SETTING_FIELD (NM_SETTING_VLAN_FLAGS, 45),                         /* 4 */
+	SETTING_FIELD (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, 22),          /* 5 */
+	SETTING_FIELD (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, 22),           /* 6 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_SETTING_VLAN_ALL     "name"","\
+                                        NM_SETTING_VLAN_INTERFACE_NAME","\
+                                        NM_SETTING_VLAN_PARENT","\
+                                        NM_SETTING_VLAN_ID","\
+                                        NM_SETTING_VLAN_FLAGS","\
+                                        NM_SETTING_VLAN_INGRESS_PRIORITY_MAP","\
+                                        NM_SETTING_VLAN_EGRESS_PRIORITY_MAP
+#define NMC_FIELDS_SETTING_VLAN_COMMON  NMC_FIELDS_SETTING_VLAN_ALL
+
 
 static char *
 wep_key_type_to_string (NMWepKeyType type)
@@ -548,6 +568,54 @@ allowed_bands_to_string (guint32 bands)
 
 	return g_string_free (band_str, FALSE);
 }
+
+static char *
+vlan_flags_to_string (guint32 flags)
+{
+	GString *flag_str;
+
+	if (flags == 0)
+		return g_strdup (_("0 (NONE)"));
+
+	flag_str = g_string_new (NULL);
+	g_string_printf (flag_str, "%d (", flags);
+
+	if (flags & NM_VLAN_FLAG_REORDER_HEADERS)
+		g_string_append (flag_str, _("REORDER_HEADERS, "));
+	if (flags & NM_VLAN_FLAG_GVRP)
+		g_string_append (flag_str, _("GVRP, "));
+	if (flags & NM_VLAN_FLAG_LOOSE_BINDING)
+		g_string_append (flag_str, _("LOOSE_BINDING, "));
+
+	if (flag_str->str[flag_str->len-1] == '(')
+		g_string_assign (flag_str, _("unknown"));
+	else
+		g_string_truncate (flag_str, flag_str->len-2);  /* chop off trailing ', ' */
+
+	g_string_append_c (flag_str, ')');
+
+	return g_string_free (flag_str, FALSE);
+}
+
+static char *
+vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
+{
+	GString *priorities;
+	int i;
+
+	priorities = g_string_new (NULL);
+	for (i = 0; i < nm_setting_vlan_get_num_priorities (s_vlan, map); i++) {
+		guint32 from, to;
+
+		nm_setting_vlan_get_priority (s_vlan, i, map, &from, &to);
+		g_string_append_printf (priorities, "%d:%d,", from, to);
+	}
+	g_string_truncate (priorities, priorities->len-1);  /* chop off trailing ',' */
+
+	return g_string_free (priorities, FALSE);
+}
+
+/*----------------------------------------------------------------------------*/
 
 gboolean
 setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
@@ -1604,6 +1672,45 @@ setting_bond_details (NMSettingBond *s_bond, NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	g_string_free (bond_options_s, TRUE);
+
+	return TRUE;
+}
+
+gboolean
+setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
+{
+	char *vlan_id_str, *vlan_flags_str, *vlan_ingress_prio_str, *vlan_egress_prio_str;
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	g_return_val_if_fail (NM_IS_SETTING_VLAN (s_vlan), FALSE);
+
+	nmc->allowed_fields = nmc_fields_setting_vlan;
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VLAN_ALL, nmc->allowed_fields, NULL);
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
+
+	vlan_id_str = g_strdup_printf ("%d", nm_setting_vlan_get_id (s_vlan));
+	vlan_flags_str = vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan));
+	vlan_ingress_prio_str = vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP);
+	vlan_egress_prio_str = vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP);
+
+	nmc->allowed_fields[0].value = NM_SETTING_VLAN_SETTING_NAME;
+	nmc->allowed_fields[1].value = nm_setting_vlan_get_interface_name (s_vlan);
+	nmc->allowed_fields[2].value = nm_setting_vlan_get_parent (s_vlan);
+	nmc->allowed_fields[3].value = vlan_id_str;
+	nmc->allowed_fields[4].value = vlan_flags_str;
+	nmc->allowed_fields[5].value = vlan_ingress_prio_str;
+	nmc->allowed_fields[6].value = vlan_egress_prio_str;
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	g_free (vlan_id_str);
+	g_free (vlan_flags_str);
+	g_free (vlan_ingress_prio_str);
+	g_free (vlan_egress_prio_str);
 
 	return TRUE;
 }

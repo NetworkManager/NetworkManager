@@ -89,6 +89,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME, 0),                 /* 15 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_SETTING_NAME, 0),            /* 16 */
 	SETTING_FIELD (NM_SETTING_BOND_SETTING_NAME, 0),                  /* 17 */
+	SETTING_FIELD (NM_SETTING_VLAN_SETTING_NAME, 0),                  /* 18 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -107,7 +108,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_OLPC_MESH_SETTING_NAME","\
                                          NM_SETTING_VPN_SETTING_NAME","\
                                          NM_SETTING_INFINIBAND_SETTING_NAME","\
-                                         NM_SETTING_BOND_SETTING_NAME
+                                         NM_SETTING_BOND_SETTING_NAME","\
+                                         NM_SETTING_VLAN_SETTING_NAME
 #if WITH_WIMAX
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
                                          NM_SETTING_WIMAX_SETTING_NAME
@@ -415,6 +417,15 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 			NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
 			if (s_bond) {
 				setting_bond_details (s_bond, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[18].name)) {
+			NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
+			if (s_vlan) {
+				setting_vlan_details (s_vlan, nmc);
 				was_output = TRUE;
 				continue;
 			}
