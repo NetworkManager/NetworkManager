@@ -3664,21 +3664,6 @@ bond_connection_from_ifcfg (const char *file,
 }
 
 static gboolean
-disabling_ip4_config_allowed (NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	/* bonding slaves are allowed to have no ip configuration */
-	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
-		return TRUE;
-
-	return FALSE;
-}
-
-static gboolean
 is_bond_device (const char *name, shvarFile *parsed)
 {
 	g_return_val_if_fail (name != NULL, FALSE);
@@ -4107,7 +4092,7 @@ connection_from_file (const char *filename,
 			can_disable_ip4 = TRUE;
 	}
 
-	if (disabling_ip4_config_allowed (connection))
+	if (utils_disabling_ip4_config_allowed (connection))
 		can_disable_ip4 = TRUE;
 
 	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, can_disable_ip4, &error);

@@ -22,6 +22,7 @@
 #define _UTILS_H_
 
 #include <glib.h>
+#include <nm-connection.h>
 #include "shvar.h"
 #include "common.h"
 
@@ -46,6 +47,8 @@ shvarFile *utils_get_route_ifcfg (const char *parent, gboolean should_create);
 shvarFile *utils_get_route6_ifcfg (const char *parent, gboolean should_create);
 
 gboolean utils_has_route_file_new_syntax (const char *filename);
+
+gboolean utils_disabling_ip4_config_allowed (NMConnection *connection);
 
 #endif  /* _UTILS_H_ */
 
