@@ -78,8 +78,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			/* Override config file "dhcp-client-id" and use one from the
 			 * connection.
 			 */
-		    if (   s_ip4
-		        && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
+			if (   s_ip4
+			    && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
 			    && !strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG)))
 				continue;
 
