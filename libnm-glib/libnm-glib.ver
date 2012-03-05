@@ -58,6 +58,10 @@ global:
 	nm_client_wwan_get_enabled;
 	nm_client_wwan_hardware_get_enabled;
 	nm_client_wwan_set_enabled;
+	nm_device_bond_get_carrier;
+	nm_device_bond_get_hw_address;
+	nm_device_bond_get_type;
+	nm_device_bond_new;
 	nm_device_bt_get_capabilities;
 	nm_device_bt_get_hw_address;
 	nm_device_bt_get_name;

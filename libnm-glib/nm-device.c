@@ -33,6 +33,7 @@
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-wimax.h"
 #include "nm-device-infiniband.h"
+#include "nm-device-bond.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -643,6 +644,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_WIMAX;
 	case NM_DEVICE_TYPE_INFINIBAND:
 		return NM_TYPE_DEVICE_INFINIBAND;
+	case NM_DEVICE_TYPE_BOND:
+		return NM_TYPE_DEVICE_BOND;
 	default:
 		g_warning ("Unknown device type %d", dtype);
 		return G_TYPE_INVALID;
