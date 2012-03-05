@@ -446,8 +446,9 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 		addr = nl_addr_get_binary_addr (nladdr);
 
 		if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
-			nm_log_dbg (LOGD_IP6, "(%s): netlink address: %s",
-			            device->iface, buf);
+			nm_log_dbg (LOGD_IP6, "(%s): netlink address: %s/%d",
+			            device->iface, buf,
+			            rtnl_addr_get_prefixlen (rtnladdr));
 		}
 
 		if (IN6_IS_ADDR_LINKLOCAL (addr)) {

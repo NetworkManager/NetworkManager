@@ -241,7 +241,7 @@ sync_addresses (int ifindex,
 
 		if (buf_valid) {
 			nm_log_dbg (log_domain, "(%s): removing address '%s/%d'",
-			            iface, buf, nl_addr_get_prefixlen (nladdr));
+			            iface, buf, rtnl_addr_get_prefixlen (match_addr));
 		}
 
 		/* Otherwise, match_addr should be removed from the interface. */
