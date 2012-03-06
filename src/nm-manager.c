@@ -2148,6 +2148,12 @@ is_bond (int ifindex)
 	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_BOND);
 }
 
+static gboolean
+is_vlan (int ifindex)
+{
+	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_VLAN);
+}
+
 static void
 udev_device_added_cb (NMUdevManager *udev_mgr,
                       GUdevDevice *udev_device,
@@ -2202,7 +2208,26 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 			device = nm_device_infiniband_new (sysfs_path, iface, driver);
 		else if (is_bond (ifindex))
 			device = nm_device_bond_new (sysfs_path, iface);
-		else
+		else if (is_vlan (ifindex)) {
+			int parent_ifindex = -1;
+			NMDevice *parent;
+
+			/* Have to find the parent device */
+			if (nm_system_get_iface_vlan_info (ifindex, &parent_ifindex, NULL)) {
+				parent = find_device_by_ifindex (self, parent_ifindex);
+				if (parent)
+					device = nm_device_vlan_new (sysfs_path, iface, parent);
+				else {
+					/* If udev signaled the VLAN interface before it signaled
+					 * the VLAN's parent at startup we may not know about the
+					 * parent device yet.  But we'll find it on the second pass
+					 * from nm_manager_start().
+					 */
+					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", iface);
+				}
+			} else
+				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", iface);
+		} else
 			device = nm_device_ethernet_new (sysfs_path, iface, driver);
 	}
 
@@ -3641,6 +3666,14 @@ nm_manager_start (NMManager *self)
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
 	bluez_manager_resync_devices (self);
+
+	/* Query devices again to ensure that we catch all virtual interfaces (like
+	 * VLANs) that require a parent.  If during the first pass the VLAN
+	 * interface was detected first, the parent wouldn't exist yet and creating
+	 * the VLAN would fail.  The second query ensures that we'll have a valid
+	 * parent for the VLAN during the second pass.
+	 */
+	nm_udev_manager_query_devices (priv->udev_mgr);
 
 	/*
 	 * Connections added before the manager is started do not emit
