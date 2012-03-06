@@ -12785,8 +12785,6 @@ int main (int argc, char **argv)
 	test_write_mobile_broadband (FALSE);
 	test_read_bridge_main ();
 	test_read_bridge_component ();
-	test_read_vlan_interface ();
-	test_write_vlan ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
