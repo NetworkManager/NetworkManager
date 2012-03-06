@@ -2169,7 +2169,12 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	GSList *iter;
 	GError *error = NULL;
 
-	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
+	g_return_if_fail (udev_device != NULL);
+	g_return_if_fail (iface != NULL);
+	g_return_if_fail (sysfs_path != NULL);
+	g_return_if_fail (driver != NULL);
+	g_return_if_fail (ifindex >= 0);
+
 	device = find_device_by_ifindex (self, ifindex);
 	if (device) {
 		/* If it's a virtual device we may need to update its UDI */
