@@ -46,6 +46,9 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
+#include <nm-setting-infiniband.h>
+#include <nm-setting-bond.h>
+#include <nm-setting-vlan.h>
 
 #include <nm-utils.h>
 
@@ -54,15 +57,18 @@ typedef NMSetting* (*SettingNewFunc) (void);
 static SettingNewFunc funcs[] = {
 	nm_setting_802_1x_new,
 	nm_setting_bluetooth_new,
+	nm_setting_bond_new,
 	nm_setting_cdma_new,
 	nm_setting_connection_new,
 	nm_setting_gsm_new,
+	nm_setting_infiniband_new,
 	nm_setting_ip4_config_new,
 	nm_setting_ip6_config_new,
 	nm_setting_olpc_mesh_new,
 	nm_setting_ppp_new,
 	nm_setting_pppoe_new,
 	nm_setting_serial_new,
+	nm_setting_vlan_new,
 	nm_setting_vpn_new,
 	nm_setting_wimax_new,
 	nm_setting_wired_new,
