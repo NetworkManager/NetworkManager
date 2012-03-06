@@ -733,13 +733,14 @@ pending_activation_new (NMManager *manager,
 	pending->context = context;
 	pending->callback = callback;
 
-	pending->device_path = g_strdup (device_path);
 	pending->connection_path = g_strdup (connection_path);
 	pending->connection = connection;
 
 	/* "/" is special-cased to NULL to get through D-Bus */
 	if (specific_object_path && strcmp (specific_object_path, "/"))
 		pending->specific_object_path = g_strdup (specific_object_path);
+	if (device_path && strcmp (device_path, "/"))
+		pending->device_path = g_strdup (device_path);
 
 	return pending;
 }
