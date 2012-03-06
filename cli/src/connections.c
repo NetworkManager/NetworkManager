@@ -1854,6 +1854,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	gboolean id_specified = FALSE;
 	gboolean wait = TRUE;
 	GError *error = NULL;
+	gboolean is_virtual = FALSE;
 
 	/* Set default timeout for connection activation. It can take quite a long time.
 	 * Using 90 seconds.
@@ -1957,9 +1958,13 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
-	device_found = find_device_for_connection (nmc, connection, iface, ap, nsp, &device, &spec_object, &error);
+	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
+		is_virtual = TRUE;
 
-	if (!device_found) {
+	device_found = find_device_for_connection (nmc, connection, iface, ap, nsp, &device, &spec_object, &error);
+	/* Virtual connection may not have their interfaces created yet */
+	if (!device_found && !is_virtual) {
 		if (error)
 			g_string_printf (nmc->return_text, _("Error: No suitable device found: %s."), error->message);
 		else
