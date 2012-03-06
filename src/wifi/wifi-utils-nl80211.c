@@ -272,8 +272,6 @@ static int nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 		[NL80211_BSS_SIGNAL_MBM] = { .type = NLA_U32 },
 		[NL80211_BSS_SIGNAL_UNSPEC] = { .type = NLA_U8 },
 		[NL80211_BSS_STATUS] = { .type = NLA_U32 },
-		[NL80211_BSS_SEEN_MS_AGO] = { .type = NLA_U32 },
-		[NL80211_BSS_BEACON_IES] = { },
 	};
 	guint32 status;
                 
