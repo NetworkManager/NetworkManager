@@ -41,6 +41,7 @@
 #include <nm-device-bt.h>
 #include <nm-device-olpc-mesh.h>
 #include <nm-device-infiniband.h>
+#include <nm-device-bond.h>
 #include <nm-remote-settings.h>
 #include <nm-vpn-connection.h>
 #include <nm-utils.h>
@@ -1467,6 +1468,44 @@ check_infiniband_compatible (NMDeviceInfiniband *device, NMConnection *connectio
 }
 
 static gboolean
+check_bond_compatible (NMDeviceBond *device, NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+	NMSettingBond *s_bond;
+	const char *connection_type;
+	const char *dev_iface_name, *bond_iface_name;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	connection_type = nm_setting_connection_get_connection_type (s_con);
+	if (strcmp (connection_type, NM_SETTING_BOND_SETTING_NAME)) {
+		g_set_error (error, 0, 0,
+		             "The connection was not an Bond connection.");
+		return FALSE;
+	}
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	if (!s_bond) {
+		g_set_error (error, 0, 0,
+		             "The connection was not a valid Bond connection.");
+		return FALSE;
+	}
+
+	dev_iface_name = nm_device_get_iface (NM_DEVICE (device));
+	bond_iface_name = nm_setting_bond_get_interface_name (s_bond);
+	if (g_strcmp0 (dev_iface_name, bond_iface_name) != 0) {
+		g_set_error (error, 0, 0,
+		             "The connection's and device's interface names did not match.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
@@ -1488,6 +1527,8 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 		return check_modem_compatible (NM_DEVICE_MODEM (device), connection, error);
 	else if (NM_IS_DEVICE_INFINIBAND (device))
 		return check_infiniband_compatible (NM_DEVICE_INFINIBAND (device), connection, error);
+	else if (NM_IS_DEVICE_BOND (device))
+		return check_bond_compatible (NM_DEVICE_BOND (device), connection, error);
 
 	g_set_error (error, 0, 0, "unhandled device type '%s'", G_OBJECT_TYPE_NAME (device));
 	return FALSE;
