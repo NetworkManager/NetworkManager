@@ -43,7 +43,7 @@
 
 #define TYPE_ETHERNET   "Ethernet"
 #define TYPE_WIRELESS   "Wireless"
-#define TYPE_INFINIBAND "Infiniband"
+#define TYPE_INFINIBAND "InfiniBand"
 #define TYPE_BRIDGE     "Bridge"
 #define TYPE_BOND       "Bond"
 #define TYPE_VLAN       "Vlan"

@@ -419,7 +419,7 @@ device_reason_to_string (NMDeviceStateReason reason)
 		return _("GSM Modem's SIM wrong");
 
 	case NM_DEVICE_STATE_REASON_INFINIBAND_MODE:
-		return _("Infiniband device does not support connected mode");
+		return _("InfiniBand device does not support connected mode");
 
         case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
 		return _("A dependency of the connection failed");

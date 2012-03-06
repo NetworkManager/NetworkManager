@@ -104,7 +104,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_WIMAX: an 802.16e Mobile WiMAX broadband device
  * @NM_DEVICE_TYPE_MODEM: a modem supporting analog telephone, CDMA/EVDO,
  * GSM/UMTS, or LTE network access protocols
- * @NM_DEVICE_TYPE_INFINIBAND: an IP-over-Infiniband device
+ * @NM_DEVICE_TYPE_INFINIBAND: an IP-over-InfiniBand device
  * @NM_DEVICE_TYPE_BOND: a bond master interface
  *
  * #NMDeviceType values indicate the type of hardware represented by
@@ -484,7 +484,7 @@ typedef enum {
 	/* GSM Modem's SIM wrong */
 	NM_DEVICE_STATE_REASON_GSM_SIM_WRONG = 48,
 
-	/* Infiniband device does not support connected mode */
+	/* InfiniBand device does not support connected mode */
 	NM_DEVICE_STATE_REASON_INFINIBAND_MODE = 49,
 
 	/* A dependency of the connection failed */

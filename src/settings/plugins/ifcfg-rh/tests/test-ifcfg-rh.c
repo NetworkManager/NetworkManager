@@ -12508,14 +12508,14 @@ test_write_infiniband (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Test Write Infiniband",
+	              NM_SETTING_CONNECTION_ID, "Test Write InfiniBand",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
 
-	/* Infiniband setting */
+	/* InfiniBand setting */
 	s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
 	ASSERT (s_infiniband != NULL,
 	        "infiniband-write", "failed to allocate new %s setting",

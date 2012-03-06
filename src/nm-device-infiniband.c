@@ -115,7 +115,7 @@ nm_device_infiniband_new (const char *udi,
 	                                  NM_DEVICE_UDI, udi,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_DRIVER, driver,
-	                                  NM_DEVICE_TYPE_DESC, "Infiniband",
+	                                  NM_DEVICE_TYPE_DESC, "InfiniBand",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_INFINIBAND,
 	                                  NULL);
 }
@@ -258,7 +258,7 @@ real_check_connection_compatible (NMDevice *device,
 		g_set_error (error,
 		             NM_INFINIBAND_ERROR,
 					 NM_INFINIBAND_ERROR_CONNECTION_NOT_INFINIBAND,
-		             "The connection was not an Infiniband connection.");
+		             "The connection was not an InfiniBand connection.");
 		return FALSE;
 	}
 
@@ -300,7 +300,7 @@ real_complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
 	                           existing_connections,
-	                           _("Infiniband connection %d"),
+	                           _("InfiniBand connection %d"),
 	                           NULL,
 	                           TRUE);
 

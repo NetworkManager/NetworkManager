@@ -2055,8 +2055,8 @@ msgstr "Kablolu bağlantı %d"
 
 #: ../src/nm-device-infiniband.c:292
 #, c-format
-msgid "Infiniband connection %d"
-msgstr "Infiniband bağlantısı %d"
+msgid "InfiniBand connection %d"
+msgstr "InfiniBand bağlantısı %d"
 
 #: ../src/nm-device-olpc-mesh.c:323
 #, c-format

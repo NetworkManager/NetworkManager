@@ -1,5 +1,5 @@
 [connection]
-id=Test Infiniband Connection
+id=Test InfiniBand Connection
 uuid=4e80a56d-c99f-4aad-a6dd-b449bc398c57
 type=infiniband
 

@@ -243,7 +243,7 @@
       </tp:enumvalue>
       <tp:enumvalue suffix="INFINIBAND" value="9">
         <tp:docstring>
-          The device is an IP-capable Infiniband interface.
+          The device is an IP-capable InfiniBand interface.
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="BOND" value="10">
@@ -518,7 +518,7 @@
       </tp:enumvalue>
       <tp:enumvalue suffix="INFINIBAND_MODE" value="49">
         <tp:docstring>
-          Infiniband device does not support connected mode.
+          InfiniBand device does not support connected mode.
         </tp:docstring>
       </tp:enumvalue>
       <tp:enumvalue suffix="DEPENDENCY_FAILED" value="50">

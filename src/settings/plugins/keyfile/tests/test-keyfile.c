@@ -2830,7 +2830,7 @@ test_write_wired_8021x_tls_connection_blob (void)
 	g_object_unref (connection);
 }
 
-#define TEST_INFINIBAND_FILE    TEST_KEYFILES_DIR"/Test_Infiniband_Connection"
+#define TEST_INFINIBAND_FILE    TEST_KEYFILES_DIR"/Test_InfiniBand_Connection"
 
 static void
 test_read_infiniband_connection (void)
@@ -2843,7 +2843,7 @@ test_read_infiniband_connection (void)
 	guint8 expected_mac[INFINIBAND_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
 		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
 		0x90 };
-	const char *expected_id = "Test Infiniband Connection";
+	const char *expected_id = "Test InfiniBand Connection";
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 	gboolean success;
 
@@ -2860,7 +2860,7 @@ test_read_infiniband_connection (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, expected_uuid);
 
-	/* Infiniband setting */
+	/* InfiniBand setting */
 	s_ib = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_ib);
 
@@ -2903,14 +2903,14 @@ test_write_infiniband_connection (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Work Infiniband",
+	              NM_SETTING_CONNECTION_ID, "Work InfiniBand",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
 
-	/* Infiniband setting */
+	/* InfiniBand setting */
 	s_ib = (NMSettingInfiniband *) nm_setting_infiniband_new ();
 	g_assert (s_ib);
 	nm_connection_add_setting (connection, NM_SETTING (s_ib));

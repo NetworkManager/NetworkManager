@@ -1431,14 +1431,14 @@ check_infiniband_compatible (NMDeviceInfiniband *device, NMConnection *connectio
 	connection_type = nm_setting_connection_get_connection_type (s_con);
 	if (strcmp (connection_type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		g_set_error (error, 0, 0,
-		             "The connection was not an Infiniband connection.");
+		             "The connection was not an InfiniBand connection.");
 		return FALSE;
 	}
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	if (!s_infiniband) {
 		g_set_error (error, 0, 0,
-		             "The connection was not a valid Infiniband connection.");
+		             "The connection was not a valid InfiniBand connection.");
 		return FALSE;
 	}
 

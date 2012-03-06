@@ -1099,8 +1099,8 @@ msgid "GSM Modem's SIM wrong"
 msgstr "SIM do modem GSM errado"
 
 #: ../cli/src/devices.c:421
-msgid "Infiniband device does not support connected mode"
-msgstr "Dispositivo Infiniband não oferece suporte ao modo conectado"
+msgid "InfiniBand device does not support connected mode"
+msgstr "Dispositivo InfiniBand não oferece suporte ao modo conectado"
 
 #: ../cli/src/devices.c:423 ../cli/src/devices.c:446 ../cli/src/devices.c:458
 #: ../cli/src/devices.c:578 ../cli/src/devices.c:622
@@ -2487,8 +2487,8 @@ msgstr "Conexão cabeada %d"
 
 #: ../src/nm-device-infiniband.c:302
 #, c-format
-msgid "Infiniband connection %d"
-msgstr "Conexão Infiniband %d"
+msgid "InfiniBand connection %d"
+msgstr "Conexão InfiniBand %d"
 
 #: ../src/nm-device-olpc-mesh.c:293
 #, c-format

@@ -28,11 +28,11 @@
 
 /**
  * SECTION:nm-setting-infiniband
- * @short_description: Describes connection properties for IP-over-Infiniband networks
+ * @short_description: Describes connection properties for IP-over-InfiniBand networks
  * @include: nm-setting-infiniband.h
  *
  * The #NMSettingInfiniband object is a #NMSetting subclass that describes properties
- * necessary for connection to IP-over-Infiniband networks.
+ * necessary for connection to IP-over-InfiniBand networks.
  **/
 
 /**

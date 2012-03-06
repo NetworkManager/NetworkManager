@@ -1206,8 +1206,8 @@ msgid "GSM Modem's SIM wrong"
 msgstr "Kartica SIM modema GSM ni ustrezna"
 
 #: ../cli/src/devices.c:421
-msgid "Infiniband device does not support connected mode"
-msgstr "Naprava Infiniband ne podpira povezanega načina"
+msgid "InfiniBand device does not support connected mode"
+msgstr "Naprava InfiniBand ne podpira povezanega načina"
 
 #: ../cli/src/devices.c:423
 #: ../cli/src/devices.c:446
@@ -2576,8 +2576,8 @@ msgstr "Žična povezava %d"
 
 #: ../src/nm-device-infiniband.c:302
 #, c-format
-msgid "Infiniband connection %d"
-msgstr "Povezava Infiniband %d"
+msgid "InfiniBand connection %d"
+msgstr "Povezava InfiniBand %d"
 
 #: ../src/nm-device-olpc-mesh.c:293
 #, c-format

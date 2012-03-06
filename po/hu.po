@@ -1150,8 +1150,8 @@ msgid "GSM Modem's SIM wrong"
 msgstr "A GSM modem SIM kódja hibás"
 
 #: ../cli/src/devices.c:421
-msgid "Infiniband device does not support connected mode"
-msgstr "Az Infiniband eszköz nem támogatja a csatlakoztatott módot"
+msgid "InfiniBand device does not support connected mode"
+msgstr "Az InfiniBand eszköz nem támogatja a csatlakoztatott módot"
 
 #: ../cli/src/devices.c:423 ../cli/src/devices.c:446 ../cli/src/devices.c:458
 #: ../cli/src/devices.c:578 ../cli/src/devices.c:622
@@ -2561,8 +2561,8 @@ msgstr "%d. vezetékes kapcsolat"
 #: ../src/nm-device-infiniband.c:332
 #, c-format
 #| msgid "Wired connection %d"
-msgid "Infiniband connection %d"
-msgstr "%d. Infiniband kapcsolat"
+msgid "InfiniBand connection %d"
+msgstr "%d. InfiniBand kapcsolat"
 
 #: ../src/nm-device-olpc-mesh.c:323
 #, c-format

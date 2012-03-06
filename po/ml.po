@@ -1096,7 +1096,7 @@ msgid "GSM Modem's SIM wrong"
 msgstr "GSM മോഡത്തിന്റെ സിം തെറ്റാണ്"
 
 #: ../cli/src/devices.c:421
-msgid "Infiniband device does not support connected mode"
+msgid "InfiniBand device does not support connected mode"
 msgstr ""
 
 #: ../cli/src/devices.c:423 ../cli/src/devices.c:446 ../cli/src/devices.c:458
@@ -2449,8 +2449,8 @@ msgstr "Wired കണക്ഷന്‍ %d"
 
 #: ../src/nm-device-infiniband.c:303
 #, c-format
-msgid "Infiniband connection %d"
-msgstr "Infiniband കണക്ഷന്‍ %d"
+msgid "InfiniBand connection %d"
+msgstr "InfiniBand കണക്ഷന്‍ %d"
 
 #: ../src/nm-device-olpc-mesh.c:293
 #, c-format
