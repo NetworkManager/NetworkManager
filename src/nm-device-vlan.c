@@ -81,6 +81,11 @@ enum {
 	LAST_PROP
 };
 
+static void
+set_carrier (NMDeviceVlan *self,
+             const gboolean carrier,
+             const gboolean defer_action);
+
 /******************************************************************/
 
 static GQuark
@@ -102,6 +107,29 @@ real_get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
+get_carrier_sync (NMDeviceVlan *self)
+{
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+	GError *error = NULL;
+	guint32 ifflags = 0;
+
+	/* Get initial link state */
+	if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
+	                                        nm_device_get_ip_ifindex (NM_DEVICE (self)),
+	                                        &ifflags,
+	                                        &error)) {
+		nm_log_warn (LOGD_HW | LOGD_DEVICE,
+		             "(%s): couldn't get carrier state: (%d) %s",
+		             nm_device_get_ip_iface (NM_DEVICE (self)),
+		             error ? error->code : -1,
+		             (error && error->message) ? error->message : "unknown");
+		g_clear_error (&error);
+	}
+
+	return !!(ifflags & IFF_LOWER_UP);
+}
+
+static gboolean
 real_hw_is_up (NMDevice *device)
 {
 	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
@@ -110,7 +138,28 @@ real_hw_is_up (NMDevice *device)
 static gboolean
 real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	return nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
+	gboolean success = FALSE, carrier;
+	guint i = 20;
+
+	while (i-- > 0 && !success) {
+		success = nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
+		g_usleep (50);
+	}
+
+	if (success) {
+		/* Block a bit to make sure the carrier comes on; it's delayed a bit
+		 * after setting the interface up.
+		 */
+		i = 20;
+		while (i-- > 0) {
+			carrier = get_carrier_sync (NM_DEVICE_VLAN (dev));
+			set_carrier (NM_DEVICE_VLAN (dev), carrier, carrier ? FALSE : TRUE);
+			if (carrier)
+				break;
+			g_usleep (100);
+		}
+	}
+	return success;
 }
 
 static void
@@ -517,8 +566,6 @@ static void
 carrier_watch_init (NMDeviceVlan *self)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	GError *error = NULL;
-	guint32 ifflags = 0;
 
 	priv->monitor = nm_netlink_monitor_get ();
 	priv->link_connected_id = g_signal_connect (priv->monitor, "carrier-on",
@@ -528,19 +575,7 @@ carrier_watch_init (NMDeviceVlan *self)
 	                                               G_CALLBACK (carrier_off),
 	                                               self);
 
-	/* Get initial link state */
-	if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
-	                                        nm_device_get_ifindex (NM_DEVICE (self)),
-	                                        &ifflags,
-	                                        &error)) {
-		nm_log_warn (LOGD_HW | LOGD_DEVICE,
-		             "(%s): couldn't get initial carrier state: (%d) %s",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             error ? error->code : -1,
-		             (error && error->message) ? error->message : "unknown");
-		g_clear_error (&error);
-	} else
-		priv->carrier = !!(ifflags & IFF_LOWER_UP);
+	priv->carrier = get_carrier_sync (NM_DEVICE_VLAN (self));
 
 	nm_log_info (LOGD_HW | LOGD_DEVICE, "(%s): carrier is %s",
 	             nm_device_get_iface (NM_DEVICE (self)),
