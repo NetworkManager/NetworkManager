@@ -1528,18 +1528,18 @@ out:
 /**
  * nm_system_get_iface_vlan_info:
  * @ifindex: the VLAN interface index
- * @out_master_ifindex: on success, the interface index of the master interface of
+ * @out_parent_ifindex: on success, the interface index of the parent interface of
  *   @iface
  * @out_vlan_id: on success, the VLAN ID of @iface
  *
- * Gets the VLAN master interface name and VLAN ID.
+ * Gets the VLAN parent interface name and VLAN ID.
  *
  * Returns: %TRUE if the interface is a VLAN device and no error occurred;
  *   %FALSE if the interface was not a VLAN interface or an error occurred
  **/
 gboolean
 nm_system_get_iface_vlan_info (int ifindex,
-                               int *out_master_ifindex,
+                               int *out_parent_ifindex,
                                int *out_vlan_id)
 {
 	struct nl_sock *nlh;
@@ -1561,8 +1561,8 @@ nm_system_get_iface_vlan_info (int ifindex,
 
 	lk = rtnl_link_get (cache, ifindex);
 	if (lk) {
-		if (out_master_ifindex)
-			*out_master_ifindex = rtnl_link_get_link (lk);
+		if (out_parent_ifindex)
+			*out_parent_ifindex = rtnl_link_get_link (lk);
 		if (out_vlan_id)
 			*out_vlan_id = rtnl_link_vlan_get_id (lk);
 

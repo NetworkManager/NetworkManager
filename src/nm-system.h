@@ -112,7 +112,7 @@ enum {
 int             nm_system_get_iface_type      (int ifindex, const char *name);
 
 gboolean        nm_system_get_iface_vlan_info (int ifindex,
-                                               int *out_master_ifindex,
+                                               int *out_parent_ifindex,
                                                int *out_vlan_id);
 
 gboolean        nm_system_add_vlan_iface (NMConnection *connection,
