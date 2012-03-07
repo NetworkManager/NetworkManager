@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2010 Red Hat, Inc.
+ * (C) Copyright 2008 - 2012 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -114,6 +114,89 @@ utils_hexstr2bin (const char *hex, size_t len)
 }
 
 /* End from hostap */
+
+/*
+ * utils_single_quote_string
+ *
+ * Put string inside single quotes and remove CR, LF characters. If single quote
+ * is present, escape it with a backslash and prepend the whole string with $
+ * in order to have $'string'. That allows us to use single quote inside
+ * single quotes without breaking bash syntax. (man bash, section QUOTING).
+ *
+ * Caller is responsible for freeing the returned string.
+ */
+char *
+utils_single_quote_string (const char *str)
+{
+	static const char const drop_chars[] = "\r\n"; /* drop CR and LF */
+	static const char escape_char = '\\'; /* escape char is backslash */
+	static const char quote_char = '\'';  /* quote char is single quote */
+	size_t i, slen, j = 0;
+	size_t drop = 0, extra = 0;
+	char *new_str;
+
+	slen = strlen (str);
+	for (i = 0; i < slen; i++) {
+		if (str[i] == quote_char)
+			extra++;
+		if (strchr (drop_chars, str[i]))
+			drop++;
+	}
+	new_str = g_malloc0 (slen + extra - drop + 4); /* 4 is for $''\0*/
+	if (!new_str) return NULL;
+
+	if (extra > 0)
+		new_str[j++] = '$';
+	new_str[j++] = quote_char;
+	for (i = 0; i < slen; i++) {
+		if (strchr (drop_chars, str[i]))
+			continue;
+		if (str[i] == quote_char)
+			new_str[j++] = escape_char;
+		new_str[j++] = str[i];
+	}
+	new_str[j] = quote_char;
+
+	return new_str;
+}
+
+/*
+ * utils_single_unquote_string
+ *
+ * Remove string from single (or double) quotes, and remove escaping of '.
+ * Also remove first $ if the string is in the form of $'string'.
+ *
+ * Caller is responsible for freeing the returned string.
+ */
+char *
+utils_single_unquote_string (const char *str)
+{
+	static const char escape_char = '\\'; /* escape char is backslash */
+	static const char q_char = '\''; /* quote char is single quote */
+	static const char dq_char = '"'; /* double quote char */
+	size_t i, slen, j = 0, quote = 0, dollar = 0;
+	char *new_str;
+
+	slen = strlen (str);
+	new_str = g_malloc0 (slen + 1);
+	if (!new_str) return NULL;
+
+	if (   (slen >= 2 && (str[0] == dq_char || str[0] == q_char) && str[0] == str[slen-1])
+	    || (slen >= 3 && str[0] == '$' && str[1] == q_char && str[1] == str[slen-1])) {
+		quote = 1;
+		if (str[0] == '$') dollar = 1;
+	}
+
+	i = quote + dollar;
+	while (i < slen - quote) {
+		if (str[i] == escape_char && str[i+1] == q_char)
+			i++;
+		new_str[j++] = str[i++];
+	}
+	new_str[j] = '\0';
+
+	return new_str;
+}
 
 /*
  * Check ';[a-fA-F0-9]{8}' file suffix used for temporary files by rpm when

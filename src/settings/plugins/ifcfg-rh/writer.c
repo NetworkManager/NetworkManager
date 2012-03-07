@@ -736,24 +736,20 @@ write_wireless_security_setting (NMConnection *connection,
 
 	/* WPA Passphrase */
 	if (wpa) {
-		GString *quoted = NULL;
+		char *quoted = NULL;
 
 		psk = nm_setting_wireless_security_get_psk (s_wsec);
 		if (psk && (strlen (psk) != 64)) {
 			/* Quote the PSK since it's a passphrase */
-			quoted = g_string_sized_new (strlen (psk) + 2); /* 2 for quotes */
-			g_string_append_c (quoted, '"');
-			g_string_append (quoted, psk);
-			g_string_append_c (quoted, '"');
+			quoted = utils_single_quote_string (psk);
 		}
 		set_secret (ifcfg,
 		            "WPA_PSK",
-		            quoted ? quoted->str : psk,
+		            quoted ? quoted : psk,
 		            "WPA_PSK_FLAGS",
 		            nm_setting_wireless_security_get_psk_flags (s_wsec),
 		            TRUE);
-		if (quoted)
-			g_string_free (quoted, TRUE);
+		g_free (quoted);
 	} else {
 		set_secret (ifcfg,
 		            "WPA_PSK",

@@ -1957,6 +1957,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 {
 	shvarFile *keys_ifcfg;
 	char *psk = NULL, *p, *hashed = NULL;
+	size_t plen;
 	gboolean quoted = FALSE;
 
 	/* Passphrase must be between 10 and 66 characters in length because WPA
@@ -1980,8 +1981,10 @@ parse_wpa_psk (shvarFile *ifcfg,
 		return NULL;
 
 	p = psk;
+	plen = strlen (p);
 
-	if (p[0] == '"' && psk[strlen (psk) - 1] == '"')
+	if (   (plen >= 2 && (p[0] == '"' || p[0] == '\'') && p[0] == p[plen - 1])
+	    || (plen >= 3 && p[0] == '$' && p[1] == '\'' && p[1] == p[plen - 1]))
 		quoted = TRUE;
 
 	if (!quoted && (strlen (psk) == 64)) {
@@ -2001,21 +2004,18 @@ parse_wpa_psk (shvarFile *ifcfg,
 		 * and between 8 and 63 characters as a passphrase.
 		 */
 
-		if (quoted) {
-			/* Get rid of the quotes */
-			p++;
-			p[strlen (p) - 1] = '\0';
-		}
+		/* Get rid of the quotes */
+		hashed = utils_single_unquote_string (p);
 
 		/* Length check */
-		if (strlen (p) < 8 || strlen (p) > 63) {
+		if (strlen (hashed) < 8 || strlen (hashed) > 63) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid WPA_PSK (passphrases must be between "
 			             "8 and 63 characters long (inclusive))");
+			g_free (hashed);
+			hashed = NULL;
 			goto out;
 		}
-
-		hashed = g_strdup (p);
 	}
 
 	if (!hashed) {

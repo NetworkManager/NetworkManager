@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2009 Red Hat, Inc.
+ * (C) Copyright 2008 - 2012 Red Hat, Inc.
  */
 
 #ifndef _UTILS_H_
@@ -29,6 +29,10 @@
 char *utils_bin2hexstr (const char *bytes, int len, int final_len);
 
 char *utils_hexstr2bin (const char *hex, size_t len);
+
+char *utils_single_quote_string (const char *str);
+
+char *utils_single_unquote_string (const char *str);
 
 char *utils_cert_path (const char *parent, const char *suffix);
 
