@@ -39,6 +39,7 @@
 #endif
 #include <nm-device-infiniband.h>
 #include <nm-device-bond.h>
+#include <nm-device-vlan.h>
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
@@ -460,6 +461,8 @@ device_type_to_string (NMDevice *device)
 		return NM_SETTING_INFINIBAND_SETTING_NAME;
 	case NM_DEVICE_TYPE_BOND:
 		return NM_SETTING_BOND_SETTING_NAME;
+	case NM_DEVICE_TYPE_VLAN:
+		return NM_SETTING_VLAN_SETTING_NAME;
 	default:
 		return _("Unknown");
 	}
@@ -739,6 +742,8 @@ show_device_info (gpointer data, gpointer user_data)
 				hwaddr = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
 			else if (NM_IS_DEVICE_BOND (device))
 				hwaddr = nm_device_bond_get_hw_address (NM_DEVICE_BOND (device));
+			else if (NM_IS_DEVICE_VLAN (device))
+				hwaddr = nm_device_vlan_get_hw_address (NM_DEVICE_VLAN (device));
 
 			state_str = g_strdup_printf ("%d (%s)", state, device_state_to_string (state));
 			reason_str = g_strdup_printf ("%d (%s)", reason, device_reason_to_string (reason));

@@ -42,6 +42,7 @@
 #include <nm-device-olpc-mesh.h>
 #include <nm-device-infiniband.h>
 #include <nm-device-bond.h>
+#include <nm-device-vlan.h>
 #include <nm-remote-settings.h>
 #include <nm-vpn-connection.h>
 #include <nm-utils.h>
@@ -1506,6 +1507,47 @@ check_bond_compatible (NMDeviceBond *device, NMConnection *connection, GError **
 }
 
 static gboolean
+check_vlan_compatible (NMDeviceVlan *device, NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan;
+	const char *ctype, *dev_iface_name, *vlan_iface_name;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (strcmp (ctype, NM_SETTING_VLAN_SETTING_NAME) != 0) {
+		g_set_error (error, 0, 0,
+		             "The connection was not an VLAN connection.");
+		return FALSE;
+	}
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	if (!s_vlan) {
+		g_set_error (error, 0, 0,
+		             "The connection was not a valid VLAN connection.");
+		return FALSE;
+	}
+
+	if (nm_setting_vlan_get_id (s_vlan) != nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device))) {
+		g_set_error (error, 0, 0,
+		             "The connection did not match the device's VLAN ID.");
+		return FALSE;
+	}
+
+	dev_iface_name = nm_device_get_iface (NM_DEVICE (device));
+	vlan_iface_name = nm_setting_vlan_get_interface_name (s_vlan);
+	if (vlan_iface_name && g_strcmp0 (dev_iface_name, vlan_iface_name) != 0) {
+		g_set_error (error, 0, 0,
+		             "The connection's and device's interface names did not match.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
@@ -1529,6 +1571,8 @@ nm_device_is_connection_compatible (NMDevice *device, NMConnection *connection, 
 		return check_infiniband_compatible (NM_DEVICE_INFINIBAND (device), connection, error);
 	else if (NM_IS_DEVICE_BOND (device))
 		return check_bond_compatible (NM_DEVICE_BOND (device), connection, error);
+	else if (NM_IS_DEVICE_VLAN (device))
+		return check_vlan_compatible (NM_DEVICE_VLAN (device), connection, error);
 
 	g_set_error (error, 0, 0, "unhandled device type '%s'", G_OBJECT_TYPE_NAME (device));
 	return FALSE;
