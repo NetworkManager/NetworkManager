@@ -34,6 +34,7 @@
 #include "nm-device-wimax.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
+#include "nm-device-vlan.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -646,6 +647,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_INFINIBAND;
 	case NM_DEVICE_TYPE_BOND:
 		return NM_TYPE_DEVICE_BOND;
+	case NM_DEVICE_TYPE_VLAN:
+		return NM_TYPE_DEVICE_VLAN;
 	default:
 		g_warning ("Unknown device type %d", dtype);
 		return G_TYPE_INVALID;
@@ -826,7 +829,10 @@ nm_device_get_device_type (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	/* Fill this in if it wasn't set at construct time */
+	/* Fill this in if it wasn't set at construct time.
+	 * FIXME: make the device subclasses do this themselves through a private
+	 * NMDevice function.
+	 */
 	if (priv->device_type == NM_DEVICE_TYPE_UNKNOWN) {
 		if (NM_IS_DEVICE_ETHERNET (self))
 			priv->device_type = NM_DEVICE_TYPE_ETHERNET;
@@ -842,6 +848,10 @@ nm_device_get_device_type (NMDevice *self)
 			priv->device_type = NM_DEVICE_TYPE_WIMAX;
 		else if (NM_IS_DEVICE_INFINIBAND (self))
 			priv->device_type = NM_DEVICE_TYPE_INFINIBAND;
+		else if (NM_IS_DEVICE_BOND (self))
+			priv->device_type = NM_DEVICE_TYPE_BOND;
+		else if (NM_IS_DEVICE_VLAN (self))
+			priv->device_type = NM_DEVICE_TYPE_VLAN;
 		else
 			g_warn_if_reached ();
 	}

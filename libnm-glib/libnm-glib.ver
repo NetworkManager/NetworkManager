@@ -107,6 +107,11 @@ global:
 	nm_device_olpc_mesh_get_hw_address;
 	nm_device_olpc_mesh_get_type;
 	nm_device_olpc_mesh_new;
+	nm_device_vlan_get_carrier;
+	nm_device_vlan_get_hw_address;
+	nm_device_vlan_get_type;
+	nm_device_vlan_get_vlan_id;
+	nm_device_vlan_new;
 	nm_device_wifi_get_access_point_by_path;
 	nm_device_wifi_get_access_points;
 	nm_device_wifi_get_active_access_point;
