@@ -133,6 +133,12 @@ connection_valid (NMDevice *device, NMConnection *connection)
 /*******************************************************************/
 
 static void
+nm_device_modem_init (NMDeviceModem *device)
+{
+	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_MODEM);
+}
+
+static void
 register_properties (NMDeviceModem *device)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
@@ -162,11 +168,6 @@ constructed (GObject *object)
 	                                         NM_DBUS_INTERFACE_DEVICE_MODEM);
 
 	register_properties (NM_DEVICE_MODEM (object));
-}
-
-static void
-nm_device_modem_init (NMDeviceModem *device)
-{
 }
 
 static void

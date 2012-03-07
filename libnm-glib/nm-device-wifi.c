@@ -451,9 +451,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_wifi_init (NMDeviceWifi *device)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-
-	priv->disposed = FALSE;
+	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_WIFI);
 }
 
 static void

@@ -152,9 +152,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_infiniband_init (NMDeviceInfiniband *device)
 {
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
-
-	priv->carrier = FALSE;
+	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_INFINIBAND);
 }
 
 static void

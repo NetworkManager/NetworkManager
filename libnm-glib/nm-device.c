@@ -196,6 +196,34 @@ device_state_changed (DBusGProxy *proxy,
 	}
 }
 
+static GType
+_nm_device_gtype_from_dtype (NMDeviceType dtype)
+{
+	switch (dtype) {
+	case NM_DEVICE_TYPE_ETHERNET:
+		return NM_TYPE_DEVICE_ETHERNET;
+	case NM_DEVICE_TYPE_WIFI:
+		return NM_TYPE_DEVICE_WIFI;
+	case NM_DEVICE_TYPE_MODEM:
+		return NM_TYPE_DEVICE_MODEM;
+	case NM_DEVICE_TYPE_BT:
+		return NM_TYPE_DEVICE_BT;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return NM_TYPE_DEVICE_OLPC_MESH;
+	case NM_DEVICE_TYPE_WIMAX:
+		return NM_TYPE_DEVICE_WIMAX;
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return NM_TYPE_DEVICE_INFINIBAND;
+	case NM_DEVICE_TYPE_BOND:
+		return NM_TYPE_DEVICE_BOND;
+	case NM_DEVICE_TYPE_VLAN:
+		return NM_TYPE_DEVICE_VLAN;
+	default:
+		g_warning ("Unknown device type %d", dtype);
+		return G_TYPE_INVALID;
+	}
+}
+
 static void
 constructed (GObject *object)
 {
@@ -204,6 +232,10 @@ constructed (GObject *object)
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 
 	priv = NM_DEVICE_GET_PRIVATE (object);
+	/* Catch failure of subclasses to call nm_device_set_device_type() */
+	g_warn_if_fail (priv->device_type != NM_DEVICE_TYPE_UNKNOWN);
+	/* Catch a subclass setting the wrong type */
+	g_warn_if_fail (G_OBJECT_TYPE (object) == _nm_device_gtype_from_dtype (priv->device_type));
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 											 NM_DBUS_SERVICE,
@@ -418,7 +450,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "Device Type",
 						  "Numeric device type (ie ethernet, wifi, etc)",
 						  NM_DEVICE_TYPE_UNKNOWN, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+						  G_PARAM_READABLE));
 	/**
 	 * NMDevice:udi:
 	 *
@@ -627,32 +659,27 @@ nm_device_class_init (NMDeviceClass *device_class)
 				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
-static GType
-_nm_device_gtype_from_dtype (NMDeviceType dtype)
+/**
+ * nm_device_set_device_type:
+ * @device: the device
+ * @dtype: the NM device type
+ *
+ * Sets the NM device type if it wasn't set during construction.  INTERNAL
+ * ONLY METHOD.
+ **/
+void
+nm_device_set_device_type (NMDevice *device, NMDeviceType dtype)
 {
-	switch (dtype) {
-	case NM_DEVICE_TYPE_ETHERNET:
-		return NM_TYPE_DEVICE_ETHERNET;
-	case NM_DEVICE_TYPE_WIFI:
-		return NM_TYPE_DEVICE_WIFI;
-	case NM_DEVICE_TYPE_MODEM:
-		return NM_TYPE_DEVICE_MODEM;
-	case NM_DEVICE_TYPE_BT:
-		return NM_TYPE_DEVICE_BT;
-	case NM_DEVICE_TYPE_OLPC_MESH:
-		return NM_TYPE_DEVICE_OLPC_MESH;
-	case NM_DEVICE_TYPE_WIMAX:
-		return NM_TYPE_DEVICE_WIMAX;
-	case NM_DEVICE_TYPE_INFINIBAND:
-		return NM_TYPE_DEVICE_INFINIBAND;
-	case NM_DEVICE_TYPE_BOND:
-		return NM_TYPE_DEVICE_BOND;
-	case NM_DEVICE_TYPE_VLAN:
-		return NM_TYPE_DEVICE_VLAN;
-	default:
-		g_warning ("Unknown device type %d", dtype);
-		return G_TYPE_INVALID;
-	}
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (device != NULL);
+	g_return_if_fail (dtype != NM_DEVICE_TYPE_UNKNOWN);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->device_type == NM_DEVICE_TYPE_UNKNOWN)
+		priv->device_type = dtype;
+	else
+		g_warn_if_fail (dtype == priv->device_type);
 }
 
 static GType
@@ -823,40 +850,9 @@ nm_device_get_ip_iface (NMDevice *device)
 NMDeviceType
 nm_device_get_device_type (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	/* Fill this in if it wasn't set at construct time.
-	 * FIXME: make the device subclasses do this themselves through a private
-	 * NMDevice function.
-	 */
-	if (priv->device_type == NM_DEVICE_TYPE_UNKNOWN) {
-		if (NM_IS_DEVICE_ETHERNET (self))
-			priv->device_type = NM_DEVICE_TYPE_ETHERNET;
-		else if (NM_IS_DEVICE_WIFI (self))
-			priv->device_type = NM_DEVICE_TYPE_WIFI;
-		else if (NM_IS_DEVICE_MODEM (self))
-			priv->device_type = NM_DEVICE_TYPE_MODEM;
-		else if (NM_IS_DEVICE_BT (self))
-			priv->device_type = NM_DEVICE_TYPE_BT;
-		else if (NM_IS_DEVICE_OLPC_MESH (self))
-			priv->device_type = NM_DEVICE_TYPE_OLPC_MESH;
-		else if (NM_IS_DEVICE_WIMAX (self))
-			priv->device_type = NM_DEVICE_TYPE_WIMAX;
-		else if (NM_IS_DEVICE_INFINIBAND (self))
-			priv->device_type = NM_DEVICE_TYPE_INFINIBAND;
-		else if (NM_IS_DEVICE_BOND (self))
-			priv->device_type = NM_DEVICE_TYPE_BOND;
-		else if (NM_IS_DEVICE_VLAN (self))
-			priv->device_type = NM_DEVICE_TYPE_VLAN;
-		else
-			g_warn_if_reached ();
-	}
-
-	return priv->device_type;
+	return NM_DEVICE_GET_PRIVATE (self)->device_type;
 }
 
 /**

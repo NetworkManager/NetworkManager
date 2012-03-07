@@ -161,11 +161,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_olpc_mesh_init (NMDeviceOlpcMesh *device)
 {
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
-
-	priv->hw_address = NULL;
-	priv->companion = NULL;
-	priv->active_channel = 0;
+	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_OLPC_MESH);
 }
 
 static void

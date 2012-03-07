@@ -205,10 +205,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_ethernet_init (NMDeviceEthernet *device)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-
-	priv->disposed = FALSE;
-	priv->carrier = FALSE;
+	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_ETHERNET);
 }
 
 static void
