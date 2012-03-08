@@ -105,7 +105,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
                         void *valid_data)
 {
 	struct nl_cb *cb;
-	int err;
+	int err, done;
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 	g_return_val_if_fail (valid_handler != NULL, -EINVAL);
@@ -120,14 +120,21 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	if (err < 0)
 		goto out;
 
-	err = 1;
-	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &err);
-	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
-	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
+	done = 1;
+	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &done);
+	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &done);
+	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &done);
 	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
 
-	while (err > 0)
-		nl_recvmsgs (nl_sock, cb);
+	/* Loop until one of our NL callbacks says we're done */
+	while (done) {
+		err = nl_recvmsgs (nl_sock, cb);
+		if (err && err != -NLE_AGAIN) {
+			nm_log_warn (LOGD_WIFI, "nl_recvmsgs() error: (%d) %s",
+			             err, nl_geterror (err));
+			break;
+		}
+	}
 
  out:
 	nl_cb_put (cb);
