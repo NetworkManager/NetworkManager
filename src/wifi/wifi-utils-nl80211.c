@@ -127,7 +127,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
 
 	while (err > 0)
-		err = nl_recvmsgs (nl_sock, cb);
+		nl_recvmsgs (nl_sock, cb);
 
  out:
 	nl_cb_put (cb);
