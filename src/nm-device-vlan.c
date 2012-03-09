@@ -359,7 +359,7 @@ real_complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_VLAN_SETTING_NAME,
 	                           existing_connections,
-	                           _("Vlan connection %d"),
+	                           _("VLAN connection %d"),
 	                           NULL,
 	                           TRUE);
 
