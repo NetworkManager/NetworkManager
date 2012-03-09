@@ -34,9 +34,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_BT_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_BT, NMDeviceBtClass))
 
 typedef enum {
-	NM_BT_ERROR_CONNECTION_NOT_BT = 0,
-	NM_BT_ERROR_CONNECTION_INVALID,
-	NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
+	NM_BT_ERROR_CONNECTION_NOT_BT = 0,   /*< nick=ConnectionNotBt >*/
+	NM_BT_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
+	NM_BT_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMBtError;
 
 #define NM_DEVICE_BT_HW_ADDRESS   "hw-address"

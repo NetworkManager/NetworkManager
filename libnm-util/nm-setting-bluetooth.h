@@ -51,10 +51,10 @@ G_BEGIN_DECLS
  * must also contain an #NMSettingGsm or #NMSettingCdma as appropriate
  */
 typedef enum {
-	NM_SETTING_BLUETOOTH_ERROR_UNKNOWN = 0,
-	NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
-	NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
-	NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND,
+	NM_SETTING_BLUETOOTH_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
+	NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,       /*< nick=InvalidProperty >*/
+	NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,       /*< nick=MissingProperty >*/
+	NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND, /*< nick=TypeSettingNotFound >*/
 } NMSettingBluetoothError;
 
 #define NM_SETTING_BLUETOOTH_ERROR nm_setting_bluetooth_error_quark ()

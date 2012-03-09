@@ -34,9 +34,9 @@ G_BEGIN_DECLS
 #define NM_MODEM_GSM_GET_CLASS(obj)	 (G_TYPE_INSTANCE_GET_CLASS ((obj),	 NM_TYPE_MODEM_GSM, NMModemGsmClass))
 
 typedef enum {
-	NM_GSM_ERROR_CONNECTION_NOT_GSM = 0,
-	NM_GSM_ERROR_CONNECTION_INVALID,
-	NM_GSM_ERROR_CONNECTION_INCOMPATIBLE,
+	NM_GSM_ERROR_CONNECTION_NOT_GSM = 0,  /*< nick=ConnectionNotGsm >*/
+	NM_GSM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
+	NM_GSM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMGsmError;
 
 typedef struct {

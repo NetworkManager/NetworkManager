@@ -72,9 +72,9 @@ G_BEGIN_DECLS
 typedef enum NMActStageReturn NMActStageReturn;
 
 typedef enum {
-	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0,
-	NM_DEVICE_ERROR_CONNECTION_INVALID,
-	NM_DEVICE_ERROR_NOT_ACTIVE,
+	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0, /*< nick=ConnectionActivating >*/
+	NM_DEVICE_ERROR_CONNECTION_INVALID,        /*< nick=ConnectionInvalid >*/
+	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
 } NMDeviceError;
 
 typedef struct {

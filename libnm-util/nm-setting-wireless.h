@@ -53,11 +53,11 @@ G_BEGIN_DECLS
  * set to a value that requires the #NMSettingWireless:band property to be set
  */
 typedef enum {
-	NM_SETTING_WIRELESS_ERROR_UNKNOWN = 0,
-	NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-	NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,
-	NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING,
-	NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND
+	NM_SETTING_WIRELESS_ERROR_UNKNOWN = 0,              /*< nick=UnknownError >*/
+	NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,         /*< nick=InvalidProperty >*/
+	NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,         /*< nick=MissingProperty >*/
+	NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING, /*< nick=MissingSecuritySetting >*/
+	NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND     /*< nick=ChannelRequiresBand >*/
 } NMSettingWirelessError;
 
 #define NM_SETTING_WIRELESS_ERROR nm_setting_wireless_error_quark ()

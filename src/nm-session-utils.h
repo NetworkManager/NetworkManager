@@ -28,10 +28,10 @@ GQuark nm_session_monitor_error_quark    (void) G_GNUC_CONST;
 GType  nm_session_monitor_error_get_type (void) G_GNUC_CONST;
 
 typedef enum {
-	NM_SESSION_MONITOR_ERROR_IO_ERROR = 0,
-	NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE,
-	NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
-	NM_SESSION_MONITOR_ERROR_NO_DATABASE,
+	NM_SESSION_MONITOR_ERROR_IO_ERROR = 0,       /*< nick=IOError >*/
+	NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE, /*< nick=MalformedDatabase >*/
+	NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,       /*< nick=UnknownUser >*/
+	NM_SESSION_MONITOR_ERROR_NO_DATABASE,        /*< nick=NoDatabase >*/
 } NMSessionMonitorError;
 
 gboolean nm_session_uid_to_user (uid_t uid, const char **out_user, GError **error);

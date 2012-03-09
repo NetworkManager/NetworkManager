@@ -34,8 +34,8 @@
 #include "nm-hostname-provider.h"
 
 typedef enum {
-    NM_DHCP_MANAGER_ERROR_BAD_CLIENT = 0,
-    NM_DHCP_MANAGER_ERROR_INTERNAL = 1,
+	NM_DHCP_MANAGER_ERROR_BAD_CLIENT = 0, /*< nick=BadClient >*/
+	NM_DHCP_MANAGER_ERROR_INTERNAL = 1,   /*< nick=InternalError >*/
 } NMDHCPManagerError;
 
 #define NM_DHCP_MANAGER_ERROR (nm_dhcp_manager_error_quark ())

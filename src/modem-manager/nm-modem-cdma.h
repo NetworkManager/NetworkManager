@@ -34,9 +34,9 @@ G_BEGIN_DECLS
 #define NM_MODEM_CDMA_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM_CDMA, NMModemCdmaClass))
 
 typedef enum {
-	NM_CDMA_ERROR_CONNECTION_NOT_CDMA = 0,
-	NM_CDMA_ERROR_CONNECTION_INVALID,
-	NM_CDMA_ERROR_CONNECTION_INCOMPATIBLE,
+	NM_CDMA_ERROR_CONNECTION_NOT_CDMA = 0, /*< nick=ConnectionNotCdma >*/
+	NM_CDMA_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
+	NM_CDMA_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMCdmaError;
 
 typedef struct {

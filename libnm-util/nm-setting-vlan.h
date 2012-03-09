@@ -46,9 +46,9 @@ G_BEGIN_DECLS
  * required
  */
 typedef enum {
-	NM_SETTING_VLAN_ERROR_UNKNOWN = 0,
-	NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-	NM_SETTING_VLAN_ERROR_MISSING_PROPERTY
+	NM_SETTING_VLAN_ERROR_UNKNOWN = 0,      /*< nick=Unknown >*/
+	NM_SETTING_VLAN_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
+	NM_SETTING_VLAN_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
 } NMSettingVlanError;
 
 #define NM_SETTING_VLAN_ERROR nm_setting_vlan_error_quark ()

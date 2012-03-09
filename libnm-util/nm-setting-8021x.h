@@ -86,9 +86,9 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
  * required
  */
 typedef enum { /*< underscore_name=nm_setting_802_1x_error >*/
-	NM_SETTING_802_1X_ERROR_UNKNOWN = 0,
-	NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-	NM_SETTING_802_1X_ERROR_MISSING_PROPERTY
+	NM_SETTING_802_1X_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
+	NM_SETTING_802_1X_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
+	NM_SETTING_802_1X_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
 } NMSetting8021xError;
 
 #define NM_SETTING_802_1X_ERROR nm_setting_802_1x_error_quark ()

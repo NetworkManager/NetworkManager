@@ -49,10 +49,10 @@ G_BEGIN_DECLS
  * with other setting configuration parameters
  */
 typedef enum {
-	NM_SETTING_PPP_ERROR_UNKNOWN = 0,
-	NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
-	NM_SETTING_PPP_ERROR_MISSING_PROPERTY,
-	NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED
+	NM_SETTING_PPP_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
+	NM_SETTING_PPP_ERROR_INVALID_PROPERTY,        /*< nick=InvalidProperty >*/
+	NM_SETTING_PPP_ERROR_MISSING_PROPERTY,        /*< nick=MissingProperty >*/
+	NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED /*< nick=RequireMPPENotAllowed >*/
 } NMSettingPPPError;
 
 #define NM_SETTING_PPP_ERROR nm_setting_ppp_error_quark ()

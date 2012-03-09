@@ -67,8 +67,8 @@ enum {
 };
 
 typedef enum {
-    NM_LOGGING_ERROR_UNKNOWN_LEVEL = 0,
-    NM_LOGGING_ERROR_UNKNOWN_DOMAIN = 1,
+	NM_LOGGING_ERROR_UNKNOWN_LEVEL = 0,  /*< nick=UnknownLevel >*/
+	NM_LOGGING_ERROR_UNKNOWN_DOMAIN = 1, /*< nick=UnknownDomain >*/
 } NMLoggingError;
 
 #define NM_LOGGING_ERROR (nm_logging_error_quark ())

@@ -27,7 +27,7 @@
 typedef struct NMConfig NMConfig;
 
 typedef enum {
-	NM_CONFIG_ERROR_NO_MEMORY = 0,
+	NM_CONFIG_ERROR_NO_MEMORY = 0, /*< nick=NoMemory >*/
 } NMConfigError;
 
 #define NM_CONFIG_ERROR (nm_config_error_quark ())

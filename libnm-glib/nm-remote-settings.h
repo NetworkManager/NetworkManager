@@ -50,9 +50,9 @@ G_BEGIN_DECLS
  *
  **/
 typedef enum {
-	NM_REMOTE_SETTINGS_ERROR_UNKNOWN = 0,
-	NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,
-	NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
+	NM_REMOTE_SETTINGS_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
+	NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,     /*< nick=ConnectionRemoved >*/
+	NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE, /*< nick=ConnectionUnavailable >*/
 } NMRemoteSettingsError;
 
 #define NM_REMOTE_SETTINGS_ERROR nm_remote_settings_error_quark ()

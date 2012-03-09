@@ -49,10 +49,10 @@ G_BEGIN_DECLS
  * did not contain a required PPP setting for PPP related options
  */
 typedef enum {
-	NM_SETTING_PPPOE_ERROR_UNKNOWN = 0,
-	NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
-	NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
-	NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING
+	NM_SETTING_PPPOE_ERROR_UNKNOWN = 0,        /*< nick=UnknownError >*/
+	NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,   /*< nick=InvalidProperty >*/
+	NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,   /*< nick=MissingProperty >*/
+	NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING /*< nick=MissingPPPSetting >*/
 } NMSettingPPPOEError;
 
 #define NM_SETTING_PPPOE_ERROR nm_setting_pppoe_error_quark ()

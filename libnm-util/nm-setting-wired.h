@@ -47,9 +47,9 @@ G_BEGIN_DECLS
  * required
  */
 typedef enum {
-	NM_SETTING_WIRED_ERROR_UNKNOWN = 0,
-	NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-	NM_SETTING_WIRED_ERROR_MISSING_PROPERTY
+	NM_SETTING_WIRED_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
+	NM_SETTING_WIRED_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
+	NM_SETTING_WIRED_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
 } NMSettingWiredError;
 
 #define NM_SETTING_WIRED_ERROR nm_setting_wired_error_quark ()

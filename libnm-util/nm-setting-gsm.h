@@ -49,10 +49,10 @@ G_BEGIN_DECLS
  * is missing in the connection
  */
 typedef enum {
-	NM_SETTING_GSM_ERROR_UNKNOWN = 0,
-	NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-	NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
-	NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING
+	NM_SETTING_GSM_ERROR_UNKNOWN = 0,           /*< nick=UnknownError >*/
+	NM_SETTING_GSM_ERROR_INVALID_PROPERTY,      /*< nick=InvalidProperty >*/
+	NM_SETTING_GSM_ERROR_MISSING_PROPERTY,      /*< nick=MissingProperty >*/
+	NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING /*< nick=MissingSerialSetting >*/
 } NMSettingGsmError;
 
 #define NM_SETTING_GSM_ERROR nm_setting_gsm_error_quark ()
