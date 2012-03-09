@@ -65,6 +65,11 @@
 #include <netlink/route/link/vlan.h>
 #endif
 
+#if !HAVE_VLAN_FLAG_LOOSE_BINDING
+/* Older kernels don't have this flag */
+#define VLAN_FLAG_LOOSE_BINDING 0x04
+#endif
+
 static void nm_system_device_set_priority (int ifindex,
                                            NMIP4Config *config,
                                            int priority);

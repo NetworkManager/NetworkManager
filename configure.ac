@@ -262,6 +262,28 @@ if test "$ac_have_nl80211" = no; then
 fi
 
 dnl
+dnl Default to using WEXT but allow it to be disabled
+dnl
+AC_MSG_CHECKING([Linux kernel VLAN_FLAG_LOOSE_BINDING enum value])
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+              [[#ifndef __user
+                #define __user
+                #endif
+                #include <sys/types.h>
+                #include <linux/types.h>
+                #include <linux/if_vlan.h>]],
+              [[unsigned int a = VLAN_FLAG_LOOSE_BINDING;]])],
+	[ac_have_vlan_flag_loose_binding=yes],
+	[ac_have_vlan_flag_loose_binding=no])
+AC_MSG_RESULT($ac_have_vlan_flag_loose_binding)
+if test "$ac_have_vlan_flag_loose_binding" = yes; then
+	AC_DEFINE(HAVE_VLAN_FLAG_LOOSE_BINDING, 1, [Define if you have VLAN_FLAG_LOOSE_BINDING])
+else
+	AC_DEFINE(HAVE_VLAN_FLAG_LOOSE_BINDING, 0, [Define if you have VLAN_FLAG_LOOSE_BINDING])
+fi
+
+dnl
 dnl Checks for libm - needed for pow()
 dnl
 LT_LIB_M
