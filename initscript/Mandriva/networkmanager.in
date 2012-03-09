@@ -14,6 +14,7 @@
 # Required-Start: $network
 # Required-Stop: $network
 # Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
 # Short-Description: Daemon for automatically switching to best network connection.
 # Description: This is a daemon for automatically switching network
 #              connections to the best available connection.
