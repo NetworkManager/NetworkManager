@@ -34,18 +34,12 @@ _init_cache (void)
 		cache = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 }
 
-void
-_nm_object_cache_remove_by_path (const char *path)
+static void
+_nm_object_cache_remove_by_path (char *path)
 {
 	_init_cache ();
 	g_hash_table_remove (cache, path);
-}
-
-void
-_nm_object_cache_remove_by_object (NMObject *object)
-{
-	_init_cache ();
-	g_hash_table_remove (cache, nm_object_get_path (object));
+	g_free (path);
 }
 
 void
@@ -57,7 +51,7 @@ _nm_object_cache_add (NMObject *object)
 	path = g_strdup (nm_object_get_path (object));
 	g_hash_table_insert (cache, path, object);
 	g_object_set_data_full (G_OBJECT (object), "nm-object-cache-tag",
-	                        path, (GDestroyNotify) _nm_object_cache_remove_by_path);
+	                        g_strdup (path), (GDestroyNotify) _nm_object_cache_remove_by_path);
 }
 
 NMObject *

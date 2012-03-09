@@ -32,8 +32,6 @@ G_BEGIN_DECLS
 /* Returns referenced object from the cache */
 NMObject *_nm_object_cache_get (const char *path);
 void _nm_object_cache_add (NMObject *object);
-void _nm_object_cache_remove_by_object (NMObject *object);
-void _nm_object_cache_remove_by_path (const char *path);
 
 G_END_DECLS
 
