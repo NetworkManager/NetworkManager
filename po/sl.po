@@ -15,10 +15,10 @@ msgstr ""
 "PO-Revision-Date: 2012-02-22 20:38+0100\n"
 "Last-Translator: Matej Urbančič <mateju@svn.gnome.org>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n%100==4 ? 3 : 0);\n"
 "X-Poedit-Country: SLOVENIA\n"
 "X-Poedit-Language: Slovenian\n"
@@ -439,8 +439,8 @@ msgstr "onemogočanje"
 #: ../cli/src/network-manager.c:423
 #: ../cli/src/settings.c:531
 #: ../cli/src/utils.c:499
-#: ../src/main.c:443
-#: ../src/main.c:462
+#: ../src/main.c:450
+#: ../src/main.c:469
 msgid "unknown"
 msgstr "neznano"
 
@@ -1206,8 +1206,8 @@ msgid "GSM Modem's SIM wrong"
 msgstr "Kartica SIM modema GSM ni ustrezna"
 
 #: ../cli/src/devices.c:421
-msgid "InfiniBand device does not support connected mode"
-msgstr "Naprava InfiniBand ne podpira povezanega načina"
+msgid "Infiniband device does not support connected mode"
+msgstr "Naprava Infiniband ne podpira povezanega načina"
 
 #: ../cli/src/devices.c:423
 #: ../cli/src/devices.c:446
@@ -2377,57 +2377,57 @@ msgstr "Zapiranje %s je spodletelo: %s\n"
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "Program NetworkManager je že zagnan (pid %ld)\n"
 
-#: ../src/main.c:365
+#: ../src/main.c:368
 msgid "Print NetworkManager version and exit"
 msgstr "Izpiši različico programa NetworkManager in končaj"
 
-#: ../src/main.c:366
+#: ../src/main.c:369
 msgid "Don't become a daemon"
 msgstr "Ne postani ozadnji program"
 
-#: ../src/main.c:367
+#: ../src/main.c:370
 msgid "Make all warnings fatal"
 msgstr "Vsa opozorila naj bodo podana kot usodna"
 
-#: ../src/main.c:368
+#: ../src/main.c:371
 msgid "Specify the location of a PID file"
 msgstr "Določite mesto datoteke PID"
 
-#: ../src/main.c:368
+#: ../src/main.c:371
 msgid "filename"
 msgstr "ime datoteke"
 
-#: ../src/main.c:369
+#: ../src/main.c:372
 msgid "State file location"
 msgstr "Mesto datoteke stanja"
 
-#: ../src/main.c:369
+#: ../src/main.c:372
 msgid "/path/to/state.file"
 msgstr "/pot/do/state.file"
 
-#: ../src/main.c:370
+#: ../src/main.c:373
 msgid "Config file location"
 msgstr "Mesto datoteke nastavitev"
 
-#: ../src/main.c:370
+#: ../src/main.c:373
 msgid "/path/to/config.file"
 msgstr "/pot/do/config.file"
 
-#: ../src/main.c:371
+#: ../src/main.c:374
 msgid "List of plugins separated by ','"
 msgstr "Seznam vstavkov, ločenih z vejico"
 
-#: ../src/main.c:371
+#: ../src/main.c:374
 msgid "plugin1,plugin2"
 msgstr "vstavek1,vstavek2"
 
 #. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:373
+#: ../src/main.c:376
 msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
 msgstr "Raven beleženja: ena izmed [ERR, WARN, INFO, DEBUG]"
 
 #. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:376
+#: ../src/main.c:379
 msgid ""
 "Log domains separated by ',': any combination of\n"
 "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
@@ -2441,12 +2441,12 @@ msgstr ""
 "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
 "                                           INFINIBAND,FIREWALL]"
 
-#: ../src/main.c:386
+#: ../src/main.c:392
 #, c-format
 msgid "GModules are not supported on your platform!\n"
 msgstr "V vašem sistemskem okolju Gmoduli niso podprti!\n"
 
-#: ../src/main.c:405
+#: ../src/main.c:411
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -2458,32 +2458,32 @@ msgstr ""
 "brezžičnih dostopnih točk, s katerimi naj se povezujejo\n"
 "brezžični omrežni vmesniki računalnika."
 
-#: ../src/main.c:411
+#: ../src/main.c:417
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Neveljavna možnost. Uporabite --help za seznam veljavnih možnosti.\n"
 
-#: ../src/main.c:421
+#: ../src/main.c:427
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "Za zagon programa NetworkManager so zahtevana skrbniška dovoljenja!\n"
 
-#: ../src/main.c:441
+#: ../src/main.c:448
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "Branje nastavitev je spodletelo: (%d) %s\n"
 
-#: ../src/main.c:452
+#: ../src/main.c:459
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Uporabite --help za prikaz seznam veljavnih možnosti.\n"
 
-#: ../src/main.c:459
+#: ../src/main.c:466
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "Razčlenjevanje datoteke stanja %s je spodletelo: (%d) %s\n"
 
-#: ../src/main.c:476
+#: ../src/main.c:483
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Opravila ni mogoče pretvoriti za ozadnje delovanje: %s [napaka %u]\n"
@@ -2548,7 +2548,7 @@ msgstr "Povezava CDMA %d"
 msgid "GSM connection %d"
 msgstr "Povezava GSM %d"
 
-#: ../src/nm-device-bond.c:189
+#: ../src/nm-device-bond.c:192
 #, c-format
 msgid "Bond connection %d"
 msgstr "Povezava vezi %d"
@@ -2563,28 +2563,34 @@ msgstr "Povezava PAN %d"
 msgid "DUN connection %d"
 msgstr "Povezava DUN %d"
 
-#: ../src/nm-device-ethernet.c:1433
+#: ../src/nm-device-ethernet.c:1326
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "Povezava PPPoE %d"
 
-#: ../src/nm-device-ethernet.c:1433
+#: ../src/nm-device-ethernet.c:1326
 #: ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "Žična povezava %d"
 
-#: ../src/nm-device-infiniband.c:302
+#: ../src/nm-device-infiniband.c:303
 #, c-format
-msgid "InfiniBand connection %d"
-msgstr "Povezava InfiniBand %d"
+msgid "Infiniband connection %d"
+msgstr "Povezava Infiniband %d"
 
 #: ../src/nm-device-olpc-mesh.c:293
 #, c-format
 msgid "Mesh %d"
 msgstr "Mreža %d"
 
-#: ../src/nm-manager.c:625
+#: ../src/nm-device-vlan.c:311
+#, c-format
+#| msgid "VPN connection %d"
+msgid "VLAN connection %d"
+msgstr "Povezava VLAN %d"
+
+#: ../src/nm-manager.c:661
 #, c-format
 msgid "VPN connection %d"
 msgstr "Povezava VPN %d"
@@ -2632,12 +2638,11 @@ msgstr "skupini netlink se ni mogoče pridružiti: %s"
 msgid "error updating link cache: %s"
 msgstr "napaka med posodabljanjem predpomnilnika povezave: %s"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:92
+#: ../src/settings/plugins/ifcfg-rh/reader.c:93
 #: ../src/settings/plugins/ifnet/connection_parser.c:51
 msgid "System"
 msgstr "Sistem"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3652
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3632
 msgid "Bond"
 msgstr "Vez"
-
