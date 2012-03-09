@@ -784,7 +784,7 @@ wifi_nl80211_is_wifi (const char *iface)
 		return FALSE;
 
 	ifindex = iface_to_index (nl_sock, iface);
-	if (index < 0)
+	if (ifindex < 0)
 		return FALSE;
 
 	if (genl_connect (nl_sock))
