@@ -148,7 +148,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_bond_init (NMDeviceBond *device)
 {
-	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_BOND);
+	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_BOND);
 }
 
 static void

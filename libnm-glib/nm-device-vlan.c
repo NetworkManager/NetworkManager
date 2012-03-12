@@ -167,7 +167,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_vlan_init (NMDeviceVlan *device)
 {
-	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_VLAN);
+	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_VLAN);
 }
 
 static void

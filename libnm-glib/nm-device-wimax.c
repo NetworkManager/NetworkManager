@@ -400,7 +400,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_wimax_init (NMDeviceWimax *device)
 {
-	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_WIMAX);
+	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_WIMAX);
 }
 
 static void

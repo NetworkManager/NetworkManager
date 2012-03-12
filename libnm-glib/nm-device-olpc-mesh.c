@@ -161,7 +161,7 @@ connection_valid (NMDevice *device, NMConnection *connection)
 static void
 nm_device_olpc_mesh_init (NMDeviceOlpcMesh *device)
 {
-	nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_OLPC_MESH);
+	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_OLPC_MESH);
 }
 
 static void

@@ -232,7 +232,7 @@ constructed (GObject *object)
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 
 	priv = NM_DEVICE_GET_PRIVATE (object);
-	/* Catch failure of subclasses to call nm_device_set_device_type() */
+	/* Catch failure of subclasses to call _nm_device_set_device_type() */
 	g_warn_if_fail (priv->device_type != NM_DEVICE_TYPE_UNKNOWN);
 	/* Catch a subclass setting the wrong type */
 	g_warn_if_fail (G_OBJECT_TYPE (object) == _nm_device_gtype_from_dtype (priv->device_type));
@@ -660,7 +660,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 }
 
 /**
- * nm_device_set_device_type:
+ * _nm_device_set_device_type:
  * @device: the device
  * @dtype: the NM device type
  *
@@ -668,7 +668,7 @@ nm_device_class_init (NMDeviceClass *device_class)
  * ONLY METHOD.
  **/
 void
-nm_device_set_device_type (NMDevice *device, NMDeviceType dtype)
+_nm_device_set_device_type (NMDevice *device, NMDeviceType dtype)
 {
 	NMDevicePrivate *priv;
 

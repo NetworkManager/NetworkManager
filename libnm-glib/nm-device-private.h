@@ -23,6 +23,6 @@
 #ifndef NM_DEVICE_PRIVATE_H
 #define NM_DEVICE_PRIVATE_H
 
-void nm_device_set_device_type (NMDevice *device, NMDeviceType dtype);
+void _nm_device_set_device_type (NMDevice *device, NMDeviceType dtype);
 
 #endif /* NM_DEVICE_PRIVATE_H */
