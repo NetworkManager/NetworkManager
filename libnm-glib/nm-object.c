@@ -505,16 +505,28 @@ async_got_type (GType type, gpointer user_data)
 	NMObjectTypeAsyncData *async_data = user_data;
 	GObject *object;
 
-	if (type != G_TYPE_INVALID) {
-		object = g_object_new (type,
-		                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
-		                       NM_OBJECT_DBUS_PATH, async_data->path,
-		                       NULL);
-	} else {
+	/* Ensure we don't have the object already; we may get multiple type
+	 * requests for the same object if there are multiple properties on
+	 * other objects that refer to the object at this path.  One of those
+	 * other requests may have already completed.
+	 */
+	object = (GObject *) _nm_object_cache_get (async_data->path);
+	if (object) {
+		create_async_complete (object, async_data);
+		return;
+	}
+
+	if (type == G_TYPE_INVALID) {
+		/* Don't know how to create this object */
 		create_async_complete (NULL, async_data);
 		return;
 	}
 
+	object = g_object_new (type,
+	                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
+	                       NM_OBJECT_DBUS_PATH, async_data->path,
+	                       NULL);
+	g_warn_if_fail (object != NULL);
 	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
 	                             NULL, async_inited, async_data);
 }
@@ -568,6 +580,23 @@ wincaps_to_dash (const char *caps)
 	return g_string_free (str, FALSE);
 }
 
+/* Adds object to array if it's not already there */
+static void
+add_to_object_array_unique (GPtrArray *array, GObject *obj)
+{
+	guint i;
+
+	g_return_if_fail (array != NULL);
+
+	if (obj != NULL) {
+		for (i = 0; i < array->len; i++) {
+			if (g_ptr_array_index (array, i) == obj)
+				return;
+		}
+		g_ptr_array_add (array, obj);
+	}
+}
+
 typedef struct {
 	NMObject *self;
 	PropertyInfo *pi;
@@ -593,10 +622,8 @@ object_property_complete (ObjectCreatedData *odata)
 		if (*array)
 			g_boxed_free (NM_TYPE_OBJECT_ARRAY, *array);
 		*array = g_ptr_array_sized_new (odata->length);
-		for (i = 0; i < odata->length; i++) {
-			if (odata->objects[i])
-				g_ptr_array_add (*array, odata->objects[i]);
-		}
+		for (i = 0; i < odata->length; i++)
+			add_to_object_array_unique (*array, odata->objects[i]);
 	} else {
 		GObject **obj_p = pi->field;
 
@@ -1068,7 +1095,7 @@ pseudo_property_object_created (GObject *obj, gpointer user_data)
 
 		if (!*list_p)
 			*list_p = g_ptr_array_new ();
-		g_ptr_array_add (*list_p, obj);
+		add_to_object_array_unique (*list_p, obj);
 		ppi->added_func (ppi->self, NM_OBJECT (obj));
 	}
 }
