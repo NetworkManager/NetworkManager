@@ -36,6 +36,8 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-leap-always-ask \
 	ifcfg-test-wifi-wpa-psk \
 	keys-test-wifi-wpa-psk \
+	ifcfg-test-wifi-wpa-psk-2 \
+	keys-test-wifi-wpa-psk-2 \
 	ifcfg-test-wifi-wpa-psk-unquoted \
 	keys-test-wifi-wpa-psk-unquoted \
 	ifcfg-test-wifi-wpa-psk-unquoted2 \
