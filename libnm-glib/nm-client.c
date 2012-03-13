@@ -1036,6 +1036,21 @@ free_object_array (GPtrArray **array)
 }
 
 static void
+dispose_and_free_object_array (GPtrArray **array)
+{
+	g_return_if_fail (array != NULL);
+
+	if (*array) {
+		/* The objects in the array may have circular refs with other
+		 * objects, which the caller will need to know to break by
+		 * calling this function rather than free_object_array().
+		 */
+		g_ptr_array_foreach (*array, (GFunc) g_object_run_dispose, NULL);
+		free_object_array (array);
+	}
+}
+
+static void
 updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMClient *client = NM_CLIENT (user_data);
@@ -1080,7 +1095,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
 		free_object_array (&priv->devices);
-		free_object_array (&priv->active_connections);
+		dispose_and_free_object_array (&priv->active_connections);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
 		priv->wwan_enabled = FALSE;
@@ -1420,7 +1435,7 @@ dispose (GObject *object)
 	g_object_unref (priv->bus_proxy);
 
 	free_object_array (&priv->devices);
-	free_object_array (&priv->active_connections);
+	dispose_and_free_object_array (&priv->active_connections);
 
 	g_slist_foreach (priv->pending_activations, (GFunc) activate_info_free, NULL);
 	g_slist_free (priv->pending_activations);
