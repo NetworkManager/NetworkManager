@@ -1243,6 +1243,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
 			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
 				return TRUE;
+			else 
+				return FALSE;
 		}
 	}
 
