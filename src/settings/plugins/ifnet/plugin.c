@@ -345,13 +345,14 @@ add_connection (NMSystemConfigInterface *config,
 	NMIfnetConnection *connection = NULL;
 	char *conn_name;
 	gboolean has_flagged_secrets = FALSE;
-	NMSettingConnection *settings = NM_SETTING_CONNECTION (
-			nm_connection_get_setting (source, NM_TYPE_SETTING_CONNECTION));
+	NMSettingConnection *s_con;
 
-	g_assert (settings);
+	s_con = nm_connection_get_setting_connection (source);
+	g_assert (s_con);
+
 	/* If the connection is not available for all users, ignore
 	 * it as this plugin only deals with System Connections */
-	if (nm_setting_connection_get_num_permissions (settings))
+	if (nm_setting_connection_get_num_permissions (s_con))
 		return NULL;
 
 	/* If the connection has flagged secrets, ignore
