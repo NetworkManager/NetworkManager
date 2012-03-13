@@ -277,7 +277,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:transport-mode:
 	 *
-	 * The IP-over-Inifiniband transport mode. Either 'datagram' or
+	 * The IP-over-InfiniBand transport mode. Either 'datagram' or
 	 * 'connected'.
 	 **/
 	g_object_class_install_property
