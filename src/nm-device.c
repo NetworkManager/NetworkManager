@@ -4384,12 +4384,11 @@ queued_set_state (gpointer user_data)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->queued_state.id) {
-		priv->queued_state.id = 0;
-
 		nm_log_dbg (LOGD_DEVICE, "(%s): running queued state change to %s (id %d)",
 			        nm_device_get_iface (self),
 			        state_to_string (priv->queued_state.state),
 			        priv->queued_state.id);
+		priv->queued_state.id = 0;
 		nm_device_state_changed (self, priv->queued_state.state, priv->queued_state.reason);
 	}
 	queued_state_clear (self);
