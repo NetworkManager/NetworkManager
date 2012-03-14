@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2012 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -34,6 +34,23 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_MODEM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_MODEM))
 #define NM_IS_DEVICE_MODEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_MODEM))
 #define NM_DEVICE_MODEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_MODEM, NMDeviceModemClass))
+
+/**
+ * NMDeviceModemError:
+ * @NM_DEVICE_MODEM_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_DEVICE_MODEM_ERROR_NOT_MODEM_CONNECTION: the connection was not of modem type
+ * @NM_DEVICE_MODEM_ERROR_INVALID_MODEM_CONNECTION: the modem connection was invalid
+ * @NM_DEVICE_MODEM_ERROR_MISSING_DEVICE_CAPS: the device missed required capabilities
+ */
+typedef enum {
+	NM_DEVICE_MODEM_ERROR_UNKNOWN = 0,              /*< nick=UnknownError >*/
+	NM_DEVICE_MODEM_ERROR_NOT_MODEM_CONNECTION,     /*< nick=NotModemConnection >*/
+	NM_DEVICE_MODEM_ERROR_INVALID_MODEM_CONNECTION, /*< nick=InvalidModemConnection >*/
+	NM_DEVICE_MODEM_ERROR_MISSING_DEVICE_CAPS,      /*< nick=MissingDeviceCaps >*/
+} NMDeviceModemError;
+
+#define NM_DEVICE_MODEM_ERROR nm_device_modem_error_quark ()
+GQuark nm_device_modem_error_quark (void);
 
 #define NM_DEVICE_MODEM_MODEM_CAPABILITIES   "modem-capabilities"
 #define NM_DEVICE_MODEM_CURRENT_CAPABILITIES "current-capabilities"

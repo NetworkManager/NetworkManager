@@ -17,8 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2012 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_BOND_H
@@ -34,6 +33,23 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_BOND(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_BOND))
 #define NM_IS_DEVICE_BOND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_BOND))
 #define NM_DEVICE_BOND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_BOND, NMDeviceBondClass))
+
+/**
+ * NMDeviceBondError:
+ * @NM_DEVICE_BOND_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_DEVICE_BOND_ERROR_NOT_BOND_CONNECTION: the connection was not of bond type
+ * @NM_DEVICE_BOND_ERROR_INVALID_BOND_CONNECTION: the bond connection was invalid
+ * @NM_DEVICE_BOND_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
+ */
+typedef enum {
+	NM_DEVICE_BOND_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
+	NM_DEVICE_BOND_ERROR_NOT_BOND_CONNECTION,     /*< nick=NotBondConnection >*/
+	NM_DEVICE_BOND_ERROR_INVALID_BOND_CONNECTION, /*< nick=InvalidBondConnection >*/
+	NM_DEVICE_BOND_ERROR_INTERFACE_MISMATCH,      /*< nick=InterfaceMismatch >*/
+} NMDeviceBondError;
+
+#define NM_DEVICE_BOND_ERROR nm_device_bond_error_quark ()
+GQuark nm_device_bond_error_quark (void);
 
 #define NM_DEVICE_BOND_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_BOND_CARRIER     "carrier"

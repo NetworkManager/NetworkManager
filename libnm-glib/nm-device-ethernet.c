@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -62,6 +62,23 @@ enum {
 #define DBUS_PROP_PERM_HW_ADDRESS "PermHwAddress"
 #define DBUS_PROP_SPEED "Speed"
 #define DBUS_PROP_CARRIER "Carrier"
+
+/**
+ * nm_device_ethernet_error_quark:
+ *
+ * Registers an error quark for #NMDeviceEthernet if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceEthernet errors.
+ **/
+GQuark
+nm_device_ethernet_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-ethernet-error-quark");
+	return quark;
+}
 
 /**
  * nm_device_ethernet_new:
@@ -159,12 +176,14 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	const char *ctype;
 	gboolean is_pppoe = FALSE;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -172,13 +191,19 @@ connection_valid (NMDevice *device, NMConnection *connection)
 	ctype = nm_setting_connection_get_connection_type (s_con);
 	if (!strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
 		is_pppoe = TRUE;
-	else if (strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME) != 0)
+	else if (strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_NOT_ETHERNET_CONNECTION,
+		             "The connection was not a wired or PPPoE connection.");
 		return FALSE;
+	}
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	/* Wired setting optional for PPPoE */
-	if (!is_pppoe && !s_wired)
+	if (!is_pppoe && !s_wired) {
+		g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION,
+		             "The connection was not a valid ethernet connection.");
 		return FALSE;
+	}
 
 	if (s_wired) {
 		const GByteArray *mac;
@@ -191,9 +216,17 @@ connection_valid (NMDevice *device, NMConnection *connection)
 		perm_str = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
 		if (perm_str) {
 			perm_mac = ether_aton (perm_str);
-			mac = nm_setting_wired_get_mac_address (s_wired);
-			if (mac && perm_mac && memcmp (mac->data, perm_mac->ether_addr_octet, ETH_ALEN))
+			if (!perm_mac) {
+				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_DEVICE_MAC,
+				             "Invalid device MAC address.");
 				return FALSE;
+			}
+			mac = nm_setting_wired_get_mac_address (s_wired);
+			if (mac && perm_mac && memcmp (mac->data, perm_mac->ether_addr_octet, ETH_ALEN)) {
+				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH,
+				             "The MACs of the device and the connection didn't match.");
+				return FALSE;
+			}
 		}
 	}
 
@@ -310,7 +343,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 

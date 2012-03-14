@@ -58,6 +58,23 @@ enum {
 #define DBUS_PROP_ACTIVE_CHANNEL  "ActiveChannel"
 
 /**
+ * nm_device_olpc_mesh_error_quark:
+ *
+ * Registers an error quark for #NMDeviceOlpcMesh if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceOlpcMesh errors.
+ **/
+GQuark
+nm_device_olpc_mesh_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-olpc-mesh-error-quark");
+	return quark;
+}
+
+/**
  * nm_device_olpc_mesh_new:
  * @connection: the #DBusGConnection
  * @path: the DBus object path of the device
@@ -136,22 +153,30 @@ nm_device_olpc_mesh_get_active_channel (NMDeviceOlpcMesh *device)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingOlpcMesh *s_olpc_mesh;
 	const char *ctype;
 
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_OLPC_MESH_SETTING_NAME) != 0)
+	if (strcmp (ctype, NM_SETTING_OLPC_MESH_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_OLPC_MESH_ERROR, NM_DEVICE_OLPC_MESH_ERROR_NOT_OLPC_MESH_CONNECTION,
+		             "The connection was not a Olpc Mesh connection.");
 		return FALSE;
+	}
 
 	s_olpc_mesh = nm_connection_get_setting_olpc_mesh (connection);
-	if (!s_olpc_mesh)
+	if (!s_olpc_mesh) {
+		g_set_error (error, NM_DEVICE_OLPC_MESH_ERROR, NM_DEVICE_OLPC_MESH_ERROR_INVALID_OLPC_MESH_CONNECTION,
+		             "The connection was not a valid Olpc Mesh connection.");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -261,7 +286,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 

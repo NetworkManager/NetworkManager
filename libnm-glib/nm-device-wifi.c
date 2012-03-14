@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -84,6 +84,23 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+/**
+ * nm_device_wifi_error_quark:
+ *
+ * Registers an error quark for #NMDeviceWifi if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceWifi errors.
+ **/
+GQuark
+nm_device_wifi_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-wifi-error-quark");
+	return quark;
+}
 
 /**
  * nm_device_wifi_new:
@@ -390,7 +407,7 @@ has_proto (NMSettingWirelessSecurity *s_wsec, const char *proto)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -402,24 +419,40 @@ connection_valid (NMDevice *device, NMConnection *connection)
 	NMDeviceWifiCapabilities wifi_caps;
 	const char *key_mgmt;
 
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0)
+	if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_NOT_WIFI_CONNECTION,
+		             "The connection was not a Wi-Fi connection.");
 		return FALSE;
+	}
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
-	if (!s_wifi)
+	if (!s_wifi) {
+		g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_INVALID_WIFI_CONNECTION,
+		             "The connection was not a valid Wi-Fi connection.");
 		return FALSE;
+	}
 
 	/* Check MAC address */
 	hw_str = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
 	if (hw_str) {
 		hw_mac = ether_aton (hw_str);
-		mac = nm_setting_wireless_get_mac_address (s_wifi);
-		if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN))
+		if (!hw_mac) {
+			g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_INVALID_DEVICE_MAC,
+			             "Invalid device MAC address.");
 			return FALSE;
+		}
+		mac = nm_setting_wireless_get_mac_address (s_wifi);
+		if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN)) {
+			g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MAC_MISMATCH,
+			             "The MACs of the device and the connection didn't match.");
+			return FALSE;
+		}
 	}
 
 	/* Check device capabilities; we assume all devices can do WEP at least */
@@ -434,12 +467,18 @@ connection_valid (NMDevice *device, NMConnection *connection)
 		    || !g_strcmp0 (key_mgmt, "wpa-eap")) {
 
 			/* Is device only WEP capable? */
-			if (!(wifi_caps & WPA_CAPS))
+			if (!(wifi_caps & WPA_CAPS)) {
+				g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_WPA_CAPS,
+				             "The device missed WPA capabilities required by the connection.");
 				return FALSE;
+			}
 
 			/* Make sure WPA2/RSN-only connections don't get chosen for WPA-only cards */
-			if (has_proto (s_wsec, "rsn") && !has_proto (s_wsec, "wpa") && !(wifi_caps & RSN_CAPS))
+			if (has_proto (s_wsec, "rsn") && !has_proto (s_wsec, "wpa") && !(wifi_caps & RSN_CAPS)) {
+				g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_RSN_CAPS,
+				             "The device missed WPA2/RSN capabilities required by the connection.");
 				return FALSE;
+			}
 		}
 	}
 
@@ -604,7 +643,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 

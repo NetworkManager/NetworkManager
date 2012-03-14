@@ -17,8 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2012 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_VLAN_H
@@ -34,6 +33,25 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_VLAN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_VLAN))
 #define NM_IS_DEVICE_VLAN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_VLAN))
 #define NM_DEVICE_VLAN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_VLAN, NMDeviceVlanClass))
+
+/**
+ * NMDeviceVlanError:
+ * @NM_DEVICE_VLAN_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_DEVICE_VLAN_ERROR_NOT_VLAN_CONNECTION: the connection was not of VLAN type
+ * @NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION: the VLAN connection was invalid
+ * @NM_DEVICE_VLAN_ERROR_ID_MISMATCH: the VLAN identifiers of the connection and the device mismatched
+ * @NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
+ */
+typedef enum {
+	NM_DEVICE_VLAN_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
+	NM_DEVICE_VLAN_ERROR_NOT_VLAN_CONNECTION,     /*< nick=NotVlanConnection >*/
+	NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION, /*< nick=InvalidVlanConnection >*/
+	NM_DEVICE_VLAN_ERROR_ID_MISMATCH,             /*< nick=IdMismatch >*/
+	NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH,      /*< nick=InterfaceMismatch >*/
+} NMDeviceVlanError;
+
+#define NM_DEVICE_VLAN_ERROR nm_device_vlan_error_quark ()
+GQuark nm_device_vlan_error_quark (void);
 
 #define NM_DEVICE_VLAN_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_VLAN_CARRIER     "carrier"

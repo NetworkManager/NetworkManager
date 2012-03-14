@@ -1347,8 +1347,35 @@ nm_device_disconnect (NMDevice *device,
 gboolean
 nm_device_connection_valid (NMDevice *device, NMConnection *connection)
 {
-	if (NM_DEVICE_GET_CLASS (device)->connection_valid)
-		return NM_DEVICE_GET_CLASS (device)->connection_valid (device, connection);
+	return nm_device_connection_compatible (device, connection, NULL);
+}
+
+/**
+ * nm_device_connection_compatible:
+ * @device: an #NMDevice to validate @connection against
+ * @connection: an #NMConnection to validate against @device
+ * @error: return location for a #GError, or %NULL
+ *
+ * Validates a given connection for a given #NMDevice object and returns
+ * whether the connection may be activated with the device. For example if
+ * @device is a WiFi device that supports only WEP encryption, the connection
+ * will only be valid if it is a WiFi connection which describes a WEP or open
+ * network, and will not be valid if it describes a WPA network, or if it is
+ * an Ethernet, Bluetooth, WWAN, etc connection that is incompatible with the
+ * device.
+ *
+ * This function does the same as nm_device_connection_valid(), i.e. checking
+ * compatibility of the given device and connection. But, in addition, it sets
+ * GError when FALSE is returned.
+ *
+ * Returns: %TRUE if the connection may be activated with this device, %FALSE
+ * if is incompatible with the device's capabilities and characteristics.
+ **/
+gboolean
+nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
+{
+	if (NM_DEVICE_GET_CLASS (device)->connection_compatible)
+		return NM_DEVICE_GET_CLASS (device)->connection_compatible (device, connection, error);
 	return FALSE;
 }
 

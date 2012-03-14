@@ -17,8 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -54,6 +53,23 @@ enum {
 
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
 #define DBUS_PROP_CARRIER "Carrier"
+
+/**
+ * nm_device_bond_error_quark:
+ *
+ * Registers an error quark for #NMDeviceBond if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceBond errors.
+ **/
+GQuark
+nm_device_bond_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-bond-error-quark");
+	return quark;
+}
 
 /**
  * nm_device_bond_new:
@@ -116,27 +132,38 @@ nm_device_bond_get_carrier (NMDeviceBond *device)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingBond *s_bond;
 	const char *ctype, *dev_iface_name, *bond_iface_name;
 
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_BOND_SETTING_NAME) != 0)
+	if (strcmp (ctype, NM_SETTING_BOND_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_BOND_ERROR, NM_DEVICE_BOND_ERROR_NOT_BOND_CONNECTION,
+		             "The connection was not a bond connection.");
 		return FALSE;
+	}
 
 	s_bond = nm_connection_get_setting_bond (connection);
-	if (!s_bond)
+	if (!s_bond) {
+		g_set_error (error, NM_DEVICE_BOND_ERROR, NM_DEVICE_BOND_ERROR_INVALID_BOND_CONNECTION,
+		             "The connection was not a valid bond connection.");
 		return FALSE;
+	}
 
 	dev_iface_name = nm_device_get_iface (device);
 	bond_iface_name = nm_setting_bond_get_interface_name (s_bond);
-	if (g_strcmp0 (dev_iface_name, bond_iface_name) != 0)
+	if (g_strcmp0 (dev_iface_name, bond_iface_name) != 0) {
+		g_set_error (error, NM_DEVICE_BOND_ERROR, NM_DEVICE_BOND_ERROR_INTERFACE_MISMATCH,
+		             "The interfaces of the device and the connection didn't match.");
 		return FALSE;
+	}
 
 	/* FIXME: check slaves? But we can't... */
 
@@ -240,7 +267,7 @@ nm_device_bond_class_init (NMDeviceBondClass *eth_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 

@@ -17,8 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -57,6 +56,23 @@ enum {
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
 #define DBUS_PROP_CARRIER "Carrier"
 #define DBUS_PROP_VLAN_ID "VlanId"
+
+/**
+ * nm_device_vlan_error_quark:
+ *
+ * Registers an error quark for #NMDeviceVlan if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceVlan errors.
+ **/
+GQuark
+nm_device_vlan_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-vlan-error-quark");
+	return quark;
+}
 
 /**
  * nm_device_vlan_new:
@@ -134,30 +150,44 @@ nm_device_vlan_get_vlan_id (NMDeviceVlan *device)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
 	const char *ctype, *dev_iface_name, *vlan_iface_name;
 
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_VLAN_SETTING_NAME) != 0)
+	if (strcmp (ctype, NM_SETTING_VLAN_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_NOT_VLAN_CONNECTION,
+		             "The connection was not a VLAN connection.");
 		return FALSE;
+	}
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
-	if (!s_vlan)
+	if (!s_vlan) {
+		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION,
+		             "The connection was not a valid VLAN connection.");
 		return FALSE;
+	}
 
-	if (nm_setting_vlan_get_id (s_vlan) != nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device)))
+	if (nm_setting_vlan_get_id (s_vlan) != nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device))) {
+		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_ID_MISMATCH,
+		             "The VLAN identifiers of the device and the connection didn't match.");
 		return FALSE;
+	}
 
 	dev_iface_name = nm_device_get_iface (device);
 	vlan_iface_name = nm_setting_vlan_get_interface_name (s_vlan);
-	if (vlan_iface_name && g_strcmp0 (dev_iface_name, vlan_iface_name) != 0)
+	if (vlan_iface_name && g_strcmp0 (dev_iface_name, vlan_iface_name) != 0) {
+		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH,
+		             "The interfaces of the device and the connection didn't match.");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -263,7 +293,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *eth_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 

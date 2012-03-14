@@ -1233,11 +1233,11 @@ find_device_for_connection (NmCli *nmc,
 			if (iface) {
 				const char *dev_iface = nm_device_get_iface (dev);
 				if (   !strcmp (dev_iface, iface)
-				    && nm_device_connection_valid (dev, connection)) {
+				    && nm_device_connection_compatible (dev, connection, NULL)) {
 					found_device = dev;
 				}
 			} else {
-				if (nm_device_connection_valid (dev, connection)) {
+				if (nm_device_connection_compatible (dev, connection, NULL)) {
 					found_device = dev;
 				}
 			}

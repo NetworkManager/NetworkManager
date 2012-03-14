@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_WIFI_H
@@ -35,6 +35,31 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIFI(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_WIFI))
 #define NM_IS_DEVICE_WIFI_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_WIFI))
 #define NM_DEVICE_WIFI_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIFI, NMDeviceWifiClass))
+
+/**
+ * NMDeviceWifiError:
+ * @NM_DEVICE_WIFI_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_DEVICE_WIFI_ERROR_NOT_WIFI_CONNECTION: the connection was not of Wi-Fi type
+ * @NM_DEVICE_WIFI_ERROR_INVALID_WIFI_CONNECTION: the Wi-Fi connection was invalid
+ * @NM_DEVICE_WIFI_ERROR_INVALID_DEVICE_MAC: the device's MAC was invalid
+ * @NM_DEVICE_WIFI_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
+ * @NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_WPA_CAPS: the device missed WPA capabilities
+ * required by the connection
+ * @NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_RSN_CAPS: the device missed RSN capabilities
+ * required by the connection
+ */
+typedef enum {
+	NM_DEVICE_WIFI_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
+	NM_DEVICE_WIFI_ERROR_NOT_WIFI_CONNECTION,     /*< nick=NotWifiConnection >*/
+	NM_DEVICE_WIFI_ERROR_INVALID_WIFI_CONNECTION, /*< nick=InvalidWifiConnection >*/
+	NM_DEVICE_WIFI_ERROR_INVALID_DEVICE_MAC,      /*< nick=InvalidDeviceMac >*/
+	NM_DEVICE_WIFI_ERROR_MAC_MISMATCH,            /*< nick=MacMismatch >*/
+	NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_WPA_CAPS, /*< nick=MissingDeviceWpaCaps >*/
+	NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_RSN_CAPS, /*< nick=MissingDeviceRsnCaps >*/
+} NMDeviceWifiError;
+
+#define NM_DEVICE_WIFI_ERROR nm_device_wifi_error_quark ()
+GQuark nm_device_wifi_error_quark (void);
 
 #define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"
 #define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"

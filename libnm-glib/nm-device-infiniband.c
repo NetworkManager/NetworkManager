@@ -17,8 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -55,6 +54,23 @@ enum {
 
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
 #define DBUS_PROP_CARRIER "Carrier"
+
+/**
+ * nm_device_infiniband_error_quark:
+ *
+ * Registers an error quark for #NMDeviceInfiniband if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceInfiniband errors.
+ **/
+GQuark
+nm_device_infiniband_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-infiniband-error-quark");
+	return quark;
+}
 
 /**
  * nm_device_infiniband_new:
@@ -117,7 +133,7 @@ nm_device_infiniband_get_carrier (NMDeviceInfiniband *device)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_infiniband;
@@ -125,23 +141,39 @@ connection_valid (NMDevice *device, NMConnection *connection)
 	const GByteArray *mac;
 	guint8 *hwaddr, hwaddr_buf[INFINIBAND_ALEN];
 
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_INFINIBAND_SETTING_NAME) != 0)
+	if (strcmp (ctype, NM_SETTING_INFINIBAND_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_NOT_INFINIBAND_CONNECTION,
+		             "The connection was not a InfiniBand connection.");
 		return FALSE;
+	}
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	if (!s_infiniband)
+	if (!s_infiniband) {
+		g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_INVALID_INFINIBAND_CONNECTION,
+		             "The connection was not a valid InfiniBand connection.");
 		return FALSE;
+	}
 
 	hwaddr_str = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
 	if (hwaddr_str) {
 		hwaddr = nm_utils_hwaddr_aton (hwaddr_str, ARPHRD_INFINIBAND, hwaddr_buf);
-		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-		if (mac && hwaddr && memcmp (mac->data, hwaddr, INFINIBAND_ALEN))
+		if (!hwaddr) {
+			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_INVALID_DEVICE_MAC,
+			             "Invalid device MAC address.");
 			return FALSE;
+		}
+		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
+		if (mac && hwaddr && memcmp (mac->data, hwaddr, INFINIBAND_ALEN)) {
+			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_MAC_MISMATCH,
+			             "The MACs of the device and the connection didn't match.");
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -244,7 +276,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 

@@ -76,8 +76,9 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
-	gboolean (*connection_valid)   (NMDevice *device,
-	                                NMConnection *connection);
+	gboolean (*connection_compatible) (NMDevice *device,
+	                                   NMConnection *connection,
+	                                   GError **error);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -121,6 +122,10 @@ GSList *             nm_device_filter_connections   (NMDevice *device,
 
 gboolean             nm_device_connection_valid     (NMDevice *device,
                                                      NMConnection *connection);
+
+gboolean             nm_device_connection_compatible (NMDevice *device,
+                                                      NMConnection *connection,
+                                                      GError **error);
 
 G_END_DECLS
 

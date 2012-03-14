@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2012 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -57,6 +57,23 @@ enum {
 
 #define DBUS_PROP_MODEM_CAPS "ModemCapabilities"
 #define DBUS_PROP_CURRENT_CAPS "CurrentCapabilities"
+
+/**
+ * nm_device_modem_error_quark:
+ *
+ * Registers an error quark for #NMDeviceModem if necessary.
+ *
+ * Returns: the error quark used for #NMDeviceModem errors.
+ **/
+GQuark
+nm_device_modem_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-modem-error-quark");
+	return quark;
+}
 
 /**
  * nm_device_modem_get_modem_capabilities:
@@ -100,7 +117,7 @@ nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 }
 
 static gboolean
-connection_valid (NMDevice *device, NMConnection *connection)
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingGsm *s_gsm;
@@ -108,22 +125,32 @@ connection_valid (NMDevice *device, NMConnection *connection)
 	const char *ctype;
 	NMDeviceModemCapabilities current_caps;
 
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	ctype = nm_setting_connection_get_connection_type (s_con);
 	if (   strcmp (ctype, NM_SETTING_GSM_SETTING_NAME) != 0
-	    && strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME) != 0)
+	    && strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME) != 0) {
+		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_NOT_MODEM_CONNECTION,
+		             "The connection was not a modem connection.");
 		return FALSE;
+	}
 
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	s_cdma = nm_connection_get_setting_cdma (connection);
-	if (!s_cdma && !s_gsm)
+	if (!s_cdma && !s_gsm) {
+		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_INVALID_MODEM_CONNECTION,
+		             "The connection was not a valid modem connection.");
 		return FALSE;
+	}
 
 	current_caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
 	if (   !(s_gsm && (current_caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS))
 	    && !(s_cdma && (current_caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))) {
+		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_MISSING_DEVICE_CAPS,
+		             "The device missed capabilities required by the GSM/CDMA connection.");
 		return FALSE;
 	}
 
@@ -220,7 +247,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
-	device_class->connection_valid = connection_valid;
+	device_class->connection_compatible = connection_compatible;
 
 	/**
 	 * NMDeviceModem:modem-capabilities:
