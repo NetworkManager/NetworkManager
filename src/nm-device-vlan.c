@@ -495,10 +495,10 @@ carrier_action_defer_cb (gpointer user_data)
 	state = nm_device_get_state (NM_DEVICE (self));
 	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
 		if (priv->carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
 	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
 		if (!priv->carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
+			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
 	}
 	return FALSE;
 }
