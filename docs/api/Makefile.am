@@ -37,7 +37,7 @@ OTHER_FILES= \
 GENERATED_FILES = spec.html settings-spec.xml
 
 spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
-	$(XSLTPROC) $(top_srcdir)/tools/doc-generator.xsl $(top_builddir)/introspection/all.xml > $@
+	$(XSLTPROC) --path "$(top_builddir)/introspection:$(top_srcdir)/introspection" $(top_srcdir)/tools/doc-generator.xsl $(top_builddir)/introspection/all.xml > $@
 	mkdir -p $(builddir)/html/
 	cp $@ $(builddir)/html/
 
