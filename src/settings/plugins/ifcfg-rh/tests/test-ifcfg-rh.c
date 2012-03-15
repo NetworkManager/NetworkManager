@@ -588,7 +588,7 @@ test_read_wired_static (const char *file, const char *expected_id)
 	        NM_SETTING_IP4_CONFIG_METHOD);
 
 	/* Implicit may-fail */
-	ASSERT (nm_setting_ip4_config_get_may_fail (s_ip4) == FALSE,
+	ASSERT (nm_setting_ip4_config_get_may_fail (s_ip4) == TRUE,
 	        "wired-static-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
