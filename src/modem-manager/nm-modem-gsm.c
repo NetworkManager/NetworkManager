@@ -62,6 +62,18 @@ typedef enum {
     MM_MODEM_GSM_ALLOWED_MODE_LAST = MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY
 } MMModemGsmAllowedMode;
 
+typedef enum {
+	MM_MODEM_GSM_ALLOWED_AUTH_UNKNOWN  = 0x0000,
+    /* bits 0..4 order match Ericsson device bitmap */
+    MM_MODEM_GSM_ALLOWED_AUTH_NONE     = 0x0001,
+    MM_MODEM_GSM_ALLOWED_AUTH_PAP      = 0x0002,
+    MM_MODEM_GSM_ALLOWED_AUTH_CHAP     = 0x0004,
+    MM_MODEM_GSM_ALLOWED_AUTH_MSCHAP   = 0x0008,
+    MM_MODEM_GSM_ALLOWED_AUTH_MSCHAPV2 = 0x0010,
+    MM_MODEM_GSM_ALLOWED_AUTH_EAP      = 0x0020,
+
+    MM_MODEM_GSM_ALLOWED_AUTH_LAST = MM_MODEM_GSM_ALLOWED_AUTH_EAP
+} MMModemGsmAllowedAuth;
 
 G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
 
@@ -326,6 +338,7 @@ static GHashTable *
 create_connect_properties (NMConnection *connection)
 {
 	NMSettingGsm *setting;
+	NMSettingPPP *s_ppp;
 	GHashTable *properties;
 	const char *str;
 
@@ -383,6 +396,28 @@ create_connect_properties (NMConnection *connection)
 	/* Roaming */
 	if (nm_setting_gsm_get_home_only (setting))
 		value_hash_add_bool (properties, "home_only", TRUE);
+
+	/* For IpMethod == STATIC or DHCP */
+	s_ppp = nm_connection_get_setting_ppp (connection);
+	if (s_ppp) {
+		guint32 auth = MM_MODEM_GSM_ALLOWED_AUTH_UNKNOWN;
+
+		if (nm_setting_ppp_get_noauth (s_ppp))
+			auth |= MM_MODEM_GSM_ALLOWED_AUTH_NONE;
+		if (!nm_setting_ppp_get_refuse_pap (s_ppp))
+			auth |= MM_MODEM_GSM_ALLOWED_AUTH_PAP;
+		if (!nm_setting_ppp_get_refuse_chap (s_ppp))
+			auth |= MM_MODEM_GSM_ALLOWED_AUTH_CHAP;
+		if (!nm_setting_ppp_get_refuse_mschap (s_ppp))
+			auth |= MM_MODEM_GSM_ALLOWED_AUTH_MSCHAP;
+		if (!nm_setting_ppp_get_refuse_mschapv2 (s_ppp))
+			auth |= MM_MODEM_GSM_ALLOWED_AUTH_MSCHAPV2;
+		if (!nm_setting_ppp_get_refuse_eap (s_ppp))
+			auth |= MM_MODEM_GSM_ALLOWED_AUTH_EAP;
+
+		if (auth != MM_MODEM_GSM_ALLOWED_AUTH_UNKNOWN)
+			value_hash_add_uint (properties, "allowed_auth", auth);
+	}
 
 	return properties;
 }
