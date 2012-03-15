@@ -547,6 +547,15 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (val)
 		nm_ip4_config_add_domain (config, g_value_get_string (val));
 
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_DOMAINS);
+	if (val) {
+		const char **domains = g_value_get_boxed (val);
+		const char **domain;
+
+		for (domain = domains; domain && *domain; domain++)
+			nm_ip4_config_add_domain (config, *domain);
+	}
+
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_BANNER);
 	if (val) {
 		g_free (priv->banner);

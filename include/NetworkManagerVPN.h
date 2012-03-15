@@ -151,6 +151,9 @@ typedef enum {
 /* string: DNS domain name */
 #define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN      "domain"
 
+/* array of strings: DNS domain names */
+#define NM_VPN_PLUGIN_IP4_CONFIG_DOMAINS     "domains"
+
 /* string: Login message */
 #define NM_VPN_PLUGIN_IP4_CONFIG_BANNER      "banner"
 
