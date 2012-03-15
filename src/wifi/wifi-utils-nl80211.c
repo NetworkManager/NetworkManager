@@ -53,23 +53,23 @@ typedef struct {
 
 static int ack_handler (struct nl_msg *msg, void *arg)
 {
-	int *err = arg;
-	*err = 0;
+	int *done = arg;
+	*done = 1;
 	return NL_STOP;
 }
 
 static int finish_handler (struct nl_msg *msg, void *arg)
 {
-	int *ret = arg;
-	*ret = 0;
+	int *done = arg;
+	*done = 1;
 	return NL_SKIP;
 }
 
 static int error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err,
 			  void *arg)
 {
-	int *ret = arg;
-	*ret = err->error;
+	int *done = arg;
+	*done = err->error;
 	return NL_SKIP;
 }
 
@@ -120,14 +120,16 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	if (err < 0)
 		goto out;
 
-	done = 1;
+	done = 0;
 	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &done);
 	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &done);
 	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &done);
 	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
 
-	/* Loop until one of our NL callbacks says we're done */
-	while (done) {
+	/* Loop until one of our NL callbacks says we're done; on success
+	 * done will be 1, on error it will be < 0.
+	 */
+	while (!done) {
 		err = nl_recvmsgs (nl_sock, cb);
 		if (err && err != -NLE_AGAIN) {
 			nm_log_warn (LOGD_WIFI, "nl_recvmsgs() error: (%d) %s",
@@ -135,6 +137,8 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 			break;
 		}
 	}
+	if (err == 0 && done < 0)
+		err = done;
 
  out:
 	nl_cb_put (cb);
