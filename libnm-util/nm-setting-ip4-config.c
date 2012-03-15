@@ -1231,7 +1231,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "this property to TRUE allows the overall network "
 						   "configuration to succeed if IPv4 configuration "
 						   "fails but IPv6 configuration completes successfully.",
-						   FALSE,
+						   TRUE,
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
 
