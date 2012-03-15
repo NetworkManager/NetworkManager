@@ -308,7 +308,8 @@ update (NMDnsPlugin *plugin,
 	argv[6] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
 	argv[7] = "--conf-file=" CONFFILE;
 	argv[8] = "--cache-size=400";
-	argv[9] = NULL;
+	argv[9] = "--proxy-dnssec"; /* Allow DNSSEC to pass through */
+	argv[10] = NULL;
 
 	/* And finally spawn dnsmasq */
 	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
