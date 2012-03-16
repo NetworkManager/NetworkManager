@@ -917,8 +917,8 @@ ip6_method_matches (NMConnection *connection, const char *match)
 		g_assert (method);
 	}
 
-	/* Treat missing IP6 setting as IGNORE */
-	if (!s_ip6 && !strcmp (match, NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+	/* Treat missing IP6 setting as AUTO */
+	if (!s_ip6 && !strcmp (match, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
 		return TRUE;
 
 	return method && !strcmp (method, match);

@@ -279,6 +279,17 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 	                                         reason);
 }
 
+static NMActStageReturn
+real_act_stage3_ip6_config_start (NMDevice *device,
+                                  NMIP6Config **out_config,
+                                  NMDeviceStateReason *reason)
+{
+	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
+	                                         device,
+	                                         NM_DEVICE_CLASS (nm_device_modem_parent_class),
+	                                         reason);
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -446,6 +457,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start = real_act_stage3_ip6_config_start;
 	device_class->get_enabled = real_get_enabled;
     device_class->set_enabled = real_set_enabled;
 

@@ -384,6 +384,17 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	return ret;
 }
 
+NMActStageReturn
+nm_modem_stage3_ip6_config_start (NMModem *self,
+                                  NMDevice *device,
+                                  NMDeviceClass *device_class,
+                                  NMDeviceStateReason *reason)
+{
+	/* FIXME: We don't support IPv6 on modems quite yet... */
+	nm_device_activate_schedule_ip6_config_timeout (device);
+	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
 static void
 cancel_get_secrets (NMModem *self)
 {

@@ -941,6 +941,25 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 	return ret;
 }
 
+static NMActStageReturn
+real_act_stage3_ip6_config_start (NMDevice *device,
+                                  NMIP6Config **out_config,
+                                  NMDeviceStateReason *reason)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMActStageReturn ret;
+
+	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
+		ret = nm_modem_stage3_ip6_config_start (NM_DEVICE_BT_GET_PRIVATE (device)->modem,
+		                                        device,
+		                                        NM_DEVICE_CLASS (nm_device_bt_parent_class),
+		                                        reason);
+	} else
+		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
+
+	return ret;
+}
+
 static void
 real_deactivate (NMDevice *device)
 {
@@ -1133,6 +1152,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->deactivate = real_deactivate;
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start = real_act_stage3_ip6_config_start;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 	device_class->complete_connection = real_complete_connection;
 	device_class->hwaddr_matches = hwaddr_matches;
