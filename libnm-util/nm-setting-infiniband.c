@@ -285,7 +285,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE,
 							  "Transport Mode",
 							  "The IPoIB transport mode. Either 'datagram' or 'connected'.",
-							  "datagram",
+							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
 
