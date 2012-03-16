@@ -32,6 +32,9 @@ This is a new stable release of NetworkManager.  Notable changes include:
     has been fixed
 * Fix a bug in the ifcfg-rh plugin with backticks in WPA passphrases
 * Ensure connections that cannot be stored are ignored by the ifnet plugin
+* Enable out-of-the-box IPv6 connectivity by allowing IPv4 to fail if IPv6 succeeds
+* Allow proxying of DNSSEC data when using the dnsmasq local caching nameserver plugin
+* Add support for multiple domain names sent from VPN plugins
 
 
 ==============================================
