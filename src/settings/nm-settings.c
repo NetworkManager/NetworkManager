@@ -1035,6 +1035,37 @@ add_cb (NMSettings *self,
 		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (connection)));
 }
 
+/* FIXME: remove if/when kernel supports adhoc wpa */
+static gboolean
+is_adhoc_wpa (NMConnection *connection)
+{
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	const char *mode, *key_mgmt;
+
+	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
+	 * and turns them into open networks.  It's been this way since at least
+	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
+	 */
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_return_val_if_fail (s_wifi != NULL, FALSE);
+
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) != 0)
+		return FALSE;
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wsec)
+		return FALSE;
+
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+	if (g_strcmp0 (key_mgmt, "wpa-none") != 0)
+		return FALSE;
+
+	return TRUE;
+}
+
 void
 nm_settings_add_connection (NMSettings *self,
                             NMConnection *connection,
@@ -1057,6 +1088,19 @@ nm_settings_add_connection (NMSettings *self,
 		                     "The connection was invalid: %s",
 		                     tmp_error ? tmp_error->message : "(unknown)");
 		g_error_free (tmp_error);
+		callback (self, NULL, error, context, user_data);
+		g_error_free (error);
+		return;
+	}
+
+	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
+	 * and turns them into open networks.  It's been this way since at least
+	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
+	 */
+	if (is_adhoc_wpa (connection)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                             "WPA Ad-Hoc disabled due to kernel bugs");
 		callback (self, NULL, error, context, user_data);
 		g_error_free (error);
 		return;

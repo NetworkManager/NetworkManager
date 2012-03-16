@@ -972,6 +972,36 @@ real_deactivate (NMDevice *dev)
 }
 
 static gboolean
+is_adhoc_wpa (NMConnection *connection)
+{
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	const char *mode, *key_mgmt;
+
+	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
+	 * and turns them into open networks.  It's been this way since at least
+	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
+	 */
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_return_val_if_fail (s_wifi != NULL, FALSE);
+
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) != 0)
+		return FALSE;
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wsec)
+		return FALSE;
+
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+	if (g_strcmp0 (key_mgmt, "wpa-none") != 0)
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
 real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
                                   GError **error)
@@ -982,6 +1012,14 @@ real_check_connection_compatible (NMDevice *device,
 	NMSettingWireless *s_wireless;
 	const GByteArray *mac;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
+
+	if (is_adhoc_wpa (connection)) {
+		g_set_error_literal (error,
+				             NM_WIFI_ERROR,
+				             NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+				             "WPA Ad-Hoc disabled due to kernel bugs");
+		return FALSE;
+	}
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -1186,6 +1224,18 @@ real_complete_connection (NMDevice *device,
 		                                is_manf_default_ssid (ssid),
 		                                error))
 			return FALSE;
+	}
+
+	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
+	 * and turns them into open networks.  It's been this way since at least
+	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
+	 */
+	if (is_adhoc_wpa (connection)) {
+		g_set_error_literal (error,
+				             NM_SETTING_WIRELESS_ERROR,
+				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+				             "WPA Ad-Hoc disabled due to kernel bugs");
+		return FALSE;
 	}
 
 	g_assert (ssid);
@@ -2594,6 +2644,16 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	connection = nm_act_request_get_connection (req);
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
+	 * and turns them into open networks.  It's been this way since at least
+	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
+	 */
+	if (is_adhoc_wpa (connection)) {
+		nm_log_warn (LOGD_WIFI, "Ad-Hoc WPA disabled due to kernel bugs");
+		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	/* Set spoof MAC to the interface */
 	s_wireless = nm_connection_get_setting_wireless (connection);
