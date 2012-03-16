@@ -332,7 +332,7 @@ real_complete_connection (NMDevice *device,
 	}
 
 	if (!nm_setting_infiniband_get_transport_mode (s_infiniband))
-		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram");
+		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
 
 	return TRUE;
 }
