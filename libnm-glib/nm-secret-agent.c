@@ -87,6 +87,7 @@ enum {
 	PROP_0,
 	PROP_IDENTIFIER,
 	PROP_AUTO_REGISTER,
+	PROP_REGISTERED,
 
 	LAST_PROP
 };
@@ -145,6 +146,7 @@ _internal_unregister (NMSecretAgent *self)
 	if (priv->registered) {
 		dbus_g_connection_unregister_g_object (priv->bus, G_OBJECT (self));
 		priv->registered = FALSE;
+		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_REGISTERED);
 	}
 }
 
@@ -509,9 +511,10 @@ reg_request_cb (DBusGProxy *proxy,
 
 	priv->reg_call = NULL;
 
-	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
+	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID)) {
 		priv->registered = TRUE;
-	else {
+		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_REGISTERED);
+	} else {
 		/* If registration failed we shouldn't expose ourselves on the bus */
 		_internal_unregister (self);
 	}
@@ -605,6 +608,21 @@ nm_secret_agent_unregister (NMSecretAgent *self)
 	priv->suppress_auto = TRUE;
 
 	return TRUE;
+}
+
+/**
+ * nm_secret_agent_get_registered:
+ * @self: a #NMSecretAgent
+ *
+ * Returns: a %TRUE if the agent is registered, %FALSE if it is not.
+ **/
+gboolean
+nm_secret_agent_get_registered (NMSecretAgent *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (self), FALSE);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (self)->registered;
 }
 
 static gboolean
@@ -818,6 +836,9 @@ get_property (GObject *object,
 	case PROP_AUTO_REGISTER:
 		g_value_set_boolean (value, priv->auto_register);
 		break;
+	case PROP_REGISTERED:
+		g_value_set_boolean (value, priv->registered);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -934,6 +955,19 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 						       "Auto Register",
 						       TRUE,
 						       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+
+	/**
+	 * NMSecretAgent:registered:
+	 *
+	 * %TRUE if the agent is registered with NetworkManager, %FALSE if not.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_REGISTERED,
+		 g_param_spec_boolean (NM_SECRET_AGENT_REGISTERED,
+		                       "Registered",
+		                       "Registered",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/**
 	 * NMSecretAgent::registration-result:

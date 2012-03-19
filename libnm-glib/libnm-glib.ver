@@ -199,6 +199,7 @@ global:
 	nm_secret_agent_delete_secrets;
 	nm_secret_agent_error_get_type;
 	nm_secret_agent_error_quark;
+	nm_secret_agent_get_registered;
 	nm_secret_agent_get_secrets;
 	nm_secret_agent_get_secrets_flags_get_type;
 	nm_secret_agent_get_type;

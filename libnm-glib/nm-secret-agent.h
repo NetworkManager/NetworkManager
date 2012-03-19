@@ -68,6 +68,7 @@ typedef enum {
 
 #define NM_SECRET_AGENT_IDENTIFIER          "identifier"
 #define NM_SECRET_AGENT_AUTO_REGISTER       "auto-register"
+#define NM_SECRET_AGENT_REGISTERED          "registered"
 
 #define NM_SECRET_AGENT_REGISTRATION_RESULT "registration-result"
 
@@ -228,6 +229,8 @@ GType nm_secret_agent_get_type (void);
 gboolean nm_secret_agent_register (NMSecretAgent *self);
 
 gboolean nm_secret_agent_unregister (NMSecretAgent *self);
+
+gboolean nm_secret_agent_get_registered (NMSecretAgent *self);
 
 void nm_secret_agent_get_secrets (NMSecretAgent *self,
                                   NMConnection *connection,
