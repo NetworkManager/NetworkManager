@@ -754,13 +754,14 @@ error:
 static int
 iface_to_index (struct nl_sock *nl_sock, const char *iface)
 {
-	struct nl_cache *link_cache;
+	struct nl_cache *link_cache = NULL;
 	int err, ifindex;
 
 	/* name to index */
 	err = rtnl_link_alloc_cache (nl_sock, &link_cache);
 	if (err < 0) {
-		nm_log_warn (LOGD_HW, "failed to allocate link cache");
+		nm_log_warn (LOGD_HW, "failed to allocate link cache: (%d) %s",
+		             err, nl_geterror (err));
 		return -1;
 	}
 	nl_cache_mngt_provide (link_cache);
@@ -787,11 +788,11 @@ wifi_nl80211_is_wifi (const char *iface)
 	if (nl_sock == NULL)
 		return FALSE;
 
+	if (genl_connect (nl_sock))
+		goto error;
+
 	ifindex = iface_to_index (nl_sock, iface);
 	if (ifindex < 0)
-		return FALSE;
-
-	if (genl_connect (nl_sock))
 		goto error;
 
 	id = genl_ctrl_resolve (nl_sock, "nl80211");
