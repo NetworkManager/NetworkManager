@@ -4,7 +4,7 @@ dnl The NM version number
 m4_define([nm_major_version], [0])
 m4_define([nm_minor_version], [9])
 m4_define([nm_micro_version], [3])
-m4_define([nm_nano_version],  [995])
+m4_define([nm_nano_version],  [997])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version.nm_nano_version])
 
