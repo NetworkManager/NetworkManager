@@ -2920,6 +2920,7 @@ test_write_infiniband_connection (void)
 	g_object_set (s_ib,
 	              NM_SETTING_INFINIBAND_MAC_ADDRESS, mac,
 	              NM_SETTING_INFINIBAND_MTU, 900,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 	              NULL);
 	g_byte_array_free (mac, TRUE);
 
