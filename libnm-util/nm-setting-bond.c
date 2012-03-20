@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <dbus/dbus-glib.h>
 
 #include "nm-setting-bond.h"
@@ -353,6 +354,15 @@ dev_valid_name(const char *name)
 	return TRUE;
 }
 
+static gint
+find_setting_by_name (gconstpointer a, gconstpointer b)
+{
+	NMSetting *setting = NM_SETTING (a);
+	const char *str = (const char *) b;
+
+	return strcmp (nm_setting_get_name (setting), str);
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -367,6 +377,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	                              "balance-tlb",
 	                              "balance-alb",
 	                              NULL };
+	int miimon = 0, arp_interval = 0;
+	const char *arp_ip_target = NULL;
 
 	if (!priv->interface_name || !strlen(priv->interface_name)) {
 		g_set_error (error,
@@ -388,24 +400,131 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
 		if (   !validate_option (key)
 		    || !value[0]
-		    || (strlen (value) > 200)) {
+		    || (strlen (value) > 200)
+		    || strchr (value, ' ')) {
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
-			             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_BOND_OPTIONS);
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             key);
+			return FALSE;
+		}
+	}
+
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MIIMON);
+	if (value)
+		miimon = atoi (value);
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+	if (value)
+		arp_interval = atoi (value);
+
+	/* Can only set one of miimon and arp_interval */
+	if (miimon > 0 && arp_interval > 0) {
+		g_set_error (error,
+		             NM_SETTING_BOND_ERROR,
+		             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+		             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+	}
+
+	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
+	if (!value) {
+		g_set_error (error,
+		             NM_SETTING_BOND_ERROR,
+		             NM_SETTING_BOND_ERROR_MISSING_OPTION,
+		             NM_SETTING_BOND_OPTION_MODE);
+		return FALSE;
+	}
+	if (!_nm_utils_string_in_list (value, valid_modes)) {
+		g_set_error (error,
+		             NM_SETTING_BOND_ERROR,
+		             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+		             NM_SETTING_BOND_OPTION_MODE);
+		return FALSE;
+	}
+
+	/* Make sure mode is compatible with other settings */
+	if (   strcmp (value, "balance-alb") == 0
+	    || strcmp (value, "balance-tlb") == 0) {
+		if (arp_interval > 0) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+		}
+	}
+	if (g_slist_find_custom (all_settings, NM_SETTING_INFINIBAND_SETTING_NAME, find_setting_by_name)) {
+		if (strcmp (value, "active-backup") != 0) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             NM_SETTING_BOND_OPTION_MODE);
+			return FALSE;
+		}
+	}
+
+	if (miimon == 0) {
+		/* updelay and downdelay can only be used with miimon */
+		if (g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_UPDELAY)) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             NM_SETTING_BOND_OPTION_UPDELAY);
+			return FALSE;
+		}
+		if (g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_DOWNDELAY)) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             NM_SETTING_BOND_OPTION_DOWNDELAY);
+			return FALSE;
+		}
+	}
+
+	/* arp_ip_target can only be used with arp_interval, and must
+	 * contain a comma-separated list of IPv4 addresses.
+	 */
+	arp_ip_target = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+	if (arp_interval > 0) {
+		char **addrs;
+		guint32 addr;
+		int i;
+
+		if (!arp_ip_target) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_MISSING_OPTION,
+			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 			return FALSE;
 		}
 
-		if (   (g_strcmp0 (key, "mode") == 0)
-		    && !_nm_utils_string_in_list (value, valid_modes)) {
+		addrs = g_strsplit (arp_ip_target, ",", -1);
+		if (!addrs[0]) {
+			g_strfreev (addrs);
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
-			             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_BOND_OPTIONS);
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 			return FALSE;
 		}
 
-		/* XXX: Validate arp-ip-target */
+		for (i = 0; addrs[i]; i++) {
+			if (!inet_pton (AF_INET, addrs[i], &addr)) {
+				g_strfreev (addrs);
+				g_set_error (error,
+				             NM_SETTING_BOND_ERROR,
+				             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+				             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+				return FALSE;
+			}
+		}
+		g_strfreev (addrs);
+	} else {
+		if (arp_ip_target) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -430,6 +549,7 @@ nm_setting_bond_init (NMSettingBond *setting)
 	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
 	/* Default values: */
+	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MODE, "balance-rr");
 	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MIIMON, "100");
 }
 
