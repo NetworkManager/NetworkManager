@@ -45,7 +45,6 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE_WIRED)
 #define NM_BOND_ERROR (nm_bond_error_quark ())
 
 typedef struct {
-	gboolean disposed;
 	GSList *slaves;
 } NMDeviceBondPrivate;
 
@@ -506,15 +505,12 @@ dispose (GObject *object)
 	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
 	GSList *iter;
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_bond_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
 	for (iter = priv->slaves; iter; iter = g_slist_next (iter))
 		release_slave (NM_DEVICE (self), ((SlaveInfo *) iter->data)->slave);
 	g_slist_free (priv->slaves);
+	priv->slaves = NULL;
+
+	G_OBJECT_CLASS (nm_device_bond_parent_class)->dispose (object);
 }
 
 static void
