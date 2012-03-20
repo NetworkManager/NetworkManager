@@ -161,6 +161,7 @@ void
 nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 {
 	int i, j;
+	gboolean setting_never_default;
 
 	if (!setting)
 		return; /* Defaults are just fine */
@@ -250,8 +251,14 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 			nm_ip4_config_add_route (ip4_config, setting_route);
 	}
 
-	if (nm_setting_ip4_config_get_never_default (setting))
-		nm_ip4_config_set_never_default (ip4_config, TRUE);
+	setting_never_default = nm_setting_ip4_config_get_never_default (setting);
+
+	if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
+		nm_ip4_config_set_never_default (ip4_config, setting_never_default);
+	else {
+		if (setting_never_default)
+			nm_ip4_config_set_never_default (ip4_config, TRUE);
+	}
 }
 
 static inline gboolean
