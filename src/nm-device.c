@@ -2302,6 +2302,24 @@ out:
 }
 
 
+static void
+fw_add_to_zone_cb (GError *error, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->fw_call = NULL;
+
+	if (error) {
+		/* FIXME: fail the device activation? */
+	}
+
+	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
+
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
+	             nm_device_get_iface (self));
+}
+
 /*
  * nm_device_activate_schedule_stage3_ip_config_start
  *
@@ -2311,16 +2329,33 @@ void
 nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 {
 	NMDevicePrivate *priv;
+	NMConnection *connection;
+	NMSettingConnection *s_con = NULL;
+	NMDeviceState state;
+	const char *zone;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
+	state = nm_device_get_state (self);
+	g_warn_if_fail (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_NEED_AUTH);
 
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
-	             nm_device_get_iface (self));
+	/* Add the interface to the specified firewall zone */
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+
+	zone = nm_setting_connection_get_zone (s_con);
+	nm_log_dbg (LOGD_DEVICE, "Activation (%s) setting firewall zone '%s'",
+	            nm_device_get_iface (self), zone ? zone : "default");
+	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_manager,
+	                                                        nm_device_get_ip_iface (self),
+	                                                        zone,
+	                                                        TRUE,
+	                                                        fw_add_to_zone_cb,
+	                                                        self);
 }
 
 static NMActStageReturn
@@ -2690,67 +2725,6 @@ out:
 	return FALSE;
 }
 
-static void
-fw_add_to_zone_cb (GError *error,
-                   gpointer user_data1,
-                   gpointer user_data2)
-{
-	NMDevice *self = NM_DEVICE (user_data1);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int family = GPOINTER_TO_INT (user_data2);
-	char ipver = 'x';
-	guint32 logd = LOGD_NONE;
-
-	priv->fw_call = NULL;
-
-	if (error) {
-		/* FIXME: fail the device activation? */
-	}
-
-	if (family == AF_INET) {
-		activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
-		ipver = '4';
-		logd = LOGD_IP4;
-	} else if (family == AF_INET6) {
-		activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
-		ipver = '6';
-		logd = LOGD_IP6;
-	} else
-		g_assert_not_reached ();
-
-	nm_log_info (LOGD_DEVICE | logd,
-	             "Activation (%s) Stage 5 of 5 (IPv%c Configure Commit) scheduled...",
-	             nm_device_get_iface (self), ipver);
-}
-
-static void
-fw_add_to_zone (NMDevice *self, int family)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
-	NMSettingConnection *s_con = NULL;
-
-	/* Only set the interface's zone if the device isn't yet activated.  If
-	 * already activated, the zone has already been set.
-	 */
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED) {
-		fw_add_to_zone_cb (NULL, self, GINT_TO_POINTER (family));
-		return;
-	}
-
-	/* Otherwise tell the firewall to add the interface to the specified zone */
-	connection = nm_device_get_connection (self);
-	g_assert (connection);
-	s_con = nm_connection_get_setting_connection (connection);
-	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_manager,
-	                                                 nm_device_get_ip_iface (self),
-	                                                 nm_setting_connection_get_zone (s_con),
-	                                                 TRUE,
-	                                                 fw_add_to_zone_cb,
-	                                                 self,
-	                                                 GINT_TO_POINTER (family));
-}
-
 void
 nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
 {
@@ -2771,7 +2745,11 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	                        g_object_ref (config),
 	                        g_object_unref);
 
-	fw_add_to_zone (self, AF_INET);
+	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
+
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+		         "Activation (%s) Stage 5 of 5 (IPv4 Configure Commit) scheduled...",
+		         nm_device_get_iface (self));
 }
 
 gboolean
@@ -2859,7 +2837,11 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *conf
 	                        g_object_ref (config),
 	                        g_object_unref);
 
-	fw_add_to_zone (self, AF_INET6);
+	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
+
+	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+		         "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
+		         nm_device_get_iface (self));
 }
 
 gboolean

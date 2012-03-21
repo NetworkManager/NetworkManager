@@ -56,17 +56,14 @@ GType nm_firewall_manager_get_type (void);
 
 NMFirewallManager *nm_firewall_manager_get (void);
 
-typedef void (*FwAddToZoneFunc) (GError *error,
-                                 gpointer user_data1,
-                                 gpointer user_data2);
+typedef void (*FwAddToZoneFunc) (GError *error, gpointer user_data);
 
 gpointer nm_firewall_manager_add_or_change_zone (NMFirewallManager *mgr,
                                                  const char *iface,
                                                  const char *zone,
                                                  gboolean add,
                                                  FwAddToZoneFunc callback,
-                                                 gpointer user_data1,
-                                                 gpointer user_data2);
+                                                 gpointer user_data);
 gpointer nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
                                                const char *iface,
                                                const char *zone);

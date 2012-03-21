@@ -60,8 +60,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	char *iface;
 	FwAddToZoneFunc callback;
-	gpointer user_data1;
-	gpointer user_data2;
+	gpointer user_data;
 } CBInfo;
 
 static void
@@ -77,7 +76,7 @@ add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 {
 	CBInfo *info = user_data;
 	GError *error = NULL;
-	char * zone = NULL;
+	char *zone = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
 	                            G_TYPE_STRING, &zone,
@@ -87,7 +86,7 @@ add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 		             info->iface, error->code, error->message);
 	}
 
-	info->callback (error, info->user_data1, info->user_data2);
+	info->callback (error, info->user_data);
 
 	g_free (zone);
 	g_clear_error (&error);
@@ -99,23 +98,21 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
                                         const char *zone,
                                         gboolean add, /* TRUE == add, FALSE == change */
                                         FwAddToZoneFunc callback,
-                                        gpointer user_data1,
-                                        gpointer user_data2)
+                                        gpointer user_data)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	CBInfo *info;
 
 	if (priv->running == FALSE) {
 		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change skipped (not running)", iface);
-		callback (NULL, user_data1, user_data2);
+		callback (NULL, user_data);
 		return NULL;
 	}
 
 	info = g_malloc0 (sizeof (*info));
 	info->iface = g_strdup (iface);
 	info->callback = callback;
-	info->user_data1 = user_data1;
-	info->user_data2 = user_data2;
+	info->user_data = user_data;
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s", iface, add ? "add" : "change", zone);
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,

@@ -1251,11 +1251,9 @@ connections_loaded (NMSettings *settings, gpointer user_data)
 }
 
 static void
-add_or_change_zone_cb (GError *error,
-                gpointer user_data1,
-                gpointer user_data2)
+add_or_change_zone_cb (GError *error, gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data1);
+	NMDevice *device = NM_DEVICE (user_data);
 
 	if (error) {
 		/* FIXME: what do we do here? */
@@ -1282,8 +1280,7 @@ firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 			                                        nm_setting_connection_get_zone (s_con),
 			                                        FALSE, /* change zone */
 			                                        add_or_change_zone_cb,
-			                                        g_object_ref (dev),
-			                                        NULL);
+			                                        g_object_ref (dev));
 		}
 	}
 }
@@ -1310,8 +1307,7 @@ firewall_started (NMFirewallManager *manager,
 			                                        nm_setting_connection_get_zone (s_con),
 			                                        TRUE, /* add zone */
 			                                        add_or_change_zone_cb,
-			                                        g_object_ref (dev),
-			                                        NULL);
+			                                        g_object_ref (dev));
 		}
 	}
 }
