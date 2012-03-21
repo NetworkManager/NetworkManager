@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
@@ -347,6 +347,7 @@ nm_client_get_devices (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	_nm_object_ensure_inited (NM_OBJECT (client));
+
 	return handle_ptr_array_return (NM_CLIENT_GET_PRIVATE (client)->devices);
 }
 
@@ -701,11 +702,12 @@ nm_client_get_active_connections (NMClient *client)
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
+	_nm_object_ensure_inited (NM_OBJECT (client));
+
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	if (!priv->manager_running)
 		return NULL;
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return handle_ptr_array_return (priv->active_connections);
 }
 
@@ -897,11 +899,9 @@ nm_client_get_version (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (!priv->manager_running)
-		return NULL;
-
 	_nm_object_ensure_inited (NM_OBJECT (client));
-	return priv->version;
+
+	return priv->manager_running ? priv->version : NULL;
 }
 
 /**
@@ -915,17 +915,11 @@ nm_client_get_version (NMClient *client)
 NMState
 nm_client_get_state (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-
-	if (!priv->manager_running)
-		return NM_STATE_UNKNOWN;
-
 	_nm_object_ensure_inited (NM_OBJECT (client));
-	return priv->state;
+
+	return NM_CLIENT_GET_PRIVATE (client)->state;
 }
 
 /**
@@ -1102,6 +1096,8 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		priv->wwan_hw_enabled = FALSE;
 		priv->wimax_enabled = FALSE;
 		priv->wimax_hw_enabled = FALSE;
+		g_free (priv->version);
+		priv->version = NULL;
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (client), FALSE);
 		_nm_object_reload_properties_async (NM_OBJECT (client), updated_properties, client);

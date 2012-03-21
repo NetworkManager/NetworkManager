@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -43,6 +43,7 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT,
 
 typedef struct {
 	DBusGConnection *bus;
+	gboolean inited;
 
 	DBusGProxy *proxy;
 	GHashTable *connections;
@@ -104,6 +105,29 @@ nm_remote_settings_error_quark (void)
 
 /**********************************************************************/
 
+static void
+_nm_remote_settings_ensure_inited (NMRemoteSettings *self)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	GError *error;
+
+	if (!priv->inited) {
+		if (!g_initable_init (G_INITABLE (self), NULL, &error)) {
+			/* Don't warn when the call times out because the settings service can't
+			 * be activated or whatever.
+			 */
+			if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
+				g_warning ("%s: (NMRemoteSettings) error initializing: %s\n",
+					       __func__, error->message);
+			}
+			g_error_free (error);
+		}
+		priv->inited = TRUE;
+	}
+}
+
+/**********************************************************************/
+
 typedef struct {
 	NMRemoteSettings *self;
 	NMRemoteSettingsAddConnectionFunc callback;
@@ -161,11 +185,17 @@ add_connection_info_complete (NMRemoteSettings *self,
 NMRemoteConnection *
 nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const char *path)
 {
+	NMRemoteSettingsPrivate *priv;
+
 	g_return_val_if_fail (settings != NULL, NULL);
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return g_hash_table_lookup (NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->connections, path);
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+
+	_nm_remote_settings_ensure_inited (settings);
+
+	return priv->service_running ? g_hash_table_lookup (priv->connections, path) : NULL;
 }
 
 /**
@@ -181,6 +211,7 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
 NMRemoteConnection *
 nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const char *uuid)
 {
+	NMRemoteSettingsPrivate *priv;
 	GHashTableIter iter;
 	NMRemoteConnection *candidate;
 
@@ -188,10 +219,16 @@ nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const cha
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	g_hash_table_iter_init (&iter, NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate))) == 0)
-			return candidate;
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+
+	_nm_remote_settings_ensure_inited (settings);
+
+	if (priv->service_running) {
+		g_hash_table_iter_init (&iter, priv->connections);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
+			if (g_strcmp0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate))) == 0)
+				return candidate;
+		}
 	}
 
 	return NULL;
@@ -440,9 +477,13 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
+	_nm_remote_settings_ensure_inited (settings);
+
+	if (priv->service_running) {
+		g_hash_table_iter_init (&iter, priv->connections);
+		while (g_hash_table_iter_next (&iter, NULL, &value))
+			list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
+	}
 
 	return list;
 }
@@ -495,7 +536,9 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	g_return_val_if_fail (callback != NULL, FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-	
+
+	_nm_remote_settings_ensure_inited (settings);
+
 	info = g_malloc0 (sizeof (AddConnectionInfo));
 	info->self = settings;
 	info->callback = callback;
@@ -599,6 +642,8 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
+	_nm_remote_settings_ensure_inited (settings);
+
 	info = g_malloc0 (sizeof (SaveHostnameInfo));
 	info->settings = settings;
 	info->callback = callback;
@@ -683,24 +728,7 @@ properties_changed_cb (DBusGProxy *proxy,
 NMRemoteSettings *
 nm_remote_settings_new (DBusGConnection *bus)
 {
-	NMRemoteSettings *settings;
-	GError *error = NULL;
-
-	settings = g_object_new (NM_TYPE_REMOTE_SETTINGS,
-	                         NM_REMOTE_SETTINGS_BUS, bus,
-	                         NULL);
-	if (!g_initable_init (G_INITABLE (settings), NULL, &error)) {
-		/* Don't warn when the call times out because the settings service can't
-		 * be activated or whatever.
-		 */
-		if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
-			g_warning ("%s: (NMRemoteSettings) error initializing: %s\n",
-			           __func__, error->message);
-		}
-		g_error_free (error);
-	}
-
-	return settings;
+	return g_object_new (NM_TYPE_REMOTE_SETTINGS, NM_REMOTE_SETTINGS_BUS, bus, NULL);
 }
 
 static void
