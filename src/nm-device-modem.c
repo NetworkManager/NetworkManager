@@ -75,7 +75,9 @@ ppp_failed (NMModem *modem, NMDeviceStateReason reason, gpointer user_data)
 	case NM_DEVICE_STATE_IP_CHECK:
 	case NM_DEVICE_STATE_SECONDARIES:
 	case NM_DEVICE_STATE_ACTIVATED:
-		if (nm_device_ip_config_should_fail (device, FALSE)) {
+		if (nm_device_activate_ip4_state_in_conf (device))
+			nm_device_activate_schedule_ip4_config_timeout (device);
+		else {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
