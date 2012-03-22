@@ -594,9 +594,10 @@ get_active_ap (NMDeviceWifi *self,
 	 * is uncommon though, and the frequency check penalizes closed drivers we
 	 * can't fix.  Because we're not total dicks, ignore the frequency condition
 	 * if the associated BSSID/SSID exists only in one band since that's most
-	 * likely the AP we want.
+	 * likely the AP we want.  Sometimes wl.o returns a frequency of 0, so if
+	 * we can't match the AP based on frequency at all, just give up.
 	 */
-	if (match_nofreq && (found_a_band != found_bg_band)) {
+	if (match_nofreq && ((found_a_band != found_bg_band) || (devfreq == 0))) {
 		const struct ether_addr	*ap_bssid = nm_ap_get_address (match_nofreq);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
