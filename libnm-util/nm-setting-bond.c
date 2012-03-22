@@ -237,17 +237,26 @@ gboolean nm_setting_bond_add_option (NMSettingBond *setting,
                                      const char *name,
                                      const char *value)
 {
+	NMSettingBondPrivate *priv;
 	size_t value_len;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
 	g_return_val_if_fail (validate_option (name), FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
+	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+
 	value_len = strlen (value);
 	g_return_val_if_fail (value_len > 0 && value_len < 200, FALSE);
 
-	g_hash_table_insert (NM_SETTING_BOND_GET_PRIVATE (setting)->options,
-	                     g_strdup (name), g_strdup (value));
+	g_hash_table_insert (priv->options, g_strdup (name), g_strdup (value));
+
+	if (!strcmp (name, NM_SETTING_BOND_OPTION_MIIMON)) {
+		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+	} else if (!strcmp (name, NM_SETTING_BOND_OPTION_ARP_INTERVAL))
+		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_MIIMON);
+
 	return TRUE;
 }
 
