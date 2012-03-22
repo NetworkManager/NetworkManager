@@ -601,7 +601,7 @@ nm_system_apply_ip6_config (int ifindex,
 			                               RTPROT_UNSPEC,
 			                               RT_TABLE_UNSPEC,
 			                               NULL);
-			if (err) {
+			if (err && (err != -NLE_EXIST)) {
 				nm_log_err (LOGD_DEVICE | LOGD_IP6,
 				            "(%s): failed to set IPv6 route: %s",
 				            iface ? iface : "unknown",
