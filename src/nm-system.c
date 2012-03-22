@@ -1041,11 +1041,10 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
 	/* Add the new default route */
-	err = nm_netlink_route6_add (route, NULL, 0, gw, NLM_F_REPLACE);
+	err = nm_netlink_route6_add (route, &in6addr_any, 0, gw, NLM_F_REPLACE);
 	if (err == -NLE_EXIST) {
 		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
-		 * the route if it's the same.  Should try to remove it first, then
-		 * add the new one again here.
+		 * the route if it's the same.  Suppress the pointless error.
 		 */
 		err = 0;
 	}
