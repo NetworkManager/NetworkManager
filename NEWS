@@ -35,6 +35,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Enable out-of-the-box IPv6 connectivity by allowing IPv4 to fail if IPv6 succeeds
 * Allow proxying of DNSSEC data when using the dnsmasq local caching nameserver plugin
 * Add support for multiple domain names sent from VPN plugins
+* Removed support for WiFi Ad-Hoc WPA connections due to kernel bugs
 
 
 ==============================================
