@@ -1049,7 +1049,8 @@ is_adhoc_wpa (NMConnection *connection)
 	 */
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
-	g_return_val_if_fail (s_wifi != NULL, FALSE);
+	if (!s_wifi)
+		return FALSE;
 
 	mode = nm_setting_wireless_get_mode (s_wifi);
 	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) != 0)
