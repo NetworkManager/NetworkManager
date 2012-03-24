@@ -54,6 +54,7 @@ IGNORE_HFILES= \
 	nm-settings-connection-bindings.h \
 	nm-secret-agent-bindings.h \
 	nm-vpn-connection-bindings.h \
+	nm-secret-agent-glue.h \
 	nm-vpn-plugin-glue.h
 
 # Images to copy into HTML directory.
