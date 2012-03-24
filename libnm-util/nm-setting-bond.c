@@ -402,10 +402,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		    || !value[0]
 		    || (strlen (value) > 200)
 		    || strchr (value, ' ')) {
-			g_set_error (error,
-			             NM_SETTING_BOND_ERROR,
-			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             key);
+			g_set_error_literal (error,
+			                     NM_SETTING_BOND_ERROR,
+			                     NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			                     key);
 			return FALSE;
 		}
 	}
