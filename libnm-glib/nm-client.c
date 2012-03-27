@@ -1241,6 +1241,104 @@ nm_client_new_finish (GAsyncResult *result, GError **error)
 		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
+/*
+ * Validate D-Bus object path.
+ * The function is copied and adjusted version of
+ * g_variant_serialiser_is_object_path() from glib.
+ * FIXME: The function can be replaced by g_variant_is_object_path()
+ * when we start using GLib >= 2.24
+ */
+static gboolean
+_nm_client_is_object_path (const char *string)
+{
+	gsize i;
+
+	if (!g_utf8_validate (string, -1, NULL))
+		return FALSE;
+
+	/* The path must begin with an ASCII '/' (integer 47) character */
+	if (string[0] != '/')
+		return FALSE;
+
+	for (i = 1; string[i]; i++) {
+		/* Each element must only contain the ASCII characters
+		 * "[A-Z][a-z][0-9]_"
+		 */
+		if (g_ascii_isalnum (string[i]) || string[i] == '_')
+			;
+		/* must consist of elements separated by slash characters. */
+		else if (string[i] == '/') {
+			/* No element may be the empty string. */
+			/* Multiple '/' characters cannot occur in sequence. */
+			if (string[i - 1] == '/')
+				return FALSE;
+		} else
+			return FALSE;
+	}
+
+	/* A trailing '/' character is not allowed unless the path is the
+	 * root path (a single '/' character).
+	 */
+	if (i > 1 && string[i - 1] == '/')
+		return FALSE;
+
+	return TRUE;
+}
+
+/*
+ * constructor() shouldn't be overriden in most cases, rather constructed()
+ * method is preferred and more useful.
+ * But, this serves as a workaround for bindings (use) calling the constructor()
+ * directly instead of nm_client_new() function, and neither providing
+ * construction properties. So, we fill "dbus-path" here if it was not specified
+ * (was set to default value (NULL)).
+ *
+ * It allows this python code:
+ * from gi.repository import NMClient
+ * nmclient = NMClient.Client()
+ * print nmclient.get_active_connections()
+ *
+ * instead of proper
+ * nmclient = NMClient.Client().new()
+ *
+ * Note:
+ * A nice overview of GObject construction is here:
+ * http://blogs.gnome.org/desrt/2012/02/26/a-gentle-introduction-to-gobject-construction
+ * It is much better explanation than the official docs
+ * http://developer.gnome.org/gobject/unstable/chapter-gobject.html#gobject-instantiation
+ */
+static GObject*
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	guint i;
+	const char *dbus_path;
+
+	for (i = 0; i < n_construct_params; i++) {
+		if (strcmp (construct_params[i].pspec->name, NM_OBJECT_DBUS_PATH) == 0) {
+			dbus_path = g_value_get_string (construct_params[i].value);
+			if (dbus_path == NULL) {
+				g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH);
+			} else {
+				if (!_nm_client_is_object_path (dbus_path)) {
+					g_warning ("Passsed D-Bus object path '%s' is invalid; using default '%s' instead",
+					            dbus_path, NM_DBUS_PATH);
+					g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH);
+				}
+			}
+			break;
+		}
+	}
+
+	object = G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
+	                                                               n_construct_params,
+	                                                               construct_params);
+
+	return object;
+}
+
 static void
 constructed (GObject *object)
 {
@@ -1550,6 +1648,7 @@ nm_client_class_init (NMClientClass *client_class)
 	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
 
 	/* virtual methods */
+	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
