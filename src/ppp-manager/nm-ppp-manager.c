@@ -304,18 +304,20 @@ monitor_cb (gpointer user_data)
 {
 	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	struct ifpppstatsreq req;
+	struct ifreq req;
+	struct ppp_stats stats;
 
 	memset (&req, 0, sizeof (req));
-	req.stats_ptr = (caddr_t) &req.stats;
+	memset (&stats, 0, sizeof (stats));
+	req.ifr_data = (caddr_t) &stats;
 
-	strncpy (req.ifr__name, priv->ip_iface, sizeof (req.ifr__name));
+	strncpy (req.ifr_name, priv->ip_iface, sizeof (req.ifr_name));
 	if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
 		nm_log_warn (LOGD_PPP, "could not read ppp stats: %s", strerror (errno));
 	} else {
 		g_signal_emit (manager, signals[STATS], 0, 
-		               req.stats.p.ppp_ibytes,
-		               req.stats.p.ppp_obytes);
+		               stats.p.ppp_ibytes,
+		               stats.p.ppp_obytes);
 	}
 
 	return TRUE;
