@@ -464,6 +464,8 @@ get_property (GObject *object,
 {
 	NMAccessPoint *ap = NM_ACCESS_POINT (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_FLAGS:
 		g_value_set_uint (value, nm_access_point_get_flags (ap));

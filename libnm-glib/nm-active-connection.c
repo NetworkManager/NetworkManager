@@ -394,6 +394,8 @@ get_property (GObject *object,
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_CONNECTION:
 		g_value_set_string (value, nm_active_connection_get_connection (self));

@@ -211,6 +211,8 @@ get_property (GObject *object,
 {
 	NMVPNConnection *self = NM_VPN_CONNECTION (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_VPN_STATE:
 		g_value_set_uint (value, nm_vpn_connection_get_vpn_state (self));

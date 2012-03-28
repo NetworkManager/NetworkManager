@@ -1066,6 +1066,8 @@ get_property (GObject *object, guint prop_id,
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
 
+	_nm_remote_settings_ensure_inited (NM_REMOTE_SETTINGS (object));
+
 	switch (prop_id) {
 	case PROP_BUS:
 		g_value_set_boxed (value, priv->bus);

@@ -313,6 +313,8 @@ get_property (GObject *object,
 	NMDevice *device = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, nm_device_get_device_type (device));

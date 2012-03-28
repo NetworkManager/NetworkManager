@@ -501,6 +501,8 @@ get_property (GObject *object,
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_device_wifi_get_hw_address (self));

@@ -444,6 +444,8 @@ get_property (GObject *object,
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_device_wimax_get_hw_address (self));

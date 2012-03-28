@@ -1600,6 +1600,8 @@ get_property (GObject *object,
 	NMClient *self = NM_CLIENT (object);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_VERSION:
 		g_value_set_string (value, nm_client_get_version (self));

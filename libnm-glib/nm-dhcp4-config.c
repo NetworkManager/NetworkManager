@@ -132,6 +132,8 @@ get_property (GObject *object,
 {
 	NMDHCP4Config *self = NM_DHCP4_CONFIG (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_OPTIONS:
 		g_value_set_boxed (value, nm_dhcp4_config_get_options (self));

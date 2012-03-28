@@ -205,6 +205,8 @@ get_property (GObject *object,
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_MODEM_CAPS:
 		g_value_set_uint (value, nm_device_modem_get_modem_capabilities (self));

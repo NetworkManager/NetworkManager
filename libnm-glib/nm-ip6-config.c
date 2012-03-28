@@ -268,6 +268,8 @@ get_property (GObject *object,
 	NMIP6Config *self = NM_IP6_CONFIG (object);
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_ADDRESSES:
 		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);

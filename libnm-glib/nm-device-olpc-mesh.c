@@ -257,6 +257,8 @@ get_property (GObject *object,
 {
 	NMDeviceOlpcMesh *device = NM_DEVICE_OLPC_MESH (object);
 
+	_nm_object_ensure_inited (NM_OBJECT (object));
+
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, nm_device_olpc_mesh_get_hw_address (device));
