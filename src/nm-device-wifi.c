@@ -1064,7 +1064,7 @@ real_check_connection_compatible (NMDevice *device,
 		g_set_error_literal (error,
 		                     NM_WIFI_ERROR,
 		                     NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-		                    "WPA Ad-Hoc disabled due to kernel bugs");
+		                     "WPA Ad-Hoc disabled due to kernel bugs");
 		return FALSE;
 	}
 
@@ -1234,9 +1234,9 @@ real_complete_connection (NMDevice *device,
 	 */
 	if (is_adhoc_wpa (connection)) {
 		g_set_error_literal (error,
-				             NM_SETTING_WIRELESS_ERROR,
-				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-				             "WPA Ad-Hoc disabled due to kernel bugs");
+		                     NM_SETTING_WIRELESS_ERROR,
+		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		                     "WPA Ad-Hoc disabled due to kernel bugs");
 		return FALSE;
 	}
 
@@ -1258,9 +1258,9 @@ real_complete_connection (NMDevice *device,
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (memcmp (setting_mac->data, priv->perm_hw_addr, ETH_ALEN)) {
 			g_set_error (error,
-				         NM_SETTING_WIRELESS_ERROR,
-				         NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_WIRELESS_MAC_ADDRESS);
+			             NM_SETTING_WIRELESS_ERROR,
+			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_WIRELESS_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {
@@ -3366,7 +3366,7 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 
@@ -3410,7 +3410,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = real_is_available;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 	parent_class->complete_connection = real_complete_connection;
-    parent_class->set_enabled = real_set_enabled;
+	parent_class->set_enabled = real_set_enabled;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
