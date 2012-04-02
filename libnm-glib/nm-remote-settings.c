@@ -109,7 +109,7 @@ static void
 _nm_remote_settings_ensure_inited (NMRemoteSettings *self)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	GError *error;
+	GError *error = NULL;
 
 	if (!priv->inited) {
 		if (!g_initable_init (G_INITABLE (self), NULL, &error)) {
