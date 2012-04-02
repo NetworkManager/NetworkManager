@@ -1014,14 +1014,6 @@ real_check_connection_compatible (NMDevice *device,
 	const GByteArray *mac;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
 
-	if (is_adhoc_wpa (connection)) {
-		g_set_error_literal (error,
-				             NM_WIFI_ERROR,
-				             NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-				             "WPA Ad-Hoc disabled due to kernel bugs");
-		return FALSE;
-	}
-
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
@@ -1039,6 +1031,7 @@ real_check_connection_compatible (NMDevice *device,
 		             "The connection was not a valid WiFi connection.");
 		return FALSE;
 	}
+
 
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
@@ -1065,6 +1058,14 @@ real_check_connection_compatible (NMDevice *device,
 			             (char *) mac_blacklist_iter->data, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 			return FALSE;
 		}
+	}
+
+	if (is_adhoc_wpa (connection)) {
+		g_set_error_literal (error,
+		                     NM_WIFI_ERROR,
+		                     NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+		                    "WPA Ad-Hoc disabled due to kernel bugs");
+		return FALSE;
 	}
 
 	// FIXME: check channel/freq/band against bands the hardware supports
