@@ -728,12 +728,7 @@ properties_changed_cb (DBusGProxy *proxy,
 NMRemoteSettings *
 nm_remote_settings_new (DBusGConnection *bus)
 {
-	NMRemoteSettings *settings;
-
-	settings = g_object_new (NM_TYPE_REMOTE_SETTINGS, NM_REMOTE_SETTINGS_BUS, bus, NULL);
-
-	_nm_remote_settings_ensure_inited (settings);
-	return settings;
+	return g_object_new (NM_TYPE_REMOTE_SETTINGS, NM_REMOTE_SETTINGS_BUS, bus, NULL);
 }
 
 static void
