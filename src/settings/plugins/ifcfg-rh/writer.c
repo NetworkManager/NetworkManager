@@ -1030,6 +1030,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (tmp);
 	}
 
+	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 	if (cloned_mac) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
