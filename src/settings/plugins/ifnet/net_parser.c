@@ -143,12 +143,13 @@ init_block_by_line (gchar * buf)
 	pos = g_strrstr (key_value[0], "_");
 	if (pos == NULL || is_global_setting (key_value[0])) {
 		/* global data */
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "global:%s-%s\n", key_value[0],
-			      key_value[1]);
-		g_hash_table_insert (global_settings_table,
-				     g_strdup (key_value[0]),
-				     g_strdup (key_value[1]));
+		data = g_strdup (key_value[1]);
+		tmp = strip_string (data, '"');
+		strip_string (tmp, '\'');
+		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "global:%s-%s\n", key_value[0], tmp);
+		g_hash_table_insert (global_settings_table, g_strdup (key_value[0]), g_strdup (tmp));
 		g_strfreev (key_value);
+		g_free (data);
 		return;
 	}
 	*pos++ = '\0';
@@ -593,7 +594,7 @@ ifnet_flush_to_file (const char *config_file)
 	/* Writing global data */
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		out_line =
-		    g_strdup_printf ("%s=%s\n", (gchar *) key, (gchar *) value);
+		    g_strdup_printf ("%s=\"%s\"\n", (gchar *) key, (gchar *) value);
 		g_io_channel_write_chars (channel, out_line, -1,
 					  &bytes_written, error);
 		if (bytes_written == 0 || (error && *error))

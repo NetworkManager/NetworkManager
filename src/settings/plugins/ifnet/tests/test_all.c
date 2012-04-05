@@ -56,6 +56,9 @@ test_getdata ()
 		&& strcmp (ifnet_get_data ("ppp0", "password"),
 			   "password") == 0, "get data",
 		"config_ppp0 password is not correctly read");
+	ASSERT (ifnet_get_global_data ("modules")
+		&& strcmp ("!wpa_supplicant", ifnet_get_global_data ("modules")) == 0,
+		"get data", "config_eth1 is not correct");
 }
 
 static void

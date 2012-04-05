@@ -3,6 +3,8 @@
 # please review /etc/conf.d/net.example and save your configuration
 # in /etc/conf.d/net (this file :]!).
 
+modules="!wpa_supplicant"
+
 config_eth0=(
 "202.117.16.121    netmask    255.255.255.0 brd 202.117.16.255"
 "192.168.4.121/24"
