@@ -460,7 +460,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->flags & !(NM_VLAN_FLAG_REORDER_HEADERS |
+	if (priv->flags & ~(NM_VLAN_FLAG_REORDER_HEADERS |
 	                    NM_VLAN_FLAG_GVRP |
 	                    NM_VLAN_FLAG_LOOSE_BINDING)) {
 		g_set_error (error,

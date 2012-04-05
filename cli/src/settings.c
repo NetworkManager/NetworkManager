@@ -607,10 +607,11 @@ vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 	for (i = 0; i < nm_setting_vlan_get_num_priorities (s_vlan, map); i++) {
 		guint32 from, to;
 
-		nm_setting_vlan_get_priority (s_vlan, map, i, &from, &to);
-		g_string_append_printf (priorities, "%d:%d,", from, to);
+		if (nm_setting_vlan_get_priority (s_vlan, map, i, &from, &to))
+			g_string_append_printf (priorities, "%d:%d,", from, to);
 	}
-	g_string_truncate (priorities, priorities->len-1);  /* chop off trailing ',' */
+	if (priorities->len)
+		g_string_truncate (priorities, priorities->len-1);  /* chop off trailing ',' */
 
 	return g_string_free (priorities, FALSE);
 }

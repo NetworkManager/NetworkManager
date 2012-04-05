@@ -643,17 +643,17 @@ nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
 			g_object_unref (device);
 			return NULL;
 		}
-		priv->vlan_id = vlan_id;
 
 		if (   parent_ifindex < 0
 		    || parent_ifindex != nm_device_get_ip_ifindex (parent)
-		    || priv->vlan_id < 0) {
+		    || vlan_id < 0) {
 			nm_log_warn (LOGD_DEVICE, "(%s): VLAN parent ifindex (%d) or VLAN ID (%d) invalid.",
 			             iface, parent_ifindex, priv->vlan_id);
 			g_object_unref (device);
 			return NULL;
 		}
 
+		priv->vlan_id = vlan_id;
 		priv->parent = g_object_ref (parent);
 		priv->parent_state_id = g_signal_connect (priv->parent,
 		                                          "state-changed",
