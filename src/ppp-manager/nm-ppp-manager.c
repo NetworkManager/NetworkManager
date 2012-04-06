@@ -827,6 +827,10 @@ create_pppd_cmd_line (NMPPPManager *self,
 	/* NM handles setting the default route */
 	nm_cmd_line_add_string (cmd, "nodefaultroute");
 
+	/* Allow IPv6 to be configured by IPV6CP */
+	nm_cmd_line_add_string (cmd, "ipv6");
+	nm_cmd_line_add_string (cmd, ",");
+
 	ppp_debug = !!getenv ("NM_PPP_DEBUG");
 	if (   nm_logging_level_enabled (LOGL_DEBUG)
 	    && nm_logging_domain_enabled (LOGD_PPP))
