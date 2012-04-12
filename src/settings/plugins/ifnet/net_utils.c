@@ -404,7 +404,7 @@ has_ip6_address (const char *conn_name)
 
 	g_return_val_if_fail (conn_name != NULL, FALSE);
 	ipset = split_addresses (ifnet_get_data (conn_name, "config"));
-	length = g_strv_length (ipset);
+	length = ipset ? g_strv_length (ipset) : 0;
 	for (i = 0; i < length; i++) {
 		if (!is_ip6_address (ipset[i]))
 			continue;
@@ -618,7 +618,7 @@ convert_ip4_config_block (const char *conn_name)
 	g_return_val_if_fail (conn_name != NULL, NULL);
 
 	ipset = split_addresses (ifnet_get_data (conn_name, "config"));
-	length = g_strv_length (ipset);
+	length = ipset ? g_strv_length (ipset) : 0;
 
 	routes = ifnet_get_data (conn_name, "routes");
 	if (routes)
@@ -654,7 +654,7 @@ convert_ip6_config_block (const char *conn_name)
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
 	ipset = split_addresses (ifnet_get_data (conn_name, "config"));
-	length = g_strv_length (ipset);
+	length = ipset ? g_strv_length (ipset) : 0;
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
 		ip = strip_string (ip, '"');
@@ -684,7 +684,7 @@ convert_ip4_routes_block (const char *conn_name)
 	g_return_val_if_fail (conn_name != NULL, NULL);
 
 	ipset = split_routes (ifnet_get_data (conn_name, "routes"));
-	length = g_strv_length (ipset);
+	length = ipset ? g_strv_length (ipset) : 0;
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
 		if (find_default_gateway_str (ip) || strstr (ip, "::")
@@ -718,7 +718,7 @@ convert_ip6_routes_block (const char *conn_name)
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
 	ipset = split_routes (ifnet_get_data (conn_name, "routes"));
-	length = g_strv_length (ipset);
+	length = ipset ? g_strv_length (ipset) : 0;
 	for (i = 0; i < length; i++) {
 		ip = ipset[i];
 		ip = strip_string (ip, '"');
