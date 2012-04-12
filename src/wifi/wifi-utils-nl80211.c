@@ -650,6 +650,9 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP |
 					      NM_WIFI_DEVICE_CAP_RSN;
 				break;
+			default:
+				nm_log_err (LOGD_HW | LOGD_WIFI, "Don't know the meaning of NL80211_ATTR_CIPHER_SUITES %#8.8x.", ciphers[i]);
+				break;
 			}
 		}
 	}
@@ -732,6 +735,13 @@ wifi_nl80211_init (const char *iface, int ifindex)
 		nm_log_err (LOGD_HW | LOGD_WIFI,
 				    "(%s): driver reports no supported frequencies",
 				    nl80211->parent.iface);
+		goto error;
+	}
+
+	if (device_info.caps == 0) {
+		nm_log_err (LOGD_HW | LOGD_WIFI,
+		            "(%s): driver doesn't report support of any encryption",
+		            nl80211->parent.iface);
 		goto error;
 	}
 
