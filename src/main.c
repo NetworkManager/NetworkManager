@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -66,101 +67,104 @@
  */
 static NMManager *manager = NULL;
 static GMainLoop *main_loop = NULL;
-static int quit_pipe[2] = { -1, -1 };
-
 static gboolean quit_early = FALSE;
+static sigset_t signal_set;
 
-static void
-nm_signal_handler (int signo)
+void *signal_handling_thread (void *arg);
+/*
+ * Thread function waiting for signals and processing them.
+ * Wait for signals in signal set. The semantics of sigwait() require that all
+ * threads (including the thread calling sigwait()) have the signal masked, for
+ * reliable operation. Otherwise, a signal that arrives while this thread is
+ * not blocked in sigwait() might be delivered to another thread.
+ */
+void *
+signal_handling_thread (void *arg)
 {
-	static int in_fatal = 0, x;
+	int signo;
 
-	/* avoid loops */
-	if (in_fatal > 0)
-		return;
-	++in_fatal;
+	while (1) {
+		sigwait (&signal_set, &signo);
 
-	switch (signo) {
-	case SIGSEGV:
-	case SIGBUS:
-	case SIGILL:
-	case SIGABRT:
-		nm_log_warn (LOGD_CORE, "caught signal %d. Generating backtrace...", signo);
-		nm_logging_backtrace ();
-		exit (1);
-		break;
-	case SIGFPE:
-	case SIGPIPE:
-		/* let the fatal signals interrupt us */
-		--in_fatal;
-		nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
-		nm_logging_backtrace ();
-		x = write (quit_pipe[1], "X", 1);
-		break;
-	case SIGINT:
-	case SIGTERM:
-		/* let the fatal signals interrupt us */
-		--in_fatal;
-		nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
-		quit_early = TRUE;
-		x = write (quit_pipe[1], "X", 1);
-		break;
-	case SIGHUP:
-		--in_fatal;
-		/* Reread config stuff like system config files, VPN service files, etc */
-		break;
-	case SIGUSR1:
-		--in_fatal;
-		/* Play with log levels or something */
-		break;
-	default:
-		signal (signo, nm_signal_handler);
-		break;
-	}
+		switch (signo) {
+		case SIGSEGV:
+		case SIGBUS:
+		case SIGILL:
+		case SIGABRT:
+		case SIGQUIT:
+			nm_log_warn (LOGD_CORE, "caught signal %d. Generating backtrace...", signo);
+			nm_logging_backtrace ();
+			exit (1);
+			break;
+		case SIGFPE:
+		case SIGPIPE:
+			nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
+			nm_logging_backtrace ();
+			quit_early = TRUE; /* for quitting before entering the main loop */
+			g_main_loop_quit (main_loop);
+			break;
+		case SIGINT:
+		case SIGTERM:
+			nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
+			quit_early = TRUE; /* for quitting before entering the main loop */
+			g_main_loop_quit (main_loop);
+			break;
+		case SIGHUP:
+			/* Reread config stuff like system config files, VPN service files, etc */
+			nm_log_info (LOGD_CORE, "caught signal %d, not supported yet.", signo);
+			break;
+		case SIGUSR1:
+			/* Play with log levels or something */
+			nm_log_info (LOGD_CORE, "caught signal %d, not supported yet.", signo);
+			break;
+		default:
+			nm_log_err (LOGD_CORE, "caught unexpected signal %d", signo);
+			break;
+		}
+    }
+    return NULL;
 }
 
+/*
+ * Mask the signals we are interested in and create a signal handling thread.
+ * Because all threads inherit the signal mask from their creator, all threads
+ * in the process will have the signals masked. That's why setup_signals() has
+ * to be called before creating other threads.
+ */
 static gboolean
-quit_watch (GIOChannel *src, GIOCondition condition, gpointer user_data)
-{
-
-	if (condition & G_IO_IN) {
-		nm_log_warn (LOGD_CORE, "quit request received, terminating...");
-		g_main_loop_quit (main_loop);
-	}
-
-	return FALSE;
-}
-
-static void
 setup_signals (void)
 {
-	struct sigaction action;
-	sigset_t mask;
-	GIOChannel *quit_channel;
+	pthread_t signal_thread_id;
+	int status;
 
-	/* Set up our quit pipe */
-	if (pipe (quit_pipe) < 0) {
-		fprintf (stderr, _("Failed to initialize SIGTERM pipe: %d"), errno);
-		exit (1);
+	sigemptyset (&signal_set);
+	sigaddset (&signal_set, SIGHUP);
+	sigaddset (&signal_set, SIGINT);
+	sigaddset (&signal_set, SIGQUIT);
+	sigaddset (&signal_set, SIGILL);
+	sigaddset (&signal_set, SIGABRT);
+	sigaddset (&signal_set, SIGFPE);
+	sigaddset (&signal_set, SIGBUS);
+	sigaddset (&signal_set, SIGSEGV);
+	sigaddset (&signal_set, SIGPIPE);
+	sigaddset (&signal_set, SIGTERM);
+	sigaddset (&signal_set, SIGUSR1);
+
+	/* Block all signals of interest. */
+	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
+	if (status != 0) {
+		fprintf (stderr, _("Failed to set signal mask: %d"), status);
+		return FALSE;
 	}
-	fcntl (quit_pipe[1], F_SETFL, O_NONBLOCK | fcntl (quit_pipe[1], F_GETFL));
 
-	quit_channel = g_io_channel_unix_new (quit_pipe[0]);
-	g_io_add_watch_full (quit_channel, G_PRIORITY_HIGH, G_IO_IN | G_IO_ERR, quit_watch, NULL, NULL);
+	/* Create the signal handling thread. */
+	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);
+	if (status != 0) {
+		fprintf (stderr, _("Failed to create signal handling thread: %d"), status);
+		return FALSE;
+	}
 
-	sigemptyset (&mask);
-	action.sa_handler = nm_signal_handler;
-	action.sa_mask = mask;
-	action.sa_flags = 0;
-	sigaction (SIGTERM,  &action, NULL);
-	sigaction (SIGINT,  &action, NULL);
-	sigaction (SIGILL,  &action, NULL);
-	sigaction (SIGBUS,  &action, NULL);
-	sigaction (SIGFPE,  &action, NULL);
-	sigaction (SIGHUP,  &action, NULL);
-	sigaction (SIGSEGV, &action, NULL);
-	sigaction (SIGABRT, &action, NULL);
-	sigaction (SIGUSR1,  &action, NULL);
+	return TRUE;
 }
 
 static gboolean
@@ -393,6 +397,10 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	/* Set up unix signal handling */
+	if (!setup_signals ())
+		exit (1);
+
 	/* Set locale to be able to use environment variables */
 	setlocale (LC_ALL, "");
 
@@ -528,8 +536,6 @@ main (int argc, char *argv[])
 	 */
 	dbus_glib_global_set_disable_legacy_property_access ();
 #endif
-
-	setup_signals ();
 
 	nm_logging_start (become_daemon);
 
