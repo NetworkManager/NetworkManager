@@ -1023,7 +1023,7 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 }
 
 static int
-replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
+add_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_sock *nlh;
@@ -1037,20 +1037,34 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	route = nm_netlink_route_new (ifindex, AF_INET6, 0,
 	                              NMNL_PROP_SCOPE, RT_SCOPE_UNIVERSE,
 	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
+	                              NMNL_PROP_PRIO, 1,
 	                              NULL);
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
 	/* Add the new default route */
-	err = nm_netlink_route6_add (route, &in6addr_any, 0, gw, NLM_F_REPLACE);
-	if (err == -NLE_EXIST) {
-		/* FIXME: even though we use NLM_F_REPLACE the kernel won't replace
-		 * the route if it's the same.  Suppress the pointless error.
-		 */
+	err = nm_netlink_route6_add (route, &in6addr_any, 0, gw, NLM_F_CREATE);
+	if (err == -NLE_EXIST)
 		err = 0;
-	}
 
 	rtnl_route_put (route);
 	return err;
+}
+
+static struct rtnl_route *
+find_static_default_routes (struct rtnl_route *route,
+                            struct nl_addr *dst,
+                            const char *iface,
+                            gpointer user_data)
+{
+	GList **def_routes = user_data;
+
+	if (   nl_addr_get_prefixlen (dst) == 0
+	    && rtnl_route_get_protocol (route) == RTPROT_STATIC) {
+		rtnl_route_get (route);
+		*def_routes = g_list_prepend (*def_routes, route);
+	}
+
+	return NULL;
 }
 
 /*
@@ -1062,12 +1076,35 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 gboolean
 nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
-	struct rtnl_route *gw_route = NULL;
+	GList *def_routes, *iter;
+	struct rtnl_route *route, *gw_route = NULL;
 	gboolean success = FALSE;
 	char *iface;
 	int err;
 
-	err = replace_default_ip6_route (ifindex, gw);
+	/* We can't just use NLM_F_REPLACE here like in the IPv4 case, because
+	 * the kernel doesn't like it if we replace the default routes it
+	 * creates. (See rh#785772.) So we delete any non-kernel default routes,
+	 * and then add a new default route of our own with a lower metric than
+	 * the kernel ones.
+	 */
+	def_routes = NULL;
+	nm_netlink_foreach_route (ifindex, AF_INET6, RT_SCOPE_UNIVERSE, TRUE,
+	                          find_static_default_routes, &def_routes);
+	for (iter = def_routes; iter; iter = iter->next) {
+		route = iter->data;
+		if (!nm_netlink_route_delete (route)) {
+			iface = nm_netlink_index_to_iface (ifindex);
+			nm_log_err (LOGD_DEVICE | LOGD_IP6,
+			            "(%s): failed to delete existing IPv6 default route",
+			            iface);
+			g_free (iface);
+		}
+		rtnl_route_put (route);
+	}
+	g_list_free (def_routes);
+
+	err = add_default_ip6_route (ifindex, gw);
 	if (err == 0)
 		return TRUE;
 
@@ -1091,7 +1128,7 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 		goto out;
 
 	/* Try adding the original route again */
-	err = replace_default_ip6_route (ifindex, gw);
+	err = add_default_ip6_route (ifindex, gw);
 	if (err != 0) {
 		nm_netlink_route_delete (gw_route);
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
