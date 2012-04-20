@@ -692,7 +692,7 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
  * Gets the active connections.
  *
  * Returns: (transfer none) (element-type NMClient.ActiveConnection): a #GPtrArray
-*  containing all the active #NMActiveConnection<!-- -->s.
+ *  containing all the active #NMActiveConnection<!-- -->s.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray * 
