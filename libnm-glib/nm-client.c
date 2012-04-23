@@ -1016,30 +1016,50 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
 /****************************************************************/
 
 static void
-free_object_array (GPtrArray **array)
+free_devices (NMClient *client, gboolean emit_signals)
 {
-	g_return_if_fail (array != NULL);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	GPtrArray *devices;
+	NMDevice *device;
+	int i;
 
-	if (*array) {
-		g_ptr_array_foreach (*array, (GFunc) g_object_unref, NULL);
-		g_ptr_array_free (*array, TRUE);
-		*array = NULL;
+	if (!priv->devices)
+		return;
+
+	devices = priv->devices;
+	priv->devices = NULL;
+	for (i = 0; i < devices->len; i++) {
+		device = devices->pdata[i];
+		if (emit_signals)
+			g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
+		g_object_unref (device);
 	}
+	g_ptr_array_free (devices, TRUE);
 }
 
 static void
-dispose_and_free_object_array (GPtrArray **array)
+free_active_connections (NMClient *client, gboolean emit_signals)
 {
-	g_return_if_fail (array != NULL);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	GPtrArray *active_connections;
+	NMActiveConnection *active_connection;
+	int i;
 
-	if (*array) {
-		/* The objects in the array may have circular refs with other
-		 * objects, which the caller will need to know to break by
-		 * calling this function rather than free_object_array().
-		 */
-		g_ptr_array_foreach (*array, (GFunc) g_object_run_dispose, NULL);
-		free_object_array (array);
+	if (!priv->active_connections)
+		return;
+
+	active_connections = priv->active_connections;
+	priv->active_connections = NULL;
+	for (i = 0; i < active_connections->len; i++) {
+		active_connection = active_connections->pdata[i];
+		/* Break circular refs */
+		g_object_run_dispose (G_OBJECT (active_connection));
+		g_object_unref (active_connection);
 	}
+	g_ptr_array_free (active_connections, TRUE);
+
+	if (emit_signals)
+		g_object_notify (G_OBJECT (client), NM_CLIENT_ACTIVE_CONNECTIONS);
 }
 
 static void
@@ -1086,8 +1106,8 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
-		free_object_array (&priv->devices);
-		dispose_and_free_object_array (&priv->active_connections);
+		free_devices (client, TRUE);
+		free_active_connections (client, TRUE);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
 		priv->wwan_enabled = FALSE;
@@ -1513,6 +1533,7 @@ init_async (GAsyncInitable *initable, int io_priority,
 static void
 dispose (GObject *object)
 {
+	NMClient *client = NM_CLIENT (object);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	if (priv->perm_call) {
@@ -1523,8 +1544,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->client_proxy);
 	g_clear_object (&priv->bus_proxy);
 
-	free_object_array (&priv->devices);
-	dispose_and_free_object_array (&priv->active_connections);
+	free_devices (client, FALSE);
+	free_active_connections (client, FALSE);
 
 	g_slist_foreach (priv->pending_activations, (GFunc) activate_info_free, NULL);
 	g_slist_free (priv->pending_activations);
