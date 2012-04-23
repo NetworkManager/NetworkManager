@@ -42,6 +42,16 @@
 		g_simple_async_result_set_from_error (result, __error); \
 		g_error_free (__error); \
 	} G_STMT_END
+
+#define g_clear_object(object_ptr) \
+	G_STMT_START { \
+		GObject **__obj_p = object_ptr; \
+		if (*__obj_p) { \
+			g_object_unref (*__obj_p); \
+			*__obj_p = NULL; \
+		} \
+	} G_STMT_END
+
 #endif
 
 #endif  /* NM_GLIB_COMPAT_H */

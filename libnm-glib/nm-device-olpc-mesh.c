@@ -227,14 +227,8 @@ dispose (GObject *object)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
 
-	if (priv->companion) {
-		g_object_unref (priv->companion);
-		priv->companion = NULL;
-	}
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
+	g_clear_object (&priv->companion);
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 }

@@ -43,7 +43,6 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 typedef struct {
-	gboolean disposed;
 	DBusGProxy *proxy;
 
 	char *hw_address;
@@ -608,15 +607,8 @@ dispose (GObject *object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
 	clean_up_aps (NM_DEVICE_WIFI (object), FALSE);
-	g_object_unref (priv->proxy);
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }

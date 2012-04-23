@@ -61,8 +61,6 @@ typedef struct {
 	DBusGProxy *dbus_proxy;
 
 	guint fetch_id;
-
-	gboolean disposed;
 } NMRemoteSettingsPrivate;
 
 enum {
@@ -1043,29 +1041,35 @@ dispose (GObject *object)
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
-	if (priv->disposed)
-		return;
-
-	priv->disposed = TRUE;
-
-	if (priv->fetch_id)
+	if (priv->fetch_id) {
 		g_source_remove (priv->fetch_id);
+		priv->fetch_id = 0;
+	}
 
 	while (g_slist_length (priv->add_list))
 		add_connection_info_dispose (self, (AddConnectionInfo *) priv->add_list->data);
 
-	if (priv->connections)
+	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
+		priv->connections = NULL;
+	}
 
-	if (priv->pending)
+	if (priv->pending) {
 		g_hash_table_destroy (priv->pending);
+		priv->pending = NULL;
+	}
 
 	g_free (priv->hostname);
+	priv->hostname = NULL;
 
-	g_object_unref (priv->dbus_proxy);
-	g_object_unref (priv->proxy);
-	g_object_unref (priv->props_proxy);
-	dbus_g_connection_unref (priv->bus);
+	g_clear_object (&priv->dbus_proxy);
+	g_clear_object (&priv->proxy);
+	g_clear_object (&priv->props_proxy);
+
+	if (priv->bus) {
+		dbus_g_connection_unref (priv->bus);
+		priv->bus = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_remote_settings_parent_class)->dispose (object);
 }

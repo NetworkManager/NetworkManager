@@ -42,8 +42,6 @@ typedef struct {
 	char *hw_address;
 	char *name;
 	guint32 bt_capabilities;
-
-	gboolean disposed;
 } NMDeviceBtPrivate;
 
 enum {
@@ -273,13 +271,7 @@ dispose (GObject *object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_bt_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
-	g_object_unref (priv->proxy);
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->dispose (object);
 }

@@ -60,7 +60,6 @@ G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
 typedef struct {
-	gboolean disposed;
 	DBusGProxy *proxy;
 
 	char *iface;
@@ -265,26 +264,13 @@ dispose (GObject *object)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
-	g_object_unref (priv->proxy);
-	if (priv->ip4_config)
-		g_object_unref (priv->ip4_config);
-	if (priv->dhcp4_config)
-		g_object_unref (priv->dhcp4_config);
-	if (priv->ip6_config)
-		g_object_unref (priv->ip6_config);
-	if (priv->dhcp6_config)
-		g_object_unref (priv->dhcp6_config);
-	if (priv->client)
-		g_object_unref (priv->client);
-	if (priv->active_connection)
-		g_object_unref (priv->active_connection);
+	g_clear_object (&priv->proxy);
+	g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->dhcp4_config);
+	g_clear_object (&priv->ip6_config);
+	g_clear_object (&priv->dhcp6_config);
+	g_clear_object (&priv->client);
+	g_clear_object (&priv->active_connection);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }

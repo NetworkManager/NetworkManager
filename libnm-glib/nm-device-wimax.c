@@ -42,7 +42,6 @@ G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
 void _nm_device_wimax_set_wireless_enabled (NMDeviceWimax *wimax, gboolean enabled);
 
 typedef struct {
-	gboolean disposed;
 	DBusGProxy *proxy;
 
 	char *hw_address;
@@ -593,18 +592,18 @@ dispose (GObject *object)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
-		return;
+	if (priv->hw_address) {
+		g_free (priv->hw_address);
+		priv->hw_address = NULL;
 	}
 
-	priv->disposed = TRUE;
-
-	g_free (priv->hw_address);
-	g_free (priv->bsid);
+	if (priv->bsid) {
+		g_free (priv->bsid);
+		priv->bsid = NULL;
+	}
 
 	clean_up_nsps (NM_DEVICE_WIMAX (object), FALSE);
-	g_object_unref (priv->proxy);
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
 }

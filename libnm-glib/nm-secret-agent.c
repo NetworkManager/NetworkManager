@@ -79,8 +79,6 @@ typedef struct {
 	gboolean auto_register;
 	gboolean suppress_auto;
 	gboolean auto_register_id;
-
-	gboolean disposed;
 } NMSecretAgentPrivate;
 
 enum {
@@ -878,29 +876,28 @@ dispose (GObject *object)
 	NMSecretAgent *self = NM_SECRET_AGENT (object);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
+	if (priv->registered)
+		nm_secret_agent_unregister (self);
 
-		if (priv->registered)
-			nm_secret_agent_unregister (self);
+	if (priv->auto_register_id) {
+		g_source_remove (priv->auto_register_id);
+		priv->auto_register_id = 0;
+	}
 
-		if (priv->auto_register_id)
-			g_source_remove (priv->auto_register_id);
+	g_free (priv->identifier);
+	priv->identifier = NULL;
+	g_free (priv->nm_owner);
+	priv->nm_owner = NULL;
 
-		g_free (priv->identifier);
-		g_free (priv->nm_owner);
+	while (priv->pending_gets)
+		get_secrets_info_finalize (self, priv->pending_gets->data);
 
-		while (priv->pending_gets)
-			get_secrets_info_finalize (self, priv->pending_gets->data);
+	g_clear_object (&priv->dbus_proxy);
+	g_clear_object (&priv->manager_proxy);
 
-		if (priv->dbus_proxy)
-			g_object_unref (priv->dbus_proxy);
-
-		if (priv->manager_proxy)
-			g_object_unref (priv->manager_proxy);
-
-		if (priv->bus)
-			dbus_g_connection_unref (priv->bus);
+	if (priv->bus) {
+		dbus_g_connection_unref (priv->bus);
+		priv->bus = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->dispose (object);

@@ -49,7 +49,6 @@ G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJEC
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
 
 typedef struct {
-	gboolean disposed;
 	DBusGProxy *proxy;
 
 	char *connection;
@@ -357,18 +356,13 @@ dispose (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
 	if (priv->devices) {
 		g_ptr_array_foreach (priv->devices, (GFunc) g_object_unref, NULL);
 		g_ptr_array_free (priv->devices, TRUE);
+		priv->devices = NULL;
 	}
-	g_object_unref (priv->proxy);
+
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }

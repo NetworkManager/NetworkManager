@@ -78,7 +78,7 @@ typedef struct {
 
 	GSList *notify_props;
 	guint32 notify_id;
-	gboolean inited, disposed;
+	gboolean inited;
 
 	GSList *reload_results;
 	guint reload_remaining;
@@ -194,13 +194,6 @@ dispose (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
 	if (priv->notify_id) {
 		g_source_remove (priv->notify_id);
 		priv->notify_id = 0;
@@ -208,12 +201,18 @@ dispose (GObject *object)
 
 	g_slist_foreach (priv->notify_props, (GFunc) g_free, NULL);
 	g_slist_free (priv->notify_props);
+	priv->notify_props = NULL;
 
 	g_slist_foreach (priv->property_interfaces, (GFunc) g_free, NULL);
 	g_slist_free (priv->property_interfaces);
+	priv->property_interfaces = NULL;
 
-	g_object_unref (priv->properties_proxy);
-	dbus_g_connection_unref (priv->connection);
+	g_clear_object (&priv->properties_proxy);
+
+	if (priv->connection) {
+		dbus_g_connection_unref (priv->connection);
+		priv->connection = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
 }

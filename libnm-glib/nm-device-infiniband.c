@@ -224,10 +224,7 @@ dispose (GObject *object)
 {
 	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
 
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
+	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_infiniband_parent_class)->dispose (object);
 }

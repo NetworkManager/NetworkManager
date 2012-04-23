@@ -72,7 +72,6 @@ typedef struct {
 	GSList *calls;
 
 	gboolean visible;
-	gboolean disposed;
 } NMRemoteConnectionPrivate;
 
 #define NM_REMOTE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionPrivate))
@@ -477,14 +476,14 @@ dispose (GObject *object)
 	NMRemoteConnection *self = NM_REMOTE_CONNECTION (object);
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
+	while (g_slist_length (priv->calls))
+		remote_call_complete (self, priv->calls->data);
 
-		while (g_slist_length (priv->calls))
-			remote_call_complete (self, priv->calls->data);
+	g_clear_object (&priv->proxy);
 
-		g_object_unref (priv->proxy);
+	if (priv->bus) {
 		dbus_g_connection_unref (priv->bus);
+		priv->bus = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_remote_connection_parent_class)->dispose (object);

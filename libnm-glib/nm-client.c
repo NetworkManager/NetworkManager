@@ -53,8 +53,6 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, NM_TYPE_OBJECT,
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	DBusGProxy *client_proxy;
 	DBusGProxy *bus_proxy;
 	gboolean manager_running;
@@ -1517,24 +1515,23 @@ dispose (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
-		return;
+	if (priv->perm_call) {
+		dbus_g_proxy_cancel_call (priv->client_proxy, priv->perm_call);
+		priv->perm_call = NULL;
 	}
 
-	if (priv->perm_call)
-		dbus_g_proxy_cancel_call (priv->client_proxy, priv->perm_call);
-
-	g_object_unref (priv->client_proxy);
-	g_object_unref (priv->bus_proxy);
+	g_clear_object (&priv->client_proxy);
+	g_clear_object (&priv->bus_proxy);
 
 	free_object_array (&priv->devices);
 	dispose_and_free_object_array (&priv->active_connections);
 
 	g_slist_foreach (priv->pending_activations, (GFunc) activate_info_free, NULL);
 	g_slist_free (priv->pending_activations);
+	priv->pending_activations = NULL;
 
 	g_hash_table_destroy (priv->permissions);
+	priv->permissions = NULL;
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 }

@@ -63,9 +63,6 @@ typedef struct {
 	DBusGConnection *connection;
 	char *dbus_service_name;
 
-	/* GObject-y stuff */
-	gboolean disposed;
-
 	/* Temporary stuff */
 	guint connect_timer;
 	guint quit_timer;
@@ -590,15 +587,10 @@ dispose (GObject *object)
 	NMVPNServiceState state;
 	GError *err = NULL;
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_vpn_plugin_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
-	if (priv->fail_stop_id)
+	if (priv->fail_stop_id) {
 		g_source_remove (priv->fail_stop_id);
+		priv->fail_stop_id = 0;
+	}
 
 	state = nm_vpn_plugin_get_state (plugin);
 
