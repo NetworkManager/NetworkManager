@@ -844,8 +844,14 @@ process_properties_changed (NMObject *self, GHashTable *properties, gboolean syn
 		return;
 
 	g_hash_table_iter_init (&iter, properties);
-	while (g_hash_table_iter_next (&iter, &name, &value))
-		handle_property_changed (self, name, value, synchronously);
+	while (g_hash_table_iter_next (&iter, &name, &value)) {
+		if (value)
+			handle_property_changed (self, name, value, synchronously);
+		else {
+			g_warning ("%s:%d %s(): object %s property '%s' value is unexpectedly NULL",
+			           __FILE__, __LINE__, __func__, G_OBJECT_TYPE_NAME (self), (const char *) name);
+		}
+	}
 }
 
 static void
