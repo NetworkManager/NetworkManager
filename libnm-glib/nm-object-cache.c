@@ -64,3 +64,28 @@ _nm_object_cache_get (const char *path)
 	return object ? g_object_ref (object) : NULL;
 }
 
+void
+_nm_object_cache_clear (NMObject *except)
+{
+	GHashTableIter iter;
+	NMObject *obj;
+	const char *path;
+	char *foo;
+
+	_init_cache ();
+	g_hash_table_iter_init (&iter, cache);
+	while (g_hash_table_iter_next (&iter, (gpointer) &path, (gpointer) &obj)) {
+		if (obj != except) {
+			/* Remove the callback so that if the object isn't yet released
+			 * by a client, when it does finally get unrefed, it won't trigger
+			 * the cache removal for a new object with the same path as the
+			 * one being released.
+			 */
+			foo = g_object_steal_data (G_OBJECT (obj), "nm-object-cache-tag");
+			g_free (foo);
+
+			g_hash_table_iter_remove (&iter);
+		}
+	}
+}
+

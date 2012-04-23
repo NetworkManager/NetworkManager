@@ -1116,6 +1116,11 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		priv->wimax_hw_enabled = FALSE;
 		g_free (priv->version);
 		priv->version = NULL;
+
+		/* Clear object cache to ensure bad refcounting by clients doesn't
+		 * keep objects in the cache.
+		 */
+		_nm_object_cache_clear (NM_OBJECT (client));
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (client), FALSE);
 		_nm_object_reload_properties_async (NM_OBJECT (client), updated_properties, client);
