@@ -258,6 +258,43 @@ connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
 	g_hash_table_remove (priv->pending, path);
 }
 
+static void connection_visible_cb (NMRemoteConnection *remote,
+                                   gboolean visible,
+                                   gpointer user_data);
+
+/* Takes a reference to the connection when adding to 'to' */
+static void
+move_connection (NMRemoteSettings *self,
+                 NMRemoteConnection *remote,
+                 GHashTable *from,
+                 GHashTable *to)
+{
+	const char *path = nm_connection_get_path (NM_CONNECTION (remote));
+
+	g_hash_table_insert (to, g_strdup (path), g_object_ref (remote));
+	if (from)
+		g_hash_table_remove (from, path);
+
+	/* Setup connection signals since removing from 'from' clears them, but
+	 * also the first time the connection is added to a hash if 'from' is NULL.
+	 */
+	if (!g_signal_handler_find (remote, G_SIGNAL_MATCH_FUNC,
+	                            0, 0, NULL, connection_removed_cb, NULL)) {
+		g_signal_connect (remote,
+		                  NM_REMOTE_CONNECTION_REMOVED,
+		                  G_CALLBACK (connection_removed_cb),
+		                  self);
+	}
+
+	if (!g_signal_handler_find (remote, G_SIGNAL_MATCH_FUNC,
+	                            0, 0, NULL, connection_visible_cb, NULL)) {
+		g_signal_connect (remote,
+		                  "visible",
+		                  G_CALLBACK (connection_visible_cb),
+		                  self);
+	}
+}
+
 static void
 connection_visible_cb (NMRemoteConnection *remote,
                        gboolean visible,
@@ -278,16 +315,14 @@ connection_visible_cb (NMRemoteConnection *remote,
 		/* Connection visible to this user again */
 		if (g_hash_table_lookup (priv->pending, path)) {
 			/* Move connection from pending to visible hash; emit for clients */
-			g_hash_table_insert (priv->connections, g_strdup (path), g_object_ref (remote));
-			g_hash_table_remove (priv->pending, path);
+			move_connection (self, remote, priv->pending, priv->connections);
 			g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
 		}
 	} else {
 		/* Connection now invisible to this user */
 		if (g_hash_table_lookup (priv->connections, path)) {
 			/* Move connection to pending hash and wait for it to become visible again */
-			g_hash_table_insert (priv->pending, g_strdup (path), g_object_ref (remote));
-			g_hash_table_remove (priv->connections, path);
+			move_connection (self, remote, priv->connections, priv->pending);
 
 			/* Signal to clients that the connection is gone; but we have to
 			 * block our connection removed handler so we don't destroy
@@ -308,17 +343,14 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 	AddConnectionInfo *addinfo;
 	const char *path;
-	GError *error = NULL;
-	gboolean remove_from_pending = TRUE;
+	GError *error = NULL, *local;
 
 	path = nm_connection_get_path (NM_CONNECTION (remote));
 	addinfo = add_connection_info_find (self, remote);
 
 	if (g_async_initable_init_finish (G_ASYNC_INITABLE (remote), result, &error)) {
-		/* ref it when adding to ->connections, since removing it from ->pending
-		 * will unref it.
-		 */
-		g_hash_table_insert (priv->connections, g_strdup (path), g_object_ref (remote));
+		/* Connection is initialized and visible; expose it to clients */
+		move_connection (self, remote, priv->pending, priv->connections);
 
 		/* If there's a pending AddConnection request, complete that here before
 		 * signaling new-connection.
@@ -331,23 +363,23 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 		 */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
 	} else {
-		if (dbus_g_error_has_name (error, "org.freedesktop.NetworkManager.Settings.PermissionDenied")) {
-			/* Connection doesn't exist, or isn't visible to this user */
-			remove_from_pending = FALSE;
-		}
-		g_error_free (error);
-
 		if (addinfo) {
-			error = g_error_new_literal (NM_REMOTE_SETTINGS_ERROR,
+			local = g_error_new_literal (NM_REMOTE_SETTINGS_ERROR,
 			                             NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
 			                             "Connection not visible or not available");
-			add_connection_info_complete (self, addinfo, error);
-			g_error_free (error);
+			add_connection_info_complete (self, addinfo, local);
+			g_error_free (local);
 		}
-	}
 
-	if (remove_from_pending)
-		g_hash_table_remove (priv->pending, path);
+		/* PermissionDenied means the connection isn't visible to this user, so
+		 * keep it in priv->pending to be notified later of visibility changes.
+		 * Otherwise forget it.
+		 */
+		if (!dbus_g_error_has_name (error, "org.freedesktop.NetworkManager.Settings.PermissionDenied"))
+			g_hash_table_remove (priv->pending, path);
+
+		g_error_free (error);
+	}
 
 	/* Let listeners know that all connections have been found */
 	priv->init_left--;
@@ -373,14 +405,6 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	/* Create a new connection object for it */
 	connection = nm_remote_connection_new (priv->bus, path);
 	if (connection) {
-		g_signal_connect (connection, NM_REMOTE_CONNECTION_REMOVED,
-		                  G_CALLBACK (connection_removed_cb),
-		                  self);
-
-		g_signal_connect (connection, "visible",
-		                  G_CALLBACK (connection_visible_cb),
-		                  self);
-
 		g_async_initable_init_async (G_ASYNC_INITABLE (connection),
 		                             G_PRIORITY_DEFAULT, NULL,
 		                             connection_inited, self);
@@ -389,7 +413,8 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 		 * it's settings asynchronously over D-Bus.  The connection isn't
 		 * really valid until it has all its settings, so hide it until it does.
 		 */
-		g_hash_table_insert (priv->pending, g_strdup (path), connection);
+		move_connection (self, connection, NULL, priv->pending);
+		g_object_unref (connection); /* move_connection() takes a ref */
 	}
 	return connection;
 }
@@ -796,14 +821,25 @@ nm_remote_settings_new_finish (GAsyncResult *result, GError **error)
 		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
+static void
+forget_connection (gpointer user_data)
+{
+	NMRemoteConnection *remote = NM_REMOTE_CONNECTION (user_data);
+
+	g_signal_handlers_disconnect_matched (remote, G_SIGNAL_MATCH_FUNC,
+	                                      0, 0, NULL, connection_removed_cb, NULL);
+	g_signal_handlers_disconnect_matched (remote, G_SIGNAL_MATCH_FUNC,
+	                                      0, 0, NULL, connection_visible_cb, NULL);
+	g_object_unref (remote);
+}
 
 static void
 nm_remote_settings_init (NMRemoteSettings *self)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-	priv->pending = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, forget_connection);
+	priv->pending = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, forget_connection);
 }
 
 static void
