@@ -457,34 +457,55 @@ activate_info_complete (ActivateInfo *info,
 }
 
 static void
-recheck_pending_activations (NMClient *self)
+recheck_pending_activations (NMClient *self, const char *failed_path, GError *error)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	GSList *iter;
 	const GPtrArray *active_connections;
+	gboolean found_in_active = FALSE;
+	gboolean found_in_pending = FALSE;
+	ActivateInfo *ainfo = NULL;
 	int i;
 
 	active_connections = nm_client_get_active_connections (self);
-	if (!active_connections)
-		return;
 
-	/* For each active connection, look for a pending activation that has
-	 * the active connection's object path, and call its callback.
+	/* For each pending activation, look for a active connection that has
+	 * the pending activation's object path, and call pending connection's
+	 * callback.
+	 * If the connection to activate doesn't make it to active_connections,
+	 * due to an error, we have to call the callback for failed_path.
 	 */
-	for (i = 0; i < active_connections->len; i++) {
-		NMActiveConnection *active = g_ptr_array_index (active_connections, i);
-		const char *active_path = nm_object_get_path (NM_OBJECT (active));
+	for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
+		ActivateInfo *info = iter->data;
 
-		for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
-			ActivateInfo *info = iter->data;
+		if (!found_in_pending && failed_path && g_strcmp0 (failed_path, info->active_path) == 0) {
+			found_in_pending = TRUE;
+			ainfo = info;
+		}
+
+		for (i = 0; active_connections && i < active_connections->len; i++) {
+			NMActiveConnection *active = g_ptr_array_index (active_connections, i);
+			const char *active_path = nm_object_get_path (NM_OBJECT (active));
+
+			if (!found_in_active && failed_path && g_strcmp0 (failed_path, active_path) == 0)
+				found_in_active = TRUE;
 
 			if (g_strcmp0 (info->active_path, active_path) == 0) {
-				/* Call the pending activation's callback and it all up*/
+				/* Call the pending activation's callback and it all up */
 				activate_info_complete (info, active, NULL);
 				activate_info_free (info);
 				break;
 			}
 		}
+	}
+
+	if (!found_in_active && found_in_pending) {
+		/* A newly activated connection failed due to some immediate error
+		 * and disappeared from active connection list.  Make sure the
+		 * callback gets called.
+		 */
+		activate_info_complete (ainfo, NULL, error);
+		activate_info_free (ainfo);
 	}
 }
 
@@ -506,7 +527,7 @@ activate_cb (DBusGProxy *proxy,
 		g_clear_error (&error);
 	} else {
 		info->active_path = path;
-		recheck_pending_activations (info->client);
+		recheck_pending_activations (info->client, NULL, NULL);
 	}
 }
 
@@ -585,7 +606,7 @@ add_activate_cb (DBusGProxy *proxy,
 	} else {
 		info->new_connection_path = connection_path;
 		info->active_path = active_path;
-		recheck_pending_activations (info->client);
+		recheck_pending_activations (info->client, NULL, NULL);
 	}
 }
 
@@ -651,7 +672,14 @@ nm_client_add_and_activate_connection (NMClient *client,
 static void
 active_connections_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	recheck_pending_activations (NM_CLIENT (object));
+	recheck_pending_activations (NM_CLIENT (object), NULL, NULL);
+}
+
+static void
+object_creation_failed_cb (GObject *object, GError *error, char *failed_path)
+{
+	if (error)
+		recheck_pending_activations (NM_CLIENT (object), failed_path, error);
 }
 
 /**
@@ -1408,6 +1436,9 @@ constructed (GObject *object)
 
 	g_signal_connect (object, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
 	                  G_CALLBACK (active_connections_changed_cb), NULL);
+
+	g_signal_connect (object, "object-creation-failed",
+	                  G_CALLBACK (object_creation_failed_cb), NULL);
 }
 
 static gboolean
