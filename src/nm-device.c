@@ -3222,6 +3222,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 	}
 
 	priv->act_request = g_object_ref (req);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
 	if (!nm_act_request_get_assumed (req)) {
 		NMActiveConnection *dep_ac;
