@@ -873,6 +873,12 @@ fi
 
 echo libnl version: ${libnl_version}
 
+if test "${ac_with_wext}" = "yes"; then
+	echo WEXT support: yes
+else
+	echo WEXT support: no
+fi
+
 echo
 echo Building documentation: ${with_docs}
 echo Building tests: ${with_tests}
