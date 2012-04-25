@@ -3732,8 +3732,8 @@ make_vlan_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *iface_name = NULL;
 	char *parent = NULL;
-	const char *p = NULL, *w;
-	gboolean has_numbers = FALSE;
+	const char *p = NULL;
+	char *end = NULL;
 	gint vlan_id = -1;
 	guint32 vlan_flags = 0;
 
@@ -3773,17 +3773,12 @@ make_vlan_setting (shvarFile *ifcfg,
 				p = iface_name + 4;
 		}
 
-		w = p;
-		while (*w && !has_numbers)
-			has_numbers = g_ascii_isdigit (*w);
-
-		/* Grab VLAN ID from interface name; this takes precedence over the
-		 * separate VLAN_ID property for backwards compat.
-		 */
-		if (has_numbers) {
-			errno = 0;
-			vlan_id = (gint) g_ascii_strtoll (p, NULL, 10);
-			if (vlan_id < 0 || vlan_id > 4095 || errno) {
+		if (p) {
+			/* Grab VLAN ID from interface name; this takes precedence over the
+			 * separate VLAN_ID property for backwards compat.
+			 */
+			vlan_id = (gint) g_ascii_strtoll (p, &end, 10);
+			if (vlan_id < 0 || vlan_id > 4095 || end == p || *end) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				             "Failed to determine VLAN ID from DEVICE '%s'",
 				             iface_name);
