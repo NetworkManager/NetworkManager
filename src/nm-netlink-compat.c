@@ -121,7 +121,7 @@ rtnl_link_vlan_get_id (struct rtnl_link *l)
 	if ((if_name = rtnl_link_get_name (l)) == NULL)
 		return -1;
 
-	strcpy (if_request.device1, if_name);
+	g_strlcpy (if_request.device1, if_name, sizeof (if_request.device1));
 
 	if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
 		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
@@ -158,7 +158,7 @@ rtnl_link_vlan_set_flags (struct rtnl_link *l, unsigned int flags)
 	}
 
 	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
-	strcpy (if_request.device1, if_name);
+	g_strlcpy (if_request.device1, if_name, sizeof (if_request.device1));
 	if_request.cmd = SET_VLAN_FLAG_CMD;
 	if_request.u.flag = flags;
 
@@ -190,7 +190,7 @@ rtnl_link_vlan_set_ingress_map (struct rtnl_link *l, int from, uint32_t to)
 	}
 
 	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
-	strcpy (if_request.device1, if_name);
+	g_strlcpy (if_request.device1, if_name, sizeof (if_request.device1));
 	if_request.cmd = SET_VLAN_INGRESS_PRIORITY_CMD;
 	if_request.u.skb_priority = from;
 	if_request.vlan_qos = to;
@@ -223,7 +223,7 @@ rtnl_link_vlan_set_egress_map (struct rtnl_link *l, int from, uint32_t to)
 	}
 
 	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
-	strcpy (if_request.device1, if_name);
+	g_strlcpy (if_request.device1, if_name, sizeof (if_request.device1));
 	if_request.cmd = SET_VLAN_EGRESS_PRIORITY_CMD;
 	if_request.u.skb_priority = from;
 	if_request.vlan_qos = to;

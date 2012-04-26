@@ -1743,7 +1743,7 @@ nm_system_iface_compat_add_vlan_device (const char *master, int vid)
 	}
 
 	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
-	strcpy (if_request.device1, master);
+	g_strlcpy (if_request.device1, master, sizeof (if_request.device1));
 	if_request.cmd = ADD_VLAN_CMD;
 	if_request.u.VID = vid;
 
@@ -1769,7 +1769,7 @@ nm_system_iface_compat_rem_vlan_device (const char *iface)
 	}
 
 	memset (&if_request, 0, sizeof (struct vlan_ioctl_args));
-        strcpy (if_request.device1, iface);
+	g_strlcpy (if_request.device1, iface, sizeof (if_request.device1));
 	if_request.cmd = DEL_VLAN_CMD;
 
 	if (ioctl (fd, SIOCSIFVLAN, &if_request) < 0) {
