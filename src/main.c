@@ -543,6 +543,13 @@ main (int argc, char *argv[])
 	success = FALSE;
 
 	nm_log_info (LOGD_CORE, "Read config file %s", nm_config_get_path (config));
+	nm_log_info (LOGD_CORE, "WEXT support is %s",
+#if HAVE_WEXT
+	             "enabled"
+#else
+	             "disabled"
+#endif
+	             );
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
