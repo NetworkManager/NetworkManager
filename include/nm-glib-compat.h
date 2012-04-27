@@ -45,7 +45,7 @@
 
 #define g_clear_object(object_ptr) \
 	G_STMT_START { \
-		GObject **__obj_p = object_ptr; \
+		GObject **__obj_p = (gpointer) (object_ptr); \
 		if (*__obj_p) { \
 			g_object_unref (*__obj_p); \
 			*__obj_p = NULL; \

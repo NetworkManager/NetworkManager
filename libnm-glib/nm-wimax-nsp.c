@@ -23,6 +23,8 @@
 #include <config.h>
 #include <string.h>
 
+#include "nm-glib-compat.h"
+
 #include <nm-connection.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wimax.h>

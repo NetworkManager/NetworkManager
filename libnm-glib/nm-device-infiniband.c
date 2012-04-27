@@ -25,6 +25,8 @@
 #include <linux/if_infiniband.h>
 #include <netinet/ether.h>
 
+#include "nm-glib-compat.h"
+
 #include <nm-setting-connection.h>
 #include <nm-setting-infiniband.h>
 #include <nm-utils.h>

@@ -24,6 +24,8 @@
 #include <config.h>
 #include <string.h>
 
+#include "nm-glib-compat.h"
+
 #include <nm-setting-connection.h>
 #include <nm-setting-olpc-mesh.h>
 

@@ -24,6 +24,8 @@
 #include <string.h>
 #include <netinet/ether.h>
 
+#include "nm-glib-compat.h"
+
 #include <nm-setting-connection.h>
 #include <nm-setting-vlan.h>
 #include <nm-utils.h>

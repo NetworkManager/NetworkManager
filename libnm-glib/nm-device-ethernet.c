@@ -25,6 +25,8 @@
 #include <string.h>
 #include <netinet/ether.h>
 
+#include "nm-glib-compat.h"
+
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-pppoe.h>
