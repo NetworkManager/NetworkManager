@@ -1769,7 +1769,7 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = do_connections_list (nmc, argc, argv);
 	} else {
 
-	 	if (matches (*argv, "list") == 0) {
+		if (matches (*argv, "list") == 0) {
 			nmc->return_value = do_connections_list (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "status") == 0) {
@@ -1836,7 +1836,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	else {
 		while (real_con_commands[i] && matches (*argv, real_con_commands[i]) != 0)
 			i++;
- 		if (real_con_commands[i] != NULL)
+		if (real_con_commands[i] != NULL)
 			real_cmd = TRUE;
 	}
 

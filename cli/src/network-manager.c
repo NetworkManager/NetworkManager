@@ -135,7 +135,7 @@ show_nm_status (NmCli *nmc)
 		fields_str = fields_common;
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
 		fields_str = fields_all;
-	else 
+	else
 		fields_str = nmc->required_fields;
 
 	nmc->allowed_fields = nmc_fields_nm_status;
@@ -214,8 +214,8 @@ static void networking_set_sleep (NmCli *nmc, gboolean in_sleep)
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: Couldn't connect to system bus: %s"), err->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-        	g_error_free (err);
-	        goto gone;
+		g_error_free (err);
+		goto gone;
 	}
 
 	proxy = dbus_g_proxy_new_for_name (connection,
@@ -226,8 +226,8 @@ static void networking_set_sleep (NmCli *nmc, gboolean in_sleep)
 		g_string_printf (nmc->return_text, _("Error: Couldn't create D-Bus object proxy."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto gone;
-        }
- 
+	}
+
 	if (!dbus_g_proxy_call (proxy, "Sleep", &err, G_TYPE_BOOLEAN, in_sleep, G_TYPE_INVALID, G_TYPE_INVALID)) {
 		g_string_printf (nmc->return_text, _("Error in sleep: %s"), err->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;

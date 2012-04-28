@@ -515,7 +515,7 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 
 	i = 0;
 	while (flags_str[i])
-		 g_free (flags_str[i++]);
+		g_free (flags_str[i++]);
 
 	return ret_str;
 }
@@ -1120,7 +1120,7 @@ do_devices_list (NmCli *nmc, int argc, char **argv)
 				device = candidate;
 		}
 		if (!device) {
-		 	g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1409,7 +1409,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (!device) {
-		 	g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1429,7 +1429,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 					g_free (bssid_up);
 				}
 				if (!ap) {
-				 	g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
+					g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto error;
 				}
@@ -1446,7 +1446,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				show_acces_point_info (device, nmc);
 			}
 		} else {
-		 	g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiFi device."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiFi device."), iface);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1483,7 +1483,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				}
 			}
 			if (!ap) {
-			 	g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
+				g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto error;
 			}
@@ -2066,7 +2066,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 		}
 
 		if (!device) {
-		 	g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -2086,7 +2086,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 					g_free (nsp_up);
 				}
 				if (!nsp) {
-				 	g_string_printf (nmc->return_text, _("Error: NSP with name '%s' not found."), nsp_user);
+					g_string_printf (nmc->return_text, _("Error: NSP with name '%s' not found."), nsp_user);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto error;
 				}
@@ -2097,7 +2097,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				show_nsp_info (device, nmc);
 			}
 		} else {
-		 	g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiMAX device."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiMAX device."), iface);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -2128,7 +2128,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				}
 			}
 			if (!nsp) {
-			 	g_string_printf (nmc->return_text, _("Error: Access point with nsp '%s' not found."), nsp_user);
+				g_string_printf (nmc->return_text, _("Error: Access point with nsp '%s' not found."), nsp_user);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto error;
 			}

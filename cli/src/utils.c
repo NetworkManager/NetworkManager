@@ -69,7 +69,7 @@ ssid_to_printable (const char *str, gsize len)
 	int i;
 
 	if (str == NULL || len == 0)
-		 return NULL;
+		return NULL;
 
 	if (g_utf8_validate (str, len, NULL))
 		return g_strdup_printf ("'%.*s'", (int) len, str);
@@ -471,7 +471,7 @@ nmc_is_nm_running (NmCli *nmc, GError **error)
 			g_set_error (error, 0, 0, "%s", nmc->return_text->str);
 		goto done;
 	}
- 
+
 	if (!org_freedesktop_DBus_name_has_owner (proxy, NM_DBUS_SERVICE, &has_owner, &err)) {
 		g_string_printf (nmc->return_text, _("Error: NameHasOwner request failed: %s"),
 		                 (err && err->message) ? err->message : _("(unknown)"));
