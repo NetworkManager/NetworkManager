@@ -162,6 +162,7 @@ set_carrier (NMDeviceWired *self,
 {
 	NMDeviceWiredPrivate *priv;
 	NMDeviceState state;
+	guint32 caps;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -171,6 +172,13 @@ set_carrier (NMDeviceWired *self,
 
 	/* Clear any previous deferred action */
 	carrier_action_defer_clear (self);
+
+	/* Warn if we try to set carrier down on a device that
+	 * doesn't support carrier detect.  These devices assume
+	 * the carrier is always up.
+	 */
+	caps = nm_device_get_capabilities (NM_DEVICE (self));
+	g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
 
 	priv->carrier = carrier;
 	g_object_notify (G_OBJECT (self), "carrier");
@@ -200,10 +208,8 @@ carrier_on (NMNetlinkMonitor *monitor,
 
 	/* Make sure signal is for us */
 	if (idx == nm_device_get_ifindex (device)) {
-		/* Ignore spurious netlink messages */
 		caps = nm_device_get_capabilities (device);
-		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			return;
+		g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
 
 		set_carrier (self, TRUE, FALSE);
 		set_speed (self, ethtool_get_speed (self));
@@ -224,10 +230,8 @@ carrier_off (NMNetlinkMonitor *monitor,
 		NMDeviceState state;
 		gboolean defer = FALSE;
 
-		/* Ignore spurious netlink messages */
 		caps = nm_device_get_capabilities (device);
-		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			return;
+		g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
 
 		/* Defer carrier-off event actions while connected by a few seconds
 		 * so that tripping over a cable, power-cycling a switch, or breaking
@@ -350,11 +354,15 @@ static gboolean
 real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	gboolean success, carrier;
+	guint32 caps;
 
 	success = nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
 	if (success) {
-		carrier = get_carrier_sync (NM_DEVICE_WIRED (dev));
-		set_carrier (NM_DEVICE_WIRED (dev), carrier, carrier ? FALSE : TRUE);
+		caps = nm_device_get_capabilities (dev);
+		if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
+			carrier = get_carrier_sync (NM_DEVICE_WIRED (dev));
+			set_carrier (NM_DEVICE_WIRED (dev), carrier, carrier ? FALSE : TRUE);
+		}
 	}
 	return success;
 }
