@@ -20,9 +20,9 @@
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
 .\"
-.\" Copyright (C) 2010 - 2011 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2012 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "6 September 2011"
+.TH NMCLI "1" "28 April 2012"
 
 .SH NAME
 nmcli \- command-line tool for controlling NetworkManager
@@ -324,6 +324,44 @@ respectively.
 .nf
 \fBReference to D-Bus:\fP
 No simple reference.
+.fi
+.TP
+.B wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>] [--private] [--nowait] [--timeout <timeout>]
+.br
+Connect to a Wi-Fi network specified by SSID or BSSID. The command creates a new
+connection and then activates it on a device. This is a command-line counterpart
+of clicking an SSID in a GUI client. The command always creates a new connection
+and thus it is mainly useful for connecting to new Wi-Fi networks. If a connection
+for the network already exists, it's better to connect through it using 
+\fInmcli con up id <name>\fP. Note that only open, WEP and WPA-PSK networks are
+supported at the moment. It is also supposed that IP configuration is obtained via
+DHCP.
+.RS
+.PP
+Available options are:
+.IP \fIpassword\fP 13
+- password for secured networks (WEP or WPA)
+.IP \fIwep-key-type\fP 13
+- type of WEP secret, either \fIkey\fP for ASCII/HEX key or \fIphrase\fP for passphrase
+.IP \fIiface\fP 13
+- interface that will be used for activation
+.IP \fIbssid\fP 13
+- if specified, the created connection will be restricted just for the BSSID
+.IP \fIname\fP 13
+- if specified, the connection will use the name (else NM creates a name itself)
+.IP \fI\-\-private\fP 13
+- the connection will only be visible to the user who created it (else the connection is system-wide)
+.IP \fI\-\-nowait\fP 13
+- exit immediately without waiting for command completion
+.IP \fI\-\-timeout\fP 13
+- how long to wait for command completion (default is 90 s)
+.PP
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager
+method:    AddAndActivateConnection
+arguments: according to arguments
 .fi
 .RE
 

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <netinet/ether.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -208,6 +209,8 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
 
+static guint progress_id = 0;  /* ID of event source for displaying progress */
+
 static void
 usage (void)
 {
@@ -222,6 +225,8 @@ usage (void)
 	         "  list [iface <iface>]\n"
 	         "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
 	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n"
+	         "               [--private] [--nowait] [--timeout <timeout>]\n"
 #if WITH_WIMAX
 	         "  wimax [list [iface <iface>] [nsp <name>]]\n\n"
 #endif
@@ -232,6 +237,11 @@ usage (void)
 static void
 quit (void)
 {
+	if (progress_id) {
+		g_source_remove (progress_id);
+		nmc_terminal_erase_line ();
+	}
+
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
@@ -1490,6 +1500,443 @@ error:
 	return nmc->return_value;
 }
 
+static gboolean
+progress_cb (gpointer user_data)
+{
+	NMDevice *device = (NMDevice *) user_data;
+
+	nmc_terminal_show_progress (device ? device_state_to_string (nm_device_get_state (device)) : "");
+
+	return TRUE;
+}
+
+static void
+monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+	NMDeviceState state;
+	NMDeviceStateReason reason;
+
+	state = nm_device_get_state_reason (device, &reason);
+
+	if (state == NM_DEVICE_STATE_ACTIVATED) {
+		if (nmc->print_output == NMC_PRINT_PRETTY) {
+			NMActiveConnection *active = nm_device_get_active_connection (device);
+
+			nmc_terminal_erase_line ();
+			printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+			        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+		}
+		quit ();
+	} else if (state == NM_DEVICE_STATE_FAILED) {
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
+		                 reason, device_reason_to_string (reason));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+	}
+}
+
+typedef struct {
+	NmCli *nmc;
+	NMDevice *device;
+} AddAndActivateInfo;
+
+static void
+add_and_activate_cb (NMClient *client,
+                     NMActiveConnection *active,
+                     const char *connection_path,
+                     GError *error,
+                     gpointer user_data)
+{
+	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	NMDevice *device = info->device;
+	NMActiveConnectionState state;
+
+        if (error) {
+		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: (%d) %s"),
+		                 error->code, error->message);
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+	} else {
+		state = nm_active_connection_get_state (active);
+
+		if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
+			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+			quit ();
+		}
+
+		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+			/* User doesn't want to wait or already activated */
+			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED && nmc->print_output == NMC_PRINT_PRETTY) {
+				printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+				        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+			}
+			quit ();
+		} else {
+			g_signal_connect (device, "notify::state", G_CALLBACK (monitor_device_state_cb), nmc);
+			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
+
+			if (nmc->print_output == NMC_PRINT_PRETTY)
+				progress_id = g_timeout_add (120, progress_cb, device);
+		}
+	}
+
+	g_free (info);
+}
+
+/*
+ * Find a Wi-Fi device with 'iface' in 'devices' array. If 'iface' is NULL,
+ * the first Wi-Fi device is returned. 'idx' parameter is updated to the point
+ * where the function finished so that the function can be called repeatedly
+ * to get next matching device.
+ * Returns: found device or NULL
+ */
+static NMDevice *
+find_wifi_device_by_iface (const GPtrArray *devices, const char *iface, int *idx)
+{
+	NMDevice *device = NULL;
+	int i;
+
+	for (i = *idx; devices && (i < devices->len); i++) {
+		NMDevice *candidate = g_ptr_array_index (devices, i);
+		const char *dev_iface = nm_device_get_iface (candidate);
+
+		if (!NM_IS_DEVICE_WIFI (candidate))
+			continue;
+
+		if (iface) {
+			/* If a iface was specified then use it. */
+			if (strcmp (dev_iface, iface) == 0) {
+				device = candidate;
+				break;
+			}
+		} else {
+			/* Else return the first Wi-Fi device. */
+			device = candidate;
+			break;
+		}
+	}
+
+	*idx = i + 1;
+	return device;
+}
+
+/*
+ * Find AP on 'device' according to 'bssid' or 'ssid' parameter.
+ * Returns: found AP or NULL
+ */
+static NMAccessPoint *
+find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
+{
+	const GPtrArray *aps;
+	NMAccessPoint *ap = NULL;
+	int i;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
+	g_return_val_if_fail ((bssid && !ssid) || (!bssid && ssid), NULL);
+
+	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
+	for (i = 0; aps && (i < aps->len); i++) {
+		NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
+
+		if (ssid) {
+			/* Parameter is SSID */
+			const GByteArray *candidate_ssid = nm_access_point_get_ssid (candidate_ap);
+			char *ssid_tmp = nm_utils_ssid_to_utf8 (candidate_ssid);
+
+			/* Compare SSIDs */
+			if (strcmp (ssid, ssid_tmp) == 0) {
+				ap = candidate_ap;
+				g_free (ssid_tmp);
+				break;
+			}
+			g_free (ssid_tmp);
+		} else if (bssid) {
+			/* Parameter is BSSID */
+			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
+			char *bssid_up = nm_utils_hwaddr_ntoa (bssid->data, ARPHRD_ETHER);
+
+			/* Compare BSSIDs */
+			if (strcmp (bssid_up, candidate_bssid) == 0) {
+				ap = candidate_ap;
+				g_free (bssid_up);
+				break;
+			}
+			g_free (bssid_up);
+		}
+	}
+
+	return ap;
+}
+
+static NMCResultCode
+do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice *device = NULL;
+	NMAccessPoint *ap = NULL;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	AddAndActivateInfo *info;
+	const char *param_user = NULL;
+	const char *iface = NULL;
+	const char *bssid = NULL;
+	const char *password = NULL;
+	const char *con_name = NULL;
+	gboolean private = FALSE;
+	gboolean wait = TRUE;
+	gboolean wep_passphrase = FALSE;
+	GByteArray *bssid1_arr = NULL;
+	GByteArray *bssid2_arr = NULL;
+	const GPtrArray *devices;
+	int devices_idx;
+	GError *error = NULL;
+
+	/* Default timeout for waiting for operation completion */
+	nmc->timeout = 90;
+
+	/* Get the first compulsory argument (SSID or BSSID) */
+	if (argc > 0) {
+		param_user = *argv;
+		bssid1_arr = nm_utils_hwaddr_atoba (param_user, ARPHRD_ETHER);
+
+		argc--;
+		argv++;
+	} else {
+		g_string_printf (nmc->return_text, _("Error: SSID or BSSID are missing."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	/* Get the rest of the parameters */
+	while (argc > 0) {
+		if (strcmp (*argv, "iface") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			iface = *argv;
+		} else if (strcmp (*argv, "bssid") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			bssid = *argv;
+			bssid2_arr = nm_utils_hwaddr_atoba (bssid, ARPHRD_ETHER);
+			if (!bssid2_arr) {
+				g_string_printf (nmc->return_text, _("Error: bssid argument value '%s' is not a valid BSSID."),
+				                 bssid);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		} else if (strcmp (*argv, "password") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			password = *argv;
+		} else if (strcmp (*argv, "wep-key-type") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			if (strcmp (*argv, "key") == 0)
+				wep_passphrase = FALSE;
+			else if (strcmp (*argv, "phrase") == 0)
+				wep_passphrase = TRUE;
+			else {
+				g_string_printf (nmc->return_text,
+				                 _("Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."),
+				                 *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		} else if (strcmp (*argv, "name") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			con_name = *argv;
+		} else if (strcmp (*argv, "--private") == 0) {
+			private = TRUE;
+		} else if (strcmp (*argv, "--nowait") == 0) {
+			wait = FALSE;
+		} else if (strcmp (*argv, "--timeout") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+
+			errno = 0;
+			nmc->timeout = strtol (*argv, NULL, 10);
+			if (errno || nmc->timeout < 0) {
+				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		} else {
+			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+		}
+
+		argc--;
+		argv++;
+	}
+
+	/* Verify SSID/BSSID parameters */
+	if (bssid1_arr && bssid2_arr && memcmp (bssid1_arr->data, bssid2_arr->data, ETH_ALEN)) {
+		g_string_printf (nmc->return_text, _("Error: BSSID to connect to (%s) differs from bssid argument (%s)."),
+		                 param_user, bssid);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+	if (!bssid1_arr && strlen (param_user) > 32) {
+		g_string_printf (nmc->return_text, _("Error: Parameter '%s' is neither SSID nor BSSID."), param_user);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	if (!nmc_is_nm_running (nmc, &error)) {
+		if (error) {
+			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			g_error_free (error);
+		} else {
+			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		}
+		goto error;
+	}
+
+	if (!nmc_versions_match (nmc))
+		goto error;
+
+	nmc->get_client (nmc);
+	devices = nm_client_get_devices (nmc->client);
+
+	/* Find a device to activate the connection on */
+	devices_idx = 0;
+	device = find_wifi_device_by_iface (devices, iface, &devices_idx);
+
+	if (!device) {
+		if (iface)
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), iface);
+		else
+			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+
+	/* Find an AP to connect to */
+	ap = find_ap_on_device (device, bssid1_arr, bssid1_arr ? NULL : param_user);
+	if (!ap && !iface) {
+		/* AP not found. iface was not specified, so try finding the AP on another device. */
+		while ((device = find_wifi_device_by_iface (devices, NULL, &devices_idx)) != NULL) {
+			ap = find_ap_on_device (device, bssid1_arr, bssid1_arr ? NULL : param_user);
+			if (ap)
+				break;
+		}
+	}
+
+	if (!ap) {
+		if (!bssid1_arr)
+			g_string_printf (nmc->return_text, _("Error: No network with SSID '%s' found."), param_user);
+		else
+			g_string_printf (nmc->return_text, _("Error: No access point with BSSID '%s' found."), param_user);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+
+	/* If there are some connection data from user, create a connection and
+	 * fill them into proper settings. */
+	if (con_name || private || bssid2_arr || password)
+		connection = nm_connection_new ();
+
+	if (con_name || private) {
+		s_con =  (NMSettingConnection *) nm_setting_connection_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+		/* Set user provided connection name */
+		if (con_name)
+			g_object_set (s_con, NM_SETTING_CONNECTION_ID, con_name, NULL);
+
+		/* Connection will only be visible to this user when '--private' is specified */
+		if (private)
+			nm_setting_connection_add_permission (s_con, "user", g_get_user_name (), NULL);
+	}
+	if (bssid2_arr) {
+		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+		/* 'bssid' parameter is used to restrict the conenction only to the BSSID */
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_BSSID, bssid2_arr, NULL);
+	}
+	if (password) {
+		NM80211ApFlags flags = nm_access_point_get_flags (ap);
+		NM80211ApSecurityFlags wpa_flags = nm_access_point_get_wpa_flags (ap);
+		NM80211ApSecurityFlags rsn_flags = nm_access_point_get_rsn_flags (ap);
+
+		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+		/* Set password for WEP or WPA-PSK. */
+		if (flags & NM_802_11_AP_FLAGS_PRIVACY) {
+			if (wpa_flags == NM_802_11_AP_SEC_NONE && rsn_flags == NM_802_11_AP_SEC_NONE) {
+				/* WEP */
+				nm_setting_wireless_security_set_wep_key (s_wsec, 0, password);
+				g_object_set (G_OBJECT (s_wsec),
+				              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+				              wep_passphrase ? NM_WEP_KEY_TYPE_PASSPHRASE: NM_WEP_KEY_TYPE_KEY,
+				              NULL);
+			} else if (   !(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+				   && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+				/* WPA PSK */
+				g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_PSK, password, NULL);
+			}
+		}
+		// FIXME: WPA-Enterprise is not supported yet.
+		// We are not able to determine and fill all the parameters for
+		// 802.1X authentication automatically without user providing
+		// the data. Adding nmcli options for the 8021x setting would
+		// clutter the command. However, that could be solved later by
+		// implementing add/edit connections support for nmcli.
+	}
+
+	/* nowait_flag indicates user input. should_wait says whether quit in start().
+	 * We have to delay exit after add_and_activate_cb() is called, even if
+	 * the user doesn't want to wait, in order to give NM time to check our
+	 * permissions. */
+	nmc->nowait_flag = !wait;
+	nmc->should_wait = TRUE;
+
+	info = g_malloc0 (sizeof (AddAndActivateInfo));
+	info->nmc = nmc;
+	info->device = device;
+
+	nm_client_add_and_activate_connection (nmc->client,
+	                                       connection,
+	                                       device,
+	                                       nm_object_get_path (NM_OBJECT (ap)),
+	                                       add_and_activate_cb,
+	                                       info);
+
+error:
+	if (bssid1_arr)
+		g_byte_array_free (bssid1_arr, TRUE);
+	if (bssid2_arr)
+		g_byte_array_free (bssid2_arr, TRUE);
+
+	return nmc->return_value;
+}
+
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
@@ -1498,8 +1945,9 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 	else if (argc > 0) {
 		if (matches (*argv, "list") == 0) {
 			nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
-		}
-		else {
+		} else if (matches (*argv, "connect") == 0) {
+			nmc->return_value = do_device_wifi_connect_network (nmc, argc-1, argv+1);
+		} else {
 			g_string_printf (nmc->return_text, _("Error: 'dev wifi' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}

@@ -137,6 +137,38 @@ nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error)
 }
 
 /*
+ * Erase terminal line using ANSI escape sequences.
+ * It prints <ESC>[2K sequence to erase the line and then \r to return back
+ * to the beginning of the line.
+ *
+ * http://www.termsys.demon.co.uk/vtansi.htm
+ */
+void
+nmc_terminal_erase_line (void)
+{
+	printf ("\33[2K\r");
+	fflush (stdout);
+}
+
+/*
+ * Print animated progress for an operation.
+ * Repeated calls of the function will show rotating slash in terminal followed
+ * by the string passed in 'str' argument.
+ */
+void
+nmc_terminal_show_progress (const char *str)
+{
+	static int idx = 0;
+	const char slashes[4] = {'|', '/', '-', '\\'};
+
+	nmc_terminal_erase_line ();
+	printf ("%c %s", slashes[idx++], str ? str : "");
+	fflush (stdout);
+	if (idx == 4)
+		idx = 0;
+}
+
+/*
  * Find out how many columns an UTF-8 string occupies on the screen
  */
 int

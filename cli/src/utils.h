@@ -30,6 +30,8 @@ int next_arg (int *argc, char ***argv);
 char *ssid_to_printable (const char *str, gsize len);
 char *nmc_ip4_address_as_string (guint32 ip, GError **error);
 char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
+void nmc_terminal_erase_line (void);
+void nmc_terminal_show_progress (const char *str);
 int nmc_string_screen_width (const char *start, const char *end);
 void set_val_str (NmcOutputField fields_array[], guint32 index, const char *value);
 void set_val_arr (NmcOutputField fields_array[], guint32 index, const char **value);
