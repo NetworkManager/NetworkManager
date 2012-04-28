@@ -4,908 +4,1367 @@
 # Žygimantas Beručka <zygis@gnome.org>, 2005-2006, 2008, 2010.
 # Aurimas Černius <aurisc4@gmail.com>, 2010.
 # Rimas Kudelis <rq@akl.lt>, 2010.
+# Algimantas Margevičius <margevicius.algimantas@gmail.com>, 2012.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=Networ"
-"kManager&component=general\n"
-"POT-Creation-Date: 2010-09-20 15:25+0000\n"
-"PO-Revision-Date: 2010-10-16 17:10+0300\n"
-"Last-Translator: Rimas Kudelis <rq@akl.lt>\n"
-"Language-Team: Lithuanian <komp_lt@konferencijos.lt>\n"
-"Language: lt\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2012-04-28 03:24+0000\n"
+"PO-Revision-Date: 2012-04-28 16:21+0300\n"
+"Last-Translator: Aurimas Černius <aurisc4@gmail.com>\n"
+"Language-Team: Lietuvių <>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: lt\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%"
-"100<10 || n%100>=20) ? 1 : 2);\n"
+"100<10 || n%100>=20) ? 1 : 2)\n"
 "X-Generator: Virtaal 0.5.2\n"
 
-#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
-#: ../cli/src/devices.c:88 ../cli/src/devices.c:101 ../cli/src/devices.c:111
-#: ../cli/src/devices.c:121 ../cli/src/devices.c:134 ../cli/src/devices.c:145
-#: ../cli/src/devices.c:156 ../cli/src/devices.c:165 ../cli/src/devices.c:174
+#: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
+#: ../cli/src/common.c:63 ../cli/src/connections.c:125
+#: ../cli/src/connections.c:159
+msgid "GROUP"
+msgstr "GRUPĖ"
+
+#. 0
+#: ../cli/src/common.c:33 ../cli/src/common.c:53
+msgid "ADDRESS"
+msgstr "ADRESAS"
+
+#. 1
+#: ../cli/src/common.c:34 ../cli/src/common.c:54
+msgid "ROUTE"
+msgstr "KELIAS"
+
+#. 2
+#: ../cli/src/common.c:35 ../cli/src/common.c:55
+msgid "DNS"
+msgstr "DNS"
+
+#. 3
+#: ../cli/src/common.c:36 ../cli/src/common.c:56
+msgid "DOMAIN"
+msgstr "DOMENAS"
+
+#. 4
+#: ../cli/src/common.c:37
+msgid "WINS"
+msgstr "SĖKMĖS"
+
+#. 0
+#: ../cli/src/common.c:45 ../cli/src/common.c:64
+msgid "OPTION"
+msgstr "PARINKTIS"
+
+#. 0
+#. used only for 'GENERAL' group listing
+#: ../cli/src/connections.c:58 ../cli/src/connections.c:126
+#: ../cli/src/devices.c:102 ../cli/src/devices.c:123 ../cli/src/devices.c:133
+#: ../cli/src/devices.c:143 ../cli/src/devices.c:157 ../cli/src/devices.c:171
+#: ../cli/src/devices.c:193
 msgid "NAME"
 msgstr "PAVADINIMAS"
 
 #. 0
-#: ../cli/src/connections.c:61 ../cli/src/connections.c:76
+#. 1
+#: ../cli/src/connections.c:59 ../cli/src/connections.c:127
 msgid "UUID"
 msgstr "UUID"
 
 #. 1
-#: ../cli/src/connections.c:62
-msgid "DEVICES"
-msgstr "ĮRENGINIAI"
-
-#. 2
-#: ../cli/src/connections.c:63 ../cli/src/connections.c:78
-msgid "SCOPE"
-msgstr "SRITIS"
-
-#. 3
-#: ../cli/src/connections.c:64
-msgid "DEFAULT"
-msgstr "NUMATYTASIS"
-
-#. 4
-#: ../cli/src/connections.c:65
-msgid "DBUS-SERVICE"
-msgstr "DBUS-TARNYBA"
-
-#. 5
-#: ../cli/src/connections.c:66
-msgid "SPEC-OBJECT"
-msgstr "SPEC-OBJECTAS"
-
-#. 6
-#: ../cli/src/connections.c:67
-msgid "VPN"
-msgstr "VPN"
-
-#. 1
 #. 0
 #. 1
-#: ../cli/src/connections.c:77 ../cli/src/devices.c:62 ../cli/src/devices.c:90
+#. 2
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:160
+#: ../cli/src/devices.c:68 ../cli/src/devices.c:104 ../cli/src/devices.c:196
 msgid "TYPE"
 msgstr "TIPAS"
 
-#. 3
-#: ../cli/src/connections.c:79
+#. 2
+#: ../cli/src/connections.c:61
 msgid "TIMESTAMP"
 msgstr "LAIKO-ŽYMA"
 
-#. 4
-#: ../cli/src/connections.c:80
+#. 3
+#: ../cli/src/connections.c:62
 msgid "TIMESTAMP-REAL"
 msgstr "LAIKO-ŽYMA-TIKROJI"
 
-#. 5
-#: ../cli/src/connections.c:81
+#. 4
+#: ../cli/src/connections.c:63
 msgid "AUTOCONNECT"
 msgstr "AUTOPRISIJUNGIMAS"
 
-#. 6
-#: ../cli/src/connections.c:82
+#. 5
+#: ../cli/src/connections.c:64
 msgid "READONLY"
 msgstr "TIKSKAITOMA"
 
-#. 7
-#: ../cli/src/connections.c:83
+#. 6
+#. 8
+#. 2
+#. 11
+#. 5
+#: ../cli/src/connections.c:65 ../cli/src/connections.c:134
+#: ../cli/src/devices.c:70 ../cli/src/devices.c:183 ../cli/src/devices.c:199
 msgid "DBUS-PATH"
 msgstr "DBUS-KELIAS"
 
-#: ../cli/src/connections.c:159
+#. 2
+#: ../cli/src/connections.c:128
+msgid "DEVICES"
+msgstr "ĮRENGINIAI"
+
+#. 3
+#. 1
+#. 6
+#. 1
+#: ../cli/src/connections.c:129 ../cli/src/devices.c:69
+#: ../cli/src/devices.c:109 ../cli/src/network-manager.c:39
+msgid "STATE"
+msgstr "BŪSENA"
+
+#. 4
+#: ../cli/src/connections.c:130
+msgid "DEFAULT"
+msgstr "NUMATYTASIS"
+
+#. 5
+#: ../cli/src/connections.c:131
+msgid "DEFAULT6"
+msgstr "NUMATYTASIS6"
+
+#. 6
+#: ../cli/src/connections.c:132
+msgid "SPEC-OBJECT"
+msgstr "SPEC-OBJECTAS"
+
+#. 7
+#. 1
+#: ../cli/src/connections.c:133 ../cli/src/connections.c:147
+msgid "VPN"
+msgstr "VPN"
+
+#. 9
+#: ../cli/src/connections.c:135
+msgid "CON-PATH"
+msgstr "RYŠIO-KELIAS"
+
+#. 10
+#: ../cli/src/connections.c:136
+msgid "ZONE"
+msgstr "ZONA"
+
+#. 11
+#: ../cli/src/connections.c:137
+msgid "MASTER-PATH"
+msgstr "PAGRINDINIS-KELIAS"
+
+#: ../cli/src/connections.c:145 ../cli/src/devices.c:79
+msgid "GENERAL"
+msgstr "BENDRA"
+
+#. 0
+#: ../cli/src/connections.c:146
+msgid "IP"
+msgstr "IP"
+
+#. 1
+#: ../cli/src/connections.c:161
+msgid "USERNAME"
+msgstr "NAUDOTOJO VARDAS"
+
+#. 2
+#: ../cli/src/connections.c:162
+msgid "GATEWAY"
+msgstr "ŠLIUZAS"
+
+#. 3
+#: ../cli/src/connections.c:163
+msgid "BANNER"
+msgstr "PRANEŠIMAS"
+
+#. 4
+#: ../cli/src/connections.c:164
+msgid "VPN-STATE"
+msgstr "VPN BŪSENA"
+
+#. 5
+#: ../cli/src/connections.c:165
+msgid "CFG"
+msgstr "KONF"
+
+#: ../cli/src/connections.c:186
 #, c-format
 msgid ""
 "Usage: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down }\n"
+"  COMMAND := { list | status | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
-"  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"  list [id <id> | uuid <id>]\n"
+"  status [id <id> | uuid <id> | path <path>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
 "<timeout>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 msgstr ""
 "Naudojimas: nmcli con { KOMANDA | help }\n"
-"  KOMANDA := { list | status | up | down }\n"
+"  KOMANDA := { list | status | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
-"  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"  list [id <id> | uuid <id>]\n"
+"  status [id <id> | uuid <id> | path <path>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
 "<timeout>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:199 ../cli/src/connections.c:540
+#: ../cli/src/connections.c:240 ../cli/src/connections.c:591
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "Klaida: „con list“: %s"
 
-#: ../cli/src/connections.c:201 ../cli/src/connections.c:542
+#: ../cli/src/connections.c:242 ../cli/src/connections.c:593
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "Klaida: „con list“: %s; leidžiami laukai: %s"
 
-#: ../cli/src/connections.c:209
+#: ../cli/src/connections.c:250
 msgid "Connection details"
 msgstr "Ryšio informacija"
 
-#: ../cli/src/connections.c:384 ../cli/src/connections.c:605
-msgid "system"
-msgstr "sisteminis"
-
-#: ../cli/src/connections.c:384 ../cli/src/connections.c:605
-msgid "user"
-msgstr "naudotojo"
-
-#: ../cli/src/connections.c:386
+#: ../cli/src/connections.c:466
 msgid "never"
 msgstr "niekada"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:387 ../cli/src/connections.c:388
-#: ../cli/src/connections.c:606 ../cli/src/connections.c:609
-#: ../cli/src/devices.c:432 ../cli/src/devices.c:557 ../cli/src/devices.c:583
-#: ../cli/src/devices.c:584 ../cli/src/devices.c:585 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:587 ../cli/src/settings.c:508
-#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
-#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
-#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
-#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
-#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
-#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
-#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
-#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
-#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
-#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
-#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
-#: ../cli/src/settings.c:1224
+#: ../cli/src/connections.c:467 ../cli/src/connections.c:468
+#: ../cli/src/connections.c:705 ../cli/src/connections.c:706
+#: ../cli/src/connections.c:708 ../cli/src/devices.c:595
+#: ../cli/src/devices.c:648 ../cli/src/devices.c:762 ../cli/src/devices.c:763
+#: ../cli/src/devices.c:795 ../cli/src/devices.c:821 ../cli/src/devices.c:822
+#: ../cli/src/devices.c:823 ../cli/src/devices.c:824 ../cli/src/devices.c:825
+#: ../cli/src/settings.c:657 ../cli/src/settings.c:727
+#: ../cli/src/settings.c:847 ../cli/src/settings.c:1129
+#: ../cli/src/settings.c:1130 ../cli/src/settings.c:1132
+#: ../cli/src/settings.c:1134 ../cli/src/settings.c:1135
+#: ../cli/src/settings.c:1263 ../cli/src/settings.c:1264
+#: ../cli/src/settings.c:1265 ../cli/src/settings.c:1266
+#: ../cli/src/settings.c:1341 ../cli/src/settings.c:1342
+#: ../cli/src/settings.c:1343 ../cli/src/settings.c:1344
+#: ../cli/src/settings.c:1345 ../cli/src/settings.c:1346
+#: ../cli/src/settings.c:1347 ../cli/src/settings.c:1348
+#: ../cli/src/settings.c:1349 ../cli/src/settings.c:1350
+#: ../cli/src/settings.c:1351 ../cli/src/settings.c:1352
+#: ../cli/src/settings.c:1353 ../cli/src/settings.c:1424
 msgid "yes"
 msgstr "taip"
 
-#: ../cli/src/connections.c:387 ../cli/src/connections.c:388
-#: ../cli/src/connections.c:606 ../cli/src/connections.c:609
-#: ../cli/src/devices.c:432 ../cli/src/devices.c:557 ../cli/src/devices.c:583
-#: ../cli/src/devices.c:584 ../cli/src/devices.c:585 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:587 ../cli/src/settings.c:508
-#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
-#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
-#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
-#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
-#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
-#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
-#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
-#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
-#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
-#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
-#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
-#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
+#: ../cli/src/connections.c:467 ../cli/src/connections.c:468
+#: ../cli/src/connections.c:705 ../cli/src/connections.c:706
+#: ../cli/src/connections.c:708 ../cli/src/devices.c:595
+#: ../cli/src/devices.c:648 ../cli/src/devices.c:762 ../cli/src/devices.c:763
+#: ../cli/src/devices.c:795 ../cli/src/devices.c:821 ../cli/src/devices.c:822
+#: ../cli/src/devices.c:823 ../cli/src/devices.c:824 ../cli/src/devices.c:825
+#: ../cli/src/settings.c:657 ../cli/src/settings.c:659
+#: ../cli/src/settings.c:727 ../cli/src/settings.c:847
+#: ../cli/src/settings.c:1129 ../cli/src/settings.c:1130
+#: ../cli/src/settings.c:1132 ../cli/src/settings.c:1134
+#: ../cli/src/settings.c:1135 ../cli/src/settings.c:1263
+#: ../cli/src/settings.c:1264 ../cli/src/settings.c:1265
+#: ../cli/src/settings.c:1266 ../cli/src/settings.c:1341
+#: ../cli/src/settings.c:1342 ../cli/src/settings.c:1343
+#: ../cli/src/settings.c:1344 ../cli/src/settings.c:1345
+#: ../cli/src/settings.c:1346 ../cli/src/settings.c:1347
+#: ../cli/src/settings.c:1348 ../cli/src/settings.c:1349
+#: ../cli/src/settings.c:1350 ../cli/src/settings.c:1351
+#: ../cli/src/settings.c:1352 ../cli/src/settings.c:1353
+#: ../cli/src/settings.c:1424
 msgid "no"
 msgstr "ne"
 
-#: ../cli/src/connections.c:461 ../cli/src/connections.c:504
-msgid "System connections"
-msgstr "Sistemos ryšiai"
+#: ../cli/src/connections.c:542
+msgid "Connection list"
+msgstr "Ryšių sąrašas"
 
-#: ../cli/src/connections.c:466 ../cli/src/connections.c:517
-msgid "User connections"
-msgstr "Naudotojo ryšiai"
-
-#: ../cli/src/connections.c:478 ../cli/src/connections.c:1338
-#: ../cli/src/connections.c:1354 ../cli/src/connections.c:1363
-#: ../cli/src/connections.c:1374 ../cli/src/connections.c:1459
-#: ../cli/src/devices.c:962 ../cli/src/devices.c:972 ../cli/src/devices.c:1074
-#: ../cli/src/devices.c:1081
+#: ../cli/src/connections.c:555 ../cli/src/connections.c:1088
+#: ../cli/src/connections.c:1456 ../cli/src/connections.c:1471
+#: ../cli/src/connections.c:1480 ../cli/src/connections.c:1490
+#: ../cli/src/connections.c:1502 ../cli/src/connections.c:1601
+#: ../cli/src/connections.c:1703 ../cli/src/devices.c:1202
+#: ../cli/src/devices.c:1212 ../cli/src/devices.c:1326
+#: ../cli/src/devices.c:1334 ../cli/src/devices.c:1547
+#: ../cli/src/devices.c:1554
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Klaida: trūksta argumento %s."
 
-#: ../cli/src/connections.c:491
+#: ../cli/src/connections.c:568
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Klaida: ryšio %s nėra."
 
-#: ../cli/src/connections.c:523 ../cli/src/connections.c:1387
-#: ../cli/src/connections.c:1477 ../cli/src/devices.c:785
-#: ../cli/src/devices.c:852 ../cli/src/devices.c:986 ../cli/src/devices.c:1087
+#: ../cli/src/connections.c:574 ../cli/src/connections.c:1515
+#: ../cli/src/connections.c:1618 ../cli/src/connections.c:1710
+#: ../cli/src/devices.c:999 ../cli/src/devices.c:1079
+#: ../cli/src/devices.c:1226 ../cli/src/devices.c:1340
+#: ../cli/src/devices.c:1560
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Nežinomas parametras: %s\n"
 
-#: ../cli/src/connections.c:532
+#: ../cli/src/connections.c:583
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "Klaida: nenurodyta tinkamų parametrų."
 
-#: ../cli/src/connections.c:547 ../cli/src/connections.c:1580
-#: ../cli/src/devices.c:1293 ../cli/src/network-manager.c:359
+#: ../cli/src/connections.c:598 ../cli/src/connections.c:1803
+#: ../cli/src/devices.c:1768 ../cli/src/network-manager.c:456
 #, c-format
 msgid "Error: %s."
 msgstr "Klaida: %s"
 
-#: ../cli/src/connections.c:653
+#: ../cli/src/connections.c:611
+msgid "activating"
+msgstr "aktyvuojama"
+
+#: ../cli/src/connections.c:613
+msgid "activated"
+msgstr "aktyvuota"
+
+#: ../cli/src/connections.c:615 ../cli/src/devices.c:263
+msgid "deactivating"
+msgstr "deaktyvuojama"
+
+#: ../cli/src/connections.c:618 ../cli/src/connections.c:641
+#: ../cli/src/connections.c:1327 ../cli/src/devices.c:267
+#: ../cli/src/devices.c:796 ../cli/src/network-manager.c:111
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:291
+#: ../cli/src/network-manager.c:346 ../cli/src/network-manager.c:384
+#: ../cli/src/network-manager.c:423 ../cli/src/settings.c:563
+#: ../cli/src/settings.c:591 ../cli/src/utils.c:499 ../src/main.c:458
+#: ../src/main.c:477
+msgid "unknown"
+msgstr "nežinoma"
+
+#: ../cli/src/connections.c:627
+msgid "VPN connecting (prepare)"
+msgstr "VPN jungiamasi (ruošiama)"
+
+#: ../cli/src/connections.c:629
+msgid "VPN connecting (need authentication)"
+msgstr "VPN jungiamasi (reikia nustatyti tapatybę)"
+
+#: ../cli/src/connections.c:631
+msgid "VPN connecting"
+msgstr "VPN jungiamasi"
+
+#: ../cli/src/connections.c:633
+msgid "VPN connecting (getting IP configuration)"
+msgstr "VPN jungiamasi (gaunama IP konfigūracija)"
+
+#: ../cli/src/connections.c:635
+msgid "VPN connected"
+msgstr "VPN prisijungta"
+
+#: ../cli/src/connections.c:637
+msgid "VPN connection failed"
+msgstr "VPN prisijungti nepavyko"
+
+#: ../cli/src/connections.c:639
+msgid "VPN disconnected"
+msgstr "VPN atsijungta"
+
+#: ../cli/src/connections.c:892 ../cli/src/connections.c:1116
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "Klaida: „con status“: %s"
 
-#: ../cli/src/connections.c:655
+#: ../cli/src/connections.c:894 ../cli/src/connections.c:1118
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "Klaida: „con status“: %s; leidžiami laukai: %s"
 
-#: ../cli/src/connections.c:662
+#: ../cli/src/connections.c:902
+msgid "Active connection details"
+msgstr "Aktyvaus ryšio detalės"
+
+#: ../cli/src/connections.c:1038 ../cli/src/connections.c:1530
+#: ../cli/src/connections.c:1633 ../cli/src/connections.c:1724
+#: ../cli/src/devices.c:1026 ../cli/src/devices.c:1088
+#: ../cli/src/devices.c:1241 ../cli/src/devices.c:1370
+#: ../cli/src/devices.c:1589
+#, c-format
+msgid "Error: Can't find out if NetworkManager is running: %s."
+msgstr "Klaida: nepavyko nustatyti ar veikia NetworkManager: %s."
+
+#: ../cli/src/connections.c:1042 ../cli/src/connections.c:1534
+#: ../cli/src/connections.c:1637 ../cli/src/connections.c:1728
+#: ../cli/src/devices.c:1030 ../cli/src/devices.c:1092
+#: ../cli/src/devices.c:1245 ../cli/src/devices.c:1374
+#: ../cli/src/devices.c:1593
+#, c-format
+msgid "Error: NetworkManager is not running."
+msgstr "Klaida: NetworkManager neveikia."
+
+#: ../cli/src/connections.c:1074
 msgid "Active connections"
 msgstr "Aktyvūs ryšiai"
 
-#: ../cli/src/connections.c:1030
+#: ../cli/src/connections.c:1099
+#, c-format
+msgid "Error: '%s' is not an active connection."
+msgstr "Klaida: „%s“ nėra aktyvus ryšys."
+
+#: ../cli/src/connections.c:1104
+#, c-format
+msgid "Error: unknown parameter: %s"
+msgstr "Klaida: nežinomas parametras: %s"
+
+#: ../cli/src/connections.c:1211
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "nėra aktyvaus ryšio įrenginyje „%s“"
 
-#: ../cli/src/connections.c:1038
+#: ../cli/src/connections.c:1219
 #, c-format
 msgid "no active connection or device"
 msgstr "nėra aktyvaus ryšio įrenginyje"
 
-#: ../cli/src/connections.c:1088
+#: ../cli/src/connections.c:1290
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "įrenginys „%s“ nesuderinamas su ryšiu „%s“"
 
-#: ../cli/src/connections.c:1090
+#: ../cli/src/connections.c:1292
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "nerastas įrenginys ryšiui „%s“"
 
-#: ../cli/src/connections.c:1101
-msgid "activating"
-msgstr "aktyvuojama"
-
-#: ../cli/src/connections.c:1103
-msgid "activated"
-msgstr "aktyvuota"
-
-#: ../cli/src/connections.c:1106 ../cli/src/connections.c:1129
-#: ../cli/src/connections.c:1162 ../cli/src/devices.c:246
-#: ../cli/src/devices.c:558 ../cli/src/network-manager.c:94
-#: ../cli/src/network-manager.c:149 ../cli/src/settings.c:473
-msgid "unknown"
-msgstr "nežinoma"
-
-#: ../cli/src/connections.c:1115
-msgid "VPN connecting (prepare)"
-msgstr "VPN jungiamasi (ruošiama)"
-
-#: ../cli/src/connections.c:1117
-msgid "VPN connecting (need authentication)"
-msgstr "VPN jungiamasi (reikia nustatyti tapatybę)"
-
-#: ../cli/src/connections.c:1119
-msgid "VPN connecting"
-msgstr "VPN jungiamasi"
-
-#: ../cli/src/connections.c:1121
-msgid "VPN connecting (getting IP configuration)"
-msgstr "VPN jungiamasi (gaunama IP konfigūracija)"
-
-#: ../cli/src/connections.c:1123
-msgid "VPN connected"
-msgstr "VPN prisijungta"
-
-#: ../cli/src/connections.c:1125
-msgid "VPN connection failed"
-msgstr "VPN prisijungti nepavyko"
-
-#: ../cli/src/connections.c:1127
-msgid "VPN disconnected"
-msgstr "VPN atsijungta"
-
-#: ../cli/src/connections.c:1138
+#: ../cli/src/connections.c:1303
 msgid "unknown reason"
 msgstr "nežinoma priežastis"
 
-#: ../cli/src/connections.c:1140
+#: ../cli/src/connections.c:1305
 msgid "none"
 msgstr "jokia"
 
-#: ../cli/src/connections.c:1142
+#: ../cli/src/connections.c:1307
 msgid "the user was disconnected"
 msgstr "naudotojas buvo atjungtas"
 
-#: ../cli/src/connections.c:1144
+#: ../cli/src/connections.c:1309
 msgid "the base network connection was interrupted"
 msgstr "bazinis tinklo ryšys buvo pertrauktas"
 
-#: ../cli/src/connections.c:1146
+#: ../cli/src/connections.c:1311
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN tarnyba netikėtai sustojo"
 
-#: ../cli/src/connections.c:1148
+#: ../cli/src/connections.c:1313
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN tarnyba grąžino netinkamą konfigūraciją"
 
-#: ../cli/src/connections.c:1150
+#: ../cli/src/connections.c:1315
 msgid "the connection attempt timed out"
 msgstr "bandymo jungtis laikas baigėsi"
 
-#: ../cli/src/connections.c:1152
+#: ../cli/src/connections.c:1317
 msgid "the VPN service did not start in time"
 msgstr "VPN tarnyba nebuvo paleista laiku"
 
-#: ../cli/src/connections.c:1154
+#: ../cli/src/connections.c:1319
 msgid "the VPN service failed to start"
 msgstr "nepavyko paleisti VPN tarnybos"
 
-#: ../cli/src/connections.c:1156
+#: ../cli/src/connections.c:1321
 msgid "no valid VPN secrets"
 msgstr "nėra tinkamų VPN paslapčių"
 
-#: ../cli/src/connections.c:1158
+#: ../cli/src/connections.c:1323
 msgid "invalid VPN secrets"
 msgstr "netinkamos VPN paslaptys"
 
-#: ../cli/src/connections.c:1160
+#: ../cli/src/connections.c:1325
 msgid "the connection was removed"
 msgstr "ryšys buvo pašalintas"
 
-#: ../cli/src/connections.c:1174
+#: ../cli/src/connections.c:1339
 #, c-format
 msgid "state: %s\n"
 msgstr "būsena: %s\n"
 
-#: ../cli/src/connections.c:1177 ../cli/src/connections.c:1203
+#: ../cli/src/connections.c:1342 ../cli/src/connections.c:1368
 #, c-format
 msgid "Connection activated\n"
 msgstr "Ryšys aktyvuotas\n"
 
-#: ../cli/src/connections.c:1180
+#: ../cli/src/connections.c:1345
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Klaida: nepavyko aktyvuoti ryšio."
 
-#: ../cli/src/connections.c:1199
+#: ../cli/src/connections.c:1364
 #, c-format
 msgid "state: %s (%d)\n"
 msgstr "būsena: %s (%d)\n"
 
-#: ../cli/src/connections.c:1209
+#: ../cli/src/connections.c:1374
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Klaida: nepavyko aktyvuoti ryšio: %s."
 
-#: ../cli/src/connections.c:1226 ../cli/src/devices.c:909
+#: ../cli/src/connections.c:1391 ../cli/src/devices.c:1148
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Klaida: baigėsi %d sek. laikas."
 
-#: ../cli/src/connections.c:1269
+#: ../cli/src/connections.c:1404
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Klaida: nepavyko aktyvuoti ryšio: %s"
 
-#: ../cli/src/connections.c:1283
-#, c-format
-msgid "Error: Obtaining active connection for '%s' failed."
-msgstr "Klaida: nepavyko „%s“ gauti aktyvaus ryšio."
-
-#: ../cli/src/connections.c:1292
+#: ../cli/src/connections.c:1410
 #, c-format
 msgid "Active connection state: %s\n"
 msgstr "Aktyvaus ryšio būsena: %s\n"
 
-#: ../cli/src/connections.c:1293
+#: ../cli/src/connections.c:1411
 #, c-format
 msgid "Active connection path: %s\n"
 msgstr "Aktyvaus ryšio kelias: %s\n"
 
-#: ../cli/src/connections.c:1347 ../cli/src/connections.c:1468
+#: ../cli/src/connections.c:1464 ../cli/src/connections.c:1609
+#: ../cli/src/connections.c:1737
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "Klaida: nežinomas ryšys: %s"
 
-#: ../cli/src/connections.c:1382 ../cli/src/devices.c:980
+#: ../cli/src/connections.c:1510 ../cli/src/devices.c:1220
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "Klaida: netinkama laukimo laiko reikšmė „%s“."
 
-#: ../cli/src/connections.c:1395 ../cli/src/connections.c:1485
+#: ../cli/src/connections.c:1523 ../cli/src/connections.c:1626
+#: ../cli/src/connections.c:1717
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "Klaida: id arba uuid turi būti nurodytas."
 
-#: ../cli/src/connections.c:1415
+#: ../cli/src/connections.c:1555
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "Klaida: nerastas tinkamas įrenginys: %s."
 
-#: ../cli/src/connections.c:1417
+#: ../cli/src/connections.c:1557
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "Klaida: nerastas tinkamas įrenginys."
 
-#: ../cli/src/connections.c:1512
+#: ../cli/src/connections.c:1662
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "Įspėjimas: ryšys neaktyvus\n"
 
-#: ../cli/src/connections.c:1569
+#: ../cli/src/connections.c:1676
+#, c-format
+msgid "Error: Connection deletion failed: %s"
+msgstr "Klaida: nepavyko ištrinti ryšio: %s"
+
+#: ../cli/src/connections.c:1794
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "Klaida: netinkama „con“ komanda „%s“."
 
-#: ../cli/src/connections.c:1605
+#: ../cli/src/connections.c:1859
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "Klaida: nepavyko prisijungti prie D-Bus."
 
-#: ../cli/src/connections.c:1612
+#: ../cli/src/connections.c:1867
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Klaida: nepavyko gauti sistemos nustatymų."
 
-#: ../cli/src/connections.c:1620
+#: ../cli/src/connections.c:1877
 #, c-format
-msgid "Error: Could not get user settings."
-msgstr "Klaida: nepavyko gauti naudotojo nustatymų."
-
-#: ../cli/src/connections.c:1630
-#, c-format
-msgid "Error: Can't obtain connections: settings services are not running."
-msgstr "Klaida: nepavyko gauti ryšių: nustatymų tarnybos neveikia."
+msgid "Error: Can't obtain connections: settings service is not running."
+msgstr "Klaida: nepavyko gauti ryšių: nustatymų tarnyba neveikia."
 
 #. 0
 #. 9
-#: ../cli/src/devices.c:61 ../cli/src/devices.c:89 ../cli/src/devices.c:184
+#. 3
+#: ../cli/src/devices.c:67 ../cli/src/devices.c:103 ../cli/src/devices.c:181
+#: ../cli/src/devices.c:197
 msgid "DEVICE"
 msgstr "ĮRENGINYS"
 
-#. 1
-#. 4
 #. 0
-#: ../cli/src/devices.c:63 ../cli/src/devices.c:93
-#: ../cli/src/network-manager.c:36
-msgid "STATE"
-msgstr "BŪSENA"
-
-#: ../cli/src/devices.c:72
-msgid "GENERAL"
-msgstr "BENDRA"
-
-#. 0
-#: ../cli/src/devices.c:73
+#: ../cli/src/devices.c:80
 msgid "CAPABILITIES"
 msgstr "GEBOS"
 
 #. 1
-#: ../cli/src/devices.c:74
+#: ../cli/src/devices.c:81
 msgid "WIFI-PROPERTIES"
 msgstr "WIFI-SAVYBĖS"
 
 #. 2
-#: ../cli/src/devices.c:75
+#: ../cli/src/devices.c:82
 msgid "AP"
 msgstr "AP"
 
 #. 3
-#: ../cli/src/devices.c:76
+#: ../cli/src/devices.c:83
 msgid "WIRED-PROPERTIES"
 msgstr "LAIDINIO-TINKLO-SAVYBĖS"
 
 #. 4
-#: ../cli/src/devices.c:77
-msgid "IP4-SETTINGS"
-msgstr "IP4-PARAMETRAI"
+#: ../cli/src/devices.c:84
+msgid "WIMAX-PROPERTIES"
+msgstr "WIMAX-SAVYBĖS"
 
 #. 5
-#: ../cli/src/devices.c:78
-msgid "IP4-DNS"
-msgstr "IP4-DNS"
+#. 0
+#: ../cli/src/devices.c:85 ../cli/src/devices.c:194
+msgid "NSP"
+msgstr "NSP"
 
 #. 6
-#: ../cli/src/devices.c:79
-#| msgid "IP4-SETTINGS"
-msgid "IP6-SETTINGS"
-msgstr "IP6-PARAMETRAI"
+#: ../cli/src/devices.c:86
+msgid "IP4"
+msgstr "IP4"
 
 #. 7
-#: ../cli/src/devices.c:80
-#| msgid "IP4-DNS"
-msgid "IP6-DNS"
-msgstr "IP6-DNS"
+#: ../cli/src/devices.c:87
+msgid "DHCP4"
+msgstr "DHCP4"
+
+#. 8
+#: ../cli/src/devices.c:88
+msgid "IP6"
+msgstr "IP6"
+
+#. 9
+#: ../cli/src/devices.c:89
+msgid "DHCP6"
+msgstr "DHCP6"
 
 #. 2
-#: ../cli/src/devices.c:91
+#: ../cli/src/devices.c:105
+msgid "VENDOR"
+msgstr "GAMINTOJAS"
+
+#. 3
+#: ../cli/src/devices.c:106
+msgid "PRODUCT"
+msgstr "PRODUKTAS"
+
+#. 4
+#: ../cli/src/devices.c:107
 msgid "DRIVER"
 msgstr "TVARKYKLĖ"
 
-#. 3
-#: ../cli/src/devices.c:92
+#. 5
+#: ../cli/src/devices.c:108
 msgid "HWADDR"
 msgstr "APARATINIS-ADRESAS"
 
+#. 7
+#: ../cli/src/devices.c:110
+msgid "REASON"
+msgstr "PRIEŽASTIS"
+
+#. 8
+#: ../cli/src/devices.c:111
+msgid "UDI"
+msgstr "UDI"
+
+#. 9
+#: ../cli/src/devices.c:112
+msgid "IP-IFACE"
+msgstr "IP-IFACE"
+
+#. 10
+#: ../cli/src/devices.c:113
+msgid "NM-MANAGED"
+msgstr "NM-VALDOMAS"
+
+#. 11
+#: ../cli/src/devices.c:114
+msgid "FIRMWARE-MISSING"
+msgstr "TRŪKSTA-APĮRANGOS"
+
+#. 12
+#: ../cli/src/devices.c:115
+msgid "CONNECTION"
+msgstr "PRISIJUNGIMAS"
+
 #. 0
-#: ../cli/src/devices.c:102
+#: ../cli/src/devices.c:124
 msgid "CARRIER-DETECT"
 msgstr "NEŠLIO-APTIKIMAS"
 
 #. 1
-#: ../cli/src/devices.c:103
+#: ../cli/src/devices.c:125
 msgid "SPEED"
 msgstr "SPARTA"
 
 #. 0
-#: ../cli/src/devices.c:112
+#: ../cli/src/devices.c:134
 msgid "CARRIER"
 msgstr "NEŠLYS"
 
 #. 0
-#: ../cli/src/devices.c:122
+#: ../cli/src/devices.c:144
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:123
+#: ../cli/src/devices.c:145
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:124
+#: ../cli/src/devices.c:146
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:125
+#: ../cli/src/devices.c:147
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:126
+#: ../cli/src/devices.c:148
 msgid "CCMP"
 msgstr "CCMP"
 
 #. 0
-#: ../cli/src/devices.c:135 ../cli/src/devices.c:146
-msgid "ADDRESS"
-msgstr "ADRESAS"
+#: ../cli/src/devices.c:158
+msgid "CTR-FREQ"
+msgstr "CTR DAŽNIS"
 
 #. 1
-#: ../cli/src/devices.c:136 ../cli/src/devices.c:147
-msgid "PREFIX"
-msgstr "PRIEŠDĖLIS"
+#: ../cli/src/devices.c:159
+msgid "RSSI"
+msgstr "RSSI"
 
 #. 2
-#: ../cli/src/devices.c:137 ../cli/src/devices.c:148
-msgid "GATEWAY"
-msgstr "ŠLIUZAS"
+#: ../cli/src/devices.c:160
+msgid "CINR"
+msgstr "CINR"
+
+#. 3
+#: ../cli/src/devices.c:161
+msgid "TX-POW"
+msgstr "TX-POW"
+
+#. 4
+#: ../cli/src/devices.c:162
+msgid "BSID"
+msgstr "BSID"
 
 #. 0
-#: ../cli/src/devices.c:157 ../cli/src/devices.c:166
-msgid "DNS"
-msgstr "DNS"
-
-#. 0
-#: ../cli/src/devices.c:175
+#: ../cli/src/devices.c:172
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:176
+#: ../cli/src/devices.c:173
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:177
+#: ../cli/src/devices.c:174
 msgid "MODE"
 msgstr "VEIKSENA"
 
 #. 3
-#: ../cli/src/devices.c:178
+#: ../cli/src/devices.c:175
 msgid "FREQ"
 msgstr "DAŽNIS"
 
 #. 4
-#: ../cli/src/devices.c:179
+#: ../cli/src/devices.c:176
 msgid "RATE"
 msgstr "DAŽNUMAS"
 
 #. 5
-#: ../cli/src/devices.c:180
-
+#. 1
+#: ../cli/src/devices.c:177 ../cli/src/devices.c:195
 msgid "SIGNAL"
 msgstr "SIGNALAS"
 
 #. 6
-#: ../cli/src/devices.c:181
+#: ../cli/src/devices.c:178
 msgid "SECURITY"
 msgstr "SAUGA"
 
 #. 7
-#: ../cli/src/devices.c:182
+#: ../cli/src/devices.c:179
 msgid "WPA-FLAGS"
 msgstr "WPA-ŽYMOS"
 
 #. 8
-#: ../cli/src/devices.c:183
+#: ../cli/src/devices.c:180
 msgid "RSN-FLAGS"
 msgstr "RSN-ŽYMOS"
 
 #. 10
-#: ../cli/src/devices.c:185
+#. 4
+#: ../cli/src/devices.c:182 ../cli/src/devices.c:198
 msgid "ACTIVE"
 msgstr "AKTYVUS"
 
-#: ../cli/src/devices.c:208
+#: ../cli/src/devices.c:215
 #, c-format
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
 "\n"
 "  COMMAND := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 msgstr ""
 "Naudojimas: nmcli dev { KOMANDA | help }\n"
+"\n"
+"  KOMANDA := { status | list | disconnect | wifi | wimax}\n"
 "\n"
 "  KOMANDA := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:228
+#: ../cli/src/devices.c:243
 msgid "unmanaged"
 msgstr "nevaldomas"
 
-#: ../cli/src/devices.c:230
+#: ../cli/src/devices.c:245
 msgid "unavailable"
 msgstr "neprieinamas"
 
-#: ../cli/src/devices.c:232 ../cli/src/network-manager.c:91
+#: ../cli/src/devices.c:247 ../cli/src/network-manager.c:108
 msgid "disconnected"
 msgstr "atjungtas"
 
-#: ../cli/src/devices.c:234
+#: ../cli/src/devices.c:249
 msgid "connecting (prepare)"
 msgstr "jungiamasi (ruošiama)"
 
-#: ../cli/src/devices.c:236
+#: ../cli/src/devices.c:251
 msgid "connecting (configuring)"
 msgstr "jungiamasi (konfigūruojama)"
 
-#: ../cli/src/devices.c:238
+#: ../cli/src/devices.c:253
 msgid "connecting (need authentication)"
 msgstr "jungiamasi (reikia nustatyti tapatybę)"
 
-#: ../cli/src/devices.c:240
+#: ../cli/src/devices.c:255
 msgid "connecting (getting IP configuration)"
 msgstr "jungiamasi (gaunama IP konfigūracija)"
 
-#: ../cli/src/devices.c:242 ../cli/src/network-manager.c:89
+#: ../cli/src/devices.c:257
+msgid "connecting (checking IP connectivity)"
+msgstr "jungiamasi (tikrinamas IP jungiamumas)"
+
+#: ../cli/src/devices.c:259
+msgid "connecting (starting secondary connections)"
+msgstr "jungiamasi (paleidžiami antriniai prisijungimai)"
+
+#: ../cli/src/devices.c:261 ../cli/src/network-manager.c:104
 msgid "connected"
 msgstr "prisijungta"
 
-#: ../cli/src/devices.c:244
+#: ../cli/src/devices.c:265
 msgid "connection failed"
 msgstr "prisijungti nepavyko"
 
-#: ../cli/src/devices.c:267 ../cli/src/devices.c:424
+#: ../cli/src/devices.c:276
+msgid "No reason given"
+msgstr "Nenurodyta priežastis"
+
+#: ../cli/src/devices.c:279
+msgid "Unknown error"
+msgstr "Nežinoma klaida"
+
+#: ../cli/src/devices.c:282
+msgid "Device is now managed"
+msgstr "Įrenginys dabar yra valdomas"
+
+#: ../cli/src/devices.c:285
+msgid "Device is now unmanaged"
+msgstr "Įrenginys dabar yra nevaldomas"
+
+#: ../cli/src/devices.c:288
+msgid "The device could not be readied for configuration"
+msgstr "Nepavyko paruošti įrenginio konfigūravimui"
+
+#: ../cli/src/devices.c:291
+msgid ""
+"IP configuration could not be reserved (no available address, timeout, etc)"
+msgstr ""
+"Nepavyko rezervuoti IP konfigūracijos (nėra galimo adreso, baigėsi laikas ir "
+"kt.)"
+
+#: ../cli/src/devices.c:294
+msgid "The IP configuration is no longer valid"
+msgstr "IP konfigūracija nebeteisinga"
+
+#: ../cli/src/devices.c:297
+msgid "Secrets were required, but not provided"
+msgstr "Reikalingos bet nepateiktos paslaptys"
+
+#: ../cli/src/devices.c:300
+msgid "802.1X supplicant disconnected"
+msgstr "802.1X prašytojas atjungtas"
+
+#: ../cli/src/devices.c:303
+msgid "802.1X supplicant configuration failed"
+msgstr "802.1X prašytojo konfigūracija nepavyko"
+
+#: ../cli/src/devices.c:306
+msgid "802.1X supplicant failed"
+msgstr "802.1X prašytojas dingo"
+
+#: ../cli/src/devices.c:309
+msgid "802.1X supplicant took too long to authenticate"
+msgstr "802.1X prašytojui per ilgai užtruko patvirtinti tapatybę"
+
+#: ../cli/src/devices.c:312
+msgid "PPP service failed to start"
+msgstr "nepavyko paleisti PPP tarnybos"
+
+#: ../cli/src/devices.c:315
+msgid "PPP service disconnected"
+msgstr "PPP tarnyba atjungta"
+
+#: ../cli/src/devices.c:318
+msgid "PPP failed"
+msgstr "PPP nepavyko"
+
+#: ../cli/src/devices.c:321
+msgid "DHCP client failed to start"
+msgstr "nepavyko paleisti DHCP kliento"
+
+#: ../cli/src/devices.c:324
+msgid "DHCP client error"
+msgstr "DHCO kliento klaida"
+
+#: ../cli/src/devices.c:327
+msgid "DHCP client failed"
+msgstr "DHCP klientas dingo"
+
+#: ../cli/src/devices.c:330
+msgid "Shared connection service failed to start"
+msgstr "Bendro ryšio tarnybos nepavyko paleisti"
+
+#: ../cli/src/devices.c:333
+msgid "Shared connection service failed"
+msgstr "Nepavyko bendro ryšio tarnybos paleidimas"
+
+#: ../cli/src/devices.c:336
+msgid "AutoIP service failed to start"
+msgstr "AutoIP tarnybos nepavyko paleisti"
+
+#: ../cli/src/devices.c:339
+msgid "AutoIP service error"
+msgstr "AutoIP tarnybos klaida"
+
+#: ../cli/src/devices.c:342
+msgid "AutoIP service failed"
+msgstr "Nepavyko AutoIP tarnybos paleidimas"
+
+#: ../cli/src/devices.c:345
+msgid "The line is busy"
+msgstr "Linija užimta"
+
+#: ../cli/src/devices.c:348
+msgid "No dial tone"
+msgstr "Nėra skambinimo tono"
+
+#: ../cli/src/devices.c:351
+msgid "No carrier could be established"
+msgstr "Nepavyko nustatyti pernešėjo"
+
+#: ../cli/src/devices.c:354
+msgid "The dialing request timed out"
+msgstr "Skambinimo užklausos laikas baigėsi"
+
+#: ../cli/src/devices.c:357
+msgid "The dialing attempt failed"
+msgstr "Mėginimas skambinti nepavyko"
+
+#: ../cli/src/devices.c:360
+msgid "Modem initialization failed"
+msgstr "Nepavyko inicializuoti modemo"
+
+#: ../cli/src/devices.c:363
+msgid "Failed to select the specified APN"
+msgstr "Nepavyko pasirinkti nurodyto APN"
+
+#: ../cli/src/devices.c:366
+msgid "Not searching for networks"
+msgstr "Neieškoma tinklų"
+
+#: ../cli/src/devices.c:369
+msgid "Network registration denied"
+msgstr "Tinklo registracija draudžiama"
+
+#: ../cli/src/devices.c:372
+msgid "Network registration timed out"
+msgstr "Baigėsi tinklo registracijos laikas"
+
+#: ../cli/src/devices.c:375
+msgid "Failed to register with the requested network"
+msgstr "Nepavyko registruoti su prašomu tinklu"
+
+#: ../cli/src/devices.c:378
+msgid "PIN check failed"
+msgstr "Nepavyko patikrinti PIN"
+
+#: ../cli/src/devices.c:381
+msgid "Necessary firmware for the device may be missing"
+msgstr "Trūksta įrenginiui reikalingos aparatinės programinės įrangos"
+
+#: ../cli/src/devices.c:384
+msgid "The device was removed"
+msgstr "Įrenginys buvo pašalintas"
+
+#: ../cli/src/devices.c:387
+msgid "NetworkManager went to sleep"
+msgstr "NetworkManager užmigo"
+
+#: ../cli/src/devices.c:390
+msgid "The device's active connection disappeared"
+msgstr "Įrenginio aktyvus ryšys dingo"
+
+#: ../cli/src/devices.c:393
+msgid "Device disconnected by user or client"
+msgstr "Įrenginys atjungtas naudotojo arba kliento"
+
+#: ../cli/src/devices.c:396
+msgid "Carrier/link changed"
+msgstr "Pernešėjas/saitas pasikeitė"
+
+#: ../cli/src/devices.c:399
+msgid "The device's existing connection was assumed"
+msgstr "Įrenginio esamas ryšys buvo priimtas"
+
+#: ../cli/src/devices.c:402
+msgid "The supplicant is now available"
+msgstr "Prašytojas dabar yra prieinamas"
+
+#: ../cli/src/devices.c:405
+msgid "The modem could not be found"
+msgstr "Nepavyko rasti modemo"
+
+#: ../cli/src/devices.c:408
+msgid "The Bluetooth connection failed or timed out"
+msgstr "Bluetooth ryšys nepavyko arba baigėsi laikas"
+
+#: ../cli/src/devices.c:411
+msgid "GSM Modem's SIM card not inserted"
+msgstr "GSM modemo SIM kortelė neįdėta"
+
+#: ../cli/src/devices.c:414
+msgid "GSM Modem's SIM PIN required"
+msgstr "Reikalingas GSM modemo SIM kortelės PIN"
+
+#: ../cli/src/devices.c:417
+msgid "GSM Modem's SIM PUK required"
+msgstr "Reikalingas GSM modemo SIM kortelės PUK"
+
+#: ../cli/src/devices.c:420
+msgid "GSM Modem's SIM wrong"
+msgstr "Neteisinga GSM modemo SIM"
+
+#: ../cli/src/devices.c:423
+msgid "InfiniBand device does not support connected mode"
+msgstr "InfiniBand įrenginys nepalaiko ryšio veiksenos"
+
+#: ../cli/src/devices.c:426
+msgid "A dependency of the connection failed"
+msgstr "Ryšio priklausomybė nepavyko"
+
+#: ../cli/src/devices.c:428 ../cli/src/devices.c:451 ../cli/src/devices.c:467
+#: ../cli/src/devices.c:587 ../cli/src/devices.c:631
 msgid "Unknown"
 msgstr "Nežinoma"
 
-#: ../cli/src/devices.c:299
+#: ../cli/src/devices.c:500
 msgid "(none)"
 msgstr "(jokios)"
 
-#: ../cli/src/devices.c:324
-#, c-format
-msgid "%s: error converting IP4 address 0x%X"
-msgstr "%s: klaida konvertuojant IP4 adresą 0x%X"
-
-#: ../cli/src/devices.c:393
+#: ../cli/src/devices.c:556
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:394
+#: ../cli/src/devices.c:557
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:403
+#: ../cli/src/devices.c:566
 msgid "Encrypted: "
 msgstr "Šifruota: "
 
-#: ../cli/src/devices.c:408
+#: ../cli/src/devices.c:571
 msgid "WEP "
 msgstr "WEP"
 
-#: ../cli/src/devices.c:410
+#: ../cli/src/devices.c:573
 msgid "WPA "
 msgstr "WPA"
 
-#: ../cli/src/devices.c:412
+#: ../cli/src/devices.c:575
 msgid "WPA2 "
 msgstr "WPA2"
 
-#: ../cli/src/devices.c:415
+#: ../cli/src/devices.c:578
 msgid "Enterprise "
 msgstr "Kompanija "
 
-#: ../cli/src/devices.c:424
+#: ../cli/src/devices.c:587
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: ../cli/src/devices.c:424
+#: ../cli/src/devices.c:587
 msgid "Infrastructure"
 msgstr "Infrastruktūra"
 
-#: ../cli/src/devices.c:486
+#: ../cli/src/devices.c:622
+msgid "Home"
+msgstr "Namai"
+
+#: ../cli/src/devices.c:625
+msgid "Partner"
+msgstr "Partneris"
+
+#: ../cli/src/devices.c:628
+msgid "Roaming"
+msgstr "Tarptinklinio ryšio tinklas"
+
+#: ../cli/src/devices.c:700
 #, c-format
 msgid "Error: 'dev list': %s"
 msgstr "Klaida: „dev list“: %s"
 
-#: ../cli/src/devices.c:488
+#: ../cli/src/devices.c:702
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "Klaida: „dev list“: %s; leidžiami laukai: %s"
 
-#: ../cli/src/devices.c:497
+#: ../cli/src/devices.c:711
 msgid "Device details"
 msgstr "Įrenginio informacija"
 
-#: ../cli/src/devices.c:527 ../cli/src/devices.c:925
+#: ../cli/src/devices.c:756 ../cli/src/devices.c:757 ../cli/src/devices.c:1164
+#: ../cli/src/utils.c:445
 msgid "(unknown)"
 msgstr "(nežinoma)"
 
-#: ../cli/src/devices.c:528
-msgid "unknown)"
-msgstr "nežinoma)"
+#: ../cli/src/devices.c:765
+msgid "not connected"
+msgstr "neprisijungta"
 
-#: ../cli/src/devices.c:554
+#: ../cli/src/devices.c:792
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:627
+#: ../cli/src/devices.c:865
 msgid "on"
 msgstr "įjungta"
 
-#: ../cli/src/devices.c:627
+#: ../cli/src/devices.c:865
 msgid "off"
 msgstr "išjungta"
 
-#: ../cli/src/devices.c:808
+#: ../cli/src/devices.c:1016
 #, c-format
 msgid "Error: 'dev status': %s"
 msgstr "Klaida: „dev status“: %s"
 
-#: ../cli/src/devices.c:810
+#: ../cli/src/devices.c:1018
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
 msgstr "Klaida: „dev status“: %s; leidžiami laukai: %s"
 
-#: ../cli/src/devices.c:817
+#: ../cli/src/devices.c:1041
 msgid "Status of devices"
 msgstr "Įrenginių būsena"
 
-#: ../cli/src/devices.c:845
+#: ../cli/src/devices.c:1072
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "Klaida: trūksta argumento „%s“."
 
-#: ../cli/src/devices.c:874 ../cli/src/devices.c:1013
-#: ../cli/src/devices.c:1136
+#: ../cli/src/devices.c:1113 ../cli/src/devices.c:1265
+#: ../cli/src/devices.c:1402 ../cli/src/devices.c:1621
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Klaida: nerastas įrenginys „%s“."
 
-#: ../cli/src/devices.c:897
+#: ../cli/src/devices.c:1136
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "Pavyko: sėkmingai atjungtas įrenginys „%s“."
 
-#: ../cli/src/devices.c:922
+#: ../cli/src/devices.c:1161
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "Klaida: įrenginio „%s“ (%s) atjungti nepavyko: %s"
 
-#: ../cli/src/devices.c:930
+#: ../cli/src/devices.c:1169
 #, c-format
 msgid "Device state: %d (%s)\n"
 msgstr "Įrenginio būsena: %d (%s)\n"
 
-#: ../cli/src/devices.c:994
+#: ../cli/src/devices.c:1234
 #, c-format
 msgid "Error: iface has to be specified."
 msgstr "Klaida: turi būti nurodytas iface."
 
-#: ../cli/src/devices.c:1112
+#: ../cli/src/devices.c:1360
 #, c-format
 msgid "Error: 'dev wifi': %s"
 msgstr "Klaida: „dev wifi“: %s"
 
-#: ../cli/src/devices.c:1114
+#: ../cli/src/devices.c:1362
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgstr "Klaida: „dev wifi“: %s; leidžiami laukai: %s"
 
-#: ../cli/src/devices.c:1121
+#: ../cli/src/devices.c:1385
 msgid "WiFi scan list"
 msgstr "WiFi skenavimo sąrašas"
 
-#: ../cli/src/devices.c:1156 ../cli/src/devices.c:1210
+#: ../cli/src/devices.c:1422 ../cli/src/devices.c:1476
 #, c-format
-msgid "Error: Access point with hwaddr '%s' not found."
-msgstr "Klaida: nerastas prieigos taškas su hwaddr „%s“."
+msgid "Error: Access point with bssid '%s' not found."
+msgstr "Klaida: prieigos taškas su bssid „%s“ nerastas"
 
-#: ../cli/src/devices.c:1173
+#: ../cli/src/devices.c:1439
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
 msgstr "Klaida: „%s“ nėra WiFi įrenginys "
 
-#: ../cli/src/devices.c:1237
+#: ../cli/src/devices.c:1503
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
 msgstr "Klaida: netinkama „dev wifi“ komanda „%s“."
 
-#: ../cli/src/devices.c:1284
+#: ../cli/src/devices.c:1579
+#, c-format
+msgid "Error: 'dev wimax': %s"
+msgstr "Klaida: „dev wimax“: %s"
+
+#: ../cli/src/devices.c:1581
+#, c-format
+msgid "Error: 'dev wimax': %s; allowed fields: %s"
+msgstr "Klaida: „dev wimax“: %s; leidžiami laukai: %s"
+
+#: ../cli/src/devices.c:1604
+msgid "WiMAX NSP list"
+msgstr "WiMAX NSP sąrašas"
+
+#: ../cli/src/devices.c:1641
+#, c-format
+msgid "Error: NSP with name '%s' not found."
+msgstr "Klaida: NSP pavadintas „%s“ nerastas."
+
+#: ../cli/src/devices.c:1652
+#, c-format
+msgid "Error: Device '%s' is not a WiMAX device."
+msgstr "Klaida: „%s“ nėra WiMAX įrenginys "
+
+#: ../cli/src/devices.c:1683
+#, c-format
+msgid "Error: Access point with nsp '%s' not found."
+msgstr "Klaida: prieigos su nsp „%s“ taškas nerastas."
+
+#: ../cli/src/devices.c:1710
+#, c-format
+msgid "Error: 'dev wimax' command '%s' is not valid."
+msgstr "Klaida: netinkama „dev wimax“ komanda „%s“."
+
+#: ../cli/src/devices.c:1760
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "Klaida: netinkama „dev“ komanda „%s“."
 
-#: ../cli/src/network-manager.c:35
+#: ../cli/src/network-manager.c:37
 msgid "RUNNING"
 msgstr "VEIKIA"
 
-#. 1
-#: ../cli/src/network-manager.c:37
+#. 0
+#: ../cli/src/network-manager.c:38
+msgid "VERSION"
+msgstr "VERSIJA"
+
+#. 2
+#: ../cli/src/network-manager.c:40
 msgid "NET-ENABLED"
 msgstr "TINKLAS-ĮJUNGTAS"
 
-#. 2
-#: ../cli/src/network-manager.c:38
+#. 3
+#: ../cli/src/network-manager.c:41
 msgid "WIFI-HARDWARE"
 msgstr "WIFI-APARATINĖ-ĮRANGA"
 
-#. 3
-#: ../cli/src/network-manager.c:39
+#. 4
+#: ../cli/src/network-manager.c:42
 msgid "WIFI"
 msgstr "WIFI"
 
-#. 4
-#: ../cli/src/network-manager.c:40
+#. 5
+#: ../cli/src/network-manager.c:43
 msgid "WWAN-HARDWARE"
 msgstr "WWAN-APARATINĖ-ĮRANGA"
 
-#. 5
-#: ../cli/src/network-manager.c:41
+#. 6
+#: ../cli/src/network-manager.c:44
 msgid "WWAN"
 msgstr "WWAN"
 
-#: ../cli/src/network-manager.c:64
+#. 7
+#: ../cli/src/network-manager.c:45
+msgid "WIMAX-HARDWARE"
+msgstr "WIMAX-APARATINĖ-ĮRANGA"
+
+#. 8
+#: ../cli/src/network-manager.c:46
+msgid "WIMAX"
+msgstr "WIMAX"
+
+#: ../cli/src/network-manager.c:67
 #, c-format
-#| msgid ""
-#| "Usage: nmcli nm { COMMAND | help }\n"
-#| "\n"
-#| "  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
-#| "\n"
-#| "  status\n"
-#| "  sleep\n"
-#| "  wakeup\n"
-#| "  wifi [on|off]\n"
-#| "  wwan [on|off]\n"
-#| "\n"
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
 "\n"
 "  COMMAND := { status | enable | sleep | wifi | wwan }\n"
 "\n"
@@ -914,137 +1373,160 @@ msgid ""
 "  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
+"  wimax [on|off]\n"
 "\n"
 msgstr ""
 "Naudojimas: nmcli nm { KOMANDA | help }\n"
 "\n"
+"  KOMANDA := { status | enable | sleep | wifi | wwan | wimax}\n"
+"\n"
 "  KOMANDA := { status | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  enable [on|off]\n"
-"  sleep [on|off]\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
+"  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:85
+#: ../cli/src/network-manager.c:96
 msgid "asleep"
 msgstr "miegantis"
 
-#: ../cli/src/network-manager.c:87
+#: ../cli/src/network-manager.c:98
 msgid "connecting"
 msgstr "jungiamasi"
 
-#: ../cli/src/network-manager.c:128
+#: ../cli/src/network-manager.c:100
+msgid "connected (local only)"
+msgstr "prisijungta (vietinis)"
+
+#: ../cli/src/network-manager.c:102
+msgid "connected (site only)"
+msgstr "prisijungta (tik puslapyje)"
+
+#: ../cli/src/network-manager.c:106
+msgid "disconnecting"
+msgstr "atsijungiama"
+
+#: ../cli/src/network-manager.c:146
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "Klaida: „nm status“: %s"
 
-#: ../cli/src/network-manager.c:130
+#: ../cli/src/network-manager.c:148
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "Klaida: „nm status“: %s; leidžiami laukai: %s"
 
-#: ../cli/src/network-manager.c:137
+#. create NMClient
+#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
+msgid "enabled"
+msgstr "įjungta"
+
+#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
+#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
+#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
+#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
+#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
+#: ../cli/src/network-manager.c:421
+msgid "disabled"
+msgstr "išjungta"
+
+#: ../cli/src/network-manager.c:181
 msgid "NetworkManager status"
 msgstr "NetworkManager būsena"
 
 #. Print header
-#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
-#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
-#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
-#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
-msgid "enabled"
-msgstr "įjungta"
-
-#: ../cli/src/network-manager.c:144 ../cli/src/network-manager.c:145
-#: ../cli/src/network-manager.c:146 ../cli/src/network-manager.c:147
-#: ../cli/src/network-manager.c:154 ../cli/src/network-manager.c:247
-#: ../cli/src/network-manager.c:296 ../cli/src/network-manager.c:328
-msgid "disabled"
-msgstr "išjungta"
-
-#: ../cli/src/network-manager.c:152
+#: ../cli/src/network-manager.c:184
 msgid "running"
 msgstr "veikia"
 
-#: ../cli/src/network-manager.c:152
+#: ../cli/src/network-manager.c:184
 msgid "not running"
 msgstr "neveikia"
 
-#: ../cli/src/network-manager.c:175
+#: ../cli/src/network-manager.c:215 ../cli/src/utils.c:425
 #, c-format
-#| msgid "Error: could not connect to D-Bus."
 msgid "Error: Couldn't connect to system bus: %s"
 msgstr "Klaida: nepavyko prisijungti prie sistemos magistralės: %s"
 
-#: ../cli/src/network-manager.c:186
+#: ../cli/src/network-manager.c:226
 #, c-format
-#| msgid "Error: could not connect to D-Bus."
 msgid "Error: Couldn't create D-Bus object proxy."
 msgstr "Klaida: nepavyko sukurti D-Bus tarpinio objekto."
 
-#: ../cli/src/network-manager.c:192
+#: ../cli/src/network-manager.c:232
 #, c-format
-#| msgid "Error: 'con list': %s"
 msgid "Error in sleep: %s"
 msgstr "Klaida užmigdant: %s"
 
-#: ../cli/src/network-manager.c:237 ../cli/src/network-manager.c:286
-#: ../cli/src/network-manager.c:318
+#: ../cli/src/network-manager.c:276 ../cli/src/network-manager.c:331
+#: ../cli/src/network-manager.c:369 ../cli/src/network-manager.c:408
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "Klaida: „--fields“ reikšmė „%s“ čia netinkama; leidžiami laukai: %s"
 
-#: ../cli/src/network-manager.c:245
-#| msgid "WiFi enabled"
+#: ../cli/src/network-manager.c:284
 msgid "Networking enabled"
 msgstr "Tinklas įjungtas"
 
-#: ../cli/src/network-manager.c:256
+#: ../cli/src/network-manager.c:300
 #, c-format
-#| msgid "Error: invalid 'wwan' parameter: '%s'."
 msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
 msgstr ""
 "Klaida: netinkamas „enable“ parametras: „%s“; naudokite „true“ arba „false“."
 
-#: ../cli/src/network-manager.c:265
+#: ../cli/src/network-manager.c:310
 #, c-format
-#| msgid "Error: Could not connect to NetworkManager."
 msgid "Error: Sleeping status is not exported by NetworkManager."
 msgstr "Klaida: „NetworkManager“ nepateikia informacijos apie miego būseną."
 
-#: ../cli/src/network-manager.c:273
+#: ../cli/src/network-manager.c:318
 #, c-format
-#| msgid "Error: invalid 'wifi' parameter: '%s'."
 msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
 msgstr ""
 "Klaida: netinkamas „sleep“ parametras: „%s“; naudokite „true“ arba „false“."
 
-#: ../cli/src/network-manager.c:294
+#: ../cli/src/network-manager.c:339
 msgid "WiFi enabled"
 msgstr "WiFi įjungtas"
 
-#: ../cli/src/network-manager.c:305
+#: ../cli/src/network-manager.c:355
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "Klaida: netinkamas „wifi“ parametras: „%s“."
 
-#: ../cli/src/network-manager.c:326
+#: ../cli/src/network-manager.c:377
 msgid "WWAN enabled"
 msgstr "WWAN įjungta"
 
-#: ../cli/src/network-manager.c:337
+#: ../cli/src/network-manager.c:393
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "Klaida: netinkamas „wwan“ parametras: „%s“."
 
-#: ../cli/src/network-manager.c:348
+#: ../cli/src/network-manager.c:416
+msgid "WiMAX enabled"
+msgstr "WiMAX įjungtas"
+
+#: ../cli/src/network-manager.c:432
+#, c-format
+msgid "Error: invalid 'wimax' parameter: '%s'."
+msgstr "Klaida: netinkamas „wimax“ parametras: „%s“."
+
+#: ../cli/src/network-manager.c:445
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "Klaida: netinkama „nm“ komanda „%s“."
 
-#: ../cli/src/nmcli.c:69
+#: ../cli/src/nmcli.c:64
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
@@ -1056,6 +1538,8 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
+"  -n[ocheck]                                 don't check nmcli and "
+"NetworkManager versions\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
@@ -1074,6 +1558,8 @@ msgstr ""
 "  -f[fields] <field1,field2,...>|all|common  nurodyti išvedamus laukus\n"
 "  -e[scape] yes|no                           atlikti stulpelių skirtukų "
 "kaitą\n"
+"  -n[ocheck]                                 netikrinti nmcli ir "
+"NetworkManager versijų\n"
 "  -v[ersion]                                 rodyti programos versiją\n"
 "  -h[elp]                                    išvesti šią pagalbą\n"
 "\n"
@@ -1083,566 +1569,612 @@ msgstr ""
 "  dev         NetworkManager valdomi įrenginiai\n"
 "\n"
 
-#: ../cli/src/nmcli.c:113
+#: ../cli/src/nmcli.c:109
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "Klaida: nežinomas objektas „%s“, bandykite „nmcli help“."
 
-#: ../cli/src/nmcli.c:143
+#: ../cli/src/nmcli.c:139
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "Klaida: parinktis „--terse“ nurodyta antrą kartą."
 
-#: ../cli/src/nmcli.c:148
+#: ../cli/src/nmcli.c:144
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr ""
 "Klaida: parinktis „--terse“ yra tarpusavyje nesuderinama su „--pretty“."
 
-#: ../cli/src/nmcli.c:156
+#: ../cli/src/nmcli.c:152
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "Klaida: parinktis „--pretty“ nurodyta antrą kartą."
 
-#: ../cli/src/nmcli.c:161
+#: ../cli/src/nmcli.c:157
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr ""
 "Klaida: parinktis „--pretty“ yra tarpusavyje nesuderinama su „--terse“."
 
-#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#: ../cli/src/nmcli.c:167 ../cli/src/nmcli.c:183
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "Klaida: trūksta argumento parinkčiai „%s“."
 
-#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#: ../cli/src/nmcli.c:176 ../cli/src/nmcli.c:192
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "Klaida: „%s“ yra netinkamas argumentas parinkčiai „%s“."
 
-#: ../cli/src/nmcli.c:203
+#: ../cli/src/nmcli.c:199
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "Klaida: trūksta laukų parinktims „%s“."
 
-#: ../cli/src/nmcli.c:209
+#: ../cli/src/nmcli.c:207
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "nmcli įrankis, versija %s\n"
 
-#: ../cli/src/nmcli.c:215
+#: ../cli/src/nmcli.c:213
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "Klaida: nežinoma parinktis „%s“, bandykite „nmcli -help“."
 
-#: ../cli/src/nmcli.c:234
+#: ../cli/src/nmcli.c:232
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "Gautas signalas %d, išjungiama..."
 
-#: ../cli/src/nmcli.c:259
-#, c-format
-msgid "Error: Could not connect to NetworkManager."
-msgstr "Klaida: nepavyko prisijungti prie NetworkManager."
+#: ../cli/src/nmcli.c:257
+msgid "Error: Could not create NMClient object."
+msgstr "Klaida: nepavyko sukurti NMClient objekto."
 
-#: ../cli/src/nmcli.c:275
+#: ../cli/src/nmcli.c:273
 msgid "Success"
 msgstr "Pavyko"
 
-#: ../cli/src/settings.c:411
+#: ../cli/src/settings.c:497
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (šešioliktainis ascii raktas)"
 
-#: ../cli/src/settings.c:413
+#: ../cli/src/settings.c:499
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128 bitų slaptažodis)"
 
-#: ../cli/src/settings.c:416
+#: ../cli/src/settings.c:502
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (nežinoma)"
 
-#: ../cli/src/settings.c:442
+#: ../cli/src/settings.c:528
 msgid "0 (unknown)"
 msgstr "0 (nežinoma)"
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:534
 msgid "any, "
 msgstr "bet koks, "
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:536
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:538
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:540
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:542
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:544
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:546
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:548
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:550
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:552
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:468
+#: ../cli/src/settings.c:554
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:470
+#: ../cli/src/settings.c:556
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
+#: ../cli/src/settings.c:558
+msgid "WCDMA 3GPP UMTS 1900 MHz, "
+msgstr "WCDMA 3GPP UMTS 1900 MHz, "
+
+#: ../cli/src/settings.c:560
+msgid "WCDMA 3GPP UMTS 2600 MHz, "
+msgstr "WCDMA 3GPP UMTS 2600 MHz, "
+
+#: ../cli/src/settings.c:578
+msgid "0 (NONE)"
+msgstr "0 (JOKS)"
+
+#: ../cli/src/settings.c:584
+msgid "REORDER_HEADERS, "
+msgstr "PERRIKIUOTI_ANTRAŠTES, "
+
+#: ../cli/src/settings.c:586
+msgid "GVRP, "
+msgstr "GVRP, "
+
+#: ../cli/src/settings.c:588
+msgid "LOOSE_BINDING, "
+msgstr "PRARASTI_SUSIEJIMĄ, "
+
+#: ../cli/src/settings.c:731 ../cli/src/settings.c:927
+#: ../cli/src/settings.c:1631
 msgid "auto"
 msgstr "automatinis"
 
-#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
-#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
+#: ../cli/src/settings.c:921 ../cli/src/settings.c:924
+#: ../cli/src/settings.c:925 ../cli/src/utils.c:247
 msgid "not set"
 msgstr "nenustatyta"
 
-#: ../cli/src/utils.c:124
+#: ../cli/src/utils.c:103
+#, c-format
+msgid "Error converting IP4 address '0x%X' to text form"
+msgstr "Klaida konvertuojant IP4 adresą „0x%X“ į tekstinę formą"
+
+#: ../cli/src/utils.c:131
+#, c-format
+msgid "Error converting IP6 address '%s' to text form"
+msgstr "Klaida konvertuojant IP6 adresą „%s“ į tekstinę formą"
+
+#: ../cli/src/utils.c:200
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "laukas „%s“ turi būti vienintelis"
 
-#: ../cli/src/utils.c:127
+#: ../cli/src/utils.c:203
 #, c-format
 msgid "invalid field '%s'"
 msgstr "netinkamas laukas „%s“"
 
-#: ../cli/src/utils.c:146
+#: ../cli/src/utils.c:222
 #, c-format
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "Parinktis „--terse“ reikalauja nurodyti „--fields“"
 
-#: ../cli/src/utils.c:150
+#: ../cli/src/utils.c:226
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "Parinktis „--terse“ reikalauja konkrečių parinkties „--fields“ reikšmių, ne "
 "„%s“"
 
-#: ../libnm-util/crypto.c:120
+#: ../cli/src/utils.c:436
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+msgstr ""
+"Klaida: nepavyko sukurti D-Bus tarpinio objekto skirto org.freedesktop.DBus"
+
+#: ../cli/src/utils.c:444
+#, c-format
+msgid "Error: NameHasOwner request failed: %s"
+msgstr "Klaida: NameHasOwner užklausa nepavyko: %s"
+
+#: ../cli/src/utils.c:489
+#, c-format
+msgid ""
+"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
+"nocheck to suppress the warning.\n"
+msgstr ""
+"Įspėjimas: nmcli (%s) ir NetworkManager (%s) versijos neatitinka. Naudokite "
+"--nocheck įspėjimui nerodyti.\n"
+
+#: ../cli/src/utils.c:498
+#, c-format
+msgid ""
+"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
+"execution using --nocheck, but the results are unpredictable."
+msgstr ""
+"Klaida: nmcli (%s) ir NetworkManager (%s) versijos neatitinka. Priverskite "
+"vykdymą naudodami --nocheck, bet rezultatai yra nenuspėjami."
+
+#: ../libnm-util/crypto.c:133
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "PEM rakto faile nėra pabaigos gairės „%s“."
 
-#: ../libnm-util/crypto.c:130
+#: ../libnm-util/crypto.c:146
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Nepanašu į PEM asmeninio rakto failą."
 
-#: ../libnm-util/crypto.c:138
+#: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Nepakanka atminties PEM failo duomenų saugojimui."
 
-#: ../libnm-util/crypto.c:154
+#: ../libnm-util/crypto.c:170
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Netinkamai suformuotas PEM failas: Proc-Type buvo ne pirma gairė."
 
-#: ../libnm-util/crypto.c:162
+#: ../libnm-util/crypto.c:178
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Netinkamai suformuotas PEM failas: nežinoma Proc-Type gairė „%s“."
 
-#: ../libnm-util/crypto.c:172
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Netinkamai suformuotas PEM failas: DEK-Info buvo ne antra gairė."
 
-#: ../libnm-util/crypto.c:183
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Netinkamai suformuotas PEM failas: DEK-Info gairėje nerasta IV."
 
-#: ../libnm-util/crypto.c:190
+#: ../libnm-util/crypto.c:206
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr ""
 "Netinkamai suformuotas PEM failas: DEK-Info gairėje netinkamas IV formatas."
 
-#: ../libnm-util/crypto.c:203
+#: ../libnm-util/crypto.c:219
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr ""
 "Netinkamai suformuotas PEM failas: nežinomas asmeninio rakto šifras „%s“."
 
-#: ../libnm-util/crypto.c:222
+#: ../libnm-util/crypto.c:238
 #, c-format
 msgid "Could not decode private key."
 msgstr "Nepavyko iškoduoti asmeninio rakto."
 
-#: ../libnm-util/crypto.c:267
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "PEM liudijime „%s“ nėra pabaigos gairės „%s“."
+#: ../libnm-util/crypto.c:284
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "Nepavyko rasti laukiamos PKCS#8 pradžios žymos."
 
-#: ../libnm-util/crypto.c:277
+#: ../libnm-util/crypto.c:292
 #, c-format
-msgid "Failed to decode certificate."
-msgstr "Nepavyko iškoduoti liudijimo."
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "Nepavyko rasti laukiamos PKCS#8 pabaigos žymos „%s“."
 
-#: ../libnm-util/crypto.c:286
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr "Nepakanka atminties išsaugoti privataus rakto duomenis."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "Nepavyko iššifruoti PKCS#8 asmeninio rakto."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
 #, c-format
 msgid "Not enough memory to store certificate data."
-msgstr "Nepakanka atminties liudijimo duomnų saugojimui."
+msgstr "Nepakanka atminties liudijimo duomenų saugojimui."
 
-#: ../libnm-util/crypto.c:294
-#, c-format
-msgid "Not enough memory to store file data."
-msgstr "Nepakanka atminties įrašyti failo duomenis."
-
-#: ../libnm-util/crypto.c:324
+#: ../libnm-util/crypto.c:365
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "IV ilgis turi būti lyginis baitų skaičius."
 
-#: ../libnm-util/crypto.c:333
+#: ../libnm-util/crypto.c:374
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr "Nepakanka atminties IV saugojimui."
 
-#: ../libnm-util/crypto.c:344
+#: ../libnm-util/crypto.c:385
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV yra ne šešioliktainių skaitmenų."
 
-#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
-#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
-#: ../libnm-util/crypto_nss.c:336
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Asmeninio rakto šifras „%s“ nežinomas."
 
-#: ../libnm-util/crypto.c:391
+#: ../libnm-util/crypto.c:432
 #, c-format
 msgid "Not enough memory to decrypt private key."
 msgstr "Nepakanka atminties iššifruoti asmeninį raktą."
 
-#: ../libnm-util/crypto.c:511
-#, c-format
-msgid "Unable to determine private key type."
-msgstr "Nepavyko nustatyti asmeninio rakto tipo."
-
-#: ../libnm-util/crypto.c:530
+#: ../libnm-util/crypto.c:497
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr "Nepakanka atminties iššifruoto asmeninio rakto saugojimui."
 
-#: ../libnm-util/crypto_gnutls.c:49
+#: ../libnm-util/crypto.c:542
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Nepavyko nustatyti asmeninio rakto tipo."
+
+#: ../libnm-util/crypto.c:597
+#, c-format
+msgid "PEM certificate had no start tag '%s'."
+msgstr "PEM liudijime nėra pradžios gairės „%s“."
+
+#: ../libnm-util/crypto.c:606
+#, c-format
+msgid "PEM certificate had no end tag '%s'."
+msgstr "PEM liudijime nėra pabaigos gairės „%s“."
+
+#: ../libnm-util/crypto.c:630
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Nepavyko iškoduoti liudijimo."
+
+#: ../libnm-util/crypto_gnutls.c:50
 msgid "Failed to initialize the crypto engine."
 msgstr "Nepavyko inicijuoti šifravimo posistemės."
 
-#: ../libnm-util/crypto_gnutls.c:93
+#: ../libnm-util/crypto_gnutls.c:92
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "Nepavyko inicijuoti MD5 posistemės: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:156
+#: ../libnm-util/crypto_gnutls.c:155
 #, c-format
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "Netinkamas IV ilgis (turi būti bent %zd)."
 
-#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "Nepakanka atminties iššifruoto rakto buferiui."
 
-#: ../libnm-util/crypto_gnutls.c:173
+#: ../libnm-util/crypto_gnutls.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr "Nepavyko inicijuoti iššifravimo šifro konteksto: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:182
+#: ../libnm-util/crypto_gnutls.c:181
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr "Nepavyko iššifravimui nustatyti simetriško rakto: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:191
+#: ../libnm-util/crypto_gnutls.c:190
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "Nepavyko iššifravimui nustatyti IV: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:200
+#: ../libnm-util/crypto_gnutls.c:199
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Nepavyko iššifruoti asmeninio rakto: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr "Nepavyko iššifruoti asmeninio rakto: netikėtas užpildo ilgis."
 
-#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "Nepavyko iššifruoti asmeninio rakto."
 
-#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
 #, c-format
 msgid "Could not allocate memory for encrypting."
 msgstr "Nepavyko išskirti atminties šifravimui."
 
-#: ../libnm-util/crypto_gnutls.c:294
+#: ../libnm-util/crypto_gnutls.c:293
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr "Nepavyko inicijuoti šifravimo šifro konteksto: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:303
+#: ../libnm-util/crypto_gnutls.c:302
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr "Nepavyko šifravimui nustatyti simetriško rakto: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:313
+#: ../libnm-util/crypto_gnutls.c:312
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
 msgstr "Nepavyko šifravimui nustatyti IV: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:322
+#: ../libnm-util/crypto_gnutls.c:321
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
 msgstr "Nepavyko šifruoti duomenų: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:362
+#: ../libnm-util/crypto_gnutls.c:361
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Klaida inicijuojant liudijimo duomenis: %s"
 
-#: ../libnm-util/crypto_gnutls.c:384
+#: ../libnm-util/crypto_gnutls.c:383
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Nepavyko iškoduoti liudijimo: %s"
 
-#: ../libnm-util/crypto_gnutls.c:408
+#: ../libnm-util/crypto_gnutls.c:407
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "Nepavyko inicializuoti PKCS#12 dekoderio: %s"
 
-#: ../libnm-util/crypto_gnutls.c:421
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "Nepavyko iškoduoti PKCS#12 failo: %s"
 
-#: ../libnm-util/crypto_gnutls.c:433
+#: ../libnm-util/crypto_gnutls.c:432
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "Nepavyko patvirtinti PKCS#12 failo: %s"
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr "Nepavyko inicializuoti PKCS#8 dekoderio: %s"
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr "Nepavyko iškoduoti PKCS#8 failo: %s"
 
 #: ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "Nepavyko inicijuoti šifravimo posistemės: %d."
 
-#: ../libnm-util/crypto_nss.c:111
+#: ../libnm-util/crypto_nss.c:107
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "Nepavyko inicijuoti MD5 konteksto: %d."
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:175
 #, c-format
 msgid "Invalid IV length (must be at least %d)."
 msgstr "Netinkamas IV ilgis (turi būti bent %d)."
 
-#: ../libnm-util/crypto_nss.c:196
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "Nepavyko inicijuoti iššifravimo šifro lizdo."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:202
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "Nepavyko iššifravimui nustatyti simetriško rakto."
 
-#: ../libnm-util/crypto_nss.c:216
+#: ../libnm-util/crypto_nss.c:212
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Nepavyko iššifravimui nustatyti IV."
 
-#: ../libnm-util/crypto_nss.c:224
+#: ../libnm-util/crypto_nss.c:220
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "Nepavyko inicijuoti iššifravimo konteksto."
 
-#: ../libnm-util/crypto_nss.c:237
+#: ../libnm-util/crypto_nss.c:233
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Nepavyko iššifruoti asmeninio rakto: %d."
 
-#: ../libnm-util/crypto_nss.c:245
+#: ../libnm-util/crypto_nss.c:241
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr "Nepavyko iššifruoti asmeninio rakto: iššifruoti duomenys per dideli."
 
-#: ../libnm-util/crypto_nss.c:256
+#: ../libnm-util/crypto_nss.c:252
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "Nepavyko baigti asmeninio rakto iššifravimo: %d."
 
-#: ../libnm-util/crypto_nss.c:364
+#: ../libnm-util/crypto_nss.c:360
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "Nepavyko inicijuoti šifravimo šifro lizdo."
 
-#: ../libnm-util/crypto_nss.c:372
+#: ../libnm-util/crypto_nss.c:368
 #, c-format
 msgid "Failed to set symmetric key for encryption."
 msgstr "Nepavyko šifravimui nustatyti simetriško rakto."
 
-#: ../libnm-util/crypto_nss.c:380
+#: ../libnm-util/crypto_nss.c:376
 #, c-format
 msgid "Failed to set IV for encryption."
 msgstr "Nepavyko šifravimui nustatyti IV."
 
-#: ../libnm-util/crypto_nss.c:388
+#: ../libnm-util/crypto_nss.c:384
 #, c-format
 msgid "Failed to initialize the encryption context."
 msgstr "Nepavyko inicijuoti šifravimo konteksto."
 
-#: ../libnm-util/crypto_nss.c:396
+#: ../libnm-util/crypto_nss.c:392
 #, c-format
 msgid "Failed to encrypt: %d."
 msgstr "Nepavyko šifruoti: %d."
 
-#: ../libnm-util/crypto_nss.c:404
+#: ../libnm-util/crypto_nss.c:400
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "Netikėtas duomenų kiekis po šifravimo."
 
-#: ../libnm-util/crypto_nss.c:447
+#: ../libnm-util/crypto_nss.c:443
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Nepavyko iškoduoti liudijimo: %d"
 
-#: ../libnm-util/crypto_nss.c:482
+#: ../libnm-util/crypto_nss.c:478
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "Nepavyko konvertuoti slaptažodžio į UCS-2: %d"
 
-#: ../libnm-util/crypto_nss.c:510
+#: ../libnm-util/crypto_nss.c:506
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "Nepavyko inicializuoti PKCS#12 dekoderio: %d"
 
-#: ../libnm-util/crypto_nss.c:519
+#: ../libnm-util/crypto_nss.c:515
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "Nepavyko iškoduoti PKCS#12 failo: %d"
 
-#: ../libnm-util/crypto_nss.c:528
+#: ../libnm-util/crypto_nss.c:524
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "Nepavyko patvirtinti PKCS#12 failo: %d"
 
-#: ../libnm-util/crypto_nss.c:557
+#: ../libnm-util/crypto_nss.c:568
 msgid "Could not generate random data."
 msgstr "Nepavyko sugeneruoti atsitiktinių duomenų."
 
-#: ../libnm-util/nm-utils.c:1975
+#: ../libnm-util/nm-utils.c:2040
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr "Nepakanka atminties šifravimo raktui sukurti."
 
-#: ../libnm-util/nm-utils.c:2085
+#: ../libnm-util/nm-utils.c:2150
 msgid "Could not allocate memory for PEM file creation."
 msgstr "Nepakanka atminties PEM failui sukurti."
 
-#: ../libnm-util/nm-utils.c:2097
+#: ../libnm-util/nm-utils.c:2162
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr "Nepakanka atminties IV įrašyti į PEM failą."
 
-#: ../libnm-util/nm-utils.c:2109
+#: ../libnm-util/nm-utils.c:2174
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr "Nepakanka atminties šifruotam raktui įrašyti į PEM failą."
 
-#: ../libnm-util/nm-utils.c:2128
+#: ../libnm-util/nm-utils.c:2193
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr "Nepakanka atminties PEM failo duomenims."
 
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "Dalijimasis ryšiu naudojant apsaugotą WiFi tinklą"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "Dalijimasis ryšiu naudojant atvirą WiFi tinklą"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "Keisti pastovų sistemos vardą"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "Keisti sistemos ryšius"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr "Sistemos politika neleidžia keisti sistemos nustatymų"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr "Sistemos politika neleidžia keisti įsiminto sistemos vardo"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr ""
-"Sistemos politika nelaidžia dalytis ryšiais naudojant apsaugotą WiFi tinklą"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr ""
-"Sistemos politika neleidžia dalytis ryšiais naudojant atvirą WiFi tinklą"
-
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
-msgid "Allow control of network connections"
-msgstr "Leisti valdyti tinklo ryšius"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
-msgid "Allow use of user-specific connections"
-msgstr "Leisti naudoti pasirinktinius naudotojo ryšius"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
-msgid "Enable or disable WiFi devices"
-msgstr "Įjungti arba išjungti WiFi įrenginius"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
-msgid "Enable or disable mobile broadband devices"
-msgstr "Įjungti arba išjungti mobiliojo plačiajuosčio ryšio įrenginius"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
 msgid "Enable or disable system networking"
 msgstr "Įjungti arba išjungti sistemos prieigą prie tinklo"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "System policy prevents enabling or disabling system networking"
+msgstr ""
+"Sistemos politika neleidžia įjungti arba išjungti sistemos prieigos prie "
+"tinklo"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
 msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
@@ -1650,91 +2182,245 @@ msgstr ""
 "Užmigdyti arba pažadinti NetworkManager (tai turėtų naudoti tik sistemos "
 "energijos valdymo posistemė)"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
-msgid "System policy prevents control of network connections"
-msgstr "Sistemos politika neleidžia valdyti tinklo ryšių"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+msgid "System policy prevents putting NetworkManager to sleep or waking it up"
+msgstr "Sistemos politika neleidžia užmigdyti arba pažadinti NetworkManager"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable WiFi devices"
+msgstr "Įjungti arba išjungti WiFi įrenginius"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
 msgid "System policy prevents enabling or disabling WiFi devices"
 msgstr "Sistemos politika neleidžia įjungti arba išjungti WiFi įrenginių"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "Enable or disable mobile broadband devices"
+msgstr "Įjungti arba išjungti mobiliojo plačiajuosčio ryšio įrenginius"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
 msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr ""
 "Sistemos politika neleidžia įjungti arba išjungti mobiliojo plačiajuosčio "
 "ryšio įrenginių"
 
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "Enable or disable WiMAX mobile broadband devices"
+msgstr "Įjungti arba išjungti WiMAX mobiliojo plačiajuosčio ryšio įrenginius"
+
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
-msgid "System policy prevents enabling or disabling system networking"
+msgid ""
+"System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
-"Sistemos politika neleidžia įjungti arba išjungti sistemos prieigos prie "
-"tinklo"
+"Sistemos politika neleidžia įjungti arba išjungti WiMAX mobiliojo "
+"plačiajuosčio ryšio įrenginių"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
-msgid "System policy prevents putting NetworkManager to sleep or waking it up"
-msgstr "Sistemos politika neleidžia užmigdyti arba pažadinti NetworkManager"
+msgid "Allow control of network connections"
+msgstr "Leisti valdyti tinklo ryšius"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
-msgid "System policy prevents use of user-specific connections"
-msgstr "Sistemos politika neleidžia naudoti pasirinktinių naudotojo ryšių"
+msgid "System policy prevents control of network connections"
+msgstr "Sistemos politika neleidžia valdyti tinklo ryšių"
 
-#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
-#: ../src/nm-netlink-monitor.c:653
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:13
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Dalijimasis ryšiu naudojant apsaugotą WiFi tinklą"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
+msgid "System policy prevents sharing connections via a protected WiFi network"
+msgstr ""
+"Sistemos politika nelaidžia dalytis ryšiais naudojant apsaugotą WiFi tinklą"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
+msgid "Connection sharing via an open WiFi network"
+msgstr "Dalijimasis ryšiu naudojant atvirą WiFi tinklą"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:16
+msgid "System policy prevents sharing connections via an open WiFi network"
+msgstr ""
+"Sistemos politika neleidžia dalytis ryšiais naudojant atvirą WiFi tinklą"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:17
+msgid "Modify personal network connections"
+msgstr "Keisti asmeninius tinklo ryšius"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:18
+msgid "System policy prevents modification of personal network settings"
+msgstr "Sistemos politika neleidžia keisti asmeninių tinklų nustatymų"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
+msgid "Modify network connections for all users"
+msgstr "Keisti visų naudotojų tinklo ryšius"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
+msgid "System policy prevents modification of network settings for all users"
+msgstr ""
+"Sistemos politika neleidžia keisti tinklo nustatymų, skirtų visiems "
+"naudotojams"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
+msgid "Modify persistent system hostname"
+msgstr "Keisti pastovų sistemos vardą"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:22
+msgid "System policy prevents modification of the persistent system hostname"
+msgstr "Sistemos politika neleidžia keisti įsiminto sistemos vardo"
+
+#: ../src/main.c:156
 #, c-format
-msgid "error processing netlink message: %s"
-msgstr "klaida apdorojant netlink pranešimą: %s"
+msgid "Failed to set signal mask: %d"
+msgstr "Nepavyko nustatyti signalo kaukės: %d"
 
-#: ../src/nm-netlink-monitor.c:214
-msgid "error occurred while waiting for data on socket"
-msgstr "laukiant lizde duomenų įvyko klaida"
-
-#: ../src/nm-netlink-monitor.c:254
+#: ../src/main.c:163
 #, c-format
-msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "nepavyko prisijungti prie netlink saito būsenai stebėti: %s"
+msgid "Failed to create signal handling thread: %d"
+msgstr "Nepavyko sukurti signalo apdorojimo gijos: %d"
 
-#: ../src/nm-netlink-monitor.c:265
+#: ../src/main.c:178
 #, c-format
-msgid "unable to enable netlink handle credential passing: %s"
-msgstr "nepavyko įjungti netlink valdiklio įgaliojimams perduoti: %s"
+msgid "Opening %s failed: %s\n"
+msgstr "Nepavyko atverti %s: %s\n"
 
-#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
+#: ../src/main.c:184
 #, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "nepavyko rezervuoti netlink valdiklio saito būsenai stebėti: %s"
+msgid "Writing to %s failed: %s\n"
+msgstr "Nepavyko rašymas į %s: %s\n"
 
-#: ../src/nm-netlink-monitor.c:376
+#: ../src/main.c:189
 #, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "nepavyko rezervuoti netlink saito podėlio saito būsenai stebėti: %s"
+msgid "Closing %s failed: %s\n"
+msgstr "Nepavyko užverti %s: %s\n"
 
-#: ../src/nm-netlink-monitor.c:502
+#: ../src/main.c:232
 #, c-format
-msgid "unable to join netlink group: %s"
-msgstr "nepavyko prisijungti prie netlink grupės: %s"
+msgid "NetworkManager is already running (pid %ld)\n"
+msgstr "NetworkManager jau veikia „pid %ld)\n"
 
-#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#: ../src/main.c:372
+msgid "Print NetworkManager version and exit"
+msgstr "Parodyti NetworkManager versiją ir išeiti"
+
+#: ../src/main.c:373
+msgid "Don't become a daemon"
+msgstr "Netapti demonu"
+
+#: ../src/main.c:374
+msgid "Make all warnings fatal"
+msgstr "Paversti visus įspėjimus lemtingais"
+
+#: ../src/main.c:375
+msgid "Specify the location of a PID file"
+msgstr "Nurodykite PID failo vietą"
+
+#: ../src/main.c:375
+msgid "filename"
+msgstr "failo pavadinimas"
+
+#: ../src/main.c:376
+msgid "State file location"
+msgstr "Būsenos failo vieta"
+
+#: ../src/main.c:376
+msgid "/path/to/state.file"
+msgstr "/kelias/iki/būsenos.failo"
+
+#: ../src/main.c:377
+msgid "Config file location"
+msgstr "Konfigūracijos failo vieta"
+
+#: ../src/main.c:377
+msgid "/path/to/config.file"
+msgstr "/kelias/iki/konfigūracijos.failo"
+
+#: ../src/main.c:378
+msgid "List of plugins separated by ','"
+msgstr "Įskiepių sąrašas skiriant „,“"
+
+#: ../src/main.c:378
+msgid "plugin1,plugin2"
+msgstr "įskiepis1,įskiepis2"
+
+#. Translators: Do not translate the values in the square brackets
+#: ../src/main.c:380
+msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
+msgstr "Žurnalo lygis: vienas iš [ERR, WARN, INFO, DEBUG]"
+
+#. Translators: Do not translate the values in the square brackets
+#: ../src/main.c:383
+msgid ""
+"Log domains separated by ',': any combination of\n"
+"                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,"
+"DHCP4,DHCP6,PPP,\n"
+"                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,"
+"SHARING,SUPPLICANT,\n"
+"                                           AGENTS,SETTINGS,SUSPEND,CORE,"
+"DEVICE,OLPC,WIMAX,\n"
+"                                           INFINIBAND,FIREWALL]"
+msgstr ""
+"Žurnalo sritys skiriamos „,“: bet kokia reikšmių kombinacija\n"
+"                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,"
+"DHCP4,DHCP6,PPP,\n"
+"                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,"
+"SHARING,SUPPLICANT,\n"
+"                                           AGENTS,SETTINGS,SUSPEND,CORE,"
+"DEVICE,OLPC,WIMAX,\n"
+"                                           INFINIBAND,FIREWALL]"
+
+#: ../src/main.c:396
 #, c-format
-msgid "error updating link cache: %s"
-msgstr "klaida atnaujinant saito podėlį: %s"
+msgid "GModules are not supported on your platform!\n"
+msgstr "GModules nepalaikomi jūsų platformoje\n"
 
-#: ../src/main.c:499
+#: ../src/main.c:419
+msgid ""
+"NetworkManager monitors all network connections and automatically\n"
+"chooses the best connection to use.  It also allows the user to\n"
+"specify wireless access points which wireless cards in the computer\n"
+"should associate with."
+msgstr ""
+"NetworkManager stebi visus tinklo ryšius ir automatiškai\n"
+"pasirenka geriausią ryšį. Jis taip pat leidžia naudotojui\n"
+"nurodyti belaidžio ryšio prieigos taškus, su kuriais susieti\n"
+"jūsų kompiuterio belaidžio ryšio kortas."
+
+#: ../src/main.c:425
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Netinkama parinktis. Galimų parinkčių sąrašą galite pamatyti naudodami "
 "parametrą --help.\n"
 
-#: ../src/main.c:570
+#: ../src/main.c:435
+#, c-format
+msgid "You must be root to run NetworkManager!\n"
+msgstr "Jūs turite būti root, kad paleistumėte NetworkManager!\n"
+
+#: ../src/main.c:456
+#, c-format
+msgid "Failed to read configuration: (%d) %s\n"
+msgstr "Nepavyko perskaityti konfigūracijos: (%d) %s\n"
+
+#: ../src/main.c:467
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  Naudokite --help, galimų parinkčių sąrašui gauti.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:328
+#: ../src/main.c:474
+#, c-format
+msgid "State file %s parsing failed: (%d) %s\n"
+msgstr "Nepavyko perskaityti būsenos failo %s: (%d) %s\n"
+
+#: ../src/main.c:491
+#, c-format
+msgid "Could not daemonize: %s [error %u]\n"
+msgstr "Nepavyko tapri demonu: %s [klaida %u]\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
 msgid "# Created by NetworkManager\n"
 msgstr "# Sukurta NetworkManager programos\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:344
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:69
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -1743,204 +2429,169 @@ msgstr ""
 "# Sulieta iš %s\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+#: ../src/dhcp-manager/nm-dhcp-manager.c:266
 msgid "no usable DHCP client could be found."
 msgstr "nerastas veikiantis DHCP klientas."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+#: ../src/dhcp-manager/nm-dhcp-manager.c:275
 msgid "'dhclient' could be found."
 msgstr "nerastas „dhclient“."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+#: ../src/dhcp-manager/nm-dhcp-manager.c:285
 msgid "'dhcpcd' could be found."
 msgstr "nerastas „dhcpcd“."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "nepalaikomas DHCP klientas „%s“."
 
-#: ../src/logging/nm-logging.c:146
-#, c-format
-msgid "Unknown log level '%s'"
-msgstr "Nežinomas žurnalo vedimo lygis „%s“"
-
-#: ../src/logging/nm-logging.c:171
-#, c-format
-msgid "Unknown log domain '%s'"
-msgstr "Nežinoma žurnalo sritis „%s“"
-
-#: ../src/dns-manager/nm-dns-manager.c:384
+#: ../src/dns-manager/nm-dns-manager.c:376
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "PASTABA: libc adresų nustatymo funkcija gali nepalaikyti daugiau nei 3 vardų "
 "serverių."
 
-#: ../src/dns-manager/nm-dns-manager.c:386
+#: ../src/dns-manager/nm-dns-manager.c:378
 msgid "The nameservers listed below may not be recognized."
 msgstr "Žemiau pateikti vardų serveriai gali būti neatpažinti."
 
-#: ../src/settings/nm-default-wired-connection.c:157
+#: ../src/logging/nm-logging.c:130
 #, c-format
-msgid "Auto %s"
-msgstr "Automatinis %s"
+msgid "Unknown log level '%s'"
+msgstr "Nežinomas žurnalo vedimo lygis „%s“"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3412
-#: ../system-settings/plugins/ifnet/connection_parser.c:49
+#: ../src/logging/nm-logging.c:155
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Nežinoma žurnalo sritis „%s“"
+
+#: ../src/modem-manager/nm-modem-cdma.c:279 ../src/nm-device-bt.c:325
+#, c-format
+msgid "CDMA connection %d"
+msgstr "CDMA ryšys %d"
+
+#: ../src/modem-manager/nm-modem-gsm.c:547 ../src/nm-device-bt.c:321
+#, c-format
+msgid "GSM connection %d"
+msgstr "GSM ryšys %d"
+
+#: ../src/nm-device-bond.c:191
+#, c-format
+msgid "Bond connection %d"
+msgstr "Susieti ryšį %d"
+
+#: ../src/nm-device-bt.c:296
+#, c-format
+msgid "PAN connection %d"
+msgstr "PAN ryšys %d"
+
+#: ../src/nm-device-bt.c:329
+#, c-format
+msgid "DUN connection %d"
+msgstr "DUN ryšys %d"
+
+#: ../src/nm-device-ethernet.c:1326
+#, c-format
+msgid "PPPoE connection %d"
+msgstr "PPPoE ryšys %d"
+
+#: ../src/nm-device-ethernet.c:1326 ../src/settings/nm-settings-utils.c:50
+#, c-format
+msgid "Wired connection %d"
+msgstr "Laidinis ryšys %d"
+
+#: ../src/nm-device-infiniband.c:303
+#, c-format
+msgid "InfiniBand connection %d"
+msgstr "InfiniBand ryšys %d"
+
+#: ../src/nm-device-olpc-mesh.c:293
+#, c-format
+msgid "Mesh %d"
+msgstr "Susiejimas %d"
+
+#: ../src/nm-device-vlan.c:362
+#, c-format
+msgid "VLAN connection %d"
+msgstr "VLAN ryšys %d"
+
+#: ../src/nm-manager.c:661
+#, c-format
+msgid "VPN connection %d"
+msgstr "VPN ryšys %d"
+
+#: ../src/nm-netlink-monitor.c:148 ../src/nm-netlink-monitor.c:272
+#: ../src/nm-netlink-monitor.c:695
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "klaida apdorojant netlink pranešimą: %s"
+
+#: ../src/nm-netlink-monitor.c:251
+msgid "error occurred while waiting for data on socket"
+msgstr "laukiant lizde duomenų įvyko klaida"
+
+#: ../src/nm-netlink-monitor.c:296
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "nepavyko prisijungti prie netlink saito būsenai stebėti: %s"
+
+#: ../src/nm-netlink-monitor.c:307
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "nepavyko įjungti netlink valdiklio įgaliojimams perduoti: %s"
+
+#: ../src/nm-netlink-monitor.c:330 ../src/nm-netlink-monitor.c:390
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "nepavyko rezervuoti netlink valdiklio saito būsenai stebėti: %s"
+
+#: ../src/nm-netlink-monitor.c:415
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "nepavyko rezervuoti netlink saito podėlio saito būsenai stebėti: %s"
+
+#: ../src/nm-netlink-monitor.c:542
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "nepavyko prisijungti prie netlink grupės: %s"
+
+#: ../src/nm-netlink-monitor.c:671 ../src/nm-netlink-monitor.c:684
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "klaida atnaujinant saito podėlį: %s"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:93
 msgid "System"
 msgstr "Sistema"
 
-#~ msgid "Type"
-#~ msgstr "Tipas"
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3634
+msgid "Bond"
+msgstr "Susieti"
 
-#~ msgid "Name"
-#~ msgstr "Pavadinimas"
+#~ msgid "SCOPE"
+#~ msgstr "SRITIS"
 
-#~ msgid "User connections:\n"
-#~ msgstr "Naudotojo ryšiai:\n"
+#~ msgid "DBUS-SERVICE"
+#~ msgstr "DBUS-TARNYBA"
 
-#~ msgid "System-wide connections"
+#~ msgid "system"
+#~ msgstr "sisteminis"
+
+#~ msgid "user"
+#~ msgstr "naudotojo"
+
+#~ msgid "System connections"
 #~ msgstr "Sistemos ryšiai"
 
-#~ msgid "Default"
-#~ msgstr "Numatyta"
+#~ msgid "User connections"
+#~ msgstr "Naudotojo ryšiai"
 
-#~ msgid "Service"
-#~ msgstr "Tarnyba"
+#~ msgid "Error: Obtaining active connection for '%s' failed."
+#~ msgstr "Klaida: nepavyko „%s“ gauti aktyvaus ryšio."
 
-#~ msgid "%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d"
-#~ msgstr "%s, %s, dažnis %d MHz, sparta %d Mb/s, stiprumas %d"
+#~ msgid "Error: Could not get user settings."
+#~ msgstr "Klaida: nepavyko gauti naudotojo nustatymų."
 
-#~ msgid "Device"
-#~ msgstr "Įrenginys"
-
-#~ msgid "Driver"
-#~ msgstr "Tvarkyklė"
-
-#~ msgid "State"
-#~ msgstr "Būsena"
-
-#~ msgid "HW Address"
-#~ msgstr "Aparatinis adresas"
-
-#~ msgid ""
-#~ "\n"
-#~ "  Capabilities:\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Galimybės:\n"
-
-#~ msgid "Carrier Detect"
-#~ msgstr "Perdavimo aptikimas"
-
-#~ msgid "Speed"
-#~ msgstr "Sparta"
-
-#~ msgid ""
-#~ "\n"
-#~ "  Wireless Properties\n"
-#~ msgstr ""
-#~ "\n"
-#~ "  Belaidžio ryšio savybės\n"
-
-#~ msgid "WEP Encryption"
-#~ msgstr "WEP šifravimas"
-
-#~ msgid "WPA Encryption"
-#~ msgstr "WPA šifravimas"
-
-#~ msgid "WPA2 Encryption"
-#~ msgstr "WPA2 šifravimas"
-
-#~ msgid "TKIP cipher"
-#~ msgstr "TKIP šifras"
-
-#~ msgid "CCMP cipher"
-#~ msgstr "CCMP šifras"
-
-#~ msgid ""
-#~ "\n"
-#~ "  Wireless Access Points %s\n"
-#~ msgstr ""
-#~ "\n"
-#~ "  Belaidžiai prieigos taškai %s\n"
-
-#~ msgid "(* = current AP)"
-#~ msgstr "(* = dabartinis prieigos taškas)"
-
-#~ msgid ""
-#~ "\n"
-#~ "  Wired Properties\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Laidinio ryšio savybės\n"
-
-#~ msgid "Carrier"
-#~ msgstr "Perdavimas"
-
-#~ msgid ""
-#~ "\n"
-#~ "  IPv4 Settings:\n"
-#~ msgstr ""
-#~ "\n"
-#~ "  IPv4 nustatymai:\n"
-
-#~ msgid "Address"
-#~ msgstr "Adresas"
-
-#~ msgid "Prefix"
-#~ msgstr "Priešdėlis"
-
-#~ msgid "Gateway"
-#~ msgstr "Šliuzas"
-
-#~ msgid "Device:"
-#~ msgstr "Įrenginys:"
-
-#~ msgid "Error: hwaddr has to be specified."
-#~ msgstr "Klaida: turi būti nurodytas hwaddr."
-
-#~ msgid "AP parameters"
-#~ msgstr "Prieigos taško parametrai"
-
-#~ msgid "Frequency:"
-#~ msgstr "Dažnis:"
-
-#~ msgid "Mode:"
-#~ msgstr "Veiksena:"
-
-#~ msgid "Ad-hoc"
-#~ msgstr "Ad-hoc"
-
-#~ msgid "Maximal bitrate:"
-#~ msgstr "Didžiausias galimas bitų dažnis:"
-
-#~ msgid "Strength:"
-#~ msgstr "Stiprumas:"
-
-#~ msgid "Flags:"
-#~ msgstr "Požymiai:"
-
-#~ msgid "privacy"
-#~ msgstr "privatumas"
-
-#~ msgid "WPA flags:"
-#~ msgstr "WPA požymiai:"
-
-#~ msgid "RSN flags:"
-#~ msgstr "RSN požymiai:"
-
-#~ msgid "NM running:"
-#~ msgstr "NM veikimas:"
-
-#~ msgid "NM state:"
-#~ msgstr "NM būsena"
-
-#~ msgid "NM wireless hardware:"
-#~ msgstr "NM belaidė įranga:"
-
-#~ msgid "NM wireless:"
-#~ msgstr "NM belaidis:"
-
-#~ msgid "NM WWAN hardware:"
-#~ msgstr "NM WWAN įranga:"
+#~ msgid "IP4-SETTINGS"
+#~ msgstr "IP4-PARAMETRAI"
