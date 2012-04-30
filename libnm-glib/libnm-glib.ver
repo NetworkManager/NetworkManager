@@ -177,11 +177,11 @@ global:
 	nm_ip6_config_new;
 	nm_ip6_route_object_array_get_type;
 	nm_object_array_get_type;
+	nm_object_error_get_type;
+	nm_object_error_quark;
 	nm_object_get_connection;
 	nm_object_get_path;
 	nm_object_get_type;
-	nm_object_error_get_type;
-	nm_object_error_quark;
 	nm_remote_connection_commit_changes;
 	nm_remote_connection_delete;
 	nm_remote_connection_get_secrets;
