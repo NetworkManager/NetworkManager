@@ -133,7 +133,7 @@ NetworkManager
 .br
 Use this object to inquire and change state of NetworkManager.
 .TP
-.SS \fICOMMAND\fP := { status | enable | sleep | wifi | wwan }
+.SS \fICOMMAND\fP := { status | permissions | enable | sleep | wifi | wwan }
 .sp
 .RS
 .TP
@@ -145,6 +145,19 @@ command is provided to \fInm\fP object.
 .nf
 \fBReference to D-Bus:\fP
 No simple reference.
+.fi
+.TP
+.B permissions
+.br
+Show the permissions a caller has for various authenticated operations that
+NetworkManager provides, like enable/disable networking, changing Wi-Fi, WWAN,
+and WiMAX state, modifying connections, etc.
+.br
+.nf
+\fBReference to D-Bus:\fP
+interface: org.freedesktop.NetworkManager
+method:    GetPermissions
+arguments: none
 .fi
 .TP
 .B enable [true|false]

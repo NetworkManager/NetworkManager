@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2011 Red Hat, Inc.
+ * (C) Copyright 2010 - 2012 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -57,6 +57,16 @@ static NmcOutputField nmc_fields_nm_status[] = {
 #define NMC_FIELDS_NM_WWAN           "WWAN"
 #define NMC_FIELDS_NM_WIMAX          "WIMAX"
 
+/* Available fields for 'nm permissions' */
+static NmcOutputField nmc_fields_nm_permissions[] = {
+	{"PERMISSION",     N_("PERMISSION"),      57, NULL, 0},  /* 0 */
+	{"VALUE",          N_("VALUE"),           10, NULL, 0},  /* 1 */
+	{NULL,             NULL,                  0, NULL, 0}
+};
+#define NMC_FIELDS_NM_PERMISSIONS_ALL     "PERMISSION,VALUE"
+#define NMC_FIELDS_NM_PERMISSIONS_COMMON  "PERMISSION,VALUE"
+
+
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
 
@@ -66,18 +76,20 @@ usage (void)
 	fprintf (stderr,
 	         _("Usage: nmcli nm { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	         "  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n\n"
+	         "  COMMAND := { status | permissions | enable | sleep | wifi | wwan | wimax }\n\n"
 #else
-	         "  COMMAND := { status | enable | sleep | wifi | wwan }\n\n"
+	         "  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n\n"
 #endif
 	         "  status\n"
+	         "  permissions\n"
 	         "  enable [true|false]\n"
 	         "  sleep [true|false]\n"
 	         "  wifi [on|off]\n"
 	         "  wwan [on|off]\n"
 #if WITH_WIMAX
-	         "  wimax [on|off]\n\n"
+	         "  wimax [on|off]\n"
 #endif
+	         "\n"
 	         ));
 }
 
@@ -203,6 +215,129 @@ error:
 	return nmc->return_value;
 }
 
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI        "org.freedesktop.NetworkManager.enable-disable-wifi"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN        "org.freedesktop.NetworkManager.enable-disable-wwan"
+#define NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX       "org.freedesktop.NetworkManager.enable-disable-wimax"
+#define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
+#define NM_AUTH_PERMISSION_NETWORK_CONTROL            "org.freedesktop.NetworkManager.network-control"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED       "org.freedesktop.NetworkManager.wifi.share.protected"
+#define NM_AUTH_PERMISSION_WIFI_SHARE_OPEN            "org.freedesktop.NetworkManager.wifi.share.open"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM     "org.freedesktop.NetworkManager.settings.modify.system"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN        "org.freedesktop.NetworkManager.settings.modify.own"
+#define NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME   "org.freedesktop.NetworkManager.settings.modify.hostname"
+
+static const char *
+permission_to_string (NMClientPermission perm)
+{
+	switch (perm) {
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+	case NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX:
+		return NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
+	case NM_CLIENT_PERMISSION_SLEEP_WAKE:
+		return NM_AUTH_PERMISSION_SLEEP_WAKE;
+	case NM_CLIENT_PERMISSION_NETWORK_CONTROL:
+		return NM_AUTH_PERMISSION_NETWORK_CONTROL;
+	case NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED:
+		return NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
+	case NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN:
+		return NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
+	case NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME:
+		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME;
+	default:
+		return _("unknown");
+	}
+}
+
+static const char *
+permission_result_to_string (NMClientPermissionResult perm_result)
+{
+	
+	switch (perm_result) {
+	case NM_CLIENT_PERMISSION_RESULT_YES:
+		return _("yes");
+	case NM_CLIENT_PERMISSION_RESULT_NO:
+		return _("no");
+	case NM_CLIENT_PERMISSION_RESULT_AUTH:
+		return _("auth");
+	default:
+		return _("unknown");
+	}
+}
+
+static NMCResultCode
+show_nm_permissions (NmCli *nmc)
+{
+	NMClientPermission perm;
+	GError *error = NULL;
+	const char *fields_str;
+	const char *fields_all =    NMC_FIELDS_NM_PERMISSIONS_ALL;
+	const char *fields_common = NMC_FIELDS_NM_PERMISSIONS_COMMON;
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+		fields_str = fields_common;
+	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+		fields_str = fields_all;
+	else
+		fields_str = nmc->required_fields;
+
+	nmc->allowed_fields = nmc_fields_nm_permissions;
+	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+
+	if (error) {
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'nm permissions': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'nm permissions': %s; allowed fields: %s"), error->message, NMC_FIELDS_NM_PERMISSIONS_ALL);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return nmc->return_value;
+	}
+
+	if (!nmc_is_nm_running (nmc, &error)) {
+		if (error) {
+			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			g_error_free (error);
+		} else {
+			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		}
+		goto error;
+	}
+
+	nmc->get_client (nmc); /* create NMClient */
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+	nmc->print_fields.header_name = _("NetworkManager permissions");
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
+		NMClientPermissionResult perm_result = nm_client_get_permission_result (nmc->client, perm);
+
+		set_val_str (nmc->allowed_fields, 0, permission_to_string (perm));
+		set_val_str (nmc->allowed_fields, 1, permission_result_to_string (perm_result));
+		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
+		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+	}
+	return NMC_RESULT_SUCCESS;
+
+error:
+	return nmc->return_value;
+}
+
 /* libnm-glib doesn't provide API fro Sleep method - implement D-Bus call ourselves */
 static void networking_set_sleep (NmCli *nmc, gboolean in_sleep)
 {
@@ -266,6 +401,11 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = show_nm_status (nmc);
+		}
+		else if (matches (*argv, "permissions") == 0) {
+			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
+				goto opt_error;
+			nmc->return_value = show_nm_permissions (nmc);
 		}
 		else if (matches (*argv, "enable") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
