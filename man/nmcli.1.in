@@ -133,7 +133,7 @@ NetworkManager
 .br
 Use this object to inquire and change state of NetworkManager.
 .TP
-.SS \fICOMMAND\fP := { status | permissions | enable | sleep | wifi | wwan }
+.SS \fICOMMAND\fP := { status | permissions | enable | sleep | wifi | wwan | wimax }
 .sp
 .RS
 .TP
@@ -203,6 +203,18 @@ No simple reference.
 Inquire or set status of WWAN in NetworkManager. If no arguments are supplied,
 WWAN status is printed; \fIon\fP enables WWAN; \fIoff\fP disables WWAN.
 .br
+.nf
+\fBReference to D-Bus:\fP
+No simple reference.
+.fi
+.TP
+.B wimax [on|off]
+.br
+Inquire or set status of WiMAX in NetworkManager. If no arguments are supplied,
+WiMAX status is printed; \fIon\fP enables WiMAX; \fIoff\fP disables WiMAX.
+.br
+Note: WiMAX support is a compile-time decision, so it may be unavailable on some
+installations.
 .nf
 \fBReference to D-Bus:\fP
 No simple reference.
