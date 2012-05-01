@@ -137,6 +137,8 @@ gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 
+guint nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self);
+
 gboolean nm_supplicant_interface_get_has_credentials_request (NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,

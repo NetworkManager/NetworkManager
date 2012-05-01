@@ -85,6 +85,7 @@ typedef struct {
 	gboolean              is_wireless;
 	gboolean              has_credreq;  /* Whether querying 802.1x credentials is supported */
 	gboolean              fast_supported;
+	guint32               max_scan_ssids;
 
 	char *                object_path;
 	guint32               state;
@@ -503,6 +504,44 @@ wpas_iface_scan_done (DBusGProxy *proxy,
 }
 
 static void
+parse_capabilities (NMSupplicantInterface *self, GHashTable *props)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	GValue *value;
+	gboolean have_active = FALSE, have_ssid = FALSE;
+
+	g_return_if_fail (props != NULL);
+
+	value = g_hash_table_lookup (props, "Scan");
+	if (value && G_VALUE_HOLDS (value, G_TYPE_STRV)) {
+		const char **vals = g_value_get_boxed (value);
+		const char **iter = vals;
+
+		while (iter && *iter && (!have_active || !have_ssid)) {
+			if (g_strcmp0 (*iter, "active") == 0)
+				have_active = TRUE;
+			else if (g_strcmp0 (*iter, "ssid") == 0)
+				have_ssid = TRUE;
+			iter++;
+		}
+	}
+
+	value = g_hash_table_lookup (props, "MaxScanSSID");
+	if (value && G_VALUE_HOLDS (value, G_TYPE_INT)) {
+		/* We need active scan and SSID probe capabilities to care about MaxScanSSIDs */
+		if (have_active && have_ssid) {
+			/* wpa_supplicant's WPAS_MAX_SCAN_SSIDS value is 16, but for speed
+			 * and to ensure we don't disclose too many SSIDs from the hidden
+			 * list, we'll limit to 5.
+			 */
+			priv->max_scan_ssids = CLAMP (g_value_get_int (value), 0, 5);
+			nm_log_info (LOGD_SUPPLICANT, "(%s) supports %d scan SSIDs",
+			             priv->dev, priv->max_scan_ssids);
+		}
+	}
+}
+
+static void
 wpas_iface_properties_changed (DBusGProxy *proxy,
                                GHashTable *props,
                                gpointer user_data)
@@ -526,6 +565,10 @@ wpas_iface_properties_changed (DBusGProxy *proxy,
 		for (i = 0; paths && (i < paths->len); i++)
 			handle_new_bss (self, g_ptr_array_index (paths, i), NULL);
 	}
+
+	value = g_hash_table_lookup (props, "Capabilities");
+	if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_VARIANT))
+		parse_capabilities (self, g_value_get_boxed (value));
 }
 
 static void
@@ -1257,6 +1300,15 @@ nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
+}
+
+guint
+nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
+{
+	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), 0);
+
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->max_scan_ssids;
 }
 
 /*******************************************************************/
