@@ -68,6 +68,7 @@
 #include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
 #include "nm-settings-utils.h"
+#include "nm-connection-provider.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -110,6 +111,12 @@ static void impl_settings_save_hostname (NMSettings *self,
 
 static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
 
+static void connection_provider_init (NMConnectionProvider *cp_class);
+
+G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_init))
+
+
 typedef struct {
 	NMDBusManager *dbus_mgr;
 	DBusGConnection *bus;
@@ -126,8 +133,6 @@ typedef struct {
 	GHashTable *connections;
 	GSList *unmanaged_specs;
 } NMSettingsPrivate;
-
-G_DEFINE_TYPE (NMSettings, nm_settings, G_TYPE_OBJECT)
 
 #define NM_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTINGS, NMSettingsPrivate))
 
@@ -1621,6 +1626,82 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device)
 
 /***************************************************************/
 
+static gint
+best_connection_sort (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	NMSettingsConnection *ac = (NMSettingsConnection *) a;
+	NMSettingsConnection *bc = (NMSettingsConnection *) b;
+	guint64 ats, bts;
+
+	if (!ac && bc)
+		return -1;
+	else if (ac && !bc)
+		return 1;
+	else if (!ac && !bc)
+		return 0;
+
+	g_assert (ac && bc);
+
+	/* In the future we may use connection priorities in addition to timestamps */
+	ats = nm_settings_connection_get_timestamp (ac);
+	bts = nm_settings_connection_get_timestamp (bc);
+
+	if (ats < bts)
+		return -1;
+	else if (ats > bts)
+		return 1;
+	return 0;
+}
+
+static GSList *
+get_best_connections (NMConnectionProvider *provider,
+                      guint max_requested,
+                      const char *ctype1,
+                      const char *ctype2,
+                      NMConnectionFilterFunc func,
+                      gpointer func_data)
+{
+	NMSettings *self = NM_SETTINGS (provider);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *sorted = NULL;
+	GHashTableIter iter;
+	NMSettingsConnection *connection;
+	guint added = 0;
+	guint64 oldest = 0;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
+		if (ctype1 && !nm_connection_is_type (NM_CONNECTION (connection), ctype1))
+			continue;
+		if (ctype2 && !nm_connection_is_type (NM_CONNECTION (connection), ctype2))
+			continue;
+		if (func && !func (provider, NM_CONNECTION (connection), func_data))
+			continue;
+
+		/* Don't bother with a connection that's older than the oldest one in the list */
+		if (   max_requested
+		    && added >= max_requested
+		    && nm_settings_connection_get_timestamp (connection) <= oldest)
+			continue;
+
+		/* List is sorted with oldest first */
+		sorted = g_slist_insert_sorted_with_data (sorted, connection, best_connection_sort, NULL);
+		added++;
+
+		if (max_requested && added > max_requested) {
+			/* Over the limit, remove the oldest one */
+			sorted = g_slist_delete_link (sorted, sorted);
+			added--;
+		}
+
+		oldest = nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (sorted->data));
+	}
+
+	return g_slist_reverse (sorted);
+}
+
+/***************************************************************/
+
 NMSettings *
 nm_settings_new (const char *config_file,
                  const char **plugins,
@@ -1657,6 +1738,12 @@ nm_settings_new (const char *config_file,
 
 	dbus_g_connection_register_g_object (priv->bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
 	return self;
+}
+
+static void
+connection_provider_init (NMConnectionProvider *cp_class)
+{
+    cp_class->get_best_connections = get_best_connections;
 }
 
 static void
