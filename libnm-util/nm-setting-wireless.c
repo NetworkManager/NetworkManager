@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2012 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -80,6 +80,7 @@ typedef struct {
 	guint32 mtu;
 	GSList *seen_bssids;
 	char *security;
+	gboolean hidden;
 } NMSettingWirelessPrivate;
 
 enum {
@@ -97,6 +98,7 @@ enum {
 	PROP_MTU,
 	PROP_SEEN_BSSIDS,
 	PROP_SEC,
+	PROP_HIDDEN,
 
 	LAST_PROP
 };
@@ -482,6 +484,20 @@ nm_setting_wireless_get_security (NMSettingWireless *setting)
 }
 
 /**
+ * nm_setting_wireless_get_hidden:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns: the #NMSettingWireless:hidden property of the setting
+ **/
+gboolean
+nm_setting_wireless_get_hidden (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->hidden;
+}
+
+/**
  * nm_setting_wireless_add_seen_bssid:
  * @setting: the #NMSettingWireless
  * @bssid: the new BSSID to add to the list
@@ -770,6 +786,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->security);
 		priv->security = g_value_dup_string (value);
 		break;
+	case PROP_HIDDEN:
+		priv->hidden = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -821,6 +840,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SEC:
 		g_value_set_string (value, nm_setting_wireless_get_security (setting));
+		break;
+	case PROP_HIDDEN:
+		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1082,4 +1104,27 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						  NM_SETTING_WIRELESS_SECURITY_SETTING_NAME " setting.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWireless:hidden:
+	 *
+	 * If %TRUE, indicates this network is a non-broadcasting network that
+	 * hides its SSID.  In this case various workarounds may take place, such
+	 * as probe-scanning the SSID for more reliable network discovery.  However,
+	 * these workarounds expose inherent insecurities with hidden SSID networks,
+	 * and thus hidden SSID networks should be used with caution.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_HIDDEN,
+		 g_param_spec_boolean (NM_SETTING_WIRELESS_HIDDEN,
+		                       "Hidden",
+		                       "If TRUE, indicates this network is a non-broadcasting "
+		                       "network that hides its SSID.  In this case various "
+		                       "workarounds may take place, such as probe-scanning "
+		                       "the SSID for more reliable network discovery.  "
+		                       "However, these workarounds expose inherent "
+		                       "insecurities with hidden SSID networks, and thus "
+		                       "hidden SSID networks should be used with caution.",
+		                       FALSE,
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

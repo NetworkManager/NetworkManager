@@ -76,6 +76,7 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_MTU         "mtu"
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_SEC         "security"
+#define NM_SETTING_WIRELESS_HIDDEN      "hidden"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -122,6 +123,7 @@ const GByteArray *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless 
 const GSList     *nm_setting_wireless_get_mac_address_blacklist (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_security           (NMSettingWireless *setting);
+gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);
 
 gboolean          nm_setting_wireless_add_seen_bssid         (NMSettingWireless *setting,
 															  const char *bssid);

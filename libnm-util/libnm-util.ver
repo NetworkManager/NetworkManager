@@ -435,6 +435,7 @@ global:
 	nm_setting_wireless_get_bssid;
 	nm_setting_wireless_get_channel;
 	nm_setting_wireless_get_cloned_mac_address;
+	nm_setting_wireless_get_hidden;
 	nm_setting_wireless_get_mac_address;
 	nm_setting_wireless_get_mac_address_blacklist;
 	nm_setting_wireless_get_mode;
