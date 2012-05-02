@@ -1202,8 +1202,18 @@ string_to_gvalue (const char *str)
 	return val;
 }
 
+static GValue *
+byte_array_array_to_gvalue (const GPtrArray *array)
+{
+	GValue *val = g_slice_new0 (GValue);
+
+	g_value_init (val, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR);
+	g_value_set_boxed (val, array);
+	return val;
+}
+
 gboolean
-nm_supplicant_interface_request_scan (NMSupplicantInterface * self)
+nm_supplicant_interface_request_scan (NMSupplicantInterface *self, const GPtrArray *ssids)
 {
 	NMSupplicantInterfacePrivate *priv;
 	NMSupplicantInfo *info;
@@ -1217,6 +1227,8 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface * self)
 	/* Scan parameters */
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, destroy_gvalue);
 	g_hash_table_insert (hash, "Type", string_to_gvalue ("active"));
+	if (ssids)
+		g_hash_table_insert (hash, "SSIDs", byte_array_array_to_gvalue (ssids));
 
 	info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
 	call = dbus_g_proxy_begin_call (priv->iface_proxy, "Scan",

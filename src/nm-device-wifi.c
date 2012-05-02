@@ -153,8 +153,6 @@ struct _NMDeviceWifiPrivate {
 	NMDeviceWifiCapabilities capabilities;
 };
 
-static gboolean request_wireless_scan (gpointer user_data);
-
 static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
 
 static void cancel_pending_scan (NMDeviceWifi *self);
@@ -1545,19 +1543,101 @@ check_scanning_allowed (NMDeviceWifi *self)
 }
 
 static gboolean
+hidden_filter_func (NMConnectionProvider *provider,
+                    NMConnection *connection,
+                    gpointer user_data)
+{
+	NMSettingWireless *s_wifi;
+
+	s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (connection);
+	return s_wifi ? nm_setting_wireless_get_hidden (s_wifi) : FALSE;
+}
+
+static GPtrArray *
+build_hidden_probe_list (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->supplicant.iface);
+	NMConnectionProvider *provider = nm_device_get_connection_provider (NM_DEVICE (self));
+	GSList *connections, *iter;
+	GPtrArray *ssids = NULL;
+	static GByteArray *nullssid = NULL;
+
+	/* Need at least two: wildcard SSID and one or more hidden SSIDs */
+	if (max_scan_ssids < 2)
+		return NULL;
+
+	/* Static wildcard SSID used for every scan */
+	if (G_UNLIKELY (nullssid == NULL))
+		nullssid = g_byte_array_new ();
+
+	connections = nm_connection_provider_get_best_connections (provider,
+	                                                           max_scan_ssids - 1,
+	                                                           NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                           NULL,
+	                                                           hidden_filter_func,
+	                                                           NULL);
+	if (connections && connections->data) {
+		ssids = g_ptr_array_sized_new (max_scan_ssids - 1);
+		g_ptr_array_add (ssids, nullssid);  /* Add wildcard SSID */
+	}
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = iter->data;
+		NMSettingWireless *s_wifi;
+		const GByteArray *ssid;
+
+		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (connection);
+		g_assert (s_wifi);
+		ssid = nm_setting_wireless_get_ssid (s_wifi);
+		g_assert (ssid);
+		g_ptr_array_add (ssids, (gpointer) ssid);
+	}
+	g_slist_free (connections);
+
+	return ssids;
+}
+
+static gboolean
 request_wireless_scan (gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean backoff = FALSE;
+	GPtrArray *ssids = NULL;
 
 	if (check_scanning_allowed (self)) {
 		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scanning requested",
 		            nm_device_get_iface (NM_DEVICE (self)));
 
-		if (nm_supplicant_interface_request_scan (priv->supplicant.iface)) {
+		ssids = build_hidden_probe_list (self);
+
+		if (nm_logging_level_enabled (LOGL_DEBUG)) {
+			if (ssids) {
+				guint i;
+				char *foo;
+
+				for (i = 0; i < ssids->len; i++) {
+					foo = nm_utils_ssid_to_utf8 (g_ptr_array_index (ssids, i));
+					nm_log_dbg (LOGD_WIFI_SCAN, "(%s): (%d) probe scanning SSID '%s'",
+					            nm_device_get_iface (NM_DEVICE (self)),
+					            i, foo ? foo : "<hidden>");
+					g_free (foo);
+				}
+			} else {
+				nm_log_dbg (LOGD_WIFI_SCAN, "(%s): no SSIDs to probe scan",
+				            nm_device_get_iface (NM_DEVICE (self)));
+			}
+		}
+
+		if (nm_supplicant_interface_request_scan (priv->supplicant.iface, ssids)) {
 			/* success */
 			backoff = TRUE;
+		}
+
+		if (ssids) {
+			/* Elements owned by the connections, so we don't free them here */
+			g_ptr_array_free (ssids, TRUE);
 		}
 	} else {
 		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan requested but not allowed at this time",

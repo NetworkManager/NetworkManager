@@ -127,7 +127,7 @@ const char * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
 const char *nm_supplicant_interface_get_object_path (NMSupplicantInterface * iface);
 
-gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self);
+gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self, const GPtrArray *ssids);
 
 guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 
