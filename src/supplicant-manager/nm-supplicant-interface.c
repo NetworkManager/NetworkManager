@@ -50,6 +50,8 @@ static void wpas_iface_scan_done (DBusGProxy *proxy,
                                   gboolean success,
                                   gpointer user_data);
 
+static void wpas_iface_get_props (NMSupplicantInterface *self);
+
 #define NM_SUPPLICANT_INTERFACE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                                  NM_TYPE_SUPPLICANT_INTERFACE, \
                                                  NMSupplicantInterfacePrivate))
@@ -86,6 +88,7 @@ typedef struct {
 	gboolean              has_credreq;  /* Whether querying 802.1x credentials is supported */
 	gboolean              fast_supported;
 	guint32               max_scan_ssids;
+	guint32               ready_count;
 
 	char *                object_path;
 	guint32               state;
@@ -407,7 +410,12 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 	if (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY)
 		g_return_if_fail (new_state > NM_SUPPLICANT_INTERFACE_STATE_READY);
 
-	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
+		/* Get properties again to update to the actual wpa_supplicant
+		 * interface state.
+		 */
+		wpas_iface_get_props (self);
+	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		/* Cancel all pending calls when going down */
 		cancel_all_callbacks (priv->other_pcalls);
 		cancel_all_callbacks (priv->assoc_pcalls);
@@ -547,6 +555,7 @@ wpas_iface_properties_changed (DBusGProxy *proxy,
                                gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 	GValue *value;
 
 	value = g_hash_table_lookup (props, "Scanning");
@@ -554,8 +563,16 @@ wpas_iface_properties_changed (DBusGProxy *proxy,
 		set_scanning (self, g_value_get_boolean (value));
 
 	value = g_hash_table_lookup (props, "State");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		set_state_from_string (self, g_value_get_string (value));
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		if (priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY) {
+			/* Only transition to actual wpa_supplicant interface states (ie,
+			 * anything > READY) after the NMSupplicantInterface has had a
+			 * chance to initialize, which is signalled by entering the READY
+			 * state.
+			 */
+			set_state_from_string (self, g_value_get_string (value));
+		}
+	}
 
 	value = g_hash_table_lookup (props, "BSSs");
 	if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH)) {
@@ -569,6 +586,18 @@ wpas_iface_properties_changed (DBusGProxy *proxy,
 	value = g_hash_table_lookup (props, "Capabilities");
 	if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_VARIANT))
 		parse_capabilities (self, g_value_get_boxed (value));
+}
+
+static void
+iface_check_ready (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->ready_count && priv->state < NM_SUPPLICANT_INTERFACE_STATE_READY) {
+		priv->ready_count--;
+		if (priv->ready_count == 0)
+			set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
+	}
 }
 
 static void
@@ -588,6 +617,7 @@ iface_get_props_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
+	iface_check_ready (info->interface);
 }
 
 static void
@@ -672,6 +702,8 @@ iface_check_netreply_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer us
 			        priv->has_credreq ? "supports" : "does not support");
 	}
 	g_clear_error (&error);
+
+	iface_check_ready (info->interface);
 }
 
 static void
@@ -764,13 +796,10 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 	                                               WPAS_DBUS_SERVICE,
 	                                               path,
 	                                               DBUS_INTERFACE_PROPERTIES);
-	/* Get initial properties */
+	/* Get initial properties and check whether NetworkReply is supported */
 	wpas_iface_get_props (self);
-
-	/* Check whether NetworkReply is supported */
 	wpas_iface_check_network_reply (self);
-
-	set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
+	priv->ready_count = 2;
 }
 
 static void
