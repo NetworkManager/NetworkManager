@@ -61,6 +61,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
+#include "nm-connection-provider.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -226,6 +227,8 @@ typedef struct {
 
 	/* master interface for bridge, bond, vlan, etc */
 	NMDevice *	master;
+
+	NMConnectionProvider *con_provider;
 } NMDevicePrivate;
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
@@ -583,6 +586,30 @@ nm_device_get_type_desc (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
+}
+
+void
+nm_device_set_connection_provider (NMDevice *device,
+                                   NMConnectionProvider *provider)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (device != NULL);
+	g_return_if_fail (provider != NULL);
+	g_return_if_fail (NM_IS_CONNECTION_PROVIDER (provider));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	g_return_if_fail (priv->con_provider == NULL);
+
+	priv->con_provider = provider;
+}
+
+NMConnectionProvider *
+nm_device_get_connection_provider (NMDevice *device)
+{
+	g_return_val_if_fail (device != NULL, NULL);
+
+	return NM_DEVICE_GET_PRIVATE (device)->con_provider;
 }
 
 /**

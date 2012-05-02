@@ -67,4 +67,6 @@ gboolean nm_device_dhcp4_renew (NMDevice *device, gboolean release);
 
 gboolean nm_device_match_ip_config (NMDevice *device, NMConnection *connection);
 
+NMConnectionProvider *nm_device_get_connection_provider (NMDevice *device);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

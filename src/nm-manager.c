@@ -1678,6 +1678,8 @@ add_device (NMManager *self, NMDevice *device)
 		return;
 	}
 
+	nm_device_set_connection_provider (device, NM_CONNECTION_PROVIDER (priv->settings));
+
 	priv->devices = g_slist_append (priv->devices, device);
 
 	g_signal_connect (device, "state-changed",

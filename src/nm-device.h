@@ -34,6 +34,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-connection.h"
 #include "nm-rfkill.h"
+#include "settings/nm-connection-provider.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
@@ -262,6 +263,8 @@ gboolean nm_device_get_firmware_missing (NMDevice *self);
 gboolean nm_device_activate (NMDevice *device, NMActRequest *req, GError **error);
 
 gboolean nm_device_disconnect (NMDevice *device, GError **error);
+
+void nm_device_set_connection_provider (NMDevice *device, NMConnectionProvider *provider);
 
 G_END_DECLS
 
