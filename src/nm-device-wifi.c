@@ -68,7 +68,7 @@ static gboolean impl_device_get_access_points (NMDeviceWifi *device,
 
 
 /* All of these are in seconds */
-#define SCAN_INTERVAL_MIN 0
+#define SCAN_INTERVAL_MIN 3
 #define SCAN_INTERVAL_STEP 20
 #define SCAN_INTERVAL_MAX 120
 
@@ -1724,8 +1724,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            success ? "successful" : "failed");
 
-	if (check_scanning_allowed (self))
-		schedule_scan (self, TRUE);
+	schedule_scan (self, success);
 
 	/* Ensure that old APs get removed, which otherwise only
 	 * happens when there are new BSSes.
