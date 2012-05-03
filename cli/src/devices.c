@@ -1161,6 +1161,16 @@ timeout_cb (gpointer user_data)
 	return FALSE;
 }
 
+static gboolean
+progress_cb (gpointer user_data)
+{
+	NMDevice *device = (NMDevice *) user_data;
+
+	nmc_terminal_show_progress (device ? device_state_to_string (nm_device_get_state (device)) : "");
+
+	return TRUE;
+}
+
 static void
 disconnect_device_cb (NMDevice *device, GError *error, gpointer user_data)
 {
@@ -1176,10 +1186,13 @@ disconnect_device_cb (NMDevice *device, GError *error, gpointer user_data)
 		quit ();
 	} else {
 		state = nm_device_get_state (device);
-		printf (_("Device state: %d (%s)\n"), state, device_state_to_string (state));
 
 		if (nmc->nowait_flag || state == NM_DEVICE_STATE_DISCONNECTED) {
 			/* Don't want to wait or device already disconnected */
+			if (state == NM_DEVICE_STATE_DISCONNECTED && nmc->print_output == NMC_PRINT_PRETTY) {
+				nmc_terminal_erase_line ();
+				printf (_("Device '%s' has been disconnected.\n"), nm_device_get_iface (device));
+			}
 			quit ();
 		} else {
 			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), nmc);
@@ -1282,6 +1295,10 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = !wait;
 	nmc->should_wait = TRUE;
 	nm_device_disconnect (device, disconnect_device_cb, nmc);
+
+	/* Start progress indication */
+	if (nmc->print_output == NMC_PRINT_PRETTY)
+		progress_id = g_timeout_add (120, progress_cb, device);
 
 error:
 	return nmc->return_value;
@@ -1498,16 +1515,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 error:
 	return nmc->return_value;
-}
-
-static gboolean
-progress_cb (gpointer user_data)
-{
-	NMDevice *device = (NMDevice *) user_data;
-
-	nmc_terminal_show_progress (device ? device_state_to_string (nm_device_get_state (device)) : "");
-
-	return TRUE;
 }
 
 static void
