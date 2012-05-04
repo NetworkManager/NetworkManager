@@ -535,7 +535,9 @@ struct nl80211_device_info {
 	guint32 *freqs;
 	int num_freqs;
 	guint32 caps;
-	gboolean can_scan, can_scan_ssid;
+	gboolean can_scan;
+	gboolean can_scan_ssid;
+	gboolean supported;
 	gboolean success;
 };
 
@@ -579,11 +581,24 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		struct nlattr *nl_cmd;
 		int i;
 
-		nla_for_each_nested (nl_cmd,
-				     tb[NL80211_ATTR_SUPPORTED_COMMANDS], i) {
-			guint32 cmd = nla_get_u32 (nl_cmd);
-			if (cmd == NL80211_CMD_TRIGGER_SCAN)
+		nla_for_each_nested (nl_cmd, tb[NL80211_ATTR_SUPPORTED_COMMANDS], i) {
+			switch (nla_get_u32 (nl_cmd)) {
+			case NL80211_CMD_TRIGGER_SCAN:
 				info->can_scan = TRUE;
+				break;
+			case NL80211_CMD_CONNECT:
+			case NL80211_CMD_AUTHENTICATE:
+				/* Only devices that support CONNECT or AUTH actually support
+				 * 802.11, unlike say ipw2x00 (up to at least kernel 3.4) which
+				 * has minimal info support, but no actual command support.
+				 * This check mirrors what wpa_supplicant does to determine
+				 * whether or not to use the nl80211 driver.
+				 */
+				info->supported = TRUE;
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
@@ -720,6 +735,13 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	if (!device_info.success) {
 		nm_log_dbg (LOGD_HW | LOGD_WIFI,
 				    "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
+				    nl80211->parent.iface);
+		goto error;
+	}
+
+	if (!device_info.supported) {
+		nm_log_dbg (LOGD_HW | LOGD_WIFI,
+				    "(%s): driver does not fully support nl80211, falling back to WEXT",
 				    nl80211->parent.iface);
 		goto error;
 	}
