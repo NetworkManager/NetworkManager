@@ -992,7 +992,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 		goto out;
 
 	if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
-		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		nm_log_err (LOGD_DEVICE | LOGD_VPN | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route: %d",
 		            iface, err);
 		goto out;
@@ -1007,7 +1007,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 	err = replace_default_ip4_route (ifindex, int_gw, mss);
 	if (err != 0) {
 		nm_netlink_route_delete (gw_route);
-		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+		nm_log_err (LOGD_DEVICE | LOGD_VPN | LOGD_IP4,
 		            "(%s): failed to set IPv4 default route (pass #2): %d",
 		            iface, err);
 	} else
@@ -1072,7 +1072,7 @@ out:
 }
 
 static struct rtnl_route *
-add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
+add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw, int mss)
 {
 	struct nl_sock *nlh;
 	struct rtnl_route *route = NULL;
@@ -1082,7 +1082,7 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 	g_return_val_if_fail (nlh != NULL, NULL);
 
 	/* Gateway might be over a bridge; try adding a route to gateway first */
-	route = nm_netlink_route_new (ifindex, AF_INET6, 0,
+	route = nm_netlink_route_new (ifindex, AF_INET6, mss,
 	                              NMNL_PROP_SCOPE, RT_SCOPE_LINK,
 	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
 	                              NULL);
@@ -1106,7 +1106,7 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw)
 }
 
 static int
-add_default_ip6_route (int ifindex, const struct in6_addr *gw)
+add_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_sock *nlh;
@@ -1117,7 +1117,7 @@ add_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -ENOMEM);
 
-	route = nm_netlink_route_new (ifindex, AF_INET6, 0,
+	route = nm_netlink_route_new (ifindex, AF_INET6, mss,
 	                              NMNL_PROP_SCOPE, RT_SCOPE_UNIVERSE,
 	                              NMNL_PROP_TABLE, RT_TABLE_MAIN,
 	                              NMNL_PROP_PRIO, 1,
@@ -1150,20 +1150,12 @@ find_static_default_routes (struct rtnl_route *route,
 	return NULL;
 }
 
-/*
- * nm_system_replace_default_ip6_route
- *
- * Replace default IPv6 route with one via the given gateway
- *
- */
-gboolean
-nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
+static int
+replace_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 {
 	GList *def_routes, *iter;
-	struct rtnl_route *route, *gw_route = NULL;
-	gboolean success = FALSE;
+	struct rtnl_route *route;
 	char *iface;
-	int err;
 
 	/* We can't just use NLM_F_REPLACE here like in the IPv4 case, because
 	 * the kernel doesn't like it if we replace the default routes it
@@ -1187,11 +1179,25 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	}
 	g_list_free (def_routes);
 
-	err = add_default_ip6_route (ifindex, gw);
-	if (err == 0)
-		return TRUE;
+	return add_default_ip6_route (ifindex, gw, mss);
+}
 
-	if (err == -NLE_EXIST)
+/*
+ * nm_system_replace_default_ip6_route
+ *
+ * Replace default IPv6 route with one via the given gateway
+ *
+ */
+gboolean
+nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
+{
+	struct rtnl_route *gw_route = NULL;
+	gboolean success = FALSE;
+	char *iface;
+	int err;
+
+	err = replace_default_ip6_route (ifindex, gw, 0);
+	if (err == 0 || err == -NLE_EXIST)
 		return TRUE;
 
 	iface = nm_netlink_index_to_iface (ifindex);
@@ -1206,15 +1212,69 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 	}
 
 	/* Try adding a direct route to the gateway first */
-	gw_route = add_ip6_route_to_gateway (ifindex, gw);
+	gw_route = add_ip6_route_to_gateway (ifindex, gw, 0);
 	if (!gw_route)
 		goto out;
 
 	/* Try adding the original route again */
-	err = add_default_ip6_route (ifindex, gw);
+	err = replace_default_ip6_route (ifindex, gw, 0);
 	if (err != 0) {
 		nm_netlink_route_delete (gw_route);
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to set IPv6 default route (pass #2): %d",
+		            iface, err);
+	} else
+		success = TRUE;
+
+out:
+	if (gw_route)
+		rtnl_route_put (gw_route);
+	g_free (iface);
+	return success;
+}
+
+gboolean
+nm_system_replace_default_ip6_route_vpn (int ifindex,
+                                         const struct in6_addr *ext_gw,
+                                         const struct in6_addr *int_gw,
+                                         guint32 mss,
+                                         int parent_ifindex,
+                                         guint32 parent_mss)
+{
+	struct rtnl_route *gw_route = NULL;
+	struct nl_sock *nlh;
+	gboolean success = FALSE;
+	int err;
+	char *iface;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	err = replace_default_ip6_route (ifindex, int_gw, mss);
+	if (err == 0)
+		return TRUE;
+
+	iface = nm_netlink_index_to_iface (ifindex);
+	if (!iface)
+		goto out;
+
+	if ((err != -NLE_OBJ_NOTFOUND) && (err != -NLE_FAILURE)) {
+		nm_log_err (LOGD_DEVICE | LOGD_VPN | LOGD_IP6,
+		            "(%s): failed to set IPv6 default route: %d",
+		            iface, err);
+		goto out;
+	}
+
+	/* Try adding a direct route to the gateway first */
+	gw_route = add_ip6_route_to_gateway (parent_ifindex, ext_gw, parent_mss);
+	if (!gw_route)
+		goto out;
+
+	/* Try adding the original route again */
+	err = replace_default_ip6_route (ifindex, int_gw, mss);
+	if (err != 0) {
+		nm_netlink_route_delete (gw_route);
+		nm_log_err (LOGD_DEVICE | LOGD_VPN | LOGD_IP6,
 		            "(%s): failed to set IPv6 default route (pass #2): %d",
 		            iface, err);
 	} else

@@ -908,8 +908,6 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 
 	switch (cfg_type) {
 	case NM_DNS_IP_CONFIG_TYPE_VPN:
-		/* FIXME: not quite yet... */
-		g_return_val_if_fail (cfg_type != NM_DNS_IP_CONFIG_TYPE_VPN, FALSE);
 		priv->ip6_vpn_config = config;
 		break;
 	case NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE:

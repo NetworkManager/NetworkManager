@@ -24,7 +24,9 @@
 #include <string.h>
 
 #include "nm-vpn-plugin-utils.h"
+#include "nm-vpn-plugin.h"
 #include "nm-setting-private.h"
+#include "nm-dbus-glib-types.h"
 
 #define DATA_KEY_TAG "DATA_KEY="
 #define DATA_VAL_TAG "DATA_VAL="
@@ -185,4 +187,3 @@ nm_vpn_plugin_utils_get_secret_flags (GHashTable *data,
 	g_free (flag_name);
 	return success;
 }
-

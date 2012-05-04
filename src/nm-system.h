@@ -53,6 +53,13 @@ gboolean		nm_system_replace_default_ip4_route_vpn (int ifindex,
                                                          int parent_ifindex,
                                                          guint32 parent_mss);
 
+gboolean		nm_system_replace_default_ip6_route_vpn (int ifindex,
+                                                         const struct in6_addr *ext_gw,
+                                                         const struct in6_addr *int_gw,
+                                                         guint32 mss,
+                                                         int parent_ifindex,
+                                                         guint32 parent_mss);
+
 struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device,
                                                         guint32 vpn_gw);
 struct rtnl_route *nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,

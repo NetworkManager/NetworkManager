@@ -114,8 +114,28 @@ typedef enum {
 } NMVPNPluginFailure;
 
 
+/*** Generic config ***/
+
+/* string: VPN interface name (tun0, tap0, etc) */
+#define NM_VPN_PLUGIN_CONFIG_TUNDEV      "tundev"
+
+/* string: Login message */
+#define NM_VPN_PLUGIN_CONFIG_BANNER      "banner"
+
 /* uint32 / array of uint8: IP address of the public external VPN gateway (network byte order) */
-#define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY "gateway"
+#define NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY "gateway"
+
+/* uint32: Maximum Transfer Unit that the VPN interface should use */
+#define NM_VPN_PLUGIN_CONFIG_MTU         "mtu"
+
+/* boolean: Has IP4 configuration? */
+#define NM_VPN_PLUGIN_CONFIG_HAS_IP4     "has-ip4"
+
+/* boolean: Has IP6 configuration? */
+#define NM_VPN_PLUGIN_CONFIG_HAS_IP6     "has-ip6"
+
+
+/*** Ip4Config ***/
 
 /* uint32: IP address of the internal gateway of the subnet the VPN interface is
  *         on, if the VPN uses subnet configuration (network byte order)
@@ -142,30 +162,14 @@ typedef enum {
 /* uint32: Message Segment Size that the VPN interface should use */
 #define NM_VPN_PLUGIN_IP4_CONFIG_MSS         "mss"
 
-/* uint32: Maximum Transfer Unit that the VPN interface should use */
-#define NM_VPN_PLUGIN_IP4_CONFIG_MTU         "mtu"
-
-/* string: VPN interface name (tun0, tap0, etc) */
-#define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      "tundev"
-
 /* string: DNS domain name */
 #define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN      "domain"
 
 /* array of strings: DNS domain names */
 #define NM_VPN_PLUGIN_IP4_CONFIG_DOMAINS     "domains"
 
-/* string: Login message */
-#define NM_VPN_PLUGIN_IP4_CONFIG_BANNER      "banner"
-
-/* array of array of uint32: custom routes the client should apply.  NOTE: NM
- *     expects the D-Bus argument signature "aau" here.  i.e., an array of
- *     routes, where each route is a 4-element array of uint32 values.
- *
- *     Each route consists of the following 4 uint32 values, in this order:
- *              1: destination IP address (network byte order)
- *              2: destination prefix (1 - 32 inclusive)
- *              3: IP address of next hop (network byte order)
- *              4: route metric
+/* [ip4 routes]: custom routes the client should apply, in the format used
+ *         by nm_utils_ip4_routes_to/from_gvalue
  */
 #define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES      "routes"
 
@@ -175,5 +179,52 @@ typedef enum {
 /* Deprecated */
 #define NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY   NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY
 
+/* Legacy IP4 items; these are included in the IP4 config by older plugins,
+ * but in the generic config by newer plugins.
+ */
+
+#define NM_VPN_PLUGIN_IP4_CONFIG_BANNER      NM_VPN_PLUGIN_CONFIG_BANNER
+#define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY
+#define NM_VPN_PLUGIN_IP4_CONFIG_MTU         NM_VPN_PLUGIN_CONFIG_MTU
+#define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      NM_VPN_PLUGIN_CONFIG_TUNDEV
+
+
+/*** Ip6Config ***/
+
+/* array of uint8: IP address of the internal gateway of the subnet the VPN interface is
+ *         on, if the VPN uses subnet configuration (network byte order)
+ */
+#define NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY "internal-gateway"
+
+/* array of uint8: internal IP address of the local VPN interface (network byte order) */
+#define NM_VPN_PLUGIN_IP6_CONFIG_ADDRESS     "address"
+
+/* array of uint8: IP address of the other side of Point-to-Point connection if the VPN
+ *         uses Point-to-Point configuration. (network byte order)
+ */
+#define NM_VPN_PLUGIN_IP6_CONFIG_PTP         "ptp"
+
+/* uint32: prefix length of the VPN interface; 1 - 128 inclusive */
+#define NM_VPN_PLUGIN_IP6_CONFIG_PREFIX      "prefix"
+
+/* array of array of uint8: IP addresses of DNS servers for the VPN (network byte order) */
+#define NM_VPN_PLUGIN_IP6_CONFIG_DNS         "dns"
+
+/* uint32: Message Segment Size that the VPN interface should use */
+#define NM_VPN_PLUGIN_IP6_CONFIG_MSS         "mss"
+
+/* string: DNS domain name */
+#define NM_VPN_PLUGIN_IP6_CONFIG_DOMAIN      "domain"
+
+/* array of strings: DNS domain names */
+#define NM_VPN_PLUGIN_IP6_CONFIG_DOMAINS     "domains"
+
+/* [ip6 routes]: custom routes the client should apply, in the format used
+ *         by nm_utils_ip6_routes_to/from_gvalue
+ */
+#define NM_VPN_PLUGIN_IP6_CONFIG_ROUTES      "routes"
+
+/* boolean: prevent this VPN connection from ever getting the default route */
+#define NM_VPN_PLUGIN_IP6_CONFIG_NEVER_DEFAULT "never-default"
 
 #endif /* NETWORK_MANAGER_VPN_H */

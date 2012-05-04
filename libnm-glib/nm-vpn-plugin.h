@@ -91,13 +91,17 @@ typedef struct {
 
 	void (*quit)           (NMVPNPlugin *plugin);
 
+	void (*config)         (NMVPNPlugin *plugin,
+	                        GHashTable  *config);
+
+	void (*ip6_config)     (NMVPNPlugin *plugin,
+	                        GHashTable  *config);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
-	void (*_reserved5) (void);
-	void (*_reserved6) (void);
 } NMVPNPluginClass;
 
 GType  nm_vpn_plugin_get_type       (void);
@@ -115,8 +119,14 @@ void               nm_vpn_plugin_set_login_banner (NMVPNPlugin *plugin,
 void               nm_vpn_plugin_failure        (NMVPNPlugin *plugin,
                                                  NMVPNPluginFailure reason);
 
+void               nm_vpn_plugin_set_config     (NMVPNPlugin *plugin,
+                                                 GHashTable *config);
+
 void               nm_vpn_plugin_set_ip4_config (NMVPNPlugin *plugin,
                                                  GHashTable *ip4_config);
+
+void               nm_vpn_plugin_set_ip6_config (NMVPNPlugin *plugin,
+                                                 GHashTable *ip6_config);
 
 gboolean           nm_vpn_plugin_disconnect     (NMVPNPlugin *plugin,
                                                  GError **err);
