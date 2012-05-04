@@ -64,30 +64,30 @@ typedef struct {
 	GObjectClass parent;
 
 	/* virtual methods */
-	gboolean (*connect)    (NMVPNPlugin   *plugin,
-					    NMConnection  *connection,
-					    GError       **err);
+	gboolean (*connect)      (NMVPNPlugin   *plugin,
+	                          NMConnection  *connection,
+	                          GError       **err);
 
 	gboolean (*need_secrets) (NMVPNPlugin *plugin,
-	                              NMConnection *connection,
-	                              char **setting_name,
-	                              GError **error);
+	                          NMConnection *connection,
+	                          char **setting_name,
+	                          GError **error);
 
-	gboolean (*disconnect) (NMVPNPlugin   *plugin,
-					    GError       **err);
+	gboolean (*disconnect)   (NMVPNPlugin   *plugin,
+	                          GError       **err);
 
 	/* Signals */
 	void (*state_changed)  (NMVPNPlugin *plugin,
-					    NMVPNServiceState state);
+	                        NMVPNServiceState state);
 
 	void (*ip4_config)     (NMVPNPlugin *plugin,
-					    GHashTable  *ip4_config);
+	                        GHashTable  *ip4_config);
 
 	void (*login_banner)   (NMVPNPlugin *plugin,
-					    const char *banner);
+	                        const char *banner);
 
 	void (*failure)        (NMVPNPlugin *plugin,
-					    NMVPNPluginFailure reason);
+	                        NMVPNPluginFailure reason);
 
 	void (*quit)           (NMVPNPlugin *plugin);
 
@@ -107,19 +107,19 @@ GType  nm_vpn_plugin_error_get_type (void);
 DBusGConnection   *nm_vpn_plugin_get_connection (NMVPNPlugin *plugin);
 NMVPNServiceState  nm_vpn_plugin_get_state      (NMVPNPlugin *plugin);
 void               nm_vpn_plugin_set_state      (NMVPNPlugin *plugin,
-									    NMVPNServiceState state);
+                                                 NMVPNServiceState state);
 
 void               nm_vpn_plugin_set_login_banner (NMVPNPlugin *plugin,
-										 const char *banner);
+                                                   const char *banner);
 
 void               nm_vpn_plugin_failure        (NMVPNPlugin *plugin,
-									    NMVPNPluginFailure reason);
+                                                 NMVPNPluginFailure reason);
 
 void               nm_vpn_plugin_set_ip4_config (NMVPNPlugin *plugin,
-									    GHashTable *ip4_config);
+                                                 GHashTable *ip4_config);
 
 gboolean           nm_vpn_plugin_disconnect     (NMVPNPlugin *plugin,
-									    GError **err);
+                                                 GError **err);
 
 G_END_DECLS
 
