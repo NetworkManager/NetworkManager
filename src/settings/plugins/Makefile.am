@@ -1,4 +1,4 @@
-SUBDIRS=keyfile
+SUBDIRS=keyfile example
 
 if TARGET_REDHAT
 SUBDIRS+=ifcfg-rh

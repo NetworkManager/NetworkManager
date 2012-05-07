@@ -756,6 +756,7 @@ src/settings/plugins/ifcfg-suse/Makefile
 src/settings/plugins/keyfile/Makefile
 src/settings/plugins/keyfile/tests/Makefile
 src/settings/plugins/keyfile/tests/keyfiles/Makefile
+src/settings/plugins/example/Makefile
 src/settings/tests/Makefile
 src/wimax/Makefile
 src/backends/Makefile
