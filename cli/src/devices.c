@@ -245,200 +245,6 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
-static const char *
-device_state_to_string (NMDeviceState state)
-{
-	switch (state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-		return _("unmanaged");
-	case NM_DEVICE_STATE_UNAVAILABLE:
-		return _("unavailable");
-	case NM_DEVICE_STATE_DISCONNECTED:
-		return _("disconnected");
-	case NM_DEVICE_STATE_PREPARE:
-		return _("connecting (prepare)");
-	case NM_DEVICE_STATE_CONFIG:
-		return _("connecting (configuring)");
-	case NM_DEVICE_STATE_NEED_AUTH:
-		return _("connecting (need authentication)");
-	case NM_DEVICE_STATE_IP_CONFIG:
-		return _("connecting (getting IP configuration)");
-	case NM_DEVICE_STATE_IP_CHECK:
-		return _("connecting (checking IP connectivity)");
-	case NM_DEVICE_STATE_SECONDARIES:
-		return _("connecting (starting secondary connections)");
-	case NM_DEVICE_STATE_ACTIVATED:
-		return _("connected");
-	case NM_DEVICE_STATE_DEACTIVATING:
-		return _("deactivating");
-	case NM_DEVICE_STATE_FAILED:
-		return _("connection failed");
-	default:
-		return _("unknown");
-	}
-}
-
-static const char *
-device_reason_to_string (NMDeviceStateReason reason)
-{
-	switch (reason) {
-	case NM_DEVICE_STATE_REASON_NONE:
-		return _("No reason given");
-
-	case NM_DEVICE_STATE_REASON_UNKNOWN:
-		return _("Unknown error");
-
-	case NM_DEVICE_STATE_REASON_NOW_MANAGED:
-		return _("Device is now managed");
-
-	case NM_DEVICE_STATE_REASON_NOW_UNMANAGED:
-		return _("Device is now unmanaged");
-
-	case NM_DEVICE_STATE_REASON_CONFIG_FAILED:
-		return _("The device could not be readied for configuration");
-
-	case NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE:
-		return _("IP configuration could not be reserved (no available address, timeout, etc)");
-
-	case NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED:
-		return _("The IP configuration is no longer valid");
-
-	case NM_DEVICE_STATE_REASON_NO_SECRETS:
-		return _("Secrets were required, but not provided");
-
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT:
-		return _("802.1X supplicant disconnected");
-
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED:
-		return _("802.1X supplicant configuration failed");
-
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED:
-		return _("802.1X supplicant failed");
-
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT:
-		return _("802.1X supplicant took too long to authenticate");
-
-	case NM_DEVICE_STATE_REASON_PPP_START_FAILED:
-		return _("PPP service failed to start");
-
-	case NM_DEVICE_STATE_REASON_PPP_DISCONNECT:
-		return _("PPP service disconnected");
-
-	case NM_DEVICE_STATE_REASON_PPP_FAILED:
-		return _("PPP failed");
-
-	case NM_DEVICE_STATE_REASON_DHCP_START_FAILED:
-		return _("DHCP client failed to start");
-
-	case NM_DEVICE_STATE_REASON_DHCP_ERROR:
-		return _("DHCP client error");
-
-	case NM_DEVICE_STATE_REASON_DHCP_FAILED:
-		return _("DHCP client failed");
-
-	case NM_DEVICE_STATE_REASON_SHARED_START_FAILED:
-		return _("Shared connection service failed to start");
-
-	case NM_DEVICE_STATE_REASON_SHARED_FAILED:
-		return _("Shared connection service failed");
-
-	case NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED:
-		return _("AutoIP service failed to start");
-
-	case NM_DEVICE_STATE_REASON_AUTOIP_ERROR:
-		return _("AutoIP service error");
-
-	case NM_DEVICE_STATE_REASON_AUTOIP_FAILED:
-		return _("AutoIP service failed");
-
-	case NM_DEVICE_STATE_REASON_MODEM_BUSY:
-		return _("The line is busy");
-
-	case NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE:
-		return _("No dial tone");
-
-	case NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER:
-		return _("No carrier could be established");
-
-	case NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT:
-		return _("The dialing request timed out");
-
-	case NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED:
-		return _("The dialing attempt failed");
-
-	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
-		return _("Modem initialization failed");
-
-	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
-		return _("Failed to select the specified APN");
-
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
-		return _("Not searching for networks");
-
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
-		return _("Network registration denied");
-
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT:
-		return _("Network registration timed out");
-
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED:
-		return _("Failed to register with the requested network");
-
-	case NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED:
-		return _("PIN check failed");
-
-	case NM_DEVICE_STATE_REASON_FIRMWARE_MISSING:
-		return _("Necessary firmware for the device may be missing");
-
-	case NM_DEVICE_STATE_REASON_REMOVED:
-		return _("The device was removed");
-
-	case NM_DEVICE_STATE_REASON_SLEEPING:
-		return _("NetworkManager went to sleep");
-
-	case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
-		return _("The device's active connection disappeared");
-
-	case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-		return _("Device disconnected by user or client");
-
-	case NM_DEVICE_STATE_REASON_CARRIER:
-		return _("Carrier/link changed");
-
-	case NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED:
-		return _("The device's existing connection was assumed");
-
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE:
-		return _("The supplicant is now available");
-
-	case NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND:
-		return _("The modem could not be found");
-
-	case NM_DEVICE_STATE_REASON_BT_FAILED:
-		return _("The Bluetooth connection failed or timed out");
-
-	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
-		return _("GSM Modem's SIM card not inserted");
-
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
-		return _("GSM Modem's SIM PIN required");
-
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
-		return _("GSM Modem's SIM PUK required");
-
-	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
-		return _("GSM Modem's SIM wrong");
-
-	case NM_DEVICE_STATE_REASON_INFINIBAND_MODE:
-		return _("InfiniBand device does not support connected mode");
-
-        case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
-		return _("A dependency of the connection failed");
-	default:
-		return _("Unknown");
-	}
-}
-
 /* Convert device type to string. Use setting names strings to match with
  * connection type names.
  */
@@ -755,8 +561,8 @@ show_device_info (gpointer data, gpointer user_data)
 			else if (NM_IS_DEVICE_VLAN (device))
 				hwaddr = nm_device_vlan_get_hw_address (NM_DEVICE_VLAN (device));
 
-			state_str = g_strdup_printf ("%d (%s)", state, device_state_to_string (state));
-			reason_str = g_strdup_printf ("%d (%s)", reason, device_reason_to_string (reason));
+			state_str = g_strdup_printf ("%d (%s)", state, nmc_device_state_to_string (state));
+			reason_str = g_strdup_printf ("%d (%s)", reason, nmc_device_reason_to_string (reason));
 
 			nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = nm_device_get_iface (device);
@@ -985,7 +791,7 @@ show_device_status (NMDevice *device, NmCli *nmc)
 {
 	nmc->allowed_fields[0].value = nm_device_get_iface (device);
 	nmc->allowed_fields[1].value = device_type_to_string (device);
-	nmc->allowed_fields[2].value = device_state_to_string (nm_device_get_state (device));
+	nmc->allowed_fields[2].value = nmc_device_state_to_string (nm_device_get_state (device));
 	nmc->allowed_fields[3].value = nm_object_get_path (NM_OBJECT (device));
 
 	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
@@ -1166,7 +972,7 @@ progress_cb (gpointer user_data)
 {
 	NMDevice *device = (NMDevice *) user_data;
 
-	nmc_terminal_show_progress (device ? device_state_to_string (nm_device_get_state (device)) : "");
+	nmc_terminal_show_progress (device ? nmc_device_state_to_string (nm_device_get_state (device)) : "");
 
 	return TRUE;
 }
@@ -1537,7 +1343,7 @@ monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data
 		quit ();
 	} else if (state == NM_DEVICE_STATE_FAILED) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
-		                 reason, device_reason_to_string (reason));
+		                 reason, nmc_device_reason_to_string (reason));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
 	}
