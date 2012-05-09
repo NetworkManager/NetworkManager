@@ -89,6 +89,10 @@ typedef struct {
 	char *iface;
 	int ifindex;
 
+	gboolean has_linklocal;
+	gboolean has_nonlinklocal;
+	guint dhcp_opts;
+
 	char *disable_ip6_path;
 	gboolean disable_ip6_save_valid;
 	gint32 disable_ip6_save;
@@ -414,21 +418,17 @@ state_to_string (NMIP6DeviceState state)
 }
 
 static void
-nm_ip6_device_sync_from_netlink (NMIP6Device *device)
+check_addresses (NMIP6Device *device)
 {
 	NMIP6Manager *manager = device->manager;
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	struct rtnl_addr *rtnladdr;
 	struct nl_addr *nladdr;
 	struct in6_addr *addr;
-	CallbackInfo *info;
-	guint dhcp_opts = IP6_DHCP_OPT_NONE;
-	gboolean found_linklocal = FALSE, found_other = FALSE;
 
-	nm_log_dbg (LOGD_IP6, "(%s): syncing with netlink (ra_flags 0x%X) (state/target '%s'/'%s')",
-	            device->iface, device->ra_flags,
-	            state_to_string (device->state),
-	            state_to_string (device->target_state));
+	/* Reset address information */
+	device->has_linklocal = FALSE;
+	device->has_nonlinklocal = FALSE;
 
 	/* Look for any IPv6 addresses the kernel may have set for the device */
 	for (rtnladdr = (struct rtnl_addr *) nl_cache_get_first (priv->addr_cache);
@@ -454,11 +454,11 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 		if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 			if (device->state == NM_IP6_DEVICE_UNCONFIGURED)
 				device->state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
-			found_linklocal = TRUE;
+			device->has_linklocal = TRUE;
 		} else {
 			if (device->state < NM_IP6_DEVICE_GOT_ADDRESS)
 				device->state = NM_IP6_DEVICE_GOT_ADDRESS;
-			found_other = TRUE;
+			device->has_nonlinklocal = TRUE;
 		}
 	}
 
@@ -466,11 +466,17 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 	 * before in the initial run, but if it goes away later, make sure we
 	 * regress from GOT_LINK_LOCAL back to UNCONFIGURED.
 	 */
-	if ((device->state == NM_IP6_DEVICE_GOT_LINK_LOCAL) && !found_linklocal)
+	if ((device->state == NM_IP6_DEVICE_GOT_LINK_LOCAL) && !device->has_linklocal)
 		device->state = NM_IP6_DEVICE_UNCONFIGURED;
 
-	nm_log_dbg (LOGD_IP6, "(%s): addresses synced (state %s)",
-	            device->iface, state_to_string (device->state));
+	nm_log_dbg (LOGD_IP6, "(%s): addresses checked (state %s)",
+		    device->iface, state_to_string (device->state));
+}
+
+static void
+check_ra_flags (NMIP6Device *device)
+{
+	device->dhcp_opts = IP6_DHCP_OPT_NONE;
 
 	/* We only care about router advertisements if we want a real IPv6 address */
 	if (   (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS)
@@ -480,13 +486,21 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 			device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
 
 		if (device->ra_flags & IF_RA_MANAGED) {
-			dhcp_opts = IP6_DHCP_OPT_MANAGED;
+			device->dhcp_opts = IP6_DHCP_OPT_MANAGED;
 			nm_log_dbg (LOGD_IP6, "router advertisement deferred to DHCPv6");
 		} else if (device->ra_flags & IF_RA_OTHERCONF) {
-			dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
+			device->dhcp_opts = IP6_DHCP_OPT_OTHERCONF;
 			nm_log_dbg (LOGD_IP6, "router advertisement requests parallel DHCPv6");
 		}
 	}
+	nm_log_dbg (LOGD_IP6, "(%s): router advertisement checked (state %s)",
+		    device->iface, state_to_string (device->state));
+}
+
+static void
+check_addrconf_complete (NMIP6Device *device)
+{
+	CallbackInfo *info;
 
 	if (!device->addrconf_complete) {
 		/* Managed mode (ie DHCP only) short-circuits automatic addrconf, so
@@ -494,7 +508,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 		 * when the RA requests managed mode.
 		 */
 		if (   (device->state >= device->target_state)
-		    || (dhcp_opts == IP6_DHCP_OPT_MANAGED)) {
+		    || (device->dhcp_opts == IP6_DHCP_OPT_MANAGED)) {
 			/* device->finish_addrconf_id may currently be a timeout
 			 * rather than an idle, so we remove the existing source.
 			 */
@@ -503,9 +517,9 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 
 			nm_log_dbg (LOGD_IP6, "(%s): reached target state or Managed-mode requested (state '%s') (dhcp opts 0x%X)",
 			            device->iface, state_to_string (device->state),
-			            dhcp_opts);
+			            device->dhcp_opts);
 
-			info = callback_info_new (device, dhcp_opts, TRUE);
+			info = callback_info_new (device, device->dhcp_opts, TRUE);
 			device->finish_addrconf_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                              finish_addrconf,
 			                                              info,
@@ -520,19 +534,35 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 			 */
 			if (   (device->state == NM_IP6_DEVICE_GOT_ADDRESS)
 			    && (device->target_state == NM_IP6_DEVICE_GOT_ADDRESS)
-			    && !found_other) {
-				nm_log_dbg (LOGD_IP6, "(%s): RA-provided address no longer valid",
+			    && !device->has_nonlinklocal) {
+				nm_log_dbg (LOGD_IP6, "(%s): RA-provided address no longer found",
 				            device->iface);
 				success = FALSE;
 			}
 
-			info = callback_info_new (device, dhcp_opts, success);
+			info = callback_info_new (device, device->dhcp_opts, success);
 			device->config_changed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                             emit_config_changed,
 			                                             info,
 			                                             (GDestroyNotify) g_free);
 		}
 	}
+
+	nm_log_dbg (LOGD_IP6, "(%s): dhcp_opts checked (state %s)",
+		    device->iface, state_to_string (device->state));
+}
+
+static void
+nm_ip6_device_sync_from_netlink (NMIP6Device *device)
+{
+	nm_log_dbg (LOGD_IP6, "(%s): syncing with netlink (ra_flags 0x%X) (state/target '%s'/'%s')",
+	            device->iface, device->ra_flags,
+	            state_to_string (device->state),
+	            state_to_string (device->target_state));
+
+	check_addresses (device);
+	check_ra_flags (device);
+	check_addrconf_complete (device);
 }
 
 static void
@@ -1068,7 +1098,6 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	}
 
 	if (device) {
-		nm_log_dbg (LOGD_IP6, "(%s): syncing device with netlink changes", device->iface);
 		nm_ip6_device_sync_from_netlink (device);
 	}
 }
