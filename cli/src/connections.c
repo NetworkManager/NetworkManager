@@ -2030,6 +2030,9 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		if (!nmc_versions_match (nmc))
 			return nmc->return_value;
 
+		/* Get NMClient object early */
+		nmc->get_client (nmc);
+
 		nmc->should_wait = TRUE;
 
 		args_info.nmc = nmc;
