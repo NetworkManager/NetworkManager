@@ -23,10 +23,20 @@ nm_connection_provider_get_best_connections (NMConnectionProvider *self,
                                              NMConnectionFilterFunc func,
                                              gpointer func_data)
 {
-    g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
 
-    if (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_best_connections)
-        return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_best_connections (self, max_requested, ctype1, ctype2, func, func_data);
+	if (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_best_connections)
+		return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_best_connections (self, max_requested, ctype1, ctype2, func, func_data);
+	return NULL;
+}
+
+const GSList *
+nm_connection_provider_get_connections (NMConnectionProvider *self)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
+
+	if (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_connections)
+		return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_connections (self);
 	return NULL;
 }
 
@@ -35,6 +45,45 @@ nm_connection_provider_get_best_connections (NMConnectionProvider *self,
 static void
 nm_connection_provider_init (gpointer g_iface)
 {
+	GType iface_type = G_TYPE_FROM_INTERFACE (g_iface);
+	static gboolean initialized = FALSE;
+
+	if (initialized)
+		return;
+	initialized = TRUE;
+
+	/* Signals */
+	g_signal_new (NM_CP_SIGNAL_CONNECTION_ADDED,
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              G_STRUCT_OFFSET (NMConnectionProvider, connection_added),
+	              NULL, NULL,
+	              g_cclosure_marshal_VOID__OBJECT,
+	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	g_signal_new (NM_CP_SIGNAL_CONNECTION_UPDATED,
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              G_STRUCT_OFFSET (NMConnectionProvider, connection_updated),
+	              NULL, NULL,
+	              g_cclosure_marshal_VOID__OBJECT,
+	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	g_signal_new (NM_CP_SIGNAL_CONNECTION_REMOVED,
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              G_STRUCT_OFFSET (NMConnectionProvider, connection_removed),
+	              NULL, NULL,
+	              g_cclosure_marshal_VOID__OBJECT,
+	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	g_signal_new (NM_CP_SIGNAL_CONNECTIONS_LOADED,
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              G_STRUCT_OFFSET (NMConnectionProvider, connections_loaded),
+	              NULL, NULL,
+	              g_cclosure_marshal_VOID__VOID,
+	              G_TYPE_NONE, 0);
 }
 
 GType

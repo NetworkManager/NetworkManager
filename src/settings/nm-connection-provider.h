@@ -26,6 +26,12 @@
 
 typedef struct _NMConnectionProvider NMConnectionProvider;
 
+#define NM_CP_SIGNAL_CONNECTION_ADDED        "cp-connection-added"
+#define NM_CP_SIGNAL_CONNECTION_UPDATED      "cp-connection-updated"
+#define NM_CP_SIGNAL_CONNECTION_REMOVED      "cp-connection-removed"
+#define NM_CP_SIGNAL_CONNECTIONS_LOADED      "cp-connections-loaded"
+
+
 /**
  * NMConnectionFilterFunc:
  * @provider: The provider requesting the filtering
@@ -49,6 +55,17 @@ struct _NMConnectionProvider {
 	                                  const char *ctype2,
 	                                  NMConnectionFilterFunc func,
 	                                  gpointer func_data);
+
+	const GSList * (*get_connections) (NMConnectionProvider *self);
+
+	/* Signals */
+	void (*connection_added)   (NMConnectionProvider *self, NMConnection *connection);
+
+	void (*connection_updated) (NMConnectionProvider *self, NMConnection *connection);
+
+	void (*connection_removed) (NMConnectionProvider *self, NMConnection *connection);
+
+	void (*connections_loaded) (NMConnectionProvider *self);
 };
 
 GType nm_connection_provider_get_type (void);
@@ -75,5 +92,15 @@ GSList *nm_connection_provider_get_best_connections (NMConnectionProvider *self,
                                                      const char *ctype2,
                                                      NMConnectionFilterFunc func,
                                                      gpointer func_data);
+
+/**
+ * nm_connection_provider_get_connections:
+ * @self: the #NMConnectionProvider
+ *
+ * Returns: a #GSList of #NMConnection objects representing all known
+ *   connections.  Returned list is owned by the connection provider and must
+ *   not be freed.
+ */
+const GSList *nm_connection_provider_get_connections (NMConnectionProvider *self);
 
 #endif /* NM_CONNECTION_PROVIDER_H */

@@ -191,6 +191,7 @@ load_connections (NMSettings *self)
 	unmanaged_specs_changed (NULL, self);
 
 	g_signal_emit (self, signals[CONNECTIONS_LOADED], 0);
+	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTIONS_LOADED);
 }
 
 void
@@ -679,6 +680,7 @@ connection_removed (NMSettingsConnection *obj, gpointer user_data)
 
 	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit (NM_SETTINGS (user_data), signals[CONNECTION_REMOVED], 0, connection);
+	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 
 	g_object_unref (connection);
 }
@@ -706,6 +708,7 @@ connection_updated (NMSettingsConnection *connection, gpointer user_data)
 	               signals[CONNECTION_UPDATED],
 	               0,
 	               connection);
+	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_UPDATED, connection);
 }
 
 static void
@@ -854,6 +857,7 @@ claim_connection (NMSettings *self,
 	if (priv->connections_loaded) {
 		/* Internal added signal */
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
+		g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_ADDED, connection);
 
 		/* Exported D-Bus signal */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
@@ -1700,6 +1704,24 @@ get_best_connections (NMConnectionProvider *provider,
 	return g_slist_reverse (sorted);
 }
 
+static const GSList *
+get_connections (NMConnectionProvider *provider)
+{
+	static GSList *list = NULL;
+	NMSettings *self = NM_SETTINGS (provider);
+	GHashTableIter iter;
+	NMSettingsConnection *connection;
+
+	/* Lazily free the list with every call so we can keep it 'const' for callers */
+	g_slist_free (list);
+	list = NULL;
+
+	g_hash_table_iter_init (&iter, NM_SETTINGS_GET_PRIVATE (self)->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection))
+		list = g_slist_prepend (list, connection);
+	return g_slist_reverse (list);
+}
+
 /***************************************************************/
 
 NMSettings *
@@ -1744,6 +1766,7 @@ static void
 connection_provider_init (NMConnectionProvider *cp_class)
 {
     cp_class->get_best_connections = get_best_connections;
+    cp_class->get_connections = get_connections;
 }
 
 static void
