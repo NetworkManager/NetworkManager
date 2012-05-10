@@ -1,5 +1,6 @@
 SUBDIRS = . tests
 INCLUDES = \
+	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-glib \
@@ -52,6 +53,7 @@ lib_ifnet_io_la_CPPFLAGS = \
 	-DSBINDIR=\"$(sbindir)\"
 
 lib_ifnet_io_la_LIBADD = \
+	 $(top_builddir)/src/wifi/libwifi-utils.la \
 	 $(top_builddir)/libnm-util/libnm-util.la \
 	 $(GLIB_LIBS)\
 	 $(GIO_LIBS)

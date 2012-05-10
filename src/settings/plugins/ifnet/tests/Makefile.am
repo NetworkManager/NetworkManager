@@ -10,7 +10,8 @@ check_ifnet_CPPFLAGS = $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
 		    $(builddir)/../lib-ifnet-io.la \
 		    $(CHECK_LIBS) \
-		    $(GLIB_LIBS)
+		    $(GLIB_LIBS) \
+		    $(LIBM)
 EXTRA_DIST = hostname \
 			 net \
 			 net.all \

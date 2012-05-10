@@ -22,7 +22,14 @@
 #include <string.h>
 #include <nm-system-config-interface.h>
 #include <stdio.h>
+
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <unistd.h>
+
 #include "plugin.h"
+#include "wifi-utils.h"
+
 #include "net_parser.h"
 #include "net_utils.h"
 
@@ -122,6 +129,24 @@ is_global_setting (char *key)
 	return 0;
 }
 
+/* Find out whether the 'iface' is an interface */
+static gboolean
+name_is_interface (const char *iface)
+{
+	int fd;
+	struct ifreq ifr;
+	gboolean is_iface = FALSE;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd >= 0) {
+		strncpy (ifr.ifr_name, iface, IFNAMSIZ);
+		if (ioctl (fd, SIOCGIFHWADDR, &ifr) == 0)
+			is_iface = TRUE;
+		close (fd);
+	}
+	return is_iface;
+}
+
 /* Parse a complete line */
 /* Connection type is determined here */
 static void
@@ -166,8 +191,12 @@ init_block_by_line (gchar * buf)
 			/* ignored connection */
 			conn = add_new_connection_config ("ignore", pos);
 		} else
-			/* wireless connection */
-			conn = add_new_connection_config ("wireless", pos);
+			if (name_is_interface (pos) && !wifi_utils_is_wifi (pos, NULL))
+				/* wired connection */
+				conn = add_new_connection_config ("wired", pos);
+			else
+				/* wireless connection */
+				conn = add_new_connection_config ("wireless", pos);
 	}
 	data = g_strdup (key_value[1]);
 	tmp = strip_string (data, '"');
