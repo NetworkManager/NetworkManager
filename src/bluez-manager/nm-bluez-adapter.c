@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -41,6 +41,9 @@ typedef struct {
 
 	char *address;
 	GHashTable *devices;
+
+	/* Cached for devices */
+	NMConnectionProvider *provider;
 } NMBluezAdapterPrivate;
 
 
@@ -85,23 +88,18 @@ nm_bluez_adapter_get_initialized (NMBluezAdapter *self)
 	return NM_BLUEZ_ADAPTER_GET_PRIVATE (self)->initialized;
 }
 
-static void
-devices_to_list (gpointer key, gpointer data, gpointer user_data)
-{
-	NMBluezDevice *device = NM_BLUEZ_DEVICE (data);
-	GSList **list = user_data;
-
-	if (nm_bluez_device_get_usable (device))
-		*list = g_slist_append (*list, data);
-}
-
 GSList *
 nm_bluez_adapter_get_devices (NMBluezAdapter *self)
 {
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
 	GSList *devices = NULL;
+	GHashTableIter iter;
+	NMBluezDevice *device;
 
-	g_hash_table_foreach (priv->devices, devices_to_list, &devices);
+	g_hash_table_iter_init (&iter, NM_BLUEZ_ADAPTER_GET_PRIVATE (self)->devices);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device)) {
+		if (nm_bluez_device_get_usable (device))
+			devices = g_slist_append (devices, device);
+	}
 	return devices;
 }
 
@@ -109,16 +107,19 @@ static void
 device_usable (NMBluezDevice *device, GParamSpec *pspec, gpointer user_data)
 {
 	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	gboolean usable = nm_bluez_device_get_usable (device);
 
-	if (nm_bluez_device_get_usable (device))
+	nm_log_dbg (LOGD_BT, "(%s): bluez device now %s",
+	            nm_bluez_device_get_path (device),
+	            usable ? "usable" : "unusable");
+
+	if (usable) {
+		nm_log_dbg (LOGD_BT, "(%s): bluez device address %s",
+				    nm_bluez_device_get_path (device),
+				    nm_bluez_device_get_address (device));
 		g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
-	else {
-		g_object_ref (device);
-		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
+	} else
 		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
-		g_object_unref (device);
-	}
 }
 
 static void
@@ -127,6 +128,9 @@ device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
 	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
 
+	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
+	            nm_bluez_device_get_path (device),
+	            success ? "initialized" : "failed to initialize");
 	if (!success)
 		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
 }
@@ -138,10 +142,12 @@ device_created (DBusGProxy *proxy, const char *path, gpointer user_data)
 	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	device = nm_bluez_device_new (path);
+	device = nm_bluez_device_new (path, priv->provider);
 	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
-	g_hash_table_insert (priv->devices, g_strdup (path), device);
+	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
+
+	nm_log_dbg (LOGD_BT, "(%s): new bluez device found", path);
 }
 
 static void
@@ -151,10 +157,12 @@ device_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
+	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
+
 	device = g_hash_table_lookup (priv->devices, path);
 	if (device) {
 		g_object_ref (device);
-		g_hash_table_remove (priv->devices, path);
+		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
 		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 		g_object_unref (device);
 	}
@@ -214,8 +222,10 @@ query_properties (NMBluezAdapter *self)
 	}
 }
 
+/***********************************************************/
+
 NMBluezAdapter *
-nm_bluez_adapter_new (const char *path)
+nm_bluez_adapter_new (const char *path, NMConnectionProvider *provider)
 {
 	NMBluezAdapter *self;
 	NMBluezAdapterPrivate *priv;
@@ -229,6 +239,9 @@ nm_bluez_adapter_new (const char *path)
 		return NULL;
 
 	priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+
+	priv->provider = provider;
+
 	dbus_mgr = nm_dbus_manager_get ();
 	connection = nm_dbus_manager_get_connection (dbus_mgr);
 
@@ -258,7 +271,23 @@ nm_bluez_adapter_init (NMBluezAdapter *self)
 	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
 
 	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                       g_free, g_object_unref);
+	                                       NULL, g_object_unref);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (object);
+	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMBluezDevice *device;
+
+	g_hash_table_iter_init (&iter, priv->devices);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device))
+		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
+	g_hash_table_remove_all (priv->devices);
+
+	G_OBJECT_CLASS (nm_bluez_adapter_parent_class)->dispose (object);
 }
 
 static void
@@ -320,6 +349,7 @@ nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	/* Properties */

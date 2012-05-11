@@ -127,18 +127,16 @@ static gboolean impl_manager_set_logging (NMManager *manager,
 #include "nm-manager-glue.h"
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
-					   const char *bdaddr,
-					   const char *name,
-					   const char *object_path,
-					   guint32 uuids,
-					   NMManager *manager);
+                                           const char *bdaddr,
+                                           const char *name,
+                                           const char *object_path,
+                                           guint32 uuids,
+                                           NMManager *manager);
 
 static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
-					     const char *bdaddr,
-					     const char *object_path,
-					     gpointer user_data);
-
-static void bluez_manager_resync_devices (NMManager *self);
+                                             const char *bdaddr,
+                                             const char *object_path,
+                                             gpointer user_data);
 
 static void add_device (NMManager *self, NMDevice *device);
 
@@ -1160,8 +1158,6 @@ connection_added (NMSettings *settings,
                   NMSettingsConnection *connection,
                   NMManager *manager)
 {
-	bluez_manager_resync_devices (manager);
-
 	if (connection_needs_virtual_device (NM_CONNECTION (connection)))
 		system_create_virtual_device (manager, NM_CONNECTION (connection));
 }
@@ -1171,8 +1167,6 @@ connection_changed (NMSettings *settings,
                      NMSettingsConnection *connection,
                      NMManager *manager)
 {
-	bluez_manager_resync_devices (manager);
-
 	/* FIXME: Some virtual devices may need to be updated in the future. */
 }
 
@@ -1181,8 +1175,6 @@ connection_removed (NMSettings *settings,
                     NMSettingsConnection *connection,
                     NMManager *manager)
 {
-	bluez_manager_resync_devices (manager);
-
 	/*
 	 * Do not delete existing virtual devices to keep connectivity up.
 	 * Virtual devices are reused when NetworkManager is restarted.
@@ -1793,120 +1785,6 @@ add_device (NMManager *self, NMDevice *device)
 	}
 }
 
-static gboolean
-bdaddr_matches_connection (NMSettingBluetooth *s_bt, const char *bdaddr)
-{
-	const GByteArray *arr;
-	gboolean ret = FALSE;
-
-	arr = nm_setting_bluetooth_get_bdaddr (s_bt);
-
-	if (   arr != NULL 
-	       && arr->len == ETH_ALEN) {
-		char *str;
-
-		str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-				       arr->data[0],
-				       arr->data[1],
-				       arr->data[2],
-				       arr->data[3],
-				       arr->data[4],
-				       arr->data[5]);
-		ret = g_str_equal (str, bdaddr);
-		g_free (str);
-	}
-
-	return ret;
-}
-
-static NMConnection *
-bluez_manager_find_connection (NMManager *manager,
-                               const char *bdaddr,
-                               guint32 capabilities)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMConnection *found = NULL;
-	GSList *connections, *l;
-
-	connections = nm_settings_get_connections (priv->settings);
-
-	for (l = connections; l != NULL; l = l->next) {
-		NMConnection *candidate = NM_CONNECTION (l->data);
-		NMSettingConnection *s_con;
-		NMSettingBluetooth *s_bt;
-		const char *con_type;
-		const char *bt_type;
-
-		s_con = nm_connection_get_setting_connection (candidate);
-		g_assert (s_con);
-		con_type = nm_setting_connection_get_connection_type (s_con);
-		g_assert (con_type);
-		if (!g_str_equal (con_type, NM_SETTING_BLUETOOTH_SETTING_NAME))
-			continue;
-
-		s_bt = nm_connection_get_setting_bluetooth (candidate);
-		if (!s_bt)
-			continue;
-
-		if (!bdaddr_matches_connection (s_bt, bdaddr))
-			continue;
-
-		bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
-		if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
-		    && !(capabilities & NM_BT_CAPABILITY_DUN))
-		    	continue;
-		if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)
-		    && !(capabilities & NM_BT_CAPABILITY_NAP))
-		    	continue;
-
-		found = candidate;
-		break;
-	}
-
-	g_slist_free (connections);
-	return found;
-}
-
-static void
-bluez_manager_resync_devices (NMManager *self)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter, *gone = NULL, *keep = NULL;
-
-	/* Remove devices from the device list that don't have a corresponding connection */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-		guint32 uuids;
-		const char *bdaddr;
-
-		if (nm_device_get_device_type (candidate) == NM_DEVICE_TYPE_BT) {
-			uuids = nm_device_bt_get_capabilities (NM_DEVICE_BT (candidate));
-			bdaddr = nm_device_bt_get_hw_address (NM_DEVICE_BT (candidate));
-
-			if (bluez_manager_find_connection (self, bdaddr, uuids))
-				keep = g_slist_prepend (keep, candidate);
-			else
-				gone = g_slist_prepend (gone, candidate);
-		} else
-			keep = g_slist_prepend (keep, candidate);
-	}
-
-	/* Only touch the device list if anything actually changed */
-	if (g_slist_length (gone)) {
-		g_slist_free (priv->devices);
-		priv->devices = keep;
-
-		while (g_slist_length (gone))
-			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE);
-	} else {
-		g_slist_free (keep);
-		g_slist_free (gone);
-	}
-
-	/* Now look for devices without connections */
-	nm_bluez_manager_query_devices (priv->bluez_mgr);
-}
-
 static void
 bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
                                const char *bdaddr,
@@ -1926,12 +1804,6 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 
 	/* Make sure the device is not already in the device list */
 	if (nm_manager_get_device_by_udi (manager, object_path))
-		return;
-
-	if (has_dun == FALSE && has_nap == FALSE)
-		return;
-
-	if (!bluez_manager_find_connection (manager, bdaddr, capabilities))
 		return;
 
 	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, FALSE);
@@ -1955,19 +1827,15 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	NMDevice *device;
 
 	g_return_if_fail (bdaddr != NULL);
 	g_return_if_fail (object_path != NULL);
 
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_udi (device), object_path)) {
-			nm_log_info (LOGD_HW, "BT device %s removed", bdaddr);
-			priv->devices = remove_one_device (self, priv->devices, device, FALSE);
-			break;
-		}
+	device = nm_manager_get_device_by_udi (self, object_path);
+	if (device) {
+		nm_log_info (LOGD_HW, "BT device %s removed", bdaddr);
+		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 	}
 }
 
@@ -3254,9 +3122,6 @@ do_sleep_wake (NMManager *self)
 			else
 				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
-
-		/* Ask for new bluetooth devices */
-		bluez_manager_resync_devices (self);
 	}
 
 	nm_manager_update_state (self);
@@ -3673,7 +3538,7 @@ nm_manager_start (NMManager *self)
 	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
-	bluez_manager_resync_devices (self);
+	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
 	/* Query devices again to ensure that we catch all virtual interfaces (like
 	 * VLANs) that require a parent.  If during the first pass the VLAN
@@ -4015,17 +3880,17 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (udev_manager_rfkill_changed_cb),
 	                  singleton);
 
-	priv->bluez_mgr = nm_bluez_manager_get ();
+	priv->bluez_mgr = nm_bluez_manager_get (NM_CONNECTION_PROVIDER (priv->settings));
 
 	g_signal_connect (priv->bluez_mgr,
-			  "bdaddr-added",
-			  G_CALLBACK (bluez_manager_bdaddr_added_cb),
-			  singleton);
+	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
+	                  G_CALLBACK (bluez_manager_bdaddr_added_cb),
+	                  singleton);
 
 	g_signal_connect (priv->bluez_mgr,
-			  "bdaddr-removed",
-			  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
-			  singleton);
+	                  NM_BLUEZ_MANAGER_BDADDR_REMOVED,
+	                  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
+	                  singleton);
 
 	return singleton;
 }

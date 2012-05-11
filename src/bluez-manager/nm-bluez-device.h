@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_BLUEZ_DEVICE_H
@@ -23,6 +23,9 @@
 
 #include <glib.h>
 #include <glib-object.h>
+
+#include "nm-connection.h"
+#include "nm-connection-provider.h"
 
 #define NM_TYPE_BLUEZ_DEVICE            (nm_bluez_device_get_type ())
 #define NM_BLUEZ_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ_DEVICE, NMBluezDevice))
@@ -53,7 +56,7 @@ typedef struct {
 
 GType nm_bluez_device_get_type (void);
 
-NMBluezDevice *nm_bluez_device_new (const char *path);
+NMBluezDevice *nm_bluez_device_new (const char *path, NMConnectionProvider *provider);
 
 const char *nm_bluez_device_get_path (NMBluezDevice *self);
 

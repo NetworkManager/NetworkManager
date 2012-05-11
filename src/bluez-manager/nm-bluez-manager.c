@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2010 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #include <signal.h>
@@ -36,6 +36,8 @@
 typedef struct {
 	NMDBusManager *dbus_mgr;
 	gulong name_owner_changed_id;
+
+	NMConnectionProvider *provider;
 
 	DBusGProxy *proxy;
 
@@ -165,7 +167,7 @@ default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluezManager *se
 
 	/* Add the new default adapter */
 	if (path) {
-		priv->adapter = nm_bluez_adapter_new (path);
+		priv->adapter = nm_bluez_adapter_new (path, priv->provider);
 		g_signal_connect (priv->adapter, "initialized", G_CALLBACK (adapter_initialized), self);
 	}
 }
@@ -238,12 +240,6 @@ bluez_connect (NMBluezManager *self)
 }
 
 static void
-remove_all_devices (NMBluezManager *self, gboolean do_signal)
-{
-	/* FIXME: do something */
-}
-
-static void
 name_owner_changed_cb (NMDBusManager *dbus_mgr,
                        const char *name,
                        const char *old_owner,
@@ -251,6 +247,7 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
                        gpointer user_data)
 {
 	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
@@ -260,8 +257,13 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
 
 	if (!old_owner_good && new_owner_good)
 		query_default_adapter (self);
-	else if (old_owner_good && !new_owner_good)
-		remove_all_devices (self, TRUE);
+	else if (old_owner_good && !new_owner_good) {
+		/* Throwing away the adapter removes all devices too */
+		if (priv->adapter) {
+			g_object_unref (priv->adapter);
+			priv->adapter = NULL;
+		}
+	}
 }
 
 static void
@@ -274,7 +276,10 @@ bluez_cleanup (NMBluezManager *self, gboolean do_signal)
 		priv->proxy = NULL;
 	}
 
-	remove_all_devices (self, do_signal);
+	if (priv->adapter) {
+		g_object_unref (priv->adapter);
+		priv->adapter = NULL;
+	}
 }
 
 static void
@@ -290,24 +295,22 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
 		bluez_connect (self);
 }
 
+/****************************************************************/
 
 NMBluezManager *
-nm_bluez_manager_new (void)
-{
-	return NM_BLUEZ_MANAGER (g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL));
-}
-
-NMBluezManager *
-nm_bluez_manager_get (void)
+nm_bluez_manager_get (NMConnectionProvider *provider)
 {
 	static NMBluezManager *singleton = NULL;
 
-	if (!singleton)
-		singleton = nm_bluez_manager_new ();
-	else
-		g_object_ref (singleton);
+	if (singleton)
+		return g_object_ref (singleton);
 
+	singleton = (NMBluezManager *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
 	g_assert (singleton);
+
+	/* Cache the connection provider for NMBluezAdapter objects */
+	NM_BLUEZ_MANAGER_GET_PRIVATE (singleton)->provider = provider;
+
 	return singleton;
 }
 
@@ -333,13 +336,20 @@ nm_bluez_manager_init (NMBluezManager *self)
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
 	bluez_cleanup (self, FALSE);
 
-	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->finalize (object);
+	if (priv->dbus_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, name_owner_changed_cb, self);
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, self);
+		g_object_unref (priv->dbus_mgr);
+	}
+
+	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -350,11 +360,11 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 	g_type_class_add_private (klass, sizeof (NMBluezManagerPrivate));
 
 	/* virtual methods */
-	object_class->finalize = finalize;
+	object_class->dispose = dispose;
 
 	/* Signals */
 	signals[BDADDR_ADDED] =
-		g_signal_new ("bdaddr-added",
+		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
@@ -363,7 +373,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		              G_TYPE_NONE, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[BDADDR_REMOVED] =
-		g_signal_new ("bdaddr-removed",
+		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),

@@ -15,13 +15,17 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
 #include <glib.h>
 #include <string.h>
+#include <net/ethernet.h>
+#include <netinet/ether.h>
 
 #include "NetworkManager.h"
+#include "nm-setting-bluetooth.h"
+
 #include "nm-dbus-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
@@ -41,9 +45,13 @@ typedef struct {
 	gboolean usable;
 
 	char *address;
+	guint8 bin_address[ETH_ALEN];
 	char *name;
 	guint32 capabilities;
 	gint rssi;
+
+	NMConnectionProvider *provider;
+	GSList *connections;
 } NMBluezDevicePrivate;
 
 
@@ -65,6 +73,8 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
+
+/***********************************************************/
 
 const char *
 nm_bluez_device_get_path (NMBluezDevice *self)
@@ -122,6 +132,111 @@ nm_bluez_device_get_rssi (NMBluezDevice *self)
 	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->rssi;
 }
 
+static void
+check_emit_usable (NMBluezDevice *self)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	gboolean new_usable;
+
+	new_usable = (priv->initialized && priv->capabilities && priv->name && priv->address && priv->connections);
+	if (new_usable != priv->usable) {
+		priv->usable = new_usable;
+		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
+	}
+}
+
+/********************************************************************/
+
+static gboolean
+connection_compatible (NMBluezDevice *self, NMConnection *connection)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	NMSettingBluetooth *s_bt;
+	const char *bt_type;
+	const GByteArray *bdaddr;
+
+	if (!nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME))
+		return FALSE;
+
+	s_bt = nm_connection_get_setting_bluetooth (connection);
+	if (!s_bt)
+		return FALSE;
+
+	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
+	if (!bdaddr || bdaddr->len != ETH_ALEN)
+		return FALSE;
+	if (memcmp (bdaddr->data, priv->bin_address, ETH_ALEN) != 0)
+		return FALSE;
+
+	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
+	if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
+	    && !(priv->capabilities & NM_BT_CAPABILITY_DUN))
+	    	return FALSE;
+
+	if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)
+	    && !(priv->capabilities & NM_BT_CAPABILITY_NAP))
+	    	return FALSE;
+
+	return TRUE;
+}
+
+static void
+_internal_add_connection (NMBluezDevice *self, NMConnection *connection)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	if (!g_slist_find (priv->connections, connection)) {
+		priv->connections = g_slist_prepend (priv->connections, g_object_ref (connection));
+		check_emit_usable (self);
+	}
+}
+
+static void
+cp_connection_added (NMConnectionProvider *provider,
+                     NMConnection *connection,
+                     NMBluezDevice *self)
+{
+	if (connection_compatible (self, connection))
+		_internal_add_connection (self, connection);
+}
+
+static void
+cp_connection_removed (NMConnectionProvider *provider,
+                       NMConnection *connection,
+                       NMBluezDevice *self)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	if (g_slist_find (priv->connections, connection)) {
+		priv->connections = g_slist_remove (priv->connections, connection);
+		g_object_unref (connection);
+		check_emit_usable (self);
+	}
+}
+
+static void
+cp_connection_updated (NMConnectionProvider *provider,
+                       NMConnection *connection,
+                       NMBluezDevice *self)
+{
+	if (connection_compatible (self, connection))
+		_internal_add_connection (self, connection);
+	else
+		cp_connection_removed (provider, connection, self);
+}
+
+static void
+cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
+{
+	const GSList *connections, *iter;
+
+	connections = nm_connection_provider_get_connections (provider);
+	for (iter = connections; iter; iter = g_slist_next (iter))
+		cp_connection_added (provider, NM_CONNECTION (iter->data), self);
+}
+
+/***********************************************************/
+
 static guint32
 convert_uuids_to_capabilities (const char **strings)
 {
@@ -130,51 +245,24 @@ convert_uuids_to_capabilities (const char **strings)
 
 	for (iter = strings; iter && *iter; iter++) {
 		char **parts;
-		guint uuid16;
 
 		parts = g_strsplit (*iter, "-", -1);
-		if (parts == NULL || parts[0] == NULL) {
-			g_strfreev (parts);
-			continue;
+		if (parts && parts[0]) {
+			switch (g_ascii_strtoull (parts[0], NULL, 16)) {
+			case 0x1103:
+				capabilities |= NM_BT_CAPABILITY_DUN;
+				break;
+			case 0x1116:
+				capabilities |= NM_BT_CAPABILITY_NAP;
+				break;
+			default:
+				break;
+			}
 		}
-
-		uuid16 = g_ascii_strtoull (parts[0], NULL, 16);
 		g_strfreev (parts);
-
-		switch (uuid16) {
-		case 0x1103:
-			capabilities |= NM_BT_CAPABILITY_DUN;
-			break;
-		case 0x1116:
-			capabilities |= NM_BT_CAPABILITY_NAP;
-			break;
-		default:
-			break;
-		}
 	}
 
 	return capabilities;
-}
-
-static void
-check_emit_usable (NMBluezDevice *self)
-{
-	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-
-	if (   priv->initialized
-	    && priv->capabilities
-	    && priv->name
-	    && priv->address) {
-		if (!priv->usable) {
-			priv->usable = TRUE;
-			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
-		}
-	} else {
-		if (priv->usable) {
-			priv->usable = FALSE;
-			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
-		}
-	}
 }
 
 static void
@@ -224,6 +312,7 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	GError *err = NULL;
 	GValue *value;
 	const char **uuids;
+	struct ether_addr *tmp;
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &properties,
@@ -237,6 +326,11 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 
 	value = g_hash_table_lookup (properties, "Address");
 	priv->address = value ? g_value_dup_string (value) : NULL;
+	if (priv->address) {
+		tmp = ether_aton (priv->address);
+		g_assert (tmp);
+		memcpy (priv->bin_address, tmp->ether_addr_octet, ETH_ALEN);
+	}
 
 	value = g_hash_table_lookup (properties, "Name");
 	priv->name = value ? g_value_dup_string (value) : NULL;
@@ -252,6 +346,9 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		priv->capabilities = NM_BT_CAPABILITY_NONE;
 
 	g_hash_table_unref (properties);
+
+	/* Check if any connections match this device */
+	cp_connections_loaded (priv->provider, self);
 
 	priv->initialized = TRUE;
 	g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
@@ -275,14 +372,18 @@ query_properties (NMBluezDevice *self)
 	}
 }
 
+/********************************************************************/
+
 NMBluezDevice *
-nm_bluez_device_new (const char *path)
+nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 {
 	NMBluezDevice *self;
 	NMBluezDevicePrivate *priv;
 	NMDBusManager *dbus_mgr;
 	DBusGConnection *connection;
 
+	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (provider != NULL, NULL);
 
 	self = (NMBluezDevice *) g_object_new (NM_TYPE_BLUEZ_DEVICE,
 	                                       NM_BLUEZ_DEVICE_PATH, path,
@@ -291,6 +392,29 @@ nm_bluez_device_new (const char *path)
 		return NULL;
 
 	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	priv->provider = provider;
+
+	g_signal_connect (priv->provider,
+	                  NM_CP_SIGNAL_CONNECTION_ADDED,
+	                  G_CALLBACK (cp_connection_added),
+	                  self);
+
+	g_signal_connect (priv->provider,
+	                  NM_CP_SIGNAL_CONNECTION_REMOVED,
+	                  G_CALLBACK (cp_connection_removed),
+	                  self);
+
+	g_signal_connect (priv->provider,
+	                  NM_CP_SIGNAL_CONNECTION_UPDATED,
+	                  G_CALLBACK (cp_connection_updated),
+	                  self);
+
+	g_signal_connect (priv->provider,
+	                  NM_CP_SIGNAL_CONNECTIONS_LOADED,
+	                  G_CALLBACK (cp_connections_loaded),
+	                  self);
+
 	dbus_mgr = nm_dbus_manager_get ();
 	connection = nm_dbus_manager_get_connection (dbus_mgr);
 
@@ -316,6 +440,24 @@ nm_bluez_device_new (const char *path)
 static void
 nm_bluez_device_init (NMBluezDevice *self)
 {
+}
+
+static void
+dispose (GObject *object)
+{
+	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	g_slist_foreach (priv->connections, (GFunc) g_object_unref, NULL);
+	g_slist_free (priv->connections);
+	priv->connections = NULL;
+
+	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
+	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
+	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
+	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
+
+	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
 }
 
 static void
@@ -389,6 +531,7 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	/* Properties */
