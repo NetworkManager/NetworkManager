@@ -369,7 +369,9 @@ wpas_iface_bss_removed (DBusGProxy *proxy,
 static int
 wpas_state_string_to_enum (const char *str_state)
 {
-	if (!strcmp (str_state, "disconnected"))
+	if (!strcmp (str_state, "interface_disabled"))
+		return NM_SUPPLICANT_INTERFACE_STATE_DISABLED;
+	else if (!strcmp (str_state, "disconnected"))
 		return NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED;
 	else if (!strcmp (str_state, "inactive"))
 		return NM_SUPPLICANT_INTERFACE_STATE_INACTIVE;
@@ -1290,6 +1292,8 @@ nm_supplicant_interface_state_to_string (guint32 state)
 		return "starting";
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
 		return "ready";
+	case NM_SUPPLICANT_INTERFACE_STATE_DISABLED:
+		return "disabled";
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
 		return "disconnected";
 	case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
