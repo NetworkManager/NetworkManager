@@ -692,7 +692,7 @@ PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26], [have_libsoup=yes],[have_libso
 AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
                      [enable_concheck=${enableval}], [enable_concheck=${have_libsoup}])
 if (test "${enable_concheck}" = "yes"); then
-	if test x"$have_concheck" = x"no"; then
+	if test x"$have_libsoup" = x"no"; then
 		AC_MSG_ERROR(Connectivity checking requires libsoup development headers)
 	fi
 	AC_SUBST(LIBSOUP_CFLAGS)
