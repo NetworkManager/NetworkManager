@@ -143,11 +143,17 @@ nm_ip4_config_add_address (NMIP4Config *config,
                            NMIP4Address *address)
 {
 	NMIP4ConfigPrivate *priv;
+	GSList *iter;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (address != NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
+		if (nm_ip4_address_compare ((NMIP4Address *) iter->data, address))
+			return;
+	}
+
 	priv->addresses = g_slist_append (priv->addresses, nm_ip4_address_dup (address));
 }
 
@@ -210,7 +216,8 @@ void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver)
 		guint32 s = g_array_index (priv->nameservers, guint32, i);
 
 		/* No dupes */
-		g_return_if_fail (nameserver != s);
+		if (nameserver == s)
+			return;
 	}
 
 	g_array_append_val (priv->nameservers, nameserver);
@@ -254,7 +261,8 @@ void nm_ip4_config_add_wins (NMIP4Config *config, guint32 wins)
 		guint32 s = g_array_index (priv->wins, guint32, i);
 
 		/* No dupes */
-		g_return_if_fail (wins != s);
+		if (wins == s)
+			return;
 	}
 
 	g_array_append_val (priv->wins, wins);
@@ -301,11 +309,17 @@ void
 nm_ip4_config_add_route (NMIP4Config *config, NMIP4Route *route)
 {
 	NMIP4ConfigPrivate *priv;
+	GSList *iter;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (route != NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
+		if (nm_ip4_route_compare ((NMIP4Route *) iter->data, route))
+			return;
+	}
+
 	priv->routes = g_slist_append (priv->routes, nm_ip4_route_dup (route));
 }
 
