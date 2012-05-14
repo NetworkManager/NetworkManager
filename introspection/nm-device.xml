@@ -91,6 +91,14 @@
         Whether or not this device is managed by NetworkManager.
       </tp:docstring>
     </property>
+    <property name="Autoconnect" type="b" access="readwrite">
+      <tp:docstring>
+        If TRUE, indicates the device is allowed to autoconnect.  If FALSE,
+        manual intervention is required before the device will automatically
+        connect to a known network, such as activating a connection using the
+        device, or setting this property to TRUE.
+      </tp:docstring>
+    </property>
     <property name="FirmwareMissing" type="b" access="read">
       <tp:docstring>
         If TRUE, indicates the device is likely missing firmware necessary for

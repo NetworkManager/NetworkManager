@@ -112,6 +112,7 @@ enum {
 	PROP_ACTIVE_CONNECTION,
 	PROP_DEVICE_TYPE,
 	PROP_MANAGED,
+	PROP_AUTOCONNECT,
 	PROP_FIRMWARE_MISSING,
 	PROP_TYPE_DESC,
 	PROP_RFKILL_TYPE,
@@ -223,8 +224,8 @@ typedef struct {
 	/* IP6 config from DHCP */
 	NMIP6Config *   dhcp6_ip6_config;
 
-	/* inhibit autoconnect feature */
-	gboolean	autoconnect_inhibit;
+	/* allow autoconnect feature */
+	gboolean        autoconnect;
 
 	/* master interface for bridge, bond, vlan, etc */
 	NMDevice *	master;
@@ -785,10 +786,10 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	g_value_take_object (&instance, self);
 
 	g_value_init (&retval, G_TYPE_BOOLEAN);
-	if (priv->autoconnect_inhibit)
-		g_value_set_boolean (&retval, FALSE);
-	else
+	if (priv->autoconnect)
 		g_value_set_boolean (&retval, TRUE);
+	else
+		g_value_set_boolean (&retval, FALSE);
 
 	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
 	 * value being changed if no handlers are connected */
@@ -3195,7 +3196,7 @@ nm_device_disconnect (NMDevice *device, GError **error)
 		return FALSE;
 	}
 
-	priv->autoconnect_inhibit = TRUE;	
+	priv->autoconnect = FALSE;
 	nm_device_state_changed (device,
 	                         NM_DEVICE_STATE_DISCONNECTED,
 	                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
@@ -3813,6 +3814,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MANAGED:
 		priv->managed = g_value_get_boolean (value);
 		break;
+	case PROP_AUTOCONNECT:
+		priv->autoconnect = g_value_get_boolean (value);
+		break;
 	case PROP_FIRMWARE_MISSING:
 		priv->firmware_missing = g_value_get_boolean (value);
 		break;
@@ -3920,6 +3924,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MANAGED:
 		g_value_set_boolean (value, priv->managed);
+		break;
+	case PROP_AUTOCONNECT:
+		g_value_set_boolean (value, priv->autoconnect);
 		break;
 	case PROP_FIRMWARE_MISSING:
 		g_value_set_boolean (value, priv->firmware_missing);
@@ -4080,6 +4087,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       "Managed",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_AUTOCONNECT,
+		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT,
+		                       "Autoconnect",
+		                       "Autoconnect",
+		                       TRUE,
+		                       G_PARAM_READWRITE));
 
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_MISSING,
@@ -4391,7 +4406,7 @@ nm_device_state_changed (NMDevice *device,
 			nm_device_deactivate (device, reason);
 		break;
 	default:
-		priv->autoconnect_inhibit = FALSE;
+		priv->autoconnect = TRUE;
 		break;
 	}
 
@@ -4711,12 +4726,11 @@ nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr)
 	}
 }
 
-
-void
-nm_device_clear_autoconnect_inhibit (NMDevice *device)
+gboolean
+nm_device_get_autoconnect (NMDevice *device)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	g_return_if_fail (priv);
-	priv->autoconnect_inhibit = FALSE;
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
 }
 

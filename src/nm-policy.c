@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2011 Red Hat, Inc.
+ * Copyright (C) 2004 - 2012 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -1127,6 +1127,15 @@ device_ip_config_changed (NMDevice *device,
 }
 
 static void
+device_autoconnect_changed (NMDevice *device,
+                            GParamSpec *pspec,
+                            gpointer user_data)
+{
+	if (nm_device_get_autoconnect (device))
+		schedule_activate_check ((NMPolicy *) user_data, device, 0);
+}
+
+static void
 wireless_networks_changed (NMDevice *device, GObject *ap, gpointer user_data)
 {
 	schedule_activate_check ((NMPolicy *) user_data, device, 0);
@@ -1169,6 +1178,7 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	_connect_device_signal (policy, device, "state-changed", device_state_changed);
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP4_CONFIG, device_ip_config_changed);
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP6_CONFIG, device_ip_config_changed);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_AUTOCONNECT, device_autoconnect_changed);
 
 	switch (nm_device_get_device_type (device)) {
 	case NM_DEVICE_TYPE_WIFI:

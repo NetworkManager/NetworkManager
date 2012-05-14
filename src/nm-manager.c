@@ -3133,7 +3133,8 @@ do_sleep_wake (NMManager *self)
 					nm_device_set_enabled (device, enabled);
 			}
 
-			nm_device_clear_autoconnect_inhibit (device);
+			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, TRUE, NULL);
+
 			if (nm_device_spec_match_list (device, unmanaged_specs))
 				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 			else

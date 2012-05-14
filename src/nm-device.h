@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -52,6 +52,7 @@
 #define NM_DEVICE_ACTIVE_CONNECTION "active-connection"
 #define NM_DEVICE_DEVICE_TYPE      "device-type" /* ugh */
 #define NM_DEVICE_MANAGED          "managed"
+#define NM_DEVICE_AUTOCONNECT      "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
 #define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
@@ -244,7 +245,7 @@ void nm_device_set_managed (NMDevice *device,
                             gboolean managed,
                             NMDeviceStateReason reason);
 
-void nm_device_clear_autoconnect_inhibit (NMDevice *device);
+gboolean nm_device_get_autoconnect (NMDevice *device);
 
 void nm_device_handle_autoip4_event (NMDevice *self,
                                      const char *event,
