@@ -36,5 +36,5 @@ libnm_settings_plugin_example_la_LIBADD = \
 	$(GMODULE_LIBS) \
 	$(GIO_LIBS)
 
-libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
+libnm_settings_plugin_example_la_LDFLAGS = -module -avoid-version
 
