@@ -89,6 +89,7 @@ global:
 	nm_device_ethernet_new;
 	nm_device_filter_connections;
 	nm_device_get_active_connection;
+	nm_device_get_autoconnect;
 	nm_device_get_capabilities;
 	nm_device_get_device_type;
 	nm_device_get_dhcp4_config;
@@ -125,6 +126,7 @@ global:
 	nm_device_olpc_mesh_get_hw_address;
 	nm_device_olpc_mesh_get_type;
 	nm_device_olpc_mesh_new;
+	nm_device_set_autoconnect;
 	nm_device_vlan_error_get_type;
 	nm_device_vlan_error_quark;
 	nm_device_vlan_get_carrier;

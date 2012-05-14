@@ -71,6 +71,7 @@ typedef struct {
 	NMDeviceCapabilities capabilities;
 	gboolean managed;
 	gboolean firmware_missing;
+	gboolean autoconnect;
 	NMIP4Config *ip4_config;
 	NMDHCP4Config *dhcp4_config;
 	NMIP6Config *ip6_config;
@@ -92,6 +93,7 @@ enum {
 	PROP_DRIVER,
 	PROP_CAPABILITIES,
 	PROP_MANAGED,
+	PROP_AUTOCONNECT,
 	PROP_FIRMWARE_MISSING,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
@@ -154,6 +156,7 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_DRIVER,            &priv->driver },
 		{ NM_DEVICE_CAPABILITIES,      &priv->capabilities },
 		{ NM_DEVICE_MANAGED,           &priv->managed },
+		{ NM_DEVICE_AUTOCONNECT,       &priv->autoconnect },
 		{ NM_DEVICE_FIRMWARE_MISSING,  &priv->firmware_missing },
 		{ NM_DEVICE_IP4_CONFIG,        &priv->ip4_config, NULL, NM_TYPE_IP4_CONFIG },
 		{ NM_DEVICE_DHCP4_CONFIG,      &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
@@ -326,6 +329,9 @@ get_property (GObject *object,
 	case PROP_MANAGED:
 		g_value_set_boolean (value, nm_device_get_managed (device));
 		break;
+	case PROP_AUTOCONNECT:
+		g_value_set_boolean (value, nm_device_get_autoconnect (device));
+		break;
 	case PROP_FIRMWARE_MISSING:
 		g_value_set_boolean (value, nm_device_get_firmware_missing (device));
 		break;
@@ -375,11 +381,17 @@ set_property (GObject *object,
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean b;
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
 		/* Construct only */
 		priv->device_type = g_value_get_uint (value);
+		break;
+	case PROP_AUTOCONNECT:
+		b = g_value_get_boolean (value);
+		if (priv->autoconnect != b)
+			nm_device_set_autoconnect (NM_DEVICE (object), b);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -498,6 +510,19 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "Managed",
 						  FALSE,
 						  G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:autoconnect:
+	 *
+	 * Whether the device can auto-activate a connection.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_AUTOCONNECT,
+		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT,
+		                       "Autoconnect",
+		                       "Autoconnect",
+		                       TRUE,
+		                       G_PARAM_READWRITE));
 
 	/**
 	 * NMDevice:firmware-missing:
@@ -915,6 +940,49 @@ nm_device_get_managed (NMDevice *device)
 
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->managed;
+}
+
+/**
+ * nm_device_get_autoconnect:
+ * @device: a #NMDevice
+ *
+ * Whether the #NMDevice can be autoconnected.
+ *
+ * Returns: %TRUE if the device is allowed to be autoconnected
+ **/
+gboolean
+nm_device_get_autoconnect (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
+}
+
+/**
+ * nm_device_set_autoconnect:
+ * @device: a #NMDevice
+ * @autoconnect: %TRUE to enable autoconnecting
+ *
+ * Enables or disables automatic activation of the #NMDevice.
+ **/
+void
+nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect)
+{
+	GValue value = {0,};
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	g_value_init (&value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&value, autoconnect);
+
+
+	NM_DEVICE_GET_PRIVATE (device)->autoconnect = autoconnect;
+
+	_nm_object_set_property (NM_OBJECT (device),
+	                         NM_DBUS_INTERFACE_DEVICE,
+	                         "Autoconnect",
+	                         &value);
 }
 
 /**
