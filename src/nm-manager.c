@@ -2176,7 +2176,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	g_return_if_fail (iface != NULL);
 	g_return_if_fail (sysfs_path != NULL);
 	g_return_if_fail (driver != NULL);
-	g_return_if_fail (ifindex >= 0);
+	g_return_if_fail (ifindex > 0);
 
 	device = find_device_by_ifindex (self, ifindex);
 	if (device) {

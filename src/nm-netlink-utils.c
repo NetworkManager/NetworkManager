@@ -136,7 +136,7 @@ nm_netlink_route_new (int ifindex,
 	route = rtnl_route_alloc ();
 	g_return_val_if_fail (route != NULL, NULL);
 
-	if (ifindex >= 0)
+	if (ifindex > 0)
 		rtnl_route_set_oif (route, ifindex);
 	if (family != AF_UNSPEC)
 		rtnl_route_set_family (route, family);
@@ -385,7 +385,7 @@ foreach_route_cb (struct nl_object *object, void *user_data)
 	if (nm_logging_level_enabled (LOGL_DEBUG))
 		dump_route (route);
 
-	if (   info->ifindex >= 0
+	if (   info->ifindex > 0
 	    && rtnl_route_get_oif (route) != info->ifindex)
 		return;
 

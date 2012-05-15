@@ -506,7 +506,8 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	priv->ip_iface = g_strdup (iface);
 	if (priv->ip_iface) {
 		priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
-		if (priv->ip_ifindex < 0) {
+		if (priv->ip_ifindex <= 0) {
+			/* Device IP interface must always be a kernel network interface */
 			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
 		}
 	}
@@ -3119,7 +3120,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
 	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
-	if (ifindex >= 0) {
+	if (ifindex > 0) {
 		nm_system_iface_flush_routes (ifindex, family);
 		nm_system_iface_flush_addresses (ifindex, family);
 	}
@@ -3738,11 +3739,15 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->iface);
 		priv->ifindex = 0;
 		priv->iface = g_value_dup_string (value);
-		if (priv->iface) {
+
+		/* Only look up the ifindex if it appears to be an actual kernel
+		 * interface name.  eg Bluetooth devices won't have one until we know
+		 * the IP interface.
+		 */
+		if (priv->iface && !strchr (priv->iface, ':')) {
 			priv->ifindex = nm_netlink_iface_to_index (priv->iface);
-			if (priv->ifindex <= 0) {
+			if (priv->ifindex <= 0)
 				nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", priv->iface);
-			}
 		}
 		break;
 	case PROP_IP_IFACE:

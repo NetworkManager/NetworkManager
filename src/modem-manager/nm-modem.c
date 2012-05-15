@@ -591,7 +591,7 @@ real_deactivate (NMModem *self, NMDevice *device)
 	case MM_MODEM_IP_METHOD_STATIC:
 	case MM_MODEM_IP_METHOD_DHCP:
 		ifindex = nm_device_get_ip_ifindex (device);
-		if (ifindex >= 0) {
+		if (ifindex > 0) {
 			/* FIXME: use AF_UNSPEC here when we have IPv6 support */
 			nm_system_iface_flush_routes (ifindex, AF_INET);
 			nm_system_iface_flush_addresses (ifindex, AF_UNSPEC);

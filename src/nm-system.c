@@ -479,7 +479,7 @@ nm_system_set_ip6_route (int ifindex,
 	struct rtnl_route *route;
 	int err = 0;
 
-	g_return_val_if_fail (ifindex >= 0, -1);
+	g_return_val_if_fail (ifindex > 0, -1);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, -1);
@@ -1472,9 +1472,9 @@ nm_system_iface_enslave (gint master_ifindex,
 	struct nl_sock *sock;
 	int err;
 
-	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (master_ifindex > 0, FALSE);
 	g_return_val_if_fail (master_iface != NULL, FALSE);
-	g_return_val_if_fail (slave_ifindex >= 0, FALSE);
+	g_return_val_if_fail (slave_ifindex > 0, FALSE);
 	g_return_val_if_fail (slave_iface != NULL, FALSE);
 
 	sock = nm_netlink_get_default_handle ();
@@ -1557,9 +1557,9 @@ nm_system_iface_release (gint master_ifindex,
 	struct nl_sock *sock;
 	int err;
 
-	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (master_ifindex > 0, FALSE);
 	g_return_val_if_fail (master_iface != NULL, FALSE);
-	g_return_val_if_fail (slave_ifindex >= 0, FALSE);
+	g_return_val_if_fail (slave_ifindex > 0, FALSE);
 	g_return_val_if_fail (slave_iface != NULL, FALSE);
 
 	sock = nm_netlink_get_default_handle ();
@@ -1598,7 +1598,7 @@ nm_system_get_iface_type (int ifindex, const char *name)
 	char *type;
 	int res = NM_IFACE_TYPE_UNSPEC;
 
-	g_return_val_if_fail (ifindex >= 0 || name, NM_IFACE_TYPE_UNSPEC);
+	g_return_val_if_fail (ifindex > 0 || name, NM_IFACE_TYPE_UNSPEC);
 
 	nlh = nm_netlink_get_default_handle ();
 	if (!nlh)
@@ -1905,7 +1905,7 @@ nm_system_add_vlan_iface (NMConnection *connection,
 	guint32 vlan_flags = 0;
 	guint32 num, i, from, to;
 
-	g_return_val_if_fail (parent_ifindex >= 0, FALSE);
+	g_return_val_if_fail (parent_ifindex > 0, FALSE);
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
