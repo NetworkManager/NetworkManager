@@ -184,12 +184,14 @@ set_carrier (NMDeviceWired *self,
 	g_object_notify (G_OBJECT (self), "carrier");
 
 	state = nm_device_get_state (NM_DEVICE (self));
-	nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
-	             "(%s): carrier now %s (device state %d%s)",
-	             nm_device_get_iface (NM_DEVICE (self)),
-	             carrier ? "ON" : "OFF",
-	             state,
-	             defer_action ? ", deferring action for 4 seconds" : "");
+	if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
+		nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
+		             "(%s): carrier now %s (device state %d%s)",
+		             nm_device_get_iface (NM_DEVICE (self)),
+		             carrier ? "ON" : "OFF",
+		             state,
+		             defer_action ? ", deferring action for 4 seconds" : "");
+	}
 
 	if (defer_action)
 		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
