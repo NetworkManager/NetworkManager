@@ -55,6 +55,9 @@
 #include "nm-manager.h"
 #include "nm-enum-types.h"
 #include "wifi-utils.h"
+#if HAVE_WEXT
+#include "wifi-utils-wext.h"
+#endif
 
 /* This is a bug; but we can't really change API now... */
 #include "NetworkManagerVPN.h"
@@ -153,9 +156,16 @@ constructor (GType type,
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
-	priv->wifi_data = wifi_utils_init (nm_device_get_iface (NM_DEVICE (self)),
-	                                   nm_device_get_ifindex (NM_DEVICE (self)),
-	                                   FALSE);
+	/*
+	 * The kernel driver now uses nl80211, but we force use of WEXT because
+	 * the cfg80211 interactions are not quite ready to support access to
+	 * mesh control through nl80211 just yet.
+	 */
+#if HAVE_WEXT
+	priv->wifi_data = wifi_wext_init (nm_device_get_iface (NM_DEVICE (self)),
+	                                  nm_device_get_ifindex (NM_DEVICE (self)),
+	                                  FALSE);
+#endif
 	if (priv->wifi_data == NULL) {
 		nm_log_warn (LOGD_HW | LOGD_OLPC_MESH, "(%s): failed to initialize WiFi driver",
 		             nm_device_get_iface (NM_DEVICE (self)));
