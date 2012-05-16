@@ -570,20 +570,8 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	g_hash_table_remove_all (priv->options);
 	g_hash_table_foreach (options, copy_option, priv->options);
 
-	if (old_state == new_state) {
-		/* dhclient will stay in the same state (or, really, provide the same
-		 * reason) for operations like RENEW and REBIND.  We need to ensure
-		 * that triggers various DHCP lease change code, so we need to pass
-		 * along same-state transitions for these states.
-		 */
-		if (   new_state != DHC_BOUND4
-		    && new_state != DHC_RENEW4
-		    && new_state != DHC_REBIND4
-		    && new_state != DHC_BOUND6
-		    && new_state != DHC_RENEW6
-		    && new_state != DHC_REBIND6)
-			return;
-	}
+	if (old_state == new_state)
+		return;
 
 	/* Handle changed device state */
 	if (state_is_bound (new_state)) {
