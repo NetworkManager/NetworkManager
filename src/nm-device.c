@@ -543,12 +543,52 @@ nm_device_get_device_type (NMDevice *self)
 }
 
 
+/**
+ * nm_device_get_priority():
+ * @dev: the #NMDevice
+ *
+ * Returns: the device's routing priority.  Lower numbers means a "better"
+ *  device, eg higher priority.
+ */
 int
 nm_device_get_priority (NMDevice *dev)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (dev), -1);
+	g_return_val_if_fail (NM_IS_DEVICE (dev), 100);
 
-	return (int) nm_device_get_device_type (dev);
+	/* Device 'priority' is used for two things:
+	 *
+	 * a) two devices on the same IP subnet: the "better" (ie, lower number)
+	 *     device is the default outgoing device for that subnet
+	 * b) default route: the "better" device gets the default route.  This can
+	 *     always be modified by setting a connection to never-default=TRUE, in
+	 *     which case that device will never take the default route when
+	 *     it's using that connection.
+	 */
+
+	switch (nm_device_get_device_type (dev)) {
+	case NM_DEVICE_TYPE_ETHERNET:
+		return 1;
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return 2;
+	case NM_DEVICE_TYPE_ADSL:
+		return 3;
+	case NM_DEVICE_TYPE_WIMAX:
+		return 4;
+	case NM_DEVICE_TYPE_BOND:
+		return 5;
+	case NM_DEVICE_TYPE_VLAN:
+		return 6;
+	case NM_DEVICE_TYPE_MODEM:
+		return 7;
+	case NM_DEVICE_TYPE_BT:
+		return 8;
+	case NM_DEVICE_TYPE_WIFI:
+		return 9;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return 10;
+	default:
+		return 20;
+	}
 }
 
 
