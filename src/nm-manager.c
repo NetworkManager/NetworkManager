@@ -3651,7 +3651,8 @@ firmware_dir_changed (GFileMonitor *monitor,
 	}
 }
 
-#define PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
+#define NM_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
+#define DEV_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.Device.PermissionDenied"
 
 static void
 prop_set_auth_done_cb (NMAuthChain *chain,
@@ -3664,9 +3665,13 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
 	NMAuthCallResult result;
-	DBusMessage *reply, *request;
-	const char *permission, *prop;
+	DBusMessage *reply = NULL, *request;
+	GError *ret_error;
+	const char *permission, *prop, *objpath;
 	gboolean set_enabled = TRUE;
+	gboolean is_device = FALSE;
+	size_t objpath_len;
+	size_t devpath_len;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
@@ -3674,9 +3679,16 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	permission = nm_auth_chain_get_data (chain, "permission");
 	prop = nm_auth_chain_get_data (chain, "prop");
 	set_enabled = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enabled"));
+	objpath = nm_auth_chain_get_data (chain, "objectpath");
+
+	objpath_len = strlen (objpath);
+	devpath_len = strlen (NM_DBUS_PATH "/Devices");
+	if (   strncmp (objpath, NM_DBUS_PATH "/Devices", devpath_len) == 0
+	    && objpath_len > devpath_len)
+		is_device = TRUE;
 
 	if (error) {
-		reply = dbus_message_new_error (request, PERM_DENIED_ERROR,
+		reply = dbus_message_new_error (request, is_device ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
 		                                "Not authorized to perform this operation");
 	} else {
 		/* Caller has had a chance to obtain authorization, so we only need to
@@ -3684,11 +3696,27 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		 */
 		result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
 		if (result != NM_AUTH_CALL_RESULT_YES) {
-			reply = dbus_message_new_error (request, PERM_DENIED_ERROR,
-				                            "Not authorized to perform this operation");
+			reply = dbus_message_new_error (request, is_device ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
+			                                "Not authorized to perform this operation");
 		} else {
-			g_object_set (self, prop, set_enabled, NULL);
-			reply = dbus_message_new_method_return (request);
+			if (is_device) {
+				/* Find the device */
+				NMDevice *device = nm_manager_get_device_by_path (self, objpath);
+				if (device) {
+					g_object_set (device, prop, set_enabled, NULL);
+					reply = dbus_message_new_method_return (request);
+				}
+				else {
+					ret_error = g_error_new_literal (NM_MANAGER_ERROR,
+					                                 NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+					                                 "Can't find device for this operation");
+					dbus_g_method_return_error (context, ret_error);
+					g_error_free (ret_error);
+				}
+			} else {
+				g_object_set (self, prop, set_enabled, NULL);
+				reply = dbus_message_new_method_return (request);
+			}
 		}
 	}
 
@@ -3716,6 +3744,7 @@ prop_filter (DBusConnection *connection,
 	const char *propiface = NULL;
 	const char *propname = NULL;
 	const char *sender = NULL;
+	const char *objpath = NULL;
 	const char *glib_propname = NULL, *permission = NULL;
 	DBusError dbus_error;
 	gulong uid = G_MAXULONG;
@@ -3737,7 +3766,7 @@ prop_filter (DBusConnection *connection,
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_message_iter_get_basic (&iter, &propiface);
-	if (!propiface || strcmp (propiface, NM_DBUS_INTERFACE))
+	if (!propiface || (strcmp (propiface, NM_DBUS_INTERFACE) && strcmp (propiface, NM_DBUS_INTERFACE_DEVICE)))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_message_iter_next (&iter);
 
@@ -3756,6 +3785,9 @@ prop_filter (DBusConnection *connection,
 	} else if (!strcmp (propname, "WimaxEnabled")) {
 		glib_propname = NM_MANAGER_WIMAX_ENABLED;
 		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
+	} else if (!strcmp (propname, "Autoconnect")) {
+		glib_propname = NM_DEVICE_AUTOCONNECT;
+		permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
 	} else
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
@@ -3769,15 +3801,22 @@ prop_filter (DBusConnection *connection,
 
 	sender = dbus_message_get_sender (message);
 	if (!sender) {
-		reply = dbus_message_new_error (message, PERM_DENIED_ERROR,
+		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
 		                                "Could not determine D-Bus requestor");
+		goto out;
+	}
+
+	objpath = dbus_message_get_path (message);
+	if (!objpath) {
+		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
+		                                "Could not determine D-Bus object path");
 		goto out;
 	}
 
 	dbus_error_init (&dbus_error);
 	uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
 	if (dbus_error_is_set (&dbus_error)) {
-		reply = dbus_message_new_error (message, PERM_DENIED_ERROR,
+		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
 		                                "Could not determine the user ID of the requestor");
 		dbus_error_free (&dbus_error);
 		goto out;
@@ -3792,6 +3831,7 @@ prop_filter (DBusConnection *connection,
 		nm_auth_chain_set_data (chain, "permission", g_strdup (permission), g_free);
 		nm_auth_chain_set_data (chain, "enabled", GUINT_TO_POINTER (set_enabled), NULL);
 		nm_auth_chain_set_data (chain, "message", dbus_message_ref (message), (GDestroyNotify) dbus_message_unref);
+		nm_auth_chain_set_data (chain, "objectpath", g_strdup (objpath), g_free);
 		nm_auth_chain_add_call (chain, permission, TRUE);
 	} else {
 		/* Yay for root */
