@@ -34,23 +34,6 @@ NM_STATE_CONNECTED_LOCAL, NM_STATE_CONNECTED_SITE, or NM_STATE_CONNECTED_GLOBAL
 based on it and the device's state.
 
 
-* ADSL support
-
-NetworkManager should natively support ADSL modems using one of the 3 main
-connection methods, PPP over ATM (pppoa), PPP over Ethernet (pppoe), or
-IP over ATM (ipoatm).  Initial support could be targeted at just pppoa and
-pppoe, and there is some code in NetworkManager already for pppoe.  More info
-about ADSL configuration on Linux in general is here:
-
-http://atm.eagle-usb.org/wakka.php?wiki=UeagleAtmDoc
-
-Big thanks to Pantelis Koukousoulas for getting ADSL working for PPPoA and PPPoE
-methods in the 'adsl' branch in NetworkManager git.  We need more testing, IPv6
-PPP support, and also support for multiple ADSL devices (by reading the "atmindex"
-attribute from the sysfs directory for the ATM interface on 2.6.38.8 and later
-kernels).
-
-
 * Real Access Point mode support
 
 Now that NetworkManager requires wpa_supplicant 0.7.x or later, we can add
