@@ -643,11 +643,6 @@ process_address_change (NMIP6Manager *manager, struct nl_msg *msg)
 	}
 
 	device = nm_ip6_manager_get_device (manager, rtnl_addr_get_ifindex (rtnladdr));
-	if (!device) {
-		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
-		rtnl_addr_put (rtnladdr);
-		return NULL;
-	}
 
 	old_size = nl_cache_nitems (priv->addr_cache);
 	nl_cache_include (priv->addr_cache, (struct nl_object *)rtnladdr, NULL, NULL);
@@ -684,11 +679,6 @@ process_route_change (NMIP6Manager *manager, struct nl_msg *msg)
 	}
 
 	device = nm_ip6_manager_get_device (manager, rtnl_route_get_oif (rtnlroute));
-	if (!device) {
-		nm_log_dbg (LOGD_IP6, "ignoring message for unknown device");
-		rtnl_route_put (rtnlroute);
-		return NULL;
-	}
 
 	old_size = nl_cache_nitems (priv->route_cache);
 	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL, NULL);
