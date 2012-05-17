@@ -304,6 +304,11 @@ PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.75)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
+# dbus-glib uses GValueArray, which is deprecated as of GLib 2.32.
+# Set GLIB_VERSION_MIN_REQUIRED to something less than that to avoid
+# getting warnings. (GLIB_VERSION_2_26 is the oldest defined version.)
+DBUS_CFLAGS="$DBUS_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_26"
+
 PKG_CHECK_MODULES(GLIB, gthread-2.0 glib-2.0 >= 2.22 gobject-2.0)
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
