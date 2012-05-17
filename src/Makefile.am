@@ -187,7 +187,9 @@ NetworkManager_SOURCES = \
 		nm-rfkill.h \
 		nm-session-monitor.h \
 		nm-session-utils.c \
-		nm-session-utils.h
+		nm-session-utils.h \
+		nm-connection-provider.h \
+		nm-connection-provider.c
 
 if WITH_CONCHECK
 NetworkManager_SOURCES += nm-connectivity.c nm-connectivity.h

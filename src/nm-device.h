@@ -34,7 +34,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-connection.h"
 #include "nm-rfkill.h"
-#include "settings/nm-connection-provider.h"
+#include "nm-connection-provider.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"

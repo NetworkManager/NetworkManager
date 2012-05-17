@@ -48,9 +48,7 @@ libsettings_la_SOURCES = \
 	nm-secret-agent.c \
 	nm-secret-agent.h \
 	nm-settings-utils.h \
-	nm-settings-utils.c \
-	nm-connection-provider.h \
-	nm-connection-provider.c
+	nm-settings-utils.c
 
 libsettings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
