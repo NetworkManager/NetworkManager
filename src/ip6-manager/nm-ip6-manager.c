@@ -213,6 +213,43 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 	return g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
 }
 
+static char *
+device_get_iface (NMIP6Device *device)
+{
+	return device ? device->iface : "unknown";
+}
+
+static const char *
+state_to_string (NMIP6DeviceState state)
+{
+	switch (state) {
+	case NM_IP6_DEVICE_UNCONFIGURED:
+		return "unconfigured";
+	case NM_IP6_DEVICE_GOT_LINK_LOCAL:
+		return "got-link-local";
+	case NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT:
+		return "got-ra";
+	case NM_IP6_DEVICE_GOT_ADDRESS:
+		return "got-address";
+	case NM_IP6_DEVICE_TIMED_OUT:
+		return "timed-out";
+	default:
+		return "unknown";
+	}
+}
+
+static void
+device_set_state (NMIP6Device *device, NMIP6DeviceState state)
+{
+	NMIP6DeviceState oldstate;
+
+	oldstate = device->state;
+
+	device->state = state;
+	nm_log_dbg (LOGD_IP6, "(%s) IP6 device state: %s -> %s",
+	            device_get_iface (device), state_to_string (oldstate), state_to_string (state));
+}
+
 /******************************************************************/
 
 typedef struct {
@@ -398,25 +435,6 @@ callback_info_new (NMIP6Device *device, guint dhcp_opts, gboolean success)
 	return info;
 }
 
-static const char *
-state_to_string (NMIP6DeviceState state)
-{
-	switch (state) {
-	case NM_IP6_DEVICE_UNCONFIGURED:
-		return "unconfigured";
-	case NM_IP6_DEVICE_GOT_LINK_LOCAL:
-		return "got-link-local";
-	case NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT:
-		return "got-ra";
-	case NM_IP6_DEVICE_GOT_ADDRESS:
-		return "got-address";
-	case NM_IP6_DEVICE_TIMED_OUT:
-		return "timed-out";
-	default:
-		return "unknown";
-	}
-}
-
 static void
 check_addresses (NMIP6Device *device)
 {
@@ -453,11 +471,11 @@ check_addresses (NMIP6Device *device)
 
 		if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 			if (device->state == NM_IP6_DEVICE_UNCONFIGURED)
-				device->state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
+				device_set_state (device, NM_IP6_DEVICE_GOT_LINK_LOCAL);
 			device->has_linklocal = TRUE;
 		} else {
 			if (device->state < NM_IP6_DEVICE_GOT_ADDRESS)
-				device->state = NM_IP6_DEVICE_GOT_ADDRESS;
+				device_set_state (device, NM_IP6_DEVICE_GOT_ADDRESS);
 			device->has_nonlinklocal = TRUE;
 		}
 	}
@@ -467,7 +485,7 @@ check_addresses (NMIP6Device *device)
 	 * regress from GOT_LINK_LOCAL back to UNCONFIGURED.
 	 */
 	if ((device->state == NM_IP6_DEVICE_GOT_LINK_LOCAL) && !device->has_linklocal)
-		device->state = NM_IP6_DEVICE_UNCONFIGURED;
+		device_set_state (device, NM_IP6_DEVICE_UNCONFIGURED);
 
 	nm_log_dbg (LOGD_IP6, "(%s): addresses checked (state %s)",
 		    device->iface, state_to_string (device->state));
@@ -483,7 +501,7 @@ check_ra_flags (NMIP6Device *device)
 	    && (device->ra_flags & IF_RA_RCVD)) {
 
 		if (device->state < NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
-			device->state = NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT;
+			device_set_state (device, NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT);
 
 		if (device->ra_flags & IF_RA_MANAGED) {
 			device->dhcp_opts = IP6_DHCP_OPT_MANAGED;
