@@ -9,6 +9,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix fights with the kernel over the IPv6 default route
 * Fix regression in carrier handling for device's that don't support carrier detect
 * Add ability to connect to new WiFi networks from nmcli
+* Add native support for ADSL modems using PPPoE or PPPoATM
 
 
 ==============================================
