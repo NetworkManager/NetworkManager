@@ -219,7 +219,7 @@ NMClient_1_0_gir_INCLUDES = Gio-2.0 DBusGLib-1.0
 NMClient_1_0_gir_PACKAGES = gio-2.0 dbus-glib-1 gudev-1.0
 NMClient_1_0_gir_EXPORT_PACKAGES = libnm-glib libnm-glib-vpn
 NMClient_1_0_gir_CFLAGS = $(INCLUDES) -I$(top_srcdir)/libnm-glib -I$(top_srcdir)/libnm-util
-NMClient_1_0_gir_LIBS = libnm-glib.la
+NMClient_1_0_gir_LIBS = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la
 NMClient_1_0_gir_FILES = $(introspection_sources)
 NMClient_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm --include-uninstalled=$(top_builddir)/libnm-util/NetworkManager-1.0.gir
 INTROSPECTION_GIRS += NMClient-1.0.gir
