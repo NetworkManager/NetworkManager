@@ -7,7 +7,8 @@ INCLUDES = \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/generated \
 	-I${top_builddir}/src/generated \
-	-I${top_srcdir}/src/logging
+	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/posix-signals
 
 noinst_LTLIBRARIES = libppp-manager.la
 
@@ -33,6 +34,7 @@ libppp_manager_la_CPPFLAGS = \
 libppp_manager_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 

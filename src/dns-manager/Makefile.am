@@ -1,5 +1,6 @@
 INCLUDES = \
 	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/posix-signals \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/src \
@@ -28,6 +29,7 @@ libdns_manager_la_CPPFLAGS = \
 
 libdns_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
 	$(LIBNL_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

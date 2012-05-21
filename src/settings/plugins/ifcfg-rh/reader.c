@@ -48,6 +48,7 @@
 #include <nm-utils.h>
 
 #include "wifi-utils.h"
+#include "nm-posix-signals.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -208,6 +209,12 @@ iscsiadm_child_setup (gpointer user_data G_GNUC_UNUSED)
 	 */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
+
+	/*
+	 * We blocked signals in main(). We need to restore original signal
+	 * mask for iscsiadm here so that it can receive signals.
+	 */
+	nm_unblock_posix_signals (NULL);
 }
 
 static char *

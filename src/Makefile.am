@@ -1,6 +1,7 @@
 SUBDIRS= \
 	generated \
 	logging \
+	posix-signals \
 	dns-manager \
 	vpn-manager \
 	dhcp-manager \
@@ -27,6 +28,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/src/generated \
            -I${top_builddir}/src/generated \
            -I${top_srcdir}/src/logging \
+           -I${top_srcdir}/src/posix-signals \
            -I${top_srcdir}/src/dns-manager \
            -I${top_srcdir}/src/vpn-manager \
            -I${top_srcdir}/src/dhcp-manager \
@@ -304,6 +306,7 @@ endif
 NetworkManager_LDADD = \
 	./generated/libnm-generated.la \
 	./logging/libnm-logging.la \
+	./posix-signals/libnm-posix-signals.la \
 	./dns-manager/libdns-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \

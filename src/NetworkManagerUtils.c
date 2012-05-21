@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2011 Red Hat, Inc.
+ * Copyright (C) 2004 - 2012 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -41,6 +41,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-manager-auth.h"
+#include "nm-posix-signals.h"
 
 /*
  * nm_ethernet_address_is_valid
@@ -94,7 +95,7 @@ nm_spawn_process (const char *args)
 		return -1;
 	}
 
-	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
+	if (!g_spawn_sync ("/", argv, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, &status, &error)) {
 		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, error->message);
 		g_error_free (error);
 	}

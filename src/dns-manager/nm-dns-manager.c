@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2011 Red Hat, Inc.
+ * Copyright (C) 2004 - 2012 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -42,6 +42,7 @@
 #include "nm-logging.h"
 #include "backends/nm-backend.h"
 #include "NetworkManagerUtils.h"
+#include "nm-posix-signals.h"
 
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
@@ -218,6 +219,12 @@ netconfig_child_setup (gpointer user_data G_GNUC_UNUSED)
 {
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
+
+	/*
+	 * We blocked signals in main(). We need to restore original signal
+	 * mask for netconfig here so that it can receive signals.
+	 */
+	nm_unblock_posix_signals (NULL);
 }
 
 static GPid

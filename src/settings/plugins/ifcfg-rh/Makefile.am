@@ -25,6 +25,7 @@ libifcfg_rh_io_la_SOURCES = \
 INCLUDES = \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/posix-signals \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
@@ -40,6 +41,7 @@ libifcfg_rh_io_la_CPPFLAGS = \
 
 libifcfg_rh_io_la_LIBADD = \
 	$(top_builddir)/src/wifi/libwifi-utils.la \
+	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(NSS_LIBS)

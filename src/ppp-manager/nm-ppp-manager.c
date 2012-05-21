@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -53,6 +53,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-marshal.h"
+#include "nm-posix-signals.h"
 
 static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
                                            DBusGMethodInvocation *context);
@@ -959,6 +960,12 @@ pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
+
+	/*
+	 * We blocked signals in main(). We need to restore original signal
+	 * mask for pppd here so that it can receive signals.
+	 */
+	nm_unblock_posix_signals (NULL);
 }
 
 static void

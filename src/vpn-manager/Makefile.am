@@ -7,6 +7,7 @@ INCLUDES = \
 	-I${top_srcdir}/src/generated \
 	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/posix-signals \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/dns-manager \
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"
@@ -31,6 +32,7 @@ libvpn_manager_la_CPPFLAGS =	\
 libvpn_manager_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(LIBNL_LIBS) \
 	$(DBUS_LIBS) \

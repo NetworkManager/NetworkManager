@@ -735,6 +735,7 @@ src/Makefile
 src/tests/Makefile
 src/generated/Makefile
 src/logging/Makefile
+src/posix-signals/Makefile
 src/dns-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile

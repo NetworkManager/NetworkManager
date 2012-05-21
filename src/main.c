@@ -54,6 +54,7 @@
 #include "nm-logging.h"
 #include "nm-policy-hosts.h"
 #include "nm-config.h"
+#include "nm-posix-signals.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -135,6 +136,7 @@ static gboolean
 setup_signals (void)
 {
 	pthread_t signal_thread_id;
+	sigset_t old_sig_mask;
 	int status;
 
 	sigemptyset (&signal_set);
@@ -151,11 +153,13 @@ setup_signals (void)
 	sigaddset (&signal_set, SIGUSR1);
 
 	/* Block all signals of interest. */
-	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
+	status = pthread_sigmask (SIG_BLOCK, &signal_set, &old_sig_mask);
 	if (status != 0) {
 		fprintf (stderr, _("Failed to set signal mask: %d"), status);
 		return FALSE;
 	}
+	/* Save original mask so that we could use it for child processes. */
+	nm_save_original_signal_mask (old_sig_mask);
 
 	/* Create the signal handling thread. */
 	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);

@@ -62,6 +62,7 @@
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
+#include "nm-posix-signals.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -1379,6 +1380,12 @@ aipd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	 */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
+
+	/*
+	 * We blocked signals in main(). We need to restore original signal
+	 * mask for avahi-autoipd here so that it can receive signals.
+	 */
+	nm_unblock_posix_signals (NULL);
 }
 
 static NMActStageReturn
@@ -2600,6 +2607,8 @@ share_child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
+
+	nm_unblock_posix_signals (NULL);
 }
 
 static gboolean

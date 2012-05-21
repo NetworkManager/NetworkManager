@@ -35,6 +35,7 @@
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
+#include "nm-posix-signals.h"
 
 G_DEFINE_TYPE (NMDHCPDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
@@ -83,6 +84,12 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
+
+	/*
+	 * We blocked signals in main(). We need to restore original signal
+	 * mask for dhcpcd here so that it can receive signals.
+	 */
+	nm_unblock_posix_signals (NULL);
 }
 
 static GPid
