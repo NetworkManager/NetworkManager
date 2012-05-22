@@ -243,8 +243,9 @@ device_set_state (NMIP6Device *device, NMIP6DeviceState state)
 {
 	NMIP6DeviceState oldstate;
 
-	oldstate = device->state;
+	g_return_if_fail (device != NULL);
 
+	oldstate = device->state;
 	device->state = state;
 	nm_log_dbg (LOGD_IP6, "(%s) IP6 device state: %s -> %s",
 	            device_get_iface (device), state_to_string (oldstate), state_to_string (state));
@@ -592,16 +593,48 @@ ref_object (struct nl_object *obj, void *data)
 	*out = obj;
 }
 
+static void
+dump_address_change (NMIP6Device *device, struct nlmsghdr *hdr, struct rtnl_addr *rtnladdr)
+{
+	char *event;
+	struct nl_addr *addr;
+	char addr_str[40];
+
+	event = hdr->nlmsg_type == RTM_NEWADDR ? "new" : "lost";
+	addr = rtnl_addr_get_local (rtnladdr);
+	nl_addr2str (addr, addr_str, 40);
+
+	nm_log_dbg (LOGD_IP6, "(%s) %s address: %s", device_get_iface (device), event, addr_str);
+}
+
+static void
+dump_route_change (NMIP6Device *device, struct nlmsghdr *hdr, struct rtnl_route *rtnlroute)
+{
+	char *event;
+	struct nl_addr *dst;
+	char dst_str[40];
+	struct nl_addr *gateway;
+	char gateway_str[40];
+
+	event = hdr->nlmsg_type == RTM_NEWROUTE ? "new" : "lost";
+	dst = rtnl_route_get_dst (rtnlroute);
+	gateway = rtnl_route_get_gateway (rtnlroute);
+	nl_addr2str (dst, dst_str, 40);
+	nl_addr2str (gateway, gateway_str, 40);
+
+	nm_log_dbg (LOGD_IP6, "(%s) %s route: %s via %s",device_get_iface (device), event, dst_str, gateway_str);
+}
+
 static NMIP6Device *
-process_addr (NMIP6Manager *manager, struct nl_msg *msg)
+process_address_change (NMIP6Manager *manager, struct nl_msg *msg)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	NMIP6Device *device;
+	struct nlmsghdr *hdr;
 	struct rtnl_addr *rtnladdr;
 	int old_size;
 
-	nm_log_dbg (LOGD_IP6, "processing netlink new/del address message");
-
+	hdr = nlmsg_hdr (msg);
 	rtnladdr = NULL;
 	nl_msg_parse (msg, ref_object, &rtnladdr);
 	if (!rtnladdr) {
@@ -618,31 +651,31 @@ process_addr (NMIP6Manager *manager, struct nl_msg *msg)
 
 	old_size = nl_cache_nitems (priv->addr_cache);
 	nl_cache_include (priv->addr_cache, (struct nl_object *)rtnladdr, NULL, NULL);
-	rtnl_addr_put (rtnladdr);
 
 	/* The kernel will re-notify us of automatically-added addresses
 	 * every time it gets another router advertisement. We only want
 	 * to notify higher levels if we actually changed something.
 	 */
-	if (nl_cache_nitems (priv->addr_cache) == old_size) {
-		nm_log_dbg (LOGD_IP6, "(%s): address cache unchanged, ignoring message",
-		            device->iface);
+	nm_log_dbg (LOGD_IP6, "(%s): address cache size: %d -> %d:",
+		    device_get_iface (device), old_size, nl_cache_nitems (priv->addr_cache));
+	dump_address_change (device, hdr, rtnladdr);
+	rtnl_addr_put (rtnladdr);
+	if (nl_cache_nitems (priv->addr_cache) == old_size)
 		return NULL;
-	}
 
 	return device;
 }
 
 static NMIP6Device *
-process_route (NMIP6Manager *manager, struct nl_msg *msg)
+process_route_change (NMIP6Manager *manager, struct nl_msg *msg)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	NMIP6Device *device;
+	struct nlmsghdr *hdr;
 	struct rtnl_route *rtnlroute;
 	int old_size;
 
-	nm_log_dbg (LOGD_IP6, "processing netlink new/del route message");
-
+	hdr = nlmsg_hdr (msg);
 	rtnlroute = NULL;
 	nl_msg_parse (msg, ref_object, &rtnlroute);
 	if (!rtnlroute) {
@@ -659,14 +692,14 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 
 	old_size = nl_cache_nitems (priv->route_cache);
 	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL, NULL);
-	rtnl_route_put (rtnlroute);
 
-	/* As above in process_addr */
-	if (nl_cache_nitems (priv->route_cache) == old_size) {
-		nm_log_dbg (LOGD_IP6, "(%s): route cache unchanged, ignoring message",
-		            device->iface);
+	/* As above in process_address_change */
+	nm_log_dbg (LOGD_IP6, "(%s): route cache size: %d -> %d:",
+		    device_get_iface (device), old_size, nl_cache_nitems (priv->route_cache));
+	dump_route_change (device, hdr, rtnlroute);
+	rtnl_route_put (rtnlroute);
+	if (nl_cache_nitems (priv->route_cache) == old_size)
 		return NULL;
-	}
 
 	return device;
 }
@@ -1099,11 +1132,11 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	switch (hdr->nlmsg_type) {
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
-		device = process_addr (manager, msg);
+		device = process_address_change (manager, msg);
 		break;
 	case RTM_NEWROUTE:
 	case RTM_DELROUTE:
-		device = process_route (manager, msg);
+		device = process_route_change (manager, msg);
 		break;
 	case RTM_NEWNDUSEROPT:
 		device = process_nduseropt (manager, msg);
