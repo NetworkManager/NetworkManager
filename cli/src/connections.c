@@ -705,6 +705,21 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 	if (dev_str->len > 0)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
 
+	/* Fill field values */
+	nmc_fields_con_status[0].value = nmc_fields_status_details_groups[0].name;
+	nmc_fields_con_status[1].value = _("N/A");
+	nmc_fields_con_status[2].value = nm_active_connection_get_uuid (active);
+	nmc_fields_con_status[3].value = dev_str->str;
+	nmc_fields_con_status[4].value = active_connection_state_to_string (state);
+	nmc_fields_con_status[5].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
+	nmc_fields_con_status[6].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
+	nmc_fields_con_status[7].value = nm_active_connection_get_specific_object (active);
+	nmc_fields_con_status[8].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+	nmc_fields_con_status[9].value = nm_object_get_path (NM_OBJECT (active));
+	nmc_fields_con_status[10].value = nm_active_connection_get_connection (active);
+	nmc_fields_con_status[11].value = _("N/A");
+	nmc_fields_con_status[12].value = nm_active_connection_get_master (active);
+
 	for (iter = con_list; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = (NMConnection *) iter->data;
 		const char *con_path = nm_connection_get_path (connection);
@@ -714,20 +729,9 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 			s_con = nm_connection_get_setting_connection (connection);
 			g_assert (s_con != NULL);
 
-			/* Fill field values */
-			nmc_fields_con_status[0].value = nmc_fields_status_details_groups[0].name;
+			/* Fill field values that depend on NMConnection */
 			nmc_fields_con_status[1].value = nm_setting_connection_get_id (s_con);
-			nmc_fields_con_status[2].value = nm_setting_connection_get_uuid (s_con);
-			nmc_fields_con_status[3].value = dev_str->str;
-			nmc_fields_con_status[4].value = active_connection_state_to_string (state);
-			nmc_fields_con_status[5].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
-			nmc_fields_con_status[6].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
-			nmc_fields_con_status[7].value = nm_active_connection_get_specific_object (active);
-			nmc_fields_con_status[8].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
-			nmc_fields_con_status[9].value = nm_object_get_path (NM_OBJECT (active));
-			nmc_fields_con_status[10].value = nm_active_connection_get_connection (active);
 			nmc_fields_con_status[11].value = nm_setting_connection_get_zone (s_con);
-			nmc_fields_con_status[12].value = nm_active_connection_get_master (active);
 
 			success = TRUE;
 			break;
