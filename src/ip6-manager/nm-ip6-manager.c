@@ -414,7 +414,7 @@ state_to_string (NMIP6DeviceState state)
 }
 
 static void
-nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
+nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 {
 	NMIP6Manager *manager = device->manager;
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
@@ -511,7 +511,7 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device, gboolean config_changed)
 			                                              info,
 			                                              (GDestroyNotify) g_free);
 		}
-	} else if (config_changed) {
+	} else {
 		if (!device->config_changed_id) {
 			gboolean success = TRUE;
 
@@ -617,37 +617,6 @@ process_route (NMIP6Manager *manager, struct nl_msg *msg)
 	if (nl_cache_nitems (priv->route_cache) == old_size) {
 		nm_log_dbg (LOGD_IP6, "(%s): route cache unchanged, ignoring message",
 		            device->iface);
-		return NULL;
-	}
-
-	return device;
-}
-
-static NMIP6Device *
-process_prefix (NMIP6Manager *manager, struct nl_msg *msg)
-{
-	struct prefixmsg *pmsg;
-	NMIP6Device *device;
-
-	/* We don't care about the prefix itself, but if we receive a
-	 * router advertisement telling us to use DHCP, we might not
-	 * get any RTM_NEWADDRs or RTM_NEWROUTEs, so this is our only
-	 * way to notice immediately that an RA was received.
-	 */
-
-	nm_log_dbg (LOGD_IP6, "processing netlink new prefix message");
-
-	if (!nlmsg_valid_hdr (nlmsg_hdr (msg), sizeof(*pmsg))) {
-		nm_log_dbg (LOGD_IP6, "ignoring invalid prefix message");
-		return NULL;
-	}
-
-	pmsg = (struct prefixmsg *) NLMSG_DATA (nlmsg_hdr (msg));
-	device = nm_ip6_manager_get_device (manager, pmsg->prefix_ifindex);
-
-	if (!device || device->addrconf_complete) {
-		nm_log_dbg (LOGD_IP6, "(%s): ignoring unknown or completed device",
-		            device ? device->iface : "(none)");
 		return NULL;
 	}
 
@@ -1076,7 +1045,6 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	NMIP6Manager *manager = (NMIP6Manager *) user_data;
 	NMIP6Device *device;
 	struct nlmsghdr *hdr;
-	gboolean config_changed = FALSE;
 
 	hdr = nlmsg_hdr (msg);
 	nm_log_dbg (LOGD_HW, "netlink event type %d", hdr->nlmsg_type);
@@ -1084,23 +1052,16 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	case RTM_NEWADDR:
 	case RTM_DELADDR:
 		device = process_addr (manager, msg);
-		config_changed = TRUE;
 		break;
 	case RTM_NEWROUTE:
 	case RTM_DELROUTE:
 		device = process_route (manager, msg);
-		config_changed = TRUE;
-		break;
-	case RTM_NEWPREFIX:
-		device = process_prefix (manager, msg);
 		break;
 	case RTM_NEWNDUSEROPT:
 		device = process_nduseropt (manager, msg);
-		config_changed = TRUE;
 		break;
 	case RTM_NEWLINK:
 		device = process_newlink (manager, msg);
-		config_changed = TRUE;
 		break;
 	default:
 		return;
@@ -1108,7 +1069,7 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 
 	if (device) {
 		nm_log_dbg (LOGD_IP6, "(%s): syncing device with netlink changes", device->iface);
-		nm_ip6_device_sync_from_netlink (device, config_changed);
+		nm_ip6_device_sync_from_netlink (device);
 	}
 }
 
@@ -1204,7 +1165,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	 * device is already fully configured and schedule the
 	 * ADDRCONF_COMPLETE signal in that case.
 	 */
-	nm_ip6_device_sync_from_netlink (device, FALSE);
+	nm_ip6_device_sync_from_netlink (device);
 }
 
 void
