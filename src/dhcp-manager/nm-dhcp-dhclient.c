@@ -334,6 +334,7 @@ merge_dhclient_config (const char *iface,
 	g_assert (new);
 	success = g_file_set_contents (conf_file, new, -1, error);
 	g_free (new);
+	g_free (orig);
 
 	return success;
 }
