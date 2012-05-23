@@ -2,4 +2,4 @@ DEVICE=eth0
 HWADDR=00:22:15:59:62:97
 ONBOOT=no
 BRIDGE=br0
-
+BRIDGING_OPTS="priority=28 hairpin_mode=1 path_cost=100"

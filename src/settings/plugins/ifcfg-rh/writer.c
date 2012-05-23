@@ -1289,13 +1289,13 @@ write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 }
 
 static guint32
-get_bridge_default (NMSettingBridge *s_br, const char *prop)
+get_setting_default (NMSetting *setting, const char *prop)
 {
 	GParamSpec *pspec;
 	GValue val = { 0 };
 	guint32 ret = 0;
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (s_br), prop);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
 	g_assert (pspec);
 	g_value_init (&val, pspec->value_type);
 	g_param_value_set_default (pspec, &val);
@@ -1339,7 +1339,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		svSetValue (ifcfg, "STP", "yes", FALSE);
 
 		i = nm_setting_bridge_get_forward_delay (s_bridge);
-		if (i && i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY)) {
+		if (i && i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY)) {
 			s = g_strdup_printf ("%u", i);
 			svSetValue (ifcfg, "DELAY", s, FALSE);
 			g_free (s);
@@ -1348,14 +1348,14 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		g_string_append_printf (opts, "priority=%u", nm_setting_bridge_get_priority (s_bridge));
 
 		i = nm_setting_bridge_get_hello_time (s_bridge);
-		if (i && i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME)) {
+		if (i && i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "hello_time=%u", i);
 		}
 
 		i = nm_setting_bridge_get_max_age (s_bridge);
-		if (i && i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_MAX_AGE)) {
+		if (i && i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "max_age=%u", i);
@@ -1363,7 +1363,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	}
 
 	i = nm_setting_bridge_get_ageing_time (s_bridge);
-	if (i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME)) {
+	if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "ageing_time=%u", i);
@@ -1374,6 +1374,46 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	g_string_free (opts, TRUE);
 
 	svSetValue (ifcfg, "TYPE", TYPE_BRIDGE, FALSE);
+
+	return TRUE;
+}
+
+static gboolean
+write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingBridgePort *s_port;
+	guint32 i;
+	GString *opts;
+
+	s_port = nm_connection_get_setting_bridge_port (connection);
+	if (!s_port)
+		return TRUE;
+
+	svSetValue (ifcfg, "BRIDGING_OPTS", NULL, FALSE);
+
+	/* Bridge options */
+	opts = g_string_sized_new (32);
+
+	i = nm_setting_bridge_port_get_priority (s_port);
+	if (i && i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
+		g_string_append_printf (opts, "priority=%u", i);
+
+	i = nm_setting_bridge_port_get_path_cost (s_port);
+	if (i && i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "path_cost=%u", i);
+	}
+
+	if (nm_setting_bridge_port_get_hairpin_mode (s_port)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "hairpin_mode=1");
+	}
+
+	if (opts->len)
+		svSetValue (ifcfg, "BRIDGING_OPTS", opts->str, FALSE);
+	g_string_free (opts, TRUE);
 
 	return TRUE;
 }
@@ -1419,6 +1459,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	if (master) {
 		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
 			svSetValue (ifcfg, "MASTER", master, FALSE);
+		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
+			svSetValue (ifcfg, "BRIDGE", master, FALSE);
 	}
 
 	/* secondary connection UUIDs */
@@ -2158,6 +2200,9 @@ write_connection (NMConnection *connection,
 		if (!write_8021x_setting (connection, ifcfg, wired, error))
 			goto out;
 	}
+
+	if (!write_bridge_port_setting (connection, ifcfg, error))
+		goto out;
 
 	if (!utils_ignore_ip_config (connection)) {
 		svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);

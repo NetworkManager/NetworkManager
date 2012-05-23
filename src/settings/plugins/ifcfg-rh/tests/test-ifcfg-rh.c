@@ -12089,12 +12089,15 @@ static void
 test_read_bridge_component (void)
 {
 	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingBridgePort *s_port;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
+	gboolean success;
 
 	connection = connection_from_file (TEST_IFCFG_BRIDGE_COMPONENT,
 	                                   NULL,
@@ -12106,20 +12109,135 @@ test_read_bridge_component (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection != NULL,
-	        "bridge-component-read", "unexpected failure reading %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	g_assert (connection);
 
-	ASSERT (unmanaged != NULL,
-	        "bridge-component-read", "missing unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
 
-	ASSERT (g_strcmp0 (unmanaged, "mac:00:22:15:59:62:97") == 0,
-	        "bridge-component-read", "unexpected unmanaged spec from %s", TEST_IFCFG_BRIDGE_COMPONENT);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "br0");
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+
+	s_port = nm_connection_get_setting_bridge_port (connection);
+	g_assert (s_port);
+	g_assert (nm_setting_bridge_port_get_hairpin_mode (s_port));
+	g_assert_cmpuint (nm_setting_bridge_port_get_priority (s_port), ==, 28);
+	g_assert_cmpuint (nm_setting_bridge_port_get_path_cost (s_port), ==, 100);
 
 	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
+}
+
+static void
+test_write_bridge_component (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSetting *s_port;
+	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
+	GByteArray *mac;
+	guint32 mtu = 1492;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Component",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+				  NM_SETTING_CONNECTION_MASTER, "br0",
+				  NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	g_assert (s_wired);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	mac = g_byte_array_sized_new (sizeof (tmpmac));
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRED_MTU, mtu,
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	/* Bridge port */
+	s_port = nm_setting_bridge_port_new ();
+	nm_connection_add_setting (connection, s_port);
+	g_object_set (s_port,
+	              NM_SETTING_BRIDGE_PORT_PRIORITY, 50,
+	              NM_SETTING_BRIDGE_PORT_PATH_COST, 33,
+	              NULL);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	if (route6file)
+		unlink (route6file);
+
+	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
 }
 
 #define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
@@ -13306,13 +13424,14 @@ int main (int argc, char **argv)
 
 	test_read_bridge_main ();
 	test_write_bridge_main ();
+	test_read_bridge_component ();
+	test_write_bridge_component ();
 
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();
 	test_write_vpn ();
 	test_write_mobile_broadband (TRUE);
 	test_write_mobile_broadband (FALSE);
-	test_read_bridge_component ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
