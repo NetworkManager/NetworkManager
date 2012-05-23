@@ -1270,8 +1270,6 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 	struct rtnl_route *rtnlroute;
 	struct nl_addr *nldest, *nlgateway;
 	struct in6_addr *dest, *gateway;
-	gboolean defgw_set = FALSE;
-	struct in6_addr defgw;
 	uint32_t metric;
 	NMIP6Route *ip6route;
 	int i;
@@ -1321,11 +1319,9 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		gateway = nl_addr_get_binary_addr (nlgateway);
 
 		if (rtnl_route_get_dst_len (rtnlroute) == 0) {
-			/* Default gateway route; don't add to normal routes but to each address */
-			if (!defgw_set) {
-				memcpy (&defgw, gateway, sizeof (defgw));
-				defgw_set = TRUE;
-			}
+			/* Default gateway route; cache the router's address for later */
+			if (!nm_ip6_config_get_defgw (config))
+				nm_ip6_config_set_defgw (config, gateway);
 			continue;
 		}
 
@@ -1348,6 +1344,8 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 
 	/* Add addresses */
 	for (rtnladdr = FIRST_ADDR (priv->addr_cache); rtnladdr; rtnladdr = NEXT_ADDR (rtnladdr)) {
+		const struct in6_addr *defgw;
+
 		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
 
@@ -1360,8 +1358,9 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
 		nm_ip6_address_set_address (ip6addr, addr);
 		nm_ip6_config_take_address (config, ip6addr);
-		if (defgw_set)
-			nm_ip6_address_set_gateway (ip6addr, &defgw);
+		defgw = nm_ip6_config_get_defgw (config);
+		if (defgw)
+			nm_ip6_address_set_gateway (ip6addr, defgw);
 	}
 
 	/* Add DNS servers */

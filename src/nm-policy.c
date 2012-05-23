@@ -648,7 +648,12 @@ update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		g_assert (ip6_config);
 		addr = nm_ip6_config_get_address (ip6_config, 0);
 
-		nm_system_replace_default_ip6_route (ip_ifindex, nm_ip6_address_get_gateway (addr));
+		if (memcmp (nm_ip6_address_get_gateway (addr)->s6_addr, in6addr_any.s6_addr, sizeof (in6addr_any.s6_addr)) != 0)
+			nm_system_replace_default_ip6_route (ip_ifindex, nm_ip6_address_get_gateway (addr));
+		else if (nm_ip6_config_get_defgw (ip6_config))
+			nm_system_replace_default_ip6_route (ip_ifindex, nm_ip6_config_get_defgw (ip6_config));
+		else
+			nm_log_dbg (LOGD_IP6, "missing default IPv6 route");
 
 		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	}

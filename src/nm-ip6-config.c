@@ -53,6 +53,8 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 
+	gboolean defgw_set;
+	struct in6_addr defgw;
 	GSList *routes;
 
 	gboolean never_default;
@@ -242,6 +244,30 @@ void nm_ip6_config_reset_nameservers (NMIP6Config *config)
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	if (priv->nameservers->len)
 		g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
+}
+
+void
+nm_ip6_config_set_defgw (NMIP6Config *config, const struct in6_addr *defgw)
+{
+	NMIP6ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP6_CONFIG (config));
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	if (defgw)
+		memcpy (&priv->defgw, defgw, sizeof (priv->defgw));
+	priv->defgw_set = !!defgw;
+}
+
+const struct in6_addr *
+nm_ip6_config_get_defgw (NMIP6Config *config)
+{
+	NMIP6ConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	return priv->defgw_set ? &priv->defgw : NULL;
 }
 
 void
@@ -659,6 +685,7 @@ nm_ip6_config_init (NMIP6Config *config)
 	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (struct in6_addr));
 	priv->domains = g_ptr_array_sized_new (3);
 	priv->searches = g_ptr_array_sized_new (3);
+	priv->defgw_set = FALSE;
 }
 
 static void

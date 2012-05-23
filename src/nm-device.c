@@ -1794,6 +1794,10 @@ merge_ip6_configs (NMIP6Config *dst, NMIP6Config *src)
 	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
 		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
 
+	/* default gateway */
+	if (!nm_ip6_config_get_defgw (dst))
+		nm_ip6_config_set_defgw (dst, nm_ip6_config_get_defgw (src));
+
 	/* routes */
 	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
 		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
