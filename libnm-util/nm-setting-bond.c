@@ -329,31 +329,6 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 	g_assert_not_reached ();
 }
 
-/*
- * This function is a 1:1 copy of the kernel's
- * dev_valid_name() in net/core/dev.c
- */
-static gboolean
-dev_valid_name(const char *name)
-{
-	if (*name == '\0')
-		return FALSE;
-
-	if (strlen (name) >= 16)
-		return FALSE;
-
-	if (!strcmp (name, ".") || !strcmp (name, ".."))
-		return FALSE;
-
-	while (*name) {
-		if (*name == '/' || isspace (*name))
-			return FALSE;
-		name++;
-	}
-
-	return TRUE;
-}
-
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -388,7 +363,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!dev_valid_name (priv->interface_name)) {
+	if (!nm_utils_iface_valid_name (priv->interface_name)) {
 		g_set_error (error,
 		             NM_SETTING_BOND_ERROR,
 		             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,

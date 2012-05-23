@@ -2582,3 +2582,33 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
 
 	return g_string_free (out, FALSE);
 }
+
+/**
+ * nm_utils_iface_name_valid:
+ * @name: Name of interface
+ *
+ * This function is a 1:1 copy of the kernel's interface validation
+ * function in net/core/dev.c.
+ *
+ * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
+ */
+gboolean
+nm_utils_iface_valid_name(const char *name)
+{
+	if (*name == '\0')
+		return FALSE;
+
+	if (strlen (name) >= 16)
+		return FALSE;
+
+	if (!strcmp (name, ".") || !strcmp (name, ".."))
+		return FALSE;
+
+	while (*name) {
+		if (*name == '/' || isspace (*name))
+			return FALSE;
+		name++;
+	}
+
+	return TRUE;
+}
