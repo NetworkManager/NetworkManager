@@ -114,7 +114,7 @@ typedef enum {
 } NMVPNPluginFailure;
 
 
-/* uint32: IP address of the public external VPN gateway (network byte order) */
+/* uint32 / array of uint8: IP address of the public external VPN gateway (network byte order) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY "gateway"
 
 /* uint32: IP address of the internal gateway of the subnet the VPN interface is

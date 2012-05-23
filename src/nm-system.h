@@ -55,7 +55,8 @@ gboolean		nm_system_replace_default_ip4_route_vpn (int ifindex,
 
 struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device,
                                                         guint32 vpn_gw);
-
+struct rtnl_route *nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
+                                                        const struct in6_addr *vpn_gw);
 
 gboolean        nm_system_iface_flush_addresses         (int ifindex, int family);
 

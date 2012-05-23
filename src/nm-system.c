@@ -513,6 +513,96 @@ nm_system_set_ip6_route (int ifindex,
 }
 
 static gboolean
+ip6_dest_in_same_subnet (NMIP6Config *config, const struct in6_addr *dest, guint32 dest_prefix)
+{
+	int num;
+	int i;
+
+	num = nm_ip6_config_get_num_addresses (config);
+	for (i = 0; i < num; i++) {
+		NMIP6Address *addr = nm_ip6_config_get_address (config, i);
+		guint32 prefix = nm_ip6_address_get_prefix (addr);
+		const struct in6_addr *address = nm_ip6_address_get_address (addr);
+
+		if (prefix <= dest_prefix) {
+			const guint8 *maskbytes = (const guint8 *)address;
+			const guint8 *addrbytes = (const guint8 *)dest;
+			int nbytes, nbits;
+
+			/* Copied from g_inet_address_mask_matches() */
+			nbytes = prefix / 8;
+			if (nbytes != 0 && memcmp (maskbytes, addrbytes, nbytes) != 0)
+				continue;
+
+			nbits = prefix % 8;
+			if (nbits == 0)
+				return TRUE;
+
+			if (maskbytes[nbytes] == (addrbytes[nbytes] & (0xFF << (8 - nbits))))
+				return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+struct rtnl_route *
+nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
+                                     const struct in6_addr *vpn_gw)
+{
+	NMIP6Config *parent_config;
+	const struct in6_addr *parent_gw = NULL;
+	guint32 parent_prefix = 0;
+	int i, err;
+	NMIP6Address *tmp;
+	struct rtnl_route *route = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
+	g_return_val_if_fail (vpn_gw != NULL, NULL);
+
+	/* This is all just the same as
+	 * nm_system_add_ip4_vpn_gateway_route(), except with an IPv6
+	 * address for the VPN gateway.
+	 */
+
+	parent_config = nm_device_get_ip6_config (parent_device);
+	g_return_val_if_fail (parent_config != NULL, NULL);
+
+	for (i = 0; i < nm_ip6_config_get_num_addresses (parent_config); i++) {
+		tmp = nm_ip6_config_get_address (parent_config, i);
+		if (nm_ip6_address_get_gateway (tmp)) {
+			parent_gw = nm_ip6_address_get_gateway (tmp);
+			parent_prefix = nm_ip6_address_get_prefix (tmp);
+			break;
+		}
+	}
+
+	if (!parent_gw)
+		return NULL;
+
+	if (ip6_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix)) {
+		err = nm_system_set_ip6_route (nm_device_get_ip_ifindex (parent_device),
+		                               vpn_gw, 128, NULL, 0,
+		                               nm_ip6_config_get_mss (parent_config),
+		                               RTPROT_UNSPEC, RT_TABLE_UNSPEC,
+		                               &route);
+	} else {
+		err = nm_system_set_ip6_route (nm_device_get_ip_ifindex (parent_device),
+		                               vpn_gw, 128, parent_gw, 0,
+		                               nm_ip6_config_get_mss (parent_config),
+		                               RTPROT_UNSPEC, RT_TABLE_UNSPEC,
+		                               &route);
+	}
+
+	if (err) {
+		nm_log_err (LOGD_DEVICE | LOGD_IP6,
+		            "(%s): failed to add IPv6 route to VPN gateway (%d)",
+		            nm_device_get_iface (parent_device), err);
+	}
+	return route;
+}
+
+static gboolean
 add_ip6_addresses (NMIP6Config *config, int ifindex)
 {
 	char *iface;

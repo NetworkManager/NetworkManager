@@ -78,6 +78,7 @@ typedef struct {
 	NMDevice *parent_dev;
 	gulong device_monitor;
 	gulong device_ip4;
+	gulong device_ip6;
 
 	NMVPNConnectionState vpn_state;
 	NMVPNConnectionStateReason failure_reason;
@@ -86,6 +87,7 @@ typedef struct {
 	NMIP4Config *ip4_config;
 	guint32 ip4_internal_gw;
 	guint32 ip4_external_gw;
+	struct in6_addr *ip6_external_gw;
 	char *ip_iface;
 	int ip_ifindex;
 	char *banner;
@@ -231,15 +233,33 @@ device_ip4_config_changed (NMDevice *device,
 	    || !nm_device_get_ip4_config (device))
 		return;
 
-	if (priv->gw_route) {
-		rtnl_route_put (priv->gw_route);
-		priv->gw_route = NULL;
-	}
-
 	/* Re-add the VPN gateway route */
 	if (priv->ip4_external_gw) {
+		if (priv->gw_route)
+			rtnl_route_put (priv->gw_route);
 		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
 		                                                      priv->ip4_external_gw);
+	}
+}
+
+static void
+device_ip6_config_changed (NMDevice *device,
+                           GParamSpec *pspec,
+                           gpointer user_data)
+{
+	NMVPNConnection *vpn = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
+
+	if (   (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+	    || !nm_device_get_ip6_config (device))
+		return;
+
+	/* Re-add the VPN gateway route */
+	if (priv->ip6_external_gw) {
+		if (priv->gw_route)
+			rtnl_route_put (priv->gw_route);
+		priv->gw_route = nm_system_add_ip6_vpn_gateway_route (priv->parent_dev,
+		                                                      priv->ip6_external_gw);
 	}
 }
 
@@ -276,6 +296,9 @@ nm_vpn_connection_new (NMConnection *connection,
 
 	priv->device_ip4 = g_signal_connect (parent_device, "notify::" NM_DEVICE_IP4_CONFIG,
 	                                     G_CALLBACK (device_ip4_config_changed),
+	                                     self);
+	priv->device_ip6 = g_signal_connect (parent_device, "notify::" NM_DEVICE_IP6_CONFIG,
+	                                     G_CALLBACK (device_ip6_config_changed),
 	                                     self);
 
 	if (!nm_active_connection_export (NM_ACTIVE_CONNECTION (self),
@@ -378,17 +401,18 @@ plugin_state_changed (DBusGProxy *proxy,
 	}
 }
 
+static char addr_to_string_buf[INET6_ADDRSTRLEN + 1];
+
 static const char *
 ip_address_to_string (guint32 numeric)
 {
 	struct in_addr temp_addr;
-	static char buf[INET_ADDRSTRLEN + 1];
 
-	memset (&buf, '\0', sizeof (buf));
+	memset (&addr_to_string_buf, '\0', sizeof (addr_to_string_buf));
 	temp_addr.s_addr = numeric;
 
-	if (inet_ntop (AF_INET, &temp_addr, buf, INET_ADDRSTRLEN)) {
-		return buf;
+	if (inet_ntop (AF_INET, &temp_addr, addr_to_string_buf, INET_ADDRSTRLEN)) {
+		return addr_to_string_buf;
 	} else {
 		nm_log_warn (LOGD_VPN, "error converting IP4 address 0x%X",
 		             ntohl (temp_addr.s_addr));
@@ -396,35 +420,50 @@ ip_address_to_string (guint32 numeric)
 	}
 }
 
-static void
-print_vpn_config (NMIP4Config *config,
-                  guint32 internal_gw,
-                  const char *ip_iface,
-                  const char *banner)
+static const char *
+ip6_address_to_string (struct in6_addr *addr)
 {
+	memset (addr_to_string_buf, '\0', sizeof (addr_to_string_buf));
+	if (inet_ntop (AF_INET6, addr, addr_to_string_buf, INET6_ADDRSTRLEN)) {
+		return addr_to_string_buf;
+	} else {
+		nm_log_warn (LOGD_VPN, "error converting IP6 address");
+		return NULL;
+	}
+}
+
+static void
+print_vpn_config (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMIP4Address *addr;
 	char *dns_domain = NULL;
 	guint32 num, i;
 
-	g_return_if_fail (config != NULL);
+	if (priv->ip4_external_gw) {
+		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
+		             ip_address_to_string (priv->ip4_external_gw));
+	} else if (priv->ip6_external_gw) {
+		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
+		             ip6_address_to_string (priv->ip6_external_gw));
+	} 
 
-	addr = nm_ip4_config_get_address (config, 0);
+	addr = nm_ip4_config_get_address (priv->ip4_config, 0);
 
-	nm_log_info (LOGD_VPN, "VPN Gateway: %s", ip_address_to_string (nm_ip4_address_get_gateway (addr)));
-	if (internal_gw)
-		nm_log_info (LOGD_VPN, "Internal Gateway: %s", ip_address_to_string (internal_gw));
-	nm_log_info (LOGD_VPN, "Tunnel Device: %s", ip_iface);
+	if (priv->ip4_internal_gw)
+		nm_log_info (LOGD_VPN, "Internal Gateway: %s", ip_address_to_string (priv->ip4_internal_gw));
+	nm_log_info (LOGD_VPN, "Tunnel Device: %s", priv->ip_iface);
 	nm_log_info (LOGD_VPN, "Internal IP4 Address: %s", ip_address_to_string (nm_ip4_address_get_address (addr)));
 	nm_log_info (LOGD_VPN, "Internal IP4 Prefix: %d", nm_ip4_address_get_prefix (addr));
 	nm_log_info (LOGD_VPN, "Internal IP4 Point-to-Point Address: %s",
-	             ip_address_to_string (nm_ip4_config_get_ptp_address (config)));
-	nm_log_info (LOGD_VPN, "Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
+	             ip_address_to_string (nm_ip4_config_get_ptp_address (priv->ip4_config)));
+	nm_log_info (LOGD_VPN, "Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
 
-	num = nm_ip4_config_get_num_routes (config);
+	num = nm_ip4_config_get_num_routes (priv->ip4_config);
 	for (i = 0; i < num; i++) {
 		NMIP4Route *route;
 
-		route = nm_ip4_config_get_route (config, i);
+		route = nm_ip4_config_get_route (priv->ip4_config, i);
 		nm_log_info (LOGD_VPN, "Static Route: %s/%d   Next Hop: %s",
 		             ip_address_to_string (nm_ip4_route_get_dest (route)),
 		             nm_ip4_route_get_prefix (route),
@@ -432,23 +471,23 @@ print_vpn_config (NMIP4Config *config,
 	}
 
 	nm_log_info (LOGD_VPN, "Forbid Default Route: %s",
-	             nm_ip4_config_get_never_default (config) ? "yes" : "no");
+	             nm_ip4_config_get_never_default (priv->ip4_config) ? "yes" : "no");
 
-	num = nm_ip4_config_get_num_nameservers (config);
+	num = nm_ip4_config_get_num_nameservers (priv->ip4_config);
 	for (i = 0; i < num; i++) {
 		nm_log_info (LOGD_VPN, "Internal IP4 DNS: %s",
-		             ip_address_to_string (nm_ip4_config_get_nameserver (config, i)));
+		             ip_address_to_string (nm_ip4_config_get_nameserver (priv->ip4_config, i)));
 	}
 
-	if (nm_ip4_config_get_num_domains (config) > 0)
-		dns_domain = (char *) nm_ip4_config_get_domain (config, 0);
+	if (nm_ip4_config_get_num_domains (priv->ip4_config) > 0)
+		dns_domain = (char *) nm_ip4_config_get_domain (priv->ip4_config, 0);
 
 	nm_log_info (LOGD_VPN, "DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
 
-	if (banner && strlen (banner)) {
+	if (priv->banner && strlen (priv->banner)) {
 		nm_log_info (LOGD_VPN, "Login Banner:");
 		nm_log_info (LOGD_VPN, "-----------------------------------------");
-		nm_log_info (LOGD_VPN, "%s", banner);
+		nm_log_info (LOGD_VPN, "%s", priv->banner);
 		nm_log_info (LOGD_VPN, "-----------------------------------------");
 	}
 }
@@ -489,21 +528,33 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		goto error;
 	}
 
+	/* External world-visible address of the VPN server */
+	priv->ip4_external_gw = 0;
+	priv->ip6_external_gw = NULL;
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY);
+	if (val) {
+		if (G_VALUE_HOLDS (val, G_TYPE_UINT)) {
+			priv->ip4_external_gw = g_value_get_uint (val);
+		} else if (G_VALUE_HOLDS (val, DBUS_TYPE_G_UCHAR_ARRAY)) {
+			GByteArray *ba = g_value_get_boxed (val);
+
+			if (ba->len == sizeof (struct in6_addr))
+				priv->ip6_external_gw = g_memdup (ba->data, ba->len);
+		} else {
+			nm_log_err (LOGD_VPN, "(%s): VPN gateway is neither IPv4 nor IPv6", priv->ip_iface);
+			goto error;
+		}
+	}
+
 	addr = nm_ip4_address_new ();
 	nm_ip4_address_set_prefix (addr, 24); /* default to class C */
+	if (priv->ip4_external_gw)
+		nm_ip4_address_set_gateway (addr, priv->ip4_external_gw);
 
 	/* Internal address of the VPN subnet's gateway */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY);
 	if (val)
 		priv->ip4_internal_gw = g_value_get_uint (val);
-
-	/* External world-visible address of the VPN server */
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY);
-	if (val) {
-		priv->ip4_external_gw = g_value_get_uint (val);
-		nm_ip4_address_set_gateway (addr, g_value_get_uint (val));
-	} else
-		priv->ip4_external_gw = 0;
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
@@ -598,7 +649,8 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (val && G_VALUE_HOLDS_BOOLEAN (val))
 		nm_ip4_config_set_never_default (config, g_value_get_boolean (val));
 
-	print_vpn_config (config, priv->ip4_internal_gw, priv->ip_iface, priv->banner);
+	priv->ip4_config = config;
+	print_vpn_config (connection);
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	s_ip4 = nm_connection_get_setting_ip4_config (priv->connection);
@@ -613,6 +665,9 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		if (priv->ip4_external_gw) {
 			priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
 			                                                      priv->ip4_external_gw);
+		} else if (priv->ip6_external_gw) {
+			priv->gw_route = nm_system_add_ip6_vpn_gateway_route (priv->parent_dev,
+			                                                      priv->ip6_external_gw);
 		} else
 			priv->gw_route = NULL;
 
@@ -620,8 +675,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		dns_mgr = nm_dns_manager_get (NULL);
 		nm_dns_manager_add_ip4_config (dns_mgr, priv->ip_iface, config, NM_DNS_IP_CONFIG_TYPE_VPN);
 		g_object_unref (dns_mgr);
-
-		priv->ip4_config = config;
 
 		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 		             nm_vpn_connection_get_name (connection));
@@ -632,6 +685,8 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	}
 
 error:
+	g_clear_object (&priv->ip4_config);
+
 	nm_log_warn (LOGD_VPN, "VPN connection '%s' did not receive valid IP config information.",
 	             nm_vpn_connection_get_name (connection));
 	nm_vpn_connection_set_vpn_state (connection,
@@ -1137,9 +1192,13 @@ dispose (GObject *object)
 
 	if (priv->gw_route)
 		rtnl_route_put (priv->gw_route);
+	if (priv->ip6_external_gw)
+		g_free (priv->ip6_external_gw);
 
 	if (priv->device_ip4)
 		g_signal_handler_disconnect (priv->parent_dev, priv->device_ip4);
+	if (priv->device_ip6)
+		g_signal_handler_disconnect (priv->parent_dev, priv->device_ip6);
 
 	if (priv->device_monitor)
 		g_signal_handler_disconnect (priv->parent_dev, priv->device_monitor);
