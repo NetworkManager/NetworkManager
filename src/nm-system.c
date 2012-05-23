@@ -349,14 +349,15 @@ add_ip4_addresses (NMIP4Config *config, int ifindex)
 }
 
 struct rtnl_route *
-nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_config)
+nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
 	NMIP4Config *parent_config;
-	guint32 parent_gw = 0, parent_prefix = 0, vpn_gw = 0, i;
+	guint32 parent_gw = 0, parent_prefix = 0, i;
 	NMIP4Address *tmp;
 	struct rtnl_route *route = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
+	g_return_val_if_fail (vpn_gw != 0, NULL);
 
 	/* Set up a route to the VPN gateway's public IP address through the default
 	 * network device if the VPN gateway is on a different subnet.
@@ -374,15 +375,7 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_c
 		}
 	}
 
-	for (i = 0; i < nm_ip4_config_get_num_addresses (vpn_config); i++) {
-		tmp = nm_ip4_config_get_address (vpn_config, i);
-		if (nm_ip4_address_get_gateway (tmp)) {
-			vpn_gw = nm_ip4_address_get_gateway (tmp);
-			break;
-		}
-	}
-
-	if (!parent_gw || !vpn_gw)
+	if (!parent_gw)
 		return NULL;
 
 	/* If the VPN gateway is in the same subnet as one of the parent device's

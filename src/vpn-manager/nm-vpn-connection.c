@@ -85,6 +85,7 @@ typedef struct {
 	guint ipconfig_timeout;
 	NMIP4Config *ip4_config;
 	guint32 ip4_internal_gw;
+	guint32 ip4_external_gw;
 	char *ip_iface;
 	int ip_ifindex;
 	char *banner;
@@ -230,11 +231,16 @@ device_ip4_config_changed (NMDevice *device,
 	    || !nm_device_get_ip4_config (device))
 		return;
 
-	if (priv->gw_route)
+	if (priv->gw_route) {
 		rtnl_route_put (priv->gw_route);
+		priv->gw_route = NULL;
+	}
 
 	/* Re-add the VPN gateway route */
-	priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev, priv->ip4_config);
+	if (priv->ip4_external_gw) {
+		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
+		                                                      priv->ip4_external_gw);
+	}
 }
 
 NMVPNConnection *
@@ -459,7 +465,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	NMIP4Config *config;
 	GValue *val;
 	int i;
-	guint32 vpn_ext_gw = 0;
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) reply received.",
 	             nm_vpn_connection_get_name (connection));
@@ -495,9 +500,10 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	/* External world-visible address of the VPN server */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY);
 	if (val) {
+		priv->ip4_external_gw = g_value_get_uint (val);
 		nm_ip4_address_set_gateway (addr, g_value_get_uint (val));
-		vpn_ext_gw = g_value_get_uint (val);
-	}
+	} else
+		priv->ip4_external_gw = 0;
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
@@ -576,8 +582,8 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 			 * the VPN server, we want to use the NM created route instead of
 			 * whatever the server provides.
 			 */
-			if (   vpn_ext_gw
-			    && nm_ip4_route_get_dest (route) == vpn_ext_gw
+			if (   priv->ip4_external_gw
+			    && nm_ip4_route_get_dest (route) == priv->ip4_external_gw
 			    && nm_ip4_route_get_prefix (route) == 32)
 				continue;
 
@@ -604,7 +610,11 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		NMDnsManager *dns_mgr;
 
 		/* Add any explicit route to the VPN gateway through the parent device */
-		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev, config);
+		if (priv->ip4_external_gw) {
+			priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
+			                                                      priv->ip4_external_gw);
+		} else
+			priv->gw_route = NULL;
 
 		/* Add the VPN to DNS */
 		dns_mgr = nm_dns_manager_get (NULL);
