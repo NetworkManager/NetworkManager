@@ -1156,6 +1156,16 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 	GList *def_routes, *iter;
 	struct rtnl_route *route;
 	char *iface;
+	char gw_str[INET6_ADDRSTRLEN + 1];
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (gw != NULL, FALSE);
+
+	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		memset (gw_str, 0, sizeof (gw_str));
+		if (inet_ntop (AF_INET6, gw, gw_str, sizeof (gw_str) - 1))
+			nm_log_dbg (LOGD_IP6, "Setting IPv6 default route via %s", gw_str);
+	}
 
 	/* We can't just use NLM_F_REPLACE here like in the IPv4 case, because
 	 * the kernel doesn't like it if we replace the default routes it
