@@ -114,11 +114,12 @@ static NmcOutputField nmc_fields_dev_list_general[] = {
 	{"UDI",               N_("UDI"),               64, NULL, 0},  /* 9 */
 	{"IP-IFACE",          N_("IP-IFACE"),          10, NULL, 0},  /* 10 */
 	{"NM-MANAGED",        N_("NM-MANAGED"),        15, NULL, 0},  /* 11 */
-	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18, NULL, 0},  /* 12 */
-	{"CONNECTION",        N_("CONNECTION"),        51, NULL, 0},  /* 13 */
+	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15, NULL, 0},  /* 12 */
+	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18, NULL, 0},  /* 13 */
+	{"CONNECTION",        N_("CONNECTION"),        51, NULL, 0},  /* 14 */
 	{NULL, NULL, 0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE,REASON,UDI,IP-IFACE,NM-MANAGED,FIRMWARE-MISSING,CONNECTION"
+#define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE,REASON,UDI,IP-IFACE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,CONNECTION"
 #define NMC_FIELDS_DEV_LIST_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
 /* Available fields for 'dev list' - CAPABILITIES part */
@@ -580,8 +581,9 @@ show_device_info (gpointer data, gpointer user_data)
 			nmc->allowed_fields[9].value = nm_device_get_udi (device);
 			nmc->allowed_fields[10].value = nm_device_get_ip_iface (device);
 			nmc->allowed_fields[11].value = nm_device_get_managed (device) ? _("yes") : _("no");
-			nmc->allowed_fields[12].value = nm_device_get_firmware_missing (device) ? _("yes") : _("no");
-			nmc->allowed_fields[13].value = (acon = nm_device_get_active_connection (device)) ?
+			nmc->allowed_fields[12].value = nm_device_get_autoconnect (device) ? _("yes") : _("no");
+			nmc->allowed_fields[13].value = nm_device_get_firmware_missing (device) ? _("yes") : _("no");
+			nmc->allowed_fields[14].value = (acon = nm_device_get_active_connection (device)) ?
 			                                   nm_object_get_path (NM_OBJECT (acon)) : _("not connected");
 
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
