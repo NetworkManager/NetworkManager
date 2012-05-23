@@ -44,6 +44,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-bond.h>
+#include <nm-setting-bridge.h>
 #include <nm-utils.h>
 
 #include "wifi-utils.h"
@@ -65,12 +66,27 @@ static gboolean
 get_int (const char *str, int *value)
 {
 	char *e;
+	long int tmp;
 
 	errno = 0;
-	*value = strtol (str, &e, 0);
+	tmp = strtol (str, &e, 0);
 	if (errno || *e != '\0')
 		return FALSE;
+	*value = (int) tmp;
+	return TRUE;
+}
 
+static gboolean
+get_uint (const char *str, guint32 *value)
+{
+	char *e;
+	long unsigned int tmp;
+
+	errno = 0;
+	tmp = strtoul (str, &e, 0);
+	if (errno || *e != '\0')
+		return FALSE;
+	*value = (guint32) tmp;
 	return TRUE;
 }
 
@@ -3699,6 +3715,167 @@ bond_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+static void
+handle_bridge_option (NMSettingBridge *s_bridge,
+                      gboolean stp,
+                      const char *key,
+                      const char *value)
+{
+	guint32 u = 0;
+
+	if (!strcmp (key, "priority")) {
+		if (stp == FALSE) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: 'priority' invalid when STP is disabled");
+		} else if (get_uint (value, &u))
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_PRIORITY, u, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority value '%s'", value);
+	} else if (!strcmp (key, "hello_time")) {
+		if (stp == FALSE) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: 'hello_time' invalid when STP is disabled");
+		} else if (get_uint (value, &u))
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME, u, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid hello_time value '%s'", value);
+	} else if (!strcmp (key, "max_age")) {
+		if (stp == FALSE) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: 'max_age' invalid when STP is disabled");
+		} else if (get_uint (value, &u))
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAX_AGE, u, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid max_age value '%s'", value);
+	} else if (!strcmp (key, "ageing_time")) {
+		if (get_uint (value, &u))
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME, u, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid ageing_time value '%s'", value);
+	} else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unhandled bridge option '%s'", key);
+}
+
+static NMSetting *
+make_bridge_setting (shvarFile *ifcfg,
+                     const char *file,
+                     gboolean nm_controlled,
+                     char **unmanaged,
+                     GError **error)
+{
+	NMSettingBridge *s_bridge;
+	char *value;
+	guint32 u;
+	gboolean stp = FALSE;
+
+	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
+
+	value = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (!value || !strlen (value)) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
+		goto error;
+	}
+
+	g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, value, NULL);
+	g_free (value);
+
+	value = svGetValue (ifcfg, "STP", FALSE);
+	if (value) {
+		if (!strcasecmp (value, "on") || !strcasecmp (value, "yes")) {
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, TRUE, NULL);
+			stp = TRUE;
+		} else if (!strcasecmp (value, "off") || !strcasecmp (value, "no"))
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
+		else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid STP value '%s'", value);
+		g_free (value);
+	}
+
+	value = svGetValue (ifcfg, "DELAY", FALSE);
+	if (value) {
+		if (stp) {
+			if (get_uint (value, &u))
+				g_object_set (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY, u, NULL);
+			else
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid forward delay value '%s'", value);
+		} else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: DELAY invalid when STP is disabled");
+		g_free (value);
+	}
+
+	value = svGetValue (ifcfg, "BRIDGING_OPTS", FALSE);
+	if (value) {
+		char **items, **iter;
+
+		items = g_strsplit_set (value, " ", -1);
+		for (iter = items; iter && *iter; iter++) {
+			if (strlen (*iter)) {
+				char **keys, *key, *val;
+
+				keys = g_strsplit_set (*iter, "=", 2);
+				if (keys && *keys) {
+					key = *keys;
+					val = *(keys + 1);
+					if (val && strlen(key) && strlen(val))
+						handle_bridge_option (s_bridge, stp, key, val);
+				}
+
+				g_strfreev (keys);
+			}
+		}
+		g_free (value);
+		g_strfreev (items);
+	}
+
+	return (NMSetting *) s_bridge;
+
+error:
+	g_object_unref (s_bridge);
+	return NULL;
+}
+
+static NMConnection *
+bridge_connection_from_ifcfg (const char *file,
+                              shvarFile *ifcfg,
+                              gboolean nm_controlled,
+                              char **unmanaged,
+                              GError **error)
+{
+	NMConnection *connection = NULL;
+	NMSetting *con_setting = NULL;
+	NMSetting *bridge_setting = NULL;
+
+	g_return_val_if_fail (file != NULL, NULL);
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+
+	connection = nm_connection_new ();
+	if (!connection) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to allocate new connection for %s.", file);
+		return NULL;
+	}
+
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BRIDGE_SETTING_NAME, NULL, _("Bridge"));
+	if (!con_setting) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to create connection setting.");
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, con_setting);
+
+	bridge_setting = make_bridge_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	if (!bridge_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, bridge_setting);	
+
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	return connection;
+}
+
 static gboolean
 is_bond_device (const char *name, shvarFile *parsed)
 {
@@ -4075,8 +4252,7 @@ connection_from_file (const char *filename,
 	else if (!strcasecmp (type, TYPE_VLAN))
 		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else if (!strcasecmp (type, TYPE_BRIDGE))
-		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
-		             "Bridge connections are not yet supported");
+		connection = bridge_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
 	else {
 		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
 		             "Unknown connection type '%s'", type);

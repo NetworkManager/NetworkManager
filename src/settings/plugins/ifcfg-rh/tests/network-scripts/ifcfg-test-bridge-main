@@ -4,4 +4,4 @@ TYPE=Bridge
 BOOTPROTO=dhcp
 STP=on
 DELAY=0
-
+BRIDGING_OPTS="priority=32744 hello_time=7 max_age=39 ageing_time=235352"

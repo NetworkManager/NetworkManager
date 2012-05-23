@@ -11929,6 +11929,7 @@ static void
 test_read_bridge_main (void)
 {
 	NMConnection *connection;
+	NMSettingBridge *s_bridge;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -11946,13 +11947,140 @@ test_read_bridge_main (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
-	ASSERT (connection == NULL,
-	        "bridge-main-read", "unexpected success reading %s", TEST_IFCFG_BRIDGE_MAIN);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+	g_assert_no_error (error);
+
+	/* ===== Bridging SETTING ===== */
+
+	s_bridge = nm_connection_get_setting_bridge (connection);
+	g_assert (s_bridge);
+	g_assert_cmpstr (nm_setting_bridge_get_interface_name (s_bridge), ==, "br0");
+	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 0);
+	g_assert_cmpuint (nm_setting_bridge_get_stp (s_bridge), ==, TRUE);
+	g_assert_cmpuint (nm_setting_bridge_get_priority (s_bridge), ==, 32744);
+	g_assert_cmpuint (nm_setting_bridge_get_hello_time (s_bridge), ==, 7);
+	g_assert_cmpuint (nm_setting_bridge_get_max_age (s_bridge), ==, 39);
+	g_assert_cmpuint (nm_setting_bridge_get_ageing_time (s_bridge), ==, 235352);
 
 	g_free (unmanaged);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
+	g_object_unref (connection);
+}
+
+static void
+test_write_bridge_main (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingBridge *s_bridge;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	const guint32 ip1 = htonl (0x01010103);
+	const guint32 gw = htonl (0x01010101);
+	const guint32 prefix = 24;
+	NMIP4Address *addr;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Main",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* bridge setting */
+	s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
+	g_assert (s_bridge);
+	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
+
+	g_object_set (s_bridge,
+	              NM_SETTING_BRIDGE_INTERFACE_NAME, "br0",
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	g_assert (nm_connection_verify (connection, &error));
+	g_assert_no_error (error);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert (success);
+	g_assert_cmpstr (testfile, !=, NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_BRIDGE,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert_no_error (error);
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
 }
 
 #define TEST_IFCFG_BRIDGE_COMPONENT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-component"
@@ -13176,12 +13304,14 @@ int main (int argc, char **argv)
 	test_write_bond_slave ();
 	test_write_bond_slave_ib ();
 
+	test_read_bridge_main ();
+	test_write_bridge_main ();
+
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();
 	test_write_vpn ();
 	test_write_mobile_broadband (TRUE);
 	test_write_mobile_broadband (FALSE);
-	test_read_bridge_main ();
 	test_read_bridge_component ();
 
 	base = g_path_get_basename (argv[0]);

@@ -1288,6 +1288,96 @@ write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 	return TRUE;
 }
 
+static guint32
+get_bridge_default (NMSettingBridge *s_br, const char *prop)
+{
+	GParamSpec *pspec;
+	GValue val = { 0 };
+	guint32 ret = 0;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (s_br), prop);
+	g_assert (pspec);
+	g_value_init (&val, pspec->value_type);
+	g_param_value_set_default (pspec, &val);
+	g_assert (G_VALUE_HOLDS_UINT (&val));
+	ret = g_value_get_uint (&val);
+	g_value_unset (&val);
+	return ret;
+}
+
+static gboolean
+write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingBridge *s_bridge;
+	const char *iface;
+	guint32 i;
+	GString *opts;
+	char *s;
+
+	s_bridge = nm_connection_get_setting_bridge (connection);
+	if (!s_bridge) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Missing '%s' setting", NM_SETTING_BRIDGE_SETTING_NAME);
+		return FALSE;
+	}
+
+	iface = nm_setting_bridge_get_interface_name (s_bridge);
+	if (!iface) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing interface name");
+		return FALSE;
+	}
+
+	svSetValue (ifcfg, "DEVICE", iface, FALSE);
+	svSetValue (ifcfg, "BRIDGING_OPTS", NULL, FALSE);
+	svSetValue (ifcfg, "STP", NULL, FALSE);
+	svSetValue (ifcfg, "DELAY", NULL, FALSE);
+
+	/* Bridge options */
+	opts = g_string_sized_new (32);
+
+	if (nm_setting_bridge_get_stp (s_bridge)) {
+		svSetValue (ifcfg, "STP", "yes", FALSE);
+
+		i = nm_setting_bridge_get_forward_delay (s_bridge);
+		if (i && i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY)) {
+			s = g_strdup_printf ("%u", i);
+			svSetValue (ifcfg, "DELAY", s, FALSE);
+			g_free (s);
+		}
+
+		g_string_append_printf (opts, "priority=%u", nm_setting_bridge_get_priority (s_bridge));
+
+		i = nm_setting_bridge_get_hello_time (s_bridge);
+		if (i && i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME)) {
+			if (opts->len)
+				g_string_append_c (opts, ' ');
+			g_string_append_printf (opts, "hello_time=%u", i);
+		}
+
+		i = nm_setting_bridge_get_max_age (s_bridge);
+		if (i && i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_MAX_AGE)) {
+			if (opts->len)
+				g_string_append_c (opts, ' ');
+			g_string_append_printf (opts, "max_age=%u", i);
+		}
+	}
+
+	i = nm_setting_bridge_get_ageing_time (s_bridge);
+	if (i != get_bridge_default (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "ageing_time=%u", i);
+	}
+
+	if (opts->len)
+		svSetValue (ifcfg, "BRIDGING_OPTS", opts->str, FALSE);
+	g_string_free (opts, TRUE);
+
+	svSetValue (ifcfg, "TYPE", TYPE_BRIDGE, FALSE);
+
+	return TRUE;
+}
+
 static void
 write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
@@ -2054,6 +2144,9 @@ write_connection (NMConnection *connection,
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME)) {
 		if (!write_bonding_setting (connection, ifcfg, error))
+			goto out;
+	} else if (!strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		if (!write_bridge_setting (connection, ifcfg, error))
 			goto out;
 	} else {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
