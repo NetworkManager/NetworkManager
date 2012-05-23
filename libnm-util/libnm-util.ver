@@ -18,6 +18,7 @@ global:
 	nm_connection_get_setting_adsl;
 	nm_connection_get_setting_bluetooth;
 	nm_connection_get_setting_bond;
+	nm_connection_get_setting_bridge;
 	nm_connection_get_setting_by_name;
 	nm_connection_get_setting_cdma;
 	nm_connection_get_setting_connection;
@@ -201,6 +202,17 @@ global:
 	nm_setting_bond_get_valid_options;
 	nm_setting_bond_new;
 	nm_setting_bond_remove_option;
+	nm_setting_bridge_error_get_type;
+	nm_setting_bridge_error_quark;
+	nm_setting_bridge_get_ageing_time;
+	nm_setting_bridge_get_forward_delay;
+	nm_setting_bridge_get_hello_time;
+	nm_setting_bridge_get_interface_name;
+	nm_setting_bridge_get_max_age;
+	nm_setting_bridge_get_priority;
+	nm_setting_bridge_get_stp;
+	nm_setting_bridge_get_type;
+	nm_setting_bridge_new;
 	nm_setting_cdma_error_get_type;
 	nm_setting_cdma_error_quark;
 	nm_setting_cdma_get_number;
