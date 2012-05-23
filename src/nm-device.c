@@ -120,6 +120,8 @@ enum {
 	LAST_PROP
 };
 
+#define DEFAULT_AUTOCONNECT TRUE
+
 /***********************************************************/
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
@@ -264,6 +266,7 @@ nm_device_init (NMDevice *self)
 	priv->state_reason = NM_DEVICE_STATE_REASON_NONE;
 	priv->dhcp_timeout = 0;
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
+	priv->autoconnect = DEFAULT_AUTOCONNECT;
 }
 
 static void
@@ -4093,7 +4096,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT,
 		                       "Autoconnect",
 		                       "Autoconnect",
-		                       TRUE,
+		                       DEFAULT_AUTOCONNECT,
 		                       G_PARAM_READWRITE));
 
 	g_object_class_install_property
