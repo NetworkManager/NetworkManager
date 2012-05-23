@@ -44,6 +44,7 @@
 #include <linux/sockios.h>
 #include <linux/if_bonding.h>
 #include <linux/if_vlan.h>
+#include <linux/if_bridge.h>
 
 #include "nm-system.h"
 #include "nm-device.h"
@@ -1877,6 +1878,8 @@ nm_system_get_iface_type (int ifindex, const char *name)
 		res = NM_IFACE_TYPE_BOND;
 	else if (!g_strcmp0 (type, "vlan"))
 		res = NM_IFACE_TYPE_VLAN;
+	else if (!g_strcmp0 (type, "bridge"))
+		res = NM_IFACE_TYPE_BRIDGE;
 	else if (!g_strcmp0 (type, "dummy"))
 		res = NM_IFACE_TYPE_DUMMY;
 
@@ -2312,4 +2315,244 @@ nm_system_del_vlan_iface (const char *iface)
 	rtnl_link_put (new_link);
 	nl_cache_free (cache);
 	return (ret == 0) ? TRUE : FALSE;
+}
+
+static int
+_bridge_create_compat (const char *iface)
+{
+	int ret = 0, fd;
+
+	if ((fd = socket (AF_LOCAL, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -EBADF;
+	}
+
+	if (ioctl (fd, SIOCBRADDBR, iface) < 0)
+		ret = -errno;
+
+	close (fd);
+	return ret;
+}
+
+/**
+ * nm_system_create_bridge:
+ * @iface: Name bridging device to create
+ *
+ * Creates a new bridging device in the kernel. If a bridging device with
+ * the specified name already exists, it is being reused.
+ *
+ * Returns: %TRUE on success, %FALSE on error.
+ */
+gboolean
+nm_system_create_bridge (const char *iface)
+{
+	int err;
+
+	/* FIXME: use netlink */
+	err = _bridge_create_compat (iface);
+	if (err < 0 && err != -EEXIST) {
+		nm_log_err (LOGD_DEVICE, "(%s): error while adding bridge: %s",
+		            iface, strerror (-err));
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static int
+_bridge_del_compat (const char *iface)
+{
+	int ret = 0, fd;
+
+	if ((fd = socket (AF_LOCAL, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -EBADF;
+	}
+
+	if (ioctl (fd, SIOCBRDELBR, iface) < 0)
+		ret = -errno;
+
+	close (fd);
+	return ret;
+}
+
+/**
+ * nm_system_del_bridge:
+ * @iface: Name of bridging device to delete
+ *
+ * Deletes the specified bridging device in the kernel.
+ *
+ * Returns: %TRUE on success, %FALSE on error.
+ */
+gboolean
+nm_system_del_bridge (const char *iface)
+{
+	int err;
+
+	/* FIXME: use netlink */
+	err = _bridge_del_compat (iface);
+	if (err < 0 && err != -ENXIO) {
+		nm_log_err (LOGD_DEVICE, "(%s): error while deleting bridge: %s ",
+		            iface, strerror (-err));
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static int
+_bridge_attach_compat (int master_ifindex,
+                       const char *master_iface,
+                       int slave_ifindex,
+                       const char *slave_iface)
+{
+	int ret = 0, fd;
+	struct ifreq ifr;
+
+	if ((fd = socket (AF_LOCAL, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -EBADF;
+	}
+
+	memset (&ifr, 0, sizeof (ifr));
+	strncpy (ifr.ifr_name, master_iface, IFNAMSIZ);
+	ifr.ifr_ifindex = slave_ifindex;
+	if (ioctl (fd, SIOCBRADDIF, &ifr) < 0)
+		ret = -errno;
+
+	close (fd);
+	return ret;
+}
+
+static int
+_bridge_detach_compat (int master_ifindex,
+                       const char *master_iface,
+                       int slave_ifindex,
+                       const char *slave_iface)
+{
+	int ret = 0, fd;
+	struct ifreq ifr;
+
+	if ((fd = socket (AF_LOCAL, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		return -EBADF;
+	}
+
+	memset (&ifr, 0, sizeof(ifr));
+	strncpy (ifr.ifr_name, master_iface, IFNAMSIZ);
+	ifr.ifr_ifindex = slave_ifindex;
+	if (ioctl (fd, SIOCBRDELIF, &ifr) < 0)
+		ret = -errno;
+
+	close (fd);
+	return ret;
+}
+
+/**
+ * nm_system_bridge_attach:
+ * @master_ifindex: master device interface index
+ * @master_iface: master device interface name
+ * @slave_ifindex: slave device interface index
+ * @slave_iface: slave device interface name
+ *
+ * Attaches interface 'slave' to bridge 'master'
+ *
+ * Returns: %TRUE on success, or %FALSE
+ */
+gboolean
+nm_system_bridge_attach (int master_ifindex,
+                         const char *master_iface,
+                         int slave_ifindex,
+                         const char *slave_iface)
+{
+	char *mif = NULL, *sif = NULL;
+	int err = -1;
+
+	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (slave_ifindex >= 0, FALSE);
+
+	if (!master_iface) {
+		mif = nm_netlink_index_to_iface (master_ifindex);
+		if (mif == NULL) {
+			nm_log_err (LOGD_DEVICE, "interface name lookup failed for index %d", master_ifindex);
+			goto out;
+		}
+	}
+
+	if (!slave_ifindex) {
+		sif = nm_netlink_index_to_iface (slave_ifindex);
+		if (sif == NULL) {
+			nm_log_err (LOGD_DEVICE, "interface name lookup failed for index %d", slave_ifindex);
+			goto out;
+		}
+	}
+
+	/* FIXME: long term plan is to use netlink for this */
+	err = _bridge_attach_compat (master_ifindex,
+	                             mif ? mif : master_iface,
+	                             slave_ifindex,
+	                             sif ? sif : slave_iface);
+	if (err < 0 && err != -EBUSY) {
+		nm_log_err (LOGD_DEVICE, "(%s): failed to attach slave %s: %s",
+		            master_iface, slave_iface, strerror (-err));
+	}
+
+out:
+	g_free (sif);
+	g_free (mif);
+	return err == 0 ? TRUE : FALSE;
+}
+
+/**
+ * nm_system_bridge_detach:
+ * @master_ifindex: master device interface index
+ * @master_iface: master device interface name
+ * @slave_ifindex: slave device interface index
+ * @slave_iface: slave device interface name
+ *
+ * Detaches the interface 'slave' from the bridge 'master'.
+ *
+ * Returns: %TRUE on success, or %FALSE
+ */
+gboolean
+nm_system_bridge_detach (int master_ifindex,
+                         const char *master_iface,
+                         int slave_ifindex,
+                         const char *slave_iface)
+{
+	char *mif = NULL, *sif = NULL;
+	int err = -1;
+
+	g_return_val_if_fail (master_ifindex >= 0, FALSE);
+	g_return_val_if_fail (slave_ifindex >= 0, FALSE);
+
+	if (!master_iface) {
+		mif = nm_netlink_index_to_iface (master_ifindex);
+		if (mif == NULL) {
+			nm_log_err (LOGD_DEVICE, "interface name lookup failed for index %d", master_ifindex);
+			goto out;
+		}
+	}
+
+	if (!slave_ifindex) {
+		sif = nm_netlink_index_to_iface (slave_ifindex);
+		if (sif == NULL) {
+			nm_log_err (LOGD_DEVICE, "interface name lookup failed for index %d", slave_ifindex);
+			goto out;
+		}
+	}
+
+	/* FIXME: long term plan is to use netlink for this */
+	err = _bridge_detach_compat (master_ifindex,
+	                             mif ? mif : master_iface,
+	                             slave_ifindex,
+	                             sif ? sif : slave_iface);
+	/* Kernel doesn't return an error detaching an already-detached interface */
+	if (err < 0) {
+		nm_log_err (LOGD_DEVICE, "(%s): failed to detach slave %s: %s",
+		            master_iface, slave_iface, strerror (-err));
+	}
+
+out:
+	g_free (mif);
+	g_free (sif);
+	return err == 0 ? TRUE : FALSE;
 }

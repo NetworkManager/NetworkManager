@@ -113,7 +113,8 @@ enum {
 		NM_IFACE_TYPE_UNSPEC = 0,
 		NM_IFACE_TYPE_BOND,
 		NM_IFACE_TYPE_VLAN,
-		NM_IFACE_TYPE_DUMMY,
+		NM_IFACE_TYPE_BRIDGE,
+		NM_IFACE_TYPE_DUMMY
 };
 
 int             nm_system_get_iface_type      (int ifindex, const char *name);
@@ -126,5 +127,17 @@ gboolean        nm_system_add_vlan_iface (NMConnection *connection,
                                           const char *iface,
                                           int parent_ifindex);
 gboolean        nm_system_del_vlan_iface (const char *iface);
+
+gboolean        nm_system_create_bridge (const char *iface);
+gboolean        nm_system_del_bridge (const char *iface);
+
+gboolean        nm_system_bridge_attach (int master_ifindex,
+                                         const char *master_iface,
+                                         int slave_ifindex,
+                                         const char *slave_iface);
+gboolean        nm_system_bridge_detach (int master_ifindex,
+                                         const char *master_iface,
+                                         int slave_ifindex,
+                                         const char *slave_iface);
 
 #endif
