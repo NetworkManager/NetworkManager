@@ -598,11 +598,12 @@ dump_address_change (NMIP6Device *device, struct nlmsghdr *hdr, struct rtnl_addr
 {
 	char *event;
 	struct nl_addr *addr;
-	char addr_str[40];
+	char addr_str[40] = "none";
 
 	event = hdr->nlmsg_type == RTM_NEWADDR ? "new" : "lost";
 	addr = rtnl_addr_get_local (rtnladdr);
-	nl_addr2str (addr, addr_str, 40);
+	if (addr)
+		nl_addr2str (addr, addr_str, 40);
 
 	nm_log_dbg (LOGD_IP6, "(%s) %s address: %s", device_get_iface (device), event, addr_str);
 }
@@ -612,15 +613,17 @@ dump_route_change (NMIP6Device *device, struct nlmsghdr *hdr, struct rtnl_route 
 {
 	char *event;
 	struct nl_addr *dst;
-	char dst_str[40];
+	char dst_str[40] = "none";
 	struct nl_addr *gateway;
-	char gateway_str[40];
+	char gateway_str[40] = "none";
 
 	event = hdr->nlmsg_type == RTM_NEWROUTE ? "new" : "lost";
 	dst = rtnl_route_get_dst (rtnlroute);
 	gateway = rtnl_route_get_gateway (rtnlroute);
-	nl_addr2str (dst, dst_str, 40);
-	nl_addr2str (gateway, gateway_str, 40);
+	if (dst)
+		nl_addr2str (dst, dst_str, 40);
+	if (gateway)
+		nl_addr2str (gateway, gateway_str, 40);
 
 	nm_log_dbg (LOGD_IP6, "(%s) %s route: %s via %s",device_get_iface (device), event, dst_str, gateway_str);
 }
