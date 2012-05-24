@@ -66,6 +66,10 @@ GType nm_dns_manager_get_type (void);
 
 NMDnsManager * nm_dns_manager_get (const char **plugins);
 
+/* Allow changes to be batched together */
+void nm_dns_manager_begin_updates (NMDnsManager *mgr, const char *func);
+void nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func);
+
 gboolean nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
                                         const char *iface,
                                         NMIP4Config *config,

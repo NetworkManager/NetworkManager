@@ -62,6 +62,8 @@ G_DEFINE_TYPE(NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
                                        NM_TYPE_DNS_MANAGER, \
                                        NMDnsManagerPrivate))
 
+#define HASH_LEN 20
+
 typedef struct {
 	gboolean disposed;
 
@@ -71,14 +73,10 @@ typedef struct {
 	NMIP6Config *ip6_device_config;
 	GSList *configs;
 	char *hostname;
+	guint updates_queue;
 
-	/* poor man's hash; we assume that the IP4 config object won't change
-	 * after it's given to us, which is (at this time) a fair assumption. So
-	 * we track the order of the currently applied IP configs and if they
-	 * haven't changed we don't need to rewrite resolv.conf.
-	 */
-	#define HLEN 6
-	gpointer hash[HLEN];
+	guint8 hash[HASH_LEN];  /* SHA1 hash of current DNS config */
+	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
 	GSList *plugins;
 
@@ -536,34 +534,43 @@ out:
 }
 
 static void
-compute_hash (NMDnsManager *self, gpointer *hash)
+compute_hash (NMDnsManager *self, guint8 buffer[HASH_LEN])
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	gpointer check[HLEN];
+	GChecksum *sum;
 	GSList *iter;
-	int i = 0;
+	gsize len = HASH_LEN;
 
-	memset (check, 0, sizeof (check));
+	sum = g_checksum_new (G_CHECKSUM_SHA1);
+	g_assert (len == g_checksum_type_get_length (G_CHECKSUM_SHA1));
 
 	if (priv->ip4_vpn_config)
-		check[i++] = priv->ip4_vpn_config;
+		nm_ip4_config_hash (priv->ip4_vpn_config, sum, TRUE);
 	if (priv->ip4_device_config)
-		check[i++] = priv->ip4_device_config;
+		nm_ip4_config_hash (priv->ip4_device_config, sum, TRUE);
 
 	if (priv->ip6_vpn_config)
-		check[i++] = priv->ip6_vpn_config;
+		nm_ip6_config_hash (priv->ip6_vpn_config, sum, TRUE);
 	if (priv->ip6_device_config)
-		check[i++] = priv->ip6_device_config;
+		nm_ip6_config_hash (priv->ip6_device_config, sum, TRUE);
 
-	/* Add two more "other" configs if any exist */
-	for (iter = priv->configs; iter && i < HLEN; iter = g_slist_next (iter)) {
-		if (   (iter->data != priv->ip4_vpn_config)
-		    && (iter->data != priv->ip4_device_config)
-		    && (iter->data != priv->ip6_vpn_config)
-		    && (iter->data != priv->ip6_device_config))
-			check[i++] = iter->data;
+	/* add any other configs we know about */
+	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
+		if (   (iter->data == priv->ip4_vpn_config)
+		    && (iter->data == priv->ip4_device_config)
+		    && (iter->data == priv->ip6_vpn_config)
+		    && (iter->data == priv->ip6_device_config))
+			continue;
+
+		if (NM_IS_IP4_CONFIG (iter->data))
+			nm_ip4_config_hash (NM_IP4_CONFIG (iter->data), sum, TRUE);
+		else if (NM_IS_IP6_CONFIG (iter->data))
+			nm_ip6_config_hash (NM_IP6_CONFIG (iter->data), sum, TRUE);
 	}
-	memcpy (hash, check, sizeof (check));
+
+	memset (buffer, 0, sizeof (buffer));
+	g_checksum_get_digest (sum, buffer, &len);
+	g_checksum_free (sum);
 }
 
 static gboolean
@@ -587,6 +594,8 @@ update_dns (NMDnsManager *self,
 	g_return_val_if_fail (*error == NULL, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	nm_log_dbg (LOGD_DNS, "updating resolv.conf");
 
 	if (iface && (iface != priv->last_iface)) {
 		g_free (priv->last_iface);
@@ -791,23 +800,6 @@ plugin_failed (NMDnsPlugin *plugin, gpointer user_data)
 	}
 }
 
-static gboolean
-config_changed (NMDnsManager *self)
-{
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	gpointer check[HLEN];
-
-	/* We only store HLEN configs; so if there are actually more than that,
-	 * we have to assume that the config has changed.
-	 */
-	if (g_slist_length (priv->configs) > HLEN)
-		return TRUE;
-
-	/* Otherwise return TRUE if the configuration has changed */
-	compute_hash (self, check);
-	return memcmp (check, priv->hash, sizeof (check)) ? TRUE : FALSE;
-}
-
 gboolean
 nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
                                const char *iface,
@@ -838,10 +830,7 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
-	if (!config_changed (mgr))
-		return TRUE;
-
-	if (!update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -878,10 +867,7 @@ nm_dns_manager_remove_ip4_config (NMDnsManager *mgr,
 
 	g_object_unref (config);
 
-	if (!config_changed (mgr))
-		return TRUE;
-
-	if (!update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -921,10 +907,7 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
-	if (!config_changed (mgr))
-		return TRUE;
-
-	if (!update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -961,10 +944,7 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr,
 
 	g_object_unref (config);	
 
-	if (!config_changed (mgr))
-		return TRUE;
-
-	if (!update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -1002,12 +982,64 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 	 * wants one.  But hostname changes are system-wide and *not* tied to a
 	 * specific interface, so netconfig can't really handle this.  Fake it.
 	 */
-	if (!update_dns (mgr, priv->last_iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, priv->last_iface, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
+}
+
+void
+nm_dns_manager_begin_updates (NMDnsManager *mgr, const char *func)
+{
+	NMDnsManagerPrivate *priv;
+
+	g_return_if_fail (mgr != NULL);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+
+	/* Save current hash when starting a new batch */
+	if (priv->updates_queue == 0)
+		memcpy (priv->prev_hash, priv->hash, sizeof (priv->hash));
+
+	priv->updates_queue++;
+
+	nm_log_dbg (LOGD_DNS, "(%s): queueing DNS updates (%d)", func, priv->updates_queue);
+}
+
+void
+nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
+{
+	NMDnsManagerPrivate *priv;
+	GError *error = NULL;
+	gboolean changed;
+	guint8 new[HASH_LEN];
+
+	g_return_if_fail (mgr != NULL);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	g_return_if_fail (priv->updates_queue > 0);
+
+	compute_hash (mgr, new);
+	changed = (memcmp (new, priv->prev_hash, sizeof (new)) != 0) ? TRUE : FALSE;
+	nm_log_dbg (LOGD_DNS, "(%s): DNS configuration %s", __func__, changed ? "changed" : "did not change");
+
+	priv->updates_queue--;
+	if ((priv->updates_queue > 0) || (changed == FALSE)) {
+		nm_log_dbg (LOGD_DNS, "(%s): no DNS changes to commit (%d)", func, priv->updates_queue);
+		return;
+	}
+
+	/* Commit all the outstanding changes */
+	nm_log_dbg (LOGD_DNS, "(%s): committing DNS changes (%d)", func, priv->updates_queue);
+	if (!update_dns (mgr, priv->last_iface, FALSE, &error)) {
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
+			         error ? error->code : -1,
+			         error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+
+	memset (priv->prev_hash, 0, sizeof (priv->prev_hash));
 }
 
 static void
@@ -1084,8 +1116,10 @@ nm_dns_manager_error_quark (void)
 }
 
 static void
-nm_dns_manager_init (NMDnsManager *mgr)
+nm_dns_manager_init (NMDnsManager *self)
 {
+	/* Set the initial hash */
+	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
 }
 
 static void
