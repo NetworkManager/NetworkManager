@@ -141,13 +141,103 @@ ac_state_from_vpn_state (NMVPNConnectionState vpn_state)
 }
 
 static void
+call_plugin_disconnect (NMVPNConnection *self)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	if (priv->proxy) {
+		org_freedesktop_NetworkManager_VPN_Plugin_disconnect (priv->proxy, &error);
+		if (error)
+			nm_log_warn (LOGD_VPN, "error disconnecting VPN: %s", error->message);
+		g_clear_error (&error);
+
+		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
+	}
+}
+
+static void
+vpn_cleanup (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->ip_ifindex) {
+		nm_system_iface_set_up (priv->ip_ifindex, FALSE, NULL);
+		/* FIXME: use AF_UNSPEC here when we have IPv6 support */
+		nm_system_iface_flush_routes (priv->ip_ifindex, AF_INET);
+		nm_system_iface_flush_addresses (priv->ip_ifindex, AF_UNSPEC);
+	}
+
+	if (priv->ip4_config) {
+		NMIP4Config *parent_config;
+		NMDnsManager *dns_mgr;
+
+		/* Remove attributes of the VPN's IP4 Config */
+		dns_mgr = nm_dns_manager_get (NULL);
+		nm_dns_manager_remove_ip4_config (dns_mgr, priv->ip_iface, priv->ip4_config);
+		g_object_unref (dns_mgr);
+
+		/* Reset routes and addresses of the currently active device */
+		parent_config = nm_device_get_ip4_config (priv->parent_dev);
+		if (parent_config) {
+			if (!nm_system_apply_ip4_config (nm_device_get_ip_ifindex (priv->parent_dev),
+			                                 nm_device_get_ip4_config (priv->parent_dev),
+			                                 nm_device_get_priority (priv->parent_dev),
+			                                 NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_ROUTES)) {
+				nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device addresses and routes.");
+			}
+		}
+	}
+
+	if (priv->ip6_config) {
+		NMIP6Config *parent_config;
+		NMDnsManager *dns_mgr;
+
+		/* Remove attributes of the VPN's IP6 Config */
+		dns_mgr = nm_dns_manager_get (NULL);
+		nm_dns_manager_remove_ip6_config (dns_mgr, priv->ip_iface, priv->ip6_config);
+		g_object_unref (dns_mgr);
+
+		/* Reset routes and addresses of the currently active device */
+		parent_config = nm_device_get_ip6_config (priv->parent_dev);
+		if (parent_config) {
+			if (!nm_system_apply_ip6_config (nm_device_get_ip_ifindex (priv->parent_dev),
+			                                 nm_device_get_ip6_config (priv->parent_dev),
+			                                 nm_device_get_priority (priv->parent_dev),
+			                                 NM_IP6_COMPARE_FLAG_ADDRESSES | NM_IP6_COMPARE_FLAG_ROUTES)) {
+				nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device addresses and routes.");
+			}
+		}
+	}
+
+	if (priv->gw_route) {
+		nm_netlink_route_delete (priv->gw_route);
+		rtnl_route_put (priv->gw_route);
+		priv->gw_route = NULL;
+	}
+
+	g_free (priv->banner);
+	priv->banner = NULL;
+
+	g_free (priv->ip_iface);
+	priv->ip_iface = NULL;
+	priv->ip_ifindex = 0;
+
+	/* Clear out connection secrets to ensure that the settings service
+	 * gets asked for them next time the connection is activated.
+	 */
+	if (priv->connection)
+		nm_connection_clear_secrets (priv->connection);
+}
+
+static void
 nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
                                  NMVPNConnectionState vpn_state,
                                  NMVPNConnectionStateReason reason)
 {
 	NMVPNConnectionPrivate *priv;
 	NMVPNConnectionState old_vpn_state;
-	char *ip_iface;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 
@@ -163,10 +253,12 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (connection),
 	                                ac_state_from_vpn_state (vpn_state));
 
-	/* Save ip_iface since when the VPN goes down it may get freed
-	 * before we're done with it.
-	 */
-	ip_iface = g_strdup (priv->ip_iface);
+	/* Clear any in-progress secrets request */
+	if (priv->secrets_id) {
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
+		priv->secrets_id = 0;
+	}
+	priv->secrets_idx = SECRETS_REQ_SYSTEM;
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
@@ -177,32 +269,47 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
 	g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
 
-	/* Call dispatcher after the event gets processed internally */
 	switch (vpn_state) {
+	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+		/* Kick off the secrets requests; first we get existing system secrets
+		 * and ask the plugin if these are sufficient, next we get all existing
+		 * secrets from system and from user agents and ask the plugin again,
+		 * and last we ask the user for new secrets if required.
+		 */
+		get_secrets (connection, SECRETS_REQ_SYSTEM);
+		break;
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		/* Secrets no longer needed now that we're connected */
+		nm_connection_clear_secrets (priv->connection);
+
+		/* Let dispatcher scripts know we're up and running */
 		nm_utils_call_dispatcher ("vpn-up",
 		                          priv->connection,
 		                          priv->parent_dev,
-		                          ip_iface,
+		                          priv->ip_iface,
 		                          priv->ip4_config,
 		                          priv->ip6_config);
 		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 		if (old_vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED) {
+			/* Let dispatcher scripts know we're about to go down */
 			nm_utils_call_dispatcher ("vpn-down",
 			                          priv->connection,
 			                          priv->parent_dev,
-			                          ip_iface,
+			                          priv->ip_iface,
 			                          NULL,
 			                          NULL);
 		}
+
+		/* Tear down and clean up the connection */
+		call_plugin_disconnect (connection);
+		vpn_cleanup (connection);
 		break;
 	default:
 		break;
 	}
 
-	g_free (ip_iface);
 	g_object_unref (connection);
 }
 
@@ -1414,127 +1521,7 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 	}
 }
 
-static void
-vpn_cleanup (NMVPNConnection *connection)
-{
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-
-	if (priv->ip_ifindex) {
-		nm_system_iface_set_up (priv->ip_ifindex, FALSE, NULL);
-		/* FIXME: use AF_UNSPEC here when we have IPv6 support */
-		nm_system_iface_flush_routes (priv->ip_ifindex, AF_INET);
-		nm_system_iface_flush_addresses (priv->ip_ifindex, AF_UNSPEC);
-	}
-
-	if (priv->ip4_config) {
-		NMIP4Config *parent_config;
-		NMDnsManager *dns_mgr;
-
-		/* Remove attributes of the VPN's IP4 Config */
-		dns_mgr = nm_dns_manager_get (NULL);
-		nm_dns_manager_remove_ip4_config (dns_mgr, priv->ip_iface, priv->ip4_config);
-		g_object_unref (dns_mgr);
-
-		/* Reset routes and addresses of the currently active device */
-		parent_config = nm_device_get_ip4_config (priv->parent_dev);
-		if (parent_config) {
-			if (!nm_system_apply_ip4_config (nm_device_get_ip_ifindex (priv->parent_dev),
-			                                 nm_device_get_ip4_config (priv->parent_dev),
-			                                 nm_device_get_priority (priv->parent_dev),
-			                                 NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_ROUTES)) {
-				nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device addresses and routes.");
-			}
-		}
-	}
-
-	if (priv->ip6_config) {
-		NMIP6Config *parent_config;
-		NMDnsManager *dns_mgr;
-
-		/* Remove attributes of the VPN's IP6 Config */
-		dns_mgr = nm_dns_manager_get (NULL);
-		nm_dns_manager_remove_ip6_config (dns_mgr, priv->ip_iface, priv->ip6_config);
-		g_object_unref (dns_mgr);
-
-		/* Reset routes and addresses of the currently active device */
-		parent_config = nm_device_get_ip6_config (priv->parent_dev);
-		if (parent_config) {
-			if (!nm_system_apply_ip6_config (nm_device_get_ip_ifindex (priv->parent_dev),
-			                                 nm_device_get_ip6_config (priv->parent_dev),
-			                                 nm_device_get_priority (priv->parent_dev),
-			                                 NM_IP6_COMPARE_FLAG_ADDRESSES | NM_IP6_COMPARE_FLAG_ROUTES)) {
-				nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device addresses and routes.");
-			}
-		}
-	}
-
-	if (priv->gw_route) {
-		nm_netlink_route_delete (priv->gw_route);
-		rtnl_route_put (priv->gw_route);
-		priv->gw_route = NULL;
-	}
-
-	g_free (priv->banner);
-	priv->banner = NULL;
-
-	g_free (priv->ip_iface);
-	priv->ip_iface = NULL;
-	priv->ip_ifindex = 0;
-
-	/* Clear out connection secrets to ensure that the settings service
-	 * gets asked for them next time the connection is activated.
-	 */
-	if (priv->connection)
-		nm_connection_clear_secrets (priv->connection);
-}
-
-static void
-connection_state_changed (NMVPNConnection *self,
-                          NMVPNConnectionState state,
-                          NMVPNConnectionStateReason reason)
-{
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-
-	/* Clear any in-progress secrets request */
-	if (priv->secrets_id) {
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
-		priv->secrets_id = 0;
-	}
-	priv->secrets_idx = SECRETS_REQ_SYSTEM;
-
-	switch (state) {
-	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-		/* Kick off the secrets requests; first we get existing system secrets
-		 * and ask the plugin if these are sufficient, next we get all existing
-		 * secrets from system and from user agents and ask the plugin again,
-		 * and last we ask the user for new secrets if required.
-		 */
-		get_secrets (self, SECRETS_REQ_SYSTEM);
-		break;
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		/* Secrets no longer needed now that we're connected */
-		nm_connection_clear_secrets (priv->connection);
-		break;
-	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
-	case NM_VPN_CONNECTION_STATE_FAILED:
-		if (priv->proxy) {
-			GError *err = NULL;
-
-			org_freedesktop_NetworkManager_VPN_Plugin_disconnect (priv->proxy, &err);
-			if (err) {
-				nm_log_warn (LOGD_VPN, "error disconnecting VPN: %s", err->message);
-				g_error_free (err);
-			}
-
-			g_object_unref (priv->proxy);
-			priv->proxy = NULL;
-		}
-		vpn_cleanup (self);
-		break;
-	default:
-		break;
-	}
-}
+/******************************************************************************/
 
 static void
 nm_vpn_connection_init (NMVPNConnection *self)
@@ -1633,7 +1620,6 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	g_type_class_add_private (connection_class, sizeof (NMVPNConnectionPrivate));
 
 	/* virtual methods */
-	connection_class->vpn_state_changed = connection_state_changed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
