@@ -638,7 +638,7 @@ nm_ip6_config_diff (NMIP6Config *a, NMIP6Config *b)
 	NMIP6ConfigCompareFlags flags = NM_IP6_COMPARE_FLAG_NONE;
 
 	if ((a && !b) || (b && !a))
-		return 0xFFFFFFFF;
+		return NM_IP6_COMPARE_FLAG_ALL;
 	if (!a && !b)
 		return NM_IP6_COMPARE_FLAG_NONE;
 
