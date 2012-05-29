@@ -60,8 +60,10 @@
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
 
-/* Internal signal */
+/* Internal signals */
 #define NM_DEVICE_AUTH_REQUEST "auth-request"
+#define NM_DEVICE_IP4_CONFIG_CHANGED "ip4-config-changed"
+#define NM_DEVICE_IP6_CONFIG_CHANGED "ip6-config-changed"
 
 
 G_BEGIN_DECLS

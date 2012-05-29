@@ -94,6 +94,8 @@ enum {
 	STATE_CHANGED,
 	AUTOCONNECT_ALLOWED,
 	AUTH_REQUEST,
+	IP4_CONFIG_CHANGED,
+	IP6_CONFIG_CHANGED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -3517,21 +3519,21 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
+	ip_ifindex = nm_device_get_ip_ifindex (self);
 
 	old_config = priv->ip4_config;
 
-	if (new_config && old_config)
+	if (new_config && old_config) {
 		diff = nm_ip4_config_diff (new_config, old_config);
-
-	/* No actual change, do nothing */
-	if (diff == NM_IP4_COMPARE_FLAG_NONE)
+		if (diff == NM_IP4_COMPARE_FLAG_NONE)
+			return TRUE;  /* no actual change */
+	} else if (!new_config && !old_config)
 		return TRUE;
 
 	dns_mgr = nm_dns_manager_get (NULL);
 	if (old_config) {
 		/* Remove any previous IP4 Config from the DNS manager */
 		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
-		g_object_unref (old_config);
 		priv->ip4_config = NULL;
 	}
 
@@ -3541,10 +3543,8 @@ nm_device_set_ip4_config (NMDevice *self,
 		/* Don't touch the device's actual IP config if the connection is
 		 * assumed when NM starts.
 		 */
-		if (!assumed) {
-			ip_ifindex = nm_device_get_ip_ifindex (self);
+		if (!assumed)
 			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
-		}
 
 		if (success || assumed) {
 			/* Export over D-Bus */
@@ -3560,6 +3560,10 @@ nm_device_set_ip4_config (NMDevice *self,
 	g_object_unref (dns_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
+	g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
+
+	if (old_config)
+		g_object_unref (old_config);
 
 	return success;
 }
@@ -3586,18 +3590,17 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	old_config = priv->ip6_config;
 
-	if (new_config && old_config)
+	if (new_config && old_config) {
 		diff = nm_ip6_config_diff (new_config, old_config);
-
-	/* No actual change, do nothing */
-	if (diff == NM_IP6_COMPARE_FLAG_NONE)
+		if (diff == NM_IP6_COMPARE_FLAG_NONE)
+			return TRUE;  /* no actual change */
+	} else if (!new_config && !old_config)
 		return TRUE;
 
 	dns_mgr = nm_dns_manager_get (NULL);
 	if (old_config) {
 		/* Remove any previous IP6 Config from the DNS manager */
 		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
-		g_object_unref (old_config);
 		priv->ip6_config = NULL;
 	}
 
@@ -3618,6 +3621,10 @@ nm_device_set_ip6_config (NMDevice *self,
 	g_object_unref (dns_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
+	g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
+
+	if (old_config)
+		g_object_unref (old_config);
 
 	return success;
 }
@@ -4270,6 +4277,22 @@ nm_device_class_init (NMDeviceClass *klass)
 		              /* dbus-glib context, permission, allow_interaction, callback, user_data */
 		              _nm_marshal_VOID__POINTER_STRING_BOOLEAN_POINTER_POINTER,
 		              G_TYPE_NONE, 5, G_TYPE_POINTER, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
+
+	signals[IP4_CONFIG_CHANGED] =
+		g_signal_new (NM_DEVICE_IP4_CONFIG_CHANGED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              _nm_marshal_VOID__OBJECT_OBJECT,
+		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+
+	signals[IP6_CONFIG_CHANGED] =
+		g_signal_new (NM_DEVICE_IP6_CONFIG_CHANGED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              _nm_marshal_VOID__OBJECT_OBJECT,
+		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 	                                 &dbus_glib_nm_device_interface_object_info);
