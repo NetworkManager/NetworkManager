@@ -34,8 +34,13 @@
 #define NM_IS_VPN_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_VPN_CONNECTION))
 #define NM_VPN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
 
+/* Properties */
 #define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
+
+/* Signals */
+#define NM_VPN_CONNECTION_VPN_STATE_CHANGED "vpn-state-changed"
+
 
 typedef struct {
 	NMActiveConnection parent;

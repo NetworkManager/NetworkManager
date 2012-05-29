@@ -1645,16 +1645,14 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 
 	/* signals */
 	signals[VPN_STATE_CHANGED] =
-		g_signal_new ("vpn-state-changed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMVPNConnectionClass, vpn_state_changed),
-				    NULL, NULL,
-				    _nm_marshal_VOID__UINT_UINT,
-				    G_TYPE_NONE, 2,
-				    G_TYPE_UINT, G_TYPE_UINT);
+		g_signal_new (NM_VPN_CONNECTION_VPN_STATE_CHANGED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              _nm_marshal_VOID__UINT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (object_class),
-									 &dbus_glib_nm_vpn_connection_object_info);
+	                                 &dbus_glib_nm_vpn_connection_object_info);
 }
 
