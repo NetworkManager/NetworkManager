@@ -81,7 +81,7 @@ static void schedule_activate_all (NMPolicy *policy);
 
 
 static NMDevice *
-get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
+get_best_ip4_device (NMManager *manager)
 {
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
@@ -89,8 +89,6 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (out_req != NULL, NULL);
-	g_return_val_if_fail (*out_req == NULL, NULL);
 
 	devices = nm_manager_get_devices (manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
@@ -148,7 +146,6 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 		if (prio > 0 && prio < best_prio) {
 			best = dev;
 			best_prio = prio;
-			*out_req = req;
 		}
 	}
 
@@ -156,7 +153,7 @@ get_best_ip4_device (NMManager *manager, NMActRequest **out_req)
 }
 
 static NMDevice *
-get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
+get_best_ip6_device (NMManager *manager)
 {
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
@@ -164,8 +161,6 @@ get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (out_req != NULL, NULL);
-	g_return_val_if_fail (*out_req == NULL, NULL);
 
 	devices = nm_manager_get_devices (manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
@@ -222,7 +217,6 @@ get_best_ip6_device (NMManager *manager, NMActRequest **out_req)
 		if (prio > 0 && prio < best_prio) {
 			best = dev;
 			best_prio = prio;
-			*out_req = req;
 		}
 	}
 
@@ -295,8 +289,6 @@ static void
 update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 {
 	char *configured_hostname = NULL;
-	NMActRequest *best_req4 = NULL;
-	NMActRequest *best_req6 = NULL;
 	const char *dhcp_hostname, *p;
 
 	g_return_if_fail (policy != NULL);
@@ -325,9 +317,9 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
-		best4 = get_best_ip4_device (policy->manager, &best_req4);
+		best4 = get_best_ip4_device (policy->manager);
 	if (!best6)
-		best6 = get_best_ip6_device (policy->manager, &best_req6);
+		best6 = get_best_ip6_device (policy->manager);
 
 	if (!best4 && !best6) {
 		/* No best device; fall back to original hostname or if there wasn't
@@ -433,284 +425,356 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 }
 
 static void
-update_ip4_routing_and_dns (NMPolicy *policy, gboolean force_update)
+update_default_ac (NMPolicy *policy,
+                   NMActiveConnection *best,
+                   void (*set_active_func)(NMActiveConnection*, gboolean))
 {
-	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
-	NMDevice *best = NULL;
-	NMActRequest *best_req = NULL;
-	NMDnsManager *dns_mgr;
-	GSList *devices = NULL, *iter, *vpns;
-	NMIP4Config *ip4_config = NULL;
-	NMIP4Address *addr;
-	const char *ip_iface = NULL;
-	NMConnection *connection = NULL;
-	NMSettingConnection *s_con = NULL;
-	const char *connection_id;
-	int ip_ifindex = 0;
+	GSList *devices, *vpns, *iter;
+	NMActRequest *req;
 
-	best = get_best_ip4_device (policy->manager, &best_req);
-	if (!force_update && best && (best == policy->default_device4))
-		goto out;
-
-	/* If a VPN connection is active, it is preferred */
-	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
-	for (iter = vpns; iter; iter = g_slist_next (iter)) {
-		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
-		NMConnection *vpn_connection;
-		NMSettingIP4Config *s_ip4;
-		gboolean can_default = TRUE;
-		NMVPNConnectionState vpn_state;
-
-		/* If it's marked 'never-default', don't make it default */
-		vpn_connection = nm_vpn_connection_get_connection (candidate);
-		g_assert (vpn_connection);
-
-		/* Check the active IP4 config from the VPN service daemon */
-		ip4_config = nm_vpn_connection_get_ip4_config (candidate);
-		if (!ip4_config || nm_ip4_config_get_never_default (ip4_config))
-			can_default = FALSE;
-
-		/* Check the user's preference from the NMConnection */
-		s_ip4 = nm_connection_get_setting_ip4_config (vpn_connection);
-		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
-			can_default = FALSE;
-
-		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
-		if (can_default && (vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED)) {
-			NMIP4Config *parent_ip4;
-			NMDevice *parent;
-			guint32 parent_mss;
-
-			ip_iface = nm_vpn_connection_get_ip_iface (candidate);
-			ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
-			connection = nm_vpn_connection_get_connection (candidate);
-			addr = nm_ip4_config_get_address (ip4_config, 0);
-
-			parent = nm_vpn_connection_get_parent_device (candidate);
-			parent_ip4 = nm_device_get_ip4_config (parent);
-			parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
-
-			nm_system_replace_default_ip4_route_vpn (ip_ifindex,
-			                                         nm_ip4_address_get_gateway (addr),
-			                                         nm_vpn_connection_get_ip4_internal_gateway (candidate),
-			                                         nm_ip4_config_get_mss (ip4_config),
-			                                         nm_device_get_ip_ifindex (parent),
-			                                         parent_mss);
-
-			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
-		}
-	}
-	g_slist_free (vpns);
-
-	/* The best device gets the default route if a VPN connection didn't */
-	if (!ip_iface || !ip4_config) {
-		if (!best)
-			goto out;
-
-		connection = nm_act_request_get_connection (best_req);
-		ip_iface = nm_device_get_ip_iface (best);
-		ip_ifindex = nm_device_get_ip_ifindex (best);
-		ip4_config = nm_device_get_ip4_config (best);
-		g_assert (ip4_config);
-		addr = nm_ip4_config_get_address (ip4_config, 0);
-
-		nm_system_replace_default_ip4_route (ip_ifindex,
-		                                     nm_ip4_address_get_gateway (addr),
-		                                     nm_ip4_config_get_mss (ip4_config));
-		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
-	}
-
-	if (!ip_iface || !ip4_config) {
-		nm_log_warn (LOGD_CORE, "couldn't determine IP interface (%p) or IPv4 config (%p)!",
-		             ip_iface, ip4_config);
-		goto out;
-	}
-
-	/* Update the default active connection.  Only mark the new default
-	 * active connection after setting default = FALSE on all other connections
-	 * first.  The order is important, we don't want two connections marked
-	 * default at the same time ever.
+	/* Clear the 'default[6]' flag on all active connections that aren't the new
+	 * default active connection.  We'll set the new default after; this ensures
+	 * we don't ever have two marked 'default[6]' simultaneously.
 	 */
 	devices = nm_manager_get_devices (policy->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-		NMActRequest *req;
-
-		req = nm_device_get_act_request (dev);
-		if (req && (req != best_req))
-			nm_active_connection_set_default (NM_ACTIVE_CONNECTION (req), FALSE);
+		req = nm_device_get_act_request (NM_DEVICE (iter->data));
+		if (req && (NM_ACTIVE_CONNECTION (req) != best))
+			set_active_func (NM_ACTIVE_CONNECTION (req), FALSE);
 	}
 
-	dns_mgr = nm_dns_manager_get (NULL);
-	nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, dns_type);
-	g_object_unref (dns_mgr);
-
-	/* Now set new default active connection _after_ updating DNS info, so that
-	 * if the connection is shared dnsmasq picks up the right stuff.
-	 */
-	if (best_req)
-		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (best_req), TRUE);
-
-	if (connection)
-		s_con = nm_connection_get_setting_connection (connection);
-
-	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
-	if (connection_id) {
-		nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.", connection_id, ip_iface);
-	} else {
-		nm_log_info (LOGD_CORE, "Policy set (%s) as default for IPv4 routing and DNS.", ip_iface);
+	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
+	for (iter = vpns; iter; iter = g_slist_next (iter)) {
+		if (NM_ACTIVE_CONNECTION (iter->data) != best)
+			set_active_func (NM_ACTIVE_CONNECTION (iter->data), FALSE);
 	}
+	g_slist_free (vpns);
 
-out:
-	policy->default_device4 = best;
+	/* Mark new default active connection */
+	if (best)
+		set_active_func (best, TRUE);
 }
 
-static void
-update_ip6_routing_and_dns (NMPolicy *policy, gboolean force_update)
+static NMIP4Config *
+get_best_ip4_config (NMPolicy *policy,
+                     const char **out_ip_iface,
+                     int *out_ip_ifindex,
+                     NMActiveConnection **out_ac,
+                     NMDevice **out_device,
+                     NMVPNConnection **out_vpn)
 {
-	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
-	NMDevice *best = NULL;
-	NMActRequest *best_req = NULL;
-	NMDnsManager *dns_mgr;
-	GSList *devices = NULL, *iter;
-	GSList *vpns;
-	NMIP6Config *ip6_config = NULL;
-	NMIP6Address *addr;
-	const char *ip_iface = NULL;
-	int ip_ifindex = -1;
-	NMConnection *connection = NULL;
-	NMSettingConnection *s_con = NULL;
-	const char *connection_id;
-
-	best = get_best_ip6_device (policy->manager, &best_req);
-	if (!force_update && best && (best == policy->default_device6))
-		goto out;
+	GSList *vpns, *iter;
+	NMDevice *device;
+	NMActRequest *req = NULL;
+	NMIP4Config *ip4_config = NULL;
 
 	/* If a VPN connection is active, it is preferred */
 	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
 	for (iter = vpns; iter; iter = g_slist_next (iter)) {
 		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
-		NMConnection *vpn_connection;
-		NMSettingIP6Config *s_ip6;
-		gboolean can_default = TRUE;
+		NMIP4Config *vpn_ip4;
+		NMConnection *tmp;
+		NMSettingIP4Config *s_ip4;
 		NMVPNConnectionState vpn_state;
 
-		/* If it's marked 'never-default', don't make it default */
-		vpn_connection = nm_vpn_connection_get_connection (candidate);
-		g_assert (vpn_connection);
-
-		/* Check the active IP6 config from the VPN service daemon */
-		ip6_config = nm_vpn_connection_get_ip6_config (candidate);
-		if (!ip6_config || nm_ip6_config_get_never_default (ip6_config))
-			can_default = FALSE;
-
-		/* Check the user's preference from the NMConnection */
-		s_ip6 = nm_connection_get_setting_ip6_config (vpn_connection);
-		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
-			can_default = FALSE;
+		tmp = nm_vpn_connection_get_connection (candidate);
+		g_assert (tmp);
 
 		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
-		if (can_default && (vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED)) {
-			NMIP6Config *parent_ip6;
-			NMDevice *parent;
-			guint32 parent_mss;
+		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+			continue;
 
-			ip_iface = nm_vpn_connection_get_ip_iface (candidate);
-			ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
-			connection = nm_vpn_connection_get_connection (candidate);
-			addr = nm_ip6_config_get_address (ip6_config, 0);
+		/* Check for a VPN-provided config never-default */
+		vpn_ip4 = nm_vpn_connection_get_ip4_config (candidate);
+		if (!vpn_ip4 || nm_ip4_config_get_never_default (vpn_ip4))
+			continue;
 
-			parent = nm_vpn_connection_get_parent_device (candidate);
-			parent_ip6 = nm_device_get_ip6_config (parent);
-			parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
+		/* Check the user's preference from the NMConnection */
+		s_ip4 = nm_connection_get_setting_ip4_config (tmp);
+		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+			continue;
 
-			nm_system_replace_default_ip6_route_vpn (ip_ifindex,
-			                                         nm_ip6_address_get_gateway (addr),
-			                                         nm_vpn_connection_get_ip6_internal_gateway (candidate),
-			                                         nm_ip6_config_get_mss (ip6_config),
-			                                         nm_device_get_ip_ifindex (parent),
-			                                         parent_mss);
-
-			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
-		}
+		ip4_config = vpn_ip4;
+		if (out_vpn)
+			*out_vpn = candidate;
+		if (out_ac)
+			*out_ac = NM_ACTIVE_CONNECTION (candidate);
+		if (out_ip_iface)
+			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
+		if (out_ip_ifindex)
+			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
+		break;
 	}
 	g_slist_free (vpns);
 
-	/* The best device gets the default route if a VPN connection didn't */
-	if (!ip_iface || !ip6_config) {
-		if (!best)
-			goto out;
+	/* If no VPN connections, we use the best device instead */
+	if (!ip4_config) {
+		device = get_best_ip4_device (policy->manager);
+		if (device) {
+			ip4_config = nm_device_get_ip4_config (device);
+			g_assert (ip4_config);
+			req = nm_device_get_act_request (device);
+			g_assert (req);
 
-		connection = nm_act_request_get_connection (best_req);
-		ip_iface = nm_device_get_ip_iface (best);
-		ip_ifindex = nm_device_get_ip_ifindex (best);
-		ip6_config = nm_device_get_ip6_config (best);
-		g_assert (ip6_config);
-		addr = nm_ip6_config_get_address (ip6_config, 0);
+			if (out_device)
+				*out_device = device;
+			if (out_ac)
+				*out_ac = NM_ACTIVE_CONNECTION (req);
+			if (out_ip_iface)
+				*out_ip_iface = nm_device_get_ip_iface (device);
+			if (out_ip_ifindex)
+				*out_ip_ifindex = nm_device_get_ip_ifindex (device);
+		}
+	}
 
+	return ip4_config;
+}
+
+static void
+update_ip4_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
+{
+	NMIP4Config *ip4_config;
+	const char *ip_iface = NULL;
+	NMVPNConnection *vpn = NULL;
+	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
+
+	ip4_config = get_best_ip4_config (policy, &ip_iface, NULL, NULL, NULL, &vpn);
+	if (ip4_config) {
+		if (vpn)
+			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
+
+		/* Tell the DNS manager this config is preferred by re-adding it with
+		 * a different IP config type.
+		 */
+		nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, dns_type);
+	}
+}
+
+static void
+update_ip4_routing (NMPolicy *policy, gboolean force_update)
+{
+	NMDevice *best = NULL, *parent;
+	NMConnection *connection = NULL;
+	NMVPNConnection *vpn = NULL;
+	NMActiveConnection *best_ac = NULL;
+	NMIP4Config *ip4_config = NULL, *parent_ip4;
+	NMIP4Address *addr;
+	const char *ip_iface = NULL;
+	int ip_ifindex = -1;
+	guint32 parent_mss;
+
+	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
+	 * so we can get (vpn != NULL && best == NULL).
+	 */
+	ip4_config = get_best_ip4_config (policy, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
+	if (!ip4_config) {
+		policy->default_device4 = NULL;
+		return;
+	}
+	g_assert ((best || vpn) && best_ac);
+
+	if (!force_update && best && (best == policy->default_device4))
+		return;
+
+	/* We set the default route to the gateway of the first IP address of the config */
+	addr = nm_ip4_config_get_address (ip4_config, 0);
+	g_assert (addr);
+
+	if (vpn) {
+		parent = nm_vpn_connection_get_parent_device (vpn);
+		parent_ip4 = nm_device_get_ip4_config (parent);
+		parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
+
+		nm_system_replace_default_ip4_route_vpn (ip_ifindex,
+		                                         nm_ip4_address_get_gateway (addr),
+		                                         nm_vpn_connection_get_ip4_internal_gateway (vpn),
+		                                         nm_ip4_config_get_mss (ip4_config),
+		                                         nm_device_get_ip_ifindex (parent),
+		                                         parent_mss);
+	} else {
+		nm_system_replace_default_ip4_route (ip_ifindex,
+		                                     nm_ip4_address_get_gateway (addr),
+		                                     nm_ip4_config_get_mss (ip4_config));
+	}
+
+	update_default_ac (policy, best_ac, nm_active_connection_set_default);
+	policy->default_device4 = best;
+
+	connection = nm_active_connection_get_connection (best_ac);
+	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
+	             nm_connection_get_id (connection), ip_iface);
+}
+
+static NMIP6Config *
+get_best_ip6_config (NMPolicy *policy,
+                     const char **out_ip_iface,
+                     int *out_ip_ifindex,
+                     NMActiveConnection **out_ac,
+                     NMDevice **out_device,
+                     NMVPNConnection **out_vpn)
+{
+	GSList *vpns, *iter;
+	NMDevice *device;
+	NMActRequest *req = NULL;
+	NMIP6Config *ip6_config = NULL;
+
+	/* If a VPN connection is active, it is preferred */
+	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
+	for (iter = vpns; iter; iter = g_slist_next (iter)) {
+		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
+		NMIP6Config *vpn_ip6;
+		NMConnection *tmp;
+		NMSettingIP6Config *s_ip6;
+		NMVPNConnectionState vpn_state;
+
+		tmp = nm_vpn_connection_get_connection (candidate);
+		g_assert (tmp);
+
+		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
+		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+			continue;
+
+		/* Check for a VPN-provided config never-default */
+		vpn_ip6 = nm_vpn_connection_get_ip6_config (candidate);
+		if (!vpn_ip6 || nm_ip6_config_get_never_default (vpn_ip6))
+			continue;
+
+		/* Check the user's preference from the NMConnection */
+		s_ip6 = nm_connection_get_setting_ip6_config (tmp);
+		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
+			continue;
+
+		ip6_config = vpn_ip6;
+		if (out_vpn)
+			*out_vpn = candidate;
+		if (out_ac)
+			*out_ac = NM_ACTIVE_CONNECTION (candidate);
+		if (out_ip_iface)
+			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
+		if (out_ip_ifindex)
+			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
+		break;
+	}
+	g_slist_free (vpns);
+
+	/* If no VPN connections, we use the best device instead */
+	if (!ip6_config) {
+		device = get_best_ip6_device (policy->manager);
+		if (device) {
+			req = nm_device_get_act_request (device);
+			g_assert (req);
+			ip6_config = nm_device_get_ip6_config (device);
+			g_assert (ip6_config);
+
+			if (out_device)
+				*out_device = device;
+			if (out_ac)
+				*out_ac = NM_ACTIVE_CONNECTION (req);
+			if (out_ip_iface)
+				*out_ip_iface = nm_device_get_ip_iface (device);
+			if (out_ip_ifindex)
+				*out_ip_ifindex = nm_device_get_ip_ifindex (device);
+		}
+	}
+
+	return ip6_config;
+}
+
+static void
+update_ip6_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
+{
+	NMIP6Config *ip6_config;
+	const char *ip_iface = NULL;
+	NMVPNConnection *vpn = NULL;
+	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
+
+	ip6_config = get_best_ip6_config (policy, &ip_iface, NULL, NULL, NULL, &vpn);
+	if (ip6_config) {
+		if (vpn)
+			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
+
+		/* Tell the DNS manager this config is preferred by re-adding it with
+		 * a different IP config type.
+		 */
+		nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, dns_type);
+	}
+}
+
+static void
+update_ip6_routing (NMPolicy *policy, gboolean force_update)
+{
+	NMDevice *best = NULL, *parent;
+	NMConnection *connection = NULL;
+	NMVPNConnection *vpn = NULL;
+	NMActiveConnection *best_ac = NULL;
+	NMIP6Config *ip6_config = NULL, *parent_ip6;
+	NMIP6Address *addr;
+	const char *ip_iface = NULL;
+	int ip_ifindex = -1;
+	guint32 parent_mss;
+
+	/* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
+	 * so we can get (vpn != NULL && best == NULL).
+	 */
+	ip6_config = get_best_ip6_config (policy, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
+	if (!ip6_config) {
+		policy->default_device6 = NULL;
+		return;
+	}
+	g_assert ((best || vpn) && best_ac);
+
+	if (!force_update && best && (best == policy->default_device6))
+		return;
+
+	/* We set the default route to the gateway of the first IP address of the config */
+	addr = nm_ip6_config_get_address (ip6_config, 0);
+	g_assert (addr);
+
+	if (vpn) {
+		parent = nm_vpn_connection_get_parent_device (vpn);
+		parent_ip6 = nm_device_get_ip6_config (parent);
+		parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
+
+		nm_system_replace_default_ip6_route_vpn (ip_ifindex,
+		                                         nm_ip6_address_get_gateway (addr),
+		                                         nm_vpn_connection_get_ip6_internal_gateway (vpn),
+		                                         nm_ip6_config_get_mss (ip6_config),
+		                                         nm_device_get_ip_ifindex (parent),
+		                                         parent_mss);
+	} else {
 		if (memcmp (nm_ip6_address_get_gateway (addr)->s6_addr, in6addr_any.s6_addr, sizeof (in6addr_any.s6_addr)) != 0)
 			nm_system_replace_default_ip6_route (ip_ifindex, nm_ip6_address_get_gateway (addr));
 		else if (nm_ip6_config_get_defgw (ip6_config))
 			nm_system_replace_default_ip6_route (ip_ifindex, nm_ip6_config_get_defgw (ip6_config));
 		else
 			nm_log_dbg (LOGD_IP6, "missing default IPv6 route");
-
-		dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 	}
 
-	if (!ip_iface || !ip6_config) {
-		nm_log_warn (LOGD_CORE, "couldn't determine IP interface (%p) or IPv6 config (%p)!",
-		             ip_iface, ip6_config);
-		goto out;
-	}
-
-	/* Update the default active connection.  Only mark the new default
-	 * active connection after setting default = FALSE on all other connections
-	 * first.  The order is important, we don't want two connections marked
-	 * default at the same time ever.
-	 */
-	devices = nm_manager_get_devices (policy->manager);
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-		NMActRequest *req;
-
-		req = nm_device_get_act_request (dev);
-		if (req && (req != best_req))
-			nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (req), FALSE);
-	}
-
-	dns_mgr = nm_dns_manager_get (NULL);
-	nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, dns_type);
-	g_object_unref (dns_mgr);
-
-	/* Now set new default active connection _after_ updating DNS info, so that
-	 * if the connection is shared dnsmasq picks up the right stuff.
-	 */
-	if (best_req)
-		nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (best_req), TRUE);
-
-	if (connection)
-		s_con = nm_connection_get_setting_connection (connection);
-
-	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
-	if (connection_id) {
-		nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.", connection_id, ip_iface);
-	} else {
-		nm_log_info (LOGD_CORE, "Policy set (%s) as default for IPv6 routing and DNS.", ip_iface);
-	}
-
-out:
+	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
 	policy->default_device6 = best;
+
+	connection = nm_active_connection_get_connection (best_ac);
+	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
+	             nm_connection_get_id (connection), ip_iface);
 }
 
 static void
 update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
-	update_ip4_routing_and_dns (policy, force_update);
-	update_ip6_routing_and_dns (policy, force_update);
+	NMDnsManager *mgr;
+
+	mgr = nm_dns_manager_get (NULL);
+
+	update_ip4_dns (policy, mgr);
+	update_ip6_dns (policy, mgr);
+
+	update_ip4_routing (policy, force_update);
+	update_ip6_routing (policy, force_update);
 
 	/* Update the system hostname */
 	update_system_hostname (policy, policy->default_device4, policy->default_device6);
+
+	g_object_unref (mgr);
 }
 
 static void
