@@ -43,7 +43,6 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
-#include "nm-dns-manager.h"
 #include "nm-netlink-monitor.h"
 #include "nm-netlink-utils.h"
 #include "nm-glib-compat.h"
@@ -171,12 +170,6 @@ vpn_cleanup (NMVPNConnection *connection)
 
 	if (priv->ip4_config) {
 		NMIP4Config *parent_config;
-		NMDnsManager *dns_mgr;
-
-		/* Remove attributes of the VPN's IP4 Config */
-		dns_mgr = nm_dns_manager_get (NULL);
-		nm_dns_manager_remove_ip4_config (dns_mgr, priv->ip_iface, priv->ip4_config);
-		g_object_unref (dns_mgr);
 
 		/* Reset routes and addresses of the currently active device */
 		parent_config = nm_device_get_ip4_config (priv->parent_dev);
@@ -192,12 +185,6 @@ vpn_cleanup (NMVPNConnection *connection)
 
 	if (priv->ip6_config) {
 		NMIP6Config *parent_config;
-		NMDnsManager *dns_mgr;
-
-		/* Remove attributes of the VPN's IP6 Config */
-		dns_mgr = nm_dns_manager_get (NULL);
-		nm_dns_manager_remove_ip6_config (dns_mgr, priv->ip_iface, priv->ip6_config);
-		g_object_unref (dns_mgr);
 
 		/* Reset routes and addresses of the currently active device */
 		parent_config = nm_device_get_ip6_config (priv->parent_dev);
@@ -655,7 +642,6 @@ static gboolean
 nm_vpn_connection_apply_config (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMDnsManager *dns_mgr;
 
 	nm_system_iface_set_up (priv->ip_ifindex, TRUE, NULL);
 
@@ -682,18 +668,6 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 	} else {
 		priv->gw_route = NULL;
 	}
-
-	/* Add the VPN to DNS */
-	dns_mgr = nm_dns_manager_get (NULL);
-	if (priv->ip4_config) {
-		nm_dns_manager_add_ip4_config (dns_mgr, priv->ip_iface, priv->ip4_config,
-		                               NM_DNS_IP_CONFIG_TYPE_VPN);
-	}
-	if (priv->ip6_config) {
-		nm_dns_manager_add_ip6_config (dns_mgr, priv->ip_iface, priv->ip6_config,
-		                               NM_DNS_IP_CONFIG_TYPE_VPN);
-	}
-	g_object_unref (dns_mgr);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_vpn_connection_get_name (connection));

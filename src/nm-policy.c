@@ -764,6 +764,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMDnsManager *mgr;
 
 	mgr = nm_dns_manager_get (NULL);
+	nm_dns_manager_begin_updates (mgr, __func__);
 
 	update_ip4_dns (policy, mgr);
 	update_ip6_dns (policy, mgr);
@@ -774,6 +775,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	/* Update the system hostname */
 	update_system_hostname (policy, policy->default_device4, policy->default_device6);
 
+	nm_dns_manager_end_updates (mgr, __func__);
 	g_object_unref (mgr);
 }
 
@@ -1096,6 +1098,10 @@ device_state_changed (NMDevice *device,
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMConnection *connection = nm_device_get_connection (device);
+	const char *ip_iface = nm_device_get_ip_iface (device);
+	NMIP4Config *ip4_config;
+	NMIP6Config *ip6_config;
+	NMDnsManager *dns_mgr;
 
 	if (connection)
 		g_object_set_data (G_OBJECT (connection), FAILURE_REASON_TAG, GUINT_TO_POINTER (0));
@@ -1151,20 +1157,33 @@ device_state_changed (NMDevice *device,
 			nm_connection_clear_secrets (connection);
 		}
 
-		update_routing_and_dns (policy, FALSE);
+		/* Add device's new IPv4 and IPv6 configs to DNS */
+
+		dns_mgr = nm_dns_manager_get (NULL);
+		nm_dns_manager_begin_updates (dns_mgr, __func__);
+
+		ip4_config = nm_device_get_ip4_config (device);
+		if (ip4_config) {
+			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			update_ip4_dns (policy, dns_mgr);
+		}
+		ip6_config = nm_device_get_ip6_config (device);
+		if (ip6_config) {
+			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			update_ip6_dns (policy, dns_mgr);
+		}
+
+		nm_dns_manager_end_updates (dns_mgr, __func__);
+		g_object_unref (dns_mgr);
+
+		/* And make sure the best devices have the default route */
+		update_ip4_routing (policy, FALSE);
+		update_ip6_routing (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
-		if (   old_state == NM_DEVICE_STATE_UNAVAILABLE
-		    || old_state == NM_DEVICE_STATE_DISCONNECTED) {
-			/* If the device was never activated, there's no point in
-			 * updating routing or DNS.  This allows us to keep the previous
-			 * resolv.conf or routes from before NM started if no device was
-			 * ever managed by NM.
-			 */
-			break;
-		}
 	case NM_DEVICE_STATE_UNAVAILABLE:
-		update_routing_and_dns (policy, FALSE);
+		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
+			update_routing_and_dns (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Reset RETRIES_TAG when carrier on. If cable was unplugged
@@ -1172,8 +1191,10 @@ device_state_changed (NMDevice *device,
 		if (reason == NM_DEVICE_STATE_REASON_CARRIER && old_state == NM_DEVICE_STATE_UNAVAILABLE)
 			reset_retries_all (policy->settings, device);
 
+		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
+			update_routing_and_dns (policy, FALSE);
+
 		/* Device is now available for auto-activation */
-		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device, 0);
 		break;
 
@@ -1189,11 +1210,77 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-device_ip_config_changed (NMDevice *device,
-                          GParamSpec *pspec,
-                          gpointer user_data)
+device_ip4_config_changed (NMDevice *device,
+                           NMIP4Config *new_config,
+                           NMIP4Config *old_config,
+                           gpointer user_data)
 {
-	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
+	NMPolicy *policy = user_data;
+	NMDnsManager *dns_mgr;
+	const char *ip_iface = nm_device_get_ip_iface (device);
+	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
+
+	dns_mgr = nm_dns_manager_get (NULL);
+	nm_dns_manager_begin_updates (dns_mgr, __func__);
+
+	/* Old configs get removed immediately */
+	if (old_config)
+		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
+
+	/* Ignore IP config changes while the device is activating, because we'll
+	 * catch all the changes when the device moves to ACTIVATED state.
+	 * Prevents unecessary changes to DNS information.
+	 */
+	if (!nm_device_is_activating (device)) {
+		if (new_config)
+			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		update_ip4_dns (policy, dns_mgr);
+
+		/* Only change routing if something actually changed */
+		diff = nm_ip4_config_diff (new_config, old_config);
+		if (diff & (NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_PTP_ADDRESS | NM_IP4_COMPARE_FLAG_ROUTES))
+			update_ip4_routing (policy, TRUE);
+	}
+
+	nm_dns_manager_end_updates (dns_mgr, __func__);
+	g_object_unref (dns_mgr);
+}
+
+static void
+device_ip6_config_changed (NMDevice *device,
+                           NMIP6Config *new_config,
+                           NMIP6Config *old_config,
+                           gpointer user_data)
+{
+	NMPolicy *policy = user_data;
+	NMDnsManager *dns_mgr;
+	const char *ip_iface = nm_device_get_ip_iface (device);
+	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
+
+	dns_mgr = nm_dns_manager_get (NULL);
+	nm_dns_manager_begin_updates (dns_mgr, __func__);
+
+	/* Old configs get removed immediately */
+	if (old_config)
+		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
+
+	/* Ignore IP config changes while the device is activating, because we'll
+	 * catch all the changes when the device moves to ACTIVATED state.
+	 * Prevents unecessary changes to DNS information.
+	 */
+	if (!nm_device_is_activating (device)) {
+		if (new_config)
+			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		update_ip6_dns (policy, dns_mgr);
+
+		/* Only change routing if something actually changed */
+		diff = nm_ip6_config_diff (new_config, old_config);
+		if (diff & (NM_IP6_COMPARE_FLAG_ADDRESSES | NM_IP6_COMPARE_FLAG_PTP_ADDRESS | NM_IP6_COMPARE_FLAG_ROUTES))
+			update_ip6_routing (policy, TRUE);
+	}
+
+	nm_dns_manager_end_updates (dns_mgr, __func__);
+	g_object_unref (dns_mgr);
 }
 
 static void
@@ -1246,8 +1333,8 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 
 	_connect_device_signal (policy, device, "state-changed", device_state_changed);
-	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP4_CONFIG, device_ip_config_changed);
-	_connect_device_signal (policy, device, "notify::" NM_DEVICE_IP6_CONFIG, device_ip_config_changed);
+	_connect_device_signal (policy, device, NM_DEVICE_IP4_CONFIG_CHANGED, device_ip4_config_changed);
+	_connect_device_signal (policy, device, NM_DEVICE_IP6_CONFIG_CHANGED, device_ip6_config_changed);
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_AUTOCONNECT, device_autoconnect_changed);
 
 	switch (nm_device_get_device_type (device)) {
@@ -1295,7 +1382,9 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 		iter = next;
 	}
 
-	update_routing_and_dns (policy, FALSE);
+	/* Don't update routing and DNS here as we've already handled that
+	 * for devices that need it when the device's state changed to UNMANAGED.
+	 */
 }
 
 static void

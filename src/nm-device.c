@@ -45,7 +45,6 @@
 #include "nm-system.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
-#include "nm-dns-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
@@ -3511,7 +3510,6 @@ nm_device_set_ip4_config (NMDevice *self,
 	NMIP4Config *old_config = NULL;
 	gboolean success = TRUE;
 	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
-	NMDnsManager *dns_mgr;
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -3530,12 +3528,7 @@ nm_device_set_ip4_config (NMDevice *self,
 	} else if (!new_config && !old_config)
 		return TRUE;
 
-	dns_mgr = nm_dns_manager_get (NULL);
-	if (old_config) {
-		/* Remove any previous IP4 Config from the DNS manager */
-		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
-		priv->ip4_config = NULL;
-	}
+	priv->ip4_config = NULL;
 
 	if (new_config) {
 		priv->ip4_config = g_object_ref (new_config);
@@ -3550,14 +3543,9 @@ nm_device_set_ip4_config (NMDevice *self,
 			/* Export over D-Bus */
 			if (!nm_ip4_config_get_dbus_path (new_config))
 				nm_ip4_config_export (new_config);
-
-			/* Add the DNS information to the DNS manager */
-			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-
 			_update_ip4_address (self);
 		}
 	}
-	g_object_unref (dns_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
 	g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
@@ -3578,7 +3566,6 @@ nm_device_set_ip6_config (NMDevice *self,
 	NMIP6Config *old_config = NULL;
 	gboolean success = TRUE;
 	NMIP6ConfigCompareFlags diff = NM_IP6_COMPARE_FLAG_ALL;
-	NMDnsManager *dns_mgr;
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -3597,12 +3584,7 @@ nm_device_set_ip6_config (NMDevice *self,
 	} else if (!new_config && !old_config)
 		return TRUE;
 
-	dns_mgr = nm_dns_manager_get (NULL);
-	if (old_config) {
-		/* Remove any previous IP6 Config from the DNS manager */
-		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
-		priv->ip6_config = NULL;
-	}
+	priv->ip6_config = NULL;
 
 	if (new_config) {
 		priv->ip6_config = g_object_ref (new_config);
@@ -3613,12 +3595,8 @@ nm_device_set_ip6_config (NMDevice *self,
 			/* Export over D-Bus */
 			if (!nm_ip6_config_get_dbus_path (new_config))
 				nm_ip6_config_export (new_config);
-
-			/* Add the DNS information to the DNS manager */
-			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		}
 	}
-	g_object_unref (dns_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
 	g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
