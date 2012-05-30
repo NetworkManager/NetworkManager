@@ -748,7 +748,9 @@ process_nduseropt_rdnss (NMIP6Device *device, struct nd_opt_hdr *opt)
 	 */
 	server.expires = ntohl (rdnss_opt->nd_opt_rdnss_lifetime);
 	if (server.expires > 0)
-		server.expires += now + 10;
+		if (server.expires < 7200)
+			server.expires = 7200;
+		server.expires += now;
 
 	for (addr = (struct in6_addr *) (rdnss_opt + 1); opt_len >= 2; addr++, opt_len -= 2) {
 		char buf[INET6_ADDRSTRLEN + 1];
@@ -879,7 +881,9 @@ process_nduseropt_dnssl (NMIP6Device *device, struct nd_opt_hdr *opt)
 	 */
 	domain.expires = ntohl (dnssl_opt->nd_opt_dnssl_lifetime);
 	if (domain.expires > 0)
-		domain.expires += now + 10;
+		if (domain.expires < 7200)
+			domain.expires = 7200;
+		domain.expires += now;
 
 	while (opt_len) {
 		const char *domain_str;
