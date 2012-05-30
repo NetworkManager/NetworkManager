@@ -677,6 +677,65 @@ nm_ip6_config_diff (NMIP6Config *a, NMIP6Config *b)
 	return flags;
 }
 
+static inline void
+hash_u32 (GChecksum *sum, guint32 n)
+{
+	g_checksum_update (sum, (const guint8 *) &n, sizeof (n));
+}
+
+static inline void
+hash_in6addr (GChecksum *sum, const struct in6_addr *a)
+{
+	g_checksum_update (sum, (const guint8 *) a, sizeof (*a));
+}
+
+void
+nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
+{
+	guint32 i;
+	const struct in6_addr *in6a;
+	const char *s;
+
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (sum != NULL);
+
+	if (dns_only == FALSE) {
+		for (i = 0; i < nm_ip6_config_get_num_addresses (config); i++) {
+			NMIP6Address *a = nm_ip6_config_get_address (config, i);
+
+			hash_in6addr (sum, nm_ip6_address_get_address (a));
+			hash_u32 (sum, nm_ip6_address_get_prefix (a));
+			hash_in6addr (sum, nm_ip6_address_get_gateway (a));
+		}
+
+		for (i = 0; i < nm_ip6_config_get_num_routes (config); i++) {
+			NMIP6Route *r = nm_ip6_config_get_route (config, i);
+
+			hash_in6addr (sum, nm_ip6_route_get_dest (r));
+			hash_u32 (sum, nm_ip6_route_get_prefix (r));
+			hash_in6addr (sum, nm_ip6_route_get_next_hop (r));
+			hash_u32 (sum, nm_ip6_route_get_metric (r));
+		}
+
+		in6a = nm_ip6_config_get_ptp_address (config);
+		if (in6a)
+			hash_in6addr (sum, in6a);
+	}
+
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (config); i++)
+		hash_in6addr (sum, nm_ip6_config_get_nameserver (config, i));
+
+	for (i = 0; i < nm_ip6_config_get_num_domains (config); i++) {
+		s = nm_ip6_config_get_domain (config, i);
+		g_checksum_update (sum, (const guint8 *) s, strlen (s));
+	}
+
+	for (i = 0; i < nm_ip6_config_get_num_searches (config); i++) {
+		s = nm_ip6_config_get_search (config, i);
+		g_checksum_update (sum, (const guint8 *) s, strlen (s));
+	}
+}
+
 static void
 nm_ip6_config_init (NMIP6Config *config)
 {

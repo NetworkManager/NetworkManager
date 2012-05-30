@@ -813,6 +813,68 @@ nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b)
 	return flags;
 }
 
+static inline void
+hash_u32 (GChecksum *sum, guint32 n)
+{
+	g_checksum_update (sum, (const guint8 *) &n, sizeof (n));
+}
+
+void
+nm_ip4_config_hash (NMIP4Config *config, GChecksum *sum, gboolean dns_only)
+{
+	guint32 i, n;
+	const char *s;
+
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (sum != NULL);
+
+	if (dns_only == FALSE) {
+		for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
+			NMIP4Address *a = nm_ip4_config_get_address (config, i);
+
+			hash_u32 (sum, nm_ip4_address_get_address (a));
+			hash_u32 (sum, nm_ip4_address_get_prefix (a));
+			hash_u32 (sum, nm_ip4_address_get_gateway (a));
+		}
+
+		for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
+			NMIP4Route *r = nm_ip4_config_get_route (config, i);
+
+			hash_u32 (sum, nm_ip4_route_get_dest (r));
+			hash_u32 (sum, nm_ip4_route_get_prefix (r));
+			hash_u32 (sum, nm_ip4_route_get_next_hop (r));
+			hash_u32 (sum, nm_ip4_route_get_metric (r));
+		}
+
+		n = nm_ip4_config_get_ptp_address (config);
+		if (n)
+			hash_u32 (sum, n);
+
+		for (i = 0; i < nm_ip4_config_get_num_nis_servers (config); i++)
+			hash_u32 (sum, nm_ip4_config_get_nis_server (config, i));
+
+		s = nm_ip4_config_get_nis_domain (config);
+		if (s)
+			g_checksum_update (sum, (const guint8 *) s, strlen (s));
+	}
+
+	for (i = 0; i < nm_ip4_config_get_num_nameservers (config); i++)
+		hash_u32 (sum, nm_ip4_config_get_nameserver (config, i));
+
+	for (i = 0; i < nm_ip4_config_get_num_wins (config); i++)
+		hash_u32 (sum, nm_ip4_config_get_wins (config, i));
+
+	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++) {
+		s = nm_ip4_config_get_domain (config, i);
+		g_checksum_update (sum, (const guint8 *) s, strlen (s));
+	}
+
+	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++) {
+		s = nm_ip4_config_get_search (config, i);
+		g_checksum_update (sum, (const guint8 *) s, strlen (s));
+	}
+}
+
 static void
 nm_ip4_config_init (NMIP4Config *config)
 {

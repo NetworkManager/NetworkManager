@@ -120,4 +120,6 @@ typedef enum {
 /* Returns a bitfield representing how the two IP6 configs differ */
 NMIP6ConfigCompareFlags nm_ip6_config_diff (NMIP6Config *a, NMIP6Config *b);
 
+void nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only);
+
 #endif /* NM_IP6_CONFIG_H */

@@ -139,4 +139,6 @@ typedef enum {
 /* Returns a bitfield representing how the two IP4 configs differ */
 NMIP4ConfigCompareFlags nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b);
 
+void nm_ip4_config_hash (NMIP4Config *config, GChecksum *sum, gboolean dns_only);
+
 #endif /* NM_IP4_CONFIG_H */
