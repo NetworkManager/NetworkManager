@@ -51,7 +51,8 @@ typedef struct {
 
 	/* Signals */
 	void (*vpn_state_changed) (NMVPNConnection *connection,
-	                           NMVPNConnectionState state,
+	                           NMVPNConnectionState new_state,
+	                           NMVPNConnectionState old_state,
 	                           NMVPNConnectionStateReason reason);
 } NMVPNConnectionClass;
 

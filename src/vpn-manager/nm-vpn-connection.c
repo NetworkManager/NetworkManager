@@ -266,7 +266,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	 */
 	g_object_ref (connection);
 
-	g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
+	g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, old_vpn_state, reason);
 	g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
 
 	switch (vpn_state) {
@@ -1649,8 +1649,8 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+		              _nm_marshal_VOID__UINT_UINT_UINT,
+		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (object_class),
 	                                 &dbus_glib_nm_vpn_connection_object_info);

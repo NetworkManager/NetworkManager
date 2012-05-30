@@ -926,7 +926,8 @@ vpn_connection_activated (NMVPNManager *manager,
 static void
 vpn_connection_deactivated (NMVPNManager *manager,
                             NMVPNConnection *vpn,
-                            NMVPNConnectionState state,
+                            NMVPNConnectionState new_state,
+                            NMVPNConnectionState old_state,
                             NMVPNConnectionStateReason reason,
                             gpointer user_data)
 {

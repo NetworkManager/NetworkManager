@@ -115,19 +115,20 @@ find_active_vpn_connection_by_connection (NMVPNManager *self, NMConnection *conn
 
 static void
 connection_vpn_state_changed (NMVPNConnection *connection,
-                              NMVPNConnectionState state,
+                              NMVPNConnectionState new_state,
+                              NMVPNConnectionState old_state,
                               NMVPNConnectionStateReason reason,
                               gpointer user_data)
 {
 	NMVPNManager *manager = NM_VPN_MANAGER (user_data);
 
-	switch (state) {
+	switch (new_state) {
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
 		g_signal_emit (manager, signals[CONNECTION_ACTIVATED], 0, connection);
 		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
-		g_signal_emit (manager, signals[CONNECTION_DEACTIVATED], 0, connection, state, reason);
+		g_signal_emit (manager, signals[CONNECTION_DEACTIVATED], 0, connection, new_state, old_state, reason);
 		break;
 	default:
 		break;
@@ -520,9 +521,8 @@ nm_vpn_manager_class_init (NMVPNManagerClass *manager_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMVPNManagerClass, connection_deactivated),
 				    NULL, NULL,
-				    _nm_marshal_VOID__OBJECT_UINT_UINT,
-				    G_TYPE_NONE, 3,
-				    G_TYPE_OBJECT, G_TYPE_UINT, G_TYPE_UINT);
+				    _nm_marshal_VOID__OBJECT_UINT_UINT_UINT,
+				    G_TYPE_NONE, 3, G_TYPE_OBJECT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_error_domain_register (NM_VPN_MANAGER_ERROR, NULL, NM_TYPE_VPN_MANAGER_ERROR);
 }

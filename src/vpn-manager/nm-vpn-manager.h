@@ -57,7 +57,8 @@ typedef struct {
 	/* Signals */
 	void (*connection_deactivated) (NMVPNManager *manager,
 	                                NMVPNConnection *connection,
-	                                NMVPNConnectionState state,
+	                                NMVPNConnectionState new_state,
+	                                NMVPNConnectionState old_state,
 	                                NMVPNConnectionStateReason reason);
 } NMVPNManagerClass;
 
