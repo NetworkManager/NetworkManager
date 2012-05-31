@@ -52,6 +52,7 @@ NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
 #define NM_VPN_PLUGIN_UI_CAPABILITY_NONE     0x00
 #define NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT   0x01
 #define NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT   0x02
+#define NM_VPN_PLUGIN_UI_CAPABILITY_IPV6     0x04
 
 /* Short display name of the VPN plugin */
 #define NM_VPN_PLUGIN_UI_INTERFACE_NAME "name"
