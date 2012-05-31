@@ -740,6 +740,12 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (priv->has_ip4) {
 		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received.",
 		             nm_vpn_connection_get_name (connection));
+
+		if (g_hash_table_size (config_hash) == 0) {
+			priv->has_ip4 = FALSE;
+			nm_vpn_connection_config_maybe_complete (connection, TRUE);
+			return;
+		}
 	} else {
 		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received from old-style plugin.",
 		             nm_vpn_connection_get_name (connection));
@@ -879,6 +885,12 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP6 Config Get) reply received.",
 	             nm_vpn_connection_get_name (connection));
+
+	if (g_hash_table_size (config_hash) == 0) {
+		priv->has_ip6 = FALSE;
+		nm_vpn_connection_config_maybe_complete (connection, TRUE);
+		return;
+	}
 
 	config = nm_ip6_config_new ();
 
