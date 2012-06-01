@@ -27,6 +27,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -102,6 +104,8 @@ enum {
 	PROP_IFACE,
 	PROP_IP_IFACE,
 	PROP_DRIVER,
+	PROP_DRIVER_VERSION,
+	PROP_FIRMWARE_VERSION,
 	PROP_CAPABILITIES,
 	PROP_IP4_ADDRESS,
 	PROP_IP4_CONFIG,
@@ -159,6 +163,8 @@ typedef struct {
 	char *        type_desc;
 	guint32       capabilities;
 	char *        driver;
+	char *        driver_version;
+	char *        firmware_version;
 	gboolean      managed; /* whether managed by NM or not */
 	RfKillType    rfkill_type;
 	gboolean      firmware_missing;
@@ -340,18 +346,57 @@ update_ip6_privacy_save (NMDevice *self)
 	}
 }
 
+/*
+ * Get driver info from SIOCETHTOOL ioctl() for 'iface'
+ * Returns driver and firmware versions to 'driver_version and' 'firmware_version'
+ */
+static gboolean
+device_get_driver_info (const char *iface, char **driver_version, char **firmware_version)
+{
+	struct ethtool_drvinfo drvinfo;
+	struct ifreq req;
+	int fd;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_log_warn (LOGD_HW, "couldn't open control socket.");
+		return FALSE;
+	}
+
+	/* Get driver and firmware version info */
+	memset (&req, 0, sizeof (struct ifreq));
+	strncpy (req.ifr_name, iface, IFNAMSIZ);
+	drvinfo.cmd = ETHTOOL_GDRVINFO;
+	req.ifr_data = &drvinfo;
+
+	errno = 0;
+	if (ioctl (fd, SIOCETHTOOL, &req) < 0) {
+		nm_log_dbg (LOGD_HW, "SIOCETHTOOL ioctl() failed: cmd=ETHTOOL_GDRVINFO, iface=%s, errno=%d",
+		            iface, errno);
+		close (fd);
+		return FALSE;
+	}
+	if (driver_version)
+		*driver_version = g_strdup (drvinfo.version);
+	if (firmware_version)
+		*firmware_version = g_strdup (drvinfo.fw_version);
+
+	close (fd);
+	return TRUE;
+}
+
 static GObject*
 constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
 	GObject *object;
 	NMDevice *dev;
 	NMDevicePrivate *priv;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
-													   n_construct_params,
-													   construct_params);
+	                         n_construct_params,
+	                         construct_params);
 	if (!object)
 		return NULL;
 
@@ -377,6 +422,8 @@ constructor (GType type,
 	priv->dhcp_manager = nm_dhcp_manager_get ();
 
 	priv->fw_manager = nm_firewall_manager_get ();
+
+	device_get_driver_info (priv->iface, &priv->driver_version, &priv->firmware_version);
 
 	update_accept_ra_save (dev);
 	update_ip6_privacy_save (dev);
@@ -533,6 +580,22 @@ nm_device_get_driver (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->driver;
+}
+
+const char *
+nm_device_get_driver_version (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->driver_version;
+}
+
+const char *
+nm_device_get_firmware_version (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->firmware_version;
 }
 
 
@@ -3787,6 +3850,8 @@ finalize (GObject *object)
 	g_free (priv->iface);
 	g_free (priv->ip_iface);
 	g_free (priv->driver);
+	g_free (priv->driver_version);
+	g_free (priv->firmware_version);
 	g_free (priv->type_desc);
 	if (priv->dhcp_anycast_address)
 		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
@@ -3828,7 +3893,16 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IP_IFACE:
 		break;
 	case PROP_DRIVER:
+		g_free (priv->driver);
 		priv->driver = g_strdup (g_value_get_string (value));
+		break;
+	case PROP_DRIVER_VERSION:
+		g_free (priv->driver_version);
+		priv->driver_version = g_strdup (g_value_get_string (value));
+		break;
+	case PROP_FIRMWARE_VERSION:
+		g_free (priv->firmware_version);
+		priv->firmware_version = g_strdup (g_value_get_string (value));
 		break;
 	case PROP_CAPABILITIES:
 		priv->capabilities = g_value_get_uint (value);
@@ -3897,6 +3971,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DRIVER:
 		g_value_set_string (value, priv->driver);
+		break;
+	case PROP_DRIVER_VERSION:
+		g_value_set_string (value, priv->driver_version);
+		break;
+	case PROP_FIRMWARE_VERSION:
+		g_value_set_string (value, priv->firmware_version);
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
@@ -4023,6 +4103,22 @@ nm_device_class_init (NMDeviceClass *klass)
 		 g_param_spec_string (NM_DEVICE_DRIVER,
 		                      "Driver",
 		                      "Driver",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_DRIVER_VERSION,
+		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION,
+		                      "Driver Version",
+		                      "Driver Version",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_FIRMWARE_VERSION,
+		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION,
+		                      "Firmware Version",
+		                      "Firmware Version",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 

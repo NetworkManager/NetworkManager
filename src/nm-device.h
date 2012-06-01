@@ -41,6 +41,8 @@
 #define NM_DEVICE_IFACE            "interface"
 #define NM_DEVICE_IP_IFACE         "ip-interface"
 #define NM_DEVICE_DRIVER           "driver"
+#define NM_DEVICE_DRIVER_VERSION   "driver-version"
+#define NM_DEVICE_FIRMWARE_VERSION "firmware-version"
 #define NM_DEVICE_CAPABILITIES     "capabilities"
 #define NM_DEVICE_IP4_ADDRESS      "ip4-address"
 #define NM_DEVICE_IP4_CONFIG       "ip4-config"
@@ -187,6 +189,8 @@ int             nm_device_get_ifindex	(NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
 int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
+const char *	nm_device_get_driver_version	(NMDevice *dev);
+const char *	nm_device_get_firmware_version	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 

@@ -36,6 +36,16 @@
         The driver handling the device.
       </tp:docstring>
     </property>
+    <property name="DriverVersion" type="s" access="read">
+      <tp:docstring>
+        The version of the driver handling the device.
+      </tp:docstring>
+    </property>
+    <property name="FirmwareVersion" type="s" access="read">
+      <tp:docstring>
+        The firmware version for the device.
+      </tp:docstring>
+    </property>
     <property name="Capabilities" type="u" access="read" tp:type="NM_DEVICE_CAP">
       <tp:docstring>
         Flags describing the capabilities of the device.
