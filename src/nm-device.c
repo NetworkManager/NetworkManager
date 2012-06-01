@@ -63,6 +63,7 @@
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
 #include "nm-posix-signals.h"
+#include "nm-manager-auth.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -89,7 +90,6 @@ nm_device_error_quark (void)
 
 enum {
 	STATE_CHANGED,
-	DISCONNECT_REQUEST,
 	AUTOCONNECT_ALLOWED,
 	AUTH_REQUEST,
 	LAST_SIGNAL,
@@ -3187,32 +3187,56 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	nm_device_set_ip6_config (self, NULL, &ignored);
 }
 
-gboolean
-nm_device_disconnect (NMDevice *device, GError **error)
+static void
+disconnect_cb (NMDevice *device,
+               DBusGMethodInvocation *context,
+               GError *error,
+               gpointer user_data)
 {
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	GError *local = NULL;
 
-	g_return_val_if_fail (device != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->state <= NM_DEVICE_STATE_DISCONNECTED) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ACTIVE,
-		                     "Cannot disconnect an inactive device.");
-		return FALSE;
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else {
+		/* Authorized */
+		if (priv->state <= NM_DEVICE_STATE_DISCONNECTED) {
+			local = g_error_new_literal (NM_DEVICE_ERROR,
+			                             NM_DEVICE_ERROR_NOT_ACTIVE,
+			                             "Device is not active");
+			dbus_g_method_return_error (context, local);
+			g_error_free (local);
+		} else {
+			priv->autoconnect = FALSE;
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			dbus_g_method_return (context);
+		}
 	}
-
-	priv->autoconnect = FALSE;
-	nm_device_state_changed (device,
-	                         NM_DEVICE_STATE_DISCONNECTED,
-	                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-	return TRUE;
 }
 
 static void
 impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 {
-	g_signal_emit (device, signals[DISCONNECT_REQUEST], 0, context);
+	GError *error = NULL;
+
+	if (NM_DEVICE_GET_PRIVATE (device)->act_request == NULL) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "This device is not active");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Ask the manager to authenticate this request for us */
+	g_signal_emit (device, signals[AUTH_REQUEST], 0,
+	               context,
+	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	               TRUE,
+	               disconnect_cb,
+	               NULL);
 }
 
 static gboolean
@@ -4140,14 +4164,6 @@ nm_device_class_init (NMDeviceClass *klass)
 		              _nm_marshal_VOID__UINT_UINT_UINT,
 		              G_TYPE_NONE, 3,
 		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
-
-	signals[DISCONNECT_REQUEST] =
-		g_signal_new (NM_DEVICE_DISCONNECT_REQUEST,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__POINTER,
-		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[AUTOCONNECT_ALLOWED] =
 		g_signal_new ("autoconnect-allowed",

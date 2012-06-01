@@ -1532,114 +1532,6 @@ manager_modem_enabled_changed (NMModem *device, gpointer user_data)
 	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
 }
 
-static GError *
-deactivate_disconnect_check_error (GError *auth_error,
-                                   NMAuthCallResult result,
-                                   const char *detail)
-{
-	if (auth_error) {
-		nm_log_dbg (LOGD_CORE, "%s request failed: %s", detail, auth_error->message);
-		return g_error_new (NM_MANAGER_ERROR,
-		                    NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                    "%s request failed: %s",
-		                    detail, auth_error->message);
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
-		return g_error_new (NM_MANAGER_ERROR,
-		                    NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                    "Not authorized to %s connections",
-		                    detail);
-	}
-	return NULL;
-}
-
-static void
-disconnect_net_auth_done_cb (NMAuthChain *chain,
-                             GError *auth_error,
-                             DBusGMethodInvocation *context,
-                             gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
-	NMAuthCallResult result;
-	NMDevice *device;
-
-	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
-
-	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
-	error = deactivate_disconnect_check_error (auth_error, result, "Disconnect");
-	if (!error) {
-		device = nm_auth_chain_get_data (chain, "device");
-		if (!nm_device_disconnect (device, &error))
-			g_assert (error);
-	}
-
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else
-		dbus_g_method_return (context);
-
-	g_clear_error (&error);
-	nm_auth_chain_unref (chain);
-}
-
-static void
-manager_device_disconnect_request (NMDevice *device,
-                                   DBusGMethodInvocation *context,
-                                   NMManager *self)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMActRequest *req;
-	GError *error = NULL;
-	gulong sender_uid = G_MAXULONG;
-	char *error_desc = NULL;
-
-	req = nm_device_get_act_request (device);
-	if (!req) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		                             "This device is not active");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	/* Need to check the caller's permissions and stuff before we can
-	 * deactivate the connection.
-	 */
-	if (!nm_auth_get_caller_uid (context,
-		                         priv->dbus_mgr,
-	                             &sender_uid,
-	                             &error_desc)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		g_free (error_desc);
-		return;
-	}
-
-	/* Yay for root */
-	if (0 == sender_uid) {
-		if (!nm_device_disconnect (device, &error)) {
-			dbus_g_method_return_error (context, error);
-			g_clear_error (&error);
-		} else
-			dbus_g_method_return (context);
-	} else {
-		NMAuthChain *chain;
-
-		/* Otherwise validate the user request */
-		chain = nm_auth_chain_new (context, NULL, disconnect_net_auth_done_cb, self);
-		g_assert (chain);
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-		nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
-	}
-}
-
 static void
 device_auth_done_cb (NMAuthChain *chain,
                      GError *auth_error,
@@ -1770,10 +1662,6 @@ add_device (NMManager *self, NMDevice *device)
 
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
-					  self);
-
-	g_signal_connect (device, NM_DEVICE_DISCONNECT_REQUEST,
-					  G_CALLBACK (manager_device_disconnect_request),
 					  self);
 
 	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
@@ -3082,8 +2970,18 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
 	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL));
-	error = deactivate_disconnect_check_error (auth_error, result, "Deactivate");
-	if (!error) {
+	if (auth_error) {
+		nm_log_dbg (LOGD_CORE, "Disconnect request failed: %s", auth_error->message);
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "Deactivate request failed: %s",
+		                     auth_error->message);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Not authorized to deactivate connections");
+	} else {
+		/* success; deactivation allowed */
 		active_path = nm_auth_chain_get_data (chain, "path");
 		if (!nm_manager_deactivate_connection (self,
 		                                       active_path,
