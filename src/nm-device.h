@@ -23,7 +23,7 @@
 #define NM_DEVICE_H
 
 #include <glib-object.h>
-#include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
 #include "NetworkManager.h"
@@ -60,6 +60,7 @@
 
 /* Internal signal */
 #define NM_DEVICE_DISCONNECT_REQUEST "disconnect-request"
+#define NM_DEVICE_AUTH_REQUEST "auth-request"
 
 
 G_BEGIN_DECLS
@@ -170,6 +171,11 @@ typedef struct {
 	                                   NMDevice *slave);
 } NMDeviceClass;
 
+
+typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
+                                         DBusGMethodInvocation *context,
+                                         GError *error,
+                                         gpointer user_data);
 
 GType nm_device_get_type (void);
 

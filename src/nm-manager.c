@@ -1641,6 +1641,99 @@ manager_device_disconnect_request (NMDevice *device,
 }
 
 static void
+device_auth_done_cb (NMAuthChain *chain,
+                     GError *auth_error,
+                     DBusGMethodInvocation *context,
+                     gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+	NMAuthCallResult result;
+	NMDevice *device;
+	const char *permission;
+	NMDeviceAuthRequestFunc callback;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	permission = nm_auth_chain_get_data (chain, "requested-permission");
+	g_assert (permission);
+	callback = nm_auth_chain_get_data (chain, "callback");
+	g_assert (callback);
+	device = nm_auth_chain_get_data (chain, "device");
+	g_assert (device);
+
+	result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
+	if (auth_error) {
+		/* translate the auth error into a manager permission denied error */
+		nm_log_dbg (LOGD_CORE, "%s request failed: %s", permission, auth_error->message);
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "%s request failed: %s",
+		                     permission, auth_error->message);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		nm_log_dbg (LOGD_CORE, "%s request failed: not authorized", permission);
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "%s request failed: not authorized",
+		                     permission);
+	}
+
+	g_assert (error || (result == NM_AUTH_CALL_RESULT_YES));
+
+	callback (device,
+	          context,
+	          error,
+	          nm_auth_chain_get_data (chain, "user-data"));
+
+	g_clear_error (&error);
+	nm_auth_chain_unref (chain);
+}
+
+static void
+device_auth_request_cb (NMDevice *device,
+                        DBusGMethodInvocation *context,
+                        const char *permission,
+                        gboolean allow_interaction,
+                        NMDeviceAuthRequestFunc callback,
+                        gpointer user_data,
+                        NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+	gulong sender_uid = G_MAXULONG;
+	char *error_desc = NULL;
+	NMAuthChain *chain;
+
+	/* Get the caller's UID for the root check */
+	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		callback (device, context, error, user_data);
+		g_error_free (error);
+		g_free (error_desc);
+		return;
+	}
+
+	/* Yay for root */
+	if (0 == sender_uid)
+		callback (device, context, NULL, user_data);
+	else {
+		/* Otherwise validate the non-root request */
+		chain = nm_auth_chain_new (context, NULL, device_auth_done_cb, self);
+		g_assert (chain);
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+		nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
+		nm_auth_chain_set_data (chain, "requested-permission", g_strdup (permission), g_free);
+		nm_auth_chain_set_data (chain, "callback", callback, NULL);
+		nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
+		nm_auth_chain_add_call (chain, permission, allow_interaction);
+	}
+}
+
+static void
 add_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -1682,6 +1775,10 @@ add_device (NMManager *self, NMDevice *device)
 	g_signal_connect (device, NM_DEVICE_DISCONNECT_REQUEST,
 					  G_CALLBACK (manager_device_disconnect_request),
 					  self);
+
+	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
+	                  G_CALLBACK (device_auth_request_cb),
+	                  self);
 
 	if (devtype == NM_DEVICE_TYPE_WIFI) {
 		/* Attach to the access-point-added signal so that the manager can fill

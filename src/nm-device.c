@@ -91,6 +91,7 @@ enum {
 	STATE_CHANGED,
 	DISCONNECT_REQUEST,
 	AUTOCONNECT_ALLOWED,
+	AUTH_REQUEST,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -4156,6 +4157,15 @@ nm_device_class_init (NMDeviceClass *klass)
 		              autoconnect_allowed_accumulator, NULL,
 		              _nm_marshal_BOOLEAN__VOID,
 		              G_TYPE_BOOLEAN, 0);
+
+	signals[AUTH_REQUEST] =
+		g_signal_new (NM_DEVICE_AUTH_REQUEST,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              /* dbus-glib context, permission, allow_interaction, callback, user_data */
+		              _nm_marshal_VOID__POINTER_STRING_BOOLEAN_POINTER_POINTER,
+		              G_TYPE_NONE, 5, G_TYPE_POINTER, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 	                                 &dbus_glib_nm_device_interface_object_info);
