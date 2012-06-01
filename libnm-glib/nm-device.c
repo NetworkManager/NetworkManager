@@ -68,6 +68,8 @@ typedef struct {
 	NMDeviceType device_type;
 	char *udi;
 	char *driver;
+	char *driver_version;
+	char *firmware_version;
 	NMDeviceCapabilities capabilities;
 	gboolean managed;
 	gboolean firmware_missing;
@@ -91,6 +93,8 @@ enum {
 	PROP_INTERFACE,
 	PROP_UDI,
 	PROP_DRIVER,
+	PROP_DRIVER_VERSION,
+	PROP_FIRMWARE_VERSION,
 	PROP_CAPABILITIES,
 	PROP_MANAGED,
 	PROP_AUTOCONNECT,
@@ -154,6 +158,8 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_INTERFACE,         &priv->iface },
 		{ NM_DEVICE_IP_INTERFACE,      &priv->ip_iface },
 		{ NM_DEVICE_DRIVER,            &priv->driver },
+		{ NM_DEVICE_DRIVER_VERSION,    &priv->driver_version },
+		{ NM_DEVICE_FIRMWARE_VERSION,  &priv->firmware_version },
 		{ NM_DEVICE_CAPABILITIES,      &priv->capabilities },
 		{ NM_DEVICE_MANAGED,           &priv->managed },
 		{ NM_DEVICE_AUTOCONNECT,       &priv->autoconnect },
@@ -290,6 +296,8 @@ finalize (GObject *object)
 	g_free (priv->ip_iface);
 	g_free (priv->udi);
 	g_free (priv->driver);
+	g_free (priv->driver_version);
+	g_free (priv->firmware_version);
 	g_free (priv->product);
 	g_free (priv->vendor);
 
@@ -322,6 +330,12 @@ get_property (GObject *object,
 		break;
 	case PROP_DRIVER:
 		g_value_set_string (value, nm_device_get_driver (device));
+		break;
+	case PROP_DRIVER_VERSION:
+		g_value_set_string (value, nm_device_get_driver_version (device));
+		break;
+	case PROP_FIRMWARE_VERSION:
+		g_value_set_string (value, nm_device_get_firmware_version (device));
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, nm_device_get_capabilities (device));
@@ -484,6 +498,32 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "Driver",
 						  NULL,
 						  G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:driver-version:
+	 *
+	 * The version of the device driver.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DRIVER_VERSION,
+		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION,
+		                      "Driver Version",
+		                      "Driver Version",
+		                      NULL,
+		                      G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:firmware-version:
+	 *
+	 * The firmware version of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_FIRMWARE_VERSION,
+		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION,
+		                      "Firmware Version",
+		                      "Firmware Version",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
 	/**
 	 * NMDevice:capabilities:
@@ -906,6 +946,42 @@ nm_device_get_driver (NMDevice *device)
 
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->driver;
+}
+
+/**
+ * nm_device_get_driver_version:
+ * @device: a #NMDevice
+ *
+ * Gets the driver version of the #NMDevice.
+ *
+ * Returns: the version of the device driver. This is the internal string used by the
+ * device, and must not be modified.
+ **/
+const char *
+nm_device_get_driver_version (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_GET_PRIVATE (device)->driver_version;
+}
+
+/**
+ * nm_device_get_firmware_version:
+ * @device: a #NMDevice
+ *
+ * Gets the firmware version of the #NMDevice.
+ *
+ * Returns: the firmware version of the device. This is the internal string used by the
+ * device, and must not be modified.
+ **/
+const char *
+nm_device_get_firmware_version (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_GET_PRIVATE (device)->firmware_version;
 }
 
 /**
