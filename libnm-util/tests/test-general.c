@@ -783,7 +783,7 @@ new_test_connection (void)
 	NMConnection *connection;
 	NMSetting *setting;
 	char *uuid;
-	gulong timestamp = time (NULL);
+	guint64 timestamp = time (NULL);
 
 	connection = nm_connection_new ();
 
