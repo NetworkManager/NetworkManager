@@ -938,11 +938,11 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 	nmc->allowed_fields[2].value = nm_setting_wireless_get_mode (s_wireless);
 	nmc->allowed_fields[3].value = nm_setting_wireless_get_band (s_wireless);
 	nmc->allowed_fields[4].value = channel_str;
-	nmc->allowed_fields[5].value = bssid_str ? bssid_str : _("not set");
+	nmc->allowed_fields[5].value = bssid_str;
 	nmc->allowed_fields[6].value = rate_str;
 	nmc->allowed_fields[7].value = tx_power_str;
-	nmc->allowed_fields[8].value = device_mac_str ? device_mac_str : _("not set");
-	nmc->allowed_fields[9].value = cloned_mac_str ? cloned_mac_str : _("not set");
+	nmc->allowed_fields[8].value = device_mac_str;
+	nmc->allowed_fields[9].value = cloned_mac_str;
 	nmc->allowed_fields[10].value = mac_blacklist->str;
 	nmc->allowed_fields[11].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
 	nmc->allowed_fields[12].value = seen_bssids->str;

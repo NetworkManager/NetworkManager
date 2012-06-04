@@ -276,7 +276,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	int table_width = 0;
 	char *line = NULL;
 	char *indent_str;
-	const char *not_set_str = _("not set");
+	const char *not_set_str = "--";
 	int i;
 	gboolean multiline = fields.flags & NMC_PF_FLAG_MULTILINE;
 	gboolean terse = fields.flags & NMC_PF_FLAG_TERSE;
