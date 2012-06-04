@@ -311,11 +311,12 @@ real_set_enabled (NMDevice *device, gboolean enabled)
 		nm_modem_set_mm_enabled (priv->modem, enabled);
 
 		if (enabled == FALSE) {
-			state = nm_device_get_state (NM_DEVICE (device));
-			if (state == NM_DEVICE_STATE_ACTIVATED) {
-				nm_device_state_changed (NM_DEVICE (device),
+			state = nm_device_get_state (device);
+			if (nm_device_is_activating (device) || state == NM_DEVICE_STATE_ACTIVATED) {
+				/* user-initiated action, hence DISCONNECTED not FAILED */
+				nm_device_state_changed (device,
 				                         NM_DEVICE_STATE_DISCONNECTED,
-				                         NM_DEVICE_STATE_REASON_NONE);
+				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
 		}
 	}
