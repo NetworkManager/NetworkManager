@@ -753,8 +753,9 @@ link_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (dev);
 
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+		nm_device_state_changed (dev,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 		return FALSE;
 	}
 

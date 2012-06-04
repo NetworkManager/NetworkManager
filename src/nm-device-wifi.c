@@ -2071,8 +2071,11 @@ link_timeout_cb (gpointer user_data)
 	 * to reassociate within the timeout period, so the connection must
 	 * fail.
 	 */
-	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
-		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+		nm_device_state_changed (dev,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
+	}
 
 	return FALSE;
 }
