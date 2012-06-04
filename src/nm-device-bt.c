@@ -668,14 +668,18 @@ nm_device_bt_modem_removed (NMDeviceBt *self, NMModem *modem)
 	if (modem != priv->modem)
 		return FALSE;
 
+	/* Fail the device if the modem was removed while active */
 	state = nm_device_get_state (NM_DEVICE (self));
-	nm_modem_device_state_changed (priv->modem,
-	                               NM_DEVICE_STATE_DISCONNECTED,
-	                               state,
-	                               NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	if (   state == NM_DEVICE_STATE_ACTIVATED
+	    || nm_device_is_activating (NM_DEVICE (self))) {
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
+	} else {
+		g_object_unref (priv->modem);
+		priv->modem = NULL;
+	}
 
-	g_object_unref (priv->modem);
-	priv->modem = NULL;
 	return TRUE;
 }
 
