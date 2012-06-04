@@ -66,6 +66,7 @@
 #include "nm-posix-signals.h"
 #include "nm-manager-auth.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-dispatcher.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 

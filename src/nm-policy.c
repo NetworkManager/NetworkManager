@@ -41,6 +41,7 @@
 #include "nm-policy-hostname.h"
 #include "nm-manager-auth.h"
 #include "nm-firewall-manager.h"
+#include "nm-dispatcher.h"
 
 struct NMPolicy {
 	NMManager *manager;

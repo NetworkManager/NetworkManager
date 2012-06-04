@@ -193,7 +193,9 @@ NetworkManager_SOURCES = \
 		nm-session-utils.c \
 		nm-session-utils.h \
 		nm-connection-provider.h \
-		nm-connection-provider.c
+		nm-connection-provider.c \
+		nm-dispatcher.c \
+		nm-dispatcher.h
 
 if WITH_CONCHECK
 NetworkManager_SOURCES += nm-connectivity.c nm-connectivity.h

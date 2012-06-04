@@ -47,6 +47,7 @@
 #include "nm-netlink-utils.h"
 #include "nm-glib-compat.h"
 #include "settings/nm-settings-connection.h"
+#include "nm-dispatcher.h"
 
 #include "nm-vpn-connection-glue.h"
 
