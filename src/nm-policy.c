@@ -990,15 +990,6 @@ reset_connections_retries (gpointer user_data)
 	return FALSE;
 }
 
-static NMConnection *
-get_device_connection (NMDevice *device)
-{
-	NMActRequest *req = NULL;
-
-	req = nm_device_get_act_request (device);
-	return req ? nm_act_request_get_connection (req) : NULL;
-}
-
 static void schedule_activate_all (NMPolicy *policy);
 
 static void
@@ -1039,7 +1030,7 @@ device_state_changed (NMDevice *device,
                       gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
-	NMConnection *connection = get_device_connection (device);
+	NMConnection *connection = nm_device_get_connection (device);
 
 	if (connection)
 		g_object_set_data (G_OBJECT (connection), FAILURE_REASON_TAG, GUINT_TO_POINTER (0));
@@ -1297,7 +1288,7 @@ firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
-		if (   (get_device_connection (dev) == connection)
+		if (   (nm_device_get_connection (dev) == connection)
 		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)) {
 			nm_firewall_manager_add_or_change_zone (policy->fw_manager,
 			                                        nm_device_get_ip_iface (dev),
@@ -1323,7 +1314,7 @@ firewall_started (NMFirewallManager *manager,
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
-		connection = get_device_connection (dev);
+		connection = nm_device_get_connection (dev);
 		s_con = nm_connection_get_setting_connection (connection);
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
 			nm_firewall_manager_add_or_change_zone (policy->fw_manager,
