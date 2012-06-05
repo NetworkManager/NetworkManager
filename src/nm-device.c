@@ -912,14 +912,6 @@ nm_device_complete_connection (NMDevice *self,
 	if (success)
 		success = nm_connection_verify (connection, error);
 
-	/* If ip6-privacy is unknown, enable it with temporary address preferred */
-	if (success) {
-		NMSettingIP6Config *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6 && nm_setting_ip6_config_get_ip6_privacy (s_ip6) == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
-			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
-			              NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR, NULL);
-	}
-
 	return success;
 }
 
