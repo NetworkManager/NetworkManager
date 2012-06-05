@@ -30,6 +30,8 @@
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 
+static GSList *requests = NULL;
+
 static void
 dump_object_to_props (GObject *object, GHashTable *hash)
 {
@@ -137,6 +139,7 @@ typedef struct {
 static void
 dispatcher_info_free (DispatchInfo *info)
 {
+	requests = g_slist_remove (requests, info);
 	g_object_unref (info->dbus_mgr);
 	g_free (info);
 }
@@ -206,7 +209,7 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	}
 
 	if (info->callback)
-		info->callback (call, info->user_data);
+		info->callback (info, info->user_data);
 
 	g_clear_error (&error);
 	g_object_unref (proxy);
@@ -240,7 +243,7 @@ action_to_string (DispatcherAction action)
 	g_assert_not_reached ();
 }
 
-static gpointer
+static gconstpointer
 _dispatcher_call (DispatcherAction action,
                   NMConnection *connection,
                   NMDevice *device,
@@ -349,10 +352,13 @@ _dispatcher_call (DispatcherAction action,
 	g_hash_table_destroy (vpn_ip4_props);
 	g_hash_table_destroy (vpn_ip6_props);
 
-	return call;
+	/* Track the request in case of cancelation */
+	requests = g_slist_append (requests, info);
+
+	return info;
 }
 
-gpointer
+gconstpointer
 nm_dispatcher_call (DispatcherAction action,
                     NMConnection *connection,
                     NMDevice *device,
@@ -362,7 +368,7 @@ nm_dispatcher_call (DispatcherAction action,
 	return _dispatcher_call (action, connection, device, NULL, NULL, NULL, callback, user_data);
 }
 
-gpointer
+gconstpointer
 nm_dispatcher_call_vpn (DispatcherAction action,
                         NMConnection *connection,
                         NMDevice *device,
@@ -373,5 +379,18 @@ nm_dispatcher_call_vpn (DispatcherAction action,
                         gpointer user_data)
 {
 	return _dispatcher_call (action, connection, device, vpn_iface, vpn_ip4_config, vpn_ip6_config, callback, user_data);
+}
+
+void
+nm_dispatcher_call_cancel (gconstpointer call)
+{
+	/* 'call' is really a DispatchInfo pointer, just opaque to callers.
+	 * Look it up in our requests list, but don't access it directly before
+	 * we've made sure it's a valid request,since it may have long since been
+	 * freed.  Canceling just means the callback doesn't get called, so set
+	 * the DispatcherInfo's callback to NULL.
+	 */
+	if (g_slist_find (requests, call))
+		((DispatchInfo *) call)->callback = NULL;
 }
 
