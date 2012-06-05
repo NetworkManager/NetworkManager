@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <syslog.h>
@@ -44,53 +44,40 @@
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
 
-static gboolean quit_timeout_cb (gpointer user_data);
+typedef struct {
+	GObject parent;
 
-typedef struct Handler Handler;
-typedef struct HandlerClass HandlerClass;
+	/* Private data */
+	guint quit_id;
+	gboolean persist;
+} Handler;
+
+typedef struct {
+  GObjectClass parent;
+} HandlerClass;
 
 GType handler_get_type (void);
 
-struct Handler {
-	GObject parent;
-};
-
-struct HandlerClass {
-  GObjectClass parent;
-};
-
-#define HANDLER_TYPE              (handler_get_type ())
-#define HANDLER(object)           (G_TYPE_CHECK_INSTANCE_CAST ((object), HANDLER_TYPE, Handler))
-#define HANDLER_CLASS(klass)      (G_TYPE_CHECK_CLASS_CAST ((klass), HANDLER_TYPE, HandlerClass))
-#define IS_HANDLER(object)        (G_TYPE_CHECK_INSTANCE_TYPE ((object), HANDLER_TYPE))
-#define IS_HANDLER_CLASS(klass)   (G_TYPE_CHECK_CLASS_TYPE ((klass), HANDLER_TYPE))
-#define HANDLER_GET_CLASS(obj)    (G_TYPE_INSTANCE_GET_CLASS ((obj), HANDLER_TYPE, HandlerClass))
+#define HANDLER_TYPE         (handler_get_type ())
+#define HANDLER(object)      (G_TYPE_CHECK_INSTANCE_CAST ((object), HANDLER_TYPE, Handler))
+#define HANDLER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), HANDLER_TYPE, HandlerClass))
 
 G_DEFINE_TYPE(Handler, handler, G_TYPE_OBJECT)
 
-typedef struct {
-	DBusGConnection *g_connection;
-	DBusGProxy *bus_proxy;
-	guint quit_timeout;
-	gboolean persist;
-
-	Handler *handler;
-} Dispatcher;
-
-static gboolean
-nm_dispatcher_action (Handler *h,
-                      const char *action,
-                      GHashTable *connection_hash,
-                      GHashTable *connection_props,
-                      GHashTable *device_props,
-                      GHashTable *device_ip4_props,
-                      GHashTable *device_ip6_props,
-                      GHashTable *device_dhcp4_props,
-                      GHashTable *device_dhcp6_props,
-                      const char *vpn_ip_iface,
-                      GHashTable *vpn_ip4_props,
-                      GHashTable *vpn_ip6_props,
-                      GError **error);
+static void
+impl_dispatch (Handler *h,
+               const char *action,
+               GHashTable *connection_hash,
+               GHashTable *connection_props,
+               GHashTable *device_props,
+               GHashTable *device_ip4_props,
+               GHashTable *device_ip6_props,
+               GHashTable *device_dhcp4_props,
+               GHashTable *device_dhcp6_props,
+               const char *vpn_ip_iface,
+               GHashTable *vpn_ip4_props,
+               GHashTable *vpn_ip6_props,
+               DBusGMethodInvocation *context);
 
 #include "nm-dispatcher-glue.h"
 
@@ -101,33 +88,188 @@ handler_init (Handler *h)
 }
 
 static void
-handler_finalize (GObject *object)
+handler_class_init (HandlerClass *h_class)
 {
-	G_OBJECT_CLASS (handler_parent_class)->finalize (object);
+}
+
+typedef struct Request Request;
+
+static void dispatch_one_script (Request *request);
+
+typedef struct {
+	Request *request;
+
+	char *script;
+	GPid pid;
+	DispatchResult result;
+	char *error;
+} ScriptInfo;
+
+struct Request {
+	Handler *handler;
+
+	DBusGMethodInvocation *context;
+	char *action;
+	char *iface;
+	char **envp;
+	GPtrArray *scripts;  /* list of ScriptInfo */
+	guint idx;
+
+	guint script_watch_id;
+	guint script_timeout_id;
+};
+
+static void
+script_info_free (ScriptInfo *info)
+{
+	g_free (info->script);
+	g_free (info->error);
+	g_free (info);
 }
 
 static void
-handler_class_init (HandlerClass *h_class)
+request_free (Request *request)
 {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (h_class);
-
-  gobject_class->finalize = handler_finalize;
+	g_free (request->action);
+	g_free (request->iface);
+	g_strfreev (request->envp);
+	if (request->scripts)
+		g_ptr_array_foreach (request->scripts, (GFunc) script_info_free, NULL);
+	g_ptr_array_free (request->scripts, TRUE);
 }
 
-/*
- * nmd_permission_check
- *
- * Verify that the given script has the permissions we want.  Specifically,
- * ensure that the file is
- *	- A regular file.
- *	- Owned by root.
- *	- Not writable by the group or by other.
- *	- Not setuid.
- *	- Executable by the owner.
- *
- */
+static gboolean
+quit_timeout_cb (gpointer user_data)
+{
+	g_main_loop_quit (loop);
+	return FALSE;
+}
+
+static void
+quit_timeout_reschedule (Handler *h)
+{
+	if (h->quit_id)
+		g_source_remove (h->quit_id);
+	if (!h->persist)
+		h->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+}
+
+static gboolean
+next_script (gpointer user_data)
+{
+	Request *request = user_data;
+	GPtrArray *results;
+	GValueArray *item;
+	guint i;
+
+	quit_timeout_reschedule (request->handler);
+
+	request->idx++;
+	if (request->idx < request->scripts->len) {
+		dispatch_one_script (request);
+		return FALSE;
+	}
+
+	/* All done */
+	results = g_ptr_array_sized_new (request->scripts->len);
+	for (i = 0; i < request->scripts->len; i++) {
+		ScriptInfo *script = g_ptr_array_index (request->scripts, i);
+		GValue elt = {0, };
+
+		item = g_value_array_new (3);
+
+		/* Script path */
+		g_value_init (&elt, G_TYPE_STRING);
+		g_value_set_string (&elt, script->script);
+		g_value_array_append (item, &elt);
+		g_value_unset (&elt);
+
+		/* Result */
+		g_value_init (&elt, G_TYPE_UINT);
+		g_value_set_uint (&elt, script->result);
+		g_value_array_append (item, &elt);
+		g_value_unset (&elt);
+
+		/* Error */
+		g_value_init (&elt, G_TYPE_STRING);
+		g_value_set_string (&elt, script->error ? script->error : "");
+		g_value_array_append (item, &elt);
+		g_value_unset (&elt);
+
+		g_ptr_array_add (results, item);
+	}
+
+	dbus_g_method_return (request->context, results);
+
+	request_free (request);
+	return FALSE;
+}
+
+static void
+script_watch_cb (GPid pid, gint status, gpointer user_data)
+{
+	ScriptInfo *script = user_data;
+	guint err;
+
+	g_assert (pid == script->pid);
+
+	script->request->script_watch_id = 0;
+	g_source_remove (script->request->script_timeout_id);
+	script->request->script_timeout_id = 0;
+
+	if (WIFEXITED (status)) {
+		err = WEXITSTATUS (status);
+		if (err == 0)
+			script->result = DISPATCH_RESULT_SUCCESS;
+		else {
+			script->error = g_strdup_printf ("Script '%s' exited with error status %d.",
+			                                 script->script, err);
+		}
+	} else if (WIFSTOPPED (status)) {
+		script->error = g_strdup_printf ("Script '%s' stopped unexpectedly with signal %d.",
+		                                 script->script, WSTOPSIG (status));
+	} else if (WIFSIGNALED (status)) {
+		script->error = g_strdup_printf ("Script '%s' died with signal %d",
+		                                 script->script, WTERMSIG (status));
+	} else {
+		script->error = g_strdup_printf ("Script '%s' died from an unknown cause",
+		                                 script->script);
+	}
+
+	if (script->result != DISPATCH_RESULT_SUCCESS) {
+		script->result = DISPATCH_RESULT_FAILED;
+		g_warning ("%s", script->error);
+	}
+
+	g_spawn_close_pid (script->pid);
+	next_script (script->request);
+}
+
+static gboolean
+script_timeout_cb (gpointer user_data)
+{
+	ScriptInfo *script = user_data;
+
+	g_source_remove (script->request->script_watch_id);
+	script->request->script_watch_id = 0;
+	script->request->script_timeout_id = 0;
+
+	g_warning ("Script '%s' took too long; killing it.", script->script);
+
+	if (kill (script->pid, 0) == 0)
+		kill (script->pid, SIGKILL);
+	waitpid (script->pid, NULL, 0);
+
+	script->error = g_strdup_printf ("Script '%s' timed out.", script->script);
+	script->result = DISPATCH_RESULT_TIMEOUT;
+
+	g_spawn_close_pid (script->pid);
+	g_idle_add (next_script, script->request);
+	return FALSE;
+}
+
 static inline gboolean
-nmd_permission_check (struct stat *s, GError **error)
+check_permissions (struct stat *s, GError **error)
 {
 	g_return_val_if_fail (s != NULL, FALSE);
 	g_return_val_if_fail (error != NULL, FALSE);
@@ -160,223 +302,170 @@ nmd_permission_check (struct stat *s, GError **error)
 	return TRUE;
 }
 
-
-/*
- * nmd_is_valid_filename
- *
- * Verify that the given script is a valid file name. Specifically,
- * ensure that the file:
- *	- is not a editor backup file
- *	- is not a package management file
- *	- does not start with '.'
- */
-static inline gboolean
-nmd_is_valid_filename (const char *file_name)
+static gboolean
+check_filename (const char *file_name)
 {
 	char *bad_suffixes[] = { "~", ".rpmsave", ".rpmorig", ".rpmnew", NULL };
 	char *tmp;
-	int i;
+	guint i;
+
+	/* File must not be a backup file, package management file, or start with '.' */
 
 	if (file_name[0] == '.')
 		return FALSE;
 	for (i = 0; bad_suffixes[i]; i++) {
-		if (g_str_has_suffix(file_name, bad_suffixes[i]))
+		if (g_str_has_suffix (file_name, bad_suffixes[i]))
 			return FALSE;
 	}
-	tmp = g_strrstr(file_name, ".dpkg-");
-	if (tmp && (tmp == strrchr(file_name,'.')))
+	tmp = g_strrstr (file_name, ".dpkg-");
+	if (tmp && (tmp == strrchr (file_name, '.')))
 		return FALSE;
 	return TRUE;
-}
-
-static gint
-sort_files (gconstpointer a, gconstpointer b)
-{
-	char *a_base = NULL, *b_base = NULL;
-	int ret = 0;
-
-	if (a && !b)
-		return 1;
-	if (!a && !b)
-		return 0;
-	if (!a && b)
-		return -1;
-
-	a_base = g_path_get_basename (a);
-	b_base = g_path_get_basename (b);
-
-	ret = strcmp (a_base, b_base);
-
-	g_free (a_base);
-	g_free (b_base);
-	return ret;
 }
 
 static void
 child_setup (gpointer user_data G_GNUC_UNUSED)
 {
-        /* We are in the child process at this point */
-		/* Give child a different process group to ensure signal separation. */
-        pid_t pid = getpid ();
-        setpgid (pid, pid);
+	/* We are in the child process at this point */
+	/* Give child a different process group to ensure signal separation. */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
 }
 
 static void
-dispatch_scripts (const char *action, const char *iface, char **envp)
+dispatch_one_script (Request *request)
 {
+	GError *error = NULL;
+	gchar *argv[4];
+	ScriptInfo *script = g_ptr_array_index (request->scripts, request->idx);
+
+	argv[0] = script->script;
+	argv[1] = request->iface ? request->iface : "none";
+	argv[2] = request->action;
+	argv[3] = NULL;
+
+	if (debug)
+		g_message ("Script: %s %s %s", script->script, request->iface ? request->iface : "(none)", request->action);
+
+	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, child_setup, request, &script->pid, &error)) {
+		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
+		request->script_timeout_id = g_timeout_add_seconds (3, script_timeout_cb, script);
+	} else {
+		g_warning ("Failed to execute script '%s': (%d) %s",
+		           script->script, error->code, error->message);
+		script->result = DISPATCH_RESULT_EXEC_FAILED;
+		script->error = g_strdup (error->message);
+		g_clear_error (&error);
+
+		/* Try the next script */
+		g_idle_add (next_script, request);
+	}
+}
+
+static GPtrArray *
+find_scripts (Request *request)
+{
+	GPtrArray *scripts;
+	ScriptInfo *s;
 	GDir *dir;
 	const char *filename;
-	GSList *scripts = NULL, *iter;
+	GSList *sorted = NULL, *iter;
 	GError *error = NULL;
 
 	if (!(dir = g_dir_open (NMD_SCRIPT_DIR, 0, &error))) {
-		g_warning ("g_dir_open() could not open '" NMD_SCRIPT_DIR "'.  '%s'",
-		           error->message);
+		g_warning ("Failed to open dispatcher directory '%s': (%d) %s",
+		           NMD_SCRIPT_DIR, error->code, error->message);
 		g_error_free (error);
-		return;
+		return NULL;
 	}
 
 	while ((filename = g_dir_read_name (dir))) {
-		char *file_path;
-		struct stat	s;
-		GError *pc_error = NULL;
+		char *path;
+		struct stat	st;
 		int err;
 
-		if (!nmd_is_valid_filename (filename))
+		if (!check_filename (filename))
 			continue;
 
-		file_path = g_build_filename (NMD_SCRIPT_DIR, filename, NULL);
+		path = g_build_filename (NMD_SCRIPT_DIR, filename, NULL);
 
-		err = stat (file_path, &s);
-		if (err) {
-			g_warning ("Script '%s' could not be stated: %d", file_path, err);
-			g_free (file_path);
-			continue;
-		}
-
-		if (!nmd_permission_check (&s, &pc_error)) {
-			g_warning ("Script '%s' could not be executed: %s", file_path, pc_error->message);
-			g_error_free (pc_error);
-			g_free (file_path);
+		err = stat (path, &st);
+		if (err)
+			g_warning ("Failed to stat '%s': %d", path, err);
+		else if (!check_permissions (&st, &error)) {
+			g_warning ("Cannot execute '%s': %s", path, error->message);
+			g_clear_error (&error);
 		} else {
 			/* success */
-			scripts = g_slist_insert_sorted (scripts, file_path, sort_files);
+			sorted = g_slist_insert_sorted (sorted, path, (GCompareFunc) g_strcmp0);
 		}
 	}
 	g_dir_close (dir);
 
-	for (iter = scripts; iter; iter = g_slist_next (iter)) {
-		gchar *argv[4];
-		gint status = -1;
-
-		argv[0] = (char *) iter->data;
-		argv[1] = iface ? (char *) iface : "none";
-		argv[2] = (char *) action;
-		argv[3] = NULL;
-
-		if (debug)
-			g_message ("Script: %s %s %s", (char *) iter->data, iface ? (char *) iface : "(none)", (char *) action);
-
-		error = NULL;
-		if (g_spawn_sync ("/", argv, envp, 0, child_setup, NULL, NULL, NULL, &status, &error)) {
-			if (WIFEXITED (status)) {
-				if (WEXITSTATUS (status) != 0)
-					g_warning ("Script '%s' exited with error status %d.",
-					           (char *) iter->data, WEXITSTATUS (status));
-			} else
-				g_warning ("Script '%s' exited abnormally.", (char *) iter->data);
-		} else {
-			g_warning ("Could not run script '%s': (%d) %s",
-			           (char *) iter->data, error->code, error->message);
-			g_error_free (error);
-		}
+	scripts = g_ptr_array_sized_new (5);
+	for (iter = sorted; iter; iter = g_slist_next (iter)) {
+		s = g_malloc0 (sizeof (*s));
+		s->request = request;
+		s->script = iter->data;
+		g_ptr_array_add (scripts, s);
 	}
+	g_slist_free (sorted);
 
-	g_slist_foreach (scripts, (GFunc) g_free, NULL);
-	g_slist_free (scripts);
+	return scripts;
 }
 
-static gboolean
-nm_dispatcher_action (Handler *h,
-                      const char *action,
-                      GHashTable *connection_hash,
-                      GHashTable *connection_props,
-                      GHashTable *device_props,
-                      GHashTable *device_ip4_props,
-                      GHashTable *device_ip6_props,
-                      GHashTable *device_dhcp4_props,
-                      GHashTable *device_dhcp6_props,
-                      const char *vpn_ip_iface,
-                      GHashTable *vpn_ip4_props,
-                      GHashTable *vpn_ip6_props,
-                      GError **error)
+static void
+impl_dispatch (Handler *h,
+               const char *str_action,
+               GHashTable *connection_hash,
+               GHashTable *connection_props,
+               GHashTable *device_props,
+               GHashTable *device_ip4_props,
+               GHashTable *device_ip6_props,
+               GHashTable *device_dhcp4_props,
+               GHashTable *device_dhcp6_props,
+               const char *vpn_ip_iface,
+               GHashTable *vpn_ip4_props,
+               GHashTable *vpn_ip6_props,
+               DBusGMethodInvocation *context)
 {
-	Dispatcher *d = g_object_get_data (G_OBJECT (h), "dispatcher");
-	char **envp, **p;
+	Request *request;
+	char **p;
 	char *iface = NULL;
 
-	/* Back off the quit timeout */
-	if (d->quit_timeout)
-		g_source_remove (d->quit_timeout);
-	if (!d->persist)
-		d->quit_timeout = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+	quit_timeout_reschedule (h);
 
-	envp = nm_dispatcher_utils_construct_envp (action,
-	                                           connection_hash,
-	                                           connection_props,
-	                                           device_props,
-	                                           device_ip4_props,
-	                                           device_ip6_props,
-	                                           device_dhcp4_props,
-	                                           device_dhcp6_props,
-	                                           vpn_ip_iface,
-	                                           vpn_ip4_props,
-	                                           vpn_ip6_props,
-	                                           &iface);
+	request = g_malloc0 (sizeof (*request));
+	request->handler = h;
+	request->context = context;
+	request->action = g_strdup (str_action);
+
+	request->envp = nm_dispatcher_utils_construct_envp (str_action,
+	                                                    connection_hash,
+	                                                    connection_props,
+	                                                    device_props,
+	                                                    device_ip4_props,
+	                                                    device_ip6_props,
+	                                                    device_dhcp4_props,
+	                                                    device_dhcp6_props,
+	                                                    vpn_ip_iface,
+	                                                    vpn_ip4_props,
+	                                                    vpn_ip6_props,
+	                                                    &iface);
 
 	if (debug) {
-		g_message ("------------ Script Environment ------------");
-		for (p = envp; *p; p++)
+		g_message ("------------ Action ID %p '%s' Interface %s Environment ------------",
+		           context, str_action, iface ? iface : "(none)");
+		for (p = request->envp; *p; p++)
 			g_message ("  %s", *p);
 		g_message ("\n");
 	}
 
-	dispatch_scripts (action, iface, envp);
-	g_strfreev (envp);
-	g_free (iface);
+	request->iface = g_strdup (iface);
+	request->scripts = find_scripts (request);
 
-	return TRUE;
-}
-
-static gboolean
-start_dbus_service (Dispatcher *d)
-{
-	int request_name_result;
-	GError *err = NULL;
-	gboolean success = FALSE;
-
-	if (!dbus_g_proxy_call (d->bus_proxy, "RequestName", &err,
-							G_TYPE_STRING, NM_DISPATCHER_DBUS_SERVICE,
-							G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-							G_TYPE_INVALID,
-							G_TYPE_UINT, &request_name_result,
-							G_TYPE_INVALID)) {
-		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.\n"
-		           "  Message: '%s'", err->message);
-		g_error_free (err);
-		goto out;
-	}
-
-	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service "
-		           "as it is already taken.  Return: %d",
-		           request_name_result);
-		goto out;
-	}
-	success = TRUE;
-
-out:
-	return success;
+	/* start dispatching scripts */
+	dispatch_one_script (request);
 }
 
 static void
@@ -386,42 +475,67 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 	g_main_loop_quit (loop);
 }
 
-static gboolean
-dbus_init (Dispatcher *d)
+static DBusGConnection *
+dbus_init (void)
 {
-	GError *err = NULL;
+	GError *error = NULL;
+	DBusGConnection *bus;
 	DBusConnection *connection;
-	
+	DBusGProxy *proxy;
+	int result;
+
 	dbus_connection_set_change_sigpipe (TRUE);
 
-	d->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-	if (!d->g_connection) {
+	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+	if (!bus) {
 		g_warning ("Could not get the system bus.  Make sure "
 		           "the message bus daemon is running!  Message: %s",
-		           err->message);
-		g_error_free (err);
-		return FALSE;
+		           error->message);
+		g_error_free (error);
+		return NULL;
 	}
 
 	/* Clean up nicely if we get kicked off the bus */
-	connection = dbus_g_connection_get_connection (d->g_connection);
+	connection = dbus_g_connection_get_connection (bus);
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 
-	d->bus_proxy = dbus_g_proxy_new_for_name (d->g_connection,
-	                                          "org.freedesktop.DBus",
-	                                          "/org/freedesktop/DBus",
-	                                          "org.freedesktop.DBus");
-	if (!d->bus_proxy) {
-		g_warning ("Could not get the DBus object!");
+	proxy = dbus_g_proxy_new_for_name (bus,
+	                                   "org.freedesktop.DBus",
+	                                   "/org/freedesktop/DBus",
+	                                   "org.freedesktop.DBus");
+	if (!proxy) {
+		g_warning ("Could not create the DBus proxy!");
 		goto error;
 	}
 
-	g_signal_connect (d->bus_proxy, "destroy", G_CALLBACK (destroy_cb), NULL);
+	g_signal_connect (proxy, "destroy", G_CALLBACK (destroy_cb), NULL);
 
-	return TRUE;
+	if (!dbus_g_proxy_call (proxy, "RequestName", &error,
+	                        G_TYPE_STRING, NM_DISPATCHER_DBUS_SERVICE,
+	                        G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_UINT, &result,
+	                        G_TYPE_INVALID)) {
+		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.\n"
+		           "  Message: '%s'", error->message);
+		g_error_free (error);
+		goto error;
+	}
 
-error:	
-	return FALSE;
+	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service "
+		           "as it is already taken.  Result: %d",
+		           result);
+		goto error;
+	}
+
+	return bus;
+
+error:
+	if (proxy)
+		g_object_unref (proxy);
+	dbus_g_connection_unref (bus);
+	return NULL;
 }
 
 static void
@@ -433,30 +547,25 @@ log_handler (const gchar *log_domain,
 	int syslog_priority;	
 
 	switch (log_level) {
-		case G_LOG_LEVEL_ERROR:
-			syslog_priority = LOG_CRIT;
-			break;
-
-		case G_LOG_LEVEL_CRITICAL:
-			syslog_priority = LOG_ERR;
-			break;
-
-		case G_LOG_LEVEL_WARNING:
-			syslog_priority = LOG_WARNING;
-			break;
-
-		case G_LOG_LEVEL_MESSAGE:
-			syslog_priority = LOG_NOTICE;
-			break;
-
-		case G_LOG_LEVEL_DEBUG:
-			syslog_priority = LOG_DEBUG;
-			break;
-
-		case G_LOG_LEVEL_INFO:
-		default:
-			syslog_priority = LOG_INFO;
-			break;
+	case G_LOG_LEVEL_ERROR:
+		syslog_priority = LOG_CRIT;
+		break;
+	case G_LOG_LEVEL_CRITICAL:
+		syslog_priority = LOG_ERR;
+		break;
+	case G_LOG_LEVEL_WARNING:
+		syslog_priority = LOG_WARNING;
+		break;
+	case G_LOG_LEVEL_MESSAGE:
+		syslog_priority = LOG_NOTICE;
+		break;
+	case G_LOG_LEVEL_DEBUG:
+		syslog_priority = LOG_DEBUG;
+		break;
+	case G_LOG_LEVEL_INFO:
+	default:
+		syslog_priority = LOG_INFO;
+		break;
 	}
 
 	syslog (syslog_priority, "%s", message);
@@ -502,20 +611,14 @@ setup_signals (void)
 	sigaction (SIGINT,  &action, NULL);
 }
 
-static gboolean
-quit_timeout_cb (gpointer user_data)
-{
-	g_main_loop_quit (loop);
-	return FALSE;
-}
-
 int
 main (int argc, char **argv)
 {
-	Dispatcher *d = g_malloc0 (sizeof (Dispatcher));
 	GOptionContext *opt_ctx;
 	GError *error = NULL;
 	gboolean persist = FALSE;
+	DBusGConnection *bus;
+	Handler *handler;
 
 	GOptionEntry entries[] = {
 		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, "Output to console rather than syslog", NULL },
@@ -530,7 +633,6 @@ main (int argc, char **argv)
 	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
 		g_warning ("%s\n", error->message);
 		g_error_free (error);
-		g_free (d);
 		return 1;
 	}
 
@@ -544,30 +646,27 @@ main (int argc, char **argv)
 
 	loop = g_main_loop_new (NULL, FALSE);
 
-	if (!dbus_init (d))
-		return 1;
-	if (!start_dbus_service (d))
+	bus = dbus_init ();
+	if (!bus)
 		return 1;
 
-	d->persist = persist;
-	d->handler = g_object_new (HANDLER_TYPE, NULL);
-	if (!d->handler)
+	handler = g_object_new (HANDLER_TYPE, NULL);
+	if (!handler)
 		return 1;
-	g_object_set_data (G_OBJECT (d->handler), "dispatcher", d);
+	handler->persist = persist;
 
 	dbus_g_object_type_install_info (HANDLER_TYPE, &dbus_glib_nm_dispatcher_object_info);
-	dbus_g_connection_register_g_object (d->g_connection,
+	dbus_g_connection_register_g_object (bus,
 	                                     NM_DISPATCHER_DBUS_PATH,
-	                                     G_OBJECT (d->handler));
+	                                     G_OBJECT (handler));
 
 	if (!persist)
-		d->quit_timeout = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+		handler->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 
 	g_main_loop_run (loop);
 
-	g_object_unref (d->handler);
-	dbus_g_connection_unref (d->g_connection);
-	g_free (d);
+	g_object_unref (handler);
+	dbus_g_connection_unref (bus);
 
 	if (!debug)
 		logging_shutdown ();

@@ -15,8 +15,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
+
+#include <dbus/dbus-glib.h>
+
+/* dbus-glib types for dispatcher call return value */
+#define DISPATCHER_TYPE_RESULT       (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_INVALID))
+#define DISPATCHER_TYPE_RESULT_ARRAY (dbus_g_type_get_collection ("GPtrArray", DISPATCHER_TYPE_RESULT))
 
 #define NM_DISPATCHER_DBUS_SERVICE "org.freedesktop.nm_dispatcher"
 #define NM_DISPATCHER_DBUS_IFACE   "org.freedesktop.nm_dispatcher"
@@ -29,4 +35,12 @@
 #define NMD_DEVICE_PROPS_TYPE             "type"
 #define NMD_DEVICE_PROPS_STATE            "state"
 #define NMD_DEVICE_PROPS_PATH             "path"
+
+typedef enum {
+	DISPATCH_RESULT_UNKNOWN = 0,
+	DISPATCH_RESULT_SUCCESS = 1,
+	DISPATCH_RESULT_EXEC_FAILED = 2,
+	DISPATCH_RESULT_FAILED = 3,
+	DISPATCH_RESULT_TIMEOUT = 4,
+} DispatchResult;
 

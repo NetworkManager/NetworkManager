@@ -128,10 +128,81 @@ fill_vpn_props (NMIP4Config *ip4_config,
 		dump_object_to_props (G_OBJECT (ip6_config), ip6_hash);
 }
 
+typedef struct {
+	NMDBusManager *dbus_mgr;
+} DispatchInfo;
+
+static void
+dispatcher_info_free (DispatchInfo *info)
+{
+	g_object_unref (info->dbus_mgr);
+	g_free (info);
+}
+
+static const char *
+dispatch_result_to_string (DispatchResult result)
+{
+	switch (result) {
+	case DISPATCH_RESULT_UNKNOWN:
+		return "unknown";
+	case DISPATCH_RESULT_SUCCESS:
+		return "success";
+	case DISPATCH_RESULT_EXEC_FAILED:
+		return "exec failed";
+	case DISPATCH_RESULT_FAILED:
+		return "failed";
+	case DISPATCH_RESULT_TIMEOUT:
+		return "timed out";
+	}
+	g_assert_not_reached ();
+}
+
 static void
 dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
-	dbus_g_proxy_end_call (proxy, call, NULL, G_TYPE_INVALID);
+	GError *error = NULL;
+	GPtrArray *results = NULL;
+	guint i;
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           DISPATCHER_TYPE_RESULT_ARRAY, &results,
+	                           G_TYPE_INVALID)) {
+		for (i = 0; results && (i < results->len); i++) {
+			GValueArray *item = g_ptr_array_index (results, i);
+			GValue *tmp;
+			const char *script, *err;
+			DispatchResult result;
+
+			if (   (G_VALUE_TYPE (g_value_array_get_nth (item, 0)) == G_TYPE_STRING)
+			    && (G_VALUE_TYPE (g_value_array_get_nth (item, 1)) == G_TYPE_UINT)
+			    && (G_VALUE_TYPE (g_value_array_get_nth (item, 2)) == G_TYPE_STRING)) {
+				/* result */
+				tmp = g_value_array_get_nth (item, 1);
+				result = g_value_get_uint (tmp);
+				if (result != DISPATCH_RESULT_SUCCESS) {
+					/* script */
+					tmp = g_value_array_get_nth (item, 0);
+					script = g_value_get_string (tmp);
+
+					/* error */
+					tmp = g_value_array_get_nth (item, 2);
+					err = g_value_get_string (tmp);
+
+					nm_log_warn (LOGD_CORE, "Dispatcher script %s: %s",
+					             dispatch_result_to_string (result), err);
+				}
+			} else
+				nm_log_dbg (LOGD_CORE, "Dispatcher result element %d invalid type", i);
+
+			g_array_unref ((GArray *) item);
+		}
+		g_ptr_array_free (results, TRUE);
+	} else {
+		g_assert (error);
+		nm_log_warn (LOGD_CORE, "Dispatcher failed: (%d) %s", error->code, error->message);
+	}
+
+	g_clear_error (&error);
 	g_object_unref (proxy);
 }
 
@@ -155,6 +226,8 @@ nm_utils_call_dispatcher (const char *action,
 	GHashTable *device_dhcp6_props;
 	GHashTable *vpn_ip4_props;
 	GHashTable *vpn_ip6_props;
+	DBusGProxyCall *call;
+	DispatchInfo *info;
 
 	g_return_if_fail (action != NULL);
 
@@ -209,29 +282,27 @@ nm_utils_call_dispatcher (const char *action,
 			fill_vpn_props (vpn_ip4_config, NULL, vpn_ip4_props, vpn_ip6_props);
 	}
 
-	/* Do a non-blocking call, but wait for the reply, because dbus-glib
-	 * sometimes needs time to complete internal housekeeping.  If we use
-	 * dbus_g_proxy_call_no_reply(), that housekeeping (specifically the
-	 * GetNameOwner response) doesn't complete and we run into an assert
-	 * on unreffing the proxy.
-	 */
-	dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
-	                                      dispatcher_done_cb,
-	                                      dbus_mgr,       /* automatically unref the dbus mgr when call is done */
-	                                      g_object_unref,
-	                                      5000,
-	                                      G_TYPE_STRING, action,
-	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_ip4_props,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_ip6_props,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp4_props,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp6_props,
-	                                      G_TYPE_STRING, vpn_iface ? vpn_iface : "",
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
-	                                      G_TYPE_INVALID);
+	info = g_malloc0 (sizeof (*info));
+	info->dbus_mgr = dbus_mgr;
+
+	/* Send the action to the dispatcher */
+	call = dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
+	                                             dispatcher_done_cb,
+	                                             info,
+	                                             (GDestroyNotify) dispatcher_info_free,
+	                                             15000,
+	                                             G_TYPE_STRING, action,
+	                                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_ip4_props,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_ip6_props,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp4_props,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp6_props,
+	                                             G_TYPE_STRING, vpn_iface ? vpn_iface : "",
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
+	                                             DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
+	                                             G_TYPE_INVALID);
 	g_hash_table_destroy (connection_hash);
 	g_hash_table_destroy (connection_props);
 	g_hash_table_destroy (device_props);
