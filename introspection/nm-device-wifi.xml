@@ -14,6 +14,19 @@
       </tp:docstring>
     </method>
 
+    <method name="RequestScan">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_request_scan"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="options" type="a{sv}" direction="in">
+        <tp:docstring>
+          Options of scan
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Request the device to scan
+      </tp:docstring>
+    </method>
+
     <property name="HwAddress" type="s" access="read">
       <tp:docstring>
         The active hardware address of the device.

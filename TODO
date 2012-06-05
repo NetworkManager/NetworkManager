@@ -53,44 +53,6 @@ provide Ad-Hoc connection sharing support for those devices and switch between
 Ad-Hoc and AP mode depending on device capabilities.
 
 
-* On-Demand WiFi Scan support
-
-Single-user and embedded devices often use a continuous wifi scan when the
-networking configuration interface is open to quickly allow users to find their
-wifi network.  NM periodically scans, but this could take as long as 2 mintues
-to update the list.  Note that WiFi scans require 2 - 10 seconds to complete,
-and during this time normal traffic (video, VOIP, streaming music, downloads,
-etc) is not transmitted, so a WiFi scan is a disruptive operation to the user.
-
-A D-Bus method should be added to the NMDeviceWifi device to allow user
-applications to request a scan.  This request should be rate-limited to no
-more than once every 10 seconds to give time for traffic to resume when the
-scan is done, and to lessen the effect of any DDoS by malicious user
-applications.  This request should also be restricted by one or more PolicyKit
-permissions like org.freedesktop.NetworkManager.network-control.
-
-To begin, a new method definition should be added to the
-introspection/nm-device-wifi.xml for a method called "RequestScan" which takes
-an argument called "options" of type of "a{sv}".  This argument will be used
-later.  An annotation (like the other functions have) should be added so that
-the method will be called "impl_device_request_scan".
-
-Next, the corresponding method implementation should be added to
-src/nm-device-wifi.c by adding the prototype for impl_device_request_scan
-near the top of the file, and implementing it below.  The implementation will
-recieve a GHashTable corresponding to the "a{sv}" argument list from the XML
-file, but we can ignore that for now.
-
-The incoming request should be authenticated using nm_auth_get_caller_uid()
-and additionally starting a PolicyKit authentication check with
-with nm_auth_chain_new().  See the function manager_device_disconnect_request()
-in src/nm-manager.c for an example of this.
-
-Only after the caller is authorized to scan should the request be checked
-against the last scan timestamp, and if the last scan was 10 seconds or more
-ago, a new scan should be requested.
-
-
 * Reconnect to WiFi Networks Only If They Succeeded Once
 
 Currently, NetworkManager will attempt to connect to a previously attempted

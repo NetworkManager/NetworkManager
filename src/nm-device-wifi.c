@@ -56,6 +56,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-system.h"
+#include "nm-manager-auth.h"
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
 #include "wifi-utils.h"
@@ -63,6 +64,10 @@
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
                                                GError **err);
+
+static void impl_device_request_scan (NMDeviceWifi *device,
+                                      GHashTable *options,
+                                      DBusGMethodInvocation *context);
 
 #include "nm-device-wifi-glue.h"
 
@@ -150,6 +155,8 @@ struct _NMDeviceWifiPrivate {
 	guint             periodic_source_id;
 	guint             link_timeout_id;
 
+	glong             request_scan_time;
+
 	NMDeviceWifiCapabilities capabilities;
 };
 
@@ -190,6 +197,8 @@ static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
                                                  NMDeviceWifi * self);
 
 static void schedule_scanlist_cull (NMDeviceWifi *self);
+
+static gboolean request_wireless_scan (gpointer user_data);
 
 /*****************************************************************/
 
@@ -329,6 +338,8 @@ constructor (GType type,
 		priv->ipw_rfkill_path = NULL;
 	}
 	priv->ipw_rfkill_state = nm_device_wifi_get_ipw_rfkill_state (self);
+
+	priv->request_scan_time = 0;
 
 	return object;
 }
@@ -1439,6 +1450,55 @@ impl_device_get_access_points (NMDeviceWifi *self,
 			g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (ap)));
 	}
 	return TRUE;
+}
+
+static void
+request_scan_cb (NMDevice *device,
+                 DBusGMethodInvocation *context,
+                 GError *error,
+                 gpointer user_data)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GTimeVal now;
+
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		g_clear_error (&error);
+	} else {
+		g_get_current_time (&now);
+		cancel_pending_scan (self);
+		request_wireless_scan (self);
+		priv->request_scan_time = now.tv_sec;
+
+		dbus_g_method_return (context);
+	}
+}
+
+static void
+impl_device_request_scan (NMDeviceWifi *self,
+                          GHashTable *options,
+                          DBusGMethodInvocation *context)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GTimeVal now;
+
+	g_get_current_time (&now);
+	if (!priv->enabled || now.tv_sec - priv->request_scan_time < 10) {
+		dbus_g_method_return (context);
+		return;
+	}
+
+	/* Ask the manager to authenticate this request for us */
+	g_signal_emit_by_name (NM_DEVICE (self),
+	                       NM_DEVICE_AUTH_REQUEST,
+	                       context,
+	                       NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                       TRUE,
+	                       request_scan_cb,
+	                       NULL);
+
+	return;
 }
 
 static gboolean
