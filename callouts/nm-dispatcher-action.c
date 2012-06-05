@@ -545,14 +545,14 @@ main (int argc, char **argv)
 	loop = g_main_loop_new (NULL, FALSE);
 
 	if (!dbus_init (d))
-		return -1;
+		return 1;
 	if (!start_dbus_service (d))
-		return -1;
+		return 1;
 
 	d->persist = persist;
 	d->handler = g_object_new (HANDLER_TYPE, NULL);
 	if (!d->handler)
-		return -1;
+		return 1;
 	g_object_set_data (G_OBJECT (d->handler), "dispatcher", d);
 
 	dbus_g_object_type_install_info (HANDLER_TYPE, &dbus_glib_nm_dispatcher_object_info);
