@@ -129,6 +129,8 @@ fill_vpn_props (NMIP4Config *ip4_config,
 }
 
 typedef struct {
+	DispatcherFunc callback;
+	gpointer user_data;
 	NMDBusManager *dbus_mgr;
 } DispatchInfo;
 
@@ -160,6 +162,7 @@ dispatch_result_to_string (DispatchResult result)
 static void
 dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
+	DispatchInfo *info = user_data;
 	GError *error = NULL;
 	GPtrArray *results = NULL;
 	guint i;
@@ -202,17 +205,50 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		nm_log_warn (LOGD_CORE, "Dispatcher failed: (%d) %s", error->code, error->message);
 	}
 
+	if (info->callback)
+		info->callback (call, info->user_data);
+
 	g_clear_error (&error);
 	g_object_unref (proxy);
 }
 
-void
-nm_utils_call_dispatcher (const char *action,
-                          NMConnection *connection,
-                          NMDevice *device,
-                          const char *vpn_iface,
-                          NMIP4Config *vpn_ip4_config,
-                          NMIP6Config *vpn_ip6_config)
+static const char *
+action_to_string (DispatcherAction action)
+{
+	switch (action) {
+	case DISPATCHER_ACTION_HOSTNAME:
+		return "hostname";
+	case DISPATCHER_ACTION_UP:
+		return "up";
+	case DISPATCHER_ACTION_PRE_DOWN:
+		return "pre-down";
+	case DISPATCHER_ACTION_DOWN:
+		return "down";
+	case DISPATCHER_ACTION_VPN_UP:
+		return "vpn-up";
+	case DISPATCHER_ACTION_VPN_PRE_DOWN:
+		return "vpn-pre-down";
+	case DISPATCHER_ACTION_VPN_DOWN:
+		return "vpn-down";
+	case DISPATCHER_ACTION_DHCP4_CHANGE:
+		return "dhcp4-change";
+	case DISPATCHER_ACTION_DHCP6_CHANGE:
+		return "dhcp6-change";
+	default:
+		break;
+	}
+	g_assert_not_reached ();
+}
+
+static gpointer
+_dispatcher_call (DispatcherAction action,
+                  NMConnection *connection,
+                  NMDevice *device,
+                  const char *vpn_iface,
+                  NMIP4Config *vpn_ip4_config,
+                  NMIP6Config *vpn_ip6_config,
+                  DispatcherFunc callback,
+                  gpointer user_data)
 {
 	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
@@ -229,14 +265,12 @@ nm_utils_call_dispatcher (const char *action,
 	DBusGProxyCall *call;
 	DispatchInfo *info;
 
-	g_return_if_fail (action != NULL);
-
 	/* All actions except 'hostname' require a device */
-	if (strcmp (action, "hostname") != 0)
-		g_return_if_fail (NM_IS_DEVICE (device));
+	if (action != DISPATCHER_ACTION_HOSTNAME)
+		g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	/* VPN actions require at least an IPv4 config (for now) */
-	if (strcmp (action, "vpn-up") == 0)
-		g_return_if_fail (vpn_ip4_config != NULL);
+	if (action == DISPATCHER_ACTION_VPN_UP)
+		g_return_val_if_fail (vpn_ip4_config != NULL, NULL);
 
 	dbus_mgr = nm_dbus_manager_get ();
 	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
@@ -247,7 +281,7 @@ nm_utils_call_dispatcher (const char *action,
 	if (!proxy) {
 		nm_log_err (LOGD_CORE, "could not get dispatcher proxy!");
 		g_object_unref (dbus_mgr);
-		return;
+		return NULL;
 	}
 
 	if (connection) {
@@ -271,7 +305,7 @@ nm_utils_call_dispatcher (const char *action,
 	vpn_ip6_props = value_hash_create ();
 
 	/* hostname actions only send the hostname */
-	if (strcmp (action, "hostname") != 0) {
+	if (action != DISPATCHER_ACTION_HOSTNAME) {
 		fill_device_props (device,
 		                   device_props,
 		                   device_ip4_props,
@@ -283,6 +317,8 @@ nm_utils_call_dispatcher (const char *action,
 	}
 
 	info = g_malloc0 (sizeof (*info));
+	info->callback = callback;
+	info->user_data = user_data;
 	info->dbus_mgr = dbus_mgr;
 
 	/* Send the action to the dispatcher */
@@ -291,7 +327,7 @@ nm_utils_call_dispatcher (const char *action,
 	                                             info,
 	                                             (GDestroyNotify) dispatcher_info_free,
 	                                             15000,
-	                                             G_TYPE_STRING, action,
+	                                             G_TYPE_STRING, action_to_string (action),
 	                                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
 	                                             DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
 	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
@@ -312,6 +348,30 @@ nm_utils_call_dispatcher (const char *action,
 	g_hash_table_destroy (device_dhcp6_props);
 	g_hash_table_destroy (vpn_ip4_props);
 	g_hash_table_destroy (vpn_ip6_props);
+
+	return call;
 }
 
+gpointer
+nm_dispatcher_call (DispatcherAction action,
+                    NMConnection *connection,
+                    NMDevice *device,
+                    DispatcherFunc callback,
+                    gpointer user_data)
+{
+	return _dispatcher_call (action, connection, device, NULL, NULL, NULL, callback, user_data);
+}
+
+gpointer
+nm_dispatcher_call_vpn (DispatcherAction action,
+                        NMConnection *connection,
+                        NMDevice *device,
+                        const char *vpn_iface,
+                        NMIP4Config *vpn_ip4_config,
+                        NMIP6Config *vpn_ip6_config,
+                        DispatcherFunc callback,
+                        gpointer user_data)
+{
+	return _dispatcher_call (action, connection, device, vpn_iface, vpn_ip4_config, vpn_ip6_config, callback, user_data);
+}
 

@@ -1596,7 +1596,7 @@ dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
 	}
 
 	/* Notify dispatcher scripts of new DHCP4 config */
-	nm_utils_call_dispatcher ("dhcp4-change", connection, device, NULL, NULL, NULL);
+	nm_dispatcher_call (DISPATCHER_ACTION_DHCP4_CHANGE, connection, device, NULL, NULL);
 }
 
 static void
@@ -1971,7 +1971,7 @@ dhcp6_lease_change (NMDevice *device)
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	} else {
 		/* Notify dispatcher scripts of new DHCPv6 config */
-		nm_utils_call_dispatcher ("dhcp6-change", connection, device, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE, connection, device, NULL, NULL);
 	}
 }
 
@@ -4631,7 +4631,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
 		             nm_device_get_iface (device));
-		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), device, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		connection = nm_act_request_get_connection (req);
@@ -4650,7 +4650,7 @@ nm_device_state_changed (NMDevice *device,
 	}
 
 	if (old_state == NM_DEVICE_STATE_ACTIVATED)
-		nm_utils_call_dispatcher ("down", nm_act_request_get_connection (req), device, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL);
 
 	/* Dispose of the cached activation request */
 	if (req)

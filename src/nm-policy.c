@@ -260,7 +260,7 @@ _set_hostname (NMPolicy *policy,
 	g_object_unref (dns_mgr);
 
 	if (nm_policy_set_system_hostname (policy->cur_hostname, msg))
-		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL);
 }
 
 static void

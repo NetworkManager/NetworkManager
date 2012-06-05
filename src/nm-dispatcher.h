@@ -30,11 +30,33 @@
 #include "nm-ip6-config.h"
 #include "nm-connection.h"
 
-void nm_utils_call_dispatcher (const char *action,
-                               NMConnection *connection,
-                               NMDevice *device,
-                               const char *vpn_iface,
-                               NMIP4Config *vpn_ip4_config,
-                               NMIP6Config *vpn_ip6_config);
+typedef enum {
+	DISPATCHER_ACTION_HOSTNAME,
+	DISPATCHER_ACTION_UP,
+	DISPATCHER_ACTION_PRE_DOWN,
+	DISPATCHER_ACTION_DOWN,
+	DISPATCHER_ACTION_VPN_UP,
+	DISPATCHER_ACTION_VPN_PRE_DOWN,
+	DISPATCHER_ACTION_VPN_DOWN,
+	DISPATCHER_ACTION_DHCP4_CHANGE,
+	DISPATCHER_ACTION_DHCP6_CHANGE
+} DispatcherAction;
+
+typedef void (*DispatcherFunc) (gpointer call, gpointer user_data);
+
+gpointer nm_dispatcher_call (DispatcherAction action,
+                             NMConnection *connection,
+                             NMDevice *device,
+                             DispatcherFunc callback,
+                             gpointer user_data);
+
+gpointer nm_dispatcher_call_vpn (DispatcherAction action,
+                                 NMConnection *connection,
+                                 NMDevice *device,
+                                 const char *vpn_iface,
+                                 NMIP4Config *vpn_ip4_config,
+                                 NMIP6Config *vpn_ip6_config,
+                                 DispatcherFunc callback,
+                                 gpointer user_data);
 
 #endif /* NM_DISPATCHER_H */

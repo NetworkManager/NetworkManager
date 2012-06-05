@@ -243,23 +243,27 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		nm_connection_clear_secrets (priv->connection);
 
 		/* Let dispatcher scripts know we're up and running */
-		nm_utils_call_dispatcher ("vpn-up",
-		                          priv->connection,
-		                          priv->parent_dev,
-		                          priv->ip_iface,
-		                          priv->ip4_config,
-		                          priv->ip6_config);
+		nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_UP,
+		                        priv->connection,
+		                        priv->parent_dev,
+		                        priv->ip_iface,
+		                        priv->ip4_config,
+		                        priv->ip6_config,
+		                        NULL,
+		                        NULL);
 		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 		if (old_vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED) {
 			/* Let dispatcher scripts know we're about to go down */
-			nm_utils_call_dispatcher ("vpn-down",
-			                          priv->connection,
-			                          priv->parent_dev,
-			                          priv->ip_iface,
-			                          NULL,
-			                          NULL);
+			nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
+			                        priv->connection,
+			                        priv->parent_dev,
+			                        priv->ip_iface,
+			                        NULL,
+			                        NULL,
+			                        NULL,
+			                        NULL);
 		}
 
 		/* Tear down and clean up the connection */
