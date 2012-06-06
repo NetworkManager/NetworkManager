@@ -381,7 +381,6 @@ device_set_state (NMIP6Device *device, NMIP6DeviceState state)
 
 typedef struct {
 	NMIP6Device *device;
-	guint dhcp_opts;
 	gboolean success;
 } CallbackInfo;
 
@@ -406,14 +405,14 @@ finish_addrconf (gpointer user_data)
 	/* And tell listeners that addrconf is complete */
 	if (info->success) {
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-		               ifindex, info->dhcp_opts, TRUE);
+		               ifindex, device->dhcp_opts, TRUE);
 	} else {
 		nm_log_info (LOGD_IP6, "(%s): IP6 addrconf timed out or failed.",
 		             device->iface);
 
 		nm_ip6_manager_cancel_addrconf (manager, ifindex);
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-		               ifindex, info->dhcp_opts, FALSE);
+		               ifindex, device->dhcp_opts, FALSE);
 	}
 
 	return FALSE;
@@ -429,7 +428,7 @@ emit_config_changed (gpointer user_data)
 	device->config_changed_id = 0;
 	g_signal_emit (manager, signals[CONFIG_CHANGED], 0,
 	               device->ifindex,
-	               info->dhcp_opts,
+	               device->dhcp_opts,
 	               info->success);
 	return FALSE;
 }
@@ -440,7 +439,7 @@ static gboolean
 rdnss_expired (gpointer user_data)
 {
 	NMIP6Device *device = user_data;
-	CallbackInfo info = { device, IP6_DHCP_OPT_NONE, FALSE };
+	CallbackInfo info = { device, FALSE };
 
 	nm_log_dbg (LOGD_IP6, "(%s): IPv6 RDNSS information expired", device->iface);
 
@@ -530,7 +529,7 @@ static gboolean
 dnssl_expired (gpointer user_data)
 {
 	NMIP6Device *device = user_data;
-	CallbackInfo info = { device, IP6_DHCP_OPT_NONE, FALSE };
+	CallbackInfo info = { device, FALSE };
 
 	nm_log_dbg (LOGD_IP6, "(%s): IPv6 DNSSL information expired", device->iface);
 
@@ -611,13 +610,12 @@ set_dnssl_timeout (NMIP6Device *device)
 }
 
 static CallbackInfo *
-callback_info_new (NMIP6Device *device, guint dhcp_opts, gboolean success)
+callback_info_new (NMIP6Device *device, gboolean success)
 {
 	CallbackInfo *info;
 
 	info = g_malloc0 (sizeof (CallbackInfo));
 	info->device = device;
-	info->dhcp_opts = dhcp_opts;
 	info->success = success;
 	return info;
 }
@@ -724,7 +722,7 @@ check_addrconf_complete (NMIP6Device *device)
 			            device->iface, state_to_string (device->state),
 			            device->dhcp_opts);
 
-			info = callback_info_new (device, device->dhcp_opts, TRUE);
+			info = callback_info_new (device, TRUE);
 			device->finish_addrconf_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                              finish_addrconf,
 			                                              info,
@@ -745,7 +743,7 @@ check_addrconf_complete (NMIP6Device *device)
 				success = FALSE;
 			}
 
-			info = callback_info_new (device, device->dhcp_opts, success);
+			info = callback_info_new (device, success);
 			device->config_changed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 			                                             emit_config_changed,
 			                                             info,
@@ -1403,7 +1401,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	device->ra_flags = 0;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	info = callback_info_new (device, 0, FALSE);
+	info = callback_info_new (device, FALSE);
 	device->finish_addrconf_id = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
 	                                                         NM_IP6_TIMEOUT,
 	                                                         finish_addrconf,
