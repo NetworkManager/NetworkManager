@@ -149,7 +149,7 @@ nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 	NMSettingIP6ConfigPrivate *priv;
 	
 
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), 0);
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	g_return_val_if_fail (i <= g_slist_length (priv->dns), NULL);
@@ -631,7 +631,7 @@ nm_setting_ip6_config_get_may_fail (NMSettingIP6Config *setting)
 NMSettingIP6ConfigPrivacy
 nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ip6_privacy;
 }
@@ -1210,8 +1210,8 @@ nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
 const struct in6_addr *
 nm_ip6_address_get_address (NMIP6Address *address)
 {
-	g_return_val_if_fail (address != NULL, 0);
-	g_return_val_if_fail (address->refcount > 0, 0);
+	g_return_val_if_fail (address != NULL, NULL);
+	g_return_val_if_fail (address->refcount > 0, NULL);
 
 	return &address->address;
 }
@@ -1279,8 +1279,8 @@ nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
 const struct in6_addr *
 nm_ip6_address_get_gateway (NMIP6Address *address)
 {
-	g_return_val_if_fail (address != NULL, 0);
-	g_return_val_if_fail (address->refcount > 0, 0);
+	g_return_val_if_fail (address != NULL, NULL);
+	g_return_val_if_fail (address->refcount > 0, NULL);
 
 	return &address->gateway;
 }
@@ -1427,8 +1427,8 @@ nm_ip6_route_compare (NMIP6Route *route, NMIP6Route *other)
 const struct in6_addr *
 nm_ip6_route_get_dest (NMIP6Route *route)
 {
-	g_return_val_if_fail (route != NULL, 0);
-	g_return_val_if_fail (route->refcount > 0, 0);
+	g_return_val_if_fail (route != NULL, NULL);
+	g_return_val_if_fail (route->refcount > 0, NULL);
 
 	return &route->dest;
 }
@@ -1496,8 +1496,8 @@ nm_ip6_route_set_prefix (NMIP6Route *route, guint32 prefix)
 const struct in6_addr *
 nm_ip6_route_get_next_hop (NMIP6Route *route)
 {
-	g_return_val_if_fail (route != NULL, 0);
-	g_return_val_if_fail (route->refcount > 0, 0);
+	g_return_val_if_fail (route != NULL, NULL);
+	g_return_val_if_fail (route->refcount > 0, NULL);
 
 	return &route->next_hop;
 }

@@ -104,7 +104,7 @@ NMSetting *nm_setting_bluetooth_new (void)
 const char *
 nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_BLUETOOTH (setting), 0);
+	g_return_val_if_fail (NM_IS_SETTING_BLUETOOTH (setting), NULL);
 
 	return NM_SETTING_BLUETOOTH_GET_PRIVATE (setting)->type;
 }

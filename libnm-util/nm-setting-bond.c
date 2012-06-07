@@ -111,7 +111,7 @@ nm_setting_bond_new (void)
 const char *
 nm_setting_bond_get_interface_name (NMSettingBond *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), 0);
+	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
 
 	return NM_SETTING_BOND_GET_PRIVATE (setting)->interface_name;
 }
