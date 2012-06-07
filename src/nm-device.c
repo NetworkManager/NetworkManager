@@ -1851,8 +1851,8 @@ merge_ip6_configs (NMIP6Config *dst, NMIP6Config *src)
 		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
 
 	/* default gateway */
-	if (!nm_ip6_config_get_defgw (dst))
-		nm_ip6_config_set_defgw (dst, nm_ip6_config_get_defgw (src));
+	if (!nm_ip6_config_get_gateway (dst))
+		nm_ip6_config_set_gateway (dst, nm_ip6_config_get_gateway (src));
 
 	/* routes */
 	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
