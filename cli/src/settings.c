@@ -1761,6 +1761,9 @@ setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
+	g_free ((char*) nmc->allowed_fields[3].value);
+	g_free ((char*) nmc->allowed_fields[4].value);
+
 	return TRUE;
 }
 
