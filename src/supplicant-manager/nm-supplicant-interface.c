@@ -104,7 +104,7 @@ typedef struct {
 	guint32               blobs_left;
 	GHashTable *          bss_proxies;
 
-	guint32               last_scan;
+	time_t                last_scan;
 
 	NMSupplicantConfig *  cfg;
 
@@ -467,16 +467,13 @@ static void
 set_scanning (NMSupplicantInterface *self, gboolean new_scanning)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	GTimeVal cur_time;
 
 	if (priv->scanning != new_scanning) {
 		priv->scanning = new_scanning;
 
 		/* Cache time of last scan completion */
-		if (priv->scanning == FALSE) {
-			g_get_current_time (&cur_time);
-			priv->last_scan = cur_time.tv_sec;
-		}
+		if (priv->scanning == FALSE)
+			priv->last_scan = time (NULL);
 
 		g_object_notify (G_OBJECT (self), "scanning");
 	}
@@ -504,11 +501,9 @@ wpas_iface_scan_done (DBusGProxy *proxy,
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	GTimeVal cur_time;
 
 	/* Cache last scan completed time */
-	g_get_current_time (&cur_time);
-	priv->last_scan = cur_time.tv_sec;
+	priv->last_scan = time (NULL);
 
 	g_signal_emit (self, signals[SCAN_DONE], 0, success);
 }

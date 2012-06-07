@@ -509,7 +509,6 @@ NMAccessPoint *
 nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
 {
 	NMAccessPoint *ap;
-	GTimeVal cur_time;
 	const struct ether_addr * addr;
 	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
@@ -531,8 +530,7 @@ nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
 		return NULL;
 	}
 
-	g_get_current_time (&cur_time);
-	nm_ap_set_last_seen (ap, cur_time.tv_sec);
+	nm_ap_set_last_seen (ap, (guint32) time (NULL));
 
 	if (!nm_ap_get_ssid (ap))
 		nm_ap_set_broadcast (ap, FALSE);
