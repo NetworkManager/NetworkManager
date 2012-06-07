@@ -261,6 +261,10 @@ bss_properties_changed (DBusGProxy *proxy,
                         gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->scanning)
+		priv->last_scan = time (NULL);
 
 	if (g_strcmp0 (interface, WPAS_DBUS_IFACE_BSS) == 0)
 		g_signal_emit (self, signals[BSS_UPDATED], 0, dbus_g_proxy_get_path (proxy), props);
@@ -272,6 +276,10 @@ old_bss_properties_changed (DBusGProxy *proxy,
                             gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->scanning)
+		priv->last_scan = time (NULL);
 
 	g_signal_emit (self, signals[BSS_UPDATED], 0, dbus_g_proxy_get_path (proxy), props);
 }
@@ -350,7 +358,13 @@ wpas_iface_bss_added (DBusGProxy *proxy,
                       GHashTable *props,
                       gpointer user_data)
 {
-	handle_new_bss (NM_SUPPLICANT_INTERFACE (user_data), object_path, props);
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->scanning)
+		priv->last_scan = time (NULL);
+
+	handle_new_bss (self, object_path, props);
 }
 
 static void
@@ -449,6 +463,11 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 	}
 
 	priv->state = new_state;
+
+	if (   priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
+	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
+		priv->last_scan = time (NULL);
+
 	g_signal_emit (self, signals[STATE], 0, priv->state, old_state);
 }
 
@@ -494,6 +513,12 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 	return FALSE;
 }
 
+time_t
+nm_supplicant_interface_get_last_scan_time (NMSupplicantInterface *self)
+{
+	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->last_scan;
+}
+
 static void
 wpas_iface_scan_done (DBusGProxy *proxy,
                       gboolean success,
@@ -504,7 +529,6 @@ wpas_iface_scan_done (DBusGProxy *proxy,
 
 	/* Cache last scan completed time */
 	priv->last_scan = time (NULL);
-
 	g_signal_emit (self, signals[SCAN_DONE], 0, success);
 }
 

@@ -46,6 +46,7 @@ typedef enum {
 	NM_WIFI_ERROR_CONNECTION_INVALID,          /*< nick=ConnectionInvalid >*/
 	NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,     /*< nick=ConnectionIncompatible >*/
 	NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,      /*< nick=AccessPointNotFound >*/
+	NM_WIFI_ERROR_SCAN_NOT_ALLOWED,            /*< nick=ScanNotAllowed >*/
 } NMWifiError;
 
 #define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"

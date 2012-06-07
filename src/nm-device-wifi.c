@@ -144,7 +144,6 @@ struct _NMDeviceWifiPrivate {
 	gboolean          enabled; /* rfkilled or not */
 	
 	time_t            scheduled_scan_time;
-	time_t            request_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             scanlist_cull_id;
@@ -158,6 +157,8 @@ struct _NMDeviceWifiPrivate {
 
 	NMDeviceWifiCapabilities capabilities;
 };
+
+static gboolean check_scanning_allowed (NMDeviceWifi *self);
 
 static void schedule_scan (NMDeviceWifi *self, gboolean backoff);
 
@@ -1456,16 +1457,19 @@ request_scan_cb (NMDevice *device,
                  gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	if (error) {
 		dbus_g_method_return_error (context, error);
 		g_clear_error (&error);
+	} else if (!check_scanning_allowed (self)) {
+		error = g_error_new_literal (NM_WIFI_ERROR,
+		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		                             "Scanning not allowed at this time");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
 	} else {
 		cancel_pending_scan (self);
 		request_wireless_scan (self);
-		priv->request_scan_time = time (NULL);
-
 		dbus_g_method_return (context);
 	}
 }
@@ -1476,22 +1480,48 @@ impl_device_request_scan (NMDeviceWifi *self,
                           DBusGMethodInvocation *context)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
+	time_t last_scan;
+	GError *error;
 
-	if (!priv->enabled || (time (NULL) - priv->request_scan_time) < 10) {
-		dbus_g_method_return (context);
-		return;
+	if (   !priv->enabled
+	    || !priv->supplicant.iface
+	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
+	    || nm_device_is_activating (device)) {
+		error = g_error_new_literal (NM_WIFI_ERROR,
+		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		                             "Scanning not allowed while unavailable or activating");
+		goto error;
+	}
+
+	if (nm_supplicant_interface_get_scanning (priv->supplicant.iface)) {
+		error = g_error_new_literal (NM_WIFI_ERROR,
+		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		                             "Scanning not allowed while already scanning");
+		goto error;
+	}
+
+	last_scan = nm_supplicant_interface_get_last_scan_time (priv->supplicant.iface);
+	if ((time (NULL) - last_scan) < 10) {
+		error = g_error_new_literal (NM_WIFI_ERROR,
+		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		                             "Scanning not allowed immediately following previous scan");
+		goto error;
 	}
 
 	/* Ask the manager to authenticate this request for us */
-	g_signal_emit_by_name (NM_DEVICE (self),
+	g_signal_emit_by_name (device,
 	                       NM_DEVICE_AUTH_REQUEST,
 	                       context,
 	                       NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	                       TRUE,
 	                       request_scan_cb,
 	                       NULL);
-
 	return;
+
+error:
+	dbus_g_method_return_error (context, error);
+	g_error_free (error);
 }
 
 static gboolean
