@@ -964,16 +964,15 @@ void nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
 	NMAccessPointPrivate *priv;
 
 	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (   mode == NM_802_11_MODE_ADHOC
+	                  || mode == NM_802_11_MODE_INFRA);
 
-	if (mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_INFRA) {
-		priv = NM_AP_GET_PRIVATE (ap);
+	priv = NM_AP_GET_PRIVATE (ap);
 
-		if (priv->mode != mode) {
-			priv->mode = mode;
-			g_object_notify (G_OBJECT (ap), NM_AP_MODE);
-		}
-	} else
-		nm_log_warn (LOGD_WIFI, "Invalid AP mode '%d'", mode);
+	if (priv->mode != mode) {
+		priv->mode = mode;
+		g_object_notify (G_OBJECT (ap), NM_AP_MODE);
+	}
 }
 
 
