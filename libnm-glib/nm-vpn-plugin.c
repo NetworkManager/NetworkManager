@@ -76,6 +76,7 @@ typedef struct {
 	guint quit_timer;
 	guint fail_stop_id;
 
+	gboolean got_config;
 	gboolean has_ip4, got_ip4;
 	gboolean has_ip6, got_ip6;
 
@@ -341,6 +342,8 @@ nm_vpn_plugin_set_config (NMVPNPlugin *plugin,
 	g_return_if_fail (NM_IS_VPN_PLUGIN (plugin));
 	g_return_if_fail (config != NULL);
 
+	priv->got_config = TRUE;
+
 	val = g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP4);
 	if (val && g_value_get_boolean (val))
 		priv->has_ip4 = TRUE;
@@ -390,6 +393,14 @@ nm_vpn_plugin_set_ip4_config (NMVPNPlugin *plugin,
 	g_return_if_fail (ip4_config != NULL);
 
 	priv->got_ip4 = TRUE;
+
+	/* Old plugins won't send the "config" signal and thus can't send
+	 * NM_VPN_PLUGIN_CONFIG_HAS_IP4 either.  But since they don't support IPv6,
+	 * we can safely assume that, if we don't receive a "config" signal but do
+	 * receive an "ip4-config" signal, the old plugin supports IPv4.
+	 */
+	if (!priv->got_config)
+		priv->has_ip4 = TRUE;
 
 	/* Older NetworkManager daemons expect all config info to be in
 	 * the ip4 config, so they won't even notice the "config" signal
