@@ -63,14 +63,44 @@ typedef struct {
 	void (*_reserved6) (void);
 } NMRemoteConnectionClass;
 
+/**
+ * NMRemoteConnectionCommitFunc:
+ * @connection: the connection for which updates are to be committed
+ * @error: on failure, a descriptive error
+ * @user_data: user data passed to nm_remote_connection_commit_changes()
+ *
+ * Called when NetworkManager has committed outstanding changes to a connection
+ * to backing storage as a result of nm_remote_connection_commit_changes().
+ */
 typedef void (*NMRemoteConnectionCommitFunc) (NMRemoteConnection *connection,
                                               GError *error,
                                               gpointer user_data);
 
+/**
+ * NMRemoteConnectionDeleteFunc:
+ * @connection: the connection to be deleted
+ * @error: on failure, a descriptive error
+ * @user_data: user data passed to nm_remote_connection_delete()
+ *
+ * Called when NetworkManager has deleted a connection as a result of
+ * nm_remote_connection_delete().
+ */
 typedef void (*NMRemoteConnectionDeleteFunc) (NMRemoteConnection *connection,
                                               GError *error,
                                               gpointer user_data);
 
+/**
+ * NMRemoteConnectionGetSecretsFunc:
+ * @connection: the connection for which secrets were requested
+ * @secrets: (element-type utf8 GLib.HashTable): on success, a hash table of
+ *  hash tables, with each inner hash mapping a setting property to a #GValue
+ *  containing that property's value
+ * @error: on failure, a descriptive error
+ * @user_data: user data passed to nm_remote_connection_get_secrets()
+ *
+ * Called when NetworkManager returns secrets in response to a request for
+ * secrets via nm_remote_connection_get_secrets().
+ */
 typedef void (*NMRemoteConnectionGetSecretsFunc) (NMRemoteConnection *connection,
                                                   GHashTable *secrets,
                                                   GError *error,
