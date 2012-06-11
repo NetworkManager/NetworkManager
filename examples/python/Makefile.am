@@ -7,4 +7,5 @@ EXTRA_DIST = \
 	show-bssids.py \
 	disconnect-device.py \
 	get-active-connections.py \
-	list-devices.py
+	list-devices.py \
+	goi-list-connections.py
