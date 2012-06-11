@@ -153,7 +153,7 @@ NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
 NetworkManager_1_0_gir_CFLAGS = $(INCLUDES) -I$(top_srcdir)/libnm-util
 NetworkManager_1_0_gir_LIBS = libnm-util.la
 NetworkManager_1_0_gir_FILES = $(introspection_sources)
-NetworkManager_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm_
+NetworkManager_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
 INTROSPECTION_GIRS += NetworkManager-1.0.gir
 
 girdir = $(datadir)/gir-1.0
