@@ -674,7 +674,6 @@ check_addresses (NMIP6Device *device)
 	for (rtnladdr = (struct rtnl_addr *) nl_cache_get_first (priv->addr_cache);
 		 rtnladdr;
 		 rtnladdr = (struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) rtnladdr)) {
-		char buf[INET6_ADDRSTRLEN];
 
 		if (rtnl_addr_get_ifindex (rtnladdr) != device->ifindex)
 			continue;
@@ -684,12 +683,6 @@ check_addresses (NMIP6Device *device)
 			continue;
 
 		addr = nl_addr_get_binary_addr (nladdr);
-
-		if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
-			nm_log_dbg (LOGD_IP6, "(%s): netlink address: %s/%d",
-			            device->iface, buf,
-			            rtnl_addr_get_prefixlen (rtnladdr));
-		}
 
 		if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 			if (device->state == NM_IP6_DEVICE_UNCONFIGURED)
@@ -708,9 +701,6 @@ check_addresses (NMIP6Device *device)
 	 */
 	if ((device->state == NM_IP6_DEVICE_GOT_LINK_LOCAL) && !device->has_linklocal)
 		device_set_state (device, NM_IP6_DEVICE_UNCONFIGURED);
-
-	nm_log_dbg (LOGD_IP6, "(%s): addresses checked (state %s)",
-		    device->iface, state_to_string (device->state));
 }
 
 static void
@@ -733,8 +723,6 @@ check_ra_flags (NMIP6Device *device)
 			nm_log_dbg (LOGD_IP6, "router advertisement requests parallel DHCPv6");
 		}
 	}
-	nm_log_dbg (LOGD_IP6, "(%s): router advertisement checked (state %s)",
-		    device->iface, state_to_string (device->state));
 }
 
 static void
@@ -755,8 +743,8 @@ check_addrconf_complete (NMIP6Device *device)
 			if (device->finish_addrconf_id)
 				g_source_remove (device->finish_addrconf_id);
 
-			nm_log_dbg (LOGD_IP6, "(%s): reached target state or Managed-mode requested (state '%s') (dhcp opts 0x%X)",
-			            device->iface, state_to_string (device->state),
+			nm_log_dbg (LOGD_IP6, "(%s): reached target state or Managed-mode requested (dhcp opts 0x%X)",
+			            device->iface,
 			            device->dhcp_opts);
 
 			info = callback_info_new (device, TRUE);
@@ -787,18 +775,12 @@ check_addrconf_complete (NMIP6Device *device)
 			                                             (GDestroyNotify) g_free);
 		}
 	}
-
-	nm_log_dbg (LOGD_IP6, "(%s): dhcp_opts checked (state %s)",
-		    device->iface, state_to_string (device->state));
 }
 
 static void
 nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 {
-	nm_log_dbg (LOGD_IP6, "(%s): syncing with netlink (ra_flags 0x%X) (state/target '%s'/'%s')",
-	            device->iface, device->ra_flags,
-	            state_to_string (device->state),
-	            state_to_string (device->target_state));
+	nm_log_dbg (LOGD_IP6, "(%s): syncing from netlink", device->iface);
 
 	check_addresses (device);
 	check_ra_flags (device);
@@ -1390,6 +1372,9 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
 		nm_utils_do_sysctl (accept_ra_path, "2");
 	}
+
+	nm_log_dbg (LOGD_IP6, "(%s) IP6 device target state: %s",
+	            device_get_iface (device), state_to_string (device->target_state));
 
 	return TRUE;
 }
