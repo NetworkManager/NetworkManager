@@ -717,7 +717,7 @@ dnl -------------------------
 dnl Vala bindings
 dnl -------------------------
 
-VAPIGEN_CHECK(0.17)
+VAPIGEN_CHECK(0.17.1.24)
 
 dnl
 dnl Tests
