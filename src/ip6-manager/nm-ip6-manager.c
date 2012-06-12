@@ -18,8 +18,12 @@
  * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
+#define _GNU_SOURCE /* for struct in6_pktinfo */
+
 #include <errno.h>
+#include <unistd.h>
 #include <netinet/icmp6.h>
+#include <netinet/in.h>
 
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
@@ -32,6 +36,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
+#include "nm-utils.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
 #define NM_IP6_TIMEOUT 20
@@ -106,9 +111,13 @@ typedef struct {
 
 	GArray *rdnss_servers;
 	guint rdnss_timeout_id;
+	guint32 rdnss_timeout;
 
 	GArray *dnssl_domains;
 	guint dnssl_timeout_id;
+	guint32 dnssl_timeout;
+
+	time_t last_solicitation;
 
 	guint ip6flags_poll_id;
 
@@ -211,6 +220,123 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	return g_hash_table_lookup (priv->devices, GINT_TO_POINTER (ifindex));
+}
+
+static int
+get_hwaddr (int ifindex, guint8 *buf)
+{
+	struct rtnl_link *lk;
+	struct nl_addr *addr;
+	int len;
+
+	lk = nm_netlink_index_to_rtnl_link (ifindex);
+	if (!lk)
+		return -1;
+
+	addr = rtnl_link_get_addr (lk);
+	len = nl_addr_get_len (addr);
+	if (len > NM_UTILS_HWADDR_LEN_MAX)
+		len = -1;
+	else
+		memcpy (buf, nl_addr_get_binary_addr (addr), len);
+
+	rtnl_link_put (lk);
+	return len;
+}
+
+static void
+device_send_router_solicitation (NMIP6Device *device, const char *why)
+{
+	int sock, hops;
+	struct sockaddr_in6 sin6;
+	struct nd_router_solicit rs;
+	struct nd_opt_hdr lladdr_hdr;
+	guint8 hwaddr[NM_UTILS_HWADDR_LEN_MAX + 7];
+	int hwaddr_len;
+	static const guint8 local_routers_addr[] =
+		{ 0xFF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02 };
+	struct msghdr mhdr;
+	struct iovec iov[3];
+	struct cmsghdr *cmsg;
+	struct in6_pktinfo *ipi;
+	guint8 cmsgbuf[128];
+	int cmsglen = 0;
+	time_t now;
+
+	now = time (NULL);
+	if (device->last_solicitation > now - 5)
+		return;
+	device->last_solicitation = now;
+
+	nm_log_dbg (LOGD_IP6, "(%s): %s: sending router solicitation",
+	            device->iface, why);
+
+	sock = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+	if (sock < 0) {
+		nm_log_dbg (LOGD_IP6, "(%s): could not create ICMPv6 socket: %s",
+		            device->iface, g_strerror (errno));
+		return;
+	}
+
+	hops = 255;
+	if (   setsockopt (sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hops, sizeof (hops)) == -1
+	    || setsockopt (sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &hops, sizeof (hops)) == -1) {
+		nm_log_dbg (LOGD_IP6, "(%s): could not set hop limit on ICMPv6 socket: %s",
+		            device->iface, g_strerror (errno));
+		close (sock);
+		return;
+	}
+
+	/* Use the "all link-local routers" multicast address */
+	memset (&sin6, 0, sizeof (sin6));
+	memcpy (&sin6.sin6_addr, local_routers_addr, sizeof (sin6.sin6_addr));
+	mhdr.msg_name = &sin6;
+	mhdr.msg_namelen = sizeof (sin6);
+
+	/* Build the router solicitation */
+	mhdr.msg_iov = iov;
+	memset (&rs, 0, sizeof (rs));
+	rs.nd_rs_type = ND_ROUTER_SOLICIT;
+	iov[0].iov_len  = sizeof (rs);
+	iov[0].iov_base = &rs;
+
+	memset (hwaddr, 0, sizeof (hwaddr));
+	hwaddr_len = get_hwaddr (device->ifindex, hwaddr);
+
+	if (hwaddr_len > 0) {
+		memset (&lladdr_hdr, 0, sizeof (lladdr_hdr));
+		lladdr_hdr.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
+		lladdr_hdr.nd_opt_len = (sizeof (lladdr_hdr) + hwaddr_len + 7) % 8;
+		iov[1].iov_len  = sizeof (lladdr_hdr);
+		iov[1].iov_base = &lladdr_hdr;
+
+		iov[2].iov_len  = (lladdr_hdr.nd_opt_len * 8) - 2;
+		iov[2].iov_base = hwaddr;
+
+		mhdr.msg_iovlen = 3;
+	} else
+		mhdr.msg_iovlen = 1;
+
+	/* Force this to go on the right device */
+	memset (cmsgbuf, 0, sizeof (cmsgbuf));
+	cmsg = (struct cmsghdr *) cmsgbuf;
+	cmsglen = CMSG_SPACE (sizeof (*ipi));
+	cmsg->cmsg_len = CMSG_LEN (sizeof (*ipi));
+	cmsg->cmsg_level = SOL_IPV6;
+	cmsg->cmsg_type = IPV6_PKTINFO;
+	ipi = (struct in6_pktinfo *) CMSG_DATA (cmsg);
+	ipi->ipi6_ifindex = device->ifindex;
+
+	mhdr.msg_control = cmsg;
+	mhdr.msg_controllen = cmsglen;
+
+	if (sendmsg (sock, &mhdr, 0) == -1) {
+		nm_log_dbg (LOGD_IP6, "(%s): could not send router solicitation: %s",
+		            device->iface, g_strerror (errno));
+	}
+
+	close (sock);
 }
 
 static char *
@@ -324,6 +450,22 @@ rdnss_expired (gpointer user_data)
 	return FALSE;
 }
 
+static gboolean
+rdnss_needs_refresh (gpointer user_data)
+{
+	NMIP6Device *device = user_data;
+	gchar *msg;
+
+	msg = g_strdup_printf ("IPv6 RDNSS due to expire in %d seconds",
+	                       device->rdnss_timeout);
+	device_send_router_solicitation (device, msg);
+	g_free (msg);
+
+	set_rdnss_timeout (device);
+
+	return FALSE;
+}
+
 static void
 set_rdnss_timeout (NMIP6Device *device)
 {
@@ -362,9 +504,23 @@ set_rdnss_timeout (NMIP6Device *device)
 	}
 
 	if (expires) {
-		device->rdnss_timeout_id = g_timeout_add_seconds (MIN (expires - now, G_MAXUINT32 - 1),
-		                                                  rdnss_expired,
-		                                                  device);
+		gchar *msg;
+
+		device->rdnss_timeout = MIN (expires - now, G_MAXUINT32 - 1);
+
+		if (device->rdnss_timeout <= 5) {
+			msg = g_strdup_printf ("IPv6 RDNSS about to expire in %d seconds",
+			                       device->rdnss_timeout);
+			device_send_router_solicitation (device, msg);
+			g_free (msg);
+			device->rdnss_timeout_id = g_timeout_add_seconds (device->rdnss_timeout,
+			                                                  rdnss_expired,
+			                                                  device);
+		} else {
+			device->rdnss_timeout_id = g_timeout_add_seconds (device->rdnss_timeout / 2,
+			                                                  rdnss_needs_refresh,
+			                                                  device);
+		}
 	}
 }
 
@@ -381,6 +537,22 @@ dnssl_expired (gpointer user_data)
 	set_dnssl_timeout (device);
 	clear_config_changed (device);
 	emit_config_changed (&info);
+	return FALSE;
+}
+
+static gboolean
+dnssl_needs_refresh (gpointer user_data)
+{
+	NMIP6Device *device = user_data;
+	gchar *msg;
+
+	msg = g_strdup_printf ("IPv6 DNSSL due to expire in %d seconds",
+	                       device->dnssl_timeout);
+	device_send_router_solicitation (device, msg);
+	g_free (msg);
+
+	set_dnssl_timeout (device);
+
 	return FALSE;
 }
 
@@ -418,9 +590,23 @@ set_dnssl_timeout (NMIP6Device *device)
 	}
 
 	if (expires) {
-		device->dnssl_timeout_id = g_timeout_add_seconds (MIN (expires - now, G_MAXUINT32 - 1),
-		                                                  dnssl_expired,
-		                                                  device);
+		gchar *msg;
+
+		device->dnssl_timeout = MIN (expires - now, G_MAXUINT32 - 1);
+
+		if (device->dnssl_timeout <= 5) {
+			msg = g_strdup_printf ("IPv6 DNSSL about to expire in %d seconds",
+			                       device->dnssl_timeout);
+			device_send_router_solicitation (device, msg);
+			g_free (msg);
+			device->dnssl_timeout_id = g_timeout_add_seconds (device->dnssl_timeout,
+			                                                  dnssl_expired,
+			                                                  device);
+		} else {
+			device->dnssl_timeout_id = g_timeout_add_seconds (device->dnssl_timeout / 2,
+			                                                  dnssl_needs_refresh,
+			                                                  device);
+		}
 	}
 }
 
