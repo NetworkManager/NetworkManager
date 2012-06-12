@@ -712,6 +712,13 @@ NM_COMPILER_WARNINGS
 
 GTK_DOC_CHECK(1.0)
 
+
+dnl -------------------------
+dnl Vala bindings
+dnl -------------------------
+
+VAPIGEN_CHECK(0.17)
+
 dnl
 dnl Tests
 dnl
@@ -824,6 +831,7 @@ examples/ruby/Makefile
 examples/C/Makefile
 examples/C/glib/Makefile
 examples/C/qt/Makefile
+vapi/Makefile
 ])
 AC_OUTPUT
 

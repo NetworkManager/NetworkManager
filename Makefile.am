@@ -16,7 +16,8 @@ SUBDIRS = \
 	po \
 	man \
 	docs \
-	examples
+	examples \
+	vapi
 
 EXTRA_DIST = \
 	CONTRIBUTING \
