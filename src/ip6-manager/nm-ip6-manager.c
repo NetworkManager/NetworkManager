@@ -364,17 +364,73 @@ state_to_string (NMIP6DeviceState state)
 	}
 }
 
-static void
+static gboolean
 device_set_state (NMIP6Device *device, NMIP6DeviceState state)
 {
-	NMIP6DeviceState oldstate;
+	NMIP6DeviceState old_state;
 
-	g_return_if_fail (device != NULL);
+	g_return_val_if_fail (device != NULL, FALSE);
 
-	oldstate = device->state;
+	if (state == device->state)
+		return FALSE;
+
+	old_state = device->state;
 	device->state = state;
 	nm_log_dbg (LOGD_IP6, "(%s) IP6 device state: %s -> %s",
-	            device_get_iface (device), state_to_string (oldstate), state_to_string (state));
+	            device_get_iface (device),
+	            state_to_string (old_state),
+	            state_to_string (state));
+	return TRUE;
+}
+
+static char *
+ra_flags_to_string (guint32 ra_flags)
+{
+	GString *s = g_string_sized_new (20);
+
+	g_string_append (s, " (");
+	if (ra_flags & IF_RS_SENT)
+		g_string_append_c (s, 'S');
+
+	if (ra_flags & IF_RA_RCVD)
+		g_string_append_c (s, 'R');
+
+	if (ra_flags & IF_RA_MANAGED)
+		g_string_append_c (s, 'M');
+
+	if (ra_flags & IF_RA_OTHERCONF)
+		g_string_append_c (s, 'O');
+
+	g_string_append_c (s, ')');
+	return g_string_free (s, FALSE);
+}
+
+static gboolean
+device_set_ra_flags (NMIP6Device *device, guint ra_flags)
+{
+	guint old_ra_flags;
+	gchar *ra_flags_str, *old_ra_flags_str;
+
+	g_return_val_if_fail (device != NULL, FALSE);
+
+	if (ra_flags == device->ra_flags)
+		return FALSE;
+
+	old_ra_flags = device->ra_flags;
+	device->ra_flags = ra_flags;
+
+	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		ra_flags_str = ra_flags_to_string (ra_flags);
+		old_ra_flags_str = ra_flags_to_string (old_ra_flags);
+		nm_log_dbg (LOGD_IP6, "(%s) IP6 device ra_flags: 0x%08x %s -> 0x%08x %s",
+		            device_get_iface (device),
+		            old_ra_flags, old_ra_flags_str,
+		            ra_flags, ra_flags_str);
+		g_free (ra_flags_str);
+		g_free (old_ra_flags_str);
+	}
+
+	return TRUE;
 }
 
 /******************************************************************/
@@ -1216,28 +1272,6 @@ static struct nla_policy link_prot_policy[IFLA_INET6_MAX + 1] = {
 	[IFLA_INET6_FLAGS]	= { .type = NLA_U32 },
 };
 
-static char *
-ra_flags_to_string (guint32 ra_flags)
-{
-	GString *s = g_string_sized_new (20);
-
-	g_string_append (s, " (");
-	if (ra_flags & IF_RS_SENT)
-		g_string_append_c (s, 'S');
-
-	if (ra_flags & IF_RA_RCVD)
-		g_string_append_c (s, 'R');
-
-	if (ra_flags & IF_RA_OTHERCONF)
-		g_string_append_c (s, 'O');
-
-	if (ra_flags & IF_RA_MANAGED)
-		g_string_append_c (s, 'M');
-
-	g_string_append_c (s, ')');
-	return g_string_free (s, FALSE);
-}
-
 static NMIP6Device *
 process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 {
@@ -1247,7 +1281,6 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	struct nlattr *tb[IFLA_MAX + 1];
 	struct nlattr *pi[IFLA_INET6_MAX + 1];
 	int err;
-	char *flags_str = NULL;
 
 	/* FIXME: we have to do this manually for now since libnl doesn't yet
 	 * support the IFLA_PROTINFO attribute of NEWLINK messages.  When it does,
@@ -1290,13 +1323,7 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 	}
 
-	device->ra_flags = nla_get_u32 (pi[IFLA_INET6_FLAGS]);
-
-	if (nm_logging_level_enabled (LOGL_DEBUG))
-		flags_str = ra_flags_to_string (device->ra_flags);
-	nm_log_dbg (LOGD_IP6, "(%s): got IPv6 flags 0x%X%s",
-	            device->iface, device->ra_flags, flags_str ? flags_str : "");
-	g_free (flags_str);
+	device_set_ra_flags (device, nla_get_u32 (pi[IFLA_INET6_FLAGS]));
 
 	return device;
 }
