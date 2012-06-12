@@ -88,6 +88,7 @@ typedef struct {
 
 /**
  * nm_setting_vlan_new:
+ *
  * Creates a new #NMSettingVlan object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingVlan object
