@@ -303,13 +303,14 @@ service_quit (gpointer user_data)
 
 static void
 connection_vpn_state_changed (NMVPNConnection *connection,
-                              NMVPNConnectionState state,
+                              NMVPNConnectionState new_state,
+                              NMVPNConnectionState old_state,
                               NMVPNConnectionStateReason reason,
                               gpointer user_data)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (user_data);
 
-	switch (state) {
+	switch (new_state) {
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 		/* Remove the connection from our list */
@@ -350,9 +351,9 @@ nm_vpn_service_activate (NMVPNService *service,
 	clear_quit_timeout (service);
 
 	vpn = nm_vpn_connection_new (connection, device, specific_object, user_requested, user_uid);
-	g_signal_connect (vpn, "vpn-state-changed",
-				   G_CALLBACK (connection_vpn_state_changed),
-				   service);
+	g_signal_connect (vpn, NM_VPN_CONNECTION_VPN_STATE_CHANGED,
+	                  G_CALLBACK (connection_vpn_state_changed),
+	                  service);
 
 	priv->connections = g_slist_prepend (priv->connections, vpn);
 
