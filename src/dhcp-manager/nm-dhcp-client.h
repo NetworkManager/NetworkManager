@@ -35,6 +35,7 @@
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDHCPClientClass))
 
 #define NM_DHCP_CLIENT_INTERFACE "iface"
+#define NM_DHCP_CLIENT_HWADDR    "hwaddr"
 #define NM_DHCP_CLIENT_IPV6      "ipv6"
 #define NM_DHCP_CLIENT_UUID      "uuid"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"

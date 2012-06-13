@@ -36,6 +36,7 @@
 
 typedef struct {
 	char *       iface;
+	GByteArray * hwaddr;
 	gboolean     ipv6;
 	char *       uuid;
 	guint32      timeout;
@@ -67,6 +68,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_IFACE,
+	PROP_HWADDR,
 	PROP_IPV6,
 	PROP_UUID,
 	PROP_TIMEOUT,
@@ -1323,6 +1325,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		g_value_set_string (value, priv->iface);
 		break;
+	case PROP_HWADDR:
+		g_value_set_boxed (value, priv->hwaddr);
+		break;
 	case PROP_IPV6:
 		g_value_set_boolean (value, priv->ipv6);
 		break;
@@ -1348,6 +1353,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		/* construct-only */
 		priv->iface = g_strdup (g_value_get_string (value));
+		break;
+	case PROP_HWADDR:
+		/* construct only */
+		priv->hwaddr = g_value_dup_boxed (value);
 		break;
 	case PROP_IPV6:
 		/* construct-only */
@@ -1382,6 +1391,8 @@ dispose (GObject *object)
 
 	g_hash_table_destroy (priv->options);
 	g_free (priv->iface);
+	if (priv->hwaddr)
+		g_byte_array_free (priv->hwaddr, TRUE);
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 }
@@ -1407,6 +1418,14 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 		                      "Interface",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_HWADDR,
+		 g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR,
+		                     "hwaddr",
+		                     "hardware address",
+		                     G_TYPE_BYTE_ARRAY,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_IPV6,

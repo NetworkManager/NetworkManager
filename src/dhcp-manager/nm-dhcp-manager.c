@@ -384,6 +384,7 @@ add_client (NMDHCPManager *self, NMDHCPClient *client)
 static NMDHCPClient *
 client_start (NMDHCPManager *self,
               const char *iface,
+              const GByteArray *hwaddr,
               const char *uuid,
               gboolean ipv6,
               NMSettingIP4Config *s_ip4,
@@ -417,6 +418,7 @@ client_start (NMDHCPManager *self,
 	/* And make a new one */
 	client = g_object_new (priv->client_type,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
+	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
 	                       NM_DHCP_CLIENT_IPV6, ipv6,
 	                       NM_DHCP_CLIENT_UUID, uuid,
 	                       NM_DHCP_CLIENT_TIMEOUT, timeout ? timeout : DHCP_TIMEOUT,
@@ -442,13 +444,13 @@ client_start (NMDHCPManager *self,
 NMDHCPClient *
 nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            const char *iface,
+                           const GByteArray *hwaddr,
                            const char *uuid,
                            NMSettingIP4Config *s_ip4,
                            guint32 timeout,
                            guint8 *dhcp_anycast_addr)
 {
 	NMDHCPManagerPrivate *priv;
-	NMDHCPClient *client = NULL;
 	const char *hostname = NULL;
 	gboolean send_hostname = TRUE;
 
@@ -485,15 +487,14 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 		}
 	}
 
-	client = client_start (self, iface, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, hostname, FALSE);
-
-	return client;
+	return client_start (self, iface, hwaddr, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, hostname, FALSE);
 }
 
 /* Caller owns a reference to the NMDHCPClient on return */
 NMDHCPClient *
 nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *iface,
+                           const GByteArray *hwaddr,
                            const char *uuid,
                            NMSettingIP6Config *s_ip6,
                            guint32 timeout,
@@ -516,7 +517,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 			hostname = NULL;
 	}
 
-	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, hostname, info_only);
+	return client_start (self, iface, hwaddr, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, hostname, info_only);
 }
 
 static void
