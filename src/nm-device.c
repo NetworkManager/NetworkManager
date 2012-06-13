@@ -611,6 +611,18 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	g_free (old_ip_iface);
 }
 
+const guint8 *
+nm_device_get_hw_address (NMDevice *dev, guint *out_len)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
+	g_return_val_if_fail (out_len != NULL, NULL);
+	g_return_val_if_fail (*out_len == 0, NULL);
+
+	if (NM_DEVICE_GET_CLASS (dev)->get_hw_address)
+		return NM_DEVICE_GET_CLASS (dev)->get_hw_address (dev, out_len);
+	return NULL;
+}
 
 /*
  * Get/set functions for driver

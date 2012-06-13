@@ -370,6 +370,15 @@ update_hw_address (NMDevice *dev)
 	}
 }
 
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
+
+	*out_len = sizeof (priv->hw_addr);
+	return priv->hw_addr;
+}
+
 static gboolean
 hwaddr_matches (NMDevice *device,
                 NMConnection *connection,
@@ -1477,6 +1486,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->take_down = take_down;
 	device_class->hw_bring_up = hw_bring_up;
 	device_class->update_hw_address = update_hw_address;
+	device_class->get_hw_address = get_hw_address;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;

@@ -112,6 +112,7 @@ typedef struct {
 	void        (* update_hw_address) (NMDevice *self);
 	void        (* update_permanent_hw_address) (NMDevice *self);
 	void        (* update_initial_hw_address) (NMDevice *self);
+	const guint8 * (* get_hw_address) (NMDevice *self, guint *out_len);
 
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
@@ -211,6 +212,8 @@ const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
+
+const guint8 *  nm_device_get_hw_address (NMDevice *dev, guint *out_len);
 
 NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
 NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);

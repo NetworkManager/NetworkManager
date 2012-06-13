@@ -63,6 +63,7 @@ typedef struct {
 	guint mm_watch_id;
 	gboolean mm_running;
 
+	guint8 hw_addr[ETH_ALEN];  /* binary representation of bdaddr */
 	char *bdaddr;
 	char *name;
 	guint32 capabilities;
@@ -115,14 +116,6 @@ guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 	g_return_val_if_fail (NM_IS_DEVICE_BT (self), NM_BT_CAPABILITY_NONE);
 
 	return NM_DEVICE_BT_GET_PRIVATE (self)->capabilities;
-}
-
-const char *nm_device_bt_get_hw_address (NMDeviceBt *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (NM_IS_DEVICE_BT (self), NULL);
-
-	return NM_DEVICE_BT_GET_PRIVATE (self)->bdaddr;
 }
 
 static guint32
@@ -399,6 +392,15 @@ static guint32
 get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
+}
+
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+
+	*out_len = sizeof (priv->hw_addr);
+	return priv->hw_addr;
 }
 
 static gboolean
@@ -1231,6 +1233,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_HW_ADDRESS:
 		/* Construct only */
 		priv->bdaddr = g_ascii_strup (g_value_get_string (value), -1);
+		if (!nm_utils_hwaddr_aton (priv->bdaddr, ARPHRD_ETHER, &priv->hw_addr))
+			nm_log_err (LOGD_HW, "Failed to convert BT address '%s'", priv->bdaddr);
 		break;
 	case PROP_BT_NAME:
 		/* Construct only */
@@ -1326,6 +1330,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->hwaddr_matches = hwaddr_matches;
+	device_class->get_hw_address = get_hw_address;
 	device_class->is_available = is_available;
 
 	device_class->state_changed = device_state_changed;

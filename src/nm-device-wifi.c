@@ -1460,25 +1460,6 @@ get_best_auto_connection (NMDevice *dev,
 	return NULL;
 }
 
-/*
- * nm_device_wifi_get_address
- *
- * Get a device's hardware address
- *
- */
-void
-nm_device_wifi_get_address (NMDeviceWifi *self,
-                            struct ether_addr *addr)
-{
-	NMDeviceWifiPrivate *priv;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (addr != NULL);
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	memcpy (addr, &priv->hw_addr, sizeof (struct ether_addr));
-}
-
 static void
 ap_list_dump (NMDeviceWifi *self)
 {
@@ -2936,6 +2917,15 @@ update_initial_hw_address (NMDevice *dev)
 	g_free (mac_str);
 }
 
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+
+	*out_len = ETH_ALEN;
+	return priv->hw_addr;
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
@@ -3761,6 +3751,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;
 	parent_class->update_hw_address = update_hw_address;
+	parent_class->get_hw_address = get_hw_address;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->get_best_auto_connection = get_best_auto_connection;

@@ -315,6 +315,14 @@ update_hw_address (NMDevice *dev)
 	}
 }
 
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+       NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
+
+       *out_len = sizeof (priv->hw_addr);
+       return priv->hw_addr;
+}
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
@@ -505,6 +513,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;
 	parent_class->update_hw_address = update_hw_address;
+	parent_class->get_hw_address = get_hw_address;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
@@ -616,15 +625,16 @@ static gboolean
 is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	struct ether_addr their_addr;
+	const guint8 *their_addr;
+	guint their_addr_len = 0;
 	NMManager *manager;
 
 	if (!NM_IS_DEVICE_WIFI (other))
 		return FALSE;
 
-	nm_device_wifi_get_address (NM_DEVICE_WIFI (other), &their_addr);
-
-	if (memcmp (priv->hw_addr, their_addr.ether_addr_octet, ETH_ALEN) != 0)
+	their_addr = nm_device_get_hw_address (other, &their_addr_len);
+	if (   (their_addr_len != ETH_ALEN)
+	    || (memcmp (priv->hw_addr, their_addr, ETH_ALEN) != 0))
 		return FALSE;
 
 	priv->companion = other;

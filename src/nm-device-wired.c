@@ -387,6 +387,15 @@ update_hw_address (NMDevice *dev)
 	}
 }
 
+static const guint8 *
+get_hw_address (NMDevice *dev, guint *out_len)
+{
+	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
+
+	*out_len = priv->hw_addr_len;
+	return priv->hw_addr;
+}
+
 static gboolean
 can_interrupt_activation (NMDevice *dev)
 {
@@ -472,6 +481,7 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	parent_class->hw_bring_up = hw_bring_up;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->update_hw_address = update_hw_address;
+	parent_class->get_hw_address = get_hw_address;
 	parent_class->is_available = is_available;
 	parent_class->connection_match_config = connection_match_config;
 }

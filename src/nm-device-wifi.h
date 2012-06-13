@@ -94,8 +94,6 @@ NMDevice *nm_device_wifi_new (const char *udi,
                               const char *iface,
                               const char *driver);
 
-void nm_device_wifi_get_address (NMDeviceWifi *dev, struct ether_addr *addr);
-
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 
 RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);

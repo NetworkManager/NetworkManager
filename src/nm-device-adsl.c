@@ -82,6 +82,7 @@ typedef struct {
 	int           brfd;
 	int           nas_ifindex;
 	char *        nas_ifname;
+	guint8        nas_hw_addr[ETH_ALEN];
 } NMDeviceAdslPrivate;
 
 enum {
@@ -233,6 +234,7 @@ static void
 set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
+	gsize addrlen;
 
 	g_return_if_fail (name != NULL);
 
@@ -245,6 +247,13 @@ set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 
 	g_warn_if_fail (priv->nas_ifname == NULL);
 	priv->nas_ifname = g_strdup (name);
+
+	/* Update NAS interface's MAC address */
+	addrlen = nm_device_read_hwaddr (NM_DEVICE (self),
+	                                 priv->nas_hw_addr,
+	                                 sizeof (priv->nas_hw_addr),
+	                                 NULL);
+	g_warn_if_fail (addrlen == sizeof (priv->nas_hw_addr));
 }
 
 static gboolean
@@ -591,9 +600,19 @@ deactivate (NMDevice *device)
 		priv->nas_ifindex = -1;
 	g_free (priv->nas_ifname);
 	priv->nas_ifname = NULL;
+	memset (priv->nas_hw_addr, 0, sizeof (priv->nas_hw_addr));
 }
 
 /**************************************************************/
+
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device);
+
+	*out_len = priv->nas_ifname ? sizeof (priv->nas_hw_addr) : 0;
+	return priv->nas_hw_addr;
+}
 
 static void
 set_carrier (NMDeviceAdsl *self, const gboolean carrier)
@@ -818,6 +837,7 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->complete_connection = complete_connection;
 
+	parent_class->get_hw_address = get_hw_address;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;
