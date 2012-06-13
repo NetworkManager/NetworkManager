@@ -378,37 +378,13 @@ update_hw_address (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
 	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
-	struct rtnl_link *rtnl;
-	struct nl_addr *addr;
+	gsize addrlen;
 
-	rtnl = nm_netlink_index_to_rtnl_link (nm_device_get_ip_ifindex (dev));
-	if (!rtnl) {
-		nm_log_err (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (dev),
-		            "(%s) failed to read hardware address (error %d)",
-		            nm_device_get_iface (dev), errno);
-		return;
+	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), NULL);
+	if (addrlen) {
+		g_warn_if_fail (addrlen == priv->hw_addr_len);
+		priv->hw_addr_len = addrlen;
 	}
-
-	addr = rtnl_link_get_addr (rtnl);
-	if (!addr) {
-		nm_log_err (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (dev),
-		            "(%s) no hardware address?",
-		            nm_device_get_iface (dev));
-		rtnl_link_put (rtnl);
-		return;
-	}
-
-	if (nl_addr_get_len (addr) != priv->hw_addr_len) {
-		nm_log_err (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (dev),
-		            "(%s) hardware address is wrong length (expected %d got %d)",
-		            nm_device_get_iface (dev),
-		            priv->hw_addr_len, nl_addr_get_len (addr));
-	} else {
-		memcpy (&priv->hw_addr, nl_addr_get_binary_addr (addr),
-				priv->hw_addr_len);
-	}
-
-	rtnl_link_put (rtnl);
 }
 
 static gboolean

@@ -94,7 +94,7 @@ struct _NMDeviceOlpcMeshPrivate
 {
 	gboolean          dispose_has_run;
 
-	struct ether_addr hw_addr;
+	guint8            hw_addr[ETH_ALEN];
 
 	GByteArray *      ssid;
 
@@ -139,7 +139,7 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 	priv->companion = NULL;
 	priv->stage1_waiting = FALSE;
 
-	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
+	memset (&priv->hw_addr, 0, sizeof (priv->hw_addr));
 }
 
 static GObject*
@@ -297,23 +297,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-/*
- * nm_device_olpc_mesh_get_address
- *
- * Get a device's hardware address
- *
- */
-static void
-nm_device_olpc_mesh_get_address (NMDeviceOlpcMesh *self,
-                                       struct ether_addr *addr)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (addr != NULL);
-
-	memcpy (addr, &(priv->hw_addr), sizeof (struct ether_addr));
-}
-
 /****************************************************************************/
 
 static void
@@ -321,31 +304,15 @@ update_hw_address (NMDevice *dev)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	struct ifreq req;
-	int ret, fd;
+	gsize addrlen;
+	gboolean changed = FALSE;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_warn (LOGD_OLPC_MESH, "could not open control socket.");
-		return;
+	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
+	if (addrlen) {
+		g_return_if_fail (addrlen == ETH_ALEN);
+		if (changed)
+			g_object_notify (G_OBJECT (dev), NM_DEVICE_OLPC_MESH_HW_ADDRESS);
 	}
-
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-	ret = ioctl (fd, SIOCGIFHWADDR, &req);
-	if (ret) {
-		nm_log_warn (LOGD_OLPC_MESH, "(%s): error getting hardware address: %d",
-		             nm_device_get_iface (dev), errno);
-		goto out;
-	}
-
-	if (memcmp (&priv->hw_addr, &req.ifr_hwaddr.sa_data, sizeof (struct ether_addr))) {
-		memcpy (&priv->hw_addr, &req.ifr_hwaddr.sa_data, sizeof (struct ether_addr));
-		g_object_notify (G_OBJECT (dev), NM_DEVICE_OLPC_MESH_HW_ADDRESS);
-	}
-
-out:
-	close (fd);
 }
 
 
@@ -488,12 +455,10 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDeviceOlpcMesh *device = NM_DEVICE_OLPC_MESH (object);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
-	struct ether_addr hw_addr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		nm_device_olpc_mesh_get_address (device, &hw_addr);
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&hw_addr, ARPHRD_ETHER));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_COMPANION:
 		if (priv->companion)
@@ -659,10 +624,8 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 
 	nm_device_wifi_get_address (NM_DEVICE_WIFI (other), &their_addr);
 
-	if (memcmp (priv->hw_addr.ether_addr_octet,
-		their_addr.ether_addr_octet, ETH_ALEN) != 0) {
+	if (memcmp (priv->hw_addr, their_addr.ether_addr_octet, ETH_ALEN) != 0)
 		return FALSE;
-	}
 
 	priv->companion = other;
 

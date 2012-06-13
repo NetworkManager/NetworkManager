@@ -70,9 +70,6 @@ NMDevice   *nm_device_wimax_new            (const char *udi,
 											const char *iface,
 											const char *driver);
 
-void        nm_device_wimax_get_hw_address (NMDeviceWimax *self,
-											struct ether_addr *addr);
-
 NMWimaxNsp *nm_device_wimax_get_active_nsp (NMDeviceWimax *self);
 
 guint       nm_device_wimax_get_center_frequency (NMDeviceWimax *self);

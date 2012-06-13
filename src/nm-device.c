@@ -5358,3 +5358,70 @@ nm_device_supports_vlans (NMDevice *device)
 	/* At the moment, NM's VLAN code assumes all VLANs are over ethernet. */
 	return NM_IS_DEVICE_ETHERNET (device);
 }
+
+/**
+ * nm_device_read_hwaddr:
+ * @dev: the device
+ * @buf: an allocated buffer which on success holds the device's hardware
+ *   address
+ * @buf_len: the size of @buf
+ * @out_changed: on success, %TRUE if the contents of @buf are different from
+ *   the original contents of @buf when this function was called
+ *
+ * Reads the device's hardware address from the kernel and copies it into
+ * @buf, returning the size of the data copied into @buf.  On failure
+ * @buf is not modified.
+ *
+ * Returns: the size of the hardware address in bytes on success, 0 on failure
+ */
+gsize
+nm_device_read_hwaddr (NMDevice *dev,
+                       guint8 *buf,
+                       gsize buf_len,
+                       gboolean *out_changed)
+{
+	struct rtnl_link *rtnl;
+	struct nl_addr *addr;
+	int idx;
+	gsize addrlen = 0;
+	const guint8 *binaddr;
+
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (buf != NULL, 0);
+	g_return_val_if_fail (buf_len > 0, 0);
+
+	idx = nm_device_get_ip_ifindex (dev);
+	g_return_val_if_fail (idx > 0, 0);
+
+	rtnl = nm_netlink_index_to_rtnl_link (idx);
+	if (!rtnl) {
+		nm_log_err (LOGD_HW | LOGD_DEVICE,
+		            "(%s): failed to read hardware address (error %d)",
+		            nm_device_get_iface (dev), errno);
+		return 0;
+	}
+
+	addr = rtnl_link_get_addr (rtnl);
+	if (!addr) {
+		nm_log_err (LOGD_HW | LOGD_DEVICE,
+		            "(%s): no hardware address?",
+		            nm_device_get_iface (dev));
+		goto out;
+	}
+
+	addrlen = nl_addr_get_len (addr);
+	if (addrlen > buf_len) {
+		nm_log_err (LOGD_HW | LOGD_DEVICE,
+		            "(%s): hardware address is wrong length (got %zd max %zd)",
+		            nm_device_get_iface (dev), addrlen, buf_len);
+	} else {
+		binaddr = nl_addr_get_binary_addr (addr);
+		if (out_changed)
+			*out_changed = memcmp (buf, binaddr, addrlen) ? TRUE : FALSE;
+		memcpy (buf, binaddr, addrlen);
+	}
+
+out:
+	rtnl_link_put (rtnl);
+	return addrlen;
+}

@@ -46,6 +46,8 @@ gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait, gboolean *no_firm
 
 void nm_device_hw_take_down (NMDevice *self, gboolean block);
 
+gsize nm_device_read_hwaddr (NMDevice *dev, guint8 *out_buf, gsize buf_len, gboolean *out_changed);
+
 gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
 
 void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);

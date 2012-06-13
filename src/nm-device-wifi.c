@@ -203,6 +203,8 @@ static void schedule_scanlist_cull (NMDeviceWifi *self);
 
 static gboolean request_wireless_scan (gpointer user_data);
 
+static void update_hw_address (NMDevice *dev);
+
 /*****************************************************************/
 
 #define NM_WIFI_ERROR (nm_wifi_error_quark ())
@@ -831,19 +833,6 @@ bring_up (NMDevice *dev)
 	return TRUE;
 }
 
-static void
-_update_hw_addr (NMDeviceWifi *self, const guint8 *addr)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	g_return_if_fail (addr != NULL);
-
-	if (memcmp (&priv->hw_addr, addr, ETH_ALEN)) {
-		memcpy (&priv->hw_addr, addr, ETH_ALEN);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_HW_ADDRESS);
-	}
-}
-
 static gboolean
 _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 {
@@ -873,7 +862,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
-		_update_hw_addr (self, addr);
+		update_hw_address (dev);
 		nm_log_info (LOGD_DEVICE | LOGD_ETHER, "(%s): %s MAC address to %s",
 		             iface, detail, mac_str);
 	} else {
@@ -2866,26 +2855,16 @@ error:
 static void
 update_hw_address (NMDevice *dev)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
-	struct ifreq req;
-	int fd;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (dev);
+	gsize addrlen;
+	gboolean changed = FALSE;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_HW, "could not open control socket.");
-		return;
+	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
+	if (addrlen) {
+		g_return_if_fail (addrlen == ETH_ALEN);
+		if (changed)
+			g_object_notify (G_OBJECT (dev), NM_DEVICE_WIFI_HW_ADDRESS);
 	}
-
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-	errno = 0;
-	if (ioctl (fd, SIOCGIFHWADDR, &req) < 0) {
-		nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): unable to read hardware address (error %d)",
-		            nm_device_get_iface (dev), errno);
-	} else
-		_update_hw_addr (self, (const guint8 *) &req.ifr_hwaddr.sa_data);
-
-	close (fd);
 }
 
 static void

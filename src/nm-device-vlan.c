@@ -161,39 +161,15 @@ update_hw_address (NMDevice *dev)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	struct rtnl_link *rtnl;
-	struct nl_addr *addr;
+	gsize addrlen;
+	gboolean changed = FALSE;
 
-	rtnl = nm_netlink_index_to_rtnl_link (nm_device_get_ip_ifindex (dev));
-	if (!rtnl) {
-		nm_log_err (LOGD_HW | LOGD_VLAN,
-		            "(%s) failed to read hardware address (error %d)",
-		            nm_device_get_iface (dev), errno);
-		return;
+	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
+	if (addrlen) {
+		priv->hw_addr_len = addrlen;
+		if (changed)
+			g_object_notify (G_OBJECT (self), NM_DEVICE_VLAN_HW_ADDRESS);
 	}
-
-	addr = rtnl_link_get_addr (rtnl);
-	if (!addr) {
-		nm_log_err (LOGD_HW | LOGD_VLAN,
-		            "(%s) no hardware address?",
-		            nm_device_get_iface (dev));
-		goto out;
-	}
-
-	if (nl_addr_get_len (addr) > sizeof (priv->hw_addr)) {
-		nm_log_err (LOGD_HW | LOGD_VLAN,
-		            "(%s) hardware address is wrong length (got %d max %zd)",
-		            nm_device_get_iface (dev),
-		            nl_addr_get_len (addr),
-		            sizeof (priv->hw_addr));
-	} else {
-		priv->hw_addr_len = nl_addr_get_len (addr);
-		memcpy (&priv->hw_addr, nl_addr_get_binary_addr (addr), priv->hw_addr_len);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_VLAN_HW_ADDRESS);
-	}
-
-out:
-	rtnl_link_put (rtnl);
 }
 
 static gboolean
