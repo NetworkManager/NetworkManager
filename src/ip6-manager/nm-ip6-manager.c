@@ -51,6 +51,8 @@ typedef struct {
 	NMNetlinkMonitor *monitor;
 	GHashTable *devices;
 
+	guint request_ip6_info_id;
+
 	struct nl_sock *nlh;
 	struct nl_cache *addr_cache, *route_cache;
 
@@ -114,6 +116,8 @@ typedef struct {
 	NMIP6DeviceState target_state;
 	gboolean addrconf_complete;
 
+	guint sync_from_netlink_id;
+
 	GArray *rdnss_servers;
 	guint rdnss_timeout_id;
 	guint32 rdnss_timeout;
@@ -152,6 +156,8 @@ nm_ip6_device_destroy (NMIP6Device *device)
 	clear_config_changed (device);
 
 	g_free (device->iface);
+	if (device->sync_from_netlink_id)
+		g_source_remove (device->sync_from_netlink_id);
 	if (device->rdnss_servers)
 		g_array_free (device->rdnss_servers, TRUE);
 	if (device->rdnss_timeout_id)
@@ -767,14 +773,19 @@ check_addrconf_complete (NMIP6Device *device)
 	}
 }
 
-static void
-nm_ip6_device_sync_from_netlink (NMIP6Device *device)
+static gboolean
+device_sync_from_netlink (gpointer user_data)
 {
+	NMIP6Device *device = (NMIP6Device *) user_data;
+
 	nm_log_dbg (LOGD_IP6, "(%s): syncing from netlink", device->iface);
 
 	check_addresses (device);
 	check_ra_flags (device);
 	check_addrconf_complete (device);
+
+	device->sync_from_netlink_id = 0;
+	return FALSE;
 }
 
 static void
@@ -1289,10 +1300,23 @@ process_newlink (NMIP6Manager *manager, struct nl_msg *msg)
 	return device;
 }
 
+static gboolean
+manager_request_ip6_info (gpointer user_data)
+{
+	NMIP6Manager *manager = user_data;
+	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
+
+	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
+	
+	priv->request_ip6_info_id = 0;
+	return FALSE;
+}
+
 static void
 netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer user_data)
 {
-	NMIP6Manager *manager = (NMIP6Manager *) user_data;
+	NMIP6Manager *manager = NM_IP6_MANAGER (user_data);
+	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 	NMIP6Device *device;
 	struct nlmsghdr *hdr;
 
@@ -1309,7 +1333,8 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 		/* Once we have received an RTM_NEWROUTE, the IPv6 flags might have been
 		 * set. But we need to request an RTM_NEWLINK to find out what they actually are.
 		 */
-		nm_netlink_monitor_request_ip6_info (monitor, NULL);
+		if (priv->request_ip6_info_id == 0)
+			priv->request_ip6_info_id = g_idle_add (manager_request_ip6_info, manager);
 		break;
 	case RTM_NEWNDUSEROPT:
 		device = process_nduseropt (manager, msg);
@@ -1321,9 +1346,8 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 		return;
 	}
 
-	if (device) {
-		nm_ip6_device_sync_from_netlink (device);
-	}
+	if (device && device->sync_from_netlink_id == 0)
+		device->sync_from_netlink_id = g_idle_add (device_sync_from_netlink, device);
 }
 
 gboolean
@@ -1417,7 +1441,7 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	 * device is already fully configured and schedule the
 	 * ADDRCONF_COMPLETE signal in that case.
 	 */
-	nm_ip6_device_sync_from_netlink (device);
+	device_sync_from_netlink (device);
 }
 
 void
