@@ -55,6 +55,9 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
+	void (*connection_activated) (NMVPNManager *manager,
+	                              NMVPNConnection *connection);
+
 	void (*connection_deactivated) (NMVPNManager *manager,
 	                                NMVPNConnection *connection,
 	                                NMVPNConnectionState new_state,

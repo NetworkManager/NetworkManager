@@ -355,19 +355,20 @@ manager_sleeping (NMManager *self)
 static void
 vpn_manager_connection_activated_cb (NMVPNManager *manager,
                                      NMVPNConnection *vpn,
-                                     NMVPNConnectionState state,
-                                     NMVPNConnectionStateReason reason,
                                      gpointer user_data)
 {
+	NMConnection *connection = nm_vpn_connection_get_connection (vpn);
+
 	/* Update timestamp for the VPN connection */
-	nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_vpn_connection_get_connection (vpn)),
+	nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (connection),
 	                                         (guint64) time (NULL), TRUE);
 }
 
 static void
 vpn_manager_connection_deactivated_cb (NMVPNManager *manager,
                                        NMVPNConnection *vpn,
-                                       NMVPNConnectionState state,
+                                       NMVPNConnectionState new_state,
+                                       NMVPNConnectionState old_state,
                                        NMVPNConnectionStateReason reason,
                                        gpointer user_data)
 {

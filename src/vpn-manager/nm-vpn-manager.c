@@ -519,10 +519,9 @@ nm_vpn_manager_class_init (NMVPNManagerClass *manager_class)
 		g_signal_new ("connection-deactivated",
 				    G_OBJECT_CLASS_TYPE (object_class),
 				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMVPNManagerClass, connection_deactivated),
-				    NULL, NULL,
+				    0, NULL, NULL,
 				    _nm_marshal_VOID__OBJECT_UINT_UINT_UINT,
-				    G_TYPE_NONE, 3, G_TYPE_OBJECT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+				    G_TYPE_NONE, 4, G_TYPE_OBJECT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_error_domain_register (NM_VPN_MANAGER_ERROR, NULL, NM_TYPE_VPN_MANAGER_ERROR);
 }
