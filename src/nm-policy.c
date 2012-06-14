@@ -457,6 +457,7 @@ update_default_ac (NMPolicy *policy,
 
 static NMIP4Config *
 get_best_ip4_config (NMPolicy *policy,
+                     gboolean ignore_never_default,
                      const char **out_ip_iface,
                      int *out_ip_ifindex,
                      NMActiveConnection **out_ac,
@@ -484,15 +485,20 @@ get_best_ip4_config (NMPolicy *policy,
 		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 			continue;
 
-		/* Check for a VPN-provided config never-default */
 		vpn_ip4 = nm_vpn_connection_get_ip4_config (candidate);
-		if (!vpn_ip4 || nm_ip4_config_get_never_default (vpn_ip4))
+		if (!vpn_ip4)
 			continue;
 
-		/* Check the user's preference from the NMConnection */
-		s_ip4 = nm_connection_get_setting_ip4_config (tmp);
-		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
-			continue;
+		if (ignore_never_default == FALSE) {
+			/* Check for a VPN-provided config never-default */
+			if (nm_ip4_config_get_never_default (vpn_ip4))
+				continue;
+
+			/* Check the user's preference from the NMConnection */
+			s_ip4 = nm_connection_get_setting_ip4_config (tmp);
+			if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+				continue;
+		}
 
 		ip4_config = vpn_ip4;
 		if (out_vpn)
@@ -538,7 +544,7 @@ update_ip4_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 	NMVPNConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
-	ip4_config = get_best_ip4_config (policy, &ip_iface, NULL, NULL, NULL, &vpn);
+	ip4_config = get_best_ip4_config (policy, TRUE, &ip_iface, NULL, NULL, NULL, &vpn);
 	if (ip4_config) {
 		if (vpn)
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -566,7 +572,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
-	ip4_config = get_best_ip4_config (policy, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
+	ip4_config = get_best_ip4_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
 	if (!ip4_config) {
 		policy->default_device4 = NULL;
 		return;
@@ -607,6 +613,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 
 static NMIP6Config *
 get_best_ip6_config (NMPolicy *policy,
+                     gboolean ignore_never_default,
                      const char **out_ip_iface,
                      int *out_ip_ifindex,
                      NMActiveConnection **out_ac,
@@ -634,15 +641,20 @@ get_best_ip6_config (NMPolicy *policy,
 		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 			continue;
 
-		/* Check for a VPN-provided config never-default */
 		vpn_ip6 = nm_vpn_connection_get_ip6_config (candidate);
-		if (!vpn_ip6 || nm_ip6_config_get_never_default (vpn_ip6))
+		if (!vpn_ip6)
 			continue;
 
-		/* Check the user's preference from the NMConnection */
-		s_ip6 = nm_connection_get_setting_ip6_config (tmp);
-		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
-			continue;
+		if (ignore_never_default == FALSE) {
+			/* Check for a VPN-provided config never-default */
+			if (nm_ip6_config_get_never_default (vpn_ip6))
+				continue;
+
+			/* Check the user's preference from the NMConnection */
+			s_ip6 = nm_connection_get_setting_ip6_config (tmp);
+			if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
+				continue;
+		}
 
 		ip6_config = vpn_ip6;
 		if (out_vpn)
@@ -688,7 +700,7 @@ update_ip6_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 	NMVPNConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
-	ip6_config = get_best_ip6_config (policy, &ip_iface, NULL, NULL, NULL, &vpn);
+	ip6_config = get_best_ip6_config (policy, TRUE, &ip_iface, NULL, NULL, NULL, &vpn);
 	if (ip6_config) {
 		if (vpn)
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -716,7 +728,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	/* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
-	ip6_config = get_best_ip6_config (policy, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
+	ip6_config = get_best_ip6_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
 	if (!ip6_config) {
 		policy->default_device6 = NULL;
 		return;
@@ -922,7 +934,29 @@ vpn_connection_activated (NMVPNManager *manager,
                           NMVPNConnection *vpn,
                           gpointer user_data)
 {
+	NMDnsManager *mgr;
+	NMIP4Config *ip4_config;
+	NMIP6Config *ip6_config;
+	const char *ip_iface;
+
+	mgr = nm_dns_manager_get (NULL);
+	nm_dns_manager_begin_updates (mgr, __func__);
+
+	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
+
+	/* Add the VPN connection's IP configs from DNS */
+
+	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
+	if (ip4_config)
+		nm_dns_manager_add_ip4_config (mgr, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+
+	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
+	if (ip6_config)
+		nm_dns_manager_add_ip6_config (mgr, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+
 	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
+
+	nm_dns_manager_end_updates (mgr, __func__);
 }
 
 static void
@@ -933,7 +967,29 @@ vpn_connection_deactivated (NMVPNManager *manager,
                             NMVPNConnectionStateReason reason,
                             gpointer user_data)
 {
+	NMDnsManager *mgr;
+	NMIP4Config *ip4_config;
+	NMIP6Config *ip6_config;
+	const char *ip_iface;
+
+	mgr = nm_dns_manager_get (NULL);
+	nm_dns_manager_begin_updates (mgr, __func__);
+
+	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
+
+	/* Remove the VPN connection's IP configs from DNS */
+
+	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
+	if (ip4_config)
+		nm_dns_manager_remove_ip4_config (mgr, ip_iface, ip4_config);
+
+	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
+	if (ip6_config)
+		nm_dns_manager_remove_ip6_config (mgr, ip_iface, ip6_config);
+
 	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
+
+	nm_dns_manager_end_updates (mgr, __func__);
 }
 
 static void
