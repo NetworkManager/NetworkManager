@@ -86,7 +86,7 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_MODE_ADHOC  "adhoc"
 
 /**
- * NM_SETTING_WIRELESS_MODE_INFRA
+ * NM_SETTING_WIRELESS_MODE_INFRA:
  *
  * Indicates infrastructure mode where an access point is expected to be present
  * for this connection.

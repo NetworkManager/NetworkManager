@@ -105,7 +105,7 @@ nm_setting_pppoe_get_service  (NMSettingPPPOE *setting)
 }
 
 /**
- * nm_setting_pppoe_get_service:
+ * nm_setting_pppoe_get_username:
  * @setting: the #NMSettingPPPOE
  *
  * Returns: the #NMSettingPPPOE:username property of the setting
@@ -119,7 +119,7 @@ nm_setting_pppoe_get_username (NMSettingPPPOE *setting)
 }
 
 /**
- * nm_setting_pppoe_get_service:
+ * nm_setting_pppoe_get_password:
  * @setting: the #NMSettingPPPOE
  *
  * Returns: the #NMSettingPPPOE:password property of the setting

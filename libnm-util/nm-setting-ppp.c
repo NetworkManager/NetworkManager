@@ -117,7 +117,7 @@ nm_setting_ppp_new (void)
 }
 
 /**
- * nm_setting_wired_get_noauth:
+ * nm_setting_ppp_get_noauth:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:noauth property of the setting
@@ -131,7 +131,7 @@ nm_setting_ppp_get_noauth (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_refuse_eap:
+ * nm_setting_ppp_get_refuse_eap:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:refuse-eap property of the setting
@@ -145,7 +145,7 @@ nm_setting_ppp_get_refuse_eap (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_refuse_pap:
+ * nm_setting_ppp_get_refuse_pap:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:refuse-pap property of the setting
@@ -159,7 +159,7 @@ nm_setting_ppp_get_refuse_pap (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_refuse_chap:
+ * nm_setting_ppp_get_refuse_chap:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:refuse-chap property of the setting
@@ -173,7 +173,7 @@ nm_setting_ppp_get_refuse_chap (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_refuse_mschap:
+ * nm_setting_ppp_get_refuse_mschap:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:refuse-mschap property of the setting
@@ -187,7 +187,7 @@ nm_setting_ppp_get_refuse_mschap (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_refuse_mschapv2:
+ * nm_setting_ppp_get_refuse_mschapv2:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:refuse-mschapv2 property of the setting
@@ -201,7 +201,7 @@ nm_setting_ppp_get_refuse_mschapv2 (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_nobsdcomp:
+ * nm_setting_ppp_get_nobsdcomp:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:nobsdcomp property of the setting
@@ -215,7 +215,7 @@ nm_setting_ppp_get_nobsdcomp (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_nodeflate:
+ * nm_setting_ppp_get_nodeflate:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:nodeflate property of the setting
@@ -229,7 +229,7 @@ nm_setting_ppp_get_nodeflate (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_no_vj_comp:
+ * nm_setting_ppp_get_no_vj_comp:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:no-vj-comp property of the setting
@@ -243,7 +243,7 @@ nm_setting_ppp_get_no_vj_comp (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_require_mppe:
+ * nm_setting_ppp_get_require_mppe:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:require-mppe property of the setting
@@ -257,7 +257,7 @@ nm_setting_ppp_get_require_mppe (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_require_mppe_128:
+ * nm_setting_ppp_get_require_mppe_128:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:require-mppe-128 property of the setting
@@ -271,7 +271,7 @@ nm_setting_ppp_get_require_mppe_128 (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_mppe_stateful:
+ * nm_setting_ppp_get_mppe_stateful:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:mppe-stateful property of the setting
@@ -285,7 +285,7 @@ nm_setting_ppp_get_mppe_stateful (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_crtscts:
+ * nm_setting_ppp_get_crtscts:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:crtscts property of the setting
@@ -299,7 +299,7 @@ nm_setting_ppp_get_crtscts (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_baud:
+ * nm_setting_ppp_get_baud:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:baud property of the setting
@@ -313,7 +313,7 @@ nm_setting_ppp_get_baud (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_mru:
+ * nm_setting_ppp_get_mru:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:mru property of the setting
@@ -327,7 +327,7 @@ nm_setting_ppp_get_mru (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_mtu:
+ * nm_setting_ppp_get_mtu:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:mtu property of the setting
@@ -341,7 +341,7 @@ nm_setting_ppp_get_mtu (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_lcp_echo_failure:
+ * nm_setting_ppp_get_lcp_echo_failure:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:lcp-echo-failure property of the setting
@@ -355,7 +355,7 @@ nm_setting_ppp_get_lcp_echo_failure (NMSettingPPP *setting)
 }
 
 /**
- * nm_setting_wired_get_lcp_echo_interval:
+ * nm_setting_ppp_get_lcp_echo_interval:
  * @setting: the #NMSettingPPP
  *
  * Returns: the #NMSettingPPP:lcp-echo-interval property of the setting

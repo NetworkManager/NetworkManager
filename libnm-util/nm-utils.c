@@ -1889,7 +1889,7 @@ nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value)
 /* FIXME: the Posix namespace does not exist, and thus neither does
    the in6_addr struct. Marking (skip) for now */
 /**
- * nm_utils_ip6_dns_from_gvalue: (skip):
+ * nm_utils_ip6_dns_from_gvalue: (skip)
  * @value: a #GValue
  *
  * Converts a #GValue containing a #GPtrArray of IP6 DNS, represented as
@@ -1925,7 +1925,7 @@ nm_utils_ip6_dns_from_gvalue (const GValue *value)
 }
 
 /**
- * nm_utils_ip6_dns_to_gvalue: (skip):
+ * nm_utils_ip6_dns_to_gvalue: (skip)
  * @list: a list of #NMIP6Route objects
  * @value: a pointer to a #GValue into which to place the converted DNS server
  * addresses, which should be unset by the caller (when no longer needed) with

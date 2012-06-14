@@ -221,7 +221,7 @@ set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 }
 
 /**
- * nm_setting_vlan_add_priority_str
+ * nm_setting_vlan_add_priority_str:
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  * @str: the string which contains a priority map, like "3:7"

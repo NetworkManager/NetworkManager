@@ -103,7 +103,7 @@ nm_setting_bond_new (void)
 }
 
 /**
- * nm_setting_bond_get_interface_name
+ * nm_setting_bond_get_interface_name:
  * @setting: the #NMSettingBond
  *
  * Returns: the #NMSettingBond:interface-name property of the setting

@@ -59,7 +59,7 @@
  **/
 
 /**
- * nm_setting_wired_error_quark:
+ * nm_setting_wireless_security_error_quark:
  *
  * Registers an error quark for #NMSettingWired if necessary.
  *
