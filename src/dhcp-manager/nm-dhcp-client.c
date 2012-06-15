@@ -28,6 +28,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <net/if_arp.h>
 
 #include "nm-utils.h"
 #include "nm-logging.h"
@@ -40,6 +41,7 @@ typedef struct {
 	gboolean     ipv6;
 	char *       uuid;
 	guint32      timeout;
+	GByteArray * duid;
 
 	guchar       state;
 	GPid         pid;
@@ -184,7 +186,7 @@ nm_dhcp_client_stop_pid (GPid pid, const char *iface, guint timeout_secs)
 }
 
 static void
-stop (NMDHCPClient *self, gboolean release)
+stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -323,6 +325,66 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	return priv->pid ? TRUE : FALSE;
 }
 
+struct duid_header {
+	uint16_t duid_type;
+	uint16_t hw_type;
+	uint32_t time;
+	/* link-layer address follows */
+} __attribute__((__packed__));
+
+#define DUID_TIME_EPOCH 946684800
+
+/* Generate a DHCP Unique Identifier for DHCPv6 using the
+ * DUID-LLT method (see RFC 3315 s9.2), following Debian's
+ * netcfg DUID-LL generation method.
+ */
+static GByteArray *
+generate_duid (const GByteArray *hwaddr)
+{
+	GByteArray *duid;
+	struct duid_header p;
+	int arptype;
+
+	g_return_val_if_fail (hwaddr != NULL, NULL);
+
+	memset (&p, 0, sizeof (p));
+	p.duid_type = g_htons(1);
+	arptype = nm_utils_hwaddr_type (hwaddr->len);
+	g_assert (arptype == ARPHRD_ETHER || arptype == ARPHRD_INFINIBAND);
+	p.hw_type = g_htons (arptype);
+	p.time = g_htonl (time (NULL) - DUID_TIME_EPOCH);
+
+	duid = g_byte_array_sized_new (sizeof (p) + hwaddr->len);
+	g_byte_array_append (duid, (const guint8 *) &p, sizeof (p));
+	g_byte_array_append (duid, hwaddr->data, hwaddr->len);
+
+	return duid;
+}
+
+static GByteArray *
+get_duid (NMDHCPClient *self)
+{
+	/* generate a default DUID */
+	return generate_duid (NM_DHCP_CLIENT_GET_PRIVATE (self)->hwaddr);
+}
+
+static char *
+escape_duid (const GByteArray *duid)
+{
+	guint32 i = 0;
+	GString *s;
+
+	g_return_val_if_fail (duid != NULL, NULL);
+
+	s = g_string_sized_new (40);
+	while (i < duid->len) {
+		if (s->len)
+			g_string_append_c (s, ':');
+		g_string_append_printf (s, "%02x", duid->data[i]);
+	}
+	return g_string_free (s, FALSE);
+}
+
 gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           NMSettingIP6Config *s_ip6,
@@ -331,6 +393,7 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           gboolean info_only)
 {
 	NMDHCPClientPrivate *priv;
+	char *escaped;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
@@ -340,12 +403,29 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	g_return_val_if_fail (priv->ipv6 == TRUE, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
+	/* If we don't have one yet, read the default DUID for this DHCPv6 client
+	 * from the client-specific persistent configuration.
+	 */
+	if (!priv->duid)
+		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
+
+	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		escaped = escape_duid (priv->duid);
+		nm_log_dbg (LOGD_DHCP, "(%s): DHCPv6 DUID is '%s'", priv->iface, escaped);
+		g_free (escaped);
+	}
+
 	priv->info_only = info_only;
 
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self, s_ip6, dhcp_anycast_addr, hostname, info_only);
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
+	                                                        s_ip6,
+	                                                        dhcp_anycast_addr,
+	                                                        hostname,
+	                                                        info_only,
+	                                                        priv->duid);
 	if (priv->pid > 0)
 		start_monitor (self);
 
@@ -399,7 +479,7 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 
 	/* Kill the DHCP client */
 	if (!priv->dead) {
-		NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release);
+		NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release, priv->duid);
 		priv->dead = TRUE;
 
 		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction, DHCP client pid %d",
@@ -1394,6 +1474,9 @@ dispose (GObject *object)
 	if (priv->hwaddr)
 		g_byte_array_free (priv->hwaddr, TRUE);
 
+	if (priv->duid)
+		g_byte_array_free (priv->duid, TRUE);
+
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 }
 
@@ -1410,6 +1493,7 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 	object_class->set_property = set_property;
 
 	client_class->stop = stop;
+	client_class->get_duid = get_duid;
 
 	g_object_class_install_property
 		(object_class, PROP_IFACE,

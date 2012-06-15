@@ -583,7 +583,8 @@ ip6_start (NMDHCPClient *client,
            NMSettingIP6Config *s_ip6,
            guint8 *dhcp_anycast_addr,
            const char *hostname,
-           gboolean info_only)
+           gboolean info_only,
+           const GByteArray *duid)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	const char *iface;
@@ -600,12 +601,12 @@ ip6_start (NMDHCPClient *client,
 }
 
 static void
-stop (NMDHCPClient *client, gboolean release)
+stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 
 	/* Chain up to parent */
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
 
 	if (priv->conf_file)
 		remove (priv->conf_file);

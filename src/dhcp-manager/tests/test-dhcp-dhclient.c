@@ -225,6 +225,58 @@ test_existing_multiline_alsoreq (void)
 
 /*******************************************/
 
+static void
+test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
+{
+	GByteArray *t;
+	char *w;
+
+	t = nm_dhcp_dhclient_unescape_duid (escaped);
+	g_assert (t);
+	g_assert_cmpint (t->len, ==, len);
+	g_assert_cmpint (memcmp (t->data, unescaped, len), ==, 0);
+	g_byte_array_free (t, TRUE);
+
+	t = g_byte_array_sized_new (len);
+	g_byte_array_append (t, unescaped, len);
+	w = nm_dhcp_dhclient_escape_duid (t);
+	g_assert (w);
+	g_assert_cmpint (strlen (escaped), ==, strlen (w));
+	g_assert_cmpstr (escaped, ==, w);
+}
+
+static void
+test_duids (void)
+{
+	const guint8 test1_u[] = { 0x00, 0x01, 0x00, 0x01, 0x13, 0x6f, 0x13, 0x6e,
+	                           0x00, 0x22, 0xfa, 0x8c, 0xd6, 0xc2 };
+	const char *test1_s = "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302";
+
+	const guint8 test2_u[] = { 0x00, 0x01, 0x00, 0x01, 0x17, 0x57, 0xee, 0x39,
+	                           0x00, 0x23, 0x15, 0x08, 0x7E, 0xac };
+	const char *test2_s = "\\000\\001\\000\\001\\027W\\3569\\000#\\025\\010~\\254";
+
+	const guint8 test3_u[] = { 0x00, 0x01, 0x00, 0x01, 0x17, 0x58, 0xe8, 0x58,
+	                           0x00, 0x23, 0x15, 0x08, 0x7e, 0xac };
+	const char *test3_s = "\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254";
+
+	const guint8 test4_u[] = { 0x00, 0x01, 0x00, 0x01, 0x15, 0xd5, 0x31, 0x97,
+	                           0x00, 0x16, 0xeb, 0x04, 0x45, 0x18 };
+	const char *test4_s = "\\000\\001\\000\\001\\025\\3251\\227\\000\\026\\353\\004E\\030";
+
+	const char *bad_s = "\\000\\001\\000\\001\\425\\3251\\227\\000\\026\\353\\004E\\030";
+
+	test_one_duid (test1_s, test1_u, sizeof (test1_u));
+	test_one_duid (test2_s, test2_u, sizeof (test2_u));
+	test_one_duid (test3_s, test3_u, sizeof (test3_u));
+	test_one_duid (test4_s, test4_u, sizeof (test4_u));
+
+	/* Invalid octal digit */
+	g_assert (nm_dhcp_dhclient_unescape_duid (bad_s) == NULL);
+}
+
+/*******************************************/
+
 #if GLIB_CHECK_VERSION(2,25,12)
 typedef GTestFixtureFunc TCFunc;
 #else
@@ -248,6 +300,7 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_override_hostname, NULL));
 	g_test_suite_add (suite, TESTCASE (test_existing_alsoreq, NULL));
 	g_test_suite_add (suite, TESTCASE (test_existing_multiline_alsoreq, NULL));
+	g_test_suite_add (suite, TESTCASE (test_duids, NULL));
 
 	return g_test_run ();
 }

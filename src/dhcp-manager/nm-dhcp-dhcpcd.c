@@ -170,19 +170,20 @@ ip6_start (NMDHCPClient *client,
            NMSettingIP6Config *s_ip6,
            guint8 *dhcp_anycast_addr,
            const char *hostname,
-           gboolean info_only)
+           gboolean info_only,
+           const GByteArray *duid)
 {
 	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");
 	return -1;
 }
 
 static void
-stop (NMDHCPClient *client, gboolean release)
+stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 
 	/* Chain up to parent */
-	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client, release);
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client, release, duid);
 
 	if (priv->pid_file)
 		remove (priv->pid_file);
