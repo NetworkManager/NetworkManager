@@ -2468,6 +2468,8 @@ addrconf6_start (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	gboolean success;
+	const guint8 *hwaddr;
+	guint hwaddr_len = 0;
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
@@ -2490,8 +2492,12 @@ addrconf6_start (NMDevice *self)
 		                                                   self);
 	}
 
+	hwaddr = nm_device_get_hw_address (self, &hwaddr_len);
+	g_warn_if_fail (hwaddr != NULL);
 	success = nm_ip6_manager_prepare_interface (priv->ip6_manager,
 	                                            nm_device_get_ip_ifindex (self),
+	                                            hwaddr,
+	                                            hwaddr_len,
 	                                            nm_connection_get_setting_ip6_config (connection),
 	                                            priv->ip6_accept_ra_path);
 	if (success) {
