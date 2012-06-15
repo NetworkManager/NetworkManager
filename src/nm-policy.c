@@ -968,24 +968,58 @@ vpn_connection_deactivated (NMVPNManager *manager,
                             gpointer user_data)
 {
 	NMDnsManager *mgr;
-	NMIP4Config *ip4_config;
-	NMIP6Config *ip6_config;
+	NMIP4Config *ip4_config, *parent_ip4 = NULL;
+	NMIP6Config *ip6_config, *parent_ip6 = NULL;
 	const char *ip_iface;
+	NMDevice *parent;
 
 	mgr = nm_dns_manager_get (NULL);
 	nm_dns_manager_begin_updates (mgr, __func__);
 
 	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
-
-	/* Remove the VPN connection's IP configs from DNS */
+	parent = nm_vpn_connection_get_parent_device (vpn);
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
-	if (ip4_config)
+	if (ip4_config) {
+		/* Remove the VPN connection's IP4 config from DNS */
 		nm_dns_manager_remove_ip4_config (mgr, ip_iface, ip4_config);
 
+		/* Re-apply routes and addresses of the VPN connection's parent interface,
+		 * which the VPN might have overridden.
+		 */
+		if (parent) {
+			parent_ip4 = nm_device_get_ip4_config (parent);
+			if (parent_ip4) {
+				if (!nm_system_apply_ip4_config (nm_device_get_ip_ifindex (parent),
+				                                 parent_ip4,
+				                                 nm_device_get_priority (parent),
+				                                 NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_ROUTES)) {
+					nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device IPv4 addresses and routes.");
+				}
+			}
+		}
+	}
+
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
-	if (ip6_config)
+	if (ip6_config) {
+		/* Remove the VPN connection's IP6 config from DNS */
 		nm_dns_manager_remove_ip6_config (mgr, ip_iface, ip6_config);
+
+		/* Re-apply routes and addresses of the VPN connection's parent interface,
+		 * which the VPN might have overridden.
+		 */
+		if (parent) {
+			parent_ip6 = nm_device_get_ip6_config (parent);
+			if (parent_ip6) {
+				if (!nm_system_apply_ip6_config (nm_device_get_ip_ifindex (parent),
+				                                 parent_ip6,
+				                                 nm_device_get_priority (parent),
+				                                 NM_IP6_COMPARE_FLAG_ADDRESSES | NM_IP6_COMPARE_FLAG_ROUTES)) {
+					nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device IPv6 addresses and routes.");
+				}
+			}
+		}
+	}
 
 	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
 

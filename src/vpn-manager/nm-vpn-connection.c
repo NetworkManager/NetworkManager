@@ -168,36 +168,6 @@ vpn_cleanup (NMVPNConnection *connection)
 		nm_system_iface_flush_addresses (priv->ip_ifindex, AF_UNSPEC);
 	}
 
-	if (priv->ip4_config) {
-		NMIP4Config *parent_config;
-
-		/* Reset routes and addresses of the currently active device */
-		parent_config = nm_device_get_ip4_config (priv->parent_dev);
-		if (parent_config) {
-			if (!nm_system_apply_ip4_config (nm_device_get_ip_ifindex (priv->parent_dev),
-			                                 nm_device_get_ip4_config (priv->parent_dev),
-			                                 nm_device_get_priority (priv->parent_dev),
-			                                 NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_ROUTES)) {
-				nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device addresses and routes.");
-			}
-		}
-	}
-
-	if (priv->ip6_config) {
-		NMIP6Config *parent_config;
-
-		/* Reset routes and addresses of the currently active device */
-		parent_config = nm_device_get_ip6_config (priv->parent_dev);
-		if (parent_config) {
-			if (!nm_system_apply_ip6_config (nm_device_get_ip_ifindex (priv->parent_dev),
-			                                 nm_device_get_ip6_config (priv->parent_dev),
-			                                 nm_device_get_priority (priv->parent_dev),
-			                                 NM_IP6_COMPARE_FLAG_ADDRESSES | NM_IP6_COMPARE_FLAG_ROUTES)) {
-				nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device addresses and routes.");
-			}
-		}
-	}
-
 	if (priv->gw_route) {
 		nm_netlink_route_delete (priv->gw_route);
 		rtnl_route_put (priv->gw_route);
