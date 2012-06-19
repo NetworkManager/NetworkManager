@@ -80,10 +80,12 @@ typedef struct {
 
 	gulong ih_event_id;
 	int sc_network_wd;
+	GFileMonitor *hostname_monitor;
+	guint hostname_monitor_id;
 	char *hostname;
 
-	GFileMonitor *monitor;
-	guint monitor_id;
+	GFileMonitor *ifcfg_monitor;
+	guint ifcfg_monitor_id;
 
 	DBusGConnection *bus;
 } SCPluginIfcfgPrivate;
@@ -325,11 +327,11 @@ connection_new_or_changed (SCPluginIfcfg *self,
 }
 
 static void
-dir_changed (GFileMonitor *monitor,
-		   GFile *file,
-		   GFile *other_file,
-		   GFileMonitorEvent event_type,
-		   gpointer user_data)
+ifcfg_dir_changed (GFileMonitor *monitor,
+                   GFile *file,
+                   GFile *other_file,
+                   GFileMonitorEvent event_type,
+                   gpointer user_data)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
@@ -379,8 +381,9 @@ setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 	g_object_unref (file);
 
 	if (monitor) {
-		priv->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (dir_changed), plugin);
-		priv->monitor = monitor;
+		priv->ifcfg_monitor_id = g_signal_connect (monitor, "changed",
+		                                           G_CALLBACK (ifcfg_dir_changed), plugin);
+		priv->ifcfg_monitor = monitor;
 	}
 }
 
@@ -463,7 +466,8 @@ add_connection (NMSystemConfigInterface *config,
 	return (NMSettingsConnection *) added;
 }
 
-#define SC_NETWORK_FILE SYSCONFDIR"/sysconfig/network"
+#define SC_NETWORK_FILE "/etc/sysconfig/network"
+#define HOSTNAME_FILE   "/etc/hostname"
 
 static char *
 plugin_get_hostname (SCPluginIfcfg *plugin)
@@ -471,6 +475,11 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 	shvarFile *network;
 	char *hostname;
 	gboolean ignore_localhost;
+
+	if (g_file_get_contents (HOSTNAME_FILE, &hostname, NULL, NULL)) {
+		g_strchomp (hostname);
+		return hostname;
+	}
 
 	network = svNewFile (SC_NETWORK_FILE);
 	if (!network) {
@@ -500,33 +509,30 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	shvarFile *network;
 
-	network = svCreateFile (SC_NETWORK_FILE);
-	if (!network) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not save hostname: failed to create/open " SC_NETWORK_FILE);
+	if (!g_file_set_contents (HOSTNAME_FILE, hostname, -1, NULL)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not save hostname: failed to create/open " HOSTNAME_FILE);
 		return FALSE;
 	}
 
-	svSetValue (network, "HOSTNAME", hostname, FALSE);
-	svWriteFile (network, 0644);
-	svCloseFile (network);
-
 	g_free (priv->hostname);
 	priv->hostname = g_strdup (hostname);
+
+	/* Remove "HOSTNAME" from SC_NETWORK_FILE, if present */
+	network = svNewFile (SC_NETWORK_FILE);
+	if (network) {
+		svSetValue (network, "HOSTNAME", NULL, FALSE);
+		svWriteFile (network, 0644);
+		svCloseFile (network);
+	}
+
 	return TRUE;
 }
 
 static void
-sc_network_changed_cb (NMInotifyHelper *ih,
-                       struct inotify_event *evt,
-                       const char *path,
-                       gpointer user_data)
+hostname_maybe_changed (SCPluginIfcfg *plugin)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	char *new_hostname;
-
-	if (evt->wd != priv->sc_network_wd)
-		return;
 
 	new_hostname = plugin_get_hostname (plugin);
 	if (   (new_hostname && !priv->hostname)
@@ -537,6 +543,33 @@ sc_network_changed_cb (NMInotifyHelper *ih,
 		g_object_notify (G_OBJECT (plugin), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 	} else
 		g_free (new_hostname);
+}
+
+static void
+sc_network_changed_cb (NMInotifyHelper *ih,
+                       struct inotify_event *evt,
+                       const char *path,
+                       gpointer user_data)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+
+	if (evt->wd != priv->sc_network_wd)
+		return;
+
+	hostname_maybe_changed (plugin);
+}
+
+static void
+hostname_changed_cb (GFileMonitor *monitor,
+                     GFile *file,
+                     GFile *other_file,
+                     GFileMonitorEvent event_type,
+                     gpointer user_data)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+
+	hostname_maybe_changed (plugin);
 }
 
 static gboolean
@@ -614,10 +647,28 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 	NMInotifyHelper *ih;
 	GError *error = NULL;
 	gboolean success = FALSE;
+	GFile *file;
+	GFileMonitor *monitor;
+
+	/* We watch SC_NETWORK_FILE via NMInotifyHelper (which doesn't track file creation but
+	 * *does* track modifications made via other hard links), since we expect it to always
+	 * exist. But we watch HOSTNAME_FILE via GFileMonitor (which has the opposite
+	 * semantics), since /etc/hostname might not exist, but is unlikely to have hard
+	 * links. bgo 532815 is the bug for being able to just use GFileMonitor for both.
+	 */
 
 	ih = nm_inotify_helper_get ();
 	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (sc_network_changed_cb), plugin);
 	priv->sc_network_wd = nm_inotify_helper_add_watch (ih, SC_NETWORK_FILE);
+
+	file = g_file_new_for_path (HOSTNAME_FILE);
+	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	g_object_unref (file);
+	if (monitor) {
+		priv->hostname_monitor_id =
+			g_signal_connect (monitor, "changed", G_CALLBACK (hostname_changed_cb), plugin);
+		priv->hostname_monitor = monitor;
+	}
 
 	priv->hostname = plugin_get_hostname (plugin);
 
@@ -674,24 +725,35 @@ dispose (GObject *object)
 		priv->bus = NULL;
 	}
 
-	ih = nm_inotify_helper_get ();
+	if (priv->ih_event_id) {
+		ih = nm_inotify_helper_get ();
 
-	g_signal_handler_disconnect (ih, priv->ih_event_id);
+		g_signal_handler_disconnect (ih, priv->ih_event_id);
+		priv->ih_event_id = 0;
 
-	if (priv->sc_network_wd >= 0)
-		nm_inotify_helper_remove_watch (ih, priv->sc_network_wd);
+		if (priv->sc_network_wd >= 0)
+			nm_inotify_helper_remove_watch (ih, priv->sc_network_wd);
+	}
+
+	if (priv->hostname_monitor) {
+		if (priv->hostname_monitor_id)
+			g_signal_handler_disconnect (priv->hostname_monitor, priv->hostname_monitor_id);
+
+		g_file_monitor_cancel (priv->hostname_monitor);
+		g_object_unref (priv->hostname_monitor);
+	}
 
 	g_free (priv->hostname);
 
 	if (priv->connections)
 		g_hash_table_destroy (priv->connections);
 
-	if (priv->monitor) {
-		if (priv->monitor_id)
-			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
+	if (priv->ifcfg_monitor) {
+		if (priv->ifcfg_monitor_id)
+			g_signal_handler_disconnect (priv->ifcfg_monitor, priv->ifcfg_monitor_id);
 
-		g_file_monitor_cancel (priv->monitor);
-		g_object_unref (priv->monitor);
+		g_file_monitor_cancel (priv->ifcfg_monitor);
+		g_object_unref (priv->ifcfg_monitor);
 	}
 
 	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
