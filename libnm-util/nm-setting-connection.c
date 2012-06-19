@@ -601,14 +601,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->zone && !priv->zone[0]) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_CONNECTION_TYPE);
-		return FALSE;
-	}
-
 	/* Make sure the corresponding 'type' item is present */
 	if (all_settings && !g_slist_find_custom (all_settings, priv->type, find_setting_by_name)) {
 		g_set_error (error,

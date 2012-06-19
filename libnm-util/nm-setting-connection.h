@@ -79,13 +79,6 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_MASTER      "master"
 #define NM_SETTING_CONNECTION_SLAVE_TYPE  "slave-type"
 
-/* Well-known zone names */
-#define NM_SETTING_CONNECTION_ZONE_TRUSTED   "trusted"
-#define NM_SETTING_CONNECTION_ZONE_HOME      "home"
-#define NM_SETTING_CONNECTION_ZONE_WORK      "work"
-#define NM_SETTING_CONNECTION_ZONE_PUBLIC    "public"
-#define NM_SETTING_CONNECTION_ZONE_BLOCK     "block"
-
 /**
  * NMSettingConnection:
  *
