@@ -4927,7 +4927,7 @@ test_read_wifi_wpa_psk_2 (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System ipsum (test-wifi-wpa-psk-2)";
-	const char *expected_psk = "They're really saying I love you. >>`<<";
+	const char *expected_psk = "They're really saying I love you. >>`<< \\";
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_2,
                                      NULL,
@@ -12858,7 +12858,7 @@ int main (int argc, char **argv)
 	                         FALSE,
 	                         TRUE,
 	                         TRUE,
-	                         "blah`oops\"grr'$*@~!%");
+	                         "blah`oops\"grr'$*@~!%\\");
 	test_write_wifi_wpa_psk_adhoc ();
 	test_write_wifi_wpa_eap_tls ();
 	test_write_wifi_wpa_eap_ttls_tls ();

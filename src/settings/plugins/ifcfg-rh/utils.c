@@ -189,7 +189,7 @@ utils_single_unquote_string (const char *str)
 
 	i = quote + dollar;
 	while (i < slen - quote) {
-		if (str[i] == escape_char && str[i+1] == q_char)
+		if (str[i] == escape_char && str[i+1] == q_char && i+1 < slen-quote)
 			i++;
 		new_str[j++] = str[i++];
 	}
