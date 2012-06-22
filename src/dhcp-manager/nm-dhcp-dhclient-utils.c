@@ -328,3 +328,39 @@ error:
 	return NULL;
 }
 
+#define DUID_PREFIX "default-duid \""
+
+GByteArray *
+nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
+{
+	GByteArray *duid = NULL;
+	char *contents;
+	char **line, **split, *p, *e;
+
+	if (!g_file_test (leasefile, G_FILE_TEST_EXISTS))
+		return NULL;
+
+	if (!g_file_get_contents (leasefile, &contents, NULL, error))
+		return NULL;
+
+	split = g_strsplit_set (contents, "\n\r", -1);
+	for (line = split; line && *line && (duid == NULL); line++) {
+		p = g_strstrip (*line);
+		if (g_str_has_prefix (p, DUID_PREFIX)) {
+			p += strlen (DUID_PREFIX);
+
+			/* look for trailing "; */
+			e = p + strlen (p) - 2;
+			if (strcmp (e, "\";") != 0)
+				continue;
+			*e = '\0';
+
+			duid = nm_dhcp_dhclient_unescape_duid (p);
+		}
+	}
+	g_free (contents);
+	g_strfreev (split);
+
+	return duid;
+}
+

@@ -38,5 +38,7 @@ char *nm_dhcp_dhclient_escape_duid (const GByteArray *duid);
 
 GByteArray *nm_dhcp_dhclient_unescape_duid (const char *duid);
 
+GByteArray *nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error);
+
 #endif /* NM_DHCP_DHCLIENT_UTILS_H */
 
