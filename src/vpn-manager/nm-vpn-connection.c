@@ -1357,11 +1357,19 @@ plugin_need_secrets_cb  (DBusGProxy *proxy,
 
 	if (setting_name && strlen (setting_name)) {
 		/* More secrets required */
-		nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated additional secrets required",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection));
 
-		get_secrets (self, priv->secrets_idx + 1);
+		if (priv->secrets_idx == SECRETS_REQ_NEW) {
+			nm_log_err (LOGD_VPN, "(%s/%s) final secrets request failed to provide sufficient secrets",
+			            nm_connection_get_uuid (priv->connection),
+			            nm_connection_get_id (priv->connection));
+			nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		} else {
+			nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated additional secrets required",
+			            nm_connection_get_uuid (priv->connection),
+			            nm_connection_get_id (priv->connection));
+
+			get_secrets (self, priv->secrets_idx + 1);
+		}
 		return;
 	}
 
