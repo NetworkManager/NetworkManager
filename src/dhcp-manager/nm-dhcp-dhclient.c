@@ -53,6 +53,8 @@ typedef struct {
 	const char *def_leasefile;
 	char *lease_file;
 	char *pid_file;
+	gboolean lease_duid_found;
+	gboolean default_duid_found;
 } NMDHCPDhclientPrivate;
 
 const char *
@@ -446,6 +448,7 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 static GPid
 dhclient_start (NMDHCPClient *client,
                 const char *mode_opt,
+                const GByteArray *duid,
                 gboolean release)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
@@ -494,6 +497,36 @@ dhclient_start (NMDHCPClient *client,
 	if (!priv->lease_file) {
 		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
 		return -1;
+	}
+
+	if (ipv6 && duid) {
+		char *escaped = NULL;
+
+		escaped = nm_dhcp_dhclient_escape_duid (duid);
+
+		/* Save the generated DUID into the default leasefile for persistent storage */
+		if (!priv->default_duid_found) {
+			nm_log_dbg (LOGD_DHCP6, "Saving DHCPv6 DUID '%s' to leasefile %s",
+			            escaped, priv->def_leasefile);
+			if (!nm_dhcp_dhclient_save_duid (priv->def_leasefile, escaped, &error)) {
+				g_assert (error);
+				nm_log_warn (LOGD_DHCP6, "Could not save DUID: %s", error->message);
+				g_clear_error (&error);
+			}
+		}
+
+		/* Save the DUID to the network-specific leasefile so it'll actually get used */
+		if (!priv->lease_duid_found) {
+			nm_log_dbg (LOGD_DHCP6, "Saving DHCPv6 DUID '%s' to leasefile %s",
+			            escaped, priv->lease_file);
+			if (!nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error)) {
+				g_assert (error);
+				nm_log_warn (LOGD_DHCP6, "Could not save DUID: %s", error->message);
+				g_clear_error (&error);
+			}
+		}
+
+		g_free (escaped);
 	}
 
 	argv = g_ptr_array_new ();
@@ -576,7 +609,7 @@ ip4_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	return dhclient_start (client, NULL, FALSE);
+	return dhclient_start (client, NULL, NULL, FALSE);
 }
 
 static GPid
@@ -598,7 +631,7 @@ ip6_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	return dhclient_start (client, info_only ? "-S" : "-N", FALSE);
+	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE);
 }
 
 static void
@@ -620,7 +653,7 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 	if (release) {
 		GPid rpid;
 
-		rpid = dhclient_start (client, NULL, TRUE);
+		rpid = dhclient_start (client, NULL, duid, TRUE);
 		if (rpid > 0) {
 			/* Wait a few seconds for the release to happen */
 			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client), 5);
@@ -642,6 +675,7 @@ get_duid (NMDHCPClient *client)
 	                                    TRUE);
 	nm_log_dbg (LOGD_DHCP, "Looking for DHCPv6 DUID in '%s'.", leasefile);
 	duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
+	priv->lease_duid_found = !!duid;
 	g_free (leasefile);
 
 	if (error) {
@@ -656,6 +690,7 @@ get_duid (NMDHCPClient *client)
 		/* Otherwise read the default machine-wide DUID */
 		nm_log_dbg (LOGD_DHCP, "Looking for default DHCPv6 DUID in '%s'.", priv->def_leasefile);
 		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
+		priv->default_duid_found = !!duid;
 		if (error) {
 			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
 			             priv->def_leasefile,

@@ -364,3 +364,57 @@ nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 	return duid;
 }
 
+gboolean
+nm_dhcp_dhclient_save_duid (const char *leasefile,
+                            const char *escaped_duid,
+                            GError **error)
+{
+	char **lines = NULL, **iter, *l;
+	GString *s;
+	gboolean success;
+	gsize len = 0;
+
+	g_return_val_if_fail (leasefile != NULL, FALSE);
+	g_return_val_if_fail (escaped_duid != NULL, FALSE);
+
+	if (g_file_test (leasefile, G_FILE_TEST_EXISTS)) {
+		char *contents = NULL;
+
+		if (!g_file_get_contents (leasefile, &contents, &len, error)) {
+			g_prefix_error (error, "failed to read lease file %s: ", leasefile);
+			return FALSE;
+		}
+
+		/* If the file already contains an uncommented DUID, leave it */
+		g_assert (contents);
+		lines = g_strsplit_set (contents, "\n\r", -1);
+		g_free (contents);
+		for (iter = lines; iter && *iter; iter++) {
+			l = *iter;
+			while (g_ascii_isspace (*l))
+				l++;
+			if (g_str_has_prefix (l, DUID_PREFIX)) {
+				g_strfreev (lines);
+				return TRUE;
+			}
+		}
+	}
+
+	s = g_string_sized_new (len + 50);
+	g_string_append_printf (s, DUID_PREFIX "%s\";\n", escaped_duid);
+
+	/* Preserve existing leasefile contents */
+	if (lines) {
+		for (iter = lines; iter && *iter; iter++)
+			g_string_append (s, *iter[0] ? *iter : "\n");
+		g_strfreev (lines);
+	}
+
+	success = g_file_set_contents (leasefile, s->str, -1, error);
+	if (!success)
+		g_prefix_error (error, "failed to set DUID in lease file %s: ", leasefile);
+
+	g_string_free (s, TRUE);
+	return success;
+}
+
