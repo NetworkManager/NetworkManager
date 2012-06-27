@@ -705,6 +705,7 @@ periodic_update (gpointer user_data)
 	NMAccessPoint *new_ap;
 	guint32 new_rate, percent;
 	NMDeviceState state;
+	guint32 supplicant_state;
 
 	/* BSSID and signal strength have meaningful values only if the device
 	 * is activated and not scanning.
@@ -713,7 +714,14 @@ periodic_update (gpointer user_data)
 	if (state != NM_DEVICE_STATE_ACTIVATED)
 		return TRUE;
 
-	if (nm_supplicant_interface_get_scanning (priv->supplicant.iface))
+	/* Only update current AP if we're actually talking to something, otherwise
+	 * assume the old one (if any) is still valid until we're told otherwise or
+	 * the connection fails.
+	 */
+	supplicant_state = nm_supplicant_interface_get_state (priv->supplicant.iface);
+	if (   supplicant_state < NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING
+	    || supplicant_state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED
+	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
 		return TRUE;
 
 	/* In IBSS mode, most newer firmware/drivers do "BSS coalescing" where
@@ -2170,6 +2178,9 @@ static gboolean
 link_timeout_cb (gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMAccessPoint *ap;
 
 	nm_log_warn (LOGD_WIFI, "(%s): link timed out.", nm_device_get_iface (dev));
 
@@ -2179,12 +2190,25 @@ link_timeout_cb (gpointer user_data)
 	 * to reassociate within the timeout period, so the connection must
 	 * fail.
 	 */
-	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_state_changed (dev,
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
-	}
+	if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+		return FALSE;
 
+	/* Remove whatever access point we used to be connected to from the list
+	 * since it failed and might no longer be visible.  If it's actually still
+	 * there, we'll find it in the next scan.
+	 */
+	if (priv->current_ap) {
+		ap = priv->current_ap;
+		priv->current_ap = NULL;
+	} else
+		ap = nm_device_wifi_get_activation_ap (self);
+
+	if (ap)
+		remove_access_point (self, ap);
+
+	nm_device_state_changed (dev,
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 	return FALSE;
 }
 
@@ -2316,7 +2340,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			             nm_device_get_iface (device),
 			             ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 			nm_device_activate_schedule_stage3_ip_config_start (device);
-		}
+		} else if (devstate == NM_DEVICE_STATE_ACTIVATED)
+			periodic_update (self);
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
 		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
@@ -2431,6 +2456,7 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
                                      GParamSpec *pspec,
                                      NMDeviceWifi *self)
 {
+	NMDeviceState state;
 	gboolean scanning;
 
 	scanning = nm_supplicant_interface_get_scanning (iface);
@@ -2439,6 +2465,11 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	            scanning ? "scanning" : "idle");
 
 	g_object_notify (G_OBJECT (self), "scanning");
+
+	/* Run a quick update of current AP when coming out of a scan */
+	state = nm_device_get_state (NM_DEVICE (self));
+	if (!scanning && state == NM_DEVICE_STATE_ACTIVATED)
+		periodic_update (self);
 }
 
 static void
@@ -3347,7 +3378,10 @@ device_state_changed (NMDevice *device,
 		activation_failure_handler (device);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		// FIXME: ensure that the activation request is destroyed
+		/* Kick off a scan to get latest results */
+		priv->scan_interval = SCAN_INTERVAL_MIN;
+		cancel_pending_scan (self);
+		request_wireless_scan (self);
 		break;
 	default:
 		break;
