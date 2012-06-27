@@ -1454,6 +1454,9 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 		g_assert_not_reached ();
 	}
 
+	if (priv->user_requested)
+		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
+
 	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 	                                                       filter_by_uid,
 	                                                       priv->user_uid,

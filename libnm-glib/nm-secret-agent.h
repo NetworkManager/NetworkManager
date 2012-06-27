@@ -50,13 +50,18 @@ typedef enum {
  * secrets from the user.  This flag signals that NetworkManager thinks any
  * existing secrets are invalid or wrong.  This flag implies that interaction
  * is allowed.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED: set if the request was
+ * initiated by user-requested action via the D-Bus interface, as opposed to
+ * automatically initiated by NetworkManager in response to (for example) scan
+ * results or carrier changes.
  *
  * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
  */
 typedef enum {
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED = 0x4
 } NMSecretAgentGetSecretsFlags;
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())

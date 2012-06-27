@@ -130,6 +130,9 @@ nm_act_request_get_secrets (NMActRequest *self,
 	info->callback = callback;
 	info->callback_data = callback_data;
 
+	if (priv->user_requested)
+		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
+
 	call_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 	                                              priv->user_requested,
 	                                              priv->user_uid,
