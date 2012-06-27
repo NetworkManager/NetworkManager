@@ -2419,7 +2419,6 @@ handle_auth_or_fail (NMDeviceWifi *self,
 {
 	const char *setting_name;
 	guint32 tries;
-	NMAccessPoint *ap;
 	NMConnection *connection;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -2432,9 +2431,6 @@ handle_auth_or_fail (NMDeviceWifi *self,
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
-
-	ap = nm_device_wifi_get_activation_ap (self);
-	g_assert (ap);
 
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES));
 	if (tries > 3)
