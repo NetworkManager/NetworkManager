@@ -2518,10 +2518,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	if (setting_name) {
 		NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
-		/* If the caller doesn't necessarily want completely new secrets,
-		 * only ask for new secrets after the first failure.
-		 */
-		if (new_secrets || tries)
+		if (new_secrets)
 			flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
 
@@ -2606,6 +2603,9 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	}
 
 	if (is_encrypted (ap, connection)) {
+		guint64 timestamp = 0;
+		gboolean new_secrets = TRUE;
+
 		/* Connection failed; either driver problems, the encryption key is
 		 * wrong, or the passwords or certificates were wrong.
 		 */
@@ -2613,7 +2613,15 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		             "Activation (%s/wireless): association took too long.",
 		             nm_device_get_iface (dev));
 
-		if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE) {
+		/* Ask for new secrets only if we've never activated this connection
+		 * before.  If we've connected before, don't bother the user with
+		 * dialogs, just retry or fail, and if we never connect the user can
+		 * fix the password somewhere else.
+		 */
+		if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp))
+			new_secrets = !timestamp;
+
+		if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE) {
 			nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
 			             "Activation (%s/wireless): asking for new secrets",
 			             nm_device_get_iface (dev));
