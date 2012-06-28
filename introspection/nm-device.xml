@@ -544,7 +544,7 @@
           A dependency of the connection failed.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="BR2684_FAILED" value="50">
+      <tp:enumvalue suffix="BR2684_FAILED" value="51">
         <tp:docstring>
           Problem with the RFC 2684 Ethernet over ADSL bridge.
         </tp:docstring>
