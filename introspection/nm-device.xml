@@ -564,6 +564,11 @@
           ModemManager was not running or quit unexpectedly.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="SSID_NOT_FOUND" value="53">
+        <tp:docstring>
+          The 802.11 Wi-Fi network could not be found.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

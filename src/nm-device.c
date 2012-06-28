@@ -4510,6 +4510,8 @@ reason_to_string (NMDeviceStateReason reason)
 		return "br2684-bridge-failed";
 	case NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE:
 		return "modem-manager-unavailable";
+	case NM_DEVICE_STATE_REASON_SSID_NOT_FOUND:
+		return "SSID not found";
 	default:
 		break;
 	}

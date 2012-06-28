@@ -495,6 +495,9 @@ typedef enum {
 	/* ModemManager not running */
 	NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE = 52,
 
+	/* The WiFi network could not be found */
+	NM_DEVICE_STATE_REASON_SSID_NOT_FOUND = 53,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

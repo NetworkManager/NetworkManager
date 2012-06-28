@@ -150,6 +150,7 @@ struct _NMDeviceWifiPrivate {
 
 	Supplicant        supplicant;
 	WifiData *        wifi_data;
+	gboolean          ssid_found;
 
 	guint32           failed_link_count;
 	guint             periodic_source_id;
@@ -2208,7 +2209,8 @@ link_timeout_cb (gpointer user_data)
 
 	nm_device_state_changed (dev,
 	                         NM_DEVICE_STATE_FAILED,
-	                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
+	                         priv->ssid_found ? NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT :
+	                                            NM_DEVICE_STATE_REASON_SSID_NOT_FOUND);
 	return FALSE;
 }
 
@@ -2302,6 +2304,11 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	devstate = nm_device_get_state (device);
 	scanning = nm_supplicant_interface_get_scanning (iface);
 
+	/* In these states we know the supplicant is actually talking to something */
+	if (   new_state >= NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING
+	    && new_state <= NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
+		priv->ssid_found = TRUE;
+
 	switch (new_state) {
 	case NM_SUPPLICANT_INTERFACE_STATE_READY:
 		priv->scan_interval = SCAN_INTERVAL_MIN;
@@ -2360,8 +2367,10 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		 * the scan but will be re-established when the scan is done.
 		 */
 		if (devstate == NM_DEVICE_STATE_ACTIVATED) {
-			if (priv->link_timeout_id == 0)
+			if (priv->link_timeout_id == 0) {
 				priv->link_timeout_id = g_timeout_add_seconds (scanning ? 30 : 15, link_timeout_cb, self);
+				priv->ssid_found = FALSE;
+			}
 		}
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
@@ -2564,6 +2573,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *ap;
 	NMActRequest *req;
 	NMConnection *connection;
@@ -2602,7 +2612,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		return FALSE;
 	}
 
-	if (is_encrypted (ap, connection)) {
+	if (priv->ssid_found && is_encrypted (ap, connection)) {
 		guint64 timestamp = 0;
 		gboolean new_secrets = TRUE;
 
@@ -2635,7 +2645,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		             "failing activation.",
 		             nm_device_get_iface (dev));
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
+		                         priv->ssid_found ? NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT :
+		                                            NM_DEVICE_STATE_REASON_SSID_NOT_FOUND);
 	}
 
 	return FALSE;
@@ -2989,6 +3000,8 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 		             "security.  No secrets needed.",
 		             iface, nm_connection_get_id (connection));
 	}
+
+	priv->ssid_found = FALSE;
 
 	config = build_supplicant_config (self, connection, ap);
 	if (config == NULL) {
