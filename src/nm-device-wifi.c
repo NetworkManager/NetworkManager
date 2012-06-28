@@ -696,12 +696,25 @@ set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap)
 	g_free (old_path);
 }
 
-static void
-periodic_update (NMDeviceWifi *self)
+/* Called both as a GSourceFunc and standalone */
+static gboolean
+periodic_update (gpointer user_data)
 {
+	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *new_ap;
 	guint32 new_rate, percent;
+	NMDeviceState state;
+
+	/* BSSID and signal strength have meaningful values only if the device
+	 * is activated and not scanning.
+	 */
+	state = nm_device_get_state (NM_DEVICE (self));
+	if (state != NM_DEVICE_STATE_ACTIVATED)
+		return TRUE;
+
+	if (nm_supplicant_interface_get_scanning (priv->supplicant.iface))
+		return TRUE;
 
 	/* In IBSS mode, most newer firmware/drivers do "BSS coalescing" where
 	 * multiple IBSS stations using the same SSID will eventually switch to
@@ -771,33 +784,7 @@ periodic_update (NMDeviceWifi *self)
 		priv->rate = new_rate;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
 	}
-}
 
-/*
- * nm_device_wifi_periodic_update
- *
- * Periodically update device statistics.
- *
- */
-static gboolean
-nm_device_wifi_periodic_update (gpointer data)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (data);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMDeviceState state;
-
-	/* BSSID and signal strength have meaningful values only if the device
-	   is activated and not scanning */
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (state != NM_DEVICE_STATE_ACTIVATED)
-		goto out;
-
-	if (nm_supplicant_interface_get_scanning (priv->supplicant.iface))
-		goto out;
-
-	periodic_update (self);
-
-out:
 	return TRUE;
 }
 
@@ -837,7 +824,7 @@ real_bring_up (NMDevice *dev)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	priv->periodic_source_id = g_timeout_add_seconds (6, nm_device_wifi_periodic_update, self);
+	priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update, self);
 	return TRUE;
 }
 
