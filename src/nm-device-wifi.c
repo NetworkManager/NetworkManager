@@ -3164,7 +3164,6 @@ activation_failure_handler (NMDevice *dev)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *ap;
-	const GByteArray * ssid;
 	NMConnection *connection;
 
 	connection = nm_device_get_connection (dev);
@@ -3186,12 +3185,6 @@ activation_failure_handler (NMDevice *dev)
 			g_object_unref (ap);
 		}
 	}
-
-	ssid = nm_ap_get_ssid (ap);
-	nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-	             "Activation (%s) failed for access point (%s)",
-	             nm_device_get_iface (dev),
-	             ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 }
 
 static gboolean

@@ -4454,6 +4454,7 @@ nm_device_state_changed (NMDevice *device,
 	NMDeviceState old_state;
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
+	NMConnection *connection;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
@@ -4554,7 +4555,11 @@ nm_device_state_changed (NMDevice *device,
 		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
-		nm_log_warn (LOGD_DEVICE, "Activation (%s) failed.", nm_device_get_iface (device));
+		connection = nm_act_request_get_connection (req);
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "Activation (%s) failed for connection '%s'",
+		             nm_device_get_iface (device),
+		             nm_connection_get_id (connection));
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.
