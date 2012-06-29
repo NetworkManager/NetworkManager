@@ -39,7 +39,8 @@
 #define NM_VPN_CONNECTION_BANNER "banner"
 
 /* Signals */
-#define NM_VPN_CONNECTION_VPN_STATE_CHANGED "vpn-state-changed"
+/* not exported: includes old reason code */
+#define NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED "internal-state-changed"
 
 
 typedef struct {
@@ -52,8 +53,13 @@ typedef struct {
 	/* Signals */
 	void (*vpn_state_changed) (NMVPNConnection *connection,
 	                           NMVPNConnectionState new_state,
-	                           NMVPNConnectionState old_state,
 	                           NMVPNConnectionStateReason reason);
+
+	/* not exported over D-Bus */
+	void (*internal_state_changed) (NMVPNConnection *connection,
+	                                NMVPNConnectionState new_state,
+	                                NMVPNConnectionState old_state,
+	                                NMVPNConnectionStateReason reason);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);

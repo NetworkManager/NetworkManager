@@ -351,7 +351,7 @@ nm_vpn_service_activate (NMVPNService *service,
 	clear_quit_timeout (service);
 
 	vpn = nm_vpn_connection_new (connection, device, specific_object, user_requested, user_uid);
-	g_signal_connect (vpn, NM_VPN_CONNECTION_VPN_STATE_CHANGED,
+	g_signal_connect (vpn, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
 	                  G_CALLBACK (connection_vpn_state_changed),
 	                  service);
 

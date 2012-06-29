@@ -189,7 +189,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 
 	vpn = nm_vpn_service_activate (service, connection, device, specific_object, user_requested, user_uid, error);
 	if (vpn) {
-		g_signal_connect (vpn, NM_VPN_CONNECTION_VPN_STATE_CHANGED,
+		g_signal_connect (vpn, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
 		                  G_CALLBACK (connection_vpn_state_changed),
 		                  manager);
 	}
