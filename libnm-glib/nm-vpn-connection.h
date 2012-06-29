@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
 #ifndef NM_VPN_CONNECTION_H
@@ -51,8 +51,7 @@ typedef struct {
 
 	/* Signals */
 	void (*vpn_state_changed) (NMVPNConnection *connection,
-	                           NMVPNConnectionState new_state,
-	                           NMVPNConnectionState old_state,
+	                           NMVPNConnectionState state,
 	                           NMVPNConnectionStateReason reason);
 
 	/* Padding for future expansion */
