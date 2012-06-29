@@ -699,8 +699,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 
 	/**
 	 * NMDevice::state-changed:
-	 * @device: the client that received the signal
-	 * @state: the new state of the device
+	 * @device: the device object that received the signal
+	 * @new_state: the new state of the device
+	 * @old_state: the previous state of the device
+	 * @reason: the reason describing the state change
 	 *
 	 * Notifies the state change of a #NMDevice.
 	 **/

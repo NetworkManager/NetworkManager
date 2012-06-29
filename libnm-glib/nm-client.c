@@ -1877,24 +1877,24 @@ nm_client_class_init (NMClientClass *client_class)
 
 	/**
 	 * NMClient::device-removed:
-	 * @widget: the client that received the signal
+	 * @client: the client that received the signal
 	 * @device: (type NMClient.Device): the removed device
 	 *
 	 * Notifies that a #NMDevice is removed.
 	 **/
 	signals[DEVICE_REMOVED] =
 		g_signal_new ("device-removed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, device_removed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMClientClass, device_removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 
 	/**
 	 * NMClient::permission-changed:
-	 * @widget: the client that received the signal
+	 * @client: the client that received the signal
 	 * @permission: a permission from #NMClientPermission
 	 * @result: the permission's result, one of #NMClientPermissionResult
 	 *
@@ -1902,11 +1902,11 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	signals[PERMISSION_CHANGED] =
 		g_signal_new ("permission-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL,
-					  _nm_glib_marshal_VOID__UINT_UINT,
-					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              _nm_glib_marshal_VOID__UINT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 static void
