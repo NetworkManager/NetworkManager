@@ -25,14 +25,9 @@
       <tp:docstring>
         Emitted when the state of the VPN connection has changed.
       </tp:docstring>
-      <arg name="new_state" type="u" tp:type="NM_VPN_CONNECTION_STATE">
+      <arg name="state" type="u" tp:type="NM_VPN_CONNECTION_STATE">
         <tp:docstring>
           The new state of the VPN connection.
-        </tp:docstring>
-      </arg>
-      <arg name="old_state" type="u" tp:type="NM_VPN_CONNECTION_STATE">
-        <tp:docstring>
-          The old state of the VPN connection.
         </tp:docstring>
       </arg>
       <arg name="reason" type="u" tp:type="NM_VPN_CONNECTION_STATE_REASON">
