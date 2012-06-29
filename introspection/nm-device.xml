@@ -274,6 +274,11 @@
           The device is a VLAN interface.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="ADSL" value="12">
+        <tp:docstring>
+          The device is an ADSL device supporting PPPoE and PPPoATM protocols.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">

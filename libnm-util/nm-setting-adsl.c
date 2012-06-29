@@ -280,7 +280,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (object);
 
@@ -318,7 +318,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingAdsl *setting = NM_SETTING_ADSL (object);
 
@@ -381,7 +381,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
-	 * NMSettingADSL:password:
+	 * NMSettingAdsl:password:
 	 *
 	 * Password used to authenticate with the ADSL service.
 	 **/
