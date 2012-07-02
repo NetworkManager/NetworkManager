@@ -25,6 +25,7 @@
 
 
 #include <glib.h>
+#include <glib-object.h>
 
 #if !GLIB_CHECK_VERSION(2,31,0)
 #define g_value_set_schar g_value_set_char
@@ -52,6 +53,25 @@
 		} \
 	} G_STMT_END
 
+#endif
+
+#ifndef G_DEFINE_BOXED_TYPE
+#define G_DEFINE_BOXED_TYPE(t,p,d,f) \
+GType \
+p##_get_type (void) \
+{ \
+    static volatile gsize g_define_type_id__volatile = 0; \
+ \
+    if (g_once_init_enter (&g_define_type_id__volatile)) { \
+        GType g_define_type_id = \
+            g_boxed_type_register_static( \
+                g_intern_static_string(#t), \
+                (GBoxedCopyFunc) d, \
+                (GBoxedFreeFunc) f); \
+        g_once_init_leave (&g_define_type_id__volatile, g_define_type_id); \
+    } \
+    return g_define_type_id__volatile; \
+}
 #endif
 
 #endif  /* NM_GLIB_COMPAT_H */

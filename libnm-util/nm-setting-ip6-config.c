@@ -29,6 +29,7 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 /**
  * SECTION:nm-setting-ip6-config
@@ -56,10 +57,8 @@ nm_setting_ip6_config_error_quark (void)
 	return quark;
 }
 
-#if GLIB_CHECK_VERSION(2,26,0)
 G_DEFINE_BOXED_TYPE (NMIP6Address, nm_ip6_address, nm_ip6_address_dup, nm_ip6_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP6Route, nm_ip6_route, nm_ip6_route_dup, nm_ip6_route_unref)
-#endif
 
 G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING)
 

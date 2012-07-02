@@ -30,6 +30,9 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
+
+
 
 /**
  * SECTION:nm-setting-ip4-config
@@ -57,10 +60,8 @@ nm_setting_ip4_config_error_quark (void)
 	return quark;
 }
 
-#if GLIB_CHECK_VERSION(2,26,0)
 G_DEFINE_BOXED_TYPE (NMIP4Address, nm_ip4_address, nm_ip4_address_dup, nm_ip4_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP4Route, nm_ip4_route, nm_ip4_route_dup, nm_ip4_route_unref)
-#endif
 
 G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING)
 
