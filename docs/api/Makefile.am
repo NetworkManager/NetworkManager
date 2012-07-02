@@ -55,6 +55,8 @@ DOC_MODULE=NetworkManager
 # The top-level SGML file.
 DOC_MAIN_SGML_FILE=network-manager-docs.xml
 
+DOC_SOURCE_DIR=$(srcdir)
+
 # Extra options to supply to gtkdoc-mkdb
 MKDB_OPTIONS=--sgml-mode --output-format=xml
 
