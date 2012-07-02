@@ -64,6 +64,10 @@ if TARGET_EXHERBO
 libnmbackend_la_SOURCES += NetworkManagerExherbo.c
 endif
 
+if TARGET_LFS
+libnmbackend_la_SOURCES += NetworkManagerLFS.c
+endif
+
 libnmbackend_la_LIBADD += \
 	$(top_builddir)/src/logging/libnm-logging.la \
 	$(LIBNL_LIBS) \
