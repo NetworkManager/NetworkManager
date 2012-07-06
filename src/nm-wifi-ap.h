@@ -86,6 +86,8 @@ void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 NM80211Mode			nm_ap_get_mode			(NMAccessPoint *ap);
 void				nm_ap_set_mode			(NMAccessPoint *ap, const NM80211Mode mode);
 
+gboolean            nm_ap_is_hotspot        (NMAccessPoint *ap);
+
 gint8			nm_ap_get_strength		(NMAccessPoint *ap);
 void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
 

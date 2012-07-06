@@ -726,6 +726,10 @@ periodic_update (gpointer user_data)
 	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
 		return TRUE;
 
+	/* In AP mode we currently have nothing to do. */
+	if (priv->current_ap && (nm_ap_get_mode (priv->current_ap) == NM_802_11_MODE_AP))
+		return TRUE;
+
 	/* In IBSS mode, most newer firmware/drivers do "BSS coalescing" where
 	 * multiple IBSS stations using the same SSID will eventually switch to
 	 * using the same BSSID to avoid network segmentation.  When this happens,
@@ -1070,6 +1074,15 @@ check_connection_compatible (NMDevice *device,
 		                     NM_WIFI_ERROR,
 		                     NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
 		                     "WPA Ad-Hoc disabled due to kernel bugs");
+		return FALSE;
+	}
+
+	if (    (g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0)
+	     && !(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+		g_set_error_literal (error,
+		                     NM_WIFI_ERROR,
+		                     NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+		                     "Access Point (AP) mode is not supported by this device.");
 		return FALSE;
 	}
 
@@ -2760,7 +2773,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSupplicantConfig *config = NULL;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
-	guint32 adhoc_freq = 0;
+	guint32 fixed_freq = 0;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
@@ -2771,35 +2784,36 @@ build_supplicant_config (NMDeviceWifi *self,
 	if (!config)
 		return NULL;
 
-	/* Supplicant requires an initial frequency for Ad-Hoc networks; if the user
+	/* Supplicant requires an initial frequency for Ad-Hoc and Hotspot; if the user
 	 * didn't specify one and we didn't find an AP that matched the connection,
 	 * just pick a frequency the device supports.
 	 */
-	if (nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) {
+	if (   nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC
+	    || nm_ap_get_mode (ap) == NM_802_11_MODE_AP) {
 		const char *band = nm_setting_wireless_get_band (s_wireless);
 		const guint32 a_freqs[] = { 5180, 5200, 5220, 5745, 5765, 5785, 5805, 0 };
 		const guint32 bg_freqs[] = { 2412, 2437, 2462, 2472, 0 };
 
-		adhoc_freq = nm_ap_get_freq (ap);
-		if (!adhoc_freq) {
+		fixed_freq = nm_ap_get_freq (ap);
+		if (!fixed_freq) {
 			if (g_strcmp0 (band, "a") == 0)
-				adhoc_freq = wifi_utils_find_freq (priv->wifi_data, a_freqs);
+				fixed_freq = wifi_utils_find_freq (priv->wifi_data, a_freqs);
 			else
-				adhoc_freq = wifi_utils_find_freq (priv->wifi_data, bg_freqs);
+				fixed_freq = wifi_utils_find_freq (priv->wifi_data, bg_freqs);
 		}
 
-		if (!adhoc_freq) {
+		if (!fixed_freq) {
 			if (g_strcmp0 (band, "a") == 0)
-				adhoc_freq = 5180;
+				fixed_freq = 5180;
 			else
-				adhoc_freq = 2462;
+				fixed_freq = 2462;
 		}
 	}
 
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
 	                                                nm_ap_get_broadcast (ap),
-	                                                adhoc_freq,
+	                                                fixed_freq,
 	                                                wifi_utils_can_scan_ssid (priv->wifi_data))) {
 		nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;

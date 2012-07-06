@@ -407,7 +407,10 @@ detail_access_point (gpointer data, gpointer user_data)
 	info->nmc->allowed_fields[0].value = ap_name;
 	info->nmc->allowed_fields[1].value = ssid_str;
 	info->nmc->allowed_fields[2].value = bssid;
-	info->nmc->allowed_fields[3].value = mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc") : mode == NM_802_11_MODE_INFRA ? _("Infrastructure") : _("Unknown");
+	info->nmc->allowed_fields[3].value = mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
+	                                   : mode == NM_802_11_MODE_AP ? _("AP")
+	                                   : mode == NM_802_11_MODE_INFRA ? _("Infrastructure")
+	                                   : _("Unknown");
 	info->nmc->allowed_fields[4].value = freq_str;
 	info->nmc->allowed_fields[5].value = bitrate_str;
 	info->nmc->allowed_fields[6].value = strength_str;

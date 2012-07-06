@@ -592,7 +592,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NULL };
+	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NM_SETTING_WIRELESS_MODE_AP, NULL };
 	const char *valid_bands[] = { "a", "bg", NULL };
 	GSList *iter;
 
@@ -889,15 +889,15 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:mode:
 	 *
-	 * WiFi network mode; one of 'infrastructure' or 'adhoc'.  If blank,
+	 * WiFi network mode; one of 'infrastructure', 'adhoc' or 'ap'.  If blank,
 	 * infrastructure is assumed.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
 		 g_param_spec_string (NM_SETTING_WIRELESS_MODE,
 						  "Mode",
-						  "WiFi network mode; one of 'infrastructure' or "
-						  "'adhoc'.  If blank, infrastructure is assumed.",
+						  "WiFi network mode; one of 'infrastructure', "
+						  "'adhoc' or 'ap'.  If blank, infrastructure is assumed.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

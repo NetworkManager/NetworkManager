@@ -363,11 +363,11 @@ gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
                                            gboolean is_broadcast,
-                                           guint32 adhoc_freq,
+                                           guint32 fixed_freq,
                                            gboolean has_scan_capa_ssid)
 {
 	NMSupplicantConfigPrivate *priv;
-	gboolean is_adhoc;
+	gboolean is_adhoc, is_ap;
 	const char *mode;
 	const GByteArray *id;
 
@@ -378,7 +378,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 	mode = nm_setting_wireless_get_mode (setting);
 	is_adhoc = (mode && !strcmp (mode, "adhoc")) ? TRUE : FALSE;
-	if (is_adhoc)
+	is_ap = (mode && !strcmp (mode, "ap")) ? TRUE : FALSE;
+	if (is_adhoc || is_ap)
 		priv->ap_scan = 2;
 	else if (is_broadcast == FALSE) {
 		/* drivers that support scanning specific SSIDs should use
@@ -395,27 +396,34 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 	if (is_adhoc) {
 		if (!nm_supplicant_config_add_option (self, "mode", "1", -1, FALSE)) {
-			nm_log_warn (LOGD_SUPPLICANT, "Error adding mode to supplicant config.");
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding mode=1 (adhoc) to supplicant config.");
 			return FALSE;
-		}
-
-		if (adhoc_freq) {
-			char *str_freq;
-
-			str_freq = g_strdup_printf ("%u", adhoc_freq);
-			if (!nm_supplicant_config_add_option (self, "frequency", str_freq, -1, FALSE)) {
-				g_free (str_freq);
-				nm_log_warn (LOGD_SUPPLICANT, "Error adding Ad-Hoc frequency to supplicant config.");
-				return FALSE;
-			}
-			g_free (str_freq);
 		}
 	}
 
-	/* Except for Ad-Hoc networks, request that the driver probe for the
+	if (is_ap) {
+		if (!nm_supplicant_config_add_option (self, "mode", "2", -1, FALSE)) {
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding mode=2 (ap) to supplicant config.");
+			return FALSE;
+		}
+	}
+
+	if ((is_adhoc || is_ap) && fixed_freq) {
+		char *str_freq;
+
+		str_freq = g_strdup_printf ("%u", fixed_freq);
+		if (!nm_supplicant_config_add_option (self, "frequency", str_freq, -1, FALSE)) {
+			g_free (str_freq);
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding Ad-Hoc/AP frequency to supplicant config.");
+			return FALSE;
+		}
+		g_free (str_freq);
+	}
+
+	/* Except for Ad-Hoc and Hotspot, request that the driver probe for the
 	 * specific SSID we want to associate with.
 	 */
-	if (!is_adhoc) {
+	if (!(is_adhoc || is_ap)) {
 		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1, FALSE))
 			return FALSE;
 	}

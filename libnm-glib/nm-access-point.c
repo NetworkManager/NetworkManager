@@ -347,6 +347,9 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 			return FALSE;
 		if (!strcmp (setting_mode, "adhoc") && (ap_mode != NM_802_11_MODE_ADHOC))
 			return FALSE;
+		/* Hotspot never matches against APs as it's a device-specific mode. */
+		if (!strcmp (setting_mode, "ap"))
+			return FALSE;
 	}
 
 	/* Band and Channel/Frequency */
@@ -658,7 +661,9 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	/**
 	 * NMAccessPoint:mode:
 	 *
-	 * The mode of the access point.
+	 * The mode of the access point; either "infrastructure" (a central
+	 * coordinator of the wireless network allowing clients to connect) or
+	 * "ad-hoc" (a network with no central controller).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,

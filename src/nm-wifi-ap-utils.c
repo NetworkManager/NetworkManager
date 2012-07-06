@@ -514,7 +514,8 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 		gboolean valid = FALSE;
 
 		/* Make sure the supplied mode matches the AP's */
-		if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		if (   !strcmp (mode, NM_SETTING_WIRELESS_MODE_INFRA)
+		    || !strcmp (mode, NM_SETTING_WIRELESS_MODE_AP)) {
 			if (ap_mode == NM_802_11_MODE_INFRA)
 				valid = TRUE;
 		} else if (!strcmp (mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {

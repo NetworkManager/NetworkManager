@@ -187,6 +187,9 @@ static int nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
 	case NL80211_IFTYPE_ADHOC:
 		info->mode = NM_802_11_MODE_ADHOC;
 		break;
+	case NL80211_IFTYPE_AP:
+		info->mode = NM_802_11_MODE_AP;
+		break;
 	case NL80211_IFTYPE_STATION:
 		info->mode = NM_802_11_MODE_INFRA;
 		break;

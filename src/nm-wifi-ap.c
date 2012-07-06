@@ -58,6 +58,7 @@ typedef struct
 
 	/* Non-scanned attributes */
 	gboolean			fake;	/* Whether or not the AP is from a scan */
+	gboolean            hotspot;    /* Whether the AP is a local device's hotspot network */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	glong				last_seen;	/* Last time the AP was seen in a scan in seconds */
 } NMAccessPointPrivate;
@@ -650,7 +651,10 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 			nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 		else if (!strcmp (mode, "adhoc"))
 			nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
-		else
+		else if (!strcmp (mode, "ap")) {
+			nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
+			NM_AP_GET_PRIVATE (ap)->hotspot = TRUE;
+		} else
 			goto error;
 	} else {
 		nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
@@ -975,6 +979,13 @@ void nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
 	}
 }
 
+gboolean
+nm_ap_is_hotspot (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+
+	return NM_AP_GET_PRIVATE (ap)->hotspot;
+}
 
 /*
  * Get/set functions for strength
@@ -1159,6 +1170,10 @@ nm_ap_check_compatible (NMAccessPoint *self,
 		if (!strcmp (mode, "infrastructure") && (priv->mode != NM_802_11_MODE_INFRA))
 			return FALSE;
 		if (!strcmp (mode, "adhoc") && (priv->mode != NM_802_11_MODE_ADHOC))
+			return FALSE;
+		if (   !strcmp (mode, "ap")
+		    && (priv->mode != NM_802_11_MODE_INFRA)
+		    && (priv->hotspot != TRUE))
 			return FALSE;
 	}
 

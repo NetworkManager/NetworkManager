@@ -96,7 +96,9 @@ gboolean
 wifi_utils_set_mode (WifiData *data, const NM80211Mode mode)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail ((mode == NM_802_11_MODE_INFRA) || (mode == NM_802_11_MODE_ADHOC), FALSE);
+	g_return_val_if_fail (   (mode == NM_802_11_MODE_INFRA)
+	                      || (mode == NM_802_11_MODE_AP)
+	                      || (mode == NM_802_11_MODE_ADHOC), FALSE);
 
 	/* nl80211 probably doesn't need this */
 	return data->set_mode ? data->set_mode (data, mode) : TRUE;

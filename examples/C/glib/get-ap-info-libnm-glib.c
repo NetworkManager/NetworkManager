@@ -133,7 +133,10 @@ show_access_point_info (NMAccessPoint *ap)
 
 	printf ("SSID:       %s\n", ssid_str);
 	printf ("BSSID:      %s\n", hwaddr);
-	printf ("Mode:       %s\n", mode == NM_802_11_MODE_ADHOC ? "Ad-Hoc" : mode == NM_802_11_MODE_INFRA ? "Infrastructure" : "Unknown");
+	printf ("Mode:       %s\n", mode == NM_802_11_MODE_ADHOC ? "Ad-Hoc"
+	                          : mode == NM_802_11_MODE_AP ? "AP"
+	                          : mode == NM_802_11_MODE_INFRA ? "Infrastructure"
+	                          : "Unknown");
 	printf ("Freq:       %s\n", freq_str);
 	printf ("Bitrate:    %s\n", bitrate_str);
 	printf ("Strength:   %s\n", strength_str);

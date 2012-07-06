@@ -118,6 +118,8 @@ wifi_wext_get_mode (WifiData *data)
 	switch (wrq.u.mode) {
 	case IW_MODE_ADHOC:
 		return NM_802_11_MODE_ADHOC;
+	case IW_MODE_MASTER:
+		return NM_802_11_MODE_AP;
 	case IW_MODE_INFRA:
 		return NM_802_11_MODE_INFRA;
 	default:
@@ -139,6 +141,9 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 	switch (mode) {
 	case NM_802_11_MODE_ADHOC:
 		wrq.u.mode = IW_MODE_ADHOC;
+		break;
+	case NM_802_11_MODE_AP:
+		wrq.u.mode = IW_MODE_MASTER;
 		break;
 	case NM_802_11_MODE_INFRA:
 		wrq.u.mode = IW_MODE_INFRA;

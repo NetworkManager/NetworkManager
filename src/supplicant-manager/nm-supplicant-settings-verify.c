@@ -91,7 +91,7 @@ static const struct Opt opt_table[] = {
 	{ "ssid",               TYPE_BYTES,   0, 32,FALSE,  NULL },
 	{ "bssid",              TYPE_KEYWORD, 0, 0, FALSE,  NULL },
 	{ "scan_ssid",          TYPE_INT,     0, 1, FALSE,  NULL },
-	{ "mode",               TYPE_INT,     0, 1, FALSE,  NULL },
+	{ "mode",               TYPE_INT,     0, 2, FALSE,  NULL },
 	{ "frequency",          TYPE_INT,     2412, 5825, FALSE,  NULL },
 	{ "auth_alg",           TYPE_KEYWORD, 0, 0, FALSE,  auth_alg_allowed },
 	{ "psk",                TYPE_BYTES,   0, 0, FALSE,  NULL },
