@@ -32,4 +32,5 @@ src/nm-manager.c
 src/nm-netlink-monitor.c
 src/settings/plugins/ifcfg-rh/reader.c
 src/settings/nm-settings-utils.c
+test/nm-online.c
 

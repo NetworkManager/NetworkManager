@@ -30,20 +30,24 @@
  * Robert Love <rml@novell.com>
  */
 
-#define PROGRESS_STEPS 15
+#include <config.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <locale.h>
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 
 #include "NetworkManager.h"
 #include "nm-glib-compat.h"
+
+#define PROGRESS_STEPS 15
 
 typedef struct 
 {
@@ -105,7 +109,7 @@ static gboolean handle_timeout (gpointer data)
 	Timeout *timeout = (Timeout *) data;
 
 	if (!timeout->quiet) {
-		g_print ("\rConnecting");
+		g_print (_("\rConnecting"));
 		for (; i > 0; i--)
 			putchar ((timeout->value >= (i * timeout->norm)) ? ' ' : '.');
 		if (timeout->value)
@@ -136,26 +140,33 @@ int main (int argc, char *argv[])
 	gboolean success;
 
 	GOptionEntry options[] = {
-		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, "Time to wait for a connection, in seconds (default is 30)", NULL},
-		{"exit", 'x', 0, G_OPTION_ARG_NONE, &exit_no_nm, "Exit immediately if NetworkManager is not running or connecting", NULL},
-		{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "Don't print anything", NULL},
+		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (default is 30)"), NULL},
+		{"exit", 'x', 0, G_OPTION_ARG_NONE, &exit_no_nm, N_("Exit immediately if NetworkManager is not running or connecting"), NULL},
+		{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, N_("Don't print anything"), NULL},
 		{NULL}
 	};
 
-	opt_ctx = g_option_context_new ("");
-	g_option_context_set_translation_domain (opt_ctx, "UTF-8");
+	/* Set locale to be able to use environment variables */
+	setlocale (LC_ALL, "");
+
+	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
+
+	opt_ctx = g_option_context_new (NULL);
+	g_option_context_set_translation_domain (opt_ctx, GETTEXT_PACKAGE);
 	g_option_context_set_ignore_unknown_options (opt_ctx, FALSE);
 	g_option_context_set_help_enabled (opt_ctx, TRUE);
 	g_option_context_add_main_entries (opt_ctx, options, NULL);
 
 	g_option_context_set_summary (opt_ctx,
-		"Waits for a successful connection in NetworkManager.");
+	                              _("Waits for a successful connection in NetworkManager."));
 
 	success = g_option_context_parse (opt_ctx, &argc, &argv, NULL);
 	g_option_context_free (opt_ctx);
 
 	if (!success) {
-		g_warning ("Invalid option.  Please use --help to see a list of valid options.");
+		g_warning (_("Invalid option.  Please use --help to see a list of valid options."));
 		return 2;
 	}
 	
@@ -164,7 +175,7 @@ int main (int argc, char *argv[])
 	else
 		timeout.value = 30;
 	if (timeout.value < 0 || timeout.value > 3600)  {
-		g_warning ("Invalid option.  Please use --help to see a list of valid options.");
+		g_warning (_("Invalid option.  Please use --help to see a list of valid options."));
 		return 2;
 	}
 

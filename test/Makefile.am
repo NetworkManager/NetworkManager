@@ -10,7 +10,8 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
 	-DNM_RUN_DIR=\"$(rundir)\" \
-	-DDATADIR=\"$(datadir)\"
+	-DDATADIR=\"$(datadir)\" \
+	-DNMLOCALEDIR=\"$(datadir)/locale\"
 
 bin_PROGRAMS = nm-tool nm-online
 
