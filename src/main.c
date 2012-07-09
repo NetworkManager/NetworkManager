@@ -385,14 +385,14 @@ main (int argc, char *argv[])
 		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &log_domains,
 		        /* Translators: Do not translate the values in the square brackets */
 		        N_("Log domains separated by ',': any combination of\n"
-		        "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
-		        "                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
-		        "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
-		        "                                           INFINIBAND,FIREWALL,ADSL]"),
+		        "                                                [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
+		        "                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
+		        "                                                 AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
+		        "                                                 INFINIBAND,FIREWALL,ADSL]"),
 		        "HW,RFKILL,WIFI" },
-		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, _("An http(s) address for checking internet connectivity") },
-		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, _("The interval between connectivity checks (in seconds)") },
-		{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &connectivity_response, _("The expected start of the response") },
+		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, _("An http(s) address for checking internet connectivity"), "http://example.com" },
+		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, _("The interval between connectivity checks (in seconds)"), "60" },
+		{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &connectivity_response, _("The expected start of the response"), N_("Bingo!") },
 		{NULL}
 	};
 
