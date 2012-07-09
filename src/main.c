@@ -390,9 +390,9 @@ main (int argc, char *argv[])
 		        "                                           AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
 		        "                                           INFINIBAND,FIREWALL,ADSL]"),
 		        "HW,RFKILL,WIFI" },
-		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, "A http(s) address to check internet connectivity" },
-		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, "the interval in seconds how often a connectivity check will be done" },
-		{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &connectivity_response, "the expected start of the response" },
+		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, _("An http(s) address for checking internet connectivity") },
+		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, _("The interval between connectivity checks (in seconds)") },
+		{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &connectivity_response, _("The expected start of the response") },
 		{NULL}
 	};
 
