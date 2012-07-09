@@ -111,7 +111,7 @@ nm_config_get_connectivity_uri (NMConfig *config)
 const guint
 nm_config_get_connectivity_interval (NMConfig *config)
 {
-	g_return_val_if_fail (config != NULL, -1);
+	g_return_val_if_fail (config != NULL, 0);
 
 	return config->connectivity_interval;
 }
