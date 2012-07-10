@@ -335,7 +335,7 @@ state_to_string (NMIP6DeviceState state)
 	case NM_IP6_DEVICE_GOT_LINK_LOCAL:
 		return "got-link-local";
 	case NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT:
-		return "got-ra";
+		return "got-router-advertisement";
 	case NM_IP6_DEVICE_GOT_ADDRESS:
 		return "got-address";
 	case NM_IP6_DEVICE_TIMED_OUT:
