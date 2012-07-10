@@ -568,12 +568,24 @@ find_plugin (GSList *list, const char *pname)
 	return obj;
 }
 
+static void
+add_keyfile_plugin (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GObject *keyfile_plugin;
+
+	keyfile_plugin = nm_settings_keyfile_plugin_new (priv->config_file);
+	g_assert (keyfile_plugin);
+	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
+}
+
 static gboolean
 load_plugins (NMSettings *self, const char **plugins, GError **error)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *list = NULL;
 	const char **iter;
+	gboolean keyfile_added = FALSE;
 	gboolean success = TRUE;
 
 	for (iter = plugins; *iter; iter++) {
@@ -587,10 +599,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		while (isblank (*pname))
 			pname++;
 
-		/* keyfile plugin built in now */
-		if (!strcmp (pname, "keyfile"))
-			continue;
-
 		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */
 		if (!strcmp (pname, "ifcfg-fedora"))
 			pname = "ifcfg-rh";
@@ -598,6 +606,15 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		obj = find_plugin (list, pname);
 		if (obj)
 			continue;
+
+		/* keyfile plugin is built-in now */
+		if (strcmp (pname, "keyfile") == 0) {
+			if (!keyfile_added) {
+				add_keyfile_plugin (self);
+				keyfile_added = TRUE;
+			}
+			continue;
+		}
 
 		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 		path = g_module_build_path (PLUGINDIR, full_name);
@@ -638,6 +655,10 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
 		list = g_slist_append (list, obj);
 	}
+
+	/* If keyfile plugin was not among configured plugins, add it as the last one */
+	if (!keyfile_added)
+		add_keyfile_plugin (self);
 
 	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
 	g_slist_free (list);
@@ -1732,7 +1753,6 @@ nm_settings_new (const char *config_file,
 {
 	NMSettings *self;
 	NMSettingsPrivate *priv;
-	GObject *keyfile_plugin;
 
 	self = g_object_new (NM_TYPE_SETTINGS, NULL);
 	if (!self)
@@ -1751,11 +1771,6 @@ nm_settings_new (const char *config_file,
 			return NULL;
 		}
 	}
-
-	/* Add the keyfile plugin last */
-	keyfile_plugin = nm_settings_keyfile_plugin_new (config_file);
-	g_assert (keyfile_plugin);
-	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
 
 	unmanaged_specs_changed (NULL, self);
 
