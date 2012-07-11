@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 Red Hat, Inc.
+ * (C) Copyright 2011 - 2012 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
@@ -269,8 +269,8 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 
 /**
  * nm_setting_vlan_get_num_priorities:
- * @map: the type of priority map
  * @setting: the #NMSettingVlan
+ * @map: the type of priority map
  *
  * Returns the number of entires in the
  * #NMSettingVlan:ingress_priority_map or #NMSettingVlan:egress_priority_map
@@ -289,8 +289,8 @@ nm_setting_vlan_get_num_priorities (NMSettingVlan *setting, NMVlanPriorityMap ma
 
 /**
  * nm_setting_vlan_get_priority:
- * @map: the type of priority map
  * @setting: the #NMSettingVlan
+ * @map: the type of priority map
  * @idx: the zero-based index of the ingress/egress priority map entry
  * @out_from: (out): on return the value of the priority map's 'from' item
  * @out_to: (out): on return the value of priority map's 'to' item
@@ -327,8 +327,8 @@ nm_setting_vlan_get_priority (NMSettingVlan *setting,
 
 /**
  * nm_setting_vlan_add_priority:
- * @map: the type of priority map
  * @setting: the #NMSettingVlan
+ * @map: the type of priority map
  * @from: the priority to map to @to
  * @to: the priority to map @from to
  *
@@ -377,8 +377,8 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
 
 /**
  * nm_setting_vlan_remove_priority:
- * @map: the type of priority map
  * @setting: the #NMSettingVlan
+ * @map: the type of priority map
  * @idx: the zero-based index of the priority map to remove
  *
  * Removes the priority map at index @idx from the
@@ -405,8 +405,8 @@ nm_setting_vlan_remove_priority (NMSettingVlan *setting,
 
 /**
  * nm_setting_vlan_clear_priorities:
- * @map: the type of priority map
  * @setting: the #NMSettingVlan
+ * @map: the type of priority map
  *
  * Clear all the entires from #NMSettingVlan:ingress_priority_map or
  * #NMSettingVlan:egress_priority_map properties.
