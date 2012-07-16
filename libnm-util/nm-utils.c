@@ -21,7 +21,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2010 Red Hat, Inc.
+ * (C) Copyright 2005 - 2012 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -2215,6 +2215,20 @@ out:
 	}
 
 	return ret;
+}
+
+/**
+ * nm_utils_file_is_pkcs12:
+ * @filename: name of the file to test
+ *
+ * Utility function to find out if the @filename is in PKCS#12 format.
+ *
+ * Returns: TRUE if the file is PKCS#12, FALSE if it is not
+ **/
+gboolean
+nm_utils_file_is_pkcs12 (const char *filename)
+{
+	return crypto_is_pkcs12_file (filename, NULL);
 }
 
 /* Band, channel/frequency stuff for wireless */

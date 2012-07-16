@@ -20,7 +20,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2011 Red Hat, Inc.
+ * (C) Copyright 2005 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_UTILS_H
@@ -113,6 +113,7 @@ GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
+gboolean nm_utils_file_is_pkcs12 (const char *filename);
 
 guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
 guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
