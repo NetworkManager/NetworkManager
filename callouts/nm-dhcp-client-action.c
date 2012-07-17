@@ -15,18 +15,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
+
+/* for environ */
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
 #include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
 
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
@@ -178,9 +178,7 @@ static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
 static dbus_bool_t
 build_message (DBusMessage * message)
 {
-	char ** env = NULL;
-	char ** item;
-	char ** p;
+	char **item;
 	dbus_bool_t success = FALSE;
 	DBusMessageIter iter, iter_dict;
 
@@ -189,31 +187,37 @@ build_message (DBusMessage * message)
 		goto out;
 
 	/* List environment and format for dbus dict */
-	env = g_listenv ();
-	for (item = env; *item; item++) {
-		gboolean ignore_item = FALSE;
-		const char * val = g_getenv (*item);
+	for (item = environ; *item; item++) {
+		char *name, *val, **p;
+
+		/* Split on the = */
+		name = strdup (*item);
+		val = strchr (name, '=');
+		if (!val)
+			goto next;
+		*val++ = '\0';
+		if (!strlen (val))
+			val = NULL;
 
 		/* Ignore non-DCHP-related environment variables */
-		for (p = (char **) ignore; *p && !ignore_item; p++) {
-			if (strncmp (*item, *p, strlen (*p)) == 0)
-				ignore_item = TRUE;
+		for (p = (char **) ignore; *p; p++) {
+			if (strncmp (name, *p, strlen (*p)) == 0)
+				goto next;
 		}
-		if (ignore_item)
-			continue;
 
 		/* Value passed as a byte array rather than a string, because there are
 		 * no character encoding guarantees with DHCP, and D-Bus requires
 		 * strings to be UTF-8.
 		 */
 		if (!wpa_dbus_dict_append_byte_array (&iter_dict,
-		                                      *item,
+		                                      name,
 		                                      val ? val : "\0",
 		                                      val ? strlen (val) : 1)) {
-			fprintf (stderr, "Error: failed to add item '%s' to signal\n",
-			         *item);
-			goto out;
+			fprintf (stderr, "Error: failed to add item '%s' to signal\n", name);
 		}
+
+	next:
+		free (name);
 	}
 
 	if (!wpa_dbus_dict_close_write (&iter, &iter_dict))
@@ -222,7 +226,6 @@ build_message (DBusMessage * message)
 	success = TRUE;
 
 out:
-	g_strfreev (env);
 	return success;
 }
 
@@ -283,8 +286,6 @@ main (int argc, char *argv[])
 	DBusConnection * connection;
 	DBusMessage * message;
 	dbus_bool_t result;
-
-	g_type_init ();
 
 	/* Get a connection to the system bus */
 	connection = dbus_init ();

@@ -24,14 +24,10 @@ nm_dhcp_client_action_SOURCES = \
 
 nm_dhcp_client_action_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
-nm_dhcp_client_action_LDADD = \
-	$(DBUS_LIBS) \
-	$(GLIB_LIBS)
+nm_dhcp_client_action_LDADD = $(DBUS_LIBS)
 
 
 nm_avahi_autoipd_action_SOURCES = \
