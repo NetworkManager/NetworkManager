@@ -1035,6 +1035,17 @@ init_async (GAsyncInitable *initable, int io_priority,
 	                         G_TYPE_INVALID);
 }
 
+static gboolean
+init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return TRUE;
+}
+
 static void
 dispose (GObject *object)
 {
@@ -1198,4 +1209,5 @@ static void
 nm_remote_settings_async_initable_iface_init (GAsyncInitableIface *iface)
 {
 	iface->init_async = init_async;
+	iface->init_finish = init_finish;
 }

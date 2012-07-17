@@ -205,14 +205,10 @@ init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 {
 	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
 
-	/* This is needed for now because of bug 667375; it can go away
-	 * when we depend on glib >= 2.38
-	 */
-
 	if (g_simple_async_result_propagate_error (simple, error))
 		return FALSE;
 	else
-		return g_simple_async_result_get_op_res_gboolean (simple);
+		return TRUE;
 }
 
 static void
