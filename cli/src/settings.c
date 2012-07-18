@@ -258,6 +258,7 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, 16),         /* 7 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, 15),           /* 8 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_MAY_FAIL, 12),                /* 9 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, 15),             /* 10 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
@@ -269,7 +270,8 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
                                               NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES","\
                                               NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS","\
                                               NM_SETTING_IP6_CONFIG_NEVER_DEFAULT","\
-                                              NM_SETTING_IP6_CONFIG_MAY_FAIL
+                                              NM_SETTING_IP6_CONFIG_MAY_FAIL","\
+                                              NM_SETTING_IP6_CONFIG_IP6_PRIVACY
 #define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
@@ -634,6 +636,21 @@ vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 		g_string_truncate (priorities, priorities->len-1);  /* chop off trailing ',' */
 
 	return g_string_free (priorities, FALSE);
+}
+
+static char *
+ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy)
+{
+	switch (ip6_privacy) {
+	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
+		return g_strdup_printf (_("%d (disabled)"), ip6_privacy);
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
+		return g_strdup_printf (_("%d (enabled, prefer public IP)"), ip6_privacy);
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
+		return g_strdup_printf (_("%d (enabled, prefer temporary IP)"), ip6_privacy);
+	default:
+		return g_strdup_printf (_("%d (unknown)"), ip6_privacy);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1169,6 +1186,7 @@ gboolean
 setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 {
 	GString *dns_str, *dns_search_str, *addr_str, *route_str;
+	char *ip6_privacy_str;
 	int i, num;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
@@ -1274,6 +1292,8 @@ setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 		g_string_append (route_str, " }");
 	}
 
+	ip6_privacy_str = ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6));
+
 	nmc->allowed_fields[0].value = NM_SETTING_IP6_CONFIG_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_ip6_config_get_method (s_ip6);
 	nmc->allowed_fields[2].value = dns_str->str;
@@ -1284,6 +1304,7 @@ setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 	nmc->allowed_fields[7].value = nm_setting_ip6_config_get_ignore_auto_dns (s_ip6) ? _("yes") : _("no");
 	nmc->allowed_fields[8].value = nm_setting_ip6_config_get_never_default (s_ip6) ? _("yes") : _("no");
 	nmc->allowed_fields[9].value = nm_setting_ip6_config_get_may_fail (s_ip6) ? _("yes") : _("no");
+	nmc->allowed_fields[10].value = ip6_privacy_str;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -1292,6 +1313,7 @@ setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 	g_string_free (dns_search_str, TRUE);
 	g_string_free (addr_str, TRUE);
 	g_string_free (route_str, TRUE);
+	g_free (ip6_privacy_str);
 
 	return TRUE;
 }
