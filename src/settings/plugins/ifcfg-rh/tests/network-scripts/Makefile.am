@@ -1,5 +1,6 @@
 EXTRA_DIST = \
 	ifcfg-test-minimal \
+	ifcfg-test-variables-corner-cases-1 \
 	ifcfg-test-nm-controlled \
 	ifcfg-test-wired-static \
 	ifcfg-test-wired-static-bootproto \

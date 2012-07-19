@@ -336,6 +336,151 @@ test_read_minimal (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_variables_corner_cases (const char *file, const char *expected_id)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const GByteArray *array;
+	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
+	const char *expected_zone = "'";
+	guint64 expected_timestamp = 0;
+
+	connection = connection_from_file (file,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "corner-cases-read", "failed to read %s: %s", file, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "corner-cases-verify", "failed to verify %s: %s", file, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = nm_connection_get_setting_connection (connection);
+	ASSERT (s_con != NULL,
+	        "corner-cases-verify-connection", "failed to verify %s: missing %s setting",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID  - that is NAME= variable */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "corner-cases-verify-connection", "failed to verify %s: missing %s / %s key",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "corner-cases-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ZONE */
+	tmp = nm_setting_connection_get_zone (s_con);
+	ASSERT (tmp != NULL,
+	        "corner-cases-verify-connection", "failed to verify %s: missing %s / %s key",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_zone) == 0,
+	        "corner-cases-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+
+	/* Timestamp */
+	ASSERT (nm_setting_connection_get_timestamp (s_con) == expected_timestamp,
+	        "corner-cases-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_TIMESTAMP);
+
+	/* Autoconnect */
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
+	        "corner-cases-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        file,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_AUTOCONNECT);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	ASSERT (s_wired != NULL,
+	        "corner-cases-verify-wired", "failed to verify %s: missing %s setting",
+	        file,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* MAC address */
+	array = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (array != NULL,
+	        "corner-cases-verify-wired", "failed to verify %s: missing %s / %s key",
+	        file,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (array->len == ETH_ALEN,
+	        "corner-cases-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
+	        file,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	        "corner-cases-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+
+	ASSERT (nm_setting_wired_get_mtu (s_wired) == 0,
+	        "corner-cases-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MTU);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	ASSERT (s_ip4 != NULL,
+	        "corner-cases-verify-ip4", "failed to verify %s: missing %s setting",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "corner-cases-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE,
+	        "corner-cases-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        file,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_UNMANAGED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-nm-controlled"
 
 static void
@@ -12729,6 +12874,8 @@ test_write_infiniband (void)
 
 #define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
 
+#define TEST_IFCFG_VARIABLES_CORNER_CASES_1 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1"
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -12742,6 +12889,7 @@ int main (int argc, char **argv)
 	/* The tests */
 	test_read_unmanaged ();
 	test_read_minimal ();
+	test_read_variables_corner_cases (TEST_IFCFG_VARIABLES_CORNER_CASES_1, "\"");
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static");
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto");
 	test_read_wired_static_no_prefix (8);

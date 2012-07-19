@@ -117,7 +117,7 @@ svUnescape(char *s) {
     int len, i;
 
     len = strlen(s);
-    if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
+    if (len >= 2 && (s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
 	i = len - 2;
 	if (i == 0)
 	  s[0] = '\0';

@@ -1,0 +1,8 @@
+DEVICE=eth0
+HWADDR=00:16:41:11:22:33
+
+# Variable with only single character (double quote)
+NAME="
+
+# Variable with only single character (quote)
+ZONE='
