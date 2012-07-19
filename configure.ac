@@ -368,14 +368,14 @@ if test "x$with_systemdsystemunitdir" != xno; then
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
-AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd], [Build NetworkManager with specific session tracking support]))
+AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|ck|none], [Build NetworkManager with specific session tracking support]))
 if test "z$with_session_tracking" = "z"; then
     # Default to ConsoleKit session tracking like we used before
     with_session_tracking=ck
 fi
 
 case $with_session_tracking in
-    ck|none) ;;
+    ck|none|no) ;;
     systemd)
         PKG_CHECK_MODULES(SYSTEMD, [libsystemd-login])
         ;;
@@ -464,7 +464,7 @@ else
 fi
 AM_CONDITIONAL(WITH_POLKIT, test "${enable_polkit}" = "yes")
 
-AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
+AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss|gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 
 with_nss=no
 with_gnutls=no
