@@ -12511,8 +12511,6 @@ test_write_bond_slave (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
 	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
 	GByteArray *mac;
 	guint32 mtu = 1492;
@@ -12563,29 +12561,6 @@ test_write_bond_slave (void)
 	              NM_SETTING_WIRED_MTU, mtu,
 	              NULL);
 	g_byte_array_free (mac, TRUE);
-
-	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-			"bond-slave-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-
-	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-	              NULL);
-
-	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	ASSERT (s_ip6 != NULL,
-	        "bond-slave-write", "failed to allocate new %s setting",
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-
-	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
-	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "bond-slave-write", "failed to verify connection: %s",

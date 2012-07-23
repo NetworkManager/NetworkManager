@@ -2009,16 +2009,16 @@ write_connection (NMConnection *connection,
 			goto out;
 	}
 
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4 || !utils_disabling_ip4_config_allowed (connection)) {
+	if (!utils_ignore_ip_config (connection)) {
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		if (!write_ip4_setting (connection, ifcfg, error))
 			goto out;
-	}
 
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (s_ip6) {
-		if (!write_ip6_setting (connection, ifcfg, error))
-			goto out;
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6) {
+			if (!write_ip6_setting (connection, ifcfg, error))
+				goto out;
+		}
 	}
 
 	write_connection_setting (s_con, ifcfg);

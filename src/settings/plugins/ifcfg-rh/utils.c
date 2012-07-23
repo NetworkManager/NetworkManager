@@ -444,14 +444,16 @@ gone:
 }
 
 gboolean
-utils_disabling_ip4_config_allowed (NMConnection *connection)
+utils_ignore_ip_config (NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	/* bonding slaves are allowed to have no ip configuration */
+	/* bonding slaves have no IP configuration, and the system
+	 * scripts just ignore it if it's there.
+	 */
 	if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
 		return TRUE;
 

@@ -52,7 +52,7 @@ shvarFile *utils_get_route6_ifcfg (const char *parent, gboolean should_create);
 
 gboolean utils_has_route_file_new_syntax (const char *filename);
 
-gboolean utils_disabling_ip4_config_allowed (NMConnection *connection);
+gboolean utils_ignore_ip_config (NMConnection *connection);
 
 #endif  /* _UTILS_H_ */
 

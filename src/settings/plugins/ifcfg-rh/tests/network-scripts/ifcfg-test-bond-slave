@@ -2,3 +2,5 @@ DEVICE=eth0
 HWADDR=00:22:15:59:62:97
 ONBOOT=no
 MASTER=bond0
+# This should be ignored
+BOOTPROTO=dhcp

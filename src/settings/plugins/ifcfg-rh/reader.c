@@ -4087,6 +4087,9 @@ connection_from_file (const char *filename,
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
+	} else if (s_ip6 && utils_ignore_ip_config (connection)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring IP6 configuration");
+		g_object_unref (s_ip6);
 	} else if (s_ip6) {
 		const char *method;
 
@@ -4096,14 +4099,14 @@ connection_from_file (const char *filename,
 			can_disable_ip4 = TRUE;
 	}
 
-	if (utils_disabling_ip4_config_allowed (connection))
-		can_disable_ip4 = TRUE;
-
 	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, can_disable_ip4, &error);
 	if (error) {
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
+	} else if (s_ip4 && utils_ignore_ip_config (connection)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring IP4 configuration");
+		g_object_unref (s_ip4);
 	} else if (s_ip4)
 		nm_connection_add_setting (connection, s_ip4);
 
