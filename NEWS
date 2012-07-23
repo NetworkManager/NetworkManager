@@ -16,6 +16,9 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Add on-demand WiFi scan support
 * Fix IPv6 default gateway handling for DHCPv6
 * Add Vala language bindings
+* Fix various crashes and issues in the ifcfg-rh system settings plugin
+* Fix race with multiple interfaces running DHCP at the same time
+* Add Linux From Scratch (LFS) support
 
 
 ==============================================
