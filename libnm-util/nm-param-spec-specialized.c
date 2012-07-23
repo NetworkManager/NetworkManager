@@ -372,7 +372,7 @@ _gvalues_compare_map (const GValue *value1, const GValue *value2)
 }
 
 static gint
-nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
+_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 {
 	GValueArray *values1, *values2;
 	GValue *tmp_val;
@@ -430,7 +430,7 @@ nm_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 }
 
 static gint
-nm_gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
+_gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
 {
 	GValueArray *values1, *values2;
 	GValue *tmp_val;
@@ -499,9 +499,9 @@ _gvalues_compare_struct (const GValue *value1, const GValue *value2)
 	 */
 
 	if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ADDRESS)) {
-		return nm_gvalue_ip6_address_compare (value1, value2);
+		return _gvalue_ip6_address_compare (value1, value2);
 	} else if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ROUTE)) {
-		return nm_gvalue_ip6_route_compare (value1, value2);
+		return _gvalue_ip6_route_compare (value1, value2);
 	} else {
 		g_warning ("Don't know how to compare structures");
 		return (value1 == value2);

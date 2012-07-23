@@ -486,14 +486,9 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
-/**
- * nm_connection_get_type_setting:
- * @connection: a #NMConnection
- *
- * Returns: (transfer none): the #NMSetting of the connection base type
- */
+/* not exposed until we actually need it */
 static NMSetting *
-nm_connection_get_type_setting (NMConnection *connection)
+_get_type_setting (NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	const char *type;
@@ -1223,7 +1218,7 @@ nm_connection_get_virtual_iface_name (NMConnection *connection)
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	base = nm_connection_get_type_setting (connection);
+	base = _get_type_setting (connection);
 	g_assert (base);
 
 	return nm_setting_get_virtual_iface_name (base);
