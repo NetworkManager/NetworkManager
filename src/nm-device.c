@@ -2478,7 +2478,8 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	state = nm_device_get_state (self);
-	g_warn_if_fail (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_NEED_AUTH);
+	if (nm_act_request_get_assumed (priv->act_request) == FALSE)
+		g_warn_if_fail (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_NEED_AUTH);
 
 	/* Add the interface to the specified firewall zone */
 	connection = nm_device_get_connection (self);
