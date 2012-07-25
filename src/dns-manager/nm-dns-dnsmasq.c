@@ -41,6 +41,7 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
 #define PIDFILE LOCALSTATEDIR "/run/nm-dns-dnsmasq.pid"
 #define CONFFILE LOCALSTATEDIR "/run/nm-dns-dnsmasq.conf"
+#define CONFDIR SYSCONFDIR "/NetworkManager/dnsmasq.d"
 
 typedef struct {
 	guint32 foo;
@@ -246,7 +247,7 @@ update (NMDnsPlugin *plugin,
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	GString *conf;
 	GSList *iter;
-	const char *argv[11];
+	const char *argv[12];
 	GError *error = NULL;
 	int ignored;
 	GPid pid = 0;
@@ -309,7 +310,8 @@ update (NMDnsPlugin *plugin,
 	argv[7] = "--conf-file=" CONFFILE;
 	argv[8] = "--cache-size=400";
 	argv[9] = "--proxy-dnssec"; /* Allow DNSSEC to pass through */
-	argv[10] = NULL;
+	argv[10] = "--conf-dir=" CONFDIR;
+	argv[11] = NULL;
 
 	/* And finally spawn dnsmasq */
 	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");

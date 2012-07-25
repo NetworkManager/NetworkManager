@@ -25,7 +25,8 @@ libdns_manager_la_CPPFLAGS = \
 	$(LIBNL_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DLOCALSTATEDIR=\"$(localstatedir)\"
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libdns_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
