@@ -1230,7 +1230,7 @@ find_device_for_connection (NmCli *nmc,
 				active = nm_device_get_active_connection (*device);
 
 			if (!active) {
-				g_set_error (error, 0, 0, _("no active connection on device '%s'"), iface);
+				g_set_error (error, NMCLI_ERROR, 0, _("no active connection on device '%s'"), iface);
 				return FALSE;
 			}
 			*spec_object = nm_object_get_path (NM_OBJECT (active));
@@ -1238,7 +1238,7 @@ find_device_for_connection (NmCli *nmc,
 		} else {
 			active = get_default_active_connection (nmc, device);
 			if (!active) {
-				g_set_error (error, 0, 0, _("no active connection or device"));
+				g_set_error_literal (error, NMCLI_ERROR, 0, _("no active connection or device"));
 				return FALSE;
 			}
 			*spec_object = nm_object_get_path (NM_OBJECT (active));
@@ -1309,9 +1309,11 @@ find_device_for_connection (NmCli *nmc,
 			return TRUE;
 		} else {
 			if (iface)
-				g_set_error (error, 0, 0, _("device '%s' not compatible with connection '%s'"), iface, nm_setting_connection_get_id (s_con));
+				g_set_error (error, NMCLI_ERROR, 0, _("device '%s' not compatible with connection '%s'"),
+				             iface, nm_setting_connection_get_id (s_con));
 			else
-				g_set_error (error, 0, 0, _("no device found for connection '%s'"), nm_setting_connection_get_id (s_con));
+				g_set_error (error, NMCLI_ERROR, 0, _("no device found for connection '%s'"),
+				             nm_setting_connection_get_id (s_con));
 			return FALSE;
 		}
 	}

@@ -57,6 +57,18 @@ typedef struct {
 GMainLoop *loop = NULL;
 
 
+/* Get an error quark for use with GError */
+GQuark
+nmcli_error_quark (void)
+{
+	static GQuark error_quark = 0;
+
+	if (G_UNLIKELY (error_quark == 0))
+		error_quark = g_quark_from_static_string ("nmcli-error-quark");
+
+	return error_quark;
+}
+
 static void
 usage (const char *prog_name)
 {

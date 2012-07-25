@@ -100,7 +100,7 @@ nmc_ip4_address_as_string (guint32 ip, GError **error)
 	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
 		return g_strdup (buf);
 	} else {
-		g_set_error (error, 0, 0, _("Error converting IP4 address '0x%X' to text form"),
+		g_set_error (error, NMCLI_ERROR, 0, _("Error converting IP4 address '0x%X' to text form"),
 		             ntohl (tmp_addr.s_addr));
 		return NULL;
 	}
@@ -128,7 +128,7 @@ nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error)
 			g_string_append_printf (ip6_str, "%02X", ip->s6_addr[0]);
 			for (j = 1; j < 16; j++)
 				g_string_append_printf (ip6_str, " %02X", ip->s6_addr[j]);
-			g_set_error (error, 0, 0, _("Error converting IP6 address '%s' to text form"),
+			g_set_error (error, NMCLI_ERROR, 0, _("Error converting IP6 address '%s' to text form"),
 			             ip6_str->str);
 			g_string_free (ip6_str, TRUE);
 		}
@@ -229,10 +229,10 @@ parse_output_fields (const char *fields_str, const NmcOutputField fields_array[]
 		}
 		if (fields_array[i].name == NULL) {
 			if (!strcasecmp (*iter, "all") || !strcasecmp (*iter, "common"))
-				g_set_error (error, 0, 0, _("field '%s' has to be alone"), *iter);
+				g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), *iter);
 
 			else
-				g_set_error (error, 0, 1, _("invalid field '%s'"), *iter);
+				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'"), *iter);
 			g_array_free (array, TRUE);
 			array = NULL;
 			goto done;
@@ -251,11 +251,11 @@ nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError 
 
 	if (print_output == NMC_PRINT_TERSE) {
 		if (!fields) {
-			g_set_error (error, 0, 0, _("Option '--terse' requires specifying '--fields'"));
+			g_set_error_literal (error, NMCLI_ERROR, 0, _("Option '--terse' requires specifying '--fields'"));
 			return FALSE;
 		} else if (   !strcasecmp (fields, "all")
 		           || !strcasecmp (fields, "common")) {
-			g_set_error (error, 0, 0, _("Option '--terse' requires specific '--fields' option values , not '%s'"), fields);
+			g_set_error (error, NMCLI_ERROR, 0, _("Option '--terse' requires specific '--fields' option values , not '%s'"), fields);
 			return FALSE;
 		}
 	}
@@ -468,7 +468,7 @@ nmc_is_nm_running (NmCli *nmc, GError **error)
 		g_string_printf (nmc->return_text, _("Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		if (error)
-			g_set_error (error, 0, 0, "%s", nmc->return_text->str);
+			g_set_error_literal (error, NMCLI_ERROR, 0, nmc->return_text->str);
 		goto done;
 	}
 

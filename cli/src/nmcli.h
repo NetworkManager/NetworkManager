@@ -119,4 +119,8 @@ typedef struct _NmCli {
 	gboolean nocheck_ver;                             /* Don't check nmcli and NM versions: option '--nocheck' */
 } NmCli;
 
+/* Error quark for GError domain */
+#define NMCLI_ERROR (nmcli_error_quark ())
+GQuark nmcli_error_quark (void);
+
 #endif /* NMC_NMCLI_H */
