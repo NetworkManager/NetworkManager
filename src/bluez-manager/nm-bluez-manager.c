@@ -185,7 +185,7 @@ default_adapter_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	                            G_TYPE_INVALID)) {
 		/* Ignore "No such adapter" errors; just means bluetooth isn't active */
 		if (   !dbus_g_error_has_name (err, "org.bluez.Error.NoSuchAdapter")
-		    && !dubs_g_error_has_name (err, "org.freedesktop.systemd1.LoadFailed")
+		    && !dbus_g_error_has_name (err, "org.freedesktop.systemd1.LoadFailed")
 		    && !g_error_matches (err, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)) {
 			nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
 			             err && err->message ? err->message : "(unknown)");
