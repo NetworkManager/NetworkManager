@@ -22,7 +22,7 @@
 .\"
 .\" Copyright (C) 2010 - 2012 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "29 May 2012"
+.TH NMCLI "1" "26 July 2012"
 
 .SH NAME
 nmcli \(en command\(hyline tool for controlling NetworkManager
@@ -455,6 +455,12 @@ Connection activation failed
 Connection deactivation failed
 .IP "6" 4
 Disconnecting device failed
+.IP "7" 4
+Connection deletion failed
+.IP "8" 4
+NetworkManager is not running
+.IP "9" 4
+\fInmcli\fP and \fINetworkManager\fP versions mismatch
 
 .SH EXAMPLES
 .IP "\fB\f(CWnmcli \-t \-f RUNNING nm\fP\fP"
