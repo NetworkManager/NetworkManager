@@ -28,7 +28,7 @@
 #define NM_DNS_BIND(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DNS_BIND, NMDnsBind))
 #define NM_DNS_BIND_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DNS_BIND, NMDnsBindClass))
 #define NM_IS_DNS_BIND(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DNS_BIND))
-#define NM_IS_DNS_BIND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DNS_BIND))
+#define NM_IS_DNS_BIND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DNS_BIND))
 #define NM_DNS_BIND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DNS_BIND, NMDnsBindClass))
 
 typedef struct {
