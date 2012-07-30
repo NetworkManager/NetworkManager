@@ -157,7 +157,7 @@ un-authenticated connections and that additional credentials are required to
 successfully connect to this network.
 
 
-* VPN re-connect
+* VPN re-connect (bgo #349151)
 
 NM should remember whether a VPN was connected if a connection disconnects
 (like WiFi drops out or short carrier drop) or if the laptop goes to sleep.
@@ -167,7 +167,7 @@ the VPN because WiFi choked for 10 seconds, but reconnect the VPN if it was
 connected before the drop.
 
 
-* VPN autoconnect
+* VPN autoconnect (bgo #560471)
 
 We should add a property to the NMSettingConnection object in
 libnm-util/nm-setting-connection.c called "vpns" that is a string list,
