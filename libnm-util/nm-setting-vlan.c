@@ -614,8 +614,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * a default name will be constructed from the interface described by the
 	 * parent interface and the #NMSettingVlan:id , ex 'eth2.1'. The parent
 	 * interface may be given by the #NMSettingVlan:parent property or by a
-	 * hardware address property, eg #NMSettingWired:mac-address or
-	 * #NMSettingInfiniband:mac-address.
+	 * hardware address property, eg #NMSettingWired:mac-address.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IFACE_NAME,
@@ -627,8 +626,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     "parent interface and the 'id' property, ex "
 		                     "'eth2.1'. The parent interface may be given by "
 		                     "the 'parent' property or by a hardware address "
-		                     "property, eg the 'wired' or 'infiniband' "
-		                     "settings' 'mac-address' property.",
+		                     "property, eg the 'wired' settings' 'mac-address' "
+		                     "property.",
 		                     NULL,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
@@ -638,8 +637,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * If given, specifies the parent interface name or parent connection UUID
 	 * from which this VLAN interface should be created.  If this property is
 	 * not specified, the connection must contain a hardware address in a
-	 * hardware-specific setting, like #NMSettingWired:mac-address or
-	 * #NMSettingInfiniband:mac-address.
+	 * hardware-specific setting, like #NMSettingWired:mac-address.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
@@ -650,8 +648,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     "interface should be created.  If this property is "
 		                     "not specified, the connection must contain a "
 		                     "hardware address in a hardware-specific setting, "
-		                     "like the 'wired' or 'infiniband' settings' "
-		                     "'mac-address' property.",
+		                     "like the 'wired' settings' 'mac-address' property.",
 		                     NULL,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
