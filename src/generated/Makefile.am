@@ -57,8 +57,11 @@ INCLUDES = \
 	-I$(top_srcdir)/src/firewall-manager \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/wifi \
-	-I$(top_srcdir)/src/wimax \
 	-I$(top_srcdir)/libnm-util
+
+if WITH_WIMAX
+INCLUDES += -I$(top_srcdir)/src/wimax
+endif
 
 libnm_generated_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
