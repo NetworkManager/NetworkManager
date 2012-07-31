@@ -838,6 +838,71 @@ test18_read_static_ipv6 (const char *path)
 	g_object_unref (connection);
 }
 
+static void
+test19_read_static_ipv4_plen (const char *path)
+{
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	GError *error = NULL;
+	const char *expected_address = "10.0.0.3";
+	guint32 expected_prefix = 8;
+	NMIP4Address *ip4_addr;
+	struct in_addr addr;
+#define TEST19_NAME "wired-static-verify-ip4-plen"
+	if_block *block = NULL;
+
+	const char* file = "test19-" TEST19_NAME;
+
+	init_ifparser_with_file (path, file);
+	block = ifparser_getfirst ();
+	connection = nm_connection_new();
+	ifupdown_update_connection_from_if_block(connection, block, &error);
+
+	ASSERT (connection != NULL,
+			TEST19_NAME, "failed to read %s: %s", file, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+			TEST19_NAME, "failed to verify %s: %s", file, error->message);
+
+	ASSERT (unmanaged == NULL,
+			TEST19_NAME, "failed to verify %s: unexpected unmanaged value", file);
+
+	/* ===== IPv4 SETTING ===== */
+
+	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
+			TEST19_NAME, "failed to verify %s: couldn't convert IP address #1",
+			file);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	ASSERT (s_ip4 != NULL,
+			TEST19_NAME, "failed to verify %s: missing %s setting",
+			file,
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* IP addresses */
+	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
+			TEST19_NAME, "failed to verify %s: unexpected %s / %s key value",
+			file,
+			NM_SETTING_IP4_CONFIG_SETTING_NAME,
+			NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	ASSERT (ip4_addr,
+			TEST19_NAME, "failed to verify %s: missing IP4 address #1",
+			file);
+
+	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
+			TEST19_NAME, "failed to verify %s: unexpected IP4 address prefix",
+			file);
+
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+			TEST19_NAME, "failed to verify %s: unexpected IP4 address: %s",
+			file, addr.s_addr);
+
+	g_object_unref (connection);
+}
+
 
 #if GLIB_CHECK_VERSION(2,25,12)
 typedef GTestFixtureFunc TCFunc;
@@ -881,6 +946,7 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test16_missing_newline, TEST_ENI_DIR));
 	g_test_suite_add (suite, TESTCASE (test17_read_static_ipv4, TEST_ENI_DIR));
 	g_test_suite_add (suite, TESTCASE (test18_read_static_ipv6, TEST_ENI_DIR));
+	g_test_suite_add (suite, TESTCASE (test19_read_static_ipv4_plen, TEST_ENI_DIR));
 
 	return g_test_run ();
 }
