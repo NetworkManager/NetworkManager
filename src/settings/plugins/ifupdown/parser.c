@@ -498,12 +498,20 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		/* mask/prefix */
 		netmask_v = ifparser_getkey (block, "netmask");
 		if (netmask_v) {
-			if (!inet_pton (AF_INET, netmask_v, &tmp_mask)) {
+			if (strlen (netmask_v) < 7) {
+				netmask_int = atoi (netmask_v);
+				if (netmask_int > 32) {
+					g_set_error (error, eni_plugin_error_quark (), 0,
+								"Invalid IPv4 netmask '%s'", netmask_v);
+					goto error;
+				}
+			} else if (!inet_pton (AF_INET, netmask_v, &tmp_mask)) {
 				g_set_error (error, eni_plugin_error_quark (), 0,
 						   "Invalid IPv4 netmask '%s'", netmask_v);
 				goto error;
+			} else {
+				netmask_int = nm_utils_ip4_netmask_to_prefix (tmp_mask.s_addr);
 			}
-			netmask_int = nm_utils_ip4_netmask_to_prefix (tmp_mask.s_addr);
 		}
 
 		/* gateway */
