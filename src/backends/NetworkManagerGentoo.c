@@ -63,9 +63,3 @@ void nm_backend_enable_loopback (void)
 
 	g_free (comm);
 }
-
-int nm_backend_ipv6_use_tempaddr (void)
-{
-	return nm_generic_ipv6_use_tempaddr ();
-}
-

@@ -40,7 +40,6 @@
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
-#include "backends/nm-backend.h"
 #include "NetworkManagerUtils.h"
 #include "nm-system.h"
 #include "nm-dhcp-manager.h"
@@ -2295,6 +2294,48 @@ addrconf6_cleanup (NMDevice *self)
 
 /******************************************/
 
+/* Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
+ * /lib/sysctl.d/sysctl.conf
+ */
+static int
+ip6_use_tempaddr (void)
+{
+	char *contents = NULL;
+	gsize len = 0;
+	const char *group_name = "[forged_group]\n";
+	char *sysctl_data = NULL;
+	GKeyFile *keyfile;
+	GError *error = NULL;
+	int tmp, ret = -1;
+
+	/* Read file contents to a string. */
+	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, &len, NULL))
+		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, &len, NULL))
+			return -1;
+
+	/* Prepend a group so that we can use GKeyFile parser. */
+	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
+
+	keyfile = g_key_file_new ();
+	if (keyfile == NULL)
+		goto done;
+
+	if (!g_key_file_load_from_data (keyfile, sysctl_data, len + strlen (group_name), G_KEY_FILE_NONE, NULL))
+		goto done;
+
+	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
+	if (error == NULL)
+		ret = tmp;
+
+done:
+	g_free (contents);
+	g_free (sysctl_data);
+	g_clear_error (&error);
+	g_key_file_free (keyfile);
+
+	return ret;
+}
+
 static NMActStageReturn
 real_act_stage3_ip6_config_start (NMDevice *self,
                                   NMIP6Config **out_config,
@@ -2362,7 +2403,7 @@ real_act_stage3_ip6_config_start (NMDevice *self,
 	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
 	 * use that value instead of per-connection value.
 	 */
-	conf_use_tempaddr = nm_backend_ipv6_use_tempaddr ();
+	conf_use_tempaddr = ip6_use_tempaddr ();
 	if (conf_use_tempaddr >= 0)
 		ip6_privacy = conf_use_tempaddr;
 	else {
