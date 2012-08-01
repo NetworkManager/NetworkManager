@@ -120,6 +120,11 @@
         The general type of the network device; ie Ethernet, WiFi, etc.
       </tp:docstring>
     </property>
+    <property name="AvailableConnections" type="ao" access="read">
+      <tp:docstring>
+        An array of object paths of every configured connection that is currently 'available' through this device.
+      </tp:docstring>
+    </property>
 
     <method name="Disconnect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>

@@ -65,6 +65,7 @@
 #include "nm-connection-provider.h"
 #include "nm-posix-signals.h"
 #include "nm-manager-auth.h"
+#include "nm-dbus-glib-types.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -123,6 +124,7 @@ enum {
 	PROP_TYPE_DESC,
 	PROP_RFKILL_TYPE,
 	PROP_IFINDEX,
+	PROP_AVAILABLE_CONNECTIONS,
 	LAST_PROP
 };
 
@@ -169,6 +171,7 @@ typedef struct {
 	gboolean      managed; /* whether managed by NM or not */
 	RfKillType    rfkill_type;
 	gboolean      firmware_missing;
+	GHashTable *  available_connections;
 
 	guint32         ip4_address;
 
@@ -241,6 +244,12 @@ typedef struct {
 	NMDevice *	master;
 
 	NMConnectionProvider *con_provider;
+
+	/* connection provider signals for available connections property */
+	guint cp_added_id;
+	guint cp_loaded_id;
+	guint cp_removed_id;
+	guint cp_updated_id;
 } NMDevicePrivate;
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
@@ -258,9 +267,18 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
 
 static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
 
+static gboolean real_check_connection_available (NMDevice *device, NMConnection *connection);
+
+static void _clear_available_connections (NMDevice *device, gboolean do_signal);
+
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static const char *reason_to_string (NMDeviceStateReason reason);
+
+static void cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
+static void cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
+static void cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
+static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 
 static void
 nm_device_init (NMDevice *self)
@@ -274,6 +292,7 @@ nm_device_init (NMDevice *self)
 	priv->dhcp_timeout = 0;
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
+	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 }
 
 static void
@@ -712,6 +731,25 @@ nm_device_set_connection_provider (NMDevice *device,
 	g_return_if_fail (priv->con_provider == NULL);
 
 	priv->con_provider = provider;
+	priv->cp_added_id = g_signal_connect (priv->con_provider,
+	                                      NM_CP_SIGNAL_CONNECTION_ADDED,
+	                                      G_CALLBACK (cp_connection_added),
+	                                      device);
+
+	priv->cp_loaded_id = g_signal_connect (priv->con_provider,
+	                                       NM_CP_SIGNAL_CONNECTIONS_LOADED,
+	                                       G_CALLBACK (cp_connections_loaded),
+	                                       device);
+
+	priv->cp_removed_id = g_signal_connect (priv->con_provider,
+	                                        NM_CP_SIGNAL_CONNECTION_REMOVED,
+	                                        G_CALLBACK (cp_connection_removed),
+	                                        device);
+
+	priv->cp_updated_id = g_signal_connect (priv->con_provider,
+	                                        NM_CP_SIGNAL_CONNECTION_UPDATED,
+	                                        G_CALLBACK (cp_connection_updated),
+	                                        device);
 }
 
 NMConnectionProvider *
@@ -3803,6 +3841,28 @@ dispose (GObject *object)
 	}
 	g_free (priv->ip6_privacy_tempaddr_path);
 
+	if (priv->cp_added_id) {
+	    g_signal_handler_disconnect (priv->con_provider, priv->cp_added_id);
+	    priv->cp_added_id = 0;
+	}
+
+	if (priv->cp_loaded_id) {
+	    g_signal_handler_disconnect (priv->con_provider, priv->cp_loaded_id);
+	    priv->cp_loaded_id = 0;
+	}
+
+	if (priv->cp_removed_id) {
+	    g_signal_handler_disconnect (priv->con_provider, priv->cp_removed_id);
+	    priv->cp_removed_id = 0;
+	}
+
+	if (priv->cp_updated_id) {
+	    g_signal_handler_disconnect (priv->con_provider, priv->cp_updated_id);
+	    priv->cp_updated_id = 0;
+	}
+
+	g_hash_table_unref (priv->available_connections);
+
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
@@ -3928,6 +3988,9 @@ get_property (GObject *object, guint prop_id,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceState state;
 	const char *ac_path = NULL;
+	GPtrArray *array;
+	GHashTableIter iter;
+	NMConnection *connection;
 
 	state = nm_device_get_state (self);
 
@@ -4020,6 +4083,13 @@ get_property (GObject *object, guint prop_id,
 	case PROP_RFKILL_TYPE:
 		g_value_set_uint (value, priv->rfkill_type);
 		break;
+	case PROP_AVAILABLE_CONNECTIONS:
+		array = g_ptr_array_sized_new (g_hash_table_size (priv->available_connections));
+		g_hash_table_iter_init (&iter, priv->available_connections);
+		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL))
+			g_ptr_array_add (array, g_strdup (nm_connection_get_path (connection)));
+		g_value_take_boxed (value, array);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -4050,6 +4120,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage3_ip6_config_start = real_act_stage3_ip6_config_start;
 	klass->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
 	klass->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
+	klass->check_connection_available = real_check_connection_available;
 
 	/* Properties */
 	g_object_class_install_property
@@ -4228,6 +4299,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                   "Ifindex",
 		                   0, G_MAXINT, 0,
 		                   G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property
+		(object_class, PROP_AVAILABLE_CONNECTIONS,
+		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS,
+		                     "AvailableConnections",
+		                     "AvailableConnections",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	/* Signals */
 	signals[STATE_CHANGED] =
@@ -4494,6 +4573,14 @@ nm_device_state_changed (NMDevice *device,
 		nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
 		                                         (guint64) time (NULL), TRUE);
 	}
+
+	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+		_clear_available_connections (device, TRUE);
+
+	/* Update the available connections list when a device first becomes available */
+	if (   state >= NM_DEVICE_STATE_DISCONNECTED
+	    && old_state < NM_DEVICE_STATE_DISCONNECTED)
+		nm_device_recheck_available_connections (device);
 
 	/* Handle the new state here; but anything that could trigger
 	 * another state change should be done below.
@@ -4853,5 +4940,115 @@ nm_device_get_autoconnect (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
+}
+
+static void
+_signal_available_connections_changed (NMDevice *device)
+{
+	g_object_notify (G_OBJECT (device), NM_DEVICE_AVAILABLE_CONNECTIONS);
+}
+
+static void
+_clear_available_connections (NMDevice *device, gboolean do_signal)
+{
+	g_hash_table_remove_all (NM_DEVICE_GET_PRIVATE (device)->available_connections);
+	if (do_signal == TRUE)
+		_signal_available_connections_changed (device);
+}
+
+static gboolean
+_try_add_available_connection (NMDevice *self, NMConnection *connection)
+{
+	if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
+	if (nm_device_check_connection_compatible (self, connection, NULL)) {
+		/* Let subclasses implement additional checks on the connection */
+		if (   NM_DEVICE_GET_CLASS (self)->check_connection_available
+		    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection)) {
+
+			g_hash_table_insert (NM_DEVICE_GET_PRIVATE (self)->available_connections,
+					             g_object_ref (connection),
+					             GUINT_TO_POINTER (1));
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+_del_available_connection (NMDevice *device, NMConnection *connection)
+{
+	return g_hash_table_remove (NM_DEVICE_GET_PRIVATE (device)->available_connections, connection);
+}
+
+static gboolean
+real_check_connection_available (NMDevice *device, NMConnection *connection)
+{
+	/* Default is to assume the connection is available unless a subclass
+	 * overrides this with more specific checks.
+	 */
+	return TRUE;
+}
+
+void
+nm_device_recheck_available_connections (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+	const GSList *connections, *iter;
+
+	g_return_if_fail (device != NULL);
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE(device);
+
+	_clear_available_connections (device, FALSE);
+
+	connections = nm_connection_provider_get_connections (priv->con_provider);
+	for (iter = connections; iter; iter = g_slist_next (iter))
+		_try_add_available_connection (device, NM_CONNECTION (iter->data));
+
+	_signal_available_connections_changed (device);
+}
+
+static void
+cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+{
+	if (_try_add_available_connection (NM_DEVICE (user_data), connection))
+		_signal_available_connections_changed (NM_DEVICE (user_data));
+}
+
+static void
+cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+{
+	const GSList *connections, *iter;
+	gboolean added = FALSE;
+
+	connections = nm_connection_provider_get_connections (cp);
+	for (iter = connections; iter; iter = g_slist_next (iter))
+		added |= _try_add_available_connection (NM_DEVICE (user_data), NM_CONNECTION (iter->data));
+
+	if (added)
+		_signal_available_connections_changed (NM_DEVICE (user_data));
+}
+
+static void
+cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+{
+	if (_del_available_connection (NM_DEVICE (user_data), connection))
+		_signal_available_connections_changed (NM_DEVICE (user_data));
+}
+
+static void
+cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+{
+	gboolean added, deleted;
+
+	/* FIXME: don't remove it from the hash if it's just going to get re-added */
+	deleted = _del_available_connection (NM_DEVICE (user_data), connection);
+	added = _try_add_available_connection (NM_DEVICE (user_data), connection);
+
+	/* Only signal if the connection was removed OR added, but not both */
+	if (added != deleted)
+		_signal_available_connections_changed (NM_DEVICE (user_data));
 }
 

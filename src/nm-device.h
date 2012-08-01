@@ -59,6 +59,7 @@
 #define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
+#define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 
 /* Internal signals */
 #define NM_DEVICE_AUTH_REQUEST "auth-request"
@@ -124,9 +125,20 @@ typedef struct {
 	                                             GSList *connections,
 	                                             char **specific_object);
 
+	/* Checks whether the connection is compatible with the device using
+	 * only the devices type and characteristics.  Does not use any live
+	 * network information like WiFi/WiMAX scan lists etc.
+	 */
 	gboolean    (* check_connection_compatible) (NMDevice *self,
 	                                             NMConnection *connection,
 	                                             GError **error);
+
+	/* Checks whether the connection is likely available to be activated,
+	 * including any live network information like scan lists.  Returns
+	 * TRUE if the connection is available; FALSE if not.
+	 */
+	gboolean    (* check_connection_available) (NMDevice *self,
+	                                            NMConnection *connection);
 
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,

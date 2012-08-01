@@ -884,9 +884,13 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 }
 
 static void
-access_point_removed (NMDeviceWifi *device, NMAccessPoint *ap)
+remove_access_point (NMDeviceWifi *device, NMAccessPoint *ap)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(device);
 	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
+	priv->ap_list = g_slist_remove (priv->ap_list, ap);
+	g_object_unref(ap);
+	nm_device_recheck_available_connections (NM_DEVICE (device));
 }
 
 static void
@@ -897,10 +901,7 @@ remove_all_aps (NMDeviceWifi *self)
 	/* Remove outdated APs */
 	while (g_slist_length (priv->ap_list)) {
 		NMAccessPoint *ap = NM_AP (priv->ap_list->data);
-
-		access_point_removed (self, ap);
-		priv->ap_list = g_slist_remove (priv->ap_list, ap);
-		g_object_unref (ap);
+		remove_access_point (self, ap);
 	}
 	g_slist_free (priv->ap_list);
 	priv->ap_list = NULL;
@@ -952,9 +953,7 @@ real_deactivate (NMDevice *dev)
 	 * and thus the AP culling never happens. (bgo #569241)
 	 */
 	if (orig_ap && nm_ap_get_fake (orig_ap)) {
-		access_point_removed (self, orig_ap);
-		priv->ap_list = g_slist_remove (priv->ap_list, orig_ap);
-		g_object_unref (orig_ap);
+	    remove_access_point (self, orig_ap);
 	}
 
 	/* Reset MAC address back to initial address */
@@ -1067,6 +1066,33 @@ real_check_connection_compatible (NMDevice *device,
 	// FIXME: check bitrate against device capabilities
 
 	return TRUE;
+}
+
+
+static gboolean
+real_check_connection_available (NMDevice *device, NMConnection *connection)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	NMSettingWireless *s_wifi;
+	const char *mode;
+	GSList *ap_iter = NULL;
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+
+	/* Ad-Hoc connections are always available because they may be started
+	 * at any time.
+	 */
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (g_strcmp0 (mode, "adhoc") == 0)
+		return TRUE;
+
+	/* check if its visible */
+	for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
+		if (nm_ap_check_compatible (NM_AP (ap_iter->data), connection))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*
@@ -1902,6 +1928,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
 		nm_ap_export_to_dbus (merge_ap);
 		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, merge_ap);
+		nm_device_recheck_available_connections (NM_DEVICE (self));
 	}
 }
 
@@ -1964,9 +1991,7 @@ cull_scan_list (NMDeviceWifi *self)
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		            ssid ? "'" : "");
 
-		access_point_removed (self, outdated_ap);
-		priv->ap_list = g_slist_remove (priv->ap_list, outdated_ap);
-		g_object_unref (outdated_ap);
+		remove_access_point (self, outdated_ap);
 		removed++;
 	}
 	g_slist_free (outdated_list);
@@ -1976,6 +2001,9 @@ cull_scan_list (NMDeviceWifi *self)
 	            removed, total);
 
 	ap_list_dump (self);
+
+	if(removed > 0)
+	    nm_device_recheck_available_connections (NM_DEVICE (self));
 
 	return FALSE;
 }
@@ -2839,6 +2867,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		priv->ap_list = g_slist_prepend (priv->ap_list, ap);
 		nm_ap_export_to_dbus (ap);
 		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
+		nm_device_recheck_available_connections (NM_DEVICE (self));
 	}
 
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
@@ -3162,7 +3191,6 @@ static void
 activation_failure_handler (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *ap;
 	NMConnection *connection;
 
@@ -3180,9 +3208,7 @@ activation_failure_handler (NMDevice *dev)
 			 * list because we don't have any scan or capability info
 			 * for it, and they are pretty much useless.
 			 */
-			access_point_removed (self, ap);
-			priv->ap_list = g_slist_remove (priv->ap_list, ap);
-			g_object_unref (ap);
+			remove_access_point (self, ap);
 		}
 	}
 }
@@ -3544,6 +3570,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->is_available = real_is_available;
 	parent_class->check_connection_compatible = real_check_connection_compatible;
+	parent_class->check_connection_available = real_check_connection_available;
 	parent_class->complete_connection = real_complete_connection;
 	parent_class->set_enabled = real_set_enabled;
 
@@ -3633,7 +3660,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		g_signal_new ("access-point-removed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
+		              0,
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__OBJECT,
 		              G_TYPE_NONE, 1,

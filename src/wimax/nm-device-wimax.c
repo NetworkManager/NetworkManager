@@ -254,6 +254,8 @@ remove_all_nsps (NMDeviceWimax *self)
 		g_object_unref (nsp);
 	}
 
+	nm_device_recheck_available_connections (NM_DEVICE (self));
+
 	g_slist_free (priv->nsp_list);
 	priv->nsp_list = NULL;
 }
@@ -477,6 +479,21 @@ real_check_connection_compatible (NMDevice *device,
 	}
 
 	return TRUE;
+}
+
+static gboolean
+real_check_connection_available (NMDevice *device, NMConnection *connection)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
+	const GSList *ns_iter = NULL;
+
+	/* Ensure the connection applies to an NSP in the scan list */
+	for (ns_iter = priv->nsp_list; ns_iter; ns_iter = ns_iter->next) {
+		if (nm_wimax_nsp_check_compatible (NM_WIMAX_NSP (ns_iter->data), connection))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 static gboolean
@@ -1070,6 +1087,9 @@ remove_outdated_nsps (NMDeviceWimax *self,
 		g_object_unref (nsp);
 	}
 
+	if (g_slist_length(to_remove) > 0)
+	    nm_device_recheck_available_connections (NM_DEVICE (self));
+
 	g_slist_free (to_remove);
 }
 
@@ -1117,6 +1137,7 @@ wmx_scan_result_cb (struct wmxsdk *wmxsdk,
 			priv->nsp_list = g_slist_append (priv->nsp_list, nsp);
 			nm_wimax_nsp_export_to_dbus (nsp);
 			g_signal_emit (self, signals[NSP_ADDED], 0, nsp);
+			nm_device_recheck_available_connections (NM_DEVICE (self));
 		}
 	}
 }
@@ -1504,6 +1525,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->hw_take_down = real_hw_take_down;
 	device_class->update_hw_address = real_update_hw_address;
 	device_class->check_connection_compatible = real_check_connection_compatible;
+	device_class->check_connection_available = real_check_connection_available;
 	device_class->complete_connection = real_complete_connection;
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->get_generic_capabilities = real_get_generic_capabilities;

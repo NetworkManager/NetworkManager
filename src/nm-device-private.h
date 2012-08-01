@@ -69,4 +69,6 @@ gboolean nm_device_match_ip_config (NMDevice *device, NMConnection *connection);
 
 NMConnectionProvider *nm_device_get_connection_provider (NMDevice *device);
 
+void nm_device_recheck_available_connections (NMDevice *device);
+
 #endif	/* NM_DEVICE_PRIVATE_H */
