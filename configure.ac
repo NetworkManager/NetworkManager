@@ -107,109 +107,28 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo, mandriva, pardus, linexa, exherbo or lfs]))
-if test "z$with_distro" = "z"; then
-	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
-	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
-	AC_CHECK_FILE(/etc/fedora-release,with_distro="redhat")
-	AC_CHECK_FILE(/etc/gentoo-release,with_distro="gentoo")
-	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
-	AC_CHECK_FILE(/etc/arch-release,with_distro="arch")
-	AC_CHECK_FILE(/etc/slackware-version,with_distro="slackware")
-	AC_CHECK_FILE(/etc/frugalware-release,with_distro="frugalware")
-	AC_CHECK_FILE(/etc/mandriva-release,with_distro="mandriva")
-	AC_CHECK_FILE(/etc/pardus-release,with_distro="pardus")
-	AC_CHECK_FILE(/etc/linexa-release,with_distro="linexa")
-	AC_CHECK_FILE(/etc/exherbo-release,with_distro="exherbo")
-	AC_CHECK_FILE(/etc/lfs-release,with_distro="lfs")
-	if test "z$with_distro" = "z"; then
-		with_distro=`lsb_release -is`
-	fi
-fi
-with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
-
-if test "z$with_distro" = "z"; then
-	echo "Linux distribution autodetection failed, you must specify the distribution to target using --with-distro=DISTRO"
-	exit 1
-else
-	case $with_distro in
-		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva|pardus|linexa|exherbo|lfs|generic) ;;
-		*)
-			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
-			exit 1
-			;;
-	esac
-fi
-
-AM_CONDITIONAL(TARGET_GENERIC, test x"$with_distro" = xgeneric)
-if test x"$with_distro" = xgeneric; then
-  AC_DEFINE(TARGET_GENERIC, 1, [Define for a general unknown Linux system])
-fi
-
-AM_CONDITIONAL(TARGET_REDHAT, test x"$with_distro" = xredhat)
-if test x"$with_distro" = xredhat; then
-  AC_DEFINE(TARGET_REDHAT, 1, [Define if you have Fedora or RHEL])
-fi
-
-AM_CONDITIONAL(TARGET_SUSE, test x"$with_distro" = xsuse)
-if test x"$with_distro" = xsuse; then
-  AC_DEFINE(TARGET_SUSE, 1, [Define if you have OpenSUSE or SLES])
-fi
-
-AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
-if test x"$with_distro" = xgentoo; then
-  AC_DEFINE(TARGET_GENTOO, 1, [Define if you have Gentoo])
-fi
-
-AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
-if test x"$with_distro" = xdebian; then
-  AC_DEFINE(TARGET_DEBIAN, 1, [Define if you have Debian])
-fi
-
-AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
-if test x"$with_distro" = xslackware; then
-  AC_DEFINE(TARGET_SLACKWARE, 1, [Define if you have Slackware])
-fi
-
-AM_CONDITIONAL(TARGET_ARCH, test x"$with_distro" = xarch)
-if test x"$with_distro" = xarch; then
-  AC_DEFINE(TARGET_ARCH, 1, [Define if you have Arch])
-fi
-
-AM_CONDITIONAL(TARGET_PALDO, test x"$with_distro" = xpaldo)
-if test x"$with_distro" = xpaldo; then
-  AC_DEFINE(TARGET_PALDO, 1, [Define if you have Paldo])
-fi
-
-AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
-if test x"$with_distro" = xfrugalware; then
-  AC_DEFINE(TARGET_FRUGALWARE, 1, [Define if you have Frugalware])
-fi
-
-AM_CONDITIONAL(TARGET_MANDRIVA, test x"$with_distro" = xmandriva)
-if test x"$with_distro" = xmandriva; then
-  AC_DEFINE(TARGET_MANDRIVA, 1, [Define if you have Mandriva])
-fi
-
-AM_CONDITIONAL(TARGET_PARDUS, test x"$with_distro" = xpardus)
-if test x"$with_distro" = xpardus; then
-  AC_DEFINE(TARGET_PARDUS, 1, [Define if you have Pardus])
-fi
-
-AM_CONDITIONAL(TARGET_LINEXA, test x"$with_distro" = xlinexa)
-if test x"$with_distro" = xlinexa; then
-  AC_DEFINE(TARGET_LINEXA, 1, [Define if you have linexa])
-fi
-
-AM_CONDITIONAL(TARGET_EXHERBO, test x"$with_distro" = xexherbo)
-if test x"$with_distro" = xexherbo; then
-  AC_DEFINE(TARGET_EXHERBO, 1, [Define if you have Exherbo])
-fi
-
-AM_CONDITIONAL(TARGET_LFS, test x"$with_distro" = xlfs)
-if test x"$with_distro" = xlfs; then
-  AC_DEFINE(TARGET_LFS, 1, [Define if you have Linux From Scratch])
-fi
+# Alternative configuration plugins
+AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
+AC_ARG_ENABLE(ifcfg-suse, AS_HELP_STRING([--enable-ifcfg-suse], [enable ifcfg-suse configuration plugin (SUSE)]))
+AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown configuration plugin (Debian/Ubuntu)]))
+AC_ARG_ENABLE(ifnet, AS_HELP_STRING([--enable-ifnet], [enable ifnet configuration plugin (Gentoo)]))
+# Default alternative plugins by distribution
+AS_IF([test -z "$enable_ifcfg_rh"], AC_CHECK_FILE(/etc/redhat-release, enable_ifcfg_rh=yes))
+AS_IF([test -z "$enable_ifcfg_rh"], AC_CHECK_FILE(/etc/fedora-release, enable_ifcfg_rh=yes))
+AS_IF([test -z "$enable_ifcfg_rh"], AC_CHECK_FILE(/etc/mandriva-release, enable_ifcfg_rh=yes))
+AS_IF([test -z "$enable_ifcfg_suse"], AC_CHECK_FILE(/etc/SuSE-release, enable_ifcfg_suse=yes))
+AS_IF([test -z "$enable_ifupdown"], AC_CHECK_FILE(/etc/debian_version, enable_ifupdown=yes))
+AS_IF([test -z "$enable_ifnet"], AC_CHECK_FILE(/etc/gentoo-release, enable_ifnet=yes))
+# Otherwise plugins default to "no"
+AS_IF([test -z "$enable_ifcfg_rh"], enable_ifcfg_rh=no)
+AS_IF([test -z "$enable_ifcfg_suse"], enable_ifcfg_suse=no)
+AS_IF([test -z "$enable_ifupdown"], enable_ifupdown=no)
+AS_IF([test -z "$enable_ifnet"], enable_ifnet=no)
+# Create automake conditionals
+AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
+AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_SUSE, test "$enable_ifcfg_suse" = "yes")
+AM_CONDITIONAL(CONFIG_PLUGIN_IFUPDOWN, test "$enable_ifupdown" = "yes")
+AM_CONDITIONAL(CONFIG_PLUGIN_IFNET, test "$enable_ifnet" = "yes")
 
 dnl
 dnl Distribution version string
@@ -837,11 +756,15 @@ vapi/Makefile
 ])
 AC_OUTPUT
 
+# Print build configuration
 echo
-echo Distribution target: ${with_distro}
-echo 'if this is not correct, please specifiy your distro with --with-distro=DISTRO'
+echo Configuration plugins:
+echo "  ifcfg-rh: ${enable_ifcfg_rh}"
+echo "  ifcfg-suse: ${enable_ifcfg_suse}"
+echo "  ifupdown: ${enable_ifupdown}"
+echo "  ifnet: ${enable_ifnet}"
+echo
 
-echo 
 echo "Handlers for /etc/resolv.conf:"
 echo "  resolvconf: ${with_resolvconf}"
 echo "  netconfig: ${with_netconfig}"

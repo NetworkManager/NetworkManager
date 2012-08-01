@@ -1,21 +1,17 @@
 SUBDIRS=keyfile example
 
-if TARGET_REDHAT
+if CONFIG_PLUGIN_IFCFG_RH
 SUBDIRS+=ifcfg-rh
 endif
 
-if TARGET_SUSE
+if CONFIG_PLUGIN_IFCFG_SUSE
 SUBDIRS+=ifcfg-suse
 endif
 
-if TARGET_MANDRIVA
-SUBDIRS+=ifcfg-rh
-endif
-
-if TARGET_DEBIAN
+if CONFIG_PLUGIN_IFUPDOWN
 SUBDIRS+=ifupdown
 endif
 
-if TARGET_GENTOO
+if CONFIG_PLUGIN_IFNET
 SUBDIRS+=ifnet
 endif
