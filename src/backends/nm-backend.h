@@ -23,6 +23,4 @@
 
 /* Random disto-specific stuff */
 
-void nm_backend_enable_loopback (void);
-
 #endif  /* NM_BACKEND_H */

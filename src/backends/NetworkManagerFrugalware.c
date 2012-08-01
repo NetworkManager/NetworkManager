@@ -25,8 +25,3 @@
 
 /* Provided by the frugalwareutils package on Frugalware */
 #include <libfwnetconfig.h> 
-
-void nm_backend_enable_loopback (void)
-{
-	fwnet_loup ();
-}

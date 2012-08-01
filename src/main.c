@@ -42,7 +42,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "nm-policy.h"
-#include "backends/nm-backend.h"
 #include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
@@ -55,6 +54,7 @@
 #include "nm-policy-hosts.h"
 #include "nm-config.h"
 #include "nm-posix-signals.h"
+#include "nm-system.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -640,8 +640,18 @@ main (int argc, char *argv[])
 
 	nm_manager_start (manager);
 
-	/* Bring up the loopback interface. */
-	nm_backend_enable_loopback ();
+	/* Make sure the loopback interface is up. If interface is down, we bring
+	 * it up and kernel will assign it link-local IPv4 and IPv6 addresses. If
+	 * it was already up, we assume is in clean state.
+	 *
+	 * TODO: it might be desirable to check the list of addresses and compare
+	 * it with a list of expected addresses (one of the protocol families
+	 * could be disabled). The 'lo' interface is sometimes used for assigning
+	 * global addresses so their availability doesn't depend on the state of
+	 * physical interfaces.
+	 */
+	nm_log_dbg (LOGD_CORE, "setting up local loopback");
+	nm_system_iface_set_up (nm_netlink_iface_to_index ("lo"), TRUE, NULL);
 
 	success = TRUE;
 

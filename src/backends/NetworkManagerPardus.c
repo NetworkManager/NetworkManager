@@ -25,8 +25,3 @@
 #endif
 
 #include "NetworkManagerGeneric.h"
-
-void nm_backend_enable_loopback (void)
-{
-	nm_generic_enable_loopback ();
-}

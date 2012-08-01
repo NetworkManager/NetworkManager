@@ -26,6 +26,4 @@
 
 #include "nm-backend.h"
 
-void nm_generic_enable_loopback (void);
-
 #endif  /* NM_GENERIC_H */

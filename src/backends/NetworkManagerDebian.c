@@ -31,12 +31,3 @@
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
-
-void nm_backend_enable_loopback (void)
-{
-	/* ifupdown isn't always installed (bgo #625427) */
-	if (g_file_test ("/sbin/ifup", G_FILE_TEST_EXISTS))
-		nm_spawn_process ("/sbin/ifup lo");
-	else
-		nm_generic_enable_loopback ();
-}
