@@ -16,8 +16,6 @@ libdns_manager_la_SOURCES = \
 	nm-dns-plugin.c \
 	nm-dns-dnsmasq.h \
 	nm-dns-dnsmasq.c \
-	nm-dns-bind.h \
-	nm-dns-bind.c \
 	nm-dns-utils.h \
 	nm-dns-utils.c
 
