@@ -103,17 +103,6 @@ out:
 }
 
 /*
- * nm_generic_update_dns
- *
- * Make glibc/nscd aware of any changes to the resolv.conf file by
- * restarting nscd.
- *
- */
-void nm_generic_update_dns (void)
-{
-}
-
-/*
  * nm_generic_ipv6_use_tempaddr
  *
  * Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
@@ -162,11 +151,6 @@ done:
 void nm_backend_enable_loopback (void)
 {
 	nm_generic_enable_loopback ();
-}
-
-void nm_backend_update_dns (void)
-{
-	nm_generic_update_dns ();
 }
 
 int nm_backend_ipv6_use_tempaddr (void)

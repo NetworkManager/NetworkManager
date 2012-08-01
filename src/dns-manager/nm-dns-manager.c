@@ -40,7 +40,6 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-logging.h"
-#include "backends/nm-backend.h"
 #include "NetworkManagerUtils.h"
 #include "nm-posix-signals.h"
 
@@ -765,9 +764,6 @@ update_dns (NMDnsManager *self,
 
 	if (success == FALSE)
 		success = update_resolv_conf (domain, searches, nameservers, iface, error);
-
-	if (success)
-		nm_backend_update_dns ();
 
 	if (searches)
 		g_strfreev (searches);

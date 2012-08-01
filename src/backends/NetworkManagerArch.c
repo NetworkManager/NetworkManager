@@ -43,16 +43,6 @@ void nm_backend_enable_loopback (void)
 	nm_generic_enable_loopback ();
 }
 
-void nm_backend_update_dns (void)
-{
-	/* Make glibc/nscd aware of any changes to the resolv.conf file by
-	 * restarting nscd; check if the daemon was already running - do not
-	 * start a new instance
-	 */
-	if (g_file_test("/var/run/daemons/nscd", G_FILE_TEST_EXISTS))
-		nm_spawn_process ("/etc/rc.d/nscd restart");
-}
-
 int nm_backend_ipv6_use_tempaddr (void)
 {
 	return nm_generic_ipv6_use_tempaddr ();

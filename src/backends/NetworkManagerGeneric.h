@@ -27,7 +27,6 @@
 #include "nm-backend.h"
 
 void nm_generic_enable_loopback (void);
-void nm_generic_update_dns      (void);
 int nm_generic_ipv6_use_tempaddr (void);
 
 #endif  /* NM_GENERIC_H */

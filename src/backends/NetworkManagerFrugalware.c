@@ -31,11 +31,6 @@ void nm_backend_enable_loopback (void)
 	fwnet_loup ();
 }
 
-void nm_backend_update_dns (void)
-{
-	/* I'm not running nscd */
-}
-
 int nm_backend_ipv6_use_tempaddr (void)
 {
 	return nm_generic_ipv6_use_tempaddr ();

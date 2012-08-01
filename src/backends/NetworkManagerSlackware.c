@@ -31,10 +31,6 @@ void nm_backend_enable_loopback (void)
 	nm_generic_enable_loopback ();
 }
 
-void nm_backend_update_dns (void)
-{
-}
-
 int nm_backend_ipv6_use_tempaddr (void)
 {
 	return nm_generic_ipv6_use_tempaddr ();

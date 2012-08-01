@@ -24,7 +24,6 @@
 /* Random disto-specific stuff */
 
 void nm_backend_enable_loopback (void);
-void nm_backend_update_dns      (void);
 int nm_backend_ipv6_use_tempaddr (void);
 
 #endif  /* NM_BACKEND_H */

@@ -38,12 +38,6 @@ void nm_backend_enable_loopback (void)
 	nm_generic_enable_loopback ();
 }
 
-void nm_backend_update_dns (void)
-{
-	if (g_file_test("/var/run/nscd/nscd.pid", G_FILE_TEST_EXISTS))
-		nm_spawn_process ("/usr/sbin/nscd -i hosts");
-}
-
 int nm_backend_ipv6_use_tempaddr (void)
 {
 	return nm_generic_ipv6_use_tempaddr ();

@@ -64,17 +64,6 @@ void nm_backend_enable_loopback (void)
 	g_free (comm);
 }
 
-void nm_backend_update_dns (void)
-{
-	/* Make glibc/nscd aware of any changes to the resolv.conf file by
-	 * restarting nscd. Only restart if already running.
-	 */
-	if (g_file_test ("/usr/sbin/nscd", G_FILE_TEST_IS_EXECUTABLE)) {
-		nm_log_info (LOGD_DNS, "Clearing nscd hosts cache.");
-		nm_spawn_process ("/usr/sbin/nscd -i hosts");
-	}
-}
-
 int nm_backend_ipv6_use_tempaddr (void)
 {
 	return nm_generic_ipv6_use_tempaddr ();

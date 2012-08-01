@@ -31,19 +31,6 @@ void nm_backend_enable_loopback (void)
 	nm_generic_enable_loopback ();
 }
 
-void nm_backend_update_dns (void)
-{
-	/* Invalidate the nscd host cache since we changed resolv.conf */
-	if (g_file_test ("/usr/sbin/nscd", G_FILE_TEST_EXISTS | G_FILE_TEST_IS_EXECUTABLE | G_FILE_TEST_IS_REGULAR)) {
-		if (g_file_test ("/etc/init.d/nscd", G_FILE_TEST_EXISTS))
-			nm_spawn_process ("/etc/init.d/nscd condrestart");
-		else if (g_file_test ("/bin/systemctl", G_FILE_TEST_IS_EXECUTABLE))
-			nm_spawn_process ("/bin/systemctl condrestart nscd.service");
-
-		nm_spawn_process ("/usr/sbin/nscd -i hosts");
-	}
-}
-
 int nm_backend_ipv6_use_tempaddr (void)
 {
 	return nm_generic_ipv6_use_tempaddr ();
