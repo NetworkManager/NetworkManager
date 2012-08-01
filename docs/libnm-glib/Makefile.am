@@ -72,7 +72,6 @@ extra_files = libnm-glib.png
 GTKDOC_CFLAGS =				\
 	-I$(top_srcdir)/include		\
 	-I$(top_srcdir)/libnm-util	\
-	-I$(top_builddir)/marshallers	\
 	-I$(top_srcdir)/libnm-glib	\
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)

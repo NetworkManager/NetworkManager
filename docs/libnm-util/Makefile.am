@@ -50,7 +50,6 @@ extra_files =
 GTKDOC_CFLAGS =				\
 	-I$(top_srcdir)/include		\
 	-I$(top_srcdir)/libnm-util	\
-	-I$(top_builddir)/marshallers	\
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)
 
