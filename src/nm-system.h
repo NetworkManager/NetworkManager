@@ -33,10 +33,6 @@
 #include "nm-setting-bond.h"
 #include "nm-setting-vlan.h"
 
-/* Prototypes for system/distribution dependent functions,
- * implemented in the backend files in backends/ directory
- */
-
 gboolean        nm_system_iface_flush_routes         (int ifindex, int family);
 
 gboolean		nm_system_replace_default_ip4_route   (int ifindex,

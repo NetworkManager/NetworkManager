@@ -16,7 +16,6 @@ nm_daemon_all_sources = \
 	$(top_srcdir)/src/dhcp-manager/*.[ch] \
 	$(top_srcdir)/src/ip6-manager/*.[ch] \
 	$(top_srcdir)/src/supplicant-manager/*.[ch] \
-	$(top_srcdir)/src/backends/*.[ch] \
 	$(top_srcdir)/src/ppp-manager/*.[ch] \
 	$(top_srcdir)/src/dnsmasq-manager/*.[ch] \
 	$(top_srcdir)/src/modem-manager/*.[ch] \
@@ -49,7 +48,6 @@ INCLUDES = \
 	-I${top_srcdir}/src/dhcp-manager \
 	-I${top_srcdir}/src/ip6-manager \
 	-I${top_srcdir}/src/supplicant-manager \
-	-I${top_srcdir}/src/backends \
 	-I${top_srcdir}/src/ppp-manager \
 	-I${top_srcdir}/src/dnsmasq-manager \
 	-I${top_srcdir}/src/modem-manager \

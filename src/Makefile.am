@@ -8,7 +8,6 @@ SUBDIRS= \
 	ip6-manager \
 	supplicant-manager \
 	ppp-manager \
-	backends \
 	dnsmasq-manager \
 	modem-manager \
 	bluez-manager \
@@ -321,7 +320,6 @@ NetworkManager_LDADD = \
 	./wifi/libwifi-utils.la \
 	./firewall-manager/libfirewall-manager.la \
 	./settings/libsettings.la \
-	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
