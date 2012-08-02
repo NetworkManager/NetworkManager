@@ -11,7 +11,6 @@ SUBDIRS = \
 	tools \
 	policy \
 	data \
-	initscript \
 	test \
 	po \
 	man \
