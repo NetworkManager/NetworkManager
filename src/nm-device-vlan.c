@@ -636,7 +636,11 @@ nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
 		int vlan_id;
 
 		itype = nm_system_get_iface_type (ifindex, iface);
-		g_assert (itype == NM_IFACE_TYPE_VLAN);
+		if (itype != NM_IFACE_TYPE_VLAN) {
+			nm_log_err (LOGD_DEVICE, "(%s): failed to get VLAN interface type.", iface);
+			g_object_unref (device);
+			return NULL;
+		}
 
 		if (!nm_system_get_iface_vlan_info (ifindex, &parent_ifindex, &vlan_id)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to get VLAN interface info.", iface);

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2004 - 2012 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  * Copyright (C) 1996 - 1997 Yoichi Hariguchi <yoichi@fore.com>
  * Copyright (C) January, 1998 Sergei Viznyuk <sv@phystech.com>
@@ -44,6 +44,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/if_bonding.h>
+#include <linux/if_vlan.h>
 
 #include "nm-system.h"
 #include "nm-device.h"
@@ -1734,6 +1735,63 @@ nm_system_iface_release (gint master_ifindex,
 }
 
 /**
+ * nm_system_get_iface_type_compat:
+ * @ifindex: interface index
+ * @name: name of interface
+ *
+ * Lookup the type of an interface.  At least one of @ifindex or @name must
+ * be provided.
+ *
+ * Returns: Interface type (NM_IFACE_TYPE_*) or NM_IFACE_TYPE_UNSPEC.
+ **/
+static int
+nm_system_compat_get_iface_type (int ifindex, const char *name)
+{
+	int res = NM_IFACE_TYPE_UNSPEC;
+	char *ifname = NULL;
+	struct vlan_ioctl_args ifv;
+	struct ifreq ifr;
+	struct ifbond ifb;
+	int fd;
+
+	g_return_val_if_fail (ifindex > 0 || name, NM_IFACE_TYPE_UNSPEC);
+
+	if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+		nm_log_err (LOGD_DEVICE, "couldn't open control socket.");
+		goto out;
+	}
+
+	if (!name) {
+		g_assert (ifindex > 0);
+		ifname = nm_netlink_index_to_iface (ifindex);
+	}
+
+	/* Check VLAN */
+	memset (&ifv, 0, sizeof (ifv));
+	ifv.cmd = GET_VLAN_VID_CMD;
+	strncpy (ifv.device1, ifname ? ifname : name, sizeof (ifv.device1) - 1);
+	if (ioctl (fd, SIOCGIFVLAN, &ifv) == 0) {
+		res = NM_IFACE_TYPE_VLAN;
+		goto out;
+	}
+
+	/* and bond */
+	memset (&ifr, 0, sizeof (ifr));
+	strncpy (ifr.ifr_name, ifname ? ifname : name, sizeof (ifr.ifr_name) - 1);
+	memset (&ifb, 0, sizeof (ifb));
+	ifr.ifr_data = (caddr_t) &ifb;
+	if (ioctl (fd, SIOCBONDINFOQUERY, &ifr) == 0) {
+		res = NM_IFACE_TYPE_BOND;
+		goto out;
+	}
+
+out:
+	close (fd);
+	g_free (ifname);
+	return res;
+}
+
+/**
  * nm_system_get_iface_type:
  * @ifindex: interface index
  * @name: name of interface
@@ -1750,6 +1808,7 @@ nm_system_get_iface_type (int ifindex, const char *name)
 	struct nl_sock *nlh;
 	char *type;
 	int res = NM_IFACE_TYPE_UNSPEC;
+	int err;
 
 	g_return_val_if_fail (ifindex > 0 || name, NM_IFACE_TYPE_UNSPEC);
 
@@ -1758,8 +1817,12 @@ nm_system_get_iface_type (int ifindex, const char *name)
 		goto out;
 
 	/* Prefer interface indexes to names */
-	if (rtnl_link_get_kernel (nlh, ifindex, ifindex < 0 ? name : NULL, &result) < 0)
+	err = rtnl_link_get_kernel (nlh, ifindex, ifindex < 0 ? name : NULL, &result);
+	if (err < 0) {
+		if (err == -NLE_OPNOTSUPP)
+			res = nm_system_compat_get_iface_type (ifindex, name);
 		goto out;
+	}
 
 	type = rtnl_link_get_type (result);
 
