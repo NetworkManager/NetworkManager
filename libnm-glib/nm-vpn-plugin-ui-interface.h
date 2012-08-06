@@ -49,10 +49,21 @@ NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
 #define NM_IS_VPN_PLUGIN_UI_INTERFACE(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_PLUGIN_UI_INTERFACE))
 #define NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_VPN_PLUGIN_UI_INTERFACE, NMVpnPluginUiInterface))
 
-#define NM_VPN_PLUGIN_UI_CAPABILITY_NONE     0x00
-#define NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT   0x01
-#define NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT   0x02
-#define NM_VPN_PLUGIN_UI_CAPABILITY_IPV6     0x04
+/**
+ * NMVpnPluginUiCapability:
+ * @NM_VPN_PLUGIN_UI_CAPABILITY_NONE: unknown or no capability
+ * @NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT: the plugin can import new connections
+ * @NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT: the plugin can export connections
+ * @NM_VPN_PLUGIN_UI_CAPABILITY_IPV6: the plugin supports IPv6 addressing
+ *
+ * Flags that indicate to UI programs certain capabilities of the plugin.
+ **/
+typedef enum /*< flags >*/ {
+	NM_VPN_PLUGIN_UI_CAPABILITY_NONE   = 0x00,
+	NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT = 0x01,
+	NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT = 0x02,
+	NM_VPN_PLUGIN_UI_CAPABILITY_IPV6   = 0x04
+} NMVpnPluginUiCapability;
 
 /* Short display name of the VPN plugin */
 #define NM_VPN_PLUGIN_UI_INTERFACE_NAME "name"
@@ -63,13 +74,27 @@ NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
 /* D-Bus service name of the plugin's VPN service */
 #define NM_VPN_PLUGIN_UI_INTERFACE_SERVICE "service"
 
+/**
+ * NMVpnPluginUiInterfaceProp:
+ * @NM_VPN_PLUGIN_UI_INTERFACE_PROP_NAME: the VPN plugin's name
+ * @NM_VPN_PLUGIN_UI_INTERFACE_PROP_DESC: description of the VPN plugin and what
+ * VPN services it supports
+ * @NM_VPN_PLUGIN_UI_INTERFACE_PROP_SERVICE: the D-Bus service name used by the
+ * plugin's VPN service daemon
+ *
+ * #GObject property numbers that plugins should override to provide certain
+ * information to UI programs.
+ **/
 typedef enum {
+	/*< private >*/
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_FIRST = 0x1000,
 
+	/*< public >*/
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_NAME = NM_VPN_PLUGIN_UI_INTERFACE_PROP_FIRST,
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_DESC,
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_SERVICE
 } NMVpnPluginUiInterfaceProp;
+
 
 struct _NMVpnPluginUiInterface {
 	GTypeInterface g_iface;
