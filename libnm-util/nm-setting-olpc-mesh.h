@@ -41,8 +41,14 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_OLPC_MESH_SETTING_NAME "802-11-olpc-mesh"
 
-typedef enum
-{
+/**
+ * NMSettingOlpcMeshError:
+ * @NM_SETTING_OLPC_MESH_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY: the property was invalid
+ * @NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY: the property was missing and is
+ * required
+ */
+typedef enum {
 	NM_SETTING_OLPC_MESH_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
 	NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
 	NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
