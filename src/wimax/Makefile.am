@@ -1,8 +1,11 @@
 INCLUDES = \
 	-I${top_srcdir}/src \
+	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
+	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
+	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-util
 
 pkglib_LTLIBRARIES = libnm-device-plugin-wimax.la

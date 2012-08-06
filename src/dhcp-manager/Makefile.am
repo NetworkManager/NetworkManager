@@ -2,14 +2,14 @@ SUBDIRS=. tests
 
 INCLUDES = \
 	-I${top_srcdir} \
-	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
-	-I${top_srcdir}/src/generated \
+	-I${top_srcdir}/include \
 	-I${top_builddir}/src/generated \
+	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src/posix-signals \
-	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/libnm-util \
+	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src
 
 noinst_LTLIBRARIES = libdhcp-manager.la libdhcp-dhclient.la
