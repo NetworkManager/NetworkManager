@@ -1038,6 +1038,7 @@ nm_utils_is_uuid (const char *str)
 char *
 nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id)
 {
+	/* Basically VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD */
 	return g_strdup_printf ("%s.%d", parent_iface, vlan_id);
 }
 

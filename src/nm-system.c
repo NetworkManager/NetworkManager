@@ -1964,7 +1964,7 @@ nm_system_iface_compat_add_vlan_device (const char *master, int vid)
 	if_request.u.VID = vid;
 
 	if (ioctl (fd, SIOCSIFVLAN, &if_request) < 0) {
-		nm_log_err (LOGD_DEVICE, "couldn't add vlan device %s vid %d.", master, vid);
+		nm_log_err (LOGD_DEVICE, "couldn't add vlan device %s vid %d: %d.", master, vid, errno);
 		close (fd);
 		return FALSE;
 	}
@@ -2000,8 +2000,8 @@ nm_system_iface_compat_rem_vlan_device (const char *iface)
 
 static gboolean
 nm_system_iface_compat_add_vlan (NMConnection *connection,
-				const char *iface,
-				int master_ifindex)
+                                 const char *iface,
+                                 int master_ifindex)
 {
 	NMSettingVlan *s_vlan;
 	int vlan_id;
@@ -2010,7 +2010,8 @@ nm_system_iface_compat_add_vlan (NMConnection *connection,
 	int ifindex;
 	struct rtnl_link *new_link = NULL;
 	char *master = nm_netlink_index_to_iface (master_ifindex);
-	char *name = NULL;
+	int itype;
+	gboolean created = FALSE;
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_return_val_if_fail (s_vlan, FALSE);
@@ -2022,78 +2023,106 @@ nm_system_iface_compat_add_vlan (NMConnection *connection,
 		g_return_val_if_fail (iface != NULL, FALSE);
 	}
 
-	/*
-	 * Use VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD as default,
-	 * we will overwrite it with rtnl_link_set_name() later.
-	 */
-	name = nm_utils_new_vlan_name(master, vlan_id);
+	itype = nm_system_get_iface_type (-1, iface);
+	if (itype == NM_IFACE_TYPE_UNSPEC) {
+		char *name;
 
-	/*
-	 * vconfig add
-	 */
+		/* Create the VLAN interface.  Use VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD as
+		 * default and change the name later via nm_system_iface_compat_set_name().
+		 * The old ioctl-based VLAN kernel API has no ability to directly return
+		 * the new interface's name or index, so we have to create it with a
+		 * known name and do the rename dance instead.
+		 */
+		if (!nm_system_iface_compat_add_vlan_device (master, vlan_id))
+			return FALSE;
 
-	if (!nm_system_iface_compat_add_vlan_device (master, vlan_id))
-		goto err_out;
+		/* And rename it to what the connection wants */
+		name = nm_utils_new_vlan_name (master, vlan_id);
+		if (strcmp (name, iface) != 0) {
+			if (!nm_system_iface_compat_set_name (name, iface)) {
+				nm_system_iface_compat_rem_vlan_device (name);
+				g_free (name);
+				return FALSE;
+			}
+		}
+		g_free (name);
+		created = TRUE;
+	} else if (itype != NM_IFACE_TYPE_VLAN) {
+		nm_log_err (LOGD_DEVICE, "(%s): already exists but is not a VLAN interface.", iface);
+		return FALSE;
+	} else {
+		int tmp_vlan_id = -1, tmp_master_ifindex = -1;
 
-	/*
-	 * get corresponding rtnl_link
-	 */
+		/* VLAN interface with this name already exists. Be a bit paranoid and
+		 * double-check the VLAN ID and parent ifindex.
+		 */
+		ifindex = nm_netlink_iface_to_index (iface);
+		if (ifindex <= 0)
+			return FALSE;
 
-	if (!nm_system_iface_compat_set_name (name, iface))
-		goto err_out_delete_vlan_with_default_name;
+		if (!nm_system_get_iface_vlan_info (ifindex, &tmp_master_ifindex, &tmp_vlan_id)) {
+			nm_log_err (LOGD_DEVICE, "(%s): failed to get VLAN interface info.", iface);
+			return FALSE;
+		}
+
+		if (tmp_master_ifindex != master_ifindex) {
+			nm_log_err (LOGD_DEVICE, "(%s): master ifindex (%d) does match expected (%d).",
+			            iface, tmp_master_ifindex, master_ifindex);
+			return FALSE;
+		}
+
+		if (tmp_vlan_id != vlan_id) {
+			nm_log_err (LOGD_DEVICE, "(%s): VLAN ID %d does match expected ID %d.",
+			            iface, tmp_vlan_id, vlan_id);
+			return FALSE;
+		}
+
+		nm_log_dbg (LOGD_DEVICE, "(%s): found existing VLAN interface.", iface);
+	}
 
 	ifindex = nm_netlink_iface_to_index (iface);
 	if (ifindex <= 0)
-		goto err_out;
+		goto error;
 
 	new_link = nm_netlink_index_to_rtnl_link (ifindex);
 	if (!new_link)
-		goto err_out_delete_vlan_with_default_name;
+		goto error;
 
-	/*
-	 * vconfig set_flag
-	 */
+	/* vconfig set_flag */
 	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
-	if (vlan_flags)
+	if (vlan_flags) {
 		if (rtnl_link_vlan_set_flags (new_link, vlan_flags))
-			goto err_out_delete_vlan_with_new_name;
-
-	/*
-	 * vconfig set_ingress_map
-	 */
-	num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
-	for (i = 0; i < num; i++) {
-		if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to))
-			if (rtnl_link_vlan_set_ingress_map (new_link, from, to))
-				goto err_out_delete_vlan_with_new_name;
+			goto error_new_link;
 	}
 
-	/*
-	 * vconfig set_egress_map
-	 */
+	/* vconfig set_ingress_map */
+	num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
+	for (i = 0; i < num; i++) {
+		if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to)) {
+			if (rtnl_link_vlan_set_ingress_map (new_link, from, to))
+				goto error_new_link;
+		}
+	}
+
+	/* vconfig set_egress_map */
 	num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP);
 	for (i = 0; i < num; i++) {
-		if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
+		if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to)) {
 			if (rtnl_link_vlan_set_egress_map (new_link, from, to))
-				goto err_out_delete_vlan_with_new_name;
+				goto error_new_link;
+		}
 	}
 
 	rtnl_link_put (new_link);
 	return TRUE;
 
-err_out:
-	g_free (name);
-	return FALSE;
-
-err_out_delete_vlan_with_default_name:
-	nm_system_iface_compat_rem_vlan_device (name);
-	g_free (name);
-	return FALSE;
-
-err_out_delete_vlan_with_new_name:
+error_new_link:
 	rtnl_link_put (new_link);
-	nm_system_iface_compat_rem_vlan_device (iface);
-	g_free (name);
+	/* fall through */
+
+error:
+	if (created)
+		nm_system_iface_compat_rem_vlan_device (iface);
 	return FALSE;
 }
 
