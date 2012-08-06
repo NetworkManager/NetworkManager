@@ -42,6 +42,30 @@ G_BEGIN_DECLS
 #define NM_VPN_PLUGIN_DBUS_SERVICE_NAME "service-name"
 #define NM_VPN_PLUGIN_STATE             "state"
 
+/**
+ * NMVPNPluginError:
+ * @NM_VPN_PLUGIN_ERROR_GENERAL: general failure
+ * @NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS: the plugin is already starting,
+ *  and another connect request was received
+ * @NM_VPN_PLUGIN_ERROR_ALREADY_STARTED: the plugin is already connected, and
+ *  another connect request was received
+ * @NM_VPN_PLUGIN_ERROR_STOPPING_IN_PROGRESS: the plugin is already stopping,
+ *  and another stop request was received
+ * @NM_VPN_PLUGIN_ERROR_ALREADY_STOPPED: the plugin is already stopped, and
+ *  another disconnect request was received
+ * @NM_VPN_PLUGIN_ERROR_WRONG_STATE: the operation could not be performed in
+ *  this state
+ * @NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS: the operation could not be performed as
+ *  the request contained malformed arguments, or arguments of unexpected type.
+ *  Usually means that one of the VPN setting data items or secrets was not of
+ *  the expected type (ie int, string, bool, etc).
+ * @NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED: a child process failed to launch
+ * @NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID: the operation could not be performed
+ *  because the connection was invalid.  Usually means that the connection's
+ *  VPN setting was missing some required data item or secret.
+ *
+ * Returned by the VPN service plugin to indicate errors.
+ **/
 typedef enum {
 	NM_VPN_PLUGIN_ERROR_GENERAL,              /*< nick=General >*/
 	NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS, /*< nick=StartingInProgress >*/
