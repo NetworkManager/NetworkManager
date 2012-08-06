@@ -54,7 +54,36 @@ G_BEGIN_DECLS
 #define NM_CLIENT_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 
-/* Permissions */
+/**
+ * NMClientPermission:
+ * @NM_CLIENT_PERMISSION_NONE: unknown or no permission
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK: controls whether networking
+ *  can be globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI: controls whether WiFi can be
+ *  globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN: controls whether WWAN (3G) can be
+ *  globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIMAX: controls whether WiMAX can be
+ *  globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_SLEEP_WAKE: controls whether the client can ask
+ *  NetworkManager to sleep and wake
+ * @NM_CLIENT_PERMISSION_NETWORK_CONTROL: controls whether networking connections
+ *  can be started, stopped, and changed
+ * @NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED: controls whether a password
+ *  protected WiFi hotspot can be created
+ * @NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN: controls whether an open WiFi hotspot
+ *  can be created
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM: controls whether connections
+ *  that are available to all users can be modified
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_OWN: controls whether connections
+ *  owned by the current user can be modified
+ * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME: controls whether the
+ *  persistent hostname can be changed
+ * @NM_CLIENT_PERMISSION_LAST: a reserved boundary value
+ *
+ * #NMClientPermission values indicate various permissions that NetworkManager
+ * clients can obtain to perform certain tasks on behalf of the current user.
+ **/
 typedef enum {
 	NM_CLIENT_PERMISSION_NONE = 0,
 	NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK = 1,
@@ -72,6 +101,18 @@ typedef enum {
 	NM_CLIENT_PERMISSION_LAST = NM_CLIENT_PERMISSION_SETTINGS_MODIFY_HOSTNAME
 } NMClientPermission;
 
+/**
+ * NMClientPermissionResult:
+ * @NM_CLIENT_PERMISSION_RESULT_UNKNOWN: unknown or no authorization
+ * @NM_CLIENT_PERMISSION_RESULT_YES: the permission is available
+ * @NM_CLIENT_PERMISSION_RESULT_AUTH: authorization is necessary before the
+ *  permission is available
+ * @NM_CLIENT_PERMISSION_RESULT_NO: permission to perform the operation is
+ *  denied by system policy
+ *
+ * #NMClientPermissionResult values indicate what authorizations and permissions
+ * the user requires to obtain a given #NMClientPermission
+ **/
 typedef enum {
 	NM_CLIENT_PERMISSION_RESULT_UNKNOWN = 0,
 	NM_CLIENT_PERMISSION_RESULT_YES,
