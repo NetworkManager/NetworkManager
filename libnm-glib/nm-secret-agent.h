@@ -29,6 +29,23 @@ G_BEGIN_DECLS
 
 GQuark nm_secret_agent_error_quark (void);
 
+/**
+ * NMSecretAgentError:
+ * @NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED: the caller (ie, NetworkManager) is not
+ *  authorized to make this request
+ * @NM_SECRET_AGENT_ERROR_INVALID_CONNECTION: the connection for which secrets
+ *  were requested could not be found
+ * @NM_SECRET_AGENT_ERROR_USER_CANCELED: the request was canceled by the user
+ * @NM_SECRET_AGENT_ERROR_AGENT_CANCELED: the agent canceled the request
+ *  because it was requested to do so by NetworkManager
+ * @NM_SECRET_AGENT_ERROR_INTERNAL_ERROR: some internal error in the agent caused
+ *  the request to fail
+ * @NM_SECRET_AGENT_ERROR_NO_SECRETS: the agent cannot find any secrets for this
+ *  connection
+ *
+ * #NMSecretAgentError values are passed by secret agents back to NetworkManager
+ * when they encounter problems retrieving secrets on behalf of NM.
+ */
 typedef enum {
 	NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED = 0, /*< nick=NotAuthorized >*/
 	NM_SECRET_AGENT_ERROR_INVALID_CONNECTION, /*< nick=InvalidConnection >*/
@@ -57,7 +74,7 @@ typedef enum {
  *
  * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
  */
-typedef enum {
+typedef enum /*< flags >*/ {
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2,
