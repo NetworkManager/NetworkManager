@@ -7,6 +7,7 @@
 #include <nm-device-bt.h>
 #include <nm-device-wimax.h>
 #include <nm-device-olpc-mesh.h>
+#include <nm-device-adsl.h>
 #include <nm-device-infiniband.h>
 #include <nm-device-bond.h>
 #include <nm-device-vlan.h>
@@ -30,6 +31,7 @@ nm_device_modem_get_type
 nm_device_bt_get_type
 nm_device_wimax_get_type
 nm_device_olpc_mesh_get_type
+nm_device_adsl_get_type
 nm_device_infiniband_get_type
 nm_device_bond_get_type
 nm_device_vlan_get_type
