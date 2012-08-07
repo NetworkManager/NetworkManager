@@ -1,28 +1,20 @@
 <?xml version="1.0"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
-               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+  <!ENTITY version SYSTEM "version.xml">
+]>
+
 <book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
   <bookinfo>
     <title>libnm-glib Reference Manual</title>
     <releaseinfo>
-      for libnm-glib 0.9
+      for libnm-glib &version;
       The latest version of this documentation can be found on-line at
       <ulink role="online-location" url="http://projects.gnome.org/NetworkManager/developers/libnm-glib/09/">http://projects.gnome.org/NetworkManager/developers/libnm-glib/09/</ulink>.
     </releaseinfo>
-    <authorgroup>
-      <author>
-	<firstname>Dan</firstname>
-	<surname>Williams</surname>
-	<affiliation>
-	  <address>
-	    <email>dcbw@redhat.com</email>
-	  </address>
-	</affiliation>
-      </author>
-    </authorgroup>
 
     <copyright>
-      <year>2011</year>
+      <year>2012</year>
       <holder>The NetworkManager Authors</holder>
     </copyright>
 
@@ -45,14 +37,6 @@
 	  <city>Boston</city>, <state>MA</state> <postcode>02110-1301</postcode>,
 	  <country>USA</country>
 	</address>
-      </para>
-
-      <para>
-	Many of the names used by companies to distinguish their
-	products and services are claimed as trademarks. Where those
-	names appear in any GNOME documentation, and those trademarks
-	are made aware to the members of the GNOME Documentation
-	Project, the names have been printed in caps or initial caps.
       </para>
     </legalnotice>
   </bookinfo>

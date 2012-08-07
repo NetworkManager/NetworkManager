@@ -7,20 +7,9 @@
   <bookinfo>
     <title>NetworkManager D-Bus Reference Manual</title>
     <releaseinfo>Version &version;</releaseinfo>
-    <authorgroup>
-      <author>
-	<firstname>Dan</firstname>
-	<surname>Williams</surname>
-	<affiliation>
-	  <address>
-	    <email>dcbw@redhat.com</email>
-	  </address>
-	</affiliation>
-      </author>
-    </authorgroup>
 
     <copyright>
-      <year>2011</year>
+      <year>2012</year>
       <holder>The NetworkManager Authors</holder>
     </copyright>
 
@@ -43,14 +32,6 @@
 	  <city>Boston</city>, <state>MA</state> <postcode>02110-1301</postcode>,
 	  <country>USA</country>
 	</address>
-      </para>
-
-      <para>
-	Many of the names used by companies to distinguish their
-	products and services are claimed as trademarks. Where those
-	names appear in any GNOME documentation, and those trademarks
-	are made aware to the members of the GNOME Documentation
-	Project, the names have been printed in caps or initial caps.
       </para>
     </legalnotice>
   </bookinfo>

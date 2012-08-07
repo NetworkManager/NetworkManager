@@ -39,7 +39,7 @@ IGNORE_HFILES= \
 HTML_IMAGES = 
 
 # Extra XML files that are included by $(DOC_MAIN_SGML_FILE).
-content_files = 
+content_files = version.xml
 
 # Other files to distribute.
 extra_files =
@@ -61,6 +61,8 @@ GTKDOC_LIBS = \
 
 # include common portion ...
 include $(top_srcdir)/gtk-doc.make
+
+EXTRA_DIST += version.xml.in
 
 CLEANFILES += \
 	libnm-util-sections.txt \

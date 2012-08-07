@@ -828,7 +828,9 @@ docs/Makefile
 docs/api/Makefile
 docs/api/version.xml
 docs/libnm-glib/Makefile
+docs/libnm-glib/version.xml
 docs/libnm-util/Makefile
+docs/libnm-util/version.xml
 NetworkManager.pc
 examples/Makefile
 examples/shell/Makefile
