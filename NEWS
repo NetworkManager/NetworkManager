@@ -19,6 +19,9 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix various crashes and issues in the ifcfg-rh system settings plugin
 * Fix race with multiple interfaces running DHCP at the same time
 * Add Linux From Scratch (LFS) support
+* Allow customized dnsmasq local caching nameserver config via /etc/NetworkManager/dnsmasq.d/
+* Fixes for VLAN and bonding when libnl2 or earlier are used
+* D-Bus API, libnm-glib, libnm-util, and GObject Introspection documentation updates
 
 
 ==============================================
