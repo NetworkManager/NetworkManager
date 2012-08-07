@@ -1544,7 +1544,7 @@ nm_connection_get_setting_ppp (NMConnection *connection)
  * nm_connection_get_setting_pppoe:
  * @connection: the #NMConnection
  *
- * A shortcut to return any #NMSettingPPOE the connection might contain.
+ * A shortcut to return any #NMSettingPPPOE the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingPPPOE if the connection contains one, otherwise NULL
  **/
