@@ -1576,7 +1576,7 @@ nm_utils_ip4_netmask_to_prefix (guint32 netmask)
  * nm_utils_ip4_prefix_to_netmask:
  * @prefix: a CIDR prefix
  *
- * Returns: the netmask represented by the prefix
+ * Returns: the netmask represented by the prefix, in network byte order
  **/
 guint32
 nm_utils_ip4_prefix_to_netmask (guint32 prefix)
