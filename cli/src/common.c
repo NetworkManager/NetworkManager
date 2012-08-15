@@ -411,7 +411,7 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 		return _("The device could not be readied for configuration");
 
 	case NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE:
-		return _("IP configuration could not be reserved (no available address, timeout, etc)");
+		return _("IP configuration could not be reserved (no available address, timeout, etc.)");
 
 	case NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED:
 		return _("The IP configuration is no longer valid");
