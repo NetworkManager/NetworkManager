@@ -1086,6 +1086,10 @@ real_check_connection_available (NMDevice *device, NMConnection *connection)
 	if (g_strcmp0 (mode, "adhoc") == 0)
 		return TRUE;
 
+	/* Hidden SSIDs obviously don't always appear in the scan list either */
+	if (nm_setting_wireless_get_hidden (s_wifi))
+		return TRUE;
+
 	/* check if its visible */
 	for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
 		if (nm_ap_check_compatible (NM_AP (ap_iter->data), connection))
