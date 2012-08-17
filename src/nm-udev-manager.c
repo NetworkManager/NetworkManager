@@ -131,7 +131,10 @@ killswitch_new (GUdevDevice *device, RfKillType rtype)
 		driver = "(unknown)";
 	ks->driver = g_strdup (driver);
 
-	if (g_strcmp0 (subsys, "platform") == 0 || g_strcmp0 (parent_subsys, "platform") == 0)
+	if (   g_strcmp0 (subsys, "platform") == 0
+	    || g_strcmp0 (parent_subsys, "platform") == 0
+	    || g_strcmp0 (subsys, "acpi") == 0
+	    || g_strcmp0 (parent_subsys, "acpi") == 0)
 		ks->platform = TRUE;
 
 	if (grandparent)
