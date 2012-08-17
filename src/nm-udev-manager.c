@@ -204,6 +204,14 @@ recheck_killswitches (NMUdevManager *self)
 		if (device) {
 			sysfs_state = g_udev_device_get_property_as_int (device, "RFKILL_STATE");
 			dev_state = sysfs_state_to_nm_state (sysfs_state);
+
+			nm_log_dbg (LOGD_RFKILL, "%s rfkill%s switch %s state now %d/%u",
+			            rfkill_type_to_desc (ks->rtype),
+			            ks->platform ? " platform" : "",
+			            ks->name,
+			            sysfs_state,
+			            dev_state);
+
 			if (ks->platform == FALSE) {
 				if (dev_state > poll_states[ks->rtype])
 					poll_states[ks->rtype] = dev_state;
@@ -285,10 +293,11 @@ add_one_killswitch (NMUdevManager *self, GUdevDevice *device)
 	ks = killswitch_new (device, rtype);
 	priv->killswitches = g_slist_prepend (priv->killswitches, ks);
 
-	nm_log_info (LOGD_RFKILL, "found %s radio killswitch %s (at %s) (driver %s)",
-	             rfkill_type_to_desc (rtype),
+	nm_log_info (LOGD_RFKILL, "%s: found %s radio killswitch (at %s) (%sdriver %s)",
 	             ks->name,
+	             rfkill_type_to_desc (rtype),
 	             ks->path,
+	             ks->platform ? "platform " : "",
 	             ks->driver ? ks->driver : "<unknown>");
 }
 
