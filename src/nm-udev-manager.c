@@ -123,7 +123,7 @@ killswitch_new (GUdevDevice *device, RfKillType rtype)
 			/* Sigh; try the grandparent */
 			grandparent = g_udev_device_get_parent (parent);
 			if (grandparent)
-				driver = g_udev_device_get_property (parent, "DRIVER");
+				driver = g_udev_device_get_property (grandparent, "DRIVER");
 		}
 	}
 
