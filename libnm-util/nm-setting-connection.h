@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2012 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -78,6 +78,7 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_ZONE        "zone"
 #define NM_SETTING_CONNECTION_MASTER      "master"
 #define NM_SETTING_CONNECTION_SLAVE_TYPE  "slave-type"
+#define NM_SETTING_CONNECTION_SECONDARIES "secondaries"
 
 /**
  * NMSettingConnection:
@@ -127,6 +128,10 @@ const char *nm_setting_connection_get_master           (NMSettingConnection *set
 gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
 							const char *type);
 const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
+guint32     nm_setting_connection_get_num_secondaries  (NMSettingConnection *setting);
+const char *nm_setting_connection_get_secondary        (NMSettingConnection *setting, guint32 idx);
+gboolean    nm_setting_connection_add_secondary        (NMSettingConnection *setting, const char *sec_uuid);
+void        nm_setting_connection_remove_secondary     (NMSettingConnection *setting, guint32 idx);
 
 G_END_DECLS
 

@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2012 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -83,6 +83,7 @@ typedef struct {
 	guint64 timestamp;
 	gboolean read_only;
 	char *zone;
+	GSList *secondaries; /* secondary connections to activate with the base connection */
 } NMSettingConnectionPrivate;
 
 enum {
@@ -97,6 +98,7 @@ enum {
 	PROP_ZONE,
 	PROP_MASTER,
 	PROP_SLAVE_TYPE,
+	PROP_SECONDARIES,
 
 	LAST_PROP
 };
@@ -529,6 +531,94 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
 	return !g_strcmp0 (NM_SETTING_CONNECTION_GET_PRIVATE (setting)->slave_type, type);
 }
 
+/**
+ * nm_setting_connection_get_num_secondaries:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the number of configured secondary connection UUIDs
+ **/
+guint32
+nm_setting_connection_get_num_secondaries (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
+
+	return g_slist_length (NM_SETTING_CONNECTION_GET_PRIVATE (setting)->secondaries);
+}
+
+/**
+ * nm_setting_connection_get_secondary:
+ * @setting: the #NMSettingConnection
+ * @idx: the zero-based index of the secondary connection UUID entry
+ *
+ * Returns: the secondary connection UUID at index @idx
+ **/
+const char *
+nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
+{
+	NMSettingConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	g_return_val_if_fail (idx <= g_slist_length (priv->secondaries), NULL);
+
+	return (const char *) g_slist_nth_data (priv->secondaries, idx);
+}
+
+/**
+ * nm_setting_connection_add_secondary:
+ * @setting: the #NMSettingConnection
+ * @sec_uuid: the secondary connection UUID to add
+ *
+ * Adds a new secondary connetion UUID to the setting.
+ *
+ * Returns: %TRUE if the secondary connection UUID was added; %FALSE if the UUID
+ * was already present
+ **/
+gboolean
+nm_setting_connection_add_secondary (NMSettingConnection *setting,
+                                     const char *sec_uuid)
+{
+	NMSettingConnectionPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
+	g_return_val_if_fail (sec_uuid != NULL, FALSE);
+	g_return_val_if_fail (sec_uuid[0] != '\0', FALSE);
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	for (iter = priv->secondaries; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (sec_uuid, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->secondaries = g_slist_append (priv->secondaries, g_strdup (sec_uuid));
+	return TRUE;
+}
+
+/**
+ * nm_setting_connection_remove_secondary:
+ * @setting: the #NMSettingConnection
+ * @idx: index number of the secondary connection UUID
+ *
+ * Removes the secondary coonnection UUID at index @idx.
+ **/
+void
+nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 idx)
+{
+	NMSettingConnectionPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_CONNECTION (setting));
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->secondaries, idx);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->secondaries = g_slist_delete_link (priv->secondaries, elt);
+}
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -750,6 +840,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->slave_type);
 		priv->slave_type = g_value_dup_string (value);
 		break;
+	case PROP_SECONDARIES:
+		nm_utils_slist_free (priv->secondaries, g_free);
+		priv->secondaries = g_value_dup_boxed (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -803,6 +897,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLAVE_TYPE:
 		g_value_set_string (value, nm_setting_connection_get_slave_type (setting));
+		break;
+	case PROP_SECONDARIES:
+		g_value_set_boxed (value, priv->secondaries);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1042,4 +1139,19 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "connection is not a slave.",
 		                      NULL,
 		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	/**
+	 * NMSettingConnection:secondaries:
+	 *
+	 * List of connection UUIDs that should be activated when the base connection
+	 * itself is activated.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_SECONDARIES,
+		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES,
+		                             "Secondaries",
+		                             "List of connection UUIDs that should be activated "
+		                             "when the base connection itself is activated.",
+		                             DBUS_TYPE_G_LIST_OF_STRING,
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }
