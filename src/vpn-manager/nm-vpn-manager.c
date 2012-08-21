@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -155,7 +155,8 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
 
-	if (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED) {
+	if (   nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED
+	    && nm_device_get_state (device) != NM_DEVICE_STATE_SECONDARIES) {
 		g_set_error (error,
 		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE,
 		             "%s", "The base device for the VPN connection was not active.");

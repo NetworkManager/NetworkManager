@@ -2469,11 +2469,12 @@ out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
 
 	/* Handle interfaces (bond slaves, etc) that won't have any IP config; they
-	 * need to move to ACTIVATED.
+	 * need to move to SECONDARIES.
 	 */
 	if (priv->ip4_state == IP_DONE && priv->ip6_state == IP_DONE) {
 		/* FIXME: call layer2 stuff to set MTU? */
-		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+
+		nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
 	}
 
 	return FALSE;
@@ -2891,10 +2892,10 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		}
 	}
 
-	/* Enter the ACTIVATED state if this is the first method to complete */
+	/* Enter the SECONDARIES state if this is the first method to complete */
 	priv->ip4_state = IP_DONE;
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
 
 out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv4 Commit) complete.",
@@ -2977,10 +2978,10 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, config);
 
 	if (ip6_config_merge_and_apply (self, config, &reason)) {
-		/* Enter the ACTIVATED state if this is the first method to complete */
+		/* Enter the SECONDARIES state if this is the first method to complete */
 		priv->ip6_state = IP_DONE;
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+			nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
 	} else {
 		nm_log_info (LOGD_DEVICE | LOGD_IP6,
 			         "Activation (%s) Stage 5 of 5 (IPv6 Commit) failed",
@@ -4658,6 +4659,10 @@ nm_device_state_changed (NMDevice *device,
 		 * handler for a variety of reasons.
 		 */
 		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+		break;
+	case NM_DEVICE_STATE_SECONDARIES:
+		nm_log_dbg (LOGD_DEVICE, "(%s): device entered SECONDARIES state",
+		            nm_device_get_iface (device));
 		break;
 	default:
 		break;
