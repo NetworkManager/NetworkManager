@@ -63,6 +63,11 @@ typedef enum {
 #define NM_MANAGER_HOSTNAME "hostname"
 #define NM_MANAGER_SLEEPING "sleeping"
 
+/* Internal signals */
+#define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
+#define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
+
+
 typedef struct {
 	GObject parent;
 } NMManager;

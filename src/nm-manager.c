@@ -256,6 +256,8 @@ enum {
 	PROPERTIES_CHANGED,
 	CHECK_PERMISSIONS,
 	USER_PERMISSIONS_CHANGED,
+	ACTIVE_CONNECTION_ADDED,
+	ACTIVE_CONNECTION_REMOVED,
 
 	LAST_SIGNAL
 };
@@ -319,6 +321,7 @@ _active_connection_cleanup (gpointer user_data)
 		iter = iter->next;
 		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
 			priv->active_connections = g_slist_remove (priv->active_connections, ac);
+			g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, ac);
 			g_signal_handlers_disconnect_by_func (ac, active_connection_state_changed, self);
 			g_object_unref (ac);
 			changed = TRUE;
@@ -362,6 +365,8 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
 	                  self);
+
+	g_signal_emit (self, signals[ACTIVE_CONNECTION_ADDED], 0, active);
 	g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 }
 
@@ -4607,6 +4612,22 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              0, NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
+
+	signals[ACTIVE_CONNECTION_ADDED] =
+		g_signal_new (NM_MANAGER_ACTIVE_CONNECTION_ADDED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[ACTIVE_CONNECTION_REMOVED] =
+		g_signal_new (NM_MANAGER_ACTIVE_CONNECTION_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 	                                 &dbus_glib_nm_manager_object_info);
