@@ -45,12 +45,6 @@ G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
 
-#if defined(TARGET_DEBIAN) || defined(TARGET_SUSE) || defined(TARGET_MANDRIVA)
-#define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhcp"
-#else
-#define NM_DHCLIENT_LEASE_DIR           LOCALSTATEDIR "/lib/dhclient"
-#endif
-
 #define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
 
 typedef struct {
@@ -85,10 +79,9 @@ nm_dhcp_dhclient_get_path (const char *try_first)
 }
 
 static char *
-get_leasefile_for_iface (const char * iface, const char *uuid, gboolean ipv6)
+get_dhclient_leasefile (const char * iface, const char *uuid, gboolean ipv6)
 {
-	return g_strdup_printf ("%s/dhclient%s-%s-%s.lease",
-	                        NM_DHCLIENT_LEASE_DIR,
+	return g_strdup_printf (NMSTATEDIR "/dhclient%s-%s-%s.lease",
 	                        ipv6 ? "6" : "",
 	                        uuid,
 	                        iface);
@@ -135,7 +128,7 @@ add_lease_option (GHashTable *hash, char *line)
 }
 
 GSList *
-nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
+nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean ipv6)
 {
 	GSList *parsed = NULL, *iter, *leases = NULL;
 	char *contents = NULL;
@@ -143,7 +136,11 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid)
 	char **line, **split = NULL;
 	GHashTable *hash = NULL;
 
-	leasefile = get_leasefile_for_iface (iface, uuid, FALSE);
+	/* IPv6 not supported */
+	if (ipv6)
+		return NULL;
+
+	leasefile = get_dhclient_leasefile (iface, uuid, FALSE);
 	if (!leasefile)
 		return NULL;
 
@@ -455,7 +452,7 @@ dhclient_start (NMDHCPClient *client,
 	}
 
 	g_free (priv->lease_file);
-	priv->lease_file = get_leasefile_for_iface (iface, uuid, ipv6);
+	priv->lease_file = get_dhclient_leasefile (iface, uuid, ipv6);
 	if (!priv->lease_file) {
 		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
 		return -1;

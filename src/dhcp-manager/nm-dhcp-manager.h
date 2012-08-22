@@ -82,7 +82,8 @@ NMDHCPClient * nm_dhcp_manager_start_ip6     (NMDHCPManager *manager,
 
 GSList *       nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                                  const char *iface,
-                                                 const char *uuid);
+                                                 const char *uuid,
+                                                 gboolean ipv6);
 
 /* For testing only */
 NMIP4Config *nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,

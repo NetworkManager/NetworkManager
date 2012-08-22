@@ -73,7 +73,7 @@ nm_dhcp_dhcpcd_get_path (const char *try_first)
 }
 
 GSList *
-nm_dhcp_dhcpcd_get_lease_config (const char *iface, const char *uuid)
+nm_dhcp_dhcpcd_get_lease_config (const char *iface, const char *uuid, gboolean ipv6)
 {
 	return NULL;
 }

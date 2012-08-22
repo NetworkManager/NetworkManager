@@ -62,7 +62,7 @@ nm_dhcp_manager_error_quark (void)
 
 static NMDHCPManager *singleton = NULL;
 
-typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid);
+typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid, gboolean ipv6);
 
 typedef struct {
 	GType               client_type;
@@ -531,14 +531,15 @@ nm_dhcp_manager_set_hostname_provider (NMDHCPManager *manager,
 GSList *
 nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                   const char *iface,
-                                  const char *uuid)
+                                  const char *uuid,
+                                  gboolean ipv6)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	return NM_DHCP_MANAGER_GET_PRIVATE (self)->get_lease_config_func (iface, uuid);
+	return NM_DHCP_MANAGER_GET_PRIVATE (self)->get_lease_config_func (iface, uuid, ipv6);
 }
 
 NMIP4Config *

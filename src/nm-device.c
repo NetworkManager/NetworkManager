@@ -4857,7 +4857,8 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 	dhcp_mgr = nm_dhcp_manager_get ();
 	leases = nm_dhcp_manager_get_lease_config (dhcp_mgr,
 	                                           nm_device_get_iface (self),
-	                                           nm_connection_get_uuid (connection));
+	                                           nm_connection_get_uuid (connection),
+						   FALSE);
 	g_object_unref (dhcp_mgr);
 
 	method = s_ip4 ? nm_setting_ip4_config_get_method (s_ip4) : NM_SETTING_IP4_CONFIG_METHOD_AUTO;
