@@ -44,15 +44,6 @@ typedef struct {
 	guint monitor_id;
 } NMVPNManagerPrivate;
 
-enum {
-	CONNECTION_ACTIVATED,
-	CONNECTION_DEACTIVATED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
 GQuark
 nm_vpn_manager_error_quark (void)
 {
@@ -113,28 +104,6 @@ find_active_vpn_connection_by_connection (NMVPNManager *self, NMConnection *conn
 	return found;
 }
 
-static void
-connection_vpn_state_changed (NMVPNConnection *connection,
-                              NMVPNConnectionState new_state,
-                              NMVPNConnectionState old_state,
-                              NMVPNConnectionStateReason reason,
-                              gpointer user_data)
-{
-	NMVPNManager *manager = NM_VPN_MANAGER (user_data);
-
-	switch (new_state) {
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		g_signal_emit (manager, signals[CONNECTION_ACTIVATED], 0, connection);
-		break;
-	case NM_VPN_CONNECTION_STATE_FAILED:
-	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
-		g_signal_emit (manager, signals[CONNECTION_DEACTIVATED], 0, connection, new_state, old_state, reason);
-		break;
-	default:
-		break;
-	}
-}
-
 NMActiveConnection *
 nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                     NMConnection *connection,
@@ -188,14 +157,13 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		return NULL;
 	}
 
-	vpn = nm_vpn_service_activate (service, connection, device, specific_object, user_requested, user_uid, error);
-	if (vpn) {
-		g_signal_connect (vpn, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
-		                  G_CALLBACK (connection_vpn_state_changed),
-		                  manager);
-	}
-
-	return (NMActiveConnection *) vpn;
+	return (NMActiveConnection *) nm_vpn_service_activate (service,
+	                                                       connection,
+	                                                       device,
+	                                                       specific_object,
+	                                                       user_requested,
+	                                                       user_uid,
+	                                                       error);
 }
 
 gboolean
@@ -416,23 +384,6 @@ nm_vpn_manager_class_init (NMVPNManagerClass *manager_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
-
-	/* signals */
-	signals[CONNECTION_ACTIVATED] =
-		g_signal_new ("connection-activated",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    0, NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1, G_TYPE_OBJECT);
-
-	signals[CONNECTION_DEACTIVATED] =
-		g_signal_new ("connection-deactivated",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    0, NULL, NULL,
-				    _nm_marshal_VOID__OBJECT_UINT_UINT_UINT,
-				    G_TYPE_NONE, 4, G_TYPE_OBJECT, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_error_domain_register (NM_VPN_MANAGER_ERROR, NULL, NM_TYPE_VPN_MANAGER_ERROR);
 }
