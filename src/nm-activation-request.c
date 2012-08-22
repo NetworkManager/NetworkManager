@@ -297,7 +297,7 @@ nm_act_request_add_share_rule (NMActRequest *req,
 static void
 device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 {
-	NMActiveConnectionState new_ac_state;
+	NMActiveConnectionState ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
 	/* Set NMActiveConnection state based on the device's state */
 	switch (nm_device_get_state (device)) {
@@ -307,22 +307,29 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 	case NM_DEVICE_STATE_IP_CONFIG:
 	case NM_DEVICE_STATE_IP_CHECK:
 	case NM_DEVICE_STATE_SECONDARIES:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
+		ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
+		ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATING;
+		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATING;
+		break;
+	case NM_DEVICE_STATE_FAILED:
+	case NM_DEVICE_STATE_DISCONNECTED:
+		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
 		break;
 	default:
-		new_ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
-		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (self), FALSE);
-		nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (self), FALSE);
 		break;
 	}
 
-	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self), new_ac_state);
+	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
+	    || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (self), FALSE);
+		nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (self), FALSE);
+	}
+
+	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self), ac_state);
 }
 
 /********************************************************************/

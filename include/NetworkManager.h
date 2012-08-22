@@ -523,6 +523,8 @@ typedef enum {
  * @NM_ACTIVE_CONNECTION_STATE_ACTIVATED: there is a connection to the network
  * @NM_ACTIVE_CONNECTION_STATE_DEACTIVATING: the network connection is being
  *   torn down and cleaned up
+ * @NM_ACTIVE_CONNECTION_STATE_DEACTIVATED: the network connection is disconnected
+ *   and will be removed
  *
  * #NMActiveConnectionState values indicate the state of a connection to a
  * specific network while it is starting, connected, or disconnecting from that
@@ -532,7 +534,8 @@ typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,
 	NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
 	NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
-	NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
+	NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+	NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
 } NMActiveConnectionState;
 
 #endif /* NETWORK_MANAGER_H */

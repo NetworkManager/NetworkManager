@@ -70,6 +70,11 @@
           The connection is being torn down and cleaned up.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="DEACTIVATED" value="4">
+        <tp:docstring>
+          The connection is no longer active.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
   </interface>
 </node>
