@@ -23,14 +23,11 @@
 #define NM_POLICY_H
 
 #include "nm-manager.h"
-#include "nm-vpn-manager.h"
 #include "nm-settings.h"
 
 typedef struct NMPolicy NMPolicy;
 
-NMPolicy *nm_policy_new (NMManager *manager,
-                         NMVPNManager *vpn_manager,
-                         NMSettings *settings);
+NMPolicy *nm_policy_new (NMManager *manager, NMSettings *settings);
 void nm_policy_destroy (NMPolicy *policy);
 
 #endif /* NM_POLICY_H */

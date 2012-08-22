@@ -599,7 +599,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	policy = nm_policy_new (manager, vpn_manager, settings);
+	policy = nm_policy_new (manager, settings);
 	if (policy == NULL) {
 		nm_log_err (LOGD_CORE, "failed to initialize the policy.");
 		goto done;
