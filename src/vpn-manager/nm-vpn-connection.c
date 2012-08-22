@@ -623,7 +623,7 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 	}
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
-	             nm_vpn_connection_get_name (connection));
+	             nm_connection_get_id (priv->connection));
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_ACTIVATED,
 	                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
@@ -665,7 +665,7 @@ nm_vpn_connection_config_maybe_complete (NMVPNConnection *connection,
 	g_clear_object (&priv->ip6_config);
 
 	nm_log_warn (LOGD_VPN, "VPN connection '%s' did not receive valid IP config information.",
-	             nm_vpn_connection_get_name (connection));
+	             nm_connection_get_id (priv->connection));
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_FAILED,
 	                                 NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID);
@@ -743,7 +743,7 @@ nm_vpn_connection_config_get (DBusGProxy *proxy,
 	GValue *val;
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) reply received.",
-	             nm_vpn_connection_get_name (connection));
+	             nm_connection_get_id (priv->connection));
 
 	if (!process_generic_config (connection, config_hash))
 		return;
@@ -773,7 +773,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	if (priv->has_ip4) {
 		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received.",
-		             nm_vpn_connection_get_name (connection));
+		             nm_connection_get_id (priv->connection));
 
 		if (g_hash_table_size (config_hash) == 0) {
 			priv->has_ip4 = FALSE;
@@ -782,7 +782,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		}
 	} else {
 		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received from old-style plugin.",
-		             nm_vpn_connection_get_name (connection));
+		             nm_connection_get_id (priv->connection));
 
 		/* In the old API, the generic and IPv4 configuration items
 		 * were mixed together.
@@ -918,7 +918,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	int i;
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP6 Config Get) reply received.",
-	             nm_vpn_connection_get_name (connection));
+	             nm_connection_get_id (priv->connection));
 
 	if (g_hash_table_size (config_hash) == 0) {
 		priv->has_ip6 = FALSE;
@@ -1054,7 +1054,7 @@ nm_vpn_connection_ip_config_timeout (gpointer user_data)
 	 */
 	if (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_IP_CONFIG_GET) {
 		nm_log_warn (LOGD_VPN, "VPN connection '%s' (IP Config Get) timeout exceeded.",
-		             nm_vpn_connection_get_name (connection));
+		             nm_connection_get_id (priv->connection));
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT);
@@ -1070,11 +1070,11 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (Connect) reply received.",
-	             nm_vpn_connection_get_name (connection));
+	             nm_connection_get_id (priv->connection));
 
 	if (err) {
 		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.", 
-		             nm_vpn_connection_get_name (connection), err->message);
+		             nm_connection_get_id (priv->connection), err->message);
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
@@ -1198,20 +1198,6 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_NEED_AUTH,
 	                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
-}
-
-const char *
-nm_vpn_connection_get_name (NMVPNConnection *connection)
-{
-	NMVPNConnectionPrivate *priv;
-	NMSettingConnection *s_con;
-
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
-
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	s_con = nm_connection_get_setting_connection (priv->connection);
-
-	return nm_setting_connection_get_id (s_con);
 }
 
 NMConnection *
