@@ -27,6 +27,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-device.h"
+#include "nm-settings-connection.h"
 
 #include "nm-active-connection-glue.h"
 
@@ -95,10 +96,19 @@ nm_active_connection_set_state (NMActiveConnection *self,
                                 NMActiveConnectionState new_state)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMActiveConnectionState old_state;
 
-	if (priv->state != new_state) {
-		priv->state = new_state;
-		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
+	if (priv->state == new_state)
+		return;
+
+	old_state = priv->state;
+	priv->state = new_state;
+	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
+
+	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (priv->connection),
+		                                         (guint64) time (NULL), TRUE);
 	}
 }
 

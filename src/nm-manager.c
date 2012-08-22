@@ -223,7 +223,6 @@ typedef struct {
 	gboolean net_enabled;
 
 	NMVPNManager *vpn_manager;
-	gulong vpn_manager_activated_id;
 
 	NMModemManager *modem_manager;
 	guint modem_added_id;
@@ -428,18 +427,6 @@ manager_sleeping (NMManager *self)
 	if (priv->sleeping || !priv->net_enabled)
 		return TRUE;
 	return FALSE;
-}
-
-static void
-vpn_manager_connection_activated_cb (NMVPNManager *manager,
-                                     NMVPNConnection *vpn,
-                                     gpointer user_data)
-{
-	NMConnection *connection = nm_vpn_connection_get_connection (vpn);
-
-	/* Update timestamp for the VPN connection */
-	nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (connection),
-	                                         (guint64) time (NULL), TRUE);
 }
 
 static void
@@ -4087,11 +4074,6 @@ dispose (GObject *object)
 	g_free (priv->hostname);
 
 	g_object_unref (priv->settings);
-
-	if (priv->vpn_manager_activated_id) {
-		g_source_remove (priv->vpn_manager_activated_id);
-		priv->vpn_manager_activated_id = 0;
-	}
 	g_object_unref (priv->vpn_manager);
 
 	if (priv->modem_added_id) {
@@ -4407,8 +4389,6 @@ nm_manager_init (NMManager *manager)
 	                                           G_CALLBACK (modem_removed), manager);
 
 	priv->vpn_manager = nm_vpn_manager_get ();
-	priv->vpn_manager_activated_id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-activated",
-	                                                   G_CALLBACK (vpn_manager_connection_activated_cb), manager);
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
