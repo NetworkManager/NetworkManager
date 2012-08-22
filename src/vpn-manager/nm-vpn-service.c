@@ -355,7 +355,7 @@ nm_vpn_service_activate (NMVPNService *service,
 	                  G_CALLBACK (connection_vpn_state_changed),
 	                  service);
 
-	priv->connections = g_slist_prepend (priv->connections, vpn);
+	priv->connections = g_slist_prepend (priv->connections, g_object_ref (vpn));
 
 	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service)) {
 		// FIXME: fill in error when errors happen

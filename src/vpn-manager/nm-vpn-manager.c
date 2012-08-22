@@ -234,37 +234,6 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *self,
 	return success;
 }
 
-void
-nm_vpn_manager_add_active_connections (NMVPNManager *self,
-                                       NMConnection *filter,
-                                       GPtrArray *array)
-{
-	NMVPNManagerPrivate *priv;
-	GHashTableIter iter;
-	gpointer data;
-	GSList *active, *aiter;
-
-	g_return_if_fail (self);
-	g_return_if_fail (NM_IS_VPN_MANAGER (self));
-	g_return_if_fail (array != NULL);
-
-	priv = NM_VPN_MANAGER_GET_PRIVATE (self);
-	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		active = nm_vpn_service_get_active_connections (NM_VPN_SERVICE (data));
-		for (aiter = active; aiter; aiter = g_slist_next (aiter)) {
-			NMVPNConnection *vpn = NM_VPN_CONNECTION (aiter->data);
-			const char *path;
-
-			if (!filter || (nm_vpn_connection_get_connection (vpn) == filter)) {
-				path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn));
-				g_ptr_array_add (array, g_strdup (path));
-			}
-		}
-		g_slist_free (active);
-	}
-}
-
 GSList *
 nm_vpn_manager_get_active_connections (NMVPNManager *self)
 {
@@ -311,17 +280,6 @@ nm_vpn_manager_get_vpn_connection_for_active (NMVPNManager *manager,
 	}
 
 	return NULL;
-}
-
-NMConnection *
-nm_vpn_manager_get_connection_for_active (NMVPNManager *manager,
-                                          const char *active_path)
-{
-	NMVPNConnection *vpn_con;
-
-	vpn_con = nm_vpn_manager_get_vpn_connection_for_active (manager, active_path);
-
-	return vpn_con ? nm_vpn_connection_get_connection (vpn_con) : NULL;
 }
 
 static char *

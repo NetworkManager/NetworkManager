@@ -199,6 +199,9 @@ typedef struct {
 typedef struct {
 	char *state_file;
 
+	GSList *active_connections;
+	guint ac_cleanup_id;
+
 	GSList *devices;
 	NMState state;
 #if WITH_CONCHECK
@@ -221,7 +224,6 @@ typedef struct {
 
 	NMVPNManager *vpn_manager;
 	gulong vpn_manager_activated_id;
-	gulong vpn_manager_deactivated_id;
 
 	NMModemManager *modem_manager;
 	guint modem_added_id;
@@ -297,6 +299,75 @@ nm_manager_error_quark (void)
 
 /************************************************************************/
 
+static void active_connection_state_changed (NMActiveConnection *active,
+                                             GParamSpec *pspec,
+                                             NMManager *self);
+
+static gboolean
+_active_connection_cleanup (gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	gboolean changed = FALSE;
+
+	priv->ac_cleanup_id = 0;
+
+	iter = priv->active_connections;
+	while (iter) {
+		NMActiveConnection *ac = iter->data;
+
+		iter = iter->next;
+		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+			priv->active_connections = g_slist_remove (priv->active_connections, ac);
+			g_signal_handlers_disconnect_by_func (ac, active_connection_state_changed, self);
+			g_object_unref (ac);
+			changed = TRUE;
+		}
+	}
+
+	if (changed)
+		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
+
+	return FALSE;
+}
+
+static void
+active_connection_state_changed (NMActiveConnection *active,
+                                 GParamSpec *pspec,
+                                 NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActiveConnectionState state;
+
+	state = nm_active_connection_get_state (active);
+	if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+		/* Destroy active connections from an idle handler to ensure that
+		 * their last property change notifications go out, which wouldn't
+		 * happen if we destroyed them immediately when their state was set
+		 * to DEACTIVATED.
+		 */
+		if (!priv->ac_cleanup_id)
+			priv->ac_cleanup_id = g_idle_add (_active_connection_cleanup, self);
+	}
+}
+
+static void
+active_connection_add (NMManager *self, NMActiveConnection *active)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (g_slist_find (priv->active_connections, active) == FALSE);
+
+	priv->active_connections = g_slist_prepend (priv->active_connections, active);
+	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
+	                  G_CALLBACK (active_connection_state_changed),
+	                  self);
+	g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
+}
+
+/************************************************************************/
+
 static NMDevice *
 nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 {
@@ -363,17 +434,6 @@ vpn_manager_connection_activated_cb (NMVPNManager *manager,
 	/* Update timestamp for the VPN connection */
 	nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (connection),
 	                                         (guint64) time (NULL), TRUE);
-}
-
-static void
-vpn_manager_connection_deactivated_cb (NMVPNManager *manager,
-                                       NMVPNConnection *vpn,
-                                       NMVPNConnectionState new_state,
-                                       NMVPNConnectionState old_state,
-                                       NMVPNConnectionStateReason reason,
-                                       gpointer user_data)
-{
-	g_object_notify (G_OBJECT (user_data), NM_MANAGER_ACTIVE_CONNECTIONS);
 }
 
 static void
@@ -894,28 +954,17 @@ static GPtrArray *
 get_active_connections (NMManager *manager, NMConnection *filter)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GPtrArray *active;
 	GSList *iter;
+	GPtrArray *active;
 
  	active = g_ptr_array_sized_new (3);
 
-	/* Add active device connections */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMActRequest *req;
-		const char *path;
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *ac = iter->data;
 
-		req = nm_device_get_act_request (NM_DEVICE (iter->data));
-		if (!req)
-			continue;
-
-		if (!filter || (nm_act_request_get_connection (req) == filter)) {
-			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req));
-			g_ptr_array_add (active, g_strdup (path));
-		}
+		if (!filter || (nm_active_connection_get_connection (ac) == filter))
+			g_ptr_array_add (active, g_strdup (nm_active_connection_get_path (ac)));
 	}
-
-	/* Add active VPN connections */
-	nm_vpn_manager_add_active_connections (priv->vpn_manager, filter, active);
 
 	return active;
 }
@@ -1795,7 +1844,7 @@ add_device (NMManager *self, NMDevice *device)
 
 		ac = internal_activate_device (self, device, existing, NULL, FALSE, 0, NULL, TRUE, NULL, &error);
 		if (ac)
-			g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
+			active_connection_add (self, ac);
 		else {
 			nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
 			             nm_connection_get_path (existing),
@@ -2319,6 +2368,7 @@ internal_activate_device (NMManager *manager,
 	                          assumed,
 	                          device,
 	                          master_device);
+	/* Device takes ownership of 'req' */
 	nm_device_activate (device, req);
 	g_object_unref (req);
 
@@ -2648,7 +2698,7 @@ nm_manager_activate_connection (NMManager *manager,
 	char *iface;
 	NMDevice *master_device = NULL;
 	NMConnection *master_connection = NULL;
-	NMActiveConnection *master_ac = NULL;
+	NMActiveConnection *master_ac = NULL, *ac = NULL;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2673,8 +2723,10 @@ nm_manager_activate_connection (NMManager *manager,
 	}
 
 	/* VPN ? */
-	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
-		return activate_vpn_connection (manager, connection, specific_object, device_path, sender_uid, error);
+	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
+		ac = activate_vpn_connection (manager, connection, specific_object, device_path, sender_uid, error);
+		goto activated;
+	}
 
 	/* Device-based connection */
 	if (device_path) {
@@ -2798,16 +2850,22 @@ nm_manager_activate_connection (NMManager *manager,
 		            nm_active_connection_get_path (master_ac));
 	}
 
-	return internal_activate_device (manager,
-	                                 device,
-	                                 connection,
-	                                 specific_object,
-	                                 dbus_sender ? TRUE : FALSE,
-	                                 dbus_sender ? sender_uid : 0,
-	                                 dbus_sender,
-	                                 FALSE,
-	                                 master_ac,
-	                                 error);
+	ac = internal_activate_device (manager,
+	                               device,
+	                               connection,
+	                               specific_object,
+	                               dbus_sender ? TRUE : FALSE,
+	                               dbus_sender ? sender_uid : 0,
+	                               dbus_sender,
+	                               FALSE,
+	                               master_ac,
+	                               error);
+
+activated:
+	if (ac)
+		active_connection_add (manager, ac);
+
+	return ac;
 }
 
 /* 
@@ -2845,9 +2903,7 @@ pending_activate (NMManager *self, PendingActivation *pending)
 	                                     &error);
 	g_free (sender);
 
-	if (ac)
-		g_object_notify (G_OBJECT (pending->manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-	else {
+	if (!ac) {
 		nm_log_warn (LOGD_CORE, "connection %s failed to activate: (%d) %s",
 		             pending->connection_path,
 		             error ? error->code : -1,
@@ -3069,24 +3125,15 @@ impl_manager_deactivate_connection (NMManager *self,
 	gulong sender_uid = G_MAXULONG;
 	char *error_desc = NULL;
 
-	/* Check for device connections first */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMActRequest *req;
-		const char *req_path = NULL;
+	/* Find the connection by its object path */
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *ac = iter->data;
 
-		req = nm_device_get_act_request (NM_DEVICE (iter->data));
-		if (req)
-			req_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req));
-
-		if (req_path && !strcmp (active_path, req_path)) {
-			connection = nm_act_request_get_connection (req);
+		if (g_strcmp0 (nm_active_connection_get_path (ac), active_path) == 0) {
+			connection = nm_active_connection_get_connection (ac);
 			break;
 		}
 	}
-
-	/* Maybe it's a VPN */
-	if (!connection)
-		connection = nm_vpn_manager_get_connection_for_active (priv->vpn_manager, active_path);
 
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -4019,6 +4066,7 @@ dispose (GObject *object)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
+	GSList *iter;
 
 	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
@@ -4038,6 +4086,17 @@ dispose (GObject *object)
 		                                   TRUE);
 	}
 
+	if (priv->ac_cleanup_id) {
+		g_source_remove (priv->ac_cleanup_id);
+		priv->ac_cleanup_id = 0;
+	}
+
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+		g_signal_handlers_disconnect_by_func (iter->data, active_connection_state_changed, object);
+		g_object_unref (iter->data);
+	}
+	g_slist_free (priv->active_connections);
+
 #if WITH_CONCHECK
 	if (priv->connectivity) {
 		g_object_unref (priv->connectivity);
@@ -4052,10 +4111,6 @@ dispose (GObject *object)
 	if (priv->vpn_manager_activated_id) {
 		g_source_remove (priv->vpn_manager_activated_id);
 		priv->vpn_manager_activated_id = 0;
-	}
-	if (priv->vpn_manager_deactivated_id) {
-		g_source_remove (priv->vpn_manager_deactivated_id);
-		priv->vpn_manager_deactivated_id = 0;
 	}
 	g_object_unref (priv->vpn_manager);
 
@@ -4379,8 +4434,6 @@ nm_manager_init (NMManager *manager)
 	priv->vpn_manager = nm_vpn_manager_get ();
 	priv->vpn_manager_activated_id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-activated",
 	                                                   G_CALLBACK (vpn_manager_connection_activated_cb), manager);
-	priv->vpn_manager_deactivated_id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
-	                                                   G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
