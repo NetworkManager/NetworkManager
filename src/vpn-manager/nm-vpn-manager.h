@@ -81,8 +81,6 @@ gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
                                                const char *path,
                                                NMVPNConnectionStateReason reason);
 
-GSList *nm_vpn_manager_get_active_connections (NMVPNManager *manager);
-
 NMVPNConnection *nm_vpn_manager_get_vpn_connection_for_active (NMVPNManager *manager,
                                                                const char *active_path);
 

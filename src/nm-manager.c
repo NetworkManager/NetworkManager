@@ -366,6 +366,12 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 	g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 }
 
+const GSList *
+nm_manager_get_active_connections (NMManager *manager)
+{
+	return NM_MANAGER_GET_PRIVATE (manager)->active_connections;
+}
+
 /************************************************************************/
 
 static NMDevice *
@@ -948,25 +954,6 @@ pending_activation_destroy (PendingActivation *pending,
 
 	memset (pending, 0, sizeof (PendingActivation));
 	g_slice_free (PendingActivation, pending);
-}
-
-static GPtrArray *
-get_active_connections (NMManager *manager, NMConnection *filter)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *iter;
-	GPtrArray *active;
-
- 	active = g_ptr_array_sized_new (3);
-
-	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *ac = iter->data;
-
-		if (!filter || (nm_active_connection_get_connection (ac) == filter))
-			g_ptr_array_add (active, g_strdup (nm_active_connection_get_path (ac)));
-	}
-
-	return active;
 }
 
 /*******************************************************************/
@@ -3612,13 +3599,6 @@ impl_manager_set_logging (NMManager *manager,
 	return FALSE;
 }
 
-GPtrArray *
-nm_manager_get_active_connections_by_connection (NMManager *manager,
-                                                 NMConnection *connection)
-{
-	return get_active_connections (manager, connection);
-}
-
 void
 nm_manager_start (NMManager *self)
 {
@@ -4304,6 +4284,9 @@ get_property (GObject *object, guint prop_id,
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	GPtrArray *active;
+	const char *path;
 
 	switch (prop_id) {
 	case PROP_VERSION:
@@ -4335,7 +4318,12 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
-		g_value_take_boxed (value, get_active_connections (self, NULL));
+		active = g_ptr_array_sized_new (3);
+		for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (iter->data));
+			g_ptr_array_add (active, g_strdup (path));
+		}
+		g_value_take_boxed (value, active);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);

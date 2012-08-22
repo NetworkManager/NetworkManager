@@ -434,26 +434,17 @@ update_default_ac (NMPolicy *policy,
                    NMActiveConnection *best,
                    void (*set_active_func)(NMActiveConnection*, gboolean))
 {
-	GSList *devices, *vpns, *iter;
-	NMActRequest *req;
+	const GSList *connections, *iter;
 
 	/* Clear the 'default[6]' flag on all active connections that aren't the new
 	 * default active connection.  We'll set the new default after; this ensures
 	 * we don't ever have two marked 'default[6]' simultaneously.
 	 */
-	devices = nm_manager_get_devices (policy->manager);
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
-		req = nm_device_get_act_request (NM_DEVICE (iter->data));
-		if (req && (NM_ACTIVE_CONNECTION (req) != best))
-			set_active_func (NM_ACTIVE_CONNECTION (req), FALSE);
-	}
-
-	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
-	for (iter = vpns; iter; iter = g_slist_next (iter)) {
+	connections = nm_manager_get_active_connections (policy->manager);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		if (NM_ACTIVE_CONNECTION (iter->data) != best)
 			set_active_func (NM_ACTIVE_CONNECTION (iter->data), FALSE);
 	}
-	g_slist_free (vpns);
 
 	/* Mark new default active connection */
 	if (best)
@@ -469,21 +460,27 @@ get_best_ip4_config (NMPolicy *policy,
                      NMDevice **out_device,
                      NMVPNConnection **out_vpn)
 {
-	GSList *vpns, *iter;
+	const GSList *connections, *iter;
 	NMDevice *device;
 	NMActRequest *req = NULL;
 	NMIP4Config *ip4_config = NULL;
 
 	/* If a VPN connection is active, it is preferred */
-	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
-	for (iter = vpns; iter; iter = g_slist_next (iter)) {
-		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
+	connections = nm_manager_get_active_connections (policy->manager);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
+		NMVPNConnection *candidate;
 		NMIP4Config *vpn_ip4;
 		NMConnection *tmp;
 		NMSettingIP4Config *s_ip4;
 		NMVPNConnectionState vpn_state;
 
-		tmp = nm_vpn_connection_get_connection (candidate);
+		if (!NM_IS_VPN_CONNECTION (active))
+			continue;
+
+		candidate = NM_VPN_CONNECTION (active);
+
+		tmp = nm_active_connection_get_connection (active);
 		g_assert (tmp);
 
 		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
@@ -509,14 +506,13 @@ get_best_ip4_config (NMPolicy *policy,
 		if (out_vpn)
 			*out_vpn = candidate;
 		if (out_ac)
-			*out_ac = NM_ACTIVE_CONNECTION (candidate);
+			*out_ac = active;
 		if (out_ip_iface)
 			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
 		if (out_ip_ifindex)
 			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
 		break;
 	}
-	g_slist_free (vpns);
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip4_config) {
@@ -634,21 +630,27 @@ get_best_ip6_config (NMPolicy *policy,
                      NMDevice **out_device,
                      NMVPNConnection **out_vpn)
 {
-	GSList *vpns, *iter;
+	const GSList *connections, *iter;
 	NMDevice *device;
 	NMActRequest *req = NULL;
 	NMIP6Config *ip6_config = NULL;
 
 	/* If a VPN connection is active, it is preferred */
-	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
-	for (iter = vpns; iter; iter = g_slist_next (iter)) {
-		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
+	connections = nm_manager_get_active_connections (policy->manager);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
+		NMVPNConnection *candidate;
 		NMIP6Config *vpn_ip6;
 		NMConnection *tmp;
 		NMSettingIP6Config *s_ip6;
 		NMVPNConnectionState vpn_state;
 
-		tmp = nm_vpn_connection_get_connection (candidate);
+		if (!NM_IS_VPN_CONNECTION (active))
+			continue;
+
+		candidate = NM_VPN_CONNECTION (active);
+
+		tmp = nm_active_connection_get_connection (active);
 		g_assert (tmp);
 
 		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
@@ -681,7 +683,6 @@ get_best_ip6_config (NMPolicy *policy,
 			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
 		break;
 	}
-	g_slist_free (vpns);
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip6_config) {
@@ -1774,25 +1775,26 @@ connection_updated (NMSettings *settings,
 static void
 _deactivate_if_active (NMManager *manager, NMConnection *connection)
 {
-	GPtrArray *list;
-	int i;
+	const GSList *active, *iter;
 
-	list = nm_manager_get_active_connections_by_connection (manager, connection);
-	if (!list)
-		return;
-
-	for (i = 0; i < list->len; i++) {
-		char *path = g_ptr_array_index (list, i);
+	active = nm_manager_get_active_connections (manager);
+	for (iter = active; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *ac = iter->data;
 		GError *error = NULL;
 
-		if (!nm_manager_deactivate_connection (manager, path, NM_DEVICE_STATE_REASON_CONNECTION_REMOVED, &error)) {
-			nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",
-			             nm_connection_get_id (connection), error->code, error->message);
-			g_error_free (error);
+		if (nm_active_connection_get_connection (ac) == connection) {
+			if (!nm_manager_deactivate_connection (manager,
+			                                       nm_active_connection_get_path (ac),
+			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+			                                       &error)) {
+				nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",
+					         nm_connection_get_id (connection),
+					         error ? error->code : -1,
+					         error ? error->message : "(unknown)");
+				g_clear_error (&error);
+			}
 		}
-		g_free (path);
 	}
-	g_ptr_array_free (list, TRUE);
 }
 
 static void

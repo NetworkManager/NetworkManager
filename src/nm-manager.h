@@ -95,6 +95,8 @@ NMManager *nm_manager_get (void);
 
 void nm_manager_start (NMManager *manager);
 
+const GSList *nm_manager_get_active_connections (NMManager *manager);
+
 /* Device handling */
 
 GSList *nm_manager_get_devices (NMManager *manager);
@@ -118,8 +120,5 @@ gboolean nm_manager_deactivate_connection (NMManager *manager,
 /* State handling */
 
 NMState nm_manager_get_state (NMManager *manager);
-
-GPtrArray * nm_manager_get_active_connections_by_connection (NMManager *manager,
-                                                             NMConnection *connection);
 
 #endif /* NM_MANAGER_H */
