@@ -168,6 +168,22 @@ make_connection_setting (const char *file,
 	g_object_set (s_con, NM_SETTING_CONNECTION_ZONE, zone, NULL);
 	g_free (zone);
 
+	value = svGetValue (ifcfg, "SECONDARY_UUIDS", FALSE);
+	if (value) {
+		char **items, **iter;
+
+		items = g_strsplit_set (value, " \t", -1);
+		for (iter = items; iter && *iter; iter++) {
+			if (strlen (*iter)) {
+				if (!nm_setting_connection_add_secondary (s_con, *iter))
+					PLUGIN_WARN (IFCFG_PLUGIN_NAME,
+					             "    warning: secondary connection UUID '%s' already added", *iter);
+			}
+		}
+		g_free (value);
+		g_strfreev (items);
+	}
+
 	return NM_SETTING (s_con);
 }
 

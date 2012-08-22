@@ -1296,6 +1296,28 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
 			svSetValue (ifcfg, "MASTER", master, FALSE);
 	}
+
+	/* secondary connection UUIDs */
+	svSetValue (ifcfg, "SECONDARY_UUIDS", NULL, FALSE);
+	n = nm_setting_connection_get_num_secondaries (s_con);
+	if (n > 0) {
+		str = g_string_sized_new (n * 37);
+
+		for (i = 0; i < n; i++) {
+			const char *uuid;
+
+			/* Items separated by space for consistency with eg
+			 * IPV6ADDR_SECONDARIES and DOMAIN.
+			 */
+			if (str->len)
+				g_string_append_c (str, ' ');
+
+			if ((uuid = nm_setting_connection_get_secondary (s_con, i)) != NULL)
+				g_string_append (str, uuid);
+		}
+		svSetValue (ifcfg, "SECONDARY_UUIDS", str->str, FALSE);
+		g_string_free (str, TRUE);
+	}
 }
 
 static gboolean
