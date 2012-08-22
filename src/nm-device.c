@@ -2761,7 +2761,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	 * in which case we postpone activation here until the master enslaves us,
 	 * which calls nm_device_slave_notify_enslaved().
 	 */
-	master = (NMDevice *) nm_act_request_get_master (priv->act_request);
+	master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request));
 	if (master) {
 		if (priv->enslaved == FALSE) {
 			nm_log_info (LOGD_DEVICE, "Activation (%s) connection '%s' waiting on master '%s'",
@@ -2824,7 +2824,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	state = nm_device_get_state (self);
-	if (nm_act_request_get_assumed (priv->act_request) == FALSE)
+	if (nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request)) == FALSE)
 		g_warn_if_fail (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_NEED_AUTH);
 
 	/* Add the interface to the specified firewall zone */
@@ -3176,7 +3176,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	/* Merge with user overrides */
 	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
 
-	assumed = nm_act_request_get_assumed (priv->act_request);
+	assumed = nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request));
 	if (!nm_device_set_ip4_config (self, config, assumed, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
 			         "Activation (%s) Stage 5 of 5 (IPv4 Commit) failed",
@@ -3653,7 +3653,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	if (nm_act_request_get_assumed (req)) {
+	if (nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (req))) {
 		/* If it's an assumed connection, let the device subclass short-circuit
 		 * the normal connection process and just copy its IP configs from the
 		 * interface.
@@ -3671,7 +3671,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 		nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
 		/* Handle any dependencies this connection might have */
-		master = (NMDevice *) nm_act_request_get_master (req);
+		master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (req));
 		if (master) {
 			/* Master should at least already be activating */
 			g_assert (nm_device_get_state (master) > NM_DEVICE_STATE_DISCONNECTED);

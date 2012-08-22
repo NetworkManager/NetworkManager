@@ -19,12 +19,14 @@
  */
 
 #include <glib.h>
+#include "nm-types.h"
 #include "nm-active-connection.h"
 #include "NetworkManager.h"
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-device.h"
 
 #include "nm-active-connection-glue.h"
 
@@ -36,16 +38,20 @@ G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, G_TYPE_OBJECT)
                                              NMActiveConnectionPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	NMConnection *connection;
 	char *path;
 	char *specific_object;
-	char *device_path;
+	NMDevice *device;
+
 	gboolean is_default;
 	gboolean is_default6;
 	NMActiveConnectionState state;
 	gboolean vpn;
+
+	gboolean user_requested;
+	gulong user_uid;
+	gboolean assumed;
+	NMDevice *master;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -59,6 +65,13 @@ enum {
 	PROP_DEFAULT6,
 	PROP_VPN,
 	PROP_MASTER,
+
+	PROP_INT_CONNECTION,
+	PROP_INT_DEVICE,
+	PROP_INT_USER_REQUESTED,
+	PROP_INT_USER_UID,
+	PROP_INT_ASSUMED,
+	PROP_INT_MASTER,
 
 	LAST_PROP
 };
@@ -175,27 +188,58 @@ nm_active_connection_get_default6 (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->is_default6;
 }
 
-gboolean
-nm_active_connection_export (NMActiveConnection *self,
-                             NMConnection *connection,
-                             const char *devpath)
+void
+nm_active_connection_export (NMActiveConnection *self)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMDBusManager *dbus_mgr;
 	static guint32 counter = 0;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (devpath != NULL, FALSE);
-
-	priv->connection = g_object_ref (connection);
 	priv->path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
-	priv->device_path = g_strdup (devpath);
-
 	dbus_mgr = nm_dbus_manager_get ();
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
 	                                     priv->path, G_OBJECT (self));
 	g_object_unref (dbus_mgr);
-	return TRUE;
+}
+
+gboolean
+nm_active_connection_get_user_requested (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->user_requested;
+}
+
+gulong
+nm_active_connection_get_user_uid (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), G_MAXULONG);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->user_uid;
+}
+
+gboolean
+nm_active_connection_get_assumed (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->assumed;
+}
+
+NMDevice *
+nm_active_connection_get_device (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->device;
+}
+
+NMDevice *
+nm_active_connection_get_master (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->master;
 }
 
 /****************************************************************/
@@ -206,29 +250,37 @@ nm_active_connection_init (NMActiveConnection *self)
 }
 
 static void
-dispose (GObject *object)
-{
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
-
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
-
-		g_free (priv->path);
-		g_free (priv->specific_object);
-		g_free (priv->device_path);
-		g_object_unref (priv->connection);
-	}
-
-	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
-}
-
-static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_INT_CONNECTION:
+		g_warn_if_fail (priv->connection == NULL);
+		priv->connection = g_value_dup_object (value);
+		break;
+	case PROP_INT_DEVICE:
+		g_warn_if_fail (priv->device == NULL);
+		priv->device = g_value_dup_object (value);
+		if (priv->device)
+			g_warn_if_fail (priv->device != priv->master);
+		break;
+	case PROP_INT_USER_REQUESTED:
+		priv->user_requested = g_value_get_boolean (value);
+		break;
+	case PROP_INT_USER_UID:
+		priv->user_uid = g_value_get_ulong (value);
+		break;
+	case PROP_INT_ASSUMED:
+		priv->assumed = g_value_get_boolean (value);
+		break;
+	case PROP_INT_MASTER:
+		g_warn_if_fail (priv->master == NULL);
+		priv->master = g_value_dup_object (value);
+		if (priv->master)
+			g_warn_if_fail (priv->master != priv->device);
+		break;
 	case PROP_SPECIFIC_OBJECT:
 		priv->specific_object = g_value_dup_boxed (value);
 		break;
@@ -240,6 +292,8 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_VPN:
 		priv->vpn = g_value_get_boolean (value);
+		break;
+	case PROP_MASTER:
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -266,7 +320,8 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DEVICES:
 		devices = g_ptr_array_sized_new (1);
-		g_ptr_array_add (devices, g_strdup (priv->device_path));
+		if (priv->device)
+			g_ptr_array_add (devices, g_strdup (nm_device_get_path (priv->device)));
 		g_value_take_boxed (value, devices);
 		break;
 	case PROP_STATE:
@@ -282,11 +337,29 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->vpn);
 		break;
 	case PROP_MASTER:
+		g_value_set_boxed (value, priv->master ? nm_device_get_path (priv->master) : "/");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+static void
+dispose (GObject *object)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+
+	g_free (priv->path);
+	priv->path = NULL;
+	g_free (priv->specific_object);
+	priv->specific_object = NULL;
+
+	g_clear_object (&priv->connection);
+	g_clear_object (&priv->device);
+	g_clear_object (&priv->master);
+
+	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
 
 static void
@@ -301,7 +374,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *vpn_class)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	/* properties */
+	/* D-Bus exported properties */
 	g_object_class_install_property (object_class, PROP_CONNECTION,
 		g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
 		                    "Connection",
@@ -366,6 +439,49 @@ nm_active_connection_class_init (NMActiveConnectionClass *vpn_class)
 		                    "Path of master device",
 		                    DBUS_TYPE_G_OBJECT_PATH,
 		                    G_PARAM_READABLE));
+
+	/* Internal properties */
+	g_object_class_install_property (object_class, PROP_INT_CONNECTION,
+		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_CONNECTION,
+		                     "Internal Connection",
+		                     "Internal connection",
+		                     NM_TYPE_CONNECTION,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property (object_class, PROP_INT_DEVICE,
+		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_DEVICE,
+		                     "Internal device",
+		                     "Internal device",
+		                     NM_TYPE_DEVICE,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property (object_class, PROP_INT_USER_REQUESTED,
+		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_USER_REQUESTED,
+		                      "User requested",
+		                      "User requested",
+		                      FALSE,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property (object_class, PROP_INT_USER_UID,
+		g_param_spec_ulong (NM_ACTIVE_CONNECTION_INT_USER_UID,
+		                    "User UID",
+		                    "User UID (if user requested)",
+		                    0, G_MAXULONG, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property (object_class, PROP_INT_ASSUMED,
+		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_ASSUMED,
+		                      "Assumed",
+		                      "Assumed",
+		                      FALSE,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property (object_class, PROP_INT_MASTER,
+		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_MASTER,
+		                     "Internal master device",
+		                     "Internal device",
+		                     NM_TYPE_DEVICE,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

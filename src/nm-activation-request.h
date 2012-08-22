@@ -23,6 +23,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include "nm-types.h"
 #include "nm-connection.h"
 #include "nm-active-connection.h"
 #include "nm-settings-flags.h"
@@ -35,11 +36,11 @@
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
 typedef struct {
-	GObject parent;
+	NMActiveConnection parent;
 } NMActRequest;
 
 typedef struct {
-	GObjectClass parent;
+	NMActiveConnectionClass parent;
 
 	/* Signals */
 	void (*properties_changed) (NMActRequest *req, GHashTable *properties);
@@ -53,12 +54,10 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            gulong user_uid,
                                            const char *dbus_sender,
                                            gboolean assumed,
-                                           gpointer *device,  /* An NMDevice */
-                                           gpointer *master); /* An NMDevice */
+                                           NMDevice *device,
+                                           NMDevice *master);
 
-NMConnection *nm_act_request_get_connection     (NMActRequest *req);
-
-gboolean      nm_act_request_get_user_requested (NMActRequest *req);
+NMConnection *nm_act_request_get_connection (NMActRequest *req);
 
 gulong        nm_act_request_get_user_uid (NMActRequest *req);
 
@@ -71,12 +70,6 @@ void          nm_act_request_set_shared (NMActRequest *req, gboolean shared);
 void          nm_act_request_add_share_rule (NMActRequest *req,
                                              const char *table,
                                              const char *rule);
-
-GObject *     nm_act_request_get_device (NMActRequest *req);
-
-gboolean      nm_act_request_get_assumed (NMActRequest *req);
-
-GObject *     nm_act_request_get_master (NMActRequest *req);
 
 /* Secrets handling */
 

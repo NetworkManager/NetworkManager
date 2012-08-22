@@ -69,8 +69,6 @@ typedef struct {
 
 	NMConnection *connection;
 
-	gboolean user_requested;
-	gulong user_uid;
 	guint32 secrets_id;
 	SecretsReq secrets_idx;
 	char *username;
@@ -347,42 +345,20 @@ nm_vpn_connection_new (NMConnection *connection,
                        gulong user_uid)
 {
 	NMVPNConnection *self;
-	NMVPNConnectionPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
 	self = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION,
+	                                         NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
+	                                         NM_ACTIVE_CONNECTION_INT_DEVICE, parent_device,
 	                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
+	                                         NM_ACTIVE_CONNECTION_INT_USER_REQUESTED, user_requested,
+	                                         NM_ACTIVE_CONNECTION_INT_USER_UID, user_uid,
 	                                         NM_ACTIVE_CONNECTION_VPN, TRUE,
 	                                         NULL);
-	if (!self)
-		return NULL;
-
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-
-	priv->user_requested = user_requested;
-	priv->user_uid = user_uid;
-	priv->connection = g_object_ref (connection);
-	priv->parent_dev = g_object_ref (parent_device);
-
-	priv->device_monitor = g_signal_connect (parent_device, "state-changed",
-									 G_CALLBACK (device_state_changed),
-									 self);
-
-	priv->device_ip4 = g_signal_connect (parent_device, "notify::" NM_DEVICE_IP4_CONFIG,
-	                                     G_CALLBACK (device_ip4_config_changed),
-	                                     self);
-	priv->device_ip6 = g_signal_connect (parent_device, "notify::" NM_DEVICE_IP6_CONFIG,
-	                                     G_CALLBACK (device_ip6_config_changed),
-	                                     self);
-
-	if (!nm_active_connection_export (NM_ACTIVE_CONNECTION (self),
-	                                  connection,
-	                                  nm_device_get_path (parent_device))) {
-		g_object_unref (self);
-		self = NULL;
-	}
+	if (self)
+		nm_active_connection_export (NM_ACTIVE_CONNECTION (self));
 
 	return self;
 }
@@ -1436,10 +1412,12 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
 	GError *error = NULL;
-	gboolean filter_by_uid = priv->user_requested;
+	gboolean filter_by_uid;
 
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
 	priv->secrets_idx = secrets_idx;
+
+	filter_by_uid = nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self));
 
 	nm_log_dbg (LOGD_VPN, "(%s/%s) requesting VPN secrets pass #%d",
 	            nm_connection_get_uuid (priv->connection),
@@ -1461,12 +1439,12 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 		g_assert_not_reached ();
 	}
 
-	if (priv->user_requested)
+	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
 		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
 
 	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 	                                                       filter_by_uid,
-	                                                       priv->user_uid,
+	                                                       nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (self)),
 	                                                       NM_SETTING_VPN_SETTING_NAME,
 	                                                       flags,
 	                                                       NULL,
@@ -1489,6 +1467,35 @@ static void
 nm_vpn_connection_init (NMVPNConnection *self)
 {
 	NM_VPN_CONNECTION_GET_PRIVATE (self)->vpn_state = NM_VPN_CONNECTION_STATE_PREPARE;
+}
+
+static void
+constructed (GObject *object)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMConnection *connection;
+	NMDevice *device;
+
+	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
+
+	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (object));
+	priv->connection = g_object_ref (connection);
+
+	device = (NMDevice *) nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
+	g_assert (device);
+
+	priv->parent_dev = g_object_ref (device);
+
+	priv->device_monitor = g_signal_connect (device, "state-changed",
+	                                         G_CALLBACK (device_state_changed),
+	                                         object);
+
+	priv->device_ip4 = g_signal_connect (device, "notify::" NM_DEVICE_IP4_CONFIG,
+	                                     G_CALLBACK (device_ip4_config_changed),
+	                                     object);
+	priv->device_ip6 = g_signal_connect (device, "notify::" NM_DEVICE_IP6_CONFIG,
+	                                     G_CALLBACK (device_ip6_config_changed),
+	                                     object);
 }
 
 static void
@@ -1517,7 +1524,7 @@ dispose (GObject *object)
 	if (priv->device_monitor)
 		g_signal_handler_disconnect (priv->parent_dev, priv->device_monitor);
 
-	g_object_unref (priv->parent_dev);
+	g_clear_object (&priv->parent_dev);
 
 	if (priv->ip4_config)
 		g_object_unref (priv->ip4_config);
@@ -1535,7 +1542,7 @@ dispose (GObject *object)
 		                                       priv->secrets_id);
 	}
 
-	g_object_unref (priv->connection);
+	g_clear_object (&priv->connection);
 	g_free (priv->username);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
@@ -1583,6 +1590,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 
 	/* virtual methods */
 	object_class->get_property = get_property;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 

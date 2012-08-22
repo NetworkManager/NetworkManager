@@ -22,6 +22,7 @@
 #define NM_ACTIVE_CONNECTION_H
 
 #include <glib-object.h>
+#include "nm-types.h"
 #include "nm-connection.h"
 
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
@@ -31,7 +32,7 @@
 #define NM_IS_ACTIVE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_ACTIVE_CONNECTION))
 #define NM_ACTIVE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
 
-/* Properties */
+/* D-Bus Exported Properties */
 #define NM_ACTIVE_CONNECTION_CONNECTION      "connection"
 #define NM_ACTIVE_CONNECTION_UUID            "uuid"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
@@ -42,6 +43,15 @@
 #define NM_ACTIVE_CONNECTION_VPN             "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER          "master"
 
+/* Internal non-exported construct-time properties */
+#define NM_ACTIVE_CONNECTION_INT_CONNECTION     "int-connection"
+#define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
+#define NM_ACTIVE_CONNECTION_INT_USER_REQUESTED "int-user-requested"
+#define NM_ACTIVE_CONNECTION_INT_USER_UID       "int-user-uid"
+#define NM_ACTIVE_CONNECTION_INT_ASSUMED        "int-assumed"
+#define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
+
+
 typedef struct {
 	GObject parent;
 } NMActiveConnection;
@@ -50,14 +60,12 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*properties_changed) (NMActiveConnection *req, GHashTable *properties);
+	void (*properties_changed) (NMActiveConnection *active, GHashTable *properties);
 } NMActiveConnectionClass;
 
 GType         nm_active_connection_get_type (void);
 
-gboolean      nm_active_connection_export (NMActiveConnection *self,
-                                           NMConnection *connection,
-                                           const char *devpath);
+void          nm_active_connection_export (NMActiveConnection *self);
 
 NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
 const char *  nm_active_connection_get_name       (NMActiveConnection *self);
@@ -83,5 +91,15 @@ NMActiveConnectionState nm_active_connection_get_state (NMActiveConnection *self
 
 void          nm_active_connection_set_state (NMActiveConnection *self,
                                               NMActiveConnectionState state);
+
+NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
+
+gboolean      nm_active_connection_get_user_requested (NMActiveConnection *self);
+
+gulong        nm_active_connection_get_user_uid (NMActiveConnection *self);
+
+gboolean      nm_active_connection_get_assumed (NMActiveConnection *self);
+
+NMDevice *    nm_active_connection_get_master (NMActiveConnection *self);
 
 #endif /* NM_ACTIVE_CONNECTION_H */

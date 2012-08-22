@@ -2309,7 +2309,7 @@ internal_activate_device (NMManager *manager,
 	}
 
 	if (master)
-		master_device = (NMDevice *) nm_act_request_get_device (NM_ACT_REQUEST (master));
+		master_device = nm_active_connection_get_device (master);
 
 	req = nm_act_request_new (connection,
 	                          specific_object,
@@ -2317,8 +2317,8 @@ internal_activate_device (NMManager *manager,
 	                          sender_uid,
 	                          dbus_sender,
 	                          assumed,
-	                          (gpointer) device,
-	                          (gpointer) master_device);
+	                          device,
+	                          master_device);
 	nm_device_activate (device, req);
 	g_object_unref (req);
 
