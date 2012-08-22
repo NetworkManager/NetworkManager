@@ -4518,7 +4518,7 @@ reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
 		return "dependency-failed";
 	case NM_DEVICE_STATE_REASON_BR2684_FAILED:
-		return "br2684 bridge failed";
+		return "br2684-bridge-failed";
 	default:
 		break;
 	}
