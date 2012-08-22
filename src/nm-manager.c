@@ -4342,28 +4342,15 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GPtrArray *active;
-	int i;
+	GSList *iter;
 
-	active = get_active_connections (manager, NULL);
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *ac = iter->data;
+		NMSettingsConnection *connection;
 
-	for (i = 0; i < active->len; i++) {
-		const char *active_path = g_ptr_array_index (active, i);
-		NMActRequest *req;
-		NMDevice *device = NULL;
-
-		req = nm_manager_get_act_request_by_path (manager, active_path, &device);
-		if (device && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_act_request_get_connection (req)),
-			                                         (guint64) time (NULL), FALSE);
-		else {
-			/* The connection is probably VPN */
-			NMVPNConnection *vpn_con;
-
-			vpn_con = nm_vpn_manager_get_vpn_connection_for_active (priv->vpn_manager, active_path);
-			if (vpn_con && nm_vpn_connection_get_vpn_state (vpn_con) == NM_VPN_CONNECTION_STATE_ACTIVATED)
-				nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (nm_vpn_connection_get_connection (vpn_con)),
-				                                         (guint64) time (NULL), FALSE);
+		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+			connection = NM_SETTINGS_CONNECTION (nm_active_connection_get_connection (ac));
+			nm_settings_connection_update_timestamp (connection, (guint64) time (NULL), FALSE);
 		}
 	}
 

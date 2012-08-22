@@ -234,34 +234,6 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *self,
 	return success;
 }
 
-NMVPNConnection *
-nm_vpn_manager_get_vpn_connection_for_active (NMVPNManager *manager,
-                                              const char *active_path)
-{
-	NMVPNManagerPrivate *priv;
-	GHashTableIter iter;
-	gpointer data;
-	GSList *active, *elt;
-
-	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
-
-	priv = NM_VPN_MANAGER_GET_PRIVATE (manager);
-	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		active = nm_vpn_service_get_active_connections (NM_VPN_SERVICE (data));
-		for (elt = active; elt; elt = g_slist_next (elt)) {
-			NMVPNConnection *vpn = NM_VPN_CONNECTION (elt->data);
-			const char *ac_path;
-
-			ac_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn));
-			if (ac_path && !strcmp (ac_path, active_path))
-				return vpn;
-		}
-	}
-
-	return NULL;
-}
-
 static char *
 service_name_from_file (const char *path)
 {
