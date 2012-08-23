@@ -60,8 +60,8 @@
 # define NM_DIST_VERSION VERSION
 #endif
 
-#define NM_DEFAULT_PID_FILE          LOCALSTATEDIR"/run/NetworkManager.pid"
-#define NM_DEFAULT_SYSTEM_STATE_FILE LOCALSTATEDIR"/lib/NetworkManager/NetworkManager.state"
+#define NM_DEFAULT_PID_FILE          NMRUNDIR "/NetworkManager.pid"
+#define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
 /*
  * Globals
@@ -278,23 +278,10 @@ parse_state_file (const char *filename,
 		 * users upgrading NM get this working too.
 		 */
 		if (g_error_matches (tmp_error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			char *data, *dirname;
+			char *data;
 			gsize len = 0;
 
 			g_clear_error (&tmp_error);
-
-			/* try to create the directory if it doesn't exist */
-			dirname = g_path_get_dirname (filename);
-			errno = 0;
-			if (g_mkdir_with_parents (dirname, 0755) != 0) {
-				if (errno != EEXIST) {
-					g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_ACCES,
-					             "Error creating state directory %s: %s", dirname, strerror(errno));
-					g_free (dirname);
-					return FALSE;
-				}
-			}
-			g_free (dirname);
 
 			/* Write out the initial state to the state file */
 			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
@@ -441,6 +428,12 @@ main (int argc, char *argv[])
 	 * talking on the session bus.  See rh #588745
 	 */
 	setenv ("GIO_USE_VFS", "local", 1);
+
+	/* Setup runtime directory */
+	if (g_mkdir_with_parents (NMRUNDIR, 0755) != 0) {
+		nm_log_err (LOGD_CORE, "Cannot create '%s': %s", NMRUNDIR, strerror (errno));
+		exit (1);
+	}
 
 	pidfile = pidfile ? pidfile : g_strdup (NM_DEFAULT_PID_FILE);
 	state_file = state_file ? state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);

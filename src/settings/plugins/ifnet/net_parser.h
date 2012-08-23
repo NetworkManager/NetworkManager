@@ -25,7 +25,6 @@
 #include <glib.h>
 
 #define CONF_NET_FILE SYSCONFDIR "/conf.d/net"
-#define IFNET_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
 #define IFNET_KEY_FILE_GROUP "ifnet"
 
 gboolean ifnet_init (gchar * config_file);

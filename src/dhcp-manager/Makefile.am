@@ -54,7 +54,8 @@ libdhcp_manager_la_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
-	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
+	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\"
 
 libdhcp_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \

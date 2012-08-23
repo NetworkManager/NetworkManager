@@ -42,8 +42,8 @@
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
 
-#define SETTINGS_TIMESTAMPS_FILE  LOCALSTATEDIR"/lib/NetworkManager/timestamps"
-#define SETTINGS_SEEN_BSSIDS_FILE LOCALSTATEDIR"/lib/NetworkManager/seen-bssids"
+#define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
+#define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
 
 static void impl_settings_connection_get_settings (NMSettingsConnection *connection,
                                                    DBusGMethodInvocation *context);

@@ -31,7 +31,7 @@
 #define EXAMPLE_PLUGIN_NAME "example"
 #define EXAMPLE_PLUGIN_INFO "(c) 2012 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
-#define EXAMPLE_DIR SYSCONFDIR"/NetworkManager/example-plugin"
+#define EXAMPLE_DIR NMCONFDIR "/example-plugin"
 
 /* Boilerplate stuff for the plugin's error domain.  Bits of the code that
  * create new errors in the plugin's domain will create errors of

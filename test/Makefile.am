@@ -9,7 +9,6 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
-	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DDATADIR=\"$(datadir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"
 

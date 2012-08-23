@@ -26,7 +26,7 @@ libkeyfile_io_la_SOURCES = \
 libkeyfile_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
+	-DNMCONFDIR=\"$(nmconfdir)\"
 
 libkeyfile_io_la_LIBADD = $(GLIB_LIBS)
 
@@ -41,7 +41,7 @@ libnm_settings_plugin_keyfile_la_SOURCES = \
 libnm_settings_plugin_keyfile_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
+	-DNMCONFDIR=\"$(nmconfdir)\"
 
 libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

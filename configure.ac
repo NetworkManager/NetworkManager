@@ -99,6 +99,13 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
+# NetworkManager paths
+AC_SUBST(nmbinary, "$sbindir/$PACKAGE", [NetworkManager binary executable])
+AC_SUBST(nmconfdir, "$sysconfdir/$PACKAGE", [NetworkManager configuration directory])
+AC_SUBST(nmdatadir, "$pkgdatadir", [NetworkManager shared data directory])
+AC_SUBST(nmstatedir, "$localstatedir/lib/$PACKAGE", [NetworkManager persistent state directory])
+AC_SUBST(nmrundir, "$localstatedir/run/$PACKAGE", [NetworkManager runtime state directory])
+
 # Alternative configuration plugins
 AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
 AC_ARG_ENABLE(ifcfg-suse, AS_HELP_STRING([--enable-ifcfg-suse], [enable ifcfg-suse configuration plugin (SUSE)]))
@@ -291,6 +298,7 @@ case $with_session_tracking in
 esac
 AC_SUBST(SYSTEMD_CFLAGS)
 AC_SUBST(SYSTEMD_LIBS)
+AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
 AM_CONDITIONAL(SESSION_TRACKING_CK, test "x$with_session_tracking" = "xck")
 AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "x$with_session_tracking" = "xsystemd")
 

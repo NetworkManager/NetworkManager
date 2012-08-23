@@ -26,7 +26,7 @@
 #define KEYFILE_PLUGIN_NAME "keyfile"
 #define KEYFILE_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
-#define KEYFILE_DIR SYSCONFDIR "/NetworkManager/system-connections"
+#define KEYFILE_DIR NMCONFDIR "/system-connections"
 
 #define VPN_SECRETS_GROUP "vpn-secrets"
 

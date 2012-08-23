@@ -24,7 +24,7 @@ nm_dhcp_client_action_SOURCES = \
 
 nm_dhcp_client_action_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dhcp_client_action_LDADD = $(DBUS_LIBS)
@@ -58,7 +58,7 @@ nm_dispatcher_action_CPPFLAGS = \
 	-I${top_builddir}/libnm-util \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dispatcher_action_LDADD = \

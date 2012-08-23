@@ -39,9 +39,9 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
 #define NM_DNS_DNSMASQ_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DNS_DNSMASQ, NMDnsDnsmasqPrivate))
 
-#define PIDFILE LOCALSTATEDIR "/run/nm-dns-dnsmasq.pid"
-#define CONFFILE LOCALSTATEDIR "/run/nm-dns-dnsmasq.conf"
-#define CONFDIR SYSCONFDIR "/NetworkManager/dnsmasq.d"
+#define PIDFILE NMRUNDIR "/dnsmasq.pid"
+#define CONFFILE NMRUNDIR "/dnsmasq.conf"
+#define CONFDIR NMCONFDIR "/dnsmasq.d"
 
 typedef struct {
 	guint32 foo;

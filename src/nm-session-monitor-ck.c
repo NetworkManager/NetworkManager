@@ -28,8 +28,6 @@
 #include "nm-session-utils.h"
 #include "nm-session-monitor.h"
 
-#define CKDB_PATH "/var/run/ConsoleKit/database"
-
 /* <internal>
  * SECTION:nm-session-monitor
  * @title: NMSessionMonitor

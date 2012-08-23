@@ -59,7 +59,7 @@ libsettings_la_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DDATADIR=\"$(datadir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\" \
 	-DPLUGINDIR=\"$(pkglibdir)\"
 

@@ -39,7 +39,7 @@
 #include "nm-dispatcher-action.h"
 #include "nm-dispatcher-utils.h"
 
-#define NMD_SCRIPT_DIR    SYSCONFDIR "/NetworkManager/dispatcher.d"
+#define NMD_SCRIPT_DIR NMCONFDIR "/dispatcher.d"
 
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;

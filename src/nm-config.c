@@ -24,8 +24,8 @@
 
 #include "nm-config.h"
 
-#define NM_DEFAULT_SYSTEM_CONF_FILE  SYSCONFDIR"/NetworkManager/NetworkManager.conf"
-#define NM_OLD_SYSTEM_CONF_FILE      SYSCONFDIR"/NetworkManager/nm-system-settings.conf"
+#define NM_DEFAULT_SYSTEM_CONF_FILE  NMCONFDIR "/NetworkManager.conf"
+#define NM_OLD_SYSTEM_CONF_FILE      NMCONFDIR "/nm-system-settings.conf"
 
 struct NMConfig {
 	char *path;

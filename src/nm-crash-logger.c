@@ -39,8 +39,8 @@ int main (int argc, char ** argv)
 	char *	args[] = { BINDIR "/gdb",
                           "--batch", 
                           "--quiet",
-                          "--command=" DATADIR "/NetworkManager/gdb-cmd",
-                          SBINDIR "/NetworkManager",
+                          "--command=" NMDATADIR "/gdb-cmd",
+                          NMBINARY,
                           NULL, NULL };
 
 	snprintf (nm_pid, sizeof (nm_pid), "%d", getppid ());

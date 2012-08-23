@@ -299,13 +299,19 @@ NetworkManager_CPPFLAGS = \
 	-DDATADIR=\"$(datadir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
-	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\" \
-	-DNMPLUGINDIR=\"$(pkglibdir)\"
+	-DNMPLUGINDIR=\"$(pkglibdir)\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMRUNDIR=\"$(nmrundir)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
 	-DARP_DEBUG
 
 if WITH_CONCHECK
 NetworkManager_CPPFLAGS += $(LIBSOUP_CFLAGS)
+endif
+
+if SESSION_TRACKING_CK
+NetworkManager_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
 endif
 
 NetworkManager_LDADD = \
@@ -345,10 +351,10 @@ nm_crash_logger_SOURCES = nm-crash-logger.c
 nm_crash_logger_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
-	-DSBINDIR=\"$(sbindir)\" \
-	-DDATADIR=\"$(datadir)\" \
+	-DNMBINARY=\"$(nmbinary)\" \
+	-DNMDATADIR=\"$(nmdatadir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DLOCALSTATEDIR=\"$(localstatedir)\"
+	-DNMSTATEDIR=\"$(nmstatedir)\"
 nm_crash_logger_LDADD = $(GLIB_LIBS)
 
 
