@@ -46,10 +46,6 @@
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
 
-#ifdef HAVE_SELINUX
-#include <selinux/selinux.h>
-#endif
-
 #ifndef RESOLV_CONF
 #define RESOLV_CONF "/etc/resolv.conf"
 #endif
