@@ -331,6 +331,64 @@ merge_dhclient_config (const char *iface,
 	return success;
 }
 
+static char *
+get_dhclient_config (const char * iface, const char *uuid, gboolean ipv6)
+{
+	char *path;
+
+	/* NetworkManager-overridden configuration can be used to ship DHCP config
+	 * with NetworkManager itself. It can be uuid-specific, device-specific
+	 * or generic.
+	 */
+	if (uuid) {
+		path = g_strdup_printf (NMCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", uuid);
+		if (g_file_test (path, G_FILE_TEST_EXISTS))
+			return path;
+		g_free (path);
+	}
+
+	path = g_strdup_printf (NMCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+	g_free (path);
+
+	path = g_strdup_printf (NMCONFDIR "/dhclient%s.conf", ipv6 ? "6" : "");
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+	g_free (path);
+
+	/* Distribution's dhclient configuration is used so that we can use
+	 * configuration shipped with dhclient (if any).
+	 *
+	 * This replaces conditional compilation based on distribution name. Fedora
+	 * and Debian store the configs in /etc/dhcp while upstream defaults to /etc
+	 * which is then used by many other distributions. Some distributions
+	 * (including Fedora) don't even provide a default configuration file.
+	 */
+	path = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+	g_free (path);
+
+	path = g_strdup_printf (SYSCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+	g_free (path);
+
+	path = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient%s.conf", ipv6 ? "6" : "");
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+	g_free (path);
+
+	path = g_strdup_printf (SYSCONFDIR "/dhclient%s.conf", ipv6 ? "6" : "");
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+	g_free (path);
+
+	return NULL;
+}
+
+
 /* NM provides interface-specific options; thus the same dhclient config
  * file cannot be used since DHCP transactions can happen in parallel.
  * Since some distros don't have default per-interface dhclient config files,
@@ -343,43 +401,18 @@ create_dhclient_config (const char *iface,
                         guint8 *dhcp_anycast_addr,
                         const char *hostname)
 {
-	char *orig = NULL, *tmp, *conf_file = NULL;
+	char *orig = NULL, *new = NULL;
 	GError *error = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 
-#if defined(TARGET_SUSE)
-	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
-#elif defined(TARGET_DEBIAN) || defined(TARGET_GENTOO)
-	orig = g_strdup (SYSCONFDIR "/dhcp/dhclient.conf");
-#else
-	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", iface);
-#endif
-
-	if (!orig) {
-		nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
-		return NULL;
-	}
-
-#if !defined(TARGET_SUSE) && !defined(TARGET_DEBIAN) && !defined(TARGET_GENTOO)
-	/* Try /etc/dhcp/ too (rh #607759) */
-	if (!g_file_test (orig, G_FILE_TEST_EXISTS)) {
-		g_free (orig);
-		orig = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient-%s.conf", iface);
-		if (!orig) {
-			nm_log_warn (LOGD_DHCP, "(%s): not enough memory for dhclient options.", iface);
-			return NULL;
-		}
-	}
-#endif
-
-	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
-	conf_file = g_build_filename ("/var", "run", tmp, NULL);
-	g_free (tmp);
+	/* TODO: also support UUID */
+	orig = get_dhclient_config (iface, NULL, FALSE);
+	new = g_strdup_printf (NMSTATEDIR "/dhclient-%s.conf", iface);
 
 	error = NULL;
-	success = merge_dhclient_config (iface, conf_file, s_ip4, dhcp_anycast_addr, hostname, orig, &error);
+	success = merge_dhclient_config (iface, new, s_ip4, dhcp_anycast_addr, hostname, orig, &error);
 	if (!success) {
 		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient configuration: %s",
 		             iface, error->message);
@@ -387,7 +420,7 @@ create_dhclient_config (const char *iface,
 	}
 
 	g_free (orig);
-	return conf_file;
+	return new;
 }
 
 

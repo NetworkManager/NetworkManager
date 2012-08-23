@@ -29,7 +29,8 @@ libdhcp_dhclient_la_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\"
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
+	-DNMCONFDIR=\"$(nmconfdir)\"
 
 libdhcp_dhclient_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
