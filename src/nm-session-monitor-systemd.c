@@ -31,6 +31,7 @@
 
 #include "nm-session-utils.h"
 #include "nm-session-monitor.h"
+#include "nm-logging.h"
 
 /********************************************************************/
 
@@ -236,10 +237,18 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
                                     const char **out_user,
                                     GError **error)
 {
+	int ret;
+
 	if (!nm_session_uid_to_user (uid, out_user, error))
 		return FALSE;
 
-	return sd_uid_get_sessions (uid, FALSE, NULL) > 0;
+	ret = sd_uid_get_sessions (uid, FALSE, NULL) > 0;
+	if (ret < 0) {
+		nm_log_warn (LOGD_CORE, "Failed to get systemd sessions for uid %d: %d",
+		             uid, ret);
+		return FALSE;
+	}
+	return ret > 0 ? TRUE : FALSE;
 }
 
 gboolean
@@ -247,5 +256,13 @@ nm_session_monitor_uid_active (NMSessionMonitor *monitor,
                                uid_t uid,
                                GError **error)
 {
-	return sd_uid_get_sessions (uid, TRUE, NULL) > 0;
+	int ret;
+
+	ret = sd_uid_get_sessions (uid, TRUE, NULL) > 0;
+	if (ret < 0) {
+		nm_log_warn (LOGD_CORE, "Failed to get active systemd sessions for uid %d: %d",
+		             uid, ret);
+		return FALSE;
+	}
+	return ret > 0 ? TRUE : FALSE;
 }
