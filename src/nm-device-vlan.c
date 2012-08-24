@@ -741,6 +741,8 @@ dispose (GObject *object)
 
 	g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
 	g_object_unref (priv->parent);
+
+	G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
 }
 
 static void
