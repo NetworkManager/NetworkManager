@@ -77,7 +77,8 @@ get_modem_properties (DBusGConnection *connection,
 					  char **driver,
 					  guint32 *type,
 					  guint32 *ip_method,
-					  guint32 *ip_timeout)
+					  guint32 *ip_timeout,
+					  NMModemState *state)
 {
 	DBusGProxy *proxy;
 	GError *err = NULL;
@@ -122,6 +123,8 @@ get_modem_properties (DBusGConnection *connection,
 			*driver = g_value_dup_string (value);
 		else if (g_strcmp0 (prop, "IpTimeout") == 0)
 			*ip_timeout = g_value_get_uint (value);
+		else if (g_strcmp0 (prop, "State") == 0)
+			*state = g_value_get_uint (value);
 	}
 	g_hash_table_unref (props);
 
@@ -140,6 +143,7 @@ create_modem (NMModemManager *manager, const char *path)
 	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 	uint ip_timeout = 0;
+	NMModemState state = NM_MODEM_STATE_UNKNOWN;
 
 	if (g_hash_table_lookup (priv->modems, path)) {
 		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
@@ -148,7 +152,7 @@ create_modem (NMModemManager *manager, const char *path)
 
 	if (!get_modem_properties (nm_dbus_manager_get_connection (priv->dbus_mgr),
 	                           path, &master_device, &data_device, &driver,
-	                           &modem_type, &ip_method, &ip_timeout))
+	                           &modem_type, &ip_method, &ip_timeout, &state))
 		return;
 
 	if (modem_type == MM_MODEM_TYPE_UNKNOWN) {
@@ -172,9 +176,9 @@ create_modem (NMModemManager *manager, const char *path)
 	}
 
 	if (modem_type == MM_MODEM_TYPE_GSM)
-		modem = nm_modem_gsm_new (path, master_device, data_device, ip_method);
+		modem = nm_modem_gsm_new (path, master_device, data_device, ip_method, state);
 	else if (modem_type == MM_MODEM_TYPE_CDMA)
-		modem = nm_modem_cdma_new (path, master_device, data_device, ip_method);
+		modem = nm_modem_cdma_new (path, master_device, data_device, ip_method, state);
 	else
 		nm_log_warn (LOGD_MB, "unknown modem type '%d'", modem_type);
 

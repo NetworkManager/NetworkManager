@@ -166,6 +166,19 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
 }
 
+static void
+modem_state_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
+
+	if (   nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED
+	    && nm_modem_get_state (priv->modem) != NM_MODEM_STATE_CONNECTED) {
+		/* Fail the device if the modem disconnects unexpectedly */
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
+	}
+}
+
 /*****************************************************************************/
 
 NMModem *
@@ -379,6 +392,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_STATE, G_CALLBACK (modem_state_cb), self);
 }
 
 static void

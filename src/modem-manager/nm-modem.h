@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_IP_METHOD "ip-method"
 #define NM_MODEM_IP_TIMEOUT "ip-timeout"
 #define NM_MODEM_ENABLED   "enabled"
+#define NM_MODEM_STATE     "state"
 
 #define NM_MODEM_PPP_STATS         "ppp-stats"
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
@@ -49,6 +50,23 @@ G_BEGIN_DECLS
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
 #define NM_MODEM_AUTH_REQUESTED    "auth-requested"
 #define NM_MODEM_AUTH_RESULT       "auth-result"
+
+/* From ModemManager */
+typedef enum {
+    NM_MODEM_STATE_UNKNOWN = 0,
+    NM_MODEM_STATE_DISABLED = 10,
+    NM_MODEM_STATE_DISABLING = 20,
+    NM_MODEM_STATE_ENABLING = 30,
+    NM_MODEM_STATE_ENABLED = 40,
+    NM_MODEM_STATE_SEARCHING = 50,
+    NM_MODEM_STATE_REGISTERED = 60,
+    NM_MODEM_STATE_DISCONNECTING = 70,
+    NM_MODEM_STATE_CONNECTING = 80,
+    NM_MODEM_STATE_CONNECTED = 90,
+
+    NM_MODEM_STATE_LAST = NM_MODEM_STATE_CONNECTED
+} NMModemState;
+
 
 typedef struct {
 	GObject parent;
@@ -154,6 +172,8 @@ gboolean nm_modem_hw_bring_up (NMModem *modem, NMDevice *device, gboolean *no_fi
 gboolean      nm_modem_get_mm_enabled (NMModem *self);
 
 void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
+
+NMModemState  nm_modem_get_state (NMModem *self);
 
 G_END_DECLS
 

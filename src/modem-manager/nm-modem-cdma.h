@@ -55,7 +55,8 @@ GType nm_modem_cdma_get_type (void);
 NMModem *nm_modem_cdma_new (const char *path,
                             const char *device,
                             const char *data_device,
-                            guint32 ip_method);
+                            guint32 ip_method,
+                            NMModemState state);
 
 G_END_DECLS
 

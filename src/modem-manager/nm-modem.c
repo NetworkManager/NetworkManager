@@ -44,6 +44,7 @@ enum {
 	PROP_IP_METHOD,
 	PROP_IP_TIMEOUT,
 	PROP_ENABLED,
+	PROP_STATE,
 
 	LAST_PROP
 };
@@ -67,6 +68,7 @@ typedef struct {
 
 	gboolean mm_enabled;
 	guint32 mm_ip_timeout;
+	NMModemState state;
 
 	/* PPP stats */
 	guint32 in_bytes;
@@ -103,6 +105,14 @@ nm_modem_get_mm_enabled (NMModem *self)
 	g_return_val_if_fail (NM_IS_MODEM (self), TRUE);
 
 	return NM_MODEM_GET_PRIVATE (self)->mm_enabled;
+}
+
+NMModemState
+nm_modem_get_state (NMModem *self)
+{
+	g_return_val_if_fail (NM_IS_MODEM (self), NM_MODEM_STATE_UNKNOWN);
+
+	return NM_MODEM_GET_PRIVATE (self)->state;
 }
 
 DBusGProxy *
@@ -798,6 +808,7 @@ modem_properties_changed (DBusGProxy *proxy,
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 	GValue *value;
+	NMModemState new_state;
 
 	if (strcmp (interface, MM_DBUS_INTERFACE_MODEM))
 		return;
@@ -811,6 +822,15 @@ modem_properties_changed (DBusGProxy *proxy,
 	if (value && G_VALUE_HOLDS_UINT (value)) {
 		priv->ip_method = g_value_get_uint (value);
 		g_object_notify (G_OBJECT (self), NM_MODEM_IP_METHOD);
+	}
+
+	value = g_hash_table_lookup (props, "State");
+	if (value && G_VALUE_HOLDS_UINT (value)) {
+		new_state = g_value_get_uint (value);
+		if (new_state != priv->state) {
+			priv->state = new_state;
+			g_object_notify (G_OBJECT (self), NM_MODEM_STATE);
+		}
 	}
 }
 
@@ -912,11 +932,13 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ENABLED:
 		g_value_set_boolean (value, priv->mm_enabled);
 		break;
+	case PROP_STATE:
+		g_value_set_boolean (value, priv->state);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
-
 }
 
 static void
@@ -947,6 +969,9 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ENABLED:
 		break;
+	case PROP_STATE:
+		priv->state = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -954,20 +979,37 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
-	if (priv->act_request)
+	if (priv->act_request) {
 		g_object_unref (priv->act_request);
+		priv->act_request = NULL;
+	}
 
-	if (priv->proxy)
+	if (priv->proxy) {
 		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
+	}
 
-	if (priv->props_proxy)
+	if (priv->props_proxy) {
 		g_object_unref (priv->props_proxy);
+		priv->props_proxy = NULL;
+	}
 
-	g_object_unref (priv->dbus_mgr);
+	if (priv->dbus_mgr) {
+		g_object_unref (priv->dbus_mgr);
+		priv->dbus_mgr = NULL;
+	}
+
+	G_OBJECT_CLASS (nm_modem_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
 	g_free (priv->iface);
 	g_free (priv->path);
@@ -987,6 +1029,7 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->constructor = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	klass->act_stage1_prepare = real_act_stage1_prepare;
@@ -1042,6 +1085,16 @@ nm_modem_class_init (NMModemClass *klass)
 		                       "Enabled",
 		                       TRUE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_MODEM_STATE,
+		                    "ModemManager modem state",
+		                    "ModemManager modem state",
+		                    NM_MODEM_STATE_UNKNOWN,
+		                    NM_MODEM_STATE_LAST,
+		                    NM_MODEM_STATE_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[PPP_STATS] =
