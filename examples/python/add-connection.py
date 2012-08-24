@@ -14,18 +14,32 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2010 Red Hat, Inc.
+# Copyright (C) 2010 - 2012 Red Hat, Inc.
 #
 
-import dbus
+#
+# This example adds a new ethernet connection via AddConnection() D-Bus call.
+#
+# Configuration settings are described at
+# http://projects.gnome.org/NetworkManager/developers/api/09/ref-settings.html
+#
+
+import socket, struct, dbus, uuid
+
+# Helper functions
+def ip_to_int(ip_string):
+    return struct.unpack("=I", socket.inet_aton(ip_string))[0]
+
+def int_to_ip(ip_int):
+    return socket.inet_ntoa(struct.pack("=I", ip_int))
 
 s_wired = dbus.Dictionary({'duplex': 'full'})
 s_con = dbus.Dictionary({
             'type': '802-3-ethernet',
-            'uuid': '7371bb78-c1f7-42a3-a9db-5b9566e8ca07',
-            'id': 'MyConnection'})
+            'uuid': str(uuid.uuid4()),
+            'id': 'MyConnectionExample'})
 
-addr1 = dbus.Array([dbus.UInt32(50462986L), dbus.UInt32(8L), dbus.UInt32(16908554L)], signature=dbus.Signature('u'))
+addr1 = dbus.Array([ip_to_int("10.1.2.3"), dbus.UInt32(8L), ip_to_int("10.1.2.1")], signature=dbus.Signature('u'))
 s_ip4 = dbus.Dictionary({
             'addresses': dbus.Array([addr1], signature=dbus.Signature('au')),
             'method': 'manual'})
@@ -39,8 +53,9 @@ con = dbus.Dictionary({
     'ipv6': s_ip6})
 
 
-bus = dbus.SystemBus()
+print "Creating connection:", s_con['id'], "-", s_con['uuid']
 
+bus = dbus.SystemBus()
 proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")
 settings = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Settings")
 
