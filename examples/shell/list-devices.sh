@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2011 Red Hat, Inc.
+# Copyright (C) 2011 - 2012 Red Hat, Inc.
 #
 
 #
@@ -35,11 +35,15 @@ devtype_to_name()
 {
   case $1 in
     1) echo "Ethernet" ;;
-    2) echo "WiFi" ;;
+    2) echo "Wi-Fi" ;;
     5) echo "Bluetooth" ;;
     6) echo "OLPC" ;;
     7) echo "WiMAX" ;;
     8) echo "Modem" ;;
+    9) echo "InfiniBand" ;;
+   10) echo "Bond" ;;
+   11) echo "VLAN" ;;
+   12) echo "ADSL" ;;
     *) echo "Unknown" ;;
   esac
 }

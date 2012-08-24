@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2011 Red Hat, Inc.
+# Copyright (C) 2011 - 2012 Red Hat, Inc.
 #
 
 require 'dbus'
@@ -26,11 +26,15 @@ require 'dbus'
 #
 
 devtypes = { 1 => "Ethernet",
-             2 => "WiFi",
+             2 => "Wi-Fi",
              5 => "Bluetooth",
              6 => "OLPC",
              7 => "WiMAX",
-             8 => "Modem" }
+             8 => "Modem",
+             9 => "InfiniBand",
+             10 => "Bond",
+             11 => "VLAN",
+             12 => "ADSL" }
 
 states = { 0   => "Unknown",
            10  => "Unmanaged",
