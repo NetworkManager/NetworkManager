@@ -387,6 +387,7 @@ device_get_driver_info (const char *iface, char **driver_version, char **firmwar
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, iface, IFNAMSIZ);
 	drvinfo.cmd = ETHTOOL_GDRVINFO;
+	memset (&drvinfo, 0, sizeof (drvinfo));
 	req.ifr_data = &drvinfo;
 
 	errno = 0;
