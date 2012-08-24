@@ -2123,6 +2123,14 @@ udev_device_removed_cb (NMUdevManager *manager,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 	guint32 ifindex;
+	const char *iface = g_udev_device_get_name (udev_device);
+
+	/* Ignore PPP interfaces as they are the IP interface of a device,
+	 * but they come and go when the device gets activated or deactivated.
+	 * We don't want their transient nature to affect their master device.
+	 */
+	if (strncmp (iface, "ppp", 3) == 0)
+		return;
 
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
@@ -2131,7 +2139,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 		 * they may have already been removed from sysfs.  Instead, we just
 		 * have to fall back to the device's interface name.
 		 */
-		device = find_device_by_ip_iface (self, g_udev_device_get_name (udev_device));
+		device = find_device_by_ip_iface (self, iface);
 	}
 
 	if (device)
