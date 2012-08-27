@@ -945,8 +945,8 @@ find_vlan_parent (NMManager *self,
 	GSList *iter;
 
 	/* The 'parent' property could be either an interface name, a connection
-	 * UUID, or even given by the MAC address of the connection's ethernet,
-	 * InfiniBand, or WiFi setting.
+	 * UUID, or even given by the MAC address of the connection's ethernet
+	 * or WiFi setting.
 	 */
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_return_val_if_fail (s_vlan != NULL, NULL);
