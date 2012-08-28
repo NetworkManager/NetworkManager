@@ -60,6 +60,7 @@ typedef struct {
 	NMDevice *device;
 	gboolean user_requested;
 	gulong user_uid;
+	char *dbus_sender;
 
 	NMActiveConnection *dep;
 	guint dep_state_id;
@@ -194,6 +195,22 @@ nm_act_request_get_user_requested (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->user_requested;
+}
+
+gulong
+nm_act_request_get_user_uid (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), 0);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->user_uid;
+}
+
+const char *
+nm_act_request_get_dbus_sender (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->dbus_sender;
 }
 
 GObject *
@@ -436,6 +453,7 @@ dep_state_changed (NMActiveConnection *dep,
  * @user_requested: pass %TRUE if the activation was requested via D-Bus,
  *    otherwise %FALSE if requested internally by NM (ie, autoconnect)
  * @user_uid: if @user_requested is %TRUE, the Unix UID of the user that requested
+ * @dbus_sender: if @user_requested is %TRUE, the D-BUS sender that requested
  *    the activation
  * @assumed: pass %TRUE if the activation should "assume" (ie, taking over) an
  *    existing connection made before this instance of NM started
@@ -453,6 +471,7 @@ nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
                     gboolean user_requested,
                     gulong user_uid,
+                    const char *dbus_sender,
                     gboolean assumed,
                     gpointer *device,
                     NMActiveConnection *dependency)
@@ -479,6 +498,7 @@ nm_act_request_new (NMConnection *connection,
 
 	priv->user_uid = user_uid;
 	priv->user_requested = user_requested;
+	priv->dbus_sender = g_strdup (dbus_sender);
 	priv->assumed = assumed;
 
 	if (dependency) {
@@ -557,6 +577,8 @@ dispose (GObject *object)
 	g_slist_free (priv->secrets_calls);
 
 	g_object_unref (priv->connection);
+
+	g_free (priv->dbus_sender);
 
 	if (priv->dep) {
 		g_object_weak_unref (G_OBJECT (priv->dep), (GWeakNotify) dep_gone, object);

@@ -149,6 +149,7 @@ static NMActiveConnection *internal_activate_device (NMManager *manager,
                                                      const char *specific_object,
                                                      gboolean user_requested,
                                                      gulong sender_uid,
+                                                     const char *dbus_sender,
                                                      gboolean assumed,
                                                      NMActiveConnection *master,
                                                      GError **error);
@@ -1759,7 +1760,7 @@ add_device (NMManager *self, NMDevice *device)
 		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume existing connection",
 		            nm_device_get_iface (device));
 
-		ac = internal_activate_device (self, device, existing, NULL, FALSE, 0, TRUE, NULL, &error);
+		ac = internal_activate_device (self, device, existing, NULL, FALSE, 0, NULL, TRUE, NULL, &error);
 		if (ac)
 			g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 		else {
@@ -2241,6 +2242,7 @@ internal_activate_device (NMManager *manager,
                           const char *specific_object,
                           gboolean user_requested,
                           gulong sender_uid,
+                          const char *dbus_sender,
                           gboolean assumed,
                           NMActiveConnection *master,
                           GError **error)
@@ -2269,6 +2271,7 @@ internal_activate_device (NMManager *manager,
 	                          specific_object,
 	                          user_requested,
 	                          sender_uid,
+	                          dbus_sender,
 	                          assumed,
 	                          (gpointer) device,
 	                          master);
@@ -2757,6 +2760,7 @@ nm_manager_activate_connection (NMManager *manager,
 	                                 specific_object,
 	                                 dbus_sender ? TRUE : FALSE,
 	                                 dbus_sender ? sender_uid : 0,
+	                                 dbus_sender,
 	                                 FALSE,
 	                                 master_ac,
 	                                 error);

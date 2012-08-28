@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2010 Red Hat, Inc.
+ * (C) Copyright 2005 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_ACTIVATION_REQUEST_H
@@ -62,6 +62,7 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
                                            gboolean user_requested,
                                            gulong user_uid,
+                                           const char *dbus_sender,
                                            gboolean assumed,
                                            gpointer *device,  /* An NMDevice */
                                            NMActiveConnection *dependency);
@@ -69,6 +70,10 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
+
+gulong        nm_act_request_get_user_uid (NMActRequest *req);
+
+const char   *nm_act_request_get_dbus_sender (NMActRequest *req);
 
 gboolean      nm_act_request_get_shared (NMActRequest *req);
 
