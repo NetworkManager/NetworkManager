@@ -322,9 +322,12 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 
 	priv->call = NULL;
 
+	/* Returned value array is (uuuu): [IP, DNS1, DNS2, DNS3], all in
+	 * network byte order.
+	 */
 	if (dbus_g_proxy_end_call (proxy, call, &error,
-							   G_TYPE_VALUE_ARRAY, &ret_array,
-							   G_TYPE_INVALID)) {
+	                           G_TYPE_VALUE_ARRAY, &ret_array,
+	                           G_TYPE_INVALID)) {
 		NMIP4Address *addr;
 		int i;
 
@@ -334,6 +337,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 
 		nm_log_info (LOGD_MB, "(%s): IPv4 static configuration:", priv->iface);
 
+		/* IP address */
 		nm_ip4_address_set_address (addr, g_value_get_uint (g_value_array_get_nth (ret_array, 0)));
 		nm_ip4_address_set_prefix (addr, 32);
 		nm_ip4_config_take_address (config, addr);
@@ -342,7 +346,8 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		             ip_address_to_string (nm_ip4_address_get_address (addr)),
 		             nm_ip4_address_get_prefix (addr));
 
-		for (i = 0; i < ret_array->n_values; i++) {
+		/* DNS servers */
+		for (i = 1; i < ret_array->n_values; i++) {
 			GValue *value = g_value_array_get_nth (ret_array, i);
 			guint32 tmp = g_value_get_uint (value);
 
