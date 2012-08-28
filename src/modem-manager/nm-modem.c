@@ -282,6 +282,25 @@ ppp_stage3_ip4_config_start (NMModem *self,
 /*****************************************************************************/
 /* IP method static */
 
+static char addr_to_string_buf[INET6_ADDRSTRLEN + 1];
+
+static const char *
+ip_address_to_string (guint32 numeric)
+{
+	struct in_addr temp_addr;
+
+	memset (&addr_to_string_buf, '\0', sizeof (addr_to_string_buf));
+	temp_addr.s_addr = numeric;
+
+	if (inet_ntop (AF_INET, &temp_addr, addr_to_string_buf, INET_ADDRSTRLEN)) {
+		return addr_to_string_buf;
+	} else {
+		nm_log_warn (LOGD_VPN, "error converting IP4 address 0x%X",
+		             ntohl (temp_addr.s_addr));
+		return NULL;
+	}
+}
+
 static void
 static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
@@ -302,14 +321,25 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		config = nm_ip4_config_new ();
 
 		addr = nm_ip4_address_new ();
+
+		nm_log_info (LOGD_MB, "(%s): IPv4 static configuration:", priv->iface);
+
 		nm_ip4_address_set_address (addr, g_value_get_uint (g_value_array_get_nth (ret_array, 0)));
 		nm_ip4_address_set_prefix (addr, 32);
 		nm_ip4_config_take_address (config, addr);
 
+		nm_log_info (LOGD_MB, "  address %s/%d",
+		             ip_address_to_string (nm_ip4_address_get_address (addr)),
+		             nm_ip4_address_get_prefix (addr));
+
 		for (i = 0; i < ret_array->n_values; i++) {
 			GValue *value = g_value_array_get_nth (ret_array, i);
+			guint32 tmp = g_value_get_uint (value);
 
-			nm_ip4_config_add_nameserver (config, g_value_get_uint (value));
+			if (tmp > 0) {
+				nm_ip4_config_add_nameserver (config, tmp);
+				nm_log_info (LOGD_MB, "  DNS %s", ip_address_to_string (tmp));
+			}
 		}
 		g_value_array_free (ret_array);
 	}
