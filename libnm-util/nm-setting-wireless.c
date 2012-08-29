@@ -509,15 +509,16 @@ nm_setting_wireless_get_hidden (NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  * @bssid: the new BSSID to add to the list
  *
- * Adds a new WiFi AP's BSSID to the previously seen BSSID list of the setting.
- * NetworkManager tracks previously seen BSSIDs internally so this function
- * no longer has much use.
+ * Adds a new Wi-Fi AP's BSSID to the previously seen BSSID list of the setting.
+ * NetworkManager now tracks previously seen BSSIDs internally so this function
+ * no longer has much use. Actually, changes you make using this function will
+ * not be preserved.
  *
  * Returns: %TRUE if @bssid was already known, %FALSE if not
  **/
 gboolean
 nm_setting_wireless_add_seen_bssid (NMSettingWireless *setting,
-									const char *bssid)
+                                    const char *bssid)
 {
 	NMSettingWirelessPrivate *priv;
 	char *lower_bssid;
@@ -1061,21 +1062,25 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NMSettingWireless:seen-bssids:
 	 *
 	 * A list of BSSIDs (each BSSID formatted as a MAC address like
-	 * '00:11:22:33:44:55') that have been detected as part of the WiFI network.
-	 * NetworkManager internally tracks previously seen BSSIDs so this property
-	 * is no longer of much use.
+	 * '00:11:22:33:44:55') that have been detected as part of the Wi-FI network.
+	 * NetworkManager internally tracks previously seen BSSIDs. The property is only
+	 * meant for reading and reflects the BBSID list of NetworkManager. The changes you
+	 * make to this property will not be preserved.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS,
-							   "Seen BSSIDS",
-							   "A list of BSSIDs (each BSSID formatted as a MAC "
-							   "address like 00:11:22:33:44:55') that have been "
-							   "detected as part of the WiFI network. "
-							   "NetworkManager internally tracks previously seen "
-							   "BSSIDs so this property is no longer of much use.",
-							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             "Seen BSSIDS",
+		                             "A list of BSSIDs (each BSSID formatted as a MAC "
+		                             "address like 00:11:22:33:44:55') that have been "
+		                             "detected as part of the WiFI network. "
+		                             "NetworkManager internally tracks previously seen "
+		                             "BSSIDs. The property is only meant for reading "
+		                             "and reflects the BBSID list of NetworkManager. "
+		                             "The changes you make to this property will not be "
+		                             "preserved.",
+		                             DBUS_TYPE_G_LIST_OF_STRING,
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWireless:mtu:
