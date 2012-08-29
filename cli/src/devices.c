@@ -403,7 +403,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	if (security_str->len > 0)
 		g_string_truncate (security_str, security_str->len-1);  /* Chop off last space */
 
-	ap_name = g_strdup_printf ("AP%d", info->index++); /* AP */
+	ap_name = g_strdup_printf ("AP[%d]", info->index++); /* AP */
 	info->nmc->allowed_fields[0].value = ap_name;
 	info->nmc->allowed_fields[1].value = ssid_str;
 	info->nmc->allowed_fields[2].value = bssid;
@@ -461,7 +461,7 @@ detail_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx)
 	}
 
 	quality_str = g_strdup_printf ("%u", nm_wimax_nsp_get_signal_quality (nsp));
-	nsp_name = g_strdup_printf ("NSP%d", idx); /* NSP */
+	nsp_name = g_strdup_printf ("NSP[%d]", idx); /* NSP */
 
 	nmc->allowed_fields[0].value = nsp_name;
 	nmc->allowed_fields[1].value = nm_wimax_nsp_get_name (nsp);
