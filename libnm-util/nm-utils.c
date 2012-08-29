@@ -2593,8 +2593,10 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
  */
 gboolean
-nm_utils_iface_valid_name(const char *name)
+nm_utils_iface_valid_name (const char *name)
 {
+	g_return_val_if_fail (name != NULL, FALSE);
+
 	if (*name == '\0')
 		return FALSE;
 
