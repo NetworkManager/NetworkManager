@@ -1318,7 +1318,7 @@ reload_complete (NMObject *object)
 	priv->reload_error = NULL;
 
 	for (iter = results; iter; iter = iter->next) {
-		simple = results->data;
+		simple = iter->data;
 
 		if (error)
 			g_simple_async_result_set_from_error (simple, error);

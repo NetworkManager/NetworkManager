@@ -184,6 +184,27 @@ register_properties (NMDevice *device)
 	                                property_info);
 }
 
+typedef struct {
+	NMDeviceState old_state;
+	NMDeviceState new_state;
+	NMDeviceStateReason reason;
+} StateChangeData;
+
+static void
+device_state_change_reloaded (GObject *object,
+                              GAsyncResult *result,
+                              gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (object);
+	StateChangeData *data = user_data;
+
+	_nm_object_reload_properties_finish (NM_OBJECT (object), result, NULL);
+
+	g_signal_emit (self, signals[STATE_CHANGED], 0,
+	               data->new_state, data->old_state, data->reason);
+	g_slice_free (StateChangeData, data);
+}
+
 static void
 device_state_changed (DBusGProxy *proxy,
                       NMDeviceState new_state,
@@ -191,17 +212,21 @@ device_state_changed (DBusGProxy *proxy,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-
 	if (old_state != new_state) {
-		/* Update state here since the PropertyChanged signal for state
-		 * might come in a bit later, but a client might ask for the
-		 * state via nm_device_get_state() as a result of this signal.
-		 * When the PC signal does come in that will trigger the glib
-		 * property notify signal so we don't need to do that here.
+		StateChangeData *data;
+
+		/* Our object-valued properties (eg, ip4_config) will still
+		 * have their old values at this point, because NMObject is
+		 * in the process of asynchronously reading the new values.
+		 * Wait for that to finish before emitting the signal.
 		 */
-		NM_DEVICE_GET_PRIVATE (self)->state = new_state;
-		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
+		data = g_slice_new (StateChangeData);
+		data->old_state = old_state;
+		data->new_state = new_state;
+		data->reason = reason;
+		_nm_object_reload_properties_async (NM_OBJECT (user_data),
+		                                    device_state_change_reloaded,
+		                                    data);
 	}
 }
 
