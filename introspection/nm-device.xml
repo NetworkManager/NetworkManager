@@ -559,6 +559,11 @@
           Problem with the RFC 2684 Ethernet over ADSL bridge.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_MANAGER_UNAVAILABLE" value="52">
+        <tp:docstring>
+          ModemManager was not running or quit unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

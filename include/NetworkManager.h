@@ -492,6 +492,9 @@ typedef enum {
 	/* Problem with the RFC 2684 Ethernet over ADSL bridge */
 	NM_DEVICE_STATE_REASON_BR2684_FAILED = 51,
 
+	/* ModemManager not running */
+	NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE = 52,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;
