@@ -3024,19 +3024,6 @@ clear_act_request (NMDevice *self)
 }
 
 static void
-queued_state_clear (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->queued_state.id) {
-		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued state transition (id %d)",
-		            nm_device_get_iface (self), priv->queued_state.id);
-		g_source_remove (priv->queued_state.id);
-	}
-	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
-}
-
-static void
 dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -3204,7 +3191,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	}
 
 	/* Clear any queued transitions */
-	queued_state_clear (self);
+	nm_device_queued_state_clear (self);
 
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
@@ -3772,7 +3759,7 @@ dispose (GObject *object)
 	}
 
 	/* Clear any queued transitions */
-	queued_state_clear (self);
+	nm_device_queued_state_clear (self);
 
 	/* Clean up and stop DHCP */
 	dhcp4_cleanup (self, take_down, FALSE);
@@ -4482,7 +4469,7 @@ nm_device_state_changed (NMDevice *device,
 	             reason);
 
 	/* Clear any queued transitions */
-	queued_state_clear (device);
+	nm_device_queued_state_clear (device);
 
 	/* Cache the activation request for the dispatcher */
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
@@ -4594,7 +4581,7 @@ queued_set_state (gpointer user_data)
 		priv->queued_state.id = 0;
 		nm_device_state_changed (self, priv->queued_state.state, priv->queued_state.reason);
 	}
-	queued_state_clear (self);
+	nm_device_queued_state_clear (self);
 	return FALSE;
 }
 
@@ -4613,7 +4600,7 @@ nm_device_queue_state (NMDevice *self,
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
 		g_warn_if_fail (priv->queued_state.id == 0);
-		queued_state_clear (self);
+		nm_device_queued_state_clear (self);
 	}
 
 	priv->queued_state.state = state;
@@ -4623,6 +4610,32 @@ nm_device_queue_state (NMDevice *self,
 	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s (id %d)",
 	            nm_device_get_iface (self), state_to_string (state),
 	            priv->queued_state.id);
+}
+
+NMDeviceState
+nm_device_queued_state_peek (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (self != NULL, NM_DEVICE_STATE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_STATE_UNKNOWN);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	return priv->queued_state.id ? priv->queued_state.state : NM_DEVICE_STATE_UNKNOWN;
+}
+
+void
+nm_device_queued_state_clear (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->queued_state.id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued state transition (id %d)",
+		            nm_device_get_iface (self), priv->queued_state.id);
+		g_source_remove (priv->queued_state.id);
+	}
+	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
 }
 
 NMDeviceState
