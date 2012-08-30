@@ -1531,6 +1531,12 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		if (rtnl_route_get_family (rtnlroute) != AF_INET6)
 			continue;
 
+		/* And ignore cache/cloned routes as they aren't part of the interface's
+		 * permanent routing configuration.
+		 */
+		if (rtnl_route_get_flags (rtnlroute) & RTM_F_CLONED)
+			continue;
+
 		nldest = rtnl_route_get_dst (rtnlroute);
 		if (!nldest || nl_addr_get_family (nldest) != AF_INET6)
 			continue;
