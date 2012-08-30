@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 
 #include "NetworkManager.h"
+#include "nm-types.h"
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -84,9 +85,9 @@ typedef enum {
 	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
 } NMDeviceError;
 
-typedef struct {
+struct _NMDevice {
 	GObject parent;
-} NMDevice;
+};
 
 typedef struct {
 	GObjectClass parent;

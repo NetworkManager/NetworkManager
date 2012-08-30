@@ -114,6 +114,7 @@ libtest_wifi_ap_utils_la_LIBADD = \
 sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
+		nm-types.h \
 		nm-call-store.c \
 		nm-call-store.h \
 		nm-device.c \
