@@ -551,6 +551,9 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_BR2684_FAILED:
 		return _("A problem with the RFC 2684 Ethernet over ADSL bridge");
 
+	case NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE:
+		return _("ModemManager is unavailable");
+
 	default:
 		return _("Unknown");
 	}
