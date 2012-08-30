@@ -147,6 +147,13 @@ carrier_action_defer_cb (gpointer user_data)
 	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
 		if (priv->carrier)
 			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+		else {
+			/* clear any queued state changes if they wouldn't be valid when the
+			 * carrier is off.
+			 */
+			if (nm_device_queued_state_peek (NM_DEVICE (self)) >= NM_DEVICE_STATE_DISCONNECTED)
+				nm_device_queued_state_clear (NM_DEVICE (self));
+		}
 	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
 		if (!priv->carrier)
 			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
