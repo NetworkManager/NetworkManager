@@ -93,14 +93,15 @@ static NmcOutputField nmc_fields_dev_list_sections[] = {
 	{"DHCP6",             N_("DHCP6"),             0, NULL, 0},  /* 10 */
 	{"BOND",              N_("BOND"),              0, NULL, 0},  /* 11 */
 	{"VLAN",              N_("VLAN"),              0, NULL, 0},  /* 12 */
+	{"CONNECTIONS",       N_("CONNECTIONS"),       0, NULL, 0},  /* 13 */
 	{NULL,                NULL,                    0, NULL, 0}
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
 #else
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
 #endif
 
 /* Available fields for 'dev list' - GENERAL part */
@@ -124,8 +125,19 @@ static NmcOutputField nmc_fields_dev_list_general[] = {
 	{"CONNECTION",        N_("CONNECTION"),        51, NULL, 0},  /* 16 */
 	{NULL, NULL, 0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,STATE,REASON,UDI,IP-IFACE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,CONNECTION"
+#define NMC_FIELDS_DEV_LIST_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,STATE,REASON,UDI,IP-IFACE,"\
+                                            "NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,CONNECTION"
 #define NMC_FIELDS_DEV_LIST_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
+
+/* Available fields for 'dev list' - CONNECTIONS part */
+static NmcOutputField nmc_fields_dev_list_connections[] = {
+	{"NAME",                       N_("NAME"),                       10, NULL, 0},  /* 0 */
+	{"AVAILABLE-CONNECTION-PATHS", N_("AVAILABLE-CONNECTION-PATHS"), 80, NULL, 0},  /* 1 */
+	{"AVAILABLE-CONNECTIONS",      N_("AVAILABLE-CONNECTIONS"),      80, NULL, 0},  /* 2 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_DEV_LIST_CONNECTIONS_ALL     "AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
+#define NMC_FIELDS_DEV_LIST_CONNECTIONS_COMMON  "AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
 
 /* Available fields for 'dev list' - CAPABILITIES part */
 static NmcOutputField nmc_fields_dev_list_cap[] = {
@@ -882,6 +894,53 @@ show_device_info (gpointer data, gpointer user_data)
 			}
 		}
 
+		/* section CONNECTIONS */
+		if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[13].name)) {
+			const GPtrArray *avail_cons;
+			GString *ac_paths_str;
+			char **ac_arr = NULL;
+			int i;
+
+			nmc->allowed_fields = nmc_fields_dev_list_connections;
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_CONNECTIONS_ALL, nmc->allowed_fields, NULL);
+			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+			/* available-connections */
+			avail_cons = nm_device_get_available_connections (device);
+			ac_paths_str = g_string_new (NULL);
+			if (avail_cons->len) {
+				ac_arr = g_new (char *, avail_cons->len + 1);
+				ac_arr[avail_cons->len] = NULL;
+			}
+			for (i = 0; avail_cons && (i < avail_cons->len); i++) {
+				NMRemoteConnection *avail_con = g_ptr_array_index (avail_cons, i);
+				const char *ac_path = nm_connection_get_path (NM_CONNECTION (avail_con));
+				const char *ac_id = nm_connection_get_id (NM_CONNECTION (avail_con));
+				const char *ac_uuid = nm_connection_get_uuid (NM_CONNECTION (avail_con));
+
+				ac_arr[i] = g_strdup_printf ("%s | %s", ac_uuid, ac_id);
+
+				if (i == 0)
+					g_string_printf (ac_paths_str, "%s/{", NM_DBUS_PATH_SETTINGS);
+				else
+					g_string_append_c (ac_paths_str, ',');
+				g_string_append (ac_paths_str, strrchr (ac_path, '/') + 1);
+			}
+			if (ac_paths_str->len > 0)
+				g_string_append_c (ac_paths_str, '}');
+
+			set_val_str (nmc->allowed_fields, 0, nmc_fields_dev_list_sections[13].name);  /* "CONNECTIONS" */
+			set_val_str (nmc->allowed_fields, 1, ac_paths_str->str);
+			set_val_arr (nmc->allowed_fields, 2, (const char **) ac_arr);
+
+			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+			g_string_free (ac_paths_str, TRUE);
+			g_strfreev (ac_arr);
+			was_output = TRUE;
+		}
 	}
 
 	if (sections_array)
