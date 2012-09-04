@@ -12,978 +12,1672 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
-"product=NetworkManager&component=general\n"
-"POT-Creation-Date: 2010-08-10 03:25+0000\n"
-"PO-Revision-Date: 2010-09-01 22:08+0300\n"
-"Last-Translator: Simos Xenitellis <simos@gnome.org>\n"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2012-07-25 16:03+0000\n"
+"PO-Revision-Date: 2012-07-26 01:07+0200\n"
+"Last-Translator: Tom Tryfonidis <tomtryf@gmail.com>\n"
 "Language-Team: Greek <team@gnome.gr>\n"
+"Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;\n"
 "X-Generator: Lokalize 0.3\n"
 
-#: ../cli/src/connections.c:60 ../cli/src/connections.c:75
-#: ../cli/src/devices.c:88 ../cli/src/devices.c:101 ../cli/src/devices.c:111
-#: ../cli/src/devices.c:121 ../cli/src/devices.c:134 ../cli/src/devices.c:145
-#: ../cli/src/devices.c:156 ../cli/src/devices.c:165 ../cli/src/devices.c:174
+#: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
+#: ../cli/src/common.c:63 ../cli/src/connections.c:128
+#: ../cli/src/connections.c:162
+msgid "GROUP"
+msgstr "ΟΜΑΔΑ"
+
+#. 0
+#: ../cli/src/common.c:33 ../cli/src/common.c:53
+msgid "ADDRESS"
+msgstr "ΔΙΕΥΘΥΝΣΗ"
+
+#. 1
+#: ../cli/src/common.c:34 ../cli/src/common.c:54
+msgid "ROUTE"
+msgstr "ROUTE"
+
+#. 2
+#: ../cli/src/common.c:35 ../cli/src/common.c:55
+msgid "DNS"
+msgstr "DNS"
+
+#. 3
+#: ../cli/src/common.c:36 ../cli/src/common.c:56
+msgid "DOMAIN"
+msgstr "ΤΟΜΕΑΣ"
+
+#. 4
+#: ../cli/src/common.c:37
+msgid "WINS"
+msgstr "WINS"
+
+#. 0
+#: ../cli/src/common.c:45 ../cli/src/common.c:64
+msgid "OPTION"
+msgstr "ΕΠΙΛΟΓΗ"
+
+#: ../cli/src/common.c:366
+msgid "unmanaged"
+msgstr "χωρίς διαχείριση"
+
+#: ../cli/src/common.c:368
+msgid "unavailable"
+msgstr "μη διαθέσιμη"
+
+#: ../cli/src/common.c:370 ../cli/src/network-manager.c:120
+msgid "disconnected"
+msgstr "αποσυνδέθηκε"
+
+#: ../cli/src/common.c:372
+msgid "connecting (prepare)"
+msgstr "σύνδεση (προετοιμασία)"
+
+#: ../cli/src/common.c:374
+msgid "connecting (configuring)"
+msgstr "σύνδεση (διαμόρφωση)"
+
+#: ../cli/src/common.c:376
+msgid "connecting (need authentication)"
+msgstr "σύνδεση (απαιτείται πιστοποίηση)"
+
+#: ../cli/src/common.c:378
+msgid "connecting (getting IP configuration)"
+msgstr "σύνδεση (γίνεται λήψη ρυθμίσεων IP)"
+
+#: ../cli/src/common.c:380
+msgid "connecting (checking IP connectivity)"
+msgstr "σύνδεση (γίνεται έλεγχος συνδεσιμότητας της IP)"
+
+#: ../cli/src/common.c:382
+msgid "connecting (starting secondary connections)"
+msgstr "σύνδεση (γίνεται εκκίνηση των δευτερευουσών συνδέσεων)"
+
+#: ../cli/src/common.c:384 ../cli/src/network-manager.c:116
+msgid "connected"
+msgstr "συνδέθηκε"
+
+#: ../cli/src/common.c:386 ../cli/src/connections.c:633
+msgid "deactivating"
+msgstr "απενεργοποίηση"
+
+#: ../cli/src/common.c:388
+msgid "connection failed"
+msgstr "αποτυχία σύνδεσης"
+
+#: ../cli/src/common.c:390 ../cli/src/connections.c:636
+#: ../cli/src/connections.c:659 ../cli/src/connections.c:1351
+#: ../cli/src/devices.c:622 ../cli/src/network-manager.c:123
+#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:188
+#: ../cli/src/network-manager.c:197 ../cli/src/network-manager.c:257
+#: ../cli/src/network-manager.c:273 ../cli/src/network-manager.c:431
+#: ../cli/src/network-manager.c:486 ../cli/src/network-manager.c:524
+#: ../cli/src/network-manager.c:563 ../cli/src/settings.c:585
+#: ../cli/src/settings.c:613 ../cli/src/utils.c:531 ../src/main.c:462
+#: ../src/main.c:481
+msgid "unknown"
+msgstr "άγνωστη"
+
+#: ../cli/src/common.c:399
+msgid "No reason given"
+msgstr "Δε δόθηκε αιτία"
+
+#: ../cli/src/common.c:402
+msgid "Unknown error"
+msgstr "Άγνωστο σφάλμα"
+
+#: ../cli/src/common.c:405
+#, fuzzy
+msgid "Device is now managed"
+msgstr "Η συσκευή είναι τώρα με διαχείριση"
+
+#: ../cli/src/common.c:408
+#, fuzzy
+msgid "Device is now unmanaged"
+msgstr "Η συσκευή είναι τώρα χωρίς διαχείριση"
+
+#: ../cli/src/common.c:411
+#, fuzzy
+#| msgid "the VPN service returned invalid configuration"
+msgid "The device could not be readied for configuration"
+msgstr "Αδυναμία εφαρμογής των επιλεγμένων ρυθμίσεων στις οθόνες"
+
+#: ../cli/src/common.c:414
+msgid ""
+"IP configuration could not be reserved (no available address, timeout, etc)"
+msgstr ""
+"Οι ρυθμίσεις IP δε μπόρεσαν να εξασφαλιστούν (δεν υπάρχει διαθέσιμη "
+"διεύθυνση, χρονικό όριο, κ.λπ)"
+
+#: ../cli/src/common.c:417
+msgid "The IP configuration is no longer valid"
+msgstr "Δεν είναι πλέον έγκυρες οι ρυθμίσεις IP"
+
+#: ../cli/src/common.c:420
+msgid "Secrets were required, but not provided"
+msgstr "Τα μυστικά απαιτήθηκαν, αλλά δεν παρήχθησαν"
+
+#: ../cli/src/common.c:423
+msgid "802.1X supplicant disconnected"
+msgstr "Αποσυνδέθηκε το 802.1x supplicant"
+
+#: ../cli/src/common.c:426
+msgid "802.1X supplicant configuration failed"
+msgstr "Απέtυχε η ρύθμιση του 802.1x supplicant"
+
+#: ../cli/src/common.c:429
+msgid "802.1X supplicant failed"
+msgstr "Αποτυχία του 802.1x supplicant"
+
+#: ../cli/src/common.c:432
+msgid "802.1X supplicant took too long to authenticate"
+msgstr "Το 802.1x supplicant πήρε αρκετή ώρα για να πιστοποιηθεί"
+
+#: ../cli/src/common.c:435
+msgid "PPP service failed to start"
+msgstr "Αποτυχία εκκίνησης της υπηρεσίας PPP"
+
+#: ../cli/src/common.c:438
+msgid "PPP service disconnected"
+msgstr "Αποσυνδέθηκε η υπηρεσία PPP"
+
+#: ../cli/src/common.c:441
+msgid "PPP failed"
+msgstr "Το PPP απέτυχε"
+
+#: ../cli/src/common.c:444
+msgid "DHCP client failed to start"
+msgstr "Αποτυχία εκκίνησης του πελάτη DHCP"
+
+#: ../cli/src/common.c:447
+msgid "DHCP client error"
+msgstr "Σφάλμα πελάτη DHCP"
+
+#: ../cli/src/common.c:450
+msgid "DHCP client failed"
+msgstr "Αποτυχία του πελάτη DHCP"
+
+#: ../cli/src/common.c:453
+msgid "Shared connection service failed to start"
+msgstr "Αποτυχία εκκίνησης υπηρεσίας της κοινόχρηστης σύνδεσης"
+
+#: ../cli/src/common.c:456
+msgid "Shared connection service failed"
+msgstr "Αποτυχία υπηρεσίας της κοινόχρηστης σύνδεσης"
+
+#: ../cli/src/common.c:459
+msgid "AutoIP service failed to start"
+msgstr "Αποτυχία εκκίνησης της υπηρεσίας AutoIP"
+
+#: ../cli/src/common.c:462
+msgid "AutoIP service error"
+msgstr "Σφάλμα υπηρεσίας AutoIP"
+
+#: ../cli/src/common.c:465
+msgid "AutoIP service failed"
+msgstr "Αποτυχία υπηρεσίας AutoIP"
+
+#: ../cli/src/common.c:468
+msgid "The line is busy"
+msgstr "Η γραμμή είναι απασχολημένη"
+
+#: ../cli/src/common.c:471
+#, fuzzy
+msgid "No dial tone"
+msgstr "Καθόλου ήχος κλήσης"
+
+#: ../cli/src/common.c:474
+#, fuzzy
+msgid "No carrier could be established"
+msgstr "Δεν ήταν δυνατή η ανάκτηση σιωπής"
+
+#: ../cli/src/common.c:477
+msgid "The dialing request timed out"
+msgstr "Έληξε το αίτημα κλήσης"
+
+#: ../cli/src/common.c:480
+msgid "The dialing attempt failed"
+msgstr "Απέτυχε η προσπάθεια κλήσης"
+
+#: ../cli/src/common.c:483
+msgid "Modem initialization failed"
+msgstr "Απέτυχε η προετοιμασία του μόντεμ"
+
+#: ../cli/src/common.c:486
+msgid "Failed to select the specified APN"
+msgstr "Αποτυχία επιλογής του συγκεκριμένου APN"
+
+#: ../cli/src/common.c:489
+msgid "Not searching for networks"
+msgstr "Δεν ψάχνει για δίκτυα"
+
+#: ../cli/src/common.c:492
+msgid "Network registration denied"
+msgstr "Αρνήθηκε η εγγραφή του δικτύου"
+
+#: ../cli/src/common.c:495
+msgid "Network registration timed out"
+msgstr "Έληξε η εγγραφή του δικτύου"
+
+#: ../cli/src/common.c:498
+msgid "Failed to register with the requested network"
+msgstr "Αποτυχία εγγραφής με το ζητούμενο δίκτυο"
+
+#: ../cli/src/common.c:501
+msgid "PIN check failed"
+msgstr "Απέτυχε ο έλεγχος του PIN"
+
+#: ../cli/src/common.c:504
+msgid "Necessary firmware for the device may be missing"
+msgstr "Μπορεί να λείπει το απαραίτητο υλισμικό (firmware) για τη συσκευή"
+
+#: ../cli/src/common.c:507
+msgid "The device was removed"
+msgstr "Αφαιρέθηκε η συσκευή"
+
+#: ../cli/src/common.c:510
+#, fuzzy
+#| msgid "NetworkManager status"
+msgid "NetworkManager went to sleep"
+msgstr "Ο NetworkManager πήγε για ύπνο/Ο NetworkManager τερματίστηκε"
+
+#: ../cli/src/common.c:513
+#, fuzzy
+#| msgid "no active connection or device"
+msgid "The device's active connection disappeared"
+msgstr "δεν υπάρχει ενεργή σύνδεση στη συσκευή '%s'"
+
+#: ../cli/src/common.c:516
+msgid "Device disconnected by user or client"
+msgstr "Η συσκευή αποσυνδέθηκε από τον χρήστη ή τον πελάτη"
+
+#: ../cli/src/common.c:519
+#, fuzzy
+msgid "Carrier/link changed"
+msgstr "Αν ο κειμενογράφος έχει τροποποιηθεί"
+
+#: ../cli/src/common.c:522
+#, fuzzy
+#| msgid "the connection was removed"
+msgid "The device's existing connection was assumed"
+msgstr "η σύνδεση αφαιρέθηκε"
+
+#: ../cli/src/common.c:525
+msgid "The supplicant is now available"
+msgstr "Ο supplicant είναι τώρα διαθέσιμος"
+
+#: ../cli/src/common.c:528
+msgid "The modem could not be found"
+msgstr "Το μόντεμ δεν μπόρεσε να βρεθεί"
+
+#: ../cli/src/common.c:531
+msgid "The Bluetooth connection failed or timed out"
+msgstr "Απέτυχε ή έληξε η σύνδεση Bluetooth"
+
+#: ../cli/src/common.c:534
+msgid "GSM Modem's SIM card not inserted"
+msgstr "Δεν εισήχθησε η κάρτα SIM του GSM μόντεμ"
+
+#: ../cli/src/common.c:537
+#, fuzzy
+msgid "GSM Modem's SIM PIN required"
+msgstr "Απαιτείται το PIN του GSM μόντεμ"
+
+#: ../cli/src/common.c:540
+#, fuzzy
+msgid "GSM Modem's SIM PUK required"
+msgstr "Απαιτείται το PUK του GSM μόντεμ"
+
+#: ../cli/src/common.c:543
+#, fuzzy
+msgid "GSM Modem's SIM wrong"
+msgstr "Λάθος SIM του GSM Modem"
+
+#: ../cli/src/common.c:546
+#, fuzzy
+msgid "InfiniBand device does not support connected mode"
+msgstr ""
+"Η συσκευή InfiniBand δεν υποστηρίζει συνδεδεμένη λειτουργία (connected mode)"
+
+#: ../cli/src/common.c:549
+#, fuzzy
+#| msgid "connection failed"
+msgid "A dependency of the connection failed"
+msgstr "Η σύνδεση στο %s απέτυχε"
+
+#: ../cli/src/common.c:552
+msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
+msgstr "Πρόβλημα με το RFC 2684 Ethernet μέσω γέφυρας ADSL"
+
+#: ../cli/src/common.c:555 ../cli/src/devices.c:274 ../cli/src/devices.c:290
+#: ../cli/src/devices.c:410 ../cli/src/devices.c:454
+msgid "Unknown"
+msgstr "Άγνωστο"
+
+#. 0
+#. used only for 'GENERAL' group listing
+#: ../cli/src/connections.c:59 ../cli/src/connections.c:129
+#: ../cli/src/devices.c:105 ../cli/src/devices.c:129 ../cli/src/devices.c:139
+#: ../cli/src/devices.c:149 ../cli/src/devices.c:163 ../cli/src/devices.c:177
+#: ../cli/src/devices.c:199
 msgid "NAME"
 msgstr "ΟΝΟΜΑ"
 
 #. 0
-#: ../cli/src/connections.c:61 ../cli/src/connections.c:76
+#. 1
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:130
 msgid "UUID"
 msgstr "UUID"
 
 #. 1
-#: ../cli/src/connections.c:62
-msgid "DEVICES"
-msgstr "ΣΥΣΚΕΥΕΣ"
-
-#. 2
-#: ../cli/src/connections.c:63 ../cli/src/connections.c:78
-msgid "SCOPE"
-msgstr "ΕΥΡΟΣ"
-
-#. 3
-#: ../cli/src/connections.c:64
-msgid "DEFAULT"
-msgstr "ΠΡΟΕΠΙΛΟΓΗ"
-
-#. 4
-#: ../cli/src/connections.c:65
-msgid "DBUS-SERVICE"
-msgstr "ΥΠΗΡΕΣΙΑ DBUS"
-
-#. 5
-#: ../cli/src/connections.c:66
-msgid "SPEC-OBJECT"
-msgstr "SPEC-OBJECT"
-
-#. 6
-#: ../cli/src/connections.c:67
-msgid "VPN"
-msgstr "VPN"
-
-#. 1
 #. 0
 #. 1
-#: ../cli/src/connections.c:77 ../cli/src/devices.c:62 ../cli/src/devices.c:90
+#. 2
+#: ../cli/src/connections.c:61 ../cli/src/connections.c:163
+#: ../cli/src/devices.c:71 ../cli/src/devices.c:107 ../cli/src/devices.c:202
 msgid "TYPE"
 msgstr "ΤΥΠΟΣ"
 
-#. 3
-#: ../cli/src/connections.c:79
+#. 2
+#: ../cli/src/connections.c:62
 msgid "TIMESTAMP"
 msgstr "TIMESTAMP"
 
-#. 4
-#: ../cli/src/connections.c:80
+#. 3
+#: ../cli/src/connections.c:63
 msgid "TIMESTAMP-REAL"
 msgstr "TIMESTAMP-ΠΡΑΓΜΑΤΙΚΟ"
 
-#. 5
-#: ../cli/src/connections.c:81
+#. 4
+#. 13
+#: ../cli/src/connections.c:64 ../cli/src/devices.c:119
 msgid "AUTOCONNECT"
 msgstr "ΑΥΤΟΜΑΤΗ-ΣΥΝΔΕΣΗ"
 
-#. 6
-#: ../cli/src/connections.c:82
+#. 5
+#: ../cli/src/connections.c:65
 msgid "READONLY"
 msgstr "ΜΟΝΟ-ΓΙΑ-ΑΝΑΓΝΩΣΗ"
 
-#: ../cli/src/connections.c:158
+#. 6
+#. 8
+#. 2
+#. 11
+#. 5
+#: ../cli/src/connections.c:66 ../cli/src/connections.c:137
+#: ../cli/src/devices.c:73 ../cli/src/devices.c:189 ../cli/src/devices.c:205
+msgid "DBUS-PATH"
+msgstr "ΔΙΑΔΡΟΜΗ-DBUS"
+
+#. 2
+#: ../cli/src/connections.c:131
+msgid "DEVICES"
+msgstr "ΣΥΣΚΕΥΕΣ"
+
+#. 3
+#. 1
+#. 8
+#. 1
+#: ../cli/src/connections.c:132 ../cli/src/devices.c:72
+#: ../cli/src/devices.c:114 ../cli/src/network-manager.c:39
+msgid "STATE"
+msgstr "ΚΑΤΑΣΤΑΣΗ"
+
+#. 4
+#: ../cli/src/connections.c:133
+msgid "DEFAULT"
+msgstr "ΠΡΟΕΠΙΛΟΓΗ"
+
+#. 5
+#: ../cli/src/connections.c:134
+msgid "DEFAULT6"
+msgstr "ΠΡΟΕΠΙΛΟΓΗ6"
+
+#. 6
+#: ../cli/src/connections.c:135
+msgid "SPEC-OBJECT"
+msgstr "SPEC-OBJECT"
+
+#. 7
+#. 1
+#: ../cli/src/connections.c:136 ../cli/src/connections.c:150
+msgid "VPN"
+msgstr "VPN"
+
+#. 9
+#: ../cli/src/connections.c:138
+msgid "CON-PATH"
+msgstr "ΔΙΑΔΡΟΜΗ-CON"
+
+#. 10
+#: ../cli/src/connections.c:139
+msgid "ZONE"
+msgstr "ΖΩΝΗ"
+
+#. 11
+#: ../cli/src/connections.c:140
+msgid "MASTER-PATH"
+msgstr "MASTER-PATH"
+
+#: ../cli/src/connections.c:148 ../cli/src/devices.c:82
+msgid "GENERAL"
+msgstr "ΓΕΝΙΚΑ"
+
+#. 0
+#: ../cli/src/connections.c:149
+msgid "IP"
+msgstr "IP"
+
+#. 1
+#: ../cli/src/connections.c:164
+msgid "USERNAME"
+msgstr "ΟΝΟΜΑ ΧΡΗΣΤΗ"
+
+#. 2
+#: ../cli/src/connections.c:165
+msgid "GATEWAY"
+msgstr "ΠΥΛΗ"
+
+#. 3
+#: ../cli/src/connections.c:166
+msgid "BANNER"
+msgstr "BANNER"
+
+#. 4
+#: ../cli/src/connections.c:167
+msgid "VPN-STATE"
+msgstr "ΚΑΤΑΣΤΑΣΗ-VPN"
+
+#. 5
+#: ../cli/src/connections.c:168
+msgid "CFG"
+msgstr "CFG"
+
+#: ../cli/src/connections.c:190
 #, c-format
 msgid ""
 "Usage: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down }\n"
+"  COMMAND := { list | status | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
-"  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"  list [id <id> | uuid <id>]\n"
+"  status [id <id> | uuid <id> | path <path>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
 "<timeout>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 msgstr ""
-"Χρήση: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down }\n"
+"Χρήση: nmcli con { ΕΝΤΟΛΗ | help }\n"
+"  ΕΝΤΟΛΗ := { list | status | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id> | system | user]\n"
-"  status\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--timeout "
+"  list [id <id> | uuid <id>]\n"
+"  status [id <id> | uuid <id> | path <path>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"nowait] [--timeout <timeout>]\n"
+"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
 "<timeout>]\n"
 "  down id <id> | uuid <id>\n"
+"  delete id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:198 ../cli/src/connections.c:537
+#: ../cli/src/connections.c:249 ../cli/src/connections.c:609
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "Σφάλμα: 'con list': %s"
 
-#: ../cli/src/connections.c:200 ../cli/src/connections.c:539
+#: ../cli/src/connections.c:251 ../cli/src/connections.c:611
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "Σφάλμα: 'con list': %s; επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/connections.c:208
+#: ../cli/src/connections.c:259
 msgid "Connection details"
 msgstr "Λεπτομέρειες σύνδεσης"
 
-#: ../cli/src/connections.c:382 ../cli/src/connections.c:602
-#| msgid "System"
-msgid "system"
-msgstr "σύστημα"
-
-#: ../cli/src/connections.c:382 ../cli/src/connections.c:602
-msgid "user"
-msgstr "χρήστης"
-
-#: ../cli/src/connections.c:384
+#: ../cli/src/connections.c:484
 msgid "never"
 msgstr "ποτέ"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:385 ../cli/src/connections.c:386
-#: ../cli/src/connections.c:603 ../cli/src/connections.c:606
-#: ../cli/src/devices.c:432 ../cli/src/devices.c:557 ../cli/src/devices.c:583
-#: ../cli/src/devices.c:584 ../cli/src/devices.c:585 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:587 ../cli/src/settings.c:508
-#: ../cli/src/settings.c:551 ../cli/src/settings.c:652
-#: ../cli/src/settings.c:926 ../cli/src/settings.c:927
-#: ../cli/src/settings.c:929 ../cli/src/settings.c:931
-#: ../cli/src/settings.c:1056 ../cli/src/settings.c:1057
-#: ../cli/src/settings.c:1058 ../cli/src/settings.c:1137
-#: ../cli/src/settings.c:1138 ../cli/src/settings.c:1139
-#: ../cli/src/settings.c:1140 ../cli/src/settings.c:1141
-#: ../cli/src/settings.c:1142 ../cli/src/settings.c:1143
-#: ../cli/src/settings.c:1144 ../cli/src/settings.c:1145
-#: ../cli/src/settings.c:1146 ../cli/src/settings.c:1147
-#: ../cli/src/settings.c:1148 ../cli/src/settings.c:1149
-#: ../cli/src/settings.c:1224
+#: ../cli/src/connections.c:485 ../cli/src/connections.c:486
+#: ../cli/src/connections.c:714 ../cli/src/connections.c:715
+#: ../cli/src/connections.c:717 ../cli/src/devices.c:418
+#: ../cli/src/devices.c:471 ../cli/src/devices.c:587 ../cli/src/devices.c:588
+#: ../cli/src/devices.c:589 ../cli/src/devices.c:621 ../cli/src/devices.c:647
+#: ../cli/src/devices.c:648 ../cli/src/devices.c:649 ../cli/src/devices.c:650
+#: ../cli/src/devices.c:651 ../cli/src/network-manager.c:267
+#: ../cli/src/settings.c:694 ../cli/src/settings.c:764
+#: ../cli/src/settings.c:884 ../cli/src/settings.c:1166
+#: ../cli/src/settings.c:1167 ../cli/src/settings.c:1169
+#: ../cli/src/settings.c:1171 ../cli/src/settings.c:1172
+#: ../cli/src/settings.c:1303 ../cli/src/settings.c:1304
+#: ../cli/src/settings.c:1305 ../cli/src/settings.c:1306
+#: ../cli/src/settings.c:1383 ../cli/src/settings.c:1384
+#: ../cli/src/settings.c:1385 ../cli/src/settings.c:1386
+#: ../cli/src/settings.c:1387 ../cli/src/settings.c:1388
+#: ../cli/src/settings.c:1389 ../cli/src/settings.c:1390
+#: ../cli/src/settings.c:1391 ../cli/src/settings.c:1392
+#: ../cli/src/settings.c:1393 ../cli/src/settings.c:1394
+#: ../cli/src/settings.c:1395 ../cli/src/settings.c:1466
 msgid "yes"
 msgstr "ναι"
 
-#: ../cli/src/connections.c:385 ../cli/src/connections.c:386
-#: ../cli/src/connections.c:603 ../cli/src/connections.c:606
-#: ../cli/src/devices.c:432 ../cli/src/devices.c:557 ../cli/src/devices.c:583
-#: ../cli/src/devices.c:584 ../cli/src/devices.c:585 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:587 ../cli/src/settings.c:508
-#: ../cli/src/settings.c:510 ../cli/src/settings.c:551
-#: ../cli/src/settings.c:652 ../cli/src/settings.c:926
-#: ../cli/src/settings.c:927 ../cli/src/settings.c:929
-#: ../cli/src/settings.c:931 ../cli/src/settings.c:1056
-#: ../cli/src/settings.c:1057 ../cli/src/settings.c:1058
-#: ../cli/src/settings.c:1137 ../cli/src/settings.c:1138
-#: ../cli/src/settings.c:1139 ../cli/src/settings.c:1140
-#: ../cli/src/settings.c:1141 ../cli/src/settings.c:1142
-#: ../cli/src/settings.c:1143 ../cli/src/settings.c:1144
-#: ../cli/src/settings.c:1145 ../cli/src/settings.c:1146
-#: ../cli/src/settings.c:1147 ../cli/src/settings.c:1148
-#: ../cli/src/settings.c:1149 ../cli/src/settings.c:1224
+#: ../cli/src/connections.c:485 ../cli/src/connections.c:486
+#: ../cli/src/connections.c:714 ../cli/src/connections.c:715
+#: ../cli/src/connections.c:717 ../cli/src/devices.c:418
+#: ../cli/src/devices.c:471 ../cli/src/devices.c:587 ../cli/src/devices.c:588
+#: ../cli/src/devices.c:589 ../cli/src/devices.c:621 ../cli/src/devices.c:647
+#: ../cli/src/devices.c:648 ../cli/src/devices.c:649 ../cli/src/devices.c:650
+#: ../cli/src/devices.c:651 ../cli/src/network-manager.c:269
+#: ../cli/src/settings.c:694 ../cli/src/settings.c:696
+#: ../cli/src/settings.c:764 ../cli/src/settings.c:884
+#: ../cli/src/settings.c:1166 ../cli/src/settings.c:1167
+#: ../cli/src/settings.c:1169 ../cli/src/settings.c:1171
+#: ../cli/src/settings.c:1172 ../cli/src/settings.c:1303
+#: ../cli/src/settings.c:1304 ../cli/src/settings.c:1305
+#: ../cli/src/settings.c:1306 ../cli/src/settings.c:1383
+#: ../cli/src/settings.c:1384 ../cli/src/settings.c:1385
+#: ../cli/src/settings.c:1386 ../cli/src/settings.c:1387
+#: ../cli/src/settings.c:1388 ../cli/src/settings.c:1389
+#: ../cli/src/settings.c:1390 ../cli/src/settings.c:1391
+#: ../cli/src/settings.c:1392 ../cli/src/settings.c:1393
+#: ../cli/src/settings.c:1394 ../cli/src/settings.c:1395
+#: ../cli/src/settings.c:1466
 msgid "no"
 msgstr "όχι"
 
-#: ../cli/src/connections.c:458 ../cli/src/connections.c:501
-#| msgid "Modify system connections"
-msgid "System connections"
-msgstr "Συνδέσεις συστήματος"
+#: ../cli/src/connections.c:560
+msgid "Connection list"
+msgstr "Λίστα σύνδεσης"
 
-#: ../cli/src/connections.c:463 ../cli/src/connections.c:514
-#| msgid "Modify system connections"
-msgid "User connections"
-msgstr "Συνδέσεις χρήστη"
-
-#: ../cli/src/connections.c:475 ../cli/src/connections.c:1335
-#: ../cli/src/connections.c:1351 ../cli/src/connections.c:1360
-#: ../cli/src/connections.c:1371 ../cli/src/connections.c:1456
-#: ../cli/src/devices.c:962 ../cli/src/devices.c:972 ../cli/src/devices.c:1074
-#: ../cli/src/devices.c:1081
+#: ../cli/src/connections.c:573 ../cli/src/connections.c:1110
+#: ../cli/src/connections.c:1648 ../cli/src/connections.c:1663
+#: ../cli/src/connections.c:1672 ../cli/src/connections.c:1682
+#: ../cli/src/connections.c:1694 ../cli/src/connections.c:1802
+#: ../cli/src/connections.c:1904 ../cli/src/devices.c:1041
+#: ../cli/src/devices.c:1051 ../cli/src/devices.c:1169
+#: ../cli/src/devices.c:1177 ../cli/src/devices.c:1541
+#: ../cli/src/devices.c:1548 ../cli/src/devices.c:1562
+#: ../cli/src/devices.c:1569 ../cli/src/devices.c:1586
+#: ../cli/src/devices.c:1597 ../cli/src/devices.c:1818
+#: ../cli/src/devices.c:1825
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Σφάλμα: λείπει το όρισμα %s."
 
-#: ../cli/src/connections.c:488
+#: ../cli/src/connections.c:586
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Σφάλμα: %s - δεν υπάρχει τέτοια σύνδεση."
 
-#: ../cli/src/connections.c:520 ../cli/src/connections.c:1384
-#: ../cli/src/connections.c:1474 ../cli/src/devices.c:785
-#: ../cli/src/devices.c:852 ../cli/src/devices.c:986 ../cli/src/devices.c:1087
+#: ../cli/src/connections.c:592 ../cli/src/connections.c:1707
+#: ../cli/src/connections.c:1819 ../cli/src/connections.c:1911
+#: ../cli/src/devices.c:825 ../cli/src/devices.c:905 ../cli/src/devices.c:1065
+#: ../cli/src/devices.c:1183 ../cli/src/devices.c:1610
+#: ../cli/src/devices.c:1831
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "Άγνωστη παράμετρος: %s\n"
 
-#: ../cli/src/connections.c:529
+#: ../cli/src/connections.c:601
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "Σφάλμα: δεν ορίσθηκε έγκυρη παράμετρος."
 
-#: ../cli/src/connections.c:544 ../cli/src/connections.c:1577
-#: ../cli/src/devices.c:1293 ../cli/src/network-manager.c:274
+#: ../cli/src/connections.c:616 ../cli/src/connections.c:2004
+#: ../cli/src/devices.c:2039 ../cli/src/network-manager.c:596
 #, c-format
 msgid "Error: %s."
 msgstr "Σφάλμα: %s."
 
-#: ../cli/src/connections.c:650
+#: ../cli/src/connections.c:629
+msgid "activating"
+msgstr "ενεργοποίηση"
+
+#: ../cli/src/connections.c:631
+msgid "activated"
+msgstr "ενεργοποιήθηκε"
+
+#: ../cli/src/connections.c:645
+msgid "VPN connecting (prepare)"
+msgstr "Σύνδεση VPN (προετοιμασία)"
+
+#: ../cli/src/connections.c:647
+msgid "VPN connecting (need authentication)"
+msgstr "Σύνδεση VPN (απαιτείται πιστοποίηση)"
+
+#: ../cli/src/connections.c:649
+msgid "VPN connecting"
+msgstr "Σύνδεση VPN"
+
+#: ../cli/src/connections.c:651
+msgid "VPN connecting (getting IP configuration)"
+msgstr "Σύνδεση VPN (γίνεται λήψη ρυθμίσεων IP)"
+
+#: ../cli/src/connections.c:653
+msgid "VPN connected"
+msgstr "VPN συνδέθηκε"
+
+#: ../cli/src/connections.c:655
+msgid "VPN connection failed"
+msgstr "Σύνδεση VPN απέτυχε"
+
+#: ../cli/src/connections.c:657
+msgid "VPN disconnected"
+msgstr "VPN αποσυνδέθηκε"
+
+#: ../cli/src/connections.c:710 ../cli/src/connections.c:720
+msgid "N/A"
+msgstr "N/A"
+
+#: ../cli/src/connections.c:914 ../cli/src/connections.c:1138
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "Σφάλμα: 'con status': %s"
 
-#: ../cli/src/connections.c:652
+#: ../cli/src/connections.c:916 ../cli/src/connections.c:1140
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "Σφάλμα: 'con status': %s; επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/connections.c:659
-#| msgid "Modify system connections"
+#: ../cli/src/connections.c:924
+msgid "Active connection details"
+msgstr "Λεπτομέρειες ενεργής σύνδεσης"
+
+#: ../cli/src/connections.c:1060 ../cli/src/connections.c:1722
+#: ../cli/src/connections.c:1834 ../cli/src/connections.c:1925
+#: ../cli/src/devices.c:852 ../cli/src/devices.c:914 ../cli/src/devices.c:1080
+#: ../cli/src/devices.c:1213 ../cli/src/devices.c:1632
+#: ../cli/src/devices.c:1860 ../cli/src/network-manager.c:311
+#, c-format
+msgid "Error: Can't find out if NetworkManager is running: %s."
+msgstr "Σφάλμα: Δεν μπόρεσε να μάθει αν τρέχει ο NetworkManager: %s."
+
+#: ../cli/src/connections.c:1064 ../cli/src/connections.c:1726
+#: ../cli/src/connections.c:1838 ../cli/src/connections.c:1929
+#: ../cli/src/devices.c:856 ../cli/src/devices.c:918 ../cli/src/devices.c:1084
+#: ../cli/src/devices.c:1217 ../cli/src/devices.c:1636
+#: ../cli/src/devices.c:1864 ../cli/src/network-manager.c:315
+#, c-format
+msgid "Error: NetworkManager is not running."
+msgstr "Σφάλμα: Δεν εκτελείτε ο NetworkManager."
+
+#: ../cli/src/connections.c:1096
 msgid "Active connections"
 msgstr "Ενεργές συνδέσεις"
 
-#: ../cli/src/connections.c:1027
+#: ../cli/src/connections.c:1121
+#, c-format
+msgid "Error: '%s' is not an active connection."
+msgstr "Σφάλμα: η '%s' δεν είναι μια ενεργή σύνδεση."
+
+#: ../cli/src/connections.c:1126
+#, c-format
+msgid "Error: unknown parameter: %s"
+msgstr "Σφάλμα: άγνωστη παράμετρος: %s"
+
+#: ../cli/src/connections.c:1233
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "δεν υπάρχει ενεργή σύνδεση στη συσκευή '%s'"
 
-#: ../cli/src/connections.c:1035
-#, c-format
+#: ../cli/src/connections.c:1241
 msgid "no active connection or device"
 msgstr "δεν πυάρχει ενεργή σύνδεση ή συσκευή"
 
-#: ../cli/src/connections.c:1085
+#: ../cli/src/connections.c:1312
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "η συσκευή '%s' δεν είναι συμβατή με τη σύνδεση '%s'"
 
-#: ../cli/src/connections.c:1087
+#: ../cli/src/connections.c:1315
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "δεν βρέθηκε συσκευή για τη σύνδεση '%s'"
 
-#: ../cli/src/connections.c:1098
-msgid "activating"
-msgstr "ενεργοποίηση"
-
-#: ../cli/src/connections.c:1100
-msgid "activated"
-msgstr "ενεργοποιήθηκε"
-
-#: ../cli/src/connections.c:1103 ../cli/src/connections.c:1126
-#: ../cli/src/connections.c:1159 ../cli/src/devices.c:246
-#: ../cli/src/devices.c:558 ../cli/src/network-manager.c:92
-#: ../cli/src/network-manager.c:145 ../cli/src/settings.c:473
-msgid "unknown"
-msgstr "άγνωστη"
-
-#: ../cli/src/connections.c:1112
-msgid "VPN connecting (prepare)"
-msgstr "Σύνδεση VPN (προετοιμασία)"
-
-#: ../cli/src/connections.c:1114
-msgid "VPN connecting (need authentication)"
-msgstr "Σύνδεση VPN (απαιτείται πιστοποίηση)"
-
-#: ../cli/src/connections.c:1116
-msgid "VPN connecting"
-msgstr "Σύνδεση VPN"
-
-#: ../cli/src/connections.c:1118
-msgid "VPN connecting (getting IP configuration)"
-msgstr "Σύνδεση VPN (γίνεται λήψη ρυθμίσεων IP)"
-
-#: ../cli/src/connections.c:1120
-msgid "VPN connected"
-msgstr "VPN συνδέθηκε"
-
-#: ../cli/src/connections.c:1122
-msgid "VPN connection failed"
-msgstr "Σύνδεση VPN απέτυχε"
-
-#: ../cli/src/connections.c:1124
-msgid "VPN disconnected"
-msgstr "VPN αποσυνδέθηκε"
-
-#: ../cli/src/connections.c:1135
+#: ../cli/src/connections.c:1327
 msgid "unknown reason"
 msgstr "άγνωστη αιτία"
 
-#: ../cli/src/connections.c:1137
+#: ../cli/src/connections.c:1329
 msgid "none"
 msgstr "κανένα"
 
-#: ../cli/src/connections.c:1139
+#: ../cli/src/connections.c:1331
 msgid "the user was disconnected"
 msgstr "ο χρήστης αποσυνδέθηκε"
 
-#: ../cli/src/connections.c:1141
+#: ../cli/src/connections.c:1333
 msgid "the base network connection was interrupted"
 msgstr "η βασική σύνδεση δικτύου διακόπηκε"
 
-#: ../cli/src/connections.c:1143
+#: ../cli/src/connections.c:1335
 msgid "the VPN service stopped unexpectedly"
 msgstr "η υπηρεσία VPN σταμάτησε απρόσμενα"
 
-#: ../cli/src/connections.c:1145
+#: ../cli/src/connections.c:1337
 msgid "the VPN service returned invalid configuration"
 msgstr "η υπηρεσία VPN επέστρεψε μη έγκυρη διαμόρφωση"
 
-#: ../cli/src/connections.c:1147
+#: ../cli/src/connections.c:1339
 msgid "the connection attempt timed out"
 msgstr "έληξε το χρονικό όριο απόπειρας σύνδεσης"
 
-#: ../cli/src/connections.c:1149
+#: ../cli/src/connections.c:1341
 msgid "the VPN service did not start in time"
 msgstr "η υπηρεσία VPN δεν ξεκίνησε εγκαίρως"
 
-#: ../cli/src/connections.c:1151
+#: ../cli/src/connections.c:1343
 msgid "the VPN service failed to start"
 msgstr "η υπηρεσία VPN απέτυχε να εκκινήσει"
 
-#: ../cli/src/connections.c:1153
+#: ../cli/src/connections.c:1345
 msgid "no valid VPN secrets"
 msgstr "δεν υπάρχουν έγκυρα μυστικά VPN"
 
-#: ../cli/src/connections.c:1155
+#: ../cli/src/connections.c:1347
 msgid "invalid VPN secrets"
 msgstr "μη έγκυρα μυστικά VPN"
 
-#: ../cli/src/connections.c:1157
+#: ../cli/src/connections.c:1349
 msgid "the connection was removed"
 msgstr "η σύνδεση αφαιρέθηκε"
 
-#: ../cli/src/connections.c:1171
-#, c-format
-msgid "state: %s\n"
-msgstr "κατάσταση: %s\n"
+#: ../cli/src/connections.c:1366 ../cli/src/connections.c:1571
+#, fuzzy, c-format
+msgid "Connection successfully activated (D-Bus active path: %s)\n"
+msgstr "Ενεργοποιήθηκε επιτυχώς η σύνδεση (D-Bus active path: %s)\n"
 
-#: ../cli/src/connections.c:1174 ../cli/src/connections.c:1200
-#, c-format
-msgid "Connection activated\n"
-msgstr "Ενεργοποιήθηκε η σύνδεση\n"
-
-#: ../cli/src/connections.c:1177
+#. Active connection failed and dissapeared, quit.
+#: ../cli/src/connections.c:1371 ../cli/src/connections.c:1472
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης."
 
-#: ../cli/src/connections.c:1196
-#, c-format
-msgid "state: %s (%d)\n"
-msgstr "κατάσταση: %s (%d)\n"
+#: ../cli/src/connections.c:1396
+#, fuzzy, c-format
+msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
+msgstr "Ενεργοποιήθηκε επιτυχώς η σύνδεση VPN (D-Bus active path: %s)\n"
 
-#: ../cli/src/connections.c:1206
+#: ../cli/src/connections.c:1404
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης: %s."
 
-#: ../cli/src/connections.c:1223 ../cli/src/devices.c:909
+#: ../cli/src/connections.c:1501 ../cli/src/devices.c:974
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Σφάλμα: Έληξε το χρονικό όριο %d sec"
 
-#: ../cli/src/connections.c:1266
+#: ../cli/src/connections.c:1562
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης: %s"
 
-#: ../cli/src/connections.c:1280
-#, c-format
-msgid "Error: Obtaining active connection for '%s' failed."
-msgstr "Σφάλμα: Αποτυχία απόκτησης ενεργής σύνδεσης για '%s'."
-
-#: ../cli/src/connections.c:1289
-#, c-format
-msgid "Active connection state: %s\n"
-msgstr "Κατάσταση ενεργής σύνδεσης: %s\n"
-
-#: ../cli/src/connections.c:1290
-#, c-format
-msgid "Active connection path: %s\n"
-msgstr "Διαδρομή ενεργής σύνδεσης: %s\n"
-
-#: ../cli/src/connections.c:1344 ../cli/src/connections.c:1465
+#: ../cli/src/connections.c:1656 ../cli/src/connections.c:1810
+#: ../cli/src/connections.c:1938
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "Σφάλμα: Άγνωστη σύνδεση: %s."
 
-#: ../cli/src/connections.c:1379 ../cli/src/devices.c:980
+#: ../cli/src/connections.c:1702 ../cli/src/devices.c:1059
+#: ../cli/src/devices.c:1605
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "Σφάλμα: η τιμή του χορνικού ορίου '%s' δεν είναι έγκυρη."
 
-#: ../cli/src/connections.c:1392 ../cli/src/connections.c:1482
+#: ../cli/src/connections.c:1715 ../cli/src/connections.c:1827
+#: ../cli/src/connections.c:1918
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "Σφάλμα: πρέπει να καθορισθεί id ή uuid "
 
-#: ../cli/src/connections.c:1412
+#: ../cli/src/connections.c:1747
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "Σφάλμα: Δεν βρέθηκε κατάλληλη συσκευή: %s."
 
-#: ../cli/src/connections.c:1414
+#: ../cli/src/connections.c:1749
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "Σφάλμα: Δεν βρέθηκε κατάλληλη συσκευή."
 
-#: ../cli/src/connections.c:1509
+#: ../cli/src/connections.c:1863
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "Προειδοποίηση: Η σύνδεση δεν είναι ενεργή\n"
 
-#: ../cli/src/connections.c:1566
+#: ../cli/src/connections.c:1877
+#, c-format
+msgid "Error: Connection deletion failed: %s"
+msgstr "Σφάλμα: Αποτυχία διαγραφής της σύνδεσης: %s"
+
+#: ../cli/src/connections.c:1995
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "Σφάλμα: η εντολή 'con' '%s' δεν είναι έγκυρη."
 
-#: ../cli/src/connections.c:1602
+#: ../cli/src/connections.c:2063
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "Σφάλμα: αδυναμία σύνδεσης στο D-Bus."
 
-#: ../cli/src/connections.c:1609
+#: ../cli/src/connections.c:2071
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Σφάλμα: Αδυναμία λήψης ρυθμίσεων συστήματος."
 
-#: ../cli/src/connections.c:1617
+#: ../cli/src/connections.c:2081
 #, c-format
-msgid "Error: Could not get user settings."
-msgstr "Σφάλμα: Αδυναμία λήψης ρυθμίσεων χρήστη."
-
-#: ../cli/src/connections.c:1627
-#, c-format
-msgid "Error: Can't obtain connections: settings services are not running."
+msgid "Error: Can't obtain connections: settings service is not running."
 msgstr ""
-"Σφάλμα: Αδυναμία απόκτησης συνδέσεων: οι υπηρεσίες ρυθμίσεων δεν εκτελούνται."
+"Σφάλμα: Αδυναμία απόκτησης συνδέσεων: οι υπηρεσία ρυθμίσεων δεν εκτελείτε."
 
 #. 0
 #. 9
-#: ../cli/src/devices.c:61 ../cli/src/devices.c:89 ../cli/src/devices.c:184
+#. 3
+#: ../cli/src/devices.c:70 ../cli/src/devices.c:106 ../cli/src/devices.c:187
+#: ../cli/src/devices.c:203
 msgid "DEVICE"
 msgstr "ΣΥΣΚΕΥΗ"
 
-#. 1
-#. 4
 #. 0
-#: ../cli/src/devices.c:63 ../cli/src/devices.c:93
-#: ../cli/src/network-manager.c:36
-msgid "STATE"
-msgstr "ΚΑΤΑΣΤΑΣΗ"
-
-#: ../cli/src/devices.c:72
-msgid "GENERAL"
-msgstr "ΓΕΝΙΚΑ"
-
-#. 0
-#: ../cli/src/devices.c:73
+#: ../cli/src/devices.c:83
 msgid "CAPABILITIES"
 msgstr "ΔΥΝΑΤΟΤΗΤΕΣ"
 
 #. 1
-#: ../cli/src/devices.c:74
+#: ../cli/src/devices.c:84
 msgid "WIFI-PROPERTIES"
 msgstr "ΙΔΙΟΤΗΤΕΣ-WIFI"
 
 #. 2
-#: ../cli/src/devices.c:75
+#: ../cli/src/devices.c:85
 msgid "AP"
 msgstr "AP"
 
 #. 3
-#: ../cli/src/devices.c:76
+#: ../cli/src/devices.c:86
 msgid "WIRED-PROPERTIES"
 msgstr "ΙΔΙΟΤΗΤΕΣ-ΕΝΣΥΡΜΑΤΗΣ"
 
 #. 4
-#: ../cli/src/devices.c:77
-msgid "IP4-SETTINGS"
-msgstr "ΡΥΘΜΙΣΕΙΣ-IP4"
+#: ../cli/src/devices.c:87
+msgid "WIMAX-PROPERTIES"
+msgstr "ΙΔΙΟΤΗΤΕΣ-WIMAX"
 
 #. 5
-#: ../cli/src/devices.c:78
-msgid "IP4-DNS"
-msgstr "IP4-DNS"
+#. 0
+#: ../cli/src/devices.c:88 ../cli/src/devices.c:200
+msgid "NSP"
+msgstr "NSP"
 
 #. 6
-#: ../cli/src/devices.c:79
-msgid "IP6-SETTINGS"
-msgstr "ΡΥΘΜΙΣΕΙΣ-IP6"
+#: ../cli/src/devices.c:89
+msgid "IP4"
+msgstr "IP4"
 
 #. 7
-#: ../cli/src/devices.c:80
-msgid "IP6-DNS"
-msgstr "IP6-DNS"
+#: ../cli/src/devices.c:90
+msgid "DHCP4"
+msgstr "DHCP4"
+
+#. 8
+#: ../cli/src/devices.c:91
+msgid "IP6"
+msgstr "IP6"
+
+#. 9
+#: ../cli/src/devices.c:92
+msgid "DHCP6"
+msgstr "DHCP6"
 
 #. 2
-#: ../cli/src/devices.c:91
+#: ../cli/src/devices.c:108
+msgid "VENDOR"
+msgstr "ΚΑΤΑΣΚΕΥΑΣΤΗΣ"
+
+#. 3
+#: ../cli/src/devices.c:109
+msgid "PRODUCT"
+msgstr "ΠΡΟΙΟΝ"
+
+#. 4
+#: ../cli/src/devices.c:110
 msgid "DRIVER"
 msgstr "ΟΔΗΓΟΣ"
 
-#. 3
-#: ../cli/src/devices.c:92
+#. 5
+#: ../cli/src/devices.c:111
+msgid "DRIVER-VERSION"
+msgstr "ΕΚΔΟΣΗ-ΟΔΗΓΟΥ"
+
+#. 6
+#: ../cli/src/devices.c:112
+msgid "FIRMWARE-VERSION"
+msgstr "ΕΚΔΟΣΗ-FIRMWARE"
+
+#. 7
+#: ../cli/src/devices.c:113
 msgid "HWADDR"
 msgstr "ΔΙΕΥΘΥΝΣΗ-ΥΛΙΚΟΥ"
 
+#. 9
+#: ../cli/src/devices.c:115
+msgid "REASON"
+msgstr "ΑΙΤΙΑ"
+
+#. 10
+#: ../cli/src/devices.c:116
+msgid "UDI"
+msgstr "UDI"
+
+#. 11
+#: ../cli/src/devices.c:117
+msgid "IP-IFACE"
+msgstr "IP-IFACE"
+
+#. 12
+#: ../cli/src/devices.c:118
+msgid "NM-MANAGED"
+msgstr "NM-MANAGED"
+
+#. 14
+#: ../cli/src/devices.c:120
+msgid "FIRMWARE-MISSING"
+msgstr "FIRMWARE-MISSING"
+
+#. 15
+#: ../cli/src/devices.c:121
+msgid "CONNECTION"
+msgstr "ΣΥΝΔΕΣΗ"
+
 #. 0
-#: ../cli/src/devices.c:102
+#: ../cli/src/devices.c:130
 msgid "CARRIER-DETECT"
 msgstr "ΑΝΙΧΝΕΥΣΗ-ΣΗΜΑΤΟΣ-ΓΡΑΜΜΗΣ"
 
 #. 1
-#: ../cli/src/devices.c:103
+#: ../cli/src/devices.c:131
 msgid "SPEED"
 msgstr "ΤΑΧΥΤΗΤΑ"
 
 #. 0
-#: ../cli/src/devices.c:112
+#: ../cli/src/devices.c:140
 msgid "CARRIER"
-msgstr "CARRIER"
+msgstr "ΦΕΡΟΝ"
 
 #. 0
-#: ../cli/src/devices.c:122
+#: ../cli/src/devices.c:150
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:123
+#: ../cli/src/devices.c:151
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:124
+#: ../cli/src/devices.c:152
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:125
+#: ../cli/src/devices.c:153
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:126
+#: ../cli/src/devices.c:154
 msgid "CCMP"
 msgstr "CCMP"
 
 #. 0
-#: ../cli/src/devices.c:135 ../cli/src/devices.c:146
-msgid "ADDRESS"
-msgstr "ΔΙΕΥΘΥΝΣΗ"
+#: ../cli/src/devices.c:164
+msgid "CTR-FREQ"
+msgstr "CTR-FREQ"
 
 #. 1
-#: ../cli/src/devices.c:136 ../cli/src/devices.c:147
-msgid "PREFIX"
-msgstr "ΠΡΟΘΕΜΑ"
+#: ../cli/src/devices.c:165
+msgid "RSSI"
+msgstr "RSSI"
 
 #. 2
-#: ../cli/src/devices.c:137 ../cli/src/devices.c:148
-msgid "GATEWAY"
-msgstr "ΠΥΛΗ"
+#: ../cli/src/devices.c:166
+msgid "CINR"
+msgstr "CINR"
+
+#. 3
+#: ../cli/src/devices.c:167
+msgid "TX-POW"
+msgstr "TX-POW"
+
+#. 4
+#: ../cli/src/devices.c:168
+msgid "BSID"
+msgstr "BSID"
 
 #. 0
-#: ../cli/src/devices.c:157 ../cli/src/devices.c:166
-msgid "DNS"
-msgstr "DNS"
-
-#. 0
-#: ../cli/src/devices.c:175
+#: ../cli/src/devices.c:178
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:176
+#: ../cli/src/devices.c:179
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:177
+#: ../cli/src/devices.c:180
 msgid "MODE"
 msgstr "ΛΕΙΤΟΥΡΓΙΑ"
 
 #. 3
-#: ../cli/src/devices.c:178
+#: ../cli/src/devices.c:181
 msgid "FREQ"
 msgstr "ΣΥΧΝΟΤΗΤΑ"
 
 #. 4
-#: ../cli/src/devices.c:179
+#: ../cli/src/devices.c:182
 msgid "RATE"
 msgstr "ΡΥΘΜΟΣ"
 
 #. 5
-#: ../cli/src/devices.c:180
+#. 1
+#: ../cli/src/devices.c:183 ../cli/src/devices.c:201
 msgid "SIGNAL"
 msgstr "ΣΗΜΑ"
 
 #. 6
-#: ../cli/src/devices.c:181
+#: ../cli/src/devices.c:184
 msgid "SECURITY"
 msgstr "ΑΣΦΑΛΕΙΑ"
 
 #. 7
-#: ../cli/src/devices.c:182
+#: ../cli/src/devices.c:185
 msgid "WPA-FLAGS"
 msgstr "ΕΠΙΛΟΓΕΣ-WPA"
 
 #. 8
-#: ../cli/src/devices.c:183
+#: ../cli/src/devices.c:186
 msgid "RSN-FLAGS"
 msgstr "ΕΠΙΛΟΓΕΣ-RSN"
 
 #. 10
-#: ../cli/src/devices.c:185
+#. 4
+#: ../cli/src/devices.c:188 ../cli/src/devices.c:204
 msgid "ACTIVE"
 msgstr "ΕΝΕΡΓΗ"
 
-#: ../cli/src/devices.c:208
+#: ../cli/src/devices.c:223
 #, c-format
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
 "\n"
+"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"\n"
 "  COMMAND := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+"               [--private] [--nowait] [--timeout <timeout>]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 msgstr ""
 "Χρήση: nmcli dev { COMMAND | help }\n"
 "\n"
+"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"\n"
 "  COMMAND := { status | list | disconnect | wifi }\n"
 "\n"
 "  status\n"
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+"               [--private] [--nowait] [--timeout <timeout>]\n"
+"  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:228
-msgid "unmanaged"
-msgstr "χωρίς διαχείριση"
-
-#: ../cli/src/devices.c:230
-msgid "unavailable"
-msgstr "μη διαθέσιμη"
-
-#: ../cli/src/devices.c:232 ../cli/src/network-manager.c:89
-msgid "disconnected"
-msgstr "αποσυνδέθηκε"
-
-#: ../cli/src/devices.c:234
-msgid "connecting (prepare)"
-msgstr "σύνδεση (προετοιμασία)"
-
-#: ../cli/src/devices.c:236
-msgid "connecting (configuring)"
-msgstr "σύνδεση (διαμόρφωση)"
-
-#: ../cli/src/devices.c:238
-msgid "connecting (need authentication)"
-msgstr "σύνδεση (απαιτείται πιστοποίηση)"
-
-#: ../cli/src/devices.c:240
-msgid "connecting (getting IP configuration)"
-msgstr "σύνδεση (γίνεται λήψη ρυθμίσεων IP)"
-
-#: ../cli/src/devices.c:242 ../cli/src/network-manager.c:87
-msgid "connected"
-msgstr "συνδέθηκε"
-
-#: ../cli/src/devices.c:244
-msgid "connection failed"
-msgstr "αποτυχία σύνδεσης"
-
-#: ../cli/src/devices.c:267 ../cli/src/devices.c:424
-msgid "Unknown"
-msgstr "Άγνωστο"
-
-#: ../cli/src/devices.c:299
+#: ../cli/src/devices.c:323
 msgid "(none)"
 msgstr "(κανένα)"
 
-#: ../cli/src/devices.c:324
-#, c-format
-msgid "%s: error converting IP4 address 0x%X"
-msgstr "%s: σφάλμα κατά τη μετατροπή της διεύθυνσης IP4 0x%X"
-
-#: ../cli/src/devices.c:393
+#: ../cli/src/devices.c:379
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:394
+#: ../cli/src/devices.c:380
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:403
+#: ../cli/src/devices.c:389
 msgid "Encrypted: "
 msgstr "Κρυπτογραφημένη:"
 
-#: ../cli/src/devices.c:408
+#: ../cli/src/devices.c:394
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:410
+#: ../cli/src/devices.c:396
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:412
+#: ../cli/src/devices.c:398
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:415
+#: ../cli/src/devices.c:401
 msgid "Enterprise "
 msgstr "Επιχείρηση "
 
-#: ../cli/src/devices.c:424
+#: ../cli/src/devices.c:410
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: ../cli/src/devices.c:424
+#: ../cli/src/devices.c:410
 msgid "Infrastructure"
 msgstr "Υποδομή"
 
-#: ../cli/src/devices.c:486
+#: ../cli/src/devices.c:445
+msgid "Home"
+msgstr "Οικία"
+
+#: ../cli/src/devices.c:448
+msgid "Partner"
+msgstr "Συνέταιρος"
+
+#: ../cli/src/devices.c:451
+msgid "Roaming"
+msgstr "Περιαγωγή"
+
+#: ../cli/src/devices.c:523
 #, c-format
 msgid "Error: 'dev list': %s"
 msgstr "Σφάλμα: 'dev list': %s"
 
-#: ../cli/src/devices.c:488
+#: ../cli/src/devices.c:525
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "Σφάλμα:  'dev list': %s, επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/devices.c:497
+#: ../cli/src/devices.c:534
 msgid "Device details"
 msgstr "Λεπτομέρειες συσκευής"
 
-#: ../cli/src/devices.c:527 ../cli/src/devices.c:925
+#: ../cli/src/devices.c:579 ../cli/src/devices.c:582 ../cli/src/devices.c:1000
+#: ../cli/src/utils.c:477
 msgid "(unknown)"
 msgstr "(άγνωστο)"
 
-#: ../cli/src/devices.c:528
-msgid "unknown)"
-msgstr "άγνωστο)"
+#: ../cli/src/devices.c:591
+msgid "not connected"
+msgstr "δε συνδέθηκε"
 
-#: ../cli/src/devices.c:554
+#: ../cli/src/devices.c:618
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:627
+#: ../cli/src/devices.c:691
 msgid "on"
 msgstr "on"
 
-#: ../cli/src/devices.c:627
+#: ../cli/src/devices.c:691
 msgid "off"
 msgstr "off"
 
-#: ../cli/src/devices.c:808
+#: ../cli/src/devices.c:842
 #, c-format
 msgid "Error: 'dev status': %s"
 msgstr "Σφάλμα: 'dev status': %s"
 
-#: ../cli/src/devices.c:810
+#: ../cli/src/devices.c:844
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
 msgstr "Σφάλμα: 'dev status': %s, επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/devices.c:817
+#: ../cli/src/devices.c:867
 msgid "Status of devices"
 msgstr "Κατάσταση συσκευών"
 
-#: ../cli/src/devices.c:845
+#: ../cli/src/devices.c:898
 #, c-format
 msgid "Error: '%s' argument is missing."
-msgstr "Σφάλμα: Λείπει το όρισμα '%s' ."
+msgstr "Σφάλμα: λείπει το όρισμα '%s' ."
 
-#: ../cli/src/devices.c:874 ../cli/src/devices.c:1013
-#: ../cli/src/devices.c:1136
+#: ../cli/src/devices.c:939 ../cli/src/devices.c:1104
+#: ../cli/src/devices.c:1245 ../cli/src/devices.c:1892
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Σφάλμα: Δεν βρέθηκε η συσκευή '%s'."
 
-#: ../cli/src/devices.c:897
+#: ../cli/src/devices.c:962
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "Επιτυχία: Η συσκευή '%s' αποσυνδέθηκε επιτυχώς."
 
-#: ../cli/src/devices.c:922
+#: ../cli/src/devices.c:997
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "Σφάλμα: Αποτυχία αποσύνδεσης συσκευής '%s' (%s): %s"
 
-#: ../cli/src/devices.c:930
+#: ../cli/src/devices.c:1010
 #, c-format
-msgid "Device state: %d (%s)\n"
-msgstr "Κατάσταση συσκευής: %d (%s)\n"
+msgid "Device '%s' has been disconnected.\n"
+msgstr "Αποσυνδέθηκε η συσκευή '%s'.\n"
 
-#: ../cli/src/devices.c:994
+#: ../cli/src/devices.c:1073
 #, c-format
 msgid "Error: iface has to be specified."
 msgstr "Σφάλμα: πρέπει να καθορισθεί το iface."
 
-#: ../cli/src/devices.c:1112
+#: ../cli/src/devices.c:1203
 #, c-format
 msgid "Error: 'dev wifi': %s"
 msgstr "Σφάλμα: 'dev wifi': %s"
 
-#: ../cli/src/devices.c:1114
+#: ../cli/src/devices.c:1205
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgstr "Σφάλμα: 'dev wifi': %s, επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/devices.c:1121
+#: ../cli/src/devices.c:1228
 msgid "WiFi scan list"
 msgstr "Λίστα σάρωσης WiFi"
 
-#: ../cli/src/devices.c:1156 ../cli/src/devices.c:1210
+#: ../cli/src/devices.c:1265 ../cli/src/devices.c:1319
 #, c-format
-msgid "Error: Access point with hwaddr '%s' not found."
-msgstr "Σφάλμα: δεν βρέθηκε σημείο πρόσβασης με hwaddr '%s'."
+msgid "Error: Access point with bssid '%s' not found."
+msgstr "Σφάλμα: Δεν βρέθηκε σημείο πρόσβασης με bssid '%s'."
 
-#: ../cli/src/devices.c:1173
+#: ../cli/src/devices.c:1282
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
 msgstr "Σφάλμα: Η συσκευή '%s' δεν είναι συσκευή WiFi."
 
-#: ../cli/src/devices.c:1237
+#: ../cli/src/devices.c:1350 ../cli/src/devices.c:1396
+#, c-format
+msgid "Connection with UUID '%s' created and activated on device '%s'\n"
+msgstr ""
+"Δημιουργήθηκε και ενεργοποιήθηκε η σύνδεση με UUID '%s'  στη συσκευή '%s'\n"
+
+#: ../cli/src/devices.c:1355
+#, c-format
+msgid "Error: Connection activation failed: (%d) %s."
+msgstr "Σφάλμα: Αποτυχία ενεργοποίησης σύνδεσης: (%d) %s."
+
+#: ../cli/src/devices.c:1380
+#, c-format
+msgid "Error: Failed to add/activate new connection: (%d) %s"
+msgstr "Σφάλμα: Αποτυχία προσθήκης/ενεργοποίησης της νέας σύνδεσης: (%d) %s"
+
+#: ../cli/src/devices.c:1388
+#, c-format
+msgid "Error: Failed to add/activate new connection: Unknown error"
+msgstr ""
+"Σφάλμα: Αποτυχία προσθήκης/ενεργοποίησης της νέας σύνδεσης: Άγνωστο σφάλμα"
+
+#: ../cli/src/devices.c:1532
+#, c-format
+msgid "Error: SSID or BSSID are missing."
+msgstr "Σφάλμα: λείπουν τα SSID ή BSSID"
+
+#: ../cli/src/devices.c:1555
+#, c-format
+msgid "Error: bssid argument value '%s' is not a valid BSSID."
+msgstr "Σφάλμα: η τιμή του bssid ορίσματος '%s' δεν είναι ένα έγκυρο BSSID."
+
+#: ../cli/src/devices.c:1579
+#, c-format
+msgid ""
+"Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
+msgstr ""
+"Σφάλμα: η τιμή του ορίσματος wep-key-type '%s' δεν είναι έγκυρη, "
+"χρησιμοποιήστε 'key' ή 'phrase'."
+
+#: ../cli/src/devices.c:1619
+#, c-format
+msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
+msgstr ""
+"Σφάλμα: Το BSSID για τη σύνδεση στο (%s) διαφέρει από τη παράμετρο bssid "
+"(%s)."
+
+#: ../cli/src/devices.c:1625
+#, c-format
+msgid "Error: Parameter '%s' is neither SSID nor BSSID."
+msgstr "Σφάλμα: Η παράμετρος '%s' δεν είναι ούτε SSID ούτε BSSID."
+
+#: ../cli/src/devices.c:1654
+#, c-format
+msgid "Error: Device '%s' is not a Wi-Fi device."
+msgstr "Σφάλμα: Η συσκευή '%s' δεν είναι συσκευή Wi-Fi."
+
+#: ../cli/src/devices.c:1656
+#, c-format
+msgid "Error: No Wi-Fi device found."
+msgstr "Σφάλμα: Δε βρέθηκε συσκευή Wi-Fi."
+
+#: ../cli/src/devices.c:1674
+#, c-format
+msgid "Error: No network with SSID '%s' found."
+msgstr "Σφάλμα: Δεν βρέθηκε δίκτυο με SSID '%s'."
+
+#: ../cli/src/devices.c:1676
+#, c-format
+msgid "Error: No access point with BSSID '%s' found."
+msgstr "Σφάλμα: Δεν βρέθηκε σημείο πρόσβασης με BSSID '%s'."
+
+#: ../cli/src/devices.c:1774
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
 msgstr "Σφάλμα: η εντολή 'dev wifi' '%s' δεν είναι έγκυρη."
 
-#: ../cli/src/devices.c:1284
+#: ../cli/src/devices.c:1850
+#, c-format
+msgid "Error: 'dev wimax': %s"
+msgstr "Σφάλμα: 'dev wimax': %s"
+
+#: ../cli/src/devices.c:1852
+#, c-format
+msgid "Error: 'dev wimax': %s; allowed fields: %s"
+msgstr "Σφάλμα: 'dev wimax': %s, επιτρεπόμενα πεδία: %s"
+
+#: ../cli/src/devices.c:1875
+msgid "WiMAX NSP list"
+msgstr "λίστα WiMAX NSP"
+
+#: ../cli/src/devices.c:1912
+#, c-format
+msgid "Error: NSP with name '%s' not found."
+msgstr "Σφάλμα: Δεν βρέθηκε NSP με όνομα '%s'."
+
+#: ../cli/src/devices.c:1923
+#, c-format
+msgid "Error: Device '%s' is not a WiMAX device."
+msgstr "Σφάλμα: Η συσκευή '%s' δεν είναι συσκευή WiMAX."
+
+#: ../cli/src/devices.c:1954
+#, c-format
+msgid "Error: Access point with nsp '%s' not found."
+msgstr "Σφάλμα: Δεν βρέθηκε σημείο πρόσβασης με nsp '%s'."
+
+#: ../cli/src/devices.c:1981
+#, c-format
+msgid "Error: 'dev wimax' command '%s' is not valid."
+msgstr "Σφάλμα: η εντολή 'dev wimax' '%s' δεν είναι έγκυρη."
+
+#: ../cli/src/devices.c:2031
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "Σφάλμα: η εντολή  'dev' '%s' δεν είναι έγκυρη."
 
-#: ../cli/src/network-manager.c:35
+#: ../cli/src/network-manager.c:37
 msgid "RUNNING"
 msgstr "ΕΚΤΕΛΕΙΤΑΙ"
 
-#. 1
-#: ../cli/src/network-manager.c:37
+#. 0
+#: ../cli/src/network-manager.c:38
+msgid "VERSION"
+msgstr "ΕΚΔΟΣΗ"
+
+#. 2
+#: ../cli/src/network-manager.c:40
+msgid "NET-ENABLED"
+msgstr "NET-ENABLED"
+
+#. 3
+#: ../cli/src/network-manager.c:41
 msgid "WIFI-HARDWARE"
 msgstr "ΥΛΙΚΟ WIFI"
 
-#. 2
-#: ../cli/src/network-manager.c:38
+#. 4
+#: ../cli/src/network-manager.c:42
 msgid "WIFI"
 msgstr "WIFI"
 
-#. 3
-#: ../cli/src/network-manager.c:39
+#. 5
+#: ../cli/src/network-manager.c:43
 msgid "WWAN-HARDWARE"
 msgstr "ΥΛΙΚΟ WWAN"
 
-#. 4
-#: ../cli/src/network-manager.c:40
+#. 6
+#: ../cli/src/network-manager.c:44
 msgid "WWAN"
 msgstr "WWAN"
 
+#. 7
+#: ../cli/src/network-manager.c:45
+msgid "WIMAX-HARDWARE"
+msgstr "ΥΛΙΚΟ-WIMAX"
+
+#. 8
+#: ../cli/src/network-manager.c:46
+msgid "WIMAX"
+msgstr "WIMAX"
+
 #: ../cli/src/network-manager.c:62
+msgid "PERMISSION"
+msgstr "ΑΔΕΙΑ"
+
+#. 0
+#: ../cli/src/network-manager.c:63
+msgid "VALUE"
+msgstr "ΤΙΜΗ"
+
+#: ../cli/src/network-manager.c:77
 #, c-format
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
+"wimax }\n"
+"\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  permissions\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
+"  wimax [on|off]\n"
 "\n"
 msgstr ""
 "Χρήση: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | sleep | wakeup | wifi | wwan }\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
+"wimax }\n"
+"\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
-"  sleep\n"
-"  wakeup\n"
+"  permissions\n"
+"  enable [true|false]\n"
+"  sleep [true|false]\n"
 "  wifi [on|off]\n"
 "  wwan [on|off]\n"
+"  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:83
+#: ../cli/src/network-manager.c:108
 msgid "asleep"
 msgstr "ύπνωση"
 
-#: ../cli/src/network-manager.c:85
+#: ../cli/src/network-manager.c:110
 msgid "connecting"
 msgstr "σύνδεση"
 
-#: ../cli/src/network-manager.c:125
+#: ../cli/src/network-manager.c:112
+#, fuzzy
+msgid "connected (local only)"
+msgstr "Μόνο τοπικά αρχεία"
+
+#: ../cli/src/network-manager.c:114
+#, fuzzy
+#| msgid "connected"
+msgid "connected (site only)"
+msgstr "_Μόνο αν κάποιος είναι συνδεδεμένος"
+
+#: ../cli/src/network-manager.c:118
+msgid "disconnecting"
+msgstr "γίνεται αποσύνδεση"
+
+#: ../cli/src/network-manager.c:158
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "Σφάλμα:  'nm status': %s"
 
-#: ../cli/src/network-manager.c:127
+#: ../cli/src/network-manager.c:160
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "Σφάλμα: 'nm status': %s, επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/network-manager.c:134
+#. create NMClient
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:177 ../cli/src/network-manager.c:179
+#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:429
+#: ../cli/src/network-manager.c:484 ../cli/src/network-manager.c:522
+#: ../cli/src/network-manager.c:561
+msgid "enabled"
+msgstr "ενεργοποιημένη"
+
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:177 ../cli/src/network-manager.c:179
+#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:429
+#: ../cli/src/network-manager.c:484 ../cli/src/network-manager.c:522
+#: ../cli/src/network-manager.c:561
+msgid "disabled"
+msgstr "απενεργοποιημένη"
+
+#: ../cli/src/network-manager.c:193
 msgid "NetworkManager status"
 msgstr "Κατάσταση της Διαχείρισης Δικτύου"
 
 #. Print header
-#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
-msgid "enabled"
-msgstr "ενεργοποιημένη"
-
-#: ../cli/src/network-manager.c:140 ../cli/src/network-manager.c:141
-#: ../cli/src/network-manager.c:142 ../cli/src/network-manager.c:143
-#: ../cli/src/network-manager.c:211 ../cli/src/network-manager.c:243
-msgid "disabled"
-msgstr "απενεργοποιημένη"
-
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:196
 msgid "running"
 msgstr "εκτελείται"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:196
 msgid "not running"
 msgstr "δεν εκτελείται"
 
-#: ../cli/src/network-manager.c:201 ../cli/src/network-manager.c:233
+#: ../cli/src/network-manager.c:271
+msgid "auth"
+msgstr "auth"
+
+#: ../cli/src/network-manager.c:301
+#, c-format
+msgid "Error: 'nm permissions': %s"
+msgstr "Σφάλμα: 'nm permissions': %s"
+
+#: ../cli/src/network-manager.c:303
+#, c-format
+msgid "Error: 'nm permissions': %s; allowed fields: %s"
+msgstr "Σφάλμα: 'nm permissions': %s; επιτρεπόμενα πεδία: %s"
+
+#: ../cli/src/network-manager.c:324
+msgid "NetworkManager permissions"
+msgstr "Δικαιώματα NetworkManager"
+
+#: ../cli/src/network-manager.c:350 ../cli/src/utils.c:457
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "Σφάλμα: Αδυναμία σύνδεσης στο δίαυλο συστήματος: %s"
+
+#: ../cli/src/network-manager.c:361
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "Σφάλμα: Αδυναμία δημιουργίας αντικειμένου διαμεσολαβητή του D-Bus."
+
+#: ../cli/src/network-manager.c:367
+#, fuzzy, c-format
+#| msgid "Error: 'con list': %s"
+msgid "Error in sleep: %s"
+msgstr ""
+"Ανάλυση σφάλματος σε '%s':\n"
+"%s"
+
+#: ../cli/src/network-manager.c:416 ../cli/src/network-manager.c:471
+#: ../cli/src/network-manager.c:509 ../cli/src/network-manager.c:548
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr ""
 "Σφάλμα: η τιμή '%s' του ορίσματος '--fields' δεν είναι έγκυρη εδώ. "
 "Επιτρεπόμενα πεδία: %s"
 
-#: ../cli/src/network-manager.c:209
+#: ../cli/src/network-manager.c:424
+msgid "Networking enabled"
+msgstr "Ενεργοποιήθηκε η δικτύωση"
+
+#: ../cli/src/network-manager.c:440
+#, c-format
+msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Σφάλμα: μη έγκυρη παράμετρος 'enable': '%s'; χρησιμοποιήστε 'true' ή 'false'."
+
+#: ../cli/src/network-manager.c:450
+#, fuzzy, c-format
+#| msgid "Error: Could not connect to NetworkManager."
+msgid "Error: Sleeping status is not exported by NetworkManager."
+msgstr "Σφάλμα: Αδυναμία σύνδεσης στη Διαχείριση Δικτύου."
+
+#: ../cli/src/network-manager.c:458
+#, c-format
+msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+msgstr ""
+"Σφάλμα: μη έγκυρη παράμετρος 'sleep': '%s'; χρησιμοποιήστε 'true' ή 'false'."
+
+#: ../cli/src/network-manager.c:479
 msgid "WiFi enabled"
 msgstr "Ασύρματο (WiFi) ενεργοποιημένο"
 
-#: ../cli/src/network-manager.c:220
+#: ../cli/src/network-manager.c:495
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "Σφάλμα: μη έγκυρη παράμετρος 'wifi': '%s'."
 
-#: ../cli/src/network-manager.c:241
+#: ../cli/src/network-manager.c:517
 msgid "WWAN enabled"
 msgstr "WWAN ενεργοποιημένο"
 
-#: ../cli/src/network-manager.c:252
+#: ../cli/src/network-manager.c:533
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "Σφάλμα: μη έγκυρη παράμετρος 'wwan': '%s'."
 
-#: ../cli/src/network-manager.c:263
+#: ../cli/src/network-manager.c:556
+msgid "WiMAX enabled"
+msgstr "Ενεργοποιήθηκε το WiMAX"
+
+#: ../cli/src/network-manager.c:572
+#, c-format
+msgid "Error: invalid 'wimax' parameter: '%s'."
+msgstr "Σφάλμα: μη έγκυρη παράμετρος 'wimax': '%s'."
+
+#: ../cli/src/network-manager.c:585
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "Σφάλμα: η 'nm' εντολή '%s' δεν είναι έγκυρη."
 
-#: ../cli/src/nmcli.c:69
+#: ../cli/src/nmcli.c:76
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
@@ -995,6 +1689,8 @@ msgid ""
 "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 "  -e[scape] yes|no                           escape columns separators in "
 "values\n"
+"  -n[ocheck]                                 don't check nmcli and "
+"NetworkManager versions\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
@@ -1013,6 +1709,8 @@ msgstr ""
 "  -f[ields] <field1,field2,...>|all|common   καθορισμός πεδίων για έξοδο\n"
 "  -e[scape] yes|no                           escape διαχωριστικά στηλών στις "
 "τιμές\n"
+"  -n[ocheck]                                 μην ελέγξεις της εκδόσεις των "
+"nmcli και NetworkManager\n"
 "  -v[ersion]                                 εμφάνιση έκδοσης ποργράμματος\n"
 "  -h[elp]                                    εκτύπωση βοήθειας\n"
 "\n"
@@ -1022,599 +1720,638 @@ msgstr ""
 "  dev         συσκευές που διαχειρίζεται ο NetworkManager\n"
 "\n"
 
-#: ../cli/src/nmcli.c:113
+#: ../cli/src/nmcli.c:121
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "Σφάλμα: το αντικείμενο '%s' είναι άγνωστο, δοκιμάστε την 'nmcli help'."
 
-#: ../cli/src/nmcli.c:143
+#: ../cli/src/nmcli.c:151
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "Σφάλμα: η επιλογή '--terse' καθορίζεται τη δεύτερη φορά."
 
-#: ../cli/src/nmcli.c:148
+#: ../cli/src/nmcli.c:156
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr ""
 "Σφάλμα: η επιλογή '--terse' είναι αμοιβαία αποκλειόμενη με την '--pretty'."
 
-#: ../cli/src/nmcli.c:156
+#: ../cli/src/nmcli.c:164
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "Σφάλμα: η επιλογή '--pretty' καθορίζεται τη δεύτερη φορά."
 
-#: ../cli/src/nmcli.c:161
+#: ../cli/src/nmcli.c:169
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr ""
 "Σφάλμα: η επιλογή '--pretty' είναι αμοιβαία αποκλειόμενη με την '--terse'."
 
-#: ../cli/src/nmcli.c:171 ../cli/src/nmcli.c:187
+#: ../cli/src/nmcli.c:179 ../cli/src/nmcli.c:195
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "Σφάλμα: απουσίας ορίσματος για τηνη επιλογή '%s'."
 
-#: ../cli/src/nmcli.c:180 ../cli/src/nmcli.c:196
+#: ../cli/src/nmcli.c:188 ../cli/src/nmcli.c:204
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "Σφάλμα: το '%s' δεν είναι έγκυρο όρισμα για την επιλογή '%s'."
 
-#: ../cli/src/nmcli.c:203
+#: ../cli/src/nmcli.c:211
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "Σφάλμα: λείπουν πεδία για τις επιλογές '%s'."
 
-#: ../cli/src/nmcli.c:209
+#: ../cli/src/nmcli.c:219
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "Εργαλείο nmcli, έκδοση %s\n"
 
-#: ../cli/src/nmcli.c:215
+#: ../cli/src/nmcli.c:225
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "Σφάλμα: Η επιλογή '%s' είναι άγνωστη, δοκιμάστε 'nmcli -help'."
 
-#: ../cli/src/nmcli.c:234
+#: ../cli/src/nmcli.c:244
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "Ελήφθη σήμα %d, τερματισμός…"
 
-#: ../cli/src/nmcli.c:259
-#, c-format
-msgid "Error: Could not connect to NetworkManager."
-msgstr "Σφάλμα: Αδυναμία σύνδεσης στη Διαχείριση Δικτύου."
+#: ../cli/src/nmcli.c:269
+msgid "Error: Could not create NMClient object."
+msgstr "Σφάλμα: Αδυναμία δημιουργίας αντικειμένου NMClient."
 
-#: ../cli/src/nmcli.c:275
+#: ../cli/src/nmcli.c:285
 msgid "Success"
 msgstr "Επιτυχία"
 
-#: ../cli/src/settings.c:411
+#: ../cli/src/settings.c:519
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:413
+#: ../cli/src/settings.c:521
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-bit φράση κλειδί)"
 
-#: ../cli/src/settings.c:416
+#: ../cli/src/settings.c:524 ../cli/src/settings.c:652
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (άγνωστο)"
 
-#: ../cli/src/settings.c:442
+#: ../cli/src/settings.c:550
 msgid "0 (unknown)"
 msgstr "0 (άγνωστο)"
 
-#: ../cli/src/settings.c:448
+#: ../cli/src/settings.c:556
 msgid "any, "
 msgstr "οποιοδήποτε,"
 
-#: ../cli/src/settings.c:450
+#: ../cli/src/settings.c:558
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:452
+#: ../cli/src/settings.c:560
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:454
+#: ../cli/src/settings.c:562
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:456
+#: ../cli/src/settings.c:564
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:458
+#: ../cli/src/settings.c:566
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:460
+#: ../cli/src/settings.c:568
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:462
+#: ../cli/src/settings.c:570
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:464
+#: ../cli/src/settings.c:572
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:466
+#: ../cli/src/settings.c:574
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:468
+#: ../cli/src/settings.c:576
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:470
+#: ../cli/src/settings.c:578
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:554 ../cli/src/settings.c:721
+#: ../cli/src/settings.c:580
+msgid "WCDMA 3GPP UMTS 1900 MHz, "
+msgstr "WCDMA 3GPP UMTS 1900 MHz, "
+
+#: ../cli/src/settings.c:582
+msgid "WCDMA 3GPP UMTS 2600 MHz, "
+msgstr "WCDMA 3GPP UMTS 2600 MHz, "
+
+#: ../cli/src/settings.c:600
+msgid "0 (NONE)"
+msgstr "0 (ΚΑΝΕΝΑ)"
+
+#: ../cli/src/settings.c:606
+msgid "REORDER_HEADERS, "
+msgstr "REORDER_HEADERS, "
+
+#: ../cli/src/settings.c:608
+msgid "GVRP, "
+msgstr "GVRP, "
+
+#: ../cli/src/settings.c:610
+msgid "LOOSE_BINDING, "
+msgstr "LOOSE_BINDING, "
+
+#: ../cli/src/settings.c:646
+#, c-format
+msgid "%d (disabled)"
+msgstr "%d (απενεργοποιημένο)"
+
+#: ../cli/src/settings.c:648
+#, c-format
+msgid "%d (enabled, prefer public IP)"
+msgstr "%d (ενεργοποιημένο, προτιμήστε δημόσια διεύθυνση IP)"
+
+#: ../cli/src/settings.c:650
+#, c-format
+msgid "%d (enabled, prefer temporary IP)"
+msgstr "%d (ενεργοποιημένο, προτιμήστε προσωρινή διεύθυνση IP)"
+
+#: ../cli/src/settings.c:768 ../cli/src/settings.c:964
+#: ../cli/src/settings.c:1673
 msgid "auto"
 msgstr "αυτόματα"
 
-#: ../cli/src/settings.c:716 ../cli/src/settings.c:719
-#: ../cli/src/settings.c:720 ../cli/src/utils.c:172
-msgid "not set"
-msgstr "δεν ορίσθηκε"
+#: ../cli/src/utils.c:103
+#, c-format
+msgid "Error converting IP4 address '0x%X' to text form"
+msgstr "Σφάλμα κατά τη μετατροπή της διεύθυνσης IP4 '0x%X' σε κείμενο"
 
-#: ../cli/src/utils.c:124
+#: ../cli/src/utils.c:131
+#, c-format
+msgid "Error converting IP6 address '%s' to text form"
+msgstr "Σφάλμα κατά τη μετατροπή της διεύθυνσης IP6 '%s' σε κείμενο"
+
+#: ../cli/src/utils.c:232
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "το πεδίο '%s' πρέπει να είναι μόνο του"
 
-#: ../cli/src/utils.c:127
+#: ../cli/src/utils.c:235
 #, c-format
 msgid "invalid field '%s'"
 msgstr "μη έγκυρο πεδίο '%s'"
 
-#: ../cli/src/utils.c:146
-#, c-format
+#: ../cli/src/utils.c:254
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "Η επιλογή '--terse' απαιτεί να καθορισθούν '--fields'"
 
-#: ../cli/src/utils.c:150
+#: ../cli/src/utils.c:258
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "Η επιλογή '--terse' απαιτεί να καθορισθούν συγκεκριμένες τιμές της επιλογής "
 "'--fields', όχι '%s'"
 
-#: ../libnm-util/crypto.c:120
+#: ../cli/src/utils.c:468
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+msgstr ""
+"Σφάλμα: Αδυναμία δημιουργίας αντικειμένου διαμεσολαβητή D-Bus για το org."
+"freedesktop.DBus"
+
+#: ../cli/src/utils.c:476
+#, c-format
+msgid "Error: NameHasOwner request failed: %s"
+msgstr "Σφάλμα: Απέτυχε η αίτηση NameHasOwner: %s"
+
+#: ../cli/src/utils.c:521
+#, c-format
+msgid ""
+"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
+"nocheck to suppress the warning.\n"
+msgstr ""
+"Προειδοποίηση: δεν ταιριάζουν οι εκδόσεις του nmcli (%s) και του "
+"NetworkManager (%s) . Χρησιμοποιείστε --nocheck για να εξαφανίσετε την "
+"προειδοποίηση.\n"
+
+#: ../cli/src/utils.c:530
+#, c-format
+msgid ""
+"Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
+"execution using --nocheck, but the results are unpredictable."
+msgstr ""
+"Σφάλμα: δεν ταιριάζουν οι εκδόσεις του nmcli (%s) και του NetworkManager "
+"(%s) . Κάντε εξαναγκασμένη εκτέλεση χρησιμοποιώντας --nocheck, αλλά τα "
+"αποτελέσματα είναι απρόβλεπτα."
+
+#: ../libnm-util/crypto.c:133
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "Το αρχείο κλειδιού PEM δεν είχε ετικέτα τέλους '%s'."
 
-#: ../libnm-util/crypto.c:130
+#: ../libnm-util/crypto.c:146
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Δε μοιάζει με αρχείο ιδιωτικού κλειδιού PEM."
 
-#: ../libnm-util/crypto.c:138
+#: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Δεν επαρκεί η μνήμη για την αποθήκευση των δεδομένων του αρχείου PEM."
 
-#: ../libnm-util/crypto.c:154
+#: ../libnm-util/crypto.c:170
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Κακοσχηματισμένο αρχείο PEM: Η πρώτη ετικέτα δεν ήταν η Proc-Type."
 
-#: ../libnm-util/crypto.c:162
+#: ../libnm-util/crypto.c:178
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Κακοσχηματισμένο αρχείο PEM: Άγνωστη η ετικέτα Proc-Type '%s'."
 
-#: ../libnm-util/crypto.c:172
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Κακοσχηματισμένο αρχείο PEM: Η δεύτερη ετικέτα δεν ήταν η DEK-Info."
 
-#: ../libnm-util/crypto.c:183
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Κακοσχηματισμένο αρχείο PEM: Δεν βρέθηκε IV στην ετικέτα DEK-Info."
 
-#: ../libnm-util/crypto.c:190
+#: ../libnm-util/crypto.c:206
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "Κακοσχηματισμένο αρχείο PEM: Άκυρη μορφή του IV στην ετικέτα DEK-Info."
 
-#: ../libnm-util/crypto.c:203
+#: ../libnm-util/crypto.c:219
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr ""
 "Κακοσχηματισμένο αρχείο PEM: Άγνωστος ο κρυπτογραφικός αλγόριθμος '%s' του "
 "ιδιωτικού κλειδιού."
 
-#: ../libnm-util/crypto.c:222
+#: ../libnm-util/crypto.c:238
 #, c-format
 msgid "Could not decode private key."
 msgstr "Αδύνατη η αποκωδικοποίηση του ιδιωτικού κλειδιού."
 
-#: ../libnm-util/crypto.c:267
-#, c-format
-msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr "Το πιστοποιητικό PEM '%s' δε διέθετε ετικέτα τέλους '%s'."
+#: ../libnm-util/crypto.c:284
+#, fuzzy
+msgid "Failed to find expected PKCS#8 start tag."
+msgstr "Αποτυχία εύρεσης της αναμενόμενης ετικέτας αρχής PKCS#8."
 
-#: ../libnm-util/crypto.c:277
-#, c-format
-msgid "Failed to decode certificate."
-msgstr "Απέτυχε η αποκωδικοποίηση του πιστοποιητικού."
+#: ../libnm-util/crypto.c:292
+#, fuzzy, c-format
+msgid "Failed to find expected PKCS#8 end tag '%s'."
+msgstr "Αποτυχία εύρεσης της αναμενόμενης ετικέτας τέλους PKCS#8 '%s'."
 
-#: ../libnm-util/crypto.c:286
+#: ../libnm-util/crypto.c:312
+msgid "Not enough memory to store private key data."
+msgstr ""
+"Δεν επαρκεί η μνήμη για την αποθήκευση των δεδομένων του ιδιωτικού κλειδιού."
+
+#: ../libnm-util/crypto.c:317
+msgid "Failed to decode PKCS#8 private key."
+msgstr "Αδύνατη η αποκωδικοποίηση του προσωπικού κλειδιού PKCS#8."
+
+#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr ""
 "Δεν επαρκεί η μνήμη για την αποθήκευση των δεδομένων του πιστοποιητικού."
 
-#: ../libnm-util/crypto.c:294
-#, c-format
-msgid "Not enough memory to store file data."
-msgstr "Δεν επαρκεί η μνήμη για την αποθήκευση των δεδομένων του αρχείου."
-
-#: ../libnm-util/crypto.c:324
+#: ../libnm-util/crypto.c:365
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "Το μήκος του IV πρέπει να αντιστοιχεί σε άρτιο αριθμό byte."
 
-#: ../libnm-util/crypto.c:333
+#: ../libnm-util/crypto.c:374
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr "Δεν επαρκεί η μνήμη για την αποθήκευση του IV."
 
-#: ../libnm-util/crypto.c:344
+#: ../libnm-util/crypto.c:385
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "Το IV περιέχει μη δεκαεξαδικά ψηφία."
 
-#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:148
-#: ../libnm-util/crypto_gnutls.c:266 ../libnm-util/crypto_nss.c:171
-#: ../libnm-util/crypto_nss.c:336
+#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:332
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Άγνωστος ο κρυπτογραφικός αλγόριθμος '%s' του ιδιωτικού κλειδιού."
 
-#: ../libnm-util/crypto.c:391
+#: ../libnm-util/crypto.c:432
 #, c-format
 msgid "Not enough memory to decrypt private key."
 msgstr "Δεν επαρκεί η μνήμη για την αποκρυπτογράφηση του ιδιωτικού κλειδιού."
 
-#: ../libnm-util/crypto.c:511
-#, c-format
-msgid "Unable to determine private key type."
-msgstr "Αδύνατος ο προσδιορισμός του τύπου του ιδιωτικού κλειδιού."
-
-#: ../libnm-util/crypto.c:530
+#: ../libnm-util/crypto.c:497
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr ""
 "Δεν επαρκεί η μνήμη για την αποθήκευση του αποκρυπτογραφημένου ιδιωτικού "
 "κλειδιού."
 
-#: ../libnm-util/crypto_gnutls.c:49
+#: ../libnm-util/crypto.c:542
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Αδύνατος ο προσδιορισμός του τύπου του ιδιωτικού κλειδιού."
+
+#: ../libnm-util/crypto.c:597
+#, c-format
+msgid "PEM certificate had no start tag '%s'."
+msgstr "Η πιστοποίηση PEM δεν είχε ετικέτα αρχής '%s'."
+
+#: ../libnm-util/crypto.c:606
+#, c-format
+msgid "PEM certificate had no end tag '%s'."
+msgstr "Η πιστοποίηση PEM δεν είχε ετικέτα τέλους '%s'."
+
+#: ../libnm-util/crypto.c:630
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Απέτυχε η αποκωδικοποίηση του πιστοποιητικού."
+
+#: ../libnm-util/crypto_gnutls.c:50
 msgid "Failed to initialize the crypto engine."
 msgstr "Απέτυχε η αρχικοποίηση της μηχανής κρυπτογραφίας."
 
-#: ../libnm-util/crypto_gnutls.c:93
+#: ../libnm-util/crypto_gnutls.c:92
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "Απέτυχε η αρχικοποίηση της μηχανής MD5 : %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:156
+#: ../libnm-util/crypto_gnutls.c:155
 #, c-format
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "Μη έγκυρο μήκος IV (πρέπει να είναι τουλάχιστον %zd)"
 
-#: ../libnm-util/crypto_gnutls.c:165 ../libnm-util/crypto_nss.c:188
+#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr ""
 "Η μνήμη δεν επαρκεί για τις ανάγκες της ενδιάμεσης μνήμης του "
 "αποκρυπτογραφημένου κλειδιού."
 
-#: ../libnm-util/crypto_gnutls.c:173
+#: ../libnm-util/crypto_gnutls.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr "Απέτυχε η αρχικοποίηση του αλγορίθμου αποκρυπτογράφησης: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:182
+#: ../libnm-util/crypto_gnutls.c:181
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr ""
 "Απέτυχε ο ορισμός συμμετρικού κλειδιού για την αποκρυπτογράφηση: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:191
+#: ../libnm-util/crypto_gnutls.c:190
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "Απέτυχε ο ορισμός IV για την αποκρυπτογράφηση: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:200
+#: ../libnm-util/crypto_gnutls.c:199
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Απέτυχε η αποκρυπτογράφηση του ιδιωτικού κλειδιού: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:210 ../libnm-util/crypto_nss.c:267
+#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
 #, c-format
-#| msgid "Failed to decrypt the private key: %d."
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr ""
 "Απέτυχε η αποκρυπτογράφηση του ιδιωτικού κλειδιού: μη αναμενόμενο μήκος "
 "συμπλήρωσης."
 
-#: ../libnm-util/crypto_gnutls.c:221 ../libnm-util/crypto_nss.c:278
+#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "Απέτυχε η αποκρυπτογράφηση του ιδιωτικού κλειδιού."
 
-#: ../libnm-util/crypto_gnutls.c:286 ../libnm-util/crypto_nss.c:356
+#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
 #, c-format
 msgid "Could not allocate memory for encrypting."
 msgstr "Αδυναμία διάθεσης μνήμης για κρυπτογράφηση."
 
-#: ../libnm-util/crypto_gnutls.c:294
+#: ../libnm-util/crypto_gnutls.c:293
 #, c-format
-#| msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr "Απέτυχε η αρχικοποίηση του αλγορίθμου κρυπτογράφησης: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:303
+#: ../libnm-util/crypto_gnutls.c:302
 #, c-format
-#| msgid "Failed to set symmetric key for decryption: %s / %s."
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr "Απέτυχε ο ορισμός συμμετρικού κλειδιού για την κρυπτογράφηση: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:313
+#: ../libnm-util/crypto_gnutls.c:312
 #, c-format
-#| msgid "Failed to set IV for decryption: %s / %s."
 msgid "Failed to set IV for encryption: %s / %s."
 msgstr "Απέτυχε να ορισθεί το IV για την κρυπτογράφηση: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:322
+#: ../libnm-util/crypto_gnutls.c:321
 #, c-format
-#| msgid "Failed to decrypt the private key: %s / %s."
 msgid "Failed to encrypt the data: %s / %s."
 msgstr "Απέτυχε η κρυπτογράφηση των δεδομένων: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:362
+#: ../libnm-util/crypto_gnutls.c:361
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Σφάλμα κατά την αρχικοποίηση των δεδομένων του πιστοποιητικού: %s"
 
-#: ../libnm-util/crypto_gnutls.c:384
+#: ../libnm-util/crypto_gnutls.c:383
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Αδύνατη η αποκωδικοποίηση του πιστοποιητικού: %s"
 
-#: ../libnm-util/crypto_gnutls.c:408
+#: ../libnm-util/crypto_gnutls.c:407
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "Αδύνατη η αρχικοποίηση του αποκωδικοποιητή PKCS#12: %s"
 
-#: ../libnm-util/crypto_gnutls.c:421
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "Αδύνατη η αποκωδικοποίηση του αρχείου PKCS#12: %s"
 
-#: ../libnm-util/crypto_gnutls.c:433
+#: ../libnm-util/crypto_gnutls.c:432
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "Αδύνατη η διαπίστωση του αρχείου PKCS#12: %s"
+
+#: ../libnm-util/crypto_gnutls.c:460
+#, c-format
+msgid "Couldn't initialize PKCS#8 decoder: %s"
+msgstr "Αδύνατη η αρχικοποίηση του αποκωδικοποιητή PKCS#8: %s"
+
+#: ../libnm-util/crypto_gnutls.c:483
+#, c-format
+msgid "Couldn't decode PKCS#8 file: %s"
+msgstr "Αδύνατη η αποκωδικοποίηση του αρχείου PKCS#8: %s"
 
 #: ../libnm-util/crypto_nss.c:56
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "Απέτυχε η αρχικοποίηση της μηχανής κρυπτογραφίας: %d."
 
-#: ../libnm-util/crypto_nss.c:111
+#: ../libnm-util/crypto_nss.c:107
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "Απέτυχε η αρχικοποίηση του MD5 : %d."
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:175
 #, c-format
 msgid "Invalid IV length (must be at least %d)."
 msgstr "Μη έγκυρο μήκος IV (πρέπει να είναι τουλάχιστον %d)"
 
-#: ../libnm-util/crypto_nss.c:196
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "Απέτυχε η αρχικοποίηση του αλγορίθμου αποκρυπτογράφησης."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:202
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "Απέτυχε ο ορισμός συμμετρικού κλειδιού για την αποκρυπτογράφηση."
 
-#: ../libnm-util/crypto_nss.c:216
+#: ../libnm-util/crypto_nss.c:212
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Απέτυχε ο ορισμός IV για την αποκρυπτογράφηση."
 
-#: ../libnm-util/crypto_nss.c:224
+#: ../libnm-util/crypto_nss.c:220
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "Απέτυχε η αρχικοποίηση της αποκρυπτογράφησης."
 
-#: ../libnm-util/crypto_nss.c:237
+#: ../libnm-util/crypto_nss.c:233
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Απέτυχε η αποκρυπτογράφηση του ιδιωτικού κλειδιού: %d."
 
-#: ../libnm-util/crypto_nss.c:245
+#: ../libnm-util/crypto_nss.c:241
 #, c-format
-#| msgid "Failed to decrypt the private key: %d."
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
 "Απέτυχε η αποκρυπτογράφηση του ιδιωτικού κλειδιού: τα αποκρυπτογραφημένα "
 "δεδομένα είναι πάρα πολλά."
 
-#: ../libnm-util/crypto_nss.c:256
+#: ../libnm-util/crypto_nss.c:252
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "Απέτυχε η ολοκλήρωση της αποκρυπτογράφησης του ιδιωτικού κλειδιού: %d."
 
-#: ../libnm-util/crypto_nss.c:364
+#: ../libnm-util/crypto_nss.c:360
 #, c-format
-#| msgid "Failed to initialize the decryption cipher slot."
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "Απέτυχε η αρχικοποίηση του αλγορίθμου κρυπτογράφησης."
 
-#: ../libnm-util/crypto_nss.c:372
+#: ../libnm-util/crypto_nss.c:368
 #, c-format
-#| msgid "Failed to set symmetric key for decryption."
 msgid "Failed to set symmetric key for encryption."
 msgstr "Απέτυχε ο ορισμός συμμετρικού κλειδιού για την κρυπτογράφηση."
 
-#: ../libnm-util/crypto_nss.c:380
+#: ../libnm-util/crypto_nss.c:376
 #, c-format
-#| msgid "Failed to set IV for decryption."
 msgid "Failed to set IV for encryption."
 msgstr "Απέτυχε ο ορισμός IV για την κρυπτογράφηση."
 
-#: ../libnm-util/crypto_nss.c:388
+#: ../libnm-util/crypto_nss.c:384
 #, c-format
-#| msgid "Failed to initialize the decryption context."
 msgid "Failed to initialize the encryption context."
 msgstr "Απέτυχε η αρχικοποίηση του πλαισίου της κρυπτογράφησης."
 
-#: ../libnm-util/crypto_nss.c:396
+#: ../libnm-util/crypto_nss.c:392
 #, c-format
-#| msgid "Failed to decrypt the private key: %d."
 msgid "Failed to encrypt: %d."
 msgstr "Αποτυχία κρυπτογράφησης: %d."
 
-#: ../libnm-util/crypto_nss.c:404
+#: ../libnm-util/crypto_nss.c:400
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "Μη αναμενόμενη ποσότητα δεδομένων μετά την κρυπτογράφηση."
 
-#: ../libnm-util/crypto_nss.c:447
+#: ../libnm-util/crypto_nss.c:443
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Αδύνατη η αποκωδικοποίηση του πιστοποιητικού: %d"
 
-#: ../libnm-util/crypto_nss.c:482
+#: ../libnm-util/crypto_nss.c:478
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "Αδύνατη η μετατροπή του συνθηματικού σε UCS2: %d"
 
-#: ../libnm-util/crypto_nss.c:510
+#: ../libnm-util/crypto_nss.c:506
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "Αδύνατη η αρχικοποίηση του αποκωδικοποιητή PKCS#12: %d"
 
-#: ../libnm-util/crypto_nss.c:519
+#: ../libnm-util/crypto_nss.c:515
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "Αδύνατη η αποκωδικοποίηση του αρχείου PKCS#12: %d"
 
-#: ../libnm-util/crypto_nss.c:528
+#: ../libnm-util/crypto_nss.c:524
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "Αδύνατη η διαπίστωση του αρχείου PKCS#12: %d"
 
-#: ../libnm-util/crypto_nss.c:557
-#| msgid "Could not decode private key."
+#: ../libnm-util/crypto_nss.c:568
 msgid "Could not generate random data."
 msgstr "Αδύνατη η δημιουργία τυχαίων δεδομένων."
 
-#: ../libnm-util/nm-utils.c:1975
+#: ../libnm-util/nm-utils.c:2040
 #, c-format
-#| msgid "Not enough memory to decrypt private key."
 msgid "Not enough memory to make encryption key."
 msgstr "Δεν επαρκεί η μνήμη για την δημιουργία κλειδιού κρυπτογράφησης."
 
-#: ../libnm-util/nm-utils.c:2085
-#| msgid "Not enough memory to store PEM file data."
+#: ../libnm-util/nm-utils.c:2150
 msgid "Could not allocate memory for PEM file creation."
 msgstr "Δεν επαρκεί η μνήμη για την δημιουργία αρχείου PEM."
 
-#: ../libnm-util/nm-utils.c:2097
+#: ../libnm-util/nm-utils.c:2162
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr "Αδυναμία διάθεσης μνήμης για εγγραφή του IV στο αρχείο PEM."
 
-#: ../libnm-util/nm-utils.c:2109
+#: ../libnm-util/nm-utils.c:2174
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
 msgstr ""
 "Αδυναμία διάθεσης μνήμης για εγγραφή του κρυπτογραφημένου κλειδού στο αρχείο "
 "PEM."
 
-#: ../libnm-util/nm-utils.c:2128
+#: ../libnm-util/nm-utils.c:2193
 #, c-format
-#| msgid "Not enough memory to store PEM file data."
 msgid "Could not allocate memory for PEM file data."
 msgstr "Δεν επαρκεί η μνήμη για τα δεδομένα του αρχείου PEM."
 
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
-msgid "Connection sharing via a protected WiFi network"
-msgstr "Κοινή χρήση σύνδεσης μέσω προστατευμένου ασύρματου δικτύου"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
-msgid "Connection sharing via an open WiFi network"
-msgstr "Κοινή χρήση σύνδεσης μέσω ανοιχτού ασύρματου δικτύου"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:3
-msgid "Modify persistent system hostname"
-msgstr "Αλλαγή πάγιου ονόματος συστήματος"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:4
-msgid "Modify system connections"
-msgstr "Τροποποίηση συνδέσεων συστήματος"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:5
-msgid "System policy prevents modification of system settings"
-msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει τροποποίηση των ρυθμίσεων συστήματος"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:6
-msgid "System policy prevents modification of the persistent system hostname"
-msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει τροποποίηση του πάγιου ονόματος "
-"συστήματος"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:7
-msgid "System policy prevents sharing connections via a protected WiFi network"
-msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει κοινή χρήση συνδέσεων μέσω "
-"προστατευμένου ασύρματου δικτύου"
-
-#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:8
-msgid "System policy prevents sharing connections via an open WiFi network"
-msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει κοινή χρήση συνδέσεων μέσω ανοιχτού "
-"ασύρματου δικτύου"
-
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
-msgid "Allow control of network connections"
-msgstr "Να επιτρέπεται ο έλεγχος των συνδέσεων δικτύου"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
-msgid "Allow use of user-specific connections"
-msgstr "Να επιτρέπεται η χρήση συνδέσεων συγκεκριμένων για το χρήστη"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
-msgid "Enable or disable WiFi devices"
-msgstr "Ενεργοποίηση ή απενεργοποίηση συσκευών ασύρματης δικτύωσης (WiFi)"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
-msgid "Enable or disable mobile broadband devices"
-msgstr ""
-"Ενεργοποίηση ή απενεργοποίηση συσκευών ευρυζωνικότητας κινητής τηλεφωνίας"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
 msgid "Enable or disable system networking"
 msgstr "Ενεργοποίηση ή απενεργοποίηση δικτύωσης συστήματος"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+msgid "System policy prevents enabling or disabling system networking"
+msgstr ""
+"Η πολιτική συστήματος δεν επιτρέπει ενεργοποίηση ή απενεργοποίηση της "
+"δικτύωσης του συστήματος"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
 msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
@@ -1622,112 +2359,277 @@ msgstr ""
 "Θέση της Διαχείρισης δικτύου σε αδράνεια ή ενεργοποίησή της (πρέπει να "
 "χρησιμοποιείται μόνο από τη διαχείριση ενέργειας του συστήματος)"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
-#| msgid "System policy prevents modification of system settings"
-msgid "System policy prevents control of network connections"
-msgstr "Η πολιτική συστήματος δεν επιτρέπει τον έλεγχο των συνδέσεων δικτύου"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
-#| msgid "System policy prevents sharing connections via an open WiFi network"
-msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει ενεργοποίηση ή απενεργοποίηση συσκευών "
-"ανοιχτού ασύρματου δικτύου (WiFi)"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
-msgid "System policy prevents enabling or disabling mobile broadband devices"
-msgstr ""
-"Η πολιτική του συστήματος δεν επιτρέπει την ενεργοποίηση ή απενεργοποίηση "
-"συσκευών ευρυζωνικότητας κινητής τηλεφωνίας"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
-#| msgid "System policy prevents modification of system settings"
-msgid "System policy prevents enabling or disabling system networking"
-msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει ενεργοποίηση ή απενεργοποίηση της "
-"δικτύωσης του συστήματος"
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr ""
 "Η πολιτική του συστήματος δεν επιτρέπει να τίθεται η διαχείριση δικτύου σε "
 "αδράνεια ή να ενεργοποιείται."
 
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+msgid "Enable or disable WiFi devices"
+msgstr "Ενεργοποίηση ή απενεργοποίηση συσκευών ασύρματης δικτύωσης (WiFi)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+msgid "System policy prevents enabling or disabling WiFi devices"
+msgstr ""
+"Η πολιτική συστήματος δεν επιτρέπει ενεργοποίηση ή απενεργοποίηση συσκευών "
+"ανοιχτού ασύρματου δικτύου (WiFi)"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+msgid "Enable or disable mobile broadband devices"
+msgstr ""
+"Ενεργοποίηση ή απενεργοποίηση συσκευών ευρυζωνικότητας κινητής τηλεφωνίας"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+msgid "System policy prevents enabling or disabling mobile broadband devices"
+msgstr ""
+"Η πολιτική του συστήματος δεν επιτρέπει την ενεργοποίηση ή απενεργοποίηση "
+"συσκευών ευρυζωνικότητας κινητής τηλεφωνίας"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+msgid "Enable or disable WiMAX mobile broadband devices"
+msgstr ""
+"Ενεργοποίηση ή απενεργοποίηση WiMAX συσκευών ευρυζωνικότητας κινητής "
+"τηλεφωνίας"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+msgid ""
+"System policy prevents enabling or disabling WiMAX mobile broadband devices"
+msgstr ""
+"Η πολιτική του συστήματος δεν επιτρέπει την ενεργοποίηση ή απενεργοποίηση "
+"WiMAX συσκευών ευρυζωνικότητας κινητής τηλεφωνίας"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+msgid "Allow control of network connections"
+msgstr "Να επιτρέπεται ο έλεγχος των συνδέσεων δικτύου"
+
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
-#| msgid "System policy prevents modification of system settings"
-msgid "System policy prevents use of user-specific connections"
+msgid "System policy prevents control of network connections"
+msgstr "Η πολιτική συστήματος δεν επιτρέπει τον έλεγχο των συνδέσεων δικτύου"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:13
+msgid "Connection sharing via a protected WiFi network"
+msgstr "Κοινή χρήση σύνδεσης μέσω προστατευμένου ασύρματου δικτύου"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
+msgid "System policy prevents sharing connections via a protected WiFi network"
 msgstr ""
-"Η πολιτική συστήματος δεν επιτρέπει τη χρήση συνδέσεων συγκεκριμένων για "
-"κάθε χρήστη"
+"Η πολιτική συστήματος δεν επιτρέπει κοινή χρήση συνδέσεων μέσω "
+"προστατευμένου ασύρματου δικτύου"
 
-#: ../src/nm-netlink-monitor.c:100 ../src/nm-netlink-monitor.c:231
-#: ../src/nm-netlink-monitor.c:653
-#, c-format
-msgid "error processing netlink message: %s"
-msgstr "σφάλμα κατά την επεξεργασία μηνύματος netlink: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
+msgid "Connection sharing via an open WiFi network"
+msgstr "Κοινή χρήση σύνδεσης μέσω ανοιχτού ασύρματου δικτύου"
 
-#: ../src/nm-netlink-monitor.c:214
-msgid "error occurred while waiting for data on socket"
-msgstr "σφάλμα κατά την αναμονή για δεδομένα στην υποδοχή"
-
-#: ../src/nm-netlink-monitor.c:254
-#, c-format
-msgid "unable to connect to netlink for monitoring link status: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:16
+msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr ""
-"αδύνατη η σύνδεση με το netlink για την παρακολούθηση της κατάστασης της "
-"σύνδεσης: %s"
+"Η πολιτική συστήματος δεν επιτρέπει κοινή χρήση συνδέσεων μέσω ανοιχτού "
+"ασύρματου δικτύου"
 
-#: ../src/nm-netlink-monitor.c:265
-#, c-format
-#| msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgid "unable to enable netlink handle credential passing: %s"
-msgstr "unable to enable netlink handle credential passing: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:17
+msgid "Modify personal network connections"
+msgstr "Τροποποίηση προσωπικών συνδέσεων δικτύου"
 
-#: ../src/nm-netlink-monitor.c:291 ../src/nm-netlink-monitor.c:353
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:18
+msgid "System policy prevents modification of personal network settings"
+msgstr "Η πολιτική συστήματος δεν επιτρέπει τροποποίηση των ρυθμίσεων δικτύου"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
+msgid "Modify network connections for all users"
+msgstr "Τροποποίηση συνδέσεων δικτύου για όλους τους χρήστες"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
+msgid "System policy prevents modification of network settings for all users"
 msgstr ""
-"αδύνατη η δέσμευση χειριστή netlink για την παρακολούθηση της κατάστασης της "
-"σύνδεσης: %s"
+"Η πολιτική συστήματος δεν επιτρέπει τροποποίηση των ρυθμίσεων δικτύου για "
+"όλους τους χρήστες"
 
-#: ../src/nm-netlink-monitor.c:376
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
+msgid "Modify persistent system hostname"
+msgstr "Αλλαγή πάγιου ονόματος συστήματος"
+
+#: ../policy/org.freedesktop.NetworkManager.policy.in.h:22
+msgid "System policy prevents modification of the persistent system hostname"
 msgstr ""
-"αδύνατη η εκχώρηση λανθάνουσας μνήμης στη σύνδεση netlink για την "
-"παρακολούθηση της κατάστασης της σύνδεσης δικτύου: %s"
+"Η πολιτική συστήματος δεν επιτρέπει τροποποίηση του πάγιου ονόματος "
+"συστήματος"
 
-#: ../src/nm-netlink-monitor.c:502
+#: ../src/main.c:158
+#, fuzzy, c-format
+#| msgid "Failed to encrypt: %d."
+msgid "Failed to set signal mask: %d"
+msgstr "Αποτυχία ορισμού μάσκας σήματος: %d"
+
+#: ../src/main.c:167
 #, c-format
-#| msgid "unable to join netlink group for monitoring link status: %s"
-msgid "unable to join netlink group: %s"
-msgstr "αδύνατη η σύνδεση στην ομάδα του netlink: %s"
+msgid "Failed to create signal handling thread: %d"
+msgstr ""
 
-#: ../src/nm-netlink-monitor.c:629 ../src/nm-netlink-monitor.c:642
+#: ../src/main.c:182
 #, c-format
-msgid "error updating link cache: %s"
-msgstr "σφάλμα κατά την ενημέρωση της λανθάνουσας μνήμης της σύνδεσης: %s"
+msgid "Opening %s failed: %s\n"
+msgstr "Το άνοιγμα του %s απέτυχε:%s\n"
 
-#: ../src/main.c:502
+#: ../src/main.c:188
+#, c-format
+msgid "Writing to %s failed: %s\n"
+msgstr "Η εγγραφή στο %s απέτυχε: %s\n"
+
+#: ../src/main.c:193
+#, c-format
+msgid "Closing %s failed: %s\n"
+msgstr "Το κλείσιμο του %s απέτυχε: %s\n"
+
+#: ../src/main.c:236
+#, c-format
+msgid "NetworkManager is already running (pid %ld)\n"
+msgstr "Ο NetworkManager εκτελείται ήδη (pid %ld)\n"
+
+#: ../src/main.c:376
+msgid "Print NetworkManager version and exit"
+msgstr "Προβολή έκδοσης του NetworkManager και έξοδος"
+
+#: ../src/main.c:377
+msgid "Don't become a daemon"
+msgstr "Να μη γίνει δαίμονας (daemon)"
+
+#: ../src/main.c:378
+msgid "Make all warnings fatal"
+msgstr "Να γίνουν όλες οι προειδοποιήσεις μοιραίες"
+
+#: ../src/main.c:379
+msgid "Specify the location of a PID file"
+msgstr "Καθορίστε τη τοποθεσία για το αρχείο PID"
+
+#: ../src/main.c:379
+msgid "filename"
+msgstr "όνομα αρχείου"
+
+#: ../src/main.c:380
+msgid "State file location"
+msgstr "Τοποθεσία αρχείου κατάστασης"
+
+#: ../src/main.c:380
+msgid "/path/to/state.file"
+msgstr "/path/to/state.file"
+
+#: ../src/main.c:381
+msgid "Config file location"
+msgstr "Τοποθεσία αρχείου ρυθμίσεων"
+
+#: ../src/main.c:381
+msgid "/path/to/config.file"
+msgstr "/path/to/config.file"
+
+#: ../src/main.c:382
+msgid "List of plugins separated by ','"
+msgstr "Κατάλογος πρόσθετων χωρισμένων με ','"
+
+#: ../src/main.c:382
+msgid "plugin1,plugin2"
+msgstr "plugin1,plugin2"
+
+#. Translators: Do not translate the values in the square brackets
+#: ../src/main.c:384
+msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
+msgstr "Επίπεδο καταγραφής: ένα από τα [ERR, WARN, INFO, DEBUG]"
+
+#. Translators: Do not translate the values in the square brackets
+#: ../src/main.c:387
+msgid ""
+"Log domains separated by ',': any combination of\n"
+"                                                [NONE,HW,RFKILL,ETHER,WIFI,"
+"BT,MB,DHCP4,DHCP6,PPP,\n"
+"                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,"
+"DNS,VPN,SHARING,SUPPLICANT,\n"
+"                                                 AGENTS,SETTINGS,SUSPEND,"
+"CORE,DEVICE,OLPC,WIMAX,\n"
+"                                                 INFINIBAND,FIREWALL,ADSL]"
+msgstr ""
+"Καταγραφή τομέων χωρισμένων με ',': ή οποιοσδήποτε συνδιασμός των\n"
+"                                                [NONE,HW,RFKILL,ETHER,WIFI,"
+"BT,MB,DHCP4,DHCP6,PPP,\n"
+"                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,"
+"DNS,VPN,SHARING,SUPPLICANT,\n"
+"                                                 AGENTS,SETTINGS,SUSPEND,"
+"CORE,DEVICE,OLPC,WIMAX,\n"
+"                                                 INFINIBAND,FIREWALL,ADSL]"
+
+#: ../src/main.c:393
+msgid "An http(s) address for checking internet connectivity"
+msgstr "Μια διεύθυνση http(s) για τον έλεγχο της συνδεσιμότητας στο διαδίκτυο"
+
+#: ../src/main.c:394
+msgid "The interval between connectivity checks (in seconds)"
+msgstr "Το διάστημα μεταξύ των ελέγχων συνδεσιμότητας (σε δευτερόλεπτα)"
+
+#: ../src/main.c:395
+msgid "The expected start of the response"
+msgstr "Η αναμενόμενη έναρξη της απάντησης"
+
+#: ../src/main.c:395
+msgid "Bingo!"
+msgstr "Bingo!"
+
+#: ../src/main.c:400
+#, c-format
+msgid "GModules are not supported on your platform!\n"
+msgstr "Τα GModules δεν υποστηρίζονται στην πλατφόρμα σας!\n"
+
+#: ../src/main.c:423
+msgid ""
+"NetworkManager monitors all network connections and automatically\n"
+"chooses the best connection to use.  It also allows the user to\n"
+"specify wireless access points which wireless cards in the computer\n"
+"should associate with."
+msgstr ""
+"Ο NetworkManager παρακολουθεί όλες τις συνδέσεις δικτύου και αυτόματα\n"
+"επιλέγει τη καλύτερη σύνδεση για να χρησιμοποιήσει. Επίσης επιτρέπει τον "
+"χρήστη να \n"
+"καθορίσει τα ασύρματα σημεία πρόσβασης με τα οποία οι ασύρματες κάρτες στον "
+"υπολογιστή\n"
+"πρέπει να συνδεθούν."
+
+#: ../src/main.c:429
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Άκυρη επιλογή. Παρακαλώ χρησιμοποιήστε --help για να δείτε τη λίστα των "
 "έγκυρων επιλογών.\n"
 
-#: ../src/main.c:573
+#: ../src/main.c:439
 #, c-format
-#| msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgid "You must be root to run NetworkManager!\n"
+msgstr "Πρέπει να είστε υπερχρήστης για να εκτελέσετε το  NetworkManager!\n"
+
+#: ../src/main.c:460
+#, c-format
+msgid "Failed to read configuration: (%d) %s\n"
+msgstr "Αποτυχία ανάγνωσης των ρυθμίσεων: (%d) %s\n"
+
+#: ../src/main.c:471
+#, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "%s. Παρακαλώ χρησιμοποιήστε την επιλογή --help για να δείτε τη λίστα των "
 "έγκυρων επιλογών.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:324
+#: ../src/main.c:478
+#, c-format
+msgid "State file %s parsing failed: (%d) %s\n"
+msgstr "Απέτυχε η ανάλυση του αρχείου κατάστασης %s: (%d) %s\n"
+
+#: ../src/main.c:495
+#, fuzzy, c-format
+msgid "Could not daemonize: %s [error %u]\n"
+msgstr "Αδυναμία ανοίγματος %s: Άγνωστο σφάλμα"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
 msgid "# Created by NetworkManager\n"
 msgstr "# Δημιουργήθηκε από το NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:340
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:69
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -1736,48 +2638,188 @@ msgstr ""
 "# Συγχωνεύθηκαν από το %s\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+#: ../src/dhcp-manager/nm-dhcp-manager.c:266
 msgid "no usable DHCP client could be found."
 msgstr "αδυναμία εύρεσης πελάτη DHCP που να μπορεί να χρησιμοποιηθεί."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+#: ../src/dhcp-manager/nm-dhcp-manager.c:275
 msgid "'dhclient' could be found."
 msgstr "Εύρεση 'dhclient'."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+#: ../src/dhcp-manager/nm-dhcp-manager.c:285
 msgid "'dhcpcd' could be found."
 msgstr "Εύρεση 'dhcpcd'."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#: ../src/dhcp-manager/nm-dhcp-manager.c:293
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "μη υποστηριζόμενος πελάτης DHCP '%s'"
 
-#: ../src/logging/nm-logging.c:146
-#, c-format
-msgid "Unknown log level '%s'"
-msgstr "Άγνωστο επίπεδο καταγραφής '%s'"
-
-#: ../src/logging/nm-logging.c:171
-#, c-format
-msgid "Unknown log domain '%s'"
-msgstr "Άγνωστος τομέας καταγραφής '%s'"
-
-#: ../src/dns-manager/nm-dns-manager.c:384
+#: ../src/dns-manager/nm-dns-manager.c:381
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr ""
 "ΣΗΜΕΙΩΣΗ: Ο libc resolver μπορεί να μην υποστηρίζει περισσότερους από 3 "
 "εξυπηρετητές ονομάτων."
 
-#: ../src/dns-manager/nm-dns-manager.c:386
+#: ../src/dns-manager/nm-dns-manager.c:383
 msgid "The nameservers listed below may not be recognized."
 msgstr "Οι κάτωθι εξυπηρετητές ονομάτων ίσως να μην αναγνωρίζονται."
 
-#: ../src/settings/nm-default-wired-connection.c:157
+#: ../src/logging/nm-logging.c:131
 #, c-format
-msgid "Auto %s"
-msgstr "Αυτόματο %s"
+msgid "Unknown log level '%s'"
+msgstr "Άγνωστο επίπεδο καταγραφής '%s'"
 
-#: ../system-settings/plugins/ifcfg-rh/reader.c:3412
+#: ../src/logging/nm-logging.c:156
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Άγνωστος τομέας καταγραφής '%s'"
+
+#: ../src/modem-manager/nm-modem-cdma.c:279 ../src/nm-device-bt.c:325
+#, c-format
+msgid "CDMA connection %d"
+msgstr "Σύνδεση CDMA %d"
+
+#: ../src/modem-manager/nm-modem-gsm.c:547 ../src/nm-device-bt.c:321
+#, c-format
+msgid "GSM connection %d"
+msgstr "Σύνδεση GSM %d"
+
+#: ../src/nm-device-bond.c:191
+#, c-format
+msgid "Bond connection %d"
+msgstr "Σύνδεση Bond %d"
+
+#: ../src/nm-device-adsl.c:193
+#, c-format
+msgid "ADSL connection %d"
+msgstr "Σύνδεση ADSL %d"
+
+#: ../src/nm-device-bt.c:296
+#, c-format
+msgid "PAN connection %d"
+msgstr "Σύνδεση PAN %d"
+
+#: ../src/nm-device-bt.c:329
+#, c-format
+msgid "DUN connection %d"
+msgstr "Σύνδεση DUN %d"
+
+#: ../src/nm-device-ethernet.c:1327
+#, c-format
+msgid "PPPoE connection %d"
+msgstr "Σύνδεση PPPoE %d"
+
+#: ../src/nm-device-ethernet.c:1327 ../src/settings/nm-settings-utils.c:50
+#, c-format
+msgid "Wired connection %d"
+msgstr "Ενσύρματη σύνδεση %d"
+
+#: ../src/nm-device-infiniband.c:303
+#, c-format
+msgid "InfiniBand connection %d"
+msgstr "Σύνδεση InfiniBand %d"
+
+#: ../src/nm-device-olpc-mesh.c:303
+#, c-format
+msgid "Mesh %d"
+msgstr "Πλέγμα %d"
+
+#: ../src/nm-device-vlan.c:362
+#, c-format
+msgid "VLAN connection %d"
+msgstr "Σύνδεση VLAN %d"
+
+#: ../src/nm-manager.c:661
+#, c-format
+msgid "VPN connection %d"
+msgstr "Σύνδεση VPN %d"
+
+#: ../src/nm-netlink-monitor.c:148 ../src/nm-netlink-monitor.c:272
+#: ../src/nm-netlink-monitor.c:695
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "σφάλμα κατά την επεξεργασία μηνύματος netlink: %s"
+
+#: ../src/nm-netlink-monitor.c:251
+msgid "error occurred while waiting for data on socket"
+msgstr "σφάλμα κατά την αναμονή για δεδομένα στην υποδοχή"
+
+#: ../src/nm-netlink-monitor.c:296
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr ""
+"αδύνατη η σύνδεση με το netlink για την παρακολούθηση της κατάστασης της "
+"σύνδεσης: %s"
+
+#: ../src/nm-netlink-monitor.c:307
+#, c-format
+msgid "unable to enable netlink handle credential passing: %s"
+msgstr "unable to enable netlink handle credential passing: %s"
+
+#: ../src/nm-netlink-monitor.c:330 ../src/nm-netlink-monitor.c:390
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr ""
+"αδύνατη η δέσμευση χειριστή netlink για την παρακολούθηση της κατάστασης της "
+"σύνδεσης: %s"
+
+#: ../src/nm-netlink-monitor.c:415
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"αδύνατη η εκχώρηση λανθάνουσας μνήμης στη σύνδεση netlink για την "
+"παρακολούθηση της κατάστασης της σύνδεσης δικτύου: %s"
+
+#: ../src/nm-netlink-monitor.c:542
+#, c-format
+msgid "unable to join netlink group: %s"
+msgstr "αδύνατη η σύνδεση στην ομάδα του netlink: %s"
+
+#: ../src/nm-netlink-monitor.c:671 ../src/nm-netlink-monitor.c:684
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "σφάλμα κατά την ενημέρωση της λανθάνουσας μνήμης της σύνδεσης: %s"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:94
 msgid "System"
 msgstr "Σύστημα"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3641
+msgid "Bond"
+msgstr "Bond"
+
+#: ../test/nm-online.c:112
+#, c-format
+msgid "\rConnecting"
+msgstr "\rΓίνεται σύνδεση"
+
+#: ../test/nm-online.c:143
+msgid "Time to wait for a connection, in seconds (default is 30)"
+msgstr ""
+"Χρόνος που περιμένει για μια σύνδεση, σε δευτερόλεπτα (το προεπιλεγμένο "
+"είναι 30)"
+
+#: ../test/nm-online.c:144
+msgid "Exit immediately if NetworkManager is not running or connecting"
+msgstr "Άμεση έξοδος αν ο NetworkManager δεν εκτελείτε ή δεν συνδέετε"
+
+#: ../test/nm-online.c:145
+msgid "Don't print anything"
+msgstr "Μην εκτυπώσεις τίποτα"
+
+#: ../test/nm-online.c:163
+msgid "Waits for a successful connection in NetworkManager."
+msgstr "Περιμένει για μια επιτυχής σύνδεση στο NetworkManager."
+
+#: ../test/nm-online.c:169 ../test/nm-online.c:178
+msgid "Invalid option.  Please use --help to see a list of valid options."
+msgstr ""
+"Άκυρη επιλογή. Παρακαλώ χρησιμοποιήστε --help για να δείτε τη λίστα των "
+"έγκυρων επιλογών."
+
+#~ msgid "SCOPE"
+#~ msgstr "ΕΥΡΟΣ"
+
+#~ msgid "DBUS-SERVICE"
+#~ msgstr "ΥΠΗΡΕΣΙΑ DBUS"
