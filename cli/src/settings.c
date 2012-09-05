@@ -42,6 +42,9 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),    /* 5 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),    /* 6 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),  /* 7 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),         /* 8 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),       /* 9 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),   /* 10 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -51,7 +54,10 @@ static NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_AUTOCONNECT","\
                                               NM_SETTING_CONNECTION_TIMESTAMP","\
                                               NM_SETTING_CONNECTION_READ_ONLY","\
-                                              NM_SETTING_CONNECTION_PERMISSIONS
+                                              NM_SETTING_CONNECTION_PERMISSIONS","\
+                                              NM_SETTING_CONNECTION_ZONE","\
+                                              NM_SETTING_CONNECTION_MASTER","\
+                                              NM_SETTING_CONNECTION_SLAVE_TYPE
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
@@ -695,6 +701,9 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	nmc->allowed_fields[5].value = timestamp_str;
 	nmc->allowed_fields[6].value = nm_setting_connection_get_read_only (s_con) ? ("yes") : _("no");
 	nmc->allowed_fields[7].value = perm->str;
+	nmc->allowed_fields[8].value = nm_setting_connection_get_zone (s_con);
+	nmc->allowed_fields[9].value = nm_setting_connection_get_master (s_con);
+	nmc->allowed_fields[10].value = nm_setting_connection_get_slave_type (s_con);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
