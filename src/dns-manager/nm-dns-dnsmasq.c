@@ -79,6 +79,9 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 	if (split) {
 		char **domains, **iter;
 
+		if (nm_ip4_config_get_num_nameservers (ip4) == 0)
+			return FALSE;
+
 		/* FIXME: it appears that dnsmasq can only handle one nameserver
 		 * per domain (and the manpage says this too) so only use the first
 		 * nameserver here.
@@ -188,6 +191,9 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split, const char *ifac
 	gboolean added = FALSE;
 
 	if (split) {
+		if (nm_ip6_config_get_num_nameservers (ip6) == 0)
+			return FALSE;
+
 		/* FIXME: it appears that dnsmasq can only handle one nameserver
 		 * per domain (at the manpage seems to indicate that) so only use
 		 * the first nameserver here.
