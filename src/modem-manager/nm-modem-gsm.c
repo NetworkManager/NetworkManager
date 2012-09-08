@@ -58,8 +58,10 @@ typedef enum {
     MM_MODEM_GSM_ALLOWED_MODE_3G_PREFERRED = 2,
     MM_MODEM_GSM_ALLOWED_MODE_2G_ONLY      = 3,
     MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY      = 4,
+    MM_MODEM_GSM_ALLOWED_MODE_4G_PREFERRED = 5,
+    MM_MODEM_GSM_ALLOWED_MODE_4G_ONLY      = 6,
 
-    MM_MODEM_GSM_ALLOWED_MODE_LAST = MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY
+    MM_MODEM_GSM_ALLOWED_MODE_LAST = MM_MODEM_GSM_ALLOWED_MODE_4G_ONLY
 } MMModemGsmAllowedMode;
 
 typedef enum {
@@ -388,6 +390,14 @@ create_connect_properties (NMConnection *connection)
 	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_PREFERRED);
 		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_2G_PREFERRED);
+		break;
+	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G:
+		/* deprecated modes not extended for 4G, so no need to set them here */
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_4G_PREFERRED);
+		break;
+	case NM_SETTING_GSM_NETWORK_TYPE_4G:
+		/* deprecated modes not extended for 4G, so no need to set them here */
+		value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_4G_ONLY);
 		break;
 	default:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_ANY);

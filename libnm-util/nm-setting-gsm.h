@@ -81,6 +81,10 @@ GQuark nm_setting_gsm_error_quark (void);
  * preferred but 2G-type technologies may be used as a fallback
  * @NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE: 2G-type technologies are
  * preferred but 3G-type technologies may be used as a fallback
+ * @NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G: 4G/LTE-type technologies are
+ * preferred but 3G/2/-type technologies may be used as a fallback
+ * @NM_SETTING_GSM_NETWORK_TYPE_4G: only 4G/LTE type
+ * technologies may be used
  *
  * #NMSettingGsmNetworkType values indicate the allowed access technologies
  * the device may use when connecting to this network.
@@ -90,7 +94,9 @@ typedef enum {
 	NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA = 0,
 	NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE = 1,
 	NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA = 2,
-	NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE = 3
+	NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE = 3,
+	NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G = 4,
+	NM_SETTING_GSM_NETWORK_TYPE_4G = 5
 } NMSettingGsmNetworkType;
 
 /**

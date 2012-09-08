@@ -658,10 +658,10 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 					    "Network preference to force the device to only use "
 					    "specific network technologies.  The permitted values "
 					    "are: -1: any, 0: 3G only, 1: GPRS/EDGE only, "
-					    "2: prefer 3G, and 3: prefer 2G.  Note that not all "
-					    "devices allow network preference control.",
+					    "2: prefer 3G, 3: prefer 2G, 4: prefer 4G/LTE, 5: 4G/LTE only. "
+					    "Note that not all devices allow network preference control.",
 					    NM_SETTING_GSM_NETWORK_TYPE_ANY,
-					    NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE,
+					    NM_SETTING_GSM_NETWORK_TYPE_4G,
 					    NM_SETTING_GSM_NETWORK_TYPE_ANY,
 					    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
