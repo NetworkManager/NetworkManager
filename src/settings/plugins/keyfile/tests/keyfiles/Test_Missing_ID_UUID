@@ -1,0 +1,9 @@
+# id and uuid keys are missing
+# They will be auto-genetrated by NetworkManager
+
+[connection]
+type=ethernet
+autoconnect=true
+
+[802-3-ethernet]
+mac-address=00:11:22:33:44:55

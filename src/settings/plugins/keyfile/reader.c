@@ -1293,6 +1293,24 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 			}
 		}
 
+		/* Make sure that we have 'id' even if not explictly specified in the keyfile */
+		if (!nm_setting_connection_get_id (s_con)) {
+			char *base_name;
+
+			base_name = g_path_get_basename (filename);
+			g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
+			g_free (base_name);
+		}
+
+		/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
+		if (!nm_setting_connection_get_uuid (s_con)) {
+			char *hashed_uuid;
+
+			hashed_uuid = nm_utils_uuid_generate_from_string (filename);
+			g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
+			g_free (hashed_uuid);
+		}
+
 		ensure_slave_setting (connection);
 	}
 

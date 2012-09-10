@@ -3410,6 +3410,27 @@ test_read_missing_vlan_setting (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_missing_id_uuid (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_ID_UUID", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Ensure the ID and UUID properties are there */
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "Test_Missing_ID_UUID");
+	g_assert (nm_connection_get_uuid (connection));
+
+	g_object_unref (connection);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3472,6 +3493,7 @@ int main (int argc, char **argv)
 	test_write_new_wireless_group_names ();
 
 	test_read_missing_vlan_setting ();
+	test_read_missing_id_uuid ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
