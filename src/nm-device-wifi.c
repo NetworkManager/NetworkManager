@@ -654,7 +654,7 @@ update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 }
 
 static void
-set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap)
+set_active_ap (NMDeviceWifi *self, NMAccessPoint *new_ap)
 {
 	NMDeviceWifiPrivate *priv;
 	char *old_path = NULL;
@@ -785,7 +785,7 @@ periodic_update (gpointer user_data)
 		g_free (old_addr);
 		g_free (new_addr);
 
-		set_current_ap (self, new_ap);
+		set_active_ap (self, new_ap);
 	}
 
 	new_rate = wifi_utils_get_rate (priv->wifi_data);
@@ -930,7 +930,7 @@ real_take_down (NMDevice *dev)
 	}
 
 	cleanup_association_attempt (self, TRUE);
-	set_current_ap (self, NULL);
+	set_active_ap (self, NULL);
 	remove_all_aps (self);
 }
 
@@ -952,7 +952,7 @@ real_deactivate (NMDevice *dev)
 
 	cleanup_association_attempt (self, TRUE);
 
-	set_current_ap (self, NULL);
+	set_active_ap (self, NULL);
 	priv->rate = 0;
 
 	/* If the AP is 'fake', i.e. it wasn't actually found from
@@ -2939,7 +2939,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
 
 done:
-	set_current_ap (self, ap);
+	set_active_ap (self, ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -3540,7 +3540,7 @@ dispose (GObject *object)
 		priv->supplicant.mgr = NULL;
 	}
 
-	set_current_ap (self, NULL);
+	set_active_ap (self, NULL);
 	remove_all_aps (self);
 
 	if (priv->wifi_data)
