@@ -76,7 +76,8 @@ typedef struct {
 	/* change in the interface's state */
 	void (*state)            (NMSupplicantInterface * iface,
 	                          guint32 new_state,
-	                          guint32 old_state);
+	                          guint32 old_state,
+	                          int disconnect_reason);
 
 	/* interface was removed by the supplicant */
 	void (*removed)          (NMSupplicantInterface * iface);

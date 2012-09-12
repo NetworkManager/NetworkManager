@@ -92,6 +92,7 @@ typedef struct {
 
 	char *                object_path;
 	guint32               state;
+	int                   disconnect_reason;
 	NMCallStore *         assoc_pcalls;
 	NMCallStore *         other_pcalls;
 
@@ -468,7 +469,14 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
 		priv->last_scan = time (NULL);
 
-	g_signal_emit (self, signals[STATE], 0, priv->state, old_state);
+	/* Disconnect reason is no longer relevant when not in the DISCONNECTED state */
+	if (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED)
+		priv->disconnect_reason = 0;
+
+	g_signal_emit (self, signals[STATE], 0,
+	               priv->state,
+	               old_state,
+	               priv->disconnect_reason);
 }
 
 static void
@@ -607,6 +615,21 @@ wpas_iface_properties_changed (DBusGProxy *proxy,
 	value = g_hash_table_lookup (props, "Capabilities");
 	if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_VARIANT))
 		parse_capabilities (self, g_value_get_boxed (value));
+
+	/* Disconnect reason is currently only given for deauthentication events,
+	 * not disassociation; currently they are IEEE 802.11 "reason codes",
+	 * defined by (IEEE 802.11-2007, 7.3.1.7, Table 7-22).  Any locally caused
+	 * deauthentication will be negative, while authentications caused by the
+	 * AP will be positive.
+	 */
+	value = g_hash_table_lookup (props, "DisconnectReason");
+	if (value && G_VALUE_HOLDS (value, G_TYPE_INT)) {
+		priv->disconnect_reason = g_value_get_int (value);
+		if (priv->disconnect_reason != 0) {
+			nm_log_warn (LOGD_SUPPLICANT, "Connection disconnected (reason %d)",
+			             priv->disconnect_reason);
+		}
+	}
 }
 
 static void
@@ -1539,8 +1562,8 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
 		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+		              _nm_marshal_VOID__UINT_UINT_INT,
+		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INT);
 
 	signals[REMOVED] =
 		g_signal_new (NM_SUPPLICANT_INTERFACE_REMOVED,

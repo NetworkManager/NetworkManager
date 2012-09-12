@@ -826,6 +826,7 @@ static void
 supplicant_iface_state_cb (NMSupplicantInterface *iface,
                            guint32 new_state,
                            guint32 old_state,
+                           int disconnect_reason,
                            gpointer user_data)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);

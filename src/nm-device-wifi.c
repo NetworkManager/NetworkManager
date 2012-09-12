@@ -173,6 +173,7 @@ static void remove_supplicant_timeouts (NMDeviceWifi *self);
 static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        guint32 new_state,
                                        guint32 old_state,
+                                       int disconnect_reason,
                                        gpointer user_data);
 
 static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
@@ -2298,7 +2299,10 @@ need_new_wpa_psk (NMDeviceWifi *self,
 }
 
 static gboolean
-handle_8021x_or_psk_auth_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state)
+handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
+                               guint32 new_state,
+                               guint32 old_state,
+                               int disconnect_reason)
 {
 	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
@@ -2342,6 +2346,7 @@ static void
 supplicant_iface_state_cb (NMSupplicantInterface *iface,
                            guint32 new_state,
                            guint32 old_state,
+                           int disconnect_reason,
                            gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
@@ -2416,7 +2421,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			 * have more information from wpa_supplicant about why the
 			 * disconnect happened this is the best we can do.
 			 */
-			if (handle_8021x_or_psk_auth_fail (self, new_state, old_state))
+			if (handle_8021x_or_psk_auth_fail (self, new_state, old_state, disconnect_reason))
 				break;
 		}
 
