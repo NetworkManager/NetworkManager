@@ -2215,12 +2215,92 @@ link_timeout_cb (gpointer user_data)
 }
 
 static gboolean
-handle_8021x_auth_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state)
+need_new_8021x_secrets (NMDeviceWifi *self,
+                        guint32 old_state,
+                        const char **setting_name)
 {
-	NMDevice *device = NM_DEVICE (self);
 	NMSetting8021x *s_8021x;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+	NMConnection *connection;
+
+	g_assert (setting_name != NULL);
+
+	connection = nm_device_get_connection (NM_DEVICE (self));
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	/* 802.1x stuff only happens in the supplicant's ASSOCIATED state when it's
+	 * attempting to authenticate with the AP.
+	 */
+	if (old_state != NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED)
+		return FALSE;
+
+	/* If it's an 802.1x or LEAP connection with "always ask"/unsaved secrets
+	 * then we need to ask again because it might be an OTP token and the PIN
+	 * may have changed.
+	 */
+
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	if (s_8021x) {
+		nm_setting_get_secret_flags (NM_SETTING (s_8021x),
+		                             NM_SETTING_802_1X_PASSWORD,
+		                             &secret_flags,
+		                             NULL);
+		if (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
+			*setting_name = NM_SETTING_802_1X_SETTING_NAME;
+		return *setting_name ? TRUE : FALSE;
+	}
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (s_wsec) {
+		nm_setting_get_secret_flags (NM_SETTING (s_wsec),
+		                             NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
+		                             &secret_flags,
+		                             NULL);
+		if (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
+			*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+		return *setting_name ? TRUE : FALSE;
+	}
+
+	/* Not a LEAP or 802.1x connection */
+	return FALSE;
+}
+
+static gboolean
+need_new_wpa_psk (NMDeviceWifi *self,
+                  guint32 old_state,
+                  const char **setting_name)
+{
+	NMSettingWirelessSecurity *s_wsec;
+	NMConnection *connection;
+	const char *key_mgmt = NULL;
+
+	g_assert (setting_name != NULL);
+
+	connection = nm_device_get_connection (NM_DEVICE (self));
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	/* A bad PSK will cause the supplicant to disconnect during the 4-way handshake */
+	if (old_state != NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE)
+		return FALSE;
+
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	if (s_wsec)
+		key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+
+	if (g_strcmp0 (key_mgmt, "wpa-psk") == 0) {
+		*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+		return TRUE;
+	}
+
+	/* Not a WPA-PSK connection */
+	return FALSE;
+}
+
+static gboolean
+handle_8021x_or_psk_auth_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state)
+{
+	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
 	NMConnection *connection;
 	const char *setting_name = NULL;
@@ -2228,42 +2308,14 @@ handle_8021x_auth_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state
 
 	g_return_val_if_fail (new_state == NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED, FALSE);
 
-	/* Only care about ASSOCIATED -> DISCONNECTED transitions since 802.1x stuff
-	 * happens between the ASSOCIATED and AUTHENTICATED states.
-	 */
-	if (old_state != NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED)
-		return FALSE;
-
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req != NULL, FALSE);
 
 	connection = nm_act_request_get_connection (req);
-	g_return_val_if_fail (connection != NULL, FALSE);
+	g_assert (connection);
 
-	/* If it's an 802.1x or LEAP connection with "always ask"/unsaved secrets
-	 * then we need to ask again because it might be an OTP token and the PIN
-	 * may have changed.
-	 */
-	s_8021x = nm_connection_get_setting_802_1x (connection);
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-
-	if (s_8021x) {
-		nm_setting_get_secret_flags (NM_SETTING (s_8021x),
-		                             NM_SETTING_802_1X_PASSWORD,
-		                             &secret_flags,
-		                             NULL);
-		setting_name = NM_SETTING_802_1X_SETTING_NAME;
-	} else if (s_wsec) {
-		nm_setting_get_secret_flags (NM_SETTING (s_wsec),
-		                             NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
-		                             &secret_flags,
-		                             NULL);
-		setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
-	}
-
-	if (setting_name && (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
-		NMSettingsGetSecretsFlags flags =   NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                                  | NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+	if (   need_new_8021x_secrets (self, old_state, &setting_name)
+	    || need_new_wpa_psk (self, old_state, &setting_name)) {
 
 		nm_connection_clear_secrets (connection);
 
@@ -2273,7 +2325,13 @@ handle_8021x_auth_fail (NMDeviceWifi *self, guint32 new_state, guint32 old_state
 
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
+		nm_act_request_get_secrets (req,
+		                            setting_name,
+		                            NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION
+		                              | NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW,
+		                            NULL,
+		                            wifi_secrets_cb,
+		                            self);
 		handled = TRUE;
 	}
 
@@ -2352,12 +2410,13 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
 		if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (device)) {
-			/* Disconnect of an 802.1x/LEAP connection during authentication
-			 * means secrets might be wrong. Not always the case, but until we
+			/* Disconnect of an 802.1x/LEAP connection during authentication,
+			 * or disconnect of a WPA-PSK connection during the 4-way handshake,
+			 * often means secrets are wrong. Not always the case, but until we
 			 * have more information from wpa_supplicant about why the
 			 * disconnect happened this is the best we can do.
 			 */
-			if (handle_8021x_auth_fail (self, new_state, old_state))
+			if (handle_8021x_or_psk_auth_fail (self, new_state, old_state))
 				break;
 		}
 
