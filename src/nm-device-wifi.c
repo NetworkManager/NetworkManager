@@ -886,10 +886,12 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 static void
 remove_access_point (NMDeviceWifi *device, NMAccessPoint *ap)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+
 	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
 	priv->ap_list = g_slist_remove (priv->ap_list, ap);
-	g_object_unref(ap);
+	g_object_unref (ap);
+
 	nm_device_recheck_available_connections (NM_DEVICE (device));
 }
 
