@@ -287,7 +287,7 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	NMSettingConnection *con_a;
 	NMConnection *b = NM_CONNECTION (pb);
 	NMSettingConnection *con_b;
-	guint64 ts_a, ts_b;
+	guint64 ts_a = 0, ts_b = 0;
 
 	con_a = nm_connection_get_setting_connection (a);
 	g_assert (con_a);
@@ -300,8 +300,8 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 		return 1;
 	}
 
-	ts_a = nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pa));
-	ts_b = nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pb));
+	nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pa), &ts_a);
+	nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pb), &ts_b);
 	if (ts_a > ts_b)
 		return -1;
 	else if (ts_a == ts_b)
@@ -1657,7 +1657,7 @@ best_connection_sort (gconstpointer a, gconstpointer b, gpointer user_data)
 {
 	NMSettingsConnection *ac = (NMSettingsConnection *) a;
 	NMSettingsConnection *bc = (NMSettingsConnection *) b;
-	guint64 ats, bts;
+	guint64 ats = 0, bts = 0;
 
 	if (!ac && bc)
 		return -1;
@@ -1669,8 +1669,8 @@ best_connection_sort (gconstpointer a, gconstpointer b, gpointer user_data)
 	g_assert (ac && bc);
 
 	/* In the future we may use connection priorities in addition to timestamps */
-	ats = nm_settings_connection_get_timestamp (ac);
-	bts = nm_settings_connection_get_timestamp (bc);
+	nm_settings_connection_get_timestamp (ac, &ats);
+	nm_settings_connection_get_timestamp (bc, &bts);
 
 	if (ats < bts)
 		return -1;
@@ -1697,6 +1697,8 @@ get_best_connections (NMConnectionProvider *provider,
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
+		guint64 cur_ts = 0;
+
 		if (ctype1 && !nm_connection_is_type (NM_CONNECTION (connection), ctype1))
 			continue;
 		if (ctype2 && !nm_connection_is_type (NM_CONNECTION (connection), ctype2))
@@ -1705,10 +1707,11 @@ get_best_connections (NMConnectionProvider *provider,
 			continue;
 
 		/* Don't bother with a connection that's older than the oldest one in the list */
-		if (   max_requested
-		    && added >= max_requested
-		    && nm_settings_connection_get_timestamp (connection) <= oldest)
-			continue;
+		if (max_requested && added >= max_requested) {
+		    nm_settings_connection_get_timestamp (connection, &cur_ts);
+		    if (cur_ts <= oldest)
+				continue;
+		}
 
 		/* List is sorted with oldest first */
 		sorted = g_slist_insert_sorted_with_data (sorted, connection, best_connection_sort, NULL);
@@ -1720,7 +1723,7 @@ get_best_connections (NMConnectionProvider *provider,
 			added--;
 		}
 
-		oldest = nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (sorted->data));
+		nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (sorted->data), &oldest);
 	}
 
 	return g_slist_reverse (sorted);

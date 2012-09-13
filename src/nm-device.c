@@ -4639,6 +4639,18 @@ nm_device_state_changed (NMDevice *device,
 		             "Activation (%s) failed for connection '%s'",
 		             nm_device_get_iface (device),
 		             nm_connection_get_id (connection));
+
+		/* If the connection doesn't yet have a timestamp, set it to zero so that
+		 * we can distinguish between connections we've tried to activate and have
+		 * failed (zero timestamp), connections that succeeded (non-zero timestamp),
+		 * and those we haven't tried yet (no timestamp).
+		 */
+		if (!nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), NULL)) {
+			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (connection),
+			                                         (guint64) 0,
+			                                         TRUE);
+		}
+
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.

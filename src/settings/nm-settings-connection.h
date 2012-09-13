@@ -122,7 +122,8 @@ gboolean nm_settings_connection_check_permission (NMSettingsConnection *self,
 
 void nm_settings_connection_signal_remove (NMSettingsConnection *self);
 
-guint64 nm_settings_connection_get_timestamp (NMSettingsConnection *connection);
+gboolean nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
+                                               guint64 *out_timestamp);
 
 void nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
                                               guint64 timestamp,

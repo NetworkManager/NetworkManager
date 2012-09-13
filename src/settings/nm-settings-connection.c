@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2011 Red Hat, Inc.
+ * (C) Copyright 2008 - 2012 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -107,6 +107,7 @@ typedef struct {
 	NMConnection *agent_secrets;
 
 	guint64 timestamp;   /* Up-to-date timestamp of connection use */
+	gboolean timestamp_set;
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
 } NMSettingsConnectionPrivate;
 
@@ -1061,7 +1062,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		GHashTable *settings;
 		NMConnection *dupl_con;
 		NMSettingConnection *s_con;
-		guint64 timestamp;
+		guint64 timestamp = 0;
 
 		dupl_con = nm_connection_duplicate (NM_CONNECTION (self));
 		g_assert (dupl_con);
@@ -1072,7 +1073,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 * timestamps are kept track of in a private variable. So, substitute
 		 * timestamp property with the real one here before returning the settings.
 		 */
-		timestamp = nm_settings_connection_get_timestamp (self);
+		nm_settings_connection_get_timestamp (self, &timestamp);
 		if (timestamp) {
 			s_con = nm_connection_get_setting_connection (NM_CONNECTION (dupl_con));
 			g_assert (s_con);
@@ -1403,18 +1404,23 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 /**
  * nm_settings_connection_get_timestamp:
  * @connection: the #NMSettingsConnection
+ * @out_timestamp: the connection's timestamp
  *
- * Returns current connection's timestamp.
+ * Returns the time (in seconds since the Unix epoch) when the connection
+ * was last successfully activated.
  *
- * Returns: timestamp of the last connection use (0 when it's not used)
+ * Returns: %TRUE if the timestamp has ever been set, otherwise %FALSE.
  **/
-guint64
-nm_settings_connection_get_timestamp (NMSettingsConnection *connection)
+gboolean
+nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
+                                      guint64 *out_timestamp)
 {
 	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), 0);
 
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp;
+	if (out_timestamp)
+		*out_timestamp = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp_set;
 }
 
 /**
@@ -1440,6 +1446,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
 
 	/* Update timestamp in private storage */
 	priv->timestamp = timestamp;
+	priv->timestamp_set = TRUE;
 
 	if (flush_to_disk == FALSE)
 		return;
@@ -1497,9 +1504,10 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
 	}
 
 	/* Update connection's timestamp */
-	if (!err)
+	if (!err) {
 		priv->timestamp = timestamp;
-	else {
+		priv->timestamp_set = TRUE;
+	} else {
 		nm_log_dbg (LOGD_SETTINGS, "failed to read connection timestamp for '%s': (%d) %s",
 		            connection_uuid, err->code, err->message);
 		g_clear_error (&err);
