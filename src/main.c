@@ -401,10 +401,6 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	/* Set up unix signal handling */
-	if (!setup_signals ())
-		exit (1);
-
 	/* Set locale to be able to use environment variables */
 	setlocale (LC_ALL, "");
 
@@ -500,6 +496,10 @@ main (int argc, char *argv[])
 		if (write_pidfile (pidfile))
 			wrote_pidfile = TRUE;
 	}
+
+	/* Set up unix signal handling - before creating threads, but after daemonizing! */
+	if (!setup_signals ())
+		exit (1);
 
 	if (g_fatal_warnings) {
 		GLogLevelFlags fatal_mask;
