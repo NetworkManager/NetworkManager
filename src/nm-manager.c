@@ -195,8 +195,8 @@ struct PendingActivation {
 	gboolean add_and_activate;
 
 	NMConnection *connection;
+	NMDevice *device;
 	char *specific_object_path;
-	char *device_path;
 };
 
 typedef struct {
@@ -849,7 +849,7 @@ nm_manager_get_state (NMManager *manager)
 static PendingActivation *
 pending_activation_new (NMManager *manager,
                         DBusGMethodInvocation *context,
-                        const char *device_path,
+                        NMDevice *device,
                         NMConnection *connection,
                         const char *specific_object_path,
                         gboolean add_and_activate,
@@ -860,26 +860,21 @@ pending_activation_new (NMManager *manager,
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (context != NULL, NULL);
-	g_return_val_if_fail (device_path != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	/* A object path of "/" means NULL */
 	if (g_strcmp0 (specific_object_path, "/") == 0)
 		specific_object_path = NULL;
-	if (g_strcmp0 (device_path, "/") == 0)
-		device_path = NULL;
 
 	pending = g_slice_new0 (PendingActivation);
 	pending->manager = manager;
 	pending->context = context;
 	pending->callback = callback;
 	pending->add_and_activate = add_and_activate;
-
 	pending->connection = g_object_ref (connection);
-
-	/* "/" is special-cased to NULL to get through D-Bus */
+	pending->device = g_object_ref (device);
 	pending->specific_object_path = g_strdup (specific_object_path);
-	pending->device_path = g_strdup (device_path);
 
 	return pending;
 }
@@ -972,7 +967,7 @@ pending_activation_destroy (PendingActivation *pending,
 	}
 
 	g_free (pending->specific_object_path);
-	g_free (pending->device_path);
+	g_clear_object (&pending->device);
 	g_clear_object (&pending->connection);
 
 	if (pending->chain)
@@ -2768,7 +2763,7 @@ ensure_master_active_connection (NMManager *self,
 					master_ac = nm_manager_activate_connection (self,
 					                                            candidate,
 					                                            NULL,
-					                                            nm_device_get_path (master_device),
+					                                            master_device,
 					                                            dbus_sender,
 					                                            error);
 					if (!master_ac)
@@ -2816,7 +2811,7 @@ ensure_master_active_connection (NMManager *self,
 			master_ac = nm_manager_activate_connection (self,
 			                                            master_connection,
 			                                            NULL,
-			                                            nm_device_get_path (candidate),
+			                                            candidate,
 			                                            dbus_sender,
 			                                            error);
 			if (!master_ac)
@@ -2907,12 +2902,11 @@ NMActiveConnection *
 nm_manager_activate_connection (NMManager *manager,
                                 NMConnection *connection,
                                 const char *specific_object,
-                                const char *device_path,
+                                NMDevice *device,
                                 const char *dbus_sender,
                                 GError **error)
 {
 	NMManagerPrivate *priv;
-	NMDevice *device = NULL;
 	gulong sender_uid = G_MAXULONG;
 	char *iface;
 	NMDevice *master_device = NULL;
@@ -2947,14 +2941,7 @@ nm_manager_activate_connection (NMManager *manager,
 	}
 
 	/* Device-based connection */
-	if (device_path) {
-		device = nm_manager_get_device_by_path (manager, device_path);
-		if (!device) {
-			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                     "Device not found");
-			return NULL;
-		}
-
+	if (device) {
 		/* If it's a virtual interface make sure the device given by the
 		 * path matches the connection's interface details.
 		 */
@@ -3154,7 +3141,7 @@ pending_activate (PendingActivation *pending, NMSettingsConnection *new_connecti
 		ac = nm_manager_activate_connection (pending->manager,
 		                                     NM_CONNECTION (pending->connection),
 		                                     pending->specific_object_path,
-		                                     pending->device_path,
+		                                     pending->device,
 		                                     sender,
 		                                     &error);
 		g_free (sender);
@@ -3189,8 +3176,12 @@ validate_activation_request (NMManager *self,
 	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
 		vpn = TRUE;
 
-	/* Validate the device path, if given; "/" means NULL */
-	if (device_path && (g_strcmp0 (device_path, "/") != 0))
+	/* Normalize device path */
+	if (device_path && g_strcmp0 (device_path, "/") == 0)
+		device_path = NULL;
+
+	/* And validate it */
+	if (device_path)
 		device = nm_manager_get_device_by_path (self, device_path);
 
 	/* VPN doesn't require a device, but if one is given validate it.
@@ -3232,6 +3223,7 @@ impl_manager_activate_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	PendingActivation *pending;
 	NMConnection *connection;
+	NMDevice *device = NULL;
 	GError *error = NULL;
 
 	connection = (NMConnection *) nm_settings_get_connection_by_path (priv->settings, connection_path);
@@ -3242,7 +3234,7 @@ impl_manager_activate_connection (NMManager *self,
 		goto error;
 	}
 
-	if (!validate_activation_request (self, connection, device_path, NULL, NULL, &error))
+	if (!validate_activation_request (self, connection, device_path, &device, NULL, &error))
 		goto error;
 
 	/* Need to check the caller's permissions and stuff before we can
@@ -3250,7 +3242,7 @@ impl_manager_activate_connection (NMManager *self,
 	 */
 	pending = pending_activation_new (self,
 	                                  context,
-	                                  device_path,
+	                                  device,
 	                                  connection,
 	                                  specific_object_path,
 	                                  FALSE,
@@ -3363,7 +3355,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 */
 	pending = pending_activation_new (self,
 	                                  context,
-	                                  device_path,
+	                                  device,
 	                                  connection,
 	                                  specific_object_path,
 	                                  TRUE,

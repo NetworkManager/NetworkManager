@@ -1040,7 +1040,7 @@ auto_activate_device (gpointer user_data)
 		if (!nm_manager_activate_connection (priv->manager,
 		                                     best_connection,
 		                                     specific_object,
-		                                     nm_device_get_path (data->device),
+		                                     data->device,
 		                                     NULL,
 		                                     &error)) {
 			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
@@ -1357,7 +1357,7 @@ activate_secondary_connections (NMPolicy *policy,
 			ac = nm_manager_activate_connection (priv->manager,
 			                                     NM_CONNECTION (settings_con),
 			                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
-			                                     nm_device_get_path (device),
+			                                     device,
 			                                     nm_act_request_get_dbus_sender (req),
 			                                     &error);
 			if (ac) {

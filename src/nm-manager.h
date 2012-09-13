@@ -116,7 +116,7 @@ NMDevice *nm_manager_get_device_by_ifindex (NMManager *manager,
 NMActiveConnection *nm_manager_activate_connection (NMManager *manager,
                                                     NMConnection *connection,
                                                     const char *specific_object,
-                                                    const char *device_path,
+                                                    NMDevice *device,
                                                     const char *dbus_sender, /* NULL if automatic */
                                                     GError **error);
 
