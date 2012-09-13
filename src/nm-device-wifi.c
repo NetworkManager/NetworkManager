@@ -1357,6 +1357,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		gboolean mac_blacklist_found = FALSE;
 		NMSettingIP4Config *s_ip4;
 		const char *method = NULL;
+		guint64 timestamp = 0;
 
 		s_con = nm_connection_get_setting_connection (connection);
 		if (s_con == NULL)
@@ -1365,6 +1366,15 @@ real_get_best_auto_connection (NMDevice *dev,
 			continue;
 		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
+
+		/* Don't autoconnect to networks that have been tried at least once
+		 * but haven't been successful, since these are often accidental choices
+		 * from the menu and the user may not know the password.
+		 */
+		if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp)) {
+			if (timestamp == 0)
+				continue;
+		}
 
 		s_wireless = nm_connection_get_setting_wireless (connection);
 		if (!s_wireless)
