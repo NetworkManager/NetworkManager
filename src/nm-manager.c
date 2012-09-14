@@ -2601,7 +2601,6 @@ static NMActiveConnection *
 activate_vpn_connection (NMManager *self,
                          NMConnection *connection,
                          const char *specific_object,
-                         const char *device_path,
                          gulong sender_uid,
                          GError **error)
 {
@@ -2693,7 +2692,7 @@ nm_manager_activate_connection (NMManager *manager,
 
 	/* VPN ? */
 	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
-		ac = activate_vpn_connection (manager, connection, specific_object, device_path, sender_uid, error);
+		ac = activate_vpn_connection (manager, connection, specific_object, sender_uid, error);
 		goto activated;
 	}
 
