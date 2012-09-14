@@ -62,7 +62,7 @@ NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
                                            gulong user_uid,
                                            GError **error);
 
-GSList * nm_vpn_service_get_active_connections (NMVPNService *service);
+const GSList *nm_vpn_service_get_active_connections (NMVPNService *service);
 
 void nm_vpn_service_connections_stop (NMVPNService *service,
                                       gboolean fail,

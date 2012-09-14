@@ -369,12 +369,12 @@ nm_vpn_service_activate (NMVPNService *service,
 	return vpn;
 }
 
-GSList *
+const GSList *
 nm_vpn_service_get_active_connections (NMVPNService *service)
 {
 	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), NULL);
 
-	return g_slist_copy (NM_VPN_SERVICE_GET_PRIVATE (service)->connections);
+	return NM_VPN_SERVICE_GET_PRIVATE (service)->connections;
 }
 
 static void
