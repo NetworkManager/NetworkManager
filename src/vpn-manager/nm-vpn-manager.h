@@ -68,7 +68,7 @@ NMActiveConnection *nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                                         GError **error);
 
 gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
-                                               const char *path,
+                                               NMVPNConnection *connection,
                                                NMVPNConnectionStateReason reason);
 
 #endif /* NM_VPN_MANAGER_H */

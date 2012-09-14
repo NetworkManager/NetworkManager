@@ -168,7 +168,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 
 gboolean
 nm_vpn_manager_deactivate_connection (NMVPNManager *self,
-                                      const char *path,
+                                      NMVPNConnection *connection,
                                       NMVPNConnectionStateReason reason)
 {
 	NMVPNManagerPrivate *priv;
@@ -179,19 +179,17 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *self,
 
 	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (NM_IS_VPN_MANAGER (self), FALSE);
-	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
 
 	priv = NM_VPN_MANAGER_GET_PRIVATE (self);
 	g_hash_table_iter_init (&iter, priv->services);
 	while (g_hash_table_iter_next (&iter, NULL, &data) && (success == FALSE)) {
 		active = nm_vpn_service_get_active_connections (NM_VPN_SERVICE (data));
 		for (aiter = active; aiter; aiter = g_slist_next (aiter)) {
-			NMVPNConnection *vpn = NM_VPN_CONNECTION (aiter->data);
-			const char *vpn_path;
+			NMVPNConnection *candidate = aiter->data;
 
-			vpn_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (vpn));
-			if (!strcmp (path, vpn_path)) {
-				nm_vpn_connection_disconnect (vpn, reason);
+			if (connection == candidate) {
+				nm_vpn_connection_disconnect (connection, reason);
 				success = TRUE;
 				break;
 			}

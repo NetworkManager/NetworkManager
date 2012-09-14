@@ -3014,7 +3014,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 
 		if (reason == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
 			vpn_reason = NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
-		if (nm_vpn_manager_deactivate_connection (priv->vpn_manager, connection_path, vpn_reason))
+		if (nm_vpn_manager_deactivate_connection (priv->vpn_manager, NM_VPN_CONNECTION (active), vpn_reason))
 			success = TRUE;
 	} else {
 		g_assert (NM_IS_ACT_REQUEST (active));
