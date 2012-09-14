@@ -376,6 +376,24 @@ nm_manager_get_active_connections (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->active_connections;
 }
 
+static NMActiveConnection *
+active_connection_get_by_path (NMManager *manager, const char *path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (path != NULL, NULL);
+
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *candidate = iter->data;
+
+		if (strcmp (path, nm_active_connection_get_path (candidate)) == 0)
+			return candidate;
+	}
+	return NULL;
+}
+
 /************************************************************************/
 
 static NMDevice *
@@ -2273,37 +2291,6 @@ impl_manager_get_device_by_ip_iface (NMManager *self,
 	return path ? TRUE : FALSE;
 }
 
-static NMActRequest *
-nm_manager_get_act_request_by_path (NMManager *manager,
-                                    const char *path,
-                                    NMDevice **device)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *iter;
-
-	g_return_val_if_fail (manager != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (device != NULL, NULL);
-	g_return_val_if_fail (*device == NULL, NULL);
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMActRequest *req;
-		const char *ac_path;
-
-		req = nm_device_get_act_request (NM_DEVICE (iter->data));
-		if (!req)
-			continue;
-
-		ac_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req));
-		if (!strcmp (path, ac_path)) {
-			*device = NM_DEVICE (iter->data);
-			return req;
-		}
-	}
-
-	return NULL;
-}
-
 static NMActiveConnection *
 internal_activate_device (NMManager *manager,
                           NMDevice *device,
@@ -2619,43 +2606,46 @@ activate_vpn_connection (NMManager *self,
                          GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMActRequest *parent_req = NULL;
+	NMActiveConnection *parent = NULL;
 	NMDevice *device = NULL;
 	GSList *iter;
 
 	if (specific_object) {
 		/* Find the specifc connection the client requested we use */
-		parent_req = nm_manager_get_act_request_by_path (self, specific_object, &device);
-		if (!parent_req) {
+		parent = active_connection_get_by_path (self, specific_object);
+		if (!parent) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 			                     "Base connection for VPN connection not active.");
 			return NULL;
 		}
 	} else {
-		/* Just find the current default connection */
-		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-			NMDevice *candidate = NM_DEVICE (iter->data);
-			NMActRequest *candidate_req;
+		for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+			NMActiveConnection *candidate = iter->data;
 
-			candidate_req = nm_device_get_act_request (candidate);
-			if (candidate_req && nm_active_connection_get_default (NM_ACTIVE_CONNECTION (candidate_req))) {
-				device = candidate;
-				parent_req = candidate_req;
+			if (nm_active_connection_get_default (candidate)) {
+				parent = candidate;
 				break;
 			}
 		}
 	}
 
-	if (!device || !parent_req) {
+	if (!parent) {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		                     "Could not find source connection.");
+		return NULL;
+	}
+
+	device = nm_active_connection_get_device (parent);
+	if (!device) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "Could not find source connection, or the source connection had no active device.");
+		                     "Source connection had no active device.");
 		return NULL;
 	}
 
 	return nm_vpn_manager_activate_connection (priv->vpn_manager,
 	                                           connection,
 	                                           device,
-	                                           nm_active_connection_get_path (NM_ACTIVE_CONNECTION (parent_req)),
+	                                           nm_active_connection_get_path (parent),
 	                                           TRUE,
 	                                           sender_uid,
 	                                           error);
@@ -3009,41 +2999,35 @@ nm_manager_deactivate_connection (NMManager *manager,
                                   GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *iter;
+	NMActiveConnection *active;
 	gboolean success = FALSE;
-	NMVPNConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
 
-	/* Check for device connections first */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		NMActRequest *req;
+	active = active_connection_get_by_path (manager, connection_path);
+	if (!active) {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+		                     "The connection was not active.");
+		return FALSE;
+	}
 
-		req = nm_device_get_act_request (device);
-		if (!req)
-			continue;
+	if (NM_IS_VPN_CONNECTION (active)) {
+		NMVPNConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
 
-		if (!strcmp (connection_path, nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)))) {
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         reason);
+		if (reason == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
+			vpn_reason = NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
+		if (nm_vpn_manager_deactivate_connection (priv->vpn_manager, connection_path, vpn_reason))
 			success = TRUE;
-			goto done;
-		}
-	}
-
-	/* Check for VPN connections next */
-	if (reason == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
-		vpn_reason = NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
-	if (nm_vpn_manager_deactivate_connection (priv->vpn_manager, connection_path, vpn_reason)) {
-		success = TRUE;
 	} else {
-		g_set_error (error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-		             "%s", "The connection was not active.");
+		g_assert (NM_IS_ACT_REQUEST (active));
+		/* FIXME: use DEACTIVATING state */
+		nm_device_state_changed (nm_active_connection_get_device (active),
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         reason);
+		success = TRUE;
 	}
 
-done:
-	g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+	if (success)
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+
 	return success;
 }
 
