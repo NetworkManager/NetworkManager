@@ -145,6 +145,11 @@ nm_active_connection_set_specific_object (NMActiveConnection *self,
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
+	/* Nothing that calls this function should be using paths from D-Bus,
+	 * where NM uses "/" to mean NULL.
+	 */
+	g_assert (g_strcmp0 (specific_object, "/") != 0);
+
 	if (g_strcmp0 (priv->specific_object, specific_object) == 0)
 		return;
 
@@ -253,6 +258,7 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	const char *tmp;
 
 	switch (prop_id) {
 	case PROP_INT_CONNECTION:
@@ -278,7 +284,10 @@ set_property (GObject *object, guint prop_id,
 			g_warn_if_fail (priv->master != priv->device);
 		break;
 	case PROP_SPECIFIC_OBJECT:
-		priv->specific_object = g_value_dup_boxed (value);
+		tmp = g_value_get_boxed (value);
+		/* NM uses "/" to mean NULL */
+		if (g_strcmp0 (tmp, "/") != 0)
+			priv->specific_object = g_value_dup_boxed (value);
 		break;
 	case PROP_DEFAULT:
 		priv->is_default = g_value_get_boolean (value);
