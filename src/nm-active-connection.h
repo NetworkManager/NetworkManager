@@ -50,21 +50,31 @@
 #define NM_ACTIVE_CONNECTION_INT_SUBJECT        "int-subject"
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
 
-
 typedef struct {
 	GObject parent;
 } NMActiveConnection;
 
 typedef struct {
 	GObjectClass parent;
-
 } NMActiveConnectionClass;
 
 GType         nm_active_connection_get_type (void);
 
+typedef void (*NMActiveConnectionAuthResultFunc) (NMActiveConnection *self,
+                                                  gboolean success,
+                                                  const char *error_desc,
+                                                  gpointer user_data1,
+                                                  gpointer user_data2);
+
+void          nm_active_connection_authorize (NMActiveConnection *self,
+                                              NMActiveConnectionAuthResultFunc result_func,
+                                              gpointer user_data1,
+                                              gpointer user_data2);
+
 void          nm_active_connection_export (NMActiveConnection *self);
 
 NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
+
 const char *  nm_active_connection_get_name       (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_path (NMActiveConnection *self);

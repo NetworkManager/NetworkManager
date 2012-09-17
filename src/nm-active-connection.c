@@ -27,6 +27,8 @@
 #include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-settings-connection.h"
+#include "nm-manager-auth.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-active-connection-glue.h"
 
@@ -50,6 +52,12 @@ typedef struct {
 
 	NMAuthSubject *subject;
 	NMDevice *master;
+
+	NMAuthChain *chain;
+	const char *wifi_shared_permission;
+	NMActiveConnectionAuthResultFunc result_func;
+	gpointer user_data1;
+	gpointer user_data2;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -260,6 +268,109 @@ nm_active_connection_get_master (NMActiveConnection *self)
 /****************************************************************/
 
 static void
+auth_done (NMAuthChain *chain,
+           GError *error,
+           DBusGMethodInvocation *unused,
+           gpointer user_data)
+{
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMAuthCallResult result;
+
+	g_assert (priv->chain == chain);
+	g_assert (priv->result_func != NULL);
+
+	/* Must stay alive over the callback */
+	g_object_ref (self);
+
+	if (error) {
+		priv->result_func (self, FALSE, error->message, priv->user_data1, priv->user_data2);
+		goto done;
+	}
+
+	/* Caller has had a chance to obtain authorization, so we only need to
+	 * check for 'yes' here.
+	 */
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+	if (result != NM_AUTH_CALL_RESULT_YES) {
+		priv->result_func (self,
+		                   FALSE,
+		                   "Not authorized to control networking.",
+		                   priv->user_data1,
+		                   priv->user_data2);
+		goto done;
+	}
+
+	if (priv->wifi_shared_permission) {
+		result = nm_auth_chain_get_result (chain, priv->wifi_shared_permission);
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			priv->result_func (self,
+			                   FALSE,
+			                   "Not authorized to share connections via wifi.",
+			                   priv->user_data1,
+			                   priv->user_data2);
+			goto done;
+		}
+	}
+
+	/* Otherwise authorized and available to activate */
+	priv->result_func (self, TRUE, NULL, priv->user_data1, priv->user_data2);
+
+done:
+	nm_auth_chain_unref (chain);
+	priv->chain = NULL;
+	priv->result_func = NULL;
+	priv->user_data1 = NULL;
+	priv->user_data2 = NULL;
+
+	g_object_unref (self);
+}
+
+/**
+ * nm_active_connection_authorize:
+ * @self: the #NMActiveConnection
+ * @result_func: function to be called on success or error
+ * @user_data1: pointer passed to @result_func
+ * @user_data2: additional pointer passed to @result_func
+ *
+ * Checks whether the subject that initiated the active connection (read from
+ * the #NMActiveConnection::subject property) is authorized to complete this
+ * activation request.
+ */
+void
+nm_active_connection_authorize (NMActiveConnection *self,
+                                NMActiveConnectionAuthResultFunc result_func,
+                                gpointer user_data1,
+                                gpointer user_data2)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	const char *wifi_permission = NULL;
+
+	g_return_if_fail (result_func != NULL);
+	g_return_if_fail (priv->chain == NULL);
+
+	priv->chain = nm_auth_chain_new_subject (priv->subject, NULL, auth_done, self);
+	g_assert (priv->chain);
+
+	/* Check that the subject is allowed to use networking at all */
+	nm_auth_chain_add_call (priv->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+
+	/* Shared wifi connections require special permissions too */
+	wifi_permission = nm_utils_get_shared_wifi_permission (priv->connection);
+	if (wifi_permission) {
+		priv->wifi_shared_permission = wifi_permission;
+		nm_auth_chain_add_call (priv->chain, wifi_permission, TRUE);
+	}
+
+	/* Wait for authorization */
+	priv->result_func = result_func;
+	priv->user_data1 = user_data1;
+	priv->user_data2 = user_data2;
+}
+
+/****************************************************************/
+
+static void
 nm_active_connection_init (NMActiveConnection *self)
 {
 }
@@ -372,6 +483,11 @@ static void
 dispose (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+
+	if (priv->chain) {
+		nm_auth_chain_unref (priv->chain);
+		priv->chain = NULL;
+	}
 
 	g_free (priv->path);
 	priv->path = NULL;
