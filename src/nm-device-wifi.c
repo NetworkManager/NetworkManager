@@ -948,6 +948,7 @@ deactivate (NMDevice *dev)
 	NMAccessPoint *orig_ap = nm_device_wifi_get_activation_ap (self);
 	NMActRequest *req;
 	NMConnection *connection;
+	NM80211Mode old_mode = priv->mode;
 
 	req = nm_device_get_act_request (dev);
 	if (req) {
@@ -981,7 +982,14 @@ deactivate (NMDevice *dev)
 	 */
 	wifi_utils_set_mode (priv->wifi_data, NM_802_11_MODE_INFRA);
 	priv->mode = NM_802_11_MODE_INFRA;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
+	if (priv->mode != old_mode)
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
+
+	/* Ensure we trigger a scan after deactivating a Hotspot */
+	if (old_mode == NM_802_11_MODE_AP) {
+		cancel_pending_scan (self);
+		request_wireless_scan (self);
+	}
 }
 
 static gboolean
