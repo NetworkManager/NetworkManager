@@ -151,6 +151,7 @@ struct _NMDeviceWifiPrivate {
 	Supplicant        supplicant;
 	WifiData *        wifi_data;
 	gboolean          ssid_found;
+	NM80211Mode       mode;
 
 	guint32           failed_link_count;
 	guint             periodic_source_id;
@@ -727,7 +728,7 @@ periodic_update (gpointer user_data)
 		return TRUE;
 
 	/* In AP mode we currently have nothing to do. */
-	if (priv->current_ap && (nm_ap_get_mode (priv->current_ap) == NM_802_11_MODE_AP))
+	if (priv->mode == NM_802_11_MODE_AP)
 		return TRUE;
 
 	/* In IBSS mode, most newer firmware/drivers do "BSS coalescing" where
@@ -979,6 +980,8 @@ deactivate (NMDevice *dev)
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
 	wifi_utils_set_mode (priv->wifi_data, NM_802_11_MODE_INFRA);
+	priv->mode = NM_802_11_MODE_INFRA;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
 }
 
 static gboolean
@@ -1603,6 +1606,10 @@ scanning_allowed (NMDeviceWifi *self)
 
 	g_return_val_if_fail (priv->supplicant.iface != NULL, FALSE);
 
+	/* Scanning not done in AP mode */
+	if (priv->mode == NM_802_11_MODE_AP)
+		return FALSE;
+
 	switch (nm_device_get_state (NM_DEVICE (self))) {
 	case NM_DEVICE_STATE_UNKNOWN:
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -2089,9 +2096,11 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	g_return_if_fail (properties != NULL);
 	g_return_if_fail (iface != NULL);
 
-	/* Ignore new APs when unavailable or unamnaged */
+	/* Ignore new APs when unavailable, unmanaged, or in AP mode */
 	state = nm_device_get_state (NM_DEVICE (self));
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+		return;
+	if (NM_DEVICE_WIFI_GET_PRIVATE (self)->mode == NM_802_11_MODE_AP)
 		return;
 
 	ap = nm_ap_new_from_properties (object_path, properties);
@@ -2437,8 +2446,10 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 
 			nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 			             "Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
-			             "successful.  Connected to wireless network '%s'.",
+			             "successful.  %s '%s'.",
 			             nm_device_get_iface (device),
+			             priv->mode == NM_802_11_MODE_AP ? "Started Wi-Fi Hotspot" :
+			                 "Connected to wireless network",
 			             ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 			nm_device_activate_schedule_stage3_ip_config_start (device);
 		} else if (devstate == NM_DEVICE_STATE_ACTIVATED)
@@ -2690,22 +2701,25 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	ap = nm_device_wifi_get_activation_ap (self);
-	g_assert (ap);
-
-	if (nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) {
-		/* In Ad-Hoc mode there's nothing to check the encryption key (if any)
-		 * so supplicant timeouts here are almost certainly the wifi driver
-		 * being really stupid.
+	if (   priv->mode == NM_802_11_MODE_ADHOC
+	    || priv->mode == NM_802_11_MODE_AP) {
+		/* In Ad-Hoc and AP modes there's nothing to check the encryption key
+		 * (if any), so supplicant timeouts here are almost certainly the wifi
+		 * driver being really stupid.
 		 */
 		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): Ad-Hoc network creation took "
+		             "Activation (%s/wireless): %s network creation took "
 		             "too long, failing activation.",
-		             nm_device_get_iface (dev));
+		             nm_device_get_iface (dev),
+		             priv->mode == NM_802_11_MODE_ADHOC ? "Ad-Hoc" : "Hotspot");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 		return FALSE;
 	}
+
+	g_assert (priv->mode == NM_802_11_MODE_INFRA);
+	ap = nm_device_wifi_get_activation_ap (self);
+	g_assert (ap);
 
 	if (priv->ssid_found && is_encrypted (ap, connection)) {
 		guint64 timestamp = 0;
@@ -2978,12 +2992,29 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMSettingWireless *s_wireless;
 	const GByteArray *cloned_mac;
 	GSList *iter;
+	const char *mode;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection = nm_act_request_get_connection (req);
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wireless);
+
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (g_strcmp0 (mode, "infra") == 0)
+		priv->mode = NM_802_11_MODE_INFRA;
+	else if (g_strcmp0 (mode, "adhoc") == 0)
+		priv->mode = NM_802_11_MODE_ADHOC;
+	else if (g_strcmp0 (mode, "ap") == 0) {
+		priv->mode = NM_802_11_MODE_AP;
+
+		/* Scanning not done in AP mode; clear the scan list */
+		remove_all_aps (self);
+	}
+	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
 
 	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
 	 * and turns them into open networks.  It's been this way since at least
@@ -2996,34 +3027,32 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	}
 
 	/* Set spoof MAC to the interface */
-	s_wireless = nm_connection_get_setting_wireless (connection);
-	g_assert (s_wireless);
-
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	if (cloned_mac && (cloned_mac->len == ETH_ALEN))
 		_set_hw_addr (self, (const guint8 *) cloned_mac->data, "set");
 
-	/* If the user is trying to connect to an AP that NM doesn't yet know about
-	 * (hidden network or something), create an fake AP from the security
-	 * settings in the connection to use until the AP is recognized from the
-	 * scan list, which should show up when the connection is successful.
-	 */
-	ap = nm_device_wifi_get_activation_ap (self);
-	if (ap)
-		goto done;
+	/* AP mode never uses a specific object or existing scanned AP */
+	if (priv->mode != NM_802_11_MODE_AP) {
+		ap = nm_device_wifi_get_activation_ap (self);
+		if (ap)
+			goto done;
 
-	/* Find a compatible AP in the scan list */
-	for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
-		NMAccessPoint *candidate = NM_AP (iter->data);
+		/* Find a compatible AP in the scan list */
+		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
+			NMAccessPoint *candidate = NM_AP (iter->data);
 
-		if (nm_ap_check_compatible (candidate, connection)) {
-			ap = candidate;
-			break;
+			if (nm_ap_check_compatible (candidate, connection)) {
+				ap = candidate;
+				break;
+			}
 		}
 	}
 
-	/* If no compatible AP was found, create a fake AP (network is likely
-	 * hidden) and try to use that.
+	/* If the user is trying to connect to an AP that NM doesn't yet know about
+	 * (hidden network or something) or starting a Hotspot, create an fake AP
+	 * from the security settings in the connection.  This "fake" AP gets used
+	 * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
+	 * the device is deactivated (Hotspot).
 	 */
 	if (!ap) {
 		ap = nm_ap_new_fake_from_connection (connection);
@@ -3208,6 +3237,11 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	if (NM_DEVICE_WIFI_GET_PRIVATE (self)->mode == NM_802_11_MODE_AP) {
+		*chain_up = TRUE;
+		return ret;
+	}
 
 	ap = nm_device_wifi_get_activation_ap (self);
 	g_assert (ap);
@@ -3610,8 +3644,9 @@ nm_device_wifi_new (const char *udi,
 }
 
 static void
-nm_device_wifi_init (NMDeviceWifi * self)
+nm_device_wifi_init (NMDeviceWifi *self)
 {
+	NM_DEVICE_WIFI_GET_PRIVATE (self)->mode = NM_802_11_MODE_INFRA;
 }
 
 static void
@@ -3670,7 +3705,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_MODE:
-		g_value_set_uint (value, wifi_utils_get_mode (priv->wifi_data));
+		g_value_set_uint (value, priv->mode);
 		break;
 	case PROP_BITRATE:
 		g_value_set_uint (value, priv->rate);
