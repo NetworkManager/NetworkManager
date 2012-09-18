@@ -1077,13 +1077,30 @@ check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	if (    (g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0)
-	     && !(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
-		g_set_error_literal (error,
-		                     NM_WIFI_ERROR,
-		                     NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-		                     "Access Point (AP) mode is not supported by this device.");
-		return FALSE;
+	/* Early exit if supplicant or device don't support AP mode */
+	if (g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0) {
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+			g_set_error_literal (error,
+			                     NM_WIFI_ERROR,
+			                     NM_WIFI_ERROR_AP_MODE_UNSUPPORTED,
+			                     "Access Point (AP) mode is not supported by this device.");
+			return FALSE;
+		}
+
+		if (priv->supplicant.iface) {
+			switch (nm_supplicant_interface_get_ap_support (priv->supplicant.iface)) {
+			case AP_SUPPORT_NO:
+				g_set_error_literal (error,
+				                     NM_WIFI_ERROR,
+				                     NM_WIFI_ERROR_AP_MODE_UNSUPPORTED,
+				                     "Access Point (AP) mode is not supported by the supplicant.");
+				return FALSE;
+			case AP_SUPPORT_YES:
+			case AP_SUPPORT_UNKNOWN:
+			default:
+				break;
+			}
+		}
 	}
 
 	// FIXME: check channel/freq/band against bands the hardware supports
@@ -2808,6 +2825,12 @@ build_supplicant_config (NMDeviceWifi *self,
 			else
 				fixed_freq = 2462;
 		}
+	}
+
+	/* Warn if AP mode may not be supported */
+	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
+	    && nm_supplicant_interface_get_ap_support (priv->supplicant.iface) == AP_SUPPORT_UNKNOWN) {
+		nm_log_warn (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
 	}
 
 	if (!nm_supplicant_config_add_setting_wireless (config,

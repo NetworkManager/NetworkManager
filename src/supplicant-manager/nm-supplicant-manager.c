@@ -27,6 +27,7 @@
 #include "nm-supplicant-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
+#include "nm-dbus-glib-types.h"
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                               NM_TYPE_SUPPLICANT_MANAGER, \
@@ -49,6 +50,7 @@ typedef struct {
 	gboolean        running;
 	GHashTable *    ifaces;
 	gboolean        fast_supported;
+	ApSupport       ap_support;
 	guint           die_count_reset_id;
 	guint           die_count;
 	gboolean        disposed;
@@ -86,7 +88,12 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 		start_now = !die_count_exceeded (priv->die_count);
 
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
-		iface = nm_supplicant_interface_new (self, ifname, is_wireless, priv->fast_supported, start_now);
+		iface = nm_supplicant_interface_new (self,
+		                                     ifname,
+		                                     is_wireless,
+		                                     priv->fast_supported,
+		                                     priv->ap_support,
+		                                     start_now);
 		if (iface)
 			g_hash_table_insert (priv->ifaces, g_strdup (ifname), iface);
 	} else {
@@ -125,52 +132,78 @@ nm_supplicant_manager_iface_release (NMSupplicantManager *self,
 }
 
 static void
-get_eap_methods_reply (DBusGProxy *proxy,
-                       DBusGProxyCall *call,
-                       gpointer user_data)
+get_capabilities_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMSupplicantManager *self = NM_SUPPLICANT_MANAGER (user_data);
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	NMSupplicantInterface *iface;
+	GHashTableIter hash_iter;
 	GError *error = NULL;
-	GValue value = { 0 };
-	const char **iter;
+	GHashTable *props = NULL;
+	GValue *value;
+	char **iter;
 
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           G_TYPE_VALUE, &value,
-	                           G_TYPE_INVALID)) {
-		if (G_VALUE_HOLDS (&value, G_TYPE_STRV)) {
-			iter = g_value_get_boxed (&value);
-			while (iter && *iter) {
-				if (strcasecmp (*iter++, "FAST") == 0) {
-					priv->fast_supported = TRUE;
-					break;
-				}
-			}
-		} else {
-			nm_log_warn (LOGD_SUPPLICANT, "Unexpected EapMethods property type %s",
-			             G_VALUE_TYPE_NAME (&value));
-		}
-		g_value_unset (&value);
-	} else {
-		nm_log_warn (LOGD_SUPPLICANT, "Unexpected error requesting EapMethods: (%d) %s",
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
+	                            DBUS_TYPE_G_MAP_OF_VARIANT, &props,
+	                            G_TYPE_INVALID)) {
+		nm_log_warn (LOGD_CORE, "Unexpected error requesting supplicant properties: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
+		return;
 	}
 
-	nm_log_dbg (LOGD_SUPPLICANT, "EAP-FAST is %ssupported",
-	            priv->fast_supported ? "" : "not ");
+	/* The supplicant only advertises global capabilities if the following
+	 * commit has been applied:
+	 *
+	 * commit 1634ac0654eba8d458640a115efc0a6cde3bac4d
+	 * Author: Dan Williams <dcbw@redhat.com>
+	 * Date:   Sat Sep 29 19:06:30 2012 +0300
+	 *
+	 * dbus: Add global capabilities property
+	 */
+	priv->ap_support = AP_SUPPORT_UNKNOWN;
+	value = g_hash_table_lookup (props, "Capabilities");
+	if (value && G_VALUE_HOLDS (value, G_TYPE_STRV)) {
+		priv->ap_support = AP_SUPPORT_NO;
+		for (iter = g_value_get_boxed (value); iter && *iter; iter++) {
+			if (strcasecmp (*iter, "ap"))
+				priv->ap_support = AP_SUPPORT_YES;
+		}
+	}
+
+	/* Tell all interfaces about results of the AP check */
+	g_hash_table_iter_init (&hash_iter, priv->ifaces);
+	while (g_hash_table_iter_next (&hash_iter, NULL, (gpointer) &iface))
+		nm_supplicant_interface_set_ap_support (iface, priv->ap_support);
+
+	nm_log_dbg (LOGD_SUPPLICANT, "AP mode is %ssupported",
+	            (priv->ap_support == AP_SUPPORT_YES) ? "" :
+	                (priv->ap_support == AP_SUPPORT_NO) ? "not " : " possibly");
+
+	/* EAP-FAST */
+	priv->fast_supported = FALSE;
+	value = g_hash_table_lookup (props, "EapMethods");
+	if (value && G_VALUE_HOLDS (value, G_TYPE_STRV)) {
+		for (iter = g_value_get_boxed (value); iter && *iter; iter++) {
+			if (strcasecmp (*iter, "fast"))
+				priv->fast_supported = TRUE;
+		}
+	}
+
+	nm_log_dbg (LOGD_SUPPLICANT, "EAP-FAST is %ssupported", priv->fast_supported ? "" : "not ");
+
+	g_hash_table_unref (props);
 }
 
 static void
-check_supported_eap_methods (NMSupplicantManager *self)
+check_capabilities (NMSupplicantManager *self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
-	dbus_g_proxy_begin_call (priv->props_proxy, "Get",
-	                         get_eap_methods_reply, self, NULL,
+	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
+	                         get_capabilities_cb, self, NULL,
 	                         G_TYPE_STRING, WPAS_DBUS_INTERFACE,
-	                         G_TYPE_STRING, "EapMethods",
 	                         G_TYPE_INVALID);
 }
 
@@ -239,7 +272,7 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 	if (!old_owner_good && new_owner_good) {
 		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant started");
 		set_running (self, TRUE);
-		check_supported_eap_methods (self);
+		check_capabilities (self);
 	} else if (old_owner_good && !new_owner_good) {
 		nm_log_info (LOGD_SUPPLICANT, "wpa_supplicant stopped");
 
@@ -307,9 +340,9 @@ nm_supplicant_manager_init (NMSupplicantManager *self)
 
 	priv->ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
-	/* Grab list of supported EAP methods */
+	/* Check generic supplicant capabilities */
 	if (priv->running)
-		check_supported_eap_methods (self);
+		check_capabilities (self);
 }
 
 static void

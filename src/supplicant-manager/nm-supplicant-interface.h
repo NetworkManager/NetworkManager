@@ -64,6 +64,12 @@ enum {
 #define NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR "connection-error"
 #define NM_SUPPLICANT_INTERFACE_CREDENTIALS_REQUEST "credentials-request"
 
+typedef enum {
+	AP_SUPPORT_UNKNOWN = 0,  /* Can't detect whether supported or not */
+	AP_SUPPORT_NO = 1,       /* AP mode definitely not supported */
+	AP_SUPPORT_YES = 2,      /* AP mode definitely supported */
+} ApSupport;
+
 struct _NMSupplicantInterface {
 	GObject parent;
 };
@@ -118,6 +124,7 @@ NMSupplicantInterface * nm_supplicant_interface_new (NMSupplicantManager * smgr,
                                                      const char *ifname,
                                                      gboolean is_wireless,
                                                      gboolean fast_supported,
+                                                     ApSupport ap_support,
                                                      gboolean start_now);
 
 gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
@@ -149,5 +156,10 @@ gboolean nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
                                                     const char *field,
                                                     const char *value,
                                                     GError **error);
+
+ApSupport nm_supplicant_interface_get_ap_support (NMSupplicantInterface *self);
+
+void nm_supplicant_interface_set_ap_support (NMSupplicantInterface *self,
+                                             ApSupport apmode);
 
 #endif	/* NM_SUPPLICANT_INTERFACE_H */
