@@ -1663,6 +1663,22 @@ error:
 	return NULL;
 }
 
+static void
+check_if_bond_slave (shvarFile *ifcfg,
+                     NMSettingConnection *s_con)
+{
+	char *value;
+
+	value = svGetValue (ifcfg, "MASTER", FALSE);
+	if (value) {
+		g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+		              NULL);
+		g_free (value);
+	}
+}
+
 static gboolean
 add_one_wep_key (shvarFile *ifcfg,
                  const char *shvar_key,
@@ -3417,7 +3433,6 @@ wired_connection_from_ifcfg (const char *file,
 	NMSetting *con_setting = NULL;
 	NMSetting *wired_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
-	char *value;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -3436,17 +3451,8 @@ wired_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
+	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
-
-	/* Might be a bond slave; handle master device or connection */
-	value = svGetValue (ifcfg, "MASTER", FALSE);
-	if (value) {
-		g_object_set (con_setting, NM_SETTING_CONNECTION_MASTER, value, NULL);
-		g_object_set (con_setting,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
-		              NULL);
-		g_free (value);
-	}
 
 	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
 	if (!wired_setting) {
@@ -3553,6 +3559,7 @@ infiniband_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
+	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
 
 	infiniband_setting = make_infiniband_setting (ifcfg, file, nm_controlled, unmanaged, error);

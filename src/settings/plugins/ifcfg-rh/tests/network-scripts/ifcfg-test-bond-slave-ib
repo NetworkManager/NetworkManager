@@ -1,0 +1,7 @@
+TYPE=InfiniBand
+DEVICE=ib0
+HWADDR=80:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22
+ONBOOT=no
+MASTER=bond0
+# This should be ignored
+BOOTPROTO=dhcp

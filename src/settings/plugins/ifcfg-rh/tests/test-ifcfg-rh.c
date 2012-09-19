@@ -12834,6 +12834,167 @@ test_write_infiniband (void)
 	g_object_unref (reread);
 }
 
+#define TEST_IFCFG_BOND_SLAVE_IB TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-slave-ib"
+
+static void
+test_read_bond_slave_ib (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_BOND_SLAVE_IB,
+	                                   NULL,
+	                                   NULL,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "bond-slave-read-ib", "unexpected failure reading %s", TEST_IFCFG_BOND_SLAVE_IB);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "bond-slave-read-ib", "failed to verify %s: %s", TEST_IFCFG_BOND_SLAVE_IB, error->message);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	ASSERT (s_con != NULL,
+	        "bond-slave-read-ib", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_BOND_SLAVE_IB, NM_SETTING_CONNECTION_SETTING_NAME);
+
+	ASSERT (g_strcmp0 (nm_setting_connection_get_master (s_con), "bond0") == 0,
+	        "bond-slave-read-ib", "failed to verify %s: master is not bond0",
+	        TEST_IFCFG_BOND_SLAVE_IB);
+
+	ASSERT (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_BOND_SETTING_NAME) == 0,
+	        "bond-slave-read-ib", "failed to verify %s: slave-type is not bond",
+	        TEST_IFCFG_BOND_SLAVE_IB);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
+static void
+test_write_bond_slave_ib (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingInfiniband *s_infiniband;
+	static unsigned char tmpmac[] = { 
+		0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+		0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22
+	};
+	GByteArray *mac;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "bond-slave-write-ib", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "bond-slave-write-ib", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Bond Slave InfiniBand",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
+				  NM_SETTING_CONNECTION_MASTER, "bond0",
+				  NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* InfiniBand setting */
+	s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
+	ASSERT (s_infiniband != NULL,
+	        "bond-main-write", "failed to allocate new %s setting",
+	        NM_SETTING_INFINIBAND_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
+
+	mac = g_byte_array_sized_new (sizeof (tmpmac));
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+
+	g_object_set (s_infiniband,
+	              NM_SETTING_INFINIBAND_MAC_ADDRESS, mac,
+	              NM_SETTING_INFINIBAND_MTU, 2044,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "bond-slave-write-ib", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "bond-slave-write-ib", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "bond-slave-write-ib", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               NULL,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "bond-slave-write-ib-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "bond-slave-write-ib-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "bond-slave-write-ib", "written and re-read connection weren't the same.");
+
+	if (route6file)
+		unlink (route6file);
+
+	g_free (testfile);
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -13010,8 +13171,10 @@ int main (int argc, char **argv)
 	/* bonding */
 	test_read_bond_main ();
 	test_read_bond_slave ();
+	test_read_bond_slave_ib ();
 	test_write_bond_main ();
 	test_write_bond_slave ();
+	test_write_bond_slave_ib ();
 
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();
