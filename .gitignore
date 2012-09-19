@@ -88,6 +88,7 @@ docs/libnm-glib/libnm-glib.hierarchy
 docs/libnm-glib/libnm-glib.interfaces
 docs/libnm-glib/libnm-glib.prerequisites
 docs/libnm-glib/libnm-glib.signals
+docs/libnm-glib/version.xml
 
 docs/libnm-util/*.stamp
 docs/libnm-util/html/
@@ -102,10 +103,12 @@ docs/libnm-util/libnm-util.interfaces
 docs/libnm-util/libnm-util.prerequisites
 docs/libnm-util/libnm-util.signals
 docs/libnm-util/libnm-util.types
+docs/libnm-util/version.xml
 
 docs/api/version.xml
 docs/api/generate-settings-spec
 docs/api/settings-spec.html
+docs/api/settings-spec.xml
 docs/api/spec.html
 docs/api/*.stamp
 docs/api/html/
@@ -127,6 +130,9 @@ examples/C/glib/get-active-connections-dbus-glib
 examples/C/glib/get-ap-info-libnm-glib
 examples/C/glib/list-connections-dbus-glib
 examples/C/glib/list-connections-libnm-glib
+examples/C/glib/monitor-nm-running-GDBus
+examples/C/glib/monitor-nm-running-dbus-glib
+examples/C/glib/monitor-nm-state-GDBus
 examples/C/qt/add-connection-wired
 examples/C/qt/list-connections
 examples/C/qt/change-ipv4-addresses
