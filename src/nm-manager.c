@@ -1026,11 +1026,20 @@ get_virtual_iface_name (NMManager *self,
 
 		parent = find_vlan_parent (self, connection, TRUE);
 		if (parent) {
+			ifname = nm_connection_get_virtual_iface_name (connection);
+
+			if (!nm_device_supports_vlans (parent)) {
+				nm_log_warn (LOGD_DEVICE, "(%s): No support for VLANs on interface %s of type %s",
+				             ifname ? ifname : nm_connection_get_id (connection),
+				             nm_device_get_ip_iface (parent),
+				             nm_device_get_type_desc (parent));
+				return NULL;
+			}
+
 			/* If the connection doesn't specify the interface name for the VLAN
 			 * device, we create one for it using the VLAN ID and the parent
 			 * interface's name.
 			 */
-			ifname = nm_connection_get_virtual_iface_name (connection);
 			if (ifname)
 				vname = g_strdup (ifname);
 			else {

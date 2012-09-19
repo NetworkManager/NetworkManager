@@ -288,6 +288,8 @@ gboolean nm_device_activate (NMDevice *device, NMActRequest *req, GError **error
 
 void nm_device_set_connection_provider (NMDevice *device, NMConnectionProvider *provider);
 
+gboolean nm_device_supports_vlans (NMDevice *device);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_H */
