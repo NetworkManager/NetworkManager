@@ -2812,7 +2812,6 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSupplicantConfig *config = NULL;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
-	guint32 fixed_freq = 0;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
@@ -2823,32 +2822,6 @@ build_supplicant_config (NMDeviceWifi *self,
 	if (!config)
 		return NULL;
 
-	/* Supplicant requires an initial frequency for Ad-Hoc and Hotspot; if the user
-	 * didn't specify one and we didn't find an AP that matched the connection,
-	 * just pick a frequency the device supports.
-	 */
-	if (   nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC
-	    || nm_ap_get_mode (ap) == NM_802_11_MODE_AP) {
-		const char *band = nm_setting_wireless_get_band (s_wireless);
-		const guint32 a_freqs[] = { 5180, 5200, 5220, 5745, 5765, 5785, 5805, 0 };
-		const guint32 bg_freqs[] = { 2412, 2437, 2462, 2472, 0 };
-
-		fixed_freq = nm_ap_get_freq (ap);
-		if (!fixed_freq) {
-			if (g_strcmp0 (band, "a") == 0)
-				fixed_freq = wifi_utils_find_freq (priv->wifi_data, a_freqs);
-			else
-				fixed_freq = wifi_utils_find_freq (priv->wifi_data, bg_freqs);
-		}
-
-		if (!fixed_freq) {
-			if (g_strcmp0 (band, "a") == 0)
-				fixed_freq = 5180;
-			else
-				fixed_freq = 2462;
-		}
-	}
-
 	/* Warn if AP mode may not be supported */
 	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
 	    && nm_supplicant_interface_get_ap_support (priv->supplicant.iface) == AP_SUPPORT_UNKNOWN) {
@@ -2858,7 +2831,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
 	                                                nm_ap_get_broadcast (ap),
-	                                                fixed_freq,
+	                                                nm_ap_get_freq (ap),
 	                                                wifi_utils_can_scan_ssid (priv->wifi_data))) {
 		nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
@@ -3068,6 +3041,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 		if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
 			nm_ap_set_broadcast (ap, FALSE);
+		else if (nm_ap_is_hotspot (ap))
+			nm_ap_set_address (ap, (const struct ether_addr *) &priv->hw_addr);
 
 		priv->ap_list = g_slist_prepend (priv->ap_list, ap);
 		nm_ap_export_to_dbus (ap);
@@ -3080,6 +3055,33 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 done:
 	set_active_ap (self, ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+ensure_hotspot_frequency (NMDeviceWifi *self,
+                          NMSettingWireless *s_wifi,
+                          NMAccessPoint *ap)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	const char *band = nm_setting_wireless_get_band (s_wifi);
+	const guint32 a_freqs[] = { 5180, 5200, 5220, 5745, 5765, 5785, 5805, 0 };
+	const guint32 bg_freqs[] = { 2412, 2437, 2462, 2472, 0 };
+	guint32 freq = 0;
+
+	g_assert (ap);
+
+	if (nm_ap_get_freq (ap))
+		return;
+
+	if (g_strcmp0 (band, "a") == 0)
+		freq = wifi_utils_find_freq (priv->wifi_data, a_freqs);
+	else
+		freq = wifi_utils_find_freq (priv->wifi_data, bg_freqs);
+
+	if (!freq)
+		freq = (g_strcmp0 (band, "a") == 0) ? 5180 : 2462;
+
+	nm_ap_set_freq (ap, freq);
 }
 
 static NMActStageReturn
@@ -3142,6 +3144,14 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 
 	priv->ssid_found = FALSE;
 
+	/* Supplicant requires an initial frequency for Ad-Hoc and Hotspot; if the user
+	 * didn't specify one and we didn't find an AP that matched the connection,
+	 * just pick a frequency the device supports.
+	 */
+	if ((nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) || nm_ap_is_hotspot (ap))
+		ensure_hotspot_frequency (self, s_wireless, ap);
+
+	/* Build up the supplicant configuration */
 	config = build_supplicant_config (self, connection, ap);
 	if (config == NULL) {
 		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
