@@ -980,10 +980,16 @@ deactivate (NMDevice *dev)
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
-	wifi_utils_set_mode (priv->wifi_data, NM_802_11_MODE_INFRA);
-	priv->mode = NM_802_11_MODE_INFRA;
-	if (priv->mode != old_mode)
+	if (wifi_utils_get_mode (priv->wifi_data) != NM_802_11_MODE_INFRA) {
+		nm_device_hw_take_down (NM_DEVICE (self), TRUE);
+		wifi_utils_set_mode (priv->wifi_data, NM_802_11_MODE_INFRA);
+		nm_device_hw_bring_up (NM_DEVICE (self), TRUE, NULL);
+	}
+
+	if (priv->mode != NM_802_11_MODE_INFRA) {
+		priv->mode = NM_802_11_MODE_INFRA;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_MODE);
+	}
 
 	/* Ensure we trigger a scan after deactivating a Hotspot */
 	if (old_mode == NM_802_11_MODE_AP) {
