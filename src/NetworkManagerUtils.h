@@ -90,8 +90,6 @@ void nm_utils_complete_generic (NMConnection *connection,
                                 const char *preferred,
                                 gboolean default_enable_ipv6);
 
-gboolean nm_utils_is_uuid (const char *str);
-
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 
 #endif /* NETWORK_MANAGER_UTILS_H */

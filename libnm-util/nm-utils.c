@@ -2584,7 +2584,7 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
 }
 
 /**
- * nm_utils_iface_name_valid:
+ * nm_utils_iface_valid_name:
  * @name: Name of interface
  *
  * This function is a 1:1 copy of the kernel's interface validation
@@ -2613,4 +2613,29 @@ nm_utils_iface_valid_name (const char *name)
 	}
 
 	return TRUE;
+}
+
+/**
+ * nm_utils_is_uuid:
+ * @str: a string that might be a UUID
+ *
+ * Checks if @str is a UUID
+ *
+ * Returns: %TRUE if @str is a UUID, %FALSE if not
+ */
+gboolean
+nm_utils_is_uuid (const char *str)
+{
+	const char *p = str;
+	int num_dashes = 0;
+
+	while (*p) {
+		if (*p == '-')
+			num_dashes++;
+		else if (!isxdigit (*p))
+			return FALSE;
+		p++;
+	}
+
+	return (num_dashes == 4) && (p - str == 36);
 }

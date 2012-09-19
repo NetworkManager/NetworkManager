@@ -137,6 +137,8 @@ guint8     *nm_utils_hwaddr_aton  (const char *asc, int type, gpointer buffer);
 
 gboolean    nm_utils_iface_valid_name(const char *name);
 
+gboolean nm_utils_is_uuid (const char *str);
+
 G_END_DECLS
 
 #endif /* NM_UTILS_H */

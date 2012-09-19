@@ -799,23 +799,6 @@ nm_utils_complete_generic (NMConnection *connection,
 	}
 }
 
-gboolean
-nm_utils_is_uuid (const char *str)
-{
-	const char *p = str;
-	int num_dashes = 0;
-
-	while (*p) {
-		if (*p == '-')
-			num_dashes++;
-		else if (!isxdigit (*p))
-			return FALSE;
-		p++;
-	}
-
-	return (num_dashes == 4) && (p - str == 36);
-}
-
 char *
 nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id)
 {
