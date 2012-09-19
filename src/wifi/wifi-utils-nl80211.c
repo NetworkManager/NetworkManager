@@ -108,7 +108,6 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	int err, done;
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
-	g_return_val_if_fail (valid_handler != NULL, -EINVAL);
 
 	cb = nl_cb_clone (nl_cb);
 	if (!cb) {
@@ -124,7 +123,8 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &done);
 	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &done);
 	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &done);
-	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
+	if (valid_handler)
+		nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
 
 	/* Loop until one of our NL callbacks says we're done; on success
 	 * done will be 1, on error it will be < 0.
@@ -219,12 +219,32 @@ wifi_nl80211_get_mode (WifiData *data)
 static gboolean
 wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 {
-	/*
-	 * Used only to set mode for scanning as some old cards
-	 * don't properly scan in IBSS mode, nl80211 cards are
-	 * expected to scan properly so ignore this.
-	 */
-	return TRUE;
+	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	struct nl_msg *msg;
+	int err;
+
+	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_INTERFACE, 0);
+
+	switch (mode) {
+	case NM_802_11_MODE_INFRA:
+		NLA_PUT_U32 (msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_STATION);
+		break;
+	case NM_802_11_MODE_ADHOC:
+		NLA_PUT_U32 (msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_ADHOC);
+		break;
+	case NM_802_11_MODE_AP:
+		NLA_PUT_U32 (msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_AP);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
+	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	return err ? FALSE : TRUE;
+
+ nla_put_failure:
+	nlmsg_free (msg);
+	return FALSE;
 }
 
 /* @divisor: pass what value @xbm should be divided by to get dBm */
