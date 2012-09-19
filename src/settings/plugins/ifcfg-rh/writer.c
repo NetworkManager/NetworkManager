@@ -1122,7 +1122,8 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
-static GString *vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
+static GString *
+vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 {
 	GSList *strlist = NULL, *iter;
 	GString *value = NULL;
@@ -1144,10 +1145,11 @@ static GString *vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVl
 }
 
 static gboolean
-write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingVlan *s_vlan;
 	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
 	char *tmp;
 	guint32 vlan_flags = 0;
 	GString *text = NULL;
@@ -1198,6 +1200,39 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
 	if (text)
 		g_string_free (text, TRUE);
+
+	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
+	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
+	svSetValue (ifcfg, "MTU", NULL, FALSE);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		const GByteArray *device_mac, *cloned_mac;
+		guint32 mtu;
+
+		*wired = TRUE;
+
+		device_mac = nm_setting_wired_get_mac_address (s_wired);
+		if (device_mac) {
+			tmp = nm_utils_hwaddr_ntoa (device_mac->data, ARPHRD_ETHER);
+			svSetValue (ifcfg, "HWADDR", tmp, FALSE);
+			g_free (tmp);
+		}
+
+		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+		if (cloned_mac) {
+			tmp = nm_utils_hwaddr_ntoa (cloned_mac->data, ARPHRD_ETHER);
+			svSetValue (ifcfg, "MACADDR", tmp, FALSE);
+			g_free (tmp);
+		}
+
+		mtu = nm_setting_wired_get_mtu (s_wired);
+		if (mtu) {
+			tmp = g_strdup_printf ("%u", mtu);
+			svSetValue (ifcfg, "MTU", tmp, FALSE);
+			g_free (tmp);
+		}
+	}
 
 	return TRUE;
 }
@@ -2008,7 +2043,7 @@ write_connection (NMConnection *connection,
 			goto out;
 		wired = TRUE;
 	} else if (!strcmp (type, NM_SETTING_VLAN_SETTING_NAME)) {
-		if (!write_vlan_setting (connection, ifcfg, error))
+		if (!write_vlan_setting (connection, ifcfg, &wired, error))
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (!write_wireless_setting (connection, ifcfg, &no_8021x, error))
