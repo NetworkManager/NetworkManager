@@ -839,6 +839,7 @@ examples/ruby/Makefile
 examples/C/Makefile
 examples/C/glib/Makefile
 examples/C/qt/Makefile
+examples/dispatcher/Makefile
 vapi/Makefile
 ])
 AC_OUTPUT

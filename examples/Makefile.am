@@ -2,4 +2,5 @@ SUBDIRS= \
 	shell \
 	python \
 	ruby \
-	C
+	C \
+	dispatcher
