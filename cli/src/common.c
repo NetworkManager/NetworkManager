@@ -554,6 +554,9 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE:
 		return _("ModemManager is unavailable");
 
+	case NM_DEVICE_STATE_REASON_SSID_NOT_FOUND:
+		return _("The Wi-Fi network could not be found");
+
 	default:
 		return _("Unknown");
 	}
