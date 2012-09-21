@@ -569,6 +569,11 @@
           The 802.11 Wi-Fi network could not be found.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="SECONDARY_CONNECTION_FAILED" value="54">
+        <tp:docstring>
+          A secondary connection of the base connection failed.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

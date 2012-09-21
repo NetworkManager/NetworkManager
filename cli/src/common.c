@@ -557,6 +557,9 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_SSID_NOT_FOUND:
 		return _("The Wi-Fi network could not be found");
 
+	case NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED:
+		return _("A seconadary connection of the base connection failed");
+
 	default:
 		return _("Unknown");
 	}

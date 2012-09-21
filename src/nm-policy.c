@@ -1003,7 +1003,8 @@ process_secondaries (NMPolicy *policy,
 						/* Secondary connection failed -> do not watch other connections */
 						policy->pending_secondaries = g_slist_remove (policy->pending_secondaries, secondary_data);
 						pending_secondary_data_free (secondary_data);
-						nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+						nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
+						                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
 						return;
 					}
 				}
@@ -1454,7 +1455,7 @@ device_state_changed (NMDevice *device,
 			/* Activate secondary (VPN) connections */
 			if (!activate_secondary_connections (policy, connection, device))
 				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
-				                                 NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+				                                 NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
 		} else
 			nm_device_state_changed (device, NM_DEVICE_STATE_ACTIVATED,
 			                                 NM_DEVICE_STATE_REASON_NONE);

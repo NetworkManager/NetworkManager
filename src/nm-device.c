@@ -4513,6 +4513,8 @@ reason_to_string (NMDeviceStateReason reason)
 		return "modem-manager-unavailable";
 	case NM_DEVICE_STATE_REASON_SSID_NOT_FOUND:
 		return "SSID not found";
+	case NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED:
+		return "secondary-connection-failed";
 	default:
 		break;
 	}

@@ -498,6 +498,9 @@ typedef enum {
 	/* The WiFi network could not be found */
 	NM_DEVICE_STATE_REASON_SSID_NOT_FOUND = 53,
 
+	/* A seconadary connection of the base connection failed */
+	NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED = 54,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;
