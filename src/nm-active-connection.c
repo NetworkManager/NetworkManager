@@ -89,6 +89,14 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	}
 }
 
+const char *
+nm_active_connection_get_name (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
+
+	return nm_connection_get_id (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->connection);
+}
+
 NMConnection *
 nm_active_connection_get_connection (NMActiveConnection *self)
 {

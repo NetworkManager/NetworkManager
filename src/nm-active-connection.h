@@ -60,6 +60,7 @@ gboolean      nm_active_connection_export (NMActiveConnection *self,
                                            const char *devpath);
 
 NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
+const char *  nm_active_connection_get_name       (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_path (NMActiveConnection *self);
 
