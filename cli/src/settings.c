@@ -45,6 +45,7 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),         /* 8 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),       /* 9 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),   /* 10 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),  /* 11 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -57,7 +58,8 @@ static NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_PERMISSIONS","\
                                               NM_SETTING_CONNECTION_ZONE","\
                                               NM_SETTING_CONNECTION_MASTER","\
-                                              NM_SETTING_CONNECTION_SLAVE_TYPE
+                                              NM_SETTING_CONNECTION_SLAVE_TYPE","\
+                                              NM_SETTING_CONNECTION_SECONDARIES
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
@@ -669,6 +671,7 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	const char *perm_item;
 	const char *perm_type;
 	GString *perm = NULL;
+	GString *secondaries = NULL;
 	int i;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
@@ -693,6 +696,15 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	if (perm->len > 0)
 		g_string_truncate (perm, perm->len-1); /* remove trailing , */
 
+	/* get secondaries */
+	secondaries = g_string_new (NULL);
+	for (i = 0; i < nm_setting_connection_get_num_secondaries (s_con); i++) {
+		const char *sec_uuid = nm_setting_connection_get_secondary (s_con, i);
+		g_string_append_printf (secondaries, "%s,", sec_uuid);
+	}
+	if (secondaries->len > 0)
+		g_string_truncate (secondaries, secondaries->len-1); /* remove trailing , */
+
 	nmc->allowed_fields[0].value = NM_SETTING_CONNECTION_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_connection_get_id (s_con);
 	nmc->allowed_fields[2].value = nm_setting_connection_get_uuid (s_con);
@@ -704,12 +716,14 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	nmc->allowed_fields[8].value = nm_setting_connection_get_zone (s_con);
 	nmc->allowed_fields[9].value = nm_setting_connection_get_master (s_con);
 	nmc->allowed_fields[10].value = nm_setting_connection_get_slave_type (s_con);
+	nmc->allowed_fields[11].value = secondaries->str;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	g_free (timestamp_str);
 	g_string_free (perm, TRUE);
+	g_string_free (secondaries, TRUE);
 
 	return TRUE;
 }
