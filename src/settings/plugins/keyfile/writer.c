@@ -115,10 +115,8 @@ write_ip4_values (GKeyFile *file,
                   guint32 addr1_pos,
                   guint32 addr2_pos)
 {
-	char **list = NULL;
+	GString *output;
 	int i, j;
-
-	list = g_new (char *, tuple_len);
 
 	for (i = 0, j = 0; i < array->len; i++, j++) {
 		GArray *tuple = g_ptr_array_index (array, i);
@@ -126,7 +124,7 @@ write_ip4_values (GKeyFile *file,
 		char *key_name;
 		int k;
 
-		memset (list, 0, tuple_len * sizeof (char *));
+		output = g_string_new ("");
 
 		for (k = 0; k < tuple_len; k++) {
 			if (k == addr1_pos || k == addr2_pos) {
@@ -141,24 +139,23 @@ write_ip4_values (GKeyFile *file,
 					success = FALSE;
 					break;
 				} else {
-					list[k] = g_strdup (buf);
+					g_string_append_printf (output, "%s%s", k == 0 ? "" : ",", buf);
 				}
 			} else {
 				/* prefix, metric */
-				list[k] = g_strdup_printf ("%d", g_array_index (tuple, guint32, k));
+				g_string_append_printf (output, "%c%d", k == 1 ? '/' : ',', g_array_index (tuple, guint32, k));
 			}
 		}
 
 		if (success) {
 			key_name = g_strdup_printf ("%s%d", key, j + 1);
-			g_key_file_set_string_list (file, setting_name, key_name, (const char **) list, tuple_len);
+			g_key_file_set_string (file, setting_name, key_name, output->str);
 			g_free (key_name);
 		}
 
-		for (k = 0; k < tuple_len; k++)
-			g_free (list[k]);
+		g_string_free (output, TRUE);
+
 	}
-	g_free (list);
 }
 
 static void
@@ -357,7 +354,7 @@ ip6_route_writer (GKeyFile *file,
 {
 	GPtrArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
-	char *list[3];
+	GString *output;
 	int i, j;
 
 	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE));
@@ -370,36 +367,23 @@ ip6_route_writer (GKeyFile *file,
 		GValueArray *values = g_ptr_array_index (array, i);
 		char *key_name;
 		guint32 int_val;
-		char buf[INET6_ADDRSTRLEN + 1];
-		gboolean is_unspec = FALSE;
 
-		memset (list, 0, sizeof (list));
+		output = g_string_new ("");
 
-		/* Address and prefix */
-		list[0] = ip6_array_to_addr_prefix (values);
-		if (!list[0])
-			continue;
-
-		/* Next Hop */
-		if (!ip6_array_to_addr (values, 2, buf, sizeof (buf), &is_unspec))
-			continue;
-		if (is_unspec)
-			continue;
-		list[1] = g_strdup (buf);
+		/* Address, prefix and next hop*/
+		g_string_append (output, ip6_array_to_addr_prefix (values));
 
 		/* Metric */
 		value = g_value_array_get_nth (values, 3);
 		int_val = g_value_get_uint (value);
-		list[2] = g_strdup_printf ("%d", int_val);
+		g_string_append_printf (output, ",%d", int_val);
 
 		/* Write it out */
 		key_name = g_strdup_printf ("%s%d", key, j++);
-		g_key_file_set_string_list (file, setting_name, key_name, (const char **) list, 3);
+		g_key_file_set_string (file, setting_name, key_name, output->str);
 		g_free (key_name);
 
-		g_free (list[0]);
-		g_free (list[1]);
-		g_free (list[2]);
+		g_string_free (output, TRUE);
 	}
 }
 

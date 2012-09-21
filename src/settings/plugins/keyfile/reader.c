@@ -84,195 +84,349 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 	return TRUE;
 }
 
-static GPtrArray *
-read_ip4_addresses (GKeyFile *file,
-			    const char *setting_name,
-			    const char *key)
+static gpointer
+build_ip4_address_or_route (const char *address_str, guint32 plen, const char *gateway_str, guint32 metric, gboolean route)
 {
-	GPtrArray *addresses;
-	int i = 0;
+	GArray *result;
+	struct in_addr addr;
+	guint32 address = 0;
+	guint32 gateway = 0;
+	int err;
 
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) g_array_unref);
+	g_return_val_if_fail (address_str, NULL);
+
+	/* Address */
+	err = inet_pton (AF_INET, address_str, &addr);
+	if (err <= 0) {
+		g_warning ("%s: ignoring invalid IPv4 address '%s'", __func__, address_str);
+		return NULL;
+	}
+	address = addr.s_addr;
+	/* Gateway */
+	if (gateway_str) {
+		err = inet_pton (AF_INET, gateway_str, &addr);
+		if (err <= 0) {
+			g_warning ("%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
+			return NULL;
+		}
+		gateway = addr.s_addr;
+	}
+	else
+		gateway = 0;
+
+	result = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+	g_array_append_val (result, address);
+	g_array_append_val (result, plen);
+	g_array_append_val (result, gateway);
+	if (route)
+		g_array_append_val (result, metric);
+
+	return result;
+}
+
+static gpointer
+build_ip6_address_or_route (const char *address_str, guint32 plen, const char *gateway_str, guint32 metric, gboolean route)
+{
+	GValueArray *result;
+	struct in6_addr addr;
+	GByteArray *address;
+	GByteArray *gateway;
+	GValue value = { 0, };
+	int err;
+
+	g_return_val_if_fail (address_str, NULL);
+
+	result = g_value_array_new (3);
+
+	/* add address */
+	err = inet_pton (AF_INET6, address_str, &addr);
+	if (err <= 0) {
+		g_warning ("%s: ignoring invalid IPv6 address '%s'", __func__, address_str);
+		g_value_array_free (result);
+		return NULL;
+	}
+	address = g_byte_array_new ();
+	g_byte_array_append (address, (guint8 *) addr.s6_addr, 16);
+	g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_take_boxed (&value, address);
+	g_value_array_append (result, &value);
+	g_value_unset (&value);
+
+	/* add prefix length */
+	g_value_init (&value, G_TYPE_UINT);
+	g_value_set_uint (&value, plen);
+	g_value_array_append (result, &value);
+	g_value_unset (&value);
+
+	/* add gateway */
+	if (gateway_str) {
+		err = inet_pton (AF_INET6, gateway_str, &addr);
+		if (err <= 0) {
+			g_warning ("%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
+			g_value_array_free (result);
+			return NULL;
+		}
+	} else
+		memset (&addr, 0, 16);
+	gateway = g_byte_array_new ();
+	g_byte_array_append (gateway, (guint8 *) addr.s6_addr, 16);
+	g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_take_boxed (&value, gateway);
+	g_value_array_append (result, &value);
+	g_value_unset (&value);
+
+	/* add metric (for routing) */
+	if (route) {
+		g_value_init (&value, G_TYPE_UINT);
+		g_value_set_uint (&value, metric);
+		g_value_array_append (result, &value);
+		g_value_unset (&value);
+	}
+
+	return result;
+}
+
+/* On success, returns pointer to the zero-terminated field (original @current).
+ * The @current * pointer target is set to point to the rest of the input
+ * or NULL if there is no more input. Sets error to NULL for convenience.
+ *
+ * On failure, returns NULL (unspecified). The @current pointer target is
+ * resets to its original value to allow skipping fields. The @error target
+ * is set to the character that breaks the parsing or NULL if @current was NULL.
+ *
+ * When @current target is NULL, gracefully fail returning NULL while
+ * leaving the @current target NULL end setting @error to NULL;
+ */
+static char *
+read_field (char **current, char **error, const char *characters, const char *delimiters)
+{
+	char *start;
+
+	g_return_val_if_fail (current, NULL);
+	g_return_val_if_fail (error, NULL);
+	g_return_val_if_fail (characters, NULL);
+	g_return_val_if_fail (delimiters, NULL);
+
+	if (!*current) {
+		/* graceful failure, leave '*current' NULL */
+		*error = NULL;
+		return NULL;
+	}
+
+	/* fail on empty input */
+	g_return_val_if_fail (**current, NULL);
+
+	/* remember beginning of input */
+	start = *current;
+
+	while (**current && strchr (characters, **current))
+		(*current)++;
+	if (**current)
+		if (strchr (delimiters, **current)) {
+			/* success, more data available */
+			*error = NULL;
+			*(*current)++ = '\0';
+			return start;
+		} else {
+			/* error, bad character */
+			*error = *current;
+			*current = start;
+			return NULL;
+		}
+	else {
+		/* success, end of input */
+		*error = NULL;
+		*current = NULL;
+		return start;
+	}
+}
+
+#define IP_ADDRESS_CHARS "0123456789abcdefABCDEF:.%"
+#define DIGITS "0123456789"
+#define DELIMITERS "/;,"
+
+
+/* The following IPv4 and IPv6 address formats are supported:
+ *
+ * address (DEPRECATED)
+ * address/plen
+ * address/gateway (DEPRECATED)
+ * address/plen/gateway
+ *
+ * The following IPv4 and IPv6 route formats are supported:
+ *
+ * address/plen (NETWORK dev DEVICE)
+ * address/plen/gateway (NETWORK via GATEWAY dev DEVICE)
+ * address/plen//gateway (NETWORK dev DEVICE metric METRIC)
+ * address/plen/gateway/metric (NETWORK via GATEWAY dev DEVICE metric METRIC)
+ *
+ * For backward, forward and sideward compatibility, slash (/),
+ * semicolon (;) and comma (,) are interchangable. The use of
+ * slash in the above examples is therefore not significant.
+ *
+ * Leaving out the prefix length is discouraged and DEPRECATED. The
+ * default value of IPv6 prefix length was 64 and has not been
+ * changed. The default for IPv4 is now 24, which is the closest
+ * IPv4 equivalent. These defaults may just as well be changed to
+ * match the iproute2 defaults (32 for IPv4 and 128 for IPv6).
+ *
+ * The returned result is GArray for IPv4 and GValueArray for IPv6.
+ */
+static gpointer
+read_one_ip_address_or_route (GKeyFile *file,
+	const char *setting_name,
+	const char *key_name,
+	gboolean ipv6,
+	gboolean route)
+{
+	guint32 plen, metric;
+	gpointer result;
+	char *address_str, *plen_str, *gateway_str, *metric_str, *value, *current, *error;
+
+	current = value = g_key_file_get_string (file, setting_name, key_name, NULL);
+	if (!value)
+		return NULL;
+
+	/* get address field */
+	address_str = read_field (&current, &error, IP_ADDRESS_CHARS, DELIMITERS);
+	if (error) {
+		g_warning ("keyfile: Unexpected character '%c' in '%s.%s' address (position %td of '%s').",
+			*error, setting_name, key_name, error - current, current);
+		goto error;
+	}
+	/* get prefix length field (skippable) */
+	plen_str = read_field (&current, &error, DIGITS, DELIMITERS);
+	/* get gateway field */
+	gateway_str = read_field (&current, &error, IP_ADDRESS_CHARS, DELIMITERS);
+	if (error) {
+		g_warning ("keyfile: Unexpected character '%c' in '%s.%s' %s (position %td of '%s').",
+			*error, setting_name, key_name,
+			plen_str ? "gateway" : "gateway or prefix length",
+			error - current, current);
+		goto error;
+	}
+	/* for routes, get metric */
+	if (route) {
+		metric_str = read_field (&current, &error, DIGITS, DELIMITERS);
+		if (error) {
+			g_warning ("keyfile: Unexpected character '%c' in '%s.%s' prefix length (position %td of '%s').",
+				*error, setting_name, key_name, error - current, current);
+			goto error;
+		}
+	} else
+		metric_str = NULL;
+	if (current) {
+		/* there is still some data */
+		if (*current) {
+			/* another field follows */
+			g_warning ("keyfile: %s.%s: Garbage at the and of the line: %s",
+				setting_name, key_name, current);
+			goto error;
+		} else {
+			/* semicolon at the end of input */
+			g_message ("keyfile: %s.%s: Deprecated semicolon at the end of value.",
+				setting_name, key_name);
+		}
+	}
+
+	/* parse plen, fallback to defaults */
+	if (plen_str)
+		g_return_val_if_fail (get_one_int (plen_str, ipv6 ? 128 : 32,
+			key_name, &plen), NULL);
+	else {
+		if (route)
+			plen = ipv6 ? 128 : 24;
+		else
+			plen = ipv6 ? 64 : 24;
+		g_warning ("keyfile: Missing prefix length in '%s.%s', defaulting to %d",
+			setting_name, key_name, plen);
+	}
+
+	/* parse metric, default to 0 */
+	metric = 0;
+	if (metric_str)
+		g_return_val_if_fail (get_one_int (metric_str, G_MAXUINT32,
+			key_name, &metric), NULL);
+
+	/* build the appropriate data structure for NetworkManager settings */
+	if (route)
+		g_debug ("keyfile: %s.%s: route %s/%d gateway %s metric %d", setting_name, key_name, address_str, plen, gateway_str, metric);
+	else
+		g_debug ("keyfile: %s.%s: address %s/%d gateway %s", setting_name, key_name, address_str, plen, gateway_str);
+	result = (ipv6 ? build_ip6_address_or_route : build_ip4_address_or_route) (
+		address_str, plen, gateway_str, metric, route);
+
+	g_free (value);
+	return result;
+error:
+	g_free (value);
+	return NULL;
+}
+
+static void
+ip_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	gboolean ipv6 = !strcmp (setting_name, "ipv6");
+	GPtrArray *addresses;
+	int i;
+
+	addresses = g_ptr_array_new_with_free_func (
+		ipv6 ? (GDestroyNotify) g_value_array_free : (GDestroyNotify) g_array_unref);
 
 	/* Look for individual addresses */
-	while (i++ < 1000) {
-		gchar **tmp, **iter;
+	for (i = 0; i < 1000; i++) {
 		char *key_name;
-		gsize length = 0;
-		int ret;
-		GArray *address;
-		guint32 empty = 0;
-		int j;
-
+		/* address is a GArray of three guint32 for IPv4 and a GValueArray consisting
+		 * of GByteArray, guint32 and GByteArray for IPv6.
+		 */
+		gpointer address;
+		
 		key_name = g_strdup_printf ("%s%d", key, i);
-		tmp = g_key_file_get_string_list (file, setting_name, key_name, &length, NULL);
-
-		if (!tmp || !length) {
-			g_free (key_name);
-			break; /* all done */
+		address = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, FALSE);
+		if (address) {
+			g_ptr_array_add (addresses, address);
 		}
-
-		if ((length < 2) || (length > 3)) {
-			g_warning ("%s: ignoring invalid IPv4 address item '%s'", __func__, key_name);
-			goto next;
-		}
-
-		/* convert the string array into IP addresses */
-		address = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
-		for (iter = tmp, j = 0; *iter; iter++, j++) {
-			struct in_addr addr;
-
-			if (j == 1) {
-				guint32 prefix = 0;
-
-				/* prefix */
-				if (!get_one_int (*iter, 32, key_name, &prefix)) {
-					g_array_unref (address);
-					goto next;
-				}
-
-				g_array_append_val (address, prefix);
-			} else {
-				/* address and gateway */
-				ret = inet_pton (AF_INET, *iter, &addr);
-				if (ret <= 0) {
-					g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
-					g_array_unref (address);
-					goto next;
-				}
-				g_array_append_val (address, addr.s_addr);
-			}
-		}
-
-		/* fill in blank gateway if not specified */
-		if (address->len == 2)
-			g_array_append_val (address, empty);
-
-		g_ptr_array_add (addresses, address);
-
-next:
 		g_free (key_name);
-		g_strfreev (tmp);
 	}
 
-	if (addresses->len < 1) {
-		g_ptr_array_unref (addresses);
-		addresses = NULL;
-	}
+	if (addresses->len >= 1)
+		g_object_set (setting, key, addresses, NULL);
 
-	return addresses;
+	g_ptr_array_unref (addresses);
 }
 
 static void
-ip4_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+ip_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
-	GPtrArray *addresses;
 	const char *setting_name = nm_setting_get_name (setting);
-
-	addresses = read_ip4_addresses (keyfile, setting_name, key);
-
-	/* Work around for previous syntax */
-	if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-		addresses = read_ip4_addresses (keyfile, setting_name, "address");
-
-	if (addresses) {
-		g_object_set (setting, key, addresses, NULL);
-		g_ptr_array_unref (addresses);
-	}
-}
-
-static GPtrArray *
-read_ip4_routes (GKeyFile *file,
-			 const char *setting_name,
-			 const char *key)
-{
+	gboolean ipv6 = !strcmp (setting_name, "ipv6");
 	GPtrArray *routes;
-	int i = 0;
+	int i;
 
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) g_array_unref);
+	routes = g_ptr_array_new_with_free_func (
+		ipv6 ? (GDestroyNotify) g_value_array_free : (GDestroyNotify) g_array_unref);
 
 	/* Look for individual routes */
-	while (i++ < 1000) {
-		gchar **tmp, **iter;
+	for (i = -1; i < 1000; i++) {
 		char *key_name;
-		gsize length = 0;
-		int ret;
-		GArray *route;
-		int j;
-
+		/* route is a GArray of three or four guint32 for IPv4 and a GValueArray
+		 * consisting of GByteArray, guint32, GByteArray and optional guint32
+		 * for IPv6.
+		 */
+		gpointer route;
+		
 		key_name = g_strdup_printf ("%s%d", key, i);
-		tmp = g_key_file_get_string_list (file, setting_name, key_name, &length, NULL);
-		g_free (key_name);
-
-		if (!tmp || !length)
-			break; /* all done */
-
-		if (length != 4) {
-			g_warning ("%s: ignoring invalid IPv4 route item '%s'", __func__, key_name);
-			goto next;
+		route = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, TRUE);
+		if (route) {
+			g_ptr_array_add (routes, route);
 		}
-
-		/* convert the string array into IP addresses */
-		route = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
-		for (iter = tmp, j = 0; *iter; iter++, j++) {
-			struct in_addr addr;
-
-			if (j == 1) {
-				guint32 prefix = 0;
-
-				/* prefix */
-				if (!get_one_int (*iter, 32, key_name, &prefix)) {
-					g_array_unref (route);
-					goto next;
-				}
-
-				g_array_append_val (route, prefix);
-			} else if (j == 3) {
-				guint32 metric = 0;
-
-				/* metric */
-				if (!get_one_int (*iter, G_MAXUINT32, key_name, &metric)) {
-					g_array_unref (route);
-					goto next;
-				}
-
-				g_array_append_val (route, metric);
-			} else {
-				/* address and next hop */
-				ret = inet_pton (AF_INET, *iter, &addr);
-				if (ret <= 0) {
-					g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
-					g_array_unref (route);
-					goto next;
-				}
-				g_array_append_val (route, addr.s_addr);
-			}
-		}
-		g_ptr_array_add (routes, route);
-
-next:
-		g_strfreev (tmp);
 	}
 
-	if (routes->len < 1) {
-		g_ptr_array_unref (routes);
-		routes = NULL;
-	}
-
-	return routes;
-}
-
-static void
-ip4_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
-{
-	GPtrArray *routes;
-	const char *setting_name = nm_setting_get_name (setting);
-
-	routes = read_ip4_routes (keyfile, setting_name, key);
-	if (routes) {
+	if (routes->len >= 1)
 		g_object_set (setting, key, routes, NULL);
-		g_ptr_array_unref (routes);
-	}
+
+	g_ptr_array_unref (routes);
 }
 
 static void
@@ -305,278 +459,6 @@ ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 	if (array) {
 		g_object_set (setting, key, array, NULL);
 		g_array_unref (array);
-	}
-}
-
-static char *
-split_prefix (char *addr)
-{
-	char *slash;
-
-	g_return_val_if_fail (addr != NULL, NULL);
-
-	/* Find the prefix and split the string */
-	slash = strchr (addr, '/');
-	if (slash && slash > addr) {
-		slash++;
-		*(slash - 1) = '\0';
-	}
-
-	return slash;
-}
-
-static char *
-split_gw (char *str)
-{
-	char *comma;
-
-	g_return_val_if_fail (str != NULL, NULL);
-
-	/* Find the prefix and split the string */
-	comma = strchr (str, ',');
-	if (comma && comma > str) {
-		comma++;
-		*(comma - 1) = '\0';
-		return comma;
-	}
-	return NULL;
-}
-
-static GPtrArray *
-read_ip6_addresses (GKeyFile *file,
-                    const char *setting_name,
-                    const char *key)
-{
-	GPtrArray *addresses;
-	struct in6_addr addr, gw;
-	guint32 prefix;
-	int i = 0;
-
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
-
-	/* Look for individual addresses */
-	while (i++ < 1000) {
-		char *tmp, *key_name, *str_prefix, *str_gw;
-		int ret;
-		/* TODO: GValueArray is deprecated and should be replaced with GValue */
-		GValueArray *values;
-		GByteArray *address;
-		GByteArray *gateway;
-		GValue value = { 0 };
-
-		key_name = g_strdup_printf ("%s%d", key, i);
-		tmp = g_key_file_get_string (file, setting_name, key_name, NULL);
-		g_free (key_name);
-
-		if (!tmp)
-			break; /* all done */
-
-		/* convert the string array into IPv6 addresses */
-		values = g_value_array_new (2); /* NMIP6Address has 2 items */
-
-		/* Split the address and prefix */
-		str_prefix = split_prefix (tmp);
-
-		/* address */
-		ret = inet_pton (AF_INET6, tmp, &addr);
-		if (ret <= 0) {
-			g_warning ("%s: ignoring invalid IPv6 %s element '%s'", __func__, key_name, tmp);
-			g_value_array_free (values);
-			goto next;
-		}
-
-		address = g_byte_array_new ();
-		g_byte_array_append (address, (guint8 *) addr.s6_addr, 16);
-		g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
-		g_value_take_boxed (&value, address);
-		g_value_array_append (values, &value);
-		g_value_unset (&value);
-
-		/* prefix */
-		prefix = 0;
-		if (str_prefix) {
-			if (!get_one_int (str_prefix, 128, key_name, &prefix)) {
-				g_value_array_free (values);
-				goto next;
-			}
-		} else {
-			/* Missing prefix defaults to /64 */
-			prefix = 64;
-		}
-
-		g_value_init (&value, G_TYPE_UINT);
-		g_value_set_uint (&value, prefix);
-		g_value_array_append (values, &value);
-		g_value_unset (&value);
-
-		/* Gateway (optional) */
-		str_gw = split_gw (str_prefix);
-		if (str_gw) {
-			ret = inet_pton (AF_INET6, str_gw, &gw);
-			if (ret <= 0) {
-				g_warning ("%s: ignoring invalid IPv6 %s gateway '%s'", __func__, key_name, tmp);
-				g_value_array_free (values);
-				goto next;
-			}
-
-			if (!IN6_IS_ADDR_UNSPECIFIED (&gw)) {
-				gateway = g_byte_array_new ();
-				g_byte_array_append (gateway, (guint8 *) gw.s6_addr, 16);
-				g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
-				g_value_take_boxed (&value, gateway);
-				g_value_array_append (values, &value);
-				g_value_unset (&value);
-			}
-		}
-
-		g_ptr_array_add (addresses, values);
-
-next:
-		g_free (tmp);
-	}
-
-	if (addresses->len < 1) {
-		g_ptr_array_unref (addresses);
-		addresses = NULL;
-	}
-
-	return addresses;
-}
-
-static void
-ip6_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
-{
-	GPtrArray *addresses;
-	const char *setting_name = nm_setting_get_name (setting);
-
-	addresses = read_ip6_addresses (keyfile, setting_name, key);
-	if (addresses) {
-		g_object_set (setting, key, addresses, NULL);
-		g_ptr_array_unref (addresses);
-	}
-}
-
-static GPtrArray *
-read_ip6_routes (GKeyFile *file,
-                 const char *setting_name,
-                 const char *key)
-{
-	GPtrArray *routes;
-	struct in6_addr addr;
-	guint32 prefix, metric;
-	int i = 0;
-
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
-
-	/* Look for individual routes */
-	while (i++ < 1000) {
-		gchar **tmp;
-		char *key_name, *str_prefix;
-		gsize length = 0;
-		int ret;
-		/* TODO: GValueArray is deprecated and should be replaced with GValue */
-		GValueArray *values;
-		GByteArray *address;
-		GValue value = { 0 };
-
-		key_name = g_strdup_printf ("%s%d", key, i);
-		tmp = g_key_file_get_string_list (file, setting_name, key_name, &length, NULL);
-		g_free (key_name);
-
-		if (!tmp || !length)
-			break; /* all done */
-
-		if (length != 3) {
-			g_warning ("%s: ignoring invalid IPv6 address item '%s'", __func__, key_name);
-			goto next;
-		}
-
-		/* convert the string array into IPv6 routes */
-		values = g_value_array_new (4); /* NMIP6Route has 4 items */
-
-		/* Split the route and prefix */
-		str_prefix = split_prefix (tmp[0]);
-
-		/* destination address */
-		ret = inet_pton (AF_INET6, tmp[0], &addr);
-		if (ret <= 0) {
-			g_warning ("%s: ignoring invalid IPv6 %s element '%s'", __func__, key_name, tmp[0]);
-			g_value_array_free (values);
-			goto next;
-		}
-		address = g_byte_array_new ();
-		g_byte_array_append (address, (guint8 *) addr.s6_addr, 16);
-		g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
-		g_value_take_boxed (&value, address);
-		g_value_array_append (values, &value);
-		g_value_unset (&value);
-
-		/* prefix */
-		prefix = 0;
-		if (str_prefix) {
-			if (!get_one_int (str_prefix, 128, key_name, &prefix)) {
-				g_value_array_free (values);
-				goto next;
-			}
-		} else {
-			/* default to 64 if unspecified */
-			prefix = 64;
-		}
-		g_value_init (&value, G_TYPE_UINT);
-		g_value_set_uint (&value, prefix);
-		g_value_array_append (values, &value);
-		g_value_unset (&value);
-
-		/* next hop address */
-		ret = inet_pton (AF_INET6, tmp[1], &addr);
-		if (ret <= 0) {
-			g_warning ("%s: ignoring invalid IPv6 %s element '%s'", __func__, key_name, tmp[1]);
-			g_value_array_free (values);
-			goto next;
-		}
-		address = g_byte_array_new ();
-		g_byte_array_append (address, (guint8 *) addr.s6_addr, 16);
-		g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
-		g_value_take_boxed (&value, address);
-		g_value_array_append (values, &value);
-		g_value_unset (&value);
-
-		/* metric */
-		metric = 0;
-		if (!get_one_int (tmp[2], G_MAXUINT32, key_name, &metric)) {
-			g_value_array_free (values);
-			goto next;
-		}
-		g_value_init (&value, G_TYPE_UINT);
-		g_value_set_uint (&value, metric);
-		g_value_array_append (values, &value);
-		g_value_unset (&value);
-
-		g_ptr_array_add (routes, values);
-
-next:
-		g_strfreev (tmp);
-	}
-
-	if (routes->len < 1) {
-		g_ptr_array_unref (routes);
-		routes = NULL;
-	}
-
-	return routes;
-}
-
-static void
-ip6_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
-{
-	GPtrArray *routes;
-	const char *setting_name = nm_setting_get_name (setting);
-
-	routes = read_ip6_routes (keyfile, setting_name, key);
-
-	if (routes) {
-		g_object_set (setting, key, routes, NULL);
-		g_ptr_array_unref (routes);
 	}
 }
 
@@ -955,26 +837,26 @@ typedef struct {
 /* A table of keys that require further parsing/conversion because they are
  * stored in a format that can't be automatically read using the key's type.
  * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
- * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored 
+ * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored
  * in struct in6_addr internally, but as string in keyfiles.
  */
 static KeyParser key_parsers[] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  FALSE,
-	  ip4_addr_parser },
+	  ip_addr_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_ADDRESSES,
 	  FALSE,
-	  ip6_addr_parser },
+	  ip_addr_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ROUTES,
 	  FALSE,
-	  ip4_route_parser },
+	  ip_route_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_ROUTES,
 	  FALSE,
-	  ip6_route_parser },
+	  ip_route_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_DNS,
 	  FALSE,
@@ -1330,6 +1212,8 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 		g_clear_error (&verify_error);
 		g_object_unref (connection);
 		connection = NULL;
+		g_warning ("Connection failed to verify: %s",
+			verify_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (verify_error->domain)) : "(unknown)");
 	}
 
 out:
