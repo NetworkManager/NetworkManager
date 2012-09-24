@@ -206,7 +206,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 }
 
 
-#if defined(TARGET_SUSE)
+#if defined(NETCONFIG_PATH)
 /**********************************/
 /* SUSE */
 
@@ -230,7 +230,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	char *tmp;
 	GPid pid = -1;
 
-	argv[0] = "/sbin/netconfig";
+	argv[0] = NETCONFIG_PATH;
 	argv[1] = "modify";
 	argv[2] = "--service";
 	argv[3] = "NetworkManager";
@@ -754,7 +754,7 @@ update_dns (NMDnsManager *self,
 	success = dispatch_resolvconf (domain, searches, nameservers, iface, error);
 #endif
 
-#ifdef TARGET_SUSE
+#ifdef NETCONFIG_PATH
 	if (success == FALSE) {
 		success = dispatch_netconfig (domain, searches, nameservers,
 		                              nis_domain, nis_servers,

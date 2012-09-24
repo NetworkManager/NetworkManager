@@ -639,36 +639,27 @@ AC_SUBST(DHCLIENT_PATH)
 AC_SUBST(DHCLIENT_VERSION)
 AC_SUBST(DHCPCD_PATH)
 
-# resolvconf support
-AC_ARG_WITH([resolvconf],
-	    AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]),
-	    with_resolvconf="$withval",with_resolvconf=no)
-# If a full path is given, use that and do not test if it works or not.
-case "${with_resolvconf}" in
-	/*)
-		RESOLVCONF_PATH="${with_resolvconf}"
-		AC_MSG_NOTICE(setting resolvconf path to ${RESOLVCONF_PATH})
-		;;
-	no)	AC_MSG_NOTICE(resolvconf support disabled)
-		;;
-	*)
-		AC_MSG_CHECKING(for resolvconf)
-		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
-			if test -x "${path}/resolvconf"; then
-				RESOLVCONF_PATH="${path}/resolvconf"
-				break
-			fi
-		done
-		if test -n "${RESOLVCONF_PATH}"; then
-			AC_MSG_RESULT($RESOLVCONF_PATH)
-		else
-			AC_MSG_RESULT(no)
-		fi
-		;;
-esac
-AC_SUBST(RESOLVCONF_PATH)
-if test -n "${RESOLVCONF_PATH}"; then
-	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$RESOLVCONF_PATH", [Define if you have a resolvconf implementation])
+# resolvconf and netconfig support
+AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
+AC_ARG_WITH(netconfig, AS_HELP_STRING([--with-netconfig=yes|no], [Enable SUSE netconfig support]))
+# Use netconfig by default on SUSE
+AS_IF([test -z "$with_netconfig"], AC_CHECK_FILE(/etc/SuSE-release, with_netconfig=yes))
+# Otherwise default to "no"
+AS_IF([test -z "$with_resolvconf"], with_resolvconf=no)
+AS_IF([test -z "$with_netconfig"], with_netconfig=no)
+# Find resolvconf and netconfig
+if test "$with_resolvconf" = "yes"; then
+	AC_PATH_PROGS(with_resolvconf, resolvconf, no, /sbin:/usr/sbin:/usr/local/sbin)
+fi
+if test "$with_netconfig" = "yes"; then
+	AC_PATH_PROGS(with_netconfig, netconfig, no, /sbin:/usr/sbin:/usr/local/sbin)
+fi
+# Define resolvconf and netconfig paths
+if test "${with_resolvconf}" != "no"; then
+	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf (if enabled)])
+fi
+if test -n "${with_netconfig}" != "no"; then
+	AC_DEFINE_UNQUOTED(NETCONFIG_PATH, "$with_netconfig", [Path to netconfig (if enabled)])
 fi
 
 # iptables path
@@ -861,6 +852,10 @@ echo Distribution target: ${with_distro}
 echo 'if this is not correct, please specifiy your distro with --with-distro=DISTRO'
 
 echo 
+echo "Handlers for /etc/resolv.conf:"
+echo "  resolvconf: ${with_resolvconf}"
+echo "  netconfig: ${with_netconfig}"
+echo
 
 if test -n "${DHCLIENT_PATH}"; then
 	echo ISC dhclient support: ${DHCLIENT_PATH}
