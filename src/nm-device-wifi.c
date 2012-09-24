@@ -1086,6 +1086,7 @@ manf_defaults[] = {
 	"o2DSL",
 	"WLAN",
 	"ALICE-WLAN",
+	"Speedport W 501V",
 };
 
 #define ARRAY_SIZE(a)  (sizeof (a) / sizeof (a[0]))
