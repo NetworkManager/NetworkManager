@@ -15,5 +15,6 @@ StandardError=null
 
 [Install]
 WantedBy=multi-user.target
+Alias=dbus-org.freedesktop.NetworkManager.service
 Also=NetworkManager-wait-online.service
 
