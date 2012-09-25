@@ -24,7 +24,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <stdlib.h>
 
 #include "NetworkManagerUtils.h"
@@ -410,12 +409,12 @@ parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
 	g_return_val_if_fail (*c == 0, FALSE);
 
 	/* sanity check */
-	if (!isxdigit (subchannels[0]))
+	if (!g_ascii_isxdigit (subchannels[0]))
 		return FALSE;
 
 	/* Get the first channel */
 	while (*p && (*p != ',')) {
-		if (!isxdigit (*p) && (*p != '.'))
+		if (!g_ascii_isxdigit (*p) && (*p != '.'))
 			return FALSE;  /* Invalid chars */
 		if (i >= BUFSIZE)
 			return FALSE;  /* Too long to be a subchannel */

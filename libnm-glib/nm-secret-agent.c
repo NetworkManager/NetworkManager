@@ -19,7 +19,6 @@
  */
 
 #include <config.h>
-#include <ctype.h>
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
@@ -766,7 +765,7 @@ validate_identifier (const char *identifier)
 
 	/* FIXME: do complete validation here */
 	while (p && *p) {
-		if (!isalnum (*p) && (*p != '_') && (*p != '-') && (*p != '.'))
+		if (!g_ascii_isalnum (*p) && (*p != '_') && (*p != '-') && (*p != '.'))
 			return FALSE;
 		if ((*p == '.') && (*(p + 1) == '.'))
 			return FALSE;

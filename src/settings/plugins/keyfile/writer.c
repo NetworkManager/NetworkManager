@@ -41,7 +41,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
-#include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
@@ -500,7 +499,7 @@ ssid_writer (GKeyFile *file,
 	 */
 	for (i = 0; i < array->len; i++) {
 		char c = array->data[i] & 0xFF;
-		if (!isprint (c)) {
+		if (!g_ascii_isprint (c)) {
 			new_format = FALSE;
 			break;
 		}

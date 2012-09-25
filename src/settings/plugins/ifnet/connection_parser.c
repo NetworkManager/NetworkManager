@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <netinet/ether.h>
 #include <errno.h>
-#include <ctype.h>
 #include <glib/gi18n.h>
 
 #include <nm-setting-connection.h>
@@ -2291,7 +2290,7 @@ write_wireless_setting (NMConnection *connection,
 	 * support these characters, see bug #356337)
 	 */
 	for (i = 0; i < ssid->len; i++) {
-		if (!isalnum (ssid->data[i])) {
+		if (!g_ascii_isalnum (ssid->data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}
@@ -2953,7 +2952,7 @@ get_wireless_name (NMConnection * connection)
 	}
 
 	for (i = 0; i < ssid->len; i++) {
-		if (!isprint (ssid->data[i])) {
+		if (!g_ascii_isprint (ssid->data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}

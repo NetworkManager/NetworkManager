@@ -25,7 +25,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <ctype.h>
 #include <sys/inotify.h>
 #include <errno.h>
 #include <sys/ioctl.h>
@@ -1731,7 +1730,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			char *p = value + 2;
 
 			while (*p) {
-				if (!isascii ((int) (*p))) {
+				if (!g_ascii_isprint ((int) (*p))) {
 					g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 					             "Invalid ASCII WEP key.");
 					goto out;
@@ -2029,7 +2028,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 	if (!quoted && (strlen (psk) == 64)) {
 		/* Verify the hex PSK; 64 digits */
 		while (*p) {
-			if (!isxdigit (*p++)) {
+			if (!g_ascii_isxdigit (*p++)) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				             "Invalid WPA_PSK (contains non-hexadecimal characters)");
 				goto out;
@@ -3010,7 +3009,7 @@ make_wireless_setting (shvarFile *ifcfg,
 
 			p = value + 2;
 			while (*p) {
-				if (!isxdigit (*p)) {
+				if (!g_ascii_isxdigit (*p)) {
 					g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 					             "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
 					             value, *p);
@@ -3281,7 +3280,7 @@ make_wired_setting (shvarFile *ifcfg,
 
 		/* basic sanity checks */
 		while (*p) {
-			if (!isxdigit (*p) && (*p != ',') && (*p != '.')) {
+			if (!g_ascii_isxdigit (*p) && (*p != ',') && (*p != '.')) {
 				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s'", value);
 				success = FALSE;
 				break;

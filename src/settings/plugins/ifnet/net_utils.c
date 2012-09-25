@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <errno.h>
 #include <nm-utils.h>
 #include <nm-system-config-interface.h>
@@ -67,7 +66,7 @@ is_hex (const char *value)
 	if (!p)
 		return FALSE;
 	while (*p) {
-		if (!isxdigit (*p++))
+		if (!g_ascii_isxdigit (*p++))
 			return FALSE;
 	}
 	return TRUE;
@@ -79,7 +78,7 @@ is_ascii (const char *value)
 	const char *p = value;
 
 	while (*p) {
-		if (!isascii (*p++))
+		if (!g_ascii_isprint (*p++))
 			return FALSE;
 	}
 	return TRUE;
@@ -462,7 +461,7 @@ create_ip4_block (gchar * ip)
 		iblock->ip = tmp_ip4_addr.s_addr;
 		prefix = ip_mask[1];
 		i = 0;
-		while (i < length && isdigit (prefix[i]))
+		while (i < length && g_ascii_isdigit (prefix[i]))
 			i++;
 		prefix[i] = '\0';
 		iblock->netmask = nm_utils_ip4_prefix_to_netmask ((guint32)

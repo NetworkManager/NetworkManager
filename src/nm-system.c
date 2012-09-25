@@ -40,7 +40,6 @@
 #include <resolv.h>
 #include <netdb.h>
 #include <glib.h>
-#include <ctype.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/if_bonding.h>

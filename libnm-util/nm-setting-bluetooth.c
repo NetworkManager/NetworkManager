@@ -25,7 +25,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include <net/ethernet.h>
 
 #include "nm-param-spec-specialized.h"

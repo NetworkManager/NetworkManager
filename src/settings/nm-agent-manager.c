@@ -20,7 +20,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <ctype.h>
 #include <pwd.h>
 
 #include <glib.h>
@@ -166,7 +165,7 @@ validate_identifier (const char *identifier, GError **error)
 
 	/* FIXME: do complete validation here */
 	while (p && *p) {
-		if (!isalnum (*p) && (*p != '_') && (*p != '-') && (*p != '.')) {
+		if (!g_ascii_isalnum (*p) && (*p != '_') && (*p != '-') && (*p != '.')) {
 			g_set_error (error,
 			             NM_AGENT_MANAGER_ERROR,
 				         NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER,

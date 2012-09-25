@@ -39,7 +39,6 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-system-config-interface.h"

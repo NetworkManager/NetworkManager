@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
-#include <ctype.h>
 #include <arpa/inet.h>
 
 #include <glib.h>
@@ -107,7 +106,7 @@ hostname_thread_worker (gpointer data)
 		nm_log_dbg (LOGD_DNS, "(%p) address reverse-lookup returned hostname '%s'",
 		            ht, ht->hostname);
 		for (i = 0; i < strlen (ht->hostname); i++)
-			ht->hostname[i] = tolower (ht->hostname[i]);
+			ht->hostname[i] = g_ascii_tolower (ht->hostname[i]);
 	} else {
 		nm_log_dbg (LOGD_DNS, "(%p) address reverse-lookup failed: (%d) %s",
 		            ht, ht->ret, gai_strerror (ht->ret));

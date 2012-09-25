@@ -27,7 +27,6 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 #include <gmodule.h>
 #include <net/if_arp.h>
 #include <pwd.h>
@@ -596,7 +595,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		GObject * (*factory_func) (const char *);
 
 		/* strip leading spaces */
-		while (isblank (*pname))
+		while (g_ascii_isspace (*pname))
 			pname++;
 
 		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */

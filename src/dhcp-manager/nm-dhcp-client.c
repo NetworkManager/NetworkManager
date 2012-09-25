@@ -18,7 +18,6 @@
  */
 
 #include <config.h>
-#include <ctype.h>
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -886,7 +885,7 @@ ip4_process_classless_routes (GHashTable *options,
 
 	p = str;
 	while (*p) {
-		if (!isdigit (*p) && (*p != ' ') && (*p != '.') && (*p != '/')) {
+		if (!g_ascii_isdigit (*p) && (*p != ' ') && (*p != '.') && (*p != '/')) {
 			nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes '%s'", str);
 			return FALSE;
 		}

@@ -22,7 +22,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "nm-dhcp-dhclient-utils.h"
 
@@ -108,7 +107,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 						break;
 					}
 
-					if (!isalnum ((*aiter)[0]))
+					if (!g_ascii_isalnum ((*aiter)[0]))
 						continue;
 
 					if ((*aiter)[strlen (*aiter) - 1] == ';') {
@@ -147,7 +146,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			const char *p = tmp;
 
 			while (*p) {
-				if (!isxdigit (*p) && (*p != ':')) {
+				if (!g_ascii_isxdigit (*p) && (*p != ':')) {
 					is_octets = FALSE;
 					break;
 				}

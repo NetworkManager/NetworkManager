@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
-#include <ctype.h>
 
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
@@ -345,7 +344,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 			if (dhcp_hostname && strlen (dhcp_hostname)) {
 				/* Sanity check; strip leading spaces */
 				while (*p) {
-					if (!isblank (*p++)) {
+					if (!g_ascii_isspace (*p++)) {
 						_set_hostname (policy, p-1, "from DHCPv4");
 						return;
 					}
@@ -364,7 +363,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 			if (dhcp_hostname && strlen (dhcp_hostname)) {
 				/* Sanity check; strip leading spaces */
 				while (*p) {
-					if (!isblank (*p++)) {
+					if (!g_ascii_isspace (*p++)) {
 						_set_hostname (policy, p-1, "from DHCPv6");
 						return;
 					}

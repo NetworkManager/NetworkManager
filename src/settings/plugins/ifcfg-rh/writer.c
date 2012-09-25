@@ -18,7 +18,6 @@
  * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
-#include <ctype.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -845,7 +844,7 @@ write_wireless_setting (NMConnection *connection,
 	 * hex notation of the SSID instead.
 	 */
 	for (i = 0; i < ssid->len; i++) {
-		if (!isprint (ssid->data[i])) {
+		if (!g_ascii_isprint (ssid->data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}

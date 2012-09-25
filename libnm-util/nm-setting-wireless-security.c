@@ -25,7 +25,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <ctype.h>
 #include <dbus/dbus-glib.h>
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
@@ -704,13 +703,13 @@ verify_wep_key (const char *key, NMWepKeyType wep_type)
 		if (keylen == 10 || keylen == 26) {
 			/* Hex key */
 			for (i = 0; i < keylen; i++) {
-				if (!isxdigit (key[i]))
+				if (!g_ascii_isxdigit (key[i]))
 					return FALSE;
 			}
 		} else if (keylen == 5 || keylen == 13) {
 			/* ASCII key */
 			for (i = 0; i < keylen; i++) {
-				if (!isascii (key[i]))
+				if (!g_ascii_isprint (key[i]))
 					return FALSE;
 			}
 		} else
@@ -739,7 +738,7 @@ verify_wpa_psk (const char *psk)
 	if (psklen == 64) {
 		/* Hex PSK */
 		for (i = 0; i < psklen; i++) {
-			if (!isxdigit (psk[i]))
+			if (!g_ascii_isxdigit (psk[i]))
 				return FALSE;
 		}
 	}

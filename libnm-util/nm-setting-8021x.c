@@ -24,7 +24,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include <dbus/dbus-glib.h>
 #include "nm-setting-8021x.h"
 #include "nm-param-spec-specialized.h"

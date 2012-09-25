@@ -25,7 +25,6 @@
  */
 
 #include "config.h"
-#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2504,11 +2503,11 @@ nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
 	while (left && *in) {
 		guint8 d1 = in[0], d2 = in[1];
 
-		if (!isxdigit (d1))
+		if (!g_ascii_isxdigit (d1))
 			return NULL;
 
 		/* If there's no leading zero (ie "aa:b:cc") then fake it */
-		if (d2 && isxdigit (d2)) {
+		if (d2 && g_ascii_isxdigit (d2)) {
 			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
 			in += 2;
 		} else {
@@ -2607,7 +2606,7 @@ nm_utils_iface_valid_name (const char *name)
 		return FALSE;
 
 	while (*name) {
-		if (*name == '/' || isspace (*name))
+		if (*name == '/' || g_ascii_isspace (*name))
 			return FALSE;
 		name++;
 	}
@@ -2632,7 +2631,7 @@ nm_utils_is_uuid (const char *str)
 	while (*p) {
 		if (*p == '-')
 			num_dashes++;
-		else if (!isxdigit (*p))
+		else if (!g_ascii_isxdigit (*p))
 			return FALSE;
 		p++;
 	}

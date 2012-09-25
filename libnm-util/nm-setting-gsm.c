@@ -24,7 +24,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include "nm-setting-gsm.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -306,7 +305,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		 * like space ( ) and such.
 		 */
 		for (i = 0; i < apn_len; i++) {
-			if (   !isalnum (priv->apn[i])
+			if (   !g_ascii_isalnum (priv->apn[i])
 			    && (priv->apn[i] != '.')
 			    && (priv->apn[i] != '_')
 			    && (priv->apn[i] != '-')) {
@@ -349,7 +348,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 
 		for (i = 0; i < nid_len; i++) {
-			if (!isdigit (priv->network_id[i])) {
+			if (!g_ascii_isdigit (priv->network_id[i])) {
 				g_set_error (error,
 				             NM_SETTING_GSM_ERROR,
 				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,

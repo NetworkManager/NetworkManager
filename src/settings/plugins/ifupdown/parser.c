@@ -25,7 +25,6 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <ctype.h>
 
 #include <nm-connection.h>
 #include <NetworkManager.h>
@@ -446,7 +445,7 @@ ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 	list = g_strsplit_set (dns, " \t", -1);
 	for (iter = list; iter && *iter; iter++) {
 		g_strstrip (*iter);
-		if (isblank (*iter[0]))
+		if (g_ascii_isspace (*iter[0]))
 			continue;
 		if (!inet_pton (AF_INET, *iter, &addr)) {
 			PLUGIN_WARN ("SCPlugin-Ifupdown",
@@ -552,7 +551,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			list = g_strsplit_set (search_v, " \t", -1);
 			for (iter = list; iter && *iter; iter++) {
 				g_strstrip (*iter);
-				if (isblank (*iter[0]))
+				if (g_ascii_isspace (*iter[0]))
 					continue;
 				if (!nm_setting_ip4_config_add_dns_search (s_ip4, *iter)) {
 					PLUGIN_WARN ("SCPlugin-Ifupdown",
@@ -585,7 +584,7 @@ ifupdown_ip6_add_dns (NMSettingIP6Config *s_ip6, const char *dns)
 	list = g_strsplit_set (dns, " \t", -1);
 	for (iter = list; iter && *iter; iter++) {
 		g_strstrip (*iter);
-		if (isblank (*iter[0]))
+		if (g_ascii_isspace (*iter[0]))
 			continue;
 		if (!inet_pton (AF_INET6, *iter, &addr)) {
 			PLUGIN_WARN ("SCPlugin-Ifupdown",

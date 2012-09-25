@@ -24,7 +24,6 @@
  */
 
 #include <string.h>
-#include <ctype.h>
 #include <net/ethernet.h>
 #include <dbus/dbus-glib.h>
 #include <netinet/ether.h>
