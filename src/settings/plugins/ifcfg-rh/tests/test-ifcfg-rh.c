@@ -12479,10 +12479,10 @@ test_read_bond_slave (void)
 	                                   &error,
 	                                   &ignore_error);
 	ASSERT (connection != NULL,
-	        "bond-slave-read", "unexpected failure reading %s", TEST_IFCFG_BOND_MAIN);
+	        "bond-slave-read", "unexpected failure reading %s", TEST_IFCFG_BOND_SLAVE);
 
 	ASSERT (nm_connection_verify (connection, &error),
-	        "bond-slave-read", "failed to verify %s: %s", TEST_IFCFG_BOND_MAIN, error->message);
+	        "bond-slave-read", "failed to verify %s: %s", TEST_IFCFG_BOND_SLAVE, error->message);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	ASSERT (s_con != NULL,
