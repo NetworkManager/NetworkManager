@@ -113,10 +113,11 @@ read_ip4_addresses (GKeyFile *file,
 
 		key_name = g_strdup_printf ("%s%d", key, i);
 		tmp = g_key_file_get_string_list (file, setting_name, key_name, &length, NULL);
-		g_free (key_name);
 
-		if (!tmp || !length)
+		if (!tmp || !length) {
+			g_free (key_name);
 			break; /* all done */
+		}
 
 		if ((length < 2) || (length > 3)) {
 			g_warning ("%s: ignoring invalid IPv4 address item '%s'", __func__, key_name);
@@ -157,6 +158,7 @@ read_ip4_addresses (GKeyFile *file,
 		g_ptr_array_add (addresses, address);
 
 next:
+		g_free (key_name);
 		g_strfreev (tmp);
 	}
 
