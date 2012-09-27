@@ -81,8 +81,7 @@ static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
+                      NMDeviceStateReason reason)
 {
 	if (new_state == NM_DEVICE_STATE_UNAVAILABLE) {
 		/* Use NM_DEVICE_STATE_REASON_CARRIER to make sure num retries is reset */
@@ -464,7 +463,6 @@ constructed (GObject *object)
 static void
 nm_device_bond_init (NMDeviceBond * self)
 {
-	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), NULL);
 }
 
 static void
@@ -539,6 +537,8 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
+
+	parent_class->state_changed = device_state_changed;
 
 	/* properties */
 	g_object_class_install_property

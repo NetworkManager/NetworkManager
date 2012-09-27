@@ -3410,8 +3410,7 @@ static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
+                      NMDeviceStateReason reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -3576,7 +3575,6 @@ nm_device_wifi_new (const char *udi,
 static void
 nm_device_wifi_init (NMDeviceWifi * self)
 {
-	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), NULL);
 }
 
 static void
@@ -3719,6 +3717,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->hwaddr_matches = hwaddr_matches;
+
+	parent_class->state_changed = device_state_changed;
 
 	klass->scanning_allowed = scanning_allowed;
 

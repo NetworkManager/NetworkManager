@@ -107,6 +107,9 @@ struct _NMDeviceOlpcMeshPrivate
 	guint             device_added_id;
 };
 
+static void state_changed (NMDevice *device, NMDeviceState new_state,
+                           NMDeviceState old_state, NMDeviceStateReason reason);
+
 static GQuark
 nm_olpc_mesh_error_quark (void)
 {
@@ -524,6 +527,8 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
 
+	parent_class->state_changed = state_changed;
+
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
@@ -716,11 +721,12 @@ check_companion_cb (gpointer user_data)
 }
 
 static void
-state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
+state_changed (NMDevice *device, NMDeviceState new_state,
+               NMDeviceState old_state, NMDeviceStateReason reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 
-	switch (state) {
+	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
@@ -746,23 +752,15 @@ nm_device_olpc_mesh_new (const char *udi,
                          const char *iface,
                          const char *driver)
 {
-	GObject *obj;
-
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	obj = g_object_new (NM_TYPE_DEVICE_OLPC_MESH,
-	                    NM_DEVICE_UDI, udi,
-	                    NM_DEVICE_IFACE, iface,
-	                    NM_DEVICE_DRIVER, driver,
-	                    NM_DEVICE_TYPE_DESC, "802.11 OLPC Mesh",
-	                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
-	                    NULL);
-	if (obj == NULL)
-		return NULL;
-
-	g_signal_connect (obj, "state-changed", G_CALLBACK (state_changed_cb), NULL);
-
-	return NM_DEVICE (obj);
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_OLPC_MESH,
+	                                  NM_DEVICE_UDI, udi,
+	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_DRIVER, driver,
+	                                  NM_DEVICE_TYPE_DESC, "802.11 OLPC Mesh",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
+	                                  NULL);
 }

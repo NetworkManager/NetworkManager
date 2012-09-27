@@ -283,8 +283,7 @@ static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
+                      NMDeviceStateReason reason)
 {
 	switch (new_state) {
 	case NM_DEVICE_STATE_ACTIVATED:
@@ -300,7 +299,6 @@ device_state_changed (NMDevice *device,
 static void
 nm_device_ethernet_init (NMDeviceEthernet * self)
 {
-	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), NULL);
 }
 
 static gboolean
@@ -1533,6 +1531,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 	parent_class->hwaddr_matches = hwaddr_matches;
+
+	parent_class->state_changed = device_state_changed;
 
 	/* properties */
 	g_object_class_install_property

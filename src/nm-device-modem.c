@@ -196,8 +196,7 @@ static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
+                      NMDeviceStateReason reason)
 {
 	nm_modem_device_state_changed (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
 	                               new_state,
@@ -374,7 +373,6 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 static void
 nm_device_modem_init (NMDeviceModem *self)
 {
-	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), self);
 }
 
 static void
@@ -477,6 +475,8 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	device_class->get_enabled = get_enabled;
 	device_class->set_enabled = set_enabled;
+
+	device_class->state_changed = device_state_changed;
 
 	/* Properties */
 	g_object_class_install_property

@@ -4330,8 +4330,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),
+		              NULL, NULL,
 		              _nm_marshal_VOID__UINT_UINT_UINT,
 		              G_TYPE_NONE, 3,
 		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);

@@ -1293,8 +1293,7 @@ static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
+                      NMDeviceStateReason reason)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -1396,7 +1395,6 @@ nm_device_wimax_new (const char *udi,
 		struct wmxsdk *sdk;
 
 		nm_wimax_util_sdk_ref ();
-		g_signal_connect (device, "state-changed", G_CALLBACK (device_state_changed), NULL);
 
 		/* See if the SDK already knows about this interface */
 		sdk = iwmx_sdk_get_wmxsdk_for_iface (iface);
@@ -1535,6 +1533,8 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->deactivate = deactivate;
 	device_class->set_enabled = set_enabled;
 	device_class->hwaddr_matches = hwaddr_matches;
+
+	device_class->state_changed = device_state_changed;
 
 	/* Properties */
 	g_object_class_install_property
