@@ -101,7 +101,7 @@ enum {
 /**************************************************************/
 
 static guint32
-real_get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *dev)
 {
 	guint32 caps = NM_DEVICE_CAP_NM_SUPPORTED;
 	caps |= NM_DEVICE_CAP_CARRIER_DETECT;
@@ -109,7 +109,7 @@ real_get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-real_can_interrupt_activation (NMDevice *dev)
+can_interrupt_activation (NMDevice *dev)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (dev);
 	gboolean interrupt = FALSE;
@@ -124,7 +124,7 @@ real_can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-real_is_available (NMDevice *dev)
+is_available (NMDevice *dev)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (dev);
 
@@ -136,9 +136,9 @@ real_is_available (NMDevice *dev)
 }
 
 static gboolean
-real_check_connection_compatible (NMDevice *device,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
@@ -171,11 +171,11 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_complete_connection (NMDevice *device,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMDevice *device,
+                     NMConnection *connection,
+                     const char *specific_object,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMSettingAdsl *s_adsl;
 
@@ -199,9 +199,9 @@ real_complete_connection (NMDevice *device,
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMDevice *dev,
-                               GSList *connections,
-                               char **specific_object)
+get_best_auto_connection (NMDevice *dev,
+                          GSList *connections,
+                          char **specific_object)
 {
 	GSList *iter;
 
@@ -418,7 +418,7 @@ netlink_notification (NMNetlinkMonitor *monitor,
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
@@ -505,9 +505,9 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device,
-                                  NMIP4Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip4_config_start (NMDevice *device,
+                             NMIP4Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
@@ -563,7 +563,7 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 }
 
 static void
-real_deactivate (NMDevice *device)
+deactivate (NMDevice *device)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (device);
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
@@ -810,17 +810,17 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	parent_class->get_generic_capabilities = real_get_generic_capabilities;
-	parent_class->can_interrupt_activation = real_can_interrupt_activation;
-	parent_class->is_available = real_is_available;
+	parent_class->get_generic_capabilities = get_generic_capabilities;
+	parent_class->can_interrupt_activation = can_interrupt_activation;
+	parent_class->is_available = is_available;
 
-	parent_class->check_connection_compatible = real_check_connection_compatible;
-	parent_class->get_best_auto_connection = real_get_best_auto_connection;
-	parent_class->complete_connection = real_complete_connection;
+	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->get_best_auto_connection = get_best_auto_connection;
+	parent_class->complete_connection = complete_connection;
 
-	parent_class->act_stage2_config = real_act_stage2_config;
-	parent_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	parent_class->deactivate = real_deactivate;
+	parent_class->act_stage2_config = act_stage2_config;
+	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	parent_class->deactivate = deactivate;
 
 	/* properties */
 	g_object_class_install_property

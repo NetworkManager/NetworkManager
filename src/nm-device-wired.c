@@ -354,13 +354,13 @@ nm_device_wired_init (NMDeviceWired * self)
 }
 
 static gboolean
-real_hw_is_up (NMDevice *device)
+hw_is_up (NMDevice *device)
 {
 	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
+hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	gboolean success, carrier;
 	guint32 caps;
@@ -377,13 +377,13 @@ real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 }
 
 static void
-real_hw_take_down (NMDevice *dev)
+hw_take_down (NMDevice *dev)
 {
 	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
 }
 
 static void
-real_update_hw_address (NMDevice *dev)
+update_hw_address (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
 	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
@@ -421,7 +421,7 @@ real_update_hw_address (NMDevice *dev)
 }
 
 static gboolean
-real_can_interrupt_activation (NMDevice *dev)
+can_interrupt_activation (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
 	gboolean interrupt = FALSE;
@@ -437,7 +437,7 @@ real_can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-real_is_available (NMDevice *dev)
+is_available (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
 
@@ -502,12 +502,12 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
 
-	parent_class->hw_is_up = real_hw_is_up;
-	parent_class->hw_bring_up = real_hw_bring_up;
-	parent_class->hw_take_down = real_hw_take_down;
-	parent_class->can_interrupt_activation = real_can_interrupt_activation;
-	parent_class->update_hw_address = real_update_hw_address;
-	parent_class->is_available = real_is_available;
+	parent_class->hw_is_up = hw_is_up;
+	parent_class->hw_bring_up = hw_bring_up;
+	parent_class->hw_take_down = hw_take_down;
+	parent_class->can_interrupt_activation = can_interrupt_activation;
+	parent_class->update_hw_address = update_hw_address;
+	parent_class->is_available = is_available;
 	parent_class->connection_match_config = connection_match_config;
 }
 

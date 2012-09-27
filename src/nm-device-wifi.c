@@ -278,7 +278,7 @@ ipw_rfkill_state_work (gpointer user_data)
 /*****************************************************************/
 
 static guint32
-real_get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
@@ -799,13 +799,13 @@ periodic_update (gpointer user_data)
 }
 
 static gboolean
-real_hw_is_up (NMDevice *device)
+hw_is_up (NMDevice *device)
 {
 	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
+hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
 		return FALSE;
@@ -814,13 +814,13 @@ real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 }
 
 static void
-real_hw_take_down (NMDevice *device)
+hw_take_down (NMDevice *device)
 {
 	nm_system_iface_set_up (nm_device_get_ip_ifindex (device), FALSE, NULL);
 }
 
 static gboolean
-real_is_up (NMDevice *device)
+is_up (NMDevice *device)
 {
 	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->periodic_source_id)
 		return FALSE;
@@ -829,7 +829,7 @@ real_is_up (NMDevice *device)
 }
 
 static gboolean
-real_bring_up (NMDevice *dev)
+bring_up (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -875,7 +875,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	}
 
 	/* Can't change MAC address while device is up */
-	real_hw_take_down (dev);
+	hw_take_down (dev);
 
 	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
@@ -887,7 +887,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 		nm_log_warn (LOGD_DEVICE | LOGD_ETHER, "(%s): failed to %s MAC address to %s",
 		             iface, detail, mac_str);
 	}
-	real_hw_bring_up (dev, NULL);
+	hw_bring_up (dev, NULL);
 	g_free (mac_str);
 
 	return success;
@@ -920,7 +920,7 @@ remove_all_aps (NMDeviceWifi *self)
 }
 
 static void
-real_take_down (NMDevice *dev)
+take_down (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -936,7 +936,7 @@ real_take_down (NMDevice *dev)
 }
 
 static void
-real_deactivate (NMDevice *dev)
+deactivate (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -1008,9 +1008,9 @@ is_adhoc_wpa (NMConnection *connection)
 }
 
 static gboolean
-real_check_connection_compatible (NMDevice *device,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -1082,7 +1082,7 @@ real_check_connection_compatible (NMDevice *device,
 
 
 static gboolean
-real_check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -1148,11 +1148,11 @@ is_manf_default_ssid (const GByteArray *ssid)
 }
 
 static gboolean
-real_complete_connection (NMDevice *device,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMDevice *device,
+                     NMConnection *connection,
+                     const char *specific_object,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -1320,7 +1320,7 @@ real_complete_connection (NMDevice *device,
 }
 
 static gboolean
-real_is_available (NMDevice *dev)
+is_available (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -1351,9 +1351,9 @@ real_is_available (NMDevice *dev)
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMDevice *dev,
-                               GSList *connections,
-                               char **specific_object)
+get_best_auto_connection (NMDevice *dev,
+                          GSList *connections,
+                          char **specific_object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2837,7 +2837,7 @@ error:
 /****************************************************************************/
 
 static void
-real_update_hw_address (NMDevice *dev)
+update_hw_address (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	struct ifreq req;
@@ -2862,7 +2862,7 @@ real_update_hw_address (NMDevice *dev)
 }
 
 static void
-real_update_permanent_hw_address (NMDevice *dev)
+update_permanent_hw_address (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2904,7 +2904,7 @@ real_update_permanent_hw_address (NMDevice *dev)
 }
 
 static void
-real_update_initial_hw_address (NMDevice *dev)
+update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2916,7 +2916,7 @@ real_update_initial_hw_address (NMDevice *dev)
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
 	if (!memcmp (&priv->hw_addr, &zero, ETH_ALEN))
-		real_update_hw_address (dev);
+		update_hw_address (dev);
 
 	if (memcmp (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN))
 		memcpy (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN);
@@ -2931,7 +2931,7 @@ real_update_initial_hw_address (NMDevice *dev)
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -3009,7 +3009,7 @@ done:
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -3114,7 +3114,7 @@ out:
 }
 
 static void
-real_ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
@@ -3208,7 +3208,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 
 
 static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
@@ -3230,7 +3230,7 @@ real_act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6;
@@ -3347,7 +3347,7 @@ activation_failure_handler (NMDevice *dev)
 }
 
 static gboolean
-real_can_interrupt_activation (NMDevice *dev)
+can_interrupt_activation (NMDevice *dev)
 {
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH)
 		return TRUE;
@@ -3357,7 +3357,7 @@ real_can_interrupt_activation (NMDevice *dev)
 
 
 static guint32
-real_get_type_capabilities (NMDevice *dev)
+get_type_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_WIFI_GET_PRIVATE (dev)->capabilities;
 }
@@ -3495,7 +3495,7 @@ nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
 }
 
 static void
-real_set_enabled (NMDevice *device, gboolean enabled)
+set_enabled (NMDevice *device, gboolean enabled)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -3692,31 +3692,31 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	parent_class->get_type_capabilities = real_get_type_capabilities;
-	parent_class->get_generic_capabilities = real_get_generic_capabilities;
-	parent_class->hw_is_up = real_hw_is_up;
-	parent_class->hw_bring_up = real_hw_bring_up;
-	parent_class->hw_take_down = real_hw_take_down;
-	parent_class->is_up = real_is_up;
-	parent_class->bring_up = real_bring_up;
-	parent_class->take_down = real_take_down;
-	parent_class->update_hw_address = real_update_hw_address;
-	parent_class->update_permanent_hw_address = real_update_permanent_hw_address;
-	parent_class->update_initial_hw_address = real_update_initial_hw_address;
-	parent_class->get_best_auto_connection = real_get_best_auto_connection;
-	parent_class->is_available = real_is_available;
-	parent_class->check_connection_compatible = real_check_connection_compatible;
-	parent_class->check_connection_available = real_check_connection_available;
-	parent_class->complete_connection = real_complete_connection;
-	parent_class->set_enabled = real_set_enabled;
+	parent_class->get_type_capabilities = get_type_capabilities;
+	parent_class->get_generic_capabilities = get_generic_capabilities;
+	parent_class->hw_is_up = hw_is_up;
+	parent_class->hw_bring_up = hw_bring_up;
+	parent_class->hw_take_down = hw_take_down;
+	parent_class->is_up = is_up;
+	parent_class->bring_up = bring_up;
+	parent_class->take_down = take_down;
+	parent_class->update_hw_address = update_hw_address;
+	parent_class->update_permanent_hw_address = update_permanent_hw_address;
+	parent_class->update_initial_hw_address = update_initial_hw_address;
+	parent_class->get_best_auto_connection = get_best_auto_connection;
+	parent_class->is_available = is_available;
+	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->check_connection_available = check_connection_available;
+	parent_class->complete_connection = complete_connection;
+	parent_class->set_enabled = set_enabled;
 
-	parent_class->act_stage1_prepare = real_act_stage1_prepare;
-	parent_class->act_stage2_config = real_act_stage2_config;
-	parent_class->ip4_config_pre_commit = real_ip4_config_pre_commit;
-	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
-	parent_class->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
-	parent_class->deactivate = real_deactivate;
-	parent_class->can_interrupt_activation = real_can_interrupt_activation;
+	parent_class->act_stage1_prepare = act_stage1_prepare;
+	parent_class->act_stage2_config = act_stage2_config;
+	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
+	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
+	parent_class->deactivate = deactivate;
+	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->hwaddr_matches = hwaddr_matches;
 

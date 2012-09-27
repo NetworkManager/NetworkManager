@@ -56,7 +56,7 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void real_set_enabled (NMDevice *device, gboolean enabled);
+static void set_enabled (NMDevice *device, gboolean enabled);
 
 /*****************************************************************************/
 
@@ -161,7 +161,7 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 
-	real_set_enabled (NM_DEVICE (self), nm_modem_get_mm_enabled (priv->modem));
+	set_enabled (NM_DEVICE (self), nm_modem_get_mm_enabled (priv->modem));
 
 	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
 }
@@ -206,15 +206,15 @@ device_state_changed (NMDevice *device,
 }
 
 static guint32
-real_get_generic_capabilities (NMDevice *device)
+get_generic_capabilities (NMDevice *device)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMDevice *device,
-							   GSList *connections,
-							   char **specific_object)
+get_best_auto_connection (NMDevice *device,
+                          GSList *connections,
+                          char **specific_object)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 
@@ -222,9 +222,9 @@ real_get_best_auto_connection (NMDevice *device,
 }
 
 static gboolean
-real_check_connection_compatible (NMDevice *device,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 
@@ -232,11 +232,11 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_complete_connection (NMDevice *device,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMDevice *device,
+                     NMConnection *connection,
+                     const char *specific_object,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 
@@ -244,25 +244,25 @@ real_complete_connection (NMDevice *device,
 }
 
 static gboolean
-real_hw_is_up (NMDevice *device)
+hw_is_up (NMDevice *device)
 {
 	return nm_modem_hw_is_up (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
+hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	return nm_modem_hw_bring_up (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device, no_firmware);
 }
 
 static void
-real_deactivate (NMDevice *device)
+deactivate (NMDevice *device)
 {
 	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 
@@ -273,7 +273,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 
@@ -284,9 +284,9 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device,
-                                  NMIP4Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip4_config_start (NMDevice *device,
+                             NMIP4Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	return nm_modem_stage3_ip4_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
 	                                         device,
@@ -295,9 +295,9 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 }
 
 static NMActStageReturn
-real_act_stage3_ip6_config_start (NMDevice *device,
-                                  NMIP6Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip6_config_start (NMDevice *device,
+                             NMIP6Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
 	                                         device,
@@ -308,13 +308,13 @@ real_act_stage3_ip6_config_start (NMDevice *device,
 /*****************************************************************************/
 
 static gboolean
-real_get_enabled (NMDevice *device)
+get_enabled (NMDevice *device)
 {
 	return nm_modem_get_mm_enabled (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem);
 }
 
 static void
-real_set_enabled (NMDevice *device, gboolean enabled)
+set_enabled (NMDevice *device, gboolean enabled)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
@@ -464,19 +464,19 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->get_best_auto_connection = real_get_best_auto_connection;
-	device_class->check_connection_compatible = real_check_connection_compatible;
-	device_class->complete_connection = real_complete_connection;
-	device_class->hw_is_up = real_hw_is_up;
-	device_class->hw_bring_up = real_hw_bring_up;
-	device_class->deactivate = real_deactivate;
-	device_class->act_stage1_prepare = real_act_stage1_prepare;
-	device_class->act_stage2_config = real_act_stage2_config;
-	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start = real_act_stage3_ip6_config_start;
-	device_class->get_enabled = real_get_enabled;
-    device_class->set_enabled = real_set_enabled;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->get_best_auto_connection = get_best_auto_connection;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+	device_class->hw_is_up = hw_is_up;
+	device_class->hw_bring_up = hw_bring_up;
+	device_class->deactivate = deactivate;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->get_enabled = get_enabled;
+	device_class->set_enabled = set_enabled;
 
 	/* Properties */
 	g_object_class_install_property

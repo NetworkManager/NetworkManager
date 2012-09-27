@@ -93,10 +93,10 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static GPid
-real_ip4_start (NMDHCPClient *client,
-                NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr,
-                const char *hostname)
+ip4_start (NMDHCPClient *client,
+           NMSettingIP4Config *s_ip4,
+           guint8 *dhcp_anycast_addr,
+           const char *hostname)
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
@@ -166,18 +166,18 @@ real_ip4_start (NMDHCPClient *client,
 }
 
 static GPid
-real_ip6_start (NMDHCPClient *client,
-                NMSettingIP6Config *s_ip6,
-                guint8 *dhcp_anycast_addr,
-                const char *hostname,
-                gboolean info_only)
+ip6_start (NMDHCPClient *client,
+           NMSettingIP6Config *s_ip6,
+           guint8 *dhcp_anycast_addr,
+           const char *hostname,
+           gboolean info_only)
 {
 	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");
 	return -1;
 }
 
 static void
-real_stop (NMDHCPClient *client, gboolean release)
+stop (NMDHCPClient *client, gboolean release)
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 
@@ -221,8 +221,8 @@ nm_dhcp_dhcpcd_class_init (NMDHCPDhcpcdClass *dhcpcd_class)
 	/* virtual methods */
 	object_class->dispose = dispose;
 
-	client_class->ip4_start = real_ip4_start;
-	client_class->ip6_start = real_ip6_start;
-	client_class->stop = real_stop;
+	client_class->ip4_start = ip4_start;
+	client_class->ip6_start = ip6_start;
+	client_class->stop = stop;
 }
 

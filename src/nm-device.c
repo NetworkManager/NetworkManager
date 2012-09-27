@@ -268,7 +268,7 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
 
 static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
 
-static gboolean real_check_connection_available (NMDevice *device, NMConnection *connection);
+static gboolean check_connection_available (NMDevice *device, NMConnection *connection);
 
 static void _clear_available_connections (NMDevice *device, gboolean do_signal);
 
@@ -488,7 +488,7 @@ nm_device_hw_is_up (NMDevice *self)
 }
 
 static guint32
-real_get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *dev)
 {
 	return 0;
 }
@@ -705,7 +705,7 @@ nm_device_get_type_capabilities (NMDevice *self)
 }
 
 static guint32
-real_get_type_capabilities (NMDevice *self)
+get_type_capabilities (NMDevice *self)
 {
 	return NM_DEVICE_CAP_NONE;
 }
@@ -1094,7 +1094,7 @@ ip6_method_matches (NMConnection *connection, const char *match)
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 	NMActiveConnection *master_ac;
@@ -1187,7 +1187,7 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	/* Nothing to do */
 	return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -1809,9 +1809,9 @@ shared4_new_config (NMDevice *self, NMDeviceStateReason *reason)
 /*********************************************/
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *self,
-                                  NMIP4Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip4_config_start (NMDevice *self,
+                             NMIP4Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -2338,9 +2338,9 @@ done:
 }
 
 static NMActStageReturn
-real_act_stage3_ip6_config_start (NMDevice *self,
-                                  NMIP6Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip6_config_start (NMDevice *self,
+                             NMIP6Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *ip_iface;
@@ -2567,7 +2567,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 }
 
 static NMActStageReturn
-real_act_stage4_ip4_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
+act_stage4_ip4_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
 	if (nm_device_ip_config_should_fail (self, FALSE)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
@@ -2651,7 +2651,7 @@ nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
 
 
 static NMActStageReturn
-real_act_stage4_ip6_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
+act_stage4_ip6_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
 	if (nm_device_ip_config_should_fail (self, TRUE)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
@@ -4130,15 +4130,15 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 
-	klass->get_type_capabilities = real_get_type_capabilities;
-	klass->get_generic_capabilities = real_get_generic_capabilities;
-	klass->act_stage1_prepare = real_act_stage1_prepare;
-	klass->act_stage2_config = real_act_stage2_config;
-	klass->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	klass->act_stage3_ip6_config_start = real_act_stage3_ip6_config_start;
-	klass->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
-	klass->act_stage4_ip6_config_timeout = real_act_stage4_ip6_config_timeout;
-	klass->check_connection_available = real_check_connection_available;
+	klass->get_type_capabilities = get_type_capabilities;
+	klass->get_generic_capabilities = get_generic_capabilities;
+	klass->act_stage1_prepare = act_stage1_prepare;
+	klass->act_stage2_config = act_stage2_config;
+	klass->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	klass->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	klass->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
+	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
+	klass->check_connection_available = check_connection_available;
 
 	/* Properties */
 	g_object_class_install_property
@@ -5048,7 +5048,7 @@ _del_available_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-real_check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device, NMConnection *connection)
 {
 	/* Default is to assume the connection is available unless a subclass
 	 * overrides this with more specific checks.

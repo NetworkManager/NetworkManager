@@ -122,7 +122,7 @@ nm_device_infiniband_new (const char *udi,
 
 
 static void
-real_update_hw_address (NMDevice *dev)
+update_hw_address (NMDevice *dev)
 {
 	const guint8 *hw_addr;
 	guint8 old_addr[INFINIBAND_ALEN];
@@ -138,15 +138,15 @@ real_update_hw_address (NMDevice *dev)
 }
 
 static guint32
-real_get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMDevice *dev,
-                               GSList *connections,
-                               char **specific_object)
+get_best_auto_connection (NMDevice *dev,
+                          GSList *connections,
+                          char **specific_object)
 {
 	GSList *iter;
 
@@ -182,7 +182,7 @@ real_get_best_auto_connection (NMDevice *dev,
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 	NMConnection *connection;
@@ -229,7 +229,7 @@ real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 }
 
 static void
-real_ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
+ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 {
 	NMConnection *connection;
 	NMSettingInfiniband *s_infiniband;
@@ -247,9 +247,9 @@ real_ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 }
 
 static gboolean
-real_check_connection_compatible (NMDevice *device,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *mac;
@@ -287,11 +287,11 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_complete_connection (NMDevice *device,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMDevice *device,
+                     NMConnection *connection,
+                     const char *specific_object,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *setting_mac;
@@ -476,14 +476,14 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	parent_class->get_generic_capabilities = real_get_generic_capabilities;
-	parent_class->update_hw_address = real_update_hw_address;
-	parent_class->get_best_auto_connection = real_get_best_auto_connection;
-	parent_class->check_connection_compatible = real_check_connection_compatible;
-	parent_class->complete_connection = real_complete_connection;
+	parent_class->get_generic_capabilities = get_generic_capabilities;
+	parent_class->update_hw_address = update_hw_address;
+	parent_class->get_best_auto_connection = get_best_auto_connection;
+	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->complete_connection = complete_connection;
 
-	parent_class->act_stage1_prepare = real_act_stage1_prepare;
-	parent_class->ip4_config_pre_commit = real_ip4_config_pre_commit;
+	parent_class->act_stage1_prepare = act_stage1_prepare;
+	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 	parent_class->hwaddr_matches = hwaddr_matches;

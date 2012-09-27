@@ -146,9 +146,9 @@ get_connection_bt_type (NMConnection *connection)
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMDevice *device,
-                               GSList *connections,
-                               char **specific_object)
+get_best_auto_connection (NMDevice *device,
+                          GSList *connections,
+                          char **specific_object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	GSList *iter;
@@ -181,9 +181,9 @@ real_get_best_auto_connection (NMDevice *device,
 }
 
 static gboolean
-real_check_connection_compatible (NMDevice *device,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingConnection *s_con;
@@ -237,7 +237,7 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	guint32 bt_type;
@@ -254,11 +254,11 @@ real_check_connection_available (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-real_complete_connection (NMDevice *device,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMDevice *device,
+                     NMConnection *connection,
+                     const char *specific_object,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingBluetooth *s_bt;
@@ -395,7 +395,7 @@ real_complete_connection (NMDevice *device,
 }
 
 static guint32
-real_get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
@@ -880,7 +880,7 @@ bt_connect_timeout (gpointer user_data)
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	DBusGConnection *bus;
@@ -956,9 +956,9 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip4_config_start (NMDevice *device,
-                                  NMIP4Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip4_config_start (NMDevice *device,
+                             NMIP4Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMActStageReturn ret;
@@ -975,9 +975,9 @@ real_act_stage3_ip4_config_start (NMDevice *device,
 }
 
 static NMActStageReturn
-real_act_stage3_ip6_config_start (NMDevice *device,
-                                  NMIP6Config **out_config,
-                                  NMDeviceStateReason *reason)
+act_stage3_ip6_config_start (NMDevice *device,
+                             NMIP6Config **out_config,
+                             NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMActStageReturn ret;
@@ -994,7 +994,7 @@ real_act_stage3_ip6_config_start (NMDevice *device,
 }
 
 static void
-real_deactivate (NMDevice *device)
+deactivate (NMDevice *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 
@@ -1060,7 +1060,7 @@ real_deactivate (NMDevice *device)
 /*****************************************************************************/
 
 static gboolean
-real_is_available (NMDevice *dev)
+is_available (NMDevice *dev)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (dev);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
@@ -1298,17 +1298,17 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	device_class->get_best_auto_connection = real_get_best_auto_connection;
-	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->deactivate = real_deactivate;
-	device_class->act_stage2_config = real_act_stage2_config;
-	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
-	device_class->act_stage3_ip6_config_start = real_act_stage3_ip6_config_start;
-	device_class->check_connection_compatible = real_check_connection_compatible;
-	device_class->check_connection_available = real_check_connection_available;
-	device_class->complete_connection = real_complete_connection;
+	device_class->get_best_auto_connection = get_best_auto_connection;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->deactivate = deactivate;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
+	device_class->complete_connection = complete_connection;
 	device_class->hwaddr_matches = hwaddr_matches;
-	device_class->is_available = real_is_available;
+	device_class->is_available = is_available;
 
 	/* Properties */
 	g_object_class_install_property

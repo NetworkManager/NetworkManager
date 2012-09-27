@@ -310,7 +310,7 @@ update_availability (NMDeviceWimax *self, gboolean old_available)
 /* NMDeviceInterface interface */
 
 static void
-real_set_enabled (NMDevice *device, gboolean enabled)
+set_enabled (NMDevice *device, gboolean enabled)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -347,7 +347,7 @@ real_set_enabled (NMDevice *device, gboolean enabled)
 /* NMDevice methods */
 
 static void
-real_take_down (NMDevice *device)
+take_down (NMDevice *device)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 
@@ -356,13 +356,13 @@ real_take_down (NMDevice *device)
 }
 
 static gboolean
-real_hw_is_up (NMDevice *device)
+hw_is_up (NMDevice *device)
 {
 	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
+hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (dev);
 
@@ -373,13 +373,13 @@ real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 }
 
 static void
-real_hw_take_down (NMDevice *dev)
+hw_take_down (NMDevice *dev)
 {
 	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
 }
 
 static void
-real_update_hw_address (NMDevice *dev)
+update_hw_address (NMDevice *dev)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (dev);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -441,9 +441,9 @@ hwaddr_matches (NMDevice *device,
 }
 
 static gboolean
-real_check_connection_compatible (NMDevice *device,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMSettingConnection *s_con;
@@ -482,7 +482,7 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	const GSList *ns_iter = NULL;
@@ -497,11 +497,11 @@ real_check_connection_available (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-real_complete_connection (NMDevice *device,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMDevice *device,
+                     NMConnection *connection,
+                     const char *specific_object,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -609,9 +609,9 @@ real_complete_connection (NMDevice *device,
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMDevice *device,
-                               GSList *connections,
-                               char **specific_object)
+get_best_auto_connection (NMDevice *device,
+                          GSList *connections,
+                          char **specific_object)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	GSList *iter;
@@ -655,13 +655,13 @@ real_get_best_auto_connection (NMDevice *device,
 }
 
 static guint32
-real_get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
 static gboolean
-real_is_available (NMDevice *device)
+is_available (NMDevice *device)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	const char *iface = nm_device_get_iface (device);
@@ -725,7 +725,7 @@ clear_connected_poll (NMDeviceWimax *self)
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMActRequest *req;
@@ -773,7 +773,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMConnection *connection;
@@ -841,7 +841,7 @@ force_disconnect (NMDeviceWimax *self, struct wmxsdk *sdk)
 }
 
 static void
-real_deactivate (NMDevice *device)
+deactivate (NMDevice *device)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -1519,22 +1519,22 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	device_class->take_down = real_take_down;
-	device_class->hw_is_up = real_hw_is_up;
-	device_class->hw_bring_up = real_hw_bring_up;
-	device_class->hw_take_down = real_hw_take_down;
-	device_class->update_hw_address = real_update_hw_address;
-	device_class->check_connection_compatible = real_check_connection_compatible;
-	device_class->check_connection_available = real_check_connection_available;
-	device_class->complete_connection = real_complete_connection;
-	device_class->get_best_auto_connection = real_get_best_auto_connection;
-	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->is_available = real_is_available;
-	device_class->act_stage1_prepare = real_act_stage1_prepare;
-	device_class->act_stage2_config = real_act_stage2_config;
-	device_class->deactivate = real_deactivate;
-    device_class->set_enabled = real_set_enabled;
-    device_class->hwaddr_matches = hwaddr_matches;
+	device_class->take_down = take_down;
+	device_class->hw_is_up = hw_is_up;
+	device_class->hw_bring_up = hw_bring_up;
+	device_class->hw_take_down = hw_take_down;
+	device_class->update_hw_address = update_hw_address;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
+	device_class->complete_connection = complete_connection;
+	device_class->get_best_auto_connection = get_best_auto_connection;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->is_available = is_available;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->deactivate = deactivate;
+	device_class->set_enabled = set_enabled;
+	device_class->hwaddr_matches = hwaddr_matches;
 
 	/* Properties */
 	g_object_class_install_property

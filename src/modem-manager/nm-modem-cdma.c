@@ -154,11 +154,11 @@ create_connect_properties (NMConnection *connection)
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMModem *modem,
-                         NMActRequest *req,
-                         GPtrArray **out_hints,
-                         const char **out_setting_name,
-                         NMDeviceStateReason *reason)
+act_stage1_prepare (NMModem *modem,
+                    NMActRequest *req,
+                    GPtrArray **out_hints,
+                    const char **out_setting_name,
+                    NMDeviceStateReason *reason)
 {
 	NMModemCdma *self = NM_MODEM_CDMA (modem);
 	NMModemCdmaPrivate *priv = NM_MODEM_CDMA_GET_PRIVATE (self);
@@ -194,9 +194,9 @@ real_act_stage1_prepare (NMModem *modem,
 }
 
 static NMConnection *
-real_get_best_auto_connection (NMModem *modem,
-							   GSList *connections,
-							   char **specific_object)
+get_best_auto_connection (NMModem *modem,
+                          GSList *connections,
+                          char **specific_object)
 {
 	GSList *iter;
 
@@ -219,9 +219,9 @@ real_get_best_auto_connection (NMModem *modem,
 }
 
 static gboolean
-real_check_connection_compatible (NMModem *modem,
-                                  NMConnection *connection,
-                                  GError **error)
+check_connection_compatible (NMModem *modem,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingCdma *s_cdma;
@@ -248,10 +248,10 @@ real_check_connection_compatible (NMModem *modem,
 }
 
 static gboolean
-real_complete_connection (NMModem *modem,
-                          NMConnection *connection,
-                          const GSList *existing_connections,
-                          GError **error)
+complete_connection (NMModem *modem,
+                     NMConnection *connection,
+                     const GSList *existing_connections,
+                     GError **error)
 {
 	NMSettingCdma *s_cdma;
 	NMSettingPPP *s_ppp;
@@ -286,10 +286,10 @@ real_complete_connection (NMModem *modem,
 }
 
 static gboolean
-real_get_user_pass (NMModem *modem,
-                    NMConnection *connection,
-                    const char **user,
-                    const char **pass)
+get_user_pass (NMModem *modem,
+               NMConnection *connection,
+               const char **user,
+               const char **pass)
 {
 	NMSettingCdma *s_cdma;
 
@@ -306,13 +306,13 @@ real_get_user_pass (NMModem *modem,
 }
 
 static const char *
-real_get_setting_name (NMModem *modem)
+get_setting_name (NMModem *modem)
 {
 	return NM_SETTING_CDMA_SETTING_NAME;
 }
 
 static void
-real_deactivate (NMModem *modem, NMDevice *device)
+deactivate (NMModem *modem, NMDevice *device)
 {
 	NMModemCdmaPrivate *priv = NM_MODEM_CDMA_GET_PRIVATE (modem);
 
@@ -356,13 +356,13 @@ nm_modem_cdma_class_init (NMModemCdmaClass *klass)
 
 	/* Virtual methods */
 	object_class->dispose = dispose;
-	modem_class->get_user_pass = real_get_user_pass;
-	modem_class->get_setting_name = real_get_setting_name;
-	modem_class->get_best_auto_connection = real_get_best_auto_connection;
-	modem_class->check_connection_compatible = real_check_connection_compatible;
-	modem_class->complete_connection = real_complete_connection;
-	modem_class->act_stage1_prepare = real_act_stage1_prepare;
-	modem_class->deactivate = real_deactivate;
+	modem_class->get_user_pass = get_user_pass;
+	modem_class->get_setting_name = get_setting_name;
+	modem_class->get_best_auto_connection = get_best_auto_connection;
+	modem_class->check_connection_compatible = check_connection_compatible;
+	modem_class->complete_connection = complete_connection;
+	modem_class->act_stage1_prepare = act_stage1_prepare;
+	modem_class->deactivate = deactivate;
 
 	dbus_g_error_domain_register (NM_CDMA_ERROR, NULL, NM_TYPE_CDMA_ERROR);
 }

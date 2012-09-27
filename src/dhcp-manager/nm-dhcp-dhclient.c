@@ -545,10 +545,10 @@ dhclient_start (NMDHCPClient *client,
 }
 
 static GPid
-real_ip4_start (NMDHCPClient *client,
-                NMSettingIP4Config *s_ip4,
-                guint8 *dhcp_anycast_addr,
-                const char *hostname)
+ip4_start (NMDHCPClient *client,
+           NMSettingIP4Config *s_ip4,
+           guint8 *dhcp_anycast_addr,
+           const char *hostname)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	const char *iface;
@@ -565,17 +565,17 @@ real_ip4_start (NMDHCPClient *client,
 }
 
 static GPid
-real_ip6_start (NMDHCPClient *client,
-                NMSettingIP6Config *s_ip6,
-                guint8 *dhcp_anycast_addr,
-                const char *hostname,
-                gboolean info_only)
+ip6_start (NMDHCPClient *client,
+           NMSettingIP6Config *s_ip6,
+           guint8 *dhcp_anycast_addr,
+           const char *hostname,
+           gboolean info_only)
 {
 	return dhclient_start (client, info_only ? "-S" : "-N", FALSE);
 }
 
 static void
-real_stop (NMDHCPClient *client, gboolean release)
+stop (NMDHCPClient *client, gboolean release)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 
@@ -634,8 +634,8 @@ nm_dhcp_dhclient_class_init (NMDHCPDhclientClass *dhclient_class)
 	/* virtual methods */
 	object_class->dispose = dispose;
 
-	client_class->ip4_start = real_ip4_start;
-	client_class->ip6_start = real_ip6_start;
-	client_class->stop = real_stop;
+	client_class->ip4_start = ip4_start;
+	client_class->ip6_start = ip6_start;
+	client_class->stop = stop;
 }
 

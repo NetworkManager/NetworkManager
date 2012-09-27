@@ -497,11 +497,11 @@ nm_modem_get_secrets (NMModem *self,
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMModem *modem,
-                         NMActRequest *req,
-                         GPtrArray **out_hints,
-                         const char **out_setting_name,
-                         NMDeviceStateReason *reason)
+act_stage1_prepare (NMModem *modem,
+                    NMActRequest *req,
+                    GPtrArray **out_hints,
+                    const char **out_setting_name,
+                    NMDeviceStateReason *reason)
 {
 	*reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 	return NM_ACT_STAGE_RETURN_FAILURE;
@@ -598,7 +598,7 @@ nm_modem_complete_connection (NMModem *self,
 }
 
 static void
-real_deactivate (NMModem *self, NMDevice *device)
+deactivate (NMModem *self, NMDevice *device)
 {
 	NMModemPrivate *priv;
 	int ifindex;
@@ -1067,8 +1067,8 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	klass->act_stage1_prepare = real_act_stage1_prepare;
-	klass->deactivate = real_deactivate;
+	klass->act_stage1_prepare = act_stage1_prepare;
+	klass->deactivate = deactivate;
 
 	/* Properties */
 	g_object_class_install_property

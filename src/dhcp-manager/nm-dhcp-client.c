@@ -182,7 +182,7 @@ nm_dhcp_client_stop_pid (GPid pid, const char *iface, guint timeout_secs)
 }
 
 static void
-real_stop (NMDHCPClient *self, gboolean release)
+stop (NMDHCPClient *self, gboolean release)
 {
 	NMDHCPClientPrivate *priv;
 
@@ -1398,7 +1398,7 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	client_class->stop = real_stop;
+	client_class->stop = stop;
 
 	g_object_class_install_property
 		(object_class, PROP_IFACE,
