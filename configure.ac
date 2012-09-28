@@ -464,6 +464,18 @@ else
 fi
 AM_CONDITIONAL(WITH_POLKIT, test "${enable_polkit}" = "yes")
 
+AC_ARG_ENABLE(modify-system,
+              AS_HELP_STRING([--enable-modify-system], [Allow users to modify system connections]))
+if test "${enable_modify_system}" = "yes"; then
+	if ! test "${enable_polkit}" = "yes"; then
+		AC_MSG_ERROR([--enable-modify-system requires --enable-polkit])
+	fi
+	NM_MODIFY_SYSTEM_POLICY="yes"
+else
+	NM_MODIFY_SYSTEM_POLICY="auth_admin_keep"
+fi
+AC_SUBST(NM_MODIFY_SYSTEM_POLICY)
+
 AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss|gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 
 with_nss=no
@@ -822,6 +834,7 @@ man/nm-online.1
 man/nmcli.1
 po/Makefile.in
 policy/Makefile
+policy/org.freedesktop.NetworkManager.policy.in
 data/Makefile
 docs/Makefile
 docs/api/Makefile
@@ -869,7 +882,11 @@ else
 fi
 
 if test "${enable_polkit}" = "yes"; then
-	echo PolicyKit support: yes
+	if test "${enable_modify_system}"; then
+		echo "PolicyKit support: yes (permissive modify.system)"
+	else
+		echo "PolicyKit support: yes (restrictive modify.system)"
+	fi
 else
 	echo PolicyKit support: no
 fi
