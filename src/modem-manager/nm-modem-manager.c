@@ -330,7 +330,7 @@ modem_manager_disappeared (NMModemManager *self)
 	}
 
 	/* Try to activate the modem-manager */
-	nm_log_info (LOGD_MB, "trying to start the modem manager...");
+	nm_log_dbg (LOGD_MB, "trying to start the modem manager...");
 	poke_modem_cb (self);
 	priv->poke_id = g_timeout_add_seconds (MODEM_POKE_INTERVAL, poke_modem_cb, self);
 }
