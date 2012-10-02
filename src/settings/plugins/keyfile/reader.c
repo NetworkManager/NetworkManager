@@ -57,13 +57,13 @@ read_array_of_uint (GKeyFile *file,
 
 	tmp = g_key_file_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
 	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+	g_return_val_if_fail (array != NULL, FALSE);
+
 	for (i = 0; i < length; i++)
 		g_array_append_val (array, tmp[i]);
 
-	if (array) {
-		g_object_set (setting, key, array, NULL);
-		g_array_free (array, TRUE);
-	}
+	g_object_set (setting, key, array, NULL);
+	g_array_unref (array);
 
 	return TRUE;
 }
@@ -84,12 +84,6 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 	return TRUE;
 }
 
-static void
-free_one_ip4_address (gpointer data, gpointer user_data)
-{
-	g_array_free ((GArray *) data, TRUE);
-}
-
 static GPtrArray *
 read_ip4_addresses (GKeyFile *file,
 			    const char *setting_name,
@@ -98,7 +92,7 @@ read_ip4_addresses (GKeyFile *file,
 	GPtrArray *addresses;
 	int i = 0;
 
-	addresses = g_ptr_array_sized_new (3);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) g_array_unref);
 
 	/* Look for individual addresses */
 	while (i++ < 1000) {
@@ -133,7 +127,7 @@ read_ip4_addresses (GKeyFile *file,
 
 				/* prefix */
 				if (!get_one_int (*iter, 32, key_name, &prefix)) {
-					g_array_free (address, TRUE);
+					g_array_unref (address);
 					goto next;
 				}
 
@@ -143,7 +137,7 @@ read_ip4_addresses (GKeyFile *file,
 				ret = inet_pton (AF_INET, *iter, &addr);
 				if (ret <= 0) {
 					g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
-					g_array_free (address, TRUE);
+					g_array_unref (address);
 					goto next;
 				}
 				g_array_append_val (address, addr.s_addr);
@@ -162,7 +156,7 @@ next:
 	}
 
 	if (addresses->len < 1) {
-		g_ptr_array_free (addresses, TRUE);
+		g_ptr_array_unref (addresses);
 		addresses = NULL;
 	}
 
@@ -183,15 +177,8 @@ ip4_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const c
 
 	if (addresses) {
 		g_object_set (setting, key, addresses, NULL);
-		g_ptr_array_foreach (addresses, free_one_ip4_address, NULL);
-		g_ptr_array_free (addresses, TRUE);
+		g_ptr_array_unref (addresses);
 	}
-}
-
-static void
-free_one_ip4_route (gpointer data, gpointer user_data)
-{
-	g_array_free ((GArray *) data, TRUE);
 }
 
 static GPtrArray *
@@ -202,7 +189,7 @@ read_ip4_routes (GKeyFile *file,
 	GPtrArray *routes;
 	int i = 0;
 
-	routes = g_ptr_array_sized_new (3);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) g_array_unref);
 
 	/* Look for individual routes */
 	while (i++ < 1000) {
@@ -235,7 +222,7 @@ read_ip4_routes (GKeyFile *file,
 
 				/* prefix */
 				if (!get_one_int (*iter, 32, key_name, &prefix)) {
-					g_array_free (route, TRUE);
+					g_array_unref (route);
 					goto next;
 				}
 
@@ -245,7 +232,7 @@ read_ip4_routes (GKeyFile *file,
 
 				/* metric */
 				if (!get_one_int (*iter, G_MAXUINT32, key_name, &metric)) {
-					g_array_free (route, TRUE);
+					g_array_unref (route);
 					goto next;
 				}
 
@@ -255,7 +242,7 @@ read_ip4_routes (GKeyFile *file,
 				ret = inet_pton (AF_INET, *iter, &addr);
 				if (ret <= 0) {
 					g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
-					g_array_free (route, TRUE);
+					g_array_unref (route);
 					goto next;
 				}
 				g_array_append_val (route, addr.s_addr);
@@ -268,7 +255,7 @@ next:
 	}
 
 	if (routes->len < 1) {
-		g_ptr_array_free (routes, TRUE);
+		g_ptr_array_unref (routes);
 		routes = NULL;
 	}
 
@@ -284,8 +271,7 @@ ip4_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const 
 	routes = read_ip4_routes (keyfile, setting_name, key);
 	if (routes) {
 		g_object_set (setting, key, routes, NULL);
-		g_ptr_array_foreach (routes, free_one_ip4_route, NULL);
-		g_ptr_array_free (routes, TRUE);
+		g_ptr_array_unref (routes);
 	}
 }
 
@@ -318,14 +304,8 @@ ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 
 	if (array) {
 		g_object_set (setting, key, array, NULL);
-		g_array_free (array, TRUE);
+		g_array_unref (array);
 	}
-}
-
-static void
-free_one_ip6_address (gpointer data, gpointer user_data)
-{
-	g_value_array_free ((GValueArray *) data);
 }
 
 static char *
@@ -372,12 +352,13 @@ read_ip6_addresses (GKeyFile *file,
 	guint32 prefix;
 	int i = 0;
 
-	addresses = g_ptr_array_sized_new (3);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 
 	/* Look for individual addresses */
 	while (i++ < 1000) {
 		char *tmp, *key_name, *str_prefix, *str_gw;
 		int ret;
+		/* TODO: GValueArray is deprecated and should be replaced with GValue */
 		GValueArray *values;
 		GByteArray *address;
 		GByteArray *gateway;
@@ -455,7 +436,7 @@ next:
 	}
 
 	if (addresses->len < 1) {
-		g_ptr_array_free (addresses, TRUE);
+		g_ptr_array_unref (addresses);
 		addresses = NULL;
 	}
 
@@ -471,15 +452,8 @@ ip6_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const c
 	addresses = read_ip6_addresses (keyfile, setting_name, key);
 	if (addresses) {
 		g_object_set (setting, key, addresses, NULL);
-		g_ptr_array_foreach (addresses, free_one_ip6_address, NULL);
-		g_ptr_array_free (addresses, TRUE);
+		g_ptr_array_unref (addresses);
 	}
-}
-
-static void
-free_one_ip6_route (gpointer data, gpointer user_data)
-{
-	g_value_array_free ((GValueArray *) data);
 }
 
 static GPtrArray *
@@ -492,7 +466,7 @@ read_ip6_routes (GKeyFile *file,
 	guint32 prefix, metric;
 	int i = 0;
 
-	routes = g_ptr_array_sized_new (3);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) g_value_array_free);
 
 	/* Look for individual routes */
 	while (i++ < 1000) {
@@ -500,6 +474,7 @@ read_ip6_routes (GKeyFile *file,
 		char *key_name, *str_prefix;
 		gsize length = 0;
 		int ret;
+		/* TODO: GValueArray is deprecated and should be replaced with GValue */
 		GValueArray *values;
 		GByteArray *address;
 		GValue value = { 0 };
@@ -584,7 +559,7 @@ next:
 	}
 
 	if (routes->len < 1) {
-		g_ptr_array_free (routes, TRUE);
+		g_ptr_array_unref (routes);
 		routes = NULL;
 	}
 
@@ -601,15 +576,8 @@ ip6_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const 
 
 	if (routes) {
 		g_object_set (setting, key, routes, NULL);
-		g_ptr_array_foreach (routes, free_one_ip6_route, NULL);
-		g_ptr_array_free (routes, TRUE);
+		g_ptr_array_unref (routes);
 	}
-}
-
-static void
-free_one_ip6_dns (gpointer data, gpointer user_data)
-{
-	g_byte_array_free ((GByteArray *) data, TRUE);
 }
 
 static void
@@ -625,7 +593,8 @@ ip6_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 	if (!list || !g_strv_length (list))
 		return;
 
-	array = g_ptr_array_sized_new (length);
+	array = g_ptr_array_new_with_free_func ((GDestroyNotify) g_byte_array_unref);
+
 	for (iter = list; *iter; iter++) {
 		GByteArray *byte_array;
 		struct in6_addr addr;
@@ -644,8 +613,7 @@ ip6_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 
 	if (array) {
 		g_object_set (setting, key, array, NULL);
-		g_ptr_array_foreach (array, free_one_ip6_dns, NULL);
-		g_ptr_array_free (array, TRUE);
+		g_ptr_array_unref (array);
 	}
 }
 
