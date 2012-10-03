@@ -682,32 +682,6 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 }
 
 static void
-name_owner_changed (DBusGProxy *proxy,
-                    const char *name,
-                    const char *old_owner,
-                    const char *new_owner,
-                    gpointer user_data)
-{
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	const char *sname = NM_DBUS_SERVICE;
-
-	if (!strcmp (name, sname)) {
-		if (priv->fetch_id)
-			g_source_remove (priv->fetch_id);
-
-		if (new_owner && strlen (new_owner) > 0) {
-			priv->fetch_id = g_idle_add (fetch_connections, self);
-			priv->service_running = TRUE;
-		} else {
-			priv->fetch_id = g_idle_add (remove_connections, self);
-			priv->service_running = FALSE;
-		}
-		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_SERVICE_RUNNING);
-	}
-}
-
-static void
 properties_changed_cb (DBusGProxy *proxy,
                        GHashTable *properties,
                        gpointer user_data)
@@ -731,6 +705,60 @@ properties_changed_cb (DBusGProxy *proxy,
 			priv->can_modify = g_value_get_boolean (value);
 			g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_CAN_MODIFY);
 		}
+	}
+}
+
+static void
+nm_appeared_got_properties (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	GHashTable *props = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call, NULL,
+	                           DBUS_TYPE_G_MAP_OF_VARIANT, &props,
+	                           G_TYPE_INVALID)) {
+		properties_changed_cb (priv->props_proxy, props, self);
+		g_hash_table_destroy (props);
+	}
+}
+
+static void
+name_owner_changed (DBusGProxy *proxy,
+                    const char *name,
+                    const char *old_owner,
+                    const char *new_owner,
+                    gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	const char *sname = NM_DBUS_SERVICE;
+
+	if (!strcmp (name, sname)) {
+		if (priv->fetch_id)
+			g_source_remove (priv->fetch_id);
+
+		if (new_owner && strlen (new_owner) > 0) {
+			priv->fetch_id = g_idle_add (fetch_connections, self);
+			priv->service_running = TRUE;
+
+			dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
+			                         nm_appeared_got_properties, self, NULL,
+			                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
+			                         G_TYPE_INVALID);
+		} else {
+			priv->fetch_id = g_idle_add (remove_connections, self);
+			priv->service_running = FALSE;
+
+			/* Clear properties */
+			g_free (priv->hostname);
+			priv->hostname = NULL;
+			g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_HOSTNAME);
+
+			priv->can_modify = FALSE;
+			g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_CAN_MODIFY);
+		}
+		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_SERVICE_RUNNING);
 	}
 }
 
@@ -921,6 +949,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 	}
 
+	/* If NM isn't running we'll grab properties from name_owner_changed()
+	 * when it starts.
+	 */
+	if (!priv->service_running)
+		return TRUE;
+
 	/* Get properties */
 	if (!dbus_g_proxy_call (priv->props_proxy, "GetAll", error,
 	                        G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
@@ -930,8 +964,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 	properties_changed_cb (priv->props_proxy, props, settings);
 	g_hash_table_destroy (props);
-
-	/* FIXME: need a synchronous fetch_connections too */
 
 	return TRUE;
 }
