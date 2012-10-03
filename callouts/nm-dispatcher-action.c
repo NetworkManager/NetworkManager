@@ -362,14 +362,12 @@ dispatch_one_script (Request *request)
 	}
 }
 
-static GPtrArray *
-find_scripts (Request *request)
+static GSList *
+find_scripts (void)
 {
-	GPtrArray *scripts;
-	ScriptInfo *s;
 	GDir *dir;
 	const char *filename;
-	GSList *sorted = NULL, *iter;
+	GSList *sorted = NULL;
 	GError *error = NULL;
 
 	if (!(dir = g_dir_open (NMD_SCRIPT_DIR, 0, &error))) {
@@ -402,16 +400,7 @@ find_scripts (Request *request)
 	}
 	g_dir_close (dir);
 
-	scripts = g_ptr_array_sized_new (5);
-	for (iter = sorted; iter; iter = g_slist_next (iter)) {
-		s = g_malloc0 (sizeof (*s));
-		s->request = request;
-		s->script = iter->data;
-		g_ptr_array_add (scripts, s);
-	}
-	g_slist_free (sorted);
-
-	return scripts;
+	return sorted;
 }
 
 static void
@@ -429,9 +418,18 @@ impl_dispatch (Handler *h,
                GHashTable *vpn_ip6_props,
                DBusGMethodInvocation *context)
 {
+	GSList *sorted_scripts = NULL;
+	GSList *iter;
 	Request *request;
 	char **p;
 	char *iface = NULL;
+
+	sorted_scripts = find_scripts ();
+
+	if (!sorted_scripts) {
+		dbus_g_method_return (context, g_ptr_array_new ());
+		return;
+	}
 
 	quit_timeout_reschedule (h);
 
@@ -462,7 +460,15 @@ impl_dispatch (Handler *h,
 	}
 
 	request->iface = g_strdup (iface);
-	request->scripts = find_scripts (request);
+
+	request->scripts = g_ptr_array_sized_new (5);
+	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
+		ScriptInfo *s = g_malloc0 (sizeof (*s));
+		s->request = request;
+		s->script = iter->data;
+		g_ptr_array_add (request->scripts, s);
+	}
+	g_slist_free (sorted_scripts);
 
 	/* start dispatching scripts */
 	dispatch_one_script (request);
