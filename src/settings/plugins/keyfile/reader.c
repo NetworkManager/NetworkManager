@@ -364,69 +364,46 @@ error:
 }
 
 static void
-ip_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	gboolean ipv6 = !strcmp (setting_name, "ipv6");
-	GPtrArray *addresses;
+	gboolean routes = !strcmp (key, "routes");
+	static const char *key_names_routes[] = { "route", "routes", NULL };
+	static const char *key_names_addresses[] = { "address", "addresses", NULL };
+	const char **key_names = routes ? key_names_routes : key_names_addresses;
+	GPtrArray *list;
 	int i;
 
-	addresses = g_ptr_array_new_with_free_func (
+	list = g_ptr_array_new_with_free_func (
 		ipv6 ? (GDestroyNotify) g_value_array_free : (GDestroyNotify) g_array_unref);
 
-	/* Look for individual addresses */
-	for (i = 0; i < 1000; i++) {
-		char *key_name;
-		/* address is a GArray of three guint32 for IPv4 and a GValueArray consisting
-		 * of GByteArray, guint32 and GByteArray for IPv6.
-		 */
-		gpointer address;
-		
-		key_name = g_strdup_printf ("%s%d", key, i);
-		address = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, FALSE);
-		if (address) {
-			g_ptr_array_add (addresses, address);
-		}
-		g_free (key_name);
-	}
-
-	if (addresses->len >= 1)
-		g_object_set (setting, key, addresses, NULL);
-
-	g_ptr_array_unref (addresses);
-}
-
-static void
-ip_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
-{
-	const char *setting_name = nm_setting_get_name (setting);
-	gboolean ipv6 = !strcmp (setting_name, "ipv6");
-	GPtrArray *routes;
-	int i;
-
-	routes = g_ptr_array_new_with_free_func (
-		ipv6 ? (GDestroyNotify) g_value_array_free : (GDestroyNotify) g_array_unref);
-
-	/* Look for individual routes */
 	for (i = -1; i < 1000; i++) {
-		char *key_name;
-		/* route is a GArray of three or four guint32 for IPv4 and a GValueArray
-		 * consisting of GByteArray, guint32, GByteArray and optional guint32
-		 * for IPv6.
-		 */
-		gpointer route;
+		const char **key_basename;
 		
-		key_name = g_strdup_printf ("%s%d", key, i);
-		route = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, TRUE);
-		if (route) {
-			g_ptr_array_add (routes, route);
+		for (key_basename = key_names; *key_basename; key_basename++) {
+			char *key_name;
+			gpointer item;
+
+			/* -1 means no suffix */
+			if (i >= 0)
+				key_name = g_strdup_printf ("%s%d", *key_basename, i);
+			else
+				key_name = g_strdup (*key_basename);
+
+			item = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, routes);
+
+			if (item)
+				g_ptr_array_add (list, item);
+
+			g_free (key_name);
 		}
 	}
 
-	if (routes->len >= 1)
-		g_object_set (setting, key, routes, NULL);
+	if (list->len >= 1)
+		g_object_set (setting, key, list, NULL);
 
-	g_ptr_array_unref (routes);
+	g_ptr_array_unref (list);
 }
 
 static void
@@ -844,19 +821,19 @@ static KeyParser key_parsers[] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  FALSE,
-	  ip_addr_parser },
+	  ip_address_or_route_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_ADDRESSES,
 	  FALSE,
-	  ip_addr_parser },
+	  ip_address_or_route_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ROUTES,
 	  FALSE,
-	  ip_route_parser },
+	  ip_address_or_route_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_ROUTES,
 	  FALSE,
-	  ip_route_parser },
+	  ip_address_or_route_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_DNS,
 	  FALSE,

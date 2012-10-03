@@ -173,7 +173,7 @@ ip4_addr_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip4_values (file, setting_name, key, array, 3, 0, 2);
+		write_ip4_values (file, setting_name, "address", array, 3, 0, 2);
 }
 
 static void
@@ -191,7 +191,7 @@ ip4_route_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip4_values (file, setting_name, key, array, 4, 0, 2);
+		write_ip4_values (file, setting_name, "route", array, 4, 0, 2);
 }
 
 static void
@@ -336,7 +336,7 @@ ip6_addr_writer (GKeyFile *file,
 		ip6_addr = ip6_array_to_addr_prefix (values);
 		if (ip6_addr) {
 			/* Write it out */
-			key_name = g_strdup_printf ("%s%d", key, j++);
+			key_name = g_strdup_printf ("address%d", j++);
 			g_key_file_set_string (file, setting_name, key_name, ip6_addr);
 			g_free (key_name);
 			g_free (ip6_addr);
@@ -379,7 +379,7 @@ ip6_route_writer (GKeyFile *file,
 		g_string_append_printf (output, ",%d", int_val);
 
 		/* Write it out */
-		key_name = g_strdup_printf ("%s%d", key, j++);
+		key_name = g_strdup_printf ("route%d", j++);
 		g_key_file_set_string (file, setting_name, key_name, output->str);
 		g_free (key_name);
 
