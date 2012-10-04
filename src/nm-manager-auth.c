@@ -74,24 +74,16 @@ free_data (gpointer data)
 
 #if WITH_POLKIT
 static PolkitAuthority *
-pk_authority_get (void)
+pk_authority_get (GError **error)
 {
 	static PolkitAuthority *authority = NULL;
-	GError *error = NULL;
 
-	if (authority == NULL) {
-		authority = polkit_authority_get_sync (NULL, &error);
-		if (authority == NULL) {
-			nm_log_err (LOGD_CORE, "Failed to initialize PolicyKit: (%d) %s",
-			            error ? error->code : -1,
-			            (error && error->message) ? error->message : "(unknown)");
-			g_clear_error (&error);
-			return NULL;
-		}
-	}
+	if (authority == NULL)
+		authority = polkit_authority_get_sync (NULL, error);
 
 	/* Yes, ref every time; we want to keep the object alive */
-	return g_object_ref (authority);
+	g_warn_if_fail (authority);
+	return authority ? g_object_ref (authority) : NULL;
 }
 #endif
 
@@ -110,7 +102,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
 #if WITH_POLKIT
-	self->authority = pk_authority_get ();
+	self->authority = pk_authority_get (&self->error);
 #endif
 	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_data);
 	self->done_func = done_func;
@@ -405,16 +397,17 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	g_return_val_if_fail (self->owner != NULL, FALSE);
 	g_return_val_if_fail (permission != NULL, FALSE);
 
-	subject = polkit_system_bus_name_new (self->owner);
-	if (!subject)
-		return FALSE;
-
 	call = auth_call_new (self, permission);
 
 	if (self->authority == NULL) {
 		/* No polkit, no authorization */
 		auth_call_schedule_complete_with_error (call, "PolicyKit not running");
-		g_object_unref (subject);
+		return FALSE;
+	}
+
+	subject = polkit_system_bus_name_new (self->owner);
+	if (!subject) {
+		auth_call_schedule_complete_with_error (call, "Failed to create polkit subject");
 		return FALSE;
 	}
 
@@ -603,7 +596,7 @@ nm_auth_changed_func_register (GDestroyNotify callback, gpointer callback_data)
 	gboolean found = FALSE;
 
 #if WITH_POLKIT
-	authority = pk_authority_get ();
+	authority = pk_authority_get (NULL);
 	if (!authority)
 		return;
 
