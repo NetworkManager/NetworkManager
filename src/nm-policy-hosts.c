@@ -67,16 +67,16 @@ nm_policy_hosts_clean_etc_hosts (void)
 	GString *new;
 
 	if (!g_file_get_contents (SYSCONFDIR "/hosts", &contents, &contents_len, &error)) {
-		nm_log_warn (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
-		             error ? error->code : 0,
-		             (error && error->message) ? error->message : "(unknown)");
+		nm_log_dbg (LOGD_DNS, "couldn't read " SYSCONFDIR "/hosts: (%d) %s",
+		            error ? error->code : 0,
+		            (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 		return;
 	}
 
 	new = nm_policy_get_etc_hosts (contents, contents_len);
 	if (new && new->len) {
-		nm_log_info (LOGD_DNS, "Cleaning leftovers from /etc/hosts");
+		nm_log_dbg (LOGD_DNS, "Cleaning leftovers from /etc/hosts");
 
 		g_clear_error (&error);
 		if (!g_file_set_contents (SYSCONFDIR "/hosts", new->str, -1, &error)) {
