@@ -1442,7 +1442,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	guint32 i;
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE, tmp_success;
-	gboolean ip6_privacy, ip6_privacy_prefer_public_ip;
+	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	char *ip6_privacy_str;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
 
