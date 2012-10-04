@@ -75,6 +75,12 @@ gboolean nm_dbus_manager_name_has_owner   (NMDBusManager *self,
 DBusConnection * nm_dbus_manager_get_dbus_connection (NMDBusManager *self);
 DBusGConnection * nm_dbus_manager_get_connection (NMDBusManager *self);
 
+void nm_dbus_manager_register_object (NMDBusManager *self,
+                                      const char *path,
+                                      gpointer object);
+
+void nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object);
+
 G_END_DECLS
 
 #endif /* __NM_DBUS_MANAGER_H__ */

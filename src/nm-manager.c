@@ -1892,9 +1892,7 @@ add_device (NMManager *self, NMDevice *device)
 
 	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
 	nm_device_set_path (device, path);
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
-	                                     path,
-	                                     G_OBJECT (device));
+	nm_dbus_manager_register_object (priv->dbus_mgr, path, device);
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
@@ -4124,7 +4122,7 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                  G_CALLBACK (connection_changed), singleton);
 
-	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH, G_OBJECT (singleton));
+	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH, singleton);
 
 	priv->udev_mgr = nm_udev_manager_new ();
 	g_signal_connect (priv->udev_mgr,

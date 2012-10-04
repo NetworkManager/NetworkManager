@@ -48,6 +48,7 @@ G_DEFINE_TYPE(NMDBusManager, nm_dbus_manager, G_TYPE_OBJECT)
 typedef struct {
 	DBusConnection *connection;
 	DBusGConnection *g_connection;
+	GHashTable *exported;
 	gboolean started;
 
 	DBusGProxy *proxy;
@@ -59,6 +60,7 @@ typedef struct {
 static gboolean nm_dbus_manager_init_bus (NMDBusManager *self);
 static void nm_dbus_manager_cleanup (NMDBusManager *self, gboolean dispose);
 static void start_reconnection_timeout (NMDBusManager *self);
+static void object_destroyed (NMDBusManager *self, gpointer object);
 
 NMDBusManager *
 nm_dbus_manager_get (void)
@@ -80,14 +82,29 @@ nm_dbus_manager_get (void)
 static void
 nm_dbus_manager_init (NMDBusManager *self)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	priv->exported = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
 static void
 nm_dbus_manager_dispose (GObject *object)
 {
-	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (object);
+	NMDBusManager *self = NM_DBUS_MANAGER (object);
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	GHashTableIter iter;
+	GObject *exported;
 
-	nm_dbus_manager_cleanup (NM_DBUS_MANAGER (object), TRUE);
+	if (priv->exported) {
+		g_hash_table_iter_init (&iter, priv->exported);
+		while (g_hash_table_iter_next (&iter, (gpointer) &exported, NULL))
+			g_object_weak_unref (exported, (GWeakNotify) object_destroyed, self);
+
+		g_hash_table_destroy (priv->exported);
+		priv->exported = NULL;
+	}
+
+	nm_dbus_manager_cleanup (self, TRUE);
 
 	if (priv->reconnect_id) {
 		g_source_remove (priv->reconnect_id);
@@ -358,3 +375,38 @@ nm_dbus_manager_get_connection (NMDBusManager *self)
 
 	return NM_DBUS_MANAGER_GET_PRIVATE (self)->g_connection;
 }
+
+static void
+object_destroyed (NMDBusManager *self, gpointer object)
+{
+	g_hash_table_remove (NM_DBUS_MANAGER_GET_PRIVATE (self)->exported, object);
+}
+
+void
+nm_dbus_manager_register_object (NMDBusManager *self,
+                                 const char *path,
+                                 gpointer object)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	g_assert (G_IS_OBJECT (object));
+
+	g_warn_if_fail (g_hash_table_lookup (priv->exported, object) == NULL);
+	g_hash_table_insert (priv->exported, G_OBJECT (object), GUINT_TO_POINTER (1));
+
+	dbus_g_connection_register_g_object (priv->g_connection, path, G_OBJECT (object));
+	g_object_weak_ref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
+}
+
+void
+nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	g_assert (G_IS_OBJECT (object));
+
+	g_hash_table_remove (NM_DBUS_MANAGER_GET_PRIVATE (self)->exported, G_OBJECT (object));
+	g_object_weak_unref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
+	dbus_g_connection_unregister_g_object (priv->g_connection, G_OBJECT (object));
+}
+

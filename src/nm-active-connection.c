@@ -217,8 +217,7 @@ nm_active_connection_export (NMActiveConnection *self)
 
 	priv->path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
 	dbus_mgr = nm_dbus_manager_get ();
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
-	                                     priv->path, G_OBJECT (self));
+	nm_dbus_manager_register_object (dbus_mgr, priv->path, self);
 	g_object_unref (dbus_mgr);
 }
 

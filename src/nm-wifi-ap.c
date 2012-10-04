@@ -318,7 +318,6 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
 	NMDBusManager *mgr;
-	DBusGConnection *g_connection;
 	static guint32 counter = 0;
 
 	g_return_if_fail (NM_IS_AP (ap));
@@ -331,14 +330,8 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
 	}
 
 	mgr = nm_dbus_manager_get ();
-	g_assert (mgr);
-
-	g_connection = nm_dbus_manager_get_connection (mgr);
-	g_assert (g_connection);
-
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
-	dbus_g_connection_register_g_object (g_connection, priv->dbus_path, G_OBJECT (ap));
-
+	nm_dbus_manager_register_object (mgr, priv->dbus_path, ap);
 	g_object_unref (mgr);
 }
 

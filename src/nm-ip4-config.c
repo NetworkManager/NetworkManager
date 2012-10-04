@@ -102,7 +102,6 @@ nm_ip4_config_export (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv;
 	NMDBusManager *dbus_mgr;
-	DBusGConnection *connection;
 	static guint32 counter = 0;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -111,10 +110,8 @@ nm_ip4_config_export (NMIP4Config *config)
 	g_return_if_fail (priv->path == NULL);
 
 	dbus_mgr = nm_dbus_manager_get ();
-	connection = nm_dbus_manager_get_connection (dbus_mgr);
 	priv->path = g_strdup_printf (NM_DBUS_PATH "/IP4Config/%d", counter++);
-
-	dbus_g_connection_register_g_object (connection, priv->path, G_OBJECT (config));
+	nm_dbus_manager_register_object (dbus_mgr, priv->path, config);
 	g_object_unref (dbus_mgr);
 }
 

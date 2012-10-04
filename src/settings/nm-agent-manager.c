@@ -1402,7 +1402,6 @@ nm_agent_manager_get (void)
 {
 	static NMAgentManager *singleton = NULL;
 	NMAgentManagerPrivate *priv;
-	DBusGConnection *connection;
 
 	if (singleton)
 		return g_object_ref (singleton);
@@ -1414,10 +1413,7 @@ nm_agent_manager_get (void)
 	priv->session_monitor = nm_session_monitor_get ();
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
-	connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	dbus_g_connection_register_g_object (connection,
-	                                     NM_DBUS_PATH_AGENT_MANAGER,
-	                                     G_OBJECT (singleton));
+	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, singleton);
 
 	g_signal_connect (priv->dbus_mgr,
 	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,

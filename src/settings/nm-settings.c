@@ -117,7 +117,6 @@ G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, G_TYPE_OBJECT, 0,
 
 typedef struct {
 	NMDBusManager *dbus_mgr;
-	DBusGConnection *bus;
 
 	NMAgentManager *agent_mgr;
 
@@ -707,7 +706,7 @@ connection_unregister (NMSettingsConnection *obj, gpointer user_data)
 	guint id;
 
 	/* Make sure it's unregistered from the bus now that's removed */
-	dbus_g_connection_unregister_g_object (priv->bus, connection);
+	nm_dbus_manager_unregister_object (priv->dbus_mgr, connection);
 
 	id = GPOINTER_TO_UINT (g_object_get_data (connection, UNREG_ID_TAG));
 	if (id)
@@ -856,7 +855,7 @@ claim_connection (NMSettings *self,
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
 	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
 	nm_connection_set_path (NM_CONNECTION (connection), path);
-	dbus_g_connection_register_g_object (priv->bus, path, G_OBJECT (connection));
+	nm_dbus_manager_register_object (priv->dbus_mgr, path, G_OBJECT (connection));
 	g_free (path);
 
 	g_hash_table_insert (priv->connections,
@@ -1615,7 +1614,6 @@ nm_settings_new (GError **error)
 
 	priv->config = nm_config_get ();
 	priv->dbus_mgr = nm_dbus_manager_get ();
-	priv->bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
 	/* Load the plugins; fail if a plugin is not found. */
 	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {
@@ -1625,7 +1623,7 @@ nm_settings_new (GError **error)
 
 	unmanaged_specs_changed (NULL, self);
 
-	dbus_g_connection_register_g_object (priv->bus, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
+	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
 }
 
