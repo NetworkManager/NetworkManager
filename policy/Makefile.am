@@ -25,4 +25,4 @@ polkit_policy_DATA = $(dist_polkit_policy_in_in_files:.policy.in.in=.policy)
 clean-local :
 	rm -f *~
 
-EXTRA_DIST = $(dist_polkit_policy_in_files)
+DISTCLEANFILES = $(polkit_policy_DATA)
