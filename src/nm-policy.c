@@ -1453,11 +1453,11 @@ device_state_changed (NMDevice *device,
 
 			/* Activate secondary (VPN) connections */
 			if (!activate_secondary_connections (policy, connection, device))
-				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
-				                                 NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
+				nm_device_queue_state (device, NM_DEVICE_STATE_FAILED,
+				                       NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
 		} else
-			nm_device_state_changed (device, NM_DEVICE_STATE_ACTIVATED,
-			                                 NM_DEVICE_STATE_REASON_NONE);
+			nm_device_queue_state (device, NM_DEVICE_STATE_ACTIVATED,
+			                       NM_DEVICE_STATE_REASON_NONE);
 		break;
 
 	default:
