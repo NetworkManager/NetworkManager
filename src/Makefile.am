@@ -69,7 +69,8 @@ libtest_dhcp_la_SOURCES = \
 libtest_dhcp_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(LIBNL_CFLAGS)
+	$(LIBNL_CFLAGS) \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libtest_dhcp_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \

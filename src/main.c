@@ -530,10 +530,19 @@ main (int argc, char *argv[])
 	fw_mgr = nm_firewall_manager_get ();
 	g_assert (fw_mgr != NULL);
 
-	/* Start our DBus service */
-	if (!nm_dbus_manager_start_service (dbus_mgr)) {
-		nm_log_err (LOGD_CORE, "failed to start the dbus service.");
+	if (!nm_dbus_manager_get_connection (dbus_mgr)) {
+#if HAVE_DBUS_GLIB_100
+		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
+#else
+		nm_log_err (LOGD_CORE, "Failed to connect to D-Bus, exiting...");
 		goto done;
+#endif
+	} else {
+		/* Start our DBus service */
+		if (!nm_dbus_manager_start_service (dbus_mgr)) {
+			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
+			goto done;
+		}
 	}
 
 	/* Clean leftover "# Added by NetworkManager" entries from /etc/hosts */

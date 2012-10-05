@@ -40,8 +40,10 @@ typedef gboolean (* NMDBusSignalHandlerFunc) (DBusConnection * connection,
 #define NM_IS_DBUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_DBUS_MANAGER))
 #define NM_DBUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_DBUS_MANAGER, NMDBusManagerClass)) 
 
-#define NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED "dbus-connection-changed"
-#define NM_DBUS_MANAGER_NAME_OWNER_CHANGED      "name-owner-changed"
+#define NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED          "dbus-connection-changed"
+#define NM_DBUS_MANAGER_NAME_OWNER_CHANGED               "name-owner-changed"
+#define NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW           "private-connection-new"
+#define NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED  "private-connection-disconnected"
 
 typedef struct {
 	GObject parent;
@@ -58,6 +60,12 @@ typedef struct {
 	                                 const char *name,
 	                                 const char *old_owner,
 	                                 const char *new_owner);
+
+	void (*private_connection_new) (NMDBusManager *mgr,
+	                                DBusGConnection *connection);
+
+	void (*private_connection_disconnected) (NMDBusManager *mgr,
+	                                         DBusGConnection *connection);
 } NMDBusManagerClass;
 
 GType nm_dbus_manager_get_type (void);
@@ -81,6 +89,10 @@ void nm_dbus_manager_register_object (NMDBusManager *self,
                                       gpointer object);
 
 void nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object);
+
+void nm_dbus_manager_private_server_register (NMDBusManager *self,
+                                              const char *path,
+                                              const char *tag);
 
 #if !HAVE_DBUS_GLIB_GMI_GET_CONNECTION
 DBusGConnection *dbus_g_method_invocation_get_g_connection (DBusGMethodInvocation *context);
