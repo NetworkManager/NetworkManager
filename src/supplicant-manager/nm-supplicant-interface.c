@@ -884,6 +884,7 @@ interface_add_cb (DBusGProxy *proxy,
 		           || g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SPAWN_EXEC_FAILED)
 		           || g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SPAWN_FORK_FAILED)
 		           || g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SPAWN_FAILED)
+		           || g_error_matches (error, DBUS_GERROR, DBUS_GERROR_TIMEOUT)
 		           || dbus_g_error_has_name (error, DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
 			/* Supplicant wasn't running and could be launched via service
 			 * activation.  Wait for it to start by moving back to the INIT
