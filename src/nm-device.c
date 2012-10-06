@@ -4561,6 +4561,12 @@ nm_device_state_changed (NMDevice *device,
 	gboolean no_firmware = FALSE;
 	NMConnection *connection;
 
+	/* Track re-entry */
+	static gboolean in_state_changed = FALSE;
+
+	g_warn_if_fail (in_state_changed == FALSE);
+	in_state_changed = TRUE;
+
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	/* Do nothing if state isn't changing, but as a special case allow
@@ -4705,6 +4711,8 @@ nm_device_state_changed (NMDevice *device,
 	/* Dispose of the cached activation request */
 	if (req)
 		g_object_unref (req);
+
+	in_state_changed = FALSE;
 }
 
 static gboolean
