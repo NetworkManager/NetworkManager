@@ -22,6 +22,7 @@
 #ifndef __NM_DBUS_MANAGER_H__
 #define __NM_DBUS_MANAGER_H__
 
+#include <config.h>
 #include <glib-object.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -80,6 +81,10 @@ void nm_dbus_manager_register_object (NMDBusManager *self,
                                       gpointer object);
 
 void nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object);
+
+#if !HAVE_DBUS_GLIB_GMI_GET_CONNECTION
+DBusGConnection *dbus_g_method_invocation_get_g_connection (DBusGMethodInvocation *context);
+#endif
 
 G_END_DECLS
 

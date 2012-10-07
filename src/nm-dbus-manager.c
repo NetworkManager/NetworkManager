@@ -410,3 +410,18 @@ nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object)
 	dbus_g_connection_unregister_g_object (priv->g_connection, G_OBJECT (object));
 }
 
+#if !HAVE_DBUS_GLIB_GMI_GET_CONNECTION
+struct _HACKDBusGMethodInvocation {
+  DBusGConnection *connection;
+  /* ... */
+};
+
+DBusGConnection *
+dbus_g_method_invocation_get_g_connection (DBusGMethodInvocation *context)
+{
+	/* Evil hack; this method exists in dbus-glib >= 101, but if we don't
+	 * have that, emulate it.
+	 */
+	return ((struct _HACKDBusGMethodInvocation *) context)->connection;
+}
+#endif  /* HAVE_DBUS_GLIB_GMI_GET_CONNECTION */
