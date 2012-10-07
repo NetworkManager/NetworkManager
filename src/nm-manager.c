@@ -3865,33 +3865,25 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	DBusGConnection *bus;
-	DBusConnection *dbus_connection;
+	DBusConnection *connection;
 	NMAuthCallResult result;
-	DBusMessage *reply = NULL, *request;
-	GError *ret_error;
-	const char *permission, *prop, *objpath;
+	DBusMessage *reply = NULL, *message;
+	const char *permission, *prop;
+	GObject *obj;
 	gboolean set_enabled = TRUE;
 	gboolean is_device = FALSE;
-	size_t objpath_len;
-	size_t devpath_len;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
-	request = nm_auth_chain_get_data (chain, "message");
+	message = nm_auth_chain_get_data (chain, "message");
 	permission = nm_auth_chain_get_data (chain, "permission");
 	prop = nm_auth_chain_get_data (chain, "prop");
 	set_enabled = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enabled"));
-	objpath = nm_auth_chain_get_data (chain, "objectpath");
-
-	objpath_len = strlen (objpath);
-	devpath_len = strlen (NM_DBUS_PATH "/Devices");
-	if (   strncmp (objpath, NM_DBUS_PATH "/Devices", devpath_len) == 0
-	    && objpath_len > devpath_len)
-		is_device = TRUE;
+	obj = nm_auth_chain_get_data (chain, "object");
+	is_device = NM_IS_DEVICE (obj);
 
 	if (error) {
-		reply = dbus_message_new_error (request, is_device ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
+		reply = dbus_message_new_error (message, is_device ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
 		                                "Not authorized to perform this operation");
 	} else {
 		/* Caller has had a chance to obtain authorization, so we only need to
@@ -3899,37 +3891,18 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		 */
 		result = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, permission));
 		if (result != NM_AUTH_CALL_RESULT_YES) {
-			reply = dbus_message_new_error (request, is_device ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
+			reply = dbus_message_new_error (message, is_device ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
 			                                "Not authorized to perform this operation");
 		} else {
-			if (is_device) {
-				/* Find the device */
-				NMDevice *device = nm_manager_get_device_by_path (self, objpath);
-				if (device) {
-					g_object_set (device, prop, set_enabled, NULL);
-					reply = dbus_message_new_method_return (request);
-				}
-				else {
-					ret_error = g_error_new_literal (NM_MANAGER_ERROR,
-					                                 NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-					                                 "Can't find device for this operation");
-					dbus_g_method_return_error (context, ret_error);
-					g_error_free (ret_error);
-				}
-			} else {
-				g_object_set (self, prop, set_enabled, NULL);
-				reply = dbus_message_new_method_return (request);
-			}
+			g_object_set (obj, prop, set_enabled, NULL);
+			reply = dbus_message_new_method_return (message);
 		}
 	}
 
 	if (reply) {
-		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-		g_assert (bus);
-		dbus_connection = dbus_g_connection_get_connection (bus);
-		g_assert (dbus_connection);
-
-		dbus_connection_send (dbus_connection, reply, NULL);
+		connection = nm_auth_chain_get_data (chain, "connection");
+		g_assert (connection);
+		dbus_connection_send (connection, reply, NULL);
 		dbus_message_unref (reply);
 	}
 	nm_auth_chain_unref (chain);
@@ -3946,14 +3919,12 @@ prop_filter (DBusConnection *connection,
 	DBusMessageIter sub;
 	const char *propiface = NULL;
 	const char *propname = NULL;
-	const char *sender = NULL;
-	const char *objpath = NULL;
 	const char *glib_propname = NULL, *permission = NULL;
-	DBusError dbus_error;
-	gulong uid = G_MAXULONG;
+	gulong caller_uid = G_MAXULONG;
 	DBusMessage *reply = NULL;
 	gboolean set_enabled = FALSE;
 	NMAuthChain *chain;
+	GObject *obj;
 
 	/* The sole purpose of this function is to validate property accesses
 	 * on the NMManager object since dbus-glib doesn't yet give us this
@@ -4002,30 +3973,26 @@ prop_filter (DBusConnection *connection,
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_message_iter_get_basic (&sub, &set_enabled);
 
-	sender = dbus_message_get_sender (message);
-	if (!sender) {
+	/* Make sure the object exists */
+	obj = dbus_g_connection_lookup_g_object (dbus_connection_get_g_connection (connection),
+	                                         dbus_message_get_path (message));
+	if (!obj) {
 		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
-		                                "Could not determine D-Bus requestor");
+		                                "Object does not exist");
 		goto out;
 	}
 
-	objpath = dbus_message_get_path (message);
-	if (!objpath) {
+	if (!nm_dbus_manager_get_caller_info_from_message (priv->dbus_mgr,
+	                                                   connection,
+	                                                   message,
+	                                                   NULL,
+	                                                   &caller_uid)) {
 		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
-		                                "Could not determine D-Bus object path");
+		                                "Could not determine request UID.");
 		goto out;
 	}
 
-	dbus_error_init (&dbus_error);
-	uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
-	if (dbus_error_is_set (&dbus_error)) {
-		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
-		                                "Could not determine the user ID of the requestor");
-		dbus_error_free (&dbus_error);
-		goto out;
-	}
-
-	if (uid > 0) {
+	if (caller_uid > 0) {
 		/* Otherwise validate the user request */
 		chain = nm_auth_chain_new_raw_message (message, prop_set_auth_done_cb, self);
 		g_assert (chain);
@@ -4034,7 +4001,8 @@ prop_filter (DBusConnection *connection,
 		nm_auth_chain_set_data (chain, "permission", g_strdup (permission), g_free);
 		nm_auth_chain_set_data (chain, "enabled", GUINT_TO_POINTER (set_enabled), NULL);
 		nm_auth_chain_set_data (chain, "message", dbus_message_ref (message), (GDestroyNotify) dbus_message_unref);
-		nm_auth_chain_set_data (chain, "objectpath", g_strdup (objpath), g_free);
+		nm_auth_chain_set_data (chain, "connection", dbus_connection_ref (connection), (GDestroyNotify) dbus_connection_unref);
+		nm_auth_chain_set_data (chain, "object", g_object_ref (obj), (GDestroyNotify) g_object_unref);
 		nm_auth_chain_add_call (chain, permission, TRUE);
 	} else {
 		/* Yay for root */
