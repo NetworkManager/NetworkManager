@@ -997,39 +997,34 @@ pk_add_cb (NMAuthChain *chain,
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
+	perm = nm_auth_chain_get_data (chain, "perm");
+	g_assert (perm);
+	result = nm_auth_chain_get_result (chain, perm);
+
 	if (chain_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_GENERAL,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
-		goto done;
-	}
-
-	perm = nm_auth_chain_get_data (chain, "perm");
-	g_assert (perm);
-	result = nm_auth_chain_get_result (chain, perm);
-
-	/* Caller didn't successfully authenticate */
-	if (result != NM_AUTH_CALL_RESULT_YES) {
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
-		goto done;
+	} else {
+		/* Authorized */
+		connection = nm_auth_chain_get_data (chain, "connection");
+		g_assert (connection);
+		added = add_new_connection (self, connection, &add_error);
+		if (!added) {
+			error = g_error_new (NM_SETTINGS_ERROR,
+			                     NM_SETTINGS_ERROR_ADD_FAILED,
+			                     "Saving connection failed: (%d) %s",
+			                     add_error ? add_error->code : -1,
+			                     (add_error && add_error->message) ? add_error->message : "(unknown)");
+			g_clear_error (&add_error);
+		}
 	}
 
-	connection = nm_auth_chain_get_data (chain, "connection");
-	g_assert (connection);
-	added = add_new_connection (self, connection, &add_error);
-	if (!added) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_ADD_FAILED,
-		                     "Saving connection failed: (%d) %s",
-		                     add_error ? add_error->code : -1,
-		                     (add_error && add_error->message) ? add_error->message : "(unknown)");
-		g_error_free (add_error);
-	}
-
-done:
 	callback = nm_auth_chain_get_data (chain, "callback");
 	callback_data = nm_auth_chain_get_data (chain, "callback-data");
 	caller_uid = nm_auth_chain_get_data_ulong (chain, "caller-uid");
@@ -1180,7 +1175,7 @@ nm_settings_add_connection (NMSettings *self,
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 
 	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (context, NULL, pk_add_cb, self);
+	chain = nm_auth_chain_new (context, NULL, caller_uid, pk_add_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, perm, TRUE);
@@ -1219,12 +1214,13 @@ pk_hostname_cb (NMAuthChain *chain,
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthCallResult result;
-	gboolean success = FALSE;
 	GError *error = NULL;
 	GSList *iter;
 	const char *hostname;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
+
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
 	/* If our NMSettingsConnection is already gone, do nothing */
 	if (chain_error) {
@@ -1232,38 +1228,29 @@ pk_hostname_cb (NMAuthChain *chain,
 		                     NM_SETTINGS_ERROR_GENERAL,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
-		goto done;
-	}
-
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
-
-	/* Caller didn't successfully authenticate */
-	if (result != NM_AUTH_CALL_RESULT_YES) {
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
-		goto done;
-	}
+	} else {
+		/* Set the hostname in all plugins */
+		hostname = nm_auth_chain_get_data (chain, "hostname");
+		for (iter = priv->plugins; iter; iter = iter->next) {
+			NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
 
-	/* Set the hostname in all plugins */
-	hostname = nm_auth_chain_get_data (chain, "hostname");
-	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+			/* error will be cleared if any plugin supports saving the hostname */
+			error = g_error_new_literal (NM_SETTINGS_ERROR,
+			                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
+			                             "Saving the hostname failed.");
 
-		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
-		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
-			g_object_set (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, hostname, NULL);
-			success = TRUE;
+			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+			if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
+				g_object_set (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, hostname, NULL);
+				g_clear_error (&error);
+			}
 		}
 	}
 
-	if (!success) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
-		                             "Saving the hostname failed.");
-	}
-
-done:
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else
@@ -1281,23 +1268,29 @@ impl_settings_save_hostname (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	GError *error = NULL;
+	gulong sender_uid = G_MAXULONG;
 
 	/* Do any of the plugins support setting the hostname? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 		                             "None of the registered plugins support setting the hostname.");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
+	} else if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &sender_uid)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to determine request UID.");
+	} else {
+		chain = nm_auth_chain_new (context, NULL, sender_uid, pk_hostname_cb, self);
+		g_assert (chain);
+		priv->auths = g_slist_append (priv->auths, chain);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
+		nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
 	}
 
-	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (context, NULL, pk_hostname_cb, self);
-	g_assert (chain);
-	priv->auths = g_slist_append (priv->auths, chain);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
-	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 static gboolean

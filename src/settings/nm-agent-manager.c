@@ -212,6 +212,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 		g_error_free (local);
 	} else {
 		agent = nm_auth_chain_steal_data (chain, "agent");
+		g_assert (agent);
 
 		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
 		if (result == NM_AUTH_CALL_RESULT_YES)
@@ -297,12 +298,12 @@ impl_agent_manager_register (NMAgentManager *self,
 	            nm_secret_agent_get_description (agent));
 
 	/* Kick off permissions requests for this agent */
-	chain = nm_auth_chain_new (context, NULL, agent_register_permissions_done, self);
+	chain = nm_auth_chain_new (context, NULL, sender_uid, agent_register_permissions_done, self);
+	g_assert (chain);
+	priv->chains = g_slist_append (priv->chains, chain);
 	nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-
-	priv->chains = g_slist_append (priv->chains, chain);
 
 done:
 	if (error)
@@ -816,7 +817,6 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
                           gpointer user_data)
 {
 	Request *req = user_data;
-	NMAuthCallResult result;
 	const char *perm;
 
 	req->chain = NULL;
@@ -835,15 +835,15 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 		 */
 		perm = nm_auth_chain_get_data (chain, "perm");
 		g_assert (perm);
-		result = nm_auth_chain_get_result (chain, perm);
-		if (result == NM_AUTH_CALL_RESULT_YES)
+		if (nm_auth_chain_get_result (chain, perm) == NM_AUTH_CALL_RESULT_YES)
 			req->current_has_modify = TRUE;
 
-		nm_log_dbg (LOGD_AGENTS, "(%p/%s) agent MODIFY check result %d",
-		            req, req->setting_name, result);
+		nm_log_dbg (LOGD_AGENTS, "(%p/%s) agent MODIFY check result %s",
+		            req, req->setting_name, req->current_has_modify ? "YES" : "NO");
 
 		get_agent_request_secrets (req, req->current_has_modify);
 	}
+
 	nm_auth_chain_unref (chain);
 }
 
@@ -912,6 +912,7 @@ get_next_cb (Request *req)
 		            req, req->setting_name, agent_dbus_owner);
 
 		req->chain = nm_auth_chain_new_dbus_sender (agent_dbus_owner,
+		                                            nm_secret_agent_get_owner_uid (NM_SECRET_AGENT (req->current)),
 		                                            get_agent_modify_auth_cb,
 		                                            req);
 		g_assert (req->chain);
@@ -1337,31 +1338,28 @@ agent_permissions_changed_done (NMAuthChain *chain,
 	NMAgentManager *self = NM_AGENT_MANAGER (user_data);
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMSecretAgent *agent;
-	NMAuthCallResult result;
+	gboolean share_protected = FALSE, share_open = FALSE;
 
 	priv->chains = g_slist_remove (priv->chains, chain);
 
 	agent = nm_auth_chain_get_data (chain, "agent");
+	g_assert (agent);
 
 	if (error) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) failed to request updated agent permissions",
 		            nm_secret_agent_get_description (agent));
-		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-		nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%s) updated agent permissions",
 		            nm_secret_agent_get_description (agent));
 
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
-		nm_secret_agent_add_permission (agent,
-		                                NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED,
-		                                (result == NM_AUTH_CALL_RESULT_YES));
-
-		result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-		nm_secret_agent_add_permission (agent,
-		                                NM_AUTH_PERMISSION_WIFI_SHARE_OPEN,
-		                                (result == NM_AUTH_CALL_RESULT_YES));
+		if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED) == NM_AUTH_CALL_RESULT_YES)
+			share_protected = TRUE;
+		if (nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN) == NM_AUTH_CALL_RESULT_YES)
+			share_open = TRUE;
 	}
+
+	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, share_protected);
+	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, share_open);
 
 	nm_auth_chain_unref (chain);
 }
@@ -1378,11 +1376,14 @@ authority_changed_cb (gpointer user_data)
 	g_hash_table_iter_init (&iter, priv->agents);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
 		NMAuthChain *chain;
-		const char *sender;
 
 		/* Kick off permissions requests for this agent */
-		sender = nm_secret_agent_get_dbus_owner (agent);
-		chain = nm_auth_chain_new_dbus_sender (sender, agent_permissions_changed_done, self);
+		chain = nm_auth_chain_new_dbus_sender (nm_secret_agent_get_dbus_owner (agent),
+		                                       nm_secret_agent_get_owner_uid (agent),
+		                                       agent_permissions_changed_done,
+		                                       self);
+		g_assert (chain);
+		priv->chains = g_slist_append (priv->chains, chain);
 
 		/* Make sure if the agent quits while the permissions call is in progress
 		 * that the object sticks around until our callback.
@@ -1390,8 +1391,6 @@ authority_changed_cb (gpointer user_data)
 		nm_auth_chain_set_data (chain, "agent", g_object_ref (agent), g_object_unref);
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-
-		priv->chains = g_slist_append (priv->chains, chain);
 	}
 }
 

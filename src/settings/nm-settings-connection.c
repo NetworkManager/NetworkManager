@@ -896,23 +896,20 @@ pk_auth_cb (NMAuthChain *chain,
 
 	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
 
+	perm = nm_auth_chain_get_data (chain, "perm");
+	g_assert (perm);
+	result = nm_auth_chain_get_result (chain, perm);
+
 	/* If our NMSettingsConnection is already gone, do nothing */
 	if (chain_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_GENERAL,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
-	} else {
-		perm = nm_auth_chain_get_data (chain, "perm");
-		g_assert (perm);
-		result = nm_auth_chain_get_result (chain, perm);
-
-		/* Caller didn't successfully authenticate */
-		if (result != NM_AUTH_CALL_RESULT_YES) {
-			error = g_error_new_literal (NM_SETTINGS_ERROR,
-			                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-			                             "Insufficient privileges.");
-		}
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Insufficient privileges.");
 	}
 
 	callback = nm_auth_chain_get_data (chain, "callback");
@@ -990,15 +987,16 @@ auth_start (NMSettingsConnection *self,
 	}
 
 	if (check_permission) {
-		chain = nm_auth_chain_new (context, NULL, pk_auth_cb, self);
+		chain = nm_auth_chain_new (context, NULL, sender_uid, pk_auth_cb, self);
 		g_assert (chain);
+		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
+
 		nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
 		nm_auth_chain_set_data (chain, "callback", callback, NULL);
 		nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
 		nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
 
 		nm_auth_chain_add_call (chain, check_permission, TRUE);
-		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 	} else {
 		/* Don't need polkit auth, automatic success */
 		callback (self, context, sender_uid, NULL, callback_data);

@@ -57,14 +57,17 @@ typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
 
 NMAuthChain *nm_auth_chain_new (DBusGMethodInvocation *context,
                                 DBusGProxy *proxy,
+                                gulong user_uid,
                                 NMAuthChainResultFunc done_func,
                                 gpointer user_data);
 
 NMAuthChain *nm_auth_chain_new_raw_message (DBusMessage *message,
+                                            gulong user_uid,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
 
 NMAuthChain *nm_auth_chain_new_dbus_sender (const char *dbus_sender,
+                                            gulong user_uid,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
 

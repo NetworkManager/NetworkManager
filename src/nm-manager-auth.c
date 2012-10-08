@@ -42,7 +42,10 @@ struct NMAuthChain {
 
 	DBusGMethodInvocation *context;
 	char *owner;
+	gulong user_uid;
 	GError *error;
+
+	guint idle_id;
 
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
@@ -72,6 +75,20 @@ free_data (gpointer data)
 	g_free (tmp);
 }
 
+static gboolean
+auth_chain_finish (gpointer user_data)
+{
+	NMAuthChain *self = user_data;
+
+	self->idle_id = 0;
+
+	/* Ensure we say alive across the callback */
+	self->refcount++;
+	self->done_func (self, self->error, self->context, self->user_data);
+	nm_auth_chain_unref (self);
+	return FALSE;
+}
+
 #if WITH_POLKIT
 static PolkitAuthority *
 pk_authority_get (GError **error)
@@ -92,6 +109,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
                  DBusGProxy *proxy,
                  DBusMessage *message,
                  const char *dbus_sender,
+                 gulong user_uid,
                  NMAuthChainResultFunc done_func,
                  gpointer user_data)
 {
@@ -108,6 +126,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	self->done_func = done_func;
 	self->user_data = user_data;
 	self->context = context;
+	self->user_uid = user_uid;
 
 	if (proxy)
 		self->owner = g_strdup (dbus_g_proxy_get_bus_name (proxy));
@@ -118,7 +137,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	else if (dbus_sender)
 		self->owner = g_strdup (dbus_sender);
 
-	if (!self->owner) {
+	if (user_uid > 0 && !self->owner) {
 		/* Need an owner */
 		g_warn_if_fail (self->owner);
 		nm_auth_chain_unref (self);
@@ -131,26 +150,29 @@ _auth_chain_new (DBusGMethodInvocation *context,
 NMAuthChain *
 nm_auth_chain_new (DBusGMethodInvocation *context,
                    DBusGProxy *proxy,
+                   gulong user_uid,
                    NMAuthChainResultFunc done_func,
                    gpointer user_data)
 {
-	return _auth_chain_new (context, proxy, NULL, NULL, done_func, user_data);
+	return _auth_chain_new (context, proxy, NULL, NULL, user_uid, done_func, user_data);
 }
 
 NMAuthChain *
 nm_auth_chain_new_raw_message (DBusMessage *message,
+                               gulong user_uid,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, NULL, message, NULL, done_func, user_data);
+	return _auth_chain_new (NULL, NULL, message, NULL, user_uid, done_func, user_data);
 }
 
 NMAuthChain *
 nm_auth_chain_new_dbus_sender (const char *dbus_sender,
+                               gulong user_uid,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, NULL, NULL, dbus_sender, done_func, user_data);
+	return _auth_chain_new (NULL, NULL, NULL, dbus_sender, user_uid, done_func, user_data);
 }
 
 gpointer
@@ -261,10 +283,8 @@ nm_auth_chain_check_done (NMAuthChain *self)
 	g_return_if_fail (self != NULL);
 
 	if (g_slist_length (self->calls) == 0) {
-		/* Ensure we say alive across the callback */
-		self->refcount++;
-		self->done_func (self, self->error, self->context, self->user_data);
-		nm_auth_chain_unref (self);
+		g_assert (self->idle_id == 0);
+		self->idle_id = g_idle_add (auth_chain_finish, self);
 	}
 }
 
@@ -372,7 +392,6 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	auth_call_complete (call);
 }
-#endif
 
 static void
 auth_call_schedule_complete_with_error (AuthCall *call, const char *msg)
@@ -382,16 +401,14 @@ auth_call_schedule_complete_with_error (AuthCall *call, const char *msg)
 	call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
 }
 
-gboolean
-nm_auth_chain_add_call (NMAuthChain *self,
-                        const char *permission,
-                        gboolean allow_interaction)
+static gboolean
+_add_call_polkit (NMAuthChain *self,
+                  const char *permission,
+                  gboolean allow_interaction)
 {
-	AuthCall *call;
-
-#if WITH_POLKIT
 	PolkitSubject *subject;
 	PolkitCheckAuthorizationFlags flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
+	AuthCall *call;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (self->owner != NULL, FALSE);
@@ -423,17 +440,29 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	                                      pk_call_cb,
 	                                      call);
 	g_object_unref (subject);
-#else
-	/* -- NO POLKIT -- */
+	return TRUE;
+}
+#endif
+
+gboolean
+nm_auth_chain_add_call (NMAuthChain *self,
+                        const char *permission,
+                        gboolean allow_interaction)
+{
+	AuthCall *call;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
-	/* When PolicyKit is disabled, everything is authorized */
+#if WITH_POLKIT
+	/* Non-root always gets authenticated when using polkit */
+	if (self->user_uid > 0)
+		return _add_call_polkit (self, permission, allow_interaction);
+#endif
+
+	/* Root user or non-polkit always gets the permission */
 	call = auth_call_new (self, permission);
 	nm_auth_chain_set_data (self, permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
 	call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
-#endif
-
 	return TRUE;
 }
 
@@ -447,6 +476,9 @@ nm_auth_chain_unref (NMAuthChain *self)
 	self->refcount--;
 	if (self->refcount > 0)
 		return;
+
+	if (self->idle_id)
+		g_source_remove (self->idle_id);
 
 #if WITH_POLKIT
 	if (self->authority)
