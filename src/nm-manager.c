@@ -69,6 +69,7 @@
 #include "nm-device-factory.h"
 #include "wifi-utils.h"
 #include "nm-enum-types.h"
+#include "nm-sleep-monitor.h"
 
 #if WITH_CONCHECK
 #include "nm-connectivity.h"
@@ -77,8 +78,6 @@
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
-
-#define UPOWER_DBUS_SERVICE "org.freedesktop.UPower"
 
 static gboolean impl_manager_get_devices (NMManager *manager,
                                           GPtrArray **devices,
@@ -228,7 +227,7 @@ typedef struct {
 	guint modem_removed_id;
 
 	DBusGProxy *aipd_proxy;
-	DBusGProxy *upower_proxy;
+	NMSleepMonitor *sleep_monitor;
 
 	GSList *auth_chains;
 
@@ -3288,16 +3287,16 @@ impl_manager_sleep (NMManager *self,
 }
 
 static void
-upower_sleeping_cb (DBusGProxy *proxy, gpointer user_data)
+sleeping_cb (DBusGProxy *proxy, gpointer user_data)
 {
-	nm_log_dbg (LOGD_SUSPEND, "Received UPower sleeping signal");
+	nm_log_dbg (LOGD_SUSPEND, "Received sleeping signal");
 	_internal_sleep (NM_MANAGER (user_data), TRUE);
 }
 
 static void
-upower_resuming_cb (DBusGProxy *proxy, gpointer user_data)
+resuming_cb (DBusGProxy *proxy, gpointer user_data)
 {
-	nm_log_dbg (LOGD_SUSPEND, "Received UPower resuming signal");
+	nm_log_dbg (LOGD_SUSPEND, "Received resuming signal");
 	_internal_sleep (NM_MANAGER (user_data), FALSE);
 }
 
@@ -4049,8 +4048,8 @@ dispose (GObject *object)
 	if (priv->aipd_proxy)
 		g_object_unref (priv->aipd_proxy);
 
-	if (priv->upower_proxy)
-		g_object_unref (priv->upower_proxy);
+	if (priv->sleep_monitor)
+		g_object_unref (priv->sleep_monitor);
 
 	if (priv->fw_monitor) {
 		if (priv->fw_monitor_id)
@@ -4372,23 +4371,12 @@ nm_manager_init (NMManager *manager)
 	} else
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
 
-	/* upower sleep/wake handling */
-	priv->upower_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                                UPOWER_DBUS_SERVICE,
-	                                                "/org/freedesktop/UPower",
-	                                                "org.freedesktop.UPower");
-	if (priv->upower_proxy) {
-		dbus_g_proxy_add_signal (priv->upower_proxy, "Sleeping", G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->upower_proxy, "Sleeping",
-		                             G_CALLBACK (upower_sleeping_cb),
-		                             manager, NULL);
-
-		dbus_g_proxy_add_signal (priv->upower_proxy, "Resuming", G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->upower_proxy, "Resuming",
-		                             G_CALLBACK (upower_resuming_cb),
-		                             manager, NULL);
-	} else
-		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
+	/* sleep/wake handling */
+	priv->sleep_monitor = nm_sleep_monitor_get ();
+        g_signal_connect (priv->sleep_monitor, "Sleeping",
+                          G_CALLBACK (sleeping_cb), manager);
+        g_signal_connect (priv->sleep_monitor, "Resuming",
+                          G_CALLBACK (resuming_cb), manager);
 
 	/* Listen for authorization changes */
 	nm_auth_changed_func_register (authority_changed_cb, manager);

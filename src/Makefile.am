@@ -191,6 +191,8 @@ NetworkManager_SOURCES = \
 		nm-session-monitor.h \
 		nm-session-utils.c \
 		nm-session-utils.h \
+		nm-sleep-monitor.h \
+		nm-sleep-monitor.c \
 		nm-connection-provider.h \
 		nm-connection-provider.c \
 		nm-dispatcher.c \
