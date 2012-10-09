@@ -192,7 +192,6 @@ NetworkManager_SOURCES = \
 		nm-session-utils.c \
 		nm-session-utils.h \
 		nm-sleep-monitor.h \
-		nm-sleep-monitor.c \
 		nm-connection-provider.h \
 		nm-connection-provider.c \
 		nm-dispatcher.c \
@@ -203,13 +202,18 @@ NetworkManager_SOURCES += nm-connectivity.c nm-connectivity.h
 endif
 
 if SESSION_TRACKING_SYSTEMD
-NetworkManager_SOURCES += nm-session-monitor-systemd.c
+NetworkManager_SOURCES += \
+		nm-session-monitor-systemd.c \
+		nm-sleep-monitor-systemd.c
 else
 if SESSION_TRACKING_CK
 NetworkManager_SOURCES += nm-session-monitor-ck.c
 else
 NetworkManager_SOURCES += nm-session-monitor-null.c
 endif
+
+# UPower suspend/resume used whenever systemd is not enabled
+NetworkManager_SOURCES += nm-sleep-monitor-upower.c
 endif
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
@@ -285,6 +289,7 @@ BUILT_SOURCES = \
 NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(GIO_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GMODULE_CFLAGS) \
