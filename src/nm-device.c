@@ -4574,8 +4574,10 @@ nm_device_state_changed (NMDevice *device,
 	 * can retry device initialization.
 	 */
 	if (   (priv->state == state)
-	    && !(state == NM_DEVICE_STATE_UNAVAILABLE && priv->firmware_missing))
+	    && !(state == NM_DEVICE_STATE_UNAVAILABLE && priv->firmware_missing)) {
+		in_state_changed = FALSE;
 		return;
+	}
 
 	old_state = priv->state;
 	priv->state = state;
