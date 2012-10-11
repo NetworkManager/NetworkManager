@@ -36,6 +36,7 @@
 #include <nm-setting-8021x.h>
 #include <nm-system-config-interface.h>
 #include <nm-utils.h>
+#include <ctype.h>
 
 #include "parser.h"
 #include "plugin.h"
