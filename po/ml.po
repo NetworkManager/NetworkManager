@@ -2,26 +2,28 @@
 # translation of NetworkManager.master_upstream.ml.po to
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Ani Peter <apeter@redhat.com>, 2010
-# Mohammed <sadiqpkp@gmail.com>, 2012
 #
+# Ani Peter <apeter@redhat.com>, 2010, 2012.
+# Mohammed <sadiqpkp@gmail.com>, 2012.
 msgid ""
 msgstr ""
 "Project-Id-Version: ml\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
-"product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2012-02-28 03:24+0000\n"
-"PO-Revision-Date: 2010-05-10 15:31+0530\n"
-"Last-Translator: \n"
-"Language-Team:  <en@li.org>\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
+"cgi?product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2012-09-10 15:25+0000\n"
+"PO-Revision-Date: 2012-09-21 00:17+0000\n"
+"Last-Translator: Ani Peter <apeter@redhat.com>\n"
+"Language-Team: Malayalam <discuss@lists.smc.org.in>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
+"X-Generator: Lokalize 1.0\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 
 #: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
-#: ../cli/src/common.c:63 ../cli/src/connections.c:119
-#: ../cli/src/connections.c:153
+#: ../cli/src/common.c:63 ../cli/src/connections.c:128
+#: ../cli/src/connections.c:162
 msgid "GROUP"
 msgstr "GROUP"
 
@@ -55,18 +57,302 @@ msgstr "WINS"
 msgid "OPTION"
 msgstr "OPTION"
 
+#: ../cli/src/common.c:366
+msgid "unmanaged"
+msgstr "കൈകാര്യം ചെയ്തിട്ടില്ലാത്തതു്"
+
+#: ../cli/src/common.c:368
+msgid "unavailable"
+msgstr "ലഭ്യമല്ലാത്തതു്"
+
+#: ../cli/src/common.c:370 ../cli/src/network-manager.c:120
+msgid "disconnected"
+msgstr "വിഛേദിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/common.c:372
+msgid "connecting (prepare)"
+msgstr "കണക്ട് ചെയ്യുന്നു (തയ്യാറാക്കുക)"
+
+#: ../cli/src/common.c:374
+msgid "connecting (configuring)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ക്രമീകരിക്കുന്നു)"
+
+#: ../cli/src/common.c:376
+msgid "connecting (need authentication)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ആധികാരികത ഉറപ്പാക്കേണ്ടതുണ്ടു്)"
+
+#: ../cli/src/common.c:378
+msgid "connecting (getting IP configuration)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ഐപി ക്രമീകരണം ലഭ്യമാക്കുന്നു)"
+
+#: ../cli/src/common.c:380
+msgid "connecting (checking IP connectivity)"
+msgstr "കണക്ട് ചെയ്യുന്നു (ഐപി കണക്ടിവിറ്റി പരിശോധിക്കുന്നു)"
+
+#: ../cli/src/common.c:382
+msgid "connecting (starting secondary connections)"
+msgstr "കണക്ട് ചെയ്യുന്നു (രണ്ടാംഘട്ടത്തിലുള്ള കണക്ഷന്‍ തുടങ്ങുന്നു) "
+
+#: ../cli/src/common.c:384 ../cli/src/network-manager.c:116
+msgid "connected"
+msgstr "കണക്ട് ചെയ്തിരിക്കുന്നു"
+
+#: ../cli/src/common.c:386 ../cli/src/connections.c:633
+msgid "deactivating"
+msgstr "സജീവമല്ലാതാക്കുന്നു"
+
+#: ../cli/src/common.c:388
+msgid "connection failed"
+msgstr "കണക്ഷന്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:390 ../cli/src/connections.c:636
+#: ../cli/src/connections.c:659 ../cli/src/connections.c:1351
+#: ../cli/src/devices.c:622 ../cli/src/network-manager.c:123
+#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:188
+#: ../cli/src/network-manager.c:197 ../cli/src/network-manager.c:257
+#: ../cli/src/network-manager.c:273 ../cli/src/network-manager.c:431
+#: ../cli/src/network-manager.c:486 ../cli/src/network-manager.c:524
+#: ../cli/src/network-manager.c:563 ../cli/src/settings.c:591
+#: ../cli/src/settings.c:619 ../cli/src/utils.c:531 ../src/main.c:462
+#: ../src/main.c:481
+msgid "unknown"
+msgstr "അപരിചിതം"
+
+#: ../cli/src/common.c:399
+msgid "No reason given"
+msgstr "കാരണം നല്‍കപ്പെട്ടിട്ടില്ല"
+
+#: ../cli/src/common.c:402
+msgid "Unknown error"
+msgstr "അപരിചിതമായ പിശക്"
+
+#: ../cli/src/common.c:405
+msgid "Device is now managed"
+msgstr "ഡിവൈസ് ഇപ്പോള്‍ കൈകാര്യം ചെയ്തിരിക്കുന്നു"
+
+#: ../cli/src/common.c:408
+msgid "Device is now unmanaged"
+msgstr "ഡിവൈസ് ഇപ്പോള്‍ കൈകാര്യം ചെയ്യുന്നില്ല"
+
+#: ../cli/src/common.c:411
+msgid "The device could not be readied for configuration"
+msgstr "ഡിവൈസ് ക്രമീകരിക്കാന്‍ സജ്ജമാക്കാന്‍ സാധിക്കുന്നില്ല"
+
+#: ../cli/src/common.c:414
+#| msgid ""
+#| "IP configuration could not be reserved (no available address, timeout, "
+#| "etc)"
+msgid "IP configuration could not be reserved (no available address, timeout, etc.)"
+msgstr "IP ക്രമീകരണം കരുതിവയ്ക്കാന്‍ സാധിക്കുന്നില്ല (മേല്‍വിലാസം ലഭ്യമല്ല, സമയപരിധി കഴിഞ്ഞു, മുതലായവ)"
+
+#: ../cli/src/common.c:417
+msgid "The IP configuration is no longer valid"
+msgstr "IP ക്രമീകരണം സാധുവല്ല"
+
+#: ../cli/src/common.c:420
+msgid "Secrets were required, but not provided"
+msgstr "രഹസ്യങ്ങള്‍ ആവിശ്യമായിരുന്നു, പക്ഷെ നല്‍കിയിട്ടില്ല"
+
+#: ../cli/src/common.c:423
+msgid "802.1X supplicant disconnected"
+msgstr "802.1X സപ്ലിക്കെന്റ്  വിച്ഛേദിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/common.c:426
+msgid "802.1X supplicant configuration failed"
+msgstr "802.1X സപ്ലിക്കെന്റ് ക്രമീകരണം പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:429
+msgid "802.1X supplicant failed"
+msgstr "802.1X സപ്ലിക്കെന്റ് പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:432
+msgid "802.1X supplicant took too long to authenticate"
+msgstr "802.1X സപ്ലിക്കെന്റ് ആധികാരികതക്കു വേണ്ടി കൂടുതല്‍ സമയമെടുത്തു"
+
+#: ../cli/src/common.c:435
+msgid "PPP service failed to start"
+msgstr "പിപിപി സര്‍വീസ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:438
+msgid "PPP service disconnected"
+msgstr "പിപിപി സേവനം വിഛേദിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/common.c:441
+msgid "PPP failed"
+msgstr "പിപിപി പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:444
+msgid "DHCP client failed to start"
+msgstr "DHCP ക്ലയ്ന്റ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:447
+msgid "DHCP client error"
+msgstr "DHCP ക്ലയ്ന്റ് പിശക്"
+
+#: ../cli/src/common.c:450
+msgid "DHCP client failed"
+msgstr "DHCP ക്ലയ്ന്റ് പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:453
+msgid "Shared connection service failed to start"
+msgstr "പങ്കുവെച്ച കണക്ഷന്‍ സേവനം ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:456
+msgid "Shared connection service failed"
+msgstr "പങ്കുവെച്ച കണക്ഷന്‍ സേവനം പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:459
+msgid "AutoIP service failed to start"
+msgstr "AutoIP സേവനം ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:462
+msgid "AutoIP service error"
+msgstr "AutoIP സേവനം പിശക്"
+
+#: ../cli/src/common.c:465
+msgid "AutoIP service failed"
+msgstr "AutoIP സേവനം പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:468
+msgid "The line is busy"
+msgstr "ലൈന്‍ തിരക്കിലാണു്"
+
+#: ../cli/src/common.c:471
+msgid "No dial tone"
+msgstr "ഡയല്‍ ടോണില്‍"
+
+#: ../cli/src/common.c:474
+msgid "No carrier could be established"
+msgstr "ക്യാരിയര്‍ സ്ഥാപിയ്ക്കുവാനായില്ല"
+
+#: ../cli/src/common.c:477
+msgid "The dialing request timed out"
+msgstr "ഡയലിങ് ആവശ്യത്തിന്റെ സമയപരിധി കഴിഞ്ഞിരിയ്ക്കുന്നു"
+
+#: ../cli/src/common.c:480
+msgid "The dialing attempt failed"
+msgstr "ഡയലിങ് ശ്രമം പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:483
+#| msgid "Error: Connection activation failed."
+msgid "Modem initialization failed"
+msgstr "മോഡത്തിന്റെ ആരംഭം പരാജയപ്പെട്ടു."
+
+#: ../cli/src/common.c:486
+msgid "Failed to select the specified APN"
+msgstr "നിര്‍ദ്ദേശിച്ച APN തിരഞ്ഞെടുക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
+
+#: ../cli/src/common.c:489
+msgid "Not searching for networks"
+msgstr "നെറ്റ്​വര്‍ക്കുന്നു വേണ്ടി തിരയുന്നില്ല്"
+
+#: ../cli/src/common.c:492
+msgid "Network registration denied"
+msgstr "നെറ്റ്‌വര്‍ക്ക് രജിസ്ട്രേഷന്‍ നിഷേധിച്ചു"
+
+#: ../cli/src/common.c:495
+msgid "Network registration timed out"
+msgstr "നെറ്റ്‌വര്‍ക്ക് രജിസ്ട്രേഷന്റെ സമയപരിധി കഴിഞ്ഞിരിയ്ക്കുന്നു"
+
+#: ../cli/src/common.c:498
+msgid "Failed to register with the requested network"
+msgstr "ആവശ്യപ്പെട്ട നെറ്റ്‌വര്‍ക്കിലേക്ക് രജിസ്ടര്‍ ചെയ്യുന്നതില്‍ പരാജയം"
+
+#: ../cli/src/common.c:501
+msgid "PIN check failed"
+msgstr "PIN പരിശോധന പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:504
+msgid "Necessary firmware for the device may be missing"
+msgstr "ആവശ്യമായ ഫേംവെയര്‍ ലഭ്യമല്ലെന്നു തോന്നുന്നു"
+
+#: ../cli/src/common.c:507
+msgid "The device was removed"
+msgstr "ഡിവൈസ് നീക്കം ചെയ്തിരിക്കുന്നു"
+
+#: ../cli/src/common.c:510
+msgid "NetworkManager went to sleep"
+msgstr "നെറ്റ്‌വര്‍ക്ക്മാനേജറിന്റെ ഉറക്കത്തിലേക്കു നീങ്ങി"
+
+#: ../cli/src/common.c:513
+msgid "The device's active connection disappeared"
+msgstr "ഡിവൈസിന്റെ സജീവമായ കണക്ഷന്‍ ലഭ്യമല്ലാതായി"
+
+#: ../cli/src/common.c:516
+msgid "Device disconnected by user or client"
+msgstr "ഉപയോക്താവു് അല്ലെങ്കില്‍ ക്ലയന്റ് ഡിവൈസ് കണക്ഷന്‍ നിഷേധിച്ചിരിയ്ക്കുന്നു"
+
+#: ../cli/src/common.c:519
+msgid "Carrier/link changed"
+msgstr "ക്യാരിയര്‍/കണ്ണി മാറിയിരിയ്ക്കുന്നു"
+
+#: ../cli/src/common.c:522
+msgid "The device's existing connection was assumed"
+msgstr "ഡിവൈസിന്റെ നിലവിലുള്ള കണക്ഷനാണെന്നു് ഊഹിച്ചിരിക്കുന്നു"
+
+#: ../cli/src/common.c:525
+msgid "The supplicant is now available"
+msgstr "സപ്ലിക്കെന്റ് ഇപ്പോള്‍ ലഭ്യമാണ്"
+
+#: ../cli/src/common.c:528
+msgid "The modem could not be found"
+msgstr "മോഡം കണ്ടെത്തുവാന്‍ സാധിക്കുന്നില്ല"
+
+#: ../cli/src/common.c:531
+#| msgid "the connection attempt timed out"
+msgid "The Bluetooth connection failed or timed out"
+msgstr "ബ്ലൂടൂത് കണക്ഷനുള്ള ശ്രമം കഴിഞ്ഞിരിക്കുന്നു"
+
+#: ../cli/src/common.c:534
+msgid "GSM Modem's SIM card not inserted"
+msgstr "GSM മോഡത്തില്‍ സിം കാര്‍ഡ് ഇല്ല"
+
+#: ../cli/src/common.c:537
+msgid "GSM Modem's SIM PIN required"
+msgstr "GSM മോഡത്തിന്റെ സിം PIN ആവിശ്യമാണ്"
+
+#: ../cli/src/common.c:540
+msgid "GSM Modem's SIM PUK required"
+msgstr "GSM മോഡത്തിന്റെ സിം PUK ആവിശ്യമാണ്"
+
+#: ../cli/src/common.c:543
+msgid "GSM Modem's SIM wrong"
+msgstr "GSM മോഡത്തിന്റെ സിം തെറ്റാണ്"
+
+#: ../cli/src/common.c:546
+msgid "InfiniBand device does not support connected mode"
+msgstr "ഇന്‍ഫിബാന്‍ഡ് ഡിവൈസ് കണക്ട് ചെയ്യുന്ന മോഡ് പിന്തുണയ്ക്കുന്നില്ല"
+
+#: ../cli/src/common.c:549
+#| msgid "connection failed"
+msgid "A dependency of the connection failed"
+msgstr "കണക്ഷന്റെ ഡിപന്‍ഡന്‍സ് പരാജയപ്പെട്ടു"
+
+#: ../cli/src/common.c:552
+msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
+msgstr "എഡിഎസ്എല്‍ ബ്രിഡ്ജിനു് പകരം RFC 2684 ഇഥര്‍നെറ്റില്‍ പ്രശ്നം"
+
+#: ../cli/src/common.c:555
+msgid "ModemManager is unavailable"
+msgstr "ModemManager ലഭ്യമല്ല"
+
+#: ../cli/src/common.c:558 ../cli/src/devices.c:274 ../cli/src/devices.c:290
+#: ../cli/src/devices.c:410 ../cli/src/devices.c:454
+msgid "Unknown"
+msgstr "അപരിചിതം"
+
 #. 0
 #. used only for 'GENERAL' group listing
-#: ../cli/src/connections.c:56 ../cli/src/connections.c:120
-#: ../cli/src/devices.c:100 ../cli/src/devices.c:121 ../cli/src/devices.c:131
-#: ../cli/src/devices.c:141 ../cli/src/devices.c:155 ../cli/src/devices.c:169
-#: ../cli/src/devices.c:191
+#: ../cli/src/connections.c:59 ../cli/src/connections.c:129
+#: ../cli/src/devices.c:105 ../cli/src/devices.c:129 ../cli/src/devices.c:139
+#: ../cli/src/devices.c:149 ../cli/src/devices.c:163 ../cli/src/devices.c:177
+#: ../cli/src/devices.c:199
 msgid "NAME"
 msgstr "NAME"
 
 #. 0
 #. 1
-#: ../cli/src/connections.c:57 ../cli/src/connections.c:121
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:130
 msgid "UUID"
 msgstr "UUID"
 
@@ -74,28 +360,29 @@ msgstr "UUID"
 #. 0
 #. 1
 #. 2
-#: ../cli/src/connections.c:58 ../cli/src/connections.c:154
-#: ../cli/src/devices.c:66 ../cli/src/devices.c:102 ../cli/src/devices.c:194
+#: ../cli/src/connections.c:61 ../cli/src/connections.c:163
+#: ../cli/src/devices.c:71 ../cli/src/devices.c:107 ../cli/src/devices.c:202
 msgid "TYPE"
 msgstr "TYPE"
 
 #. 2
-#: ../cli/src/connections.c:59
+#: ../cli/src/connections.c:62
 msgid "TIMESTAMP"
 msgstr "TIMESTAMP"
 
 #. 3
-#: ../cli/src/connections.c:60
+#: ../cli/src/connections.c:63
 msgid "TIMESTAMP-REAL"
 msgstr "TIMESTAMP-REAL"
 
 #. 4
-#: ../cli/src/connections.c:61
+#. 13
+#: ../cli/src/connections.c:64 ../cli/src/devices.c:119
 msgid "AUTOCONNECT"
 msgstr "AUTOCONNECT"
 
 #. 5
-#: ../cli/src/connections.c:62
+#: ../cli/src/connections.c:65
 msgid "READONLY"
 msgstr "READONLY"
 
@@ -104,96 +391,96 @@ msgstr "READONLY"
 #. 2
 #. 11
 #. 5
-#: ../cli/src/connections.c:63 ../cli/src/connections.c:128
-#: ../cli/src/devices.c:68 ../cli/src/devices.c:181 ../cli/src/devices.c:197
+#: ../cli/src/connections.c:66 ../cli/src/connections.c:137
+#: ../cli/src/devices.c:73 ../cli/src/devices.c:189 ../cli/src/devices.c:205
 msgid "DBUS-PATH"
 msgstr "DBUS-PATH"
 
 #. 2
-#: ../cli/src/connections.c:122
+#: ../cli/src/connections.c:131
 msgid "DEVICES"
 msgstr "DEVICES"
 
 #. 3
 #. 1
-#. 6
+#. 8
 #. 1
-#: ../cli/src/connections.c:123 ../cli/src/devices.c:67
-#: ../cli/src/devices.c:107 ../cli/src/network-manager.c:39
+#: ../cli/src/connections.c:132 ../cli/src/devices.c:72
+#: ../cli/src/devices.c:114 ../cli/src/network-manager.c:39
 msgid "STATE"
 msgstr "STATE"
 
 #. 4
-#: ../cli/src/connections.c:124
+#: ../cli/src/connections.c:133
 msgid "DEFAULT"
 msgstr "DEFAULT"
 
 #. 5
-#: ../cli/src/connections.c:125
+#: ../cli/src/connections.c:134
 msgid "DEFAULT6"
 msgstr "DEFAULT6"
 
 #. 6
-#: ../cli/src/connections.c:126
+#: ../cli/src/connections.c:135
 msgid "SPEC-OBJECT"
 msgstr "SPEC-OBJECT"
 
 #. 7
 #. 1
-#: ../cli/src/connections.c:127 ../cli/src/connections.c:141
+#: ../cli/src/connections.c:136 ../cli/src/connections.c:150
 msgid "VPN"
 msgstr "VPN"
 
 #. 9
-#: ../cli/src/connections.c:129
+#: ../cli/src/connections.c:138
 msgid "CON-PATH"
 msgstr "CON-PATH"
 
 #. 10
-#: ../cli/src/connections.c:130
+#: ../cli/src/connections.c:139
 msgid "ZONE"
 msgstr "ZONE"
 
 #. 11
-#: ../cli/src/connections.c:131
+#: ../cli/src/connections.c:140
 msgid "MASTER-PATH"
 msgstr "MASTER-PATH"
 
-#: ../cli/src/connections.c:139 ../cli/src/devices.c:77
+#: ../cli/src/connections.c:148 ../cli/src/devices.c:82
 msgid "GENERAL"
 msgstr "GENERAL"
 
 #. 0
-#: ../cli/src/connections.c:140
+#: ../cli/src/connections.c:149
 msgid "IP"
 msgstr "IP"
 
 #. 1
-#: ../cli/src/connections.c:155
+#: ../cli/src/connections.c:164
 msgid "USERNAME"
 msgstr "USERNAME"
 
 #. 2
-#: ../cli/src/connections.c:156
+#: ../cli/src/connections.c:165
 msgid "GATEWAY"
 msgstr "GATEWAY"
 
 #. 3
-#: ../cli/src/connections.c:157
+#: ../cli/src/connections.c:166
 msgid "BANNER"
 msgstr "BANNER"
 
 #. 4
-#: ../cli/src/connections.c:158
+#: ../cli/src/connections.c:167
 msgid "VPN-STATE"
 msgstr "VPN-STATE"
 
 #. 5
-#: ../cli/src/connections.c:159
+#: ../cli/src/connections.c:168
 msgid "CFG"
 msgstr "CFG"
 
-#: ../cli/src/connections.c:180
+#: ../cli/src/connections.c:190
 #, c-format
 msgid ""
 "Usage: nmcli con { COMMAND | help }\n"
@@ -220,376 +507,356 @@ msgstr ""
 "  down id <id> | uuid <id>\n"
 "  delete id <id> | uuid <id>\n"
 
-#: ../cli/src/connections.c:234 ../cli/src/connections.c:567
+#: ../cli/src/connections.c:249 ../cli/src/connections.c:609
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "പിശക്: 'con list': %s"
 
-#: ../cli/src/connections.c:236 ../cli/src/connections.c:569
+#: ../cli/src/connections.c:251 ../cli/src/connections.c:611
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "പിശക്: 'con list': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/connections.c:244
+#: ../cli/src/connections.c:259
 msgid "Connection details"
 msgstr "കണക്ഷന്‍ വിശദാംശങ്ങള്‍"
 
-#: ../cli/src/connections.c:442
+#: ../cli/src/connections.c:484
 msgid "never"
 msgstr "ഒരിക്കലുമില്ല"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:443 ../cli/src/connections.c:444
-#: ../cli/src/connections.c:681 ../cli/src/connections.c:682
-#: ../cli/src/connections.c:684 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:639 ../cli/src/devices.c:750 ../cli/src/devices.c:751
-#: ../cli/src/devices.c:783 ../cli/src/devices.c:809 ../cli/src/devices.c:810
-#: ../cli/src/devices.c:811 ../cli/src/devices.c:812 ../cli/src/devices.c:813
-#: ../cli/src/settings.c:576 ../cli/src/settings.c:646
-#: ../cli/src/settings.c:766 ../cli/src/settings.c:1048
-#: ../cli/src/settings.c:1049 ../cli/src/settings.c:1051
-#: ../cli/src/settings.c:1053 ../cli/src/settings.c:1054
-#: ../cli/src/settings.c:1182 ../cli/src/settings.c:1183
-#: ../cli/src/settings.c:1184 ../cli/src/settings.c:1185
-#: ../cli/src/settings.c:1260 ../cli/src/settings.c:1261
-#: ../cli/src/settings.c:1262 ../cli/src/settings.c:1263
-#: ../cli/src/settings.c:1264 ../cli/src/settings.c:1265
-#: ../cli/src/settings.c:1266 ../cli/src/settings.c:1267
-#: ../cli/src/settings.c:1268 ../cli/src/settings.c:1269
-#: ../cli/src/settings.c:1270 ../cli/src/settings.c:1271
-#: ../cli/src/settings.c:1272 ../cli/src/settings.c:1343
+#: ../cli/src/connections.c:485 ../cli/src/connections.c:486
+#: ../cli/src/connections.c:714 ../cli/src/connections.c:715
+#: ../cli/src/connections.c:717 ../cli/src/devices.c:418
+#: ../cli/src/devices.c:471 ../cli/src/devices.c:587 ../cli/src/devices.c:588
+#: ../cli/src/devices.c:589 ../cli/src/devices.c:621 ../cli/src/devices.c:647
+#: ../cli/src/devices.c:648 ../cli/src/devices.c:649 ../cli/src/devices.c:650
+#: ../cli/src/devices.c:651 ../cli/src/network-manager.c:267
+#: ../cli/src/settings.c:700 ../cli/src/settings.c:773
+#: ../cli/src/settings.c:893 ../cli/src/settings.c:1175
+#: ../cli/src/settings.c:1176 ../cli/src/settings.c:1178
+#: ../cli/src/settings.c:1180 ../cli/src/settings.c:1181
+#: ../cli/src/settings.c:1312 ../cli/src/settings.c:1313
+#: ../cli/src/settings.c:1314 ../cli/src/settings.c:1315
+#: ../cli/src/settings.c:1392 ../cli/src/settings.c:1393
+#: ../cli/src/settings.c:1394 ../cli/src/settings.c:1395
+#: ../cli/src/settings.c:1396 ../cli/src/settings.c:1397
+#: ../cli/src/settings.c:1398 ../cli/src/settings.c:1399
+#: ../cli/src/settings.c:1400 ../cli/src/settings.c:1401
+#: ../cli/src/settings.c:1402 ../cli/src/settings.c:1403
+#: ../cli/src/settings.c:1404 ../cli/src/settings.c:1475
 msgid "yes"
 msgstr "ഉവ്വു്"
 
-#: ../cli/src/connections.c:443 ../cli/src/connections.c:444
-#: ../cli/src/connections.c:681 ../cli/src/connections.c:682
-#: ../cli/src/connections.c:684 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:639 ../cli/src/devices.c:750 ../cli/src/devices.c:751
-#: ../cli/src/devices.c:783 ../cli/src/devices.c:809 ../cli/src/devices.c:810
-#: ../cli/src/devices.c:811 ../cli/src/devices.c:812 ../cli/src/devices.c:813
-#: ../cli/src/settings.c:576 ../cli/src/settings.c:578
-#: ../cli/src/settings.c:646 ../cli/src/settings.c:766
-#: ../cli/src/settings.c:1048 ../cli/src/settings.c:1049
-#: ../cli/src/settings.c:1051 ../cli/src/settings.c:1053
-#: ../cli/src/settings.c:1054 ../cli/src/settings.c:1182
-#: ../cli/src/settings.c:1183 ../cli/src/settings.c:1184
-#: ../cli/src/settings.c:1185 ../cli/src/settings.c:1260
-#: ../cli/src/settings.c:1261 ../cli/src/settings.c:1262
-#: ../cli/src/settings.c:1263 ../cli/src/settings.c:1264
-#: ../cli/src/settings.c:1265 ../cli/src/settings.c:1266
-#: ../cli/src/settings.c:1267 ../cli/src/settings.c:1268
-#: ../cli/src/settings.c:1269 ../cli/src/settings.c:1270
-#: ../cli/src/settings.c:1271 ../cli/src/settings.c:1272
-#: ../cli/src/settings.c:1343
+#: ../cli/src/connections.c:485 ../cli/src/connections.c:486
+#: ../cli/src/connections.c:714 ../cli/src/connections.c:715
+#: ../cli/src/connections.c:717 ../cli/src/devices.c:418
+#: ../cli/src/devices.c:471 ../cli/src/devices.c:587 ../cli/src/devices.c:588
+#: ../cli/src/devices.c:589 ../cli/src/devices.c:621 ../cli/src/devices.c:647
+#: ../cli/src/devices.c:648 ../cli/src/devices.c:649 ../cli/src/devices.c:650
+#: ../cli/src/devices.c:651 ../cli/src/network-manager.c:269
+#: ../cli/src/settings.c:700 ../cli/src/settings.c:702
+#: ../cli/src/settings.c:773 ../cli/src/settings.c:893
+#: ../cli/src/settings.c:1175 ../cli/src/settings.c:1176
+#: ../cli/src/settings.c:1178 ../cli/src/settings.c:1180
+#: ../cli/src/settings.c:1181 ../cli/src/settings.c:1312
+#: ../cli/src/settings.c:1313 ../cli/src/settings.c:1314
+#: ../cli/src/settings.c:1315 ../cli/src/settings.c:1392
+#: ../cli/src/settings.c:1393 ../cli/src/settings.c:1394
+#: ../cli/src/settings.c:1395 ../cli/src/settings.c:1396
+#: ../cli/src/settings.c:1397 ../cli/src/settings.c:1398
+#: ../cli/src/settings.c:1399 ../cli/src/settings.c:1400
+#: ../cli/src/settings.c:1401 ../cli/src/settings.c:1402
+#: ../cli/src/settings.c:1403 ../cli/src/settings.c:1404
+#: ../cli/src/settings.c:1475
 msgid "no"
 msgstr "ഇല്ല"
 
-#: ../cli/src/connections.c:518
+#: ../cli/src/connections.c:560
 msgid "Connection list"
 msgstr "കണക്ഷന്‍ പട്ടിക"
 
-#: ../cli/src/connections.c:531 ../cli/src/connections.c:1064
-#: ../cli/src/connections.c:1808 ../cli/src/connections.c:1823
-#: ../cli/src/connections.c:1832 ../cli/src/connections.c:1842
-#: ../cli/src/connections.c:1854 ../cli/src/connections.c:1949
-#: ../cli/src/connections.c:2051 ../cli/src/devices.c:1190
-#: ../cli/src/devices.c:1200 ../cli/src/devices.c:1314
-#: ../cli/src/devices.c:1322 ../cli/src/devices.c:1535
-#: ../cli/src/devices.c:1542
+#: ../cli/src/connections.c:573 ../cli/src/connections.c:1110
+#: ../cli/src/connections.c:1648 ../cli/src/connections.c:1663
+#: ../cli/src/connections.c:1672 ../cli/src/connections.c:1682
+#: ../cli/src/connections.c:1694 ../cli/src/connections.c:1802
+#: ../cli/src/connections.c:1904 ../cli/src/devices.c:1041
+#: ../cli/src/devices.c:1051 ../cli/src/devices.c:1169
+#: ../cli/src/devices.c:1177 ../cli/src/devices.c:1541
+#: ../cli/src/devices.c:1548 ../cli/src/devices.c:1562
+#: ../cli/src/devices.c:1569 ../cli/src/devices.c:1586
+#: ../cli/src/devices.c:1597 ../cli/src/devices.c:1818
+#: ../cli/src/devices.c:1825
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "പിശക്: %s ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
 
-#: ../cli/src/connections.c:544
+#: ../cli/src/connections.c:586
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "പിശക്: %s - ഇത്തരം കണക്ഷന്‍ ലഭ്യമല്ല."
 
-#: ../cli/src/connections.c:550 ../cli/src/connections.c:1867
-#: ../cli/src/connections.c:1966 ../cli/src/connections.c:2058
-#: ../cli/src/devices.c:987 ../cli/src/devices.c:1067
-#: ../cli/src/devices.c:1214 ../cli/src/devices.c:1328
-#: ../cli/src/devices.c:1548
+#: ../cli/src/connections.c:592 ../cli/src/connections.c:1707
+#: ../cli/src/connections.c:1819 ../cli/src/connections.c:1911
+#: ../cli/src/devices.c:825 ../cli/src/devices.c:905 ../cli/src/devices.c:1065
+#: ../cli/src/devices.c:1183 ../cli/src/devices.c:1610
+#: ../cli/src/devices.c:1831
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "അപരിചിതമായ പരാമീറ്റര്‍: %s\n"
 
-#: ../cli/src/connections.c:559
+#: ../cli/src/connections.c:601
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "പിശക്: ശരിയായ പരാമീറ്റര്‍ നല്‍കിയിട്ടില്ല."
 
-#: ../cli/src/connections.c:574 ../cli/src/connections.c:2151
-#: ../cli/src/devices.c:1756 ../cli/src/network-manager.c:456
+#: ../cli/src/connections.c:616 ../cli/src/connections.c:2004
+#: ../cli/src/devices.c:2039 ../cli/src/network-manager.c:596
 #, c-format
 msgid "Error: %s."
 msgstr "പിശക്: %s."
 
-#: ../cli/src/connections.c:587
+#: ../cli/src/connections.c:629
 msgid "activating"
 msgstr "സജീവമാക്കുന്നു"
 
-#: ../cli/src/connections.c:589
+#: ../cli/src/connections.c:631
 msgid "activated"
 msgstr "സജീവമാക്കിയിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:591 ../cli/src/devices.c:261
-msgid "deactivating"
-msgstr "സജീവമല്ലാതാക്കുന്നു"
-
-#: ../cli/src/connections.c:594 ../cli/src/connections.c:617
-#: ../cli/src/connections.c:1680 ../cli/src/devices.c:265
-#: ../cli/src/devices.c:784 ../cli/src/network-manager.c:111
-#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:176
-#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:291
-#: ../cli/src/network-manager.c:346 ../cli/src/network-manager.c:384
-#: ../cli/src/network-manager.c:423 ../cli/src/settings.c:531
-#: ../cli/src/utils.c:499 ../src/main.c:450 ../src/main.c:469
-msgid "unknown"
-msgstr "അപരിചിതം"
-
-#: ../cli/src/connections.c:603
+#: ../cli/src/connections.c:645
 msgid "VPN connecting (prepare)"
 msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു (തയ്യാറാകുക)"
 
-#: ../cli/src/connections.c:605
+#: ../cli/src/connections.c:647
 msgid "VPN connecting (need authentication)"
 msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു (ആധികാരികത ഉറപ്പാക്കേണ്ടതുണ്ടു്)"
 
-#: ../cli/src/connections.c:607
+#: ../cli/src/connections.c:649
 msgid "VPN connecting"
 msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു"
 
-#: ../cli/src/connections.c:609
+#: ../cli/src/connections.c:651
 msgid "VPN connecting (getting IP configuration)"
 msgstr "വിപിഎന്‍ കണക്ട് ചെയ്യുന്നു (ഐപി ക്രമീകരണം ലഭ്യമാക്കുന്നു)"
 
-#: ../cli/src/connections.c:611
+#: ../cli/src/connections.c:653
 msgid "VPN connected"
 msgstr "വിപിഎന്‍ കണക്ട് ചെയ്തിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:613
+#: ../cli/src/connections.c:655
 msgid "VPN connection failed"
 msgstr "വിപിഎന്‍ കണക്ഷന്‍ പരാജയപ്പെട്ടു"
 
-#: ../cli/src/connections.c:615
+#: ../cli/src/connections.c:657
 msgid "VPN disconnected"
 msgstr "വിപിഎന്‍ വിഛേദിച്ചിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:868 ../cli/src/connections.c:1092
+#: ../cli/src/connections.c:710 ../cli/src/connections.c:720
+msgid "N/A"
+msgstr "N/A"
+
+#: ../cli/src/connections.c:914 ../cli/src/connections.c:1138
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "പിശക്: 'con status': %s"
 
-#: ../cli/src/connections.c:870 ../cli/src/connections.c:1094
+#: ../cli/src/connections.c:916 ../cli/src/connections.c:1140
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "പിശക്: 'con status': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/connections.c:878
+#: ../cli/src/connections.c:924
 msgid "Active connection details"
 msgstr "സജീവമായ കണക്ഷന്‍ വിശദാംശങ്ങള്‍"
 
-#: ../cli/src/connections.c:1014 ../cli/src/connections.c:1882
-#: ../cli/src/connections.c:1981 ../cli/src/connections.c:2072
-#: ../cli/src/devices.c:1014 ../cli/src/devices.c:1076
-#: ../cli/src/devices.c:1229 ../cli/src/devices.c:1358
-#: ../cli/src/devices.c:1577
+#: ../cli/src/connections.c:1060 ../cli/src/connections.c:1722
+#: ../cli/src/connections.c:1834 ../cli/src/connections.c:1925
+#: ../cli/src/devices.c:852 ../cli/src/devices.c:914 ../cli/src/devices.c:1080
+#: ../cli/src/devices.c:1213 ../cli/src/devices.c:1632
+#: ../cli/src/devices.c:1860 ../cli/src/network-manager.c:311
 #, c-format
 msgid "Error: Can't find out if NetworkManager is running: %s."
 msgstr "പിശക്: നെറ്റ്‌വര്‍ക്ക്മാനേജര്‍ പ്രവര്‍ത്തിക്കുന്നുണ്ടോ എന്നറിയാന്‍ സാധിക്കുന്നില്ല: %s."
 
-#: ../cli/src/connections.c:1018 ../cli/src/connections.c:1886
-#: ../cli/src/connections.c:1985 ../cli/src/connections.c:2076
-#: ../cli/src/devices.c:1018 ../cli/src/devices.c:1080
-#: ../cli/src/devices.c:1233 ../cli/src/devices.c:1362
-#: ../cli/src/devices.c:1581
+#: ../cli/src/connections.c:1064 ../cli/src/connections.c:1726
+#: ../cli/src/connections.c:1838 ../cli/src/connections.c:1929
+#: ../cli/src/devices.c:856 ../cli/src/devices.c:918 ../cli/src/devices.c:1084
+#: ../cli/src/devices.c:1217 ../cli/src/devices.c:1636
+#: ../cli/src/devices.c:1864 ../cli/src/network-manager.c:315
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "പിശക്: നെറ്റ്‌വര്‍ക്ക്മാനേജര്‍ പ്രവര്‍ത്തിക്കുന്നില്ല."
 
-#: ../cli/src/connections.c:1050
+#: ../cli/src/connections.c:1096
 msgid "Active connections"
 msgstr "സജീവമായ കണക്ഷനുകള്‍"
 
-#: ../cli/src/connections.c:1075
+#: ../cli/src/connections.c:1121
 #, c-format
 msgid "Error: '%s' is not an active connection."
 msgstr "പിശക്: '%s' ഒരു സജീവമായ കണക്ഷന്‍ അല്ല."
 
-#: ../cli/src/connections.c:1080
+#: ../cli/src/connections.c:1126
 #, c-format
 msgid "Error: unknown parameter: %s"
 msgstr "പിശക്: അപരിചിതമായ പരാമീറ്റര്‍: %s"
 
-#: ../cli/src/connections.c:1564
+#: ../cli/src/connections.c:1233
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ഡിവൈസ് '%s'-ല്‍ സജീവമായ കണക്ഷന്‍ ലഭ്യമല്ല"
 
-#: ../cli/src/connections.c:1572
-#, c-format
+#: ../cli/src/connections.c:1241
 msgid "no active connection or device"
 msgstr "സജീവമായ കണക്ഷന്‍ അല്ലെങ്കില്‍ ഡിവൈസ് ലഭ്യമല്ല"
 
-#: ../cli/src/connections.c:1643
+#: ../cli/src/connections.c:1312
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "'%s' ഡിവൈസ് '%s' കണക്ഷനുമായി പൊരുത്തപ്പെടുന്നില്ല"
 
-#: ../cli/src/connections.c:1645
+#: ../cli/src/connections.c:1315
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "ഡിവൈസ് '%s'-ല്‍ സജീവമായ കണക്ഷന്‍ ലഭ്യമല്ല"
 
-#: ../cli/src/connections.c:1656
+#: ../cli/src/connections.c:1327
 msgid "unknown reason"
 msgstr "അപരിചിതമായ കാരണം"
 
-#: ../cli/src/connections.c:1658
+#: ../cli/src/connections.c:1329
 msgid "none"
 msgstr "ഒന്നുമില്ല"
 
-#: ../cli/src/connections.c:1660
+#: ../cli/src/connections.c:1331
 msgid "the user was disconnected"
 msgstr "ഉപയോക്താവു് വിഛേദിച്ചിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:1662
+#: ../cli/src/connections.c:1333
 msgid "the base network connection was interrupted"
 msgstr "അടിസ്ഥാന നെറ്റ്‌വര്‍ക്ക് കണക്ഷന്‍ തടസ്സപ്പെടുത്തിയിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:1664
+#: ../cli/src/connections.c:1335
 msgid "the VPN service stopped unexpectedly"
 msgstr "വിപിഎന്‍ സര്‍വീസ് അപ്രതീക്ഷിതമായി നിര്‍ത്തിയിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:1666
+#: ../cli/src/connections.c:1337
 msgid "the VPN service returned invalid configuration"
 msgstr "വിപിഎന്‍ സര്‍വീസ് തെറ്റായ ക്രമീകരണം തിരികെ നല്‍കിയിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:1668
+#: ../cli/src/connections.c:1339
 msgid "the connection attempt timed out"
 msgstr "കണക്ഷനുള്ള ശ്രമം കഴിഞ്ഞിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:1670
+#: ../cli/src/connections.c:1341
 msgid "the VPN service did not start in time"
 msgstr "വിപിഎന്‍ സര്‍വീസ് സമയത്തിനു് ആരംഭിച്ചില്ല"
 
-#: ../cli/src/connections.c:1672
+#: ../cli/src/connections.c:1343
 msgid "the VPN service failed to start"
 msgstr "വിപിഎന്‍ സര്‍വീസ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
 
-#: ../cli/src/connections.c:1674
+#: ../cli/src/connections.c:1345
 msgid "no valid VPN secrets"
 msgstr "ശരിയായ വിപിഎന്‍ രഹസ്യങ്ങള്‍ ലഭ്യമല്ല"
 
-#: ../cli/src/connections.c:1676
+#: ../cli/src/connections.c:1347
 msgid "invalid VPN secrets"
 msgstr "തെറ്റായ വിപിഎന്‍ രഹസ്യങ്ങള്‍"
 
-#: ../cli/src/connections.c:1678
+#: ../cli/src/connections.c:1349
 msgid "the connection was removed"
 msgstr "കണക്ഷന്‍ നീക്കം ചെയ്തിരിക്കുന്നു"
 
-#: ../cli/src/connections.c:1692
+#: ../cli/src/connections.c:1366 ../cli/src/connections.c:1571
 #, c-format
-msgid "state: %s\n"
-msgstr "അവസ്ഥ: %s\n"
+msgid "Connection successfully activated (D-Bus active path: %s)\n"
+msgstr "കണക്ഷന്‍ സജീവമായി വിജയിച്ചിരിയ്ക്കുന്നു (ഡി-ബസ് സജീവ പാഥ്: %s)\n"
 
-#: ../cli/src/connections.c:1695 ../cli/src/connections.c:1721
-#, c-format
-msgid "Connection activated\n"
-msgstr "കണക്ഷന്‍ സജീവമാക്കിയിരിക്കുന്നു\n"
-
-#: ../cli/src/connections.c:1698
+#. Active connection failed and dissapeared, quit.
+#: ../cli/src/connections.c:1371 ../cli/src/connections.c:1472
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു."
 
-#: ../cli/src/connections.c:1717
+#: ../cli/src/connections.c:1396
 #, c-format
-msgid "state: %s (%d)\n"
-msgstr "അവസ്ഥ: %s (%d)\n"
+msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
+msgstr "വിപിഎന്‍ കണക്ഷന്‍ വിജയകരമായി സജീവമാക്കിയിരിയ്ക്കുന്നു (ഡി-ബസ് സജീവ പാഥ്: %s)\n"
 
-#: ../cli/src/connections.c:1727
+#: ../cli/src/connections.c:1404
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു: %s."
 
-#: ../cli/src/connections.c:1744 ../cli/src/devices.c:1136
+#: ../cli/src/connections.c:1501 ../cli/src/devices.c:974
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "പിശക്: സമയപരിധി %d നിമിഷത്തിന്റെ കാലാവധി കഴിഞ്ഞിരിക്കുന്നു."
 
-#: ../cli/src/connections.c:1757
+#: ../cli/src/connections.c:1562
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു: %s"
 
-#: ../cli/src/connections.c:1763
-#, c-format
-msgid "Active connection state: %s\n"
-msgstr "സജീവമായ കണക്ഷന്റെ അവസ്ഥ: %s\n"
-
-#: ../cli/src/connections.c:1764
-#, c-format
-msgid "Active connection path: %s\n"
-msgstr "സജീവമായ കണക്ഷന്‍ പാഥ്: %s\n"
-
-#: ../cli/src/connections.c:1816 ../cli/src/connections.c:1957
-#: ../cli/src/connections.c:2085
+#: ../cli/src/connections.c:1656 ../cli/src/connections.c:1810
+#: ../cli/src/connections.c:1938
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "പിശക്: അപരിചിതമായ കണക്ഷന്‍: %s."
 
-#: ../cli/src/connections.c:1862 ../cli/src/devices.c:1208
+#: ../cli/src/connections.c:1702 ../cli/src/devices.c:1059
+#: ../cli/src/devices.c:1605
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "പിശഖ്: സമയപരിധിയുടെ മൂല്ല്യം '%s' തെറ്റാണു്."
 
-#: ../cli/src/connections.c:1875 ../cli/src/connections.c:1974
-#: ../cli/src/connections.c:2065
+#: ../cli/src/connections.c:1715 ../cli/src/connections.c:1827
+#: ../cli/src/connections.c:1918
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "പിശക്: id അല്ലെങ്കില്‍ uuid വ്യക്തമാക്കേണ്ടതുണ്ടു്."
 
-#: ../cli/src/connections.c:1903
+#: ../cli/src/connections.c:1747
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "പിശക്: ഉചിതമായ ഡിവൈസ് ലഭ്യമായില്ല: %s."
 
-#: ../cli/src/connections.c:1905
+#: ../cli/src/connections.c:1749
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "പിശക്: ഉചിതമായ ഡിവൈസ് ലഭ്യമായില്ല."
 
-#: ../cli/src/connections.c:2010
+#: ../cli/src/connections.c:1863
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "മുന്നറിയിപ്പു്: കണക്ഷന്‍ സജീവമല്ല\n"
 
-#: ../cli/src/connections.c:2024
+#: ../cli/src/connections.c:1877
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "പിശക്: കണക്ഷന്‍ നീക്കം ചെയ്യുന്നത് പരാജയപ്പെട്ടു: %s"
 
-#: ../cli/src/connections.c:2142
+#: ../cli/src/connections.c:1995
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "പിശക്: 'con' കമാന്‍ഡ് '%s' ശരിയല്ല."
 
-#: ../cli/src/connections.c:2207
+#: ../cli/src/connections.c:2063
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "പിശക്: D-Bus-ലേക്കു് കണക്ട് ചെയ്യുവാന്‍ സാധ്യമായില്ല."
 
-#: ../cli/src/connections.c:2215
+#: ../cli/src/connections.c:2071
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "പിശക്: സിസ്റ്റം സജ്ജീകരണങ്ങള്‍ ലഭ്യമാക്കവാന്‍ സാധ്യമായില്ല."
 
-#: ../cli/src/connections.c:2225
+#: ../cli/src/connections.c:2081
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "പിശക്: കണക്ഷനുകള്‍ ലഭ്യമാക്കുവാന്‍ സാധ്യമല്ല: സജ്ജീകരണങ്ങള്‍ക്കുള്ള സര്‍വീസ് പ്രവര്‍ത്തിക്കുന്നില്ല."
@@ -597,231 +864,256 @@ msgstr "പിശക്: കണക്ഷനുകള്‍ ലഭ്യമാക
 #. 0
 #. 9
 #. 3
-#: ../cli/src/devices.c:65 ../cli/src/devices.c:101 ../cli/src/devices.c:179
-#: ../cli/src/devices.c:195
+#: ../cli/src/devices.c:70 ../cli/src/devices.c:106 ../cli/src/devices.c:187
+#: ../cli/src/devices.c:203
 msgid "DEVICE"
 msgstr "DEVICE"
 
 #. 0
-#: ../cli/src/devices.c:78
+#: ../cli/src/devices.c:83
 msgid "CAPABILITIES"
 msgstr "CAPABILITIES"
 
 #. 1
-#: ../cli/src/devices.c:79
+#: ../cli/src/devices.c:84
 msgid "WIFI-PROPERTIES"
 msgstr "WIFI-PROPERTIES"
 
 #. 2
-#: ../cli/src/devices.c:80
+#: ../cli/src/devices.c:85
 msgid "AP"
 msgstr "AP"
 
 #. 3
-#: ../cli/src/devices.c:81
+#: ../cli/src/devices.c:86
 msgid "WIRED-PROPERTIES"
 msgstr "WIRED-PROPERTIES"
 
 #. 4
-#: ../cli/src/devices.c:82
+#: ../cli/src/devices.c:87
 msgid "WIMAX-PROPERTIES"
 msgstr "WIMAX-PROPERTIES"
 
 #. 5
 #. 0
-#: ../cli/src/devices.c:83 ../cli/src/devices.c:192
+#: ../cli/src/devices.c:88 ../cli/src/devices.c:200
 msgid "NSP"
 msgstr "NSP"
 
 #. 6
-#: ../cli/src/devices.c:84
+#: ../cli/src/devices.c:89
 msgid "IP4"
 msgstr "IP4"
 
 #. 7
-#: ../cli/src/devices.c:85
+#: ../cli/src/devices.c:90
 msgid "DHCP4"
 msgstr "DHCP4"
 
 #. 8
-#: ../cli/src/devices.c:86
+#: ../cli/src/devices.c:91
 msgid "IP6"
 msgstr "IP6"
 
 #. 9
-#: ../cli/src/devices.c:87
+#: ../cli/src/devices.c:92
 msgid "DHCP6"
 msgstr "DHCP6"
 
 #. 2
-#: ../cli/src/devices.c:103
+#: ../cli/src/devices.c:108
 msgid "VENDOR"
 msgstr "VENDOR"
 
 #. 3
-#: ../cli/src/devices.c:104
+#: ../cli/src/devices.c:109
 msgid "PRODUCT"
 msgstr "PRODUCT"
 
 #. 4
-#: ../cli/src/devices.c:105
+#: ../cli/src/devices.c:110
 msgid "DRIVER"
 msgstr "DRIVER"
 
 #. 5
-#: ../cli/src/devices.c:106
+#: ../cli/src/devices.c:111
+#| msgid "VERSION"
+msgid "DRIVER-VERSION"
+msgstr "DRIVER-VERSION"
+
+#. 6
+#: ../cli/src/devices.c:112
+#| msgid "FIRMWARE-MISSING"
+msgid "FIRMWARE-VERSION"
+msgstr "FIRMWARE-VERSION"
+
+#. 7
+#: ../cli/src/devices.c:113
 msgid "HWADDR"
 msgstr "HWADDR"
 
-#. 7
-#: ../cli/src/devices.c:108
+#. 9
+#: ../cli/src/devices.c:115
 msgid "REASON"
 msgstr "REASON"
 
-#. 8
-#: ../cli/src/devices.c:109
+#. 10
+#: ../cli/src/devices.c:116
 msgid "UDI"
 msgstr "UDI"
 
-#. 9
-#: ../cli/src/devices.c:110
+#. 11
+#: ../cli/src/devices.c:117
 msgid "IP-IFACE"
 msgstr "IP-IFACE"
 
-#. 10
-#: ../cli/src/devices.c:111
+#. 12
+#: ../cli/src/devices.c:118
 msgid "NM-MANAGED"
 msgstr "NM-MANAGED"
 
-#. 11
-#: ../cli/src/devices.c:112
+#. 14
+#: ../cli/src/devices.c:120
 msgid "FIRMWARE-MISSING"
 msgstr "FIRMWARE-MISSING"
 
-#. 12
-#: ../cli/src/devices.c:113
+#. 15
+#: ../cli/src/devices.c:121
 msgid "CONNECTION"
 msgstr "CONNECTION"
 
 #. 0
-#: ../cli/src/devices.c:122
+#: ../cli/src/devices.c:130
 msgid "CARRIER-DETECT"
 msgstr "CARRIER-DETECT"
 
 #. 1
-#: ../cli/src/devices.c:123
+#: ../cli/src/devices.c:131
 msgid "SPEED"
 msgstr "SPEED"
 
 #. 0
-#: ../cli/src/devices.c:132
+#: ../cli/src/devices.c:140
 msgid "CARRIER"
 msgstr "CARRIER"
 
 #. 0
-#: ../cli/src/devices.c:142
+#: ../cli/src/devices.c:150
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:143
+#: ../cli/src/devices.c:151
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:144
+#: ../cli/src/devices.c:152
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:145
+#: ../cli/src/devices.c:153
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:146
+#: ../cli/src/devices.c:154
 msgid "CCMP"
 msgstr "CCMP"
 
 #. 0
-#: ../cli/src/devices.c:156
+#: ../cli/src/devices.c:164
 msgid "CTR-FREQ"
 msgstr "CTR-FREQ"
 
 #. 1
-#: ../cli/src/devices.c:157
+#: ../cli/src/devices.c:165
 msgid "RSSI"
 msgstr "RSSI"
 
 #. 2
-#: ../cli/src/devices.c:158
+#: ../cli/src/devices.c:166
 msgid "CINR"
 msgstr "CINR"
 
 #. 3
-#: ../cli/src/devices.c:159
+#: ../cli/src/devices.c:167
 msgid "TX-POW"
 msgstr "TX-POW"
 
 #. 4
-#: ../cli/src/devices.c:160
+#: ../cli/src/devices.c:168
 msgid "BSID"
 msgstr "BSID"
 
 #. 0
-#: ../cli/src/devices.c:170
+#: ../cli/src/devices.c:178
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:171
+#: ../cli/src/devices.c:179
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:172
+#: ../cli/src/devices.c:180
 msgid "MODE"
 msgstr "MODE"
 
 #. 3
-#: ../cli/src/devices.c:173
+#: ../cli/src/devices.c:181
 msgid "FREQ"
 msgstr "FREQ"
 
 #. 4
-#: ../cli/src/devices.c:174
+#: ../cli/src/devices.c:182
 msgid "RATE"
 msgstr "RATE"
 
 #. 5
 #. 1
-#: ../cli/src/devices.c:175 ../cli/src/devices.c:193
+#: ../cli/src/devices.c:183 ../cli/src/devices.c:201
 msgid "SIGNAL"
 msgstr "SIGNAL"
 
 #. 6
-#: ../cli/src/devices.c:176
+#: ../cli/src/devices.c:184
 msgid "SECURITY"
 msgstr "SECURITY"
 
 #. 7
-#: ../cli/src/devices.c:177
+#: ../cli/src/devices.c:185
 msgid "WPA-FLAGS"
 msgstr "WPA-FLAGS"
 
 #. 8
-#: ../cli/src/devices.c:178
+#: ../cli/src/devices.c:186
 msgid "RSN-FLAGS"
 msgstr "RSN-FLAGS"
 
 #. 10
 #. 4
-#: ../cli/src/devices.c:180 ../cli/src/devices.c:196
+#: ../cli/src/devices.c:188 ../cli/src/devices.c:204
 msgid "ACTIVE"
 msgstr "ACTIVE"
 
-#: ../cli/src/devices.c:213
+#: ../cli/src/devices.c:223
 #, c-format
+#| msgid ""
+#| "Usage: nmcli dev { COMMAND | help }\n"
+#| "\n"
+#| "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+#| "\n"
+#| "  COMMAND := { status | list | disconnect | wifi }\n"
+#| "\n"
+#| "  status\n"
+#| "  list [iface <iface>]\n"
+#| "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+#| "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+#| "  wimax [list [iface <iface>] [nsp <name>]]\n"
+#| "\n"
 msgid ""
 "Usage: nmcli dev { COMMAND | help }\n"
 "\n"
@@ -833,10 +1125,13 @@ msgid ""
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
 "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+"               [--private] [--nowait] [--timeout <timeout>]\n"
 "  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 msgstr ""
-"ഉപയോഗക്രമം: nmcli dev { COMMAND | help }\n"
+"ഉപയോഗിയ്ക്കേണ്ട വിധം: nmcli dev { COMMAND | help }\n"
 "\n"
 "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
 "\n"
@@ -846,465 +1141,287 @@ msgstr ""
 "  list [iface <iface>]\n"
 "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
 "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+"               [--private] [--nowait] [--timeout <timeout>]\n"
 "  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:241
-msgid "unmanaged"
-msgstr "കൈകാര്യം ചെയ്തിട്ടില്ലാത്തതു്"
-
-#: ../cli/src/devices.c:243
-msgid "unavailable"
-msgstr "ലഭ്യമല്ലാത്തതു്"
-
-#: ../cli/src/devices.c:245 ../cli/src/network-manager.c:108
-msgid "disconnected"
-msgstr "വിഛേദിച്ചിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:247
-msgid "connecting (prepare)"
-msgstr "കണക്ട് ചെയ്യുന്നു (തയ്യാറാക്കുക)"
-
-#: ../cli/src/devices.c:249
-msgid "connecting (configuring)"
-msgstr "കണക്ട് ചെയ്യുന്നു (ക്രമീകരിക്കുന്നു)"
-
-#: ../cli/src/devices.c:251
-msgid "connecting (need authentication)"
-msgstr "കണക്ട് ചെയ്യുന്നു (ആധികാരികത ഉറപ്പാക്കേണ്ടതുണ്ടു്)"
-
-#: ../cli/src/devices.c:253
-msgid "connecting (getting IP configuration)"
-msgstr "കണക്ട് ചെയ്യുന്നു (ഐപി ക്രമീകരണം ലഭ്യമാക്കുന്നു)"
-
-#: ../cli/src/devices.c:255
-msgid "connecting (checking IP connectivity)"
-msgstr "കണക്ട് ചെയ്യുന്നു (ഐപി കണക്ടിവിറ്റി പരിശോധിക്കുന്നു)"
-
-#: ../cli/src/devices.c:257
-msgid "connecting (starting secondary connections)"
-msgstr "കണക്ട് ചെയ്യുന്നു (രണ്ടാംഘട്ടത്തിലുള്ള കണക്ഷന്‍ തുടങ്ങുന്നു) "
-
-#: ../cli/src/devices.c:259 ../cli/src/network-manager.c:104
-msgid "connected"
-msgstr "കണക്ട് ചെയ്തിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:263
-msgid "connection failed"
-msgstr "കണക്ഷന്‍ പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:274
-msgid "No reason given"
-msgstr "കാരണം നല്‍കപ്പെട്ടിട്ടില്ല"
-
-#: ../cli/src/devices.c:277
-msgid "Unknown error"
-msgstr "അപരിചിതമായ പിശക്"
-
-#: ../cli/src/devices.c:280
-msgid "Device is now managed"
-msgstr "ഡിവൈസ് ഇപ്പോള്‍ കൈകാര്യം ചെയ്തിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:283
-msgid "Device is now unmanaged"
-msgstr "ഡിവൈസ് ഇപ്പോള്‍ കൈകാര്യം ചെയ്യുന്നില്ല"
-
-#: ../cli/src/devices.c:286
-msgid "The device could not be readied for configuration"
-msgstr "ഡിവൈസ് ക്രമീകരിക്കാന്‍ സജ്ജമാക്കാന്‍ സാധിക്കുന്നില്ല"
-
-#: ../cli/src/devices.c:289
-msgid ""
-"IP configuration could not be reserved (no available address, timeout, etc)"
-msgstr ""
-"IP ക്രമീകരണം കരുതിവയ്ക്കാന്‍ സാധിക്കുന്നില്ല (മേല്‍വിലാസം ലഭ്യമല്ല, സമയപരിധി കഴിഞ്ഞു, മുതലായവ)"
-
-#: ../cli/src/devices.c:292
-msgid "The IP configuration is no longer valid"
-msgstr "IP ക്രമീകരണം സാധുവല്ല"
-
-#: ../cli/src/devices.c:295
-msgid "Secrets were required, but not provided"
-msgstr "രഹസ്യങ്ങള്‍ ആവിശ്യമായിരുന്നു, പക്ഷെ നല്‍കിയിട്ടില്ല"
-
-#: ../cli/src/devices.c:298
-msgid "802.1X supplicant disconnected"
-msgstr "802.1X സപ്ലിക്കെന്റ്  വിച്ഛേദിച്ചിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:301
-msgid "802.1X supplicant configuration failed"
-msgstr "802.1X സപ്ലിക്കെന്റ് ക്രമീകരണം പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:304
-msgid "802.1X supplicant failed"
-msgstr "802.1X സപ്ലിക്കെന്റ് പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:307
-msgid "802.1X supplicant took too long to authenticate"
-msgstr "802.1X സപ്ലിക്കെന്റ് ആധികാരികതക്കു വേണ്ടി കൂടുതല്‍ സമയമെടുത്തു"
-
-#: ../cli/src/devices.c:310
-msgid "PPP service failed to start"
-msgstr "പിപിപി സര്‍വീസ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:313
-msgid "PPP service disconnected"
-msgstr "പിപിപി സേവനം വിഛേദിച്ചിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:316
-msgid "PPP failed"
-msgstr "പിപിപി പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:319
-msgid "DHCP client failed to start"
-msgstr "DHCP ക്ലയ്ന്റ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:322
-msgid "DHCP client error"
-msgstr "DHCP ക്ലയ്ന്റ് പിശക്"
-
-#: ../cli/src/devices.c:325
-msgid "DHCP client failed"
-msgstr "DHCP ക്ലയ്ന്റ് പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:328
-msgid "Shared connection service failed to start"
-msgstr "പങ്കുവെച്ച കണക്ഷന്‍ സേവനം ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:331
-msgid "Shared connection service failed"
-msgstr "പങ്കുവെച്ച കണക്ഷന്‍ സേവനം പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:334
-msgid "AutoIP service failed to start"
-msgstr "AutoIP സേവനം ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:337
-msgid "AutoIP service error"
-msgstr "AutoIP സേവനം പിശക്"
-
-#: ../cli/src/devices.c:340
-msgid "AutoIP service failed"
-msgstr "AutoIP സേവനം പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:343
-msgid "The line is busy"
-msgstr ""
-
-#: ../cli/src/devices.c:346
-msgid "No dial tone"
-msgstr ""
-
-#: ../cli/src/devices.c:349
-msgid "No carrier could be established"
-msgstr ""
-
-#: ../cli/src/devices.c:352
-msgid "The dialing request timed out"
-msgstr ""
-
-#: ../cli/src/devices.c:355
-msgid "The dialing attempt failed"
-msgstr ""
-
-#: ../cli/src/devices.c:358
-#, fuzzy
-#| msgid "Error: Connection activation failed."
-msgid "Modem initialization failed"
-msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു."
-
-#: ../cli/src/devices.c:361
-msgid "Failed to select the specified APN"
-msgstr "നിര്‍ദ്ദേശിച്ച APN തിരഞ്ഞെടുക്കുന്നതില്‍ പരാജയപ്പെട്ടു."
-
-#: ../cli/src/devices.c:364
-msgid "Not searching for networks"
-msgstr "നെറ്റ്​വര്‍ക്കുന്നു വേണ്ടി തിരയുന്നില്ല്"
-
-#: ../cli/src/devices.c:367
-msgid "Network registration denied"
-msgstr ""
-
-#: ../cli/src/devices.c:370
-msgid "Network registration timed out"
-msgstr ""
-
-#: ../cli/src/devices.c:373
-msgid "Failed to register with the requested network"
-msgstr ""
-
-#: ../cli/src/devices.c:376
-msgid "PIN check failed"
-msgstr "PIN പരിശോധന പരാജയപ്പെട്ടു"
-
-#: ../cli/src/devices.c:379
-msgid "Necessary firmware for the device may be missing"
-msgstr "ആവശ്യമായ ഫേംവെയര്‍ ലഭ്യമല്ലെന്നു തോന്നുന്നു"
-
-#: ../cli/src/devices.c:382
-msgid "The device was removed"
-msgstr "ഡിവൈസ് നീക്കം ചെയ്തിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:385
-msgid "NetworkManager went to sleep"
-msgstr "നെറ്റ്‌വര്‍ക്ക്മാനേജറിന്റെ ഉറക്കത്തിലേക്കു നീങ്ങി"
-
-#: ../cli/src/devices.c:388
-msgid "The device's active connection disappeared"
-msgstr "ഡിവൈസിന്റെ സജീവമായ കണക്ഷന്‍ ലഭ്യമല്ലാതായി"
-
-#: ../cli/src/devices.c:391
-msgid "Device disconnected by user or client"
-msgstr ""
-
-#: ../cli/src/devices.c:394
-msgid "Carrier/link changed"
-msgstr ""
-
-#: ../cli/src/devices.c:397
-msgid "The device's existing connection was assumed"
-msgstr "ഡിവൈസിന്റെ നിലവിലുള്ള കണക്ഷനാണെന്നു് ഊഹിച്ചിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:400
-msgid "The supplicant is now available"
-msgstr "സപ്ലിക്കെന്റ് ഇപ്പോള്‍ ലഭ്യമാണ്"
-
-#: ../cli/src/devices.c:403
-msgid "The modem could not be found"
-msgstr "മോഡം കണ്ടെത്തുവാന്‍ സാധിക്കുന്നില്ല"
-
-#: ../cli/src/devices.c:406
-#, fuzzy
-#| msgid "the connection attempt timed out"
-msgid "The Bluetooth connection failed or timed out"
-msgstr "കണക്ഷനുള്ള ശ്രമം കഴിഞ്ഞിരിക്കുന്നു"
-
-#: ../cli/src/devices.c:409
-msgid "GSM Modem's SIM card not inserted"
-msgstr "GSM മോഡത്തില്‍ സിം കാര്‍ഡ് ഇല്ല"
-
-#: ../cli/src/devices.c:412
-msgid "GSM Modem's SIM PIN required"
-msgstr "GSM മോഡത്തിന്റെ സിം PIN ആവിശ്യമാണ്"
-
-#: ../cli/src/devices.c:415
-msgid "GSM Modem's SIM PUK required"
-msgstr "GSM മോഡത്തിന്റെ സിം PUK ആവിശ്യമാണ്"
-
-#: ../cli/src/devices.c:418
-msgid "GSM Modem's SIM wrong"
-msgstr "GSM മോഡത്തിന്റെ സിം തെറ്റാണ്"
-
-#: ../cli/src/devices.c:421
-msgid "InfiniBand device does not support connected mode"
-msgstr ""
-
-#: ../cli/src/devices.c:423 ../cli/src/devices.c:446 ../cli/src/devices.c:458
-#: ../cli/src/devices.c:578 ../cli/src/devices.c:622
-msgid "Unknown"
-msgstr "അപരിചിതം"
-
-#: ../cli/src/devices.c:491
+#: ../cli/src/devices.c:323
 msgid "(none)"
 msgstr "(ഒന്നുമില്ല)"
 
-#: ../cli/src/devices.c:547
+#: ../cli/src/devices.c:379
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:548
+#: ../cli/src/devices.c:380
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:557
+#: ../cli/src/devices.c:389
 msgid "Encrypted: "
 msgstr "എന്‍ക്രിപ്റ്റ് ചെയ്തിരിക്കുന്നു: "
 
-#: ../cli/src/devices.c:562
+#: ../cli/src/devices.c:394
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:564
+#: ../cli/src/devices.c:396
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:566
+#: ../cli/src/devices.c:398
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:569
+#: ../cli/src/devices.c:401
 msgid "Enterprise "
 msgstr "എന്റര്‍പ്രൈസ് "
 
-#: ../cli/src/devices.c:578
+#: ../cli/src/devices.c:410
 msgid "Ad-Hoc"
 msgstr "അഡ്-ഹോക്"
 
-#: ../cli/src/devices.c:578
+#: ../cli/src/devices.c:410
 msgid "Infrastructure"
 msgstr "ഇന്‍ഫ്രാസ്ട്രക്ചര്‍"
 
-#: ../cli/src/devices.c:613
+#: ../cli/src/devices.c:445
 msgid "Home"
 msgstr "പാര്‍പ്പിടം"
 
-#: ../cli/src/devices.c:616
+#: ../cli/src/devices.c:448
 msgid "Partner"
-msgstr ""
+msgstr "പങ്കാളി"
 
-#: ../cli/src/devices.c:619
+#: ../cli/src/devices.c:451
 msgid "Roaming"
-msgstr ""
+msgstr "റോമിങ്"
 
-#: ../cli/src/devices.c:691
+#: ../cli/src/devices.c:523
 #, c-format
 msgid "Error: 'dev list': %s"
 msgstr "പിശക്: 'dev list': %s"
 
-#: ../cli/src/devices.c:693
+#: ../cli/src/devices.c:525
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "പിശക്: 'dev list': %s, അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/devices.c:702
+#: ../cli/src/devices.c:534
 msgid "Device details"
 msgstr "ഡിവൈസിന്റെ വിശദാംശങ്ങള്‍"
 
-#: ../cli/src/devices.c:744 ../cli/src/devices.c:745 ../cli/src/devices.c:1152
-#: ../cli/src/utils.c:445
+#: ../cli/src/devices.c:579 ../cli/src/devices.c:582 ../cli/src/devices.c:1000
+#: ../cli/src/utils.c:477
 msgid "(unknown)"
 msgstr "(അപരിചിതം)"
 
-#: ../cli/src/devices.c:753
+#: ../cli/src/devices.c:591
 msgid "not connected"
 msgstr "കണക്ട് ചെയ്തിട്ടില്ല"
 
-#: ../cli/src/devices.c:780
+#: ../cli/src/devices.c:618
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:853
+#: ../cli/src/devices.c:691
 msgid "on"
 msgstr "ഓണ്‍"
 
-#: ../cli/src/devices.c:853
+#: ../cli/src/devices.c:691
 msgid "off"
 msgstr "ഓഫ്"
 
-#: ../cli/src/devices.c:1004
+#: ../cli/src/devices.c:842
 #, c-format
 msgid "Error: 'dev status': %s"
 msgstr "പിശക്: 'dev status': %s"
 
-#: ../cli/src/devices.c:1006
+#: ../cli/src/devices.c:844
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
 msgstr "പിശക്: 'dev status': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/devices.c:1029
+#: ../cli/src/devices.c:867
 msgid "Status of devices"
 msgstr "ഡിവൈസുകളുടെ അവസ്ഥ"
 
-#: ../cli/src/devices.c:1060
+#: ../cli/src/devices.c:898
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "പിശക്: '%s' ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
 
-#: ../cli/src/devices.c:1101 ../cli/src/devices.c:1253
-#: ../cli/src/devices.c:1390 ../cli/src/devices.c:1609
+#: ../cli/src/devices.c:939 ../cli/src/devices.c:1104
+#: ../cli/src/devices.c:1245 ../cli/src/devices.c:1892
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "പിശക്: ഡിവൈസ് '%s' ലഭ്യമായില്ല."
 
-#: ../cli/src/devices.c:1124
+#: ../cli/src/devices.c:962
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "വിജയിച്ചു: ഡിവൈസ് '%s' വിജയകരമായി വിഛേദിച്ചിരിക്കുന്നു."
 
-#: ../cli/src/devices.c:1149
+#: ../cli/src/devices.c:997
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "പിശക്: ഡിവൈസ് '%s' (%s) വിഛേദിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s"
 
-#: ../cli/src/devices.c:1157
+#: ../cli/src/devices.c:1010
 #, c-format
-msgid "Device state: %d (%s)\n"
-msgstr "ഡിവൈസിന്റെ അവസ്ഥ: %d (%s)\n"
+#| msgid "Success: Device '%s' successfully disconnected."
+msgid "Device '%s' has been disconnected.\n"
+msgstr "ഡിവൈസ് '%s' വിജയകരമായി വിഛേദിച്ചിരിക്കുന്നു.\n"
 
-#: ../cli/src/devices.c:1222
+#: ../cli/src/devices.c:1073
 #, c-format
 msgid "Error: iface has to be specified."
 msgstr "പിശക്: iface നല്‍കേണ്ടതുണ്ടു്."
 
-#: ../cli/src/devices.c:1348
+#: ../cli/src/devices.c:1203
 #, c-format
 msgid "Error: 'dev wifi': %s"
 msgstr "പിശക്: 'dev wifi': %s"
 
-#: ../cli/src/devices.c:1350
+#: ../cli/src/devices.c:1205
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgstr "പിശക്: 'dev wifi': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/devices.c:1373
+#: ../cli/src/devices.c:1228
 msgid "WiFi scan list"
 msgstr "WiFi പരിശോധന പട്ടിക"
 
-#: ../cli/src/devices.c:1410 ../cli/src/devices.c:1464
+#: ../cli/src/devices.c:1265 ../cli/src/devices.c:1319
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "പിശക്: '%s' എന്ന് bssid ഉള്ള ആക്സെസ്സ് പോയിന്റ് ലഭ്യമല്ല."
 
-#: ../cli/src/devices.c:1427
+#: ../cli/src/devices.c:1282
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
 msgstr "പിശക്: '%s' ഡിവൈസ് ഒരു വൈഫൈ ഡിവൈസല്ല."
 
-#: ../cli/src/devices.c:1491
+#: ../cli/src/devices.c:1350 ../cli/src/devices.c:1396
+#, c-format
+msgid "Connection with UUID '%s' created and activated on device '%s'\n"
+msgstr "UUID '%s'-യ്ക്കള്ള കണക്ഷന്‍ തയ്യാറാക്കി '%s' ഡിവൈസില്‍ സജീവമാക്കിയിരിയ്ക്കുന്നു\n"
+
+#: ../cli/src/devices.c:1355
+#, c-format
+#| msgid "Error: Connection activation failed: %s."
+msgid "Error: Connection activation failed: (%d) %s."
+msgstr "പിശക്: കണക്ഷന്‍ സജീവമാക്കല്‍ പരാജയപ്പെട്ടു: (%d) %s."
+
+#: ../cli/src/devices.c:1380
+#, c-format
+#| msgid "Failed to read configuration: (%d) %s\n"
+msgid "Error: Failed to add/activate new connection: (%d) %s"
+msgstr "പിശക്: ക്രമീകരണങ്ങള്‍ വായിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: (%d) %s"
+
+#: ../cli/src/devices.c:1388
+#, c-format
+msgid "Error: Failed to add/activate new connection: Unknown error"
+msgstr "പിശക്: പുതിയ കണക്ഷന്‍ ചേര്‍ക്കുവാന്‍/സജീവമാക്കുന്നതില്‍ പരാജയം : അപരിചിതമായ പിശക്"
+
+#: ../cli/src/devices.c:1532
+#, c-format
+#| msgid "Error: %s argument is missing."
+msgid "Error: SSID or BSSID are missing."
+msgstr "പിശക്: SSID അല്ലെങ്കില്‍ BSSID ലഭ്യമല്ല."
+
+#: ../cli/src/devices.c:1555
+#, c-format
+#| msgid "Error: timeout value '%s' is not valid."
+msgid "Error: bssid argument value '%s' is not a valid BSSID."
+msgstr "പിശക്: bssid ആര്‍ഗ്യുമെന്റ് മൂല്ല്യം '%s' ശരിയായൊരു BSSID മൂല്ല്യമല്ല."
+
+#: ../cli/src/devices.c:1579
+#, c-format
+msgid "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
+msgstr "പിശക്: wep-key-type ആര്‍ഗ്യുമെന്റ് മൂല്ല്യം '%s' അസാധുവാണു്, 'key' അല്ലെങ്കില്‍ 'phrase'."
+
+#: ../cli/src/devices.c:1619
+#, c-format
+msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
+msgstr "പിശക്: BSSID (%s)-ലേക്കുള്ള കണക്ഷന്‍ bssid ആര്‍ഗ്യുമെന്റ് (%s)-ല്‍ നിന്നും വ്യത്യാസമുണ്ടു്."
+
+#: ../cli/src/devices.c:1625
+#, c-format
+msgid "Error: Parameter '%s' is neither SSID nor BSSID."
+msgstr "പിശക്: പരാമീറ്റര്‍ '%s' SSID/BSSID അല്ല."
+
+#: ../cli/src/devices.c:1654
+#, c-format
+#| msgid "Error: Device '%s' is not a WiFi device."
+msgid "Error: Device '%s' is not a Wi-Fi device."
+msgstr "പിശക്: '%s' ഡിവൈസ് ഒരു വൈഫൈ ഡിവൈസല്ല."
+
+#: ../cli/src/devices.c:1656
+#, c-format
+#| msgid "Error: No suitable device found."
+msgid "Error: No Wi-Fi device found."
+msgstr "പിശക്: വൈഫൈ ഡിവൈസ് ലഭ്യമായില്ല."
+
+#: ../cli/src/devices.c:1674
+#, c-format
+#| msgid "Error: NSP with name '%s' not found."
+msgid "Error: No network with SSID '%s' found."
+msgstr "പിശക്: SSID '%s' ഉള്ള നെറ്റ്‌വര്‍ക്ക് ലഭ്യമായില്ല."
+
+#: ../cli/src/devices.c:1676
+#, c-format
+#| msgid "Error: Access point with nsp '%s' not found."
+msgid "Error: No access point with BSSID '%s' found."
+msgstr "പിശക്: '%s' എന്ന BSSID ഉള്ള ആക്സെസ്സ് പോയിന്റ് ലഭ്യമല്ല."
+
+#: ../cli/src/devices.c:1774
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
 msgstr "പിശക്: 'dev wifi' കമാന്‍ഡ് '%s' ശരിയല്ല."
 
-#: ../cli/src/devices.c:1567
+#: ../cli/src/devices.c:1850
 #, c-format
 msgid "Error: 'dev wimax': %s"
 msgstr "പിശക്: 'dev wimax': %s"
 
-#: ../cli/src/devices.c:1569
+#: ../cli/src/devices.c:1852
 #, c-format
 msgid "Error: 'dev wimax': %s; allowed fields: %s"
 msgstr "പിശക്: 'dev wimax': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/devices.c:1592
+#: ../cli/src/devices.c:1875
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP പട്ടിക"
 
-#: ../cli/src/devices.c:1629
+#: ../cli/src/devices.c:1912
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "പിശക്: '%s' എന്ന പേരിലുള്ള NSP ലഭ്യമായില്ല."
 
-#: ../cli/src/devices.c:1640
+#: ../cli/src/devices.c:1923
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "പിശക്: '%s' ഡിവൈസ് ഒരു വൈമാക്സ് ഡിവൈസല്ല."
 
-#: ../cli/src/devices.c:1671
+#: ../cli/src/devices.c:1954
 #, c-format
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "പിശക്: '%s' എന്ന nsp ഉള്ള ആക്സെസ്സ് പോയിന്റ് ലഭ്യമല്ല."
 
-#: ../cli/src/devices.c:1698
+#: ../cli/src/devices.c:1981
 #, c-format
 msgid "Error: 'dev wimax' command '%s' is not valid."
 msgstr "പിശക്: 'dev wimax' കമാന്‍ഡ് '%s' ശരിയല്ല."
 
-#: ../cli/src/devices.c:1748
+#: ../cli/src/devices.c:2031
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "പിശക്: 'dev' കമാന്‍ഡ് '%s' ശരിയല്ല."
@@ -1353,16 +1470,42 @@ msgstr "WIMAX-HARDWARE"
 msgid "WIMAX"
 msgstr "WIMAX"
 
-#: ../cli/src/network-manager.c:67
+#: ../cli/src/network-manager.c:62
+#| msgid "VERSION"
+msgid "PERMISSION"
+msgstr "PERMISSION"
+
+#. 0
+#: ../cli/src/network-manager.c:63
+msgid "VALUE"
+msgstr "VALUE"
+
+#: ../cli/src/network-manager.c:77
 #, c-format
+#| msgid ""
+#| "Usage: nmcli nm { COMMAND | help }\n"
+#| "\n"
+#| "  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+#| "\n"
+#| "  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+#| "\n"
+#| "  status\n"
+#| "  enable [true|false]\n"
+#| "  sleep [true|false]\n"
+#| "  wifi [on|off]\n"
+#| "  wwan [on|off]\n"
+#| "  wimax [on|off]\n"
+#| "\n"
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
+"wimax }\n"
 "\n"
-"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
+"  permissions\n"
 "  enable [true|false]\n"
 "  sleep [true|false]\n"
 "  wifi [on|off]\n"
@@ -1370,13 +1513,15 @@ msgid ""
 "  wimax [on|off]\n"
 "\n"
 msgstr ""
-"ഉപയോഗക്രമം: nmcli nm { COMMAND | help }\n"
+"Usage: nmcli nm { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
+"wimax }\n"
 "\n"
-"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
 "\n"
 "  status\n"
+"  permissions\n"
 "  enable [true|false]\n"
 "  sleep [true|false]\n"
 "  wifi [on|off]\n"
@@ -1384,143 +1529,164 @@ msgstr ""
 "  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:96
+#: ../cli/src/network-manager.c:108
 msgid "asleep"
 msgstr "ഉറങ്ങുന്നു"
 
-#: ../cli/src/network-manager.c:98
+#: ../cli/src/network-manager.c:110
 msgid "connecting"
 msgstr "കണക്ട് ചെയ്യുന്നു"
 
-#: ../cli/src/network-manager.c:100
+#: ../cli/src/network-manager.c:112
 msgid "connected (local only)"
 msgstr "കണക്ട് ചെയ്തിരിക്കുന്നു (തദ്ദേശത്ത് മാത്രമായി)"
 
-#: ../cli/src/network-manager.c:102
+#: ../cli/src/network-manager.c:114
 msgid "connected (site only)"
 msgstr "കണക്ട് ചെയ്തിരിക്കുന്നു (സൈറ്റ് മാത്രമായി)"
 
-#: ../cli/src/network-manager.c:106
+#: ../cli/src/network-manager.c:118
 msgid "disconnecting"
 msgstr "വിച്ഛേദിച്ചുകൊണ്ടിരിക്കുന്നു"
 
-#: ../cli/src/network-manager.c:146
+#: ../cli/src/network-manager.c:158
 #, c-format
 msgid "Error: 'nm status': %s"
 msgstr "പിശക്: 'nm status': %s"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:160
 #, c-format
 msgid "Error: 'nm status': %s; allowed fields: %s"
 msgstr "പിശക്: 'nm status': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
 #. create NMClient
-#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
-#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
-#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
-#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
-#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
-#: ../cli/src/network-manager.c:421
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:177 ../cli/src/network-manager.c:179
+#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:429
+#: ../cli/src/network-manager.c:484 ../cli/src/network-manager.c:522
+#: ../cli/src/network-manager.c:561
 msgid "enabled"
 msgstr "പ്രവര്‍ത്തന സജ്ജമാക്കിയിരിക്കുന്നു"
 
-#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
-#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
-#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
-#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
-#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
-#: ../cli/src/network-manager.c:421
+#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:174
+#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:176
+#: ../cli/src/network-manager.c:177 ../cli/src/network-manager.c:179
+#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:429
+#: ../cli/src/network-manager.c:484 ../cli/src/network-manager.c:522
+#: ../cli/src/network-manager.c:561
 msgid "disabled"
 msgstr "പ്രവര്‍ത്തനരഹിതമാക്കിയിരിക്കുന്നു"
 
-#: ../cli/src/network-manager.c:181
+#: ../cli/src/network-manager.c:193
 msgid "NetworkManager status"
 msgstr "നെറ്റ്‌വര്‍ക്ക്മാനേജറിന്റെ അവസ്ഥ"
 
 #. Print header
-#: ../cli/src/network-manager.c:184
+#: ../cli/src/network-manager.c:196
 msgid "running"
 msgstr "പ്രവര്‍ത്തനത്തില്‍"
 
-#: ../cli/src/network-manager.c:184
+#: ../cli/src/network-manager.c:196
 msgid "not running"
 msgstr "പ്രവര്‍ത്തനത്തിലല്ല"
 
-#: ../cli/src/network-manager.c:215 ../cli/src/utils.c:425
+#: ../cli/src/network-manager.c:271
+msgid "auth"
+msgstr "auth"
+
+#: ../cli/src/network-manager.c:301
+#, c-format
+#| msgid "Error: 'nm status': %s"
+msgid "Error: 'nm permissions': %s"
+msgstr "പിശക്: 'nm permissions': %s"
+
+#: ../cli/src/network-manager.c:303
+#, c-format
+#| msgid "Error: 'nm status': %s; allowed fields: %s"
+msgid "Error: 'nm permissions': %s; allowed fields: %s"
+msgstr "പിശക്: 'nm permissions': %s; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
+
+#: ../cli/src/network-manager.c:324
+#| msgid "NetworkManager status"
+msgid "NetworkManager permissions"
+msgstr "NetworkManager അനുമതികള്‍"
+
+#: ../cli/src/network-manager.c:350 ../cli/src/utils.c:457
 #, c-format
 msgid "Error: Couldn't connect to system bus: %s"
 msgstr "പിശക്: സിസ്റ്റം bus-ലേക്കു് കണക്ട് ചെയ്യുവാന്‍ സാധ്യമായില്ല: %s"
 
-#: ../cli/src/network-manager.c:226
+#: ../cli/src/network-manager.c:361
 #, c-format
 msgid "Error: Couldn't create D-Bus object proxy."
 msgstr "പിശക്: D-Bus പ്രോക്സി നിര്‍മ്മിക്കുവാന്‍ സാധ്യമായില്ല."
 
-#: ../cli/src/network-manager.c:232
+#: ../cli/src/network-manager.c:367
 #, c-format
 msgid "Error in sleep: %s"
 msgstr "ഉറങ്ങുന്നതില്‍ പിശക്: %s"
 
-#: ../cli/src/network-manager.c:276 ../cli/src/network-manager.c:331
-#: ../cli/src/network-manager.c:369 ../cli/src/network-manager.c:408
+#: ../cli/src/network-manager.c:416 ../cli/src/network-manager.c:471
+#: ../cli/src/network-manager.c:509 ../cli/src/network-manager.c:548
 #, c-format
 msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgstr "പിശക്: '%s' എന്നു് '--fields'-നുള്ള മൂല്ല്യം അസാധുവാണു്; അനുവദിക്കുന്ന ഫീള്‍ഡുകള്‍: %s"
 
-#: ../cli/src/network-manager.c:284
+#: ../cli/src/network-manager.c:424
 msgid "Networking enabled"
 msgstr "നെറ്റ്​വര്‍ക്കിങ് സജ്ജമാക്കിയിരിക്കുന്നു"
 
-#: ../cli/src/network-manager.c:300
+#: ../cli/src/network-manager.c:440
 #, c-format
 msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
 msgstr "പിശക്: തെറ്റായ 'wwan' പരാമീറ്റര്‍: '%s'; 'true' അല്ലെങ്കില്‍ 'false' ഉപയോഗിക്കുക."
 
-#: ../cli/src/network-manager.c:310
-#, fuzzy, c-format
+#: ../cli/src/network-manager.c:450
+#, c-format
 #| msgid "Error: Could not connect to NetworkManager."
 msgid "Error: Sleeping status is not exported by NetworkManager."
-msgstr "പിശക്: നെറ്റ്‌വര്‍ക്ക്മാനേജറിലേക്കു് കണക്ട് ചെയ്യുവാന്‍ സാധ്യമായില്ല."
+msgstr "പിശക്: NetworkManager സ്ലീപ്പിങ് അവസ്ഥ എക്സ്പോര്‍ട്ട് ചെയ്യുന്നില്ല."
 
-#: ../cli/src/network-manager.c:318
-#, fuzzy, c-format
+#: ../cli/src/network-manager.c:458
+#, c-format
 #| msgid "Error: invalid 'wifi' parameter: '%s'."
 msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
-msgstr "പിശക്: തെറ്റായ 'wifi' പരാമീറ്റര്‍: '%s'."
+msgstr "പിശക്: തെറ്റായ 'sleep' പരാമീറ്റര്‍: '%s'; 'true' അല്ലെങ്കില്‍ 'false' ഉപയോഗിയ്ക്കുക."
 
-#: ../cli/src/network-manager.c:339
+#: ../cli/src/network-manager.c:479
 msgid "WiFi enabled"
 msgstr "WiFi സജ്ജം"
 
-#: ../cli/src/network-manager.c:355
+#: ../cli/src/network-manager.c:495
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "പിശക്: തെറ്റായ 'wifi' പരാമീറ്റര്‍: '%s'."
 
-#: ../cli/src/network-manager.c:377
+#: ../cli/src/network-manager.c:517
 msgid "WWAN enabled"
 msgstr "WWAN സജ്ജം"
 
-#: ../cli/src/network-manager.c:393
+#: ../cli/src/network-manager.c:533
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "പിശക്: തെറ്റായ 'wwan' പരാമീറ്റര്‍: '%s'."
 
-#: ../cli/src/network-manager.c:416
+#: ../cli/src/network-manager.c:556
 msgid "WiMAX enabled"
 msgstr "WiMAX സജ്ജം"
 
-#: ../cli/src/network-manager.c:432
+#: ../cli/src/network-manager.c:572
 #, c-format
 msgid "Error: invalid 'wimax' parameter: '%s'."
 msgstr "പിശക്: തെറ്റായ 'wimax' പരാമീറ്റര്‍: '%s'."
 
-#: ../cli/src/network-manager.c:445
+#: ../cli/src/network-manager.c:585
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "പിശക്: 'nm' കമാന്‍ഡ് '%s' ശരിയല്ല."
 
-#: ../cli/src/nmcli.c:64
+#: ../cli/src/nmcli.c:76
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
@@ -1563,153 +1729,180 @@ msgstr ""
 "  dev         devices managed by NetworkManager\n"
 "\n"
 
-#: ../cli/src/nmcli.c:109
+#: ../cli/src/nmcli.c:121
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "പിശക്: '%s'വസ്തു അപരിചിതം, 'nmcli help' ശ്രമിക്കുക."
 
-#: ../cli/src/nmcli.c:139
+#: ../cli/src/nmcli.c:151
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "പിശക്: '--terse' രണ്ടാമതും നല്‍കിയിരിക്കുന്നു."
 
-#: ../cli/src/nmcli.c:144
+#: ../cli/src/nmcli.c:156
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr "Error: Option '--terse' is mutually exclusive with '--pretty'."
 
-#: ../cli/src/nmcli.c:152
+#: ../cli/src/nmcli.c:164
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "പിശക്: '--pretty' രണ്ടാമതും നല്‍കിയിരിക്കുന്നു."
 
-#: ../cli/src/nmcli.c:157
+#: ../cli/src/nmcli.c:169
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr "Error: Option '--pretty' is mutually exclusive with '--terse'."
 
-#: ../cli/src/nmcli.c:167 ../cli/src/nmcli.c:183
+#: ../cli/src/nmcli.c:179 ../cli/src/nmcli.c:195
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "പിശക്: '%s' ഐച്ഛികത്തിനുള്ള ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
 
-#: ../cli/src/nmcli.c:176 ../cli/src/nmcli.c:192
+#: ../cli/src/nmcli.c:188 ../cli/src/nmcli.c:204
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "പിശക്: '%s' ഐച്ഛികത്തിനുള്ള '%s' ശരിയായ ആര്‍ഗ്യുമെന്റല്ല."
 
-#: ../cli/src/nmcli.c:199
+#: ../cli/src/nmcli.c:211
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "പിശക്: '%s' ഐച്ഛികങ്ങള്‍ക്കുള്ള ഫീള്‍ഡുകള്‍ ലഭ്യമല്ല."
 
-#: ../cli/src/nmcli.c:207
+#: ../cli/src/nmcli.c:219
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "nmcli പ്രയോഗം, പതിപ്പു് %s\n"
 
-#: ../cli/src/nmcli.c:213
+#: ../cli/src/nmcli.c:225
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "പിശക്: '%s' ഐഛികം അപരിചിതം, 'nmcli -help' ശ്രമിക്കുക."
 
-#: ../cli/src/nmcli.c:232
+#: ../cli/src/nmcli.c:244
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "%d സിഗ്നല്‍ ലഭ്യമായി, അടച്ചു പൂട്ടുന്നു..."
 
-#: ../cli/src/nmcli.c:257
+#: ../cli/src/nmcli.c:269
 msgid "Error: Could not create NMClient object."
 msgstr "പിശക്: NMClient നിര്‍മ്മിക്കുവാന്‍ സാധമായില്ല"
 
-#: ../cli/src/nmcli.c:273
+#: ../cli/src/nmcli.c:285
 msgid "Success"
 msgstr "വിജയിച്ചു"
 
-#: ../cli/src/settings.c:465
+#: ../cli/src/settings.c:525
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:467
+#: ../cli/src/settings.c:527
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-ബിറ്റ് പാസ്ഫ്രെയിസ്)"
 
-#: ../cli/src/settings.c:470
+#: ../cli/src/settings.c:530 ../cli/src/settings.c:658
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (അപരിചിതം)"
 
-#: ../cli/src/settings.c:496
+#: ../cli/src/settings.c:556
 msgid "0 (unknown)"
 msgstr "0 (അപരിചിതം)"
 
-#: ../cli/src/settings.c:502
+#: ../cli/src/settings.c:562
 msgid "any, "
 msgstr "ഏതെങ്കിലും,"
 
-#: ../cli/src/settings.c:504
+#: ../cli/src/settings.c:564
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:506
+#: ../cli/src/settings.c:566
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:508
+#: ../cli/src/settings.c:568
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:510
+#: ../cli/src/settings.c:570
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:512
+#: ../cli/src/settings.c:572
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:514
+#: ../cli/src/settings.c:574
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:516
+#: ../cli/src/settings.c:576
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:518
+#: ../cli/src/settings.c:578
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:520
+#: ../cli/src/settings.c:580
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:522
+#: ../cli/src/settings.c:582
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:524
+#: ../cli/src/settings.c:584
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:526
+#: ../cli/src/settings.c:586
 msgid "WCDMA 3GPP UMTS 1900 MHz, "
 msgstr "WCDMA 3GPP UMTS 1900 MHz, "
 
-#: ../cli/src/settings.c:528
+#: ../cli/src/settings.c:588
 msgid "WCDMA 3GPP UMTS 2600 MHz, "
 msgstr "WCDMA 3GPP UMTS 2600 MHz, "
 
-#: ../cli/src/settings.c:650 ../cli/src/settings.c:846
-#: ../cli/src/settings.c:1550
+#: ../cli/src/settings.c:606
+msgid "0 (NONE)"
+msgstr "0 (NONE)"
+
+#: ../cli/src/settings.c:612
+msgid "REORDER_HEADERS, "
+msgstr "REORDER_HEADERS, "
+
+#: ../cli/src/settings.c:614
+msgid "GVRP, "
+msgstr "GVRP, "
+
+#: ../cli/src/settings.c:616
+msgid "LOOSE_BINDING, "
+msgstr "LOOSE_BINDING, "
+
+#: ../cli/src/settings.c:652
+#, c-format
+#| msgid "disabled"
+msgid "%d (disabled)"
+msgstr "%d (പ്രവര്‍ത്തനരഹിതമാക്കിയിരിക്കുന്നു)"
+
+#: ../cli/src/settings.c:654
+#, c-format
+msgid "%d (enabled, prefer public IP)"
+msgstr "%d (പ്രവര്‍ത്തന സജ്ജം, പബ്ലിക് ഐപി)"
+
+#: ../cli/src/settings.c:656
+#, c-format
+msgid "%d (enabled, prefer temporary IP)"
+msgstr "%d (പ്രവര്‍ത്തന സജ്ജം, താല്‍ക്കാലിക ഐപി)"
+
+#: ../cli/src/settings.c:777 ../cli/src/settings.c:973
+#: ../cli/src/settings.c:1682
 msgid "auto"
 msgstr "ഓട്ടോ"
-
-#: ../cli/src/settings.c:840 ../cli/src/settings.c:843
-#: ../cli/src/settings.c:844 ../cli/src/utils.c:247
-msgid "not set"
-msgstr "സജ്ജമല്ല"
 
 #: ../cli/src/utils.c:103
 #, c-format
@@ -1721,49 +1914,53 @@ msgstr "'0x%X' IP4 വിലാസം വാക്യത്തിലാക്ക
 msgid "Error converting IP6 address '%s' to text form"
 msgstr "'%s' IP6 വിലാസം വാക്യത്തിലാക്കുന്നതില്‍ പിശക്"
 
-#: ../cli/src/utils.c:200
+#: ../cli/src/utils.c:232
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "ഫീള്‍ഡ് '%s' മാത്രമായിരിക്കണം"
 
-#: ../cli/src/utils.c:203
+#: ../cli/src/utils.c:235
 #, c-format
 msgid "invalid field '%s'"
 msgstr "തെറ്റായ ഫീള്‍ഡ് '%s'"
 
-#: ../cli/src/utils.c:222
-#, c-format
+#: ../cli/src/utils.c:254
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "'--terse' ഐച്ഛികത്തിനു് '--fields' നല്‍കേണ്ടതുണ്ടു്"
 
-#: ../cli/src/utils.c:226
+#: ../cli/src/utils.c:258
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "'--terse' എന്ന ഐച്ഛികത്തിനു് പ്രത്യേക '--fields' ഐച്ഛികം ആവശ്യമുണ്ടു്, '%s' അല്ല"
 
-#: ../cli/src/utils.c:436
+#: ../cli/src/utils.c:468
 #, c-format
 msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
-msgstr ""
+msgstr "പിശക്: org.freedesktop.DBus-യ്ക്കുള്ള ഡി-ബസ് ഒബ്ജക്ട് പ്രോക്സി തയ്യാറാക്കുവാന്‍ സാധ്യമല്ല."
 
-#: ../cli/src/utils.c:444
+#: ../cli/src/utils.c:476
 #, c-format
 msgid "Error: NameHasOwner request failed: %s"
-msgstr ""
+msgstr "പിശക്: NameHasOwner ആവശ്യം പരാജയപ്പെട്ടു: %s"
 
-#: ../cli/src/utils.c:489
+#: ../cli/src/utils.c:521
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
 "nocheck to suppress the warning.\n"
 msgstr ""
+"മുന്നറിയിപ്പു്: nmcli (%s), NetworkManager (%s) പതിപ്പുകള്‍ തമ്മില്‍ ചേരുന്നില്ല. മുന്നറിയിപ്പു് "
+"ഇല്ലാതാക്കുന്നതിനായി --"
+"nocheck ഉപയോഗിയ്ക്കുക.\n"
 
-#: ../cli/src/utils.c:498
+#: ../cli/src/utils.c:530
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
 "execution using --nocheck, but the results are unpredictable."
 msgstr ""
+"പിശക്: nmcli (%s), NetworkManager (%s) പതിപ്പുകള്‍ തമ്മില്‍ ചേരുന്നില്ല. നിര്‍ബന്ധമായി "
+"പ്രവര്‍ത്തിപ്പിയ്ക്കുന്നതിനു് --nocheck ഉപയോഗിയ്ക്കുക."
 
 #: ../libnm-util/crypto.c:133
 #, c-format
@@ -1817,12 +2014,12 @@ msgstr "സ്വകാര്യ കീ ഡീകോഡ് ചെയ്യുവ
 
 #: ../libnm-util/crypto.c:284
 msgid "Failed to find expected PKCS#8 start tag."
-msgstr ""
+msgstr "പ്രതീക്ഷിച്ച PKCS#8 തുടക്ക റ്റാഗ് '%s' കണ്ടുപിടിയ്ക്കന്നതില്‍ പരാജയം."
 
 #: ../libnm-util/crypto.c:292
 #, c-format
 msgid "Failed to find expected PKCS#8 end tag '%s'."
-msgstr ""
+msgstr "പ്രതീക്ഷിച്ച PKCS#8 അവസാന റ്റാഗ് '%s' കണ്ടുപിടിയ്ക്കന്നതില്‍ പരാജയം."
 
 #: ../libnm-util/crypto.c:312
 msgid "Not enough memory to store private key data."
@@ -2041,8 +2238,7 @@ msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ച
 #: ../libnm-util/crypto_nss.c:241
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
-msgstr ""
-"സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: ഡീക്രിപ്റ്റ് ചെയ്ത ഡേറ്റ വളരെ വലുതാണു്."
+msgstr "സ്വകാര്യ കീ ഡീക്രിപ്റ്റ് ചെയ്യുന്നതില്‍ പരാജയപ്പെട്ടു: ഡീക്രിപ്റ്റ് ചെയ്ത ഡേറ്റ വളരെ വലുതാണു്."
 
 #: ../libnm-util/crypto_nss.c:252
 #, c-format
@@ -2108,34 +2304,33 @@ msgstr "PKCS#12 ഫയല്‍ ഉറപ്പാക്കുവാന്‍ �
 msgid "Could not generate random data."
 msgstr "വേഗത്തില്‍ ഡേറ്റാ തയ്യാറാക്കുവാന്‍ സാധ്യമായില്ല."
 
-#: ../libnm-util/nm-utils.c:2034
+#: ../libnm-util/nm-utils.c:2040
 #, c-format
 msgid "Not enough memory to make encryption key."
 msgstr "എന്‍ക്രിപ്ഷന്‍ കീ തയ്യാറാക്കുന്നതിനാവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
 
-#: ../libnm-util/nm-utils.c:2144
+#: ../libnm-util/nm-utils.c:2150
 msgid "Could not allocate memory for PEM file creation."
 msgstr "PEM ഫയല്‍ ഉണ്ടാക്കുന്നതിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
 
-#: ../libnm-util/nm-utils.c:2156
+#: ../libnm-util/nm-utils.c:2162
 #, c-format
 msgid "Could not allocate memory for writing IV to PEM file."
 msgstr "PEM ഫയലിലേക്ക് IV സൂക്ഷിക്കുന്നതിനാവശ്യമുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
 
-#: ../libnm-util/nm-utils.c:2168
+#: ../libnm-util/nm-utils.c:2174
 #, c-format
 msgid "Could not allocate memory for writing encrypted key to PEM file."
-msgstr ""
-"PEM ഫയലിലേക്ക് എന്‍ക്രിപ്റ്റ് ചെയ്ത കീ സൂക്ഷിക്കുന്നതിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
+msgstr "PEM ഫയലിലേക്ക് എന്‍ക്രിപ്റ്റ് ചെയ്ത കീ സൂക്ഷിക്കുന്നതിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
 
-#: ../libnm-util/nm-utils.c:2187
+#: ../libnm-util/nm-utils.c:2193
 #, c-format
 msgid "Could not allocate memory for PEM file data."
 msgstr "PEM ഫയല്‍ ഡേറ്റായ്ക്കുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
 msgid "Enable or disable system networking"
-msgstr ""
+msgstr "സിസ്റ്റം നെറ്റ്‌വര്‍ക്കിങ് പ്രവര്‍ത്തന സജ്ജമാക്കുക അല്ലെങ്കില്‍ പ്രവര്‍ത്തന രഹിതമാക്കുക"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
 msgid "System policy prevents enabling or disabling system networking"
@@ -2147,6 +2342,8 @@ msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
 msgstr ""
+"NetworkManager നിശ്ചലമാക്കുക അല്ലെങ്കില്‍ പ്രവര്‍ത്തിപ്പിയ്ക്കുക (സിസ്റ്റം പവര്‍ മാനേജ്മെന്റായി "
+"മാത്രമേ ഉപയോഗിയ്ക്കുവാന്‍ പാടുള്ളൂ)"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
@@ -2176,8 +2373,7 @@ msgid "Enable or disable WiMAX mobile broadband devices"
 msgstr "WiMAX മുബൈല്‍ ബ്രോഡ്ബാന്റ് ഡിവൈസുകള്‍ പ്രവര്‍ത്തനസജ്ജമാക്കുകയോ പ്രവര്‍ത്തനരഹിതമാക്കുകയോ ചെയ്യുക"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
-msgid ""
-"System policy prevents enabling or disabling WiMAX mobile broadband devices"
+msgid "System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
 "iMAX മുബൈല്‍ ബ്രോഡ്ബാന്റ് ഡിവൈസുകള്‍ പ്രവര്‍ത്തനസജ്ജമാക്കുകയോ പ്രവര്‍ത്തനരഹിതമാക്കുകയോ ചെയ്യുന്നത് "
 "സിസ്റ്റം പോളിസി തടയുന്നു"
@@ -2215,16 +2411,14 @@ msgid "System policy prevents modification of personal network settings"
 msgstr " സ്വന്തമായ നെറ്റ്​വര്‍ക്ക് സജ്ജീകരണങ്ങള്‍ മാറ്റം വരുത്തുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
-#, fuzzy
 #| msgid "Modify system connections"
 msgid "Modify network connections for all users"
-msgstr "സിസ്റ്റം കണക്ഷനുകളില്‍ മാറ്റം വരുത്തുക"
+msgstr "എല്ലാ ഉപയോക്തള്‍ക്കുള്ള നെറ്റ്‌വര്‍ക്ക് കണക്ഷനുകളില്‍ മാറ്റം വരുത്തുക"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
-#, fuzzy
 #| msgid "System policy prevents modification of system settings"
 msgid "System policy prevents modification of network settings for all users"
-msgstr " സിസ്റ്റത്തിന്റെ സജ്ജീകരണങ്ങളില്‍ മാറ്റം വരുത്തുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
+msgstr "സിസ്റ്റത്തിന്റെ സജ്ജീകരണങ്ങളില്‍ മാറ്റം വരുത്തുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
 msgid "Modify persistent system hostname"
@@ -2234,135 +2428,169 @@ msgstr "സിസ്റ്റത്തിന്റെ ഹോസ്റ്റ്�
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr "സിസ്റ്റത്തിന്റെ ഹോസ്റ്റ്നാമത്തില്‍ മാറ്റം വരുത്തുന്നതു് സിസ്റ്റം പോളിസി തടയുന്നു"
 
-#: ../src/main.c:143
+#: ../src/main.c:158
 #, c-format
-msgid "Failed to initialize SIGTERM pipe: %d"
-msgstr "SIGTERM പൈപ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %d"
+#| msgid "Failed to encrypt: %d."
+msgid "Failed to set signal mask: %d"
+msgstr "സിഗ്നല്‍ മാസ്ക് സജ്ജമാക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %d."
 
-#: ../src/main.c:174
+#: ../src/main.c:167
+#, c-format
+msgid "Failed to create signal handling thread: %d"
+msgstr "സിഗ്നല്‍ കൈകാര്യം ചെയ്യുന്ന സിഗ്നല്‍ തയ്യാറാക്കുന്നതില്‍ പരാജയം: %d"
+
+#: ../src/main.c:182
 #, c-format
 msgid "Opening %s failed: %s\n"
 msgstr "%s തുറക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %s\n"
 
-#: ../src/main.c:180
+#: ../src/main.c:188
 #, c-format
 msgid "Writing to %s failed: %s\n"
 msgstr "%s ഇലേക്കു എഴുതുന്നത് പരാജയപ്പെട്ടു: %s\n"
 
-#: ../src/main.c:185
+#: ../src/main.c:193
 #, c-format
 msgid "Closing %s failed: %s\n"
 msgstr "%s അടയ്ക്കുന്നത് പരാജയപ്പെട്ടു: %s\n"
 
-#: ../src/main.c:228
+#: ../src/main.c:236
 #, c-format
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "നെറ്റ്​വര്‍ക്ക് മാനേജര്‍ ആദ്യമേ പ്രവര്‍ത്തിച്ചുകൊണ്ടിരിക്കുന്നുണ്ട് (pid %ld)\n"
 
-#: ../src/main.c:368
+#: ../src/main.c:376
 msgid "Print NetworkManager version and exit"
 msgstr "നെറ്റ്‌വര്‍ക്ക്മാനേജറിന്റെ പതിപ്പ് വിവരം കാണിച്ചു പുറത്തു കടക്കുക"
 
-#: ../src/main.c:369
+#: ../src/main.c:377
 msgid "Don't become a daemon"
-msgstr ""
+msgstr "ഒരു ഡെമണ്‍ ആകേണ്ട"
 
-#: ../src/main.c:370
+#: ../src/main.c:378
 msgid "Make all warnings fatal"
 msgstr "എല്ലാ മുന്നറിയിപ്പുകളും സുപ്രധാനമാക്കുക"
 
-#: ../src/main.c:371
+#: ../src/main.c:379
 msgid "Specify the location of a PID file"
-msgstr ""
+msgstr "PID ഫയലിന്റെ സ്ഥാനം നല്‍കുക"
 
-#: ../src/main.c:371
+#: ../src/main.c:379
 msgid "filename"
 msgstr "പ്രമാണനാമം"
 
-#: ../src/main.c:372
+#: ../src/main.c:380
 msgid "State file location"
 msgstr "പ്രമാണത്തിന്റെ സ്ഥാനം പ്രസ്താവിക്കുക"
 
-#: ../src/main.c:372
+#: ../src/main.c:380
 msgid "/path/to/state.file"
 msgstr "/path/to/state.file"
 
-#: ../src/main.c:373
+#: ../src/main.c:381
 msgid "Config file location"
 msgstr "ക്രമീകരണ പ്രമാണത്തിന്റെ സ്ഥാനം"
 
-#: ../src/main.c:373
+#: ../src/main.c:381
 msgid "/path/to/config.file"
 msgstr "/path/to/config.file"
 
-#: ../src/main.c:374
+#: ../src/main.c:382
 msgid "List of plugins separated by ','"
-msgstr ""
+msgstr "',' ഉപയോഗിച്ചു് വേര്‍തിരിയ്ക്കുന്ന പ്ലഗിനുകളുടെ പട്ടിക"
 
-#: ../src/main.c:374
+#: ../src/main.c:382
 msgid "plugin1,plugin2"
 msgstr "plugin1,plugin2"
 
 #. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:376
+#: ../src/main.c:384
 msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
-msgstr ""
+msgstr "[ERR, WARN, INFO, DEBUG]-ന്റെ ലോഗ് ലവല്‍ ഒണ്‍"
 
 #. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:379
+#: ../src/main.c:387
 msgid ""
 "Log domains separated by ',': any combination of\n"
-"                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,"
-"DHCP4,DHCP6,PPP,\n"
-"                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,"
-"SHARING,SUPPLICANT,\n"
-"                                           AGENTS,SETTINGS,SUSPEND,CORE,"
-"DEVICE,OLPC,WIMAX,\n"
-"                                           INFINIBAND,FIREWALL]"
+"                                                [NONE,HW,RFKILL,ETHER,WIFI,"
+"BT,MB,DHCP4,DHCP6,PPP,\n"
+"                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,"
+"DNS,VPN,SHARING,SUPPLICANT,\n"
+"                                                 AGENTS,SETTINGS,SUSPEND,"
+"CORE,DEVICE,OLPC,WIMAX,\n"
+"                                                 INFINIBAND,FIREWALL,ADSL]"
 msgstr ""
+"Log domains separated by ',': any combination of\n"
+"                                                [NONE,HW,RFKILL,ETHER,WIFI,"
+"BT,MB,DHCP4,DHCP6,PPP,\n"
+"                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,"
+"DNS,VPN,SHARING,SUPPLICANT,\n"
+"                                                 AGENTS,SETTINGS,SUSPEND,"
+"CORE,DEVICE,OLPC,WIMAX,\n"
+"                                                 INFINIBAND,FIREWALL,ADSL]"
 
-#: ../src/main.c:392
+#: ../src/main.c:393
+msgid "An http(s) address for checking internet connectivity"
+msgstr "ഇന്റര്‍നെറ്റ് കണക്റ്റിവിറ്റി പരിശോധിയ്ക്കുന്നതിനുള്ള http വിലാസം"
+
+#: ../src/main.c:394
+msgid "The interval between connectivity checks (in seconds)"
+msgstr "കണക്റ്റിവിറ്റി പരിശോധനകളുടെ ഇടവേള (സെക്കന്‍ഡുകളില്‍)"
+
+#: ../src/main.c:395
+msgid "The expected start of the response"
+msgstr "മറുപടിയുടെ പ്രതീക്ഷിച്ച ആരംഭം"
+
+#: ../src/main.c:395
+msgid "Bingo!"
+msgstr "ഹുറേ!!"
+
+#: ../src/main.c:400
 #, c-format
 msgid "GModules are not supported on your platform!\n"
-msgstr ""
+msgstr "ഈ പ്ലാറ്റ്ഫോമില്‍ GModules പിന്തണയ്ക്കുന്നില്ല!\n"
 
-#: ../src/main.c:411
+#: ../src/main.c:423
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
 "specify wireless access points which wireless cards in the computer\n"
 "should associate with."
 msgstr ""
+"NetworkManager എല്ലാ നെറ്റ്‌വര്‍ക്ക് കണക്ഷനുകളും നിരീക്ഷിച്ചു്, ഓട്ടോമാറ്റിയ്ക്കായി\n"
+"ഉപയോഗിയ്ക്കുവാന്‍ ഉത്തമമായ കണക്ഷന്‍ തെരഞ്ഞെടുക്കുന്നു. കമ്പ്യൂട്ടറിലുള്ള വയര്‍ലെസ്സ്\n"
+"കാര്‍ഡുകള്‍ക്കുള്ള വയര്‍ലെസ്സ് ആക്സസ്സ് പോയിന്റുകള്‍ നല്‍കുവാന്‍ ഇതു്\n"
+"ഉപയോക്താവിനെ സഹായിയ്ക്കുന്നു."
 
-#: ../src/main.c:417
+#: ../src/main.c:429
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "തെറ്റായ ഉപാധി.  ശരിയായ കൂടുതല്‍ ഉപാധികള്‍ക്കായി ദയവായി --help ഉപയോഗിക്കുക.\n"
 
-#: ../src/main.c:427
+#: ../src/main.c:439
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "പിശക്: നെറ്റ്‌വര്‍ക്ക്മാനേജര്‍ പ്രവര്‍ത്തിക്കാന്‍ നിങ്ങള്‍ root ആയിരിക്കേണ്ടത് അത്യാവശ്യമാണ്\n"
 
-#: ../src/main.c:448
+#: ../src/main.c:460
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "ക്രമീകരണങ്ങള്‍ വായിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: (%d) %s\n"
 
-#: ../src/main.c:459
+#: ../src/main.c:471
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  ശരിയായ കൂടുതല്‍ ഉപാധികള്‍ക്കായി ദയവായി --help ഉപയോഗിക്കുക.\n"
 
-#: ../src/main.c:466
+#: ../src/main.c:478
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
-msgstr ""
+msgstr "അവസ്ഥ ഫയല്‍ %s പാഴ്സിങ് പരാജയം: (%d) %s\n"
 
-#: ../src/main.c:483
+#: ../src/main.c:495
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
-msgstr ""
+msgstr "ഡെമണൈസ് ചെയ്യുവാന്‍ സാധ്യമല്ല: %s [error %u]\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
 msgid "# Created by NetworkManager\n"
@@ -2394,55 +2622,61 @@ msgstr "'dhcpcd' ലഭ്യമായില്ല."
 msgid "unsupported DHCP client '%s'"
 msgstr "പിന്തണലഭ്യമല്ലാത്ത DHCP ക്ലയന്റ് '%s'"
 
-#: ../src/dns-manager/nm-dns-manager.c:376
+#: ../src/dns-manager/nm-dns-manager.c:380
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "കുറിപ്പു്: libc റിസോള്‍വര്‍ 3 നെയിംസര്‍വറുകളില്‍ കൂടതല്‍ പിന്തുണയ്ക്കുന്നതല്ല."
 
-#: ../src/dns-manager/nm-dns-manager.c:378
+#: ../src/dns-manager/nm-dns-manager.c:382
 msgid "The nameservers listed below may not be recognized."
 msgstr "താഴെ പറഞ്ഞിരിക്കുന്ന നെയിംസര്‍വറുകള്‍ തിരിച്ചറിയപ്പെടുന്നവയല്ല."
 
-#: ../src/logging/nm-logging.c:130
+#: ../src/logging/nm-logging.c:131
 #, c-format
 msgid "Unknown log level '%s'"
 msgstr "അപരിചതമായ ലോഗ് ലവല്‍ '%s'"
 
-#: ../src/logging/nm-logging.c:155
+#: ../src/logging/nm-logging.c:156
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "അപരിചിതമായ ലോഗ് ഡൊമെയിന്‍ '%s'"
 
-#: ../src/modem-manager/nm-modem-cdma.c:279 ../src/nm-device-bt.c:325
+#: ../src/modem-manager/nm-modem-cdma.c:281 ../src/nm-device-bt.c:351
 #, c-format
 msgid "CDMA connection %d"
 msgstr "CDMA കണക്ഷന്‍ %d"
 
-#: ../src/modem-manager/nm-modem-gsm.c:512 ../src/nm-device-bt.c:321
+#: ../src/modem-manager/nm-modem-gsm.c:549 ../src/nm-device-bt.c:347
 #, c-format
 msgid "GSM connection %d"
 msgstr "GSM കണക്ഷന്‍ %d"
 
-#: ../src/nm-device-bond.c:190
+#: ../src/nm-device-bond.c:191
 #, c-format
 msgid "Bond connection %d"
 msgstr "Bond കണക്ഷന്‍ %d"
 
-#: ../src/nm-device-bt.c:296
+#: ../src/nm-device-adsl.c:193
+#, c-format
+#| msgid "GSM connection %d"
+msgid "ADSL connection %d"
+msgstr "ADSL കണക്ഷന്‍ %d"
+
+#: ../src/nm-device-bt.c:322
 #, c-format
 msgid "PAN connection %d"
 msgstr "PAN കണക്ഷന്‍ %d"
 
-#: ../src/nm-device-bt.c:329
+#: ../src/nm-device-bt.c:355
 #, c-format
 msgid "DUN connection %d"
 msgstr "DUN കണക്ഷന്‍ %d"
 
-#: ../src/nm-device-ethernet.c:1433
+#: ../src/nm-device-ethernet.c:1327
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE കണക്ഷന്‍ %d"
 
-#: ../src/nm-device-ethernet.c:1433 ../src/settings/nm-settings-utils.c:50
+#: ../src/nm-device-ethernet.c:1327 ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "Wired കണക്ഷന്‍ %d"
@@ -2452,12 +2686,18 @@ msgstr "Wired കണക്ഷന്‍ %d"
 msgid "InfiniBand connection %d"
 msgstr "InfiniBand കണക്ഷന്‍ %d"
 
-#: ../src/nm-device-olpc-mesh.c:293
+#: ../src/nm-device-olpc-mesh.c:303
 #, c-format
 msgid "Mesh %d"
 msgstr "മെഷ് %d"
 
-#: ../src/nm-manager.c:657
+#: ../src/nm-device-vlan.c:362
+#, c-format
+#| msgid "PAN connection %d"
+msgid "VLAN connection %d"
+msgstr "VLAN കണക്ഷന്‍ %d"
+
+#: ../src/nm-manager.c:661
 #, c-format
 msgid "VPN connection %d"
 msgstr "വിപിഎന്‍  കണക്ഷന്‍ %d"
@@ -2490,8 +2730,7 @@ msgstr "ലിങ്കിന്റെ അവസ്ഥ നിരീക്ഷി�
 #: ../src/nm-netlink-monitor.c:415
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr ""
-"ലിങ്കിന്റെ അവസ്ഥ നിരീക്ഷിക്കുന്നതിനുള്ള നെറ്റ്ലിങ്ക് ലിങ്ക് കാഷേ അനുവദിക്കുവാന്‍ സാധ്യമല്ല: %s "
+msgstr "ലിങ്കിന്റെ അവസ്ഥ നിരീക്ഷിക്കുന്നതിനുള്ള നെറ്റ്ലിങ്ക് ലിങ്ക് കാഷേ അനുവദിക്കുവാന്‍ സാധ്യമല്ല: %s "
 
 #: ../src/nm-netlink-monitor.c:542
 #, c-format
@@ -2503,14 +2742,65 @@ msgstr "നെറ്റ്ലിങ്ക് ഗ്രൂപ്പില്‍ �
 msgid "error updating link cache: %s"
 msgstr "ലിങ്ക് കാഷേ പരിഷ്കരിക്കുന്നതില്‍ പിശക്: %s"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:92
-#: ../src/settings/plugins/ifnet/connection_parser.c:51
+#: ../src/settings/plugins/ifcfg-rh/reader.c:94
 msgid "System"
 msgstr "സിസ്റ്റം"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3672
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3641
 msgid "Bond"
 msgstr "Bond"
+
+#: ../test/nm-online.c:112
+#, c-format
+#| msgid "connecting"
+msgid "\rConnecting"
+msgstr "\rകണക്ട് ചെയ്യുന്നു"
+
+#: ../test/nm-online.c:143
+msgid "Time to wait for a connection, in seconds (default is 30)"
+msgstr "ഒരു കണക്ഷനു് വേണ്ടി കാത്തിരിയ്ക്കുവാനുള്ള സമയം, സെക്കന്റുകളില്‍ (സ്വതവേ 30)"
+
+#: ../test/nm-online.c:144
+#| msgid "Error: NetworkManager is not running."
+msgid "Exit immediately if NetworkManager is not running or connecting"
+msgstr "NetworkManager പ്രവര്‍ത്തനത്തിലില്ലെങ്കില്‍ ഉടന്‍ തന്നെ പുറത്തു് കടക്കുക"
+
+#: ../test/nm-online.c:145
+msgid "Don't print anything"
+msgstr "ഒന്നും പ്രിന്റ് ചെയ്യേണ്ട"
+
+#: ../test/nm-online.c:163
+msgid "Waits for a successful connection in NetworkManager."
+msgstr "NetworkManager-ല്‍ വിജയകരമായൊരു കണക്ഷനു് വേണ്ടി കാത്തിരിയ്ക്കുന്നു."
+
+#: ../test/nm-online.c:169 ../test/nm-online.c:178
+#| msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgid "Invalid option.  Please use --help to see a list of valid options."
+msgstr "തെറ്റായ ഉപാധി.  ശരിയായ കൂടുതല്‍ ഉപാധികള്‍ക്കായി ദയവായി --help ഉപയോഗിക്കുക."
+
+#~ msgid "state: %s\n"
+#~ msgstr "അവസ്ഥ: %s\n"
+
+#~ msgid "Connection activated\n"
+#~ msgstr "കണക്ഷന്‍ സജീവമാക്കിയിരിക്കുന്നു\n"
+
+#~ msgid "state: %s (%d)\n"
+#~ msgstr "അവസ്ഥ: %s (%d)\n"
+
+#~ msgid "Active connection state: %s\n"
+#~ msgstr "സജീവമായ കണക്ഷന്റെ അവസ്ഥ: %s\n"
+
+#~ msgid "Active connection path: %s\n"
+#~ msgstr "സജീവമായ കണക്ഷന്‍ പാഥ്: %s\n"
+
+#~ msgid "Device state: %d (%s)\n"
+#~ msgstr "ഡിവൈസിന്റെ അവസ്ഥ: %d (%s)\n"
+
+#~ msgid "not set"
+#~ msgstr "സജ്ജമല്ല"
+
+#~ msgid "Failed to initialize SIGTERM pipe: %d"
+#~ msgstr "SIGTERM പൈപ് ആരംഭിക്കുന്നതില്‍ പരാജയപ്പെട്ടു: %d"
 
 #~ msgid "SCOPE"
 #~ msgstr "SCOPE"
