@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager.master\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2012-09-10 15:25+0000\n"
-"PO-Revision-Date: 2012-09-13 13:56+0530\n"
+"POT-Creation-Date: 2012-09-21 15:25+0000\n"
+"PO-Revision-Date: 2012-09-23 18:58+0530\n"
 "Last-Translator: Sandeep Shedmake <sshedmak@redhat.com>\n"
 "Language-Team: Marathi <maajhe-sanganak@freelists.org>\n"
 "Language: mr\n"
@@ -112,8 +112,8 @@ msgstr "जोडणी अपयशी"
 #: ../cli/src/network-manager.c:273 ../cli/src/network-manager.c:431
 #: ../cli/src/network-manager.c:486 ../cli/src/network-manager.c:524
 #: ../cli/src/network-manager.c:563 ../cli/src/settings.c:591
-#: ../cli/src/settings.c:619 ../cli/src/utils.c:531 ../src/main.c:462
-#: ../src/main.c:481
+#: ../cli/src/settings.c:619 ../cli/src/utils.c:531 ../src/main.c:458
+#: ../src/main.c:477
 msgid "unknown"
 msgstr "अपरिचीत"
 
@@ -138,9 +138,6 @@ msgid "The device could not be readied for configuration"
 msgstr "साधनाला संरचनाकरीता सज्ज करणे अशक्य"
 
 #: ../cli/src/common.c:414
-#| msgid ""
-#| "IP configuration could not be reserved (no available address, timeout, "
-#| "etc)"
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
 msgstr "IP संरचना आरक्षित (पत्ता, वेळसमाप्ति, इत्यादि अनुपलब्ध) करणे अशक्य"
@@ -333,7 +330,12 @@ msgstr "RFC 2684 इथरनेट ओव्हर ADSL ब्रिजसह �
 msgid "ModemManager is unavailable"
 msgstr "ModemManager अनुपलब्ध"
 
-#: ../cli/src/common.c:558 ../cli/src/devices.c:274 ../cli/src/devices.c:290
+#: ../cli/src/common.c:558
+#| msgid "The modem could not be found"
+msgid "The Wi-Fi network could not be found"
+msgstr "Wi-Fi नेटवर्क आढळले नाही"
+
+#: ../cli/src/common.c:561 ../cli/src/devices.c:274 ../cli/src/devices.c:290
 #: ../cli/src/devices.c:410 ../cli/src/devices.c:454
 msgid "Unknown"
 msgstr "अपरिचीत"
@@ -2506,7 +2508,7 @@ msgstr "बिंगो!"
 msgid "GModules are not supported on your platform!\n"
 msgstr "GModules तुमच्या प्लॅफॉर्मवर समर्थीत नाही!\n"
 
-#: ../src/main.c:423
+#: ../src/main.c:419
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -2520,32 +2522,32 @@ msgstr ""
 "कार्डस् संपर्क\n"
 "साधतात."
 
-#: ../src/main.c:429
+#: ../src/main.c:425
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "अवैध पर्याय.  वैध पर्यायची यादी पहाण्याकरीता कृपया --help वापरा.\n"
 
-#: ../src/main.c:439
+#: ../src/main.c:435
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "NetworkManager सुरू करण्यासाठी रूट असणे आवश्यक!\n"
 
-#: ../src/main.c:460
+#: ../src/main.c:456
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "संरचना: (%d) %s वाचण्यास अशक्य\n"
 
-#: ../src/main.c:471
+#: ../src/main.c:467
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  वैध पर्यायची सूची पहाण्याकरीता कृपया --help वापरा.\n"
 
-#: ../src/main.c:478
+#: ../src/main.c:474
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "स्टेट फाइल %s वाचण्यास अपयशी: (%d) %s\n"
 
-#: ../src/main.c:495
+#: ../src/main.c:491
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "डिमनाइज करणे अशक्य: %s [error %u]\n"
@@ -2605,7 +2607,7 @@ msgstr "अपरिचीत लॉग डोमेन '%s'"
 msgid "CDMA connection %d"
 msgstr "CDMA जोडणी %d"
 
-#: ../src/modem-manager/nm-modem-gsm.c:549 ../src/nm-device-bt.c:347
+#: ../src/modem-manager/nm-modem-gsm.c:559 ../src/nm-device-bt.c:347
 #, c-format
 msgid "GSM connection %d"
 msgstr "GSM जोडणी %d"
@@ -2630,12 +2632,12 @@ msgstr "PAN जोडणी %d"
 msgid "DUN connection %d"
 msgstr "DUN जोडणी %d"
 
-#: ../src/nm-device-ethernet.c:1327
+#: ../src/nm-device-ethernet.c:1328
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE जोडणी %d"
 
-#: ../src/nm-device-ethernet.c:1327 ../src/settings/nm-settings-utils.c:50
+#: ../src/nm-device-ethernet.c:1328 ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "वायर्ड् जोडणी %d"
