@@ -132,7 +132,7 @@ typedef struct {
  *                 NM_SETTING_WIRELESS_SECURITY_PSK, "my really cool PSK",
  *                 NULL);
  *   nm_connection_add_setting (secrets, NM_SETTING (s_wsec));
- *   secrets_hash = nm_connection_to_hash (secrets);
+ *   secrets_hash = nm_connection_to_hash (secrets, NM_SETTING_HASH_FLAG_ALL);
  *
  *   (call the NMSecretAgentGetSecretsFunc with secrets_hash)
  *
