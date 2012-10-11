@@ -200,7 +200,7 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			} else
 				nm_log_dbg (LOGD_CORE, "Dispatcher result element %d invalid type", i);
 
-			g_array_unref ((GArray *) item);
+			g_value_array_free (item);
 		}
 		g_ptr_array_free (results, TRUE);
 	} else {
