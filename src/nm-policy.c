@@ -569,10 +569,11 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	NMIP4Config *ip4_config = NULL, *parent_ip4;
-	NMIP4Address *addr;
+	NMIP4Address *addr = NULL, *tmp_addr;
 	const char *ip_iface = NULL;
 	int ip_ifindex = -1;
 	guint32 parent_mss;
+	guint32 i;
 
 	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
 	 * so we can get (vpn != NULL && best == NULL).
@@ -587,8 +588,14 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	if (!force_update && best && (best == policy->default_device4))
 		return;
 
-	/* We set the default route to the gateway of the first IP address of the config */
-	addr = nm_ip4_config_get_address (ip4_config, 0);
+	/* We set the default route to the first gateway we find */
+	for (i = 0; i < nm_ip4_config_get_num_addresses (ip4_config); i++) {
+		tmp_addr = nm_ip4_config_get_address (ip4_config, i);
+		if (nm_ip4_address_get_gateway (tmp_addr)) {
+			addr = tmp_addr;
+			break;
+		}
+	}
 	g_assert (addr);
 
 	if (vpn) {
@@ -725,10 +732,11 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	NMIP6Config *ip6_config = NULL, *parent_ip6;
-	NMIP6Address *addr;
+	NMIP6Address *addr = NULL, *tmp_addr;
 	const char *ip_iface = NULL;
 	int ip_ifindex = -1;
 	guint32 parent_mss;
+	guint32 i;
 
 	/* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
 	 * so we can get (vpn != NULL && best == NULL).
@@ -743,8 +751,14 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	if (!force_update && best && (best == policy->default_device6))
 		return;
 
-	/* We set the default route to the gateway of the first IP address of the config */
-	addr = nm_ip6_config_get_address (ip6_config, 0);
+	/* We set the default route to the first gateway we find */
+	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
+		tmp_addr = nm_ip6_config_get_address (ip6_config, i);
+		if (nm_ip6_address_get_gateway (tmp_addr)) {
+			addr = tmp_addr;
+			break;
+		}
+	}
 	g_assert (addr);
 
 	if (vpn) {
