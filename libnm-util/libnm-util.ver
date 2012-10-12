@@ -495,6 +495,7 @@ global:
 	nm_setting_wireless_security_remove_pairwise;
 	nm_setting_wireless_security_remove_proto;
 	nm_setting_wireless_security_set_wep_key;
+	nm_utils_ap_mode_security_valid;
 	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_file_is_pkcs12;
