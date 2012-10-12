@@ -16,6 +16,7 @@ if ENABLE_TESTS
 SUBDIRS += \
 	config/tests \
 	dhcp-manager/tests \
+	dnsmasq-manager/tests \
 	platform \
 	rdisc \
 	settings/tests \
@@ -125,6 +126,8 @@ nm_sources = \
 	\
 	dnsmasq-manager/nm-dnsmasq-manager.c \
 	dnsmasq-manager/nm-dnsmasq-manager.h \
+	dnsmasq-manager/nm-dnsmasq-utils.c \
+	dnsmasq-manager/nm-dnsmasq-utils.h \
 	\
 	firewall-manager/nm-firewall-manager.c \
 	firewall-manager/nm-firewall-manager.h \

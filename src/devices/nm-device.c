@@ -2782,51 +2782,64 @@ release_shared_ip (gpointer data)
 	g_hash_table_remove (shared_ips, data);
 }
 
-static guint32
-reserve_shared_ip (void)
+static gboolean
+reserve_shared_ip (NMSettingIP4Config *s_ip4, NMPlatformIP4Address *address)
 {
-	guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
-	guint32 count = 0;
-
-	while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
-		count += ntohl (0x100);
-		if (count > ntohl (0xFE00)) {
-			nm_log_err (LOGD_SHARING, "ran out of shared IP addresses!");
-			return 0;
-		}
-	}
-
-	g_hash_table_insert (shared_ips, GUINT_TO_POINTER (start + count), GUINT_TO_POINTER (TRUE));
-	return start + count;
-}
-
-static NMIP4Config *
-shared4_new_config (NMDevice *self, NMDeviceStateReason *reason)
-{
-	NMIP4Config *config = NULL;
-	NMPlatformIP4Address address;
-	guint32 tmp_addr;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
 	if (G_UNLIKELY (shared_ips == NULL))
 		shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
 
-	tmp_addr = reserve_shared_ip ();
-	if (!tmp_addr) {
+	memset (address, 0, sizeof (*address));
+
+	if (s_ip4 && nm_setting_ip4_config_get_num_addresses (s_ip4)) {
+		/* Use the first user-supplied address */
+		NMIP4Address *user = nm_setting_ip4_config_get_address (s_ip4, 0);
+
+		g_assert (user);
+		address->address = nm_ip4_address_get_address (user);
+		address->plen = nm_ip4_address_get_prefix (user);
+	} else {
+		/* Find an unused address in the 10.42.x.x range */
+		guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
+		guint32 count = 0;
+
+		while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
+			count += ntohl (0x100);
+			if (count > ntohl (0xFE00)) {
+				nm_log_err (LOGD_SHARING, "ran out of shared IP addresses!");
+				return FALSE;
+			}
+		}
+		address->address = start + count;
+		address->plen = 24;
+
+		g_hash_table_insert (shared_ips,
+		                     GUINT_TO_POINTER (address->address),
+		                     GUINT_TO_POINTER (TRUE));
+	}
+
+	return TRUE;
+}
+
+static NMIP4Config *
+shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReason *reason)
+{
+	NMIP4Config *config = NULL;
+	NMPlatformIP4Address address;
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	if (!reserve_shared_ip (nm_connection_get_setting_ip4_config (connection), &address)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		return NULL;
 	}
 
 	config = nm_ip4_config_new ();
-	memset (&address, 0, sizeof (address));
-	address.address = tmp_addr;
-	address.plen = 24;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Remove the address lock when the object gets disposed */
 	g_object_set_data_full (G_OBJECT (config), "shared-ip",
-	                        GUINT_TO_POINTER (tmp_addr), release_shared_ip);
+	                        GUINT_TO_POINTER (address.address),
+	                        release_shared_ip);
 
 	return config;
 }
@@ -2915,7 +2928,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		g_assert (*out_config);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
-		*out_config = shared4_new_config (self, reason);
+		*out_config = shared4_new_config (self, connection, reason);
 		if (*out_config) {
 			priv->dnsmasq_manager = nm_dnsmasq_manager_new (nm_device_get_ip_iface (self));
 			ret = NM_ACT_STAGE_RETURN_SUCCESS;

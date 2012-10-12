@@ -739,6 +739,7 @@ src/tests/Makefile
 src/config/tests/Makefile
 src/dhcp-manager/Makefile
 src/dhcp-manager/tests/Makefile
+src/dnsmasq-manager/tests/Makefile
 src/supplicant-manager/tests/Makefile
 src/ppp-manager/Makefile
 src/settings/plugins/Makefile

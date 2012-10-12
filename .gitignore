@@ -186,7 +186,9 @@ valgrind-*.log
 /src/tests/test-policy-hosts
 /src/tests/test-wifi-ap-utils
 /src/tests/test-resolvconf-capture
+/src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/dhcp-manager/tests/test-dhcp-dhclient
+/src/dhcp-manager/tests/test-dnsmasq-utils
 /src/config/tests/test-config
 
 /src/settings/plugins/keyfile/tests/test-keyfile
