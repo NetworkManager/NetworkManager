@@ -4373,10 +4373,10 @@ nm_manager_init (NMManager *manager)
 
 	/* sleep/wake handling */
 	priv->sleep_monitor = nm_sleep_monitor_get ();
-        g_signal_connect (priv->sleep_monitor, "Sleeping",
-                          G_CALLBACK (sleeping_cb), manager);
-        g_signal_connect (priv->sleep_monitor, "Resuming",
-                          G_CALLBACK (resuming_cb), manager);
+	g_signal_connect (priv->sleep_monitor, "sleeping",
+	                  G_CALLBACK (sleeping_cb), manager);
+	g_signal_connect (priv->sleep_monitor, "resuming",
+	                  G_CALLBACK (resuming_cb), manager);
 
 	/* Listen for authorization changes */
 	nm_auth_changed_func_register (authority_changed_cb, manager);
