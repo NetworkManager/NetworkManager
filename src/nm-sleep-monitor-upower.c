@@ -94,7 +94,6 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
                                              self, NULL);
         } else
                 nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
-        g_object_unref (bus);
         g_object_unref (dbus_mgr);
 }
 
