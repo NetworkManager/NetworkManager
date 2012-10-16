@@ -72,7 +72,7 @@ nm_device_adsl_error_quark (void)
  *
  * Creates a new #NMDeviceAdsl.
  *
- * Returns: a new device
+ * Returns: (transfer full): a new device
  **/
 GObject *
 nm_device_adsl_new (DBusGConnection *connection, const char *path)
