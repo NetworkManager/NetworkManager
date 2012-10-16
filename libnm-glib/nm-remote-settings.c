@@ -61,6 +61,7 @@ typedef struct {
 	DBusGProxy *dbus_proxy;
 
 	guint fetch_id;
+	gboolean fetching;
 } NMRemoteSettingsPrivate;
 
 enum {
@@ -381,8 +382,10 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 
 	/* Let listeners know that all connections have been found */
 	priv->init_left--;
-	if (priv->init_left == 0)
+	if (priv->init_left == 0) {
+		priv->fetching = FALSE;
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
+	}
 }
 
 static NMRemoteConnection *
@@ -442,14 +445,16 @@ fetch_connections_done (DBusGProxy *proxy,
 		g_clear_error (&error);
 
 		/* We tried to read connections and failed */
+		priv->fetching = FALSE;
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 		return;
 	}
 
 	/* Let listeners know we are done getting connections */
-	if (connections->len == 0)
+	if (connections->len == 0) {
+		priv->fetching = FALSE;
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
-	else {
+	} else {
 		priv->init_left = connections->len;
 		for (i = 0; i < connections->len; i++) {
 			char *path = g_ptr_array_index (connections, i);
@@ -909,6 +914,7 @@ constructed (GObject *object)
 	                             object,
 	                             NULL);
 
+	priv->fetching = TRUE;
 	priv->fetch_id = g_idle_add (fetch_connections, object);
 
 
@@ -976,6 +982,10 @@ typedef struct {
 static void
 init_async_complete (NMRemoteSettingsInitData *init_data)
 {
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (init_data->settings);
+
+	priv->inited = TRUE;
+
 	g_simple_async_result_complete (init_data->result);
 	g_object_unref (init_data->result);
 	g_slice_free (NMRemoteSettingsInitData, init_data);
@@ -987,6 +997,7 @@ init_read_connections (NMRemoteSettings *settings, gpointer user_data)
 	NMRemoteSettingsInitData *init_data = user_data;
 
 	g_signal_handlers_disconnect_by_func (settings, G_CALLBACK (init_read_connections), user_data);
+
 	init_async_complete (init_data);
 }
 
@@ -1008,7 +1019,7 @@ init_async_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
 	} else
 		g_simple_async_result_take_error (init_data->result, error);
 
-	if (priv->init_left) {
+	if (priv->fetching) {
 		/* Still creating initial connections; wait for that to complete */
 		g_signal_connect (init_data->settings, "connections-read",
 		                  G_CALLBACK (init_read_connections), init_data);
