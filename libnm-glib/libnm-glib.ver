@@ -67,6 +67,7 @@ global:
 	nm_device_bond_error_quark;
 	nm_device_bond_get_carrier;
 	nm_device_bond_get_hw_address;
+	nm_device_bond_get_slaves;
 	nm_device_bond_get_type;
 	nm_device_bond_new;
 	nm_device_bt_error_get_type;
