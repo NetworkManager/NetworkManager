@@ -15,6 +15,13 @@
       </tp:docstring>
     </property>
 
+    <property name="Slaves" type="ao" access="read">
+      <tp:docstring>
+        Array of object paths representing devices which are currently
+	slaved to this device.
+      </tp:docstring>
+    </property>
+
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
             <tp:docstring>

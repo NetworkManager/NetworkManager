@@ -32,6 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-netlink-monitor.h"
+#include "nm-dbus-glib-types.h"
 #include "nm-enum-types.h"
 #include "nm-system.h"
 
@@ -60,6 +61,7 @@ enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
 	PROP_CARRIER,
+	PROP_SLAVES,
 
 	LAST_PROP
 };
@@ -402,6 +404,7 @@ enslave_slave (NMDevice *device, NMDevice *slave)
 		nm_log_dbg (LOGD_DEVICE, "(%s): enslaved bond slave %s",
 			        nm_device_get_ip_iface (device),
 			        nm_device_get_ip_iface (slave));
+		g_object_notify (G_OBJECT (device), "slaves");
 	}
 
 	nm_device_hw_bring_up (slave, TRUE, &no_firmware);
@@ -431,6 +434,7 @@ release_slave (NMDevice *device, NMDevice *slave)
 	            success);
 	priv->slaves = g_slist_remove (priv->slaves, sinfo);
 	free_slave_info (sinfo);
+	g_object_notify (G_OBJECT (device), "slaves");
 	return success;
 }
 
@@ -471,7 +475,12 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
+	NMDeviceBond *self = NM_DEVICE_BOND (object);
+	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
 	const guint8 *current_addr;
+	GPtrArray *slaves;
+	GSList *iter;
+	SlaveInfo *info;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -480,6 +489,14 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (object)));
+		break;
+	case PROP_SLAVES:
+		slaves = g_ptr_array_new ();
+		for (iter = priv->slaves; iter; iter = iter->next) {
+			info = iter->data;
+			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (info->slave)));
+		}
+		g_value_take_boxed (value, slaves);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -556,6 +573,14 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 							   "Carrier",
 							   FALSE,
 							   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_SLAVES,
+		 g_param_spec_boxed (NM_DEVICE_BOND_SLAVES,
+		                     "Slaves",
+		                     "Slaves",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] =

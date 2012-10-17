@@ -42,6 +42,7 @@ typedef enum {
 
 #define NM_DEVICE_BOND_HW_ADDRESS "hw-address"
 #define NM_DEVICE_BOND_CARRIER "carrier"
+#define NM_DEVICE_BOND_SLAVES "slaves"
 
 typedef struct {
 	NMDeviceWired parent;
