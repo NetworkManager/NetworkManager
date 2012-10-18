@@ -40,7 +40,6 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
-#include "libgsystem.h"
 #include "nm-manager.h"
 #include "nm-policy.h"
 #include "nm-dns-manager.h"
@@ -203,10 +202,10 @@ write_pidfile (const char *pidfile)
 static gboolean
 check_pidfile (const char *pidfile)
 {
-	gs_lfree char *contents = NULL;
-	gs_lfree char *proc_cmdline = NULL;
+	char *contents = NULL;
 	gsize len = 0;
 	glong pid;
+	char *proc_cmdline = NULL;
 	gboolean nm_running = FALSE;
 	const char *process_name;
 
@@ -221,6 +220,7 @@ check_pidfile (const char *pidfile)
 	if (pid <= 0 || pid > 65536 || errno)
 		goto done;
 
+	g_free (contents);
 	proc_cmdline = g_strdup_printf ("/proc/%ld/cmdline", pid);
 	if (!g_file_get_contents (proc_cmdline, &contents, &len, NULL))
 		goto done;
@@ -239,6 +239,8 @@ check_pidfile (const char *pidfile)
 	}
 
 done:
+	g_free (proc_cmdline);
+	g_free (contents);
 	return nm_running;
 }
 
@@ -276,8 +278,7 @@ parse_state_file (const char *filename,
 		 * users upgrading NM get this working too.
 		 */
 		if (g_error_matches (tmp_error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			gs_lfree char *dirname = NULL;
-			gs_lfree char *data = NULL;
+			char *data, *dirname;
 			gsize len = 0;
 
 			g_clear_error (&tmp_error);
@@ -289,9 +290,11 @@ parse_state_file (const char *filename,
 				if (errno != EEXIST) {
 					g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_ACCES,
 					             "Error creating state directory %s: %s", dirname, strerror(errno));
+					g_free (dirname);
 					return FALSE;
 				}
 			}
+			g_free (dirname);
 
 			/* Write out the initial state to the state file */
 			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
@@ -302,6 +305,7 @@ parse_state_file (const char *filename,
 			data = g_key_file_to_data (state_file, &len, NULL);
 			if (data)
 				ret = g_file_set_contents (filename, data, len, error);
+			g_free (data);
 		} else {
 			/* the error is not "No such file or directory" - propagate the error */
 			g_propagate_error (error, tmp_error);
@@ -347,27 +351,24 @@ main (int argc, char *argv[])
 	GOptionContext *opt_ctx = NULL;
 	gboolean become_daemon = FALSE;
 	gboolean g_fatal_warnings = FALSE;
-	gs_lfree char *pidfile = NULL;
-	gs_lfree char *state_file = NULL;
-	gs_lfree char *config_path = NULL;
-	gs_lfree char *plugins = NULL;
-	gs_lfree char *log_level = NULL;
-	gs_lfree char *log_domains = NULL;
-	gs_lfree char *connectivity_uri = NULL;
+	char *pidfile = NULL, *state_file = NULL;
+	char *config_path = NULL, *plugins = NULL;
+	char *log_level = NULL, *log_domains = NULL;
+	char *connectivity_uri = NULL;
 	gint connectivity_interval = -1;
-	gs_lfree char *connectivity_response = NULL;
+	char *connectivity_response = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
-	gs_lobj NMVPNManager *vpn_manager = NULL;
-	gs_lobj NMDnsManager *dns_mgr = NULL;
-	gs_lobj NMDBusManager *dbus_mgr = NULL;
-	gs_lobj NMSupplicantManager *sup_mgr = NULL;
-	gs_lobj NMDHCPManager *dhcp_mgr = NULL;
-	gs_lobj NMFirewallManager *fw_mgr = NULL;
-	gs_lobj NMSettings *settings = NULL;
-	gs_lobj NMConfig *config;
-	gs_lobj NMNetlinkMonitor *monitor = NULL;
+	NMVPNManager *vpn_manager = NULL;
+	NMDnsManager *dns_mgr = NULL;
+	NMDBusManager *dbus_mgr = NULL;
+	NMSupplicantManager *sup_mgr = NULL;
+	NMDHCPManager *dhcp_mgr = NULL;
+	NMFirewallManager *fw_mgr = NULL;
+	NMSettings *settings = NULL;
+	NMConfig *config;
+	NMNetlinkMonitor *monitor = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 
@@ -667,12 +668,43 @@ done:
 	if (manager)
 		g_object_unref (manager);
 
+	if (settings)
+		g_object_unref (settings);
+
+	if (vpn_manager)
+		g_object_unref (vpn_manager);
+
+	if (dns_mgr)
+		g_object_unref (dns_mgr);
+
+	if (dhcp_mgr)
+		g_object_unref (dhcp_mgr);
+
+	if (sup_mgr)
+		g_object_unref (sup_mgr);
+
+	if (fw_mgr)
+		g_object_unref (fw_mgr);
+
+	if (dbus_mgr)
+		g_object_unref (dbus_mgr);
+
 	nm_logging_shutdown ();
 
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
 
 	nm_config_free (config);
+
+	/* Free options */
+	g_free (pidfile);
+	g_free (state_file);
+	g_free (config_path);
+	g_free (plugins);
+	g_free (log_level);
+	g_free (log_domains);
+	g_free (connectivity_uri);
+	g_free (connectivity_response);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);

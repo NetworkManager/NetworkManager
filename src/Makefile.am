@@ -21,20 +21,11 @@ endif
 
 SUBDIRS += . tests
 
-noinst_LTLIBRARIES =
-EXTRA_DIST =
-NULL =
-libgsystem_srcpath := libgsystem
-libgsystem_cflags = $(GIO_CFLAGS)
-libgsystem_libs = $(GIO_LIBS)
-include libgsystem/Makefile-libgsystem.am
-
 INCLUDES = -I${top_srcdir} \
            -I${top_builddir}/include \
            -I${top_srcdir}/include \
            -I${top_builddir}/src/generated \
            -I${top_srcdir}/src/generated \
-           -I${top_srcdir}/src/libgsystem \
            -I${top_srcdir}/src/logging \
            -I${top_srcdir}/src/posix-signals \
            -I${top_srcdir}/src/dns-manager \
@@ -56,7 +47,7 @@ INCLUDES = -I${top_srcdir} \
 # Test libraries
 ###########################################
 
-noinst_LTLIBRARIES += \
+noinst_LTLIBRARIES = \
 	libtest-dhcp.la \
 	libtest-policy-hosts.la \
 	libtest-wifi-ap-utils.la
@@ -322,7 +313,6 @@ endif
 
 NetworkManager_LDADD = \
 	./generated/libnm-generated.la \
-	libgsystem.la \
 	./logging/libnm-logging.la \
 	./posix-signals/libnm-posix-signals.la \
 	./dns-manager/libdns-manager.la \
@@ -373,7 +363,7 @@ NetworkManager_DATA = gdb-cmd
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = org.freedesktop.NetworkManager.conf
 
-EXTRA_DIST += \
+EXTRA_DIST = \
 	$(dbusservice_DATA) \
 	$(NetworkManager_DATA)
 
