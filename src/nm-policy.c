@@ -765,8 +765,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	}
 
 	/* If we don't find a paired gateway, try the generic IPv6 gateway */
-	g_assert (gw_addr);
-	if (   (memcmp (gw_addr->s6_addr, in6addr_any.s6_addr, sizeof (in6addr_any.s6_addr)) == 0)
+	if (   IN6_IS_ADDR_UNSPECIFIED (gw_addr)
 	    && nm_ip6_config_get_gateway (ip6_config))
 		gw_addr = nm_ip6_config_get_gateway (ip6_config);
 
