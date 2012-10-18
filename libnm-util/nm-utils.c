@@ -1204,7 +1204,7 @@ device_supports_ap_ciphers (guint32 dev_caps,
 
 /**
  * nm_utils_ap_mode_security_valid:
- * @type: the security type to check AP flags and device capabilties against,
+ * @type: the security type to check device capabilties against,
  * e.g. #NMU_SEC_STATIC_WEP
  * @wifi_caps: bitfield of the capabilities of the specific WiFi device, e.g.
  * #NM_WIFI_DEVICE_CAP_CIPHER_WEP40
@@ -1257,7 +1257,7 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
  * type, and AP capabilities intersect.
  *
  * NOTE: this function cannot handle checking security for AP/Hotspot mode;
- * use nm_utils_wifi_ap_mode_security_valid() instead.
+ * use nm_utils_ap_mode_security_valid() instead.
  *
  * Returns: TRUE if the device capabilities and AP capabilties intersect and are
  * compatible with the desired @type, FALSE if they are not
