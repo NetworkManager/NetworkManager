@@ -1573,7 +1573,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	svSetValue (ifcfg, "PEERDNS", NULL, FALSE);
 	svSetValue (ifcfg, "PEERROUTES", NULL, FALSE);
-	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
 	svSetValue (ifcfg, "DHCP_CLIENT_ID", NULL, FALSE);
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		svSetValue (ifcfg, "PEERDNS",
@@ -1782,9 +1781,13 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "yes", FALSE);
 		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		const char *hostname;
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
 		svSetValue (ifcfg, "DHCPV6C", "yes", FALSE);
+		hostname = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
+		if (hostname)
+			svSetValue (ifcfg, "DHCP_HOSTNAME", hostname, FALSE);
 	} else if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_AUTOCONF", "no", FALSE);
@@ -1963,8 +1966,6 @@ write_connection (NMConnection *connection,
                   GError **error)
 {
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
 	gboolean success = FALSE;
 	shvarFile *ifcfg = NULL;
 	char *ifcfg_name = NULL;
@@ -2066,12 +2067,12 @@ write_connection (NMConnection *connection,
 	}
 
 	if (!utils_ignore_ip_config (connection)) {
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
+
 		if (!write_ip4_setting (connection, ifcfg, error))
 			goto out;
 
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6) {
+		if (nm_connection_get_setting_ip6_config (connection)) {
 			if (!write_ip6_setting (connection, ifcfg, error))
 				goto out;
 		}

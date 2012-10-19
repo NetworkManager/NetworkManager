@@ -498,7 +498,23 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            guint8 *dhcp_anycast_addr,
                            gboolean info_only)
 {
-	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, NULL, info_only);
+	NMDHCPManagerPrivate *priv;
+	const char *hostname = NULL;
+
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+
+	hostname = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
+	if (!hostname && priv->hostname_provider) {
+		hostname = nm_hostname_provider_get_hostname (priv->hostname_provider);
+		if (   g_strcmp0 (hostname, "localhost.localdomain") == 0
+		    || g_strcmp0 (hostname, "localhost6.localdomain6") == 0)
+			hostname = NULL;
+	}
+
+	return client_start (self, iface, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, hostname, info_only);
 }
 
 static void

@@ -1605,8 +1605,13 @@ make_ip6_setting (shvarFile *ifcfg,
 			nm_ip6_address_unref (addr);
 		}
 		g_strfreev (list);
-	} else if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-		/* TODO - autoconf or DHCPv6 stuff goes here */
+	} else if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	           || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+		/* METHOD_AUTO may trigger DHCPv6, so save the hostname to send to DHCP */
+		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
+		if (value && value[0])
+			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, value, NULL);
+		g_free (value);
 	}
 
 	/* DNS servers

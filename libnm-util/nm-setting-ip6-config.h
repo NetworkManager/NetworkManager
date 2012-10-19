@@ -69,6 +69,8 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP6_CONFIG_MAY_FAIL           "may-fail"
 #define NM_SETTING_IP6_CONFIG_IP6_PRIVACY        "ip6-privacy"
+#define NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
+
 
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
@@ -239,6 +241,7 @@ void                   nm_setting_ip6_config_clear_routes           (NMSettingIP
 gboolean               nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting);
 
 gboolean               nm_setting_ip6_config_get_ignore_auto_dns    (NMSettingIP6Config *setting);
+const char *           nm_setting_ip6_config_get_dhcp_hostname      (NMSettingIP6Config *setting);
 gboolean               nm_setting_ip6_config_get_never_default      (NMSettingIP6Config *setting);
 gboolean               nm_setting_ip6_config_get_may_fail           (NMSettingIP6Config *setting);
 NMSettingIP6ConfigPrivacy nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting);

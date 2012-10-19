@@ -41,7 +41,9 @@ test_config (const char *orig,
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, dhcp_client_id, NULL);
 
 	new = nm_dhcp_dhclient_create_config (iface,
+	                                      FALSE,
 	                                      s_ip4,
+	                                      NULL,
 	                                      anycast_addr,
 	                                      hostname,
 	                                      "/path/to/dhclient.conf",
@@ -49,12 +51,15 @@ test_config (const char *orig,
 	g_assert (new != NULL);
 
 #if DEBUG
-	g_message ("\n- NEW ---------------------------------\n"
-	           "%s"
-	           "+ EXPECTED ++++++++++++++++++++++++++++++\n"
-	           "%s"
-	           "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
-	           new, expected);
+	if (   strlen (new) != strlen (expected)
+	    || strcmp (new, expected)) {
+		g_message ("\n- NEW ---------------------------------\n"
+		           "%s"
+		           "+ EXPECTED ++++++++++++++++++++++++++++++\n"
+		           "%s"
+		           "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+		           new, expected);
+	}
 #endif
 	g_assert (strlen (new) == strlen (expected));
 	g_assert (strcmp (new, expected) == 0);
@@ -65,7 +70,7 @@ test_config (const char *orig,
 
 static const char *orig_missing_expected = \
 	"# Created by NetworkManager\n"
-	"\n"
+	"\n\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
 	"option wpad code 252 = string;\n"
@@ -158,7 +163,7 @@ static const char *existing_alsoreq_orig = \
 static const char *existing_alsoreq_expected = \
 	"# Created by NetworkManager\n"
 	"# Merged from /path/to/dhclient.conf\n"
-	"\n"
+	"\n\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
 	"option wpad code 252 = string;\n"
@@ -191,7 +196,7 @@ static const char *existing_multiline_alsoreq_orig = \
 static const char *existing_multiline_alsoreq_expected = \
 	"# Created by NetworkManager\n"
 	"# Merged from /path/to/dhclient.conf\n"
-	"\n"
+	"\n\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
 	"option wpad code 252 = string;\n"
