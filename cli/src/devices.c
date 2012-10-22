@@ -90,14 +90,15 @@ static NmcOutputField nmc_fields_dev_list_sections[] = {
 	{"DHCP4",             N_("DHCP4"),             0, NULL, 0},  /* 8 */
 	{"IP6",               N_("IP6"),               0, NULL, 0},  /* 9 */
 	{"DHCP6",             N_("DHCP6"),             0, NULL, 0},  /* 10 */
+	{"BOND",              N_("BOND"),              0, NULL, 0},  /* 11 */
 	{NULL,                NULL,                    0, NULL, 0}
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
 #else
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
 #endif
 
 /* Available fields for 'dev list' - GENERAL part */
@@ -209,6 +210,15 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON        "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
 #define NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIMAX_LIST_COMMON
 #endif
+
+/* Available fields for 'dev list' - BOND part */
+static NmcOutputField nmc_fields_dev_list_bond_prop[] = {
+	{"NAME",            N_("NAME"),     18, NULL, 0},  /* 0 */
+	{"SLAVES",          N_("SLAVES"),   20, NULL, 0},  /* 1 */
+	{NULL,              NULL,            0, NULL, 0}
+};
+#define NMC_FIELDS_DEV_LIST_BOND_PROP_ALL     "NAME,SLAVES"
+#define NMC_FIELDS_DEV_LIST_BOND_PROP_COMMON  "NAME,SLAVES"
 
 
 /* glib main loop variable - defined in nmcli.c */
@@ -627,6 +637,7 @@ show_device_info (gpointer data, gpointer user_data)
 			was_output = TRUE;
 		}
 
+
 		/* Wireless specific information */
 		if ((NM_IS_DEVICE_WIFI (device))) {
 			NMDeviceWifiCapabilities wcaps;
@@ -790,6 +801,42 @@ show_device_info (gpointer data, gpointer user_data)
 			if (dhcp6 && !strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[10].name))
 				was_output = print_dhcp6_config (dhcp6, nmc, nmc_fields_dev_list_sections[10].name);
 		}
+
+		/* Bond-specific information */
+		if ((NM_IS_DEVICE_BOND (device))) {
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[11].name)) {
+				const GPtrArray *slaves;
+				GString *bond_slaves_str;
+				int idx;
+
+				bond_slaves_str = g_string_new (NULL);
+				slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
+				for (idx = 0; slaves && idx < slaves->len; idx++) {
+					NMDevice *slave = g_ptr_array_index (slaves, idx);
+					const char *iface = nm_device_get_iface (slave);
+
+					g_string_append (bond_slaves_str, iface);
+					g_string_append_c (bond_slaves_str, ' ');
+				}
+				if (bond_slaves_str->len > 0)
+					g_string_truncate (bond_slaves_str, bond_slaves_str->len-1);  /* Chop off last space */
+
+				nmc->allowed_fields = nmc_fields_dev_list_bond_prop;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_BOND_PROP_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[11].name;  /* "BOND" */
+				nmc->allowed_fields[1].value = bond_slaves_str->str;
+
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+				g_string_free (bond_slaves_str, TRUE);
+				was_output = TRUE;
+			}
+		}
+
 	}
 
 	if (sections_array)
