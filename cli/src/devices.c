@@ -91,14 +91,15 @@ static NmcOutputField nmc_fields_dev_list_sections[] = {
 	{"IP6",               N_("IP6"),               0, NULL, 0},  /* 9 */
 	{"DHCP6",             N_("DHCP6"),             0, NULL, 0},  /* 10 */
 	{"BOND",              N_("BOND"),              0, NULL, 0},  /* 11 */
+	{"VLAN",              N_("VLAN"),              0, NULL, 0},  /* 12 */
 	{NULL,                NULL,                    0, NULL, 0}
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
 #else
-#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_LIST_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
 #endif
 
 /* Available fields for 'dev list' - GENERAL part */
@@ -219,6 +220,15 @@ static NmcOutputField nmc_fields_dev_list_bond_prop[] = {
 };
 #define NMC_FIELDS_DEV_LIST_BOND_PROP_ALL     "NAME,SLAVES"
 #define NMC_FIELDS_DEV_LIST_BOND_PROP_COMMON  "NAME,SLAVES"
+
+/* Available fields for 'dev list' - VLAN part */
+static NmcOutputField nmc_fields_dev_list_vlan_prop[] = {
+	{"NAME",            N_("NAME"),     18, NULL, 0},  /* 0 */
+	{"ID",              N_("ID"),        5, NULL, 0},  /* 1 */
+	{NULL,              NULL,            0, NULL, 0}
+};
+#define NMC_FIELDS_DEV_LIST_VLAN_PROP_ALL     "NAME,ID"
+#define NMC_FIELDS_DEV_LIST_VLAN_PROP_COMMON  "NAME,ID"
 
 
 /* glib main loop variable - defined in nmcli.c */
@@ -833,6 +843,27 @@ show_device_info (gpointer data, gpointer user_data)
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 				g_string_free (bond_slaves_str, TRUE);
+				was_output = TRUE;
+			}
+		}
+
+		/* VLAN-specific information */
+		if ((NM_IS_DEVICE_VLAN (device))) {
+			if (!strcasecmp (nmc_fields_dev_list_sections[section_idx].name, nmc_fields_dev_list_sections[12].name)) {
+				char * vlan_id_str = g_strdup_printf ("%u", nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device)));
+
+				nmc->allowed_fields = nmc_fields_dev_list_vlan_prop;
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_LIST_VLAN_PROP_ALL, nmc->allowed_fields, NULL);
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+				nmc->allowed_fields[0].value = nmc_fields_dev_list_sections[12].name;  /* "VLAN" */
+				nmc->allowed_fields[1].value = vlan_id_str;
+
+				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+				g_free (vlan_id_str);
 				was_output = TRUE;
 			}
 		}
