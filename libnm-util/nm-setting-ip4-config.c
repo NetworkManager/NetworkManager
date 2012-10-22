@@ -31,7 +31,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
-
+#include "nm-setting-private.h"
 
 
 /**
@@ -63,7 +63,12 @@ nm_setting_ip4_config_error_quark (void)
 G_DEFINE_BOXED_TYPE (NMIP4Address, nm_ip4_address, nm_ip4_address_dup, nm_ip4_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP4Route, nm_ip4_route, nm_ip4_route_dup, nm_ip4_route_unref)
 
-G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                                               g_define_type_id,
+                                               4,
+                                               NM_SETTING_IP4_CONFIG_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP4_CONFIG)
 
 #define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP4_CONFIG, NMSettingIP4ConfigPrivate))
 

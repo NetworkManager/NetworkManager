@@ -32,6 +32,7 @@
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-bluetooth
@@ -62,7 +63,12 @@ nm_setting_bluetooth_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_BLUETOOTH_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_BLUETOOTH_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BLUETOOTH)
 
 #define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
 

@@ -25,6 +25,7 @@
 #include "nm-setting-infiniband.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils-private.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-infiniband
@@ -52,7 +53,12 @@ nm_setting_infiniband_error_quark (void)
 	return quark;
 }
 
-G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_INFINIBAND_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_INFINIBAND_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
 

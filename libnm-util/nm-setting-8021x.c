@@ -81,7 +81,12 @@ nm_setting_802_1x_error_quark (void)
 	return quark;
 }
 
-G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_802_1X_SETTING_NAME,
+                                               g_define_type_id,
+                                               2,
+                                               NM_SETTING_802_1X_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_802_1X)
 
 #define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
 

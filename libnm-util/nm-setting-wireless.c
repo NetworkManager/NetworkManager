@@ -34,6 +34,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-wireless
@@ -62,7 +63,12 @@ nm_setting_wireless_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_WIRELESS_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_WIRELESS_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIRELESS)
 
 #define NM_SETTING_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS, NMSettingWirelessPrivate))
 

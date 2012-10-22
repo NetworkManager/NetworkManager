@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-bond
@@ -58,7 +59,12 @@ nm_setting_bond_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_BOND_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_BOND_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BOND)
 
 #define NM_SETTING_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BOND, NMSettingBondPrivate))
 

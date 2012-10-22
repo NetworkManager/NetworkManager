@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-vlan
@@ -57,7 +58,12 @@ nm_setting_vlan_error_quark (void)
 	return quark;
 }
 
-G_DEFINE_TYPE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_VLAN_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_VLAN_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VLAN)
 
 #define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
 

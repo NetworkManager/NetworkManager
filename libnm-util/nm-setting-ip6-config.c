@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-ip6-config
@@ -60,7 +61,12 @@ nm_setting_ip6_config_error_quark (void)
 G_DEFINE_BOXED_TYPE (NMIP6Address, nm_ip6_address, nm_ip6_address_dup, nm_ip6_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP6Route, nm_ip6_route, nm_ip6_route_dup, nm_ip6_route_unref)
 
-G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                                               g_define_type_id,
+                                               4,
+                                               NM_SETTING_IP6_CONFIG_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP6_CONFIG)
 
 #define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP6_CONFIG, NMSettingIP6ConfigPrivate))
 

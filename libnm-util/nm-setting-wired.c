@@ -33,6 +33,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-wired
@@ -61,7 +62,12 @@ nm_setting_wired_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_WIRED_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_WIRED_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIRED)
 
 #define NM_SETTING_WIRED_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))
 

@@ -26,6 +26,7 @@
 
 #include "nm-setting-wimax.h"
 #include "nm-param-spec-specialized.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-wimax
@@ -54,7 +55,12 @@ nm_setting_wimax_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_WIMAX_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_WIMAX_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIMAX)
 
 #define NM_SETTING_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIMAX, NMSettingWimaxPrivate))
 

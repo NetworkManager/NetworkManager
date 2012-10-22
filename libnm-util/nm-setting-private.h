@@ -21,11 +21,23 @@
 #ifndef NM_SETTING_PRIVATE_H
 #define NM_SETTING_PRIVATE_H
 
+#include "nm-glib-compat.h"
+
 #define NM_SETTING_SECRET_FLAGS_ALL \
 	(NM_SETTING_SECRET_FLAG_NONE | \
 	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
 	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+
+void _nm_register_setting (const char *name,
+                           const GType type,
+                           const guint32 priority,
+                           const GQuark error_quark);
+
+/* Ensure the setting's GType is registered at library load time */
+#define NM_SETTING_REGISTER_TYPE(x) \
+static void __attribute__((constructor)) register_setting (void) \
+{ g_type_init (); g_type_ensure (x); }
 
 #endif  /* NM_SETTING_PRIVATE_H */
 

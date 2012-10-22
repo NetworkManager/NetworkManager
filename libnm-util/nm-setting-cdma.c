@@ -54,7 +54,12 @@ nm_setting_cdma_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_CDMA_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_CDMA_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CDMA)
 
 #define NM_SETTING_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CDMA, NMSettingCdmaPrivate))
 

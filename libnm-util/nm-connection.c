@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 
 #include "nm-setting-8021x.h"
 #include "nm-setting-bluetooth.h"
@@ -116,202 +117,115 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/*************************************************************/
+
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 20
+static void __attribute__((constructor))
+_ensure_registered (void)
+{
+	g_type_init ();
+	_nm_utils_register_value_transformations ();
+	if (G_UNLIKELY (registered_settings == NULL))
+		registered_settings = g_hash_table_new (g_str_hash, g_str_equal);
+}
 
-static struct SettingInfo {
-	const char *name;
+typedef struct {
 	GType type;
 	guint32 priority;
-	gboolean base_type;
 	GQuark error_quark;
-} default_map[DEFAULT_MAP_SIZE] = { { NULL } };
+} SettingInfo;
 
-static void
-setting_register (const char *name, GType type)
+/*
+ * _nm_register_setting:
+ * @name: the name of the #NMSetting object to register
+ * @type: the #GType of the #NMSetting
+ * @priority: the sort priority of the setting, see below
+ * @error_quark: the setting's error quark
+ *
+ * INTERNAL ONLY: registers a setting's internal properties, like its priority
+ * and its error quark type, with libnm-util.
+ *
+ * A setting's priority should roughly follow the OSI layer model, but it also
+ * controls which settings get asked for secrets first.  Thus settings which
+ * relate to things that must be working first, like hardware, should get a
+ * higher priority than things which layer on top of the hardware.  For example,
+ * the GSM/CDMA settings should provide secrets before the PPP setting does,
+ * because a PIN is required to unlock the device before PPP can even start.
+ * Even settings without secrets should be assigned the right priority.
+ *
+ * 0: reserved for the Connection setting
+ *
+ * 1: hardware-related settings like Ethernet, WiFi, Infiniband, Bridge, etc.
+ * These priority 1 settings are also "base types", which means that at least
+ * one of them is required for the connection to be valid, and their name is
+ * valid in the 'type' property of the Connection setting.
+ *
+ * 2: hardware-related auxiliary settings that require a base setting to be
+ * successful first, like WiFi security, 802.1x, etc.
+ *
+ * 3: hardware-independent settings that are required before IP connectivity
+ * can be established, like PPP, PPPoE, etc.
+ *
+ * 4: IP-level stuff
+ */
+void
+_nm_register_setting (const char *name,
+                      const GType type,
+                      const guint32 priority,
+                      const GQuark error_quark)
 {
+	SettingInfo *info;
+
 	g_return_if_fail (name != NULL);
-	g_return_if_fail (G_TYPE_IS_INSTANTIATABLE (type));
+	g_return_if_fail (type != G_TYPE_INVALID);
+	g_return_if_fail (type != G_TYPE_NONE);
+	g_return_if_fail (error_quark != 0);
+	g_return_if_fail (priority <= 4);
 
-	if (G_UNLIKELY (!registered_settings)) {
-		registered_settings = g_hash_table_new_full (g_str_hash, g_str_equal, 
-		                                             (GDestroyNotify) g_free,
-		                                             (GDestroyNotify) g_free);
-	}
+	_ensure_registered ();
 
-	if (g_hash_table_lookup (registered_settings, name))
-		g_warning ("Already have a creator function for '%s', overriding", name);
-
-	g_hash_table_insert (registered_settings, g_strdup (name), g_strdup (g_type_name (type)));
-}
-
-#if 0
-static void
-setting_unregister (const char *name)
-{
-	if (registered_settings)
-		g_hash_table_remove (registered_settings, name);
-}
-#endif
-
-static void
-register_one_setting (const char *name,
-                      GType type,
-                      GQuark error_quark,
-                      guint32 priority,
-                      gboolean base_type)
-{
-	static guint32 i = 0;
-
-	g_return_if_fail (i < DEFAULT_MAP_SIZE);
-	g_return_if_fail (default_map[i].name == NULL);
-
-	default_map[i].name = name;
-	default_map[i].type = type;
-	default_map[i].error_quark = error_quark;
-	default_map[i].priority = priority;
-	default_map[i].base_type = base_type;
-	i++;
-
-	setting_register (name, type);
-}
-
-static void
-register_default_settings (void)
-{
-	_nm_utils_register_value_transformations ();
-
-	if (G_LIKELY (default_map[0].name))
+	if (G_LIKELY (g_hash_table_lookup (registered_settings, name)))
 		return;
 
-	register_one_setting (NM_SETTING_CONNECTION_SETTING_NAME,
-	                      NM_TYPE_SETTING_CONNECTION,
-	                      NM_SETTING_CONNECTION_ERROR,
-	                      0, FALSE);
+	if (priority == 0)
+		g_assert_cmpstr (name, ==, NM_SETTING_CONNECTION_SETTING_NAME);
 
-	register_one_setting (NM_SETTING_WIRED_SETTING_NAME,
-	                      NM_TYPE_SETTING_WIRED,
-	                      NM_SETTING_WIRED_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_WIRELESS_SETTING_NAME,
-	                      NM_TYPE_SETTING_WIRELESS,
-	                      NM_SETTING_WIRELESS_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_OLPC_MESH_SETTING_NAME,
-	                      NM_TYPE_SETTING_OLPC_MESH,
-	                      NM_SETTING_OLPC_MESH_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_GSM_SETTING_NAME,
-	                      NM_TYPE_SETTING_GSM,
-	                      NM_SETTING_GSM_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_CDMA_SETTING_NAME,
-	                      NM_TYPE_SETTING_CDMA,
-	                      NM_SETTING_CDMA_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_BLUETOOTH_SETTING_NAME,
-	                      NM_TYPE_SETTING_BLUETOOTH,
-	                      NM_SETTING_BLUETOOTH_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_WIMAX_SETTING_NAME,
-	                      NM_TYPE_SETTING_WIMAX,
-	                      NM_SETTING_WIMAX_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_BOND_SETTING_NAME,
-	                      NM_TYPE_SETTING_BOND,
-	                      NM_SETTING_BOND_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_INFINIBAND_SETTING_NAME,
-	                      NM_TYPE_SETTING_INFINIBAND,
-	                      NM_SETTING_INFINIBAND_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_VLAN_SETTING_NAME,
-	                      NM_TYPE_SETTING_VLAN,
-	                      NM_SETTING_VLAN_ERROR,
-	                      1, TRUE);
-
-	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	                      NM_TYPE_SETTING_WIRELESS_SECURITY,
-	                      NM_SETTING_WIRELESS_SECURITY_ERROR,
-	                      2, FALSE);
-
-	register_one_setting (NM_SETTING_SERIAL_SETTING_NAME,
-	                      NM_TYPE_SETTING_SERIAL,
-	                      NM_SETTING_SERIAL_ERROR,
-	                      2, FALSE);
-
-	register_one_setting (NM_SETTING_PPP_SETTING_NAME,
-	                      NM_TYPE_SETTING_PPP,
-	                      NM_SETTING_PPP_ERROR,
-	                      3, FALSE);
-
-	register_one_setting (NM_SETTING_PPPOE_SETTING_NAME,
-	                      NM_TYPE_SETTING_PPPOE,
-	                      NM_SETTING_PPPOE_ERROR,
-	                      3, TRUE);
-
-	register_one_setting (NM_SETTING_ADSL_SETTING_NAME,
-	                      NM_TYPE_SETTING_ADSL,
-	                      NM_SETTING_ADSL_ERROR,
-	                      3, TRUE);
-
-	register_one_setting (NM_SETTING_802_1X_SETTING_NAME,
-	                      NM_TYPE_SETTING_802_1X,
-	                      NM_SETTING_802_1X_ERROR,
-	                      3, FALSE);
-
-	register_one_setting (NM_SETTING_VPN_SETTING_NAME,
-	                      NM_TYPE_SETTING_VPN,
-	                      NM_SETTING_VPN_ERROR,
-	                      4, TRUE);
-
-	register_one_setting (NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                      NM_TYPE_SETTING_IP4_CONFIG,
-	                      NM_SETTING_IP4_CONFIG_ERROR,
-	                      6, FALSE);
-
-	register_one_setting (NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                      NM_TYPE_SETTING_IP6_CONFIG,
-	                      NM_SETTING_IP6_CONFIG_ERROR,
-	                      6, FALSE);
-
-	/* Be sure to update DEFAULT_MAP_SIZE if you add another setting!! */
+	info = g_slice_new0 (SettingInfo);
+	info->type = type;
+	info->priority = priority;
+	info->error_quark = error_quark;
+	g_hash_table_insert (registered_settings, (gpointer) name, info);
 }
 
 static guint32
-get_priority_for_setting_type (GType type)
+_get_setting_priority (NMSetting *setting)
 {
-	int i;
+	GHashTableIter iter;
+	SettingInfo *info;
 
-	for (i = 0; default_map[i].name; i++) {
-		if (default_map[i].type == type)
-			return default_map[i].priority;
+	_ensure_registered ();
+
+	g_hash_table_iter_init (&iter, registered_settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
+		if (G_OBJECT_TYPE (setting) == info->type)
+			return info->priority;
 	}
-
 	return G_MAXUINT32;
 }
 
 static gboolean
-get_base_type_for_setting_type (GType type)
+_is_setting_base_type (NMSetting *setting)
 {
-	int i;
-
-	for (i = 0; default_map[i].name; i++) {
-		if (default_map[i].type == type)
-			return default_map[i].base_type;
-	}
-	return FALSE;
+	/* Historical oddity: PPPoE is a base-type even though it's not
+	 * priority 1.  It needs to be sorted *after* lower-level stuff like
+	 * WiFi security or 802.1x for secrets, but it's still allowed as a
+	 * base type.
+	 */
+	return _get_setting_priority (setting) == 1 || NM_IS_SETTING_PPPOE (setting);
 }
+
+/*************************************************************/
 
 /**
  * nm_connection_lookup_setting_type:
@@ -324,25 +238,18 @@ get_base_type_for_setting_type (GType type)
 GType
 nm_connection_lookup_setting_type (const char *name)
 {
-	char *type_name;
-	GType type;
+	SettingInfo *info;
 
 	g_return_val_if_fail (name != NULL, G_TYPE_NONE);
 
-	if (!registered_settings)
-		register_default_settings ();
+	_ensure_registered ();
 
-	type_name = (char *) g_hash_table_lookup (registered_settings, name);
-	if (type_name) {
-		type = g_type_from_name (type_name);
-		if (!type)
-			g_warning ("Can not get type for '%s'.", type_name);
-	} else {
-		type = 0;
-		g_warning ("Unknown setting '%s'", name);
-	}
+	info = g_hash_table_lookup (registered_settings, name);
+	if (info)
+		return info->type;
 
-	return type;
+	g_warning ("Unknown setting '%s'", name);
+	return G_TYPE_INVALID;
 }
 
 /**
@@ -357,13 +264,16 @@ nm_connection_lookup_setting_type (const char *name)
 GType
 nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
 {
-	int i;
+	SettingInfo *info;
+	GHashTableIter iter;
 
-	for (i = 0; default_map[i].name; i++) {
-		if (default_map[i].error_quark == error_quark)
-			return default_map[i].type;
+	_ensure_registered ();
+
+	g_hash_table_iter_init (&iter, registered_settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
+		if (info->error_quark == error_quark)
+			return info->type;
 	}
-
 	return G_TYPE_INVALID;
 }
 
@@ -739,8 +649,8 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	gpointer value;
 	GSList *all_settings = NULL;
 	gboolean success = TRUE;
+	NMSetting *base;
 	const char *ctype;
-	GType base_type;
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
@@ -791,8 +701,8 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	base_type = nm_connection_lookup_setting_type (ctype);
-	if (base_type == 0) {
+	base = nm_connection_get_setting_by_name (connection, ctype);
+	if (!base) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
@@ -800,7 +710,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!get_base_type_for_setting_type (base_type)) {
+	if (!_is_setting_base_type (base)) {
 		g_set_error (error,
 			         NM_CONNECTION_ERROR,
 			         NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
@@ -896,22 +806,14 @@ setting_priority_compare (gconstpointer a, gconstpointer b)
 {
 	guint32 prio_a, prio_b;
 
-	prio_a = get_priority_for_setting_type (G_OBJECT_TYPE (NM_SETTING (a)));
-	prio_b = get_priority_for_setting_type (G_OBJECT_TYPE (NM_SETTING (b)));
+	prio_a = _get_setting_priority (NM_SETTING (a));
+	prio_b = _get_setting_priority (NM_SETTING (b));
 
 	if (prio_a < prio_b)
 		return -1;
 	else if (prio_a == prio_b)
 		return 0;
 	return 1;
-}
-
-static void
-add_setting_to_list (gpointer key, gpointer data, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_insert_sorted (*list, NM_SETTING (data), setting_priority_compare);
 }
 
 /**
@@ -938,9 +840,11 @@ nm_connection_need_secrets (NMConnection *connection,
                             GPtrArray **hints)
 {
 	NMConnectionPrivate *priv;
+	GHashTableIter hiter;
 	GSList *settings = NULL;
 	GSList *iter;
 	const char *name = NULL;
+	NMSetting *setting;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
@@ -950,15 +854,14 @@ nm_connection_need_secrets (NMConnection *connection,
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	/* Get list of settings in priority order */
-	g_hash_table_foreach (priv->settings, add_setting_to_list, &settings);
+	g_hash_table_iter_init (&hiter, priv->settings);
+	while (g_hash_table_iter_next (&hiter, NULL, (gpointer) &setting))
+		settings = g_slist_insert_sorted (settings, setting, setting_priority_compare);
 
 	for (iter = settings; iter; iter = g_slist_next (iter)) {
-		NMSetting *setting = NM_SETTING (iter->data);
 		GPtrArray *secrets;
 
-		// FIXME: do something with requested secrets rather than asking for
-		// all of them.  Maybe make secrets a hash table mapping
-		// settings name :: [list of secrets key names].
+		setting = NM_SETTING (iter->data);
 		secrets = nm_setting_need_secrets (setting);
 		if (secrets) {
 			if (hints)
@@ -1234,14 +1137,7 @@ nm_connection_get_virtual_iface_name (NMConnection *connection)
 NMConnection *
 nm_connection_new (void)
 {
-	GObject *object;
-
-	if (!registered_settings)
-		register_default_settings ();
-
-	object = g_object_new (NM_TYPE_CONNECTION, NULL);
-
-	return NM_CONNECTION (object);
+	return (NMConnection *) g_object_new (NM_TYPE_CONNECTION, NULL);
 }
 
 /**

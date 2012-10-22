@@ -55,7 +55,12 @@ nm_setting_adsl_error_quark (void)
 	return quark;
 }
 
-G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_ADSL_SETTING_NAME,
+                                               g_define_type_id,
+                                               1,
+                                               NM_SETTING_ADSL_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_ADSL)
 
 #define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
 

@@ -74,4 +74,13 @@ p##_get_type (void) \
 }
 #endif
 
+#if !GLIB_CHECK_VERSION(2,34,0)
+static inline void
+g_type_ensure (GType type)
+{
+  if (G_UNLIKELY (type == (GType)-1))
+    g_error ("can't happen");
+}
+#endif
+
 #endif  /* NM_GLIB_COMPAT_H */

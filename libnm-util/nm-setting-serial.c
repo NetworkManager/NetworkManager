@@ -27,6 +27,7 @@
 
 #include "nm-setting-serial.h"
 #include "nm-glib-compat.h"
+#include "nm-setting-private.h"
 
 /**
  * SECTION:nm-setting-serial
@@ -57,7 +58,12 @@ nm_setting_serial_error_quark (void)
 }
 
 
-G_DEFINE_TYPE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)
+G_DEFINE_TYPE_WITH_CODE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING,
+                         _nm_register_setting (NM_SETTING_SERIAL_SETTING_NAME,
+                                               g_define_type_id,
+                                               2,
+                                               NM_SETTING_SERIAL_ERROR))
+NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_SERIAL)
 
 #define NM_SETTING_SERIAL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_SERIAL, NMSettingSerialPrivate))
 
