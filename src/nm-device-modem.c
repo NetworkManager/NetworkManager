@@ -345,7 +345,9 @@ NMDevice *
 nm_device_modem_new (NMModem *modem, const char *driver)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
-	const char *type_desc = NULL;
+	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
+	const gchar *type_desc = NULL;
+	const gchar *ip_iface = NULL;
 
 	g_return_val_if_fail (modem != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
@@ -353,10 +355,14 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 
 	if (NM_IS_MODEM_CDMA (modem)) {
 		caps = NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO;
+		current_caps = caps;
 		type_desc = "CDMA/EVDO";
+		ip_iface = nm_modem_get_data_port (modem);
 	} else if (NM_IS_MODEM_GSM (modem)) {
 		caps = NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
+		current_caps = caps;
 		type_desc = "GSM/UMTS";
+		ip_iface = nm_modem_get_data_port (modem);
 	} else {
 		nm_log_warn (LOGD_MB, "unhandled modem type %s", G_OBJECT_TYPE_NAME (modem));
 		return NULL;
@@ -364,7 +370,8 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
 	                                  NM_DEVICE_UDI, nm_modem_get_path (modem),
-	                                  NM_DEVICE_IFACE, nm_modem_get_iface (modem),
+	                                  NM_DEVICE_IFACE, nm_modem_get_uid (modem),
+	                                  NM_DEVICE_IP_IFACE, ip_iface,
 	                                  NM_DEVICE_DRIVER, driver,
 	                                  NM_DEVICE_TYPE_DESC, type_desc,
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
@@ -507,7 +514,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
-	signals[PROPERTIES_CHANGED] = 
+	signals[PROPERTIES_CHANGED] =
 		nm_properties_changed_signal_new (object_class,
 		                                  G_STRUCT_OFFSET (NMDeviceModemClass, properties_changed));
 
@@ -522,4 +529,3 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (mclass),
 	                                 &dbus_glib_nm_device_modem_object_info);
 }
-

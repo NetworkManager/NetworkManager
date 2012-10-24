@@ -71,7 +71,9 @@ nm_modem_cdma_new (const char *path,
 
 	return (NMModem *) g_object_new (NM_TYPE_MODEM_CDMA,
 	                                 NM_MODEM_PATH, path,
-	                                 NM_MODEM_IFACE, data_device,
+	                                 NM_MODEM_UID, data_device,
+	                                 NM_MODEM_CONTROL_PORT, NULL,
+	                                 NM_MODEM_DATA_PORT, data_device,
 	                                 NM_MODEM_IP_METHOD, ip_method,
 	                                 NM_MODEM_CONNECTED, (state == NM_MODEM_STATE_CONNECTED),
 	                                 NULL);

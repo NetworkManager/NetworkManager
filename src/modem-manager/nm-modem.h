@@ -36,12 +36,14 @@ G_BEGIN_DECLS
 #define NM_IS_MODEM_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),	NM_TYPE_MODEM))
 #define NM_MODEM_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),	NM_TYPE_MODEM, NMModemClass))
 
-#define NM_MODEM_PATH       "path"
-#define NM_MODEM_IFACE      "iface"
-#define NM_MODEM_IP_METHOD  "ip-method"
-#define NM_MODEM_IP_TIMEOUT "ip-timeout"
-#define NM_MODEM_ENABLED    "enabled"
-#define NM_MODEM_CONNECTED  "connected"
+#define NM_MODEM_UID          "uid"
+#define NM_MODEM_PATH         "path"
+#define NM_MODEM_CONTROL_PORT "control-port"
+#define NM_MODEM_DATA_PORT    "data-port"
+#define NM_MODEM_IP_METHOD    "ip-method"
+#define NM_MODEM_IP_TIMEOUT   "ip-timeout"
+#define NM_MODEM_ENABLED      "enabled"
+#define NM_MODEM_CONNECTED    "connected"
 
 #define NM_MODEM_PPP_STATS         "ppp-stats"
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
@@ -110,8 +112,10 @@ typedef struct {
 
 GType nm_modem_get_type (void);
 
-const char *  nm_modem_get_iface       (NMModem *modem);
-const char *  nm_modem_get_path        (NMModem *modem);
+const char *nm_modem_get_path         (NMModem *modem);
+const char *nm_modem_get_uid          (NMModem *modem);
+const char *nm_modem_get_control_port (NMModem *modem);
+const char *nm_modem_get_data_port    (NMModem *modem);
 
 NMConnection *nm_modem_get_best_auto_connection (NMModem *self,
                                                  GSList *connections,

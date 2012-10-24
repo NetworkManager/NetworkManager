@@ -38,8 +38,10 @@ G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
 enum {
 	PROP_0,
-	PROP_IFACE,
+	PROP_CONTROL_PORT,
+	PROP_DATA_PORT,
 	PROP_PATH,
+	PROP_UID,
 	PROP_IP_METHOD,
 	PROP_IP_TIMEOUT,
 	PROP_ENABLED,
@@ -49,8 +51,10 @@ enum {
 };
 
 typedef struct {
+	char *uid;
 	char *path;
-	char *iface;
+	char *control_port;
+	char *data_port;
 	guint32 ip_method;
 
 	NMPPPManager *ppp_manager;
@@ -229,7 +233,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 		ip_timeout = priv->mm_ip_timeout;
 	}
 
-	priv->ppp_manager = nm_ppp_manager_new (priv->iface);
+	priv->ppp_manager = nm_ppp_manager_new (priv->data_port);
 	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, &error)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 						  G_CALLBACK (ppp_state_changed),
@@ -592,12 +596,12 @@ nm_modem_device_state_changed (NMModem *self,
 /*****************************************************************************/
 
 const char *
-nm_modem_get_iface (NMModem *self)
+nm_modem_get_uid (NMModem *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
-	return NM_MODEM_GET_PRIVATE (self)->iface;
+	return NM_MODEM_GET_PRIVATE (self)->uid;
 }
 
 const char *
@@ -607,6 +611,24 @@ nm_modem_get_path (NMModem *self)
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
 	return NM_MODEM_GET_PRIVATE (self)->path;
+}
+
+const char *
+nm_modem_get_control_port (NMModem *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
+
+	return NM_MODEM_GET_PRIVATE (self)->control_port;
+}
+
+const char *
+nm_modem_get_data_port (NMModem *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
+
+	return NM_MODEM_GET_PRIVATE (self)->data_port;
 }
 
 /*****************************************************************************/
@@ -632,8 +654,8 @@ constructor (GType type,
 
 	priv = NM_MODEM_GET_PRIVATE (object);
 
-	if (!priv->iface) {
-		nm_log_err (LOGD_HW, "modem command interface not provided");
+	if (!priv->data_port && !priv->control_port) {
+		nm_log_err (LOGD_HW, "neither modem command nor data interface provided");
 		goto err;
 	}
 
@@ -659,8 +681,14 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
 		break;
-	case PROP_IFACE:
-		g_value_set_string (value, priv->iface);
+	case PROP_CONTROL_PORT:
+		g_value_set_string (value, priv->control_port);
+		break;
+	case PROP_DATA_PORT:
+		g_value_set_string (value, priv->data_port);
+		break;
+	case PROP_UID:
+		g_value_set_string (value, priv->uid);
 		break;
 	case PROP_IP_METHOD:
 		g_value_set_uint (value, priv->ip_method);
@@ -691,9 +719,15 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
 		break;
-	case PROP_IFACE:
+	case PROP_CONTROL_PORT:
+		priv->control_port = g_value_dup_string (value);
+		break;
+	case PROP_DATA_PORT:
+		priv->data_port = g_value_dup_string (value);
+		break;
+	case PROP_UID:
 		/* Construct only */
-		priv->iface = g_value_dup_string (value);
+		priv->uid = g_value_dup_string (value);
 		break;
 	case PROP_IP_METHOD:
 		priv->ip_method = g_value_get_uint (value);
@@ -731,8 +765,10 @@ finalize (GObject *object)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
-	g_free (priv->iface);
+	g_free (priv->uid);
 	g_free (priv->path);
+	g_free (priv->control_port);
+	g_free (priv->data_port);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->finalize (object);
 }
@@ -757,6 +793,14 @@ nm_modem_class_init (NMModemClass *klass)
 	/* Properties */
 
 	g_object_class_install_property
+		(object_class, PROP_UID,
+		 g_param_spec_string (NM_MODEM_UID,
+		                      "UID",
+		                      "Modem unique ID",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
 		(object_class, PROP_PATH,
 		 g_param_spec_string (NM_MODEM_PATH,
 							  "DBus path",
@@ -765,12 +809,20 @@ nm_modem_class_init (NMModemClass *klass)
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
-		(object_class, PROP_IFACE,
-		 g_param_spec_string (NM_MODEM_IFACE,
-		                      "Interface",
-		                      "Modem command interface",
+		(object_class, PROP_CONTROL_PORT,
+		 g_param_spec_string (NM_MODEM_CONTROL_PORT,
+		                      "Control port",
+		                      "The port controlling the modem",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_DATA_PORT,
+		 g_param_spec_string (NM_MODEM_DATA_PORT,
+		                      "Data port",
+		                      "The port to connect to",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_METHOD,

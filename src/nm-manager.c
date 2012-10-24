@@ -387,7 +387,8 @@ modem_added (NMModemManager *modem_manager,
 	const char *ip_iface;
 	GSList *iter;
 
-	ip_iface = nm_modem_get_iface (modem);
+	ip_iface = nm_modem_get_data_port (modem);
+	g_assert (ip_iface);
 
 	replace_device = find_device_by_ip_iface (NM_MANAGER (user_data), ip_iface);
 	if (replace_device) {

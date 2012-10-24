@@ -201,7 +201,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		addr = nm_ip4_address_new ();
 
 		nm_log_info (LOGD_MB, "(%s): IPv4 static configuration:",
-		             nm_modem_get_iface (NM_MODEM (self)));
+		             nm_modem_get_uid (NM_MODEM (self)));
 
 		/* IP address */
 		nm_ip4_address_set_address (addr, g_value_get_uint (g_value_array_get_nth (ret_array, 0)));

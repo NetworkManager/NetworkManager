@@ -611,7 +611,8 @@ nm_device_bt_modem_added (NMDeviceBt *self,
                           const char *driver)
 {
 	NMDeviceBtPrivate *priv;
-	const char *modem_iface;
+	const gchar *modem_data_port;
+	const gchar *modem_control_port;
 	char *base;
 	NMDeviceState state;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
@@ -622,14 +623,15 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	g_return_val_if_fail (NM_IS_MODEM (modem), FALSE);
 
 	priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	modem_iface = nm_modem_get_iface (modem);
-	g_return_val_if_fail (modem_iface != NULL, FALSE);
+	modem_data_port = nm_modem_get_data_port (modem);
+	modem_control_port = nm_modem_get_control_port (modem);
+	g_return_val_if_fail (modem_data_port != NULL || modem_control_port != NULL, FALSE);
 
 	if (!priv->rfcomm_iface)
 		return FALSE;
 
 	base = g_path_get_basename (priv->rfcomm_iface);
-	if (strcmp (base, modem_iface)) {
+	if (g_strcmp0 (base, modem_data_port) && g_strcmp0 (base, modem_control_port)) {
 		g_free (base);
 		return FALSE;
 	}
@@ -669,6 +671,8 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
+
+	nm_device_set_ip_iface (NM_DEVICE (self), modem_data_port);
 
 	/* Kick off the modem connection */
 	if (!modem_stage1 (self, modem, &reason))
@@ -1341,7 +1345,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
 
-	signals[PROPERTIES_CHANGED] = 
+	signals[PROPERTIES_CHANGED] =
 		nm_properties_changed_signal_new (object_class,
 		                                  G_STRUCT_OFFSET (NMDeviceBtClass, properties_changed));
 
