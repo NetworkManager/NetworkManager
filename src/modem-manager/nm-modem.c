@@ -591,24 +591,6 @@ nm_modem_device_state_changed (NMModem *self,
 
 /*****************************************************************************/
 
-gboolean
-nm_modem_hw_is_up (NMModem *self, NMDevice *device)
-{
-	int ifindex = nm_device_get_ip_ifindex (device);
-
-	return ifindex > 0 ? nm_system_iface_is_up (ifindex) : TRUE;
-}
-
-gboolean
-nm_modem_hw_bring_up (NMModem *self, NMDevice *device, gboolean *no_firmware)
-{
-	int ifindex = nm_device_get_ip_ifindex (device);
-
-	return ifindex > 0 ? nm_system_iface_set_up (ifindex, TRUE, no_firmware) : TRUE;
-}
-
-/*****************************************************************************/
-
 const char *
 nm_modem_get_iface (NMModem *self)
 {

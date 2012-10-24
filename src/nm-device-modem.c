@@ -29,6 +29,7 @@
 #include "nm-rfkill.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
+#include "nm-system.h"
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
@@ -245,13 +246,17 @@ complete_connection (NMDevice *device,
 static gboolean
 hw_is_up (NMDevice *device)
 {
-	return nm_modem_hw_is_up (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	return ifindex > 0 ? nm_system_iface_is_up (ifindex) : TRUE;
 }
 
 static gboolean
 hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
-	return nm_modem_hw_bring_up (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device, no_firmware);
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	return ifindex > 0 ? nm_system_iface_set_up (ifindex, TRUE, no_firmware) : TRUE;
 }
 
 static void

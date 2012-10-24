@@ -156,10 +156,6 @@ void nm_modem_device_state_changed (NMModem *modem,
                                     NMDeviceState old_state,
                                     NMDeviceStateReason reason);
 
-gboolean nm_modem_hw_is_up (NMModem *modem, NMDevice *device);
-
-gboolean nm_modem_hw_bring_up (NMModem *modem, NMDevice *device, gboolean *no_firmware);
-
 gboolean      nm_modem_get_mm_enabled (NMModem *self);
 
 void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
