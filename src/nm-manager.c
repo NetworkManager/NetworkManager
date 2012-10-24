@@ -1538,7 +1538,7 @@ manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
 }
 
 static void
-manager_modem_enabled_changed (NMModem *device, gpointer user_data)
+manager_modem_enabled_changed (NMDevice *device, gpointer user_data)
 {
 	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
 }
