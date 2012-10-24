@@ -226,11 +226,11 @@ do_connect (NMModemGsm *self)
 	DBusGProxy *proxy;
 
 	proxy = nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self), MM_DBUS_INTERFACE_MODEM_SIMPLE);
-	dbus_g_proxy_begin_call_with_timeout (proxy,
-	                                      "Connect", stage1_prepare_done,
-	                                      self, NULL, 120000,
-	                                      DBUS_TYPE_G_MAP_OF_VARIANT, priv->connect_properties,
-	                                      G_TYPE_INVALID);
+	priv->call = dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                                   "Connect", stage1_prepare_done,
+	                                                   self, NULL, 120000,
+	                                                   DBUS_TYPE_G_MAP_OF_VARIANT, priv->connect_properties,
+	                                                   G_TYPE_INVALID);
 }
 
 static void stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data);
