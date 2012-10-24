@@ -35,10 +35,6 @@
 #define MM_MODEM_TYPE_GSM      1
 #define MM_MODEM_TYPE_CDMA     2
 
-#define MM_MODEM_IP_METHOD_PPP    0
-#define MM_MODEM_IP_METHOD_STATIC 1
-#define MM_MODEM_IP_METHOD_DHCP   2
-
 /* Errors */
 
 #define MM_SERIAL_OPEN_FAILED MM_DBUS_INTERFACE_MODEM ".SerialOpenFailed"

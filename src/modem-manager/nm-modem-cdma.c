@@ -37,7 +37,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
-G_DEFINE_TYPE (NMModemCdma, nm_modem_cdma, NM_TYPE_MODEM)
+G_DEFINE_TYPE (NMModemCdma, nm_modem_cdma, NM_TYPE_MODEM_GENERIC)
 
 #define NM_MODEM_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_CDMA, NMModemCdmaPrivate))
 
@@ -111,7 +111,7 @@ do_connect (NMModemCdma *self)
 	NMModemCdmaPrivate *priv = NM_MODEM_CDMA_GET_PRIVATE (self);
 	DBusGProxy *proxy;
 
-	proxy = nm_modem_get_proxy (NM_MODEM (self), MM_DBUS_INTERFACE_MODEM_SIMPLE);
+	proxy = nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self), MM_DBUS_INTERFACE_MODEM_SIMPLE);
 	priv->call = dbus_g_proxy_begin_call_with_timeout (proxy,
 	                                                   "Connect", stage1_prepare_done,
 	                                                   self, NULL, 120000,
@@ -179,7 +179,7 @@ act_stage1_prepare (NMModem *modem,
 		if (enabled)
 			do_connect (self);
 		else {
-			proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM);
+			proxy = nm_modem_generic_get_proxy (NM_MODEM_GENERIC (modem), MM_DBUS_INTERFACE_MODEM);
 			dbus_g_proxy_begin_call_with_timeout (proxy,
 			                                      "Enable", stage1_enable_done,
 			                                      modem, NULL, 20000,
@@ -319,12 +319,12 @@ deactivate (NMModem *modem, NMDevice *device)
 	if (priv->call) {
 		DBusGProxy *proxy;
 
-		proxy = nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM_SIMPLE);
+		proxy = nm_modem_generic_get_proxy (NM_MODEM_GENERIC (modem), MM_DBUS_INTERFACE_MODEM_SIMPLE);
 		dbus_g_proxy_cancel_call (proxy, priv->call);
 		priv->call = NULL;
 	}
 
-	NM_MODEM_CLASS (nm_modem_cdma_parent_class)->deactivate (modem, device);	
+	NM_MODEM_CLASS (nm_modem_cdma_parent_class)->deactivate (modem, device);
 }
 
 /*****************************************************************************/

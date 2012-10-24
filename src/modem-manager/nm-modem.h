@@ -67,6 +67,9 @@ typedef enum {
     NM_MODEM_STATE_LAST = NM_MODEM_STATE_CONNECTED
 } NMModemState;
 
+#define MM_MODEM_IP_METHOD_PPP    0
+#define MM_MODEM_IP_METHOD_STATIC 1
+#define MM_MODEM_IP_METHOD_DHCP   2
 
 typedef struct {
 	GObject parent;
@@ -101,6 +104,14 @@ typedef struct {
 	                                            const char **out_setting_name,
 	                                            NMDeviceStateReason *reason);
 
+	NMActStageReturn (*static_stage3_ip4_config_start) (NMModem *self,
+	                                                    NMActRequest *req,
+	                                                    NMDeviceStateReason *reason);
+
+	void (*set_mm_enabled)                     (NMModem *self, gboolean enabled);
+
+	void (*disconnect)                         (NMModem *self, gboolean warn);
+
 	void (*deactivate)                         (NMModem *self, NMDevice *device);
 
 	/* Signals */
@@ -116,9 +127,6 @@ typedef struct {
 
 GType nm_modem_get_type (void);
 
-/* Protected */
-
-DBusGProxy *  nm_modem_get_proxy       (NMModem *modem, const char *interface);
 const char *  nm_modem_get_iface       (NMModem *modem);
 const char *  nm_modem_get_path        (NMModem *modem);
 

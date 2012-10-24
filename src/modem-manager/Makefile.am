@@ -15,6 +15,8 @@ noinst_LTLIBRARIES = libmodem-manager.la
 libmodem_manager_la_SOURCES = \
 	nm-modem.c \
 	nm-modem.h \
+	nm-modem-generic.c \
+	nm-modem-generic.h \
 	nm-modem-cdma.c \
 	nm-modem-cdma.h \
 	nm-modem-gsm.c \

@@ -22,7 +22,7 @@
 #ifndef NM_MODEM_CDMA_H
 #define NM_MODEM_CDMA_H
 
-#include <nm-modem.h>
+#include <nm-modem-generic.h>
 
 G_BEGIN_DECLS
 
@@ -40,11 +40,11 @@ typedef enum {
 } NMCdmaError;
 
 typedef struct {
-	NMModem parent;
+	NMModemGeneric parent;
 } NMModemCdma;
 
 typedef struct {
-	NMModemClass parent;
+	NMModemGenericClass parent;
 
 	/* Signals */
 	void (*signal_quality) (NMModemCdma *self, guint32 quality);

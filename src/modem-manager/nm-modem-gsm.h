@@ -22,7 +22,7 @@
 #ifndef NM_MODEM_GSM_H
 #define NM_MODEM_GSM_H
 
-#include <nm-modem.h>
+#include <nm-modem-generic.h>
 
 G_BEGIN_DECLS
 
@@ -40,11 +40,11 @@ typedef enum {
 } NMGsmError;
 
 typedef struct {
-	NMModem parent;
+	NMModemGeneric parent;
 } NMModemGsm;
 
 typedef struct {
-	NMModemClass parent;
+	NMModemGenericClass parent;
 
 	/* Signals */
 	void (*signal_quality) (NMModemGsm *self, guint32 quality);
