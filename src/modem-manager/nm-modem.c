@@ -236,14 +236,14 @@ ppp_stage3_ip4_config_start (NMModem *self,
 	priv->ppp_manager = nm_ppp_manager_new (priv->data_port);
 	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, ip_timeout, &error)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
-						  G_CALLBACK (ppp_state_changed),
-						  self);
+		                  G_CALLBACK (ppp_state_changed),
+		                  self);
 		g_signal_connect (priv->ppp_manager, "ip4-config",
-						  G_CALLBACK (ppp_ip4_config),
-						  self);
+		                  G_CALLBACK (ppp_ip4_config),
+		                  self);
 		g_signal_connect (priv->ppp_manager, "stats",
-						  G_CALLBACK (ppp_stats),
-						  self);
+		                  G_CALLBACK (ppp_stats),
+		                  self);
 
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
@@ -647,8 +647,8 @@ constructor (GType type,
 	NMModemPrivate *priv;
 
 	object = G_OBJECT_CLASS (nm_modem_parent_class)->constructor (type,
-																  n_construct_params,
-																  construct_params);
+	                                                              n_construct_params,
+	                                                              construct_params);
 	if (!object)
 		return NULL;
 
@@ -673,7 +673,7 @@ constructor (GType type,
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
@@ -710,7 +710,7 @@ get_property (GObject *object, guint prop_id,
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (object);
 
@@ -803,10 +803,10 @@ nm_modem_class_init (NMModemClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_PATH,
 		 g_param_spec_string (NM_MODEM_PATH,
-							  "DBus path",
-							  "DBus path",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      "DBus path",
+		                      "DBus path",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_CONTROL_PORT,
@@ -827,12 +827,12 @@ nm_modem_class_init (NMModemClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_IP_METHOD,
 		 g_param_spec_uint (NM_MODEM_IP_METHOD,
-							"IP method",
-							"IP method",
-							MM_MODEM_IP_METHOD_PPP,
-							MM_MODEM_IP_METHOD_DHCP,
-							MM_MODEM_IP_METHOD_PPP,
-							G_PARAM_READWRITE));
+		                    "IP method",
+		                    "IP method",
+		                    MM_MODEM_IP_METHOD_PPP,
+		                    MM_MODEM_IP_METHOD_DHCP,
+		                    MM_MODEM_IP_METHOD_PPP,
+		                    G_PARAM_READWRITE));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_TIMEOUT,
@@ -862,56 +862,56 @@ nm_modem_class_init (NMModemClass *klass)
 
 	signals[PPP_STATS] =
 		g_signal_new ("ppp-stats",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemClass, ppp_stats),
-					  NULL, NULL,
-					  _nm_marshal_VOID__UINT_UINT,
-					  G_TYPE_NONE, 2,
-					  G_TYPE_UINT, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, ppp_stats),
+		              NULL, NULL,
+		              _nm_marshal_VOID__UINT_UINT,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[PPP_FAILED] =
 		g_signal_new ("ppp-failed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemClass, ppp_failed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, ppp_failed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[IP4_CONFIG_RESULT] =
 		g_signal_new (NM_MODEM_IP4_CONFIG_RESULT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemClass, ip4_config_result),
-					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_OBJECT_POINTER,
-					  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_OBJECT, G_TYPE_POINTER);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, ip4_config_result),
+		              NULL, NULL,
+		              _nm_marshal_VOID__STRING_OBJECT_POINTER,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_OBJECT, G_TYPE_POINTER);
 
 	signals[PREPARE_RESULT] =
 		g_signal_new (NM_MODEM_PREPARE_RESULT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemClass, prepare_result),
-					  NULL, NULL,
-					  _nm_marshal_VOID__BOOLEAN_UINT,
-					  G_TYPE_NONE, 2, G_TYPE_BOOLEAN, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, prepare_result),
+		              NULL, NULL,
+		              _nm_marshal_VOID__BOOLEAN_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_BOOLEAN, G_TYPE_UINT);
 
 	signals[AUTH_REQUESTED] =
 		g_signal_new (NM_MODEM_AUTH_REQUESTED,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemClass, auth_requested),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, auth_requested),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 
 	signals[AUTH_RESULT] =
 		g_signal_new (NM_MODEM_AUTH_RESULT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemClass, auth_result),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
-					  G_TYPE_NONE, 1, G_TYPE_POINTER);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, auth_result),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__POINTER,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 }

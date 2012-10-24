@@ -26,10 +26,10 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_MODEM_CDMA			  (nm_modem_cdma_get_type ())
-#define NM_MODEM_CDMA(obj)			  (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_CDMA, NMModemCdma))
-#define NM_MODEM_CDMA_CLASS(klass)	  (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_MODEM_CDMA, NMModemCdmaClass))
-#define NM_IS_MODEM_CDMA(obj)		  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MODEM_CDMA))
+#define NM_TYPE_MODEM_CDMA            (nm_modem_cdma_get_type ())
+#define NM_MODEM_CDMA(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_CDMA, NMModemCdma))
+#define NM_MODEM_CDMA_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_MODEM_CDMA, NMModemCdmaClass))
+#define NM_IS_MODEM_CDMA(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MODEM_CDMA))
 #define NM_IS_MODEM_CDMA_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_MODEM_CDMA))
 #define NM_MODEM_CDMA_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM_CDMA, NMModemCdmaClass))
 
