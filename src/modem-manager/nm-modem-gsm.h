@@ -45,9 +45,6 @@ typedef struct {
 
 typedef struct {
 	NMModemGenericClass parent;
-
-	/* Signals */
-	void (*signal_quality) (NMModemGsm *self, guint32 quality);
 } NMModemGsmClass;
 
 GType nm_modem_gsm_get_type (void);
