@@ -38,7 +38,6 @@ G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
 enum {
 	PROP_0,
-	PROP_DEVICE,
 	PROP_IFACE,
 	PROP_PATH,
 	PROP_IP_METHOD,
@@ -51,7 +50,6 @@ enum {
 
 typedef struct {
 	char *path;
-	char *device;
 	char *iface;
 	guint32 ip_method;
 
@@ -656,12 +654,7 @@ constructor (GType type,
 
 	priv = NM_MODEM_GET_PRIVATE (object);
 
-	if (!priv->device) {
-		nm_log_err (LOGD_HW, "modem parent device not provided");
-		goto err;
-	}
-
-	if (!priv->device) {
+	if (!priv->iface) {
 		nm_log_err (LOGD_HW, "modem command interface not provided");
 		goto err;
 	}
@@ -687,9 +680,6 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
-		break;
-	case PROP_DEVICE:
-		g_value_set_string (value, priv->device);
 		break;
 	case PROP_IFACE:
 		g_value_set_string (value, priv->iface);
@@ -722,10 +712,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
-		break;
-	case PROP_DEVICE:
-		/* Construct only */
-		priv->device = g_value_dup_string (value);
 		break;
 	case PROP_IFACE:
 		/* Construct only */
@@ -770,7 +756,6 @@ finalize (GObject *object)
 
 	g_free (priv->iface);
 	g_free (priv->path);
-	g_free (priv->device);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->finalize (object);
 }
@@ -801,14 +786,6 @@ nm_modem_class_init (NMModemClass *klass)
 							  "DBus path",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_class_install_property
-		(object_class, PROP_DEVICE,
-		 g_param_spec_string (NM_MODEM_DEVICE,
-		                      "Device",
-		                      "Master modem parent device",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_IFACE,

@@ -37,7 +37,6 @@ G_BEGIN_DECLS
 #define NM_MODEM_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),	NM_TYPE_MODEM, NMModemClass))
 
 #define NM_MODEM_PATH      "path"
-#define NM_MODEM_DEVICE    "device"
 #define NM_MODEM_IFACE     "iface"
 #define NM_MODEM_IP_METHOD "ip-method"
 #define NM_MODEM_IP_TIMEOUT "ip-timeout"

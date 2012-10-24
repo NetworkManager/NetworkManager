@@ -53,7 +53,6 @@ typedef struct {
 GType nm_modem_gsm_get_type (void);
 
 NMModem *nm_modem_gsm_new (const char *path,
-                           const char *device,
                            const char *data_device,
                            guint32 ip_method,
                            NMModemState state);

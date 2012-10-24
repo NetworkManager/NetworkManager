@@ -62,18 +62,15 @@ nm_cdma_error_quark (void)
 
 NMModem *
 nm_modem_cdma_new (const char *path,
-                   const char *device,
                    const char *data_device,
                    guint32 ip_method,
                    NMModemState state)
 {
 	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (device != NULL, NULL);
 	g_return_val_if_fail (data_device != NULL, NULL);
 
 	return (NMModem *) g_object_new (NM_TYPE_MODEM_CDMA,
 	                                 NM_MODEM_PATH, path,
-	                                 NM_MODEM_DEVICE, device,
 	                                 NM_MODEM_IFACE, data_device,
 	                                 NM_MODEM_IP_METHOD, ip_method,
 	                                 NM_MODEM_STATE, state,

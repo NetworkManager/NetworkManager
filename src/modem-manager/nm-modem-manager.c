@@ -176,9 +176,9 @@ create_modem (NMModemManager *manager, const char *path)
 	}
 
 	if (modem_type == MM_MODEM_TYPE_GSM)
-		modem = nm_modem_gsm_new (path, master_device, data_device, ip_method, state);
+		modem = nm_modem_gsm_new (path, data_device, ip_method, state);
 	else if (modem_type == MM_MODEM_TYPE_CDMA)
-		modem = nm_modem_cdma_new (path, master_device, data_device, ip_method, state);
+		modem = nm_modem_cdma_new (path, data_device, ip_method, state);
 	else
 		nm_log_warn (LOGD_MB, "unknown modem type '%d'", modem_type);
 
