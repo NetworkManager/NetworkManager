@@ -42,6 +42,8 @@ typedef struct {
 	DBusGProxy *props_proxy;
 
 	DBusGProxyCall *call;
+
+	NMModemState state;
 } NMModemGenericPrivate;
 
 /*****************************************************************************/
@@ -335,10 +337,16 @@ modem_properties_changed (DBusGProxy *proxy,
 	value = g_hash_table_lookup (props, "State");
 	if (value && G_VALUE_HOLDS_UINT (value)) {
 		new_state = g_value_get_uint (value);
-		if (new_state != nm_modem_get_state (NM_MODEM (self))) {
-			g_object_set (self,
-			              NM_MODEM_STATE, new_state,
-			              NULL);
+		if (new_state != priv->state) {
+			if (new_state == NM_MODEM_STATE_CONNECTED)
+				g_object_set (self,
+				              NM_MODEM_CONNECTED, TRUE,
+				              NULL);
+			else if (priv->state == NM_MODEM_STATE_CONNECTED)
+				g_object_set (self,
+				              NM_MODEM_CONNECTED, FALSE,
+				              NULL);
+			priv->state = new_state;
 		}
 	}
 }

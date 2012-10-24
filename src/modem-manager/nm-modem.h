@@ -36,12 +36,12 @@ G_BEGIN_DECLS
 #define NM_IS_MODEM_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),	NM_TYPE_MODEM))
 #define NM_MODEM_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),	NM_TYPE_MODEM, NMModemClass))
 
-#define NM_MODEM_PATH      "path"
-#define NM_MODEM_IFACE     "iface"
-#define NM_MODEM_IP_METHOD "ip-method"
+#define NM_MODEM_PATH       "path"
+#define NM_MODEM_IFACE      "iface"
+#define NM_MODEM_IP_METHOD  "ip-method"
 #define NM_MODEM_IP_TIMEOUT "ip-timeout"
-#define NM_MODEM_ENABLED   "enabled"
-#define NM_MODEM_STATE     "state"
+#define NM_MODEM_ENABLED    "enabled"
+#define NM_MODEM_CONNECTED  "connected"
 
 #define NM_MODEM_PPP_STATS         "ppp-stats"
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
@@ -49,22 +49,6 @@ G_BEGIN_DECLS
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
 #define NM_MODEM_AUTH_REQUESTED    "auth-requested"
 #define NM_MODEM_AUTH_RESULT       "auth-result"
-
-/* From ModemManager */
-typedef enum {
-    NM_MODEM_STATE_UNKNOWN = 0,
-    NM_MODEM_STATE_DISABLED = 10,
-    NM_MODEM_STATE_DISABLING = 20,
-    NM_MODEM_STATE_ENABLING = 30,
-    NM_MODEM_STATE_ENABLED = 40,
-    NM_MODEM_STATE_SEARCHING = 50,
-    NM_MODEM_STATE_REGISTERED = 60,
-    NM_MODEM_STATE_DISCONNECTING = 70,
-    NM_MODEM_STATE_CONNECTING = 80,
-    NM_MODEM_STATE_CONNECTED = 90,
-
-    NM_MODEM_STATE_LAST = NM_MODEM_STATE_CONNECTED
-} NMModemState;
 
 #define MM_MODEM_IP_METHOD_PPP    0
 #define MM_MODEM_IP_METHOD_STATIC 1
@@ -180,7 +164,7 @@ gboolean      nm_modem_get_mm_enabled (NMModem *self);
 
 void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
 
-NMModemState  nm_modem_get_state (NMModem *self);
+gboolean      nm_modem_get_mm_connected (NMModem *self);
 
 G_END_DECLS
 

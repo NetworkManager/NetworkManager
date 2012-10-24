@@ -43,7 +43,7 @@ enum {
 	PROP_IP_METHOD,
 	PROP_IP_TIMEOUT,
 	PROP_ENABLED,
-	PROP_STATE,
+	PROP_CONNECTED,
 
 	LAST_PROP
 };
@@ -61,7 +61,7 @@ typedef struct {
 
 	gboolean mm_enabled;
 	guint32 mm_ip_timeout;
-	NMModemState state;
+	gboolean mm_connected;
 
 	/* PPP stats */
 	guint32 in_bytes;
@@ -102,14 +102,10 @@ nm_modem_set_mm_enabled (NMModem *self,
 		NM_MODEM_GET_CLASS (self)->set_mm_enabled (self, enabled);
 }
 
-/*****************************************************************************/
-
-NMModemState
-nm_modem_get_state (NMModem *self)
+gboolean
+nm_modem_get_mm_connected (NMModem *self)
 {
-	g_return_val_if_fail (NM_IS_MODEM (self), NM_MODEM_STATE_UNKNOWN);
-
-	return NM_MODEM_GET_PRIVATE (self)->state;
+	return NM_MODEM_GET_PRIVATE (self)->mm_connected;
 }
 
 /*****************************************************************************/
@@ -693,8 +689,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ENABLED:
 		g_value_set_boolean (value, priv->mm_enabled);
 		break;
-	case PROP_STATE:
-		g_value_set_boolean (value, priv->state);
+	case PROP_CONNECTED:
+		g_value_set_boolean (value, priv->mm_connected);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -718,7 +714,6 @@ set_property (GObject *object, guint prop_id,
 		priv->iface = g_value_dup_string (value);
 		break;
 	case PROP_IP_METHOD:
-		/* Construct only */
 		priv->ip_method = g_value_get_uint (value);
 		break;
 	case PROP_IP_TIMEOUT:
@@ -727,8 +722,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_ENABLED:
 		priv->mm_enabled = g_value_get_boolean (value);
 		break;
-	case PROP_STATE:
-		priv->state = g_value_get_uint (value);
+	case PROP_CONNECTED:
+		priv->mm_connected = g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -822,14 +817,12 @@ nm_modem_class_init (NMModemClass *klass)
 		                       G_PARAM_READWRITE));
 
 	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_MODEM_STATE,
-		                    "ModemManager modem state",
-		                    "ModemManager modem state",
-		                    NM_MODEM_STATE_UNKNOWN,
-		                    NM_MODEM_STATE_LAST,
-		                    NM_MODEM_STATE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		(object_class, PROP_CONNECTED,
+		 g_param_spec_boolean (NM_MODEM_CONNECTED,
+		                       "Connected",
+		                       "Connected",
+		                       TRUE,
+		                       G_PARAM_READWRITE));
 
 	/* Signals */
 
