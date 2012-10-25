@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_KEYFILE_CONNECTION_H
@@ -48,6 +48,7 @@ NMKeyfileConnection *nm_keyfile_connection_new (const char *filename,
                                                 GError **error);
 
 const char *nm_keyfile_connection_get_path (NMKeyfileConnection *self);
+void        nm_keyfile_connection_set_path (NMKeyfileConnection *self, const char *path);
 
 G_END_DECLS
 

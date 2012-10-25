@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -268,6 +268,10 @@ dir_changed (GFileMonitor *monitor,
 					 * filename property too.
 					 */
 					update_connection_settings (found, connection);
+					/* However, when connections are the same and only the filename changed
+					 * we need to update the path manually (commit_changes() is not called.
+					 */
+					nm_keyfile_connection_set_path (found, full_path);
 
 					/* Re-insert the connection back into the hash with the new filename */
 					g_hash_table_insert (priv->hash,

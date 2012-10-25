@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -1026,8 +1026,15 @@ _internal_write_connection (NMConnection *connection,
 	if (!data)
 		goto out;
 
-	filename = _writer_id_to_filename (id);
-	path = g_build_filename (keyfile_dir, filename, NULL);
+	/* If we have existing file path, use it. Else generate one from
+	 * connection's ID.
+	 */
+	if (existing_path != NULL) {
+		path = g_strdup (existing_path);
+	} else {
+		filename = _writer_id_to_filename (id);
+		path = g_build_filename (keyfile_dir, filename, NULL);
+	}
 
 	/* If a file with this path already exists (but isn't the existing path
 	 * of the connection) then we need another name.  Multiple connections

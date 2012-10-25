@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -94,6 +94,19 @@ nm_keyfile_connection_get_path (NMKeyfileConnection *self)
 	g_return_val_if_fail (NM_IS_KEYFILE_CONNECTION (self), NULL);
 
 	return NM_KEYFILE_CONNECTION_GET_PRIVATE (self)->path;
+}
+
+void
+nm_keyfile_connection_set_path (NMKeyfileConnection *self, const char *path)
+{
+	NMKeyfileConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_KEYFILE_CONNECTION (self));
+	g_return_if_fail (path != NULL);
+
+	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (self);
+	g_free (priv->path);
+	priv->path = g_strdup (path);
 }
 
 static void
