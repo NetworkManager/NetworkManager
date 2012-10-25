@@ -105,6 +105,11 @@ struct _NMDeviceOlpcMeshPrivate
 	NMDevice *        companion;
 	gboolean          stage1_waiting;
 	guint             device_added_id;
+	guint             device_removed_id;
+	guint             cmp_state_changed_id;
+	guint             cmp_scanning_id;
+	guint             cmp_scanning_allowed_id;
+	guint             cmp_autoconnect_allowed_id;
 };
 
 static GQuark
@@ -432,6 +437,38 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 }
 
 static void
+companion_cleanup (NMDeviceOlpcMesh *self)
+{
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+
+	if (priv->companion == NULL)
+		return;
+
+	if (priv->cmp_state_changed_id) {
+		g_signal_handler_disconnect (priv->companion, priv->cmp_state_changed_id);
+		priv->cmp_state_changed_id = 0;
+	}
+
+	if (priv->cmp_scanning_id) {
+		g_signal_handler_disconnect (priv->companion, priv->cmp_scanning_id);
+		priv->cmp_scanning_id = 0;
+	}
+
+	if (priv->cmp_scanning_allowed_id) {
+		g_signal_handler_disconnect (priv->companion, priv->cmp_scanning_allowed_id);
+		priv->cmp_scanning_allowed_id = 0;
+	}
+
+	if (priv->cmp_autoconnect_allowed_id) {
+		g_signal_handler_disconnect (priv->companion, priv->cmp_autoconnect_allowed_id);
+		priv->cmp_autoconnect_allowed_id = 0;
+	}
+
+	priv->companion = NULL;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
@@ -448,10 +485,13 @@ dispose (GObject *object)
 		wifi_utils_deinit (priv->wifi_data);
 
 	device_cleanup (self);
+	companion_cleanup (self);
 
 	manager = nm_manager_get ();
 	if (priv->device_added_id)
 		g_signal_handler_disconnect (manager, priv->device_added_id);
+	if (priv->device_removed_id)
+		g_signal_handler_disconnect (manager, priv->device_removed_id);
 	g_object_unref (manager);
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
@@ -640,7 +680,6 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 		return FALSE;
 	}
 
-	/* FIXME detect when our companion leaves */
 	priv->companion = other;
 
 	/* When we've found the companion, stop listening for other devices */
@@ -659,14 +698,17 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	             nm_device_get_iface (NM_DEVICE (self)),
 	             nm_device_get_iface (other));
 
-	g_signal_connect (G_OBJECT (other), "state-changed",
-	                  G_CALLBACK (companion_state_changed_cb), self);
-	g_signal_connect (G_OBJECT (other), "notify::scanning",
-	                  G_CALLBACK (companion_notify_cb), self);
-	g_signal_connect (G_OBJECT (other), "scanning-allowed",
-	                  G_CALLBACK (companion_scan_allowed_cb), self);
-	g_signal_connect (G_OBJECT (other), "autoconnect-allowed",
-	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
+	priv->cmp_state_changed_id = g_signal_connect (G_OBJECT (other), "state-changed",
+	                                               G_CALLBACK (companion_state_changed_cb), self);
+
+	priv->cmp_scanning_id = g_signal_connect (G_OBJECT (other), "notify::scanning",
+	                                          G_CALLBACK (companion_notify_cb), self);
+
+	priv->cmp_scanning_allowed_id = g_signal_connect (G_OBJECT (other), "scanning-allowed",
+	                                                  G_CALLBACK (companion_scan_allowed_cb), self);
+
+	priv->cmp_autoconnect_allowed_id = g_signal_connect (G_OBJECT (other), "autoconnect-allowed",
+	                                                     G_CALLBACK (companion_autoconnect_allowed_cb), self);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
 
@@ -679,6 +721,15 @@ device_added_cb (NMManager *manager, NMDevice *other, gpointer user_data)
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
 
 	is_companion (self, other);
+}
+
+static void
+device_removed_cb (NMManager *manager, NMDevice *other, gpointer user_data)
+{
+	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (user_data);
+
+	if (other == NM_DEVICE_OLPC_MESH_GET_PRIVATE (self)->companion)
+		companion_cleanup (self);
 }
 
 static gboolean
@@ -703,6 +754,10 @@ check_companion_cb (gpointer user_data)
 
 	priv->device_added_id = g_signal_connect (manager, "device-added",
 	                                          G_CALLBACK (device_added_cb), self);
+	if (!priv->device_removed_id) {
+		priv->device_removed_id = g_signal_connect (manager, "device-removed",
+	                                                G_CALLBACK (device_removed_cb), self);
+	}
 
 	/* Try to find the companion if it's already known to the NMManager */
 	for (list = nm_manager_get_devices (manager); list ; list = g_slist_next (list)) {
