@@ -101,7 +101,10 @@ typedef struct {
 /**
  * NMSecretAgentGetSecretsFunc:
  * @agent: the secret agent object
- * @connection: (transfer none): the connection for which secrets were requested
+ * @connection: (transfer none): the connection for which secrets were requested,
+ * note that this object will be unrefed after the callback has returned, use
+ * g_object_ref()/g_object_unref() if you want to use this object after the callback
+ * has returned
  * @secrets: (element-type utf8 GLib.HashTable): the #GHashTable containing
  * the requested secrets in the same format as an #NMConnection hash (as
  * created by nm_connection_to_hash() for example).  Each key in @secrets
@@ -150,7 +153,10 @@ typedef void (*NMSecretAgentGetSecretsFunc) (NMSecretAgent *agent,
 /**
  * NMSecretAgentSaveSecretsFunc:
  * @agent: the secret agent object
- * @connection: (transfer none): the connection for which secrets were to be saved
+ * @connection: (transfer none): the connection for which secrets were to be saved,
+ * note that this object will be unrefed after the callback has returned, use
+ * g_object_ref()/g_object_unref() if you want to use this object after the callback
+ * has returned
  * @error: if the saving secrets failed, give a descriptive error here
  * @user_data: caller-specific data to be passed to the function
  *
@@ -166,7 +172,10 @@ typedef void (*NMSecretAgentSaveSecretsFunc) (NMSecretAgent *agent,
 /**
  * NMSecretAgentDeleteSecretsFunc:
  * @agent: the secret agent object
- * @connection: (transfer none): the connection for which secrets were to be deleted
+ * @connection: (transfer none): the connection for which secrets were to be deleted,
+ * note that this object will be unrefed after the callback has returned, use
+ * g_object_ref()/g_object_unref() if you want to use this object after the callback
+ * has returned
  * @error: if the deleting secrets failed, give a descriptive error here
  * @user_data: caller-specific data to be passed to the function
  *
