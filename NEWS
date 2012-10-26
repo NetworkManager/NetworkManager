@@ -1,4 +1,29 @@
 ==============================================
+NetworkManager-0.9.6.4
+Overview of changes since NetworkManager-0.9.6.0
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Add libnm-glib API to get bond interface slaves
+* Fix detection of some ACPI-based laptop airplane-mode/rfkill switches
+* Fix a crash when a VLAN interface is removed
+* Fix a regression setting the Device 'driver' and 'firmware' properties
+* Fix a stale-properties issue with libnm-glib when device state changes
+* Ignore cached/cloned route notifications from the kernel
+* Work around buggy kernel driver carrier notifications
+* Fix a crash with dnsmasq local caching nameserver functionality when no nameservers
+   are present
+* Add "Speedport W 501V" to list of manufacturer default SSIDs
+* Various documentation fixes
+* Fix routing setup if gateway is not given with the first IP address
+* Enhance nmcli for additional VLAN and bonding functionality
+* Fix possible crash when removing OLPC Mesh devices
+
+(note: no NetworkManager 0.9.6.2 was released)
+
+
+==============================================
 NetworkManager-0.9.6
 Overview of changes since NetworkManager-0.9.4
 ==============================================
