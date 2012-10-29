@@ -49,6 +49,7 @@
 #include <nm-setting-infiniband.h>
 #include <nm-setting-bond.h>
 #include <nm-setting-bridge.h>
+#include <nm-setting-bridge-port.h>
 #include <nm-setting-vlan.h>
 
 #include <nm-utils.h>
@@ -60,6 +61,7 @@ static SettingNewFunc funcs[] = {
 	nm_setting_bluetooth_new,
 	nm_setting_bond_new,
 	nm_setting_bridge_new,
+	nm_setting_bridge_port_new,
 	nm_setting_cdma_new,
 	nm_setting_connection_new,
 	nm_setting_gsm_new,

@@ -19,6 +19,7 @@ global:
 	nm_connection_get_setting_bluetooth;
 	nm_connection_get_setting_bond;
 	nm_connection_get_setting_bridge;
+	nm_connection_get_setting_bridge_port;
 	nm_connection_get_setting_by_name;
 	nm_connection_get_setting_cdma;
 	nm_connection_get_setting_connection;
@@ -213,6 +214,13 @@ global:
 	nm_setting_bridge_get_stp;
 	nm_setting_bridge_get_type;
 	nm_setting_bridge_new;
+	nm_setting_bridge_port_error_get_type;
+	nm_setting_bridge_port_error_quark;
+	nm_setting_bridge_port_get_hairpin_mode;
+	nm_setting_bridge_port_get_path_cost;
+	nm_setting_bridge_port_get_priority;
+	nm_setting_bridge_port_get_type;
+	nm_setting_bridge_port_new;
 	nm_setting_cdma_error_get_type;
 	nm_setting_cdma_error_quark;
 	nm_setting_cdma_get_number;

@@ -50,6 +50,7 @@
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
+#include "nm-setting-bridge-port.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
@@ -1588,6 +1589,23 @@ nm_connection_get_setting_wireless_security (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+}
+
+/**
+ * nm_connection_get_setting_bridge_port:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingBridgePort the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingBridgePort if the connection contains one, otherwise NULL
+ **/
+NMSettingBridgePort *
+nm_connection_get_setting_bridge_port (NMConnection *connection)
+{
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingBridgePort *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BRIDGE_PORT);
 }
 
 /**

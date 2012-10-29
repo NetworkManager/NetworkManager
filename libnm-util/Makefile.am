@@ -19,6 +19,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-bluetooth.h		\
 	nm-setting-bond.h		\
 	nm-setting-bridge.h		\
+	nm-setting-bridge-port.h	\
 	nm-setting-connection.h		\
 	nm-setting-infiniband.h		\
 	nm-setting-ip4-config.h		\
@@ -54,6 +55,7 @@ libnm_util_la_csources = \
 	nm-setting-bluetooth.c		\
 	nm-setting-bond.c		\
 	nm-setting-bridge.c		\
+	nm-setting-bridge-port.c	\
 	nm-setting-connection.c		\
 	nm-setting-infiniband.c		\
 	nm-setting-ip4-config.c		\
