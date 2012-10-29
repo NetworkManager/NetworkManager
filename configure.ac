@@ -471,7 +471,7 @@ AC_ARG_ENABLE(ppp, AS_HELP_STRING([--enable-ppp], [enable PPP/PPPoE support]),
                      [enable_ppp=${enableval}], [enable_ppp=yes])
 if (test "${enable_ppp}" = "yes"); then
 	AC_CHECK_HEADERS(pppd/pppd.h,,
-		AC_MSG_ERROR(couldn't find pppd.h. pppd development headers are required.))
+		AC_MSG_ERROR("couldn't find pppd.h. pppd development headers are required."))
 
 	AC_DEFINE(WITH_PPP, 1, [Define if you have PPP support])
 else
@@ -489,83 +489,43 @@ fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
 
-# dhclient support
+# DHCP client support
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
-# If a full path is given, use that and do not test if it works or not.
-case "${with_dhclient}" in
-	# NM only works with ISC dhclient - other derivatives don't have
-	# the same userland.  dhclient 4.x is required for IPv6 support;
-	# with older versions NM won't be able to use DHCPv6.
-
-	/*)
-		DHCLIENT_PATH="${with_dhclient}"
-		DHCLIENT_VERSION=4
-		if test -x "${with_dhclient}"; then
-			case `"${with_dhclient}" --version 2>&1` in
-				"isc-dhclient-4"*) DHCLIENT_VERSION=4; break;;
-				"isc-dhclient-V3"*) DHCLIENT_VERSION=3; break;;
-			esac
-		fi
-		AC_MSG_NOTICE(using dhclient at ${DHCLIENT_PATH})
-		;;
-	no)	AC_MSG_NOTICE(dhclient support disabled)
-		;;
-	*)
-		AC_MSG_CHECKING(for dhclient)
-		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
-			test -x "${path}/dhclient" || continue
-			case `"$path/dhclient" --version 2>&1` in
-				"isc-dhclient-4"*) DHCLIENT_PATH="$path/dhclient"; DHCLIENT_VERSION=4; break;;
-				"isc-dhclient-V3"*) DHCLIENT_PATH="$path/dhclient"; DHCLIENT_VERSION=3; break;;
-			esac
-		done
-		if test -n "${DHCLIENT_PATH}"; then
-			AC_MSG_RESULT($DHCLIENT_PATH)
-		else
-			AC_MSG_RESULT(no)
-		fi
-		;;
-esac
-
-# dhcpcd support
 AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
-# If a full path is given, use that and do not test if it works or not.
-case "${with_dhcpcd}" in
-	/*)
-		DHCPCD_PATH="${with_dhcpcd}"
-		AC_MSG_NOTICE(using dhcpcd at ${DHCPCD_PATH})
-		;;
-	no)	AC_MSG_NOTICE(dhcpcd support disabled)
-		;;
-	*)
-		AC_MSG_CHECKING(for dhcpcd)
-		# We fully work with upstream dhcpcd-4
-		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
-			test -x "${path}/dhcpcd" || continue
-			case `"$path/dhcpcd" --version 2>/dev/null` in
-				"dhcpcd "[123]*);;
-				"dhcpcd "*) DHCPCD_PATH="$path/dhcpcd"; break;;
-			esac
-		done
-		if test -n "${DHCPCD_PATH}"; then
-			AC_MSG_RESULT($DHCPCD_PATH)
-		else
-			AC_MSG_RESULT(no)
+# Default to "yes"
+AS_IF([test -z "$with_dhclient"], with_dhclient=yes)
+AS_IF([test -z "$with_dhcpcd"], with_dhcpcd=yes)
+# Search and check the executables
+if test "$with_dhclient" = "yes"; then
+	AC_PATH_PROGS(with_dhclient, dhclient, no, /sbin:/usr/sbin:/usr/local/sbin)
+	if test "$with_dhclient" != "no"; then
+		if ! $with_dhclient --version 2>&1 | grep -q "^isc-dhclient-4\."; then
+			AC_MSG_WARN([Cannot use dhclient, version 4.x is required])
+			with_dhclient=no
 		fi
-		;;
-esac
-
-if test -z "$DHCPCD_PATH" -a -z "$DHCLIENT_PATH"; then
-	# DHCP clients are not a build time dependency, only runtime.
-	# dhclient has been the longtime default for NM and it's in /sbin
-	# in most distros, so use it.
-	AC_MSG_WARN([Could not find a suitable DHCP client])
-	DHCLIENT_PATH=/sbin/dhclient
-	AC_MSG_WARN([Falling back to ISC dhclient, ${DHCLIENT_PATH}])
+	fi
 fi
-AC_SUBST(DHCLIENT_PATH)
-AC_SUBST(DHCLIENT_VERSION)
-AC_SUBST(DHCPCD_PATH)
+if test "$with_dhcpcd" = "yes"; then
+	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
+	if test "$with_dhcpcd" != "no"; then
+		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[45]]\."; then
+			AC_MSG_WARN([Cannot use dhcpcd, version 4.x or 5.x is required])
+			with_dhcpcd=no
+		fi
+	fi
+fi
+# Fallback
+if test "$with_dhclient" = "no" -a "$with_dhcpcd" = "no"; then
+	AC_MSG_WARN([Could not find a suitable DHCP client, falling back to dhclient])
+	with_dhclient=/sbin/dhclient
+fi
+# Add substitutions
+if test "$with_dhclient" != "no"; then
+	AC_SUBST(DHCLIENT_PATH, $with_dhclient)
+fi
+if test "$with_dhcpcd" != "no"; then
+	AC_SUBST(DHCPCD_PATH, $with_dhcpcd)
+fi
 
 # resolvconf and netconfig support
 AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
@@ -793,18 +753,10 @@ echo "  resolvconf: ${with_resolvconf}"
 echo "  netconfig: ${with_netconfig}"
 echo
 
-if test -n "${DHCLIENT_PATH}"; then
-	echo ISC dhclient support: ${DHCLIENT_PATH}
-	echo ISC dhclient version: ${DHCLIENT_VERSION}
-else
-	echo ISC dhclient support: no
-fi
-
-if test -n "${DHCPCD_PATH}"; then
-	echo dhcpcd support: ${DHCPCD_PATH}
-else
-	echo dhcpcd support: no
-fi
+echo "DHCP clients:"
+echo "  dhclient: $with_dhclient"
+echo "  dhcpcd: $with_dhcpcd"
+echo
 
 if test "${enable_polkit}" = "yes"; then
 	if test "${enable_modify_system}"; then
