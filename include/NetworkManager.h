@@ -52,6 +52,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_INFINIBAND NM_DBUS_INTERFACE_DEVICE ".Infiniband"
 #define NM_DBUS_INTERFACE_DEVICE_BOND       NM_DBUS_INTERFACE_DEVICE ".Bond"
 #define NM_DBUS_INTERFACE_DEVICE_VLAN       NM_DBUS_INTERFACE_DEVICE ".Vlan"
+#define NM_DBUS_INTERFACE_DEVICE_BRIDGE     NM_DBUS_INTERFACE_DEVICE ".Bridge"
 
 
 #define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
@@ -128,6 +129,7 @@ typedef enum {
 	NM_DEVICE_TYPE_BOND       = 10,
 	NM_DEVICE_TYPE_VLAN       = 11,
 	NM_DEVICE_TYPE_ADSL       = 12,
+	NM_DEVICE_TYPE_BRIDGE     = 13,
 } NMDeviceType;
 
 /**

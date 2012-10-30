@@ -24,6 +24,7 @@ src/modem-manager/nm-modem-gsm.c
 src/modem-manager/nm-modem-broadband.c
 src/nm-device-bond.c
 src/nm-device-adsl.c
+src/nm-device-bridge.c
 src/nm-device-bt.c
 src/nm-device-ethernet.c
 src/nm-device-infiniband.c

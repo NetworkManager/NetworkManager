@@ -13,6 +13,7 @@ EXTRA_DIST = \
 	nm-device-wimax.xml \
 	nm-device-infiniband.xml \
 	nm-device-bond.xml \
+	nm-device-bridge.xml \
 	nm-device-vlan.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \

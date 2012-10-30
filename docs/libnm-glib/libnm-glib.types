@@ -10,6 +10,7 @@
 #include <nm-device-adsl.h>
 #include <nm-device-infiniband.h>
 #include <nm-device-bond.h>
+#include <nm-device-bridge.h>
 #include <nm-device-vlan.h>
 #include <nm-access-point.h>
 #include <nm-ip4-config.h>
@@ -34,6 +35,7 @@ nm_device_olpc_mesh_get_type
 nm_device_adsl_get_type
 nm_device_infiniband_get_type
 nm_device_bond_get_type
+nm_device_bridge_get_type
 nm_device_vlan_get_type
 nm_wimax_nsp_get_type
 nm_access_point_get_type

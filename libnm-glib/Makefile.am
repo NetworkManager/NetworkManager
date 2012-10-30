@@ -63,6 +63,7 @@ libnminclude_HEADERS = \
 	nm-device-bt.h \
 	nm-device-olpc-mesh.h \
 	nm-device-bond.h \
+	nm-device-bridge.h \
 	nm-device-vlan.h \
 	nm-access-point.h \
 	nm-ip4-config.h \
@@ -97,6 +98,7 @@ libnm_glib_la_csources = \
 	nm-device-bt.c \
 	nm-device-olpc-mesh.c \
 	nm-device-bond.c \
+	nm-device-bridge.c \
 	nm-device-vlan.c \
 	nm-access-point.c \
 	nm-ip4-config.c \

@@ -401,6 +401,9 @@ dev_get_attrs (GUdevDevice *udev_device,
 		case NM_IFACE_TYPE_BOND:
 			driver = "bonding";
 			break;
+		case NM_IFACE_TYPE_BRIDGE:
+			driver = "bridge";
+			break;
 		case NM_IFACE_TYPE_VLAN:
 			driver = "8021q";
 			break;

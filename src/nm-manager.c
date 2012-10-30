@@ -47,6 +47,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
+#include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-adsl.h"
 #include "nm-system.h"
@@ -1020,6 +1021,9 @@ get_virtual_iface_name (NMManager *self,
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
 		return g_strdup (nm_connection_get_virtual_iface_name (connection));
 
+	if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
+		return g_strdup (nm_connection_get_virtual_iface_name (connection));
+
 	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan;
 		const char *ifname;
@@ -1060,9 +1064,9 @@ get_virtual_iface_name (NMManager *self,
 static gboolean
 connection_needs_virtual_device (NMConnection *connection)
 {
-	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
-		return TRUE;
-	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
+	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
 		return TRUE;
 
 	return FALSE;
@@ -1123,6 +1127,16 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		udi = get_virtual_iface_placeholder_udi ();
 		device = nm_device_bond_new (udi, iface);
+		g_free (udi);
+	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		if (!nm_system_create_bridge (iface)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bridging interface for '%s'",
+			             iface, nm_connection_get_id (connection));
+			goto out;
+		}
+
+		udi = get_virtual_iface_placeholder_udi ();
+		device = nm_device_bridge_new (udi, iface);
 		g_free (udi);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		g_return_val_if_fail (parent != NULL, FALSE);
@@ -2027,6 +2041,12 @@ is_bond (int ifindex)
 }
 
 static gboolean
+is_bridge (int ifindex)
+{
+	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_BRIDGE);
+}
+
+static gboolean
 is_vlan (int ifindex)
 {
 	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_VLAN);
@@ -2105,6 +2125,8 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 			device = nm_device_infiniband_new (sysfs_path, iface, driver);
 		else if (is_bond (ifindex))
 			device = nm_device_bond_new (sysfs_path, iface);
+		else if (is_bridge (ifindex))
+			device = nm_device_bridge_new (sysfs_path, iface);
 		else if (is_vlan (ifindex)) {
 			int parent_ifindex = -1;
 			NMDevice *parent;
