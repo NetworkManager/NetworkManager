@@ -7,8 +7,8 @@ EXTRA_DIST = \
 if ENABLE_VAPIGEN
 include Makefile.vapigen
 
-libnm-util.vapi: $(top_srcdir)/libnm-util/NetworkManager-1.0.gir  libnm-util.deps NetworkManager-1.0.metadata
-libnm-glib.vapi: $(top_srcdir)/libnm-glib/NMClient-1.0.gir  libnm-glib.deps NMClient-1.0.metadata libnm-util.vapi
+libnm-util.vapi: $(top_builddir)/libnm-util/NetworkManager-1.0.gir  libnm-util.deps NetworkManager-1.0.metadata
+libnm-glib.vapi: $(top_builddir)/libnm-glib/NMClient-1.0.gir  libnm-glib.deps NMClient-1.0.metadata libnm-util.vapi
 
 
 libnm_util_vapi_METADATADIRS = $(srcdir)

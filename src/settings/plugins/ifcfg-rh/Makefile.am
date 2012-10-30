@@ -29,7 +29,8 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
-	-I$(top_srcdir)/libnm-util
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util
 
 libifcfg_rh_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
