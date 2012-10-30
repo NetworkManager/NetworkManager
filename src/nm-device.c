@@ -3812,7 +3812,6 @@ dispose (GObject *object)
 
 		connection = nm_device_get_connection (self);
 		if (connection) {
-
 			/* Only static or DHCP IPv4 connections can be left up.
 			 * All IPv6 connections can be left up, so we don't have
 			 * to check that.
@@ -3822,7 +3821,8 @@ dispose (GObject *object)
 				method = nm_setting_ip4_config_get_method (s_ip4);
 			if (   !method
 			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
-			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)
+			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
 				take_down = FALSE;
 		}
 	}
