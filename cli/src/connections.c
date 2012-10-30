@@ -43,6 +43,7 @@
 #include <nm-device-olpc-mesh.h>
 #include <nm-device-infiniband.h>
 #include <nm-device-bond.h>
+#include <nm-device-bridge.h>
 #include <nm-device-vlan.h>
 #include <nm-remote-settings.h>
 #include <nm-vpn-connection.h>
@@ -94,6 +95,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_BOND_SETTING_NAME, 0),                  /* 17 */
 	SETTING_FIELD (NM_SETTING_VLAN_SETTING_NAME, 0),                  /* 18 */
 	SETTING_FIELD (NM_SETTING_ADSL_SETTING_NAME, 0),                  /* 19 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_SETTING_NAME, 0),                /* 20 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME, 0),           /* 21 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -114,7 +117,9 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_VPN_SETTING_NAME","\
                                          NM_SETTING_INFINIBAND_SETTING_NAME","\
                                          NM_SETTING_BOND_SETTING_NAME","\
-                                         NM_SETTING_VLAN_SETTING_NAME
+                                         NM_SETTING_VLAN_SETTING_NAME","\
+                                         NM_SETTING_BRIDGE_SETTING_NAME","\
+                                         NM_SETTING_BRIDGE_PORT_SETTING_NAME
 #if WITH_WIMAX
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
                                          NM_SETTING_WIMAX_SETTING_NAME
@@ -448,6 +453,24 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 			NMSettingAdsl *s_adsl = nm_connection_get_setting_adsl (connection);
 			if (s_adsl) {
 				setting_adsl_details (s_adsl, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[20].name)) {
+			NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
+			if (s_bridge) {
+				setting_bridge_details (s_bridge, nmc);
+				was_output = TRUE;
+				continue;
+			}
+		}
+
+		if (!strcasecmp (nmc_fields_settings_names[section_idx].name, nmc_fields_settings_names[21].name)) {
+			NMSettingBridgePort *s_bridge_port = nm_connection_get_setting_bridge_port (connection);
+			if (s_bridge_port) {
+				setting_bridge_port_details (s_bridge_port, nmc);
 				was_output = TRUE;
 				continue;
 			}
@@ -1739,7 +1762,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
 	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
+	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
 		is_virtual = TRUE;
 
 	device_found = find_device_for_connection (nmc, connection, iface, ap, nsp, &device, &spec_object, &error);

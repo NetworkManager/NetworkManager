@@ -39,6 +39,8 @@
 #include <nm-setting-wimax.h>
 #include <nm-setting-infiniband.h>
 #include <nm-setting-bond.h>
+#include <nm-setting-bridge.h>
+#include <nm-setting-bridge-port.h>
 #include <nm-setting-vlan.h>
 
 #include "nmcli.h"
@@ -65,5 +67,7 @@ gboolean setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *n
 gboolean setting_bond_details (NMSettingBond *s_bond, NmCli *nmc);
 gboolean setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc);
 gboolean setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc);
+gboolean setting_bridge_details (NMSettingBridge *s_bridge, NmCli *nmc);
+gboolean setting_bridge_port_details (NMSettingBridgePort *s_bridge_port, NmCli *nmc);
 
 #endif /* NMC_SETTINGS_H */

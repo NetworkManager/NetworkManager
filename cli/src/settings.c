@@ -518,6 +518,42 @@ static NmcOutputField nmc_fields_setting_vlan[] = {
                                         NM_SETTING_VLAN_EGRESS_PRIORITY_MAP
 #define NMC_FIELDS_SETTING_VLAN_COMMON  NMC_FIELDS_SETTING_VLAN_ALL
 
+/* Available fields for NM_SETTING_BRIDGE_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_bridge[] = {
+	SETTING_FIELD ("name",  8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_INTERFACE_NAME, 15),              /* 1 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_STP, 5),                          /* 2 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PRIORITY, 6),                     /* 3 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_FORWARD_DELAY, 6),                /* 4 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 5 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 6 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 7 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_SETTING_BRIDGE_ALL    "name"","\
+                                         NM_SETTING_BRIDGE_INTERFACE_NAME","\
+                                         NM_SETTING_BRIDGE_STP","\
+                                         NM_SETTING_BRIDGE_PRIORITY","\
+                                         NM_SETTING_BRIDGE_FORWARD_DELAY","\
+                                         NM_SETTING_BRIDGE_HELLO_TIME","\
+                                         NM_SETTING_BRIDGE_MAX_AGE","\
+                                         NM_SETTING_BRIDGE_AGEING_TIME
+#define NMC_FIELDS_SETTING_BRIDGE_COMMON NMC_FIELDS_SETTING_BRIDGE_ALL
+
+/* Available fields for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_bridge_port[] = {
+	SETTING_FIELD ("name",  8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PRIORITY, 10),               /* 1 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PATH_COST, 12),              /* 2 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, 15),           /* 3 */
+	{NULL, NULL, 0, NULL, 0}
+};
+#define NMC_FIELDS_SETTING_BRIDGE_PORT_ALL    "name"","\
+                                              NM_SETTING_BRIDGE_PORT_PRIORITY","\
+                                              NM_SETTING_BRIDGE_PORT_PATH_COST","\
+                                              NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE
+#define NMC_FIELDS_SETTING_BRIDGE_PORT_COMMON NMC_FIELDS_SETTING_BRIDGE_PORT_ALL
+
 
 static char *
 wep_key_type_to_string (NMWepKeyType type)
@@ -1808,6 +1844,70 @@ setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 
 	g_free ((char*) nmc->allowed_fields[3].value);
 	g_free ((char*) nmc->allowed_fields[4].value);
+
+	return TRUE;
+}
+
+gboolean
+setting_bridge_details (NMSettingBridge *s_bridge, NmCli *nmc)
+{
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (s_bridge), FALSE);
+
+	nmc->allowed_fields = nmc_fields_setting_bridge;
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_ALL, nmc->allowed_fields, NULL);
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
+
+	nmc->allowed_fields[0].value = NM_SETTING_BRIDGE_SETTING_NAME;
+	nmc->allowed_fields[1].value = nm_setting_bridge_get_interface_name (s_bridge);
+	nmc->allowed_fields[2].value = nm_setting_bridge_get_stp (s_bridge) ? _("yes") : _("no");
+	nmc->allowed_fields[3].value = g_strdup_printf ("%u", nm_setting_bridge_get_priority (s_bridge));
+	nmc->allowed_fields[4].value = g_strdup_printf ("%u", nm_setting_bridge_get_forward_delay (s_bridge));
+	nmc->allowed_fields[5].value = g_strdup_printf ("%u", nm_setting_bridge_get_hello_time (s_bridge));
+	nmc->allowed_fields[6].value = g_strdup_printf ("%u", nm_setting_bridge_get_max_age (s_bridge));
+	nmc->allowed_fields[7].value = g_strdup_printf ("%u", nm_setting_bridge_get_ageing_time (s_bridge));
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	/* free values */
+	g_free ((char*) nmc->allowed_fields[3].value);
+	g_free ((char*) nmc->allowed_fields[4].value);
+	g_free ((char*) nmc->allowed_fields[5].value);
+	g_free ((char*) nmc->allowed_fields[6].value);
+	g_free ((char*) nmc->allowed_fields[7].value);
+
+	return TRUE;
+}
+
+gboolean
+setting_bridge_port_details (NMSettingBridgePort *s_bridge_port, NmCli *nmc)
+{
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE_PORT (s_bridge_port), FALSE);
+
+	nmc->allowed_fields = nmc_fields_setting_bridge_port;
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_PORT_ALL, nmc->allowed_fields, NULL);
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
+	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
+
+	nmc->allowed_fields[0].value = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
+	nmc->allowed_fields[1].value = g_strdup_printf ("%u", nm_setting_bridge_port_get_priority (s_bridge_port));
+	nmc->allowed_fields[2].value = g_strdup_printf ("%u", nm_setting_bridge_port_get_path_cost (s_bridge_port));
+	nmc->allowed_fields[3].value = nm_setting_bridge_port_get_hairpin_mode (s_bridge_port) ? _("yes") : _("no");
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	g_free ((char*) nmc->allowed_fields[1].value);
+	g_free ((char*) nmc->allowed_fields[2].value);
 
 	return TRUE;
 }
