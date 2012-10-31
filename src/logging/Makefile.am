@@ -6,8 +6,7 @@ libnm_logging_la_SOURCES = \
 
 libnm_logging_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DG_DISABLE_DEPRECATED
+	-DLIBEXECDIR=\"$(libexecdir)\"
 
 libnm_logging_la_LIBADD = \
 	-ldl \

@@ -18,7 +18,6 @@ libifupdown_io_la_SOURCES = \
 libifupdown_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libifupdown_io_la_LIBADD = \
@@ -39,7 +38,6 @@ libnm_settings_plugin_ifupdown_la_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifupdown_la_LDFLAGS = -module -avoid-version

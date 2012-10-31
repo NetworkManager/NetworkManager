@@ -26,8 +26,7 @@ libvpn_manager_la_SOURCES = \
 libvpn_manager_la_CPPFLAGS =	\
 	$(LIBNL_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
-	$(GLIB_CFLAGS)		\
-	-DG_DISABLE_DEPRECATED
+	$(GLIB_CFLAGS)
 
 libvpn_manager_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \

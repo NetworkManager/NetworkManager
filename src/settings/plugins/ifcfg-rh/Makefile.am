@@ -36,7 +36,6 @@ libifcfg_rh_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(NSS_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 
@@ -57,7 +56,6 @@ libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version

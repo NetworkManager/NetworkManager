@@ -28,8 +28,7 @@ nmcli_SOURCES = \
 nmcli_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\" \
-	-DG_DISABLE_DEPRECATED
+	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
 
 nmcli_LDADD = \
 	$(DBUS_LIBS) \

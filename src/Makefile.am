@@ -295,7 +295,6 @@ NetworkManager_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
@@ -348,7 +347,6 @@ libexec_PROGRAMS = nm-crash-logger
 nm_crash_logger_SOURCES = nm-crash-logger.c
 nm_crash_logger_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DDATADIR=\"$(datadir)\" \

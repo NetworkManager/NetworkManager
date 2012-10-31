@@ -55,7 +55,6 @@ libsettings_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
-	-DG_DISABLE_DEPRECATED	\
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \

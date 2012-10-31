@@ -6,8 +6,7 @@ libnm_posix_signals_la_SOURCES = \
 
 libnm_posix_signals_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DG_DISABLE_DEPRECATED
+	-DLIBEXECDIR=\"$(libexecdir)\"
 
 libnm_posix_signals_la_LIBADD = \
 	-ldl \

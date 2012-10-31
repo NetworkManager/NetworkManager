@@ -38,14 +38,6 @@ dnl Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT([disable-static])
 
-dnl maintainer mode stuff
-if test $USE_MAINTAINER_MODE = yes; then
-	DISABLE_DEPRECATED="-DG_DISABLE_DEPRECATED"
-else
-	DISABLE_DEPRECATED=""
-fi
-AC_SUBST(DISABLE_DEPRECATED)
-
 dnl Version stuff
 NM_MAJOR_VERSION=nm_major_version
 NM_MINOR_VERSION=nm_minor_version

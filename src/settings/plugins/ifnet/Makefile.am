@@ -21,7 +21,6 @@ libnm_settings_plugin_ifnet_la_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifnet_la_LDFLAGS = -module -avoid-version
@@ -48,7 +47,6 @@ lib_ifnet_io_la_SOURCES = \
 lib_ifnet_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 

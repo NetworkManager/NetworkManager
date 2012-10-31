@@ -27,8 +27,7 @@ libnm_settings_plugin_example_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DG_DISABLE_DEPRECATED
+	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_example_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

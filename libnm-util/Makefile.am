@@ -9,8 +9,7 @@ lib_LTLIBRARIES=libnm-util.la
 libnm_util_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(UUID_CFLAGS) \
-	-DG_DISABLE_DEPRECATED
+	$(UUID_CFLAGS)
 
 libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
