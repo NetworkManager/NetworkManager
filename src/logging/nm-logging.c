@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2010 Red Hat, Inc.
+ * Copyright (C) 2006 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -40,13 +40,16 @@
 
 #include "nm-logging.h"
 
+#define LOGD_ALL \
+	(LOGD_HW | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
+	 LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_WIFI_SCAN | LOGD_IP4 | \
+	 LOGD_IP6 | LOGD_AUTOIP4 | LOGD_DNS | LOGD_VPN | LOGD_SHARING | \
+	 LOGD_SUPPLICANT | LOGD_AGENTS | LOGD_SETTINGS | LOGD_SUSPEND | \
+	 LOGD_CORE | LOGD_DEVICE | LOGD_OLPC_MESH | LOGD_WIMAX | \
+	 LOGD_INFINIBAND | LOGD_FIREWALL | LOGD_ADSL)
+
 static guint32 log_level = LOGL_INFO | LOGL_WARN | LOGL_ERR;
-static guint32 log_domains = \
-	LOGD_HW | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
-	LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_IP4 | LOGD_IP6 | LOGD_AUTOIP4 | \
-	LOGD_DNS | LOGD_VPN | LOGD_SHARING | LOGD_SUPPLICANT | LOGD_AGENTS | \
-	LOGD_SETTINGS | LOGD_SUSPEND | LOGD_CORE | LOGD_DEVICE | LOGD_OLPC_MESH | \
-	LOGD_WIMAX | LOGD_INFINIBAND | LOGD_FIREWALL | LOGD_ADSL;
+static guint32 log_domains = LOGD_ALL & ~LOGD_WIFI_SCAN;
 
 typedef struct {
 	guint32 num;
@@ -92,6 +95,11 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_ADSL,      "ADSL" },
 	{ 0, NULL }
 };
+
+/* Combined domains */
+#define LOGD_ALL_STRING   "ALL"
+#define LOGD_DHCP_STRING  "DHCP"
+#define LOGD_IP_STRING    "IP"
 
 /************************************************************************/
 
@@ -149,6 +157,20 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 					found = TRUE;
 					break;
 				}
+			}
+
+			/* Check for combined domains */
+			if (!strcasecmp (*iter, LOGD_ALL_STRING)) {
+				new_domains = LOGD_ALL;
+				found = TRUE;
+			} else
+			if (!strcasecmp (*iter, LOGD_DHCP_STRING)) {
+				new_domains |= LOGD_DHCP;
+				found = TRUE;
+			} else
+			if (!strcasecmp (*iter, LOGD_IP_STRING)) {
+				new_domains |= LOGD_IP;
+				found = TRUE;
 			}
 
 			if (!found) {

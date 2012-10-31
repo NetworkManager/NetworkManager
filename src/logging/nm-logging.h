@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2006 - 2010 Red Hat, Inc.
+ * Copyright (C) 2006 - 2012 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -58,6 +58,7 @@ enum {
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
+#define LOGD_IP   (LOGD_IP4 | LOGD_IP6)
 
 /* Log levels */
 enum {
