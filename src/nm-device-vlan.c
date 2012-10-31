@@ -118,7 +118,7 @@ get_carrier_sync (NMDeviceVlan *self)
 	                                        nm_device_get_ip_ifindex (NM_DEVICE (self)),
 	                                        &ifflags,
 	                                        &error)) {
-		nm_log_warn (LOGD_HW | LOGD_DEVICE,
+		nm_log_warn (LOGD_HW | LOGD_VLAN,
 		             "(%s): couldn't get carrier state: (%d) %s",
 		             nm_device_get_ip_iface (NM_DEVICE (self)),
 		             error ? error->code : -1,
@@ -178,7 +178,7 @@ update_hw_address (NMDevice *dev)
 
 	rtnl = nm_netlink_index_to_rtnl_link (nm_device_get_ip_ifindex (dev));
 	if (!rtnl) {
-		nm_log_err (LOGD_HW | LOGD_DEVICE,
+		nm_log_err (LOGD_HW | LOGD_VLAN,
 		            "(%s) failed to read hardware address (error %d)",
 		            nm_device_get_iface (dev), errno);
 		return;
@@ -186,14 +186,14 @@ update_hw_address (NMDevice *dev)
 
 	addr = rtnl_link_get_addr (rtnl);
 	if (!addr) {
-		nm_log_err (LOGD_HW | LOGD_DEVICE,
+		nm_log_err (LOGD_HW | LOGD_VLAN,
 		            "(%s) no hardware address?",
 		            nm_device_get_iface (dev));
 		goto out;
 	}
 
 	if (nl_addr_get_len (addr) > sizeof (priv->hw_addr)) {
-		nm_log_err (LOGD_HW | LOGD_DEVICE,
+		nm_log_err (LOGD_HW | LOGD_VLAN,
 		            "(%s) hardware address is wrong length (got %d max %zd)",
 		            nm_device_get_iface (dev),
 		            nl_addr_get_len (addr),
@@ -521,7 +521,7 @@ set_carrier (NMDeviceVlan *self,
 	g_object_notify (G_OBJECT (self), NM_DEVICE_VLAN_CARRIER);
 
 	state = nm_device_get_state (NM_DEVICE (self));
-	nm_log_info (LOGD_HW | LOGD_DEVICE,
+	nm_log_info (LOGD_HW | LOGD_VLAN,
 	             "(%s): carrier now %s (device state %d%s)",
 	             nm_device_get_iface (NM_DEVICE (self)),
 	             carrier ? "ON" : "OFF",
@@ -577,7 +577,7 @@ carrier_watch_init (NMDeviceVlan *self)
 
 	priv->carrier = get_carrier_sync (NM_DEVICE_VLAN (self));
 
-	nm_log_info (LOGD_HW | LOGD_DEVICE, "(%s): carrier is %s",
+	nm_log_info (LOGD_HW | LOGD_VLAN, "(%s): carrier is %s",
 	             nm_device_get_iface (NM_DEVICE (self)),
 	             priv->carrier ? "ON" : "OFF");
 
@@ -637,13 +637,13 @@ nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
 
 		itype = nm_system_get_iface_type (ifindex, iface);
 		if (itype != NM_IFACE_TYPE_VLAN) {
-			nm_log_err (LOGD_DEVICE, "(%s): failed to get VLAN interface type.", iface);
+			nm_log_err (LOGD_VLAN, "(%s): failed to get VLAN interface type.", iface);
 			g_object_unref (device);
 			return NULL;
 		}
 
 		if (!nm_system_get_iface_vlan_info (ifindex, &parent_ifindex, &vlan_id)) {
-			nm_log_warn (LOGD_DEVICE, "(%s): failed to get VLAN interface info.", iface);
+			nm_log_warn (LOGD_VLAN, "(%s): failed to get VLAN interface info.", iface);
 			g_object_unref (device);
 			return NULL;
 		}
@@ -651,7 +651,7 @@ nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
 		if (   parent_ifindex < 0
 		    || parent_ifindex != nm_device_get_ip_ifindex (parent)
 		    || vlan_id < 0) {
-			nm_log_warn (LOGD_DEVICE, "(%s): VLAN parent ifindex (%d) or VLAN ID (%d) invalid.",
+			nm_log_warn (LOGD_VLAN, "(%s): VLAN parent ifindex (%d) or VLAN ID (%d) invalid.",
 			             iface, parent_ifindex, priv->vlan_id);
 			g_object_unref (device);
 			return NULL;
