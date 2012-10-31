@@ -330,7 +330,7 @@ slave_state_changed (NMDevice *slave,
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (user_data);
 
-	nm_log_dbg (LOGD_DEVICE, "(%s): slave %s state change %d -> %d",
+	nm_log_dbg (LOGD_BOND, "(%s): slave %s state change %d -> %d",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_iface (slave),
 	            old_state,
@@ -400,9 +400,9 @@ enslave_slave (NMDevice *device, NMDevice *slave)
 		                                    self);
 		priv->slaves = g_slist_append (priv->slaves, sinfo);
 
-		nm_log_dbg (LOGD_DEVICE, "(%s): enslaved bond slave %s",
-			        nm_device_get_ip_iface (device),
-			        nm_device_get_ip_iface (slave));
+		nm_log_dbg (LOGD_BOND, "(%s): enslaved bond slave %s",
+		            nm_device_get_ip_iface (device),
+		            nm_device_get_ip_iface (slave));
 		g_object_notify (G_OBJECT (device), "slaves");
 	}
 
@@ -427,7 +427,7 @@ release_slave (NMDevice *device, NMDevice *slave)
 	                                   nm_device_get_ip_iface (device),
 	                                   nm_device_get_ip_ifindex (slave),
 	                                   nm_device_get_ip_iface (slave));
-	nm_log_dbg (LOGD_DEVICE, "(%s): released bond slave %s (success %d)",
+	nm_log_dbg (LOGD_BOND, "(%s): released bond slave %s (success %d)",
 	            nm_device_get_ip_iface (device),
 	            nm_device_get_ip_iface (slave),
 	            success);
@@ -459,7 +459,7 @@ constructed (GObject *object)
 {
 	G_OBJECT_CLASS (nm_device_bond_parent_class)->constructed (object);
 
-	nm_log_dbg (LOGD_HW | LOGD_DEVICE, "(%s): kernel ifindex %d",
+	nm_log_dbg (LOGD_HW | LOGD_BOND, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (object)),
 	            nm_device_get_ifindex (NM_DEVICE (object)));
 }
