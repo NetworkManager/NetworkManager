@@ -1,8 +1,8 @@
 .\" NetworkManager.conf(5) manual page
 .\"
-.\" Copyright (C) 2010 - 2011 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2012 Red Hat, Inc.
 .\"
-.TH "NetworkManager.conf" "5" "2 August 2011" ""
+.TH "NetworkManager.conf" "5" "31 October 2012" ""
 .SH NAME
 NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
@@ -159,8 +159,8 @@ warning messages.
 .B domains=\fI<domain1>,<domain2>, ...\fP
 The following log domains are available: [NONE, HW, RFKILL, ETHER, WIFI, BT, MB,
 DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
-AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX].  When "NONE" is given by
-itself, logging is disabled.
+AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL].
+When "NONE" is given by itself, logging is disabled.
 .PP
 .RS
 HW = Hardware related operations
@@ -210,6 +210,12 @@ DEVICE = Activation and general interface operations
 OLPC = OLPC Mesh device operations
 .br
 WIMAX = Wimax device operations
+.br
+INFINIBAND = InfiniBand device operations
+.br
+FIREWALL = FirewallD related operations
+.br
+ADSL = ADSL device operations
 .br
 .SS [connectivity]
 This section controls NetworkManager's optional connectivity checking
