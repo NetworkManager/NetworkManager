@@ -65,11 +65,11 @@ monitor_nm_running_dbus_glib_LDADD = \
 
 monitor_nm_running_GDBus_SOURCES = monitor-nm-running-GDBus.c
 monitor_nm_running_GDBus_LDADD = \
-	$(GIO_LIBS)
+	$(GLIB_LIBS)
 
 monitor_nm_state_GDBus_SOURCES = monitor-nm-state-GDBus.c
 monitor_nm_state_GDBus_LDADD = \
-	$(GIO_LIBS)
+	$(GLIB_LIBS)
 
 EXTRA_DIST = \
 	add-connection-dbus-glib.c \

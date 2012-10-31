@@ -53,7 +53,6 @@ libsettings_la_SOURCES = \
 libsettings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -71,7 +70,6 @@ libsettings_la_LIBADD = \
 	$(builddir)/plugins/keyfile/libnm-settings-plugin-keyfile.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
-	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS)
 
 libsettings_la_LDFLAGS = -rdynamic

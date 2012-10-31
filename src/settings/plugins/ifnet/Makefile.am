@@ -18,7 +18,6 @@ libnm_settings_plugin_ifnet_la_SOURCES = \
 
 libnm_settings_plugin_ifnet_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
@@ -30,9 +29,7 @@ libnm_settings_plugin_ifnet_la_LIBADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	lib-ifnet-io.la\
 	$(GLIB_LIBS) \
-	$(GMODULE_LIBS) \
-	$(GUDEV_LIBS) \
-	$(GIO_LIBS)
+	$(GUDEV_LIBS)
 
 lib_ifnet_io_la_SOURCES = \
 	net_parser.c\
@@ -53,5 +50,4 @@ lib_ifnet_io_la_CPPFLAGS = \
 lib_ifnet_io_la_LIBADD = \
 	 $(top_builddir)/src/wifi/libwifi-utils.la \
 	 $(top_builddir)/libnm-util/libnm-util.la \
-	 $(GLIB_LIBS)\
-	 $(GIO_LIBS)
+	 $(GLIB_LIBS)

@@ -54,7 +54,6 @@ libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 
 libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
@@ -63,9 +62,7 @@ libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	libifcfg-rh-io.la \
-	$(GLIB_LIBS) \
-	$(GMODULE_LIBS) \
-	$(GIO_LIBS)
+	$(GLIB_LIBS)
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = nm-ifcfg-rh.conf

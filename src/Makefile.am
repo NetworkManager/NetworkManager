@@ -289,10 +289,8 @@ BUILT_SOURCES = \
 NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(GIO_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
-	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
@@ -331,7 +329,6 @@ NetworkManager_LDADD = \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
-	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LIBS) \
 	$(LIBM) \

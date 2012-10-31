@@ -66,7 +66,6 @@ libnm_generated_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
-	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
 	$(IWMX_SDK_CFLAGS)

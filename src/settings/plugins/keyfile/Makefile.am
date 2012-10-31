@@ -40,7 +40,6 @@ libnm_settings_plugin_keyfile_la_SOURCES = \
 
 libnm_settings_plugin_keyfile_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
@@ -48,9 +47,7 @@ libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	libkeyfile-io.la \
 	$(GLIB_LIBS) \
-	$(GMODULE_LIBS) \
-	$(DBUS_LIBS) \
-	$(GIO_LIBS)
+	$(DBUS_LIBS)
 
 libnm_settings_plugin_keyfile_la_LDFLAGS = -rdynamic
 
