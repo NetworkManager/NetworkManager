@@ -561,10 +561,10 @@ if test "$with_netconfig" = "yes"; then
 	AC_PATH_PROGS(with_netconfig, netconfig, no, /sbin:/usr/sbin:/usr/local/sbin)
 fi
 # Define resolvconf and netconfig paths
-if test "${with_resolvconf}" != "no"; then
+if test "$with_resolvconf" != "no"; then
 	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf (if enabled)])
 fi
-if test -n "${with_netconfig}" != "no"; then
+if test "$with_netconfig" != "no"; then
 	AC_DEFINE_UNQUOTED(NETCONFIG_PATH, "$with_netconfig", [Path to netconfig (if enabled)])
 fi
 
