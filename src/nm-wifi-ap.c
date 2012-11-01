@@ -1172,8 +1172,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 		if (!strcmp (mode, "adhoc") && (priv->mode != NM_802_11_MODE_ADHOC))
 			return FALSE;
 		if (   !strcmp (mode, "ap")
-		    && (priv->mode != NM_802_11_MODE_INFRA)
-		    && (priv->hotspot != TRUE))
+		    && (priv->mode != NM_802_11_MODE_INFRA || priv->hotspot != TRUE))
 			return FALSE;
 	}
 
