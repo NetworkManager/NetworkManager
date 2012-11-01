@@ -3838,7 +3838,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Mode",
 		                   "Mode",
 		                   NM_802_11_MODE_UNKNOWN,
-		                   NM_802_11_MODE_INFRA,
+		                   NM_802_11_MODE_AP,
 		                   NM_802_11_MODE_INFRA,
 		                   G_PARAM_READABLE));
 
