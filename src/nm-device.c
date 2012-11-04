@@ -766,6 +766,7 @@ nm_device_get_connection_provider (NMDevice *device)
  * nm_device_enslave_slave:
  * @dev: the master device
  * @slave: the slave device to enslave
+ * @connection: the slave device's connection
  *
  * If @dev is capable of enslaving other devices (ie it's a bridge, bond, etc)
  * then this function enslaves @slave.
@@ -774,14 +775,14 @@ nm_device_get_connection_provider (NMDevice *device)
  *  other devices.
  */
 gboolean
-nm_device_enslave_slave (NMDevice *dev, NMDevice *slave)
+nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connection)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (slave != NULL, FALSE);
 	g_return_val_if_fail (nm_device_get_state (slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
 	if (NM_DEVICE_GET_CLASS (dev)->enslave_slave)
-		return NM_DEVICE_GET_CLASS (dev)->enslave_slave (dev, slave);
+		return NM_DEVICE_GET_CLASS (dev)->enslave_slave (dev, slave, connection);
 	return FALSE;
 }
 
@@ -1111,7 +1112,7 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 
 		master = NM_DEVICE (nm_act_request_get_device (NM_ACT_REQUEST (master_ac)));
 		g_assert (master);
-		if (!nm_device_enslave_slave (master, self))
+		if (!nm_device_enslave_slave (master, self, nm_act_request_get_connection (req)))
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 

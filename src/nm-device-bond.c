@@ -374,7 +374,7 @@ free_slave_info (SlaveInfo *sinfo)
 }
 
 static gboolean
-enslave_slave (NMDevice *device, NMDevice *slave)
+enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);

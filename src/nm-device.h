@@ -180,7 +180,8 @@ typedef struct {
 	                                    gboolean fail_if_no_hwaddr);
 
 	gboolean        (* enslave_slave) (NMDevice *self,
-	                                   NMDevice *slave);
+	                                   NMDevice *slave,
+	                                   NMConnection *connection);
 
 	gboolean        (* release_slave) (NMDevice *self,
 	                                   NMDevice *slave);
@@ -216,7 +217,7 @@ NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 
-gboolean        nm_device_enslave_slave     (NMDevice *dev, NMDevice *slave);
+gboolean        nm_device_enslave_slave     (NMDevice *dev, NMDevice *slave, NMConnection *connection);
 gboolean        nm_device_release_slave     (NMDevice *dev, NMDevice *slave);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
