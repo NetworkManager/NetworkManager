@@ -359,7 +359,7 @@ msgid "The Wi-Fi network could not be found"
 msgstr "Omrežja Wi-Fi ni mogoče najti."
 
 #: ../cli/src/common.c:561
-msgid "A seconadary connection of the base connection failed"
+msgid "A secondary connection of the base connection failed"
 msgstr "Drugo povezovanje z osnovno povezavo je spodletelo."
 
 #: ../cli/src/common.c:564

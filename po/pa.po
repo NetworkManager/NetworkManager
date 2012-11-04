@@ -365,7 +365,7 @@ msgid "The Wi-Fi network could not be found"
 msgstr "ਵਾਈ-ਫਾਈ ਨੈੱਟਵਰਕ ਲੱਭਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ"
 
 #: ../cli/src/common.c:561
-msgid "A seconadary connection of the base connection failed"
+msgid "A secondary connection of the base connection failed"
 msgstr "ਬੇਸ ਕੁਨੈਕਸ਼ਨ ਦਾ ਸੈਕੰਡਰੀ ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ ਹੋਇਆ ਹੈ"
 
 #: ../cli/src/common.c:564 ../cli/src/devices.c:274 ../cli/src/devices.c:290

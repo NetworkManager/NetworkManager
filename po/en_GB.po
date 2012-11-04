@@ -347,7 +347,7 @@ msgstr "The modem could not be found"
 #: ../cli/src/common.c:561
 #, fuzzy
 #| msgid "A dependency of the connection failed"
-msgid "A seconadary connection of the base connection failed"
+msgid "A secondary connection of the base connection failed"
 msgstr "A dependency of the connection failed"
 
 #: ../cli/src/common.c:564 ../cli/src/devices.c:274 ../cli/src/devices.c:290

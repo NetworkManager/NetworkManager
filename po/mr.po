@@ -336,7 +336,7 @@ msgstr "Wi-Fi नेटवर्क आढळले नाही"
 
 #: ../cli/src/common.c:561
 #| msgid "A dependency of the connection failed"
-msgid "A seconadary connection of the base connection failed"
+msgid "A secondary connection of the base connection failed"
 msgstr "बेस जोडणीची सेकंडरि जोडणी अपयशी"
 
 #: ../cli/src/common.c:564 ../cli/src/devices.c:274 ../cli/src/devices.c:290

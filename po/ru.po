@@ -348,7 +348,7 @@ msgid "The Wi-Fi network could not be found"
 msgstr "Не удалось обнаружить сеть Wi-Fi"
 
 #: ../cli/src/common.c:561
-msgid "A seconadary connection of the base connection failed"
+msgid "A secondary connection of the base connection failed"
 msgstr "Сбой вторичного подключения основого соединения"
 
 #: ../cli/src/common.c:564 ../cli/src/devices.c:294 ../cli/src/devices.c:310
