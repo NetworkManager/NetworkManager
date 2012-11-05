@@ -574,8 +574,6 @@ do_delete (NMSettingsConnection *connection,
 	/* Remove connection from seen-bssids database file */
 	remove_entry_from_db (connection, "seen-bssids");
 
-	/* Signal the connection is removed and deleted */
-	g_signal_emit (connection, signals[REMOVED], 0);
 	callback (connection, NULL, user_data);
 	g_object_unref (connection);
 }
