@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I${top_builddir}/include \
@@ -25,12 +27,8 @@ test_dispatcher_envp_LDADD = \
 
 ###########################################
 
-if WITH_TESTS
-
 check-local: test-dispatcher-envp
 	$(abs_builddir)/test-dispatcher-envp $(abs_srcdir)
-
-endif
 
 EXTRA_DIST= \
 	dispatcher-old-down \
@@ -38,3 +36,4 @@ EXTRA_DIST= \
 	dispatcher-old-vpn-down \
 	dispatcher-old-vpn-up
 
+endif

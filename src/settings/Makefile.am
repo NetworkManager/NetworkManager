@@ -1,4 +1,4 @@
-SUBDIRS=plugins . tests
+SUBDIRS = plugins . tests
 
 INCLUDES = -I${top_srcdir} \
            -I${top_builddir}/include \

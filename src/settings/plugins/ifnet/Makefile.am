@@ -1,4 +1,5 @@
 SUBDIRS = . tests
+
 INCLUDES = \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \

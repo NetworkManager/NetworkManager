@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -24,10 +26,7 @@ test_wired_defname_LDADD = \
 
 ###########################################
 
-if WITH_TESTS
-
 check-local: test-wired-defname
 	$(abs_builddir)/test-wired-defname
 
 endif
-

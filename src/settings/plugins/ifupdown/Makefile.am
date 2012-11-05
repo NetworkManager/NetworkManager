@@ -1,4 +1,4 @@
-SUBDIRS=. tests
+SUBDIRS = . tests
 
 INCLUDES = \
 	-I$(top_srcdir)/src/logging \

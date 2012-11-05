@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 SUBDIRS=certs
 
 INCLUDES = \
@@ -73,8 +75,6 @@ test_setting_8021x_LDADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
-if WITH_TESTS
-
 check-local: test-settings-defaults test-crypto test-secrets
 	$(abs_builddir)/test-settings-defaults
 	$(abs_builddir)/test-secrets
@@ -137,4 +137,3 @@ check-local: test-settings-defaults test-crypto test-secrets
 		"1234567890"
 
 endif
-

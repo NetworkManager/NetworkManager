@@ -1,6 +1,5 @@
-if WITH_DOCS
+if ENABLE_DOC
 
 SUBDIRS = api libnm-glib libnm-util
 
 endif
-

@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 SUBDIRS=keyfiles
 
 INCLUDES = \
@@ -25,10 +27,7 @@ test_keyfile_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS)
 
-if WITH_TESTS
-
 check-local: test-keyfile
 	$(abs_builddir)/test-keyfile
 
 endif
-

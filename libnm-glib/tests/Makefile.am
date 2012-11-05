@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -28,10 +30,7 @@ TEST_RSS_BIN = test-remote-settings-service.py
 
 EXTRA_DIST = $(TEST_RSS_BIN)
 
-if WITH_TESTS
-
 check-local: test-remote-settings-client
 	$(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN)
 
 endif
-

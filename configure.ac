@@ -81,20 +81,6 @@ AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
 
 dnl
-dnl Documentation
-dnl
-AC_ARG_WITH(docs, AS_HELP_STRING([--with-docs], [Build NetworkManager documentation]))
-AM_CONDITIONAL(WITH_DOCS, test "x$with_docs" = "xyes")
-case $with_docs in
-    yes)
-        enable_gtk_doc=yes
-        ;;
-    *)
-        with_docs=no
-        ;;
-esac
-
-dnl
 dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
@@ -658,29 +644,32 @@ AM_CONDITIONAL(WITH_CONCHECK, test "${enable_concheck}" = "yes")
 
 NM_COMPILER_WARNINGS
 
-GTK_DOC_CHECK(1.0)
-
-
 dnl -------------------------
 dnl Vala bindings
 dnl -------------------------
 
 VAPIGEN_CHECK(0.17.1.24)
 
-dnl
-dnl Tests
-dnl
-AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests]))
-AM_CONDITIONAL(WITH_TESTS, test "x$with_tests" = "xyes")
-case $with_tests in
-    yes)
-        with_tests=yes
-        ;;
-    *)
-        with_tests=no
-        ;;
-esac
-
+# Tests, utilities and documentation
+AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests], [Build NetworkManager tests (default: yes)]))
+AC_ARG_ENABLE(doc, AS_HELP_STRING([--enable-doc], [Build NetworkManager documentation (default: no)]))
+# Fallback to --with-tests and with-docs
+AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests (deprecated)]))
+AC_ARG_WITH(docs, AS_HELP_STRING([--with-docs], [Build NetworkManager documentation (deprecated)]))
+AS_IF([test -n "$with_tests"], enable_tests="$with_tests")
+AS_IF([test -n "$with_docs"], enable_doc="$with_docs")
+# Default to --enable-tests and --disable-docs
+AS_IF([test -z "$enable_tests"], enable_tests="yes")
+AS_IF([test -z "$enable_doc"], enable_doc="no")
+# Normalize values
+AS_IF([test "$enable_tests" != "yes"], enable_tests="no")
+AS_IF([test "$enable_doc" != "yes"], enable_doc="no")
+# Add conditionals
+AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" = "yes")
+AM_CONDITIONAL(ENABLE_DOC, test "$enable_tests" = "yes")
+# Add gtk-doc conditionals
+enable_gtk_doc="$enable_doc"
+GTK_DOC_CHECK(1.0)
 
 AC_CONFIG_FILES([
 Makefile
@@ -848,9 +837,10 @@ if test "${ac_with_wext}" = "yes"; then
 else
 	echo WEXT support: no
 fi
-
 echo
-echo Building documentation: ${with_docs}
-echo Building tests: ${with_tests}
+
+echo "Miscellaneous:"
+echo "  documentation: $enable_doc"
+echo "  tests: $enable_tests"
 echo
 

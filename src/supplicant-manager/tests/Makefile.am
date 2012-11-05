@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -20,10 +22,7 @@ test_supplicant_config_LDADD = \
 	$(top_builddir)/src/supplicant-manager/libsupplicant-manager.la \
 	$(DBUS_LIBS)
 
-if WITH_TESTS
-
 check-local: test-supplicant-config
 	$(abs_builddir)/test-supplicant-config
 
 endif
-

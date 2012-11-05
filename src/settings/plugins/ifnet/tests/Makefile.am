@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES=-I$(srcdir)/../ \
 	 -I$(top_srcdir)/libnm-glib \
 	 -I$(top_srcdir)/libnm-util \
@@ -17,3 +19,5 @@ EXTRA_DIST = hostname \
 			 net.all \
 			 nm-system-settings.conf \
 			 wpa_supplicant.conf
+
+endif

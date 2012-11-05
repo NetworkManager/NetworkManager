@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -21,10 +23,7 @@ test_dhcp_dhclient_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS)
 
-if WITH_TESTS
-
 check-local: test-dhcp-dhclient
 	$(abs_builddir)/test-dhcp-dhclient
 
 endif
-

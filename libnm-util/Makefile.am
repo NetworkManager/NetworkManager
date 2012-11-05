@@ -1,6 +1,6 @@
 include $(GLIB_MAKEFILE)
 
-SUBDIRS=. tests
+SUBDIRS = . tests
 
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/include -I${top_builddir}/include
 
@@ -164,7 +164,7 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
 
-if WITH_TESTS
+if ENABLE_TESTS
 
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-util.so $(SYMBOL_VIS_FILE)

@@ -1,3 +1,5 @@
+if ENABLE_TESTS
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -64,12 +66,9 @@ EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-if WITH_TESTS
-
 check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils
 	$(abs_builddir)/test-dhcp-options
 	$(abs_builddir)/test-policy-hosts
 	$(abs_builddir)/test-wifi-ap-utils
 
 endif
-
