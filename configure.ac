@@ -290,14 +290,14 @@ fi
 case $with_session_tracking in
     ck|none|no) ;;
     systemd)
-        PKG_CHECK_MODULES(SYSTEMD, [libsystemd-login])
+        PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
         ;;
     *)
 	AC_MSG_ERROR(--with-session-tracking must be one of [none, ck, systemd])
         ;;
 esac
-AC_SUBST(SYSTEMD_CFLAGS)
-AC_SUBST(SYSTEMD_LIBS)
+AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
+AC_SUBST(SYSTEMD_LOGIN_LIBS)
 AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
 AM_CONDITIONAL(SESSION_TRACKING_CK, test "x$with_session_tracking" = "xck")
 AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "x$with_session_tracking" = "xsystemd")

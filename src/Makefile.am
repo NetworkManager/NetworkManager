@@ -292,7 +292,7 @@ NetworkManager_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(POLKIT_CFLAGS) \
-	$(SYSTEMD_CFLAGS) \
+	$(SYSTEMD_LOGIN_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
@@ -336,7 +336,7 @@ NetworkManager_LDADD = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(POLKIT_LIBS) \
-	$(SYSTEMD_LIBS) \
+	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
 
