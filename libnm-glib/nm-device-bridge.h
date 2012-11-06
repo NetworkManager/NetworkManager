@@ -53,6 +53,7 @@ GQuark nm_device_bridge_error_quark (void);
 
 #define NM_DEVICE_BRIDGE_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_BRIDGE_CARRIER     "carrier"
+#define NM_DEVICE_BRIDGE_SLAVES      "slaves"
 
 typedef struct {
 	NMDevice parent;
@@ -74,8 +75,9 @@ GType        nm_device_bridge_get_type (void);
 
 GObject *    nm_device_bridge_new (DBusGConnection *connection, const char *path);
 
-const char * nm_device_bridge_get_hw_address (NMDeviceBridge *device);
-gboolean     nm_device_bridge_get_carrier (NMDeviceBridge *device);
+const char      *nm_device_bridge_get_hw_address (NMDeviceBridge *device);
+gboolean         nm_device_bridge_get_carrier    (NMDeviceBridge *device);
+const GPtrArray *nm_device_bridge_get_slaves     (NMDeviceBridge *device);
 
 G_END_DECLS
 

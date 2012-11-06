@@ -33,6 +33,7 @@
 #include "nm-device-bridge.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
+#include "nm-types.h"
 
 G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 
@@ -43,18 +44,21 @@ typedef struct {
 
 	char *hw_address;
 	gboolean carrier;
+	GPtrArray *slaves;
 } NMDeviceBridgePrivate;
 
 enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
 	PROP_CARRIER,
+	PROP_SLAVES,
 
 	LAST_PROP
 };
 
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
 #define DBUS_PROP_CARRIER "Carrier"
+#define DBUS_PROP_SLAVES "Slaves"
 
 /**
  * nm_device_bridge_error_quark:
@@ -133,6 +137,25 @@ nm_device_bridge_get_carrier (NMDeviceBridge *device)
 	return NM_DEVICE_BRIDGE_GET_PRIVATE (device)->carrier;
 }
 
+/**
+ * nm_device_bridge_get_slaves:
+ * @device: a #NMDeviceBridge
+ *
+ * Gets the devices currently slaved to @device.
+ *
+ * Returns: (element-type NMClient.Device): the #GPtrArray containing
+ * #NMDevice<!-- -->s that are slaves of @device. This is the internal
+ * copy used by the device, and must not be modified.
+ **/
+const GPtrArray *
+nm_device_bridge_get_slaves (NMDeviceBridge *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_BRIDGE (device), FALSE);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return handle_ptr_array_return (NM_DEVICE_BRIDGE_GET_PRIVATE (device)->slaves);
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -187,6 +210,7 @@ register_properties (NMDeviceBridge *device)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_BRIDGE_HW_ADDRESS, &priv->hw_address },
 		{ NM_DEVICE_BRIDGE_CARRIER,    &priv->carrier },
+		{ NM_DEVICE_BRIDGE_SLAVES,     &priv->slaves, NULL, NM_TYPE_DEVICE },
 		{ NULL },
 	};
 
@@ -219,6 +243,12 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->proxy);
 
+	if (priv->slaves) {
+		g_ptr_array_foreach (priv->slaves, (GFunc) g_object_unref, NULL);
+		g_ptr_array_free (priv->slaves, TRUE);
+		priv->slaves = NULL;
+	}
+
 	G_OBJECT_CLASS (nm_device_bridge_parent_class)->dispose (object);
 }
 
@@ -248,6 +278,9 @@ get_property (GObject *object,
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_bridge_get_carrier (device));
+		break;
+	case PROP_SLAVES:
+		g_value_set_boxed (value, nm_device_bridge_get_slaves (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -298,4 +331,16 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 		                       FALSE,
 		                       G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceBridge:slaves:
+	 *
+	 * The devices (#NMDevice) slaved to the bridge device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_SLAVES,
+		 g_param_spec_boxed (NM_DEVICE_BRIDGE_SLAVES,
+		                     "Slaves",
+		                     "Slaves",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE));
 }
