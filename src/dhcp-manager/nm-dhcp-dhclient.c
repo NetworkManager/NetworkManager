@@ -489,8 +489,6 @@ dhclient_start (NMDHCPClient *client,
 		g_ptr_array_add (argv, (gpointer) "-6");
 		if (mode_opt)
 			g_ptr_array_add (argv, (gpointer) mode_opt);
-	} else {
-		g_ptr_array_add (argv, (gpointer) "-4");
 	}
 #endif
 
