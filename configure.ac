@@ -303,6 +303,31 @@ AM_CONDITIONAL(SESSION_TRACKING_CK, test "x$with_session_tracking" = "xck")
 AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "x$with_session_tracking" = "xsystemd")
 
 
+AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
+if test "z$with_suspend_resume" = "z"; then
+    PKG_CHECK_EXISTS([systemd >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])
+    if test "z${have_systemd_inhibit}" = "zyes"; then
+	# Use systemd if it's new enough
+	with_suspend_resume="systemd"
+    else
+	# Fall back to upower
+	with_suspend_resume="upower"
+    fi
+fi
+
+case $with_suspend_resume in
+    upower) ;;
+    systemd)
+	PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [systemd >= 183])
+        ;;
+    *)
+	AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd])
+        ;;
+esac
+AM_CONDITIONAL(SUSPEND_RESUME_UPOWER, test "x$with_suspend_resume" = "xupower")
+AM_CONDITIONAL(SUSPEND_RESUME_SYSTEMD, test "x$with_suspend_resume" = "xsystemd")
+
+
 have_libnl="no"
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0, [have_libnl3=yes], [have_libnl3=no])
 PKG_CHECK_MODULES(LIBNL_ROUTE3, libnl-route-3.0, [have_libnl_route3=yes], [have_libnl_route3=no])
@@ -795,6 +820,8 @@ else
 fi
 
         echo Session tracking: ${with_session_tracking}
+
+        echo Suspend/resume: ${with_session_tracking}
 
 if test "${enable_wimax}" = "yes"; then
 	echo WiMAX support: yes

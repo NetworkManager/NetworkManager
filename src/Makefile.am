@@ -202,16 +202,18 @@ NetworkManager_SOURCES += nm-connectivity.c nm-connectivity.h
 endif
 
 if SESSION_TRACKING_SYSTEMD
-NetworkManager_SOURCES += \
-		nm-session-monitor-systemd.c \
-		nm-sleep-monitor-systemd.c
+NetworkManager_SOURCES += nm-session-monitor-systemd.c
 else
 if SESSION_TRACKING_CK
 NetworkManager_SOURCES += nm-session-monitor-ck.c
 else
 NetworkManager_SOURCES += nm-session-monitor-null.c
 endif
+endif
 
+if SUSPEND_RESUME_SYSTEMD
+NetworkManager_SOURCES += nm-sleep-monitor-systemd.c
+else
 # UPower suspend/resume used whenever systemd is not enabled
 NetworkManager_SOURCES += nm-sleep-monitor-upower.c
 endif
