@@ -744,11 +744,7 @@ static_stage3_done (NMModemBroadband *self)
 	}
 
 out:
-	g_signal_emit_by_name (self,
-	                       NM_MODEM_IP4_CONFIG_RESULT,
-	                       mm_bearer_get_interface (self->priv->bearer),
-	                       config,
-	                       error);
+	g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, config, error);
 	g_clear_error (&error);
 	return FALSE;
 }

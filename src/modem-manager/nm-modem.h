@@ -104,7 +104,7 @@ typedef struct {
 	void (*ppp_failed) (NMModem *self, NMDeviceStateReason reason);
 
 	void (*prepare_result)    (NMModem *self, gboolean success, NMDeviceStateReason reason);
-	void (*ip4_config_result) (NMModem *self, const char *iface, NMIP4Config *config, GError *error);
+	void (*ip4_config_result) (NMModem *self, NMIP4Config *config, GError *error);
 
 	void (*auth_requested)    (NMModem *self);
 	void (*auth_result)       (NMModem *self, GError *error);

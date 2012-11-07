@@ -225,7 +225,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		g_value_array_free (ret_array);
 	}
 
-	g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, NULL, config, error);
+	g_signal_emit_by_name (self, NM_MODEM_IP4_CONFIG_RESULT, config, error);
 	g_clear_error (&error);
 }
 

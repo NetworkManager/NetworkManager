@@ -137,12 +137,18 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 				gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 	guint32 i, num;
 	guint32 bad_dns1 = htonl (0x0A0B0C0D);
 	guint32 good_dns1 = htonl (0x04020201);  /* GTE nameserver */
 	guint32 bad_dns2 = htonl (0x0A0B0C0E);
 	guint32 good_dns2 = htonl (0x04020202);  /* GTE nameserver */
 	gboolean dns_workaround = FALSE;
+
+	/* Notify about the new data port to use */
+	g_free (priv->data_port);
+	priv->data_port = g_strdup (iface);
+	g_object_notify (G_OBJECT (self), NM_MODEM_DATA_PORT);
 
 	/* Work around a PPP bug (#1732) which causes many mobile broadband
 	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
@@ -180,7 +186,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 		nm_ip4_config_add_nameserver (config, good_dns2);
 	}
 
-	g_signal_emit (self, signals[IP4_CONFIG_RESULT], 0, iface, config, NULL);
+	g_signal_emit (self, signals[IP4_CONFIG_RESULT], 0, config, NULL);
 }
 
 static void
@@ -885,8 +891,8 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, ip4_config_result),
 		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_OBJECT_POINTER,
-		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_OBJECT, G_TYPE_POINTER);
+		              _nm_marshal_VOID__OBJECT_POINTER,
+		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
 
 	signals[PREPARE_RESULT] =
 		g_signal_new (NM_MODEM_PREPARE_RESULT,
