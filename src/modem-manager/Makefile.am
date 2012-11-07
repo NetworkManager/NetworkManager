@@ -35,3 +35,11 @@ libmodem_manager_la_LIBADD = \
 	$(LIBNL_LIBS) \
 	$(DBUS_LIBS)
 
+# Support for the new ModemManager1 interface
+if WITH_MODEM_MANAGER_1
+libmodem_manager_la_SOURCES += \
+	nm-modem-broadband.h \
+	nm-modem-broadband.c
+libmodem_manager_la_CPPFLAGS += $(MM_GLIB_CFLAGS)
+libmodem_manager_la_LIBADD += $(MM_GLIB_LIBS)
+endif

@@ -27,8 +27,20 @@ if WITH_WIMAX
 nm_daemon_all_sources += $(top_srcdir)/src/wimax/*.[ch]
 endif
 
-nm_daemon_sources = \
+nm_daemon_sources_no_bindings = \
 	$(filter-out %-glue.h %-bindings.h, $(wildcard $(nm_daemon_all_sources)))
+
+if WITH_MODEM_MANAGER_1
+# We filter out this file, which doesn't have any enum, and which clashes
+# with ModemManager1-defined symbols
+nm_daemon_sources = \
+	$(filter-out $(top_srcdir)/src/modem-manager/nm-modem-types.h, $(wildcard $(nm_daemon_sources_no_bindings)))
+else
+# Don't include ModemManager1-specific headers if we're not compiling with
+# ModemManager1 support.
+nm_daemon_sources = \
+	$(filter-out $(top_srcdir)/src/modem-manager/nm-modem-broadband.h, $(wildcard $(nm_daemon_sources_no_bindings)))
+endif
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 nm_enum_types_sources = $(nm_daemon_sources)
@@ -69,6 +81,10 @@ libnm_generated_la_CPPFLAGS = \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(IWMX_SDK_CFLAGS)
+
+if WITH_MODEM_MANAGER_1
+	libnm_generated_la_CPPFLAGS += $(MM_GLIB_CFLAGS)
+endif
 
 libnm_generated_la_LIBADD = \
 	$(GLIB_LIBS)

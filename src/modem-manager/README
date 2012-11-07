@@ -11,6 +11,15 @@ Common source
       the modem object.
 
 
+ModemManager 0.7 integration
+********************************************************************************
+
+ * nm-modem-broadband.[h|c]:
+      Defines the `NMModemBroadband' object, which is a subclass of `NMModem'.
+      This object handles both 3GPP and 3GPP2 modems exposed in the new
+      `ModemManager1' interface.
+
+
 ModemManager 0.4/0.5/0.6 integration
 ********************************************************************************
 
