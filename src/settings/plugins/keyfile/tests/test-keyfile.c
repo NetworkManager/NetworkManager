@@ -2821,6 +2821,264 @@ test_write_infiniband_connection (void)
 	g_object_unref (connection);
 }
 
+#define TEST_BRIDGE_MAIN_FILE TEST_KEYFILES_DIR"/Test_Bridge_Main"
+
+static void
+test_read_bridge_main (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	NMSettingBridge *s_bridge;
+	GError *error = NULL;
+	const char *expected_id = "Test Bridge Main";
+	const char *expected_uuid = "8f061643-fe41-4d4c-a8d9-097d26e2ad3a";
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_BRIDGE_MAIN_FILE, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Connection setting */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, expected_uuid);
+
+	/* IPv4 setting */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+	/* Bridge setting */
+	s_bridge = nm_connection_get_setting_bridge (connection);
+	g_assert (s_bridge);
+	g_assert_cmpstr (nm_setting_bridge_get_interface_name (s_bridge), ==, "br0");
+	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 0);
+	g_assert_cmpuint (nm_setting_bridge_get_stp (s_bridge), ==, TRUE);
+	g_assert_cmpuint (nm_setting_bridge_get_priority (s_bridge), ==, 32744);
+	g_assert_cmpuint (nm_setting_bridge_get_hello_time (s_bridge), ==, 7);
+	g_assert_cmpuint (nm_setting_bridge_get_max_age (s_bridge), ==, 39);
+	g_assert_cmpuint (nm_setting_bridge_get_ageing_time (s_bridge), ==, 235352);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_bridge_main (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingBridge *s_bridge;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Main",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Bridge setting */
+	s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
+	g_assert (s_bridge);
+	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
+
+	g_object_set (s_bridge,
+	              NM_SETTING_BRIDGE_INTERFACE_NAME, "br0",
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	add_one_ip4_address (s_ip4, "1.2.3.4", "1.1.1.1", 24);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
+#define TEST_BRIDGE_COMPONENT_FILE TEST_KEYFILES_DIR"/Test_Bridge_Component"
+
+static void
+test_read_bridge_component (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingBridgePort *s_port;
+	NMSettingWired *s_wired;
+	const GByteArray *array;
+	guint8 expected_mac[ETH_ALEN] = { 0x00, 0x22, 0x15, 0x59, 0x62, 0x97 };
+	GError *error = NULL;
+	const char *expected_id = "Test Bridge Component";
+	const char *expected_uuid = "d7b4f96c-c45e-4298-bef8-f48574f8c1c0";
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_BRIDGE_COMPONENT_FILE, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Connection setting */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, expected_uuid);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "br0");
+	g_assert (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME));
+
+	/* Wired setting */
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	array = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, ETH_ALEN);
+	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
+
+	/* BridgePort setting */
+	s_port = nm_connection_get_setting_bridge_port (connection);
+	g_assert (s_port);
+	g_assert (nm_setting_bridge_port_get_hairpin_mode (s_port));
+	g_assert_cmpuint (nm_setting_bridge_port_get_priority (s_port), ==, 28);
+	g_assert_cmpuint (nm_setting_bridge_port_get_path_cost (s_port), ==, 100);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_bridge_component (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingBridgePort *s_port;
+	NMSettingWired *s_wired;
+	char *uuid;
+	GByteArray *mac;
+	guint8 tmpmac[] = { 0x99, 0x88, 0x77, 0x66, 0x55, 0x44 };
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Component",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_MASTER, "br0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
+	g_assert (s_wired);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	mac = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRED_MTU, 1300,
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	/* BridgePort setting */
+	s_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
+	g_assert (s_port);
+	nm_connection_add_setting (connection, NM_SETTING (s_port));
+
+	g_object_set (s_port,
+	              NM_SETTING_BRIDGE_PORT_PRIORITY, 3,
+	              NM_SETTING_BRIDGE_PORT_PATH_COST, 99,
+	              NULL);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -2871,6 +3129,11 @@ int main (int argc, char **argv)
 
 	test_read_infiniband_connection ();
 	test_write_infiniband_connection ();
+
+	test_read_bridge_main ();
+	test_write_bridge_main ();
+	test_read_bridge_component ();
+	test_write_bridge_component ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

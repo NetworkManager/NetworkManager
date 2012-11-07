@@ -1,0 +1,17 @@
+[connection]
+id=Test Bridge Main
+uuid=8f061643-fe41-4d4c-a8d9-097d26e2ad3a
+type=bridge
+
+[bridge]
+interface-name=br0
+stp=true
+forward-delay=0
+priority=32744
+hello-time=7
+max-age=39
+ageing-time=235352
+
+[ipv4]
+method=auto
+
