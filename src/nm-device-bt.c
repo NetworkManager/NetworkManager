@@ -47,7 +47,8 @@
 #include "nm-enum-types.h"
 #include "nm-utils.h"
 
-#define MM_DBUS_SERVICE  "org.freedesktop.ModemManager"
+#define MM_OLD_DBUS_SERVICE  "org.freedesktop.ModemManager"
+#define MM_NEW_DBUS_SERVICE  "org.freedesktop.ModemManager1"
 #define BLUETOOTH_DUN_UUID "dun"
 #define BLUETOOTH_NAP_UUID "nap"
 
@@ -1154,8 +1155,13 @@ mm_name_owner_changed (NMDBusManager *dbus_mgr,
 	gboolean new_owner_good;
 
 	/* Can't handle the signal if its not from the modem service */
-	if (strcmp (MM_DBUS_SERVICE, name) != 0)
+	if (strcmp (MM_OLD_DBUS_SERVICE, name) != 0)
 		return;
+
+#if WITH_MODEM_MANAGER_1
+	if (strcmp (MM_NEW_DBUS_SERVICE, name) != 0)
+		return;
+#endif
 
 	old_owner_good = (old_owner && strlen (old_owner));
 	new_owner_good = (new_owner && strlen (new_owner));
@@ -1197,6 +1203,7 @@ static void
 nm_device_bt_init (NMDeviceBt *self)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	gboolean mm_running;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
@@ -1205,7 +1212,13 @@ nm_device_bt_init (NMDeviceBt *self)
 	                                      G_CALLBACK (mm_name_owner_changed),
 	                                      self);
 
-	set_mm_running (self, nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_DBUS_SERVICE));
+	/* Initial check to see if ModemManager is running */
+	mm_running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_OLD_DBUS_SERVICE);
+#if WITH_MODEM_MANAGER_1
+	if (!mm_running)
+		mm_running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_NEW_DBUS_SERVICE);
+#endif
+	set_mm_running (self, mm_running);
 }
 
 static void
