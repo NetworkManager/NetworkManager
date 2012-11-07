@@ -2,7 +2,7 @@
 .\"
 .\" Copyright (C) 2010 - 2012 Red Hat, Inc.
 .\"
-.TH "NetworkManager.conf" "5" "31 October 2012" ""
+.TH "NetworkManager.conf" "5" "7 November 2012" ""
 .SH NAME
 NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
@@ -157,12 +157,23 @@ from earlier levels; thus setting the log level to INFO also logs error and
 warning messages.
 .TP
 .B domains=\fI<domain1>,<domain2>, ...\fP
-The following log domains are available: [NONE, HW, RFKILL, ETHER, WIFI, BT, MB,
-DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
-AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL].
-When "NONE" is given by itself, logging is disabled.
+The following log domains are available: [HW, RFKILL, ETHER, WIFI, BT, MB, DHCP4,
+DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT, AGENTS,
+SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND,
+VLAN].
+.br
+In addition to them, these special domains can be used: [NONE, ALL, DHCP, IP].
 .PP
 .RS
+NONE = when given by itself, logging is disabled
+.br
+ALL = all log domains will be switched on
+.br
+DHCP = a shortcut for "DHCP4, DHCP6"
+.br
+IP = a shortcut for "IP4, IP6"
+.br
+.PP
 HW = Hardware related operations
 .br
 RFKILL = RFKill subsystem operations
@@ -216,6 +227,10 @@ INFINIBAND = InfiniBand device operations
 FIREWALL = FirewallD related operations
 .br
 ADSL = ADSL device operations
+.br
+BOND = Bonding device operations
+.br
+VLAN = VLAN device operations
 .br
 .SS [connectivity]
 This section controls NetworkManager's optional connectivity checking
