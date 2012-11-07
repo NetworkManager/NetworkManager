@@ -163,6 +163,16 @@ modem_ip4_config_result (NMModem *self,
 }
 
 static void
+data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	/* We set the IP iface in the device as soon as we know it, so that we
+	 * properly ifup it if needed */
+	nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
+}
+
+static void
 modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
@@ -417,6 +427,11 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_CONNECTED, G_CALLBACK (modem_connected_cb), self);
+
+	/* In the old ModemManager the data port is known from the very beginning;
+	 * while in the new ModemManager the data port is set afterwards when the bearer gets
+	 * created */
+	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
 }
 
 static void

@@ -578,6 +578,14 @@ modem_ip4_config_result (NMModem *self,
 	}
 }
 
+static void
+data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
+}
+
 static gboolean
 modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason)
 {
@@ -672,7 +680,12 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 
-	nm_device_set_ip_iface (NM_DEVICE (self), modem_data_port);
+	/* In the old ModemManager the data port is known from the very beginning;
+	 * while in the new ModemManager the data port is set afterwards when the bearer gets
+	 * created */
+	if (modem_data_port)
+		nm_device_set_ip_iface (NM_DEVICE (self), modem_data_port);
+	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
 
 	/* Kick off the modem connection */
 	if (!modem_stage1 (self, modem, &reason))
