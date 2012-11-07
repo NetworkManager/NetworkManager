@@ -33,18 +33,23 @@
 #define NM_IS_MODEM_MANAGER_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),	NM_TYPE_MODEM_MANAGER))
 #define NM_MODEM_MANAGER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),	NM_TYPE_MODEM_MANAGER, NMModemManagerClass))
 
-typedef struct {
-	GObject parent;
-} NMModemManager;
+typedef struct _NMModemManager NMModemManager;
+typedef struct _NMModemManagerClass NMModemManagerClass;
+typedef struct _NMModemManagerPrivate NMModemManagerPrivate;
 
-typedef struct {
+struct _NMModemManager {
+	GObject parent;
+	NMModemManagerPrivate *priv;
+};
+
+struct _NMModemManagerClass {
 	GObjectClass parent;
 
 	/* Signals */
 	void (*modem_added) (NMModemManager *manager, NMModem *modem, const char *driver);
 
 	void (*modem_removed) (NMModemManager *manager, NMModem *modem);
-} NMModemManagerClass;
+};
 
 GType nm_modem_manager_get_type (void);
 
