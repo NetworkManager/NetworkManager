@@ -488,6 +488,31 @@ else
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
+# ModemManager1 with libmm-glib
+AC_ARG_WITH(modem-manager-1, AS_HELP_STRING([--with-modem-manager-1], [Enable new ModemManager1 interface support]),,[with_modem_manager_1=auto])
+if (test "${with_modem_manager_1}" != "no"); then
+    PKG_CHECK_MODULES(MM_GLIB,
+                      [mm-glib],
+                      [have_libmm_glib=yes],
+                      [have_libmm_glib=no])
+    AC_SUBST(MM_GLIB_CFLAGS)
+    AC_SUBST(MM_GLIB_LIBS)
+
+    if (test "${have_libmm_glib}" = "no"); then
+        if (test "${with_modem_manager_1}" = "yes"); then
+            AC_MSG_ERROR([Couldn't find libmm-glib])
+        fi
+    else
+        with_modem_manager_1="yes"
+    fi
+fi
+
+if (test "${with_modem_manager_1}" = "yes"); then
+    AC_DEFINE(WITH_MODEM_MANAGER_1, 1, [Define if you have ModemManager1 support])
+else
+	AC_DEFINE(WITH_MODEM_MANAGER_1, 0, [Define if you have ModemManager1 support])
+fi
+AM_CONDITIONAL(WITH_MODEM_MANAGER_1, test "${with_modem_manager_1}" = "yes")
 
 # DHCP client support
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
@@ -781,6 +806,12 @@ if test "${enable_ppp}" = "yes"; then
 	echo PPP support: yes
 else
 	echo PPP support: no
+fi
+
+if test "${with_modem_manager_1}" = "yes"; then
+	echo ModemManager1 support: yes
+else
+	echo ModemManager1 support: no
 fi
 
 if test "${enable_concheck}" = "yes"; then
