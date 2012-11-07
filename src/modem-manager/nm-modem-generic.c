@@ -60,7 +60,7 @@ nm_modem_generic_get_proxy (NMModemGeneric *self,
 
 	/* Default to the default interface. */
 	if (interface == NULL)
-		interface = MM_DBUS_INTERFACE_MODEM;
+		interface = MM_OLD_DBUS_INTERFACE_MODEM;
 
 	if (interface && !strcmp (interface, DBUS_INTERFACE_PROPERTIES))
 		return priv->props_proxy;
@@ -116,7 +116,7 @@ query_mm_enabled (NMModemGeneric *self)
 	dbus_g_proxy_begin_call (NM_MODEM_GENERIC_GET_PRIVATE (self)->props_proxy,
 	                         "Get", get_mm_enabled_done,
 	                         self, NULL,
-	                         G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+	                         G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM,
 	                         G_TYPE_STRING, "Enabled",
 	                         G_TYPE_INVALID);
 }
@@ -144,7 +144,7 @@ set_mm_enabled (NMModem *self, gboolean enabled)
 	 * toggle rfkill status of the WWAN modem.
 	 */
 	dbus_g_proxy_begin_call (nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self),
-	                                                     MM_DBUS_INTERFACE_MODEM),
+	                                                     MM_OLD_DBUS_INTERFACE_MODEM),
 	                         "Enable", set_mm_enabled_done,
 	                         self, NULL,
 	                         G_TYPE_BOOLEAN, enabled,
@@ -245,7 +245,7 @@ static_stage3_ip4_config_start (NMModem *self,
 	priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
 
 	priv->call = dbus_g_proxy_begin_call (nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self),
-	                                                                  MM_DBUS_INTERFACE_MODEM),
+	                                                                  MM_OLD_DBUS_INTERFACE_MODEM),
 	                                      "GetIP4Config", static_stage3_done,
 	                                      self, NULL,
 	                                      G_TYPE_INVALID);
@@ -275,7 +275,7 @@ disconnect (NMModem *self,
             gboolean warn)
 {
 	dbus_g_proxy_begin_call (nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self),
-	                                                     MM_DBUS_INTERFACE_MODEM),
+	                                                     MM_OLD_DBUS_INTERFACE_MODEM),
 	                         "Disconnect",
 	                         disconnect_done,
 	                         GUINT_TO_POINTER (warn),
@@ -317,7 +317,7 @@ modem_properties_changed (DBusGProxy *proxy,
 	GValue *value;
 	NMModemState new_state;
 
-	if (strcmp (interface, MM_DBUS_INTERFACE_MODEM))
+	if (strcmp (interface, MM_OLD_DBUS_INTERFACE_MODEM))
 		return;
 
 	value = g_hash_table_lookup (props, "Enabled");
@@ -378,12 +378,12 @@ constructor (GType type,
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	priv->proxy = dbus_g_proxy_new_for_name (bus,
-	                                         MM_DBUS_SERVICE,
+	                                         MM_OLD_DBUS_SERVICE,
 	                                         nm_modem_get_path (NM_MODEM (object)),
-	                                         MM_DBUS_INTERFACE_MODEM);
+	                                         MM_OLD_DBUS_INTERFACE_MODEM);
 
 	priv->props_proxy = dbus_g_proxy_new_for_name (bus,
-	                                               MM_DBUS_SERVICE,
+	                                               MM_OLD_DBUS_SERVICE,
 	                                               nm_modem_get_path (NM_MODEM (object)),
 	                                               DBUS_INTERFACE_PROPERTIES);
 	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,

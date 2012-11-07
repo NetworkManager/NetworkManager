@@ -88,12 +88,12 @@ get_modem_properties (DBusGConnection *connection,
 	GValue *value;
 
 	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   MM_DBUS_SERVICE,
+	                                   MM_OLD_DBUS_SERVICE,
 	                                   path,
 	                                   "org.freedesktop.DBus.Properties");
 
 	if (!dbus_g_proxy_call_with_timeout (proxy, "GetAll", 15000, &err,
-	                                     G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+	                                     G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM,
 	                                     G_TYPE_INVALID,
 	                                     DBUS_TYPE_G_MAP_OF_VARIANT, &props,
 	                                     G_TYPE_INVALID)) {
@@ -240,9 +240,9 @@ poke_modem_cb (gpointer user_data)
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	proxy = dbus_g_proxy_new_for_name (g_connection,
-									   MM_DBUS_SERVICE,
-									   MM_DBUS_PATH,
-									   MM_DBUS_INTERFACE);
+									   MM_OLD_DBUS_SERVICE,
+									   MM_OLD_DBUS_PATH,
+									   MM_OLD_DBUS_INTERFACE);
 
 	call = dbus_g_proxy_begin_call_with_timeout (proxy,
 	                                             "EnumerateDevices",
@@ -293,7 +293,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 	nm_log_info (LOGD_MB, "modem-manager is now available");
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
-											 MM_DBUS_SERVICE, MM_DBUS_PATH, MM_DBUS_INTERFACE);
+											 MM_OLD_DBUS_SERVICE, MM_OLD_DBUS_PATH, MM_OLD_DBUS_INTERFACE);
 
 	dbus_g_proxy_add_signal (priv->proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "DeviceAdded",
@@ -346,7 +346,7 @@ nm_modem_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 	gboolean new_owner_good;
 
 	/* Can't handle the signal if its not from the modem service */
-	if (strcmp (MM_DBUS_SERVICE, name) != 0)
+	if (strcmp (MM_OLD_DBUS_SERVICE, name) != 0)
 		return;
 
 	old_owner_good = (old_owner && strlen (old_owner));
@@ -374,7 +374,7 @@ nm_modem_manager_init (NMModemManager *self)
 					  G_CALLBACK (nm_modem_manager_name_owner_changed),
 					  self);
 
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_DBUS_SERVICE))
+	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_OLD_DBUS_SERVICE))
 		modem_manager_appeared (self, TRUE);
 	else
 		modem_manager_disappeared (self);

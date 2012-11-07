@@ -21,15 +21,14 @@
 #ifndef NM_MODEM_TYPES_H
 #define NM_MODEM_TYPES_H
 
-#define MM_DBUS_SERVICE              "org.freedesktop.ModemManager"
-#define MM_DBUS_PATH                 "/org/freedesktop/ModemManager"
-#define MM_DBUS_INTERFACE            "org.freedesktop.ModemManager"
-#define MM_DBUS_INTERFACE_MODEM      "org.freedesktop.ModemManager.Modem"
-#define MM_DBUS_INTERFACE_MODEM_SIMPLE "org.freedesktop.ModemManager.Modem.Simple"
-#define MM_DBUS_INTERFACE_MODEM_CDMA "org.freedesktop.ModemManager.Modem.Cdma"
-
-#define MM_DBUS_INTERFACE_MODEM_GSM_CARD    "org.freedesktop.ModemManager.Modem.Gsm.Card"
-#define MM_DBUS_INTERFACE_MODEM_GSM_NETWORK "org.freedesktop.ModemManager.Modem.Gsm.Network"
+#define MM_OLD_DBUS_SERVICE                     "org.freedesktop.ModemManager"
+#define MM_OLD_DBUS_PATH                        "/org/freedesktop/ModemManager"
+#define MM_OLD_DBUS_INTERFACE                   "org.freedesktop.ModemManager"
+#define MM_OLD_DBUS_INTERFACE_MODEM             "org.freedesktop.ModemManager.Modem"
+#define MM_OLD_DBUS_INTERFACE_MODEM_SIMPLE      "org.freedesktop.ModemManager.Modem.Simple"
+#define MM_OLD_DBUS_INTERFACE_MODEM_CDMA        "org.freedesktop.ModemManager.Modem.Cdma"
+#define MM_OLD_DBUS_INTERFACE_MODEM_GSM_CARD    "org.freedesktop.ModemManager.Modem.Gsm.Card"
+#define MM_OLD_DBUS_INTERFACE_MODEM_GSM_NETWORK "org.freedesktop.ModemManager.Modem.Gsm.Network"
 
 #define MM_MODEM_TYPE_UNKNOWN  0
 #define MM_MODEM_TYPE_GSM      1
@@ -37,17 +36,17 @@
 
 /* Errors */
 
-#define MM_SERIAL_OPEN_FAILED MM_DBUS_INTERFACE_MODEM ".SerialOpenFailed"
-#define MM_SERIAL_SEND_FAILED MM_DBUS_INTERFACE_MODEM ".SerialSendFailed"
-#define MM_SERIAL_RESPONSE_TIMEOUT MM_DBUS_INTERFACE_MODEM ".SerialResponseTimeout"
+#define MM_SERIAL_OPEN_FAILED MM_OLD_DBUS_INTERFACE_MODEM ".SerialOpenFailed"
+#define MM_SERIAL_SEND_FAILED MM_OLD_DBUS_INTERFACE_MODEM ".SerialSendFailed"
+#define MM_SERIAL_RESPONSE_TIMEOUT MM_OLD_DBUS_INTERFACE_MODEM ".SerialResponseTimeout"
 
-#define MM_MODEM_ERROR_GENERAL MM_DBUS_INTERFACE_MODEM ".General"
-#define MM_MODEM_ERROR_OPERATION_NOT_SUPPORTED MM_DBUS_INTERFACE_MODEM ".OperationNotSupported"
+#define MM_MODEM_ERROR_GENERAL MM_OLD_DBUS_INTERFACE_MODEM ".General"
+#define MM_MODEM_ERROR_OPERATION_NOT_SUPPORTED MM_OLD_DBUS_INTERFACE_MODEM ".OperationNotSupported"
 
-#define MM_MODEM_CONNECT_ERROR_NO_CARRIER MM_DBUS_INTERFACE_MODEM ".NoCarrier"
-#define MM_MODEM_CONNECT_ERROR_NO_DIALTONE MM_DBUS_INTERFACE_MODEM ".NoDialtone"
-#define MM_MODEM_CONNECT_ERROR_BUSY MM_DBUS_INTERFACE_MODEM ".Busy"
-#define MM_MODEM_CONNECT_ERROR_NO_ANSWER MM_DBUS_INTERFACE_MODEM ".NoAnswer"
+#define MM_MODEM_CONNECT_ERROR_NO_CARRIER MM_OLD_DBUS_INTERFACE_MODEM ".NoCarrier"
+#define MM_MODEM_CONNECT_ERROR_NO_DIALTONE MM_OLD_DBUS_INTERFACE_MODEM ".NoDialtone"
+#define MM_MODEM_CONNECT_ERROR_BUSY MM_OLD_DBUS_INTERFACE_MODEM ".Busy"
+#define MM_MODEM_CONNECT_ERROR_NO_ANSWER MM_OLD_DBUS_INTERFACE_MODEM ".NoAnswer"
 
 #define MM_MODEM_ERROR "org.freedesktop.ModemManager.Modem.Gsm"
 
