@@ -10,6 +10,12 @@ Common source
       will use this interface exclusively, regardless of the real final type of
       the modem object.
 
+ * nm-modem-manager.[h|c]:
+      Defines the `NMModemManager' object, which takes care of listening to
+      signals from the DBus inteface notifying about added or removed modems.
+      It also takes care of creating proper `NMModem' objects from the
+      information retrieved from the DBus interface.
+
 
 ModemManager 0.7 integration
 ********************************************************************************
@@ -37,9 +43,3 @@ ModemManager 0.4/0.5/0.6 integration
  * nm-modem-cdma.[h|c]:
       Defines the `NMModemCdma' object, which is a subclass of `NMModemGeneric'.
       This object handles 3GPP2-specific modems (CDMA, EV-DO).
-
- * nm-modem-manager.[h|c]:
-      Defines the `NMModemManager' object, which takes care of listening to
-      signals from the DBus inteface notifying about added or removed modems.
-      It also takes care of creating proper `NMModemGsm' or `NMModemCdma'
-      objects from the information retrieved from the DBus interface.

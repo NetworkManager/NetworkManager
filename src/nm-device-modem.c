@@ -18,6 +18,8 @@
  * Copyright (C) 2009 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 
 #include "nm-device-modem.h"
@@ -30,6 +32,10 @@
 #include "nm-marshal.h"
 #include "nm-logging.h"
 #include "nm-system.h"
+
+#if WITH_MODEM_MANAGER_1
+#include "nm-modem-broadband.h"
+#endif
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
@@ -363,7 +369,15 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 		current_caps = caps;
 		type_desc = "GSM/UMTS";
 		ip_iface = nm_modem_get_data_port (modem);
-	} else {
+	}
+#if WITH_MODEM_MANAGER_1
+	else if (NM_IS_MODEM_BROADBAND (modem)) {
+		nm_modem_broadband_get_capabilities (NM_MODEM_BROADBAND (modem), &caps, &current_caps);
+		type_desc = "Broadband";
+		/* data port not yet known in broadband modems */
+	}
+#endif
+	else {
 		nm_log_warn (LOGD_MB, "unhandled modem type %s", G_OBJECT_TYPE_NAME (modem));
 		return NULL;
 	}

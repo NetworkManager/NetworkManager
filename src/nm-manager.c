@@ -384,13 +384,16 @@ modem_added (NMModemManager *modem_manager,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *replace_device, *device = NULL;
-	const char *ip_iface;
+	const char *modem_iface;
 	GSList *iter;
 
-	ip_iface = nm_modem_get_data_port (modem);
-	g_assert (ip_iface);
+	/* Don't rely only on the data port; use the control port if available */
+	modem_iface = nm_modem_get_data_port (modem);
+	if (!modem_iface)
+		modem_iface = nm_modem_get_control_port (modem);
+	g_return_if_fail (modem_iface);
 
-	replace_device = find_device_by_ip_iface (NM_MANAGER (user_data), ip_iface);
+	replace_device = find_device_by_ip_iface (NM_MANAGER (user_data), modem_iface);
 	if (replace_device) {
 		priv->devices = remove_one_device (NM_MANAGER (user_data),
 		                                   priv->devices,
@@ -411,7 +414,7 @@ modem_added (NMModemManager *modem_manager,
 	 * by the Bluetooth code during the connection process.
 	 */
 	if (driver && !strcmp (driver, "bluetooth")) {
-		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)", ip_iface);
+		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)", modem_iface);
 		return;
 	}
 

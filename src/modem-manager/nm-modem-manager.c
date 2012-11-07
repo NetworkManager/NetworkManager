@@ -21,6 +21,7 @@
  */
 
 #include <string.h>
+#include "config.h"
 #include "nm-modem-manager.h"
 #include "nm-logging.h"
 #include "nm-modem.h"
@@ -31,6 +32,11 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 
+#if WITH_MODEM_MANAGER_1
+#include <libmm-glib.h>
+#include "nm-modem-broadband.h"
+#endif
+
 #define MODEM_POKE_INTERVAL 120
 
 G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
@@ -38,11 +44,23 @@ G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
 #define NM_MODEM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_MANAGER, NMModemManagerPrivate))
 
 typedef struct {
+	/* ModemManager < 0.7 */
 	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
+	guint poke_id;
+
+#if WITH_MODEM_MANAGER_1
+	/* ModemManager >= 0.7 */
+	GDBusConnection *dbus_connection;
+	MMManager *modem_manager_1;
+	guint modem_manager_1_poke_id;
+	gboolean old_modem_manager_found;
+	gboolean new_modem_manager_found;
+#endif
+
+	/* Common */
 	GHashTable *modems;
 	gboolean disposed;
-	guint poke_id;
 } NMModemManagerPrivate;
 
 enum {
@@ -67,6 +85,30 @@ nm_modem_manager_get (void)
 
 	g_assert (singleton);
 	return singleton;
+}
+
+/************************************************************************/
+/* Support for ModemManager < 0.7 */
+
+static void
+clear_modem_manager_support (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->poke_id) {
+		g_source_remove (priv->poke_id);
+		priv->poke_id = 0;
+	}
+
+	if (priv->proxy) {
+		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
+	}
+
+	if (priv->dbus_mgr) {
+		g_object_unref (priv->dbus_mgr);
+		priv->dbus_mgr = NULL;
+	}
 }
 
 static gboolean
@@ -244,6 +286,8 @@ poke_modem_cb (gpointer user_data)
 									   MM_OLD_DBUS_PATH,
 									   MM_OLD_DBUS_INTERFACE);
 
+	nm_log_info (LOGD_MB, "Requesting to (re)launch modem-manager...");
+
 	call = dbus_g_proxy_begin_call_with_timeout (proxy,
 	                                             "EnumerateDevices",
 	                                             mm_poke_cb,
@@ -280,6 +324,10 @@ enumerate_devices_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer dat
 	}
 }
 
+#if WITH_MODEM_MANAGER_1
+static void clear_modem_manager_1_support (NMModemManager *self);
+#endif
+
 static void
 modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 {
@@ -291,6 +339,14 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 	}
 
 	nm_log_info (LOGD_MB, "modem-manager is now available");
+
+#if WITH_MODEM_MANAGER_1
+	priv->old_modem_manager_found = TRUE;
+	if (priv->new_modem_manager_found)
+		nm_log_warn (LOGD_MB, "Both the old and the new ModemManager were found");
+	else
+		clear_modem_manager_1_support (self);
+#endif
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 											 MM_OLD_DBUS_SERVICE, MM_OLD_DBUS_PATH, MM_OLD_DBUS_INTERFACE);
@@ -360,7 +416,281 @@ nm_modem_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 	}
 }
 
-/*******************************************************/
+/************************************************************************/
+/* Support for ModemManager >= 0.7 */
+
+#if WITH_MODEM_MANAGER_1
+
+static void
+clear_modem_manager_1_support (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	if (priv->modem_manager_1_poke_id) {
+		g_source_remove (priv->modem_manager_1_poke_id);
+		priv->modem_manager_1_poke_id = 0;
+	}
+
+	g_clear_object (&priv->modem_manager_1);
+	g_clear_object (&priv->dbus_connection);
+}
+
+static void
+modem_object_added (MMManager *modem_manager,
+                    MMObject  *modem_object,
+                    NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	const gchar *path;
+	gchar *drivers;
+	MMModem *modem_iface;
+	NMModem *modem;
+
+	/* Ensure we don't have the same modem already */
+	path = mm_object_get_path (modem_object);
+	if (g_hash_table_lookup (priv->modems, path)) {
+		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
+		return;
+	}
+
+	/* Ensure we have the 'Modem' interface at least */
+	modem_iface = mm_object_peek_modem (modem_object);
+	if (!modem_iface) {
+		nm_log_warn (LOGD_MB, "modem with path %s doesn't have the Modem interface, ignoring", path);
+		return;
+	}
+
+	/* Ensure we have a primary port reported */
+	if (!mm_modem_get_primary_port (modem_iface)) {
+		nm_log_warn (LOGD_MB, "modem with path %s has unknown primary port, ignoring", path);
+		return;
+	}
+
+	/* Create a new modem object */
+	modem = nm_modem_broadband_new (G_OBJECT (modem_object));
+	if (!modem)
+		return;
+
+	/* Build a single string with all drivers listed */
+	drivers = g_strjoinv (", ", (gchar **)mm_modem_get_drivers (modem_iface));
+
+	/* Keep track of the new modem and notify about it */
+	g_hash_table_insert (priv->modems, g_strdup (path), modem);
+	g_signal_emit (self, signals[MODEM_ADDED], 0, modem, drivers);
+	g_free (drivers);
+}
+
+static void
+modem_object_removed (MMManager *manager,
+                      MMObject  *modem_object,
+                      NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	NMModem *modem;
+	const gchar *path;
+
+	path = mm_object_get_path (modem_object);
+	modem = (NMModem *) g_hash_table_lookup (priv->modems, path);
+	if (!modem)
+		return;
+
+	g_signal_emit (self, signals[MODEM_REMOVED], 0, modem);
+	g_hash_table_remove (priv->modems, path);
+}
+
+static void
+modem_manager_1_available (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	GList *modems, *l;
+
+	nm_log_info (LOGD_MB, "ModemManager available in the bus");
+
+	priv->new_modem_manager_found = TRUE;
+	if (priv->old_modem_manager_found)
+		nm_log_warn (LOGD_MB, "Both the old and the new ModemManager were found");
+	else
+		clear_modem_manager_support (self);
+
+	/* Update initial modems list */
+    modems = g_dbus_object_manager_get_objects (G_DBUS_OBJECT_MANAGER (priv->modem_manager_1));
+    for (l = modems; l; l = g_list_next (l))
+	    modem_object_added (priv->modem_manager_1, MM_OBJECT (l->data), self);
+    g_list_free_full (modems, (GDestroyNotify) g_object_unref);
+}
+
+static void schedule_modem_manager_1_relaunch (NMModemManager *self,
+                                               guint n_seconds);
+
+static void
+modem_manager_1_name_owner_changed (MMManager *modem_manager_1,
+                                    GParamSpec *pspec,
+                                    NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	/* Quit poking, if any */
+	if (priv->modem_manager_1_poke_id) {
+		g_source_remove (priv->modem_manager_1_poke_id);
+		priv->modem_manager_1_poke_id = 0;
+	}
+
+	if (!g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (modem_manager_1))) {
+		nm_log_info (LOGD_MB, "ModemManager disappeared from bus");
+		schedule_modem_manager_1_relaunch (self, 0);
+		return;
+	}
+
+	/* Available! */
+	modem_manager_1_available (self);
+}
+
+static void
+manager_new_ready (GObject *source,
+                   GAsyncResult *res,
+                   NMModemManager *self)
+{
+	/* Note we always get an extra reference to self here */
+
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	g_assert (!priv->modem_manager_1);
+	priv->modem_manager_1 = mm_manager_new_finish (res, &error);
+	if (!priv->modem_manager_1) {
+		if (   !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_EXEC_FAILED)
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FORK_FAILED)
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FAILED)
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_TIMEOUT)
+		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
+			nm_log_warn (LOGD_MB, "error creating ModemManager client: %s", error->message);
+		}
+		g_error_free (error);
+		/* Setup timeout to relaunch */
+		schedule_modem_manager_1_relaunch (self, MODEM_POKE_INTERVAL);
+	} else if (priv->old_modem_manager_found) {
+		/* If we found the old MM, abort */
+		clear_modem_manager_1_support (self);
+	} else {
+		gchar *name_owner;
+
+		g_signal_connect (priv->modem_manager_1,
+		                  "notify::name-owner",
+		                  G_CALLBACK (modem_manager_1_name_owner_changed),
+		                  self);
+		g_signal_connect (priv->modem_manager_1,
+		                  "object-added",
+		                  G_CALLBACK (modem_object_added),
+		                  self);
+		g_signal_connect (priv->modem_manager_1,
+		                  "object-removed",
+		                  G_CALLBACK (modem_object_removed),
+		                  self);
+
+		/* If there is no current owner right away, ensure we poke until we get
+		 * one */
+		name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->modem_manager_1));
+		if (!name_owner) {
+			/* Setup timeout to wait for an owner */
+			schedule_modem_manager_1_relaunch (self, MODEM_POKE_INTERVAL);
+		} else {
+			/* Available! */
+			modem_manager_1_available (self);
+			g_free (name_owner);
+		}
+	}
+
+	/* Balance refcount */
+	g_object_unref (self);
+}
+
+static void
+recreate_client (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	g_assert (priv->dbus_connection);
+
+	/* Re-create the GDBusObjectManagerClient so that we request again the owner
+	 * for the well-known name.
+	 * Note that we pass an extra reference always */
+	g_clear_object (&priv->modem_manager_1);
+	mm_manager_new (priv->dbus_connection,
+	                G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_NONE,
+	                NULL,
+	                (GAsyncReadyCallback)manager_new_ready,
+	                g_object_ref (self));
+}
+
+static void
+bus_get_ready (GObject *source,
+               GAsyncResult *res,
+               NMModemManager *self)
+{
+	/* Note we always get an extra reference to self here */
+
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	priv->dbus_connection = g_bus_get_finish (res, &error);
+	if (!priv->dbus_connection) {
+		nm_log_warn (LOGD_CORE, "error getting bus connection: %s", error->message);
+		g_error_free (error);
+		/* Setup timeout to relaunch */
+		schedule_modem_manager_1_relaunch (self, MODEM_POKE_INTERVAL);
+	} else if (priv->old_modem_manager_found) {
+		/* If we found the old MM, abort */
+		clear_modem_manager_1_support (self);
+	} else {
+		/* Got the bus, create new ModemManager client. */
+		recreate_client (self);
+	}
+
+	/* Balance refcount */
+	g_object_unref (self);
+}
+
+static gboolean
+ensure_bus (NMModemManager *self)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	nm_log_dbg (LOGD_MB, "Requesting to (re)launch ModemManager...");
+
+	/* Clear poke ID */
+	priv->modem_manager_1_poke_id = 0;
+
+	if (!priv->dbus_connection)
+		g_bus_get (G_BUS_TYPE_SYSTEM,
+		           NULL,
+		           (GAsyncReadyCallback)bus_get_ready,
+		           g_object_ref (self));
+	else
+		/* If bus is already available, launch client re-creation */
+		recreate_client (self);
+
+	return FALSE;
+}
+
+static void
+schedule_modem_manager_1_relaunch (NMModemManager *self,
+                                   guint n_seconds)
+{
+	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
+
+	/* No need to pass an extra reference to self; timeout/idle will be
+	 * cancelled if the object gets disposed. */
+
+	if (n_seconds)
+		priv->modem_manager_1_poke_id = g_timeout_add_seconds (n_seconds, (GSourceFunc)ensure_bus, self);
+	else
+		priv->modem_manager_1_poke_id = g_idle_add ((GSourceFunc)ensure_bus, self);
+}
+
+#endif /* WITH_MODEM_MANAGER_1 */
+
+/************************************************************************/
 
 static void
 nm_modem_manager_init (NMModemManager *self)
@@ -368,21 +698,27 @@ nm_modem_manager_init (NMModemManager *self)
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
 
 	priv->modems = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-	priv->dbus_mgr = nm_dbus_manager_get ();
 
+	/* ModemManager < 0.7 */
+	priv->dbus_mgr = nm_dbus_manager_get ();
 	g_signal_connect (priv->dbus_mgr, NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 					  G_CALLBACK (nm_modem_manager_name_owner_changed),
 					  self);
-
 	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_OLD_DBUS_SERVICE))
 		modem_manager_appeared (self, TRUE);
 	else
 		modem_manager_disappeared (self);
+
+#if WITH_MODEM_MANAGER_1
+	/* ModemManager >= 0.7 */
+	schedule_modem_manager_1_relaunch (self, 0);
+#endif
 }
 
 static void
 dispose (GObject *object)
 {
+	NMModemManager *self = NM_MODEM_MANAGER (object);
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (object);
 
 	if (priv->disposed)
@@ -390,23 +726,16 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
-	if (priv->poke_id) {
-		g_source_remove (priv->poke_id);
-		priv->poke_id = 0;
-	}
+	/* ModemManager < 0.7 */
+	clear_modem_manager_support (self);
+
+#if WITH_MODEM_MANAGER_1
+	/* ModemManager >= 0.7 */
+	clear_modem_manager_1_support (self);
+#endif
 
 	g_hash_table_foreach_remove (priv->modems, remove_one_modem, object);
 	g_hash_table_destroy (priv->modems);
-
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
-
-	if (priv->dbus_mgr) {
-		g_object_unref (priv->dbus_mgr);
-		priv->dbus_mgr = NULL;
-	}
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_modem_manager_parent_class)->dispose (object);
