@@ -875,45 +875,32 @@ NMModem *
 nm_modem_broadband_new (GObject *object)
 {
 	MMObject *modem_object;
-	NMModem *self;
 	MMModem *modem_iface;
-	gchar *uid;
-	const gchar *path;
-	const gchar *aux;
 
 	g_return_val_if_fail (MM_IS_OBJECT (object), NULL);
 	modem_object = MM_OBJECT (object);
 
-	/* Ensure we have the 'Modem' interface at least */
+	/* Ensure we have the 'Modem' interface and the primary port at least */
 	modem_iface = mm_object_peek_modem (modem_object);
 	g_return_val_if_fail (!!modem_iface, NULL);
-
-	/* Uid is just a unique string we build for logs and such */
-	path = mm_object_get_path (modem_object);
-	g_assert (g_str_has_prefix (path, MM_DBUS_MODEM_PREFIX));
-	aux = &path[strlen (MM_DBUS_MODEM_PREFIX)];
-	while (*aux == '/')
-		aux++;
-	uid = g_strdup_printf ("modem%s", aux);
+	g_return_val_if_fail (!!mm_modem_get_primary_port (modem_iface), NULL);
 
 	/* If the modem is in 'FAILED' state we cannot do anything with it.
 	 * This happens when a severe error happened when trying to initialize it,
 	 * like missing SIM. */
 	if (mm_modem_get_state (modem_iface) == MM_MODEM_STATE_FAILED) {
-		nm_log_warn (LOGD_MB, "(%s): unusable modem detected", uid);
-		g_free (uid);
+		nm_log_warn (LOGD_MB, "(%s): unusable modem detected",
+					 mm_modem_get_primary_port (modem_iface));
 		return NULL;
 	}
 
-	self = (NMModem *) g_object_new (NM_TYPE_MODEM_BROADBAND,
-	                                 NM_MODEM_PATH, path,
-	                                 NM_MODEM_UID, uid,
+	return (NMModem *) g_object_new (NM_TYPE_MODEM_BROADBAND,
+	                                 NM_MODEM_PATH, mm_object_get_path (modem_object),
+	                                 NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
 	                                 NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
 	                                 NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
 	                                 NM_MODEM_BROADBAND_MODEM, modem_object,
 	                                 NULL);
-	g_free (uid);
-	return self;
 }
 
 static void
