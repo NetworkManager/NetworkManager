@@ -785,7 +785,7 @@ state_changed (NMDevice *device, NMDeviceState new_state,
 	case NM_DEVICE_STATE_UNMANAGED:
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
-		/* If transitioning to UNAVAILBLE and the companion device is known then
+		/* If transitioning to UNAVAILABLE and the companion device is known then
 		 * transition to DISCONNECTED otherwise wait for our companion.
 		 */
 		g_idle_add (check_companion_cb, self);
