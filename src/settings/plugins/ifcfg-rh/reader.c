@@ -3437,6 +3437,14 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
+	value = svGetValue(ifcfg, "CARRIER_DETECT", FALSE);
+	if (!value || !strlen (value)) {
+		g_free (value);
+		value = g_strdup ("yes");
+	}
+	g_object_set (s_wired, NM_SETTING_WIRED_CARRIER_DETECT, value, NULL);
+	g_free (value);
+
 	return (NMSetting *) s_wired;
 
 error:
@@ -3545,6 +3553,14 @@ make_infiniband_setting (shvarFile *ifcfg,
 		 */
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
 	}
+
+	value = svGetValue(ifcfg, "CARRIER_DETECT", FALSE);
+	if (!value || !strlen (value)) {
+		g_free (value);
+		value = g_strdup ("yes");
+	}
+	g_object_set (s_infiniband, NM_SETTING_INFINIBAND_CARRIER_DETECT, value, NULL);
+	g_free (value);
 
 	return (NMSetting *) s_infiniband;
 }
@@ -4078,6 +4094,14 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_INGRESS_PRIORITY_MAP", NM_VLAN_INGRESS_MAP);
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
+
+	value = svGetValue(ifcfg, "CARRIER_DETECT", FALSE);
+	if (!value || !strlen (value)) {
+		g_free (value);
+		value = g_strdup ("yes");
+	}
+	g_object_set (s_vlan, NM_SETTING_VLAN_CARRIER_DETECT, value, NULL);
+	g_free (value);
 
 	if (out_master)
 		*out_master = svGetValue (ifcfg, "MASTER", FALSE);

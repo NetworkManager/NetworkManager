@@ -83,6 +83,7 @@ typedef struct {
 	GPtrArray *s390_subchannels;
 	char *s390_nettype;
 	GHashTable *s390_options;
+	char *carrier_detect;
 } NMSettingWiredPrivate;
 
 enum {
@@ -98,6 +99,7 @@ enum {
 	PROP_S390_SUBCHANNELS,
 	PROP_S390_NETTYPE,
 	PROP_S390_OPTIONS,
+	PROP_CARRIER_DETECT,
 
 	LAST_PROP
 };
@@ -420,6 +422,21 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
 	return g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
 }
 
+/**
+ * nm_setting_wired_get_carrier_detect:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the connection's carrier-detection behavior;
+ *   See #NMSettingWired:carrier-detect.
+ **/
+const char *
+nm_setting_wired_get_carrier_detect (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->carrier_detect;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -503,6 +520,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
+		return FALSE;
+	}
+
+	if (priv->carrier_detect && !_nm_utils_carrier_detect_mode_valid (priv->carrier_detect)) {
+		g_set_error (error,
+		             NM_SETTING_WIRED_ERROR,
+		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRED_CARRIER_DETECT);
 		return FALSE;
 	}
 
@@ -603,6 +628,10 @@ set_property (GObject *object, guint prop_id,
 		if (new_hash)
 			g_hash_table_foreach (new_hash, copy_hash, priv->s390_options);
 		break;
+	case PROP_CARRIER_DETECT:
+		g_free (priv->carrier_detect);
+		priv->carrier_detect = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -649,6 +678,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_S390_OPTIONS:
 		g_value_set_boxed (value, priv->s390_options);
+		break;
+	case PROP_CARRIER_DETECT:
+		g_value_set_string (value, nm_setting_wired_get_carrier_detect (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -869,5 +901,23 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 							   "'layer2', 'portname', 'protocol', among others.",
 							   DBUS_TYPE_G_MAP_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingWired:carrier-detect:
+	 *
+	 * Controls whether device carrier affects this connection. Possible values
+	 * are 'no', meaning the connection completely ignores carrier; 'yes',
+	 * meaning the connection can only be activated if carrier is present,
+	 * and will be deactivated automatically if carrier is lost; and
+	 * 'on-activate', meaning the connection can only be activated if carrier
+	 * is present, but will not be deactivated if carrier is lost.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CARRIER_DETECT,
+		 g_param_spec_string (NM_SETTING_WIRED_CARRIER_DETECT,
+		                      "Carrier-detect",
+		                      "Controls whether device carrier affects this connection.",
+		                      "yes",
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
 

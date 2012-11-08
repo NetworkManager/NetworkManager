@@ -66,6 +66,7 @@ GQuark nm_setting_wired_error_quark (void);
 #define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
 #define NM_SETTING_WIRED_S390_NETTYPE "s390-nettype"
 #define NM_SETTING_WIRED_S390_OPTIONS "s390-options"
+#define NM_SETTING_WIRED_CARRIER_DETECT "carrier-detect"
 
 typedef struct {
 	NMSetting parent;
@@ -108,6 +109,8 @@ gboolean          nm_setting_wired_add_s390_option      (NMSettingWired *setting
                                                          const char *item);
 gboolean          nm_setting_wired_remove_s390_option   (NMSettingWired *setting,
                                                          const char *key);
+
+const char *      nm_setting_wired_get_carrier_detect   (NMSettingWired *setting);
 
 G_END_DECLS
 

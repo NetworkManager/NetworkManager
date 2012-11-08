@@ -66,6 +66,7 @@ typedef struct {
 	GByteArray *mac_address;
 	char *transport_mode;
 	guint32 mtu;
+	char *carrier_detect;
 } NMSettingInfinibandPrivate;
 
 enum {
@@ -73,6 +74,7 @@ enum {
 	PROP_MAC_ADDRESS,
 	PROP_MTU,
 	PROP_TRANSPORT_MODE,
+	PROP_CARRIER_DETECT,
 
 	LAST_PROP
 };
@@ -135,6 +137,21 @@ nm_setting_infiniband_get_transport_mode (NMSettingInfiniband *setting)
 	return NM_SETTING_INFINIBAND_GET_PRIVATE (setting)->transport_mode;
 }
 
+/**
+ * nm_setting_infiniband_get_carrier_detect:
+ * @setting: the #NMSettingInfiniband
+ *
+ * Returns: the connection's carrier-detection behavior;
+ *   See #NMSettingInfiniband:carrier-detect.
+ **/
+const char *
+nm_setting_infiniband_get_carrier_detect (NMSettingInfiniband *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_INFINIBAND (setting), NULL);
+
+	return NM_SETTING_INFINIBAND_GET_PRIVATE (setting)->carrier_detect;
+}
+
 
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
@@ -160,6 +177,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_INFINIBAND_ERROR,
 		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_INFINIBAND_TRANSPORT_MODE);
+		return FALSE;
+	}
+
+	if (priv->carrier_detect && !_nm_utils_carrier_detect_mode_valid (priv->carrier_detect)) {
+		g_set_error (error,
+		             NM_SETTING_INFINIBAND_ERROR,
+		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_INFINIBAND_CARRIER_DETECT);
 		return FALSE;
 	}
 
@@ -203,6 +228,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->transport_mode);
 		priv->transport_mode = g_value_dup_string (value);
 		break;
+	case PROP_CARRIER_DETECT:
+		g_free (priv->carrier_detect);
+		priv->carrier_detect = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -224,6 +253,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_TRANSPORT_MODE:
 		g_value_set_string (value, nm_setting_infiniband_get_transport_mode (setting));
+		break;
+	case PROP_CARRIER_DETECT:
+		g_value_set_string (value, nm_setting_infiniband_get_carrier_detect (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -293,5 +325,23 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 							  "The IPoIB transport mode. Either 'datagram' or 'connected'.",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSettingInfiniband:carrier-detect:
+	 *
+	 * Controls whether device carrier affects this connection. Possible values
+	 * are 'no', meaning the connection completely ignores carrier; 'yes',
+	 * meaning the connection can only be activated if carrier is present,
+	 * and will be deactivated automatically if carrier is lost; and
+	 * 'on-activate', meaning the connection can only be activated if carrier
+	 * is present, but will not be deactivated if carrier is lost.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CARRIER_DETECT,
+		 g_param_spec_string (NM_SETTING_INFINIBAND_CARRIER_DETECT,
+		                      "Carrier-detect",
+		                      "Controls whether device carrier affects this connection.",
+		                      "yes",
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
 

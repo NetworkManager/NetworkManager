@@ -34,4 +34,7 @@ gboolean    _nm_utils_string_slist_validate (GSList *list,
 
 void        _nm_utils_register_value_transformations (void);
 
+gboolean    _nm_utils_carrier_detect_mode_valid (const char *carrier_detect);
+
+
 #endif

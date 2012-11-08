@@ -63,6 +63,7 @@ GQuark nm_setting_vlan_error_quark (void);
 #define NM_SETTING_VLAN_FLAGS                "flags"
 #define NM_SETTING_VLAN_INGRESS_PRIORITY_MAP "ingress-priority-map"
 #define NM_SETTING_VLAN_EGRESS_PRIORITY_MAP  "egress-priority-map"
+#define NM_SETTING_VLAN_CARRIER_DETECT       "carrier-detect"
 
 typedef struct {
 	NMSetting parent;
@@ -141,6 +142,8 @@ void     nm_setting_vlan_clear_priorities   (NMSettingVlan *setting, NMVlanPrior
 gboolean nm_setting_vlan_add_priority_str   (NMSettingVlan *setting,
                                              NMVlanPriorityMap map,
                                              const char *str);
+
+const char * nm_setting_vlan_get_carrier_detect (NMSettingVlan *setting);
 
 G_END_DECLS
 
