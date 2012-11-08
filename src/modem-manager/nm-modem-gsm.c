@@ -475,18 +475,9 @@ get_best_auto_connection (NMModem *modem,
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
 
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
-
-		if (!nm_setting_connection_get_autoconnect (s_con))
-			continue;
-
-		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_GSM_SETTING_NAME))
-			continue;
-
-		return connection;
+		if (nm_connection_is_type (connection, NM_SETTING_GSM_SETTING_NAME))
+			return connection;
 	}
 	return NULL;
 }

@@ -158,15 +158,9 @@ get_best_auto_connection (NMDevice *dev,
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
 		NMSettingInfiniband *s_infiniband;
 
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
-
 		if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME))
-			continue;
-		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
 
 		s_infiniband = nm_connection_get_setting_infiniband (connection);

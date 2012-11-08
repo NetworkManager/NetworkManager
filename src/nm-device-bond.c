@@ -164,12 +164,8 @@ get_best_auto_connection (NMDevice *dev,
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
 
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
-		if (   nm_setting_connection_get_autoconnect (s_con)
-		    && match_bond_connection (dev, connection, NULL))
+		if (match_bond_connection (dev, connection, NULL))
 			return connection;
 	}
 	return NULL;

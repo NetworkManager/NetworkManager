@@ -208,22 +208,12 @@ get_best_auto_connection (NMDevice *dev,
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingAdsl *s_adsl;
 
 		if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME))
 			continue;
 
-		s_adsl = nm_connection_get_setting_adsl (connection);
-		if (!s_adsl)
-			continue;
-
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
-		if (!nm_setting_connection_get_autoconnect (s_con))
-			continue;
-
-		return connection;
+		if (nm_connection_get_setting_adsl (connection))
+			return connection;
 	}
 	return NULL;
 }

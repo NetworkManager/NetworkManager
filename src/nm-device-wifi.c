@@ -1386,7 +1386,6 @@ get_best_auto_connection (NMDevice *dev,
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
 		NMSettingWireless *s_wireless;
 		const GByteArray *mac;
 		const GSList *mac_blacklist, *mac_blacklist_iter;
@@ -1395,12 +1394,7 @@ get_best_auto_connection (NMDevice *dev,
 		const char *method = NULL;
 		guint64 timestamp = 0;
 
-		s_con = nm_connection_get_setting_connection (connection);
-		if (s_con == NULL)
-			continue;
-		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME))
-			continue;
-		if (!nm_setting_connection_get_autoconnect (s_con))
+		if (!nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME))
 			continue;
 
 		/* Don't autoconnect to networks that have been tried at least once

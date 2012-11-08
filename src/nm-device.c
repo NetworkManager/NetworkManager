@@ -1161,6 +1161,8 @@ nm_device_get_best_auto_connection (NMDevice *dev,
                                     char **specific_object)
 {
 	guint32 caps;
+	GSList *iter, *available_conns;
+	NMConnection *best_connection;
 
 	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
 	g_return_val_if_fail (specific_object != NULL, NULL);
@@ -1174,7 +1176,24 @@ nm_device_get_best_auto_connection (NMDevice *dev,
 	if (!NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection)
 		return NULL;
 
-	return NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection (dev, connections, specific_object);
+	available_conns = NULL;
+	for (iter = connections; iter; iter = iter->next) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+
+		s_con = nm_connection_get_setting_connection (connection);
+		g_assert (s_con);
+		if (nm_setting_connection_get_autoconnect (s_con))
+			available_conns = g_slist_prepend (available_conns, connection);
+	}
+
+	if (!available_conns)
+		return NULL;
+
+	best_connection = NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection (dev, available_conns, specific_object);
+
+	g_slist_free (available_conns);
+	return best_connection;
 }
 
 gboolean
