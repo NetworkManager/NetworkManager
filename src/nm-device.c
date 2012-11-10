@@ -1589,7 +1589,7 @@ dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
 	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
 
 	if (!nm_device_set_ip4_config (device, config, FALSE, &reason)) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv4 config in response to DHCP event.",
+		nm_log_warn (LOGD_DHCP4, "(%s): failed to update IPv4 config in response to DHCP event.",
 		             nm_device_get_ip_iface (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 		return;

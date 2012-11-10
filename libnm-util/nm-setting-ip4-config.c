@@ -1001,7 +1001,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * List of DNS servers (network byte order).  For the 'auto' method, these
 	 * DNS servers are appended to those (if any) returned by automatic
 	 * configuration.  DNS servers cannot be used with the 'shared', 'link-local',
-	 * or 'disabled' methods as there is no usptream network.  In all other
+	 * or 'disabled' methods as there is no upstream network.  In all other
 	 * methods, these DNS servers are used as the only DNS servers for this
 	 * connection.
 	 **/
@@ -1014,7 +1014,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "appended to those (if any) returned by automatic "
 							   "configuration.  DNS servers cannot be used with "
 							   "the 'shared', 'link-local', or 'disabled' "
-							   "methods as there is no usptream network.  In all "
+							   "methods as there is no upstream network.  In all "
 							   "other methods, these DNS servers are used as the "
 							   "only DNS servers for this connection.",
 							   DBUS_TYPE_G_UINT_ARRAY,
@@ -1148,7 +1148,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * NMSettingIP4Config:dhcp-client-id:
 	 *
 	 * A string sent to the DHCP server to identify the local machine which the
-	 * DHCP server may use to cusomize the DHCP lease and options.
+	 * DHCP server may use to customize the DHCP lease and options.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_CLIENT_ID,
@@ -1156,7 +1156,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "DHCP Client ID",
 						   "A string sent to the DHCP server to identify the "
 						   "local machine which the DHCP server may use to "
-						   "cusomize the DHCP lease and options.",
+						   "customize the DHCP lease and options.",
 						   NULL,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
