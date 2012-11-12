@@ -61,7 +61,6 @@ typedef struct {
 	NMNetlinkMonitor *monitor;
 	gulong            link_connected_id;
 	gulong            link_disconnected_id;
-	guint             carrier_action_defer_id;
 } NMDeviceVlanPrivate;
 
 enum {
@@ -83,8 +82,7 @@ enum {
 
 static void
 set_carrier (NMDeviceVlan *self,
-             const gboolean carrier,
-             const gboolean defer_action);
+             const gboolean carrier);
 
 /******************************************************************/
 
@@ -147,7 +145,7 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		i = 20;
 		while (i-- > 0) {
 			carrier = get_carrier_sync (NM_DEVICE_VLAN (dev));
-			set_carrier (NM_DEVICE_VLAN (dev), carrier, carrier ? FALSE : TRUE);
+			set_carrier (NM_DEVICE_VLAN (dev), carrier);
 			if (carrier)
 				break;
 			g_usleep (100);
@@ -442,65 +440,16 @@ connection_match_config (NMDevice *self, const GSList *connections)
 /******************************************************************/
 
 static void
-carrier_action_defer_clear (NMDeviceVlan *self)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
-	if (priv->carrier_action_defer_id) {
-		g_source_remove (priv->carrier_action_defer_id);
-		priv->carrier_action_defer_id = 0;
-	}
-}
-
-static gboolean
-carrier_action_defer_cb (gpointer user_data)
-{
-	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	NMDeviceState state;
-
-	priv->carrier_action_defer_id = 0;
-
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (priv->carrier)
-			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!priv->carrier)
-			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-	}
-	return FALSE;
-}
-
-static void
 set_carrier (NMDeviceVlan *self,
-             const gboolean carrier,
-             const gboolean defer_action)
+             const gboolean carrier)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	NMDeviceState state;
 
 	if (priv->carrier == carrier)
 		return;
 
-	/* Clear any previous deferred action */
-	carrier_action_defer_clear (self);
-
 	priv->carrier = carrier;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_VLAN_CARRIER);
-
-	state = nm_device_get_state (NM_DEVICE (self));
-	nm_log_info (LOGD_HW | LOGD_VLAN,
-	             "(%s): carrier now %s (device state %d%s)",
-	             nm_device_get_iface (NM_DEVICE (self)),
-	             carrier ? "ON" : "OFF",
-	             state,
-	             defer_action ? ", deferring action for 4 seconds" : "");
-
-	if (defer_action)
-		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
-	else
-		carrier_action_defer_cb (self);
 }
 
 static void
@@ -508,27 +457,15 @@ carrier_on (NMNetlinkMonitor *monitor, int idx, NMDevice *device)
 {
 	/* Make sure signal is for us */
 	if (idx == nm_device_get_ifindex (device))
-		set_carrier (NM_DEVICE_VLAN (device), TRUE, FALSE);
+		set_carrier (NM_DEVICE_VLAN (device), TRUE);
 }
 
 static void
 carrier_off (NMNetlinkMonitor *monitor, int idx, NMDevice *device)
 {
-	NMDeviceState state;
-	gboolean defer = FALSE;
-
 	/* Make sure signal is for us */
-	if (idx == nm_device_get_ifindex (device)) {
-		/* Defer carrier-off event actions while connected by a few seconds
-		 * so that tripping over a cable, power-cycling a switch, or breaking
-		 * off the RJ45 locking tab isn't so catastrophic.
-		 */
-		state = nm_device_get_state (device);
-		if (state > NM_DEVICE_STATE_DISCONNECTED)
-			defer = TRUE;
-
-		set_carrier (NM_DEVICE_VLAN (device), FALSE, defer);
-	}
+	if (idx == nm_device_get_ifindex (device))
+		set_carrier (NM_DEVICE_VLAN (device), FALSE);
 }
 
 static void
@@ -704,7 +641,6 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (priv->monitor, priv->link_connected_id);
 	if (priv->link_disconnected_id)
 		g_signal_handler_disconnect (priv->monitor, priv->link_disconnected_id);
-	carrier_action_defer_clear (self);
 
 	g_object_unref (priv->monitor);
 

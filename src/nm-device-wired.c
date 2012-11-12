@@ -55,7 +55,6 @@ typedef struct {
 	NMNetlinkMonitor *  monitor;
 	gulong              link_connected_id;
 	gulong              link_disconnected_id;
-	guint               carrier_action_defer_id;
 
 } NMDeviceWiredPrivate;
 
@@ -121,65 +120,15 @@ set_speed (NMDeviceWired *self, const guint32 speed)
 }
 
 static void
-carrier_action_defer_clear (NMDeviceWired *self)
-{
-	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
-
-	if (priv->carrier_action_defer_id) {
-		g_source_remove (priv->carrier_action_defer_id);
-		priv->carrier_action_defer_id = 0;
-	}
-}
-
-static void
-carrier_action (NMDeviceWired *self, NMDeviceState state, gboolean carrier)
-{
-	NMDevice *device = NM_DEVICE (self);
-
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (carrier)
-			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-		else {
-			/* clear any queued state changes if they wouldn't be valid when the
-			 * carrier is off.
-			 */
-			if (nm_device_queued_state_peek (device) >= NM_DEVICE_STATE_DISCONNECTED)
-				nm_device_queued_state_clear (device);
-		}
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!carrier && !nm_device_get_enslaved (device))
-			nm_device_queue_state (device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-	}
-}
-
-static gboolean
-carrier_action_defer_cb (gpointer user_data)
-{
-	NMDeviceWired *self = NM_DEVICE_WIRED (user_data);
-	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
-
-	priv->carrier_action_defer_id = 0;
-	NM_DEVICE_WIRED_GET_CLASS (self)->carrier_action (self,
-	                                                  nm_device_get_state (NM_DEVICE (self)),
-	                                                  priv->carrier);
-	return FALSE;
-}
-
-static void
 set_carrier (NMDeviceWired *self,
-             const gboolean carrier,
-             const gboolean defer_action)
+             gboolean carrier)
 {
-	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
-	NMDeviceState state;
+	NMDeviceWiredPrivate *priv;
 	guint32 caps;
 
 	if (priv->carrier == carrier)
 		return;
-
-	/* Clear any previous deferred action */
-	carrier_action_defer_clear (self);
 
 	/* Warn if we try to set carrier down on a device that
 	 * doesn't support carrier detect.  These devices assume
@@ -189,32 +138,7 @@ set_carrier (NMDeviceWired *self,
 	g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
 
 	priv->carrier = carrier;
-
-	state = nm_device_get_state (device);
-	if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
-		nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (device),
-		             "(%s): carrier now %s (device state %d%s)",
-		             nm_device_get_iface (device),
-		             carrier ? "ON" : "OFF",
-		             state,
-		             defer_action ? ", deferring action for 4 seconds" : "");
-	}
-
 	g_object_notify (G_OBJECT (self), "carrier");
-
-	/* Retry IP configuration for master devices now that the carrier is on */
-	if (nm_device_is_master (device) && priv->carrier) {
-		if (nm_device_activate_ip4_state_in_wait (device))
-			nm_device_activate_stage3_ip4_start (device);
-
-		if (nm_device_activate_ip6_state_in_wait (device))
-			nm_device_activate_stage3_ip6_start (device);
-	}
-
-	if (defer_action)
-		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
-	else
-		carrier_action_defer_cb (self);
 }
 
 static void
@@ -224,14 +148,10 @@ carrier_on (NMNetlinkMonitor *monitor,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceWired *self = NM_DEVICE_WIRED (device);
-	guint32 caps;
 
 	/* Make sure signal is for us */
 	if (idx == nm_device_get_ifindex (device)) {
-		caps = nm_device_get_capabilities (device);
-		g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
-
-		set_carrier (self, TRUE, FALSE);
+		set_carrier (self, TRUE);
 		set_speed (self, ethtool_get_speed (self));
 	}
 }
@@ -243,26 +163,10 @@ carrier_off (NMNetlinkMonitor *monitor,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceWired *self = NM_DEVICE_WIRED (device);
-	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (idx == nm_device_get_ifindex (device)) {
-		NMDeviceState state;
-		gboolean defer = FALSE;
-
-		caps = nm_device_get_capabilities (device);
-		g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
-
-		/* Defer carrier-off event actions while connected by a few seconds
-		 * so that tripping over a cable, power-cycling a switch, or breaking
-		 * off the RJ45 locking tab isn't so catastrophic.
-		 */
-		state = nm_device_get_state (device);
-		if (state > NM_DEVICE_STATE_DISCONNECTED)
-			defer = TRUE;
-
-		set_carrier (self, FALSE, defer);
-	}
+	if (idx == nm_device_get_ifindex (device))
+		set_carrier (self, FALSE);
 }
 
 static gboolean
@@ -362,7 +266,7 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		caps = nm_device_get_capabilities (dev);
 		if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 			carrier = get_carrier_sync (NM_DEVICE_WIRED (dev));
-			set_carrier (NM_DEVICE_WIRED (dev), carrier, carrier ? FALSE : TRUE);
+			set_carrier (NM_DEVICE_WIRED (dev), carrier);
 		}
 	}
 	return result;
@@ -458,8 +362,6 @@ dispose (GObject *object)
 		priv->link_disconnected_id = 0;
 	}
 
-	carrier_action_defer_clear (self);
-
 	if (priv->monitor) {
 		g_object_unref (priv->monitor);
 		priv->monitor = NULL;
@@ -473,7 +375,6 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-	NMDeviceWiredClass *wired_class = NM_DEVICE_WIRED_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceWiredPrivate));
 
@@ -487,8 +388,6 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	parent_class->connection_match_config = connection_match_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
-
-	wired_class->carrier_action = carrier_action;
 }
 
 /**

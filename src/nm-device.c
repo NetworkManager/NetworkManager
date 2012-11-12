@@ -262,6 +262,10 @@ typedef struct {
 	guint cp_loaded_id;
 	guint cp_removed_id;
 	guint cp_updated_id;
+
+	/* Deferred carrier handling */
+	guint carrier_action_defer_id;
+
 } NMDevicePrivate;
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
@@ -293,6 +297,9 @@ static void cp_connection_removed (NMConnectionProvider *cp, NMConnection *conne
 static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 
 static const char *state_to_string (NMDeviceState state);
+
+static void carrier_changed (GObject *object, GParamSpec *param, gpointer user_data);
+static void carrier_action_defer_clear (NMDevice *self);
 
 static void
 nm_device_init (NMDevice *self)
@@ -462,6 +469,9 @@ constructor (GType type,
 
 	update_accept_ra_save (dev);
 	update_ip6_privacy_save (dev);
+
+	if (g_object_class_find_property (G_OBJECT_GET_CLASS (dev), "carrier"))
+		g_signal_connect (dev, "notify::carrier", G_CALLBACK (carrier_changed), NULL);
 
 	priv->initialized = TRUE;
 	return object;
@@ -1149,6 +1159,109 @@ nm_device_get_act_request (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->act_request;
+}
+
+static void
+carrier_action_defer_clear (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->carrier_action_defer_id) {
+		g_source_remove (priv->carrier_action_defer_id);
+		priv->carrier_action_defer_id = 0;
+	}
+}
+
+static gboolean
+carrier_action_defer_cb (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceState state;
+
+	priv->carrier_action_defer_id = 0;
+
+	/* We know that carrier is FALSE */
+
+	state = nm_device_get_state (self);
+	if (state >= NM_DEVICE_STATE_DISCONNECTED)
+		nm_device_queue_state (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
+
+	return FALSE;
+}
+
+static void
+carrier_changed (GObject *object, GParamSpec *param, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean carrier, defer_action = FALSE;
+	NMDeviceState state;
+
+	/* Clear any previous deferred action */
+	carrier_action_defer_clear (self);
+
+	state = nm_device_get_state (self);
+	if (state < NM_DEVICE_STATE_UNAVAILABLE)
+		return;
+
+	g_object_get (object, "carrier", &carrier, NULL);
+
+	if (nm_device_is_master (self)) {
+		/* Bridge/bond carrier does not affect its own activation, but
+		 * when carrier comes on, if there are slaves waiting, it will
+		 * restart them.
+		 */
+		if (!carrier)
+			return;
+
+		if (!nm_device_activate_ip4_state_in_wait (self) &&
+		    !nm_device_activate_ip6_state_in_wait (self))
+			return;
+	} else if (nm_device_get_enslaved (self) && !carrier) {
+		/* Slaves don't deactivate when they lose carrier; for bonds
+		 * in particular that would be actively counterproductive.
+		 */
+		return;
+	}
+
+	if (priv->act_request && !carrier)
+		defer_action = TRUE;
+
+	nm_log_info (LOGD_HW | LOGD_DEVICE, "(%s): carrier now %s (device state %d%s)",
+	             nm_device_get_iface (self),
+	             carrier ? "ON" : "OFF",
+	             state,
+	             defer_action ? ", deferring action for 4 seconds" : "");
+
+	if (nm_device_is_master (self)) {
+		if (nm_device_activate_ip4_state_in_wait (self))
+			nm_device_activate_stage3_ip4_start (self);
+
+		if (nm_device_activate_ip6_state_in_wait (self))
+			nm_device_activate_stage3_ip6_start (self);
+
+		return;
+	}
+
+	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
+		if (carrier)
+			nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+		else {
+			/* clear any queued state changes if they wouldn't be valid when the
+			 * carrier is off.
+			 */
+			if (nm_device_queued_state_peek (self) >= NM_DEVICE_STATE_DISCONNECTED)
+				nm_device_queued_state_clear (self);
+		}
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
+		if (!carrier) {
+			if (defer_action)
+				priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
+			else
+				nm_device_queue_state (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
+		}
+	}
 }
 
 NMConnection *
@@ -4327,6 +4440,8 @@ dispose (GObject *object)
 	    g_signal_handler_disconnect (priv->con_provider, priv->cp_updated_id);
 	    priv->cp_updated_id = 0;
 	}
+
+	carrier_action_defer_clear (self);
 
 	g_hash_table_unref (priv->available_connections);
 

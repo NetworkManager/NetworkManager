@@ -42,9 +42,6 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	void (*carrier_action) (NMDeviceWired *self,
-	                        NMDeviceState state,
-	                        gboolean carrier);
 } NMDeviceWiredClass;
 
 GType nm_device_wired_get_type (void);

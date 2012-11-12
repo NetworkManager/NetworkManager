@@ -81,23 +81,6 @@ nm_bond_error_quark (void)
 /******************************************************************/
 
 static void
-carrier_action (NMDeviceWired *self, NMDeviceState state, gboolean carrier)
-{
-	/* Carrier can't be used to signal availability of the bond master because
-	 * the bond's carrier follows the slaves' carriers.  So carrier gets
-	 * ignored when determining whether or not the device can be activated.
-	 *
-	 * Second, just because all slaves have been removed or have lost carrier
-	 * does not mean the master should be deactivated.  This could be due to
-	 * user addition/removal of slaves, and is also normal operation with some
-	 * failover modes.
-	 *
-	 * For these reasons, carrier changes are effectively ignored by overriding
-	 * the parent class' carrier handling and doing nothing.
-	 */
-}
-
-static void
 update_hw_address (NMDevice *dev)
 {
 	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (dev);
@@ -463,7 +446,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-	NMDeviceWiredClass *wired_class = NM_DEVICE_WIRED_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBondPrivate));
 
@@ -486,8 +468,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
-
-	wired_class->carrier_action = carrier_action;
 
 	/* properties */
 	g_object_class_install_property

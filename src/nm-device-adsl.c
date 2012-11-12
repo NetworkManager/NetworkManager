@@ -608,7 +608,6 @@ static void
 set_carrier (NMDeviceAdsl *self, const gboolean carrier)
 {
 	NMDeviceAdslPrivate *priv;
-	NMDeviceState state;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -619,20 +618,6 @@ set_carrier (NMDeviceAdsl *self, const gboolean carrier)
 
 	priv->carrier = carrier;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ADSL_CARRIER);
-
-	state = nm_device_get_state (NM_DEVICE (self));
-	nm_log_info (LOGD_HW, "(%s): carrier now %s (device state %d)",
-	             nm_device_get_iface (NM_DEVICE (self)),
-	             carrier ? "ON" : "OFF",
-	             state);
-
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (priv->carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!priv->carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-	}
 }
 
 static gboolean
