@@ -1067,7 +1067,7 @@ deactivate (NMDevice *device)
 /*****************************************************************************/
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *dev, gboolean need_carrier)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (dev);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
@@ -1096,7 +1096,7 @@ handle_availability_change (NMDeviceBt *self,
 		return;
 	}
 
-	available = nm_device_is_available (device);
+	available = nm_device_is_available (device, TRUE);
 	if (available == old_available)
 		return;
 
@@ -1127,7 +1127,7 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            running ? "available" : "unavailable");
 
-	old_available = nm_device_is_available (NM_DEVICE (self));
+	old_available = nm_device_is_available (NM_DEVICE (self), TRUE);
 	priv->mm_running = running;
 	handle_availability_change (self, old_available, NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE);
 

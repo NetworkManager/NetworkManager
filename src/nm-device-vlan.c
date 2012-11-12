@@ -187,9 +187,9 @@ can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *dev, gboolean need_carrier)
 {
-	return NM_DEVICE_VLAN_GET_PRIVATE (dev)->carrier ? TRUE : FALSE;
+	return NM_DEVICE_VLAN_GET_PRIVATE (dev)->carrier || !need_carrier;
 }
 
 /******************************************************************/
