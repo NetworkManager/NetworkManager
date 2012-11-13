@@ -87,4 +87,6 @@ CLEANFILES =
 endif
 
 EXTRA_DIST += version.xml.in
-CLEANFILES += html/* tmpl/* xml/*
+CLEANFILES += html/* tmpl/* xml/* \
+	NetworkManager-sections.txt \
+	NetworkManager-overrides.txt

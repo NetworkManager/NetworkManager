@@ -91,6 +91,7 @@ EXTRA_DIST += version.xml.in
 
 CLEANFILES += \
 	libnm-glib-sections.txt \
+	libnm-glib-overrides.txt \
 	html/* \
 	tmpl/* \
 	xml/*

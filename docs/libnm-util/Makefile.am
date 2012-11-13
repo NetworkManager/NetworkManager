@@ -66,6 +66,7 @@ EXTRA_DIST += version.xml.in
 
 CLEANFILES += \
 	libnm-util-sections.txt \
+	libnm-util-overrides.txt \
 	html/* \
 	tmpl/* \
 	xml/*
