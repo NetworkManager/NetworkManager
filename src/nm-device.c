@@ -3433,7 +3433,14 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	if (!nm_act_request_get_assumed (req)) {
+	if (nm_act_request_get_assumed (req)) {
+		/* If it's an assumed connection, let the device subclass short-circuit
+		 * the normal connection process and just copy its IP configs from the
+		 * interface.
+		 */
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_activate_schedule_stage3_ip_config_start (self);
+	} else {
 		NMActiveConnection *dep_ac;
 		NMConnection *dep_con;
 
@@ -3472,13 +3479,6 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 			nm_device_activate_schedule_stage1_device_prepare (self);
 			break;
 		}
-	} else {
-		/* If it's an assumed connection, let the device subclass short-circuit
-		 * the normal connection process and just copy its IP configs from the
-		 * interface.
-		 */
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
-		nm_device_activate_schedule_stage3_ip_config_start (self);
 	}
 }
 
