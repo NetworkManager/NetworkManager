@@ -177,7 +177,7 @@ AC_COMPILE_IFELSE(
                 #include <linux/types.h>
                 #include <sys/socket.h>
                 #include <linux/nl80211.h>]],
-              [[int a = NL80211_RATE_INFO_BITRATE;]])],
+              [[int a = NL80211_RATE_INFO_BITRATE; a++;]])],
         [ac_have_nl80211=yes],
         [ac_have_nl80211=no])
 AC_MSG_RESULT($ac_have_nl80211)
