@@ -666,7 +666,7 @@ AS_IF([test "$enable_tests" != "yes"], enable_tests="no")
 AS_IF([test "$enable_doc" != "yes"], enable_doc="no")
 # Add conditionals
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" = "yes")
-AM_CONDITIONAL(ENABLE_DOC, test "$enable_tests" = "yes")
+AM_CONDITIONAL(ENABLE_DOC, test "$enable_doc" = "yes")
 # Add gtk-doc conditionals
 enable_gtk_doc="$enable_doc"
 GTK_DOC_CHECK(1.0)
