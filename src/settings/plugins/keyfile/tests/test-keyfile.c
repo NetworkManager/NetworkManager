@@ -50,9 +50,9 @@
 #define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"
 
 static void
-check_ip4_address (NMSettingIP4Config *config, int index, const char *address_str, int plen, const char *gateway_str)
+check_ip4_address (NMSettingIP4Config *config, int idx, const char *address_str, int plen, const char *gateway_str)
 {
-	NMIP4Address *ip4 = nm_setting_ip4_config_get_address (config, index);
+	NMIP4Address *ip4 = nm_setting_ip4_config_get_address (config, idx);
 	struct in_addr address;
 	struct in_addr gateway;
 
@@ -66,9 +66,9 @@ check_ip4_address (NMSettingIP4Config *config, int index, const char *address_st
 }
 
 static void
-check_ip6_address (NMSettingIP6Config *config, int index, const char *address_str, int plen, const char *gateway_str)
+check_ip6_address (NMSettingIP6Config *config, int idx, const char *address_str, int plen, const char *gateway_str)
 {
-	NMIP6Address *ip6 = nm_setting_ip6_config_get_address (config, index);
+	NMIP6Address *ip6 = nm_setting_ip6_config_get_address (config, idx);
 	struct in6_addr address;
 	struct in6_addr gateway;
 
@@ -82,10 +82,10 @@ check_ip6_address (NMSettingIP6Config *config, int index, const char *address_st
 }
 
 static void
-check_ip4_route (NMSettingIP4Config *config, int index, const char *destination_str, int plen,
+check_ip4_route (NMSettingIP4Config *config, int idx, const char *destination_str, int plen,
 		const char *nexthop_str, int metric)
 {
-	NMIP4Route *route = nm_setting_ip4_config_get_route (config, index);
+	NMIP4Route *route = nm_setting_ip4_config_get_route (config, idx);
 	struct in_addr destination;
 	struct in_addr nexthop;
 
@@ -100,10 +100,10 @@ check_ip4_route (NMSettingIP4Config *config, int index, const char *destination_
 }
 
 static void
-check_ip6_route (NMSettingIP6Config *config, int index, const char *destination_str, int plen,
+check_ip6_route (NMSettingIP6Config *config, int idx, const char *destination_str, int plen,
 		const char *next_hop_str, int metric)
 {
-	NMIP6Route *route = nm_setting_ip6_config_get_route (config, index);
+	NMIP6Route *route = nm_setting_ip6_config_get_route (config, idx);
 	struct in6_addr destination;
 	struct in6_addr next_hop;
 
