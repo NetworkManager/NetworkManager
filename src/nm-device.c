@@ -3408,16 +3408,16 @@ act_dep_result_cb (NMActRequest *req,
 	}
 }
 
-gboolean
-nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
+void
+nm_device_activate (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv;
 	NMConnection *connection;
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (req != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -3428,20 +3428,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 	             nm_device_get_iface (self),
 	             nm_connection_get_id (connection));
 
-	/* Make sure this connection isn't activated already, or in the process of
-	 * being activated.
-	 */
-	if (   nm_device_is_activating (self)
-	    || (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
-		NMConnection *new = nm_act_request_get_connection (req);
-		NMConnection *current = nm_act_request_get_connection (priv->act_request);
-
-		if (new == current) {
-			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CONNECTION_ACTIVATING,
-			                     "Connection is already activating");
-			return FALSE;
-		}
-	}
+	g_warn_if_fail (priv->state == NM_DEVICE_STATE_DISCONNECTED);
 
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
@@ -3493,8 +3480,6 @@ nm_device_activate (NMDevice *self, NMActRequest *req, GError **error)
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 		nm_device_activate_schedule_stage3_ip_config_start (self);
 	}
-
-	return TRUE;
 }
 
 /*

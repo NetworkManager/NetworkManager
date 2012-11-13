@@ -2289,7 +2289,6 @@ internal_activate_device (NMManager *manager,
                           GError **error)
 {
 	NMActRequest *req;
-	gboolean success;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -2316,10 +2315,10 @@ internal_activate_device (NMManager *manager,
 	                          assumed,
 	                          (gpointer) device,
 	                          master);
-	success = nm_device_activate (device, req, error);
+	nm_device_activate (device, req);
 	g_object_unref (req);
 
-	return success ? NM_ACTIVE_CONNECTION (req) : NULL;
+	return NM_ACTIVE_CONNECTION (req);
 }
 
 /**
