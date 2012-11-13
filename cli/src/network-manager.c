@@ -578,10 +578,13 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 			}
 		}
 #endif
-		else if (strcmp (*argv, "help") == 0) {
+		else if (   matches (*argv, "help") == 0
+		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
+		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
 			usage ();
 		}
 		else {
+			usage ();
 			g_string_printf (nmc->return_text, _("Error: 'nm' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}

@@ -253,8 +253,9 @@ usage (void)
 	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n"
 	         "               [--private] [--nowait] [--timeout <timeout>]\n"
 #if WITH_WIMAX
-	         "  wimax [list [iface <iface>] [nsp <name>]]\n\n"
+	         "  wimax [list [iface <iface>] [nsp <name>]]\n"
 #endif
+	         "\n"
 	         ));
 }
 
@@ -2104,10 +2105,13 @@ do_devices (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wimax (nmc, argc-1, argv+1);
 		}
 #endif
-		else if (strcmp (*argv, "help") == 0) {
+		else if (   matches (*argv, "help") == 0
+		         || (g_str_has_prefix (*argv, "-") &&  matches ((*argv)+1, "help") == 0)
+		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
 			usage ();
 		}
 		else {
+			usage ();
 			g_string_printf (nmc->return_text, _("Error: 'dev' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}

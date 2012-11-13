@@ -197,7 +197,9 @@ usage (void)
 	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 #endif
 	         "  down id <id> | uuid <id>\n"
-	         "  delete id <id> | uuid <id>\n"));
+	         "  delete id <id> | uuid <id>\n"
+	         "\n"
+	         ));
 }
 
 /* The real commands that do something - i.e. not 'help', etc. */
@@ -1987,10 +1989,13 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
 		}
-		else if (matches (*argv, "help") == 0) {
+		else if (   matches (*argv, "help") == 0
+		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
+		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
 			usage ();
 			nmc->should_wait = FALSE;
-		} else {
+		}
+		else {
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: 'con' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
