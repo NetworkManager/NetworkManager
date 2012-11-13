@@ -6,6 +6,7 @@ if ENABLE_DOC
 
 INCLUDES = \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util
 
 noinst_PROGRAMS = \
