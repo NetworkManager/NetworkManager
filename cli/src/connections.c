@@ -187,7 +187,7 @@ static void
 usage (void)
 {
 	fprintf (stderr,
-	         _("Usage: nmcli con { COMMAND | help }\n"
+	         _("Usage: nmcli connection { COMMAND | help }\n"
 	         "  COMMAND := { list | status | up | down | delete }\n\n"
 	         "  list [id <id> | uuid <id>]\n"
 	         "  status [id <id> | uuid <id> | path <path>]\n"
@@ -2028,7 +2028,7 @@ get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 		quit ();
 }
 
-/* Entry point function for connections-related commands: 'nmcli con' */
+/* Entry point function for connections-related commands: 'nmcli connection' */
 NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
 {

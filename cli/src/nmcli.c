@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2011 Red Hat, Inc.
+ * (C) Copyright 2010 - 2012 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -73,7 +73,8 @@ static void
 usage (const char *prog_name)
 {
 	fprintf (stderr,
-	         _("Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n\n"
+	         _("Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+	         "\n"
 	         "OPTIONS\n"
 	         "  -t[erse]                                   terse output\n"
 	         "  -p[retty]                                  pretty output\n"
@@ -82,11 +83,13 @@ usage (const char *prog_name)
 	         "  -e[scape] yes|no                           escape columns separators in values\n"
 	         "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
 	         "  -v[ersion]                                 show program version\n"
-	         "  -h[elp]                                    print this help\n\n"
+	         "  -h[elp]                                    print this help\n"
+	         "\n"
 	         "OBJECT\n"
-	         "  nm          NetworkManager status\n"
-	         "  con         NetworkManager connections\n"
-	         "  dev         devices managed by NetworkManager\n\n"),
+	         "  nm              NetworkManager's status\n"
+	         "  c[onnection]    NetworkManager's connections\n"
+	         "  d[evice]        devices managed by NetworkManager\n"
+	         "\n"),
 	          prog_name);
 }
 
@@ -102,8 +105,8 @@ static const struct cmd {
 	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
 } nmcli_cmds[] = {
 	{ "nm",         do_network_manager },
-	{ "con",        do_connections },
-	{ "dev",        do_devices },
+	{ "connection", do_connections },
+	{ "device",     do_devices },
 	{ "help",       do_help },
 	{ 0 }
 };

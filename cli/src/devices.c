@@ -240,7 +240,7 @@ static void
 usage (void)
 {
 	fprintf (stderr,
-	         _("Usage: nmcli dev { COMMAND | help }\n\n"
+	         _("Usage: nmcli device { COMMAND | help }\n\n"
 #if WITH_WIMAX
 	         "  COMMAND := { status | list | disconnect | wifi | wimax }\n\n"
 #else
