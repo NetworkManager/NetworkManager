@@ -86,7 +86,7 @@ usage (const char *prog_name)
 	         "  -h[elp]                                    print this help\n"
 	         "\n"
 	         "OBJECT\n"
-	         "  nm              NetworkManager's status\n"
+	         "  g[eneral]       NetworkManager's general status and operations\n"
 	         "  c[onnection]    NetworkManager's connections\n"
 	         "  d[evice]        devices managed by NetworkManager\n"
 	         "\n"),
@@ -104,10 +104,12 @@ static const struct cmd {
 	const char *cmd;
 	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
 } nmcli_cmds[] = {
-	{ "nm",         do_network_manager },
+	{ "general",    do_network_manager },
 	{ "connection", do_connections },
 	{ "device",     do_devices },
 	{ "help",       do_help },
+	/* Deprecated objects; only kept for backwards compatibility */
+	{ "nm",         do_network_manager },
 	{ 0 }
 };
 
