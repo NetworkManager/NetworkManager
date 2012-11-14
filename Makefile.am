@@ -33,10 +33,10 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-udev-dir=$$dc_install_base/lib/udev \
 	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir) \
 	--with-wext=no \
-	--with-ifcfg-rh \
-	--with-ifcfg-suse \
-	--with-ifupdown \
-	--with-ifnet
+	--enable-ifcfg-rh \
+	--enable-ifcfg-suse \
+	--enable-ifupdown \
+	--enable-ifnet
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
