@@ -100,11 +100,11 @@ gboolean        nm_system_apply_bonding_config          (const char *iface,
                                                          NMSettingBond *s_bond);
 gboolean        nm_system_add_bonding_master            (const char *iface);
 
-gboolean        nm_system_iface_enslave                 (gint master_ifindex,
+gboolean        nm_system_bond_enslave                  (gint master_ifindex,
                                                          const char *master_iface,
                                                          gint slave_ifindex,
                                                          const char *slave_iface);
-gboolean        nm_system_iface_release                 (gint master_ifindex,
+gboolean        nm_system_bond_release                  (gint master_ifindex,
                                                          const char *master_iface,
                                                          gint slave_ifindex,
                                                          const char *slave_iface);

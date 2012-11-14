@@ -385,10 +385,10 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 
 	nm_device_hw_take_down (slave, TRUE);
 
-	success = nm_system_iface_enslave (nm_device_get_ip_ifindex (device),
-	                                   nm_device_get_ip_iface (device),
-	                                   nm_device_get_ip_ifindex (slave),
-	                                   nm_device_get_ip_iface (slave));
+	success = nm_system_bond_enslave (nm_device_get_ip_ifindex (device),
+	                                  nm_device_get_ip_iface (device),
+	                                  nm_device_get_ip_ifindex (slave),
+	                                  nm_device_get_ip_iface (slave));
 	if (success) {
 		SlaveInfo *sinfo;
 
@@ -423,10 +423,10 @@ release_slave (NMDevice *device, NMDevice *slave)
 	if (!sinfo)
 		return FALSE;
 
-	success = nm_system_iface_release (nm_device_get_ip_ifindex (device),
-	                                   nm_device_get_ip_iface (device),
-	                                   nm_device_get_ip_ifindex (slave),
-	                                   nm_device_get_ip_iface (slave));
+	success = nm_system_bond_release (nm_device_get_ip_ifindex (device),
+	                                  nm_device_get_ip_iface (device),
+	                                  nm_device_get_ip_ifindex (slave),
+	                                  nm_device_get_ip_iface (slave));
 	nm_log_dbg (LOGD_BOND, "(%s): released bond slave %s (success %d)",
 	            nm_device_get_ip_iface (device),
 	            nm_device_get_ip_iface (slave),

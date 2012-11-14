@@ -1620,7 +1620,7 @@ nm_system_add_bonding_master (const char *iface)
 }
 
 static gboolean
-nm_system_iface_compat_enslave (const char *master_iface, const char *slave_iface)
+nm_system_bond_compat_enslave (const char *master_iface, const char *slave_iface)
 {
 	struct ifreq ifr;
 	int fd;
@@ -1650,7 +1650,7 @@ nm_system_iface_compat_enslave (const char *master_iface, const char *slave_ifac
 }
 
 /**
- * nm_system_iface_enslave:
+ * nm_system_bond_enslave:
  * @master_ifindex: master device interface index
  * @master_iface: master device interface name
  * @slave_ifindex: slave device interface index
@@ -1666,10 +1666,10 @@ nm_system_iface_compat_enslave (const char *master_iface, const char *slave_ifac
  * Returns: %TRUE on success, or %FALSE
  */
 gboolean
-nm_system_iface_enslave (gint master_ifindex,
-                         const char *master_iface,
-                         gint slave_ifindex,
-                         const char *slave_iface)
+nm_system_bond_enslave (gint master_ifindex,
+                        const char *master_iface,
+                        gint slave_ifindex,
+                        const char *slave_iface)
 {
 	struct nl_sock *sock;
 	int err;
@@ -1696,7 +1696,7 @@ nm_system_iface_enslave (gint master_ifindex,
 
 	err = rtnl_link_bond_enslave_ifindex (sock, master_ifindex, slave_ifindex);
 	if (err == -NLE_OPNOTSUPP)
-		return nm_system_iface_compat_enslave (master_iface, slave_iface);
+		return nm_system_bond_compat_enslave (master_iface, slave_iface);
 
 	if (err < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error enslaving %s: %d (%s)",
@@ -1708,7 +1708,7 @@ nm_system_iface_enslave (gint master_ifindex,
 }
 
 static gboolean
-nm_system_iface_compat_release (const char *master_iface, const char *slave_iface)
+nm_system_bond_compat_release (const char *master_iface, const char *slave_iface)
 {
 	struct ifreq ifr;
 	int fd;
@@ -1737,7 +1737,7 @@ nm_system_iface_compat_release (const char *master_iface, const char *slave_ifac
 }
 
 /**
- * nm_system_iface_release:
+ * nm_system_bond_release:
  * @master_ifindex: master device interface index
  * @master_iface: master device interface name
  * @slave_ifindex: slave device interface index
@@ -1751,10 +1751,10 @@ nm_system_iface_compat_release (const char *master_iface, const char *slave_ifac
  * Returns: %TRUE on success, or %FALSE
  */
 gboolean
-nm_system_iface_release (gint master_ifindex,
-                         const char *master_iface,
-                         gint slave_ifindex,
-                         const char *slave_iface)
+nm_system_bond_release (gint master_ifindex,
+                        const char *master_iface,
+                        gint slave_ifindex,
+                        const char *slave_iface)
 {
 	struct nl_sock *sock;
 	int err;
@@ -1772,7 +1772,7 @@ nm_system_iface_release (gint master_ifindex,
 
 	err = rtnl_link_bond_release_ifindex (sock, slave_ifindex);
 	if (err == -NLE_OPNOTSUPP)
-		return nm_system_iface_compat_release (master_iface, slave_iface);
+		return nm_system_bond_compat_release (master_iface, slave_iface);
 	else if (err < 0) {
 		nm_log_err (LOGD_DEVICE, "(%s): error releasing slave %s: %d (%s)",
 		            master_iface, slave_iface, err, nl_geterror (err));
