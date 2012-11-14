@@ -34,15 +34,6 @@
 #define NM_IS_ACT_REQUEST_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_ACT_REQUEST))
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
-typedef enum {
-	NM_ACT_REQUEST_DEP_RESULT_UNKNOWN,
-	NM_ACT_REQUEST_DEP_RESULT_WAIT,
-	NM_ACT_REQUEST_DEP_RESULT_READY,
-	NM_ACT_REQUEST_DEP_RESULT_FAILED,
-} NMActRequestDependencyResult;
-
-#define NM_ACT_REQUEST_DEPENDENCY_RESULT "dependency-result"
-
 typedef struct {
 	GObject parent;
 } NMActRequest;
@@ -52,8 +43,6 @@ typedef struct {
 
 	/* Signals */
 	void (*properties_changed) (NMActRequest *req, GHashTable *properties);
-
-	void (*dependency_result) (NMActRequest *req, NMActRequestDependencyResult result);
 } NMActRequestClass;
 
 GType nm_act_request_get_type (void);
@@ -65,7 +54,7 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *dbus_sender,
                                            gboolean assumed,
                                            gpointer *device,  /* An NMDevice */
-                                           NMActiveConnection *dependency);
+                                           gpointer *master); /* An NMDevice */
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 
@@ -87,9 +76,7 @@ GObject *     nm_act_request_get_device (NMActRequest *req);
 
 gboolean      nm_act_request_get_assumed (NMActRequest *req);
 
-NMActiveConnection *         nm_act_request_get_dependency (NMActRequest *req);
-
-NMActRequestDependencyResult nm_act_request_get_dependency_result (NMActRequest *req);
+GObject *     nm_act_request_get_master (NMActRequest *req);
 
 /* Secrets handling */
 

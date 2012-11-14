@@ -62,8 +62,7 @@ typedef struct {
 	gulong user_uid;
 	char *dbus_sender;
 
-	NMActiveConnection *dep;
-	guint dep_state_id;
+	NMDevice *master;
 
 	gboolean shared;
 	GSList *share_rules;
@@ -74,13 +73,6 @@ typedef struct {
 enum {
 	PROP_MASTER = 2000,
 };
-
-enum {
-	DEP_RESULT,
-
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
 
 /*******************************************************************/
 
@@ -229,31 +221,10 @@ nm_act_request_get_assumed (NMActRequest *req)
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->assumed;
 }
 
-NMActiveConnection *
-nm_act_request_get_dependency (NMActRequest *req)
+GObject *
+nm_act_request_get_master (NMActRequest *req)
 {
-	return NM_ACT_REQUEST_GET_PRIVATE (req)->dep;
-}
-
-static NMActRequestDependencyResult
-ac_state_to_dep_result (NMActiveConnection *ac)
-{
-	NMActiveConnectionState state = nm_active_connection_get_state (ac);
-
-	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		return NM_ACT_REQUEST_DEP_RESULT_WAIT;
-	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		return NM_ACT_REQUEST_DEP_RESULT_READY;
-
-	return NM_ACT_REQUEST_DEP_RESULT_FAILED;
-}
-
-NMActRequestDependencyResult
-nm_act_request_get_dependency_result (NMActRequest *req)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
-
-	return priv->dep ? ac_state_to_dep_result (priv->dep) : NM_ACT_REQUEST_DEP_RESULT_READY;
+	return (GObject *) NM_ACT_REQUEST_GET_PRIVATE (req)->master;
 }
 
 /********************************************************************/
@@ -411,39 +382,6 @@ device_state_changed (NMDevice *device,
 
 /********************************************************************/
 
-static void
-dep_gone (NMActRequest *self, GObject *ignored)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-
-	g_warn_if_fail (G_OBJECT (priv->dep) == ignored);
-
-	/* Dependent connection is gone; clean up and fail */
-	priv->dep = NULL;
-	priv->dep_state_id = 0;
-	g_signal_emit (self, signals[DEP_RESULT], 0, NM_ACT_REQUEST_DEP_RESULT_FAILED);
-}
-
-static void
-dep_state_changed (NMActiveConnection *dep,
-                   GParamSpec *pspec,
-                   NMActRequest *self)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-	NMActRequestDependencyResult result;
-
-	g_warn_if_fail (priv->dep == dep);
-
-	result = ac_state_to_dep_result (priv->dep);
-	if (result == NM_ACT_REQUEST_DEP_RESULT_FAILED) {
-		g_object_weak_unref (G_OBJECT (priv->dep), (GWeakNotify) dep_gone, self);
-		g_signal_handler_disconnect (priv->dep, priv->dep_state_id);
-		priv->dep = NULL;
-		priv->dep_state_id = 0;
-	}
-	g_signal_emit (self, signals[DEP_RESULT], 0, result);
-}
-
 /**
  * nm_act_request_new:
  *
@@ -458,9 +396,9 @@ dep_state_changed (NMActiveConnection *dep,
  * @assumed: pass %TRUE if the activation should "assume" (ie, taking over) an
  *    existing connection made before this instance of NM started
  * @device: the device/interface to configure according to @connection
- * @dependency: if the activation depends on another device (ie, VLAN slave,
- *    bond slave, etc) pass the #NMActiveConnection that this activation request
- *    should wait for before proceeding
+ * @master: if the activation depends on another device (ie, bond or bridge
+ *    master to which this device will be enslaved) pass the #NMDevice that this
+ *    activation request be enslaved to
  *
  * Begins activation of @device using the given @connection and other details.
  *
@@ -474,7 +412,7 @@ nm_act_request_new (NMConnection *connection,
                     const char *dbus_sender,
                     gboolean assumed,
                     gpointer *device,
-                    NMActiveConnection *dependency)
+                    gpointer *master)
 {
 	GObject *object;
 	NMActRequestPrivate *priv;
@@ -500,14 +438,11 @@ nm_act_request_new (NMConnection *connection,
 	priv->user_requested = user_requested;
 	priv->dbus_sender = g_strdup (dbus_sender);
 	priv->assumed = assumed;
+	if (master) {
+		g_assert (NM_IS_DEVICE (master));
+		g_assert (NM_DEVICE (master) != NM_DEVICE (device));
 
-	if (dependency) {
-		priv->dep = dependency;
-		g_object_weak_ref (G_OBJECT (dependency), (GWeakNotify) dep_gone, object);
-		priv->dep_state_id = g_signal_connect (dependency,
-		                                       "notify::" NM_ACTIVE_CONNECTION_STATE,
-		                                       G_CALLBACK (dep_state_changed),
-		                                       object);
+		priv->master = g_object_ref (master);
 	}
 
 	if (!nm_active_connection_export (NM_ACTIVE_CONNECTION (object),
@@ -530,16 +465,10 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
-	NMDevice *master;
 
 	switch (prop_id) {
 	case PROP_MASTER:
-		if (priv->dep && NM_IS_ACT_REQUEST (priv->dep)) {
-			master = NM_DEVICE (nm_act_request_get_device (NM_ACT_REQUEST (priv->dep)));
-			g_assert (master);
-			g_value_set_boxed (value, nm_device_get_path (master));
-		} else
-			g_value_set_boxed (value, "/");
+		g_value_set_boxed (value, priv->master ? nm_device_get_path (priv->master) : "/");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -580,12 +509,7 @@ dispose (GObject *object)
 
 	g_free (priv->dbus_sender);
 
-	if (priv->dep) {
-		g_object_weak_unref (G_OBJECT (priv->dep), (GWeakNotify) dep_gone, object);
-		g_signal_handler_disconnect (priv->dep, priv->dep_state_id);
-		priv->dep = NULL;
-		priv->dep_state_id = 0;
-	}
+	g_clear_object (&priv->master);
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
@@ -611,13 +535,5 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 	object_class->finalize = finalize;
 
 	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
-
-	signals[DEP_RESULT] =
-		g_signal_new (NM_ACT_REQUEST_DEPENDENCY_RESULT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1, G_TYPE_UINT);
 }
 

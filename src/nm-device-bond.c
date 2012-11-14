@@ -46,7 +46,7 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE_WIRED)
 #define NM_BOND_ERROR (nm_bond_error_quark ())
 
 typedef struct {
-	GSList *slaves;
+	gboolean unused;
 } NMDeviceBondPrivate;
 
 enum {
@@ -321,92 +321,26 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	return ret;
 }
 
-static void
-slave_state_changed (NMDevice *slave,
-                     NMDeviceState new_state,
-                     NMDeviceState old_state,
-                     NMDeviceStateReason reason,
-                     gpointer user_data)
-{
-	NMDeviceBond *self = NM_DEVICE_BOND (user_data);
-
-	nm_log_dbg (LOGD_BOND, "(%s): slave %s state change %d -> %d",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            nm_device_get_iface (slave),
-	            old_state,
-	            new_state);
-
-	if (   old_state > NM_DEVICE_STATE_DISCONNECTED
-	    && new_state <= NM_DEVICE_STATE_DISCONNECTED) {
-		/* Slave is no longer available or managed; can't use it */
-		nm_device_release_slave (NM_DEVICE (self), slave);
-	}
-}
-
-typedef struct {
-	NMDevice *slave;
-	guint state_id;
-} SlaveInfo;
-
-static SlaveInfo *
-find_slave_info_by_device (NMDeviceBond *self, NMDevice *slave)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
-		if (((SlaveInfo *) iter->data)->slave == slave)
-			return iter->data;
-	}
-	return NULL;
-}
-
-static void
-free_slave_info (SlaveInfo *sinfo)
-{
-	g_return_if_fail (sinfo != NULL);
-	g_return_if_fail (sinfo->slave != NULL);
-
-	g_signal_handler_disconnect (sinfo->slave, sinfo->state_id);
-	g_object_unref (sinfo->slave);
-	memset (sinfo, 0, sizeof (*sinfo));
-	g_free (sinfo);
-}
-
 static gboolean
 enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 {
-	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
 	gboolean success, no_firmware = FALSE;
-
-	if (find_slave_info_by_device (self, slave))
-		return TRUE;
+	const char *iface = nm_device_get_ip_iface (device);
+	const char *slave_iface = nm_device_get_ip_iface (slave);
 
 	nm_device_hw_take_down (slave, TRUE);
 
 	success = nm_system_bond_enslave (nm_device_get_ip_ifindex (device),
-	                                  nm_device_get_ip_iface (device),
+	                                  iface,
 	                                  nm_device_get_ip_ifindex (slave),
-	                                  nm_device_get_ip_iface (slave));
-	if (success) {
-		SlaveInfo *sinfo;
-
-		sinfo = g_malloc0 (sizeof (*slave));
-		sinfo->slave = g_object_ref (slave);
-		sinfo->state_id = g_signal_connect (slave,
-		                                    "state-changed",
-		                                    (GCallback) slave_state_changed,
-		                                    self);
-		priv->slaves = g_slist_append (priv->slaves, sinfo);
-
-		nm_log_dbg (LOGD_BOND, "(%s): enslaved bond slave %s",
-		            nm_device_get_ip_iface (device),
-		            nm_device_get_ip_iface (slave));
-		g_object_notify (G_OBJECT (device), "slaves");
-	}
+	                                  slave_iface);
 
 	nm_device_hw_bring_up (slave, TRUE, &no_firmware);
+
+	if (success) {
+		nm_log_info (LOGD_BOND, "(%s): enslaved bond slave %s", iface, slave_iface);
+		g_object_notify (G_OBJECT (device), "slaves");
+	}
 
 	return success;
 }
@@ -414,25 +348,16 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 static gboolean
 release_slave (NMDevice *device, NMDevice *slave)
 {
-	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
 	gboolean success;
-	SlaveInfo *sinfo;
-
-	sinfo = find_slave_info_by_device (self, slave);
-	if (!sinfo)
-		return FALSE;
 
 	success = nm_system_bond_release (nm_device_get_ip_ifindex (device),
 	                                  nm_device_get_ip_iface (device),
 	                                  nm_device_get_ip_ifindex (slave),
 	                                  nm_device_get_ip_iface (slave));
-	nm_log_dbg (LOGD_BOND, "(%s): released bond slave %s (success %d)",
-	            nm_device_get_ip_iface (device),
-	            nm_device_get_ip_iface (slave),
-	            success);
-	priv->slaves = g_slist_remove (priv->slaves, sinfo);
-	free_slave_info (sinfo);
+	nm_log_info (LOGD_BOND, "(%s): released bond slave %s (success %d)",
+	             nm_device_get_ip_iface (device),
+	             nm_device_get_ip_iface (slave),
+	             success);
 	g_object_notify (G_OBJECT (device), "slaves");
 	return success;
 }
@@ -473,12 +398,9 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceBond *self = NM_DEVICE_BOND (object);
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
 	const guint8 *current_addr;
 	GPtrArray *slaves;
-	GSList *iter;
-	SlaveInfo *info;
+	GSList *list, *iter;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -490,10 +412,10 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLAVES:
 		slaves = g_ptr_array_new ();
-		for (iter = priv->slaves; iter; iter = iter->next) {
-			info = iter->data;
-			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (info->slave)));
-		}
+		list = nm_device_master_get_slaves (NM_DEVICE (object));
+		for (iter = list; iter; iter = iter->next)
+			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
+		g_slist_free (list);
 		g_value_take_boxed (value, slaves);
 		break;
 	default:
@@ -514,21 +436,6 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-dispose (GObject *object)
-{
-	NMDeviceBond *self = NM_DEVICE_BOND (object);
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter))
-		release_slave (NM_DEVICE (self), ((SlaveInfo *) iter->data)->slave);
-	g_slist_free (priv->slaves);
-	priv->slaves = NULL;
-
-	G_OBJECT_CLASS (nm_device_bond_parent_class)->dispose (object);
-}
-
-static void
 nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -540,7 +447,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->dispose = dispose;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;

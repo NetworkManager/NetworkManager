@@ -46,7 +46,7 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE_WIRED)
 #define NM_BRIDGE_ERROR (nm_bridge_error_quark ())
 
 typedef struct {
-	GSList *slaves;
+	gboolean unused;
 } NMDeviceBridgePrivate;
 
 enum {
@@ -384,125 +384,48 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	return ret;
 }
 
-static void
-slave_state_changed (NMDevice *slave,
-                     NMDeviceState new_state,
-                     NMDeviceState old_state,
-                     NMDeviceStateReason reason,
-                     gpointer user_data)
-{
-	NMDeviceBridge *self = NM_DEVICE_BRIDGE (user_data);
-
-	nm_log_dbg (LOGD_DEVICE, "(%s): slave %s state change %d -> %d",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            nm_device_get_iface (slave),
-	            old_state,
-	            new_state);
-
-	if (   old_state > NM_DEVICE_STATE_DISCONNECTED
-	    && new_state <= NM_DEVICE_STATE_DISCONNECTED) {
-		/* Slave is no longer available or managed; can't use it */
-		nm_device_release_slave (NM_DEVICE (self), slave);
-	}
-}
-
-typedef struct {
-	NMDevice *slave;
-	guint state_id;
-} SlaveInfo;
-
-static SlaveInfo *
-find_slave_info_by_device (NMDeviceBridge *self, NMDevice *slave)
-{
-	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
-		if (((SlaveInfo *) iter->data)->slave == slave)
-			return iter->data;
-	}
-	return NULL;
-}
-
-static void
-free_slave_info (SlaveInfo *sinfo)
-{
-	g_return_if_fail (sinfo != NULL);
-	g_return_if_fail (sinfo->slave != NULL);
-
-	g_signal_handler_disconnect (sinfo->slave, sinfo->state_id);
-	g_object_unref (sinfo->slave);
-	memset (sinfo, 0, sizeof (*sinfo));
-	g_free (sinfo);
-}
-
 static gboolean
 enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 {
-	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
-	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (self);
 	gboolean success;
-
-	if (find_slave_info_by_device (self, slave))
-		return TRUE;
+	NMSettingBridgePort *s_port;
+	const char *iface = nm_device_get_ip_iface (device);
+	const char *slave_iface = nm_device_get_ip_iface (slave);
 
 	success = nm_system_bridge_attach (nm_device_get_ip_ifindex (device),
-	                                   nm_device_get_ip_iface (device),
+	                                   iface,
 	                                   nm_device_get_ip_ifindex (slave),
-	                                   nm_device_get_ip_iface (slave));
-	if (success) {
-		SlaveInfo *sinfo;
-		NMSettingBridgePort *s_port;
-		const char *slave_iface = nm_device_get_ip_iface (slave);
+	                                   slave_iface);
+	if (!success)
+		return FALSE;
 
-		sinfo = g_malloc0 (sizeof (*slave));
-		sinfo->slave = g_object_ref (slave);
-		sinfo->state_id = g_signal_connect (slave,
-		                                    "state-changed",
-		                                    (GCallback) slave_state_changed,
-		                                    self);
-		priv->slaves = g_slist_append (priv->slaves, sinfo);
-
-		nm_log_dbg (LOGD_DEVICE, "(%s): attached bridge component %s",
-		            nm_device_get_ip_iface (device),
-		            nm_device_get_ip_iface (slave));
-
-		g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
-
-		/* Set port properties */
-		s_port = nm_connection_get_setting_bridge_port (connection);
-		if (s_port) {
-			set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY, "priority", TRUE, FALSE);
-			set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST, "path_cost", TRUE, FALSE);
-			set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", FALSE, FALSE);
-		}
+	/* Set port properties */
+	s_port = nm_connection_get_setting_bridge_port (connection);
+	if (s_port) {
+		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY, "priority", TRUE, FALSE);
+		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST, "path_cost", TRUE, FALSE);
+		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", FALSE, FALSE);
 	}
 
-	return success;
+	nm_log_info (LOGD_DEVICE, "(%s): attached bridge port %s", iface, slave_iface);
+
+	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
+	return TRUE;
 }
 
 static gboolean
 release_slave (NMDevice *device, NMDevice *slave)
 {
-	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
-	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (self);
 	gboolean success;
-	SlaveInfo *sinfo;
-
-	sinfo = find_slave_info_by_device (self, slave);
-	if (!sinfo)
-		return FALSE;
 
 	success = nm_system_bridge_detach (nm_device_get_ip_ifindex (device),
 	                                   nm_device_get_ip_iface (device),
 	                                   nm_device_get_ip_ifindex (slave),
 	                                   nm_device_get_ip_iface (slave));
-	nm_log_dbg (LOGD_DEVICE, "(%s): detached bridge component %s (success %d)",
-	            nm_device_get_ip_iface (device),
-	            nm_device_get_ip_iface (slave),
-	            success);
-	priv->slaves = g_slist_remove (priv->slaves, sinfo);
-	free_slave_info (sinfo);
+	nm_log_info (LOGD_DEVICE, "(%s): detached bridge port %s (success %d)",
+	             nm_device_get_ip_iface (device),
+	             nm_device_get_ip_iface (slave),
+	             success);
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
 	return success;
 }
@@ -543,12 +466,9 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceBridge *self = NM_DEVICE_BRIDGE (object);
-	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (self);
 	const guint8 *current_addr;
 	GPtrArray *slaves;
-	GSList *iter;
-	SlaveInfo *info;
+	GSList *list, *iter;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -560,10 +480,10 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLAVES:
 		slaves = g_ptr_array_new ();
-		for (iter = priv->slaves; iter; iter = iter->next) {
-			info = iter->data;
-			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (info->slave)));
-		}
+		list = nm_device_master_get_slaves (NM_DEVICE (object));
+		for (iter = list; iter; iter = iter->next)
+			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
+		g_slist_free (list);
 		g_value_take_boxed (value, slaves);
 		break;
 	default:
@@ -584,21 +504,6 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-dispose (GObject *object)
-{
-	NMDeviceBridge *self = NM_DEVICE_BRIDGE (object);
-	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter))
-		release_slave (NM_DEVICE (self), ((SlaveInfo *) iter->data)->slave);
-	g_slist_free (priv->slaves);
-	priv->slaves = NULL;
-
-	G_OBJECT_CLASS (nm_device_bridge_parent_class)->dispose (object);
-}
-
-static void
 nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -610,7 +515,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->dispose = dispose;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;

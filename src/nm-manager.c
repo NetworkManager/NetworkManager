@@ -2289,6 +2289,7 @@ internal_activate_device (NMManager *manager,
                           GError **error)
 {
 	NMActRequest *req;
+	NMDevice *master_device = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -2307,6 +2308,9 @@ internal_activate_device (NMManager *manager,
 		                         NM_DEVICE_STATE_REASON_NONE);
 	}
 
+	if (master)
+		master_device = (NMDevice *) nm_act_request_get_device (NM_ACT_REQUEST (master));
+
 	req = nm_act_request_new (connection,
 	                          specific_object,
 	                          user_requested,
@@ -2314,7 +2318,7 @@ internal_activate_device (NMManager *manager,
 	                          dbus_sender,
 	                          assumed,
 	                          (gpointer) device,
-	                          master);
+	                          (gpointer) master_device);
 	nm_device_activate (device, req);
 	g_object_unref (req);
 

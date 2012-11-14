@@ -217,8 +217,14 @@ NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 
-gboolean        nm_device_enslave_slave     (NMDevice *dev, NMDevice *slave, NMConnection *connection);
-gboolean        nm_device_release_slave     (NMDevice *dev, NMDevice *slave);
+/* Master */
+gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave);
+GSList *        nm_device_master_get_slaves (NMDevice *dev);
+
+/* Slave */
+void            nm_device_slave_notify_enslaved (NMDevice *dev,
+                                                 gboolean enslaved,
+                                                 gboolean master_failed);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
