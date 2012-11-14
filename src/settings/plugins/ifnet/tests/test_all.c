@@ -436,7 +436,7 @@ main (void)
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 	ifnet_init ("net");
-	wpa_parser_init ("wpa_supplicant.conf");
+	wpa_parser_init (TEST_WPA_SUPPLICANT_CONF);
 	printf ("Initialization complete\n");
 	run_all (TRUE);
 	ifnet_destroy ();

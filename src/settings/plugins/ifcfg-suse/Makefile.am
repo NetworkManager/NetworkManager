@@ -10,6 +10,7 @@ libnm_settings_plugin_ifcfg_suse_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	-I${top_srcdir}/src/settings \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
