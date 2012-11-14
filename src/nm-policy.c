@@ -1430,22 +1430,16 @@ device_state_changed (NMDevice *device,
 		nm_dns_manager_begin_updates (dns_mgr, __func__);
 
 		ip4_config = nm_device_get_ip4_config (device);
-		if (ip4_config) {
+		if (ip4_config)
 			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-			update_ip4_dns (policy, dns_mgr);
-		}
 		ip6_config = nm_device_get_ip6_config (device);
-		if (ip6_config) {
+		if (ip6_config)
 			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-			update_ip6_dns (policy, dns_mgr);
-		}
+
+		update_routing_and_dns (policy, FALSE);
 
 		nm_dns_manager_end_updates (dns_mgr, __func__);
 		g_object_unref (dns_mgr);
-
-		/* And make sure the best devices have the default route */
-		update_ip4_routing (policy, FALSE);
-		update_ip6_routing (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
