@@ -88,7 +88,7 @@ AC_C_BIGENDIAN
 # NetworkManager paths
 AC_SUBST(nmbinary, "$sbindir/$PACKAGE", [NetworkManager binary executable])
 AC_SUBST(nmconfdir, "$sysconfdir/$PACKAGE", [NetworkManager configuration directory])
-AC_SUBST(nmdatadir, "$pkgdatadir", [NetworkManager shared data directory])
+AC_SUBST(nmdatadir, "$datadir/$PACKAGE", [NetworkManager shared data directory])
 AC_SUBST(nmstatedir, "$localstatedir/lib/$PACKAGE", [NetworkManager persistent state directory])
 AC_SUBST(nmrundir, "$localstatedir/run/$PACKAGE", [NetworkManager runtime state directory])
 
@@ -774,6 +774,11 @@ echo "System paths:"
 echo "  prefix: $prefix"
 echo "  exec_prefix: $exec_prefix"
 echo "  systemdunitdir: $with_systemdsystemunitdir"
+echo "  nmbinary: $nmbinary"
+echo "  nmconfdir: $nmconfdir"
+echo "  nmdatadir: $nmdatadir"
+echo "  nmstatedir: $nmstatedir"
+echo "  nmrundir: $nmrundir"
 echo
 
 echo Configuration plugins:
