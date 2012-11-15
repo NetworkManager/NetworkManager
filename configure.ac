@@ -258,14 +258,17 @@ fi
 AC_SUBST(UDEV_BASE_DIR)
 
 # systemd unit support
-AC_ARG_WITH([systemdsystemunitdir],
- AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
- [],
- [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
-if test "x$with_systemdsystemunitdir" != xno; then
+AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
+	[Directory for systemd service files]))
+# default location
+AS_IF([test -z "$with_systemdsystemunitdir" && $PKG_CONFIG systemd],
+	with_systemdsystemunitdir="\$(prefix)/lib/systemd/system")
+AS_IF([test -z "$with_systemdsystemunitdir"], with_systemdsystemunitdir=no)
+# add conditional and subst
+AM_CONDITIONAL(HAVE_SYSTEMD, [test "$with_systemdsystemunitdir" != no])
+if test "$with_systemdsystemunitdir" != no; then
 	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 fi
-AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
 AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|ck|none], [Build NetworkManager with specific session tracking support]))
 if test "z$with_session_tracking" = "z"; then
@@ -767,6 +770,12 @@ AC_OUTPUT
 
 # Print build configuration
 echo
+echo "System paths:"
+echo "  prefix: $prefix"
+echo "  exec_prefix: $exec_prefix"
+echo "  systemdunitdir: $with_systemdsystemunitdir"
+echo
+
 echo Configuration plugins:
 echo "  ifcfg-rh: ${enable_ifcfg_rh}"
 echo "  ifcfg-suse: ${enable_ifcfg_suse}"
@@ -790,12 +799,6 @@ if test -n "${DHCPCD_PATH}"; then
 	echo dhcpcd support: ${DHCPCD_PATH}
 else
 	echo dhcpcd support: no
-fi
-
-if test -n "${with_systemdsystemunitdir}"; then
-	echo systemd unit support: ${with_systemdsystemunitdir}
-else
-	echo systemd unit support: no
 fi
 
 if test "${enable_polkit}" = "yes"; then
