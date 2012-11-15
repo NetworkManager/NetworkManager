@@ -4722,16 +4722,28 @@ queued_set_state (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceState new_state;
+	NMDeviceStateReason new_reason;
 
 	if (priv->queued_state.id) {
 		nm_log_dbg (LOGD_DEVICE, "(%s): running queued state change to %s (id %d)",
 			        nm_device_get_iface (self),
 			        state_to_string (priv->queued_state.state),
 			        priv->queued_state.id);
+
+		/* Clear queued state struct before triggering state change, since
+		 * the state change may queue another state.
+		 */
 		priv->queued_state.id = 0;
-		nm_device_state_changed (self, priv->queued_state.state, priv->queued_state.reason);
+		new_state = priv->queued_state.state;
+		new_reason = priv->queued_state.reason;
+		nm_device_queued_state_clear (self);
+
+		nm_device_state_changed (self, new_state, new_reason);
+	} else {
+		g_warn_if_fail (priv->queued_state.state == NM_DEVICE_STATE_UNKNOWN);
+		g_warn_if_fail (priv->queued_state.reason == NM_DEVICE_STATE_REASON_NONE);
 	}
-	nm_device_queued_state_clear (self);
 	return FALSE;
 }
 
