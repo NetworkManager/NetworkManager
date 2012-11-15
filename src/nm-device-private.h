@@ -30,12 +30,17 @@ enum NMActStageReturn {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,
 	NM_ACT_STAGE_RETURN_SUCCESS,     /* Activation stage done */
 	NM_ACT_STAGE_RETURN_POSTPONE,    /* Long-running operation in progress */
+	NM_ACT_STAGE_RETURN_WAIT,        /* Not ready to start stage; wait */
 	NM_ACT_STAGE_RETURN_STOP         /* Activation stage done; nothing to do */
 };
 
 void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
 void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
+
+gboolean nm_device_activate_stage3_ip4_start (NMDevice *self);
+
+gboolean nm_device_activate_stage3_ip6_start (NMDevice *self);
 
 gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmware);
 

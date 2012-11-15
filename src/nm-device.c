@@ -139,6 +139,7 @@ G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 typedef enum {
 	IP_NONE = 0,
+	IP_WAIT,
 	IP_CONF,
 	IP_DONE
 } IpState;
@@ -2649,6 +2650,79 @@ act_stage3_ip6_config_start (NMDevice *self,
 	return ret;
 }
 
+/**
+ * nm_device_activate_stage3_ip4_start:
+ * @self: the device
+ *
+ * Try starting IPv4 configuration.
+ */
+gboolean
+nm_device_activate_stage3_ip4_start (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMActStageReturn ret;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	NMIP4Config *ip4_config = NULL;
+
+	g_assert (priv->ip4_state == IP_WAIT);
+
+	priv->ip4_state = IP_CONF;
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &reason);
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
+		g_assert (ip4_config);
+		nm_device_activate_schedule_ip4_config_result (self, ip4_config);
+		g_object_unref (ip4_config);
+	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+		return FALSE;
+	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
+		/* Early finish */
+		priv->ip4_state = IP_DONE;
+	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
+		/* Wait for something to try IP config again */
+		priv->ip4_state = IP_WAIT;
+	} else
+		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
+
+	return TRUE;
+}
+
+/**
+ * nm_device_activate_stage3_ip6_start:
+ * @self: the device
+ *
+ * Try starting IPv6 configuration.
+ */
+gboolean
+nm_device_activate_stage3_ip6_start (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMActStageReturn ret;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	NMIP6Config *ip6_config = NULL;
+
+	g_assert (priv->ip6_state == IP_WAIT);
+
+	priv->ip6_state = IP_CONF;
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &reason);
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
+		g_assert (ip6_config);
+		nm_device_activate_schedule_ip6_config_result (self, ip6_config);
+		g_object_unref (ip6_config);
+	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+		return FALSE;
+	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
+		/* Early finish */
+		priv->ip6_state = IP_DONE;
+	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
+		/* Wait for something to try IP config again */
+		priv->ip6_state = IP_WAIT;
+	} else
+		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
+
+	return TRUE;
+}
 
 /*
  * nm_device_activate_stage3_ip_config_start
@@ -2662,10 +2736,6 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *iface;
-	NMActStageReturn ret;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	NMIP4Config *ip4_config = NULL;
-	NMIP6Config *ip6_config = NULL;
 	int ifindex;
 	NMDevice *master;
 
@@ -2681,7 +2751,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	if ((ifindex > 0) && (nm_system_iface_is_up (ifindex) == FALSE))
 		nm_system_iface_set_up (ifindex, TRUE, NULL);
 
-	priv->ip4_state = priv->ip6_state = IP_CONF;
+	priv->ip4_state = priv->ip6_state = IP_WAIT;
 
 	/* If the device is a slave, then we don't do any IP configuration but we
 	 * use the IP config stage to indicate to the master we're ready for
@@ -2703,34 +2773,12 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	}
 
 	/* IPv4 */
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		g_assert (ip4_config);
-		nm_device_activate_schedule_ip4_config_result (self, ip4_config);
-		g_object_unref (ip4_config);
-	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+	if (!nm_device_activate_stage3_ip4_start (self))
 		goto out;
-	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
-		/* Nothing to do */
-		priv->ip4_state = IP_DONE;
-	} else
-		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
 
 	/* IPv6 */
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		g_assert (ip6_config);
-		nm_device_activate_schedule_ip6_config_result (self, ip6_config);
-		g_object_unref (ip6_config);
-	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+	if (!nm_device_activate_stage3_ip6_start (self))
 		goto out;
-	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
-		/* Nothing to do */
-		priv->ip6_state = IP_DONE;
-	} else
-		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
 
 out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
