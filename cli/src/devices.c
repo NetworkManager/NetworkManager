@@ -976,7 +976,7 @@ do_devices_list (NmCli *nmc, int argc, char **argv)
 			iface_specified = TRUE;
 
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: '%s' argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1119,7 +1119,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 			iface_specified = TRUE;
 
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1129,7 +1129,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 			wait = FALSE;
 		} else if (strcmp (*argv, "--timeout") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1247,7 +1247,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	while (argc > 0) {
 		if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1255,7 +1255,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		} else if (strcmp (*argv, "bssid") == 0 || strcmp (*argv, "hwaddr") == 0) {
 			/* hwaddr is deprecated and will be removed later */
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1619,14 +1619,14 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	while (argc > 0) {
 		if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 			iface = *argv;
 		} else if (strcmp (*argv, "bssid") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1640,14 +1640,14 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			}
 		} else if (strcmp (*argv, "password") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 			password = *argv;
 		} else if (strcmp (*argv, "wep-key-type") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1664,7 +1664,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			}
 		} else if (strcmp (*argv, "name") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1675,7 +1675,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			wait = FALSE;
 		} else if (strcmp (*argv, "--timeout") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1896,14 +1896,14 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	while (argc > 0) {
 		if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 			iface = *argv;
 		} else if (strcmp (*argv, "nsp") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}

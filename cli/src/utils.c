@@ -45,13 +45,15 @@ matches (const char *cmd, const char *pattern)
 int
 next_arg (int *argc, char ***argv)
 {
-	if (*argc <= 1) {
-		return -1;
-	}
-	else {
+	int arg_num = *argc;
+
+	if (arg_num > 0) {
 		(*argc)--;
 		(*argv)++;
 	}
+	if (arg_num <= 1)
+		return -1;
+
 	return 0;
 }
 

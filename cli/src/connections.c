@@ -572,7 +572,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 				NMConnection *con;
 
 				if (next_arg (&argc, &argv) != 0) {
-					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					return nmc->return_value;
 				}
@@ -1109,7 +1109,7 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 				NMActiveConnection *acon;
 
 				if (next_arg (&argc, &argv) != 0) {
-					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					return nmc->return_value;
 				}
@@ -1647,7 +1647,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			id_specified = TRUE;
 
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1662,7 +1662,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		}
 		else if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1671,7 +1671,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		}
 		else if (strcmp (*argv, "ap") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1681,7 +1681,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 #if WITH_WIMAX
 		else if (strcmp (*argv, "nsp") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1693,7 +1693,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			wait = FALSE;
 		} else if (strcmp (*argv, "--timeout") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1801,7 +1801,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			id_specified = TRUE;
 
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
@@ -1903,7 +1903,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
 			selector = *argv;
 			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *argv);
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
