@@ -73,7 +73,7 @@ static NmcOutputField nmc_fields_con_list[] = {
 /* Helper macro to define fields */
 #define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, 0 }
 
-/* Available settings for 'con list id/uuid <con>' */
+/* Available settings for 'con list <con>' */
 static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME, 0),            /* 0 */
 	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME, 0),                 /* 1 */
@@ -148,7 +148,7 @@ static NmcOutputField nmc_fields_con_status[] = {
 #define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
 #define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN,MASTER-PATH"
 
-/* Available fields for 'con status id/uuid/path <con>' */
+/* Available fields for 'con status <con>' */
 static NmcOutputField nmc_fields_status_details_groups[] = {
 	{"GENERAL",  N_("GENERAL"), 9, NULL, 0},  /* 0 */
 	{"IP",       N_("IP"),      5, NULL, 0},  /* 1 */
@@ -194,8 +194,8 @@ usage (void)
 	fprintf (stderr,
 	         _("Usage: nmcli connection { COMMAND | help }\n"
 	         "  COMMAND := { list | status | up | down | delete }\n\n"
-	         "  list [id <id> | uuid <id>]\n"
-	         "  status [id <id> | uuid <id> | path <path>]\n"
+	         "  list [[id|uuid|path] <ID>]\n"
+	         "  status [[id|uuid|path|apath] <ID>]\n"
 #if WITH_WIMAX
 	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
 #else
@@ -288,7 +288,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	if (print_settings_array)
 		g_array_free (print_settings_array, FALSE);
 
-	return NMC_RESULT_SUCCESS;
+	return TRUE;
 }
 
 static void
@@ -329,26 +329,34 @@ show_connection (NMConnection *data, gpointer user_data)
 static NMConnection *
 find_connection (GSList *list, const char *filter_type, const char *filter_val)
 {
-	NMSettingConnection *s_con;
 	NMConnection *connection;
 	GSList *iterator;
 	const char *id;
 	const char *uuid;
+	const char *path, *path_num;
 
 	iterator = list;
 	while (iterator) {
 		connection = NM_CONNECTION (iterator->data);
-		s_con = nm_connection_get_setting_connection (connection);
-		if (s_con) {
-			id = nm_setting_connection_get_id (s_con);
-			uuid = nm_setting_connection_get_uuid (s_con);
-			if (filter_type) {
-				if ((strcmp (filter_type, "id") == 0 && strcmp (filter_val, id) == 0) ||
-				    (strcmp (filter_type, "uuid") == 0 && strcmp (filter_val, uuid) == 0)) {
-					return connection;
-				}
-			}
-		}
+
+		id = nm_connection_get_id (connection);
+		uuid = nm_connection_get_uuid (connection);
+		path = nm_connection_get_path (connection);
+		path_num = path ? strrchr (path, '/') + 1 : NULL;
+
+		/* When filter_type is NULL, compare connection ID (filter_val)
+		 * against all types. Otherwise, only compare against the specific
+		 * type. If 'path' filter type is specified, comparison against
+		 * numeric index (in addition to the whole path) is allowed.
+		 */
+		if (   (   (!filter_type || strcmp (filter_type, "id")  == 0)
+		        && strcmp (filter_val, id) == 0)
+		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
+		        && strcmp (filter_val, uuid) == 0)
+		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
+		        && (strcmp (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))))
+			return connection;
+
 		iterator = g_slist_next (iterator);
 	}
 
@@ -366,7 +374,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
-	gboolean valid_param_specified = FALSE;
+	gboolean printed = FALSE;
 
 	nmc->should_wait = FALSE;
 
@@ -386,7 +394,6 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 			goto error;
 		if (error1)
 			goto error;
-		valid_param_specified = TRUE;
 
 		/* Print headers */
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
@@ -395,46 +402,41 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 
 		/* Print values */
 		g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
-	}
-	else {
-		while (argc > 0) {
-			if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
-				const char *selector = *argv;
-				NMConnection *con;
+	} else {
+		g_clear_error (&error1); /* the error1 is only relevant for 'con list' without arguments */
 
+		while (argc > 0) {
+			NMConnection *con;
+			const char *selector = NULL;
+
+			if (   strcmp (*argv, "id") == 0
+			    || strcmp (*argv, "uuid") == 0
+			    || strcmp (*argv, "path") == 0) {
+				selector = *argv;
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					return nmc->return_value;
 				}
-				valid_param_specified = TRUE;
-				if (!nmc->mode_specified)
-					nmc->multiline_output = TRUE;  /* multiline mode is default for 'con list id|uuid' */
-
-				con = find_connection (nmc->system_connections, selector, *argv);
-				if (con) {
-					nmc_connection_detail (con, nmc);
-				}
-				else {
-					g_string_printf (nmc->return_text, _("Error: %s - no such connection."), *argv);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-				}
-				break;
 			}
-			else {
-				fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+			if (!nmc->mode_specified)
+				nmc->multiline_output = TRUE;  /* multiline mode is default for 'con list <con>' */
+
+			con = find_connection (nmc->system_connections, selector, *argv);
+			if (con) {
+				if (printed)
+					printf ("\n");
+				printed = nmc_connection_detail (con, nmc);
+			} else {
+				g_string_printf (nmc->return_text, _("Error: %s - no such connection."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				return nmc->return_value;
 			}
 
 			argc--;
 			argv++;
 		}
 	}
-
-	if (!valid_param_specified) {
-		g_string_printf (nmc->return_text, _("Error: no valid parameter specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	}
-	return nmc->return_value;
 
 error:
 	if (error1) {
@@ -609,32 +611,37 @@ find_active_connection (const GPtrArray *active_cons, const GSList *cons,
                         const char *filter_type, const char *filter_val)
 {
 	int i;
-	const char *s_path, *a_path;
+	const char *path, *a_path, *path_num, *a_path_num;
 	const char *id;
 	const char *uuid;
 	NMConnection *con;
-	NMSettingConnection *s_con;
 
 	for (i = 0; active_cons && (i < active_cons->len); i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
-		s_path = nm_active_connection_get_connection (candidate);
+		path = nm_active_connection_get_connection (candidate);
 		a_path = nm_object_get_path (NM_OBJECT (candidate));
 		uuid = nm_active_connection_get_uuid (candidate);
+		path_num = path ? strrchr (path, '/') + 1 : NULL;
+		a_path_num = a_path ? strrchr (a_path, '/') + 1 : NULL;
 
 		con = get_connection_for_active (cons, candidate);
-		s_con = nm_connection_get_setting_connection (con);
-		g_assert (s_con != NULL);
-		id = nm_setting_connection_get_id (s_con);
+		id = nm_connection_get_id (con);
 
-		if (filter_type) {
-			if (   (strcmp (filter_type, "id") == 0 && strcmp (filter_val, id) == 0)
-			    || (strcmp (filter_type, "uuid") == 0 && strcmp (filter_val, uuid) == 0)
-			    || (strcmp (filter_type, "path") == 0 && strcmp (filter_val, s_path) == 0)
-			    || (strcmp (filter_type, "path") == 0 && strcmp (filter_val, a_path) == 0)) {
-				return candidate;
-			}
-		}
+		/* When filter_type is NULL, compare connection ID (filter_val)
+		 * against all types. Otherwise, only compare against the specific
+		 * type. If 'path' or 'apath' filter types are specified, comparison
+		 * against numeric index (in addition to the whole path) is allowed.
+		 */
+		if (   (   (!filter_type || strcmp (filter_type, "id")  == 0)
+		        && strcmp (filter_val, id) == 0)
+		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
+		        && strcmp (filter_val, uuid) == 0)
+		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
+		        && (strcmp (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))
+		    || (   (!filter_type || strcmp (filter_type, "apath") == 0)
+		        && (strcmp (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0))))
+			return candidate;
 	}
 	return NULL;
 }
@@ -889,6 +896,7 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *active_cons;
 	GError *err1 = NULL;
+	gboolean printed = FALSE;
 
 	nmc->should_wait = FALSE;
 
@@ -932,31 +940,33 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 			g_ptr_array_foreach ((GPtrArray *) active_cons, show_active_connection, (gpointer) nmc);
 	} else {
 		while (argc > 0) {
+			NMActiveConnection *acon;
+			const char *selector = NULL;
+
 			if (   strcmp (*argv, "id") == 0
 			    || strcmp (*argv, "uuid") == 0
-			    || strcmp (*argv, "path") == 0) {
-				const char *selector = *argv;
-				NMActiveConnection *acon;
+			    || strcmp (*argv, "path") == 0
+			    || strcmp (*argv, "apath") == 0) {
 
+				selector = *argv;
 				if (next_arg (&argc, &argv) != 0) {
 					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					return nmc->return_value;
 				}
-				if (!nmc->mode_specified)
-					nmc->multiline_output = TRUE;  /* multiline mode is default for 'con status id|uuid|path' */
+			}
+			if (!nmc->mode_specified)
+				nmc->multiline_output = TRUE;  /* multiline mode is default for 'con status <con>' */
 
-				acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
-				if (acon) {
-					nmc_active_connection_detail (acon, nmc);
-				} else {
-					g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *argv);
-					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-				}
-				break;
+			acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
+			if (acon) {
+				if (printed)
+					printf ("\n");
+				printed = nmc_active_connection_detail (acon, nmc); /* separate connections by blank line */
 			} else {
-				g_string_printf (nmc->return_text, _("Error: unknown parameter: %s"), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				return nmc->return_value;
 			}
 
 			argc--;
