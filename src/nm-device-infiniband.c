@@ -188,7 +188,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMConnection *connection;
 	NMSettingInfiniband *s_infiniband;
 	const char *transport_mode;
-	char *mode_path, *mode_value;
+	char *mode_path;
 	gboolean ok;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -215,9 +215,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		}
 	}
 
-	mode_value = g_strdup_printf ("%s\n", transport_mode);
-	ok = nm_utils_do_sysctl (mode_path, mode_value);
-	g_free (mode_value);
+	ok = nm_utils_do_sysctl (mode_path, transport_mode);
 	g_free (mode_path);
 
 	if (!ok) {

@@ -610,27 +610,48 @@ value_hash_add_object_property (GHashTable *hash,
 gboolean
 nm_utils_do_sysctl (const char *path, const char *value)
 {
-	int fd, len, nwrote, total;
+	int fd, len, nwrote, tries;
+	char *actual;
+
+	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+	g_return_val_if_fail (value[0], FALSE);
 
 	fd = open (path, O_WRONLY | O_TRUNC);
-	if (fd == -1)
+	if (fd == -1) {
+		nm_log_warn (LOGD_CORE, "sysctl: failed to open '%s': (%d) %s",
+		             path, errno, strerror (errno));
 		return FALSE;
+	}
 
-	len = strlen (value);
-	total = 0;
-	do {
-		nwrote = write (fd, value + total, len - total);
+	nm_log_dbg (LOGD_CORE, "sysctl: setting '%s' to '%s'", path, value);
+
+	/* Most sysfs and sysctl options don't care about a trailing CR, while some
+	 * (like infiniband) do.  So always add the CR.  Also, neither sysfs nor
+	 * sysctl support partial writes so the CR must be added to the string we're
+	 * about to write.
+	 */
+	actual = g_strdup_printf ("%s\n", value);
+
+	/* Try to write the entire value three times if a partial write occurs */
+	len = strlen (actual);
+	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
+		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
 			if (errno == EINTR)
 				continue;
-			close (fd);
-			return FALSE;
+			break;
 		}
-		total += nwrote;
-	} while (total < len);
+	}
+	g_free (actual);
+
+	if (nwrote != len) {
+		nm_log_warn (LOGD_CORE, "sysctl: failed to set '%s' to '%s': (%d) %s",
+		             path, value, errno, strerror (errno));
+	}
 
 	close (fd);
-	return TRUE;
+	return (nwrote == len);
 }
 
 gboolean

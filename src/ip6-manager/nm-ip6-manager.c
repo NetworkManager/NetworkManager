@@ -140,7 +140,7 @@ nm_ip6_device_destroy (NMIP6Device *device)
 	/* reset the saved IPv6 value */
 	if (device->disable_ip6_save_valid) {
 		nm_utils_do_sysctl (device->disable_ip6_path,
-		                    device->disable_ip6_save ? "1\n" : "0\n");
+		                    device->disable_ip6_save ? "1" : "0");
 	}
 
 	if (device->finish_addrconf_id)
@@ -1399,10 +1399,10 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	/* Establish target state and turn router advertisement acceptance on or off */
 	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
 		device->target_state = NM_IP6_DEVICE_GOT_LINK_LOCAL;
-		nm_utils_do_sysctl (accept_ra_path, "0\n");
+		nm_utils_do_sysctl (accept_ra_path, "0");
 	} else {
 		device->target_state = NM_IP6_DEVICE_GOT_ADDRESS;
-		nm_utils_do_sysctl (accept_ra_path, "2\n");
+		nm_utils_do_sysctl (accept_ra_path, "2");
 	}
 
 	return TRUE;
@@ -1447,9 +1447,9 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	 * new RAs; there doesn't seem to be a better way to do this right now.
 	 */
 	if (device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS) {
-		nm_utils_do_sysctl (device->disable_ip6_path, "1\n");
+		nm_utils_do_sysctl (device->disable_ip6_path, "1");
 		g_usleep (200);
-		nm_utils_do_sysctl (device->disable_ip6_path, "0\n");
+		nm_utils_do_sysctl (device->disable_ip6_path, "0");
 	}
 
 	device->ip6flags_poll_id = g_timeout_add_seconds (1, poll_ip6_flags, priv->monitor);
