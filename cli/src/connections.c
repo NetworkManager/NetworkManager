@@ -201,7 +201,7 @@ usage (void)
 #else
 	         "  up [id|uuid|path] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 #endif
-	         "  down id <id> | uuid <id>\n"
+	         "  down [id|uuid|path|apath] <ID>\n"
 	         "  delete [id|uuid|path] <ID>\n"
 	         "\n"
 	         ));
@@ -1523,47 +1523,11 @@ error:
 static NMCResultCode
 do_connection_down (NmCli *nmc, int argc, char **argv)
 {
-	NMConnection *connection = NULL;
-	NMActiveConnection *active = NULL;
+	NMActiveConnection *active;
 	const GPtrArray *active_cons;
-	const char *con_path;
-	const char *active_path;
-	gboolean id_specified = FALSE;
-	gboolean wait = TRUE;
-	int i;
 
-	while (argc > 0) {
-		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
-			const char *selector = *argv;
-			id_specified = TRUE;
-
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			connection = find_connection (nmc->system_connections, selector, *argv);
-
-			if (!connection) {
-				g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-				goto error;
-			}
-		}
-		else if (strcmp (*argv, "--nowait") == 0) {
-			wait = FALSE;
-		}
-		else {
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
-		}
-
-		argc--;
-		argv++;
-	}
-
-	if (!id_specified) {
-		g_string_printf (nmc->return_text, _("Error: id or uuid has to be specified."));
+	if (argc == 0) {
+		g_string_printf (nmc->return_text, _("Error: No connection specified."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
@@ -1577,24 +1541,40 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	con_path = nm_connection_get_path (connection);
-
+	/* Get active connections */
 	active_cons = nm_client_get_active_connections (nmc->client);
-	for (i = 0; active_cons && (i < active_cons->len); i++) {
-		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
+	while (argc > 0) {
+		const char *selector = NULL;
 
-		active_path = nm_active_connection_get_connection (candidate);
-		if (!strcmp (active_path, con_path)) {
-			active = candidate;
-			break;
+		if (   strcmp (*argv, "id") == 0
+		    || strcmp (*argv, "uuid") == 0
+		    || strcmp (*argv, "path") == 0
+		    || strcmp (*argv, "apath") == 0) {
+
+			selector = *argv;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
 		}
+
+		active = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
+		if (active) {
+			nm_client_deactivate_connection (nmc->client, active);
+		} else {
+			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			goto error;
+		}
+
+		argc--;
+		argv++;
 	}
 
-	if (active)
-		nm_client_deactivate_connection (nmc->client, active);
-	else
-		fprintf (stderr, _("Warning: Connection not active\n"));
-	sleep (1);  /* Don't quit immediatelly and give NM time to check our permissions */
+	// FIXME: do something better then sleep()
+	/* Don't quit immediatelly and give NM time to check our permissions */
+	sleep (1);
 
 error:
 	nmc->should_wait = FALSE;
