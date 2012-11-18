@@ -687,7 +687,6 @@ cli/Makefile
 cli/src/Makefile
 test/Makefile
 initscript/RedHat/NetworkManager
-initscript/Gentoo/NetworkManager
 initscript/Debian/NetworkManager
 initscript/Slackware/rc.networkmanager
 initscript/SUSE/networkmanager
