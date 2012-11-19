@@ -55,8 +55,8 @@
 #include "connections.h"
 
 
-/* Available fields for 'con list' */
-static NmcOutputField nmc_fields_con_list[] = {
+/* Available fields for 'connection show configured' */
+static NmcOutputField nmc_fields_con_show[] = {
 	{"NAME",            N_("NAME"),           25, NULL, 0},  /* 0 */
 	{"UUID",            N_("UUID"),           38, NULL, 0},  /* 1 */
 	{"TYPE",            N_("TYPE"),           17, NULL, 0},  /* 2 */
@@ -67,13 +67,13 @@ static NmcOutputField nmc_fields_con_list[] = {
 	{"DBUS-PATH",       N_("DBUS-PATH"),      42, NULL, 0},  /* 7 */
 	{NULL,              NULL,                  0, NULL, 0}
 };
-#define NMC_FIELDS_CON_LIST_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY,DBUS-PATH"
-#define NMC_FIELDS_CON_LIST_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
+#define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY,DBUS-PATH"
+#define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
 
 /* Helper macro to define fields */
 #define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, 0 }
 
-/* Available settings for 'con list <con>' */
+/* Available settings for 'connection show configured <con>' */
 static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME, 0),            /* 0 */
 	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME, 0),                 /* 1 */
@@ -128,8 +128,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
 #endif
 
 
-/* Available fields for 'con status' */
-static NmcOutputField nmc_fields_con_status[] = {
+/* Available fields for 'connection show active' */
+static NmcOutputField nmc_fields_con_show_active[] = {
 	{"GROUP",         N_("GROUP"),         9, NULL, 0},  /* 0 */  /* used only for 'GENERAL' group listing */
 	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 1 */
 	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 2 */
@@ -145,25 +145,25 @@ static NmcOutputField nmc_fields_con_status[] = {
 	{"MASTER-PATH",   N_("MASTER-PATH"),  44, NULL, 0},  /* 12 */
 	{NULL,            NULL,                0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
-#define NMC_FIELDS_CON_STATUS_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN,MASTER-PATH"
+#define NMC_FIELDS_CON_ACTIVE_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
+#define NMC_FIELDS_CON_ACTIVE_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN,MASTER-PATH"
 
-/* Available fields for 'con status <con>' */
-static NmcOutputField nmc_fields_status_details_groups[] = {
+/* Available fields for 'connection show active <con>' */
+static NmcOutputField nmc_fields_con_active_details_groups[] = {
 	{"GENERAL",  N_("GENERAL"), 9, NULL, 0},  /* 0 */
 	{"IP",       N_("IP"),      5, NULL, 0},  /* 1 */
 	{"VPN",      N_("VPN"),     5, NULL, 0},  /* 2 */
 	{NULL, NULL, 0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_DETAILS_ALL  "GENERAL,IP,VPN"
+#define NMC_FIELDS_CON_ACTIVE_DETAILS_ALL  "GENERAL,IP,VPN"
 
-/* GENERAL group is the same as nmc_fields_con_status */
-#define NMC_FIELDS_CON_STATUS_DETAILS_GENERAL_ALL  "GROUP,"NMC_FIELDS_CON_STATUS_ALL
+/* GENERAL group is the same as nmc_fields_con_show_active */
+#define NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL  "GROUP,"NMC_FIELDS_CON_ACTIVE_ALL
 
 /* IP group is handled by common.c */
 
 /* Available fields for VPN group */
-static NmcOutputField nmc_fields_status_details_vpn[] = {
+static NmcOutputField nmc_fields_con_active_details_vpn[] = {
 	{"GROUP",     N_("GROUP"),       9, NULL, 0},  /* 0 */
 	{"TYPE",      N_("TYPE"),       15, NULL, 0},  /* 1 */
 	{"USERNAME",  N_("USERNAME"),   15, NULL, 0},  /* 2 */
@@ -173,7 +173,7 @@ static NmcOutputField nmc_fields_status_details_vpn[] = {
 	{"CFG",       N_("CFG"),       120, NULL, 0},  /* 6 */
 	{NULL, NULL, 0, NULL, 0}
 };
-#define NMC_FIELDS_CON_STATUS_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
+#define NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
 
 
 typedef struct {
@@ -193,9 +193,9 @@ usage (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli connection { COMMAND | help }\n"
-	         "  COMMAND := { list | status | up | down | delete }\n\n"
-	         "  list [[id|uuid|path] <ID>]\n"
-	         "  status [[id|uuid|path|apath] <ID>]\n"
+	         "  COMMAND := { show | up | down | delete }\n\n"
+	         "  show configured [[id|uuid|path] <ID>]\n"
+	         "  show active [[id|uuid|path|apath] <ID>]\n"
 #if WITH_WIMAX
 	         "  up [id|uuid|path] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
 #else
@@ -209,8 +209,7 @@ usage (void)
 
 /* The real commands that do something - i.e. not 'help', etc. */
 static const char *real_con_commands[] = {
-	"list",
-	"status",
+	"show",
 	"up",
 	"down",
 	"delete",
@@ -253,9 +252,9 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, &error);
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'con list': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: 'list configured': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error->message, NMC_FIELDS_SETTINGS_NAMES_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'list configured': %s; allowed fields: %s"), error->message, NMC_FIELDS_SETTINGS_NAMES_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
@@ -364,13 +363,13 @@ find_connection (GSList *list, const char *filter_type, const char *filter_val)
 }
 
 static NMCResultCode
-do_connections_list (NmCli *nmc, int argc, char **argv)
+do_connections_show (NmCli *nmc, int argc, char **argv)
 {
 	GError *error1 = NULL;
 	GError *error2 = NULL;
 	char *fields_str;
-	char *fields_all =    NMC_FIELDS_CON_LIST_ALL;
-	char *fields_common = NMC_FIELDS_CON_LIST_COMMON;
+	char *fields_all =    NMC_FIELDS_CON_SHOW_ALL;
+	char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -385,7 +384,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_con_list;
+	nmc->allowed_fields = nmc_fields_con_show;
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error1);
 	/* error1 is checked later - it's not valid for connection details */
 
@@ -397,13 +396,13 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 
 		/* Print headers */
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.header_name = _("Connection list");
+		nmc->print_fields.header_name = _("List of configured connections");
 		print_fields (nmc->print_fields, nmc->allowed_fields);
 
 		/* Print values */
 		g_slist_foreach (nmc->system_connections, (GFunc) show_connection, nmc);
 	} else {
-		g_clear_error (&error1); /* the error1 is only relevant for 'con list' without arguments */
+		g_clear_error (&error1); /* the error1 is only relevant for 'show configured' without arguments */
 
 		while (argc > 0) {
 			NMConnection *con;
@@ -420,7 +419,7 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 				}
 			}
 			if (!nmc->mode_specified)
-				nmc->multiline_output = TRUE;  /* multiline mode is default for 'con list <con>' */
+				nmc->multiline_output = TRUE;  /* multiline mode is default for 'show configured <con>' */
 
 			con = find_connection (nmc->system_connections, selector, *argv);
 			if (con) {
@@ -441,9 +440,9 @@ do_connections_list (NmCli *nmc, int argc, char **argv)
 error:
 	if (error1) {
 		if (error1->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'con list': %s"), error1->message);
+			g_string_printf (nmc->return_text, _("Error: 'show configured': %s"), error1->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'con list': %s; allowed fields: %s"), error1->message, NMC_FIELDS_CON_LIST_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'show configured': %s; allowed fields: %s"), error1->message, NMC_FIELDS_CON_SHOW_ALL);
 		g_error_free (error1);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}
@@ -516,7 +515,7 @@ get_connection_for_active (const GSList *con_list, NMActiveConnection *active)
 }
 
 static gboolean
-fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
+fill_in_fields_con_active (NMActiveConnection *active, GSList *con_list)
 {
 	GSList *iter;
 	const char *active_path;
@@ -546,19 +545,19 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
 
 	/* Fill field values */
-	nmc_fields_con_status[0].value = (char *) nmc_fields_status_details_groups[0].name;
-	nmc_fields_con_status[1].value = _("N/A");
-	nmc_fields_con_status[2].value = (char *) nm_active_connection_get_uuid (active);
-	nmc_fields_con_status[3].value = dev_str->str;
-	nmc_fields_con_status[4].value = (char *) active_connection_state_to_string (state);
-	nmc_fields_con_status[5].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
-	nmc_fields_con_status[6].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
-	nmc_fields_con_status[7].value = (char *) nm_active_connection_get_specific_object (active);
-	nmc_fields_con_status[8].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
-	nmc_fields_con_status[9].value = (char *) nm_object_get_path (NM_OBJECT (active));
-	nmc_fields_con_status[10].value = (char *) nm_active_connection_get_connection (active);
-	nmc_fields_con_status[11].value = _("N/A");
-	nmc_fields_con_status[12].value = (char *) nm_active_connection_get_master (active);
+	nmc_fields_con_show_active[0].value = (char *) nmc_fields_con_active_details_groups[0].name;
+	nmc_fields_con_show_active[1].value = _("N/A");
+	nmc_fields_con_show_active[2].value = (char *) nm_active_connection_get_uuid (active);
+	nmc_fields_con_show_active[3].value = dev_str->str;
+	nmc_fields_con_show_active[4].value = (char *) active_connection_state_to_string (state);
+	nmc_fields_con_show_active[5].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
+	nmc_fields_con_show_active[6].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
+	nmc_fields_con_show_active[7].value = (char *) nm_active_connection_get_specific_object (active);
+	nmc_fields_con_show_active[8].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
+	nmc_fields_con_show_active[9].value = (char *) nm_object_get_path (NM_OBJECT (active));
+	nmc_fields_con_show_active[10].value = (char *) nm_active_connection_get_connection (active);
+	nmc_fields_con_show_active[11].value = _("N/A");
+	nmc_fields_con_show_active[12].value = (char *) nm_active_connection_get_master (active);
 
 	for (iter = con_list; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = (NMConnection *) iter->data;
@@ -570,8 +569,8 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 			g_assert (s_con != NULL);
 
 			/* Fill field values that depend on NMConnection */
-			nmc_fields_con_status[1].value = (char *) nm_setting_connection_get_id (s_con);
-			nmc_fields_con_status[11].value = (char *) nm_setting_connection_get_zone (s_con);
+			nmc_fields_con_show_active[1].value = (char *) nm_setting_connection_get_id (s_con);
+			nmc_fields_con_show_active[11].value = (char *) nm_setting_connection_get_zone (s_con);
 
 			success = TRUE;
 			break;
@@ -579,17 +578,17 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 	}
 
 	/* Just free GString here, the char array has to be freed after printing
-	 * (by free_fields_con_status()) */
+	 * (by free_fields_con_active()) */
 	g_string_free (dev_str, FALSE);
 	return success;
 }
 
 static void
-free_fields_con_status (void)
+free_fields_con_active (void)
 {
 	/* Just DEVICES string was dynamically allocated */
-	g_free ((char *) nmc_fields_con_status[3].value);
-	nmc_fields_con_status[3].value = NULL;
+	g_free ((char *) nmc_fields_con_show_active[3].value);
+	nmc_fields_con_show_active[3].value = NULL;
 }
 
 static void
@@ -598,12 +597,12 @@ show_active_connection (gpointer data, gpointer user_data)
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (data);
 	NmCli *nmc = (NmCli *) user_data;
 
-	fill_in_fields_con_status (active, nmc->system_connections);
+	fill_in_fields_con_active (active, nmc->system_connections);
 
 	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
-	free_fields_con_status ();
+	free_fields_con_active ();
 }
 
 static NMActiveConnection *
@@ -739,8 +738,8 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	GArray *print_groups;
 	int i;
 	char *fields_str;
-	char *fields_all =    NMC_FIELDS_CON_STATUS_DETAILS_ALL;
-	char *fields_common = NMC_FIELDS_CON_STATUS_DETAILS_ALL;
+	char *fields_all =    NMC_FIELDS_CON_ACTIVE_DETAILS_ALL;
+	char *fields_common = NMC_FIELDS_CON_ACTIVE_DETAILS_ALL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -753,21 +752,21 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	print_groups = parse_output_fields (fields_str, nmc_fields_status_details_groups, &error);
+	print_groups = parse_output_fields (fields_str, nmc_fields_con_active_details_groups, &error);
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'con status': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: 'list active': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_STATUS_DETAILS_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'list active': %s; allowed fields: %s"), error->message, NMC_FIELDS_CON_ACTIVE_DETAILS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
 	}
 
-	nmc->allowed_fields = nmc_fields_status_details_groups;
+	nmc->allowed_fields = nmc_fields_con_active_details_groups;
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ONLY;
 	nmc->print_fields.header_name = _("Active connection details");
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_STATUS_DETAILS_ALL, nmc->allowed_fields, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL, nmc->allowed_fields, NULL);
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
 	/* Loop through the groups and print them. */
@@ -780,27 +779,27 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 		was_output = FALSE;
 
 		/* GENERAL */
-		if (strcasecmp (nmc_fields_status_details_groups[group_idx].name, nmc_fields_status_details_groups[0].name) == 0) {
-			nmc->allowed_fields = nmc_fields_con_status;
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_STATUS_DETAILS_GENERAL_ALL, nmc->allowed_fields, NULL);
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name, nmc_fields_con_active_details_groups[0].name) == 0) {
+			nmc->allowed_fields = nmc_fields_con_show_active;
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL, nmc->allowed_fields, NULL);
 
 			/* Print field names */
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 			print_fields (nmc->print_fields, nmc->allowed_fields);
 
 			/* Fill in values */
-			fill_in_fields_con_status (acon, nmc->system_connections);
+			fill_in_fields_con_active (acon, nmc->system_connections);
 
 			/* and print them */
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 			print_fields (nmc->print_fields, nmc->allowed_fields);
 
-			free_fields_con_status ();
+			free_fields_con_active ();
 			was_output = TRUE;
 		}
 
 		/* IP */
-		if (strcasecmp (nmc_fields_status_details_groups[group_idx].name,  nmc_fields_status_details_groups[1].name) == 0) {
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[1].name) == 0) {
 			const GPtrArray *devices;
 			int j;
 
@@ -823,7 +822,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 
 		/* VPN */
 		if (NM_IS_VPN_CONNECTION (acon) &&
-		    strcasecmp (nmc_fields_status_details_groups[group_idx].name,  nmc_fields_status_details_groups[2].name) == 0) {
+		    strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
 			NMConnection *con;
 			NMSettingConnection *s_con;
 			NMSettingVPN *s_vpn;
@@ -838,8 +837,8 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 			s_con = nm_connection_get_setting_connection (con);
 			g_assert (s_con != NULL);
 
-			nmc->allowed_fields = nmc_fields_status_details_vpn;
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_STATUS_DETAILS_VPN_ALL, nmc->allowed_fields, NULL);
+			nmc->allowed_fields = nmc_fields_con_active_details_vpn;
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL, nmc->allowed_fields, NULL);
 
 			/* Print field names */
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
@@ -866,7 +865,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 			vpn_state_str = g_strdup_printf ("%d - %s", vpn_state, vpn_connection_state_to_string (vpn_state));
 
 			/* Print values */
-			set_val_str (nmc->allowed_fields, 0, (char *) nmc_fields_status_details_groups[2].name);
+			set_val_str (nmc->allowed_fields, 0, (char *) nmc_fields_con_active_details_groups[2].name);
 			set_val_str (nmc->allowed_fields, 1, type_str);
 			set_val_str (nmc->allowed_fields, 2, (char *) (username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME)));
 			set_val_str (nmc->allowed_fields, 3, (char *) get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
@@ -892,7 +891,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 }
 
 static NMCResultCode
-do_connections_status (NmCli *nmc, int argc, char **argv)
+do_connections_show_active (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *active_cons;
 	GError *err1 = NULL;
@@ -913,8 +912,8 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		char *fields_str;
-		char *fields_all =    NMC_FIELDS_CON_STATUS_ALL;
-		char *fields_common = NMC_FIELDS_CON_STATUS_COMMON;
+		char *fields_all =    NMC_FIELDS_CON_ACTIVE_ALL;
+		char *fields_common = NMC_FIELDS_CON_ACTIVE_COMMON;
 		guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 		guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 		guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -926,14 +925,14 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 		else
 			fields_str = nmc->required_fields;
 
-		nmc->allowed_fields = nmc_fields_con_status + 1 ;
+		nmc->allowed_fields = nmc_fields_con_show_active + 1 ;
 		nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &err1);
 		if (err1)
 			goto error;
 
 		/* Print headers */
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.header_name = _("Active connections");
+		nmc->print_fields.header_name = _("List of active connections");
 		print_fields (nmc->print_fields, nmc->allowed_fields);
 
 		if (active_cons && active_cons->len)
@@ -956,7 +955,7 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 				}
 			}
 			if (!nmc->mode_specified)
-				nmc->multiline_output = TRUE;  /* multiline mode is default for 'con status <con>' */
+				nmc->multiline_output = TRUE;  /* multiline mode is default for 'show active <con>' */
 
 			acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
 			if (acon) {
@@ -977,9 +976,9 @@ do_connections_status (NmCli *nmc, int argc, char **argv)
 error:
 	if (err1) {
 		if (err1->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'con status': %s"), err1->message);
+			g_string_printf (nmc->return_text, _("Error: 'show active': %s"), err1->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'con status': %s; allowed fields: %s"), err1->message, NMC_FIELDS_CON_STATUS_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'show active': %s; allowed fields: %s"), err1->message, NMC_FIELDS_CON_ACTIVE_ALL);
 		g_error_free (err1);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}
@@ -1678,20 +1677,27 @@ static NMCResultCode
 parse_cmd (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+	int arg_ret;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 			goto opt_error;
-		nmc->return_value = do_connections_list (nmc, argc, argv);
+		nmc->return_value = do_connections_show (nmc, argc, argv);
 	} else {
-
-		if (matches (*argv, "list") == 0) {
-			nmc->return_value = do_connections_list (nmc, argc-1, argv+1);
-		}
-		else if (matches(*argv, "status") == 0) {
-			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
-				goto opt_error;
-			nmc->return_value = do_connections_status (nmc, argc-1, argv+1);
+		if (matches (*argv, "show") == 0) {
+			arg_ret = next_arg (&argc, &argv);
+			if (arg_ret != 0 || matches (*argv, "configured") == 0) {
+				next_arg (&argc, &argv);
+				nmc->return_value = do_connections_show (nmc, argc, argv);
+			} else if (matches (*argv, "active") == 0) {
+				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
+					goto opt_error;
+				nmc->return_value = do_connections_show_active (nmc, argc-1, argv+1);
+			} else {
+				g_string_printf (nmc->return_text, _("Error: 'configured' or 'active' command is expected for 'connection show'."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				nmc->should_wait = FALSE;
+			}
 		}
 		else if (matches(*argv, "up") == 0) {
 			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
@@ -1710,7 +1716,7 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else {
 			usage ();
-			g_string_printf (nmc->return_text, _("Error: 'con' command '%s' is not valid."), *argv);
+			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			nmc->should_wait = FALSE;
 		}
