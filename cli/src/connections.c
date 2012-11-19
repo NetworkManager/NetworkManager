@@ -202,7 +202,7 @@ usage (void)
 	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 #endif
 	         "  down id <id> | uuid <id>\n"
-	         "  delete id <id> | uuid <id>\n"
+	         "  delete [id|uuid|path] <ID>\n"
 	         "\n"
 	         ));
 }
@@ -1598,56 +1598,36 @@ error:
 	return nmc->return_value;
 }
 
+typedef struct {
+	NmCli *nmc;
+	int counter;
+} DeleteStateInfo;
+
 static void
 delete_cb (NMRemoteConnection *con, GError *err, gpointer user_data)
 {
-	NmCli *nmc = (NmCli *) user_data;
+	DeleteStateInfo *info = (DeleteStateInfo *) user_data;
 
 	if (err) {
-		g_string_printf (nmc->return_text, _("Error: Connection deletion failed: %s"), err->message);
-		nmc->return_value = NMC_RESULT_ERROR_CON_DEL;
+		g_string_printf (info->nmc->return_text, _("Error: Connection deletion failed: %s"), err->message);
+		info->nmc->return_value = NMC_RESULT_ERROR_CON_DEL;
 	}
-	quit ();
-}
 
-static void
-connection_removed_cb (NMRemoteConnection *con, gpointer user_data)
-{
-	NmCli *nmc = (NmCli *) user_data;
-
-	nmc->return_value = NMC_RESULT_SUCCESS;
-	quit ();
+	info->counter--;
+	if (info->counter == 0) {
+		g_free (info);
+		quit ();
+	}
 }
 
 static NMCResultCode
 do_connection_delete (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
-	const char *selector = NULL;
-	const char *id = NULL;
+	DeleteStateInfo *del_info = NULL;
 
-	while (argc > 0) {
-		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
-			selector = *argv;
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-			id = *argv;
-		}
-		else
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
-
-		argc--;
-		argv++;
-	}
-
-	if (!id) {
-		g_string_printf (nmc->return_text, _("Error: id or uuid has to be specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
+	nmc->return_value = NMC_RESULT_SUCCESS;
+	nmc->should_wait = FALSE;
 
 	/* create NMClient */
 	nmc->get_client (nmc);
@@ -1658,30 +1638,56 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	connection = find_connection (nmc->system_connections, selector, id);
-
-	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), id);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	if (argc == 0) {
+		g_string_printf (nmc->return_text, _("Error: No connection specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
 
-	/* We need to wait a bit so that nmcli's permissions can be queried.
-	 * We will exit either on "Removed" signal or when D-Bus return (error)
-	 * message is received.
-	 */
-	nmc->should_wait = TRUE;
+	del_info = g_malloc0 (sizeof (DeleteStateInfo));
+	del_info->nmc = nmc;
+	del_info->counter = 0;
 
-	/* Connect to "Removed" signal to be able to exit when connection was removed */
-	g_signal_connect (connection, NM_REMOTE_CONNECTION_REMOVED, G_CALLBACK (connection_removed_cb), nmc);
+	while (argc > 0) {
+		const char *selector = NULL;
 
-	/* Delete the connection */
-	nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), delete_cb, nmc);
+		if (   strcmp (*argv, "id") == 0
+		    || strcmp (*argv, "uuid") == 0
+		    || strcmp (*argv, "path") == 0) {
+			selector = *argv;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		}
+
+		connection = find_connection (nmc->system_connections, selector, *argv);
+		if (!connection) {
+			g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+
+		/* We need to wait a bit so that nmcli's permissions can be checked.
+		 * We will exit when D-Bus return (error) messages are received.
+		 */
+		nmc->should_wait = TRUE;
+
+		del_info->counter++;
+
+		/* Delete the connection */
+		nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), delete_cb, del_info);
+
+		argc--;
+		argv++;
+	}
 
 	return nmc->return_value;
 
 error:
 	nmc->should_wait = FALSE;
+	g_free (del_info);
 	return nmc->return_value;
 }
 
