@@ -1167,17 +1167,24 @@ system_create_virtual_devices (NMManager *self)
 
 static void
 connection_added (NMSettings *settings,
-                  NMSettingsConnection *connection,
+                  NMSettingsConnection *settings_connection,
                   NMManager *manager)
 {
-	if (connection_needs_virtual_device (NM_CONNECTION (connection)))
-		system_create_virtual_device (manager, NM_CONNECTION (connection));
+	NMConnection *connection = NM_CONNECTION (settings_connection);
+
+	if (connection_needs_virtual_device (connection)) {
+		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+
+		g_assert (s_con);
+		if (nm_setting_connection_get_autoconnect (s_con))
+			system_create_virtual_device (manager, connection);
+	}
 }
 
 static void
 connection_changed (NMSettings *settings,
-                     NMSettingsConnection *connection,
-                     NMManager *manager)
+                    NMSettingsConnection *connection,
+                    NMManager *manager)
 {
 	/* FIXME: Some virtual devices may need to be updated in the future. */
 }
