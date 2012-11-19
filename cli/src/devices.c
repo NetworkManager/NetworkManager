@@ -267,6 +267,7 @@ usage (void)
 	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
 	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n"
 	         "               [--private] [--nowait] [--timeout <timeout>]\n"
+	         "  wifi scan [[iface] <iface>]\n"
 #if WITH_WIMAX
 	         "  wimax [list [iface <iface>] [nsp <name>]]\n"
 #endif
@@ -1883,6 +1884,64 @@ error:
 	return nmc->return_value;
 }
 
+static void
+request_scan_cb (NMDeviceWifi *device, GError *error, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: %s."),
+		                 error->message ? error->message : _("unknown"));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
+static NMCResultCode
+do_device_wifi_scan (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice *device;
+	const char *iface = NULL;
+	const GPtrArray *devices;
+	int devices_idx;
+
+	nmc->should_wait = TRUE;
+
+	/* Get the parameters */
+	if (argc > 0) {
+		if (strcmp (*argv, "iface") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+		}
+		iface = *argv;
+	}
+
+	/* Find Wi-Fi device to scan on. When no iface is provided, the first Wi-Fi is used. */
+	nmc->get_client (nmc);
+	devices = nm_client_get_devices (nmc->client);
+	devices_idx = 0;
+	device = find_wifi_device_by_iface (devices, iface, &devices_idx);
+
+	if (!device) {
+		if (iface)
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), iface);
+		else
+			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+
+	nm_device_wifi_request_scan_simple (NM_DEVICE_WIFI (device), request_scan_cb, nmc);
+
+	return nmc->return_value;
+error:
+	nmc->should_wait = FALSE;
+	return nmc->return_value;
+}
+
 static NMCResultCode
 do_device_wifi (NmCli *nmc, int argc, char **argv)
 {
@@ -1893,6 +1952,8 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
 		} else if (matches (*argv, "connect") == 0) {
 			nmc->return_value = do_device_wifi_connect_network (nmc, argc-1, argv+1);
+		} else if (matches (*argv, "scan") == 0) {
+			nmc->return_value = do_device_wifi_scan (nmc, argc-1, argv+1);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: 'dev wifi' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
