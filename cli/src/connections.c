@@ -197,9 +197,9 @@ usage (void)
 	         "  list [[id|uuid|path] <ID>]\n"
 	         "  status [[id|uuid|path|apath] <ID>]\n"
 #if WITH_WIMAX
-	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
+	         "  up [id|uuid|path] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
 #else
-	         "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
+	         "  up [id|uuid|path] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
 #endif
 	         "  down id <id> | uuid <id>\n"
 	         "  delete [id|uuid|path] <ID>\n"
@@ -1371,36 +1371,45 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *iface = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
-	gboolean id_specified = FALSE;
 	gboolean wait = TRUE;
 	GError *error = NULL;
 	gboolean is_virtual = FALSE;
+	const char *selector = NULL;
 
 	/* Set default timeout for connection activation. It can take quite a long time.
 	 * Using 90 seconds.
 	 */
 	nmc->timeout = 90;
 
-	while (argc > 0) {
-		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
-			const char *selector = *argv;
-			id_specified = TRUE;
+	if (argc == 0) {
+		g_string_printf (nmc->return_text, _("Error: No connection specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
 
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
+	if (   strcmp (*argv, "id") == 0
+	    || strcmp (*argv, "uuid") == 0
+	    || strcmp (*argv, "path") == 0) {
 
-			connection = find_connection (nmc->system_connections, selector, *argv);
-
-			if (!connection) {
-				g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-				goto error;
-			}
+		selector = *argv;
+		if (next_arg (&argc, &argv) != 0) {
+			g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
 		}
-		else if (strcmp (*argv, "iface") == 0) {
+	}
+
+	connection = find_connection (nmc->system_connections, selector, *argv);
+
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		goto error;
+	}
+	next_arg (&argc, &argv);
+
+	while (argc > 0) {
+		if (strcmp (*argv, "iface") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -1451,12 +1460,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 		argc--;
 		argv++;
-	}
-
-	if (!id_specified) {
-		g_string_printf (nmc->return_text, _("Error: id or uuid has to be specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
 	}
 
 	/* create NMClient */
