@@ -156,6 +156,7 @@ global:
 	nm_device_wifi_get_permanent_hw_address;
 	nm_device_wifi_get_type;
 	nm_device_wifi_new;
+	nm_device_wifi_request_scan_simple;
 	nm_device_wimax_error_get_type;
 	nm_device_wimax_error_quark;
 	nm_device_wimax_get_active_nsp;

@@ -45,6 +45,12 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 typedef struct {
+	NMDeviceWifi *device;
+	NMDeviceWifiRequestScanFn callback;
+	gpointer user_data;
+} RequestScanInfo;
+
+typedef struct {
 	DBusGProxy *proxy;
 
 	char *hw_address;
@@ -56,6 +62,8 @@ typedef struct {
 	GPtrArray *aps;
 
 	gboolean wireless_enabled;
+	DBusGProxyCall *scan_call;
+	RequestScanInfo *scan_info;
 } NMDeviceWifiPrivate;
 
 enum {
@@ -316,6 +324,69 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
 	}
 
 	return ap;
+}
+
+static void
+request_scan_cb (DBusGProxy *proxy,
+                 DBusGProxyCall *call,
+                 gpointer user_data)
+{
+	RequestScanInfo *info = user_data;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (info->device);
+	GError *error = NULL;
+
+	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+
+	if (info->callback)
+		info->callback (info->device, error, info->user_data);
+
+	g_clear_error (&error);
+	g_slice_free (RequestScanInfo, info);
+
+	priv->scan_call = NULL;
+	priv->scan_info = NULL;
+}
+
+/**
+ * nm_device_wifi_request_scan_simple:
+ * @device: a #NMDeviceWifi
+ * @callback: (scope async) (allow-none): the function to call when the call is done
+ * @user_data: (closure): user data to pass to the callback function
+ *
+ * Request NM to scan for access points on the #NMDeviceWifi. This function only
+ * instructs NM to perform scanning. Use nm_device_wifi_get_access_points()
+ * to get available access points.
+ *
+ **/
+void
+nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
+                                    NMDeviceWifiRequestScanFn callback,
+                                    gpointer user_data)
+{
+	RequestScanInfo *info;
+	GHashTable *options;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+
+	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
+
+	/* If a scan is in progress, just return */
+	if (priv->scan_call)
+		return;
+
+	options = g_hash_table_new (g_str_hash, g_str_equal);
+
+	info = g_slice_new0 (RequestScanInfo);
+	info->device = device;
+	info->callback = callback;
+	info->user_data = user_data;
+
+	priv->scan_info = info;
+	priv->scan_call = dbus_g_proxy_begin_call (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy, "RequestScan",
+	                                           request_scan_cb, info, NULL,
+	                                           DBUS_TYPE_G_MAP_OF_VARIANT, options,
+	                                           G_TYPE_INVALID);
+
+	g_hash_table_unref (options);
 }
 
 static void
@@ -608,6 +679,22 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
+	GError *error = NULL;
+
+	if (priv->scan_call) {
+		g_set_error_literal (&error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_UNKNOWN,
+		                     "Wi-Fi device was destroyed");
+		if (priv->scan_info) {
+			if (priv->scan_info->callback)
+				priv->scan_info->callback (NULL, error, priv->scan_info->user_data);
+			g_slice_free (RequestScanInfo, priv->scan_info);
+			priv->scan_info = NULL;
+		}
+		g_clear_error (&error);
+
+		dbus_g_proxy_cancel_call (priv->proxy, priv->scan_call);
+		priv->scan_call = NULL;
+	}
 
 	clean_up_aps (NM_DEVICE_WIFI (object), FALSE);
 	g_clear_object (&priv->proxy);

@@ -104,6 +104,13 @@ NMAccessPoint *          nm_device_wifi_get_access_point_by_path (NMDeviceWifi *
 
 const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *device);
 
+typedef void             (*NMDeviceWifiRequestScanFn)            (NMDeviceWifi *device,
+                                                                  GError *error,
+                                                                  gpointer user_data);
+void                     nm_device_wifi_request_scan_simple      (NMDeviceWifi *device,
+                                                                  NMDeviceWifiRequestScanFn callback,
+                                                                  gpointer user_data);
+
 G_END_DECLS
 
 #endif /* NM_DEVICE_WIFI_H */
