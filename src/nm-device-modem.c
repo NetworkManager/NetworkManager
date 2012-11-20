@@ -309,6 +309,12 @@ act_stage3_ip4_config_start (NMDevice *device,
 	                                         reason);
 }
 
+static void
+ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+{
+	nm_modem_ip4_pre_commit (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device, config);
+}
+
 static NMActStageReturn
 act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
@@ -509,6 +515,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->get_enabled = get_enabled;
 	device_class->set_enabled = set_enabled;
 

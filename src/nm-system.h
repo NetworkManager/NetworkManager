@@ -94,6 +94,8 @@ gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
 
 gboolean		nm_system_iface_set_mac                 (int ifindex, const struct ether_addr *mac);
 
+gboolean        nm_system_iface_set_arp                 (int ifindex, gboolean arp);
+
 gboolean        nm_system_apply_bonding_config          (const char *iface,
                                                          NMSettingBond *s_bond);
 gboolean        nm_system_add_bonding_master            (const char *iface);

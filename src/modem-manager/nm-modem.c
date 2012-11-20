@@ -311,6 +311,27 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	return ret;
 }
 
+void
+nm_modem_ip4_pre_commit (NMModem *modem,
+                         NMDevice *device,
+                         NMIP4Config *config)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (modem);
+
+	/* If the modem has an ethernet-type data interface (ie, not PPP and thus
+	 * not point-to-point) and IP config has a /32 prefix, then we assume that
+	 * ARP will be pointless and we turn it off.
+	 */
+	if (   priv->ip_method == MM_MODEM_IP_METHOD_STATIC
+	    || priv->ip_method == MM_MODEM_IP_METHOD_DHCP) {
+		NMIP4Address *addr = nm_ip4_config_get_address (config, 0);
+
+		g_assert (addr);
+		if (nm_ip4_address_get_prefix (addr) == 32)
+			nm_system_iface_set_arp (nm_device_get_ip_ifindex (device), FALSE);
+	}
+}
+
 /*****************************************************************************/
 
 NMActStageReturn

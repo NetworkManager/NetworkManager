@@ -896,6 +896,50 @@ out:
 	return success;
 }
 
+/**
+ * nm_system_iface_set_arp:
+ * @ifindex: interface index
+ * @enable: %TRUE to enable ARP, or %FALSE to disable
+ *
+ * Sets a flag to indicate that ARP should or should not be used on the
+ * interface.  Point-to-point or IPv4 /32 interfaces often require that ARP
+ * be disabled.
+ *
+ * Returns: %TRUE on success, %FALSE on failure
+ **/
+gboolean
+nm_system_iface_set_arp (int ifindex, gboolean enable)
+{
+	struct rtnl_link *request = NULL, *old = NULL;
+	struct nl_sock *nlh;
+	gboolean success = FALSE;
+	int err;
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	if (!(request = rtnl_link_alloc ()))
+		return FALSE;
+
+	if (enable)
+		rtnl_link_unset_flags (request, IFF_NOARP);
+	else
+		rtnl_link_set_flags (request, IFF_NOARP);
+
+	old = nm_netlink_index_to_rtnl_link (ifindex);
+	if (old) {
+		nlh = nm_netlink_get_default_handle ();
+		if (nlh) {
+			err = rtnl_link_change (nlh, old, request, 0);
+			if (err == 0)
+				success = TRUE;
+		}
+	}
+
+	rtnl_link_put (old);
+	rtnl_link_put (request);
+	return success;
+}
+
 static struct rtnl_route *
 add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 {
