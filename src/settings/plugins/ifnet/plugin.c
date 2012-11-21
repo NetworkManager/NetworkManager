@@ -108,7 +108,7 @@ write_system_hostname (NMSystemConfigInterface * config,
 	g_return_if_fail (newhostname);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Write system hostname: %s",
 		      newhostname);
-	if (write_hostname (newhostname, IFNET_SYSTEM_HOSTNAME_FILE)) {
+	if (write_hostname (IFNET_SYSTEM_HOSTNAME_FILE, newhostname)) {
 		g_free (priv->hostname);
 		priv->hostname = g_strdup (newhostname);
 		g_object_notify (G_OBJECT (config),

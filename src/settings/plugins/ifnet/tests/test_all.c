@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <nm-utils.h>
 
 #include "net_parser.h"
@@ -62,31 +63,33 @@ test_getdata ()
 }
 
 static void
-test_read_hostname ()
+test_read_hostname (const char *base_path)
 {
-	gchar *hostname = read_hostname ("hostname");
+	char *hostname_path, *hostname;
 
-	ASSERT (hostname != NULL, "get hostname", "hostname is NULL");
-	ASSERT (strcmp ("gentoo", hostname) == 0,
-		"get hostname",
-		"hostname is not correctly read, read:%s, expected: gentoo",
-		hostname);
+	hostname_path = g_build_filename (base_path, "hostname", NULL);
+	hostname = read_hostname (hostname_path);
+
+	g_assert_cmpstr (hostname, ==, "gentoo");
+
 	g_free (hostname);
+	g_free (hostname_path);
 }
 
 static void
-test_write_hostname ()
+test_write_hostname (const char *temp_path)
 {
-	gchar *hostname = read_hostname ("hostname");
-	gchar *tmp;
+	char *hostname_path, *hostname;
 
-	write_hostname ("gentoo-nm", "hostname");
-	tmp = read_hostname ("hostname");
-	ASSERT (strcmp (tmp, "gentoo-nm") == 0,
-		"write hostname", "write hostname error");
-	write_hostname (hostname, "hostname");
-	g_free (tmp);
+	hostname_path = g_build_filename (temp_path, "hostname-test", NULL);
+	write_hostname (hostname_path, "gentoo-nm");
+	hostname = read_hostname (hostname_path);
+
+	g_assert_cmpstr (hostname, ==, "gentoo-nm");
+
 	g_free (hostname);
+	unlink (hostname_path);
+	g_free (hostname_path);
 }
 
 static void
@@ -402,43 +405,46 @@ test_missing_config ()
 }
 
 static void
-run_all (gboolean run)
+run_all (const char *testdir_path, const char *temp_path)
 {
-	if (run) {
-		test_strip_string ();
-		test_is_static ();
-		test_has_ip6_address ();
-		test_has_default_route ();
-		test_getdata ();
-		test_read_hostname ();
-		test_write_hostname ();
-		test_is_ip4_address ();
-		test_is_ip6_address ();
-		test_convert_ipv4_config_block ();
-		test_convert_ipv4_routes_block ();
-		test_is_unmanaged ();
-		test_wpa_parser ();
-		test_convert_ipv4_routes_block ();
-		test_new_connection ();
-		test_update_connection ();
-		test_add_connection ();
-		test_delete_connection ();
-		test_missing_config ();
-	}
+	test_strip_string ();
+	test_is_static ();
+	test_has_ip6_address ();
+	test_has_default_route ();
+	test_getdata ();
+	test_read_hostname (testdir_path);
+	test_write_hostname (temp_path);
+	test_is_ip4_address ();
+	test_is_ip6_address ();
+	test_convert_ipv4_config_block ();
+	test_convert_ipv4_routes_block ();
+	test_is_unmanaged ();
+	test_wpa_parser ();
+	test_convert_ipv4_routes_block ();
+	test_new_connection ();
+	test_update_connection ();
+	test_add_connection ();
+	test_delete_connection ();
+	test_missing_config ();
 }
 
 int
-main (void)
+main (int argc, char **argv)
 {
-//      g_mem_set_vtable(glib_mem_profiler_table);
-//      g_atexit(g_mem_profile);
+	char *f;
+
 	g_type_init ();
-	ifnet_destroy ();
-	wpa_parser_destroy ();
-	ifnet_init ("net");
-	wpa_parser_init (TEST_WPA_SUPPLICANT_CONF);
-	printf ("Initialization complete\n");
-	run_all (TRUE);
+
+	f = g_build_filename (argv[1], "net", NULL);
+	ifnet_init (f);
+	g_free (f);
+
+	f = g_build_filename (argv[1], "wpa_supplicant.conf", NULL);
+	wpa_parser_init (f);
+	g_free (f);
+
+	run_all (argv[1], argv[2]);
+
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 	return 0;

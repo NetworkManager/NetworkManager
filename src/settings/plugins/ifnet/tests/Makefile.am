@@ -7,8 +7,8 @@ INCLUDES=-I$(srcdir)/../ \
 	 -I$(top_srcdir)/include \
 	 -I$(top_builddir)/include \
 	 -I$(top_srcdir)/src/settings
-TESTS = check_ifnet
-check_PROGRAMS = check_ifnet
+
+noinst_PROGRAMS = check_ifnet
 check_ifnet_SOURCES = test_all.c
 
 check_ifnet_CPPFLAGS = \
@@ -21,10 +21,14 @@ check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
 		    $(CHECK_LIBS) \
 		    $(GLIB_LIBS) \
 		    $(LIBM)
-EXTRA_DIST = hostname \
-			 net \
-			 net.all \
-			 nm-system-settings.conf \
-			 wpa_supplicant.conf
+check-local: check_ifnet
+	$(abs_builddir)/check_ifnet $(abs_srcdir) $(abs_builddir)
+
+EXTRA_DIST = \
+	hostname \
+	net \
+	net.all \
+	nm-system-settings.conf \
+	wpa_supplicant.conf
 
 endif

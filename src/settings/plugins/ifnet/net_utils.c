@@ -253,7 +253,7 @@ read_hostname (const char *path)
 }
 
 gboolean
-write_hostname (const gchar *hostname, const char *path)
+write_hostname (const char *path, const gchar *hostname)
 {
 	gboolean result;
 	char *contents;
