@@ -82,6 +82,7 @@ usage (const char *prog_name)
 	         "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 	         "  -e[scape] yes|no                           escape columns separators in values\n"
 	         "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
+	         "  -a[sk]                                     ask for missing parameters\n"
 	         "  -v[ersion]                                 show program version\n"
 	         "  -h[elp]                                    print this help\n"
 	         "\n"
@@ -220,6 +221,8 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			nmc->required_fields = g_strdup (argv[1]);
 		} else if (matches (opt, "-nocheck") == 0) {
 			nmc->nocheck_ver = TRUE;
+		} else if (matches (opt, "-ask") == 0) {
+			nmc->ask = TRUE;
 		} else if (matches (opt, "-version") == 0) {
 			printf (_("nmcli tool, version %s\n"), NMCLI_VERSION);
 			return NMC_RESULT_SUCCESS;
@@ -305,6 +308,7 @@ nmc_init (NmCli *nmc)
 	nmc->allowed_fields = NULL;
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
+	nmc->ask = FALSE;
 }
 
 static void

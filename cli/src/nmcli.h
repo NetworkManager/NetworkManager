@@ -117,6 +117,7 @@ typedef struct _NmCli {
 	NmcOutputField *allowed_fields;                   /* Array of allowed fields for particular commands */
 	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 	gboolean nocheck_ver;                             /* Don't check nmcli and NM versions: option '--nocheck' */
+	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 } NmCli;
 
 /* Error quark for GError domain */
