@@ -1374,6 +1374,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	GError *error = NULL;
 	gboolean is_virtual = FALSE;
 	const char *selector = NULL;
+	const char *name;
+	char *line = NULL;
 
 	/* Set default timeout for connection activation. It can take quite a long time.
 	 * Using 90 seconds.
@@ -1381,27 +1383,36 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	nmc->timeout = 90;
 
 	if (argc == 0) {
-		g_string_printf (nmc->return_text, _("Error: No connection specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
-
-	if (   strcmp (*argv, "id") == 0
-	    || strcmp (*argv, "uuid") == 0
-	    || strcmp (*argv, "path") == 0) {
-
-		selector = *argv;
-		if (next_arg (&argc, &argv) != 0) {
-			g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+		if (nmc->ask) {
+			line = nmc_get_user_input (_("Connection (name, UUID, or path): "));
+			name = line ? line : "";
+			// TODO: enhancement:  when just Enter is pressed (line is NULL), list
+			// available connections so that the user can select one
+		} else {
+			g_string_printf (nmc->return_text, _("Error: No connection specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
+	} else {
+		if (   strcmp (*argv, "id") == 0
+		    || strcmp (*argv, "uuid") == 0
+		    || strcmp (*argv, "path") == 0) {
+
+			selector = *argv;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			name = *argv;
+		}
+		name = *argv;
 	}
 
-	connection = find_connection (nmc->system_connections, selector, *argv);
+	connection = find_connection (nmc->system_connections, selector, name);
 
 	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *argv);
+		g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), name);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;
 	}
@@ -1513,9 +1524,11 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, "preparing");
 
+	g_free (line);
 	return nmc->return_value;
 error:
 	nmc->should_wait = FALSE;
+	g_free (line);
 	return nmc->return_value;
 }
 
