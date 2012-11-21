@@ -171,6 +171,32 @@ nmc_terminal_show_progress (const char *str)
 }
 
 /*
+ * Ask user for input and return the string.
+ * The caller is responsible for freeing the returned string.
+ */
+char *
+nmc_get_user_input (const char *ask_str)
+{
+	char *line = NULL;
+	size_t line_ln = 0;
+	ssize_t read;
+
+	fprintf (stdout, "%s", ask_str);
+	read = getline (&line, &line_ln, stdin);
+
+	/* Remove newline from the string */
+	if (read < 1 || (read == 1 && line[0] == '\n')) {
+		g_free (line);
+		line = NULL;
+	} else {
+		if (line[read-1] == '\n')
+			line[read-1] = '\0';
+	}
+
+	return line;
+}
+
+/*
  * Find out how many columns an UTF-8 string occupies on the screen
  */
 int
