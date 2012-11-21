@@ -375,6 +375,7 @@ statedir=$(localstatedir)/lib/NetworkManager
 install-data-hook:
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
 
 CLEANFILES = $(BUILT_SOURCES)
 
