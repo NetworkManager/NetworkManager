@@ -279,7 +279,7 @@ poke_modem_cb (gpointer user_data)
 									   MM_OLD_DBUS_PATH,
 									   MM_OLD_DBUS_INTERFACE);
 
-	nm_log_info (LOGD_MB, "Requesting to (re)launch modem-manager...");
+	nm_log_dbg (LOGD_MB, "Requesting to (re)launch modem-manager...");
 
 	call = dbus_g_proxy_begin_call_with_timeout (proxy,
 	                                             "EnumerateDevices",
