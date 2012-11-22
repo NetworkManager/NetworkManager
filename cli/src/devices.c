@@ -1629,6 +1629,9 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
+	NM80211ApFlags ap_flags;
+	NM80211ApSecurityFlags ap_wpa_flags;
+	NM80211ApSecurityFlags ap_rsn_flags;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -1646,6 +1649,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	GByteArray *bssid2_arr = NULL;
 	const GPtrArray *devices;
 	int devices_idx;
+	char *ssid_ask = NULL;
+	char *passwd_ask = NULL;
 
 	/* Default timeout for waiting for operation completion */
 	nmc->timeout = 90;
@@ -1658,9 +1663,16 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		argc--;
 		argv++;
 	} else {
-		g_string_printf (nmc->return_text, _("Error: SSID or BSSID are missing."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		if (nmc->ask) {
+			ssid_ask = nmc_get_user_input ("SSID or BSSID: ");
+			param_user = ssid_ask ? ssid_ask : "";
+			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ARPHRD_ETHER);
+		}
+		if (!ssid_ask) {
+			g_string_printf (nmc->return_text, _("Error: SSID or BSSID are missing."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
 	}
 
 	/* Get the rest of the parameters */
@@ -1826,36 +1838,44 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		/* 'bssid' parameter is used to restrict the conenction only to the BSSID */
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_BSSID, bssid2_arr, NULL);
 	}
-	if (password) {
-		NM80211ApFlags flags = nm_access_point_get_flags (ap);
-		NM80211ApSecurityFlags wpa_flags = nm_access_point_get_wpa_flags (ap);
-		NM80211ApSecurityFlags rsn_flags = nm_access_point_get_rsn_flags (ap);
 
-		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+	/* handle password */
+	ap_flags = nm_access_point_get_flags (ap);
+	ap_wpa_flags = nm_access_point_get_wpa_flags (ap);
+	ap_rsn_flags = nm_access_point_get_rsn_flags (ap);
 
-		/* Set password for WEP or WPA-PSK. */
-		if (flags & NM_802_11_AP_FLAGS_PRIVACY) {
-			if (wpa_flags == NM_802_11_AP_SEC_NONE && rsn_flags == NM_802_11_AP_SEC_NONE) {
+	/* Set password for WEP or WPA-PSK. */
+	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
+		/* Ask for missing password when one is expected and '--ask' is used */
+		if (!password && nmc->ask)
+			password = passwd_ask = nmc_get_user_input ("Password: ");
+
+		if (password) {
+			if (!connection)
+				connection = nm_connection_new ();
+			s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+			if (ap_wpa_flags == NM_802_11_AP_SEC_NONE && ap_rsn_flags == NM_802_11_AP_SEC_NONE) {
 				/* WEP */
 				nm_setting_wireless_security_set_wep_key (s_wsec, 0, password);
 				g_object_set (G_OBJECT (s_wsec),
 				              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
 				              wep_passphrase ? NM_WEP_KEY_TYPE_PASSPHRASE: NM_WEP_KEY_TYPE_KEY,
 				              NULL);
-			} else if (   !(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-				   && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+			} else if (   !(ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+				   && !(ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
 				/* WPA PSK */
 				g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_PSK, password, NULL);
 			}
 		}
-		// FIXME: WPA-Enterprise is not supported yet.
-		// We are not able to determine and fill all the parameters for
-		// 802.1X authentication automatically without user providing
-		// the data. Adding nmcli options for the 8021x setting would
-		// clutter the command. However, that could be solved later by
-		// implementing add/edit connections support for nmcli.
 	}
+	// FIXME: WPA-Enterprise is not supported yet.
+	// We are not able to determine and fill all the parameters for
+	// 802.1X authentication automatically without user providing
+	// the data. Adding nmcli options for the 8021x setting would
+	// clutter the command. However, that could be solved later by
+	// implementing add/edit connections support for nmcli.
 
 	/* nowait_flag indicates user input. should_wait says whether quit in start().
 	 * We have to delay exit after add_and_activate_cb() is called, even if
@@ -1880,6 +1900,8 @@ error:
 		g_byte_array_free (bssid1_arr, TRUE);
 	if (bssid2_arr)
 		g_byte_array_free (bssid2_arr, TRUE);
+	g_free (ssid_ask);
+	g_free (passwd_ask);
 
 	return nmc->return_value;
 }
