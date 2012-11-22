@@ -1537,11 +1537,22 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 {
 	NMActiveConnection *active;
 	const GPtrArray *active_cons;
+	char *line = NULL;
+	char **arg_arr = NULL;
+	char **arg_ptr = argv;
+	int arg_num = argc;
 
 	if (argc == 0) {
-		g_string_printf (nmc->return_text, _("Error: No connection specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
+		if (nmc->ask) {
+			line = nmc_get_user_input (_("Connection (name, UUID, or path): "));
+			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
+			arg_ptr = arg_arr;
+		}
+		if (arg_num == 0) {
+			g_string_printf (nmc->return_text, _("Error: No connection specified."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
 	}
 
 	/* create NMClient */
@@ -1555,33 +1566,32 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	/* Get active connections */
 	active_cons = nm_client_get_active_connections (nmc->client);
-	while (argc > 0) {
+	while (arg_num > 0) {
 		const char *selector = NULL;
 
-		if (   strcmp (*argv, "id") == 0
-		    || strcmp (*argv, "uuid") == 0
-		    || strcmp (*argv, "path") == 0
-		    || strcmp (*argv, "apath") == 0) {
+		if (   strcmp (*arg_ptr, "id") == 0
+		    || strcmp (*arg_ptr, "uuid") == 0
+		    || strcmp (*arg_ptr, "path") == 0
+		    || strcmp (*arg_ptr, "apath") == 0) {
 
-			selector = *argv;
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+			selector = *arg_ptr;
+			if (next_arg (&arg_num, &arg_ptr) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 		}
 
-		active = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
+		active = find_active_connection (active_cons, nmc->system_connections, selector, *arg_ptr);
 		if (active) {
 			nm_client_deactivate_connection (nmc->client, active);
 		} else {
-			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *argv);
+			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *arg_ptr);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
 
-		argc--;
-		argv++;
+		next_arg (&arg_num, &arg_ptr);
 	}
 
 	// FIXME: do something better then sleep()
@@ -1590,6 +1600,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 error:
 	nmc->should_wait = FALSE;
+	g_strfreev (arg_arr);
 	return nmc->return_value;
 }
 
