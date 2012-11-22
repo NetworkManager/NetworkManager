@@ -60,7 +60,7 @@
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
 
-#ifdef HAVE_LIBNL3
+#if HAVE_LIBNL == 3
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
 #endif

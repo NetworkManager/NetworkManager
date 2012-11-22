@@ -29,7 +29,7 @@
 #include "nm-logging.h"
 #include "nm-netlink-compat.h"
 
-#ifndef HAVE_LIBNL1
+#if HAVE_LIBNL != 1
 struct rtnl_nexthop *
 nm_netlink_get_nh (struct rtnl_route * route)
 {
@@ -93,7 +93,7 @@ rtnl_route_get_dst_len(struct rtnl_route * rtnlroute)
 }
 #endif
 
-#ifdef HAVE_LIBNL1
+#if HAVE_LIBNL == 1
 int
 nl_compat_error (int err)
 {

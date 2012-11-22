@@ -43,7 +43,7 @@
 #include <config.h>
 
 /* libnl-1 API compatibility for libnl-2/3*/
-#ifndef HAVE_LIBNL1
+#if HAVE_LIBNL != 1
 
 struct rtnl_nexthop * nm_netlink_get_nh(struct rtnl_route *);
 int rtnl_route_get_oif(struct rtnl_route *);
@@ -54,7 +54,7 @@ struct nl_addr * rtnl_route_get_gateway(struct rtnl_route *);
 #endif
 
 /* libnl-2 API compatibility for libnl-3 */
-#ifdef HAVE_LIBNL3
+#if HAVE_LIBNL == 3
 static inline int
 __rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
 {
@@ -65,15 +65,15 @@ __rtnl_link_alloc_cache (struct nl_sock *h, struct nl_cache **cache)
 
 
 /* libnl-2.0 compat functions */
-#ifdef HAVE_LIBNL2
+#if HAVE_LIBNL == 2
 
 /* functions with similar prototypes */
 #define nlmsg_datalen nlmsg_len
-#endif  /* HAVE_LIBNL2 */
+#endif
 
 
 /* libnl-1.0 compat functions */
-#ifdef HAVE_LIBNL1
+#if HAVE_LIBNL == 1
 
 #define nl_sock nl_handle
 
@@ -204,10 +204,10 @@ __nl_cache_include (struct nl_cache *cache, struct nl_object *obj, change_func_t
 #define NLE_PERM                28
 #define NLE_PKTLOC_FILE         29
 
-#endif  /* HAVE_LIBNL1 */
+#endif
 
 /* Stuff that only libnl3 has */
-#if defined(HAVE_LIBNL1) || defined(HAVE_LIBNL2)
+#if HAVE_LIBNL == 1 || HAVE_LIBNL == 2
 
 static inline int
 rtnl_link_bond_add (struct nl_sock *h, const char *name, void *data)
@@ -276,6 +276,6 @@ rtnl_link_delete(struct nl_sock *sk, const struct rtnl_link *l)
 	/* Operation only in libnl3 */
 	return -NLE_OPNOTSUPP;
 }
-#endif  /* HAVE_LIBNL1 || HAVE_LIBNL2 */
+#endif
 
 #endif /* NM_NETLINK_COMPAT_H */
