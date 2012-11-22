@@ -33,6 +33,7 @@ char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
 char *nmc_get_user_input (const char *ask_str);
+int nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc);
 int nmc_string_screen_width (const char *start, const char *end);
 void set_val_str (NmcOutputField fields_array[], guint32 index, char *value);
 void set_val_arr (NmcOutputField fields_array[], guint32 index, char **value);

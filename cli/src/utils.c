@@ -197,6 +197,25 @@ nmc_get_user_input (const char *ask_str)
 }
 
 /*
+ * Split string in 'line' according to 'delim' to (argument) array.
+ */
+int
+nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc)
+{
+	int i = 0;
+	char **arr;
+
+	arr = g_strsplit_set (line ? line : "", delim ? delim : " \t", 0);
+	while (arr && arr[i])
+		i++;
+
+	*argc = i;
+	*argv = arr;
+
+	return 0;
+}
+
+/*
  * Find out how many columns an UTF-8 string occupies on the screen
  */
 int
