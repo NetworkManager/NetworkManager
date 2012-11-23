@@ -1166,51 +1166,61 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 	const GPtrArray *devices;
 	NMDevice *device = NULL;
 	const char *iface = NULL;
-	gboolean iface_specified = FALSE;
+	char *iface_ask = NULL;
 	gboolean wait = TRUE;
 	int i;
 
 	/* Set default timeout for disconnect operation */
 	nmc->timeout = 10;
 
-	while (argc > 0) {
-		if (strcmp (*argv, "iface") == 0) {
-			iface_specified = TRUE;
-
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			iface = *argv;
-		} else if (strcmp (*argv, "--nowait") == 0) {
-			wait = FALSE;
-		} else if (strcmp (*argv, "--timeout") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			errno = 0;
-			nmc->timeout = strtol (*argv, NULL, 10);
-			if (errno || nmc->timeout < 0) {
-				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-		} else {
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+	if (argc == 0) {
+		if (nmc->ask) {
+			iface_ask = nmc_get_user_input ("Interface: ");
+			iface = iface_ask;
+			// TODO: list available devices when just Enter is pressed ?
 		}
+		if (!iface_ask) {
+			g_string_printf (nmc->return_text, _("Error: No interface specified."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+	} else {
+		while (argc > 0) {
+			if (strcmp (*argv, "iface") == 0) {
+				if (next_arg (&argc, &argv) != 0) {
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto error;
+				}
 
-		argc--;
-		argv++;
+				iface = *argv;
+			} else if (strcmp (*argv, "--nowait") == 0) {
+				wait = FALSE;
+			} else if (strcmp (*argv, "--timeout") == 0) {
+				if (next_arg (&argc, &argv) != 0) {
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto error;
+				}
+
+				errno = 0;
+				nmc->timeout = strtol (*argv, NULL, 10);
+				if (errno || nmc->timeout < 0) {
+					g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto error;
+				}
+
+			} else {
+				fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+			}
+
+			next_arg (&argc, &argv);
+		}
 	}
 
-	if (!iface_specified) {
-		g_string_printf (nmc->return_text, _("Error: iface has to be specified."));
+	if (!iface) {
+		g_string_printf (nmc->return_text, _("Error: No interface specified."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
