@@ -270,27 +270,27 @@ if test "$with_systemdsystemunitdir" != no; then
 	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 fi
 
-AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|ck|none], [Build NetworkManager with specific session tracking support]))
-if test "z$with_session_tracking" = "z"; then
-    # Default to ConsoleKit session tracking like we used before
-    with_session_tracking=ck
+# session tracking support
+AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|consolekit|no],
+	[Select session tracking support (default: consolekit)]))
+# default to consolekit
+AS_IF([test -z "$with_session_tracking"], with_session_tracking=consolekit)
+AS_IF([test "$with_session_tracking" = "ck"], with_session_tracking=consolekit)
+AS_IF([test "$with_session_tracking" = "none"], with_session_tracking=no)
+# check value
+AS_IF([!echo "$with_session_tracking" | grep -E "^(systemd|consolekit|no)$"],
+	AC_MSG_ERROR([--with-session-tracking must be systemd/consolekit/no, not $with_session_tracking]))
+# add conditionals and subtitutions
+AM_CONDITIONAL(SESSION_TRACKING_CK, test "$with_session_tracking" = "consolekit")
+AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "xwith_session_tracking" = "systemd")
+if test "$with_session_tracking" = "systemd"; then
+	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
+	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
+	AC_SUBST(SYSTEMD_LOGIN_LIBS)
 fi
-
-case $with_session_tracking in
-    ck|none|no) ;;
-    systemd)
-        PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
-        ;;
-    *)
-	AC_MSG_ERROR(--with-session-tracking must be one of [none, ck, systemd])
-        ;;
-esac
-AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
-AC_SUBST(SYSTEMD_LOGIN_LIBS)
-AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
-AM_CONDITIONAL(SESSION_TRACKING_CK, test "x$with_session_tracking" = "xck")
-AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "x$with_session_tracking" = "xsystemd")
-
+if test "with_session_tracking" = "consolekit"; then
+	AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
+fi
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
