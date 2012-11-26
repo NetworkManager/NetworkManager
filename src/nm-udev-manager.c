@@ -515,25 +515,35 @@ void
 nm_udev_manager_query_devices (NMUdevManager *self)
 {
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
+	GUdevEnumerator *enumerator;
 	GList *devices, *iter;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_UDEV_MANAGER (self));
 
-	devices = g_udev_client_query_by_subsystem (priv->client, "net");
+	enumerator = g_udev_enumerator_new (priv->client);
+	g_udev_enumerator_add_match_subsystem (enumerator, "net");
+	g_udev_enumerator_add_match_is_initialized (enumerator);
+
+	devices = g_udev_enumerator_execute (enumerator);
 	for (iter = devices; iter; iter = g_list_next (iter)) {
 		net_add (self, G_UDEV_DEVICE (iter->data));
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (devices);
+	g_object_unref (enumerator);
 
 
-	devices = g_udev_client_query_by_subsystem (priv->client, "atm");
+	enumerator = g_udev_enumerator_new (priv->client);
+	g_udev_enumerator_add_match_subsystem (enumerator, "atm");
+	g_udev_enumerator_add_match_is_initialized (enumerator);
+	devices = g_udev_enumerator_execute (enumerator);
 	for (iter = devices; iter; iter = g_list_next (iter)) {
 		adsl_add (self, G_UDEV_DEVICE (iter->data));
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (devices);
+	g_object_unref (enumerator);
 }
 
 static void
