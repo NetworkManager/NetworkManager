@@ -398,30 +398,6 @@ test_missing_config ()
 	        "get connection should fail with 'Unknown config for eth8'");
 }
 
-static void
-run_all (const char *testdir_path, const char *temp_path)
-{
-	test_strip_string ();
-	test_is_static ();
-	test_has_ip6_address ();
-	test_has_default_route ();
-	test_getdata ();
-	test_read_hostname (testdir_path);
-	test_write_hostname (temp_path);
-	test_is_ip4_address ();
-	test_is_ip6_address ();
-	test_convert_ipv4_config_block ();
-	test_convert_ipv4_routes_block ();
-	test_is_unmanaged ();
-	test_wpa_parser ();
-	test_convert_ipv4_routes_block ();
-	test_new_connection ();
-	test_update_connection ();
-	test_add_connection ();
-	test_delete_connection ();
-	test_missing_config ();
-}
-
 int
 main (int argc, char **argv)
 {
@@ -437,9 +413,31 @@ main (int argc, char **argv)
 	wpa_parser_init (f);
 	g_free (f);
 
-	run_all (argv[1], argv[2]);
+	test_strip_string ();
+	test_is_static ();
+	test_has_ip6_address ();
+	test_has_default_route ();
+	test_getdata ();
+	test_read_hostname (argv[1]);
+	test_write_hostname (argv[2]);
+	test_is_ip4_address ();
+	test_is_ip6_address ();
+	test_convert_ipv4_config_block ();
+	test_convert_ipv4_routes_block ();
+	test_is_unmanaged ();
+	test_wpa_parser ();
+	test_convert_ipv4_routes_block ();
+	test_new_connection ();
+	test_update_connection ();
+	test_add_connection ();
+	test_delete_connection ();
+	test_missing_config ();
 
 	ifnet_destroy ();
 	wpa_parser_destroy ();
+
+	f = g_path_get_basename (argv[0]);
+	fprintf (stdout, "%s: SUCCESS\n", f);
+	g_free (f);
 	return 0;
 }
