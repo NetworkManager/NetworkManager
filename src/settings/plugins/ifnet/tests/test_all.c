@@ -229,21 +229,15 @@ test_wpa_parser ()
 {
 	const char *value;
 
-	ASSERT (exist_ssid ("example"), "get wsec",
-		"ssid myxjtu2 is not found");
-	ASSERT (exist_ssid ("static-wep-test"), "exist_ssid",
-		"ssid static-wep-test is not found");
+	g_assert (exist_ssid ("example"));
+
+	g_assert (exist_ssid ("static-wep-test"));
 	value = wpa_get_value ("static-wep-test", "key_mgmt");
-	ASSERT (value
-		&& strcmp (value, "NONE") == 0, "get wpa data",
-		"key_mgmt of static-wep-test should be NONE, find %s", value);
+	g_assert_cmpstr (value, ==, "NONE");
 	value = wpa_get_value ("static-wep-test", "wep_key0");
-	ASSERT (value
-		&& strcmp (value, "\"abcde\"") == 0,
-		"get wpa data",
-		"wep_key0 of static-wep-test should be abcde, find %s", value);
-	ASSERT (exist_ssid ("leap-example"), "get wsec",
-		"ssid leap-example is not found");
+	g_assert_cmpstr (value, ==, "\"abcde\"");
+
+	g_assert (exist_ssid ("leap-example"));
 
 	value = wpa_get_value ("test-with-hash-in-psk", "psk");
 	g_assert_cmpstr (value, ==, "\"xjtudlc3731###asdfasdfasdf\"");
