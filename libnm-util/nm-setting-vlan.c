@@ -505,6 +505,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_VLAN_ERROR,
 			             NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,
 			             NM_SETTING_VLAN_PARENT);
+			return FALSE;
 		}
 	}
 
