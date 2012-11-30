@@ -274,31 +274,31 @@ test_new_connection ()
 	GError *error = NULL;
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth2", &error);
+	connection = ifnet_update_connection_from_config_block ("eth2", NULL, &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection failed: %s",
 		error ? error->message : "None");
 	g_object_unref (connection);
 
-	connection = ifnet_update_connection_from_config_block ("qiaomuf", &error);
+	connection = ifnet_update_connection_from_config_block ("qiaomuf", NULL, &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection failed: %s",
 		error ? error->message : "NONE");
 	g_object_unref (connection);
 
-	connection = ifnet_update_connection_from_config_block ("myxjtu2", &error);
+	connection = ifnet_update_connection_from_config_block ("myxjtu2", NULL, &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection failed: %s",
 		error ? error->message : "NONE");
 	g_object_unref (connection);
 
-	connection = ifnet_update_connection_from_config_block ("eth9", &error);
+	connection = ifnet_update_connection_from_config_block ("eth9", NULL, &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection(eth9) failed: %s",
 		error ? error->message : "NONE");
 	g_object_unref (connection);
 
-	connection = ifnet_update_connection_from_config_block ("eth10", &error);
+	connection = ifnet_update_connection_from_config_block ("eth10", NULL, &error);
 	ASSERT (connection != NULL, "new connection",
 		"new connection(eth10) failed: %s",
 		error ? error->message : "NONE");
@@ -309,13 +309,13 @@ test_new_connection ()
 #define SUP_GEN_NAME "wpa_supplicant.conf.generate"
 
 static void
-test_update_connection ()
+test_update_connection (const char *basepath)
 {
 	GError *error = NULL;
 	NMConnection *connection;
 	gboolean success;
 
-	connection = ifnet_update_connection_from_config_block ("eth0", &error);
+	connection = ifnet_update_connection_from_config_block ("eth0", basepath, &error);
 	ASSERT (connection != NULL, "get connection",
 		"get connection failed: %s",
 		error ? error->message : "None");
@@ -328,7 +328,7 @@ test_update_connection ()
 	ASSERT (success, "update connection", "update connection failed %s", "eth0");
 	g_object_unref (connection);
 
-	connection = ifnet_update_connection_from_config_block ("0xab3ace", &error);
+	connection = ifnet_update_connection_from_config_block ("0xab3ace", basepath, &error);
 	ASSERT (connection != NULL, "get connection", "get connection failed: %s",
 		error ? error->message : "None");
 
@@ -349,11 +349,11 @@ test_add_connection ()
 {
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth0", NULL);
+	connection = ifnet_update_connection_from_config_block ("eth0", NULL, NULL);
 	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL),
 	        "add connection", "add connection failed: %s", "eth0");
 	g_object_unref (connection);
-	connection = ifnet_update_connection_from_config_block ("myxjtu2", NULL);
+	connection = ifnet_update_connection_from_config_block ("myxjtu2", NULL, NULL);
 	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL),
 	        "add connection", "add connection failed: %s", "myxjtu2");
 	g_object_unref (connection);
@@ -368,14 +368,14 @@ test_delete_connection ()
 	GError *error = NULL;
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth7", &error);
+	connection = ifnet_update_connection_from_config_block ("eth7", NULL, &error);
 	ASSERT (connection != NULL, "get connection",
 	        "get connection failed: %s",
 	        error ? error->message : "None");
 	ASSERT (ifnet_delete_connection_in_parsers ("eth7", NET_GEN_NAME, SUP_GEN_NAME),
 	        "delete connection", "delete connection failed: %s", "eth7");
 	g_object_unref (connection);
-	connection = ifnet_update_connection_from_config_block ("qiaomuf", &error);
+	connection = ifnet_update_connection_from_config_block ("qiaomuf", NULL, &error);
 	ASSERT (connection != NULL, "get connection",
 	        "get connection failed: %s",
 	        error ? error->message : "None");
@@ -393,7 +393,7 @@ test_missing_config ()
 	GError *error = NULL;
 	NMConnection *connection;
 
-	connection = ifnet_update_connection_from_config_block ("eth8", &error);
+	connection = ifnet_update_connection_from_config_block ("eth8", NULL, &error);
 	ASSERT (connection == NULL && error != NULL, "get connection",
 	        "get connection should fail with 'Unknown config for eth8'");
 }
@@ -428,7 +428,7 @@ main (int argc, char **argv)
 	test_wpa_parser ();
 	test_convert_ipv4_routes_block ();
 	test_new_connection ();
-	test_update_connection ();
+	test_update_connection (argv[1]);
 	test_add_connection ();
 	test_delete_connection ();
 	test_missing_config ();

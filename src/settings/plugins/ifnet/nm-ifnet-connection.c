@@ -68,7 +68,7 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 	if (source)
 		tmp = g_object_ref (source);
 	else {
-		tmp = ifnet_update_connection_from_config_block (conn_name, &error);
+		tmp = ifnet_update_connection_from_config_block (conn_name, NULL, &error);
 		if (!tmp){
 			g_error_free (error);
 			return NULL;

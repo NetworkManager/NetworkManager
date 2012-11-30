@@ -25,6 +25,7 @@
 #include "net_parser.h"
 
 NMConnection *ifnet_update_connection_from_config_block (const char *conn_name,
+                                                         const char *basepath,
                                                          GError **error);
 
 /* nm_conn_name is used to update nm_ifnet_connection's priv data */

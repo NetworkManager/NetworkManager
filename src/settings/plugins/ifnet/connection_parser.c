@@ -75,24 +75,28 @@ static gboolean eap_simple_reader (const char *eap_method,
                                    const char *ssid,
                                    NMSetting8021x *s_8021x,
                                    gboolean phase2,
+                                   const char *basepath,
                                    GError **error);
 
 static gboolean eap_tls_reader (const char *eap_method,
                                 const char *ssid,
                                 NMSetting8021x *s_8021x,
                                 gboolean phase2,
+                                const char *basepath,
                                 GError **error);
 
 static gboolean eap_peap_reader (const char *eap_method,
                                  const char *ssid,
                                  NMSetting8021x *s_8021x,
                                  gboolean phase2,
+                                 const char *basepath,
                                  GError **error);
 
 static gboolean eap_ttls_reader (const char *eap_method,
                                  const char *ssid,
                                  NMSetting8021x *s_8021x,
                                  gboolean phase2,
+                                 const char *basepath,
                                  GError **error);
 
 typedef struct {
@@ -101,6 +105,7 @@ typedef struct {
 	                     const char *ssid,
 	                     NMSetting8021x *s_8021x,
 	                     gboolean phase2,
+	                     const char *basepath,
 	                     GError **error);
 	gboolean wifi_phase2_only;
 } EAPReader;
@@ -124,6 +129,7 @@ eap_simple_reader (const char *eap_method,
                    const char *ssid,
                    NMSetting8021x *s_8021x,
                    gboolean phase2,
+                   const char *basepath,
                    GError **error)
 {
 	const char *value;
@@ -152,17 +158,30 @@ eap_simple_reader (const char *eap_method,
 	return TRUE;
 }
 
+static char *
+get_cert (const char *ssid, const char *key, const char *basepath)
+{
+	const char *orig;
+
+	/* If it's a relative path, convert to absolute using 'basepath' */
+	orig = wpa_get_value (ssid, key);
+	if (g_path_is_absolute (orig))
+		return g_strdup (orig);
+	return g_strdup_printf ("%s/%s", basepath, orig);
+}
+
 static gboolean
 eap_tls_reader (const char *eap_method,
                 const char *ssid,
                 NMSetting8021x *s_8021x,
                 gboolean phase2,
+                const char *basepath,
                 GError **error)
 {
 	const char *value;
-	const char *ca_cert = NULL;
-	const char *client_cert = NULL;
-	const char *privkey = NULL;
+	char *ca_cert = NULL;
+	char *client_cert = NULL;
+	char *privkey = NULL;
 	const char *privkey_password = NULL;
 	gboolean success = FALSE;
 	NMSetting8021xCKFormat privkey_format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
@@ -178,7 +197,7 @@ eap_tls_reader (const char *eap_method,
 	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
 
 	/* ca cert */
-	ca_cert = wpa_get_value (ssid, phase2 ? "ca_cert2" : "ca_cert");
+	ca_cert = get_cert (ssid, phase2 ? "ca_cert2" : "ca_cert", basepath);
 	if (ca_cert) {
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_ca_cert (s_8021x,
@@ -215,7 +234,7 @@ eap_tls_reader (const char *eap_method,
 	}
 
 	/* The private key itself */
-	privkey = wpa_get_value (ssid, phase2 ? "private_key2" : "private_key");
+	privkey = get_cert (ssid, phase2 ? "private_key2" : "private_key", basepath);
 	if (!privkey) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Missing %s for EAP method '%s'.",
@@ -248,9 +267,7 @@ eap_tls_reader (const char *eap_method,
 	 */
 	if (privkey_format == NM_SETTING_802_1X_CK_FORMAT_RAW_KEY
 	    || privkey_format == NM_SETTING_802_1X_CK_FORMAT_X509) {
-		client_cert = wpa_get_value (ssid,
-					     phase2 ? "client_cert2" :
-					     "client_cert");
+		client_cert = get_cert (ssid, phase2 ? "client_cert2" : "client_cert", basepath);
 		if (!client_cert) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
 				     "Missing %s for EAP method '%s'.",
@@ -278,6 +295,9 @@ eap_tls_reader (const char *eap_method,
 	success = TRUE;
 
 done:
+	g_free (ca_cert);
+	g_free (client_cert);
+	g_free (privkey);
 	return success;
 }
 
@@ -286,15 +306,16 @@ eap_peap_reader (const char *eap_method,
                  const char *ssid,
                  NMSetting8021x *s_8021x,
                  gboolean phase2,
+                 const char *basepath,
                  GError **error)
 {
-	const char *ca_cert = NULL;
+	char *ca_cert = NULL;
 	const char *inner_auth = NULL;
 	const char *peapver = NULL;
 	char **list = NULL, **iter, *lower;
 	gboolean success = FALSE;
 
-	ca_cert = wpa_get_value (ssid, "ca_cert");
+	ca_cert = get_cert (ssid, "ca_cert", basepath);
 	if (ca_cert) {
 		if (!nm_setting_802_1x_set_ca_cert (s_8021x,
 						    ca_cert,
@@ -346,11 +367,10 @@ eap_peap_reader (const char *eap_method,
 		if (!(pos = strstr (*iter, "MSCHAPV2"))
 		    || !(pos = strstr (*iter, "MD5"))
 		    || !(pos = strstr (*iter, "GTC"))) {
-			if (!eap_simple_reader
-			    (pos, ssid, s_8021x, TRUE, error))
+			if (!eap_simple_reader (pos, ssid, s_8021x, TRUE, basepath, error))
 				goto done;
 		} else if (!(pos = strstr (*iter, "TLS"))) {
-			if (!eap_tls_reader (pos, ssid, s_8021x, TRUE, error))
+			if (!eap_tls_reader (pos, ssid, s_8021x, TRUE, basepath, error))
 				goto done;
 		} else {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
@@ -377,6 +397,7 @@ eap_peap_reader (const char *eap_method,
 	success = TRUE;
 
 done:
+	g_free (ca_cert);
 	if (list)
 		g_strfreev (list);
 	return success;
@@ -387,16 +408,17 @@ eap_ttls_reader (const char *eap_method,
                  const char *ssid,
                  NMSetting8021x *s_8021x,
                  gboolean phase2,
+                 const char *basepath,
                  GError **error)
 {
 	gboolean success = FALSE;
 	const char *anon_ident = NULL;
-	const char *ca_cert = NULL;
+	char *ca_cert = NULL;
 	const char *tmp;
 	char **list = NULL, **iter, *inner_auth = NULL;
 
 	/* ca cert */
-	ca_cert = wpa_get_value (ssid, "ca_cert");
+	ca_cert = get_cert (ssid, "ca_cert", basepath);
 	if (ca_cert) {
 		if (!nm_setting_802_1x_set_ca_cert (s_8021x,
 						    ca_cert,
@@ -434,20 +456,18 @@ eap_ttls_reader (const char *eap_method,
 		    || (pos = strstr (*iter, "mschap")) != NULL
 		    || (pos = strstr (*iter, "pap")) != NULL
 		    || (pos = strstr (*iter, "chap")) != NULL) {
-			if (!eap_simple_reader
-			    (pos, ssid, s_8021x, TRUE, error))
+			if (!eap_simple_reader (pos, ssid, s_8021x, TRUE, basepath, error))
 				goto done;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH,
 				      pos, NULL);
 		} else if ((pos = strstr (*iter, "tls")) != NULL) {
-			if (!eap_tls_reader (pos, ssid, s_8021x, TRUE, error))
+			if (!eap_tls_reader (pos, ssid, s_8021x, TRUE, basepath, error))
 				goto done;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP,
 				      "tls", NULL);
 		} else if ((pos = strstr (*iter, "mschapv2")) != NULL
 			   || (pos = strstr (*iter, "md5")) != NULL) {
-			if (!eap_simple_reader
-			    (pos, ssid, s_8021x, TRUE, error)) {
+			if (!eap_simple_reader (pos, ssid, s_8021x, TRUE, basepath, error)) {
 				PLUGIN_WARN (IFNET_PLUGIN_NAME, "SIMPLE ERROR");
 				goto done;
 			}
@@ -464,6 +484,7 @@ eap_ttls_reader (const char *eap_method,
 
 	success = TRUE;
 done:
+	g_free (ca_cert);
 	if (list)
 		g_strfreev (list);
 	g_free (inner_auth);
@@ -1385,6 +1406,7 @@ static NMSetting8021x *
 fill_8021x (const char *ssid,
             const char *key_mgmt,
             gboolean wifi,
+            const char *basepath,
             GError **error)
 {
 	NMSetting8021x *s_8021x;
@@ -1426,8 +1448,7 @@ fill_8021x (const char *ssid,
 			}
 
 			/* Parse EAP method specific options */
-			if (!(*eap->reader)
-			    (lower, ssid, s_8021x, FALSE, error)) {
+			if (!(*eap->reader) (lower, ssid, s_8021x, FALSE, basepath, error)) {
 				g_free (lower);
 				goto error;
 			}
@@ -1462,6 +1483,7 @@ error:
 
 static NMSettingWirelessSecurity *
 make_wpa_setting (const char *ssid,
+                  const char *basepath,
                   NMSetting8021x **s_8021x,
                   GError **error)
 {
@@ -1476,8 +1498,7 @@ make_wpa_setting (const char *ssid,
 		return NULL;
 	}
 
-	wsec =
-	    NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
+	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
 	/* mode=1: adhoc
 	 * mode=0: infrastructure */
@@ -1529,7 +1550,7 @@ make_wpa_setting (const char *ssid,
 				     value);
 			goto error;
 		}
-		*s_8021x = fill_8021x (ssid, value, TRUE, error);
+		*s_8021x = fill_8021x (ssid, value, TRUE, basepath, error);
 		if (!*s_8021x)
 			goto error;
 
@@ -1551,6 +1572,7 @@ error:
 
 static NMSettingWirelessSecurity *
 make_wireless_security_setting (const char *conn_name,
+                                const char *basepath,
                                 NMSetting8021x **s_8021x,
                                 GError ** error)
 {
@@ -1578,7 +1600,7 @@ make_wireless_security_setting (const char *conn_name,
 			goto error;
 	}
 	if (!wsec) {
-		wsec = make_wpa_setting (ssid, s_8021x, error);
+		wsec = make_wpa_setting (ssid, basepath, s_8021x, error);
 		if (error && *error)
 			goto error;
 	}
@@ -1635,7 +1657,9 @@ make_pppoe_connection_setting (NMConnection *connection,
 }
 
 NMConnection *
-ifnet_update_connection_from_config_block (const char *conn_name, GError **error)
+ifnet_update_connection_from_config_block (const char *conn_name,
+                                           const char *basepath,
+                                           GError **error)
 {
 	const gchar *type = NULL;
 	NMConnection *connection = NULL;
@@ -1699,7 +1723,7 @@ ifnet_update_connection_from_config_block (const char *conn_name, GError **error
 		}
 
 		/* wireless security setting */
-		wsec = make_wireless_security_setting (conn_name, &s_8021x, error);
+		wsec = make_wireless_security_setting (conn_name, basepath, &s_8021x, error);
 		if (wsec) {
 			nm_connection_add_setting (connection,
 						   NM_SETTING (wsec));

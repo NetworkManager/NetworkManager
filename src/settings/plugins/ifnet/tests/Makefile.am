@@ -29,6 +29,7 @@ EXTRA_DIST = \
 	net \
 	net.all \
 	nm-system-settings.conf \
-	wpa_supplicant.conf
+	wpa_supplicant.conf \
+	test_ca_cert.pem
 
 endif
