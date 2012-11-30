@@ -77,5 +77,5 @@ gboolean is_true (const char *str);
 
 void get_dhcp_hostname_and_client_id (char **hostname, char **client_id);
 
-void backup_file (const gchar* target);
+gchar *backup_file (const gchar* target);
 #endif

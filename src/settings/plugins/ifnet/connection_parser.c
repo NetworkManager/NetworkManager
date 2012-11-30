@@ -2808,6 +2808,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
                                     const char *config_file,
                                     const char *wpa_file,
                                     gchar **out_new_name,
+                                    gchar **out_backup,
                                     GError **error)
 {
 	NMSettingConnection *s_con;
@@ -2891,7 +2892,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 	/* connection id will be displayed in nm-applet */
 	update_connection_id (connection, conn_name);
 
-	success = ifnet_flush_to_file (config_file);
+	success = ifnet_flush_to_file (config_file, out_backup);
 	if (success)
 		wpa_flush_to_file (wpa_file);
 
@@ -2905,12 +2906,13 @@ out:
 gboolean
 ifnet_delete_connection_in_parsers (const char *conn_name,
                                     const char *config_file,
-                                    const char *wpa_file)
+                                    const char *wpa_file,
+                                    gchar **out_backup)
 {
 	gboolean result = FALSE;
 
 	ifnet_delete_network (conn_name);
-	result = ifnet_flush_to_file (config_file);
+	result = ifnet_flush_to_file (config_file, out_backup);
 	if (result) {
 		/* connection may not have security information
 		 * so simply ignore the return value*/
@@ -3005,6 +3007,7 @@ char *
 ifnet_add_new_connection (NMConnection *connection,
                           const char *config_file,
                           const char *wpa_file,
+                          gchar **out_backup,
                           GError **error)
 {
 	NMSettingConnection *s_con;
@@ -3048,6 +3051,7 @@ ifnet_add_new_connection (NMConnection *connection,
 		                                              config_file,
 		                                              wpa_file,
 		                                              NULL,
+		                                              out_backup,
 		                                              error);
 	}
 

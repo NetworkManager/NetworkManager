@@ -305,6 +305,16 @@ test_new_connection ()
 	g_object_unref (connection);
 }
 
+static void
+kill_backup (char **path)
+{
+	if (path) {
+		unlink (*path);
+		g_free (*path);
+		*path = NULL;
+	}
+}
+
 #define NET_GEN_NAME "net.generate"
 #define SUP_GEN_NAME "wpa_supplicant.conf.generate"
 
@@ -314,6 +324,7 @@ test_update_connection (const char *basepath)
 	GError *error = NULL;
 	NMConnection *connection;
 	gboolean success;
+	char *backup = NULL;
 
 	connection = ifnet_update_connection_from_config_block ("eth0", basepath, &error);
 	ASSERT (connection != NULL, "get connection",
@@ -324,7 +335,9 @@ test_update_connection (const char *basepath)
 	                                              NET_GEN_NAME,
 	                                              SUP_GEN_NAME,
 	                                              NULL,
+	                                              &backup,
 	                                              &error);
+	kill_backup (&backup);
 	ASSERT (success, "update connection", "update connection failed %s", "eth0");
 	g_object_unref (connection);
 
@@ -336,7 +349,9 @@ test_update_connection (const char *basepath)
 	                                              NET_GEN_NAME,
 	                                              SUP_GEN_NAME,
 	                                              NULL,
+	                                              &backup,
 	                                              &error);
+	kill_backup (&backup);
 	ASSERT (success, "update connection", "update connection failed %s", "0xab3ace");
 	g_object_unref (connection);
 
@@ -345,17 +360,21 @@ test_update_connection (const char *basepath)
 }
 
 static void
-test_add_connection ()
+test_add_connection (const char *basepath)
 {
 	NMConnection *connection;
+	char *backup = NULL;
 
-	connection = ifnet_update_connection_from_config_block ("eth0", NULL, NULL);
-	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL),
+	connection = ifnet_update_connection_from_config_block ("eth0", basepath, NULL);
+	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, &backup, NULL),
 	        "add connection", "add connection failed: %s", "eth0");
+	kill_backup (&backup);
 	g_object_unref (connection);
-	connection = ifnet_update_connection_from_config_block ("myxjtu2", NULL, NULL);
-	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL),
+
+	connection = ifnet_update_connection_from_config_block ("myxjtu2", basepath, NULL);
+	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, &backup, NULL),
 	        "add connection", "add connection failed: %s", "myxjtu2");
+	kill_backup (&backup);
 	g_object_unref (connection);
 
 	unlink (NET_GEN_NAME);
@@ -367,20 +386,24 @@ test_delete_connection ()
 {
 	GError *error = NULL;
 	NMConnection *connection;
+	char *backup = NULL;
 
 	connection = ifnet_update_connection_from_config_block ("eth7", NULL, &error);
 	ASSERT (connection != NULL, "get connection",
 	        "get connection failed: %s",
 	        error ? error->message : "None");
-	ASSERT (ifnet_delete_connection_in_parsers ("eth7", NET_GEN_NAME, SUP_GEN_NAME),
+	ASSERT (ifnet_delete_connection_in_parsers ("eth7", NET_GEN_NAME, SUP_GEN_NAME, &backup),
 	        "delete connection", "delete connection failed: %s", "eth7");
+	kill_backup (&backup);
 	g_object_unref (connection);
+
 	connection = ifnet_update_connection_from_config_block ("qiaomuf", NULL, &error);
 	ASSERT (connection != NULL, "get connection",
 	        "get connection failed: %s",
 	        error ? error->message : "None");
-	ASSERT (ifnet_delete_connection_in_parsers ("qiaomuf", NET_GEN_NAME, SUP_GEN_NAME),
+	ASSERT (ifnet_delete_connection_in_parsers ("qiaomuf", NET_GEN_NAME, SUP_GEN_NAME, &backup),
 	        "delete connection", "delete connection failed: %s", "qiaomuf");
+	kill_backup (&backup);
 	g_object_unref (connection);
 
 	unlink (NET_GEN_NAME);
@@ -429,7 +452,7 @@ main (int argc, char **argv)
 	test_convert_ipv4_routes_block ();
 	test_new_connection ();
 	test_update_connection (argv[1]);
-	test_add_connection ();
+	test_add_connection (argv[1]);
 	test_delete_connection ();
 	test_missing_config ();
 

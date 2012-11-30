@@ -38,7 +38,7 @@ const char *ifnet_get_global_setting (const char *group, const char *key);
 gboolean ifnet_has_network (const char *conn_name);
 
 /* Writer functions */
-gboolean ifnet_flush_to_file (const char *config_file);
+gboolean ifnet_flush_to_file (const char *config_file, gchar **out_backup);
 void ifnet_set_data (const char *conn_name, const char *key, const char *value);
 gboolean ifnet_add_network (const char *name, const char *type);
 gboolean ifnet_delete_network (const char *conn_name);

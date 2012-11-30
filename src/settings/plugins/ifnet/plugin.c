@@ -360,7 +360,7 @@ add_connection (NMSystemConfigInterface *config,
 	nm_connection_for_each_setting_value (source, check_flagged_secrets, &has_flagged_secrets);
 
 	if (!has_flagged_secrets) {
-		conn_name = ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, error);
+		conn_name = ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL, error);
 		if (conn_name)
 			connection = nm_ifnet_connection_new (conn_name, source);
 		reload_connections (config);

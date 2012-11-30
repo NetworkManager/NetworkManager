@@ -950,7 +950,7 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 	g_free (contents);
 }
 
-void backup_file (const gchar* target)
+gchar *backup_file (const gchar* target)
 {
 	GFile *source, *backup;
 	gchar* backup_path;
@@ -961,8 +961,11 @@ void backup_file (const gchar* target)
 	backup = g_file_new_for_path (backup_path);
 
 	g_file_copy (source, backup, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, error);
-	if (error && *error)
+	if (error && *error) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Backup failed: %s", (*error)->message);
+		g_free (backup_path);
+		backup_path = NULL;
+	}
 
-	g_free (backup_path);
+	return backup_path;
 }

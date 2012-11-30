@@ -590,7 +590,7 @@ done:
 }
 
 gboolean
-ifnet_flush_to_file (const char *config_file)
+ifnet_flush_to_file (const char *config_file, gchar **out_backup)
 {
 	GIOChannel *channel;
 	GError **error = NULL;
@@ -600,18 +600,20 @@ ifnet_flush_to_file (const char *config_file)
 	gchar *out_line = NULL;
 	gsize bytes_written;
 	gboolean result = FALSE;
+	gchar *backup;
 
 	if (!net_parser_data_changed)
 		return TRUE;
 	if (!conn_table || !global_settings_table)
 		return FALSE;
 
-	backup_file (config_file);
+	backup = backup_file (config_file);
 
 	channel = g_io_channel_new_file (config_file, "w", NULL);
 	if (!channel) {
 		PLUGIN_WARN (IFNET_PLUGIN_NAME,
 			     "Can't open file %s for writing", config_file);
+		g_free (backup);
 		return FALSE;
 	}
 	g_hash_table_iter_init (&iter, global_settings_table);
@@ -714,7 +716,13 @@ ifnet_flush_to_file (const char *config_file)
 	}
 	result = TRUE;
 	net_parser_data_changed = FALSE;
+
 done:
+	if (result && out_backup)
+		*out_backup = backup;
+	else
+		g_free (backup);
+
 	g_io_channel_shutdown (channel, FALSE, NULL);
 	g_io_channel_unref (channel);
 	return result;

@@ -34,14 +34,17 @@ gboolean ifnet_update_parsers_by_connection (NMConnection *connection,
                                              const char *config_file,
                                              const char *wpa_file,
                                              gchar **out_new_name,
+                                             gchar **out_backup,
                                              GError **error);
 
 gboolean ifnet_delete_connection_in_parsers (const char *conn_name,
                                              const char *config_file,
-                                             const char *wpa_file);
+                                             const char *wpa_file,
+                                             gchar **out_backup);
 
 char * ifnet_add_new_connection (NMConnection *connection,
                                  const char *config_file,
                                  const char *wpa_file,
+                                 gchar **out_backup,
                                  GError ** error);
 #endif
