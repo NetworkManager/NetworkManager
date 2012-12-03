@@ -20,5 +20,5 @@ PKG_NAME=NetworkManager
 )
 
 if test -z "$NOCONFIGURE"; then
-	$srcdir/configure --enable-maintainer-mode $@
+	$srcdir/configure --enable-maintainer-mode "$@"
 fi
