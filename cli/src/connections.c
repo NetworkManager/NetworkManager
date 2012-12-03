@@ -1869,8 +1869,6 @@ get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
 {
-	DBusGConnection *bus;
-	GError *error = NULL;
 	int i = 0;
 	gboolean real_cmd = FALSE;
 
@@ -1899,17 +1897,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		args_info.argc = argc;
 		args_info.argv = argv;
 
-		/* connect to DBus' system bus */
-		bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-		if (error || !bus) {
-			g_string_printf (nmc->return_text, _("Error: could not connect to D-Bus."));
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			nmc->should_wait = FALSE;
-			return nmc->return_value;
-		}
-
 		/* get system settings */
-		if (!(nmc->system_settings = nm_remote_settings_new (bus))) {
+		if (!(nmc->system_settings = nm_remote_settings_new (NULL))) {
 			g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			nmc->should_wait = FALSE;
@@ -1929,9 +1918,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		/* connect to signal "connections-read" - emitted when connections are fetched and ready */
 		g_signal_connect (nmc->system_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
 				  G_CALLBACK (get_connections_cb), &args_info);
-
-
-		dbus_g_connection_unref (bus);
 
 		/* The rest will be done in get_connection_cb() callback.
 		 * We need to wait for signals that connections are read.
