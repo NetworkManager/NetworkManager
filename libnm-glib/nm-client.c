@@ -1271,25 +1271,9 @@ client_device_removed (NMObject *client, NMObject *device)
 NMClient *
 nm_client_new (void)
 {
-	DBusGConnection *connection;
-	GError *err = NULL;
 	NMClient *client;
 
-#ifdef LIBNM_GLIB_TEST
-	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
-#else
-	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-#endif
-	if (!connection) {
-		g_warning ("Couldn't connect to system bus: %s", err->message);
-		g_error_free (err);
-		return NULL;
-	}
-
-	client = g_object_new (NM_TYPE_CLIENT,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
-	                       NULL);
+	client = g_object_new (NM_TYPE_CLIENT, NM_OBJECT_DBUS_PATH, NM_DBUS_PATH, NULL);
 	_nm_object_ensure_inited (NM_OBJECT (client));
 	return client;
 }
@@ -1323,32 +1307,15 @@ client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
  * #NMRemoteSettings object.
  **/
 void
-nm_client_new_async (GCancellable *cancellable, GAsyncReadyCallback callback,
+nm_client_new_async (GCancellable *cancellable,
+                     GAsyncReadyCallback callback,
                      gpointer user_data)
 {
-	DBusGConnection *connection;
-	GError *err = NULL;
 	NMClient *client;
 	GSimpleAsyncResult *simple;
 
 	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
-
-#ifdef LIBNM_GLIB_TEST
-	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &err);
-#else
-	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-#endif
-	if (!connection) {
-		g_simple_async_result_take_error (simple, err);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
-	client = g_object_new (NM_TYPE_CLIENT,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
-	                       NULL);
+	client = g_object_new (NM_TYPE_CLIENT, NM_OBJECT_DBUS_PATH, NM_DBUS_PATH, NULL);
 	g_async_initable_init_async (G_ASYNC_INITABLE (client), G_PRIORITY_DEFAULT,
 	                             cancellable, client_inited, simple);
 }
@@ -1495,18 +1462,23 @@ constructed (GObject *object)
 	                             object,
 	                             NULL);
 
-	priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-	                                             DBUS_SERVICE_DBUS,
-	                                             DBUS_PATH_DBUS,
-	                                             DBUS_INTERFACE_DBUS);
+	if (_nm_object_is_connection_private (NM_OBJECT (object)))
+		priv->manager_running = TRUE;
+	else {
+		priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
+		                                             DBUS_SERVICE_DBUS,
+		                                             DBUS_PATH_DBUS,
+		                                             DBUS_INTERFACE_DBUS);
+		g_assert (priv->bus_proxy);
 
-	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-						G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-						G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->bus_proxy,
-						    "NameOwnerChanged",
-						    G_CALLBACK (proxy_name_owner_changed),
-						    object, NULL);
+		dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                         G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->bus_proxy,
+		                             "NameOwnerChanged",
+		                             G_CALLBACK (proxy_name_owner_changed),
+		                             object, NULL);
+	}
 
 	g_signal_connect (object, "notify::" NM_CLIENT_WIRELESS_ENABLED,
 	                  G_CALLBACK (wireless_enabled_cb), NULL);
@@ -1527,13 +1499,15 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (!nm_client_parent_initable_iface->init (initable, cancellable, error))
 		return FALSE;
 
-	if (!dbus_g_proxy_call (priv->bus_proxy,
-	                        "NameHasOwner", error,
-	                        G_TYPE_STRING, NM_DBUS_SERVICE,
-	                        G_TYPE_INVALID,
-	                        G_TYPE_BOOLEAN, &priv->manager_running,
-	                        G_TYPE_INVALID))
-		return FALSE;
+	if (!_nm_object_is_connection_private (NM_OBJECT (client))) {
+		if (!dbus_g_proxy_call (priv->bus_proxy,
+		                        "NameHasOwner", error,
+		                        G_TYPE_STRING, NM_DBUS_SERVICE,
+		                        G_TYPE_INVALID,
+		                        G_TYPE_BOOLEAN, &priv->manager_running,
+		                        G_TYPE_INVALID))
+			return FALSE;
+	}
 
 	if (priv->manager_running && !get_permissions_sync (client, error))
 		return FALSE;
@@ -1590,6 +1564,22 @@ init_async_got_properties (GObject *source, GAsyncResult *result, gpointer user_
 }
 
 static void
+finish_init (NMClientInitData *init_data)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (init_data->client);
+
+	nm_client_parent_async_initable_iface->init_async (G_ASYNC_INITABLE (init_data->client),
+	                                                   G_PRIORITY_DEFAULT, NULL, /* FIXME cancellable */
+	                                                   init_async_got_properties, init_data);
+	init_data->properties_pending = TRUE;
+
+	dbus_g_proxy_begin_call (priv->client_proxy, "GetPermissions",
+	                         init_async_got_permissions, init_data, NULL,
+	                         G_TYPE_INVALID);
+	init_data->permissions_pending = TRUE;
+}
+
+static void
 init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
                                 gpointer user_data)
 {
@@ -1610,15 +1600,7 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 		return;
 	}
 
-	nm_client_parent_async_initable_iface->init_async (G_ASYNC_INITABLE (init_data->client),
-	                                                   G_PRIORITY_DEFAULT, NULL, /* FIXME cancellable */
-	                                                   init_async_got_properties, init_data);
-	init_data->properties_pending = TRUE;
-
-	dbus_g_proxy_begin_call (priv->client_proxy, "GetPermissions",
-	                         init_async_got_permissions, init_data, NULL,
-	                         G_TYPE_INVALID);
-	init_data->permissions_pending = TRUE;
+	finish_init (init_data);
 }
 
 static void
@@ -1635,12 +1617,16 @@ init_async (GAsyncInitable *initable, int io_priority,
 	                                               user_data, init_async);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
-	/* Check if NM is running */
-	dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-	                         init_async_got_manager_running,
-	                         init_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_SERVICE,
-	                         G_TYPE_INVALID);
+	if (_nm_object_is_connection_private (NM_OBJECT (init_data->client)))
+		finish_init (init_data);
+	else {
+		/* Check if NM is running */
+		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
+			                     init_async_got_manager_running,
+			                     init_data, NULL,
+			                     G_TYPE_STRING, NM_DBUS_SERVICE,
+			                     G_TYPE_INVALID);
+	}
 }
 
 static gboolean

@@ -512,8 +512,15 @@ set_property (GObject *object, guint prop_id,
 	case PROP_BUS:
 	case PROP_DBUS_CONNECTION:
 		/* Construct only */
-		if (g_value_get_boxed (value))
-			priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		/* priv->bus is set from either of two properties so that it (a) remains
+		 * backwards compatible with the previous "bus" property, and that (b)
+		 * it can be created just like an NMObject using the "dbus-connection",
+		 * even though it's not a subclass of NMObject.  So don't overwrite the
+		 * a valid value that the other property set with NULL, if one of the
+		 * properties isn't specified at construction time.
+		 */
+		if (!priv->bus)
+			priv->bus = g_value_dup_boxed (value);
 		break;
 	case PROP_DBUS_PATH:
 		/* Don't need to do anything; see constructor(). */

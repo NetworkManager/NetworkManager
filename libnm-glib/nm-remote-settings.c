@@ -32,6 +32,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-helpers-private.h"
 #include "nm-glib-compat.h"
+#include "nm-object-private.h"
 
 static void nm_remote_settings_initable_iface_init (GInitableIface *iface);
 static void nm_remote_settings_async_initable_iface_init (GAsyncInitableIface *iface);
@@ -45,6 +46,7 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT,
 
 typedef struct {
 	DBusGConnection *bus;
+	gboolean private_bus;
 	gboolean inited;
 
 	DBusGProxy *proxy;
@@ -876,24 +878,26 @@ constructed (GObject *object)
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
 
-	/* D-Bus proxy for clearing connections on NameOwnerChanged */
-	priv->dbus_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                              "org.freedesktop.DBus",
-	                                              "/org/freedesktop/DBus",
-	                                              "org.freedesktop.DBus");
-	g_assert (priv->dbus_proxy);
+	if (priv->private_bus == FALSE) {
+		/* D-Bus proxy for clearing connections on NameOwnerChanged */
+		priv->dbus_proxy = dbus_g_proxy_new_for_name (priv->bus,
+		                                              DBUS_SERVICE_DBUS,
+		                                              DBUS_PATH_DBUS,
+		                                              DBUS_INTERFACE_DBUS);
+		g_assert (priv->dbus_proxy);
 
-	dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__STRING_STRING_STRING,
-	                                   G_TYPE_NONE,
-	                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (priv->dbus_proxy, "NameOwnerChanged",
-	                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->dbus_proxy,
-	                             "NameOwnerChanged",
-	                             G_CALLBACK (name_owner_changed),
-	                             object, NULL);
+		dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__STRING_STRING_STRING,
+		                                   G_TYPE_NONE,
+		                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                                   G_TYPE_INVALID);
+		dbus_g_proxy_add_signal (priv->dbus_proxy, "NameOwnerChanged",
+		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                         G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->dbus_proxy,
+		                             "NameOwnerChanged",
+		                             G_CALLBACK (name_owner_changed),
+		                             object, NULL);
+	}
 
 	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
 	                                                 NM_DBUS_PATH_SETTINGS,
@@ -940,20 +944,23 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 	GHashTable *props;
 
-	if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", error,
-	                        G_TYPE_STRING, NM_DBUS_SERVICE,
-	                        G_TYPE_INVALID,
-	                        G_TYPE_BOOLEAN, &priv->service_running,
-	                        G_TYPE_INVALID)) {
-		priv->service_running = FALSE;
-		return FALSE;
-	}
+	if (priv->private_bus == FALSE) {
+		if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", error,
+		                        G_TYPE_STRING, NM_DBUS_SERVICE,
+		                        G_TYPE_INVALID,
+		                        G_TYPE_BOOLEAN, &priv->service_running,
+		                        G_TYPE_INVALID)) {
+			priv->service_running = FALSE;
+			return FALSE;
+		}
 
-	/* If NM isn't running we'll grab properties from name_owner_changed()
-	 * when it starts.
-	 */
-	if (!priv->service_running)
-		return TRUE;
+		/* If NM isn't running we'll grab properties from name_owner_changed()
+		 * when it starts.
+		 */
+		if (!priv->service_running)
+			return TRUE;
+	} else
+		priv->service_running = TRUE;
 
 	/* Get properties */
 	if (!dbus_g_proxy_call (priv->props_proxy, "GetAll", error,
@@ -1024,6 +1031,17 @@ init_async_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
 }
 
 static void
+init_get_properties (NMRemoteSettingsInitData *init_data)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (init_data->settings);
+
+	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
+	                         init_async_got_properties, init_data, NULL,
+	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
+	                         G_TYPE_INVALID);
+}
+
+static void
 init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
                                 gpointer user_data)
 {
@@ -1045,10 +1063,7 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 		return;
 	}
 
-	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
-	                         init_async_got_properties, init_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
-	                         G_TYPE_INVALID);
+	init_get_properties (init_data);
 }
 
 static void
@@ -1064,12 +1079,16 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
 
-	/* Check if NM is running */
-	dbus_g_proxy_begin_call (priv->dbus_proxy, "NameHasOwner",
-	                         init_async_got_manager_running,
-	                         init_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_SERVICE,
-	                         G_TYPE_INVALID);
+	if (priv->private_bus)
+		init_get_properties (init_data);
+	else {
+		/* Check if NM is running */
+		dbus_g_proxy_begin_call (priv->dbus_proxy, "NameHasOwner",
+		                         init_async_got_manager_running,
+		                         init_data, NULL,
+		                         G_TYPE_STRING, NM_DBUS_SERVICE,
+		                         G_TYPE_INVALID);
+	}
 }
 
 static gboolean
@@ -1127,15 +1146,15 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
-	DBusGConnection *connection;
 
 	switch (prop_id) {
 	case PROP_BUS:
 		/* Construct only */
-		connection = (DBusGConnection *) g_value_get_boxed (value);
-		if (!connection)
-			connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-		priv->bus = dbus_g_connection_ref (connection);
+		priv->bus = g_value_dup_boxed (value);
+		if (!priv->bus) {
+			priv->bus = _nm_dbus_new_connection (NULL);
+			priv->private_bus = _nm_dbus_is_connection_private (priv->bus);
+		}
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

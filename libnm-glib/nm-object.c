@@ -259,15 +259,13 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	DBusGConnection *connection;
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
 		/* Construct only */
-		connection = (DBusGConnection *) g_value_get_boxed (value);
-		if (!connection)
-			connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-		priv->connection = dbus_g_connection_ref (connection);
+		priv->connection = g_value_dup_boxed (value);
+		if (!priv->connection)
+			priv->connection = _nm_dbus_new_connection (NULL);
 		break;
 	case PROP_PATH:
 		/* Construct only */
@@ -1457,5 +1455,11 @@ _nm_object_new_proxy (NMObject *self, const char *path, const char *interface)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
 	return _nm_dbus_new_proxy_for_connection (priv->connection, path ? path : priv->path, interface);
+}
+
+gboolean
+_nm_object_is_connection_private (NMObject *self)
+{
+	return _nm_dbus_is_connection_private (NM_OBJECT_GET_PRIVATE (self)->connection);
 }
 
