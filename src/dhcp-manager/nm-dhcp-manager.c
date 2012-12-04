@@ -450,6 +450,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	NMDHCPManagerPrivate *priv;
 	NMDHCPClient *client = NULL;
 	const char *hostname = NULL;
+	gboolean send_hostname = TRUE;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
@@ -464,22 +465,23 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 			g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
 		}
 
-		/* If we're asked to send the hostname to DHCP server, and the hostname
-		 * isn't specified, and a hostname provider is registered: use that
-		 */
-		if (nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4)) {
+		send_hostname = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4);
+		if (send_hostname)
 			hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+	}
 
-			/* If we're supposed to send the hostname to the DHCP server but
-			 * the user didn't specify one, use the persistent hostname.
-			 */
-			if (!hostname && priv->hostname_provider) {
-				hostname = nm_hostname_provider_get_hostname (priv->hostname_provider);
-				if (   hostname
-				    && (!strcmp (hostname, "localhost.localdomain") ||
-				        !strcmp (hostname, "localhost6.localdomain6")))
-					hostname = NULL;
-			}
+	if (send_hostname) {
+		/* If we're supposed to send the hostname to the DHCP server but
+		 * the user didn't specify one, then use the hostname from the
+		 * hostname provider if there is one, otherwise use the persistent
+		 * hostname.
+		 */
+		if (!hostname && priv->hostname_provider) {
+			hostname = nm_hostname_provider_get_hostname (priv->hostname_provider);
+			if (   hostname
+			    && (!strcmp (hostname, "localhost.localdomain") ||
+			        !strcmp (hostname, "localhost6.localdomain6")))
+				hostname = NULL;
 		}
 	}
 
