@@ -30,6 +30,7 @@
 #include "NetworkManager.h"
 #include "nm-secret-agent.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
@@ -296,6 +297,20 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	return r->call;
 }
 
+static void
+cancel_done (DBusGProxy *proxy, DBusGProxyCall *call_id, void *user_data)
+{
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		nm_log_dbg (LOGD_AGENTS, "(%s): agent failed to cancel secrets: (%d) %s",
+		            (const char *) user_data,
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+}
+
 void
 nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
 {
@@ -308,13 +323,16 @@ nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
 	r = g_hash_table_lookup (priv->requests, call);
 	g_return_if_fail (r != NULL);
 
-	dbus_g_proxy_cancel_call (NM_SECRET_AGENT_GET_PRIVATE (self)->proxy, (gpointer) call);
+	dbus_g_proxy_cancel_call (priv->proxy, (gpointer) call);
 
-	dbus_g_proxy_call_no_reply (priv->proxy,
-	                            "CancelGetSecrets",
-	                            G_TYPE_STRING, r->path,
-	                            G_TYPE_STRING, r->setting_name,
-	                            G_TYPE_INVALID);
+	dbus_g_proxy_begin_call (priv->proxy,
+	                         "CancelGetSecrets",
+	                         cancel_done,
+	                         g_strdup (nm_secret_agent_get_description (self)),
+	                         g_free,
+	                         DBUS_TYPE_G_OBJECT_PATH, r->path,
+	                         G_TYPE_STRING, r->setting_name,
+	                         G_TYPE_INVALID);
 	g_hash_table_remove (priv->requests, call);
 }
 

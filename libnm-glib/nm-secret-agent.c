@@ -214,21 +214,17 @@ name_owner_changed (DBusGProxy *proxy,
 }
 
 static gboolean
-verify_request (NMSecretAgent *self,
-                DBusGMethodInvocation *context,
-                GHashTable *connection_hash,
-                const char *connection_path,
-                NMConnection **out_connection,
-                GError **error)
+verify_sender (NMSecretAgent *self,
+               DBusGMethodInvocation *context,
+               GError **error)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	NMConnection *connection = NULL;
 	DBusConnection *bus;
 	char *sender;
 	const char *nm_owner;
 	DBusError dbus_error;
 	uid_t sender_uid = G_MAXUINT;
-	GError *local = NULL;
+	gboolean allowed = FALSE;
 
 	g_return_val_if_fail (context != NULL, FALSE);
 
@@ -284,6 +280,7 @@ verify_request (NMSecretAgent *self,
 		goto out;
 	}
 
+	/* We only accept requests from NM, which always runs as root */
 	if (0 != sender_uid) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
@@ -292,26 +289,55 @@ verify_request (NMSecretAgent *self,
 		goto out;
 	}
 
-	/* And make sure the connection is actually valid */
-	if (connection_hash) {
-		connection = nm_connection_new_from_hash (connection_hash, &local);
-		if (connection && connection_path) {
-			nm_connection_set_path (connection, connection_path);
-		} else {
-			g_set_error (error,
-				         NM_SECRET_AGENT_ERROR,
-				         NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
-				         "Invalid connection: (%d) %s",
-				         local ? local->code : -1,
-				         (local && local->message) ? local->message : "(unknown)");
-			g_clear_error (&local);
-		}
-	}
+	allowed = TRUE;
 
 out:
-	if (out_connection)
-		*out_connection = connection;
 	g_free (sender);
+	return allowed;
+}
+
+static gboolean
+verify_request (NMSecretAgent *self,
+                DBusGMethodInvocation *context,
+                GHashTable *connection_hash,
+                const char *connection_path,
+                NMConnection **out_connection,
+                GError **error)
+{
+	NMConnection *connection = NULL;
+	GError *local = NULL;
+
+	if (!verify_sender (self, context, error))
+		return FALSE;
+
+	/* No connection?  If the sender verified, then we allow the request */
+	if (connection_hash == NULL)
+		return TRUE;
+
+	/* If we have a connection hash, we require a path too */
+	if (connection_path == NULL) {
+		g_set_error_literal (error,
+		                     NM_SECRET_AGENT_ERROR,
+		                     NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
+		                     "Invalid connection: no connection path given.");
+		return FALSE;
+	}
+
+	/* Make sure the given connection is valid */
+	g_assert (out_connection);
+	connection = nm_connection_new_from_hash (connection_hash, &local);
+	if (connection) {
+		nm_connection_set_path (connection, connection_path);
+		*out_connection = connection;
+	} else {
+		g_set_error (error,
+		             NM_SECRET_AGENT_ERROR,
+		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
+		             "Invalid connection: (%d) %s",
+		             local ? local->code : -1,
+		             (local && local->message) ? local->message : "(unknown)");
+		g_clear_error (&local);
+	}
 
 	return !!connection;
 }
