@@ -3122,7 +3122,8 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 
 	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, config, &error)) {
 		nm_log_err (LOGD_SHARING, "(%s/%s): failed to start dnsmasq: %s",
-		            nm_device_get_iface (self), ip_iface, error->message);
+		            nm_device_get_iface (self), ip_iface,
+		            (error && error->message) ? error->message : "(unknown)");
 		g_error_free (error);
 		nm_act_request_set_shared (req, FALSE);
 		return FALSE;
