@@ -1961,11 +1961,6 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingBridgePort *s_bridge_port;
 	NMSettingVPN *s_vpn;
 	NMSettingOlpcMesh *s_olpc_mesh;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
-	NMIP4Address *ip4addr = NULL;
-	NMIP6Address *ip6addr = NULL;
-	const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -2795,45 +2790,71 @@ cleanup_bridge_slave:
 	/* Read and add IP configuration */
 	if (   strcmp (con_type, "bond-slave") != 0
 	    && strcmp (con_type, "bridge-slave") != 0) {
+
+		NMSettingIP4Config *s_ip4 = NULL;
+		NMSettingIP6Config *s_ip6 = NULL;
+		NMIP4Address *ip4addr = NULL;
+		NMIP6Address *ip6addr = NULL;
+		gboolean ipv4_added = FALSE;
+		gboolean ipv6_added = FALSE;
+		const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
 		nmc_arg_t exp_args[] = { {"ip4", TRUE, &ip4, FALSE}, {"gw4", TRUE, &gw4, FALSE},
 		                         {"ip6", TRUE, &ip6, FALSE}, {"gw6", TRUE, &gw6, FALSE},
 		                         {NULL} };
 
-		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
-			return FALSE;
+		while (argc) {
+			nmc_arg_t *p;
 
-		if (ip4) {
-			ip4addr = nmc_parse_and_build_ip4_address (ip4, gw4, error);
-			if (!ip4addr) {
-				g_prefix_error (error, _("Error: "));
-				return FALSE;
-			}
-		}
-		if (ip4addr) {
-			s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-			nm_setting_ip4_config_add_address (s_ip4, ip4addr);
-			g_object_set (s_ip4,
-			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-			              NULL);
-			nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-			nm_ip4_address_unref (ip4addr);
-		}
+			/* reset 'found' flag */
+			for (p = exp_args; p->name; p++)
+				p->found = FALSE;
 
-		if (ip6) {
-			ip6addr = nmc_parse_and_build_ip6_address (ip6, gw6, error);
-			if (!ip6addr) {
-				g_prefix_error (error, _("Error: "));
+			ip4 = gw4 = ip6 = gw6 = NULL;
+
+			if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
 				return FALSE;
+
+			if (ip4) {
+				ip4addr = nmc_parse_and_build_ip4_address (ip4, gw4, error);
+				if (!ip4addr) {
+					g_prefix_error (error, _("Error: "));
+					return FALSE;
+				}
 			}
-		}
-		if (ip6addr) {
-			s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-			nm_setting_ip6_config_add_address (s_ip6, ip6addr);
-			g_object_set (s_ip6,
-			              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
-			              NULL);
-			nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-			nm_ip6_address_unref (ip6addr);
+			if (ip4addr) {
+				if (!ipv4_added) {
+					s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+					nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+					g_object_set (s_ip4,
+					              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+					              NULL);
+					ipv4_added = TRUE;
+				}
+				nm_setting_ip4_config_add_address (s_ip4, ip4addr);
+				nm_ip4_address_unref (ip4addr);
+				ip4addr = NULL;
+			}
+
+			if (ip6) {
+				ip6addr = nmc_parse_and_build_ip6_address (ip6, gw6, error);
+				if (!ip6addr) {
+					g_prefix_error (error, _("Error: "));
+					return FALSE;
+				}
+			}
+			if (ip6addr) {
+				if (!ipv6_added) {
+					s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+					nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+					g_object_set (s_ip6,
+					              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+					              NULL);
+					ipv6_added = TRUE;
+				}
+				nm_setting_ip6_config_add_address (s_ip6, ip6addr);
+				nm_ip6_address_unref (ip6addr);
+				ip6addr = NULL;
+			}
 		}
 	}
 
