@@ -258,8 +258,8 @@ create_dm_cmd_line (const char *iface,
 
 	dm_binary = nm_find_dnsmasq ();
 	if (!dm_binary) {
-		g_set_error (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND,
-		             "Could not find dnsmasq binary.");
+		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND,
+		                     "Could not find dnsmasq binary.");
 		return NULL;
 	}
 
@@ -298,8 +298,11 @@ create_dm_cmd_line (const char *iface,
 	s = g_string_new ("--listen-address=");
 	addr.s_addr = nm_ip4_address_get_address (tmp);
 	if (!inet_ntop (AF_INET, &addr, &localaddr[0], INET_ADDRSTRLEN)) {
-		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
-		             ntohl (addr.s_addr));
+		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
+		                                 ntohl (addr.s_addr));
+		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
+		nm_log_warn (LOGD_SHARING, err_msg);
+		g_free (err_msg);
 		goto error;
 	}
 	g_string_append (s, localaddr);
@@ -311,8 +314,11 @@ create_dm_cmd_line (const char *iface,
 	/* Add start of address range */
 	addr.s_addr = nm_ip4_address_get_address (tmp) + htonl (9);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
-		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
-		             ntohl (addr.s_addr));
+		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
+		                                 ntohl (addr.s_addr));
+		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
+		nm_log_warn (LOGD_SHARING, err_msg);
+		g_free (err_msg);
 		goto error;
 	}
 	g_string_append (s, buf);
@@ -322,8 +328,11 @@ create_dm_cmd_line (const char *iface,
 	/* Add end of address range */
 	addr.s_addr = nm_ip4_address_get_address (tmp) + htonl (99);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
-		nm_log_warn (LOGD_SHARING, "error converting IP4 address 0x%X",
-		             ntohl (addr.s_addr));
+		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
+		                                 ntohl (addr.s_addr));
+		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
+		nm_log_warn (LOGD_SHARING, err_msg);
+		g_free (err_msg);
 		goto error;
 	}
 	g_string_append (s, buf);
