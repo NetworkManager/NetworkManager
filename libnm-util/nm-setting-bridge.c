@@ -224,10 +224,10 @@ check_range (guint32 val,
              GError **error)
 {
 	if ((val != 0) && (val < min || val > max)) {
-		g_set_error (error,
-		             NM_SETTING_BRIDGE_ERROR,
-		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
-		             prop);
+		g_set_error_literal (error,
+		                     NM_SETTING_BRIDGE_ERROR,
+		                     NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
+		                     prop);
 		return FALSE;
 	}
 	return TRUE;
