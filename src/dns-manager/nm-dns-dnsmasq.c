@@ -317,7 +317,11 @@ update (NMDnsPlugin *plugin,
 	argv[idx++] = "--conf-file=" CONFFILE;
 	argv[idx++] = "--cache-size=400";
 	argv[idx++] = "--proxy-dnssec"; /* Allow DNSSEC to pass through */
-	argv[idx++] = "--conf-dir=" CONFDIR;
+
+	/* dnsmasq exits if the conf dir is not present */
+	if (g_file_test (CONFDIR, G_FILE_TEST_IS_DIR))
+		argv[idx++] = "--conf-dir=" CONFDIR;
+
 	argv[idx++] = NULL;
 	g_warn_if_fail (idx <= G_N_ELEMENTS (argv));
 
