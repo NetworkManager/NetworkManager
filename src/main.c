@@ -435,6 +435,12 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	/* Ensure state directory exists */
+	if (g_mkdir_with_parents (NMSTATEDIR, 0755) != 0) {
+		nm_log_err (LOGD_CORE, "Cannot create '%s': %s", NMSTATEDIR, strerror (errno));
+		exit (1);
+	}
+
 	pidfile = pidfile ? pidfile : g_strdup (NM_DEFAULT_PID_FILE);
 	state_file = state_file ? state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 
