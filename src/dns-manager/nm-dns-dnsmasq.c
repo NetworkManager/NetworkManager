@@ -253,10 +253,11 @@ update (NMDnsPlugin *plugin,
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	GString *conf;
 	GSList *iter;
-	const char *argv[12];
+	const char *argv[15];
 	GError *error = NULL;
 	int ignored;
 	GPid pid = 0;
+	guint idx = 0;
 
 	/* Kill the old dnsmasq; there doesn't appear to be a way to get dnsmasq
 	 * to reread the config file using SIGHUP or similar.  This is a small race
@@ -306,18 +307,19 @@ update (NMDnsPlugin *plugin,
 	nm_log_dbg (LOGD_DNS, "dnsmasq local caching DNS configuration:");
 	nm_log_dbg (LOGD_DNS, "%s", conf->str);
 
-	argv[0] = find_dnsmasq ();
-	argv[1] = "--no-resolv";  /* Use only commandline */
-	argv[2] = "--keep-in-foreground";
-	argv[3] = "--no-hosts"; /* don't use /etc/hosts to resolve */
-	argv[4] = "--bind-interfaces";
-	argv[5] = "--pid-file=" PIDFILE;
-	argv[6] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
-	argv[7] = "--conf-file=" CONFFILE;
-	argv[8] = "--cache-size=400";
-	argv[9] = "--proxy-dnssec"; /* Allow DNSSEC to pass through */
-	argv[10] = "--conf-dir=" CONFDIR;
-	argv[11] = NULL;
+	argv[idx++] = find_dnsmasq ();
+	argv[idx++] = "--no-resolv";  /* Use only commandline */
+	argv[idx++] = "--keep-in-foreground";
+	argv[idx++] = "--no-hosts"; /* don't use /etc/hosts to resolve */
+	argv[idx++] = "--bind-interfaces";
+	argv[idx++] = "--pid-file=" PIDFILE;
+	argv[idx++] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
+	argv[idx++] = "--conf-file=" CONFFILE;
+	argv[idx++] = "--cache-size=400";
+	argv[idx++] = "--proxy-dnssec"; /* Allow DNSSEC to pass through */
+	argv[idx++] = "--conf-dir=" CONFDIR;
+	argv[idx++] = NULL;
+	g_warn_if_fail (idx <= G_N_ELEMENTS (argv));
 
 	/* And finally spawn dnsmasq */
 	pid = nm_dns_plugin_child_spawn (NM_DNS_PLUGIN (self), argv, PIDFILE, "bin/dnsmasq");
