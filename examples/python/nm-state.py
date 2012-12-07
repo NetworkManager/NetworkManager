@@ -14,10 +14,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2010 Red Hat, Inc.
+# Copyright (C) 2010 - 2012 Red Hat, Inc.
 #
 
 import dbus
+
+# Device states from include/NetworkManager.h
+device_states = { 0: "Unknown",
+                 10: "Unmanaged",
+                 20: "Unavailable",
+                 30: "Disconnected",
+                 40: "Prepare",
+                 50: "Config",
+                 60: "Need Auth",
+                 70: "IP Config",
+                 80: "IP Check",
+                 90: "Secondaries",
+                 100: "Activated",
+                 110: "Deactivating",
+                 120: "Failed" }
 
 bus = dbus.SystemBus()
 
@@ -35,10 +50,10 @@ for d in devices:
     name = prop_iface.Get("org.freedesktop.NetworkManager.Device", "Interface")
 
     # and print them out
-    if state == 8:   # activated
+    if state == 100 :   # activated
         print "Device %s is activated" % name
     else:
-        print "Device %s is not activated" % name
+        print "Device %s is not activated (state=%s)" % (name, device_states[state])
 
 
 # Get active connection state
