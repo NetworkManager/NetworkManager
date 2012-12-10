@@ -32,8 +32,36 @@
 #include "network-manager.h"
 
 
-/* Available fields for 'nm status' */
+/* Available fields for 'general status' */
 static NmcOutputField nmc_fields_nm_status[] = {
+	{"RUNNING",        N_("RUNNING"),         15, NULL, 0},  /* 0 */
+	{"VERSION",        N_("VERSION"),         10, NULL, 0},  /* 1 */
+	{"STATE",          N_("STATE"),           15, NULL, 0},  /* 2 */
+	{"NETWORKING",     N_("NETWORKING"),      13, NULL, 0},  /* 3 */
+	{"WIFI-HARDWARE",  N_("WIFI-HARDWARE"),   15, NULL, 0},  /* 4 */
+	{"WIFI",           N_("WIFI"),            10, NULL, 0},  /* 5 */
+	{"WWAN-HARDWARE",  N_("WWAN-HARDWARE"),   15, NULL, 0},  /* 6 */
+	{"WWAN",           N_("WWAN"),            10, NULL, 0},  /* 7 */
+	{"WIMAX-HARDWARE", N_("WIMAX-HARDWARE"),  15, NULL, 0},  /* 8 */
+	{"WIMAX",          N_("WIMAX"),           10, NULL, 0},  /* 9 */
+	{NULL,             NULL,                  0, NULL, 0}
+};
+#if WITH_WIMAX
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN,WIMAX-HARDWARE,WIMAX"
+#define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN,WIMAX-HARDWARE,WIMAX"
+#else
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
+#define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
+#endif
+#define NMC_FIELDS_NM_STATUS_COMMON  "RUNNING,STATE,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
+#define NMC_FIELDS_NM_NETWORKING     "NETWORKING"
+#define NMC_FIELDS_NM_WIFI           "WIFI"
+#define NMC_FIELDS_NM_WWAN           "WWAN"
+#define NMC_FIELDS_NM_WIMAX          "WIMAX"
+
+/* --- Legacy stuff - kept for backward compatibility only */
+/* Available fields for 'nm status' */
+static NmcOutputField nmc_fields_nm_status_old[] = {
 	{"RUNNING",        N_("RUNNING"),         15, NULL, 0},  /* 0 */
 	{"VERSION",        N_("VERSION"),         10, NULL, 0},  /* 1 */
 	{"STATE",          N_("STATE"),           15, NULL, 0},  /* 2 */
@@ -47,17 +75,19 @@ static NmcOutputField nmc_fields_nm_status[] = {
 	{NULL,             NULL,                  0, NULL, 0}
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NET-ENABLED,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN,WIMAX-HARDWARE,WIMAX"
+#define NMC_FIELDS_NM_STATUS_ALL_OLD     "RUNNING,VERSION,STATE,NET-ENABLED,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN,WIMAX-HARDWARE,WIMAX"
 #else
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NET-ENABLED,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
+#define NMC_FIELDS_NM_STATUS_ALL_OLD     "RUNNING,VERSION,STATE,NET-ENABLED,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
 #endif
-#define NMC_FIELDS_NM_STATUS_COMMON  "RUNNING,STATE,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
-#define NMC_FIELDS_NM_NET_ENABLED    "NET-ENABLED"
-#define NMC_FIELDS_NM_WIFI           "WIFI"
-#define NMC_FIELDS_NM_WWAN           "WWAN"
-#define NMC_FIELDS_NM_WIMAX          "WIMAX"
+#define NMC_FIELDS_NM_STATUS_COMMON_OLD  "RUNNING,STATE,WIFI-HARDWARE,WIFI,WWAN-HARDWARE,WWAN"
+#define NMC_FIELDS_NM_NET_ENABLED_OLD    "NET-ENABLED"
+#define NMC_FIELDS_NM_WIFI_OLD           "WIFI"
+#define NMC_FIELDS_NM_WWAN_OLD           "WWAN"
+#define NMC_FIELDS_NM_WIMAX_OLD          "WIMAX"
+/* --- */
 
-/* Available fields for 'nm permissions' */
+
+/* Available fields for 'general permissions' */
 static NmcOutputField nmc_fields_nm_permissions[] = {
 	{"PERMISSION",     N_("PERMISSION"),      57, NULL, 0},  /* 0 */
 	{"VALUE",          N_("VALUE"),           10, NULL, 0},  /* 1 */
@@ -70,24 +100,30 @@ static NmcOutputField nmc_fields_nm_permissions[] = {
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
 
+
 static void
-usage (void)
+usage_general (void)
 {
 	fprintf (stderr,
-	         _("Usage: nmcli nm { COMMAND | help }\n\n"
-#if WITH_WIMAX
-	         "  COMMAND := { status | permissions | enable | sleep | wifi | wwan | wimax }\n\n"
-#else
-	         "  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n\n"
-#endif
+	         _("Usage: nmcli general { COMMAND | help }\n\n"
+	         "  COMMAND := { status | permissions }\n\n"
 	         "  status\n"
 	         "  permissions\n"
-	         "  enable [true|false]\n"
-	         "  sleep [true|false]\n"
-	         "  wifi [on|off]\n"
-	         "  wwan [on|off]\n"
+	         "\n"
+	         ));
+}
+
+static void
+usage_switch (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli switch { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	         "  wimax [on|off]\n"
+	         "  COMMAND := { all | networking | wifi | wwan | wimax }\n\n"
+	         "  all|networking|wifi|wwan|wimax [on/off]\n"
+#else
+	         "  COMMAND := { all | networking | wifi | wwan }\n\n"
+	         "  all|networking|wifi|wwan [on/off]\n"
 #endif
 	         "\n"
 	         ));
@@ -124,8 +160,8 @@ nm_state_to_string (NMState state)
 	}
 }
 
-static NMCResultCode
-show_nm_status (NmCli *nmc)
+static gboolean
+show_nm_status (NmCli *nmc, const char *pretty_header_name, gboolean only_switches, gboolean new_cmd)
 {
 	gboolean nm_running;
 	NMState state = NM_STATE_UNKNOWN;
@@ -137,8 +173,8 @@ show_nm_status (NmCli *nmc)
 #endif
 	GError *error = NULL;
 	const char *fields_str;
-	const char *fields_all =    NMC_FIELDS_NM_STATUS_ALL;
-	const char *fields_common = NMC_FIELDS_NM_STATUS_COMMON;
+	const char *fields_all =    new_cmd ? (only_switches ? NMC_FIELDS_NM_STATUS_SWITCH : NMC_FIELDS_NM_STATUS_ALL) : NMC_FIELDS_NM_STATUS_ALL_OLD;
+	const char *fields_common = new_cmd ? (only_switches ? NMC_FIELDS_NM_STATUS_SWITCH : NMC_FIELDS_NM_STATUS_COMMON) : NMC_FIELDS_NM_STATUS_COMMON_OLD;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -150,17 +186,17 @@ show_nm_status (NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_nm_status;
+	nmc->allowed_fields = new_cmd ? nmc_fields_nm_status : nmc_fields_nm_status_old;
 	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
 
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'nm status': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'nm status': %s; allowed fields: %s"), error->message, NMC_FIELDS_NM_STATUS_ALL);
+			g_string_printf (nmc->return_text, _("Error: %s (allowed fields: %s)"), error->message, fields_all);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return nmc->return_value;
+		return FALSE;
 	}
 
 	nmc->get_client (nmc); /* create NMClient */
@@ -168,7 +204,7 @@ show_nm_status (NmCli *nmc)
 	nm_running = nm_client_get_manager_running (nmc->client);
 	if (nm_running) {
 		if (!nmc_versions_match (nmc))
-			goto error;
+			return FALSE;
 
 		state = nm_client_get_state (nmc->client);
 		net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
@@ -191,7 +227,7 @@ show_nm_status (NmCli *nmc)
 	}
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.header_name = _("NetworkManager status");
+	nmc->print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
 	nmc->allowed_fields[0].value = nm_running ? _("running") : _("not running");
@@ -210,10 +246,7 @@ show_nm_status (NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	return NMC_RESULT_SUCCESS;
-
-error:
-	return nmc->return_value;
+	return TRUE;
 }
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
@@ -275,7 +308,7 @@ permission_result_to_string (NMClientPermissionResult perm_result)
 	}
 }
 
-static NMCResultCode
+static gboolean
 show_nm_permissions (NmCli *nmc)
 {
 	NMClientPermission perm;
@@ -299,12 +332,13 @@ show_nm_permissions (NmCli *nmc)
 
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'nm permissions': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'nm permissions': %s; allowed fields: %s"), error->message, NMC_FIELDS_NM_PERMISSIONS_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'general permissions': %s; allowed fields: %s"),
+			                 error->message, NMC_FIELDS_NM_PERMISSIONS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return nmc->return_value;
+		return FALSE;
 	}
 
 	nmc->get_client (nmc); /* create NMClient */
@@ -312,7 +346,7 @@ show_nm_permissions (NmCli *nmc)
 	if (!nm_client_get_manager_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
+		return FALSE;
 	}
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
@@ -327,10 +361,8 @@ show_nm_permissions (NmCli *nmc)
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 	}
-	return NMC_RESULT_SUCCESS;
 
-error:
-	return nmc->return_value;
+	return TRUE;
 }
 
 /* libnm-glib doesn't provide API fro Sleep method - implement D-Bus call ourselves */
@@ -369,7 +401,236 @@ gone:
 	if (proxy) g_object_unref (proxy);
 }
 
-/* entry point function for global network manager related commands 'nmcli nm' */
+/*
+ * Entry point function for general operations 'nmcli general'
+ */
+NMCResultCode
+do_general (NmCli *nmc, int argc, char **argv)
+{
+	GError *error = NULL;
+
+	if (argc == 0) {
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		show_nm_status (nmc, NULL, FALSE, TRUE);
+	}
+
+	if (argc > 0) {
+		if (matches (*argv, "status") == 0) {
+			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto finish;
+			}
+			show_nm_status (nmc, NULL, FALSE, TRUE);
+		}
+		else if (matches (*argv, "permissions") == 0) {
+			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto finish;
+			}
+			show_nm_permissions (nmc);
+		}
+		else if (   matches (*argv, "help") == 0
+		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
+		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+			usage_general ();
+		}
+		else {
+			usage_general ();
+			g_string_printf (nmc->return_text, _("Error: 'general' command '%s' is not valid."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		}
+	}
+
+finish:
+	if (error)
+		g_error_free (error);
+	quit ();
+	return nmc->return_value;
+}
+
+
+static gboolean
+nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
+{
+	g_return_val_if_fail (nmc != NULL, FALSE);
+	g_return_val_if_fail (switch_name != NULL, FALSE);
+
+	if (nmc->required_fields && strcasecmp (nmc->required_fields, switch_name) != 0) {
+		g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+		                 nmc->required_fields, switch_name);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return FALSE;
+	}
+	if (nmc->print_output == NMC_PRINT_NORMAL)
+		nmc->print_output = NMC_PRINT_TERSE;
+
+	nmc->required_fields = g_strdup (switch_name);
+	return show_nm_status (nmc, header, TRUE, TRUE);
+}
+
+static gboolean
+nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolean *res)
+{
+	g_return_val_if_fail (nmc != NULL, FALSE);
+	g_return_val_if_fail (arg1 && arg2, FALSE);
+	g_return_val_if_fail (res != NULL, FALSE);
+
+	if (!strcmp (arg2, "on"))
+		*res = TRUE;
+	else if (!strcmp (arg2, "off"))
+		*res = FALSE;
+	else {
+		g_string_printf (nmc->return_text, _("Error: invalid '%s' argument: '%s' (use on/off)."), arg1, arg2);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*
+ * Entry point function for switch commands 'nmcli switch'
+ */
+NMCResultCode
+do_switch (NmCli *nmc, int argc, char **argv)
+{
+	GError *error = NULL;
+	gboolean enable_flag;
+
+	if (argc == 0) {
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			g_error_free (error);
+			goto finish;
+		}
+		show_nm_status (nmc, _("Network switches"), TRUE, TRUE);
+	}
+
+	if (argc > 0) {
+		if (matches (*argv, "all") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no argument, show all switches */
+				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					g_error_free (error);
+					goto finish;
+				}
+				show_nm_status (nmc, _("Network switches"), TRUE, TRUE);
+			} else {
+				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+					goto finish;
+
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_networking_set_enabled (nmc->client, enable_flag);
+				nm_client_wireless_set_enabled (nmc->client, enable_flag);
+				nm_client_wimax_set_enabled (nmc->client, enable_flag);
+				nm_client_wwan_set_enabled (nmc->client, enable_flag);
+			}
+		}
+		else if (matches (*argv, "networking") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no argument, show current state of networking */
+				nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking switch"));
+			} else {
+				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+					goto finish;
+				
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_networking_set_enabled (nmc->client, enable_flag);
+			}
+		}
+		else if (matches (*argv, "wifi") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no argument, show current WiFi state */
+				nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi switch"));
+			} else {
+				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+					goto finish;
+				
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_wireless_set_enabled (nmc->client, enable_flag);
+			}
+		}
+		else if (matches (*argv, "wwan") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no argument, show current WWAN state */
+				nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN switch"));
+			} else {
+				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+					goto finish;
+
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_wwan_set_enabled (nmc->client, enable_flag);
+			}
+		}
+#if WITH_WIMAX
+		else if (matches (*argv, "wimax") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no argument, show current WiMAX state */
+				nmc_switch_show (nmc, NMC_FIELDS_NM_WIMAX, _("WiMAX switch"));
+			} else {
+				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
+					goto finish;
+
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_wimax_set_enabled (nmc->client, enable_flag);
+			}
+		}
+#endif
+		else if (   matches (*argv, "help") == 0
+		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
+		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+			usage_switch ();
+		}
+		else {
+			usage_switch ();
+			g_string_printf (nmc->return_text, _("Error: 'switch' command '%s' is not valid."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		}
+	}
+
+finish:
+	quit ();
+	return nmc->return_value;
+}
+
+/* --- Legacy stuff - kept for backward compatibility only */
+/* Legacy 'nmcli nm' command */
+static void
+usage (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli nm { COMMAND | help }\n\n"
+#if WITH_WIMAX
+	         "  COMMAND := { status | permissions | enable | sleep | wifi | wwan | wimax }\n\n"
+#else
+	         "  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n\n"
+#endif
+	         "  status\n"
+	         "  permissions\n"
+	         "  enable [true|false]\n"
+	         "  sleep [true|false]\n"
+	         "  wifi [on|off]\n"
+	         "  wwan [on|off]\n"
+#if WITH_WIMAX
+	         "  wimax [on|off]\n"
+#endif
+	         "\n"
+	         ));
+}
+
+/*
+ * Deprecated, remained here just for backward compatibility!
+ * Entry point function for global network manager related commands 'nmcli nm'
+ */
 NMCResultCode
 do_network_manager (NmCli *nmc, int argc, char **argv)
 {
@@ -388,19 +649,19 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 			goto opt_error;
-		nmc->return_value = show_nm_status (nmc);
+		show_nm_status (nmc, NULL, FALSE, FALSE);
 	}
 
 	if (argc > 0) {
 		if (matches (*argv, "status") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
-			nmc->return_value = show_nm_status (nmc);
+			show_nm_status (nmc, NULL, FALSE, FALSE);
 		}
 		else if (matches (*argv, "permissions") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
-			nmc->return_value = show_nm_permissions (nmc);
+			show_nm_permissions (nmc);
 		}
 		else if (matches (*argv, "enable") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
@@ -408,13 +669,13 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 					goto opt_error;
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "NET-ENABLED")) {
-					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
-					                 nmc->required_fields, NMC_FIELDS_NM_NET_ENABLED);
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+					                 nmc->required_fields, NMC_FIELDS_NM_NET_ENABLED_OLD);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nmc->allowed_fields = nmc_fields_nm_status;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_NET_ENABLED, nmc->allowed_fields, NULL);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_NET_ENABLED_OLD, nmc->allowed_fields, NULL);
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.header_name = _("Networking enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
@@ -463,13 +724,13 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 					goto opt_error;
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WIFI")) {
-					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
-					                 nmc->required_fields, NMC_FIELDS_NM_WIFI);
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+					                 nmc->required_fields, NMC_FIELDS_NM_WIFI_OLD);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nmc->allowed_fields = nmc_fields_nm_status;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WIFI, nmc->allowed_fields, NULL);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WIFI_OLD, nmc->allowed_fields, NULL);
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.header_name = _("WiFi enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
@@ -501,13 +762,13 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 					goto opt_error;
 				/* no argument, show current WWAN state */
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WWAN")) {
-					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
-					                 nmc->required_fields, NMC_FIELDS_NM_WWAN);
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+					                 nmc->required_fields, NMC_FIELDS_NM_WWAN_OLD);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nmc->allowed_fields = nmc_fields_nm_status;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WWAN, nmc->allowed_fields, NULL);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WWAN_OLD, nmc->allowed_fields, NULL);
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.header_name = _("WWAN enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
@@ -540,13 +801,13 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 					goto opt_error;
 				/* no argument, show current WiMAX state */
 				if (nmc->required_fields && strcasecmp (nmc->required_fields, "WIMAX")) {
-					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here; allowed fields: %s"),
-					                 nmc->required_fields, NMC_FIELDS_NM_WIMAX);
+					g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+					                 nmc->required_fields, NMC_FIELDS_NM_WIMAX_OLD);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto end;
 				}
 				nmc->allowed_fields = nmc_fields_nm_status;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WIMAX, nmc->allowed_fields, NULL);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_NM_WIMAX_OLD, nmc->allowed_fields, NULL);
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 				nmc->print_fields.header_name = _("WiMAX enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
@@ -596,3 +857,5 @@ opt_error:
 	g_error_free (error);
 	return nmc->return_value;
 }
+/* --- */
+

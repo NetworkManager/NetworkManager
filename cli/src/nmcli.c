@@ -88,6 +88,7 @@ usage (const char *prog_name)
 	         "\n"
 	         "OBJECT\n"
 	         "  g[eneral]       NetworkManager's general status and operations\n"
+	         "  s[witch]        NetworkManager switches\n"
 	         "  c[onnection]    NetworkManager's connections\n"
 	         "  d[evice]        devices managed by NetworkManager\n"
 	         "\n"),
@@ -105,7 +106,8 @@ static const struct cmd {
 	const char *cmd;
 	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
 } nmcli_cmds[] = {
-	{ "general",    do_network_manager },
+	{ "general",    do_general },
+	{ "switch",     do_switch },
 	{ "connection", do_connections },
 	{ "device",     do_devices },
 	{ "help",       do_help },

@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2012 Red Hat, Inc.
  */
 
 #ifndef NMC_NETWORK_MANAGER_H
@@ -22,6 +22,10 @@
 
 #include "nmcli.h"
 
+NMCResultCode do_general (NmCli *nmc, int argc, char **argv);
+NMCResultCode do_switch  (NmCli *nmc, int argc, char **argv);
+
+/* Backward compatibility only */
 NMCResultCode do_network_manager (NmCli *nmc, int argc, char **argv);
 
 #endif /* NMC_NETWORK_MANAGER_H */
