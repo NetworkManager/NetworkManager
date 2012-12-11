@@ -301,7 +301,7 @@ create_dm_cmd_line (const char *iface,
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
 		                                 ntohl (addr.s_addr));
 		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
-		nm_log_warn (LOGD_SHARING, err_msg);
+		nm_log_warn (LOGD_SHARING, "%s", err_msg);
 		g_free (err_msg);
 		goto error;
 	}
@@ -317,7 +317,7 @@ create_dm_cmd_line (const char *iface,
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
 		                                 ntohl (addr.s_addr));
 		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
-		nm_log_warn (LOGD_SHARING, err_msg);
+		nm_log_warn (LOGD_SHARING, "%s", err_msg);
 		g_free (err_msg);
 		goto error;
 	}
@@ -331,7 +331,7 @@ create_dm_cmd_line (const char *iface,
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
 		                                 ntohl (addr.s_addr));
 		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
-		nm_log_warn (LOGD_SHARING, err_msg);
+		nm_log_warn (LOGD_SHARING, "%s", err_msg);
 		g_free (err_msg);
 		goto error;
 	}
