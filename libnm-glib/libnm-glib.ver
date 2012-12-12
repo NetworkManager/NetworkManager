@@ -49,6 +49,7 @@ global:
 	nm_client_new_finish;
 	nm_client_permission_get_type;
 	nm_client_permission_result_get_type;
+	nm_client_set_logging;
 	nm_client_sleep;
 	nm_client_wimax_get_enabled;
 	nm_client_wimax_hardware_get_enabled;
