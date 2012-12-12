@@ -125,6 +125,10 @@ static gboolean impl_manager_set_logging (NMManager *manager,
                                           const char *domains,
                                           GError **error);
 
+static void impl_manager_get_logging (NMManager *manager,
+                                      char **level,
+                                      char **domains);
+
 #include "nm-manager-glue.h"
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
@@ -3571,6 +3575,15 @@ impl_manager_set_logging (NMManager *manager,
 		return TRUE;
 	}
 	return FALSE;
+}
+
+static void
+impl_manager_get_logging (NMManager *manager,
+                          char **level,
+                          char **domains)
+{
+	*level = g_strdup (nm_logging_level_to_string ());
+	*domains = g_strdup (nm_logging_domains_to_string ());
 }
 
 void

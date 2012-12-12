@@ -225,6 +225,23 @@
       </arg>
     </method>
 
+    <method name="GetLogging">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_logging"/>
+      <tp:docstring>
+        Get current logging verbosity level and operations domains.
+      </tp:docstring>
+      <arg name="level" type="s" direction="out">
+        <tp:docstring>
+          One of [ERR, WARN, INFO, DEBUG].
+        </tp:docstring>
+      </arg>
+      <arg name="domains" type="s" direction="out">
+        <tp:docstring>
+          For available domains see SetLogging() call.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <method name="state">
       <tp:docstring>
         The overall networking state as determined by the NetworkManager daemon,
