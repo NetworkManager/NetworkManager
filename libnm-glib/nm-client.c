@@ -1045,6 +1045,45 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
 	return GPOINTER_TO_UINT (result);
 }
 
+/**
+ * nm_client_get_logging:
+ * @client: a #NMClient
+ * @level: (allow-none): return location for logging level string
+ * @domains: (allow-none): return location for log domains string. The string is
+ *   a list of domains separated by ","
+ * @error: (allow-none): return location for a #GError, or %NULL
+ *
+ * Gets NetworkManager current logging level and domains.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ **/
+gboolean
+nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
+{
+	GError *err = NULL;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
+	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!level && !domains)
+		return TRUE;
+
+	if (!dbus_g_proxy_call (NM_CLIENT_GET_PRIVATE (client)->client_proxy, "GetLogging", &err,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_STRING, level,
+	                        G_TYPE_STRING, domains,
+	                        G_TYPE_INVALID)) {
+		if (error)
+			*error = g_error_copy (err);
+		g_error_free (err);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 /****************************************************************/
 
 static void

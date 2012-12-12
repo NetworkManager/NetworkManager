@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2012 Red Hat, Inc.
  */
 
 #ifndef NM_CLIENT_H
@@ -208,6 +208,8 @@ void      nm_client_sleep                (NMClient *client, gboolean sleep_);
 
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
                                                           NMClientPermission permission);
+
+gboolean nm_client_get_logging (NMClient *client, char **level, char **domain, GError **error);
 
 G_END_DECLS
 
