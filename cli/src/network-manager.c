@@ -98,6 +98,15 @@ static NmcOutputField nmc_fields_nm_permissions[] = {
 #define NMC_FIELDS_NM_PERMISSIONS_ALL     "PERMISSION,VALUE"
 #define NMC_FIELDS_NM_PERMISSIONS_COMMON  "PERMISSION,VALUE"
 
+/* Available fields for 'general logging' */
+static NmcOutputField nmc_fields_nm_logging[] = {
+	{"LEVEL",          N_("LEVEL"),           10, NULL, 0},  /* 0 */
+	{"DOMAINS",        N_("DOMAINS"),         70, NULL, 0},  /* 1 */
+	{NULL,             NULL,                   0, NULL, 0}
+};
+#define NMC_FIELDS_NM_LOGGING_ALL     "LEVEL,DOMAINS"
+#define NMC_FIELDS_NM_LOGGING_COMMON  "LEVEL,DOMAINS"
+
 
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
@@ -108,9 +117,10 @@ usage_general (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli general { COMMAND | help }\n\n"
-	         "  COMMAND := { status | permissions }\n\n"
+	         "  COMMAND := { status | permissions | logging }\n\n"
 	         "  status\n"
 	         "  permissions\n"
+	         "  logging [level <log level>] [domains <log domains>]\n"
 	         "\n"
 	         ));
 }
@@ -377,6 +387,62 @@ show_nm_permissions (NmCli *nmc)
 	return TRUE;
 }
 
+static gboolean
+show_general_logging (NmCli *nmc)
+{
+	char *level = NULL;
+	char *domains = NULL;
+	GError *error = NULL;
+	const char *fields_str;
+	const char *fields_all =    NMC_FIELDS_NM_LOGGING_ALL;
+	const char *fields_common = NMC_FIELDS_NM_LOGGING_COMMON;
+	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
+	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
+	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+
+	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
+		fields_str = fields_common;
+	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
+		fields_str = fields_all;
+	else
+		fields_str = nmc->required_fields;
+
+	nmc->allowed_fields = nmc_fields_nm_logging;
+	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	if (error) {
+		if (error->code == 0)
+			g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
+		else
+			g_string_printf (nmc->return_text, _("Error: 'general logging': %s; allowed fields: %s"),
+			                 error->message, NMC_FIELDS_NM_LOGGING_ALL);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return FALSE;
+	}
+
+	nmc->get_client (nmc); /* create NMClient */
+	nm_client_get_logging (nmc->client, &level, &domains, &error);
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		g_error_free (error);
+		return FALSE;
+	}
+
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+	nmc->print_fields.header_name = _("NetworkManager logging");
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+
+	set_val_str (nmc->allowed_fields, 0, level);
+	set_val_str (nmc->allowed_fields, 1, domains);
+	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
+	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	g_free (level);
+	g_free (domains);
+	return TRUE;
+}
+
 /* libnm-glib doesn't provide API fro Sleep method - implement D-Bus call ourselves */
 static void networking_set_sleep (NmCli *nmc, gboolean in_sleep)
 {
@@ -446,6 +512,38 @@ do_general (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 			show_nm_permissions (nmc);
+		}
+		else if (matches (*argv, "logging") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no arguments -> get logging level and domains */
+				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
+					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto finish;
+				}
+				show_general_logging (nmc);
+			} else {
+				/* arguments provided -> set logging level and domains */
+				const char *level = NULL;
+				const char *domains = NULL;
+				nmc_arg_t exp_args[] = { {"level",   TRUE, &level,   TRUE},
+				                         {"domains", TRUE, &domains, TRUE},
+				                         {NULL} };
+
+				if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
+					g_string_assign (nmc->return_text, error->message);
+					nmc->return_value = error->code;
+					goto finish;
+				}
+
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_set_logging (nmc->client, level, domains, &error);
+				if (error) {
+					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto finish;
+				}
+			}
 		}
 		else if (   matches (*argv, "help") == 0
 		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
