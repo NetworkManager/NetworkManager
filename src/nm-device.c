@@ -2653,12 +2653,28 @@ static void
 dhcp6_timeout (NMDHCPClient *client, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMIP6Config *config;
 
 	g_return_if_fail (nm_device_get_act_request (device) != NULL);
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
 
 	nm_dhcp_client_stop (client, FALSE);
-	dhcp6_fail (device, TRUE);
+	if (priv->dhcp6_mode == IP6_DHCP_OPT_MANAGED)
+		dhcp6_fail (device, TRUE);
+	else {
+		/* not a hard failure; just live with the RA info */
+		nm_dhcp6_config_reset (priv->dhcp6_config);
+		if (priv->dhcp6_ip6_config)
+			g_object_unref (priv->dhcp6_ip6_config);
+		priv->dhcp6_ip6_config = NULL;
+
+		if (priv->ip6_state == IP_CONF) {
+			config = nm_ip6_config_new ();
+			nm_device_activate_schedule_ip6_config_result (device, config);
+			g_object_unref (config);
+		}
+	}
 }
 
 static NMActStageReturn
