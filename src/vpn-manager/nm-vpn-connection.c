@@ -713,7 +713,7 @@ process_generic_config (NMVPNConnection *connection,
 
 	/* Grab the interface index for address/routing operations */
 	priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
-	if (priv->ip_ifindex < 0) {
+	if (priv->ip_ifindex <= 0) {
 		nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
 		nm_vpn_connection_config_maybe_complete (connection, FALSE);
 		return FALSE;
