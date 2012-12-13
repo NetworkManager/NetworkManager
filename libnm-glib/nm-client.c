@@ -334,10 +334,14 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
  * nm_client_get_devices:
  * @client: a #NMClient
  *
- * Gets all the detected devices.
+ * Gets all the known network devices.  Use nm_device_get_type() or the
+ * NM_IS_DEVICE_XXXX() functions to determine what kind of device member of the
+ * returned array is, and then you may use device-specific methods such as
+ * nm_device_ethernet_get_hw_address().
  *
- * Returns: (transfer none) (element-type NMClient.Device): a #GPtrArray containing all the #NMDevice<!-- -->s.
- * The returned array is owned by the client and should not be modified.
+ * Returns: (transfer none) (element-type NMClient.Device): a #GPtrArray
+ * containing all the #NMDevice<!-- -->s.  The returned array is owned by the
+ * #NMClient object and should not be modified.
  **/
 const GPtrArray *
 nm_client_get_devices (NMClient *client)
