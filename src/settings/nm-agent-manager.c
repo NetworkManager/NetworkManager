@@ -263,9 +263,9 @@ impl_agent_manager_register (NMAgentManager *self,
 	}
 
 	if (!nm_session_monitor_uid_has_session (priv->session_monitor,
-                                             sender_uid,
-                                             NULL,
-                                             &local)) {
+	                                         sender_uid,
+	                                         NULL,
+	                                         &local)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND,
 		                             local && local->message ? local->message : "Session not found");
@@ -550,8 +550,8 @@ request_add_agent (Request *req,
 	if (0 != agent_uid) {
 		if (!nm_auth_uid_in_acl (req->connection, session_monitor, agent_uid, NULL)) {
 			nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
-					    nm_secret_agent_get_description (agent),
-					    req, req->setting_name);
+			            nm_secret_agent_get_description (agent),
+			            req, req->setting_name);
 			/* Connection not visible to this agent's user */
 			return;
 		}
@@ -562,14 +562,14 @@ request_add_agent (Request *req,
 	if (req->filter_by_uid && (agent_uid != req->uid_filter)) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s "
 		            "(uid %d not required %ld)",
-				    nm_secret_agent_get_description (agent),
-				    req, req->setting_name, agent_uid, req->uid_filter);
+		            nm_secret_agent_get_description (agent),
+		            req, req->setting_name, agent_uid, req->uid_filter);
 		return;
 	}
 
 	nm_log_dbg (LOGD_AGENTS, "(%s) agent allowed for secrets request %p/%s",
-			    nm_secret_agent_get_description (agent),
-			    req, req->setting_name);
+	            nm_secret_agent_get_description (agent),
+	            req, req->setting_name);
 
 	/* Add this agent to the list, preferring active sessions */
 	req->pending = g_slist_insert_sorted_with_data (req->pending,
@@ -610,8 +610,8 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 	}
 
 	nm_log_dbg (LOGD_AGENTS, "(%s)%s agent removed from secrets request %p/%s",
-				nm_secret_agent_get_description (agent),
-				detail, req, req->setting_name);
+	            nm_secret_agent_get_description (agent),
+	            detail, req, req->setting_name);
 
 	req->pending = g_slist_remove (req->pending, agent);
 
@@ -643,8 +643,8 @@ next_generic (Request *req, const char *detail)
 		req->pending = g_slist_remove (req->pending, req->current);
 
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent %s secrets for request %p/%s",
-					nm_secret_agent_get_description (req->current),
-					detail, req, req->setting_name);
+		            nm_secret_agent_get_description (req->current),
+		            detail, req, req->setting_name);
 		success = TRUE;
 	}
 
@@ -926,7 +926,7 @@ get_next_cb (Request *req)
 		nm_auth_chain_add_call (req->chain, perm, TRUE);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s) requesting user-owned secrets from agent %s",
-			        req, req->setting_name, agent_dbus_owner);
+		            req, req->setting_name, agent_dbus_owner);
 
 		get_agent_request_secrets (req, FALSE);
 	}
