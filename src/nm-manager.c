@@ -872,7 +872,6 @@ static void
 pending_activation_check_authorized (PendingActivation *pending,
                                      NMDBusManager *dbus_mgr)
 {
-	char *error_desc = NULL;
 	gulong sender_uid = G_MAXULONG;
 	GError *error;
 	const char *wifi_permission = NULL;
@@ -882,16 +881,15 @@ pending_activation_check_authorized (PendingActivation *pending,
 	g_return_if_fail (pending != NULL);
 	g_return_if_fail (dbus_mgr != NULL);
 
-	if (!nm_auth_get_caller_uid (pending->context, 
-	                             dbus_mgr,
-	                             &sender_uid,
-	                             &error_desc)) {
+	if (!nm_dbus_manager_get_caller_info (dbus_mgr,
+	                                      pending->context,
+	                                      NULL,
+	                                      &sender_uid)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to determine UID of request.");
 		pending->callback (pending, error);
 		g_error_free (error);
-		g_free (error_desc);
 		return;
 	}
 
@@ -1768,17 +1766,18 @@ device_auth_request_cb (NMDevice *device,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	gulong sender_uid = G_MAXULONG;
-	char *error_desc = NULL;
 	NMAuthChain *chain;
 
 	/* Get the caller's UID for the root check */
-	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	                                      context,
+	                                      NULL,
+	                                      &sender_uid)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to determine request UID.");
 		callback (device, context, error, user_data);
 		g_error_free (error);
-		g_free (error_desc);
 		return;
 	}
 
@@ -2966,7 +2965,7 @@ pending_activate (NMManager *self, PendingActivation *pending)
 	NMSettingsConnection *connection;
 	NMActiveConnection *ac = NULL;
 	GError *error = NULL;
-	char *sender;
+	char *sender = NULL;
 
 	/* Ok, we're authorized */
 
@@ -2978,7 +2977,16 @@ pending_activate (NMManager *self, PendingActivation *pending)
 		goto out;
 	}
 
-	sender = dbus_g_method_get_sender (pending->context);
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	                                      pending->context,
+	                                      &sender,
+	                                      NULL)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "D-Bus sendder could not be determined.");
+		goto out;
+	}
+
 	g_assert (sender);
 	ac = nm_manager_activate_connection (self,
 	                                     NM_CONNECTION (connection),
@@ -3201,7 +3209,6 @@ impl_manager_deactivate_connection (NMManager *self,
 	GSList *iter;
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
-	char *error_desc = NULL;
 
 	/* Find the connection by its object path */
 	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
@@ -3225,16 +3232,15 @@ impl_manager_deactivate_connection (NMManager *self,
 	/* Need to check the caller's permissions and stuff before we can
 	 * deactivate the connection.
 	 */
-	if (!nm_auth_get_caller_uid (context, 
-		                         priv->dbus_mgr,
-	                             &sender_uid,
-	                             &error_desc)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	                                      context,
+	                                      NULL,
+	                                      &sender_uid)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to determine request UID.");
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		g_free (error_desc);
 		return;
 	}
 
@@ -3520,7 +3526,6 @@ impl_manager_enable (NMManager *self,
 	NMAuthChain *chain;
 	GError *error = NULL;
 	gulong sender_uid = G_MAXULONG;
-	char *error_desc = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -3535,13 +3540,15 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	                                      context,
+	                                      NULL,
+	                                      &sender_uid)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to determine request UID.");
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		g_free (error_desc);
 		return;
 	}
 

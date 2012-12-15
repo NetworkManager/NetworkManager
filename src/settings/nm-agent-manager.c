@@ -246,20 +246,19 @@ impl_agent_manager_register (NMAgentManager *self,
                              DBusGMethodInvocation *context)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	char *error_desc = NULL, *sender = NULL;
+	char *sender = NULL;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL, *local = NULL;
 	NMSecretAgent *agent;
 	NMAuthChain *chain;
 
-	if (!nm_auth_get_caller_uid (context, 
-		                         priv->dbus_mgr,
-	                             &sender_uid,
-	                             &error_desc)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	                                      context,
+	                                      &sender,
+	                                      &sender_uid)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
-		                             error_desc);
-		g_free (error_desc);
+		                             "Unable to determine request sender and UID.");
 		goto done;
 	}
 
@@ -270,14 +269,6 @@ impl_agent_manager_register (NMAgentManager *self,
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND,
 		                             local && local->message ? local->message : "Session not found");
-		goto done;
-	}
-
-	sender = dbus_g_method_get_sender (context);
-	if (!sender) {
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
-		                             "Failed to get D-Bus request sender");
 		goto done;
 	}
 
@@ -317,14 +308,17 @@ static void
 impl_agent_manager_unregister (NMAgentManager *self,
                                DBusGMethodInvocation *context)
 {
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	char *sender = NULL;
 
-	sender = dbus_g_method_get_sender (context);
-	if (!sender) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	                                      context,
+	                                      &sender,
+	                                      NULL)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
-		                             "Failed to get D-Bus request sender");
+		                             "Unable to determine request sender.");
 		goto done;
 	}
 

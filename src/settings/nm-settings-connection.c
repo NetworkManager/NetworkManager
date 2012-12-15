@@ -937,12 +937,11 @@ check_user_in_acl (NMConnection *connection,
 	g_return_val_if_fail (session_monitor != NULL, FALSE);
 
 	/* Get the caller's UID */
-	if (!nm_auth_get_caller_uid (context, dbus_mgr, &sender_uid, &error_desc)) {
+	if (!nm_dbus_manager_get_caller_info (dbus_mgr, context, NULL, &sender_uid)) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                     error_desc);
-		g_free (error_desc);
+		                     "Unable to determine UID of request.");
 		return FALSE;
 	}
 

@@ -1135,12 +1135,10 @@ nm_settings_add_connection (NMSettings *self,
 	}
 
 	/* Get the caller's UID */
-	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &caller_uid, &error_desc)) {
-		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-		                     "Unable to determine UID of request: %s.",
-		                     error_desc ? error_desc : "(unknown)");
-		g_free (error_desc);
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to determine request UID.");
 		callback (self, NULL, error, context, user_data);
 		g_error_free (error);
 		return;
