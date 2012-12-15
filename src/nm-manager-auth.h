@@ -95,12 +95,6 @@ gboolean nm_auth_chain_add_call (NMAuthChain *chain,
 
 void nm_auth_chain_unref (NMAuthChain *chain);
 
-/* Utils */
-gboolean nm_auth_get_caller_uid (DBusGMethodInvocation *context,
-                                 NMDBusManager *dbus_mgr,
-                                 gulong *out_uid,
-                                 char **out_error_desc);
-
 /* Caller must free returned error description */
 gboolean nm_auth_uid_in_acl (NMConnection *connection,
                              NMSessionMonitor *smon,
