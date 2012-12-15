@@ -84,6 +84,17 @@ gboolean nm_dbus_manager_name_has_owner   (NMDBusManager *self,
 DBusConnection * nm_dbus_manager_get_dbus_connection (NMDBusManager *self);
 DBusGConnection * nm_dbus_manager_get_connection (NMDBusManager *self);
 
+gboolean nm_dbus_manager_get_caller_info (NMDBusManager *self,
+                                          DBusGMethodInvocation *context,
+                                          char **out_sender,
+                                          gulong *out_uid);
+
+gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
+                                                       DBusConnection *connection,
+                                                       DBusMessage *message,
+                                                       char **out_sender,
+                                                       gulong *out_uid);
+
 void nm_dbus_manager_register_object (NMDBusManager *self,
                                       const char *path,
                                       gpointer object);

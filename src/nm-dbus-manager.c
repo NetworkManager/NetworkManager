@@ -261,6 +261,98 @@ private_server_get_connection_owner (PrivateServer *s, DBusGConnection *connecti
 
 /**************************************************************/
 
+/**
+ * _get_caller_info_from_context():
+ *
+ * Given a dbus-glib method invocation, or a DBusConnection + DBusMessage,
+ * return the sender and the UID of the sender.
+ */
+static gboolean
+_get_caller_info (NMDBusManager *self,
+                  DBusGMethodInvocation *context,
+                  DBusConnection *connection,
+                  DBusMessage *message,
+                  char **out_sender,
+                  gulong *out_uid)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *gconn;
+	char *sender;
+	const char *priv_sender;
+	DBusError error;
+	GSList *iter;
+
+	if (context) {
+		gconn = dbus_g_method_invocation_get_g_connection (context);
+		g_assert (gconn);
+		connection = dbus_g_connection_get_connection (gconn);
+
+		/* only bus connections will have a sender */
+		sender = dbus_g_method_get_sender (context);
+	} else {
+		g_assert (message);
+		sender = g_strdup (dbus_message_get_sender (message));
+	}
+	g_assert (connection);
+
+	if (!sender) {
+		/* Might be a private connection, for which we fake a sender */
+		for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
+			PrivateServer *s = iter->data;
+
+			priv_sender = g_hash_table_lookup (s->connections, connection);
+			if (priv_sender) {
+				if (out_uid)
+					*out_uid = 0;
+				if (out_sender)
+					*out_sender = g_strdup (priv_sender);
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	/* Bus connections always have a sender */
+	g_assert (sender);
+	if (out_uid) {
+		dbus_error_init (&error);
+		*out_uid = dbus_bus_get_unix_user (connection, sender, &error);
+		if (dbus_error_is_set (&error)) {
+			dbus_error_free (&error);
+			*out_uid = G_MAXULONG;
+			g_free (sender);
+			return FALSE;
+		}
+	}
+
+	if (out_sender)
+		*out_sender = g_strdup (sender);
+
+	g_free (sender);
+	return TRUE;
+}
+
+gboolean
+nm_dbus_manager_get_caller_info (NMDBusManager *self,
+                                 DBusGMethodInvocation *context,
+                                 char **out_sender,
+                                 gulong *out_uid)
+{
+	return _get_caller_info (self, context, NULL, NULL, out_sender, out_uid);
+}
+
+gboolean
+nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
+                                              DBusConnection *connection,
+                                              DBusMessage *message,
+                                              char **out_sender,
+                                              gulong *out_uid)
+{
+	return _get_caller_info (self, NULL, connection, message, out_sender, out_uid);
+}
+
+/**************************************************************/
+
 #if HAVE_DBUS_GLIB_100
 static void
 private_connection_new (NMDBusManager *self, DBusGConnection *connection)
