@@ -106,7 +106,6 @@ pk_authority_get (GError **error)
 
 static NMAuthChain *
 _auth_chain_new (DBusGMethodInvocation *context,
-                 DBusGProxy *proxy,
                  DBusMessage *message,
                  const char *dbus_sender,
                  gulong user_uid,
@@ -115,7 +114,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 {
 	NMAuthChain *self;
 
-	g_return_val_if_fail (context || proxy || message || dbus_sender, NULL);
+	g_return_val_if_fail (context || message || dbus_sender, NULL);
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
@@ -128,9 +127,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	self->context = context;
 	self->user_uid = user_uid;
 
-	if (proxy)
-		self->owner = g_strdup (dbus_g_proxy_get_bus_name (proxy));
-	else if (context)
+	if (context)
 		self->owner = dbus_g_method_get_sender (context);
 	else if (message)
 		self->owner = g_strdup (dbus_message_get_sender (message));
@@ -149,12 +146,11 @@ _auth_chain_new (DBusGMethodInvocation *context,
 
 NMAuthChain *
 nm_auth_chain_new (DBusGMethodInvocation *context,
-                   DBusGProxy *proxy,
                    gulong user_uid,
                    NMAuthChainResultFunc done_func,
                    gpointer user_data)
 {
-	return _auth_chain_new (context, proxy, NULL, NULL, user_uid, done_func, user_data);
+	return _auth_chain_new (context, NULL, NULL, user_uid, done_func, user_data);
 }
 
 NMAuthChain *
@@ -163,7 +159,7 @@ nm_auth_chain_new_raw_message (DBusMessage *message,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, NULL, message, NULL, user_uid, done_func, user_data);
+	return _auth_chain_new (NULL, message, NULL, user_uid, done_func, user_data);
 }
 
 NMAuthChain *
@@ -172,7 +168,7 @@ nm_auth_chain_new_dbus_sender (const char *dbus_sender,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, NULL, NULL, dbus_sender, user_uid, done_func, user_data);
+	return _auth_chain_new (NULL, NULL, dbus_sender, user_uid, done_func, user_data);
 }
 
 gpointer

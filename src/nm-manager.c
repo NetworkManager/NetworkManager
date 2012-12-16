@@ -915,7 +915,6 @@ pending_activation_check_authorized (PendingActivation *pending,
 	 * the user a chance to authenticate to gain the permission.
 	 */
 	pending->chain = nm_auth_chain_new (pending->context,
-	                                    NULL,
 	                                    sender_uid,
 	                                    pending_auth_done,
 	                                    pending);
@@ -1782,7 +1781,7 @@ device_auth_request_cb (NMDevice *device,
 	}
 
 	/* Validate the request */
-	chain = nm_auth_chain_new (context, NULL, sender_uid, device_auth_done_cb, self);
+	chain = nm_auth_chain_new (context, sender_uid, device_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3242,7 +3241,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	}
 
 	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (context, NULL, sender_uid, deactivate_net_auth_done_cb, self);
+	chain = nm_auth_chain_new (context, sender_uid, deactivate_net_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3420,7 +3419,7 @@ impl_manager_sleep (NMManager *self,
 		return;
 	}
 
-	chain = nm_auth_chain_new (context, NULL, sender_uid, sleep_auth_done_cb, self);
+	chain = nm_auth_chain_new (context, sender_uid, sleep_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 	nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
@@ -3549,7 +3548,7 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	chain = nm_auth_chain_new (context, NULL, sender_uid, enable_net_done_cb, self);
+	chain = nm_auth_chain_new (context, sender_uid, enable_net_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
@@ -3637,7 +3636,7 @@ impl_manager_get_permissions (NMManager *self,
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	} else {
-		chain = nm_auth_chain_new (context, NULL, sender_uid, get_permissions_done_cb, self);
+		chain = nm_auth_chain_new (context, sender_uid, get_permissions_done_cb, self);
 		g_assert (chain);
 		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 

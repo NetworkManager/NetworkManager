@@ -56,7 +56,6 @@ typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        gpointer user_data);
 
 NMAuthChain *nm_auth_chain_new (DBusGMethodInvocation *context,
-                                DBusGProxy *proxy,
                                 gulong user_uid,
                                 NMAuthChainResultFunc done_func,
                                 gpointer user_data);

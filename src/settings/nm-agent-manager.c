@@ -316,7 +316,7 @@ impl_agent_manager_register (NMAgentManager *self,
 	            nm_secret_agent_get_description (agent));
 
 	/* Kick off permissions requests for this agent */
-	chain = nm_auth_chain_new (context, NULL, sender_uid, agent_register_permissions_done, self);
+	chain = nm_auth_chain_new (context, sender_uid, agent_register_permissions_done, self);
 	g_assert (chain);
 	priv->chains = g_slist_append (priv->chains, chain);
 	nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);

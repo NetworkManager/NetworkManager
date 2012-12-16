@@ -1169,7 +1169,7 @@ nm_settings_add_connection (NMSettings *self,
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 
 	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (context, NULL, caller_uid, pk_add_cb, self);
+	chain = nm_auth_chain_new (context, caller_uid, pk_add_cb, self);
 	g_assert (chain);
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, perm, TRUE);
@@ -1274,7 +1274,7 @@ impl_settings_save_hostname (NMSettings *self,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");
 	} else {
-		chain = nm_auth_chain_new (context, NULL, sender_uid, pk_hostname_cb, self);
+		chain = nm_auth_chain_new (context, sender_uid, pk_hostname_cb, self);
 		g_assert (chain);
 		priv->auths = g_slist_append (priv->auths, chain);
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);

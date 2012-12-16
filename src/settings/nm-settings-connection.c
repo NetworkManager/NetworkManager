@@ -984,7 +984,7 @@ auth_start (NMSettingsConnection *self,
 	}
 
 	if (check_permission) {
-		chain = nm_auth_chain_new (context, NULL, sender_uid, pk_auth_cb, self);
+		chain = nm_auth_chain_new (context, sender_uid, pk_auth_cb, self);
 		g_assert (chain);
 		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 
