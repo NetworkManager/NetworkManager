@@ -240,6 +240,24 @@ agent_register_permissions_done (NMAuthChain *chain,
 	nm_auth_chain_unref (chain);
 }
 
+static NMSecretAgent *
+find_agent_by_identifier_and_uid (NMAgentManager *self,
+                                  const char *identifier,
+                                  gulong sender_uid)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMSecretAgent *agent;
+
+	g_hash_table_iter_init (&iter, priv->agents);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
+		if (   g_strcmp0 (nm_secret_agent_get_identifier (agent), identifier) == 0
+		    && nm_secret_agent_get_owner_uid (agent) == sender_uid)
+			return agent;
+	}
+	return NULL;
+}
+
 static void
 impl_agent_manager_register (NMAgentManager *self,
                              const char *identifier,
@@ -275,6 +293,14 @@ impl_agent_manager_register (NMAgentManager *self,
 	/* Validate the identifier */
 	if (!validate_identifier (identifier, &error))
 		goto done;
+
+	/* Only one agent for each identifier is allowed per user */
+	if (find_agent_by_identifier_and_uid (self, identifier, sender_uid)) {
+		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
+		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "An agent with this ID is already registered for this user.");
+		goto done;
+	}
 
 	/* Success, add the new agent */
 	agent = nm_secret_agent_new (priv->dbus_mgr, sender, identifier, sender_uid);
