@@ -971,6 +971,7 @@ auth_start (NMSettingsConnection *self,
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
+	const char *error_desc = NULL;
 
 	if (!check_user_in_acl (NM_CONNECTION (self),
 	                        context,
@@ -984,16 +985,24 @@ auth_start (NMSettingsConnection *self,
 	}
 
 	if (check_permission) {
-		chain = nm_auth_chain_new (context, sender_uid, pk_auth_cb, self);
-		g_assert (chain);
-		priv->pending_auths = g_slist_append (priv->pending_auths, chain);
+		chain = nm_auth_chain_new (context, pk_auth_cb, self, &error_desc);
+		if (chain) {
+			priv->pending_auths = g_slist_append (priv->pending_auths, chain);
 
-		nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
-		nm_auth_chain_set_data (chain, "callback", callback, NULL);
-		nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
-		nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
+			nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
+			nm_auth_chain_set_data (chain, "callback", callback, NULL);
+			nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
+			nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
 
-		nm_auth_chain_add_call (chain, check_permission, TRUE);
+			nm_auth_chain_add_call (chain, check_permission, TRUE);
+		} else {
+			g_set_error_literal (&error,
+			                     NM_SETTINGS_ERROR,
+			                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
+			                     error_desc);
+			callback (self, context, G_MAXULONG, error, callback_data);
+			g_clear_error (&error);
+		}
 	} else {
 		/* Don't need polkit auth, automatic success */
 		callback (self, context, sender_uid, NULL, callback_data);

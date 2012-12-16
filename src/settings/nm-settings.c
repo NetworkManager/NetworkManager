@@ -1097,6 +1097,7 @@ nm_settings_add_connection (NMSettings *self,
 	GError *error = NULL, *tmp_error = NULL;
 	gulong caller_uid = G_MAXULONG;
 	char *error_desc = NULL;
+	const char *auth_error_desc = NULL;
 	const char *perm;
 
 	/* Connection must be valid, of course */
@@ -1168,16 +1169,23 @@ nm_settings_add_connection (NMSettings *self,
 	else
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 
-	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (context, caller_uid, pk_add_cb, self);
-	g_assert (chain);
-	priv->auths = g_slist_append (priv->auths, chain);
-	nm_auth_chain_add_call (chain, perm, TRUE);
-	nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
-	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
-	nm_auth_chain_set_data (chain, "callback", callback, NULL);
-	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
-	nm_auth_chain_set_data_ulong (chain, "caller-uid", caller_uid);
+	/* Validate the user request */
+	chain = nm_auth_chain_new (context, pk_add_cb, self, &auth_error_desc);
+	if (chain) {
+		priv->auths = g_slist_append (priv->auths, chain);
+		nm_auth_chain_add_call (chain, perm, TRUE);
+		nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
+		nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
+		nm_auth_chain_set_data (chain, "callback", callback, NULL);
+		nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
+		nm_auth_chain_set_data_ulong (chain, "caller-uid", caller_uid);
+	} else {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             auth_error_desc);
+		callback (self, NULL, error, context, user_data);
+		g_error_free (error);
+	}
 }
 
 static void
@@ -1262,23 +1270,24 @@ impl_settings_save_hostname (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	GError *error = NULL;
-	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
 
 	/* Do any of the plugins support setting the hostname? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 		                             "None of the registered plugins support setting the hostname.");
-	} else if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &sender_uid)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
 	} else {
-		chain = nm_auth_chain_new (context, sender_uid, pk_hostname_cb, self);
-		g_assert (chain);
-		priv->auths = g_slist_append (priv->auths, chain);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
-		nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
+		chain = nm_auth_chain_new (context, pk_hostname_cb, self, &error_desc);
+		if (chain) {
+			priv->auths = g_slist_append (priv->auths, chain);
+			nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
+			nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
+		} else {
+			error = g_error_new_literal (NM_SETTINGS_ERROR,
+			                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+			                             error_desc);
+		}
 	}
 
 	if (error) {

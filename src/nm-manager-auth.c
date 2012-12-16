@@ -114,7 +114,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 {
 	NMAuthChain *self;
 
-	g_return_val_if_fail (context || message || dbus_sender, NULL);
+	g_return_val_if_fail (message || dbus_sender, NULL);
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
@@ -127,9 +127,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	self->context = context;
 	self->user_uid = user_uid;
 
-	if (context)
-		self->owner = dbus_g_method_get_sender (context);
-	else if (message)
+	if (message)
 		self->owner = g_strdup (dbus_message_get_sender (message));
 	else if (dbus_sender)
 		self->owner = g_strdup (dbus_sender);
@@ -146,11 +144,33 @@ _auth_chain_new (DBusGMethodInvocation *context,
 
 NMAuthChain *
 nm_auth_chain_new (DBusGMethodInvocation *context,
-                   gulong user_uid,
                    NMAuthChainResultFunc done_func,
-                   gpointer user_data)
+                   gpointer user_data,
+                   const char **out_error_desc)
 {
-	return _auth_chain_new (context, NULL, NULL, user_uid, done_func, user_data);
+	gulong sender_uid = G_MAXULONG;
+	char *sender = NULL;
+	NMDBusManager *dbus_mgr;
+	NMAuthChain *chain = NULL;
+
+	g_return_val_if_fail (context != NULL, NULL);
+
+	dbus_mgr = nm_dbus_manager_get ();
+	g_assert (dbus_mgr);
+
+	if (nm_dbus_manager_get_caller_info (dbus_mgr,
+	                                     context,
+	                                     &sender,
+	                                     &sender_uid)) {
+		chain = _auth_chain_new (context, NULL, sender, sender_uid, done_func, user_data);
+	}
+
+	if (!chain && out_error_desc)
+		*out_error_desc = "Unable to determine request UID and sender.";
+
+	g_free (sender);
+	g_object_unref (dbus_mgr);
+	return chain;
 }
 
 NMAuthChain *

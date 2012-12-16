@@ -869,29 +869,15 @@ pending_auth_done (NMAuthChain *chain,
 }
 
 static void
-pending_activation_check_authorized (PendingActivation *pending,
-                                     NMDBusManager *dbus_mgr)
+pending_activation_check_authorized (PendingActivation *pending)
 {
-	gulong sender_uid = G_MAXULONG;
 	GError *error;
 	const char *wifi_permission = NULL;
 	NMConnection *connection;
 	NMSettings *settings;
+	const char *error_desc = NULL;
 
 	g_return_if_fail (pending != NULL);
-	g_return_if_fail (dbus_mgr != NULL);
-
-	if (!nm_dbus_manager_get_caller_info (dbus_mgr,
-	                                      pending->context,
-	                                      NULL,
-	                                      &sender_uid)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine UID of request.");
-		pending->callback (pending, error);
-		g_error_free (error);
-		return;
-	}
 
 	/* By this point we have an auto-completed connection (for AddAndActivate)
 	 * or an existing connection (for Activate).
@@ -915,17 +901,24 @@ pending_activation_check_authorized (PendingActivation *pending,
 	 * the user a chance to authenticate to gain the permission.
 	 */
 	pending->chain = nm_auth_chain_new (pending->context,
-	                                    sender_uid,
 	                                    pending_auth_done,
-	                                    pending);
-	g_assert (pending->chain);
-	nm_auth_chain_add_call (pending->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+	                                    pending,
+	                                    &error_desc);
+	if (pending->chain) {
+		nm_auth_chain_add_call (pending->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 
-	/* Shared wifi connections require special permissions too */
-	wifi_permission = nm_utils_get_shared_wifi_permission (connection);
-	if (wifi_permission) {
-		pending->wifi_shared_permission = wifi_permission;
-		nm_auth_chain_add_call (pending->chain, wifi_permission, TRUE);
+		/* Shared wifi connections require special permissions too */
+		wifi_permission = nm_utils_get_shared_wifi_permission (connection);
+		if (wifi_permission) {
+			pending->wifi_shared_permission = wifi_permission;
+			nm_auth_chain_add_call (pending->chain, wifi_permission, TRUE);
+		}
+	} else {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		pending->callback (pending, error);
+		g_error_free (error);
 	}
 }
 
@@ -1764,32 +1757,26 @@ device_auth_request_cb (NMDevice *device,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
-	gulong sender_uid = G_MAXULONG;
 	NMAuthChain *chain;
-
-	/* Get the caller's UID for the root check */
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
-	                                      context,
-	                                      NULL,
-	                                      &sender_uid)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
-		callback (device, context, error, user_data);
-		g_error_free (error);
-		return;
-	}
+	const char *error_desc = NULL;
 
 	/* Validate the request */
-	chain = nm_auth_chain_new (context, sender_uid, device_auth_done_cb, self);
-	g_assert (chain);
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	chain = nm_auth_chain_new (context, device_auth_done_cb, self, &error_desc);
+	if (chain) {
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
-	nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
-	nm_auth_chain_set_data (chain, "requested-permission", g_strdup (permission), g_free);
-	nm_auth_chain_set_data (chain, "callback", callback, NULL);
-	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
-	nm_auth_chain_add_call (chain, permission, allow_interaction);
+		nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
+		nm_auth_chain_set_data (chain, "requested-permission", g_strdup (permission), g_free);
+		nm_auth_chain_set_data (chain, "callback", callback, NULL);
+		nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
+		nm_auth_chain_add_call (chain, permission, allow_interaction);
+	} else {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		callback (device, context, error, user_data);
+		g_error_free (error);
+	}
 }
 
 static void
@@ -3020,7 +3007,6 @@ impl_manager_activate_connection (NMManager *self,
                                   const char *specific_object_path,
                                   DBusGMethodInvocation *context)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	PendingActivation *pending;
 	GError *error = NULL;
 
@@ -3036,7 +3022,7 @@ impl_manager_activate_connection (NMManager *self,
 	                                  activation_auth_done,
 	                                  &error);
 	if (pending)
-		pending_activation_check_authorized (pending, priv->dbus_mgr);
+		pending_activation_check_authorized (pending);
 	else {
 		g_assert (error);
 		dbus_g_method_return_error (context, error);
@@ -3088,7 +3074,6 @@ impl_manager_add_and_activate_connection (NMManager *self,
                                           const char *specific_object_path,
                                           DBusGMethodInvocation *context)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	PendingActivation *pending;
 	GError *error = NULL;
 
@@ -3104,7 +3089,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	                                  add_and_activate_auth_done,
 	                                  &error);
 	if (pending)
-		pending_activation_check_authorized (pending, priv->dbus_mgr);
+		pending_activation_check_authorized (pending);
 	else {
 		g_assert (error);
 		dbus_g_method_return_error (context, error);
@@ -3204,7 +3189,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	GError *error = NULL;
 	GSList *iter;
 	NMAuthChain *chain;
-	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
 
 	/* Find the connection by its object path */
 	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
@@ -3225,28 +3210,20 @@ impl_manager_deactivate_connection (NMManager *self,
 		return;
 	}
 
-	/* Need to check the caller's permissions and stuff before we can
-	 * deactivate the connection.
-	 */
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
-	                                      context,
-	                                      NULL,
-	                                      &sender_uid)) {
+	/* Validate the user request */
+	chain = nm_auth_chain_new (context, deactivate_net_auth_done_cb, self, &error_desc);
+	if (chain) {
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+		nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+	} else {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
+		                             error_desc);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		return;
 	}
-
-	/* Otherwise validate the user request */
-	chain = nm_auth_chain_new (context, sender_uid, deactivate_net_auth_done_cb, self);
-	g_assert (chain);
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-	nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 }
 
 static void
@@ -3380,7 +3357,6 @@ impl_manager_sleep (NMManager *self,
 	GError *error = NULL;
 #if 0
 	NMAuthChain *chain;
-	gulong sender_uid = G_MAXULONG;
 	const char *error_desc = NULL;
 #endif
 
@@ -3410,20 +3386,18 @@ impl_manager_sleep (NMManager *self,
 	return;
 
 #if 0
-	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+	chain = nm_auth_chain_new (context, sleep_auth_done_cb, self, &error_desc);
+	if (chain) {
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+		nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
+	} else {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		return;
 	}
-
-	chain = nm_auth_chain_new (context, sender_uid, sleep_auth_done_cb, self);
-	g_assert (chain);
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-	nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
 #endif
 }
 
@@ -3521,7 +3495,7 @@ impl_manager_enable (NMManager *self,
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
 	GError *error = NULL;
-	gulong sender_uid = G_MAXULONG;
+	const char *error_desc;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -3536,24 +3510,19 @@ impl_manager_enable (NMManager *self,
 		return;
 	}
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
-	                                      context,
-	                                      NULL,
-	                                      &sender_uid)) {
+	chain = nm_auth_chain_new (context, enable_net_done_cb, self, &error_desc);
+	if (chain) {
+		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+		nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
+	} else {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
+		                             error_desc);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		return;
 	}
-
-	chain = nm_auth_chain_new (context, sender_uid, enable_net_done_cb, self);
-	g_assert (chain);
-	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-	nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
 }
 
 /* Permissions */
@@ -3623,21 +3592,11 @@ impl_manager_get_permissions (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	gulong sender_uid = G_MAXULONG;
+	const char *error_desc = NULL;
 	GError *error;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
-	                                      context,
-	                                      NULL,
-	                                      &sender_uid)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	} else {
-		chain = nm_auth_chain_new (context, sender_uid, get_permissions_done_cb, self);
-		g_assert (chain);
+	chain = nm_auth_chain_new (context, get_permissions_done_cb, self, &error_desc);
+	if (chain) {
 		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
@@ -3651,6 +3610,12 @@ impl_manager_get_permissions (NMManager *self,
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN, FALSE);
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
+	} else {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
 	}
 }
 
@@ -3958,7 +3923,7 @@ prop_filter (DBusConnection *connection,
 		goto out;
 	}
 
-	/* Otherwise validate the user request */
+	/* Validate the user request */
 	chain = nm_auth_chain_new_raw_message (message, caller_uid, prop_set_auth_done_cb, self);
 	g_assert (chain);
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);

@@ -269,6 +269,7 @@ impl_agent_manager_register (NMAgentManager *self,
 	GError *error = NULL, *local = NULL;
 	NMSecretAgent *agent;
 	NMAuthChain *chain;
+	const char *error_desc = NULL;
 
 	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
 	                                      context,
@@ -316,12 +317,18 @@ impl_agent_manager_register (NMAgentManager *self,
 	            nm_secret_agent_get_description (agent));
 
 	/* Kick off permissions requests for this agent */
-	chain = nm_auth_chain_new (context, sender_uid, agent_register_permissions_done, self);
-	g_assert (chain);
-	priv->chains = g_slist_append (priv->chains, chain);
-	nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
+	chain = nm_auth_chain_new (context, agent_register_permissions_done, self, &error_desc);
+	if (chain) {
+		nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
+		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
+
+		priv->chains = g_slist_append (priv->chains, chain);
+	} else {
+		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
+		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
+		                             error_desc);
+	}
 
 done:
 	if (error)
