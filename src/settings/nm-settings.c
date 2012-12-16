@@ -1147,18 +1147,14 @@ nm_settings_add_connection (NMSettings *self,
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (0 != caller_uid) {
-		if (!nm_auth_uid_in_acl (connection, priv->session_monitor, caller_uid, &error_desc)) {
-			error = g_error_new_literal (NM_SETTINGS_ERROR,
-			                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
-			                             error_desc);
-			g_free (error_desc);
-			callback (self, NULL, error, context, user_data);
-			g_error_free (error);
-			return;
-		}
-
-		/* Caller is allowed to add this connection */
+	if (!nm_auth_uid_in_acl (connection, priv->session_monitor, caller_uid, &error_desc)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		g_free (error_desc);
+		callback (self, NULL, error, context, user_data);
+		g_error_free (error);
+		return;
 	}
 
 	/* If the caller is the only user in the connection's permissions, then

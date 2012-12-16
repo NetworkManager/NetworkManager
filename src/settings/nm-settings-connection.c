@@ -946,15 +946,13 @@ check_user_in_acl (NMConnection *connection,
 	}
 
 	/* Make sure the UID can view this connection */
-	if (0 != sender_uid) {
-		if (!nm_auth_uid_in_acl (connection, session_monitor, sender_uid, &error_desc)) {
-			g_set_error_literal (error,
-			                     NM_SETTINGS_ERROR,
-			                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-			                     error_desc);
-			g_free (error_desc);
-			return FALSE;
-		}
+	if (!nm_auth_uid_in_acl (connection, session_monitor, sender_uid, &error_desc)) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                     error_desc);
+		g_free (error_desc);
+		return FALSE;
 	}
 
 	if (out_sender_uid)

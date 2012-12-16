@@ -573,15 +573,12 @@ request_add_agent (Request *req,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
 	agent_uid = nm_secret_agent_get_owner_uid (agent);
-	if (0 != agent_uid) {
-		if (!nm_auth_uid_in_acl (req->connection, session_monitor, agent_uid, NULL)) {
-			nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
-			            nm_secret_agent_get_description (agent),
-			            req, req->setting_name);
-			/* Connection not visible to this agent's user */
-			return;
-		}
-		/* Caller is allowed to manipulate this connection */
+	if (!nm_auth_uid_in_acl (req->connection, session_monitor, agent_uid, NULL)) {
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
+		            nm_secret_agent_get_description (agent),
+		            req, req->setting_name);
+		/* Connection not visible to this agent's user */
+		return;
 	}
 
 	/* If the request should filter agents by UID, do that now */
