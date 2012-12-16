@@ -541,6 +541,10 @@ nm_auth_uid_in_acl (NMConnection *connection,
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (smon != NULL, FALSE);
 
+	/* Root gets a free pass */
+	if (0 == uid)
+		return TRUE;
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
