@@ -280,10 +280,11 @@ impl_agent_manager_register (NMAgentManager *self,
 		goto done;
 	}
 
-	if (!nm_session_monitor_uid_has_session (priv->session_monitor,
-	                                         sender_uid,
-	                                         NULL,
-	                                         &local)) {
+	if (   0 != sender_uid
+	    && !nm_session_monitor_uid_has_session (priv->session_monitor,
+	                                            sender_uid,
+	                                            NULL,
+	                                            &local)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND,
 		                             local && local->message ? local->message : "Session not found");
