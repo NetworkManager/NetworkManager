@@ -1897,9 +1897,15 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing '%s' setting", NM_SETTING_IP6_CONFIG_SETTING_NAME);
-		return FALSE;
+		/* Treat missing IPv6 setting as a setting with method "auto" */
+		svSetValue (ifcfg, "IPV6INIT", "yes", FALSE);
+		svSetValue (ifcfg, "IPV6_AUTOCONF", "yes", FALSE);
+		svSetValue (ifcfg, "DHCPV6C", NULL, FALSE);
+		svSetValue (ifcfg, "IPV6_DEFROUTE", "yes", FALSE);
+		svSetValue (ifcfg, "IPV6_PEERDNS", "yes", FALSE);
+		svSetValue (ifcfg, "IPV6_PEERROUTES", "yes", FALSE);
+		svSetValue (ifcfg, "IPV6_FAILURE_FATAL", "no", FALSE);
+		return TRUE;
 	}
 
 	value = nm_setting_ip6_config_get_method (s_ip6);
@@ -2210,10 +2216,8 @@ write_connection (NMConnection *connection,
 		if (!write_ip4_setting (connection, ifcfg, error))
 			goto out;
 
-		if (nm_connection_get_setting_ip6_config (connection)) {
-			if (!write_ip6_setting (connection, ifcfg, error))
-				goto out;
-		}
+		if (!write_ip6_setting (connection, ifcfg, error))
+			goto out;
 	}
 
 	write_connection_setting (s_con, ifcfg);
