@@ -216,11 +216,13 @@
         <tp:docstring>
           A combination of logging domains separated by commas (','), or "NONE"
           to disable logging.  Each domain enables logging for operations
-          related to that domain.  Available domains are: [NONE, HW, RFKILL,
-          ETHER, WIFI, BT, MB, DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4,
-          DNS, VPN, SHARING, SUPPLICANT, USER_SET, SYS_SET, SUSPEND, CORE,
-          DEVICE, OLPC].  If an empty string is given, the log level is changed
-          but the current set of log domains remains unchanged.
+          related to that domain.  Available domains are: [HW, RFKILL, ETHER,
+          WIFI, BT, MB, DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS,
+          VPN, SHARING, SUPPLICANT, AGENTS, SETTINGS, SUSPEND, CORE, DEVICE,
+          OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND, VLAN].  In addition to
+          these domains, the following special domains can be used: [NONE, ALL,
+          DEFAULT, DHCP, IP].  If an empty string is given, the log level is
+          changed but the current set of log domains remains unchanged.
         </tp:docstring>
       </arg>
     </method>
