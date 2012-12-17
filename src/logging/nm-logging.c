@@ -49,8 +49,10 @@
 	 LOGD_INFINIBAND | LOGD_FIREWALL | LOGD_ADSL | LOGD_BOND | \
 	 LOGD_VLAN)
 
+#define LOGD_DEFAULT (LOGD_ALL & ~LOGD_WIFI_SCAN)
+
 static guint32 log_level = LOGL_INFO | LOGL_WARN | LOGL_ERR;
-static guint32 log_domains = LOGD_ALL & ~LOGD_WIFI_SCAN;
+static guint32 log_domains = LOGD_DEFAULT;
 
 typedef struct {
 	guint32 num;
@@ -100,9 +102,10 @@ static const LogDesc domain_descs[] = {
 };
 
 /* Combined domains */
-#define LOGD_ALL_STRING   "ALL"
-#define LOGD_DHCP_STRING  "DHCP"
-#define LOGD_IP_STRING    "IP"
+#define LOGD_ALL_STRING     "ALL"
+#define LOGD_DEFAULT_STRING "DEFAULT"
+#define LOGD_DHCP_STRING    "DHCP"
+#define LOGD_IP_STRING      "IP"
 
 /************************************************************************/
 
@@ -166,12 +169,13 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 			if (!strcasecmp (*iter, LOGD_ALL_STRING)) {
 				new_domains = LOGD_ALL;
 				found = TRUE;
-			} else
-			if (!strcasecmp (*iter, LOGD_DHCP_STRING)) {
+			} else if (!strcasecmp (*iter, LOGD_DEFAULT_STRING)) {
+				new_domains = LOGD_DEFAULT;
+				found = TRUE;
+			} else if (!strcasecmp (*iter, LOGD_DHCP_STRING)) {
 				new_domains |= LOGD_DHCP;
 				found = TRUE;
-			} else
-			if (!strcasecmp (*iter, LOGD_IP_STRING)) {
+			} else if (!strcasecmp (*iter, LOGD_IP_STRING)) {
 				new_domains |= LOGD_IP;
 				found = TRUE;
 			}
