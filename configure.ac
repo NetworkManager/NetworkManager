@@ -113,6 +113,8 @@ AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_SUSE, test "$enable_ifcfg_suse" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFUPDOWN, test "$enable_ifupdown" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFNET, test "$enable_ifnet" = "yes")
+# Code coverage
+GNOME_CODE_COVERAGE
 
 dnl
 dnl Distribution version string
@@ -810,5 +812,6 @@ echo
 echo "Miscellaneous:"
 echo "  documentation: $enable_doc"
 echo "  tests: $enable_tests"
+echo "  code coverage: $enable_code_coverage"
 echo
 
