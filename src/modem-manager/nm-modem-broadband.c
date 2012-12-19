@@ -351,8 +351,11 @@ act_stage1_prepare (NMModem *_self,
 			self->priv->connect_properties = create_gsm_connect_properties (connection);
 		else if (MODEM_CAPS_3GPP2 (caps))
 			self->priv->connect_properties = create_cdma_connect_properties (connection);
-		else
-			g_assert_not_reached ();
+		else {
+			nm_log_warn (LOGD_MB, "(%s) not a mobile broadband modem",
+						 nm_modem_get_uid (NM_MODEM (self)));
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
 
 		if (!self->priv->simple_iface)
 			self->priv->simple_iface = mm_object_get_modem_simple (self->priv->modem_object);
@@ -473,7 +476,11 @@ check_connection_compatible (NMModem *_self,
 		return TRUE;
 	}
 
-	g_assert_not_reached ();
+	g_set_error (error,
+	             NM_MODEM_BROADBAND_ERROR,
+	             NM_MODEM_BROADBAND_ERROR_CONNECTION_INCOMPATIBLE,
+	             "Device is not a mobile broadband modem");
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -550,7 +557,11 @@ complete_connection (NMModem *_self,
 		return TRUE;
 	}
 
-	g_assert_not_reached ();
+	g_set_error (error,
+	             NM_MODEM_BROADBAND_ERROR,
+	             NM_MODEM_BROADBAND_ERROR_CONNECTION_INCOMPATIBLE,
+	             "Device is not a mobile broadband modem");
+	return FALSE;
 }
 
 /*****************************************************************************/
