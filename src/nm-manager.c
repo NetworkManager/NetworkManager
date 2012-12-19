@@ -2334,9 +2334,8 @@ internal_activate_device (NMManager *manager,
 	                          assumed,
 	                          device,
 	                          master_device);
-	/* Device takes ownership of 'req' */
+	g_assert (req);
 	nm_device_activate (device, req);
-	g_object_unref (req);
 
 	return NM_ACTIVE_CONNECTION (req);
 }
