@@ -270,6 +270,7 @@ if test "$with_systemdsystemunitdir" != no; then
 fi
 
 # session tracking support
+AC_MSG_CHECKING([Session tracking support])
 AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|consolekit|no],
 	[Select session tracking support (default: consolekit)]))
 # default to consolekit
@@ -277,7 +278,7 @@ AS_IF([test -z "$with_session_tracking"], with_session_tracking=consolekit)
 AS_IF([test "$with_session_tracking" = "ck"], with_session_tracking=consolekit)
 AS_IF([test "$with_session_tracking" = "none"], with_session_tracking=no)
 # check value
-AS_IF([!echo "$with_session_tracking" | grep -E "^(systemd|consolekit|no)$"],
+AS_IF([! echo "$with_session_tracking" | grep -q -E "^(systemd|consolekit|no)$"],
 	AC_MSG_ERROR([--with-session-tracking must be systemd/consolekit/no, not $with_session_tracking]))
 # add conditionals and subtitutions
 AM_CONDITIONAL(SESSION_TRACKING_CK, test "$with_session_tracking" = "consolekit")
@@ -290,6 +291,7 @@ fi
 if test "with_session_tracking" = "consolekit"; then
 	AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
 fi
+AC_MSG_RESULT($with_session_tracking)
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
