@@ -767,8 +767,27 @@ echo "  nmstatedir: $nmstatedir"
 echo "  nmrundir: $nmrundir"
 echo
 
-echo "Platform interaction:"
+echo "Platform:"
 echo "  libnl: $with_libnl"
+echo "  session tracking: $with_session_tracking"
+echo "  suspend/resume: $with_suspend_resume"
+if test "${enable_polkit}" = "yes"; then
+	if test "${enable_modify_system}"; then
+		echo "  policykit: yes (permissive modify.system)"
+	else
+		echo "  policykit: yes (restrictive modify.system)"
+	fi
+else
+	echo  "  policykit: no"
+fi
+echo
+
+echo "Features:"
+echo "  wext: $ac_with_wext"
+echo "  wimax: $enable_wimax"
+echo "  ppp: $enable_ppp"
+echo "  modemmanager-1: $with_modem_manager_1"
+echo "  concheck: $enable_concheck"
 echo
 
 echo "Configuration plugins"
@@ -786,53 +805,6 @@ echo
 echo "DHCP clients:"
 echo "  dhclient: $with_dhclient"
 echo "  dhcpcd: $with_dhcpcd"
-echo
-
-if test "${enable_polkit}" = "yes"; then
-	if test "${enable_modify_system}"; then
-		echo "PolicyKit support: yes (permissive modify.system)"
-	else
-		echo "PolicyKit support: yes (restrictive modify.system)"
-	fi
-else
-	echo PolicyKit support: no
-fi
-
-        echo Session tracking: ${with_session_tracking}
-
-        echo Suspend/resume: ${with_session_tracking}
-
-if test "${enable_wimax}" = "yes"; then
-	echo WiMAX support: yes
-else
-	echo WiMAX support: no
-fi
-
-if test "${enable_ppp}" = "yes"; then
-	echo PPP support: yes
-else
-	echo PPP support: no
-fi
-
-if test "${with_modem_manager_1}" = "yes"; then
-	echo ModemManager1 support: yes
-else
-	echo ModemManager1 support: no
-fi
-
-if test "${enable_concheck}" = "yes"; then
-	echo Connectivity checking support: yes
-else
-	echo Connectivity checking support: no
-fi
-
-echo libnl version: ${libnl_version}
-
-if test "${ac_with_wext}" = "yes"; then
-	echo WEXT support: yes
-else
-	echo WEXT support: no
-fi
 echo
 
 echo "Miscellaneous:"
