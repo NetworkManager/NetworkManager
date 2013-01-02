@@ -288,7 +288,7 @@ if test "$with_session_tracking" = "systemd"; then
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
 	AC_SUBST(SYSTEMD_LOGIN_LIBS)
 fi
-if test "with_session_tracking" = "consolekit"; then
+if test "$with_session_tracking" = "consolekit"; then
 	AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
 fi
 AC_MSG_RESULT($with_session_tracking)
