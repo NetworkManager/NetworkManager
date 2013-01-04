@@ -12,6 +12,8 @@ ExecStart=@sbindir@/NetworkManager --no-daemon
 # with LOG_PERROR when run in foreground. But systemd redirects stderr to
 # syslog by default, which results in logging each message twice.
 StandardError=null
+# NM doesn't want systemd to kill its children for it
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target
