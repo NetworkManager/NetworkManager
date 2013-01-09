@@ -61,7 +61,6 @@ typedef struct {
 	NMDeviceWifiCapabilities wireless_caps;
 	GPtrArray *aps;
 
-	gboolean wireless_enabled;
 	DBusGProxyCall *scan_call;
 	RequestScanInfo *scan_info;
 } NMDeviceWifiPrivate;
