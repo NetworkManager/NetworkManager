@@ -573,15 +573,25 @@ get_user_pass (NMModem *modem,
                const char **pass)
 {
 	NMSettingGsm *s_gsm;
+	NMSettingCdma *s_cdma;
 
 	s_gsm = nm_connection_get_setting_gsm (connection);
-	if (!s_gsm)
+	s_cdma = nm_connection_get_setting_cdma (connection);
+	if (!s_gsm && !s_cdma)
 		return FALSE;
 
-	if (user)
-		*user = nm_setting_gsm_get_username (s_gsm);
-	if (pass)
-		*pass = nm_setting_gsm_get_password (s_gsm);
+	if (user) {
+		if (s_gsm)
+			*user = nm_setting_gsm_get_username (s_gsm);
+		else if (s_cdma)
+			*user = nm_setting_cdma_get_username (s_cdma);
+	}
+	if (pass) {
+		if (s_gsm)
+			*pass = nm_setting_gsm_get_password (s_gsm);
+		else if (s_cdma)
+			*pass = nm_setting_cdma_get_password (s_cdma);
+	}
 
 	return TRUE;
 }
