@@ -83,7 +83,7 @@ enum {
 /**************************************************************************/
 
 /**
- * nm_setting_bridge_port_get_priority
+ * nm_setting_bridge_port_get_priority:
  * @setting: the #NMSettingBridgePort
  *
  * Returns: the #NMSettingBridgePort:priority property of the setting
@@ -97,7 +97,7 @@ nm_setting_bridge_port_get_priority (NMSettingBridgePort *setting)
 }
 
 /**
- * nm_setting_bridge_port_get_path_cost
+ * nm_setting_bridge_port_get_path_cost:
  * @setting: the #NMSettingBridgePort
  *
  * Returns: the #NMSettingBridgePort:path-cost property of the setting
@@ -111,7 +111,7 @@ nm_setting_bridge_port_get_path_cost (NMSettingBridgePort *setting)
 }
 
 /**
- * nm_setting_bridge_port_get_hairpin_mode
+ * nm_setting_bridge_port_get_hairpin_mode:
  * @setting: the #NMSettingBridgePort
  *
  * Returns: the #NMSettingBridgePort:hairpin-mode property of the setting
