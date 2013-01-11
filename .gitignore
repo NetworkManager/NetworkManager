@@ -201,3 +201,5 @@ data/NetworkManager-wait-online.service
 data/org.freedesktop.NetworkManager.service
 
 cli/src/nmcli
+
+vapi/*.vapi
