@@ -105,7 +105,7 @@ nm_setting_bridge_new (void)
 }
 
 /**
- * nm_setting_bridge_get_interface_name
+ * nm_setting_bridge_get_interface_name:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:interface-name property of the setting
@@ -119,7 +119,7 @@ nm_setting_bridge_get_interface_name (NMSettingBridge *setting)
 }
 
 /**
- * nm_setting_bridge_get_stp
+ * nm_setting_bridge_get_stp:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:stp property of the setting
@@ -133,7 +133,7 @@ nm_setting_bridge_get_stp (NMSettingBridge *setting)
 }
 
 /**
- * nm_setting_bridge_get_priority
+ * nm_setting_bridge_get_priority:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:priority property of the setting
@@ -147,7 +147,7 @@ nm_setting_bridge_get_priority (NMSettingBridge *setting)
 }
 
 /**
- * nm_setting_bridge_get_forward_delay
+ * nm_setting_bridge_get_forward_delay:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:forward-delay property of the setting
@@ -161,7 +161,7 @@ nm_setting_bridge_get_forward_delay (NMSettingBridge *setting)
 }
 
 /**
- * nm_setting_bridge_get_hello_time
+ * nm_setting_bridge_get_hello_time:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:hello-time property of the setting
@@ -175,7 +175,7 @@ nm_setting_bridge_get_hello_time (NMSettingBridge *setting)
 }
 
 /**
- * nm_setting_bridge_get_max_age
+ * nm_setting_bridge_get_max_age:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:max-age property of the setting
@@ -189,7 +189,7 @@ nm_setting_bridge_get_max_age (NMSettingBridge *setting)
 }
 
 /**
- * nm_setting_bridge_get_ageing_time
+ * nm_setting_bridge_get_ageing_time:
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:ageing-time property of the setting
