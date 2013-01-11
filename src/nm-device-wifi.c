@@ -1388,7 +1388,8 @@ is_available (NMDevice *dev)
 	}
 
 	state = nm_supplicant_interface_get_state (sup_iface);
-	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY) {
+	if (   state < NM_SUPPLICANT_INTERFACE_STATE_READY
+	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
 		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant interface not ready",
 		            nm_device_get_iface (dev));
 		return FALSE;
