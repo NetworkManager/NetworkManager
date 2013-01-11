@@ -25,6 +25,10 @@
 #include <glib-object.h>
 #include <sys/inotify.h>
 
+/* NOTE: this code should be killed once we depend on a new enough glib to
+ * include the patches from https://bugzilla.gnome.org/show_bug.cgi?id=532815
+ */
+
 #define NM_TYPE_INOTIFY_HELPER            (nm_inotify_helper_get_type ())
 #define NM_INOTIFY_HELPER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_INOTIFY_HELPER, NMInotifyHelper))
 #define NM_INOTIFY_HELPER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_INOTIFY_HELPER, NMInotifyHelperClass))

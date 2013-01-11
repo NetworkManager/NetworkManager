@@ -27,6 +27,10 @@
 #include "nm-inotify-helper.h"
 #include "nm-logging.h"
 
+/* NOTE: this code should be killed once we depend on a new enough glib to
+ * include the patches from https://bugzilla.gnome.org/show_bug.cgi?id=532815
+ */
+
 G_DEFINE_TYPE (NMInotifyHelper, nm_inotify_helper, G_TYPE_OBJECT)
 
 #define NM_INOTIFY_HELPER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_INOTIFY_HELPER, NMInotifyHelperPrivate))
