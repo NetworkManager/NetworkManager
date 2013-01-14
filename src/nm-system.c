@@ -1865,7 +1865,7 @@ nm_system_get_iface_type (int ifindex, const char *name)
 		goto out;
 
 	/* Prefer interface indexes to names */
-	err = rtnl_link_get_kernel (nlh, ifindex, ifindex < 0 ? name : NULL, &result);
+	err = rtnl_link_get_kernel (nlh, ifindex, ifindex <= 0 ? name : NULL, &result);
 	if (err < 0) {
 		if (err == -NLE_OPNOTSUPP)
 			res = nm_system_compat_get_iface_type (ifindex, name);
