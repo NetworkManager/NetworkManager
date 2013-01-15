@@ -209,8 +209,8 @@ void      nm_client_sleep                (NMClient *client, gboolean sleep_);
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
                                                           NMClientPermission permission);
 
-gboolean nm_client_get_logging (NMClient *client, char **level, char **domain, GError **error);
-gboolean nm_client_set_logging (NMClient *client, const char *level, const char *domain, GError **error);
+gboolean nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error);
+gboolean nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error);
 
 G_END_DECLS
 
