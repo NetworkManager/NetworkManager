@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2009 - 2010 Red Hat, Inc.
+ * (C) Copyright 2009 - 2012 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <nm-setting-8021x.h>
+#include <nm-setting-adsl.h>
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-cdma.h>
 #include <nm-setting-connection.h>
@@ -58,6 +59,7 @@ typedef NMSetting* (*SettingNewFunc) (void);
 
 static SettingNewFunc funcs[] = {
 	nm_setting_802_1x_new,
+	nm_setting_adsl_new,
 	nm_setting_bluetooth_new,
 	nm_setting_bond_new,
 	nm_setting_bridge_new,
