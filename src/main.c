@@ -642,7 +642,7 @@ done:
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
 
-	nm_config_free (config);
+	g_object_unref (config);
 
 	/* Free options */
 	g_free (pidfile);

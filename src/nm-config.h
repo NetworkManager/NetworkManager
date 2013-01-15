@@ -16,6 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
 #ifndef NM_CONFIG_H
@@ -24,7 +25,24 @@
 #include <glib.h>
 #include <glib-object.h>
 
-typedef struct NMConfig NMConfig;
+G_BEGIN_DECLS
+
+#define NM_TYPE_CONFIG            (nm_config_get_type ())
+#define NM_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONFIG, NMConfig))
+#define NM_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_CONFIG, NMConfigClass))
+#define NM_IS_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONFIG))
+#define NM_IS_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_CONFIG))
+#define NM_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_CONFIG, NMConfigClass))
+
+typedef struct {
+	GObject parent;
+} NMConfig;
+
+typedef struct {
+	GObjectClass parent;
+} NMConfigClass;
+
+GType nm_config_get_type (void);
 
 typedef enum {
 	NM_CONFIG_ERROR_NO_MEMORY = 0, /*< nick=NoMemory >*/
@@ -33,7 +51,7 @@ typedef enum {
 #define NM_CONFIG_ERROR (nm_config_error_quark ())
 GQuark nm_config_error_quark (void);
 
-
+NMConfig *nm_config_get (void);
 NMConfig *nm_config_new (const char *cli_config_path,
                          const char *cli_plugins,
                          const char *cli_log_level,
@@ -53,7 +71,7 @@ const char *nm_config_get_connectivity_uri (NMConfig *config);
 const guint nm_config_get_connectivity_interval (NMConfig *config);
 const char *nm_config_get_connectivity_response (NMConfig *config);
 
-void nm_config_free (NMConfig *config);
+G_END_DECLS
 
 #endif /* NM_CONFIG_H */
 
