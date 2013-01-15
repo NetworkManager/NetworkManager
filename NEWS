@@ -1,4 +1,40 @@
 ==============================================
+NetworkManager-0.9.8
+Overview of changes since NetworkManager-0.9.6
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* New AvailableConnections property for Device objects
+* Better handling of various rfkill/Airplane Mode switches
+* Fixed handling of DNS servers for some mobile broadband devices
+* Don't duplicate various IPv6 routes added by the kernel
+* Ensure buggy ethernet driver carrier indications are handled correctly
+* Fix crash in dnsmasq plugin when no nameservers were present
+* Add support for 4G LTE network modes
+* Fix signal handling when daemonizing at startup
+* Don't autoconnect to WiFi networks that have never successfully connected
+* Only request new WiFi secrets during the initial association or when the
+    secrets are known to be wrong, not every time the connection randomly fails
+* Add capability to autoconnect VPN connections when a parent connection succeeds
+* Add configure-time option for "permissive" system connection editing policy
+* Various libnm-glib fixes for asynchronous usage
+* Fix gateway handling when given with secondary IP addresses
+* Optionally listen to systemd for suspend/resume events instead of UPower
+* Fix 'seen-bssids' property when retrieving WiFi connections via D-Bus
+* Add support for AP-mode WiFi hotspots (instead of just Ad-Hoc)
+* Add a "slaves" property to Bond devices
+* Add support for ModemManager 0.7/0.8
+* Allow more human-readable formatting of IP address in keyfile connections
+* Drop support for dhclient v3
+* Add support for DHCPv6 server-side Dynamic DNS
+* Add support for bridge master devices and bridge ports
+* Fix canceling secrets requests in GUI agents
+* Always enable Proactive Key Caching (PKC, also called OKC) for WPA Enterprise
+    WiFi configurations
+
+
+==============================================
 NetworkManager-0.9.6
 Overview of changes since NetworkManager-0.9.4
 ==============================================
