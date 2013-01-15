@@ -20,6 +20,7 @@
 
 #include <glib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-utils.h"
@@ -275,6 +276,121 @@ test_duids (void)
 	g_assert (nm_dhcp_dhclient_unescape_duid (bad_s) == NULL);
 }
 
+static void
+test_read_duid_from_leasefile (void)
+{
+	const guint8 expected[] = { 0x00, 0x01, 0x00, 0x01, 0x18, 0x79, 0xa6,
+	                            0x13, 0x60, 0x67, 0x20, 0xec, 0x4c, 0x70 };
+	GByteArray *duid;
+	GError *error = NULL;
+
+	duid = nm_dhcp_dhclient_read_duid (TESTDIR "/test-dhclient-duid.leases", &error);
+	g_assert_no_error (error);
+	g_assert (duid);
+	g_assert_cmpint (duid->len, ==, sizeof (expected));
+	g_assert_cmpint (memcmp (duid->data, expected, duid->len), ==, 0);
+
+	g_byte_array_free (duid, TRUE);
+}
+
+static void
+test_read_commented_duid_from_leasefile (void)
+{
+	GByteArray *duid;
+	GError *error = NULL;
+
+	duid = nm_dhcp_dhclient_read_duid (TESTDIR "/test-dhclient-commented-duid.leases", &error);
+	g_assert_no_error (error);
+	g_assert (duid == NULL);
+}
+
+static void
+test_write_duid (void)
+{
+	const char *duid = "\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254";
+	const char *expected_contents = "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
+	GError *error = NULL;
+	char *contents = NULL;
+	gboolean success;
+	const char *path = "test-dhclient-write-duid.leases";
+
+	success = nm_dhcp_dhclient_save_duid (path, duid, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = g_file_get_contents (path, &contents, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	unlink (path);
+	g_assert_cmpstr (expected_contents, ==, contents);
+
+	g_free (contents);
+}
+
+static void
+test_write_existing_duid (void)
+{
+	const char *duid = "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302";
+	const char *expected_contents = "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
+	GError *error = NULL;
+	char *contents = NULL;
+	gboolean success;
+	const char *path = "test-dhclient-write-existing-duid.leases";
+
+	success = g_file_set_contents (path, expected_contents, -1, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save other DUID; should be a no-op */
+	success = nm_dhcp_dhclient_save_duid (path, duid, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* reread original contents */
+	success = g_file_get_contents (path, &contents, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	unlink (path);
+	g_assert_cmpstr (expected_contents, ==, contents);
+
+	g_free (contents);
+}
+
+static void
+test_write_existing_commented_duid (void)
+{
+	#define DUID "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302"
+	#define ORIG_CONTENTS "#default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n"
+	const char *expected_contents = \
+		"default-duid \"" DUID "\";\n"
+		ORIG_CONTENTS;
+	GError *error = NULL;
+	char *contents = NULL;
+	gboolean success;
+	const char *path = "test-dhclient-write-existing-commented-duid.leases";
+
+	success = g_file_set_contents (path, ORIG_CONTENTS, -1, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save other DUID; should be a no-op */
+	success = nm_dhcp_dhclient_save_duid (path, DUID, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* reread original contents */
+	success = g_file_get_contents (path, &contents, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	unlink (path);
+	g_assert_cmpstr (expected_contents, ==, contents);
+
+	g_free (contents);
+}
+
 /*******************************************/
 
 #if GLIB_CHECK_VERSION(2,25,12)
@@ -301,6 +417,13 @@ int main (int argc, char **argv)
 	g_test_suite_add (suite, TESTCASE (test_existing_alsoreq, NULL));
 	g_test_suite_add (suite, TESTCASE (test_existing_multiline_alsoreq, NULL));
 	g_test_suite_add (suite, TESTCASE (test_duids, NULL));
+
+	g_test_suite_add (suite, TESTCASE (test_read_duid_from_leasefile, NULL));
+	g_test_suite_add (suite, TESTCASE (test_read_commented_duid_from_leasefile, NULL));
+
+	g_test_suite_add (suite, TESTCASE (test_write_duid, NULL));
+	g_test_suite_add (suite, TESTCASE (test_write_existing_duid, NULL));
+	g_test_suite_add (suite, TESTCASE (test_write_existing_commented_duid, NULL));
 
 	return g_test_run ();
 }
