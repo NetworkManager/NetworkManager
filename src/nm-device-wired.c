@@ -49,9 +49,6 @@ G_DEFINE_TYPE (NMDeviceWired, nm_device_wired, NM_TYPE_DEVICE)
 #define NM_DEVICE_WIRED_LOG_LEVEL(dev) ((nm_device_get_device_type (dev) == NM_DEVICE_TYPE_INFINIBAND) ? LOGD_INFINIBAND : LOGD_ETHER)
 
 typedef struct {
-	guint8              hw_addr[NM_UTILS_HWADDR_LEN_MAX];         /* Currently set MAC address */
-	guint               hw_addr_type;
-	guint               hw_addr_len;
 	gboolean            carrier;
 	guint32             speed;
 
@@ -301,22 +298,6 @@ constructor (GType type,
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
-	if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_ETHERNET) {
-		priv->hw_addr_type = ARPHRD_ETHER;
-		priv->hw_addr_len = ETH_ALEN;
-	} else if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_INFINIBAND) {
-		priv->hw_addr_type = ARPHRD_INFINIBAND;
-		priv->hw_addr_len = INFINIBAND_ALEN;
-	} else if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_BOND) {
-		/* We may not know the hardware address type until a slave is added */
-		priv->hw_addr_type = ARPHRD_ETHER;
-		priv->hw_addr_len = ETH_ALEN;
-	} else if (nm_device_get_device_type (self) == NM_DEVICE_TYPE_BRIDGE) {
-		priv->hw_addr_type = ARPHRD_ETHER;
-		priv->hw_addr_len = ETH_ALEN;
-	} else
-		g_assert_not_reached ();
-
 	caps = nm_device_get_capabilities (self);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 		/* Only listen to netlink for cards that support carrier detect */
@@ -371,29 +352,6 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		}
 	}
 	return result;
-}
-
-static void
-update_hw_address (NMDevice *dev)
-{
-	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
-	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
-	gsize addrlen;
-
-	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), NULL);
-	if (addrlen) {
-		g_warn_if_fail (addrlen == priv->hw_addr_len);
-		priv->hw_addr_len = addrlen;
-	}
-}
-
-static const guint8 *
-get_hw_address (NMDevice *dev, guint *out_len)
-{
-	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
-
-	*out_len = priv->hw_addr_len;
-	return priv->hw_addr;
 }
 
 static gboolean
@@ -480,72 +438,8 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 
 	parent_class->hw_bring_up = hw_bring_up;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
-	parent_class->update_hw_address = update_hw_address;
-	parent_class->get_hw_address = get_hw_address;
 	parent_class->is_available = is_available;
 	parent_class->connection_match_config = connection_match_config;
-}
-
-/**
- * nm_device_wired_get_hwaddr:
- * @dev: an #NMDeviceWired
- *
- * Get a device's hardware address
- *
- * Returns: (transfer none): @dev's hardware address
- */
-const guint8 *
-nm_device_wired_get_hwaddr (NMDeviceWired *dev)
-{
-	NMDeviceWiredPrivate *priv;
-
-	g_return_val_if_fail (dev != NULL, NULL);
-
-	priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
-	return priv->hw_addr;
-}
-
-/**
- * nm_device_wired_set_hwaddr:
- * @dev: an #NMDeviceWired
- * @addr: the new hardware address, @addrlen bytes in length
- * @addrlen: the length in bytes of @addr
- *
- * Sets the device's hardware address.
- */
-void
-nm_device_wired_set_hwaddr (NMDeviceWired *dev,
-                            const guint8 *addr,
-                            guint addrlen)
-{
-	NMDeviceWiredPrivate *priv;
-
-	g_return_if_fail (dev != NULL);
-	g_return_if_fail (addr != NULL);
-
-	priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
-	g_return_if_fail (addrlen == priv->hw_addr_len);
-
-	memcpy (priv->hw_addr, addr, priv->hw_addr_len);
-}
-
-/**
- * nm_device_wired_get_hwaddr_type:
- * @dev: an #NMDeviceWired
- *
- * Get the type of a device's hardware address
- *
- * Returns: the type of @dev's hardware address
- */
-int
-nm_device_wired_get_hwaddr_type (NMDeviceWired *dev)
-{
-	NMDeviceWiredPrivate *priv;
-
-	g_return_val_if_fail (dev != NULL, -1);
-
-	priv = NM_DEVICE_WIRED_GET_PRIVATE (dev);
-	return priv->hw_addr_type;
 }
 
 /**

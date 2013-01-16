@@ -48,6 +48,8 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE_WIRED)
 typedef struct {
 	gboolean ip4_waiting;
 	gboolean ip6_waiting;
+	guint8   hw_addr[NM_UTILS_HWADDR_LEN_MAX];
+	gsize    hw_addr_len;
 } NMDeviceBridgePrivate;
 
 enum {
@@ -102,23 +104,23 @@ device_state_changed (NMDevice *device,
 static void
 update_hw_address (NMDevice *dev)
 {
-	const guint8 *hw_addr;
-	guint8 old_addr[NM_UTILS_HWADDR_LEN_MAX];
-	int addrtype, addrlen;
+	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (dev);
+	gsize addrlen;
+	gboolean changed = FALSE;
 
-	addrtype = nm_device_wired_get_hwaddr_type (NM_DEVICE_WIRED (dev));
-	g_assert (addrtype >= 0);
-	addrlen = nm_utils_hwaddr_len (addrtype);
-	g_assert (addrlen > 0);
+	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
+	if (addrlen) {
+		priv->hw_addr_len = addrlen;
+		if (changed)
+			g_object_notify (G_OBJECT (dev), NM_DEVICE_BRIDGE_HW_ADDRESS);
+	}
+}
 
-	hw_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
-	memcpy (old_addr, hw_addr, addrlen);
-
-	NM_DEVICE_CLASS (nm_device_bridge_parent_class)->update_hw_address (dev);
-
-	hw_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
-	if (memcmp (old_addr, hw_addr, addrlen))
-		g_object_notify (G_OBJECT (dev), NM_DEVICE_BRIDGE_HW_ADDRESS);
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+	*out_len = NM_DEVICE_BRIDGE_GET_PRIVATE (device)->hw_addr_len;
+	return NM_DEVICE_BRIDGE_GET_PRIVATE (device)->hw_addr;
 }
 
 static guint32
@@ -247,10 +249,11 @@ complete_connection (NMDevice *device,
 static gboolean
 spec_match_list (NMDevice *device, const GSList *specs)
 {
+	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (device);
 	char *hwaddr;
 	gboolean matched;
 
-	hwaddr = nm_utils_hwaddr_ntoa (nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device)), ARPHRD_ETHER);
+	hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len));
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
 
@@ -578,14 +581,15 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	const guint8 *current_addr;
+	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (object);
 	GPtrArray *slaves;
 	GSList *list, *iter;
+	char *hwaddr;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		current_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (object));
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (current_addr, ARPHRD_ETHER));
+		hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len));
+		g_value_take_string (value, hwaddr);
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (object)));
@@ -630,6 +634,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;
+	parent_class->get_hw_address = get_hw_address;
 	parent_class->is_available = is_available;
 	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;

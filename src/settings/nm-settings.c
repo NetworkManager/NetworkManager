@@ -1379,12 +1379,13 @@ have_connection_for_device (NMSettings *self, GByteArray *mac, NMDevice *device)
 
 /* Search through the list of blacklisted MAC addresses in the config file. */
 static gboolean
-is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac, int hwaddr_type)
+is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GKeyFile *config;
 	char **list, **iter;
 	gboolean found = FALSE;
+	int hwaddr_type;
 
 	g_return_val_if_fail (mac != NULL, FALSE);
 
@@ -1400,6 +1401,8 @@ is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac, int hwad
 	g_key_file_set_list_separator (config, ',');
 	if (!g_key_file_load_from_file (config, priv->config_file, G_KEY_FILE_NONE, NULL))
 		goto out;
+
+	hwaddr_type = nm_utils_hwaddr_type (mac->len);
 
 	list = g_key_file_get_string_list (config, "main", CONFIG_KEY_NO_AUTO_DEFAULT, NULL, NULL);
 	for (iter = list; iter && *iter; iter++) {
@@ -1584,7 +1587,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GByteArray *mac = NULL;
 	const guint8 *hwaddr;
-	int hwaddr_type;
+	guint hwaddr_len = 0;
 	NMDefaultWiredConnection *wired;
 	gboolean read_only = TRUE;
 	const char *id;
@@ -1600,14 +1603,13 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_TAG))
 		return;
 
-	hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
-	hwaddr_type = nm_device_wired_get_hwaddr_type (NM_DEVICE_WIRED (device));
+	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
 
-	mac = g_byte_array_new ();
-	g_byte_array_append (mac, hwaddr, nm_utils_hwaddr_len (hwaddr_type));
+	mac = g_byte_array_sized_new (hwaddr_len);
+	g_byte_array_append (mac, hwaddr, hwaddr_len);
 
 	if (   have_connection_for_device (self, mac, device)
-		|| is_mac_auto_wired_blacklisted (self, mac, hwaddr_type))
+		|| is_mac_auto_wired_blacklisted (self, mac))
 		goto ignore;
 
 	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))

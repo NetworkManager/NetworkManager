@@ -44,7 +44,7 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE_WIRED)
 #define NM_INFINIBAND_ERROR (nm_infiniband_error_quark ())
 
 typedef struct {
-	int dummy;
+	guint8 hw_addr[INFINIBAND_ALEN];
 } NMDeviceInfinibandPrivate;
 
 enum {
@@ -120,21 +120,26 @@ nm_device_infiniband_new (const char *udi,
 	                                  NULL);
 }
 
-
 static void
 update_hw_address (NMDevice *dev)
 {
-	const guint8 *hw_addr;
-	guint8 old_addr[INFINIBAND_ALEN];
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (dev);
+	gsize addrlen;
+	gboolean changed = FALSE;
 
-	hw_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
-	memcpy (old_addr, hw_addr, INFINIBAND_ALEN);
+	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
+	if (addrlen) {
+		g_return_if_fail (addrlen == INFINIBAND_ALEN);
+		if (changed)
+			g_object_notify (G_OBJECT (dev), NM_DEVICE_INFINIBAND_HW_ADDRESS);
+	}
+}
 
-	NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->update_hw_address (dev);
-
-	hw_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
-	if (memcmp (old_addr, hw_addr, INFINIBAND_ALEN))
-		g_object_notify (G_OBJECT (dev), NM_DEVICE_INFINIBAND_HW_ADDRESS);
+static const guint8 *
+get_hw_address (NMDevice *device, guint *out_len)
+{
+	*out_len = INFINIBAND_ALEN;
+	return NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->hw_addr;
 }
 
 static guint32
@@ -148,6 +153,7 @@ get_best_auto_connection (NMDevice *dev,
                           GSList *connections,
                           char **specific_object)
 {
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (dev);
 	GSList *iter;
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
@@ -168,11 +174,10 @@ get_best_auto_connection (NMDevice *dev,
 			continue;
 
 		if (s_infiniband) {
-			const guint8 *hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (dev));
 			const GByteArray *mac;
 
 			mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-			if (mac && memcmp (mac->data, hwaddr, INFINIBAND_ALEN))
+			if (mac && memcmp (mac->data, priv->hw_addr, INFINIBAND_ALEN))
 				continue;
 		}
 
@@ -249,6 +254,7 @@ check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
                              GError **error)
 {
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *mac;
 
@@ -269,10 +275,8 @@ check_connection_compatible (NMDevice *device,
 	}
 
 	if (s_infiniband) {
-		const guint8 *hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
-
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-		if (mac && memcmp (mac->data, hwaddr, INFINIBAND_ALEN)) {
+		if (mac && memcmp (mac->data, priv->hw_addr, INFINIBAND_ALEN)) {
 			g_set_error (error,
 			             NM_INFINIBAND_ERROR,
 			             NM_INFINIBAND_ERROR_CONNECTION_INCOMPATIBLE,
@@ -291,9 +295,9 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *setting_mac;
-	const guint8 *hwaddr;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
@@ -308,11 +312,10 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
 	}
 
-	hwaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
 	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's MAC */
-		if (memcmp (setting_mac->data, hwaddr, INFINIBAND_ALEN)) {
+		if (memcmp (setting_mac->data, priv->hw_addr, INFINIBAND_ALEN)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_INFINIBAND_ERROR,
 			                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
@@ -323,8 +326,8 @@ complete_connection (NMDevice *device,
 		GByteArray *mac;
 
 		/* Lock the connection to this device by default */
-		mac = g_byte_array_sized_new (INFINIBAND_ALEN);
-		g_byte_array_append (mac, hwaddr, INFINIBAND_ALEN);
+		mac = g_byte_array_sized_new (sizeof (priv->hw_addr));
+		g_byte_array_append (mac, priv->hw_addr, sizeof (priv->hw_addr));
 		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 		g_byte_array_free (mac, TRUE);
 	}
@@ -338,10 +341,11 @@ complete_connection (NMDevice *device,
 static gboolean
 spec_match_list (NMDevice *device, const GSList *specs)
 {
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 	char *hwaddr;
 	gboolean matched;
 
-	hwaddr = nm_utils_hwaddr_ntoa (nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device)), ARPHRD_INFINIBAND);
+	hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, ARPHRD_INFINIBAND);
 	matched = nm_match_spec_hwaddr (specs, hwaddr);
 	g_free (hwaddr);
 
@@ -351,6 +355,7 @@ spec_match_list (NMDevice *device, const GSList *specs)
 static gboolean
 infiniband_match_config (NMDevice *self, NMConnection *connection)
 {
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (self);
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *s_mac;
 
@@ -360,7 +365,7 @@ infiniband_match_config (NMDevice *self, NMConnection *connection)
 
 	/* MAC address check */
 	s_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	if (s_mac && memcmp (s_mac->data, nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (self)), INFINIBAND_ALEN))
+	if (s_mac && memcmp (s_mac->data, priv->hw_addr, INFINIBAND_ALEN))
 		return FALSE;
 
 	return TRUE;
@@ -403,14 +408,9 @@ hwaddr_matches (NMDevice *device,
                 guint other_hwaddr_len,
                 gboolean fail_if_no_hwaddr)
 {
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
 	NMSettingInfiniband *s_ib;
-	const guint8 *devaddr;
 	const GByteArray *mac = NULL;
-	int devtype;
-
-	devtype = nm_device_wired_get_hwaddr_type (NM_DEVICE_WIRED (device));
-	devaddr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (device));
-	g_return_val_if_fail (devaddr != NULL, FALSE);
 
 	s_ib = nm_connection_get_setting_infiniband (connection);
 	if (s_ib)
@@ -422,7 +422,7 @@ hwaddr_matches (NMDevice *device,
 			g_return_val_if_fail (other_hwaddr_len == INFINIBAND_ALEN, FALSE);
 			if (memcmp (mac->data, other_hwaddr, mac->len) == 0)
 				return TRUE;
-		} else if (memcmp (mac->data, devaddr, mac->len) == 0)
+		} else if (memcmp (mac->data, priv->hw_addr, mac->len) == 0)
 			return TRUE;
 	} else if (fail_if_no_hwaddr == FALSE)
 		return TRUE;
@@ -434,12 +434,11 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	const guint8 *current_addr;
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		current_addr = nm_device_wired_get_hwaddr (NM_DEVICE_WIRED (object));
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (current_addr, ARPHRD_INFINIBAND));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->hw_addr, ARPHRD_INFINIBAND));
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (object)));
@@ -476,6 +475,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;
+	parent_class->get_hw_address = get_hw_address;
 	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
