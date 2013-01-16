@@ -45,7 +45,7 @@ spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
 
 settings-spec.xml: generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
 	rm -f $(builddir)/$@
-	$(builddir)/generate-settings-spec $(builddir)/$@
+	$(builddir)/generate-settings-spec book $(builddir)/$@
 
 all: $(GENERATED_FILES)
 

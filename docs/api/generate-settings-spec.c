@@ -17,13 +17,14 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2009 - 2012 Red Hat, Inc.
+ * (C) Copyright 2009 - 2013 Red Hat, Inc.
  */
 
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 #include <glib.h>
 #include <dbus/dbus-glib.h>
@@ -107,11 +108,12 @@ static TypeNameElement name_map[] = {
 };
 
 static void
-write_one_setting (FILE *f, SettingNewFunc func)
+write_one_setting (FILE *f, gboolean book, SettingNewFunc func)
 {
 	NMSetting *s;
 	GParamSpec **props, **iter;
 	guint num;
+	const char *row_fmt_str;
 
 	s = func ();
 
@@ -167,13 +169,24 @@ write_one_setting (FILE *f, SettingNewFunc func)
 		if (g_str_has_suffix (key_name, "-flags"))
 			flags_str = g_strdup_printf (" (see <xref linkend=\"secrets-flags\"/> for flag values)");
 
-		(void) fprintf (f,
+		if (book)
+			row_fmt_str =
 			"      <row>\n"
 			"        <entry><screen>%s</screen></entry>\n"
 			"        <entry><screen>%s</screen></entry>\n"
 			"        <entry><screen>%s</screen></entry>\n"
 			"        <entry>%s%s</entry>\n"
-			"      </row>\n",
+			"      </row>\n";
+		else
+			row_fmt_str =
+			"      <row>\n"
+			"        <entry align=\"left\">%s</entry>\n"
+			"        <entry align=\"left\">%s</entry>\n"
+			"        <entry align=\"left\">%s</entry>\n"
+			"        <entry>%s%s</entry>\n"
+			"      </row>\n";
+
+		(void) fprintf (f, row_fmt_str,
 			key_name,
 			value_type,
 			default_value ? default_value : "",
@@ -192,16 +205,186 @@ write_one_setting (FILE *f, SettingNewFunc func)
 	g_object_unref (s);
 }
 
+static void
+writer_header_docbook_section (FILE *f)
+{
+	(void) fprintf (f,
+		"<?xml version=\"1.0\"?>\n"
+		"<!DOCTYPE section PUBLIC \"-//OASIS//DTD DocBook XML V4.3//EN\"\n"
+		"               \"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd\" [\n"
+		"<!ENTITY %% local.common.attrib \"xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'\">"
+		"]>"
+		"<section>\n"
+		"  <title>Configuration Settings</title>\n"
+		"  <para>\n");
+}
+
+static void
+writer_footer_docbook_section (FILE *f)
+{
+	(void) fprintf (f,
+		"  </para>\n"
+		"</section>\n");
+}
+
+static void
+writer_header_docbook_manpage (FILE *f)
+{
+	char time_str[64];
+	time_t t;
+
+	t = time (NULL);
+	strftime (time_str, sizeof (time_str), "%d %B %Y", localtime (&t));
+
+	(void) fprintf (f,
+		"<?xml version=\"1.0\"?>\n"
+		"<!DOCTYPE refentry PUBLIC \"-//OASIS//DTD DocBook XML V4.3//EN\"\n"
+		"               \"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd\" [\n"
+		"<!ENTITY %% local.common.attrib \"xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'\">"
+		"]>"
+		"<refentry id=\"nm-settings\">\n"
+		"  <refentryinfo>\n"
+		"    <date>%s</date>\n"
+		"  </refentryinfo>\n"
+		"  <refmeta>\n"
+		"    <refentrytitle>nm-settings</refentrytitle>\n"
+		"    <manvolnum>5</manvolnum>\n"
+		"    <refmiscinfo class=\"source\">NetworkManager</refmiscinfo>\n"
+		"    <refmiscinfo class=\"manual\">Configuration</refmiscinfo>\n"
+		"    <refmiscinfo class=\"version\">%s</refmiscinfo>\n"
+		"  </refmeta>\n"
+		"  <refnamediv>\n"
+		"    <refname>nm-settings</refname>\n"
+		"    <refpurpose>Description of settings and parameters of NetworkManager connections.</refpurpose>\n"
+		"  </refnamediv>\n"
+		"  <refsect1>\n"
+		"    <title>DESCRIPTION</title>\n"
+		"    <para>\n"
+		"      NetworkManager is based on a concept of connections. These connections are\n"
+		"      then applied to a device to make an active network connection. Users can create\n"
+		"      as many connections as they see fit. The connections are handled by NetworkManager\n"
+		"      via <emphasis>settings service</emphasis> and are exported on D-Bus \n"
+		"      (<emphasis>/org/freedesktop/NetworkManager/Settings/&lt;num&gt;</emphasis> objects).\n"
+		"      The conceptual objects can be described as follows:\n"
+		"      <variablelist>\n"
+		"        <varlistentry>\n"
+		"          <term>Connection</term>\n"
+		"          <listitem>\n"
+		"            <para>\n"
+		"              A specific, encapsulated, independent group of settings describing\n"
+		"              all the configuration required to connect to a specific network.\n"
+		"              It is referred to by a unique identifier called the UUID. A connection\n"
+		"              is tied to a one specific device type, but not necessarily a specific\n"
+		"              hardware device. It is composed of one or more <emphasis>Settings</emphasis>\n"
+		"              objects.\n"
+		"            </para>\n"
+		"          </listitem>\n"
+		"      </varlistentry>\n"
+		"      </variablelist>\n"
+		"      <variablelist>\n"
+		"        <varlistentry>\n"
+		"          <term>Setting</term>\n"
+		"          <listitem>\n"
+		"            <para>\n"
+		"              A group of related key/value pairs describing a specific piece of a\n"
+		"              <emphasis>Connection</emphasis>. Settings keys and allowed values are\n"
+		"              described in the tables below. Developers can find the settings\n"
+		"              objects in the libnm-util sources. Look for the <function>class_init</function>\n"
+		"              functions near the bottoms of each setting source file.\n"
+		"            </para>\n"
+		"          </listitem>\n"
+		"      </varlistentry>\n"
+		"      </variablelist>\n",
+		time_str, VERSION);
+}
+
+static void
+writer_footer_docbook_manpage (FILE *f)
+{
+	(void) fprintf (f,
+		"    </para>\n"
+		"    <refsect2 id=\"secrets-flags\">\n"
+		"      <title>Secret flag types:</title>\n"
+		"      <para>\n"
+		"      Each secret property in a setting has an associated <emphasis>flags</emphasis> property\n"
+		"      that describes how to handle that secret. The <emphasis>flags</emphasis> property is a bitfield\n"
+		"      that contains zero or more of the following values logically OR-ed together.\n"
+		"      </para>\n"
+		"      <itemizedlist>\n"
+		"        <listitem>\n"
+		"          <para>0x0 (none) - the system is responsible for providing and storing this secret.</para>\n"
+		"        </listitem>\n"
+		"        <listitem>\n"
+		"          <para>0x1 (agent-owned) - a user-session secret agent is responsible for providing and storing\n"
+		"          this secret; when it is required, agents will be asked to provide it.</para>\n"
+		"        </listitem>\n"
+		"        <listitem>\n"
+		"          <para>0x2 (not-saved) - this secret should not be saved but should be requested from the user\n"
+		"          each time it is required. This flag should be used for One-Time-Pad secrets, PIN codes from hardware tokens,\n"
+		"          or if the user simply does not want to save the secret.</para>\n"
+		"        </listitem>\n"
+		"        <listitem>\n"
+		"          <para>0x4 (not-required) - in some situations it cannot be automatically determined that a secret\n"
+		"          is required or not. This flag hints that the secret is not required and should not be requested from the user.</para>\n"
+		"        </listitem>\n"
+		"      </itemizedlist>\n"
+		"     </refsect2>\n"
+		"  </refsect1>\n"
+		"  <refsect1>\n"
+		"    <title>AUTHOR</title>\n"
+		"    <para>\n"
+		"      <author>\n"
+		"        <firstname>NetworkManager developers</firstname>\n"
+		"      </author>\n"
+		"    </para>\n"
+		"  </refsect1>\n"
+		"  <refsect1>\n"
+		"    <title>FILES</title>\n"
+		"    <para>/etc/NetworkManager/system-connections</para>\n"
+		"    <para>or distro plugin-specific location</para>\n"
+		"  </refsect1>\n"
+		"  <refsect1>\n"
+		"    <title>SEE ALSO</title>\n"
+		"    <para>https://live.gnome.org/NetworkManagerConfiguration</para>\n"
+		"    <para>NetworkManager(8), nmcli(1), NetworkManager.conf(5)</para>\n"
+		"  </refsect1>\n"
+		"</refentry>\n");
+}
+
+static void
+usage (const char *str)
+{
+	fprintf (stderr, "Usage: %s <type> <output file> [<type> <output file>]\n"
+		 "<type> := book|refentry\n",
+	         str);
+	_exit (1);
+}
+
 int
 main (int argc, char *argv[])
 {
 	GError *error = NULL;
-	FILE *f;
+	FILE *f1 = NULL, *f2 = NULL;
 	SettingNewFunc *fptr;
+	const char *book_file = NULL, *refentry_file = NULL;;
 
-	if (argc != 2) {
-		fprintf (stderr, "Usage: %s <output file>\n", argv[0]);
-		_exit (1);
+	if (argc != 3 && argc != 5)
+		usage (argv[0]);
+
+	if (strcmp (argv[1], "book") == 0)
+		book_file = argv[2];
+	else if (strcmp (argv[1], "refentry") == 0)
+		refentry_file = argv[2];
+	else
+		usage (argv[0]);
+
+	if (argc == 5) {
+		if (strcmp (argv[3], "book") == 0 && !book_file)
+			book_file = argv[4];
+		else if (strcmp (argv[3], "refentry") == 0 && !refentry_file)
+			refentry_file = argv[4];
+		else
+			usage (argv[0]);
 	}
 
 	g_type_init ();
@@ -211,30 +394,41 @@ main (int argc, char *argv[])
 		_exit (2);
 	}
 
-	f = fopen (argv[1], "w");
-	if (!f) {
-		fprintf (stderr, "ERR: could not create %s: %d\n", argv[1], errno);
-		_exit (3);
+	if (book_file) {
+		f1 = fopen (book_file, "w");
+		if (!f1) {
+			fprintf (stderr, "ERR: could not create %s: %d\n", book_file, errno);
+			_exit (3);
+		}
+	}
+	if (refentry_file) {
+		f2 = fopen (refentry_file, "w");
+		if (!f2) {
+			fprintf (stderr, "ERR: could not create %s: %d\n", refentry_file, errno);
+			_exit (3);
+		}
 	}
 
-	(void) fprintf (f,
-		"<?xml version=\"1.0\"?>\n"
-		"<!DOCTYPE chapter PUBLIC \"-//OASIS//DTD DocBook XML V4.3//EN\"\n"
-		"               \"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd\" [\n"
-		"<!ENTITY %% local.common.attrib \"xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'\">"
-		"]>"
-		"<section>\n"
-		"  <title>Configuration Settings</title>\n"
-		"  <para>\n");
+	/* Write out docbook 'book' xml - for html generation */
+	if (f1) {
+		writer_header_docbook_section (f1);
+		for (fptr = funcs; fptr && *fptr; fptr++)
+			write_one_setting (f1, TRUE, *fptr);
+		writer_footer_docbook_section (f1);
+	}
 
-	for (fptr = funcs; fptr && *fptr; fptr++)
-		write_one_setting (f, *fptr);
+	/* Write out docbook 'refentry' xml - for man page generation */
+	if (f2) {
+		writer_header_docbook_manpage (f2);
+		for (fptr = funcs; fptr && *fptr; fptr++)
+			write_one_setting (f2, FALSE, *fptr);
+		writer_footer_docbook_manpage (f2);
+	}
 
-	(void) fprintf (f,
-		"  </para>\n"
-		"</section>\n");
-
-	fclose (f);
+	if (f1)
+		fclose (f1);
+	if (f2)
+		fclose (f2);
 	_exit (0);
 }
 
