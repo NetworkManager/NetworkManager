@@ -58,6 +58,80 @@ next_arg (int *argc, char ***argv)
 }
 
 /*
+ * Helper function to parse command-line arguments.
+ * arg_arr: description of arguments to look for
+ * last:    whether these are last expected arguments
+ * argc:    command-line argument array
+ * argv:    command-line argument array size
+ * error:   error set on a failure (when FALSE is returned)
+ * Returns: TRUE on success, FALSE on an error and sets 'error'
+ */
+gboolean
+nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error)
+{
+	nmc_arg_t *p;
+	gboolean found;
+	gboolean have_mandatory;
+
+	g_return_val_if_fail (arg_arr != NULL, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	while (*argc > 0) {
+		found = FALSE;
+
+		for (p = arg_arr; p->name; p++) {
+			if (strcmp (**argv, p->name) == 0) {
+
+				if (p->found) {
+					/* Don't allow repeated arguments, because the argument of the same
+					 * name could be used later on the line for another purpose. Assume
+					 * that's the case and return.
+					 */
+					return TRUE;
+				}
+
+				if (p->has_value) {
+					if (next_arg (argc, argv) != 0) {
+						g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+						             _("Error: value for '%s' argument is required."), *(*argv-1));
+						return FALSE;
+					}
+					*(p->value) = **argv;
+				}
+				p->found = TRUE;
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found) {
+			have_mandatory = TRUE;
+			for (p = arg_arr; p->name; p++) {
+				if (p->mandatory && !p->found) {
+					have_mandatory = FALSE;
+					break;
+				}
+			}
+
+			if (have_mandatory && !last)
+				return TRUE;
+
+			if (p && p->name)
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: Argument '%s' was expected, but '%s' provided."), p->name, **argv);
+			else
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: Unexpected argument '%s'"), **argv);
+			return FALSE;
+		}
+
+		next_arg (argc, argv);
+	}
+
+	return TRUE;
+}
+
+/*
  *  Convert SSID to a printable form.
  *  If it is an UTF-8 string, enclose it in quotes and return it.
  *  Otherwise convert it to a hex string representation.

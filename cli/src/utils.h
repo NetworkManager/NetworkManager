@@ -24,9 +24,20 @@
 
 #include "nmcli.h"
 
+/* === Types === */
+
+typedef struct {
+	const char *name;
+	gboolean has_value;
+	const char **value;
+	gboolean mandatory;
+	gboolean found;
+} nmc_arg_t;
+
 /* === Functions === */
 int matches (const char *cmd, const char *pattern);
 int next_arg (int *argc, char ***argv);
+gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);
 char *ssid_to_printable (const char *str, gsize len);
 char *nmc_ip4_address_as_string (guint32 ip, GError **error);
 char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
