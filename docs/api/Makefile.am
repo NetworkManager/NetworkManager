@@ -1,29 +1,6 @@
-GENERATE_SETTINGS_SPEC_SOURCE = generate-settings-spec.c
-
 AUTOMAKE_OPTIONS = 1.7
 
 if ENABLE_DOC
-
-INCLUDES = \
-	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
-
-noinst_PROGRAMS = \
-	generate-settings-spec
-
-generate_settings_spec_SOURCES = \
-	$(GENERATE_SETTINGS_SPEC_SOURCE)
-
-generate_settings_spec_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
-
-generate_settings_spec_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
 
 XSLTPROC = xsltproc --xinclude --nonet
 XMLS = $(wildcard $(top_srcdir)/introspection/nm-*.xml)
@@ -43,9 +20,9 @@ spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
 	mkdir -p $(builddir)/html/
 	cp $@ $(builddir)/html/
 
-settings-spec.xml: generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
+settings-spec.xml: $(top_builddir)/tools/generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
 	rm -f $(builddir)/$@
-	$(builddir)/generate-settings-spec book $(builddir)/$@
+	$(top_builddir)/tools/generate-settings-spec book $(builddir)/$@
 
 all: $(GENERATED_FILES)
 
@@ -81,7 +58,7 @@ CLEANFILES += $(GENERATED_FILES)
 
 else
 
-EXTRA_DIST = $(GENERATE_SETTINGS_SPEC_SOURCE)
+EXTRA_DIST =
 CLEANFILES =
 
 endif
