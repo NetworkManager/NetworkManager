@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -255,6 +257,74 @@ nmc_terminal_show_progress (const char *str)
 	fflush (stdout);
 	if (idx == 4)
 		idx = 0;
+}
+
+/*
+ * Convert string to signed integer.
+ * If required, the resulting number is checked to be in the <min,max> range.
+ */
+gboolean
+nmc_string_to_int_base (const char *str,
+                        int base,
+                        gboolean range_check,
+                        long int min,
+                        long int max,
+                        long int *value)
+{
+	char *end;
+	long int tmp;
+
+	errno = 0;
+	tmp = strtol (str, &end, base);
+	if (errno || *end != '\0' || (range_check && (tmp < min || tmp > max))) {
+		return FALSE;
+	}
+	*value = tmp;
+	return TRUE;
+}
+
+/*
+ * Convert string to unsigned integer.
+ * If required, the resulting number is checked to be in the <min,max> range.
+ */
+gboolean
+nmc_string_to_uint_base (const char *str,
+                         int base,
+                         gboolean range_check,
+                         unsigned long int min,
+                         unsigned long int max,
+                         unsigned long int *value)
+{
+	char *end;
+	unsigned long int tmp;
+
+	errno = 0;
+	tmp = strtoul (str, &end, base);
+	if (errno || *end != '\0' || (range_check && (tmp < min || tmp > max))) {
+		return FALSE;
+	}
+	*value = tmp;
+	return TRUE;
+}
+
+gboolean
+nmc_string_to_int (const char *str,
+                   gboolean range_check,
+                   long int min,
+                   long int max,
+                   long int *value)
+{
+	return nmc_string_to_int_base (str, 10, range_check, min, max, value);
+}
+
+gboolean
+nmc_string_to_uint (const char *str,
+                    gboolean range_check,
+                    unsigned long int min,
+                    unsigned long int max,
+                    unsigned long int *value)
+{
+	return nmc_string_to_uint_base (str, 10, range_check, min, max, value);
 }
 
 /*

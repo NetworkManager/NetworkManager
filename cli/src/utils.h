@@ -40,6 +40,28 @@ int next_arg (int *argc, char ***argv);
 gboolean nmc_arg_is_help (const char *arg);
 gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);
 char *ssid_to_printable (const char *str, gsize len);
+gboolean nmc_string_to_int_base (const char *str,
+                                 int base,
+                                 gboolean range_check,
+                                 long int min,
+                                 long int max,
+                                 long int *value);
+gboolean nmc_string_to_uint_base (const char *str,
+                                  int base,
+                                  gboolean range_check,
+                                  unsigned long int min,
+                                  unsigned long int max,
+                                  unsigned long int *value);
+gboolean nmc_string_to_int (const char *str,
+                            gboolean range_check,
+                            long int min,
+                            long int max,
+                            long int *value);
+gboolean nmc_string_to_uint (const char *str,
+                             gboolean range_check,
+                             unsigned long int min,
+                             unsigned long int max,
+                             unsigned long int *value);
 char *nmc_ip4_address_as_string (guint32 ip, GError **error);
 char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);
