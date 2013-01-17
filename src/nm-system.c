@@ -1783,7 +1783,7 @@ nm_system_bond_release (gint master_ifindex,
 }
 
 /**
- * nm_system_get_iface_type_compat:
+ * nm_system_compat_get_iface_type:
  * @ifindex: interface index
  * @name: name of interface
  *
@@ -1796,10 +1796,11 @@ static int
 nm_system_compat_get_iface_type (int ifindex, const char *name)
 {
 	int res = NM_IFACE_TYPE_UNSPEC;
-	char *ifname = NULL;
+	char *ifname = NULL, *path = NULL;
 	struct vlan_ioctl_args ifv;
 	struct ifreq ifr;
 	struct ifbond ifb;
+	struct stat st;
 	int fd;
 
 	g_return_val_if_fail (ifindex > 0 || name, NM_IFACE_TYPE_UNSPEC);
@@ -1833,7 +1834,15 @@ nm_system_compat_get_iface_type (int ifindex, const char *name)
 		goto out;
 	}
 
+	/* and bridge */
+	path = g_strdup_printf ("/sys/class/net/%s/bridge", ifname ? ifname : name);
+	if ((stat (path, &st) == 0) && S_ISDIR (st.st_mode)) {
+		res = NM_IFACE_TYPE_BRIDGE;
+		goto out;
+	}
+
 out:
+	g_free (path);
 	close (fd);
 	g_free (ifname);
 	return res;
