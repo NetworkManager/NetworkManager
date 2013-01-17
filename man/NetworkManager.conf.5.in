@@ -1,8 +1,8 @@
 .\" NetworkManager.conf(5) manual page
 .\"
-.\" Copyright (C) 2010 - 2012 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH "NetworkManager.conf" "5" "18 December 2012" ""
+.TH "NetworkManager.conf" "5" "17 January 2013" ""
 .SH NAME
 NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
@@ -262,4 +262,5 @@ URI for connectivity checking.  If missing, defaults to "NetworkManager is onlin
 .BR NetworkManager (8),
 .BR nmcli (1),
 .BR nm\-tool (1),
-.BR nm\-online (1).
+.BR nm\-online (1),
+.BR nm\-settings (5).
