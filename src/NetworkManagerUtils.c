@@ -615,7 +615,6 @@ nm_utils_do_sysctl (const char *path, const char *value)
 
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
-	g_return_val_if_fail (value[0], FALSE);
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
