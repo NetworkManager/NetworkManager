@@ -1017,9 +1017,8 @@ nm_device_slave_notify_enslaved (NMDevice *dev,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	NMConnection *connection = nm_device_get_connection (dev);
 
-	g_assert (priv->master);
-
 	if (enslaved) {
+		g_assert (priv->master);
 		g_warn_if_fail (priv->enslaved == FALSE);
 		g_warn_if_fail (priv->state == NM_DEVICE_STATE_IP_CONFIG);
 
@@ -1039,22 +1038,25 @@ nm_device_slave_notify_enslaved (NMDevice *dev,
 		NMDeviceState new_state = NM_DEVICE_STATE_DISCONNECTED;
 		NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-		if (master_failed) {
-			new_state = NM_DEVICE_STATE_FAILED;
-			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+		    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
+			if (master_failed) {
+				new_state = NM_DEVICE_STATE_FAILED;
+				reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 
-			nm_log_warn (LOGD_DEVICE,
-					     "Activation (%s) connection '%s' master failed",
-					     nm_device_get_iface (dev),
-					     nm_connection_get_id (connection));
-		} else {
-			nm_log_dbg (LOGD_DEVICE,
-					    "Activation (%s) connection '%s' master deactivated",
-					    nm_device_get_iface (dev),
-					    nm_connection_get_id (connection));
+				nm_log_warn (LOGD_DEVICE,
+				             "Activation (%s) connection '%s' master failed",
+				             nm_device_get_iface (dev),
+				             nm_connection_get_id (connection));
+			} else {
+				nm_log_dbg (LOGD_DEVICE,
+				            "Activation (%s) connection '%s' master deactivated",
+				            nm_device_get_iface (dev),
+				            nm_connection_get_id (connection));
+			}
+
+			nm_device_queue_state (dev, new_state, reason);
 		}
-
-		nm_device_queue_state (dev, new_state, reason);
 	}
 }
 
