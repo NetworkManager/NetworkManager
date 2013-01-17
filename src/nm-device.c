@@ -3553,10 +3553,10 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
 	/* master: release slaves */
-	g_clear_object (&priv->master);
 	nm_device_master_release_slaves (self, FALSE);
 
 	/* slave: mark no longer enslaved */
+	g_clear_object (&priv->master);
 	priv->enslaved = FALSE;
 
 	/* Tear down an existing activation request */
