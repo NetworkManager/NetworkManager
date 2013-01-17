@@ -314,6 +314,7 @@ static void
 set_sysfs_uint (const char *iface,
                 GObject *obj,
                 const char *obj_prop,
+                const char *dir,
                 const char *sysfs_prop,
                 gboolean default_if_zero,
                 gboolean user_hz_compensate)
@@ -356,7 +357,7 @@ set_sysfs_uint (const char *iface,
 	if (user_hz_compensate)
 		uval *= 100;
 
-	path = g_strdup_printf ("/sys/class/net/%s/bridge/%s", iface, sysfs_prop);
+	path = g_strdup_printf ("/sys/class/net/%s/%s/%s", iface, dir, sysfs_prop);
 	s = g_strdup_printf ("%u", uval);
 	/* FIXME: how should failure be handled? */
 	nm_utils_do_sysctl (path, s);
@@ -388,12 +389,12 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		iface = nm_device_get_ip_iface (dev);
 		g_assert (iface);
 
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_STP, "stp_state", FALSE, FALSE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_PRIORITY, "priority", TRUE, FALSE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY, "forward_delay", TRUE, TRUE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME, "hello_time", TRUE, TRUE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_MAX_AGE, "max_age", TRUE, TRUE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME, "ageing_time", TRUE, TRUE);
+		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_STP, "bridge", "stp_state", FALSE, FALSE);
+		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_PRIORITY, "bridge", "priority", TRUE, FALSE);
+		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY, "bridge", "forward_delay", TRUE, TRUE);
+		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME, "bridge", "hello_time", TRUE, TRUE);
+		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_MAX_AGE, "bridge", "max_age", TRUE, TRUE);
+		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME, "bridge", "ageing_time", TRUE, TRUE);
 	}
 	return ret;
 }
@@ -417,9 +418,9 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	/* Set port properties */
 	s_port = nm_connection_get_setting_bridge_port (connection);
 	if (s_port) {
-		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY, "priority", TRUE, FALSE);
-		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST, "path_cost", TRUE, FALSE);
-		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", FALSE, FALSE);
+		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY, "brport", "priority", TRUE, FALSE);
+		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST, "brport", "path_cost", TRUE, FALSE);
+		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "brport", "hairpin_mode", FALSE, FALSE);
 	}
 
 	nm_log_info (LOGD_DEVICE, "(%s): attached bridge port %s", iface, slave_iface);
