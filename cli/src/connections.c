@@ -57,6 +57,11 @@
 /* Activation timeout waiting for bond/bridge slaves (in seconds) */
 #define BB_SLAVES_TIMEOUT 10
 
+/* define some prompts for connection editor */
+#define EDITOR_PROMPT_SETTING  _("Setting name? ")
+#define EDITOR_PROMPT_PROPERTY _("Property name? ")
+#define EDITOR_PROMPT_CON_TYPE _("Enter connection type: ")
+
 /* Available fields for 'connection show configured' */
 static NmcOutputField nmc_fields_con_show[] = {
 	{"NAME",            N_("NAME"),           25},  /* 0 */
@@ -205,6 +210,7 @@ usage (void)
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	         "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	         "  delete [ id | uuid | path ] <ID>\n\n"
 	         "  reload\n\n\n"
 	         ));
@@ -284,6 +290,7 @@ static const char *real_con_commands[] = {
 	"up",
 	"down",
 	"add",
+	"edit",
 	"delete",
 	"reload",
 	NULL
@@ -1714,26 +1721,173 @@ error:
 typedef struct NameItem {
 	const char *name;
 	const char *alias;
+	const struct NameItem *settings;
 } NameItem;
+
+static const NameItem nmc_ethernet_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_infiniband_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL, NULL },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL, NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL, NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_wifi_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,        NULL,       NULL },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,          "wifi",     NULL },
+	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, "wifi-sec", NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_wimax_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,   NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_gsm_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_GSM_SETTING_NAME,        NULL,       NULL },
+	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_cdma_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,       NULL },
+	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_mobile_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,   NULL },
+	{ NM_SETTING_PPP_SETTING_NAME,        NULL,   NULL },
+	{ NM_SETTING_GSM_SETTING_NAME,        NULL,   NULL },
+	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,   NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_bluetooth_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,   NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_adsl_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,   NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_ppoe_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,       NULL },
+	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_olpc_mesh_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,        NULL },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,        NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,        NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_vpn_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_VPN_SETTING_NAME,        NULL,   NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_vlan_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,       NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_bond_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_BOND_SETTING_NAME,       NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_bridge_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_bond_slave_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_bridge_slave_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL },
+	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL },
+	{ NM_SETTING_802_1X_SETTING_NAME,      NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
 
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet"  },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,   "wifi"      },
-	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL        },
-	{ NM_SETTING_GSM_SETTING_NAME,        NULL        },
-	{ NM_SETTING_CDMA_SETTING_NAME,       NULL        },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL        },
-	{ NM_SETTING_ADSL_SETTING_NAME,       NULL        },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL        },
-	{ NM_SETTING_VPN_SETTING_NAME,        NULL        },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh" },
-	{ NM_SETTING_VLAN_SETTING_NAME,       NULL        },
-	{ NM_SETTING_BOND_SETTING_NAME,       NULL        },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL        },
-	{ "bond-slave",                       NULL        },
-	{ "bridge-slave",                     NULL        },
-	{ NULL, NULL }
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet",  nmc_ethernet_settings     },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,   "wifi",      nmc_wifi_settings         },
+	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,        nmc_wimax_settings        },
+	{ NM_SETTING_GSM_SETTING_NAME,        NULL,        nmc_gsm_settings          },
+	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,        nmc_cdma_settings         },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL,        nmc_infiniband_settings   },
+	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,        nmc_adsl_settings         },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,        nmc_bluetooth_settings    },
+	{ NM_SETTING_VPN_SETTING_NAME,        NULL,        nmc_vpn_settings          },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", nmc_olpc_mesh_settings    },
+	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,        nmc_vlan_settings         },
+	{ NM_SETTING_BOND_SETTING_NAME,       NULL,        nmc_bond_settings         },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,        nmc_bridge_settings       },
+	{ "bond-slave",                       NULL,        nmc_bond_slave_settings   },
+	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
+	{ NULL, NULL, NULL }
 };
 
 /*
@@ -1842,6 +1996,22 @@ check_valid_name (const char *val, const NameItem array[], GError **error)
 	/* We should not really come here */
 	g_ptr_array_free (tmp_arr, TRUE);
 	g_set_error (error, 1, 0, _("Unknown error"));
+	return NULL;
+}
+
+static const NameItem *
+get_valid_settings_array (const char *con_type)
+{
+	guint i, num;
+
+	if (!con_type)
+		return NULL;
+
+	num = G_N_ELEMENTS (nmc_valid_connection_types);
+        for (i = 0; i < num; i++) {
+		if (!strcmp (con_type, nmc_valid_connection_types[i].name))
+			return nmc_valid_connection_types[i].settings;
+	}
 	return NULL;
 }
 
@@ -3099,6 +3269,932 @@ error:
 	return nmc->return_value;
 }
 
+
+/*----------------------------------------------------------------------------*/
+
+static void
+editor_show_connection (NMConnection *connection, NmCli *nmc)
+{
+	nmc->print_output = NMC_PRINT_PRETTY;
+	nmc->multiline_output = TRUE;
+	nmc->escape_values = 0;
+
+	/* Remove any previous data */
+	nmc_empty_output_fields (nmc);
+
+	nmc_connection_detail (connection, nmc);
+}
+
+static void
+editor_show_setting (NMSetting *setting, NmCli *nmc)
+{
+	printf (_("['%s' setting values]\n"),
+	        nm_setting_get_name (setting));
+
+	nmc->multiline_output = TRUE;
+	nmc->escape_values = 0;
+
+	/* Remove any previous data */
+	nmc_empty_output_fields (nmc);
+
+	setting_details (setting, nmc);
+}
+
+typedef enum {
+	NMC_EDITOR_MAIN_CMD_UNKNOWN = 0,
+	NMC_EDITOR_MAIN_CMD_GOTO,
+	NMC_EDITOR_MAIN_CMD_SET,
+	NMC_EDITOR_MAIN_CMD_DESCRIBE,
+	NMC_EDITOR_MAIN_CMD_PRINT,
+	NMC_EDITOR_MAIN_CMD_VERIFY,
+	NMC_EDITOR_MAIN_CMD_SAVE,
+	NMC_EDITOR_MAIN_CMD_BACK,
+	NMC_EDITOR_MAIN_CMD_HELP,
+	NMC_EDITOR_MAIN_CMD_QUIT,
+} NmcEditorMainCmd;
+
+static NmcEditorMainCmd
+parse_editor_main_cmd (const char *cmd, char **cmd_arg)
+{
+	NmcEditorMainCmd editor_cmd = NMC_EDITOR_MAIN_CMD_UNKNOWN;
+	char **vec;
+
+	vec = g_strsplit_set (cmd, " \t", 2);
+	if (g_strv_length (vec) < 1) {
+		if (cmd_arg)
+			*cmd_arg = NULL;
+		return NMC_EDITOR_MAIN_CMD_UNKNOWN;
+	}
+
+	if (matches (vec[0], "goto") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_GOTO;
+	else if (matches (vec[0], "set") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_SET;
+	else if (matches (vec[0], "describe") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_DESCRIBE;
+	else if (matches (vec[0], "print") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_PRINT;
+	else if (matches (vec[0], "verify") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_VERIFY;
+	else if (matches (vec[0], "save") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_SAVE;
+	else if (matches (vec[0], "back") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_BACK;
+	else if (matches (vec[0], "help") == 0 || strcmp (vec[0], "?") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_HELP;
+	else if (matches (vec[0], "quit") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_QUIT;
+
+	/* set pointer to command argument */
+	if (cmd_arg)
+		*cmd_arg = g_strdup (vec[1]);
+
+	g_strfreev (vec);
+	return editor_cmd;
+}
+
+static void
+editor_main_usage (void)
+{
+	printf ("------------------------------------------------------------------------------\n");
+	/* TRANSLATORS: do not translate command names and keywords before ::
+	 *              However, you should translate terms enclosed in <>.
+	 */
+	printf (_("---[ Main menu ]---\n"
+	          "goto     [<setting> | <prop>]        :: go to a setting or property\n"
+	          "set      [<setting>.<prop> <value>]  :: set property value\n"
+	          "describe [<setting>.<prop>]          :: describe property\n"
+	          "print    [all]                       :: print the connection\n"
+	          "verify   [all]                       :: verify the connection\n"
+	          "save                                 :: save the connection\n"
+	          "back                                 :: go one level up (back)\n"
+	          "help/?   [<command>]                 :: print this help\n"
+	          "quit                                 :: exit nmcli\n"));
+	printf ("------------------------------------------------------------------------------\n");
+}
+
+static void
+editor_main_help (const char *command)
+{
+	if (!command)
+		editor_main_usage ();
+	else {
+		/* detailed command descriptions */
+		NmcEditorMainCmd cmd = parse_editor_main_cmd (command, NULL);
+
+		switch (cmd) {
+		case NMC_EDITOR_MAIN_CMD_GOTO:
+			printf (_("goto <setting>[.<prop>] | <prop>  :: enter setting/property for editation\n\n"
+			          "This command enters into a setting or property for editing it.\n\n"
+			          "Examples: nmcli> goto connection\n"
+			          "          nmcli connection> goto secondaries\n"
+			          "          nmcli> goto ipv4.addresses\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_SET:
+			printf (_("set [<setting>.<prop> <value>]  :: set property value\n\n"
+			          "This command sets property value.\n\n"
+			          "Example: nmcli> s con.id My connection\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_DESCRIBE:
+			printf (_("describe [<setting>.<prop>]  :: describe property\n\n"
+			          "Shows property description. You can consult nm-settings(5) "
+			          "manual page to see all NM settings and properties.\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_PRINT:
+			printf (_("print [all]  :: print setting or connection values\n\n"
+			          "Shows current property or the whole connection.\n\n"
+			          "Example: nmcli ipv4> print all\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_VERIFY:
+			printf (_("verify [all]  :: verify setting or connection validity\n\n"
+			          "Verifies whether the setting or connection is valid and can "
+			          "be saved later. It indicates invalid values on error.\n\n"
+			          "Examples: nmcli> verify\n"
+			          "          nmcli bond> verify\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_SAVE:
+			printf (_("save  :: save the connection\n\n"
+			          "Sends the connection to NetworkManager that will save it.\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_BACK:
+			printf (_("back  :: go to upper menu level\n\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_HELP:
+			printf (_("help/? [<command>]  :: help for the nmcli commands\n\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_QUIT:
+			printf (_("quit  :: exit nmcli\n\n"
+			          "This command exits nmcli. When the connection being edited "
+			          "is not saved, the user is asked to confirm the action.\n"));
+			break;
+		default:
+			printf (_("Unknown command: '%s'\n"), command);
+			break;
+		}
+	}
+}
+
+/*
+ * Split 'str' in the following format:  [[[setting.]property] [value]]
+ * and return the components in 'setting', 'property' and 'value'
+ * Use g_free() to deallocate the returned strings.
+ */
+static void
+split_editor_main_cmd_args (const char *str, char **setting, char **property, char **value)
+{
+	char **args, **items;
+
+	if (!str)
+		return;
+
+	args = g_strsplit_set (str, " \t", 2);
+	if (args[0]) {
+		items = g_strsplit_set (args[0], ".", 2);
+		if (g_strv_length (items) == 2) {
+			if (setting)
+				*setting = g_strdup (items[0]);
+			if (property)
+				*property = g_strdup (items[1]);
+		} else {
+			if (property)
+				*property = g_strdup (items[0]);
+		}
+		g_strfreev (items);
+
+		if (value && args[1])
+			*value = g_strdup (args[1]);
+	}
+	g_strfreev (args);
+}
+
+static NMSetting *
+is_setting_valid (NMConnection *connection, const NameItem *valid_settings, char *setting)
+{
+	const char *setting_name;
+
+	if (!(setting_name = check_valid_name (setting, valid_settings, NULL)))
+		return NULL;
+	return nm_connection_get_setting_by_name (connection, setting_name);
+}
+
+static char *
+is_property_valid (NMSetting *setting, const char *property, GError **error)
+{
+	char **valid_props = NULL;
+	const char *prop_name;
+	char *ret;
+
+	valid_props = nmc_setting_get_valid_properties (setting);
+	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
+	ret = prop_name ? g_strdup (prop_name) : NULL;
+	g_strfreev (valid_props);
+	return ret;
+}
+
+static NMSetting *
+create_setting_by_name (const char *name, const NameItem *valid_settings)
+{
+	const char *setting_name;
+	NMSetting *setting = NULL;
+
+	/* Get a valid setting name */
+	setting_name = check_valid_name (name, valid_settings, NULL);
+
+	if (setting_name) {
+		NmcSettingNewFunc new_setting_func = nmc_setting_new_func (setting_name);
+		if (!new_setting_func)
+			return NULL; /* This should really not happen */
+		setting = new_setting_func ();
+		nmc_setting_custom_init (setting);
+	}
+	return setting;
+}
+
+static const char *
+ask_check_setting (const char *arg,
+                   const NameItem *valid_settings_arr,
+                   const char *valid_settings_str)
+{
+	char *setting_name_user;
+	const char *setting_name;
+	GError *err = NULL;
+
+	if (!arg) {
+		printf (_("Available settings: %s\n"), valid_settings_str);
+		setting_name_user = nmc_get_user_input (EDITOR_PROMPT_SETTING);
+	} else
+		setting_name_user = g_strdup (arg);
+
+	if (setting_name_user)
+		g_strstrip (setting_name_user);
+
+	if (!(setting_name = check_valid_name (setting_name_user, valid_settings_arr, &err))) {
+		printf (_("Error: invalid setting name; %s\n"), err->message);
+		g_clear_error (&err);
+	}
+	g_free (setting_name_user);
+	return setting_name;
+}
+
+static const char *
+ask_check_property (const char *arg,
+                    const char **valid_props,
+                    const char *valid_props_str)
+{
+	char *prop_name_user;
+	const char *prop_name;
+	GError *tmp_err = NULL;
+
+	if (!arg) {
+		printf (_("Available properties: %s\n"), valid_props_str);
+		prop_name_user = nmc_get_user_input (EDITOR_PROMPT_PROPERTY);
+	} else
+		prop_name_user = g_strdup (arg);
+
+	if (!(prop_name = nmc_string_is_valid (prop_name_user, valid_props, &tmp_err))) {
+		printf (_("Error: property %s\n"), tmp_err->message);
+		g_clear_error (&tmp_err);
+	}
+	g_free (prop_name_user);
+	return prop_name;
+}
+
+typedef	struct {
+	guint level;
+	char *main_prompt;
+	NMSetting *curr_setting;
+	char **valid_props;
+	char *valid_props_str;
+} NmcEditorMenuContext;
+
+static void
+menu_switch_to_level0 (NmcEditorMenuContext *menu_ctx,
+                       const char *prompt)
+{
+	menu_ctx->level = 0;
+	g_free (menu_ctx->main_prompt);
+	menu_ctx->main_prompt = g_strdup (prompt);
+	menu_ctx->curr_setting = NULL;
+	g_strfreev (menu_ctx->valid_props);
+	menu_ctx->valid_props = NULL;
+	g_free (menu_ctx->valid_props_str);
+	menu_ctx->valid_props_str = NULL;
+}
+
+static void
+menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
+                       NMSetting *setting,
+                       const char *setting_name)
+{
+	menu_ctx->level = 1;
+	g_free (menu_ctx->main_prompt);
+	menu_ctx->main_prompt = g_strdup_printf ("nmcli %s> ", setting_name);
+	menu_ctx->curr_setting = setting;
+	g_strfreev (menu_ctx->valid_props);
+	menu_ctx->valid_props = nmc_setting_get_valid_properties (menu_ctx->curr_setting);
+	g_free (menu_ctx->valid_props_str);
+	menu_ctx->valid_props_str = g_strjoinv (", ", menu_ctx->valid_props);
+}
+
+static void
+print_property_description (NMSetting *setting, const char *prop_name)
+{
+	char *desc;
+
+	desc = nmc_setting_get_property_desc (setting, prop_name);
+	printf ("\n=== [%s] ===\n%s\n", prop_name, desc);
+	g_free (desc);
+}
+
+static void
+print_setting_description (NMSetting *setting)
+{
+	/* Show description of all properties */
+	char **all_props;
+	int i;
+
+	all_props = nmc_setting_get_valid_properties (setting);
+	printf (("<<< %s >>>\n"), nm_setting_get_name (setting));
+	for (i = 0; all_props && all_props[i]; i++)
+		print_property_description (setting, all_props[i]);
+	g_strfreev (all_props);
+}
+
+static gboolean
+editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
+{
+	NmcEditorMainCmd cmd;
+	char *cmd_user;
+	gboolean cmd_loop = TRUE;
+	char *cmd_arg = NULL;
+	char *cmd_arg_s, *cmd_arg_p, *cmd_arg_v;
+	const char *BASE_PROMPT = "nmcli> ";
+	NmcSettingNewFunc new_func;
+	const NameItem *valid_settings_arr = NULL;
+	char *valid_settings_str = NULL;
+	AddConnectionInfo *info = NULL;
+	char *tmp_str;
+	GError *err1 = NULL;
+	NmcEditorMenuContext menu_ctx;
+
+	valid_settings_arr = get_valid_settings_array (connection_type);
+	valid_settings_str = get_valid_options_string (valid_settings_arr);
+	printf (_("You may edit the following settings: %s\n"), valid_settings_str);
+
+	menu_ctx.level = 0;
+	menu_ctx.main_prompt = g_strdup (BASE_PROMPT);
+	menu_ctx.curr_setting = NULL;
+	menu_ctx.valid_props = NULL;
+	menu_ctx.valid_props_str = NULL;
+
+	while (cmd_loop) {
+		cmd_user = nmc_get_user_input (menu_ctx.main_prompt);
+		if (!cmd_user)
+			continue;
+		cmd = parse_editor_main_cmd (g_strstrip (cmd_user), &cmd_arg);
+
+		cmd_arg_s = NULL;
+		cmd_arg_p = NULL;
+		cmd_arg_v = NULL;
+		split_editor_main_cmd_args (cmd_arg, &cmd_arg_s, &cmd_arg_p, &cmd_arg_v);
+
+		switch (cmd) {
+		case NMC_EDITOR_MAIN_CMD_SET:
+			/* Set property value */
+			if (!cmd_arg) {
+				if (menu_ctx.level == 1) {
+					const char *prop_name;
+					char *prop_val_user = NULL;
+					char *tmp_prompt;
+					const char *avals;
+					GError *tmp_err = NULL;
+
+					prop_name = ask_check_property (cmd_arg,
+					                                (const char **) menu_ctx.valid_props,
+					                                menu_ctx.valid_props_str);
+					if (!prop_name)
+						break;
+
+					avals = nmc_setting_get_property_allowed_values (menu_ctx.curr_setting, prop_name);
+					if (avals)
+						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
+
+					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
+					prop_val_user = nmc_get_user_input (tmp_prompt);
+					g_free (tmp_prompt);
+
+					/* Set property value */
+					if (!nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
+						printf (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
+						g_clear_error (&tmp_err);
+					}
+				} else {
+					printf (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
+					printf (_("use 'goto <setting>' first, or 'set <setting>.<property>'\n"));
+				}
+			} else {
+				NMSetting *ss = NULL;
+				gboolean created_ss = FALSE;
+				char *prop_name;
+				char *tmp_prompt;
+				GError *tmp_err = NULL;
+
+				if (cmd_arg_s) {
+					/* setting provided as "setting.property" */
+					ss = is_setting_valid (connection, valid_settings_arr, cmd_arg_s);
+					if (!ss) {
+						ss = create_setting_by_name (cmd_arg_s, valid_settings_arr);
+						if (!ss) {
+							printf (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
+							        cmd_arg_s, valid_settings_str);
+							break;
+						}
+						created_ss = TRUE;
+					}
+				} else {
+					if (menu_ctx.curr_setting)
+						ss = menu_ctx.curr_setting;
+					else {
+						printf (_("Error: missing setting for '%s' property\n"), cmd_arg_p);
+						break;
+					}
+				}
+
+				prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
+				if (!prop_name) {
+					printf (_("Error: invalid property: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+					if (created_ss)
+						g_object_unref (ss);
+					break;
+				}
+
+
+
+				/* Ask for value */
+				if (!cmd_arg_v) {
+					const char *avals = nmc_setting_get_property_allowed_values (ss, prop_name);
+					if (avals)
+						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
+
+					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
+					cmd_arg_v = nmc_get_user_input (tmp_prompt);
+					g_free (tmp_prompt);
+				}
+
+				/* Set property value */
+				if (!nmc_setting_set_property (ss, prop_name, cmd_arg_v, &tmp_err)) {
+					printf (_("Error: failed to set '%s' property: %s\n"),
+					        prop_name, tmp_err->message);
+					g_clear_error (&tmp_err);
+				}
+
+				if (created_ss)
+					nm_connection_add_setting (connection, ss);
+				g_free (prop_name);
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_GOTO:
+			/* cmd_arg_s != NULL means 'setting.property' argument */
+			if (menu_ctx.level == 0 || cmd_arg_s) {
+				/* in top level - no setting selected yet */
+				const char *setting_name;
+				NMSetting *setting;
+				const char *user_arg = cmd_arg_s ? cmd_arg_s : cmd_arg_p;
+
+				setting_name = ask_check_setting (user_arg, valid_settings_arr, valid_settings_str);
+				if (!setting_name)
+					break;
+
+				setting = nm_connection_get_setting_by_name (connection, setting_name);
+				if (!setting) {
+					/* setting not created yet, do it now */
+					new_func = nmc_setting_new_func (setting_name);
+					if (!new_func) {
+						printf (_("Error: unknown setting '%s'\n"), setting_name);
+						break;
+					}
+					setting = new_func ();
+					nmc_setting_custom_init (setting);
+					nm_connection_add_setting (connection, setting);
+				}
+
+				/* Switch to level 1 */
+				menu_switch_to_level1 (&menu_ctx, setting, setting_name);
+
+				if (!cmd_arg_s) {
+					printf (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
+					break;
+				}
+			}
+			if (menu_ctx.level == 1 || cmd_arg_s) {
+				/* level 1 - setting selected */
+				char *prop_val_user = NULL;
+				const char *prop_name;
+				char *prompt;
+				GError *tmp_err = NULL;
+				gboolean set_result;
+
+				prop_name = ask_check_property (cmd_arg_p,
+				                                (const char **) menu_ctx.valid_props,
+				                                menu_ctx.valid_props_str);
+				if (!prop_name)
+					break;
+
+				prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
+				prop_val_user = nmc_get_user_input (prompt);
+				g_free (prompt);
+
+				set_result = nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err);
+				g_free (prop_val_user);
+				if (!set_result) {
+					fprintf (stdout, _("Error: property '%s' set failure: %s\n"), prop_name, tmp_err->message);
+					g_clear_error (&tmp_err);
+				}
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_DESCRIBE:
+			/* Print property description */
+			if (!cmd_arg) {
+				if (menu_ctx.level == 1) {
+					const char *prop_name;
+
+					prop_name = ask_check_property (cmd_arg,
+					                                (const char **) menu_ctx.valid_props,
+					                                menu_ctx.valid_props_str);
+					if (!prop_name)
+						break;
+
+					/* Show property description */
+					print_property_description (menu_ctx.curr_setting, prop_name);
+				} else {
+					printf (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
+					printf (_("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
+				}
+			} else {
+				NMSetting *ss = NULL;
+				gboolean unref_ss = FALSE;
+				gboolean descr_all;
+				char *user_s;
+
+				/* cmd_arg_s != NULL means argument is "setting.property" */
+				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
+				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+				if (user_s) {
+					ss = is_setting_valid (connection, valid_settings_arr, user_s);
+					if (!ss) {
+						ss = create_setting_by_name (user_s, valid_settings_arr);
+						if (!ss) {
+							printf (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
+							        user_s, valid_settings_str);
+							break;
+						}
+						unref_ss = TRUE;
+					}
+				} else
+					ss = menu_ctx.curr_setting;
+
+				if (descr_all) {
+					/* Show description for all properties */
+					print_setting_description (ss);
+				} else {
+					GError *tmp_err = NULL;
+					char *prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
+					if (prop_name) {
+						/* Show property description */
+						print_property_description (ss, prop_name);
+					} else {
+						/* If the string is not a property, try it as a setting */
+						NMSetting *s_tmp;
+						s_tmp = is_setting_valid (connection, valid_settings_arr, cmd_arg_p);
+						if (s_tmp)
+							print_setting_description (s_tmp);
+						else
+							printf (_("Error: invalid property: %s, "
+							          "neither a valid setting name.\n"),
+							        tmp_err->message);
+						g_clear_error (&tmp_err);
+					}
+					g_free (prop_name);
+				}
+				if (unref_ss)
+					g_object_unref (ss);
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_PRINT:
+			/* Print current connection settings/properties */
+			if (cmd_arg) {
+				if (strcmp (cmd_arg, "all") == 0)
+					editor_show_connection (connection, nmc);
+				else {
+					const char *s = check_valid_name (cmd_arg, valid_settings_arr, NULL);
+					if (s) {
+						NMSetting *ss = nm_connection_get_setting_by_name (connection, s);
+						if (ss)
+							editor_show_setting (ss, nmc);
+						else
+							printf (_("Error: '%s' setting not present\n"), s);
+					}
+					else
+						printf (_("Error: unknown setting: '%s'\n"), cmd_arg);
+				}
+			} else {
+				if (menu_ctx.curr_setting)
+					editor_show_setting (menu_ctx.curr_setting, nmc);
+				else
+					editor_show_connection (connection, nmc);
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_VERIFY:
+			/* Verify current setting or the whole connection */
+			if (   menu_ctx.curr_setting
+			    && (!cmd_arg || strcmp (cmd_arg, "all") != 0)) {
+				GError *tmp_err = NULL;
+				nm_setting_verify (menu_ctx.curr_setting, NULL, &tmp_err);
+				printf (_("Verify setting '%s': %s\n"),
+				        nm_setting_get_name (menu_ctx.curr_setting),
+				        tmp_err ? tmp_err->message : "OK");
+				g_clear_error (&tmp_err);
+			} else {
+				GError *tmp_err = NULL;
+				nm_connection_verify (connection, &tmp_err);
+				printf (_("Verify connection: %s\n"),
+				        tmp_err ? tmp_err->message : "OK");
+				g_clear_error (&tmp_err);
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_SAVE:
+			/* Save the connection */
+			if (nm_connection_verify (connection, &err1)) {
+				info = g_malloc0 (sizeof (AddConnectionInfo));
+				info->nmc = nmc;
+				info->con_name = g_strdup (nm_connection_get_id (connection));
+				//info->device = device;
+
+				/* Tell the settings service to add the new connection */
+				nm_remote_settings_add_connection (nmc->system_settings,
+				                                   connection,
+				                                   add_connection_cb,
+				                                   info);
+
+				// FIXME: we should run cmd loop in a thread of something,
+				// because the current way blocks glib main loop, and thus D-Bus
+				// callbacks (and all other events) can't be processed !!!
+
+			} else
+				printf (_("Error: connection verification failed: %s\n"),
+				        err1 ? err1->message : _("(unknown)"));
+
+			g_clear_error (&err1);
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_BACK:
+			/* Go back (up) an the menu */
+			if (menu_ctx.level == 1) {
+				menu_switch_to_level0 (&menu_ctx, BASE_PROMPT);
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_HELP:
+			/* Print command help */
+			editor_main_help (cmd_arg);
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_QUIT:
+			do {
+				tmp_str = nmc_get_user_input (_("Do you really want to quit? [y/n]\n"));
+			} while (!tmp_str);
+			if (matches (tmp_str, "yes") == 0)
+				cmd_loop = FALSE;  /* quit command loop */
+			g_free (tmp_str);
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_UNKNOWN:
+		default:
+			printf (_("Unknown command: '%s'\n"), cmd_user);
+			break;
+		}
+
+		g_free (cmd_user);
+		g_free (cmd_arg);
+		g_free (cmd_arg_s);
+		g_free (cmd_arg_p);
+		g_free (cmd_arg_v);
+	}
+	g_free (valid_settings_str);
+	g_free (menu_ctx.main_prompt);
+	g_strfreev (menu_ctx.valid_props);
+	g_free (menu_ctx.valid_props_str);
+
+	return TRUE;
+}
+
+static const char *
+get_ethernet_device_name (NmCli *nmc)
+{
+	const GPtrArray *devices;
+	int i;
+
+	nmc->get_client (nmc);
+	devices = nm_client_get_devices (nmc->client);
+	for (i = 0; devices && (i < devices->len); i++) {
+		NMDevice *dev = g_ptr_array_index (devices, i);
+		if (NM_IS_DEVICE_ETHERNET (dev))
+			return nm_device_get_iface (dev);
+	}
+	return NULL;
+}
+
+static void
+editor_init_new_connection (NmCli *nmc, NMConnection *connection)
+{
+	NmcSettingNewFunc new_func;
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+	const char *con_type;
+	const char *slave_type = NULL;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	con_type = nm_setting_connection_get_connection_type (s_con);
+
+	// TODO: properly initialize connection according to its type,
+	// use sensible defaults.
+	// This function is still a stub.
+
+	if (g_strcmp0 (con_type, "bond-slave") == 0)
+		slave_type = NM_SETTING_BOND_SETTING_NAME;
+	if (g_strcmp0 (con_type, "bridge-slave") == 0)
+		slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
+
+	if (slave_type) {
+		const char *dev_ifname = get_ethernet_device_name (nmc);
+
+		/* For bond/bridge slaves add 'wired' setting */
+		setting = nm_setting_wired_new ();
+		nm_connection_add_setting (connection, setting);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+		              NM_SETTING_CONNECTION_MASTER, dev_ifname ? dev_ifname : "eth0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
+		              NULL);
+	}
+	else {
+		/* Add a "base" setting to the connection by default */
+		new_func = nmc_setting_new_func (con_type);
+		if (!new_func)
+			return;
+		setting = new_func ();
+		if (!setting)
+			return;
+		nm_connection_add_setting (connection, setting);
+
+		/* Set a sensible bond/bridge interface name by default */
+		if (g_strcmp0 (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_BOND (setting),
+			              NM_SETTING_BOND_INTERFACE_NAME, "nm-bond",
+			              NULL);
+		if (g_strcmp0 (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_BRIDGE (setting),
+			              NM_SETTING_BRIDGE_INTERFACE_NAME, "nm-bridge",
+			              NULL);
+
+		/* Set sensible initial VLAN values */
+		if (g_strcmp0 (con_type, NM_SETTING_VLAN_SETTING_NAME) == 0) {
+			const char *dev_ifname = get_ethernet_device_name (nmc);
+
+			g_object_set (NM_SETTING_VLAN (setting),
+			              NM_SETTING_VLAN_PARENT, dev_ifname ? dev_ifname : "eth0",
+			              NM_SETTING_VLAN_ID, 1,
+			              NULL);
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_MASTER, dev_ifname ? dev_ifname : "eth0",
+			              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_VLAN_SETTING_NAME,
+			              NULL);
+		}
+
+		/* Initialize 'transport-mode' so that 'infiniband' is valid */
+		if (g_strcmp0 (con_type, NM_SETTING_INFINIBAND_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_INFINIBAND (setting),
+			              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+			              NULL);
+
+		/* Initialize 'number' so that 'cdma' is valid */
+		if (g_strcmp0 (con_type, NM_SETTING_CDMA_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_CDMA (setting),
+			              NM_SETTING_CDMA_NUMBER, "#777",
+			              NULL);
+
+		/* Initialize 'number' so that 'gsm' is valid */
+		if (g_strcmp0 (con_type, NM_SETTING_GSM_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_GSM (setting),
+			              NM_SETTING_GSM_NUMBER, "*99#",
+			              NULL);
+	}
+}
+
+static NMCResultCode
+do_connection_edit (NmCli *nmc, int argc, char **argv)
+{
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	const char *connection_type;
+	char *uuid;
+	char *default_name = NULL;
+	const char *type = NULL;
+	char *type_ask = NULL;
+	const char *con_name = NULL;
+	char *tmp_str;
+	GError *error = NULL;
+	GError *err1 = NULL;
+	nmc_arg_t exp_args[] = { {"type",     TRUE, &type,     FALSE},
+	                         {"con-name", TRUE, &con_name, FALSE},
+	                         {NULL} };
+
+	nmc->return_value = NMC_RESULT_SUCCESS;
+
+	if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, &error)) {
+		g_string_assign (nmc->return_text, error->message);
+		nmc->return_value = error->code;
+		g_clear_error (&error);
+		goto error;
+	}
+
+	connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
+	tmp_str = get_valid_options_string (nmc_valid_connection_types);
+
+	while (!connection_type) {
+		if (!type)
+			printf (_("Valid connection types: %s\n"), tmp_str);
+		else
+			printf (_("Error: invalid connection type; %s\n"), err1->message);
+		g_clear_error (&err1);
+
+		type_ask = nmc_get_user_input (EDITOR_PROMPT_CON_TYPE);
+		type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
+		connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
+		g_free (type_ask);
+	}
+	g_free (tmp_str);
+
+	/* Create a new connection object */
+	connection = nm_connection_new ();
+
+	/* Build up the 'connection' setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	uuid = nm_utils_uuid_generate ();
+	if (con_name)
+		default_name = g_strdup (con_name);
+	else
+		default_name = unique_connection_name (nmc->system_connections,
+		                                       get_name_alias (connection_type, nmc_valid_connection_types));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, default_name,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, connection_type,
+	              NULL);
+	g_free (uuid);
+	g_free (default_name);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	/* Initialize the new connection so that it is valid from the start */
+	editor_init_new_connection (nmc, connection);
+
+	printf ("\n");
+	printf (_("===| nmcli interactive connection editor |==="));
+	printf ("\n\n");
+	printf (_("Adding a new '%s' connection"), connection_type);
+	printf ("\n\n");
+	printf (_("Type 'help' or '?' for available commands."));
+	printf ("\n\n");
+
+	/* Run menu loop */
+	editor_menu_main (nmc, connection, connection_type);
+
+	if (connection)
+		g_object_unref (connection);
+
+	nmc->should_wait = FALSE;
+	return nmc->return_value;
+
+error:
+	if (connection)
+		g_object_unref (connection);
+	g_free (type_ask);
+
+	nmc->should_wait = FALSE;
+	return nmc->return_value;
+}
+
+
+
 typedef struct {
 	NmCli *nmc;
 	int counter;
@@ -3286,6 +4382,9 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 				nmc->should_wait = FALSE;
 			} else
 				nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "edit") == 0) {
+			nmc->return_value = do_connection_edit (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);

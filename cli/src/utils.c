@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2013 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -434,6 +434,48 @@ finish:
 		g_free (valid_vals);
 	}
 	return ret;
+}
+
+/*
+ * Convert string array (char **) to GSList.
+ *
+ * Returns: pointer to newly created GSList. Caller should free it.
+ */
+GSList *
+nmc_util_strv_to_slist (char **strv)
+{
+	GSList *list = NULL;
+	guint i = 0;
+
+	while (strv && strv[i])
+		list = g_slist_prepend (list, g_strdup (strv[i++]));
+
+	return g_slist_reverse (list);
+}
+
+/*
+ * Wrapper function for g_strsplit_set() that removes empty strings
+ * from the vector as they are not useful in most cases.
+ */
+char **
+nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens)
+{
+	char **result;
+	uint i;
+	uint j;
+
+	result = g_strsplit_set (str, delimiter, max_tokens);
+
+	/* remove empty strings */
+	for (i = 0; result && result[i]; i++) {
+		if (*(result[i]) == '\0') {
+			g_free (result[i]);
+			for (j = i; result[j]; j++)
+				result[j] = result[j + 1];
+			i--;
+		}
+	}
+	return result;
 }
 
 /*

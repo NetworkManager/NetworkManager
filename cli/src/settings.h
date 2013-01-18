@@ -46,6 +46,36 @@
 #include "nmcli.h"
 #include "utils.h"
 
+/* --- Types --- */
+
+typedef NMSetting* (*NmcSettingNewFunc) (void);
+
+
+/* --- Functions --- */
+
+void nmc_properties_init (void);
+void nmc_properties_cleanup (void);
+
+NmcSettingNewFunc nmc_setting_new_func (const char *name);
+void nmc_setting_custom_init (NMSetting *setting);
+
+char      **nmc_setting_get_valid_properties (NMSetting *setting);
+char       *nmc_setting_get_property_desc (NMSetting *setting, const char *prop);
+const char *nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop);
+char       *nmc_setting_get_property (NMSetting *setting,
+                                      const char *prop,
+                                      GError **error);
+gboolean    nmc_setting_set_property (NMSetting *setting,
+                                      const char *prop,
+                                      const char *val,
+                                      GError **error);
+gboolean    nmc_setting_remove_property_option (NMSetting *setting,
+                                                const char *prop,
+                                                const char *option,
+                                                guint32 idx,
+                                                GError **error);
+void nmc_property_set_default_value (NMSetting *setting, const char *prop);
+
 
 gboolean setting_details (NMSetting *ssetting, NmCli *nmc);
 

@@ -14,20 +14,24 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
 
-#include "net/if_arp.h"
+#include <net/if_arp.h>
+#include <stdio.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <libnm-util/nm-utils.h>
 
 #include "utils.h"
+#include "common.h"
 #include "settings.h"
 
+/* Forward declarations */
+static char *wep_key_type_to_string (NMWepKeyType type);
 
 /* Helper macro to define fields */
 #define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, FALSE, FALSE, 0 }
@@ -1372,6 +1376,3292 @@ register_nmcli_value_transforms (void)
 {
 	g_value_register_transform_func (G_TYPE_BOOLEAN, G_TYPE_STRING, nmc_value_transform_bool_string);
 	g_value_register_transform_func (G_TYPE_CHAR, G_TYPE_STRING, nmc_value_transform_char_string);
+}
+
+/*----------------------------------------------------------------------------*/
+
+/* Main hash table storing function pointer for manipulating properties */
+static GHashTable *nmc_properties = NULL;
+typedef	char *       (*NmcPropertyGetFunc)      (NMSetting *);
+typedef	gboolean     (*NmcPropertySetFunc)      (NMSetting *, const char *, const char *, GError **);
+typedef	gboolean     (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
+typedef	const char * (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
+typedef	const char * (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
+
+typedef struct {
+	NmcPropertyGetFunc get_func;           /* func getting property values */
+	NmcPropertySetFunc set_func;           /* func adding/setting property values */
+	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */
+	NmcPropertyDescribeFunc describe_func; /* func returning property description */
+	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */
+} NmcPropertyFuncs;
+
+NmcSettingNewFunc
+nmc_setting_new_func (const char *name)
+{
+	if (!name)
+		return NULL;
+
+	if (!strcmp (name, NM_SETTING_802_1X_SETTING_NAME))
+		return nm_setting_802_1x_new;
+	else if (!strcmp (name, NM_SETTING_ADSL_SETTING_NAME))
+		return nm_setting_adsl_new;
+	else if (!strcmp (name, NM_SETTING_BLUETOOTH_SETTING_NAME))
+		return nm_setting_bluetooth_new;
+	else if (!strcmp (name, NM_SETTING_BOND_SETTING_NAME))
+		return nm_setting_bond_new;
+	else if (!strcmp (name, NM_SETTING_BRIDGE_SETTING_NAME))
+		return nm_setting_bridge_new;
+	else if (!strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
+		return nm_setting_bridge_port_new;
+	else if (!strcmp (name, NM_SETTING_CDMA_SETTING_NAME))
+		return nm_setting_cdma_new;
+	else if (!strcmp (name, NM_SETTING_CONNECTION_SETTING_NAME))
+		return nm_setting_connection_new;
+	else if (!strcmp (name, NM_SETTING_GSM_SETTING_NAME))
+		return nm_setting_gsm_new;
+	else if (!strcmp (name, NM_SETTING_INFINIBAND_SETTING_NAME))
+		return nm_setting_infiniband_new;
+	else if (!strcmp (name, NM_SETTING_IP4_CONFIG_SETTING_NAME))
+		return nm_setting_ip4_config_new;
+	else if (!strcmp (name, NM_SETTING_IP6_CONFIG_SETTING_NAME))
+		return nm_setting_ip6_config_new;
+	else if (!strcmp (name, NM_SETTING_OLPC_MESH_SETTING_NAME))
+		return nm_setting_olpc_mesh_new;
+	else if (!strcmp (name, NM_SETTING_PPP_SETTING_NAME))
+		return nm_setting_ppp_new;
+	else if (!strcmp (name, NM_SETTING_PPPOE_SETTING_NAME))
+		return nm_setting_pppoe_new;
+	else if (!strcmp (name, NM_SETTING_SERIAL_SETTING_NAME))
+		return nm_setting_serial_new;
+	else if (!strcmp (name, NM_SETTING_VLAN_SETTING_NAME))
+		return nm_setting_vlan_new;
+	else if (!strcmp (name, NM_SETTING_VPN_SETTING_NAME))
+		return nm_setting_vpn_new;
+	else if (!strcmp (name, NM_SETTING_WIMAX_SETTING_NAME))
+		return nm_setting_wimax_new;
+	else if (!strcmp (name, NM_SETTING_WIRED_SETTING_NAME))
+		return nm_setting_wired_new;
+	else if (!strcmp (name, NM_SETTING_WIRELESS_SETTING_NAME))
+		return nm_setting_wireless_new;
+	else if (!strcmp (name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
+		return nm_setting_wireless_security_new;
+
+	return NULL;
+}
+
+/*
+ * Customize some properties of the setting so that the setting has sensible
+ * values.
+ */
+void
+nmc_setting_custom_init (NMSetting *setting)
+{
+	g_return_if_fail (NM_IS_SETTING (setting));
+
+	if (NM_IS_SETTING_IP4_CONFIG (setting))
+		g_object_set (NM_SETTING_IP4_CONFIG (setting),
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NULL);
+	else if (NM_IS_SETTING_IP6_CONFIG (setting))
+		g_object_set (NM_SETTING_IP6_CONFIG (setting),
+		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		              NULL);
+}
+
+/* === SetFunc, RemoveFunc, DescribeFunc, ValuesFunc functions === */
+static gboolean
+verify_string_list (char **strv,
+                    const char *prop,
+                    gboolean (*validate_func) (const char *),
+                    GError **error)
+{
+	char **iter;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	for (iter = strv; iter && *iter; iter++) {
+		if (**iter == '\0')
+			continue;
+		if (validate_func) {
+			if (!validate_func (*iter)) {
+				g_set_error (error, 1, 0, _("'%s' is not valid"),
+				             *iter);
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+/* Validate 'val' number against to int property spec */
+static gboolean
+validate_int (NMSetting *setting, const char* prop, gint val, GError **error)
+{
+	GParamSpec *pspec;
+	GValue value = G_VALUE_INIT;
+	gboolean success = TRUE;
+
+	g_value_init (&value, G_TYPE_INT);
+	g_value_set_int (&value, val);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	g_assert (G_IS_PARAM_SPEC (pspec));
+	if (g_param_value_validate (pspec, &value)) {
+		GParamSpecInt *pspec_int = (GParamSpecInt *) pspec;
+		g_set_error (error, 1, 0, _("'%d' is not valid; use <%d-%d>"),
+		             val, pspec_int->minimum, pspec_int->maximum);
+		success = FALSE;
+	}
+	g_value_unset (&value);
+	return success;
+}
+
+/* Validate 'val' number against to uint property spec */
+static gboolean
+validate_uint (NMSetting *setting, const char* prop, guint val, GError **error)
+{
+	GParamSpec *pspec;
+	GValue value = G_VALUE_INIT;
+	gboolean success = TRUE;
+
+	g_value_init (&value, G_TYPE_UINT);
+	g_value_set_uint (&value, val);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	g_assert (G_IS_PARAM_SPEC (pspec));
+	if (g_param_value_validate (pspec, &value)) {
+		GParamSpecUInt *pspec_uint = (GParamSpecUInt *) pspec;
+		g_set_error (error, 1, 0, _("'%u' is not valid; use <%d-%d>"),
+		             val, pspec_uint->minimum, pspec_uint->maximum);
+		success = FALSE;
+	}
+	g_value_unset (&value);
+	return success;
+}
+
+static gboolean
+check_and_set_string (NMSetting *setting,
+                      const char *prop,
+                      const char *val,
+                      const char **valid_strv,
+                      GError **error)
+{
+	const char *checked_val;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	checked_val = nmc_string_is_valid (val, valid_strv, error);
+	if (!checked_val)
+		return FALSE;
+
+	g_object_set (setting, prop, checked_val, NULL);
+	return TRUE;
+}
+
+#define DEFINE_SETTER_STR_LIST_MULTI(def_func, s_macro, set_func) \
+	static gboolean \
+	def_func (NMSetting *setting, \
+	          const char *prop, \
+	          const char *val, \
+	          const char **valid_strv, \
+	          GError **error) \
+	{ \
+		char **strv = NULL, **iter; \
+		const char *item; \
+		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		strv = nmc_strsplit_set (val, " \t,", 0); \
+		for (iter = strv; iter && *iter; iter++) { \
+			if (!(item = nmc_string_is_valid (g_strstrip (*iter), valid_strv, error))) { \
+				g_strfreev (strv); \
+				return FALSE; \
+			} \
+			set_func (s_macro (setting), item); \
+		} \
+		g_strfreev (strv); \
+		return TRUE; \
+	}
+
+#define DEFINE_SETTER_OPTIONS(def_func, s_macro, s_type, add_func, valid_func1, valid_func2) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
+	{ \
+		char **strv = NULL, **iter; \
+		const char **(*valid_func1_p) (s_type *) = valid_func1; \
+		const char * (*valid_func2_p) (const char *, const char *, GError **) = valid_func2; \
+		const char *opt_name, *opt_val; \
+		\
+		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		\
+		strv = nmc_strsplit_set (val, ",", 0); \
+		for (iter = strv; iter && *iter; iter++) { \
+			char *left = g_strstrip (*iter); \
+			char *right = strchr (left, '='); \
+			if (!right) { \
+				g_set_error (error, 1, 0, _("'%s' is not valid; use <option>=<value>"), *iter); \
+				g_strfreev (strv); \
+				return FALSE; \
+			} \
+			*right++ = '\0'; \
+			\
+			if (valid_func1_p) { \
+				const char **valid_options = valid_func1_p (s_macro (setting)); \
+				if (!(opt_name = nmc_string_is_valid (g_strstrip (left), valid_options, error))) { \
+					g_strfreev (strv); \
+					return FALSE; \
+				} \
+			} else \
+				opt_name = g_strstrip (left);\
+			\
+			opt_val = g_strstrip (right); \
+			if (valid_func2_p) { \
+				if (!(opt_val = valid_func2_p ((const char *) left, (const char *) opt_val, error))) { \
+					g_strfreev (strv); \
+					return FALSE; \
+				}\
+			}\
+			add_func (s_macro (setting), opt_name, opt_val); \
+		} \
+		g_strfreev (strv); \
+		return TRUE; \
+	}
+
+#define DEFINE_REMOVER_INDEX(def_func, s_macro, num_func, rem_func) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *option, guint32 idx, GError **error) \
+	{ \
+		guint32 num; \
+		if (option) { \
+			g_set_error (error, 1, 0, _("index '%s' is not valid"), option); \
+			return FALSE; \
+		} \
+		num = num_func (s_macro (setting)); \
+		if (num == 0) { \
+			g_set_error_literal (error, 1, 0, _("no item to remove")); \
+			return FALSE; \
+		} \
+		if (idx >= num) { \
+			g_set_error (error, 1, 0, _("index '%d' is not in range <0-%d>"), idx, num - 1); \
+			return FALSE; \
+		} \
+		rem_func (s_macro (setting), idx); \
+		return TRUE; \
+	}
+
+#define DEFINE_REMOVER_OPTION(def_func, s_macro, rem_func) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *option, guint32 idx, GError **error) \
+	{ \
+		gboolean success = FALSE; \
+		if (option && *option) { \
+			success = rem_func (s_macro (setting), option); \
+			if (!success) \
+				g_set_error (error, 1, 0, _("invalid option '%s'"), option); \
+		} else \
+			g_set_error_literal (error, 1, 0, _("missing option")); \
+		return success; \
+	}
+
+#define DEFINE_ALLOWED_VAL_FUNC(def_func, valid_values) \
+	static const char * \
+	def_func (NMSetting *setting, const char *prop) \
+	{ \
+		static char *values = NULL; \
+		if (G_UNLIKELY (values == NULL)) \
+			values = g_strjoinv (", ", (char **) valid_values); \
+		return values; \
+	}
+
+/* --- generic property setter functions --- */
+static gboolean
+nmc_property_set_string (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	g_object_set (setting, prop, val, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_int (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_int (val, TRUE, G_MININT, G_MAXINT, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_int (setting, prop, (gint) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, prop, val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_uint (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	unsigned long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (val, TRUE, 0, G_MAXUINT, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_uint (setting, prop, (guint) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, prop, val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_bool (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	gboolean val_bool;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_bool (val, &val_bool, error))
+		return FALSE;
+
+	g_object_set (setting, prop, val_bool, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	GByteArray *ssid_arr;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (strlen (val) > 32) {
+		g_set_error (error, 1, 0, _("'%s' is not valid"), val);
+		return FALSE;
+	}
+
+	ssid_arr = g_byte_array_sized_new (strlen (val));
+	g_byte_array_append (ssid_arr, (const guint8 *) val, strlen (val));
+	g_object_set (setting, prop, ssid_arr, NULL);
+
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	GByteArray *array;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	array = nm_utils_hwaddr_atoba (val, ARPHRD_ETHER);
+	if (!array) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, array, NULL);
+	g_byte_array_free (array, TRUE);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nm_utils_iface_valid_name (val)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid interface name"), val);
+		return FALSE;
+	}
+	g_object_set (setting, prop, val, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	unsigned long flags = 0, val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		if (!nmc_string_to_uint (*iter, TRUE, 0, G_MAXUINT32, &val_int)) {
+			g_set_error (error, 1, 0, _("'%s' is not a number"), *iter);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		flags += val_int;
+	}
+	g_strfreev (strv);
+
+	/* Validate the number according to the property spec */
+	if (!validate_uint (setting, prop, (guint) flags, error))
+		return FALSE;
+
+	g_object_set (setting, prop, (guint) flags, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_util_is_domain (const char *domain)
+{
+	//FIXME: implement
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_byte_array (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	char *val_strip;
+	const char *delimiters = " \t,";
+	long int val_int;
+	char *bin;
+	GByteArray *array = NULL;
+	gboolean success = TRUE;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	val_strip = g_strstrip (g_strdup (val));
+
+	/* First try hex string in the format of AAbbCCDd */
+	bin = nm_utils_hexstr2bin (val_strip, strlen (val_strip));
+	if (bin) {
+		array = g_byte_array_sized_new (strlen (val_strip)/2);
+		g_byte_array_append (array, (const guint8 *) bin, strlen (val_strip)/2);
+		g_free (bin);
+		goto done;
+	}
+
+	/* Otherwise, consider the following format: AA b 0xCc D */
+	strv = nmc_strsplit_set (val_strip, delimiters, 0);
+	array = g_byte_array_sized_new (g_strv_length (strv));
+	for (iter = strv; iter && *iter; iter++) {
+		if (!nmc_string_to_int_base (g_strstrip (*iter), 16, TRUE, 0, 255, &val_int)) {
+			g_set_error (error, 1, 0, _("'%s' is not a valid hex character"), *iter);
+			success = FALSE;
+			goto done;
+		}
+		g_byte_array_append (array, (const guint8 *) &val_int, 1);
+	}
+
+done:
+	if (success)
+		g_object_set (setting, prop, array, NULL);
+
+	g_strfreev (strv);
+	if (array)
+		g_byte_array_free (array, TRUE);
+	return success;
+}
+
+#define DEFINE_SETTER_MAC_BLACKLIST(def_func, s_macro, add_func) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
+	{ \
+		guint8 buf[32]; \
+		char **list = NULL, **iter; \
+		GSList *macaddr_blacklist = NULL; \
+		\
+		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		\
+		list = nmc_strsplit_set (val, " \t,", 0); \
+		for (iter = list; iter && *iter; iter++) { \
+			if (!nm_utils_hwaddr_aton (*iter, ARPHRD_ETHER, buf)) { \
+				g_set_error (error, 1, 0, _("'%s' is not a valid MAC"), *iter); \
+				g_strfreev (list); \
+				g_slist_free (macaddr_blacklist); \
+				return FALSE; \
+			} \
+		} \
+		\
+		for (iter = list; iter && *iter; iter++) \
+			add_func (s_macro (setting), *iter); \
+		\
+		g_strfreev (list); \
+		return TRUE; \
+	}
+
+
+/* --- NM_SETTING_CONNECTION_SETTING_NAME property setter functions --- */
+static gboolean
+nmc_property_con_set_uuid (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nm_utils_is_uuid (val)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid UUID"), val);
+		return FALSE;
+	}
+	g_object_set (setting, prop, val, NULL);
+	return TRUE;
+}
+
+/* 'permissions' */
+/* define from libnm-util/nm-setting-connection.c */
+#define PERM_USER_PREFIX  "user:"
+
+static gboolean
+permissions_valid (const char *perm)
+{
+	if (!perm || perm[0] == '\0')
+		return FALSE;
+
+	if (strncmp (perm, PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0) {
+		if (   strlen (perm) <= strlen (PERM_USER_PREFIX)
+		    || strchr (perm + strlen (PERM_USER_PREFIX), ':'))
+			return  FALSE;
+	} else {
+		if (strchr (perm, ':'))
+			return  FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+nmc_property_connection_set_permissions (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL;
+	guint i = 0;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	if (!verify_string_list (strv, prop, permissions_valid, error)) {
+		g_strfreev (strv);
+		return FALSE;
+	}
+
+	for (i = 0; strv && strv[i]; i++) {
+		const char *user;
+
+		if (strncmp (strv[i], PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0)
+			user = strv[i]+strlen (PERM_USER_PREFIX);
+		else
+			user = strv[i];
+
+		nm_setting_connection_add_permission (NM_SETTING_CONNECTION (setting), "user", user, NULL);
+	}
+
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_connection_remove_idx_permissions,
+                      NM_SETTING_CONNECTION,
+                      nm_setting_connection_get_num_permissions,
+                      nm_setting_connection_remove_permission)
+
+static const char *
+nmc_property_connection_describe_permissions (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of user permissions. This is a list of user names formatted as:\n"
+	         "  [user:]<user name 1>, [user:]<user name 2>,... \n"
+	         "The items can be separated by commas or spaces.\n\n"
+	         "Example: alice bob charlie\n");
+}
+
+/* 'master' */
+static gboolean
+nmc_property_con_set_master (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (   !nm_utils_iface_valid_name (val)
+	    && !nm_utils_is_uuid (val)) {
+		g_set_error (error, 1, 0,
+		             _("'%s' is not valid master; use ifname or connection UUID"),
+		             val);
+		return FALSE;
+	}
+	g_object_set (setting, prop, val, NULL);
+	return TRUE;
+}
+
+/* 'slave-type' */
+static const char *con_valid_slave_types[] = {
+	NM_SETTING_BOND_SETTING_NAME,
+	NM_SETTING_BRIDGE_SETTING_NAME,
+	NM_SETTING_VLAN_SETTING_NAME,
+	NULL
+};
+
+static gboolean
+nmc_property_con_set_slave_type (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, con_valid_slave_types, error);
+}
+
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_con_allowed_slave_type, con_valid_slave_types)
+
+/* 'secondaries' */
+static gboolean
+nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL;
+	guint i = 0;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	if (!verify_string_list (strv, prop, nm_utils_is_uuid, error)) {
+		g_strfreev (strv);
+		return FALSE;
+	}
+
+	while (strv && strv[i])
+		nm_setting_connection_add_secondary (NM_SETTING_CONNECTION (setting), strv[i++]);
+	g_strfreev (strv);
+
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_connection_remove_idx_secondaries,
+                      NM_SETTING_CONNECTION,
+                      nm_setting_connection_get_num_secondaries,
+                      nm_setting_connection_remove_secondary)
+
+
+/* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
+#define DEFINE_SETTER_STR_LIST(def_func, set_func) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
+	{ \
+		char **strv = NULL; \
+		guint i = 0; \
+		\
+		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		\
+		strv = nmc_strsplit_set (val, " \t,", 0); \
+		while (strv && strv[i]) \
+			set_func (NM_SETTING_802_1X (setting), strv[i++]); \
+		g_strfreev (strv); \
+		return TRUE; \
+	}
+
+#define DEFINE_SETTER_CERT(def_func, set_func) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
+	{ \
+		const char *SCHEME_PATH = "file://"; \
+		char *val_strip = g_strstrip (g_strdup (val)); \
+		char *p = val_strip; \
+		gboolean success; \
+		\
+		if (strncmp (val_strip, SCHEME_PATH, strlen (SCHEME_PATH)) == 0) \
+			p += strlen (SCHEME_PATH); \
+		\
+		success = set_func (NM_SETTING_802_1X (setting), \
+		                    p, \
+		                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
+		                    NULL, \
+		                    error); \
+		g_free (val_strip); \
+		return success; \
+	}
+
+#define DEFINE_SETTER_PRIV_KEY(def_func, pwd_func, set_func) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
+	{ \
+		char **strv = NULL; \
+		const char *SCHEME_PATH = "file://"; \
+		char *val_strip = g_strstrip (g_strdup (val)); \
+		char *p = val_strip; \
+		const char *path, *password; \
+		gboolean success; \
+		\
+		if (strncmp (val_strip, SCHEME_PATH, strlen (SCHEME_PATH)) == 0) \
+			p += strlen (SCHEME_PATH); \
+		\
+		strv = nmc_strsplit_set (p, " \t,", 2); \
+		path = strv[0]; \
+		if (g_strv_length (strv) == 2) \
+			password = strv[1]; \
+		else \
+			password = pwd_func (NM_SETTING_802_1X (setting)); \
+		if (password) { \
+			char *tmp_pwd = g_strdup (password); \
+			success = set_func (NM_SETTING_802_1X (setting), \
+			                    path, \
+			                    tmp_pwd, \
+			                    NM_SETTING_802_1X_CK_SCHEME_PATH, \
+			                    NULL, \
+			                    error); \
+			g_free (tmp_pwd); \
+		} else { \
+			success = FALSE; \
+			g_set_error_literal  (error, 1, 0, _("private key password not provided")); \
+		} \
+		g_free (val_strip); \
+		g_strfreev (strv); \
+		return success; \
+	}
+
+/* 'eap' */
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_802_1X_eap,
+                              NM_SETTING_802_1X,
+                              nm_setting_802_1x_add_eap_method)
+static gboolean
+nmc_property_802_1X_set_eap (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
+	return check_and_add_802_1X_eap (setting, prop, val, valid_eap, error);
+}
+DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_eap,
+                      NM_SETTING_802_1X,
+                      nm_setting_802_1x_get_num_eap_methods,
+                      nm_setting_802_1x_remove_eap_method)
+/* 'ca-cert' */
+DEFINE_SETTER_CERT (nmc_property_802_1X_set_ca_cert, nm_setting_802_1x_set_ca_cert)
+
+/* 'altsubject-matches' */
+DEFINE_SETTER_STR_LIST (nmc_property_802_1X_set_altsubject_matches, nm_setting_802_1x_add_altsubject_match)
+DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_altsubject_matches,
+                      NM_SETTING_802_1X,
+                      nm_setting_802_1x_get_num_altsubject_matches,
+                      nm_setting_802_1x_remove_altsubject_match)
+
+/* 'client-cert' */
+DEFINE_SETTER_CERT (nmc_property_802_1X_set_client_cert, nm_setting_802_1x_set_client_cert)
+
+/* 'phase2-ca-cert' */
+DEFINE_SETTER_CERT (nmc_property_802_1X_set_phase2_ca_cert, nm_setting_802_1x_set_phase2_ca_cert)
+
+/* 'phase2-altsubject-matches' */
+DEFINE_SETTER_STR_LIST (nmc_property_802_1X_set_phase2_altsubject_matches, nm_setting_802_1x_add_phase2_altsubject_match)
+DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_phase2_altsubject_matches,
+                      NM_SETTING_802_1X,
+                      nm_setting_802_1x_get_num_phase2_altsubject_matches,
+                      nm_setting_802_1x_remove_phase2_altsubject_match)
+
+/* 'phase2-client-cert' */
+DEFINE_SETTER_CERT (nmc_property_802_1X_set_phase2_client_cert, nm_setting_802_1x_set_phase2_client_cert)
+
+/* 'private-key' */
+DEFINE_SETTER_PRIV_KEY (nmc_property_802_1X_set_private_key,
+                        nm_setting_802_1x_get_private_key_password,
+                        nm_setting_802_1x_set_private_key)
+
+/* 'phase2-private-key' */
+DEFINE_SETTER_PRIV_KEY (nmc_property_802_1X_set_phase2_private_key,
+                        nm_setting_802_1x_get_phase2_private_key_password,
+                        nm_setting_802_1x_set_phase2_private_key)
+
+static const char *
+nmc_property_802_1X_describe_private_key (NMSetting *setting, const char *prop)
+{
+	return _("Enter path to a private key and the key password (if not set yet):\n"
+	         "  <file path> [<password>]\n"
+	         "Example: /home/cimrman/jara-priv-key Dardanely\n");
+}
+
+/* 'phase1-peapver' */
+static const char *_802_1X_valid_phase1_peapvers[] = { "0", "1", NULL };
+
+static gboolean
+nmc_property_802_1X_set_phase1_peapver (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, _802_1X_valid_phase1_peapvers, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_phase1_peapver, _802_1X_valid_phase1_peapvers)
+
+/* 'phase1-peaplabel' */
+static const char *_802_1X_valid_phase1_peaplabels[] = { "0", "1", NULL };
+
+static gboolean
+nmc_property_802_1X_set_phase1_peaplabel (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, _802_1X_valid_phase1_peaplabels, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_phase1_peaplabel, _802_1X_valid_phase1_peaplabels)
+
+/* 'phase1-fast-provisioning' */
+static const char *_802_1X_valid_phase1_fast_provisionings[] = { "0", "1", "2", "3", NULL };
+
+static gboolean
+nmc_property_802_1X_set_phase1_fast_provisioning (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, _802_1X_valid_phase1_fast_provisionings, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_phase1_fast_provisioning, _802_1X_valid_phase1_fast_provisionings)
+
+/* 'phase2-auth' */
+static const char *_802_1X_valid_phase2_auths[] =
+	{ "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
+
+static gboolean
+nmc_property_802_1X_set_phase2_auth (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, _802_1X_valid_phase2_auths, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_phase2_auth, _802_1X_valid_phase2_auths)
+
+/* 'phase2-autheap' */
+static const char *_802_1X_valid_phase2_autheaps[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
+static gboolean
+nmc_property_802_1X_set_phase2_autheap (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, _802_1X_valid_phase2_autheaps, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_phase2_autheap, _802_1X_valid_phase2_autheaps)
+
+/* 'password-raw' */
+static gboolean
+nmc_property_802_1X_set_password_raw (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return nmc_property_set_byte_array (setting, prop, val, error);
+}
+
+static const char *
+nmc_property_802_1X_describe_password_raw (NMSetting *setting, const char *prop)
+{
+	return _("Enter bytes as a list of hexadecimal values.\n"
+	         "Two formats are accepted:\n"
+	         "(a) a string of hexadecimal digits, where each two digits represent one byte\n"
+	         "(b) space-separated list of bytes written as hexadecimal digits "
+	         "(with optional 0x/0X prefix, and optional leading 0).\n\n"
+	         "Examples: ab0455a6ea3a74C2\n"
+	         "          ab 4 55 0xa6 ea 3a 74 C2\n");
+}
+
+/* --- NM_SETTING_ADSL_SETTING_NAME property setter functions --- */
+/* 'protocol' */
+static const char *adsl_valid_protocols[] = {
+	NM_SETTING_ADSL_PROTOCOL_PPPOA,
+	NM_SETTING_ADSL_PROTOCOL_PPPOE,
+	NM_SETTING_ADSL_PROTOCOL_IPOATM,
+	NULL
+};
+
+static gboolean
+nmc_property_adsl_set_protocol (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, adsl_valid_protocols, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_adsl_allowed_protocol, adsl_valid_protocols)
+
+/* 'encapsulation' */
+static const char *adsl_valid_encapsulations[] = {
+	NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
+	NM_SETTING_ADSL_ENCAPSULATION_LLC,
+	NULL
+};
+
+static gboolean
+nmc_property_adsl_set_encapsulation (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, adsl_valid_encapsulations, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_adsl_allowed_encapsulation, adsl_valid_encapsulations)
+
+/* --- NM_SETTING_BLUETOOTH_SETTING_NAME property setter functions --- */
+/* 'type' */
+static gboolean
+nmc_property_bluetooth_set_type (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	const char *types[] = {
+	    NM_SETTING_BLUETOOTH_TYPE_DUN,
+	    NM_SETTING_BLUETOOTH_TYPE_PANU,
+	    NULL };
+
+	return check_and_set_string (setting, prop, val, types, error);
+}
+
+/* --- NM_SETTING_BOND_SETTING_NAME property setter functions --- */
+/* 'options' */
+/*  example: miimon=100,mode=balance-rr, updelay=5 */
+static gboolean
+_validate_and_remove_bond_option (NMSettingBond *setting, const char *option)
+{
+	const char *opt;
+	const char **valid_options;
+
+	valid_options = nm_setting_bond_get_valid_options (setting);
+	opt = nmc_string_is_valid (option, valid_options, NULL);
+
+	if (opt)
+		return nm_setting_bond_remove_option (setting, opt);
+	else
+		return FALSE;
+}
+
+/* Validate bonding 'options' values */
+static const char *
+_validate_bond_option_value (const char *option, const char *value, GError **error)
+{
+	if (!g_strcmp0 (option, NM_SETTING_BOND_OPTION_MODE))
+		return nmc_bond_validate_mode (value, error);
+
+	return value;
+}
+
+DEFINE_SETTER_OPTIONS (nmc_property_bond_set_options,
+                       NM_SETTING_BOND,
+                       NMSettingBond,
+                       nm_setting_bond_add_option,
+                       nm_setting_bond_get_valid_options,
+                       _validate_bond_option_value)
+DEFINE_REMOVER_OPTION (nmc_property_bond_remove_option_options,
+                       NM_SETTING_BOND,
+                       _validate_and_remove_bond_option)
+
+static const char *
+nmc_property_bond_describe_options (NMSetting *setting, const char *prop)
+{
+	static char *desc = NULL;
+	const char **valid_options;
+	char *options_str;
+
+	if (G_UNLIKELY (desc == NULL)) {
+		valid_options = nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
+		options_str = g_strjoinv (", ", (char **) valid_options);
+
+		desc = g_strdup_printf (_("Enter a list of bonding options formatted as:\n"
+		                          "  option = <value>, option = <value>,... \n"
+		                          "Valid options are: %s\n"
+		                          "'mode' can be provided as a name or a number:\n"
+		                          "balance-rr    = 0\n"
+		                          "active-backup = 1\n"
+		                          "balance-xor   = 2\n"
+		                          "broadcast     = 3\n"
+		                          "802.3ad       = 4\n"
+		                          "balance-tlb   = 5\n"
+		                          "balance-alb   = 6\n\n"
+		                          "Example: mode=2,miimon=120\n"), options_str);
+		g_free (options_str);
+	}
+	return desc;
+}
+
+static const char *
+nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
+{
+	const char **valid_options;
+	static char *allowed_vals = NULL;
+
+	if (G_UNLIKELY (allowed_vals == NULL)) {
+		valid_options = nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
+		allowed_vals = g_strjoinv (", ", (char **) valid_options);
+	}
+	return allowed_vals;
+}
+
+/* --- NM_SETTING_INFINIBAND_SETTING_NAME property setter functions --- */
+/* 'mac-addresss' */
+static gboolean
+nmc_property_ib_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	GByteArray *array;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	array = nm_utils_hwaddr_atoba (val, ARPHRD_INFINIBAND);
+	if (!array) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid InfiniBand MAC"), val);
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, array, NULL);
+	g_byte_array_free (array, TRUE);
+	return TRUE;
+}
+
+/* 'transport-mode' */
+static const char *ib_valid_transport_modes[] = { "datagram", "connected", NULL };
+
+static gboolean
+nmc_property_ib_set_transport_mode (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, ib_valid_transport_modes, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_ib_allowed_transport_mode, ib_valid_transport_modes)
+
+/* --- NM_SETTING_IP4_CONFIG_SETTING_NAME property setter functions --- */
+/* 'method' */
+static const char *ipv4_valid_methods[] = {
+	NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+	NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	NM_SETTING_IP4_CONFIG_METHOD_SHARED,
+	NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	NULL
+};
+
+static gboolean
+nmc_property_ipv4_set_method (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	/* Silently accept "static" and convert to "manual" */
+	if (val && strlen (val) > 1 && matches (val, "static") == 0)
+		val = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+
+	return check_and_set_string (setting, prop, val, ipv4_valid_methods, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv4_allowed_method, ipv4_valid_methods)
+
+/* 'dns' */
+static gboolean
+nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	struct in_addr ip4_addr;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		if (inet_pton (AF_INET, g_strstrip (*iter), &ip4_addr) < 1) {
+			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), *iter);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), ip4_addr.s_addr);
+	}
+	g_strfreev (strv);
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_dns,
+                      NM_SETTING_IP4_CONFIG,
+                      nm_setting_ip4_config_get_num_dns,
+                      nm_setting_ip4_config_remove_dns)
+
+static const char *
+nmc_property_ipv4_describe_dns (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of IPv4 addresses of DNS servers.\n\n"
+	         "Example: 8.8.8.8, 8.8.4.4\n");
+}
+
+/* 'dns-search' */
+static gboolean
+nmc_property_ipv4_set_dns_search (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL;
+	guint i = 0;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	if (!verify_string_list (strv, prop, nmc_util_is_domain, error)) {
+		g_strfreev (strv);
+		return FALSE;
+	}
+
+	while (strv && strv[i])
+		nm_setting_ip4_config_add_dns_search (NM_SETTING_IP4_CONFIG (setting), strv[i++]);
+	g_strfreev (strv);
+
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_dns_search,
+                      NM_SETTING_IP4_CONFIG,
+                      nm_setting_ip4_config_get_num_dns_searches,
+                      nm_setting_ip4_config_remove_dns_search)
+
+/* 'addresses' */
+static gboolean
+nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	char **addrv;
+	NMIP4Address *ip4addr = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, ",", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		char *address = g_strstrip (*iter);
+		addrv = nmc_strsplit_set (address, " \t", 0);
+
+		if (g_strv_length (addrv) > 2) {
+			g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
+			             address);
+			g_strfreev (addrv);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		ip4addr = nmc_parse_and_build_ip4_address (addrv[0], addrv[1], error);
+		if (!ip4addr) {
+			g_strfreev (addrv);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		nm_setting_ip4_config_add_address (NM_SETTING_IP4_CONFIG (setting), ip4addr);
+		g_strfreev (addrv);
+	}
+	g_strfreev (strv);
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_addresses,
+                      NM_SETTING_IP4_CONFIG,
+                      nm_setting_ip4_config_get_num_addresses,
+                      nm_setting_ip4_config_remove_address)
+
+static const char *
+nmc_property_ipv4_describe_addresses (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of IPv4 addresses formatted as:\n"
+	         "  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
+	         "Missing prefix is regarded as prefix of 32.\n\n"
+	         "Example: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n");
+}
+
+/* 'routes' */
+static gboolean
+nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	char **routev;
+	NMIP4Route *ip4route = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, ",", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		char *route = g_strstrip (*iter);
+		routev = nmc_strsplit_set (route, " \t", 0);
+
+		if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
+			g_set_error (error, 1, 0, _("'%s' is not valid (use ip/[prefix] next-hop [metric])"),
+			             route);
+			g_strfreev (routev);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], routev[2], error);
+		if (!ip4route) {
+			g_strfreev (routev);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		nm_setting_ip4_config_add_route (NM_SETTING_IP4_CONFIG (setting), ip4route);
+		g_strfreev (routev);
+	}
+	g_strfreev (strv);
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_routes,
+                      NM_SETTING_IP4_CONFIG,
+                      nm_setting_ip4_config_get_num_routes,
+                      nm_setting_ip4_config_remove_route)
+
+static const char *
+nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of IPv4 routes formatted as:\n"
+	         "  ip/[prefix] next-hop [metric],... \n"
+	         "Missing prefix is regarded as a prefix of 32.\n"
+	         "Missing metric is regarded as a metric of 0.\n\n"
+	         "Example: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n");
+}
+
+/* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property setter functions --- */
+/* 'method' */
+static const char *ipv6_valid_methods[] = {
+	NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+	NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	NM_SETTING_IP6_CONFIG_METHOD_SHARED,
+	NULL
+};
+
+static gboolean
+nmc_property_ipv6_set_method (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	/* Silently accept "static" and convert to "manual" */
+	if (val && strlen (val) > 1 && matches (val, "static") == 0)
+		val = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+
+	return check_and_set_string (setting, prop, val, ipv6_valid_methods, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv6_allowed_method, ipv6_valid_methods)
+
+/* 'dns' */
+static gboolean
+nmc_property_ipv6_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	struct in6_addr ip6_addr;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		if (inet_pton (AF_INET6, g_strstrip (*iter), &ip6_addr) < 1) {
+			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), *iter);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		nm_setting_ip6_config_add_dns (NM_SETTING_IP6_CONFIG (setting), &ip6_addr);
+	}
+	g_strfreev (strv);
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_dns,
+                      NM_SETTING_IP6_CONFIG,
+                      nm_setting_ip6_config_get_num_dns,
+                      nm_setting_ip6_config_remove_dns)
+
+static const char *
+nmc_property_ipv6_describe_dns (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of IPv6 addresses of DNS servers.  If the IPv6 "
+	         "configuration method is 'auto' these DNS servers are appended "
+	         "to those (if any) returned by automatic configuration.  DNS "
+	         "servers cannot be used with the 'shared' or 'link-local' IPv6 "
+	         "configuration methods, as there is no usptream network. In "
+	         "all other IPv6 configuration methods methods, these DNS "
+	         "servers are used as the only DNS servers for this connection.\n\n"
+	         "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n");
+}
+
+/* 'dns-search' */
+static gboolean
+nmc_property_ipv6_set_dns_search (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL;
+	guint i = 0;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, " \t,", 0);
+	if (!verify_string_list (strv, prop, nmc_util_is_domain, error)) {
+		g_strfreev (strv);
+		return FALSE;
+	}
+
+	while (strv && strv[i])
+		nm_setting_ip6_config_add_dns_search (NM_SETTING_IP6_CONFIG (setting), strv[i++]);
+	g_strfreev (strv);
+
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_dns_search,
+                      NM_SETTING_IP6_CONFIG,
+                      nm_setting_ip6_config_get_num_dns_searches,
+                      nm_setting_ip6_config_remove_dns_search)
+
+/* 'addresses' */
+static gboolean
+nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	char **addrv;
+	NMIP6Address *ip6addr = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, ",", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		char *address = g_strstrip (*iter);
+		addrv = nmc_strsplit_set (address, " \t", 0);
+
+		if (g_strv_length (addrv) > 2) {
+			g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
+			             address);
+			g_strfreev (addrv);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		ip6addr = nmc_parse_and_build_ip6_address (addrv[0], addrv[1], error);
+		if (!ip6addr) {
+			g_strfreev (addrv);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		nm_setting_ip6_config_add_address (NM_SETTING_IP6_CONFIG (setting), ip6addr);
+		g_strfreev (addrv);
+	}
+	g_strfreev (strv);
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_addresses,
+                      NM_SETTING_IP6_CONFIG,
+                      nm_setting_ip6_config_get_num_addresses,
+                      nm_setting_ip6_config_remove_address)
+
+static const char *
+nmc_property_ipv6_describe_addresses (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of IPv6 addresses formatted as:\n"
+	         "  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
+	         "Missing prefix is regarded as prefix of 128.\n\n"
+	         "Example: 2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, 1050:0:0:0:5:600:300c:326b\n");
+}
+
+/* 'routes' */
+static gboolean
+nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	char **routev;
+	NMIP6Route *ip6route = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	strv = nmc_strsplit_set (val, ",", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		char *route = g_strstrip (*iter);
+		routev = nmc_strsplit_set (route, " \t", 0);
+
+		if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
+			g_set_error (error, 1, 0, _("'%s' is not valid (use <dest IP>/prefix <next-hop IP> [metric])"),
+			             route);
+			g_strfreev (routev);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], routev[2], error);
+		if (!ip6route) {
+			g_strfreev (routev);
+			g_strfreev (strv);
+			return FALSE;
+		}
+		nm_setting_ip6_config_add_route (NM_SETTING_IP6_CONFIG (setting), ip6route);
+		g_strfreev (routev);
+	}
+	g_strfreev (strv);
+	return TRUE;
+}
+DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_routes,
+                      NM_SETTING_IP6_CONFIG,
+                      nm_setting_ip6_config_get_num_routes,
+                      nm_setting_ip6_config_remove_route)
+
+static const char *
+nmc_property_ipv6_describe_routes (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of IPv6 routes formatted as:\n"
+	         "  ip/[prefix] next-hop [metric],... \n"
+	         "Missing prefix is regarded as a prefix of 128.\n"
+	         "Missing metric is regarded as a metric of 0.\n\n"
+	         "Example: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n");
+}
+
+static gboolean
+nmc_property_ipv6_set_ip6_privacy (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	unsigned long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (val, FALSE, 0, 0, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a number"), val);
+		return FALSE;
+	}
+
+	if (   val_int != NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED
+	    && val_int != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR
+	    && val_int != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) {
+		g_set_error (error, 1, 0, _("'%s' is not valid; use 0, 1, or 2"), val);
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, val_int, NULL);
+	return TRUE;
+}
+
+/* --- NM_SETTING_OLPC_MESH_SETTING_NAME property setter functions --- */
+static gboolean
+nmc_property_olpc_set_channel (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	unsigned long chan_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (val, TRUE, 1, 13, &chan_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid channel; use <1-13>"), val);
+		return FALSE;
+	}
+	g_object_set (setting, prop, chan_int, NULL);
+	return TRUE;
+}
+
+
+/* --- NM_SETTING_SERIAL_SETTING_NAME property setter functions --- */
+static gboolean
+nmc_property_serial_set_parity (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char parity;
+
+	if (val[0] == 'E' || val[0] == 'e')
+		parity = 'E';
+	else if (val[0] == 'O' || val[0] == 'o')
+		parity = 'o';
+	else if (val[0] == 'N' || val[0] == 'n')
+		parity = 'n';
+	else {
+		g_set_error (error, 1, 0, _("'%s' is not valid; use [e, o, n]"), val);
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, parity, NULL);
+	return TRUE;
+}
+
+/* --- NM_SETTING_VLAN_SETTING_NAME property setter functions --- */
+static gboolean
+nmc_property_vlan_set_prio_map (NMSetting *setting,
+                                const char *prop,
+                                const char *val,
+                                NMVlanPriorityMap map_type,
+                                GError **error)
+{
+	char **prio_map, **p;
+
+	prio_map = nmc_vlan_parse_priority_maps (val, map_type, error);
+	if (!prio_map)
+		return FALSE;
+
+	for (p = prio_map; p && *p; p++)
+		nm_setting_vlan_add_priority_str (NM_SETTING_VLAN (setting), map_type, *p);
+
+	g_strfreev (prio_map);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_vlan_remove_prio_map (NMSetting *setting,
+                                   const char *prop,
+                                   guint32 idx,
+                                   NMVlanPriorityMap map_type,
+                                   GError **error)
+{
+	guint32 num;
+
+	num = nm_setting_vlan_get_num_priorities (NM_SETTING_VLAN (setting), map_type);
+	if (num == 0) {
+		g_set_error_literal (error, 1, 0, _("no priority to remove"));
+		return FALSE;
+	}
+	if (idx >= num) {
+		g_set_error (error, 1, 0, _("index '%d' is not in the range of <0-%d>"),
+		             idx, num - 1);
+		return FALSE;
+	}
+
+	nm_setting_vlan_remove_priority (NM_SETTING_VLAN (setting), map_type, idx);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_vlan_set_ingress_priority_map (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return nmc_property_vlan_set_prio_map (setting, prop, val, NM_VLAN_INGRESS_MAP, error);
+}
+
+static gboolean
+nmc_property_vlan_set_egress_priority_map (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return nmc_property_vlan_set_prio_map (setting, prop, val, NM_VLAN_EGRESS_MAP, error);
+}
+
+static gboolean
+nmc_property_vlan_remove_idx_ingress_priority_map (NMSetting *setting,
+                                                   const char *prop,
+                                                   const char *option,
+                                                   guint32 idx,
+                                                   GError **error)
+{
+	return nmc_property_vlan_remove_prio_map (setting, prop, idx, NM_VLAN_INGRESS_MAP, error);
+}
+
+static gboolean
+nmc_property_vlan_remove_idx_egress_priority_map (NMSetting *setting,
+                                                  const char *prop,
+                                                  const char *option,
+                                                  guint32 idx,
+                                                  GError **error)
+{
+	return nmc_property_vlan_remove_prio_map (setting, prop, idx, NM_VLAN_EGRESS_MAP, error);
+}
+
+/* --- NM_SETTING_VPN_SETTING_NAME property setter functions --- */
+/* 'data' */
+DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_data,
+                       NM_SETTING_VPN,
+                       NMSettingVPN,
+                       nm_setting_vpn_add_data_item,
+                       NULL,
+                       NULL)
+DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_data,
+                       NM_SETTING_VPN,
+                       nm_setting_vpn_remove_data_item)
+
+/* 'secrets' */
+DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_secrets,
+                       NM_SETTING_VPN,
+                       NMSettingVPN,
+                       nm_setting_vpn_add_secret,
+                       NULL,
+                       NULL)
+DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_secret,
+                       NM_SETTING_VPN,
+                       nm_setting_vpn_remove_secret)
+
+/* --- NM_SETTING_WIMAX_SETTING_NAME property setter functions --- */
+/* No specific functions */
+
+/* --- NM_SETTING_WIRED_SETTING_NAME property setter functions --- */
+#if 0
+/*
+ * Do not allow setting 'port' and 'duplex' for now. They are not implemented in
+ * NM core, nor in ifcfg-rh plugin. Enable this when it gets done.
+ */
+/* 'port' */
+static const char *wired_valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
+
+static gboolean
+nmc_property_wired_set_port (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wired_valid_ports, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_port, wired_valid_ports)
+
+/* 'duplex' */
+static const char *wired_valid_duplexes[] = { "half", "full", NULL };
+
+static gboolean
+nmc_property_wired_set_duplex (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wired_valid_duplexes, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_duplex, wired_valid_duplexes)
+#endif
+
+/* 'mac-address-blacklist' */
+DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wired_set_mac_address_blacklist,
+                             NM_SETTING_WIRED,
+                             nm_setting_wired_add_mac_blacklist_item)
+DEFINE_REMOVER_INDEX (nmc_property_wired_remove_idx_mac_address_blacklist,
+                      NM_SETTING_WIRED,
+                      nm_setting_wired_get_num_mac_blacklist_items,
+                      nm_setting_wired_remove_mac_blacklist_item)
+
+/* 's390-subchannels' */
+static gboolean
+nmc_property_wired_set_s390_subchannels (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	GPtrArray *s390_subchannels;
+
+	//FIXME: both libnm-util and ifcfg-rh also allow two strings (3rd is optional)
+	strv = nmc_strsplit_set (val, " ,\t", 0);
+	if (g_strv_length (strv) != 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid; 3 strings should be provided"),
+		             val);
+		g_strfreev (strv);
+		return FALSE;
+	}
+
+	s390_subchannels = g_ptr_array_sized_new (3);
+	for (iter = strv; iter && *iter; iter++)
+		g_ptr_array_add (s390_subchannels, *iter);
+
+	g_object_set (setting, prop, s390_subchannels, NULL);
+	g_strfreev (strv);
+	g_ptr_array_free (s390_subchannels, TRUE);
+	return TRUE;
+}
+
+static const char *
+nmc_property_wired_describe_s390_subchannels (NMSetting *setting, const char *prop)
+{
+	return _("Enter a list of three channels (comma or space separated).\n\n"
+	         "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n");
+}
+
+/* 's390-nettype' */
+static const char *wired_valid_s390_nettypes[] = { "qeth", "lcs", "ctc", NULL };
+
+static gboolean
+nmc_property_wired_set_s390_nettype (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wired_valid_s390_nettypes, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_s390_nettype, wired_valid_s390_nettypes)
+
+/* 's390-options' */
+DEFINE_SETTER_OPTIONS (nmc_property_wired_set_s390_options,
+                       NM_SETTING_WIRED,
+                       NMSettingWired,
+                       nm_setting_wired_add_s390_option,
+                       nm_setting_wired_get_valid_s390_options,
+                       NULL)
+DEFINE_REMOVER_OPTION (nmc_property_wired_remove_option_s390_options,
+                       NM_SETTING_WIRED,
+                       nm_setting_wired_remove_s390_option)
+
+static const char *
+nmc_property_wired_allowed_s390_options (NMSetting *setting, const char *prop)
+{
+	const char **valid_options;
+	static char *allowed_vals = NULL;
+
+	if (G_UNLIKELY (allowed_vals == NULL)) {
+		valid_options = nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (setting));
+		allowed_vals = g_strjoinv (", ", (char **) valid_options);
+	}
+	return allowed_vals;
+}
+
+static const char *
+nmc_property_wired_describe_s390_options (NMSetting *setting, const char *prop)
+{
+	static char *desc = NULL;
+	const char **valid_options;
+	char *options_str;
+
+	if (G_UNLIKELY (desc == NULL)) {
+		valid_options = nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (setting));
+		options_str = g_strjoinv (", ", (char **) valid_options);
+
+		desc = g_strdup_printf (_("Enter a list of S/390 options formatted as:\n"
+		                          "  option = <value>, option = <value>,... \n"
+		                          "Valid options are: %s\n"),
+		                        options_str);
+		g_free (options_str);
+	}
+	return desc;
+}
+
+/* --- NM_SETTING_WIRELESS_SETTING_NAME property setter functions --- */
+/* 'mode' */
+static const char *wifi_valid_modes[] = {
+	NM_SETTING_WIRELESS_MODE_INFRA,
+	NM_SETTING_WIRELESS_MODE_ADHOC,
+	NM_SETTING_WIRELESS_MODE_AP,
+	NULL
+};
+
+static gboolean
+nmc_property_wifi_set_mode (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wifi_valid_modes, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_allowed_mode, wifi_valid_modes)
+
+/* 'band' */
+static const char *wifi_valid_bands[] = { "a", "bg", NULL };
+
+static gboolean
+nmc_property_wifi_set_band (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wifi_valid_bands, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_allowed_band, wifi_valid_bands)
+
+/* 'channel' */
+static gboolean
+nmc_property_wifi_set_channel (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	unsigned long chan_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (val, FALSE, 0, 0, &chan_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid channel"), val);
+		return FALSE;
+	}
+
+	if (   !nm_utils_wifi_is_channel_valid (chan_int, "a")
+	    || !nm_utils_wifi_is_channel_valid (chan_int, "bg")) {
+		g_set_error (error, 1, 0, _("'%ld' is not a valid channel"), chan_int);
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, chan_int, NULL);
+	return TRUE;
+}
+
+/* 'mac-address-blacklist' */
+DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wireless_set_mac_address_blacklist,
+                             NM_SETTING_WIRELESS,
+                             nm_setting_wireless_add_mac_blacklist_item)
+DEFINE_REMOVER_INDEX (nmc_property_wireless_remove_idx_mac_address_blacklist,
+                      NM_SETTING_WIRELESS,
+                      nm_setting_wireless_get_num_mac_blacklist_items,
+                      nm_setting_wireless_remove_mac_blacklist_item)
+
+/* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property setter functions --- */
+/* 'key-mgmt' */
+static const char *wifi_sec_valid_key_mgmts[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
+
+static gboolean
+nmc_property_wifi_sec_set_key_mgmt (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wifi_sec_valid_key_mgmts, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_key_mgmt, wifi_sec_valid_key_mgmts)
+
+/* 'auth-alg' */
+static const char *wifi_sec_valid_auth_algs[] = { "open", "shared", "leap", NULL };
+
+static gboolean
+nmc_property_wifi_sec_set_auth_alg (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, wifi_sec_valid_auth_algs, error);
+}
+
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_proto,
+                              NM_SETTING_WIRELESS_SECURITY,
+                              nm_setting_wireless_security_add_proto)
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_auth_alg, wifi_sec_valid_auth_algs)
+
+/* 'proto' */
+static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
+
+static gboolean
+nmc_property_wifi_sec_set_proto (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_add_wifi_sec_proto (setting, prop, val, wifi_sec_valid_protos, error);
+}
+DEFINE_REMOVER_INDEX (nmc_property_wifi_sec_remove_idx_proto,
+                      NM_SETTING_WIRELESS_SECURITY,
+                      nm_setting_wireless_security_get_num_protos,
+                      nm_setting_wireless_security_remove_proto)
+
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_pairwise,
+                              NM_SETTING_WIRELESS_SECURITY,
+                              nm_setting_wireless_security_add_pairwise)
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_proto, wifi_sec_valid_protos)
+
+/* 'pairwise' */
+static const char *wifi_sec_valid_pairwises[] = { "tkip", "ccmp", NULL };
+
+static gboolean
+nmc_property_wifi_sec_set_pairwise (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_add_wifi_sec_pairwise (setting, prop, val, wifi_sec_valid_pairwises, error);
+}
+DEFINE_REMOVER_INDEX (nmc_property_wifi_sec_remove_idx_pairwise,
+                      NM_SETTING_WIRELESS_SECURITY,
+                      nm_setting_wireless_security_get_num_pairwise,
+                      nm_setting_wireless_security_remove_pairwise)
+
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_group,
+                              NM_SETTING_WIRELESS_SECURITY,
+                              nm_setting_wireless_security_add_group)
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_pairwise, wifi_sec_valid_pairwises)
+
+/* 'group' */
+static const char *wifi_sec_valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+
+static gboolean
+nmc_property_wifi_sec_set_group (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_add_wifi_sec_group (setting, prop, val, wifi_sec_valid_groups, error);
+}
+DEFINE_REMOVER_INDEX (nmc_property_wifi_sec_remove_idx_group,
+                      NM_SETTING_WIRELESS_SECURITY,
+                      nm_setting_wireless_security_get_num_groups,
+                      nm_setting_wireless_security_remove_group)
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_group, wifi_sec_valid_groups)
+
+/* 'wep-key' */
+static gboolean
+nmc_property_wifi_set_wep_key (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	NMWepKeyType type;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (nm_utils_wep_key_valid (val, NM_WEP_KEY_TYPE_KEY)) {
+		type = NM_WEP_KEY_TYPE_KEY;
+		fprintf (stdout, _("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (type));
+	} else if (nm_utils_wep_key_valid (val, NM_WEP_KEY_TYPE_PASSPHRASE)) {
+		type = NM_WEP_KEY_TYPE_PASSPHRASE;
+		fprintf (stdout, _("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (type));
+	} else {
+		g_set_error (error, 1, 0, _("'%s' is not valid"), val);
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, val, NULL);
+	g_object_set (setting, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, type, NULL);
+	return TRUE;
+}
+
+/* 'wep-key-type' */
+static gboolean
+nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	const char *valid_wep_types[] = { "key", "passphrase", NULL };
+	const char *type_str;
+	NMWepKeyType type = NM_WEP_KEY_TYPE_UNKNOWN;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!(type_str = nmc_string_is_valid (val, valid_wep_types, error)))
+		return FALSE;
+
+	if (type_str == valid_wep_types[0])
+		type = NM_WEP_KEY_TYPE_KEY;
+	else if (type_str == valid_wep_types[1])
+		type = NM_WEP_KEY_TYPE_PASSPHRASE;
+
+	g_object_set (setting, prop, type, NULL);
+	return TRUE;
+}
+
+/* 'psk' */
+static gboolean
+nmc_property_wifi_set_psk (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nm_utils_wpa_psk_valid (val)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid PSK"), val);
+		return FALSE;
+	}
+	g_object_set (setting, prop, val, NULL);
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+
+static void
+nmc_add_prop_funcs (char *key,
+                    NmcPropertyGetFunc get_func,
+                    NmcPropertySetFunc set_func,
+                    NmcPropertyRemoveFunc remove_func,
+                    NmcPropertyDescribeFunc describe_func,
+                    NmcPropertyValuesFunc values_func)
+{
+	NmcPropertyFuncs *item = g_malloc0 (sizeof (NmcPropertyFuncs));
+	item->get_func = get_func;
+	item->set_func = set_func;
+	item->remove_func = remove_func;
+	item->describe_func = describe_func;
+	item->values_func = values_func;
+
+	g_hash_table_insert (nmc_properties, key, item);
+}
+
+/* concatenate setting name and property name */
+#define GLUE(A,B) (g_strconcat ((NM_SETTING_##A##_SETTING_NAME),(NM_SETTING_##A##_##B), NULL))
+void
+nmc_properties_init (void)
+{
+	if (G_LIKELY (nmc_properties))
+		return;
+
+	/* create properties hash table */
+	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+	/* Add editable properties for NM_SETTING_802_1X_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (802_1X, EAP),
+	                    nmc_property_802_1X_get_eap,
+	                    nmc_property_802_1X_set_eap,
+	                    nmc_property_802_1X_remove_idx_eap,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, IDENTITY),
+	                    nmc_property_802_1X_get_identity,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, ANONYMOUS_IDENTITY),
+	                    nmc_property_802_1X_get_anonymous_identity,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PAC_FILE),
+	                    nmc_property_802_1X_get_pac_file,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, CA_CERT),
+	                    nmc_property_802_1X_get_ca_cert,
+	                    nmc_property_802_1X_set_ca_cert,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, CA_PATH),
+	                    nmc_property_802_1X_get_ca_path,
+                            nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, SUBJECT_MATCH),
+	                    nmc_property_802_1X_get_subject_match,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, ALTSUBJECT_MATCHES),
+	                    nmc_property_802_1X_get_altsubject_matches,
+	                    nmc_property_802_1X_set_altsubject_matches,
+	                    nmc_property_802_1X_remove_idx_altsubject_matches,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, CLIENT_CERT),
+	                    nmc_property_802_1X_get_client_cert,
+	                    nmc_property_802_1X_set_client_cert,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE1_PEAPVER),
+	                    nmc_property_802_1X_get_phase1_peapver,
+	                    nmc_property_802_1X_set_phase1_peapver,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_802_1X_allowed_phase1_peapver);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE1_PEAPLABEL),
+	                    nmc_property_802_1X_get_phase1_peaplabel,
+	                    nmc_property_802_1X_set_phase1_peaplabel,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_802_1X_allowed_phase1_peaplabel);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE1_FAST_PROVISIONING),
+	                    nmc_property_802_1X_get_phase1_fast_provisioning,
+	                    nmc_property_802_1X_set_phase1_fast_provisioning,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_802_1X_allowed_phase1_fast_provisioning);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_AUTH),
+	                    nmc_property_802_1X_get_phase2_auth,
+	                    nmc_property_802_1X_set_phase2_auth,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_802_1X_allowed_phase2_auth);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_AUTHEAP),
+	                    nmc_property_802_1X_get_phase2_autheap,
+	                    nmc_property_802_1X_set_phase2_autheap,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_802_1X_allowed_phase2_autheap);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_CA_CERT),
+	                    nmc_property_802_1X_get_phase2_ca_cert,
+	                    nmc_property_802_1X_set_phase2_ca_cert,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_CA_PATH),
+	                    nmc_property_802_1X_get_phase2_ca_path,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_SUBJECT_MATCH),
+	                    nmc_property_802_1X_get_phase2_subject_match,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_ALTSUBJECT_MATCHES),
+	                    nmc_property_802_1X_get_phase2_altsubject_matches,
+	                    nmc_property_802_1X_set_phase2_altsubject_matches,
+	                    nmc_property_802_1X_remove_idx_phase2_altsubject_matches,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_CLIENT_CERT),
+	                    nmc_property_802_1X_get_phase2_client_cert,
+	                    nmc_property_802_1X_set_phase2_client_cert,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD),
+	                    nmc_property_802_1X_get_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_FLAGS),
+	                    nmc_property_802_1X_get_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_RAW),
+	                    nmc_property_802_1X_get_password_raw,
+	                    nmc_property_802_1X_set_password_raw,
+	                    NULL,
+	                    nmc_property_802_1X_describe_password_raw,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_RAW_FLAGS),
+	                    nmc_property_802_1X_get_password_raw_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY),
+	                    nmc_property_802_1X_get_private_key,
+	                    nmc_property_802_1X_set_private_key,
+	                    NULL,
+	                    nmc_property_802_1X_describe_private_key,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY_PASSWORD),
+	                    nmc_property_802_1X_get_private_key_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY_PASSWORD_FLAGS),
+	                    nmc_property_802_1X_get_private_key_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY),
+	                    nmc_property_802_1X_get_phase2_private_key,
+	                    nmc_property_802_1X_set_phase2_private_key,
+	                    NULL,
+	                    nmc_property_802_1X_describe_private_key,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY_PASSWORD),
+	                    nmc_property_802_1X_get_phase2_private_key_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY_PASSWORD_FLAGS),
+	                    nmc_property_802_1X_get_phase2_private_key_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PIN),
+	                    nmc_property_802_1X_get_pin,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, PIN_FLAGS),
+	                    nmc_property_802_1X_get_pin_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (802_1X, SYSTEM_CA_CERTS),
+	                    nmc_property_802_1X_get_system_ca_certs,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_ADSL_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (ADSL, USERNAME),
+	                    nmc_property_adsl_get_username,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (ADSL, PASSWORD),
+	                    nmc_property_adsl_get_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (ADSL, PASSWORD_FLAGS),
+	                    nmc_property_adsl_get_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (ADSL, PROTOCOL),
+	                    nmc_property_adsl_get_protocol,
+	                    nmc_property_adsl_set_protocol,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_adsl_allowed_protocol);
+	nmc_add_prop_funcs (GLUE (ADSL, ENCAPSULATION),
+	                    nmc_property_adsl_get_encapsulation,
+	                    nmc_property_adsl_set_encapsulation,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_adsl_allowed_encapsulation);
+	nmc_add_prop_funcs (GLUE (ADSL, VPI),
+	                    nmc_property_adsl_get_vpi,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (ADSL, VCI),
+	                    nmc_property_adsl_get_vci,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_BLUETOOTH_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (BLUETOOTH, BDADDR),
+	                    nmc_property_bluetooth_get_bdaddr,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BLUETOOTH, TYPE),
+	                    nmc_property_bluetooth_get_type,
+	                    nmc_property_bluetooth_set_type,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_BOND_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (BOND, INTERFACE_NAME),
+	                    nmc_property_bond_get_interface_name,
+	                    nmc_property_set_ifname,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BOND, OPTIONS),
+	                    nmc_property_bond_get_options,
+	                    nmc_property_bond_set_options,
+	                    nmc_property_bond_remove_option_options,
+	                    nmc_property_bond_describe_options,
+	                    nmc_property_bond_allowed_options);
+
+	/* Add editable properties for NM_SETTING_BRIDGE_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (BRIDGE, INTERFACE_NAME),
+	                    nmc_property_bridge_get_interface_name,
+	                    nmc_property_set_ifname,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, STP),
+	                    nmc_property_bridge_get_stp,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, PRIORITY),
+	                    nmc_property_bridge_get_priority,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, FORWARD_DELAY),
+	                    nmc_property_bridge_get_forward_delay,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, HELLO_TIME),
+	                    nmc_property_bridge_get_hello_time,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, MAX_AGE),
+	                    nmc_property_bridge_get_max_age,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, AGEING_TIME),
+	                    nmc_property_bridge_get_ageing_time,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (BRIDGE_PORT, PRIORITY),
+	                    nmc_property_bridge_port_get_priority,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE_PORT, PATH_COST),
+	                    nmc_property_bridge_port_get_path_cost,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE_PORT, HAIRPIN_MODE),
+	                    nmc_property_bridge_port_get_hairpin_mode,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_CDMA_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (CDMA, NUMBER),
+	                    nmc_property_cdma_get_number,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CDMA, USERNAME),
+	                    nmc_property_cdma_get_username,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CDMA, PASSWORD),
+	                    nmc_property_cdma_get_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CDMA, PASSWORD_FLAGS),
+	                    nmc_property_cdma_get_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_CONNECTION_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (CONNECTION, ID),
+	                    nmc_property_connection_get_id,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, UUID),
+	                    nmc_property_connection_get_uuid,
+	                    nmc_property_con_set_uuid,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, INTERFACE_NAME),
+	                    nmc_property_connection_get_interface_name,
+	                    nmc_property_set_ifname,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT),
+	                    nmc_property_connection_get_autoconnect,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, TIMESTAMP),
+	                    nmc_property_connection_get_timestamp,
+	                    NULL, /* read-only */
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, READ_ONLY),
+	                    nmc_property_connection_get_read_only,
+	                    NULL, /* 'read-only' is read-inly :-) */
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, PERMISSIONS),
+	                    nmc_property_connection_get_permissions,
+	                    nmc_property_connection_set_permissions,
+	                    nmc_property_connection_remove_idx_permissions,
+	                    nmc_property_connection_describe_permissions,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, ZONE),
+	                    nmc_property_connection_get_zone,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, MASTER),
+	                    nmc_property_connection_get_master,
+	                    nmc_property_con_set_master,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, SLAVE_TYPE),
+	                    nmc_property_connection_get_slave_type,
+	                    nmc_property_con_set_slave_type,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_con_allowed_slave_type);
+	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
+	                    nmc_property_connection_get_secondaries,
+	                    nmc_property_connection_set_secondaries,
+	                    nmc_property_connection_remove_idx_secondaries,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, GATEWAY_PING_TIMEOUT),
+	                    nmc_property_connection_get_gateway_ping_timeout,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_GSM_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (GSM, NUMBER),
+	                    nmc_property_gsm_get_number,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, USERNAME),
+	                    nmc_property_gsm_get_username,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, PASSWORD),
+	                    nmc_property_gsm_get_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, PASSWORD_FLAGS),
+	                    nmc_property_gsm_get_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, APN),
+	                    nmc_property_gsm_get_apn,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, NETWORK_ID),
+	                    nmc_property_gsm_get_network_id,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, NETWORK_TYPE),
+	                    nmc_property_gsm_get_network_type,
+	                    nmc_property_set_int,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, ALLOWED_BANDS),
+	                    nmc_property_gsm_get_allowed_bands,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, PIN),
+	                    nmc_property_gsm_get_pin,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, PIN_FLAGS),
+	                    nmc_property_gsm_get_pin_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (GSM, HOME_ONLY),
+	                    nmc_property_gsm_get_home_only,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_INFINIBAND_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (INFINIBAND, MAC_ADDRESS),
+	                    nmc_property_ib_get_mac_address,
+	                    nmc_property_ib_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (INFINIBAND, MTU),
+	                    nmc_property_ib_get_mtu,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (INFINIBAND, TRANSPORT_MODE),
+	                    nmc_property_ib_get_transport_mode,
+	                    nmc_property_ib_set_transport_mode,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_ib_allowed_transport_mode);
+
+	/* Add editable properties for NM_SETTING_IP4_CONFIG_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, METHOD),
+	                    nmc_property_ipv4_get_method,
+	                    nmc_property_ipv4_set_method,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_ipv4_allowed_method);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS),
+	                    nmc_property_ipv4_get_dns,
+	                    nmc_property_ipv4_set_dns,
+	                    nmc_property_ipv4_remove_idx_dns,
+	                    nmc_property_ipv4_describe_dns,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS_SEARCH),
+	                    nmc_property_ipv4_get_dns_search,
+	                    nmc_property_ipv4_set_dns_search,
+	                    nmc_property_ipv4_remove_idx_dns_search,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ADDRESSES),
+	                    nmc_property_ipv4_get_addresses,
+	                    nmc_property_ipv4_set_addresses,
+	                    nmc_property_ipv4_remove_idx_addresses,
+	                    nmc_property_ipv4_describe_addresses,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ROUTES),
+	                    nmc_property_ipv4_get_routes,
+	                    nmc_property_ipv4_set_routes,
+	                    nmc_property_ipv4_remove_idx_routes,
+	                    nmc_property_ipv4_describe_routes,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, IGNORE_AUTO_ROUTES),
+	                    nmc_property_ipv4_get_ignore_auto_routes,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, IGNORE_AUTO_DNS),
+	                    nmc_property_ipv4_get_ignore_auto_dns,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_CLIENT_ID),
+	                    nmc_property_ipv4_get_dhcp_client_id,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_SEND_HOSTNAME),
+	                    nmc_property_ipv4_get_dhcp_send_hostname,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_HOSTNAME),
+	                    nmc_property_ipv4_get_dhcp_hostname,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, NEVER_DEFAULT),
+	                    nmc_property_ipv4_get_never_default,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP4_CONFIG, MAY_FAIL),
+	                    nmc_property_ipv4_get_may_fail,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_IP6_CONFIG_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, METHOD),
+	                    nmc_property_ipv6_get_method,
+	                    nmc_property_ipv6_set_method,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_ipv6_allowed_method);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS),
+	                    nmc_property_ipv6_get_dns,
+	                    nmc_property_ipv6_set_dns,
+	                    nmc_property_ipv6_remove_idx_dns,
+	                    nmc_property_ipv6_describe_dns,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS_SEARCH),
+	                    nmc_property_ipv6_get_dns_search,
+	                    nmc_property_ipv6_set_dns_search,
+	                    nmc_property_ipv6_remove_idx_dns_search,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ADDRESSES),
+	                    nmc_property_ipv6_get_addresses,
+	                    nmc_property_ipv6_set_addresses,
+	                    nmc_property_ipv6_remove_idx_addresses,
+	                    nmc_property_ipv6_describe_addresses,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ROUTES),
+	                    nmc_property_ipv6_get_routes,
+	                    nmc_property_ipv6_set_routes,
+	                    nmc_property_ipv6_remove_idx_routes,
+	                    nmc_property_ipv6_describe_routes,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IGNORE_AUTO_ROUTES),
+	                    nmc_property_ipv6_get_ignore_auto_routes,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IGNORE_AUTO_DNS),
+	                    nmc_property_ipv6_get_ignore_auto_dns,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, NEVER_DEFAULT),
+	                    nmc_property_ipv6_get_never_default,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, MAY_FAIL),
+	                    nmc_property_ipv6_get_may_fail,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IP6_PRIVACY),
+	                    nmc_property_ipv6_get_ip6_privacy,
+	                    nmc_property_ipv6_set_ip6_privacy,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DHCP_HOSTNAME),
+	                    nmc_property_ipv6_get_dhcp_hostname,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_OLPC_MESH_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (OLPC_MESH, SSID),
+	                    nmc_property_olpc_get_ssid,
+	                    nmc_property_set_ssid,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (OLPC_MESH, CHANNEL),
+	                    nmc_property_olpc_get_channel,
+	                    nmc_property_olpc_set_channel,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (OLPC_MESH, DHCP_ANYCAST_ADDRESS),
+	                    nmc_property_olpc_get_anycast_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_PPP_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (PPP, NOAUTH),
+	                    nmc_property_ppp_get_noauth,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REFUSE_EAP),
+	                    nmc_property_ppp_get_refuse_eap,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REFUSE_PAP),
+	                    nmc_property_ppp_get_refuse_pap,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REFUSE_CHAP),
+	                    nmc_property_ppp_get_refuse_chap,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REFUSE_MSCHAP),
+	                    nmc_property_ppp_get_refuse_mschap,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REFUSE_MSCHAPV2),
+	                    nmc_property_ppp_get_refuse_mschapv2,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, NOBSDCOMP),
+	                    nmc_property_ppp_get_nobsdcomp,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, NODEFLATE),
+	                    nmc_property_ppp_get_nodeflate,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, NO_VJ_COMP),
+	                    nmc_property_ppp_get_no_vj_comp,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REQUIRE_MPPE),
+	                    nmc_property_ppp_get_require_mppe,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, REQUIRE_MPPE_128),
+	                    nmc_property_ppp_get_require_mppe_128,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, MPPE_STATEFUL),
+	                    nmc_property_ppp_get_mppe_stateful,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, CRTSCTS),
+	                    nmc_property_ppp_get_crtscts,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, BAUD),
+	                    nmc_property_ppp_get_baud,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, MRU),
+	                    nmc_property_ppp_get_mru,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, MTU),
+	                    nmc_property_ppp_get_mtu,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, LCP_ECHO_FAILURE),
+	                    nmc_property_ppp_get_lcp_echo_failure,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPP, LCP_ECHO_INTERVAL),
+	                    nmc_property_ppp_get_lcp_echo_interval,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_PPPOE_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (PPPOE, SERVICE),
+	                    nmc_property_pppoe_get_service,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPPOE, USERNAME),
+	                    nmc_property_pppoe_get_username,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPPOE, PASSWORD),
+	                    nmc_property_pppoe_get_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (PPPOE, PASSWORD_FLAGS),
+	                    nmc_property_pppoe_get_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_SERIAL_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (SERIAL, BAUD),
+	                    nmc_property_serial_get_baud,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (SERIAL, BITS),
+	                    nmc_property_serial_get_bits,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (SERIAL, PARITY),
+	                    nmc_property_serial_get_parity,
+	                    nmc_property_serial_set_parity,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (SERIAL, STOPBITS),
+	                    nmc_property_serial_get_stopbits,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (SERIAL, SEND_DELAY),
+	                    nmc_property_serial_get_send_delay,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_VLAN_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (VLAN, INTERFACE_NAME),
+	                    nmc_property_vlan_get_interface_name,
+	                    nmc_property_set_ifname,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VLAN, PARENT),
+	                    nmc_property_vlan_get_parent,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VLAN, ID),
+	                    nmc_property_vlan_get_id,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VLAN, FLAGS),
+	                    nmc_property_vlan_get_flags,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VLAN, INGRESS_PRIORITY_MAP),
+	                    nmc_property_vlan_get_ingress_priority_map,
+	                    nmc_property_vlan_set_ingress_priority_map,
+	                    nmc_property_vlan_remove_idx_ingress_priority_map,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VLAN, EGRESS_PRIORITY_MAP),
+	                    nmc_property_vlan_get_egress_priority_map,
+	                    nmc_property_vlan_set_egress_priority_map,
+	                    nmc_property_vlan_remove_idx_egress_priority_map,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_VPN_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (VPN, SERVICE_TYPE),
+	                    nmc_property_vpn_get_service_type,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VPN, USER_NAME),
+	                    nmc_property_vpn_get_user_name,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VPN, DATA),
+	                    nmc_property_vpn_get_data,
+	                    nmc_property_vpn_set_data,
+	                    nmc_property_vpn_remove_option_data,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (VPN, SECRETS),
+	                    nmc_property_vpn_get_secrets,
+	                    nmc_property_vpn_set_secrets,
+	                    nmc_property_vpn_remove_option_secret,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_WIMAX_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (WIMAX, NETWORK_NAME),
+	                    nmc_property_wimax_get_network_name,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIMAX, MAC_ADDRESS),
+	                    nmc_property_wimax_get_mac_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_WIRED_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (WIRED, PORT),
+	                    nmc_property_wired_get_port,
+	                    NULL, /*nmc_property_wired_set_port,*/
+	                    NULL,
+	                    NULL,
+	                    NULL); /*nmc_property_wired_allowed_port);*/
+	nmc_add_prop_funcs (GLUE (WIRED, SPEED),
+	                    nmc_property_wired_get_speed,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, DUPLEX),
+	                    nmc_property_wired_get_duplex,
+	                    NULL, /*nmc_property_wired_set_duplex,*/
+	                    NULL,
+	                    NULL,
+	                    NULL); /*nmc_property_wired_allowed_duplex);*/
+	nmc_add_prop_funcs (GLUE (WIRED, AUTO_NEGOTIATE),
+	                    nmc_property_wired_get_auto_negotiate,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, MAC_ADDRESS),
+	                    nmc_property_wired_get_mac_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, CLONED_MAC_ADDRESS),
+	                    nmc_property_wired_get_cloned_mac_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, MAC_ADDRESS_BLACKLIST),
+	                    nmc_property_wired_get_mac_address_blacklist,
+	                    nmc_property_wired_set_mac_address_blacklist,
+	                    nmc_property_wired_remove_idx_mac_address_blacklist,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, MTU),
+	                    nmc_property_wired_get_mtu,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, S390_SUBCHANNELS),
+	                    nmc_property_wired_get_s390_subchannels,
+	                    nmc_property_wired_set_s390_subchannels,
+	                    NULL,
+	                    nmc_property_wired_describe_s390_subchannels,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, S390_NETTYPE),
+	                    nmc_property_wired_get_s390_nettype,
+	                    nmc_property_wired_set_s390_nettype,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_wired_allowed_s390_nettype);
+	nmc_add_prop_funcs (GLUE (WIRED, S390_OPTIONS),
+	                    nmc_property_wired_get_s390_options,
+	                    nmc_property_wired_set_s390_options,
+	                    nmc_property_wired_remove_option_s390_options,
+	                    nmc_property_wired_describe_s390_options,
+	                    nmc_property_wired_allowed_s390_options);
+
+	/* Add editable properties for NM_SETTING_WIRELESS_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (WIRELESS, SSID),
+	                    nmc_property_wireless_get_ssid,
+	                    nmc_property_set_ssid,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, MODE),
+	                    nmc_property_wireless_get_mode,
+	                    nmc_property_wifi_set_mode,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_wifi_allowed_mode);
+	nmc_add_prop_funcs (GLUE (WIRELESS, BAND),
+	                    nmc_property_wireless_get_band,
+	                    nmc_property_wifi_set_band,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_wifi_allowed_band);
+	nmc_add_prop_funcs (GLUE (WIRELESS, CHANNEL),
+	                    nmc_property_wireless_get_channel,
+	                    nmc_property_wifi_set_channel,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, BSSID),
+	                    nmc_property_wireless_get_bssid,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, RATE),
+	                    nmc_property_wireless_get_rate,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, TX_POWER),
+	                    nmc_property_wireless_get_tx_power,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, MAC_ADDRESS),
+	                    nmc_property_wireless_get_mac_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, CLONED_MAC_ADDRESS),
+	                    nmc_property_wireless_get_cloned_mac_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, MAC_ADDRESS_BLACKLIST),
+	                    nmc_property_wireless_get_mac_address_blacklist,
+	                    nmc_property_wireless_set_mac_address_blacklist,
+	                    nmc_property_wireless_remove_idx_mac_address_blacklist,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, SEEN_BSSIDS),
+	                    nmc_property_wireless_get_seen_bssids,
+	                    NULL, /* read-only */
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, MTU),
+	                    nmc_property_wireless_get_mtu,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, SEC),
+	                    nmc_property_wireless_get_sec,
+	                    NULL, /* read-only */
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS, HIDDEN),
+	                    nmc_property_wireless_get_hidden,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, KEY_MGMT),
+	                    nmc_property_wifi_sec_get_key_mgmt,
+	                    nmc_property_wifi_sec_set_key_mgmt,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_wifi_sec_allowed_key_mgmt);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_TX_KEYIDX),
+	                    nmc_property_wifi_sec_get_wep_tx_keyidx,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, AUTH_ALG),
+	                    nmc_property_wifi_sec_get_auth_alg,
+	                    nmc_property_wifi_sec_set_auth_alg,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_wifi_sec_allowed_auth_alg);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PROTO),
+	                    nmc_property_wifi_sec_get_proto,
+	                    nmc_property_wifi_sec_set_proto,
+	                    nmc_property_wifi_sec_remove_idx_proto,
+	                    NULL,
+	                    nmc_property_wifi_sec_allowed_proto);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PAIRWISE),
+	                    nmc_property_wifi_sec_get_pairwise,
+	                    nmc_property_wifi_sec_set_pairwise,
+	                    nmc_property_wifi_sec_remove_idx_pairwise,
+	                    NULL,
+	                    nmc_property_wifi_sec_allowed_pairwise);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, GROUP),
+	                    nmc_property_wifi_sec_get_group,
+	                    nmc_property_wifi_sec_set_group,
+	                    nmc_property_wifi_sec_remove_idx_group,
+	                    NULL,
+	                    nmc_property_wifi_sec_allowed_group);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_USERNAME),
+	                    nmc_property_wifi_sec_get_leap_username,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY0),
+	                    nmc_property_wifi_sec_get_wep_key0,
+	                    nmc_property_wifi_set_wep_key,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY1),
+	                    nmc_property_wifi_sec_get_wep_key1,
+	                    nmc_property_wifi_set_wep_key,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY2),
+	                    nmc_property_wifi_sec_get_wep_key2,
+	                    nmc_property_wifi_set_wep_key,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY3),
+	                    nmc_property_wifi_sec_get_wep_key3,
+	                    nmc_property_wifi_set_wep_key,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY_FLAGS),
+	                    nmc_property_wifi_sec_get_wep_key_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY_TYPE),
+	                    nmc_property_wifi_sec_get_wep_key_type,
+	                    nmc_property_wifi_set_wep_key_type,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PSK),
+	                    nmc_property_wifi_sec_get_psk,
+	                    nmc_property_wifi_set_psk,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PSK_FLAGS),
+	                    nmc_property_wifi_sec_get_psk_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_PASSWORD),
+	                    nmc_property_wifi_sec_get_leap_password,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_PASSWORD_FLAGS),
+	                    nmc_property_wifi_sec_get_leap_password_flags,
+	                    nmc_property_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+}
+
+void
+nmc_properties_cleanup ()
+{
+	if (nmc_properties)
+		g_hash_table_destroy (nmc_properties);
+}
+
+static const NmcPropertyFuncs *
+nmc_properties_find (const char *s_name, const char *p_name)
+{
+	NmcPropertyFuncs *item = NULL;
+	char *key;
+
+	/* FIXME: maybe it's better to init it globally */
+	nmc_properties_init ();
+
+	key = g_strdup_printf ("%s%s", s_name, p_name);
+	item = (NmcPropertyFuncs *) g_hash_table_lookup (nmc_properties, key);
+	g_free (key);
+
+	return item;
+}
+
+/*
+ * Generic function for getting property value.
+ *
+ * Gets property value as a string by calling specialized functions.
+ *
+ * Returns: current property value. The caller must free the returned string.
+ */
+char *
+nmc_setting_get_property (NMSetting *setting, const char *prop, GError **error)
+{
+	const NmcPropertyFuncs *item;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->get_func)
+		return item->get_func (setting);
+
+	g_set_error_literal (error, 1, 0, _("don't know how to get the property value"));
+	return NULL;
+}
+
+/*
+ * Generic function for setting property value.
+ *
+ * Sets property=val in setting by calling specialized functions.
+ * If val is NULL then default property value is set.
+ *
+ * Returns: TRUE on success; FALSE on failure and sets error
+ */
+gboolean
+nmc_setting_set_property (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	const NmcPropertyFuncs *item;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->set_func) {
+		if (!val) {
+			/* No value argument sets default value */
+			nmc_property_set_default_value (setting, prop);
+			return TRUE;
+		}
+		return item->set_func (setting, prop, val, error);
+	}
+
+	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
+	return FALSE;
+}
+
+void
+nmc_property_set_default_value (NMSetting *setting, const char *prop)
+{
+	GValue value = G_VALUE_INIT;
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	if (param_spec) {
+		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (param_spec));
+		g_param_value_set_default (param_spec, &value);
+		g_object_set_property (G_OBJECT (setting), prop, &value);
+	}
+}
+
+/*
+ * Generic function for removing items for collection-type properties.
+ *
+ * If 'option' is not NULL, it tries to remove it, otherwise 'idx' is used.
+ * For single-value properties (not having specialized remove function) this
+ * function does nothing and just returns TRUE.
+ *
+ * Returns: TRUE on success; FALSE on failure and sets error
+ */
+gboolean
+nmc_setting_remove_property_option (NMSetting *setting,
+                                    const char *prop,
+                                    const char *option,
+                                    guint32 idx,
+                                    GError **error)
+{
+	const NmcPropertyFuncs *item;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->remove_func)
+		return item->remove_func (setting, prop, option, idx, error);
+
+	return TRUE;
+}
+
+/*
+ * Get valid property names for a setting.
+ *
+ * Returns: string array with the properties or NULL on failure.
+ *          The returned value should be freed with g_strfreev()
+ */
+char **
+nmc_setting_get_valid_properties (NMSetting *setting)
+{
+	char **valid_props = NULL;
+	GParamSpec **props, **iter;
+	guint num;
+	int i;
+
+	/* Iterate through properties */
+	i = 0;
+	props = g_object_class_list_properties (G_OBJECT_GET_CLASS (G_OBJECT (setting)), &num);
+	valid_props = g_malloc0 (sizeof (char*) * (num + 1));
+	for (iter = props; iter && *iter; iter++) {
+		const char *key_name = g_param_spec_get_name (*iter);
+
+		/* Add all properties except for "name" that is non-editable */
+		if (g_strcmp0 (key_name, "name") != 0)
+			valid_props[i++] = g_strdup (key_name);
+	}
+	valid_props[i] = NULL;
+
+	return valid_props;
+}
+
+/*
+ * Return allowed values for 'prop' as a string.
+ */
+const char *
+nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
+{
+
+	const NmcPropertyFuncs *item;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->values_func)
+		return item->values_func (setting, prop);
+
+	return NULL;
+}
+
+/*
+ * Create a description string for a property.
+ *
+ * It returns a description got from properties blurb, concatenated with
+ * nmcli specific description (if it exists).
+ *
+ * Returns: property description or NULL on failure. The caller must free the string.
+ */
+char *
+nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
+{
+	GParamSpec *spec;
+	const NmcPropertyFuncs *item;
+	const char *setting_desc = "";
+	const char *setting_desc_title = "";
+	const char *nmcli_desc = NULL;
+	const char *nmcli_desc_title = "";
+	const char *nmcli_nl = "";
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+
+	spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	if (spec) {
+		setting_desc = g_param_spec_get_blurb (spec);
+		setting_desc_title = _("[NM property description]");
+	}
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->describe_func) {
+		nmcli_desc = item->describe_func (setting, prop);
+		nmcli_desc_title = _("[nmcli specific description]");
+		nmcli_nl = "\n";
+	}
+
+	return g_strdup_printf ("%s\n%s\n%s%s%s%s",
+	                        setting_desc_title, setting_desc,
+	                        nmcli_nl, nmcli_desc_title, nmcli_nl,
+	                        nmcli_desc ? nmcli_desc : "");
 }
 
 /*----------------------------------------------------------------------------*/
