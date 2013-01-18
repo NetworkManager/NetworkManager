@@ -107,7 +107,6 @@ gboolean nm_logging_level_enabled (guint32 level);
 gboolean nm_logging_domain_enabled (guint32 domain);
 
 /* Undefine the nm-utils.h logging stuff to ensure errors */
-#undef nm_print_backtrace
 #undef nm_get_timestamp
 #undef nm_info
 #undef nm_info_str
@@ -120,7 +119,6 @@ gboolean nm_logging_domain_enabled (guint32 domain);
 
 gboolean nm_logging_setup     (const char *level, const char *domains, GError **error);
 void     nm_logging_start     (gboolean become_daemon);
-void     nm_logging_backtrace (void);
 void     nm_logging_shutdown  (void);
 
 #endif /* NM_LOGGING_H */

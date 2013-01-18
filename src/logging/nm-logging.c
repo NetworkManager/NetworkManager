@@ -32,10 +32,6 @@
 #include <strings.h>
 #include <string.h>
 
-#ifdef ENABLE_CRASHTRACE
-#include <execinfo.h>
-#endif
-
 #include <glib/gi18n.h>
 
 #include "nm-logging.h"
@@ -269,88 +265,6 @@ _nm_log (const char *loc,
 }
 
 /************************************************************************/
-
-static void
-fallback_get_backtrace (void)
-{
-#ifdef ENABLE_CRASHTRACE
-	void *frames[64];
-	Dl_info info;
-	size_t size;
-	guint32 i;
-	const char *name;
-
-	size = backtrace (frames, G_N_ELEMENTS (frames));
-
-	syslog (LOG_CRIT, "******************* START **********************************");
-	for (i = 0; i < size; i++) {
-		dladdr (frames[i], &info);
-		name = (info.dli_fname && *info.dli_fname) ? info.dli_fname : "(vdso)";
-		if (info.dli_saddr) {
-			syslog (LOG_CRIT, "Frame %d: %s (%s+0x%lx) [%p]",
-			        i, name,
-			        info.dli_sname,
-			        (gulong)((guchar *)frames[i] - (guchar *)info.dli_saddr),
-			        frames[i]);
-		} else {
-			syslog (LOG_CRIT, "Frame %d: %s (%p+0x%lx) [%p]",
-			        i, name,
-			        info.dli_fbase,
-			        (gulong)((guchar *)frames[i] - (guchar *)info.dli_saddr),
-			        frames[i]);
-		}
-	}
-	syslog (LOG_CRIT, "******************* END **********************************");
-#endif  /* ENABLE_CRASHTRACE */
-}
-
-
-static gboolean
-crashlogger_get_backtrace (void)
-{
-	gboolean success = FALSE;
-	int pid;	
-
-	pid = fork();
-	if (pid > 0)
-	{
-		/* Wait for the child to finish */
-		int estatus;
-		if (waitpid (pid, &estatus, 0) != -1)
-		{
-			/* Only succeed if the crashlogger succeeded */
-			if (WIFEXITED (estatus) && (WEXITSTATUS (estatus) == 0))
-				success = TRUE;
-		}
-	}
-	else if (pid == 0)
-	{
-		/* Child process */
-		execl (LIBEXECDIR"/nm-crash-logger",
-				LIBEXECDIR"/nm-crash-logger", NULL);
-	}
-
-	return success;
-}
-
-
-void
-nm_logging_backtrace (void)
-{
-	struct stat s;
-	gboolean fallback = TRUE;
-	
-	/* Try to use gdb via nm-crash-logger if it exists, since
-	 * we get much better information out of it.  Otherwise
-	 * fall back to execinfo.
-	 */
-	if (stat (LIBEXECDIR"/nm-crash-logger", &s) == 0)
-		fallback = crashlogger_get_backtrace () ? FALSE : TRUE;
-
-	if (fallback)
-		fallback_get_backtrace ();
-}
-
 
 static void
 nm_log_handler (const gchar *log_domain,

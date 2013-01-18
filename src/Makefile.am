@@ -355,18 +355,6 @@ endif
 
 NetworkManager_LDFLAGS = -rdynamic
 
-libexec_PROGRAMS = nm-crash-logger
-nm_crash_logger_SOURCES = nm-crash-logger.c
-nm_crash_logger_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	-DBINDIR=\"$(bindir)\" \
-	-DNMBINARY=\"$(nmbinary)\" \
-	-DNMDATADIR=\"$(nmdatadir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\"
-nm_crash_logger_LDADD = $(GLIB_LIBS)
-
-
 NetworkManagerdir = $(datadir)/NetworkManager
 NetworkManager_DATA = gdb-cmd
 

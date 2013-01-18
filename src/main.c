@@ -88,22 +88,6 @@ signal_handling_thread (void *arg)
 		sigwait (&signal_set, &signo);
 
 		switch (signo) {
-		case SIGSEGV:
-		case SIGBUS:
-		case SIGILL:
-		case SIGABRT:
-		case SIGQUIT:
-			nm_log_warn (LOGD_CORE, "caught signal %d. Generating backtrace...", signo);
-			nm_logging_backtrace ();
-			exit (1);
-			break;
-		case SIGFPE:
-		case SIGPIPE:
-			nm_log_warn (LOGD_CORE, "caught signal %d, shutting down abnormally. Generating backtrace...", signo);
-			nm_logging_backtrace ();
-			quit_early = TRUE; /* for quitting before entering the main loop */
-			g_main_loop_quit (main_loop);
-			break;
 		case SIGINT:
 		case SIGTERM:
 			nm_log_info (LOGD_CORE, "caught signal %d, shutting down normally.", signo);
@@ -142,13 +126,6 @@ setup_signals (void)
 	sigemptyset (&signal_set);
 	sigaddset (&signal_set, SIGHUP);
 	sigaddset (&signal_set, SIGINT);
-	sigaddset (&signal_set, SIGQUIT);
-	sigaddset (&signal_set, SIGILL);
-	sigaddset (&signal_set, SIGABRT);
-	sigaddset (&signal_set, SIGFPE);
-	sigaddset (&signal_set, SIGBUS);
-	sigaddset (&signal_set, SIGSEGV);
-	sigaddset (&signal_set, SIGPIPE);
 	sigaddset (&signal_set, SIGTERM);
 	sigaddset (&signal_set, SIGUSR1);
 

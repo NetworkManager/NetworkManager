@@ -611,13 +611,6 @@ fi
 AC_DEFINE_UNQUOTED(KERNEL_FIRMWARE_DIR, "$KERNEL_FIRMWARE_DIR", [Define to path of the kernel firmware directory])
 AC_SUBST(KERNEL_FIRMWARE_DIR)
 
-AC_ARG_ENABLE(crashtrace,
-              AS_HELP_STRING([--disable-crashtrace], [Disable GNU backtrace extensions]),
-              [enable_crashtrace=${enableval}], [enable_crashtrace=yes])
-if test x"$enable_crashtrace" = xyes; then
-  AC_DEFINE(ENABLE_CRASHTRACE, 1, [Define if you have GNU backtrace extensions])
-fi
-
 PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26], [have_libsoup=yes],[have_libsoup=no])
 AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
                      [enable_concheck=${enableval}], [enable_concheck=${have_libsoup}])
