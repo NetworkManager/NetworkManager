@@ -607,10 +607,19 @@ value_hash_add_object_property (GHashTable *hash,
 	value_hash_add (hash, key, value);
 }
 
+/**
+ * nm_utils_do_sysctl:
+ * @path: path to write @value to
+ * @value: value to write to @path
+ *
+ * Writes @value to the file at @path, trying 3 times on failure.
+ *
+ * Returns: %TRUE on success.  On failure, returns %FALSE and sets errno.
+ */
 gboolean
 nm_utils_do_sysctl (const char *path, const char *value)
 {
-	int fd, len, nwrote, tries;
+	int fd, len, nwrote, tries, saved_errno = 0;
 	char *actual;
 
 	g_return_val_if_fail (path != NULL, FALSE);
@@ -618,8 +627,10 @@ nm_utils_do_sysctl (const char *path, const char *value)
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
+		saved_errno = errno;
 		nm_log_warn (LOGD_CORE, "sysctl: failed to open '%s': (%d) %s",
-		             path, errno, strerror (errno));
+		             path, saved_errno, strerror (saved_errno));
+		errno = saved_errno;
 		return FALSE;
 	}
 
@@ -635,21 +646,24 @@ nm_utils_do_sysctl (const char *path, const char *value)
 	/* Try to write the entire value three times if a partial write occurs */
 	len = strlen (actual);
 	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
+		errno = 0;
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
 			if (errno == EINTR)
 				continue;
+			saved_errno = errno;
 			break;
 		}
 	}
 	g_free (actual);
+	close (fd);
 
-	if (nwrote != len) {
+	if (nwrote != len && saved_errno != EEXIST) {
 		nm_log_warn (LOGD_CORE, "sysctl: failed to set '%s' to '%s': (%d) %s",
-		             path, value, errno, strerror (errno));
+		             path, value, saved_errno, strerror (saved_errno));
 	}
 
-	close (fd);
+	errno = saved_errno;
 	return (nwrote == len);
 }
 
