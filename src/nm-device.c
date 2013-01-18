@@ -1062,6 +1062,19 @@ nm_device_slave_notify_enslaved (NMDevice *dev,
 	}
 }
 
+/**
+ * nm_device_get_enslaved:
+ * @device: the #NMDevice
+ *
+ * Returns: %TRUE if the device is enslaved to a master device (eg bridge or
+ * bond), %FALSE if not
+ */
+gboolean
+nm_device_get_enslaved (NMDevice *device)
+{
+	return NM_DEVICE_GET_PRIVATE (device)->enslaved;
+}
+
 /*
  * nm_device_get_act_request
  *

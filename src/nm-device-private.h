@@ -82,4 +82,6 @@ void nm_device_queued_state_clear (NMDevice *device);
 
 NMDeviceState nm_device_queued_state_peek (NMDevice *device);
 
+gboolean nm_device_get_enslaved (NMDevice *device);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

@@ -152,7 +152,7 @@ carrier_action_defer_cb (gpointer user_data)
 				nm_device_queued_state_clear (NM_DEVICE (self));
 		}
 	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!priv->carrier)
+		if (!priv->carrier && !nm_device_get_enslaved (NM_DEVICE (self)))
 			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
 	}
 
