@@ -927,8 +927,10 @@ slave_state_changed (NMDevice *slave,
 
 	if (release) {
 		nm_device_release_one_slave (self, slave, FALSE);
-		if (priv->slaves == NULL) {
-			/* FIXME: all slaves gone; do something? */
+		/* Bridge/bond interfaces are left up until manually deactivated */
+		if (priv->slaves == NULL && priv->state == NM_DEVICE_STATE_ACTIVATED) {
+			nm_log_dbg (LOGD_DEVICE, "(%s): last slave removed; remaining activated",
+			            nm_device_get_iface (self));
 		}
 	}
 }
