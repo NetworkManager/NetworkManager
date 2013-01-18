@@ -850,6 +850,13 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
 		info->enslaved = TRUE;
 		nm_device_slave_notify_enslaved (info->slave, TRUE, FALSE);
 	}
+
+	/* Ensure the device's hardware address is up-to-date; it often changes
+	 * when slaves change.
+	 */
+	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
+
 	return success;
 }
 
@@ -887,6 +894,13 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean failed)
 
 	priv->slaves = g_slist_remove (priv->slaves, info);
 	free_slave_info (info);
+
+	/* Ensure the device's hardware address is up-to-date; it often changes
+	 * when slaves change.
+	 */
+	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
+		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
+
 	return success;
 }
 
