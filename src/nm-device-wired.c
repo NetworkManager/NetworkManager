@@ -185,7 +185,6 @@ set_carrier (NMDeviceWired *self,
 	g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
 
 	priv->carrier = carrier;
-	g_object_notify (G_OBJECT (self), "carrier");
 
 	state = nm_device_get_state (NM_DEVICE (self));
 	if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
@@ -196,6 +195,8 @@ set_carrier (NMDeviceWired *self,
 		             state,
 		             defer_action ? ", deferring action for 4 seconds" : "");
 	}
+
+	g_object_notify (G_OBJECT (self), "carrier");
 
 	if (defer_action)
 		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
