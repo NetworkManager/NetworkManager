@@ -1686,9 +1686,29 @@ nm_system_bond_enslave (gint master_ifindex,
 	g_assert (!nm_system_iface_is_up (slave_ifindex));
 
 	if (nm_system_iface_get_flags (slave_ifindex) & IFF_SLAVE) {
-		nm_log_err (LOGD_DEVICE, "(%s): %s is already a slave",
-		            master_iface, slave_iface);
-		return FALSE;
+		struct rtnl_link *link;
+		int existing_master = -1;
+
+		/* Get the ifindex of the existing master device */
+		link = nm_netlink_index_to_rtnl_link (slave_ifindex);
+		g_warn_if_fail (link != NULL);
+		if (link) {
+			existing_master = rtnl_link_get_master (link);
+			rtnl_link_put (link);
+		}
+
+		if (existing_master > 0) {
+			/* Fail if the device is already a slave of a different master */
+			if (existing_master != master_ifindex) {
+				nm_log_err (LOGD_DEVICE, "(%s): already a slave of a different master",
+							slave_iface);
+				return FALSE;
+			}
+
+			nm_log_dbg (LOGD_DEVICE, "(%s): %s is already enslaved",
+			            master_iface, slave_iface);
+			return TRUE;
+		}
 	}
 
 	err = rtnl_link_bond_enslave_ifindex (sock, master_ifindex, slave_ifindex);
