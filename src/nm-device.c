@@ -5133,9 +5133,9 @@ nm_device_set_managed (NMDevice *device,
 		return;
 
 	priv->managed = managed;
-	nm_log_info (LOGD_DEVICE, "(%s): now %s",
-	             nm_device_get_iface (device),
-	             managed ? "managed" : "unmanaged");
+	nm_log_dbg (LOGD_DEVICE, "(%s): now %s",
+	            nm_device_get_iface (device),
+	            managed ? "managed" : "unmanaged");
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_MANAGED);
 
