@@ -54,7 +54,6 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-enum-types.h"
-#include "nm-netlink-monitor.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
 
@@ -231,7 +230,7 @@ constructor (GType type,
 	GObject *object;
 	NMDeviceEthernetPrivate *priv;
 	NMDevice *self;
-	int itype;
+	int ifindex;
 
 	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
 	                                                                        n_construct_params,
@@ -239,11 +238,9 @@ constructor (GType type,
 	if (object) {
 		self = NM_DEVICE (object);
 		priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+		ifindex = nm_device_get_ifindex (self);
 
-		// FIXME: Convert this into a no-export property so type can be specified
-		//        when the device is created.
-		itype = nm_system_get_iface_type (nm_device_get_ifindex (self), nm_device_get_iface (self));
-		g_assert (itype == NM_IFACE_TYPE_UNSPEC);
+		g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_ETHERNET);
 
 		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d",
 			        nm_device_get_iface (NM_DEVICE (self)),
@@ -365,7 +362,7 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 	/* Can't change MAC address while device is up */
 	nm_device_hw_take_down (dev, FALSE);
 
-	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
+	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (dev), addr, ETH_ALEN);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (dev);

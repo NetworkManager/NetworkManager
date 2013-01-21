@@ -57,6 +57,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-platform.h"
 #include "nm-udev-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
@@ -1238,7 +1239,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-		if (!nm_system_add_bonding_master (iface)) {
+		if (!nm_platform_bond_add (iface)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bonding master interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto out;
@@ -1248,16 +1249,17 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_bond_new (udi, iface);
 		g_free (udi);
 	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		gboolean exists = FALSE;
+		gboolean result;
 
-		if (!nm_system_create_bridge (iface, &exists)) {
+		result = nm_platform_bridge_add (iface);
+		if (!result && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bridging interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto out;
 		}
 
 		/* FIXME: remove when we handle bridges non-destructively */
-		if (exists && !bridge_created_by_nm (self, iface)) {
+		if (!result && !bridge_created_by_nm (self, iface)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): cannot use existing bridge for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto out;
@@ -1267,12 +1269,27 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_bridge_new (udi, iface);
 		g_free (udi);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		g_return_val_if_fail (parent != NULL, FALSE);
+		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
+		int ifindex = nm_device_get_ip_ifindex (parent);
+		int num, i;
+		guint32 from, to;
 
-		if (!nm_system_add_vlan_iface (connection, iface, nm_device_get_ip_ifindex (parent))) {
+		if (!nm_platform_vlan_add (iface, ifindex,
+				nm_setting_vlan_get_id (s_vlan),
+				nm_setting_vlan_get_flags (s_vlan))) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto out;
+		}
+		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
+		for (i = 0; i < num; i++) {
+			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to))
+				nm_platform_vlan_set_ingress_map (ifindex, from, to);
+		}
+		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP);
+		for (i = 0; i < num; i++) {
+			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
+				nm_platform_vlan_set_egress_map (ifindex, from, to);
 		}
 		udi = get_virtual_iface_placeholder_udi ();
 		device = nm_device_vlan_new (udi, iface, parent);
@@ -2151,19 +2168,19 @@ is_infiniband (GUdevDevice *device)
 static gboolean
 is_bond (int ifindex)
 {
-	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_BOND);
+	return (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_BOND);
 }
 
 static gboolean
 is_bridge (int ifindex)
 {
-	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_BRIDGE);
+	return (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_BRIDGE);
 }
 
 static gboolean
 is_vlan (int ifindex)
 {
-	return (nm_system_get_iface_type (ifindex, NULL) == NM_IFACE_TYPE_VLAN);
+	return (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_VLAN);
 }
 
 static gboolean
@@ -2196,8 +2213,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 		device = find_device_by_ifindex (self, ifindex);
 		if (device) {
 			/* If it's a virtual device we may need to update its UDI */
-			if (nm_system_get_iface_type (ifindex, iface) != NM_IFACE_TYPE_UNSPEC)
-				g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
+			g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
 			return;
 		}
 	} else {
@@ -2253,7 +2269,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 			NMDevice *parent;
 
 			/* Have to find the parent device */
-			if (nm_system_get_iface_vlan_info (ifindex, &parent_ifindex, NULL)) {
+			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
 				parent = find_device_by_ifindex (self, parent_ifindex);
 				if (parent)
 					device = nm_device_vlan_new (sysfs_path, iface, parent);

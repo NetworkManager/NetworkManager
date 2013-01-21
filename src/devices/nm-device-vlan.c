@@ -35,7 +35,7 @@
 #include "nm-enum-types.h"
 #include "nm-system.h"
 #include "nm-dbus-manager.h"
-#include "nm-netlink-monitor.h"
+#include "nm-platform.h"
 
 #include "nm-device-vlan-glue.h"
 
@@ -85,7 +85,7 @@ get_generic_capabilities (NMDevice *dev)
 static gboolean
 hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	gboolean success = FALSE, carrier;
+	gboolean success = FALSE;
 	guint i = 20;
 
 	while (i-- > 0 && !success) {
@@ -93,33 +93,6 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		g_usleep (50);
 	}
 
-	if (success) {
-		/* Block a bit to make sure the carrier comes on; it's delayed a bit
-		 * after setting the interface up.
-		 */
-		i = 20;
-		while (i-- > 0) {
-			GError *error = NULL;
-			guint32 ifflags = 0;
-
-			if (!nm_netlink_monitor_get_flags_sync (nm_netlink_monitor_get (),
-			                                        nm_device_get_ifindex (dev),
-			                                        &ifflags, &error)) {
-				nm_log_warn (LOGD_DEVICE | LOGD_VLAN,
-				             "(%s): couldn't get carrier state: %s",
-				             nm_device_get_iface (dev),
-				             error->message);
-				g_clear_error (&error);
-				break;
-			}
-
-			carrier = !!(ifflags & IFF_LOWER_UP);
-			nm_device_set_carrier (dev, carrier);
-			if (carrier)
-				break;
-			g_usleep (100);
-		}
-	}
 	return success;
 }
 
@@ -352,14 +325,14 @@ nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
 		int parent_ifindex = -1, itype;
 		int vlan_id;
 
-		itype = nm_system_get_iface_type (ifindex, iface);
-		if (itype != NM_IFACE_TYPE_VLAN) {
+		itype = nm_platform_link_get_type (ifindex);
+		if (itype != NM_LINK_TYPE_VLAN) {
 			nm_log_err (LOGD_VLAN, "(%s): failed to get VLAN interface type.", iface);
 			g_object_unref (device);
 			return NULL;
 		}
 
-		if (!nm_system_get_iface_vlan_info (ifindex, &parent_ifindex, &vlan_id)) {
+		if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
 			nm_log_warn (LOGD_VLAN, "(%s): failed to get VLAN interface info.", iface);
 			g_object_unref (device);
 			return NULL;

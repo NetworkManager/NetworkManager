@@ -39,8 +39,8 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
+#include "nm-platform.h"
 #include "nm-system.h"
-#include "nm-netlink-monitor.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
 
@@ -167,10 +167,7 @@ set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 	g_return_if_fail (name != NULL);
 
 	g_warn_if_fail (priv->nas_ifindex <= 0);
-	if (idx > 0)
-		priv->nas_ifindex = idx;
-	else
-		priv->nas_ifindex = nm_netlink_iface_to_index (name);
+	priv->nas_ifindex = idx > 0 ? idx : nm_platform_link_get_ifindex (name);
 	g_warn_if_fail (priv->nas_ifindex > 0);
 
 	g_warn_if_fail (priv->nas_ifname == NULL);
@@ -382,7 +379,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 		nm_log_dbg (LOGD_ADSL, "(%s): ATM setup successful", nm_device_get_iface (device));
 
 		/* otherwise we're good for stage3 */
-		nm_system_iface_set_up (priv->nas_ifindex, TRUE, NULL);
+		nm_platform_link_set_up (priv->nas_ifindex);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	} else if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) == 0) {

@@ -33,7 +33,6 @@
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <netinet/ether.h>
-#include <net/if.h>
 #include <errno.h>
 
 #include "nm-glib-compat.h"
@@ -54,6 +53,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 #include "nm-manager-auth.h"
 #include "nm-settings-connection.h"
@@ -847,7 +847,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	/* Can't change MAC address while device is up */
 	nm_device_hw_take_down (dev, FALSE);
 
-	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
+	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (dev), addr, ETH_ALEN);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (dev);

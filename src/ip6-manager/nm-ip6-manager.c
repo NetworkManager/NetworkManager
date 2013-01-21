@@ -34,6 +34,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
+#include "nm-platform.h"
 
 /* Pre-DHCP addrconf timeout, in seconds */
 #define NM_IP6_TIMEOUT 20
@@ -183,7 +184,7 @@ nm_ip6_device_new (NMIP6Manager *manager,
 
 	device = g_slice_new0 (NMIP6Device);
 	device->ifindex = ifindex;
-	device->iface = nm_netlink_index_to_iface (ifindex);
+	device->iface = g_strdup (nm_platform_link_get_name (ifindex));
 	if (!device->iface) {
 		nm_log_err (LOGD_IP6, "(%d): could not find interface name from index.",
 		            ifindex);

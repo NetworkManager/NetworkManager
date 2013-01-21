@@ -30,10 +30,10 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-netlink-monitor.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 
 #include "nm-device-bridge-glue.h"
@@ -144,7 +144,7 @@ complete_connection (NMDevice *device,
 	while (i < 500 && !nm_setting_bridge_get_interface_name (s_bridge)) {
 		name = g_strdup_printf ("br%u", i);
 		/* check interface names */
-		if (nm_netlink_iface_to_index (name) < 0) {
+		if (!nm_platform_link_exists (name)) {
 			/* check existing bridge connections */
 			for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
 				NMConnection *candidate = iter->data;
@@ -272,10 +272,9 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 
-	success = nm_system_bridge_attach (nm_device_get_ip_ifindex (device),
-	                                   iface,
-	                                   nm_device_get_ip_ifindex (slave),
-	                                   slave_iface);
+	success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
+	                                    nm_device_get_ip_ifindex (slave));
+
 	if (!success)
 		return FALSE;
 
@@ -299,10 +298,9 @@ release_slave (NMDevice *device, NMDevice *slave)
 {
 	gboolean success;
 
-	success = nm_system_bridge_detach (nm_device_get_ip_ifindex (device),
-	                                   nm_device_get_ip_iface (device),
-	                                   nm_device_get_ip_ifindex (slave),
-	                                   nm_device_get_ip_iface (slave));
+	success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
+	                                    nm_device_get_ip_ifindex (slave));
+
 	nm_log_info (LOGD_BRIDGE, "(%s): detached bridge port %s (success %d)",
 	             nm_device_get_ip_iface (device),
 	             nm_device_get_ip_iface (slave),

@@ -42,12 +42,12 @@
 #include "nm-device-private.h"
 #include "nm-device-ethernet.h"
 #include "NetworkManagerUtils.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-netlink-monitor.h"
 #include "nm-netlink-utils.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -213,6 +213,7 @@ typedef struct {
 	guint           carrier_defer_id;
 	gboolean        carrier;
 	gboolean        ignore_carrier;
+	guint           link_changed_id;
 
 	/* Generic DHCP stuff */
 	NMDHCPManager * dhcp_manager;
@@ -320,8 +321,7 @@ static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *conne
 
 static const char *state_to_string (NMDeviceState state);
 
-static void link_connected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device);
-static void link_disconnected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device);
+static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDevice *device);
 static void check_carrier (NMDevice *device);
 
 static void nm_device_queued_ip_config_change_clear (NMDevice *self);
@@ -558,19 +558,10 @@ constructed (GObject *object)
 		             priv->ignore_carrier ? " (but ignored)" : "");
 
 		if (!device_has_capability (dev, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
-			NMNetlinkMonitor *netlink_monitor = nm_netlink_monitor_get ();
+			NMPlatform *platform = nm_platform_get ();
 
-			priv->link_connected_id = g_signal_connect (netlink_monitor, "carrier-on",
-			                                            G_CALLBACK (link_connected_cb), dev);
-			priv->link_disconnected_id = g_signal_connect (netlink_monitor, "carrier-off",
-			                                               G_CALLBACK (link_disconnected_cb), dev);
-
-			/* Request link state again just in case an error occurred getting the
-			 * initial link state.
-			 *
-			 * TODO: Check if this is necessary at all.
-			 */
-			nm_netlink_monitor_request_status (netlink_monitor);
+			priv->link_changed_id = g_signal_connect (platform, "link-changed",
+			                                          G_CALLBACK (link_changed_cb), dev);
 		}
 	} else {
 		/* Fake online link when carrier detection is not available. */
@@ -597,7 +588,7 @@ hw_is_up (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
-	return ifindex > 0 ? nm_system_iface_is_up (ifindex) : TRUE;
+	return ifindex ? nm_platform_link_is_up (ifindex) : TRUE;
 }
 
 void
@@ -686,7 +677,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 
 	priv->ip_iface = g_strdup (iface);
 	if (priv->ip_iface) {
-		priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
+		priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
 		if (priv->ip_ifindex <= 0) {
 			/* Device IP interface must always be a kernel network interface */
 			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
@@ -1101,43 +1092,19 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 }
 
 static void
-link_connected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device)
+link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDevice *device)
 {
 	if (ifindex == nm_device_get_ifindex (device))
-		nm_device_set_carrier (device, TRUE);
-}
-
-static void
-link_disconnected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device)
-{
-	if (ifindex == nm_device_get_ifindex (device))
-		nm_device_set_carrier (device, FALSE);
+		nm_device_set_carrier (device, info->connected);
 }
 
 static void
 check_carrier (NMDevice *device)
 {
-	GError *error = NULL;
-	guint32 ifflags = 0;
+	int ifindex = nm_device_get_ip_ifindex (device);
 
-	if (device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
-		/* Don't try to get an updated state, just keep the old one. */
-		return;
-	}
-
-	if (!nm_netlink_monitor_get_flags_sync (nm_netlink_monitor_get (),
-	                                        nm_device_get_ip_ifindex (device),
-	                                        &ifflags,
-	                                        &error)) {
-		nm_log_warn (LOGD_DEVICE,
-		             "(%s): couldn't get carrier state: (%d) %s",
-		             nm_device_get_ip_iface (device),
-		             error ? error->code : -1,
-		             (error && error->message) ? error->message : "unknown");
-		g_clear_error (&error);
-	}
-
-	nm_device_set_carrier (device, !!(ifflags & IFF_LOWER_UP));
+	if (!device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+		nm_device_set_carrier (device, nm_platform_link_is_connected (ifindex));
 }
 
 static void
@@ -3289,8 +3256,8 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 
 	/* Make sure the interface is up before trying to do anything with it */
 	ifindex = nm_device_get_ip_ifindex (self);
-	if ((ifindex > 0) && (nm_system_iface_is_up (ifindex) == FALSE))
-		nm_system_iface_set_up (ifindex, TRUE, NULL);
+	if (ifindex && !nm_platform_link_is_up (ifindex))
+		nm_platform_link_set_up (ifindex);
 
 	priv->ip4_state = priv->ip6_state = IP_WAIT;
 
@@ -3707,8 +3674,8 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 
 	/* Make sure the interface is up again just because */
 	ifindex = nm_device_get_ip_ifindex (self);
-	if ((ifindex > 0) && (nm_system_iface_is_up (ifindex) == FALSE))
-		nm_system_iface_set_up (ifindex, TRUE, NULL);
+	if (ifindex && !nm_platform_link_is_up (ifindex))
+		nm_platform_link_set_up (ifindex);
 
 	/* Allow setting MTU etc */
 	if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
@@ -3824,8 +3791,8 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 
 	/* Make sure the interface is up again just because */
 	ifindex = nm_device_get_ip_ifindex (self);
-	if ((ifindex > 0) && (nm_system_iface_is_up (ifindex) == FALSE))
-		nm_system_iface_set_up (ifindex, TRUE, NULL);
+	if (ifindex && !nm_platform_link_is_up (ifindex))
+		nm_platform_link_set_up (ifindex);
 
 	/* Allow setting MTU etc */
 	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
@@ -4508,7 +4475,8 @@ hw_bring_up (NMDevice *device, gboolean *no_firmware)
 	if (!ifindex)
 		return TRUE;
 
-	result = nm_system_iface_set_up (ifindex, TRUE, no_firmware);
+	result = nm_platform_link_set_up (ifindex);
+	*no_firmware = nm_platform_get_error () == NM_PLATFORM_ERROR_NO_FIRMWARE;
 
 	/* Store carrier immediately. */
 	if (result && device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT))
@@ -4542,8 +4510,8 @@ hw_take_down (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
-	if (ifindex > 0)
-		nm_system_iface_set_up (ifindex, FALSE, NULL);
+	if (ifindex)
+		nm_platform_link_set_down (ifindex);
 }
 
 static gboolean
@@ -4659,10 +4627,8 @@ dispose (GObject *object)
 	}
 	g_free (priv->ip6_privacy_tempaddr_path);
 
-	if (priv->link_connected_id)
-		g_signal_handler_disconnect (nm_netlink_monitor_get (), priv->link_connected_id);
-	if (priv->link_disconnected_id)
-		g_signal_handler_disconnect (nm_netlink_monitor_get (), priv->link_disconnected_id);
+	if (priv->link_changed_id)
+		g_signal_handler_disconnect (nm_platform_get (), priv->link_changed_id);
 	if (priv->carrier_defer_id) {
 		g_source_remove (priv->carrier_defer_id);
 		priv->carrier_defer_id = 0;
@@ -4739,10 +4705,6 @@ set_property (GObject *object, guint prop_id,
  
 	switch (prop_id) {
 	case PROP_UDI:
-		/* Only virtual interfaces can set UDI post-construction */
-		if (priv->initialized)
-			g_return_if_fail (nm_system_get_iface_type (priv->ifindex, NULL) != NM_IFACE_TYPE_UNSPEC);
-
 		g_free (priv->udi);
 		priv->udi = g_strdup (g_value_get_string (value));
 		break;
@@ -4756,7 +4718,7 @@ set_property (GObject *object, guint prop_id,
 		 * the IP interface.
 		 */
 		if (priv->iface && !strchr (priv->iface, ':')) {
-			priv->ifindex = nm_netlink_iface_to_index (priv->iface);
+			priv->ifindex = nm_platform_link_get_ifindex (priv->iface);
 			if (priv->ifindex <= 0)
 				nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", priv->iface);
 		}
@@ -6223,43 +6185,24 @@ nm_device_update_hw_address (NMDevice *dev)
 	priv->hw_addr_len = nm_device_get_hw_address_length (dev);
 
 	if (priv->hw_addr_len) {
-		struct rtnl_link *rtnl;
-		struct nl_addr *addr;
-		int idx;
+		int ifindex = nm_device_get_ip_ifindex (dev);
 		gsize addrlen;
 		const guint8 *binaddr;
 
-		idx = nm_device_get_ip_ifindex (dev);
-		g_return_val_if_fail (idx > 0, FALSE);
+		g_return_val_if_fail (ifindex > 0, FALSE);
 
-		rtnl = nm_netlink_index_to_rtnl_link (idx);
-		if (!rtnl) {
-			nm_log_err (LOGD_HW | LOGD_DEVICE,
-			            "(%s): failed to read hardware address (error %d)",
-			            nm_device_get_iface (dev), errno);
-			return FALSE;
-		}
+		binaddr = nm_platform_link_get_address (ifindex, &addrlen);
 
-		addr = rtnl_link_get_addr (rtnl);
-		if (!addr) {
-			nm_log_err (LOGD_HW | LOGD_DEVICE,
-			            "(%s): no hardware address?",
-			            nm_device_get_iface (dev));
-			rtnl_link_put (rtnl);
-			return FALSE;
-		}
-
-		addrlen = nl_addr_get_len (addr);
 		if (addrlen != priv->hw_addr_len) {
 			nm_log_err (LOGD_HW | LOGD_DEVICE,
 			            "(%s): hardware address is wrong length (got %zd, expected %d)",
 			            nm_device_get_iface (dev), addrlen, priv->hw_addr_len);
 		} else {
-			binaddr = nl_addr_get_binary_addr (addr);
-			changed = memcmp (priv->hw_addr, binaddr, addrlen) ? TRUE : FALSE;
-			memcpy (priv->hw_addr, binaddr, addrlen);
+			changed = !!memcmp (priv->hw_addr, binaddr, addrlen);
 			if (changed) {
 				char *addrstr = nm_utils_hwaddr_ntoa (binaddr, nm_utils_hwaddr_type (addrlen));
+
+				memcpy (priv->hw_addr, binaddr, addrlen);
 				nm_log_dbg (LOGD_HW | LOGD_DEVICE,
 				            "(%s): hardware address is %s",
 				            nm_device_get_iface (dev), addrstr);
@@ -6267,8 +6210,6 @@ nm_device_update_hw_address (NMDevice *dev)
 				g_object_notify (G_OBJECT (dev), NM_DEVICE_HW_ADDRESS);
 			}
 		}
-
-		rtnl_link_put (rtnl);
 	} else {
 		int i;
 

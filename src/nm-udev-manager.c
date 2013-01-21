@@ -28,6 +28,7 @@
 
 #include "nm-udev-manager.h"
 #include "nm-logging.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 
 typedef struct {
@@ -397,14 +398,14 @@ dev_get_attrs (GUdevDevice *udev_device,
 		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
 
 	if (!driver) {
-		switch (nm_system_get_iface_type (ifindex, ifname)) {
-		case NM_IFACE_TYPE_BOND:
+		switch (nm_platform_link_get_type (ifindex)) {
+		case NM_LINK_TYPE_BOND:
 			driver = "bonding";
 			break;
-		case NM_IFACE_TYPE_BRIDGE:
+		case NM_LINK_TYPE_BRIDGE:
 			driver = "bridge";
 			break;
-		case NM_IFACE_TYPE_VLAN:
+		case NM_LINK_TYPE_VLAN:
 			driver = "8021q";
 			break;
 		default:

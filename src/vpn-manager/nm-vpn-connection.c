@@ -34,6 +34,7 @@
 #include "nm-setting-vpn.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-dbus-manager.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
@@ -41,7 +42,6 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
-#include "nm-netlink-monitor.h"
 #include "nm-netlink-utils.h"
 #include "nm-glib-compat.h"
 #include "settings/nm-settings-connection.h"
@@ -165,7 +165,7 @@ vpn_cleanup (NMVPNConnection *connection)
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	if (priv->ip_ifindex) {
-		nm_system_iface_set_up (priv->ip_ifindex, FALSE, NULL);
+		nm_platform_link_set_down (priv->ip_ifindex);
 		nm_system_iface_flush_routes (priv->ip_ifindex, AF_UNSPEC);
 		nm_system_iface_flush_addresses (priv->ip_ifindex, AF_UNSPEC);
 	}
@@ -598,7 +598,7 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	nm_system_iface_set_up (priv->ip_ifindex, TRUE, NULL);
+	nm_platform_link_set_up (priv->ip_ifindex);
 
 	if (priv->ip4_config) {
 		if (!nm_system_apply_ip4_config (priv->ip_ifindex, priv->ip4_config,
@@ -690,8 +690,8 @@ process_generic_config (NMVPNConnection *connection,
 	}
 
 	/* Grab the interface index for address/routing operations */
-	priv->ip_ifindex = nm_netlink_iface_to_index (priv->ip_iface);
-	if (priv->ip_ifindex <= 0) {
+	priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
+	if (priv->ip_ifindex < 0) {
 		nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
 		nm_vpn_connection_config_maybe_complete (connection, FALSE);
 		return FALSE;

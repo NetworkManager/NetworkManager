@@ -21,6 +21,7 @@
 
 #include <string.h>
 #include "nm-modem.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
@@ -323,7 +324,7 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 
 		g_assert (addr);
 		if (nm_ip4_address_get_prefix (addr) == 32)
-			nm_system_iface_set_arp (nm_device_get_ip_ifindex (device), FALSE);
+			nm_platform_link_set_noarp (nm_device_get_ip_ifindex (device));
 	}
 }
 
@@ -534,7 +535,7 @@ deactivate (NMModem *self, NMDevice *device)
 		if (ifindex > 0) {
 			nm_system_iface_flush_routes (ifindex, AF_UNSPEC);
 			nm_system_iface_flush_addresses (ifindex, AF_UNSPEC);
-			nm_system_iface_set_up (ifindex, FALSE, NULL);
+			nm_platform_link_set_down (ifindex);
 		}
 		break;
 	default:

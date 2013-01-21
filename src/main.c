@@ -590,7 +590,7 @@ main (int argc, char *argv[])
 	 * physical interfaces.
 	 */
 	nm_log_dbg (LOGD_CORE, "setting up local loopback");
-	nm_system_iface_set_up (nm_netlink_iface_to_index ("lo"), TRUE, NULL);
+	nm_platform_link_set_up (nm_platform_link_get_ifindex ("lo"));
 
 	success = TRUE;
 
