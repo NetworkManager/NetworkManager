@@ -372,7 +372,7 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 static gboolean
 release_slave (NMDevice *device, NMDevice *slave)
 {
-	gboolean success;
+	gboolean success, no_firmware = FALSE;
 
 	success = nm_system_bond_release (nm_device_get_ip_ifindex (device),
 	                                  nm_device_get_ip_iface (device),
@@ -383,6 +383,16 @@ release_slave (NMDevice *device, NMDevice *slave)
 	             nm_device_get_ip_iface (slave),
 	             success);
 	g_object_notify (G_OBJECT (device), "slaves");
+
+	/* Kernel bonding code "closes" the slave when releasing it, (which clears
+	 * IFF_UP), so we must bring it back up here to ensure carrier changes and
+	 * other state is noticed by the now-released slave.
+	 */
+	if (!nm_device_hw_bring_up (slave, TRUE, &no_firmware)) {
+		nm_log_warn (LOGD_BOND, "(%s): released bond slave could not be brought up.",
+		             nm_device_get_iface (slave));
+	}
+
 	return success;
 }
 
