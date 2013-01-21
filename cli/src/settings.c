@@ -963,8 +963,8 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 {
 	int i;
 	const GByteArray *ssid, *bssid, *mac;
-	char *ssid_str, *channel_str, *rate_str, *tx_power_str, *mtu_str;
-	char *device_mac_str = NULL, *cloned_mac_str = NULL, *bssid_str = NULL;
+	char *channel_str, *rate_str, *tx_power_str, *mtu_str;
+	char *device_mac_str = NULL, *cloned_mac_str = NULL, *ssid_str = NULL, *bssid_str = NULL;
 	GString *mac_blacklist, *seen_bssids;
 	const GSList *iter;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
@@ -979,7 +979,8 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+	if (ssid)
+		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
 	channel_str = g_strdup_printf ("%d", nm_setting_wireless_get_channel (s_wireless));
 	rate_str = g_strdup_printf ("%d", nm_setting_wireless_get_rate (s_wireless));
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
@@ -1594,7 +1595,7 @@ gboolean
 setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 {
 	const GByteArray *ssid, *dhcp_anycast;
-	char *ssid_str, *channel_str, *dhcp_anycast_str = NULL;
+	char *channel_str, *ssid_str = NULL, *dhcp_anycast_str = NULL;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1607,7 +1608,8 @@ setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
 	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
-	ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+	if (ssid)
+		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
 	channel_str = g_strdup_printf ("%d", nm_setting_olpc_mesh_get_channel (s_olpc_mesh));
 	dhcp_anycast = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_olpc_mesh);
 	if (dhcp_anycast)
