@@ -160,7 +160,7 @@ warning messages.
 The following log domains are available: [HW, RFKILL, ETHER, WIFI, BT, MB, DHCP4,
 DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT, AGENTS,
 SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND,
-VLAN].
+VLAN, BRIDGE].
 .br
 In addition to them, these special domains can be used: [NONE, ALL, DEFAULT, DHCP, IP].
 .PP
@@ -233,6 +233,8 @@ ADSL = ADSL device operations
 BOND = Bonding device operations
 .br
 VLAN = VLAN device operations
+.br
+BRIDGE = Bridging device operations
 .br
 .SS [connectivity]
 This section controls NetworkManager's optional connectivity checking

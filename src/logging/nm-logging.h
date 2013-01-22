@@ -57,6 +57,7 @@ enum {
 	LOGD_ADSL       = 0x04000000,
 	LOGD_BOND       = 0x08000000,
 	LOGD_VLAN       = 0x10000000,
+	LOGD_BRIDGE     = 0x20000000,
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
