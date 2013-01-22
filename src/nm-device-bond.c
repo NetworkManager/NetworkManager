@@ -90,15 +90,27 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
 
-	if (new_state == NM_DEVICE_STATE_UNAVAILABLE) {
-		/* Use NM_DEVICE_STATE_REASON_CARRIER to make sure num retries is reset */
-		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-	}
-
 	if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state > NM_DEVICE_STATE_ACTIVATED) {
 		priv->ip4_waiting = FALSE;
 		priv->ip6_waiting = FALSE;
 	}
+}
+
+static void
+carrier_action (NMDeviceWired *self, NMDeviceState state, gboolean carrier)
+{
+	/* Carrier can't be used to signal availability of the bond master because
+	 * the bond's carrier follows the slaves' carriers.  So carrier gets
+	 * ignored when determining whether or not the device can be activated.
+	 *
+	 * Second, just because all slaves have been removed or have lost carrier
+	 * does not mean the master should be deactivated.  This could be due to
+	 * user addition/removal of slaves, and is also normal operation with some
+	 * failover modes.
+	 *
+	 * For these reasons, carrier changes are effectively ignored by overriding
+	 * the parent class' carrier handling and doing nothing.
+	 */
 }
 
 static void
@@ -127,6 +139,14 @@ static guint32
 get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NM_SUPPORTED;
+}
+
+static gboolean
+is_available (NMDevice *dev)
+{
+	if (NM_DEVICE_GET_CLASS (dev)->hw_is_up)
+		return NM_DEVICE_GET_CLASS (dev)->hw_is_up (dev);
+	return FALSE;
 }
 
 static gboolean
@@ -562,6 +582,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceWiredClass *wired_class = NM_DEVICE_WIRED_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBondPrivate));
 
@@ -573,6 +594,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;
 	parent_class->get_hw_address = get_hw_address;
+	parent_class->is_available = is_available;
 	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
@@ -587,6 +609,8 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->release_slave = release_slave;
 
 	parent_class->state_changed = device_state_changed;
+
+	wired_class->carrier_action = carrier_action;
 
 	/* properties */
 	g_object_class_install_property
