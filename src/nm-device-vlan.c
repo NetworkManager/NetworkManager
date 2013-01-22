@@ -130,19 +130,13 @@ get_carrier_sync (NMDeviceVlan *self)
 }
 
 static gboolean
-hw_is_up (NMDevice *device)
-{
-	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
-}
-
-static gboolean
 hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	gboolean success = FALSE, carrier;
 	guint i = 20;
 
 	while (i-- > 0 && !success) {
-		success = nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
+		success = NM_DEVICE_GET_CLASS (dev)->hw_bring_up (dev, no_firmware);
 		g_usleep (50);
 	}
 
@@ -160,12 +154,6 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		}
 	}
 	return success;
-}
-
-static void
-hw_take_down (NMDevice *dev)
-{
-	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
 }
 
 static void
@@ -760,9 +748,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;
-	parent_class->hw_is_up = hw_is_up;
 	parent_class->hw_bring_up = hw_bring_up;
-	parent_class->hw_take_down = hw_take_down;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->is_available = is_available;
 

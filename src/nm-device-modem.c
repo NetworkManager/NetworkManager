@@ -254,22 +254,6 @@ complete_connection (NMDevice *device,
 	return nm_modem_complete_connection (priv->modem, connection, existing_connections, error);
 }
 
-static gboolean
-hw_is_up (NMDevice *device)
-{
-	int ifindex = nm_device_get_ip_ifindex (device);
-
-	return ifindex > 0 ? nm_system_iface_is_up (ifindex) : TRUE;
-}
-
-static gboolean
-hw_bring_up (NMDevice *device, gboolean *no_firmware)
-{
-	int ifindex = nm_device_get_ip_ifindex (device);
-
-	return ifindex > 0 ? nm_system_iface_set_up (ifindex, TRUE, no_firmware) : TRUE;
-}
-
 static void
 deactivate (NMDevice *device)
 {
@@ -508,8 +492,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->get_best_auto_connection = get_best_auto_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
-	device_class->hw_is_up = hw_is_up;
-	device_class->hw_bring_up = hw_bring_up;
 	device_class->deactivate = deactivate;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;

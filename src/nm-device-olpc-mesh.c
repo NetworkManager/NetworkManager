@@ -187,24 +187,6 @@ constructor (GType type,
 }
 
 static gboolean
-hw_is_up (NMDevice *device)
-{
-	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
-}
-
-static gboolean
-hw_bring_up (NMDevice *dev, gboolean *no_firmware)
-{
-	return nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
-}
-
-static void
-hw_take_down (NMDevice *dev)
-{
-	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
-}
-
-static gboolean
 is_up (NMDevice *device)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
@@ -554,9 +536,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	parent_class->get_type_capabilities = NULL;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->hw_is_up = hw_is_up;
-	parent_class->hw_bring_up = hw_bring_up;
-	parent_class->hw_take_down = hw_take_down;
 	parent_class->is_up = is_up;
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;

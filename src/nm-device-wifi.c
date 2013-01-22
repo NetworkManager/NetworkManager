@@ -804,24 +804,12 @@ periodic_update (gpointer user_data)
 }
 
 static gboolean
-hw_is_up (NMDevice *device)
-{
-	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
-}
-
-static gboolean
 hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
 		return FALSE;
 
-	return nm_system_iface_set_up (nm_device_get_ip_ifindex (device), TRUE, no_firmware);
-}
-
-static void
-hw_take_down (NMDevice *device)
-{
-	nm_system_iface_set_up (nm_device_get_ip_ifindex (device), FALSE, NULL);
+	return NM_DEVICE_GET_CLASS (device)->hw_bring_up (device, no_firmware);
 }
 
 static gboolean
@@ -880,7 +868,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	}
 
 	/* Can't change MAC address while device is up */
-	hw_take_down (dev);
+	nm_device_hw_take_down (dev, FALSE);
 
 	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
@@ -3789,9 +3777,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	parent_class->get_type_capabilities = get_type_capabilities;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->hw_is_up = hw_is_up;
 	parent_class->hw_bring_up = hw_bring_up;
-	parent_class->hw_take_down = hw_take_down;
 	parent_class->is_up = is_up;
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;

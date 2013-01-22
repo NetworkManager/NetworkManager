@@ -498,6 +498,14 @@ nm_device_hw_is_up (NMDevice *self)
 	return TRUE;
 }
 
+static gboolean
+hw_is_up (NMDevice *device)
+{
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	return ifindex > 0 ? nm_system_iface_is_up (ifindex) : TRUE;
+}
+
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
@@ -3919,6 +3927,14 @@ out:
 	return TRUE;
 }
 
+static gboolean
+hw_bring_up (NMDevice *device, gboolean *no_firmware)
+{
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	return ifindex > 0 ? nm_system_iface_set_up (ifindex, TRUE, no_firmware) : TRUE;
+}
+
 void
 nm_device_hw_take_down (NMDevice *self, gboolean block)
 {
@@ -3937,6 +3953,12 @@ nm_device_hw_take_down (NMDevice *self, gboolean block)
 	/* Wait for the device to come up if requested */
 	while (block && nm_device_hw_is_up (self) && (tries++ < 50))
 		g_usleep (200);
+}
+
+static void
+hw_take_down (NMDevice *device)
+{
+	nm_system_iface_set_up (nm_device_get_ip_ifindex (device), FALSE, NULL);
 }
 
 static gboolean
@@ -4330,6 +4352,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	klass->check_connection_available = check_connection_available;
+	klass->hw_is_up = hw_is_up;
+	klass->hw_bring_up = hw_bring_up;
+	klass->hw_take_down = hw_take_down;
 
 	/* Properties */
 	g_object_class_install_property

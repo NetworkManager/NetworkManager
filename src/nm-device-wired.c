@@ -357,32 +357,20 @@ nm_device_wired_init (NMDeviceWired * self)
 }
 
 static gboolean
-hw_is_up (NMDevice *device)
-{
-	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
-}
-
-static gboolean
 hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	gboolean success, carrier;
+	gboolean result, carrier;
 	guint32 caps;
 
-	success = nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
-	if (success) {
+	result = NM_DEVICE_GET_CLASS(dev)->hw_bring_up (dev, no_firmware);
+	if (result) {
 		caps = nm_device_get_capabilities (dev);
 		if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 			carrier = get_carrier_sync (NM_DEVICE_WIRED (dev));
 			set_carrier (NM_DEVICE_WIRED (dev), carrier, carrier ? FALSE : TRUE);
 		}
 	}
-	return success;
-}
-
-static void
-hw_take_down (NMDevice *dev)
-{
-	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
+	return result;
 }
 
 static void
@@ -505,9 +493,7 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
 
-	parent_class->hw_is_up = hw_is_up;
 	parent_class->hw_bring_up = hw_bring_up;
-	parent_class->hw_take_down = hw_take_down;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->update_hw_address = update_hw_address;
 	parent_class->is_available = is_available;
