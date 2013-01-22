@@ -90,15 +90,24 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (device);
 
-	if (new_state == NM_DEVICE_STATE_UNAVAILABLE) {
-		/* Use NM_DEVICE_STATE_REASON_CARRIER to make sure num retries is reset */
-		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-	}
-
 	if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state > NM_DEVICE_STATE_ACTIVATED) {
 		priv->ip4_waiting = FALSE;
 		priv->ip6_waiting = FALSE;
 	}
+}
+
+static void
+carrier_action (NMDeviceWired *self, NMDeviceState state, gboolean carrier)
+{
+	/* Bridge carrier state follows IFF_UP with no ports, and port carrier
+	 * states when ports are added.  Thus carrier isn't useful when deciding
+	 * to auto-activate the bridge master.  Also, like bond masters, when the
+	 * carrier state changes due to slave changes, we shouldn't deactivate the
+	 * bridge since the user may be reconfiguring ports.
+	 *
+	 * For these reasons, carrier changes are effectively ignored by overriding
+	 * the parent class' carrier handling and doing nothing.
+	 */
 }
 
 static void
@@ -626,6 +635,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceWiredClass *wired_class = NM_DEVICE_WIRED_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBridgePrivate));
 
@@ -652,6 +662,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->release_slave = release_slave;
 
 	parent_class->state_changed = device_state_changed;
+
+	wired_class->carrier_action = carrier_action;
 
 	/* properties */
 	g_object_class_install_property
