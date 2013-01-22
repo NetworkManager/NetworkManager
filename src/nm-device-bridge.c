@@ -423,7 +423,7 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "brport", "hairpin_mode", FALSE, FALSE);
 	}
 
-	nm_log_info (LOGD_DEVICE, "(%s): attached bridge port %s", iface, slave_iface);
+	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s", iface, slave_iface);
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
 
@@ -452,7 +452,7 @@ release_slave (NMDevice *device, NMDevice *slave)
 	                                   nm_device_get_ip_iface (device),
 	                                   nm_device_get_ip_ifindex (slave),
 	                                   nm_device_get_ip_iface (slave));
-	nm_log_info (LOGD_DEVICE, "(%s): detached bridge port %s (success %d)",
+	nm_log_info (LOGD_BRIDGE, "(%s): detached bridge port %s (success %d)",
 	             nm_device_get_ip_iface (device),
 	             nm_device_get_ip_iface (slave),
 	             success);
@@ -568,7 +568,7 @@ constructed (GObject *object)
 {
 	G_OBJECT_CLASS (nm_device_bridge_parent_class)->constructed (object);
 
-	nm_log_dbg (LOGD_HW | LOGD_DEVICE, "(%s): kernel ifindex %d",
+	nm_log_dbg (LOGD_HW | LOGD_BRIDGE, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (object)),
 	            nm_device_get_ifindex (NM_DEVICE (object)));
 }
