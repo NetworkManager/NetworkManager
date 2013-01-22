@@ -131,31 +131,37 @@ carrier_action_defer_clear (NMDeviceWired *self)
 	}
 }
 
+static void
+carrier_action (NMDeviceWired *self, NMDeviceState state, gboolean carrier)
+{
+	NMDevice *device = NM_DEVICE (self);
+
+	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
+		if (carrier)
+			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
+		else {
+			/* clear any queued state changes if they wouldn't be valid when the
+			 * carrier is off.
+			 */
+			if (nm_device_queued_state_peek (device) >= NM_DEVICE_STATE_DISCONNECTED)
+				nm_device_queued_state_clear (device);
+		}
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
+		if (!carrier && !nm_device_get_enslaved (device))
+			nm_device_queue_state (device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
+	}
+}
+
 static gboolean
 carrier_action_defer_cb (gpointer user_data)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (user_data);
 	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
-	NMDeviceState state;
 
 	priv->carrier_action_defer_id = 0;
-
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (priv->carrier)
-			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-		else {
-			/* clear any queued state changes if they wouldn't be valid when the
-			 * carrier is off.
-			 */
-			if (nm_device_queued_state_peek (NM_DEVICE (self)) >= NM_DEVICE_STATE_DISCONNECTED)
-				nm_device_queued_state_clear (NM_DEVICE (self));
-		}
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!priv->carrier && !nm_device_get_enslaved (NM_DEVICE (self)))
-			nm_device_queue_state (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-	}
-
+	NM_DEVICE_WIRED_GET_CLASS (self)->carrier_action (self,
+	                                                  nm_device_get_state (NM_DEVICE (self)),
+	                                                  priv->carrier);
 	return FALSE;
 }
 
@@ -430,6 +436,7 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceWiredClass *wired_class = NM_DEVICE_WIRED_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceWiredPrivate));
 
@@ -441,6 +448,8 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->is_available = is_available;
 	parent_class->connection_match_config = connection_match_config;
+
+	wired_class->carrier_action = carrier_action;
 }
 
 /**
