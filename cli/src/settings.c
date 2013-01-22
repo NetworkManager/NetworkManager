@@ -700,6 +700,64 @@ ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy)
 /*----------------------------------------------------------------------------*/
 
 gboolean
+setting_details (NMSetting *setting, NmCli *nmc)
+{
+	GType setting_type;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+
+	setting_type = G_OBJECT_TYPE (setting);
+
+	if (setting_type == NM_TYPE_SETTING_CONNECTION)
+		return setting_connection_details (NM_SETTING_CONNECTION (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_WIRED)
+		return setting_wired_details (NM_SETTING_WIRED (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_802_1X)
+		return setting_802_1X_details (NM_SETTING_802_1X (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_WIRELESS)
+		return setting_wireless_details (NM_SETTING_WIRELESS (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_WIRELESS_SECURITY)
+		return setting_wireless_security_details (NM_SETTING_WIRELESS_SECURITY (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_IP4_CONFIG)
+		return setting_ip4_config_details (NM_SETTING_IP4_CONFIG (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_IP6_CONFIG)
+		return setting_ip6_config_details (NM_SETTING_IP6_CONFIG (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_SERIAL)
+		return setting_serial_details (NM_SETTING_SERIAL (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_PPP)
+		return setting_ppp_details (NM_SETTING_PPP (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_PPPOE)
+		return setting_pppoe_details (NM_SETTING_PPPOE (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_GSM)
+		return setting_gsm_details (NM_SETTING_GSM (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_CDMA)
+		return setting_cdma_details (NM_SETTING_CDMA (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_BLUETOOTH)
+		return setting_bluetooth_details (NM_SETTING_BLUETOOTH (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_OLPC_MESH)
+		return setting_olpc_mesh_details (NM_SETTING_OLPC_MESH (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_VPN)
+		return setting_vpn_details (NM_SETTING_VPN (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_WIMAX)
+		return setting_wimax_details (NM_SETTING_WIMAX (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_INFINIBAND)
+		return setting_infiniband_details (NM_SETTING_INFINIBAND (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_BOND)
+		return setting_bond_details (NM_SETTING_BOND (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_VLAN)
+		return setting_vlan_details (NM_SETTING_VLAN (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_ADSL)
+		return setting_adsl_details (NM_SETTING_ADSL (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_BRIDGE)
+		return setting_bridge_details (NM_SETTING_BRIDGE (setting), nmc);
+	else if (setting_type == NM_TYPE_SETTING_BRIDGE_PORT)
+		return setting_bridge_port_details (NM_SETTING_BRIDGE_PORT (setting), nmc);
+	else
+		/* should not be reached */
+		return FALSE;
+}
+
+gboolean
 setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 {
 	guint64 timestamp;

@@ -47,6 +47,7 @@
 #include "utils.h"
 
 
+gboolean setting_details (NMSetting *ssetting, NmCli *nmc);
 gboolean setting_connection_details (NMSettingConnection *s_con, NmCli *nmc);
 gboolean setting_wired_details (NMSettingWired *s_wired, NmCli *nmc);
 gboolean setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc);
