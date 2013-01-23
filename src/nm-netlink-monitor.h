@@ -25,7 +25,6 @@
 
 #include <glib-object.h>
 #include <netlink/netlink.h>
-#include <netlink/route/link.h>
 
 #define NM_TYPE_NETLINK_MONITOR            (nm_netlink_monitor_get_type ())
 #define NM_NETLINK_MONITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitor))
@@ -55,8 +54,6 @@ typedef struct {
 
 	/* Signals */
 	void (*notification) (NMNetlinkMonitor *monitor, struct nl_msg *msg);
-	void (*carrier_on)   (NMNetlinkMonitor *monitor, int index);
-	void (*carrier_off)  (NMNetlinkMonitor *monitor, int index);
 } NMNetlinkMonitorClass;
 
 
@@ -73,17 +70,7 @@ gboolean          nm_netlink_monitor_subscribe        (NMNetlinkMonitor *monitor
 gboolean          nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *monitor,
                                                        GError **error);
 
-void              nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor);
-
-gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor,
-                                                       guint32 ifindex,
-                                                       guint32 *ifflags,
-                                                       GError **error);
-
 /* Generic utility functions */
-int               nm_netlink_iface_to_index     (const char *iface);
-char *            nm_netlink_index_to_iface     (int idx);
-struct rtnl_link *nm_netlink_index_to_rtnl_link (int idx);
 struct nl_sock *  nm_netlink_get_default_handle (void);
 
 #endif  /* NM_NETLINK_MONITOR_H */

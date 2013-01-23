@@ -22,16 +22,12 @@
 #ifndef NETWORK_MANAGER_SYSTEM_H
 #define NETWORK_MANAGER_SYSTEM_H
 
-#include <netlink/route/rtnl.h>
+#include <glib.h>
 #include <netlink/route/route.h>
 
-#include <net/ethernet.h>
-
-#include <glib.h>
 #include "nm-device.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-bond.h"
-#include "nm-setting-vlan.h"
 
 gboolean        nm_system_iface_flush_routes         (int ifindex, int family);
 
@@ -83,61 +79,6 @@ gboolean		nm_system_apply_ip6_config              (int ifindex,
                                                          int priority,
                                                          NMIP6ConfigCompareFlags flags);
 
-gboolean        nm_system_iface_set_up                  (int ifindex,
-                                                         gboolean up,
-                                                         gboolean *no_firmware);
-
-guint32		nm_system_iface_get_flags		(int ifindex);
-gboolean        nm_system_iface_is_up                   (int ifindex);
-
-gboolean		nm_system_iface_set_mtu                 (int ifindex, guint32 mtu);
-
-gboolean		nm_system_iface_set_mac                 (int ifindex, const struct ether_addr *mac);
-
-gboolean        nm_system_iface_set_arp                 (int ifindex, gboolean arp);
-
 gboolean        nm_system_apply_bonding_config          (const char *iface,
                                                          NMSettingBond *s_bond);
-gboolean        nm_system_add_bonding_master            (const char *iface);
-
-gboolean        nm_system_bond_enslave                  (gint master_ifindex,
-                                                         const char *master_iface,
-                                                         gint slave_ifindex,
-                                                         const char *slave_iface);
-gboolean        nm_system_bond_release                  (gint master_ifindex,
-                                                         const char *master_iface,
-                                                         gint slave_ifindex,
-                                                         const char *slave_iface);
-
-enum {
-		NM_IFACE_TYPE_UNSPEC = 0,
-		NM_IFACE_TYPE_BOND,
-		NM_IFACE_TYPE_VLAN,
-		NM_IFACE_TYPE_BRIDGE,
-		NM_IFACE_TYPE_DUMMY
-};
-
-int             nm_system_get_iface_type      (int ifindex, const char *name);
-
-gboolean        nm_system_get_iface_vlan_info (int ifindex,
-                                               int *out_parent_ifindex,
-                                               int *out_vlan_id);
-
-gboolean        nm_system_add_vlan_iface (NMConnection *connection,
-                                          const char *iface,
-                                          int parent_ifindex);
-gboolean        nm_system_del_vlan_iface (const char *iface);
-
-gboolean        nm_system_create_bridge (const char *iface, gboolean *out_exists);
-gboolean        nm_system_del_bridge (const char *iface);
-
-gboolean        nm_system_bridge_attach (int master_ifindex,
-                                         const char *master_iface,
-                                         int slave_ifindex,
-                                         const char *slave_iface);
-gboolean        nm_system_bridge_detach (int master_ifindex,
-                                         const char *master_iface,
-                                         int slave_ifindex,
-                                         const char *slave_iface);
-
 #endif
