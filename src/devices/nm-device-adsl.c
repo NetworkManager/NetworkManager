@@ -42,6 +42,7 @@
 #include "nm-system.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dbus-manager.h"
+#include "nm-platform.h"
 
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-setting-adsl.h"
@@ -71,8 +72,7 @@ typedef struct {
 	int           atm_index;
 
 	/* Watch for 'nas' interfaces going away */
-	NMNetlinkMonitor *monitor;
-	guint             netlink_id;
+	guint             lost_link_id;
 
 	/* PPP */
 	NMPPPManager *ppp_manager;
@@ -325,28 +325,20 @@ error:
 }
 
 static void
-netlink_notification (NMNetlinkMonitor *monitor,
-                      struct nl_msg *msg,
-                      gpointer user_data)
+lost_link (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDeviceAdsl *device_adsl)
 {
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (user_data);
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-	NMDevice *device = NM_DEVICE (user_data);
-	struct nlmsghdr *hdr = nlmsg_hdr (msg);
-	const char *iface = nm_device_get_iface (device);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device_adsl);
+	NMDevice *device = NM_DEVICE (device_adsl);
 
 	/* This only gets called for PPPoE connections and "nas" interfaces */
 
-	if ((hdr->nlmsg_type == RTM_DELLINK) && (priv->nas_ifindex >= 0)) {
-		struct ifinfomsg *ifi = nlmsg_data (hdr);
-
-		if (ifi->ifi_index == priv->nas_ifindex) {
+	if (priv->nas_ifindex >= 0 && ifindex == priv->nas_ifindex) {
 			/* NAS device went away for some reason; kill the connection */
-			nm_log_dbg (LOGD_ADSL, "(%s): NAS interface disappeared", iface);
+			nm_log_dbg (LOGD_ADSL, "(%s): NAS interface disappeared",
+			            nm_device_get_iface (device));
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_BR2684_FAILED);
-		}
 	}
 }
 
@@ -383,9 +375,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 		}
 
 		/* Watch for the 'nas' interface going away */
-		priv->netlink_id = g_signal_connect (priv->monitor, "notification",
-		                                     G_CALLBACK (netlink_notification),
-		                                     self);
+		priv->lost_link_id = g_signal_connect (nm_platform_get (), "link-removed",
+		                                       G_CALLBACK (lost_link),
+		                                       self);
 
 		nm_log_dbg (LOGD_ADSL, "(%s): ATM setup successful", nm_device_get_iface (device));
 
@@ -506,9 +498,9 @@ deactivate (NMDevice *device)
 		priv->ppp_manager = NULL;
 	}
 
-	if (priv->netlink_id) {
-		g_signal_handler_disconnect (priv->monitor, priv->netlink_id);
-		priv->netlink_id = 0;
+	if (priv->lost_link_id) {
+		g_signal_handler_disconnect (nm_platform_get (), priv->lost_link_id);
+		priv->lost_link_id = 0;
 	}
 
 	if (priv->brfd >= 0) {
@@ -656,9 +648,9 @@ dispose (GObject *object)
 		priv->carrier_poll_id = 0;
 	}
 
-	if (priv->netlink_id) {
-		g_source_remove (priv->netlink_id);
-		priv->netlink_id = 0;
+	if (priv->lost_link_id) {
+		g_signal_handler_disconnect (nm_platform_get (), priv->lost_link_id);
+		priv->lost_link_id = 0;
 	}
 
 	g_free (priv->nas_ifname);
@@ -670,10 +662,6 @@ dispose (GObject *object)
 static void
 nm_device_adsl_init (NMDeviceAdsl *self)
 {
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	priv->monitor = nm_netlink_monitor_get ();
-	nm_netlink_monitor_subscribe (priv->monitor, RTNLGRP_LINK, NULL);
 }
 
 static void
