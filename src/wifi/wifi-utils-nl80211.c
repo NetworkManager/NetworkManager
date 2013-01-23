@@ -33,6 +33,7 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/genl/ctrl.h>
+#include <netlink/route/link.h>
 
 #include <linux/nl80211.h>
 
@@ -40,7 +41,6 @@
 #include "wifi-utils-nl80211.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
-#include "nm-netlink-compat.h"
 
 typedef struct {
 	WifiData parent;
@@ -813,7 +813,7 @@ iface_to_index (struct nl_sock *nl_sock, const char *iface)
 	int err, ifindex;
 
 	/* name to index */
-	err = rtnl_link_alloc_cache (nl_sock, &link_cache);
+	err = rtnl_link_alloc_cache (nl_sock, AF_UNSPEC, &link_cache);
 	if (err < 0) {
 		nm_log_warn (LOGD_HW, "failed to allocate link cache: (%d) %s",
 		             err, nl_geterror (err));

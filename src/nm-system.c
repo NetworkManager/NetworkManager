@@ -60,11 +60,8 @@
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
-
-#if HAVE_LIBNL == 3
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
-#endif
 
 #if !HAVE_VLAN_FLAG_LOOSE_BINDING
 /* Older kernels don't have this flag */
@@ -1927,7 +1924,7 @@ nm_system_get_iface_vlan_info (int ifindex,
 	if (!nlh)
 		return FALSE;
 
-	ret = rtnl_link_alloc_cache (nlh, &cache);
+	ret = rtnl_link_alloc_cache (nlh, AF_UNSPEC, &cache);
 	g_return_val_if_fail (ret == 0, FALSE);
 	g_return_val_if_fail (cache != NULL, FALSE);
 
@@ -2304,7 +2301,7 @@ nm_system_del_vlan_iface (const char *iface)
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
 
-	ret = rtnl_link_alloc_cache (nlh, &cache);
+	ret = rtnl_link_alloc_cache (nlh, AF_UNSPEC, &cache);
 	g_return_val_if_fail (ret == 0, FALSE);
 	g_return_val_if_fail (cache != NULL, FALSE);
 

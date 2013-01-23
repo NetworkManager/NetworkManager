@@ -408,7 +408,7 @@ sync_connection_setup (NMNetlinkMonitor *self, GError **error)
 	nl_cache_free (addr_cache);
 #endif
 
-	err = rtnl_link_alloc_cache (priv->nlh_sync, &priv->link_cache);
+	err = rtnl_link_alloc_cache (priv->nlh_sync, AF_UNSPEC, &priv->link_cache);
 	if (err < 0) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,

@@ -320,46 +320,11 @@ AM_CONDITIONAL(SUSPEND_RESUME_UPOWER, test "x$with_suspend_resume" = "xupower")
 AM_CONDITIONAL(SUSPEND_RESUME_SYSTEMD, test "x$with_suspend_resume" = "xsystemd")
 
 # libnl support for the linux platform
-AC_ARG_WITH(libnl, AS_HELP_STRING([--with-libnl=1|2|3], [Select libnl version (default: latest available)]))
-# default to "yes"
-AS_IF([test -z "$with_libnl"], with_libnl=yes)
-# test for various libnl versions
-if test "$with_libnl" = "yes" -o "$with_libnl" = "3"; then
-	PKG_CHECK_MODULES(LIBNL3, libnl-3.0 libnl-route-3.0 libnl-genl-3.0,
-		[with_libnl=3], [test "$with_libnl" = "3" && with_libnl=no])
-	AS_IF([test "$with_libnl" = "no"],
-		AC_MSG_ERROR([libnl 3.x could not be found]))
-fi
-if test "$with_libnl" = "yes" -o "$with_libnl" = "2"; then
-	PKG_CHECK_MODULES(LIBNL2, libnl-2.0,
-		[with_libnl=2], [test "$with_libnl" = "2" && with_libnl=no])
-	AS_IF([test "$with_libnl" = "no"],
-		AC_MSG_ERROR([libnl 2.x could not be found]))
-fi
-if test "$with_libnl" = "yes" -o "$with_libnl" = "1"; then
-	PKG_CHECK_MODULES(LIBNL1, libnl-1 >= 1.0-pre8,
-		[with_libnl=1], [test "$with_libnl" = "1" && with_libnl=no])
-	AS_IF([test "$with_libnl" = "no"],
-		AC_MSG_ERROR([libnl 1.x could not be found]))
-fi
-if test "$with_libnl" = "yes"; then
-	AC_MSG_ERROR([libnl library could not be found])
-	with_libnl=no
-fi
-if ! echo "$with_libnl" | grep -q "^[[1-3]]$"; then
-	AC_MSG_ERROR([unsupported libnl version: $with_libnl])
-fi
-# add variables, conditionals and defines
-if test "$with_libnl" != "no"; then
-	AC_DEFINE_UNQUOTED(HAVE_LIBNL, $with_libnl, [libnl version])
-	AC_SUBST(LIBNL_CFLAGS, "$LIBNL3_CFLAGS$LIBNL2_CFLAGS$LIBNL1_CFLAGS")
-	AC_SUBST(LIBNL_LIBS, "$LIBNL3_LIBS$LIBNL2_LIBS$LIBNL1_LIBS")
-fi
-# additional tests
-if test "with_libnl" = "1"; then
-	NM_LIBNL_CHECK
-fi
+PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.7 libnl-route-3.0 libnl-genl-3.0)
+AC_SUBST(LIBNL_CFLAGS)
+AC_SUBST(LIBNL_LIBS)
 
+# uuid library
 PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
