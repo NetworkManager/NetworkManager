@@ -166,8 +166,7 @@ vpn_cleanup (NMVPNConnection *connection)
 
 	if (priv->ip_ifindex) {
 		nm_system_iface_set_up (priv->ip_ifindex, FALSE, NULL);
-		/* FIXME: use AF_UNSPEC here when we have IPv6 support */
-		nm_system_iface_flush_routes (priv->ip_ifindex, AF_INET);
+		nm_system_iface_flush_routes (priv->ip_ifindex, AF_UNSPEC);
 		nm_system_iface_flush_addresses (priv->ip_ifindex, AF_UNSPEC);
 	}
 
