@@ -356,12 +356,6 @@ take_down (NMDevice *device)
 }
 
 static gboolean
-hw_is_up (NMDevice *device)
-{
-	return nm_system_iface_is_up (nm_device_get_ip_ifindex (device));
-}
-
-static gboolean
 hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (dev);
@@ -369,13 +363,7 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 	if (!priv->enabled || !priv->wimaxd_enabled)
 		return FALSE;
 
-	return nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), TRUE, no_firmware);
-}
-
-static void
-hw_take_down (NMDevice *dev)
-{
-	nm_system_iface_set_up (nm_device_get_ip_ifindex (dev), FALSE, NULL);
+	return NM_DEVICE_GET_CLASS (dev)->hw_bring_up (dev, no_firmware);
 }
 
 static void
@@ -1518,9 +1506,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	object_class->dispose = dispose;
 
 	device_class->take_down = take_down;
-	device_class->hw_is_up = hw_is_up;
 	device_class->hw_bring_up = hw_bring_up;
-	device_class->hw_take_down = hw_take_down;
 	device_class->update_hw_address = update_hw_address;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
