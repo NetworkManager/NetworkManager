@@ -28,7 +28,7 @@
 /* Log domains */
 enum {
 	LOGD_NONE       = 0x00000000,
-	LOGD_HW         = 0x00000001, /* Hardware detection and info */
+	LOGD_PLATFORM   = 0x00000001, /* Platform services */
 	LOGD_RFKILL     = 0x00000002,
 	LOGD_ETHER      = 0x00000004,
 	LOGD_WIFI       = 0x00000008,
@@ -61,6 +61,7 @@ enum {
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
 #define LOGD_IP   (LOGD_IP4 | LOGD_IP6)
+#define LOGD_HW LOGD_PLATFORM
 
 /* Log levels */
 enum {

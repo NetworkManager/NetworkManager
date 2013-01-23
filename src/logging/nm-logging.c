@@ -37,7 +37,7 @@
 #include "nm-logging.h"
 
 #define LOGD_ALL \
-	(LOGD_HW | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
+	(LOGD_PLATFORM | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
 	 LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_WIFI_SCAN | LOGD_IP4 | \
 	 LOGD_IP6 | LOGD_AUTOIP4 | LOGD_DNS | LOGD_VPN | LOGD_SHARING | \
 	 LOGD_SUPPLICANT | LOGD_AGENTS | LOGD_SETTINGS | LOGD_SUSPEND | \
@@ -65,7 +65,7 @@ static const LogDesc level_descs[] = {
 
 static const LogDesc domain_descs[] = {
 	{ LOGD_NONE,      "NONE" },
-	{ LOGD_HW,        "HW" },
+	{ LOGD_PLATFORM,  "PLATFORM" },
 	{ LOGD_RFKILL,    "RFKILL" },
 	{ LOGD_ETHER,     "ETHER" },
 	{ LOGD_WIFI,      "WIFI" },
@@ -173,6 +173,12 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 				found = TRUE;
 			} else if (!strcasecmp (*iter, LOGD_IP_STRING)) {
 				new_domains |= LOGD_IP;
+				found = TRUE;
+			}
+
+			/* Check for compatibility domains */
+			if (!strcasecmp (*iter, "HW")) {
+				new_domains |= LOGD_PLATFORM;
 				found = TRUE;
 			}
 
