@@ -23,7 +23,6 @@
 #ifndef NM_NETLINK_MONITOR_H
 #define NM_NETLINK_MONITOR_H
 
-#include <glib.h>
 #include <glib-object.h>
 #include <netlink/netlink.h>
 #include <netlink/route/link.h>

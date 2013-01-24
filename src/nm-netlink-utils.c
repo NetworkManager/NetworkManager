@@ -25,11 +25,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <netlink/netlink.h>
-#include <netlink/addr.h>
 #include <netlink/route/addr.h>
-
-#include <errno.h>
 
 typedef struct {
 	int ifindex;

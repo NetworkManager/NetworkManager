@@ -22,27 +22,9 @@
 #ifndef NM_NETLINK_COMPAT_H
 #define NM_NETLINK_COMPAT_H
 
-#include <errno.h>
-
-#include <netlink/netlink.h>
-#include <netlink/route/rtnl.h>
-#include <netlink/route/link.h>
 #include <netlink/route/route.h>
-#include <netlink/route/addr.h>
-
-#include <netlink/netlink.h>
-#include <netlink/cache.h>
-#include <netlink/utils.h>
-#include <netlink/data.h>
-#include <netlink/route/rtnl.h>
-#include <netlink/route/route.h>
-#include <netlink/route/link.h>
-#include <netlink/route/nexthop.h>
-
-#include <config.h>
 
 /* libnl-1 API compatibility for libnl-3 */
-
 int rtnl_route_get_oif(struct rtnl_route *);
 int rtnl_route_set_oif(struct rtnl_route *, int);
 int rtnl_route_set_gateway(struct rtnl_route *, struct nl_addr *);

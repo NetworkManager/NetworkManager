@@ -18,15 +18,8 @@
  * Copyright (C) 2011 Caixa Magica Software.
  */
 
-#include <config.h>
 #include <glib.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <linux/if_vlan.h>
-#include <linux/sockios.h>
 
-#include "nm-logging.h"
 #include "nm-netlink-compat.h"
 
 static struct rtnl_nexthop *

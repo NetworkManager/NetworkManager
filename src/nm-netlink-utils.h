@@ -21,10 +21,7 @@
 #ifndef NM_NETLINK_UTILS_H
 #define NM_NETLINK_UTILS_H
 
-#include <glib.h>
-#include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
-#include <netinet/in.h>
 
 gboolean nm_netlink_find_address (int ifindex,
                                   int family,
