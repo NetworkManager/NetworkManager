@@ -38,6 +38,10 @@
 #include <linux/if.h>
 #include <linux/unistd.h>
 #include <unistd.h>
+#include <netlink/version.h>
+#if LIBNL_VER_NUM == LIBNL_VER (3, 2) && LIBNL_VER_MIC < 20
+#include <netlink/object-api.h>
+#endif
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
