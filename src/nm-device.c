@@ -5432,6 +5432,7 @@ nm_device_read_hwaddr (NMDevice *dev,
 		nm_log_err (LOGD_HW | LOGD_DEVICE,
 		            "(%s): hardware address is wrong length (got %zd max %zd)",
 		            nm_device_get_iface (dev), addrlen, buf_len);
+		addrlen = 0;
 	} else {
 		binaddr = nl_addr_get_binary_addr (addr);
 		if (out_changed)
