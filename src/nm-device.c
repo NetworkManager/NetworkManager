@@ -126,6 +126,7 @@ enum {
 	PROP_RFKILL_TYPE,
 	PROP_IFINDEX,
 	PROP_AVAILABLE_CONNECTIONS,
+	PROP_IS_MASTER,
 	LAST_PROP
 };
 
@@ -250,8 +251,9 @@ typedef struct {
 	NMDevice *      master;
 	gboolean        enslaved;
 
-	/* list of SlaveInfo for bond/bridge master */
-	GSList *        slaves;
+	/* slave management */
+	gboolean        is_master;
+	GSList *        slaves;    /* list of SlaveInfo */
 
 	NMConnectionProvider *con_provider;
 
@@ -998,6 +1000,18 @@ nm_device_master_get_slaves (NMDevice *dev)
 		slaves = g_slist_prepend (slaves, ((SlaveInfo *) iter->data)->slave);
 
 	return slaves;
+}
+
+/**
+ * nm_device_is_master:
+ * @dev: the device
+ *
+ * Returns: whether @dev can enslave other devices (eg, bridge or bond)
+ */
+gboolean
+nm_device_is_master (NMDevice *dev)
+{
+	return NM_DEVICE_GET_PRIVATE (dev)->is_master;
 }
 
 /* release all slaves */
@@ -4292,6 +4306,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_RFKILL_TYPE:
 		priv->rfkill_type = g_value_get_uint (value);
 		break;
+	case PROP_IS_MASTER:
+		priv->is_master = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -4413,6 +4430,9 @@ get_property (GObject *object, guint prop_id,
 		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL))
 			g_ptr_array_add (array, g_strdup (nm_connection_get_path (connection)));
 		g_value_take_boxed (value, array);
+		break;
+	case PROP_IS_MASTER:
+		g_value_set_boolean (value, priv->is_master);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -4634,6 +4654,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                     "AvailableConnections",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 		                     G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_IS_MASTER,
+		 g_param_spec_boolean (NM_DEVICE_IS_MASTER,
+		                       "IsMaster",
+		                       "IsMaster",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[STATE_CHANGED] =

@@ -496,6 +496,7 @@ nm_device_bond_new (const char *udi, const char *iface)
 	                                  NM_DEVICE_DRIVER, "bonding",
 	                                  NM_DEVICE_TYPE_DESC, "Bond",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
+	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }
 

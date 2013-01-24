@@ -560,6 +560,7 @@ nm_device_bridge_new (const char *udi, const char *iface)
 	                                  NM_DEVICE_DRIVER, "bridge",
 	                                  NM_DEVICE_TYPE_DESC, "Bridge",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
+	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
 }
 
