@@ -38,7 +38,7 @@
 #include <linux/if.h>
 #include <linux/unistd.h>
 #include <unistd.h>
-#include <netlink/object-api.h>
+#include <netlink/object.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
 
