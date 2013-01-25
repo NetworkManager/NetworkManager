@@ -46,8 +46,6 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE_WIRED)
 #define NM_BOND_ERROR (nm_bond_error_quark ())
 
 typedef struct {
-	gboolean ip4_waiting;
-	gboolean ip6_waiting;
 	guint8   hw_addr[NM_UTILS_HWADDR_LEN_MAX];
 	gsize    hw_addr_len;
 } NMDeviceBondPrivate;
@@ -81,20 +79,6 @@ nm_bond_error_quark (void)
 }
 
 /******************************************************************/
-
-static void
-device_state_changed (NMDevice *device,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
-
-	if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state > NM_DEVICE_STATE_ACTIVATED) {
-		priv->ip4_waiting = FALSE;
-		priv->ip6_waiting = FALSE;
-	}
-}
 
 static void
 carrier_action (NMDeviceWired *self, NMDeviceState state, gboolean carrier)
@@ -330,9 +314,6 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	NM_DEVICE_BOND_GET_PRIVATE (dev)->ip4_waiting = FALSE;
-	NM_DEVICE_BOND_GET_PRIVATE (dev)->ip6_waiting = FALSE;
-
 	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (dev, reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 		connection = nm_device_get_connection (dev);
@@ -354,7 +335,6 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 static gboolean
 enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 {
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
 	gboolean success, no_firmware = FALSE;
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
@@ -371,19 +351,6 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	if (success) {
 		nm_log_info (LOGD_BOND, "(%s): enslaved bond slave %s", iface, slave_iface);
 		g_object_notify (G_OBJECT (device), "slaves");
-
-		/* If waiting for a slave to continue with IP config, start now */
-		if (priv->ip4_waiting) {
-			nm_log_info (LOGD_BOND | LOGD_IP4, "(%s): retrying IPv4 config with first slave", iface);
-			priv->ip4_waiting = FALSE;
-			nm_device_activate_stage3_ip4_start (device);
-		}
-
-		if (priv->ip6_waiting) {
-			nm_log_info (LOGD_BOND | LOGD_IP6, "(%s): retrying IPv6 config with first slave", iface);
-			priv->ip6_waiting = FALSE;
-			nm_device_activate_stage3_ip6_start (device);
-		}
 	}
 
 	return success;
@@ -414,92 +381,6 @@ release_slave (NMDevice *device, NMDevice *slave)
 	}
 
 	return success;
-}
-
-static NMActStageReturn
-act_stage3_ip4_config_start (NMDevice *device,
-                             NMIP4Config **out_config,
-                             NMDeviceStateReason *reason)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-	const char *method = NULL;
-	GSList *slaves;
-
-	priv->ip4_waiting = FALSE;
-
-	slaves = nm_device_master_get_slaves (device);
-	if (slaves == NULL) {
-		connection = nm_device_get_connection (device);
-		g_assert (connection);
-
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4)
-			method = nm_setting_ip4_config_get_method (s_ip4);
-
-		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
-			priv->ip4_waiting = TRUE;
-	}
-	g_slist_free (slaves);
-
-	if (priv->ip4_waiting) {
-		ret = NM_ACT_STAGE_RETURN_WAIT;
-		nm_log_info (LOGD_BOND | LOGD_IP4, "(%s): IPv4 config waiting until slaves are present",
-					 nm_device_get_ip_iface (device));
-	} else {
-		/* We have slaves; proceed with normal IPv4 configuration */
-		ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
-	}
-
-	return ret;
-}
-
-static NMActStageReturn
-act_stage3_ip6_config_start (NMDevice *device,
-                             NMIP6Config **out_config,
-                             NMDeviceStateReason *reason)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
-	const char *method = NULL;
-	GSList *slaves;
-
-	priv->ip6_waiting = FALSE;
-
-	slaves = nm_device_master_get_slaves (device);
-	if (slaves == NULL) {
-		connection = nm_device_get_connection (device);
-		g_assert (connection);
-
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6)
-			method = nm_setting_ip6_config_get_method (s_ip6);
-
-		/* SLAAC, DHCP, and Link-Local depend on connectivity (and thus slaves)
-		 * to complete addressing.  SLAAC and DHCP obviously need a peer to
-		 * provide a prefix, while Link-Local must perform DAD on the local link.
-		 */
-		if (   !g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
-		    || !g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)
-		    || !g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
-			priv->ip6_waiting = TRUE;
-	}
-	g_slist_free (slaves);
-
-	if (priv->ip6_waiting) {
-		ret = NM_ACT_STAGE_RETURN_WAIT;
-		nm_log_info (LOGD_BOND | LOGD_IP6, "(%s): IPv6 config waiting until slaves are present",
-					 nm_device_get_ip_iface (device));
-	} else {
-		/* We have slaves; proceed with normal IPv6 configuration */
-		ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
-	}
-
-	return ret;
 }
 
 /******************************************************************/
@@ -603,12 +484,8 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->connection_match_config = connection_match_config;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
-
-	parent_class->state_changed = device_state_changed;
 
 	wired_class->carrier_action = carrier_action;
 

@@ -188,6 +188,9 @@ typedef struct {
 
 	gboolean        (* release_slave) (NMDevice *self,
 	                                   NMDevice *slave);
+
+	gboolean        (* have_any_ready_slaves) (NMDevice *self,
+	                                           const GSList *slaves);
 } NMDeviceClass;
 
 

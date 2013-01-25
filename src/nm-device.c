@@ -859,6 +859,18 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
 	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
 		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
 
+	/* Restart IP configuration if we're waiting for slaves.  Do this
+	 * after updating the hardware address as IP config may need the
+	 * new address.
+	 */
+	if (success) {
+		if (NM_DEVICE_GET_PRIVATE (dev)->ip4_state == IP_WAIT)
+			nm_device_activate_stage3_ip4_start (dev);
+
+		if (NM_DEVICE_GET_PRIVATE (dev)->ip6_state == IP_WAIT)
+			nm_device_activate_stage3_ip6_start (dev);
+	}
+
 	return success;
 }
 
@@ -2124,6 +2136,35 @@ shared4_new_config (NMDevice *self, NMDeviceStateReason *reason)
 
 /*********************************************/
 
+static gboolean
+have_any_ready_slaves (NMDevice *device, const GSList *slaves)
+{
+	const GSList *iter;
+
+	/* Any enslaved slave is "ready" in the generic case as it's
+	 * at least >= NM_DEVCIE_STATE_IP_CONFIG and has had Layer 2
+	 * properties set up.
+	 */
+	for (iter = slaves; iter; iter = g_slist_next (iter)) {
+		if (nm_device_get_enslaved (iter->data))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static gboolean
+ip4_requires_slaves (NMConnection *connection)
+{
+	NMSettingIP4Config *s_ip4;
+	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	return g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0;
+}
+
 static NMActStageReturn
 act_stage3_ip4_config_start (NMDevice *self,
                              NMIP4Config **out_config,
@@ -2134,11 +2175,29 @@ act_stage3_ip4_config_start (NMDevice *self,
 	NMSettingIP4Config *s_ip4;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+	GSList *slaves;
+	gboolean ready_slaves;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
+
+	if (priv->is_master && ip4_requires_slaves (connection)) {
+		/* If the master has no ready slaves, and depends on slaves for
+		 * a successful IPv4 attempt, then postpone IPv4 addressing.
+		 */
+		slaves = nm_device_master_get_slaves (self);
+		ready_slaves = NM_DEVICE_GET_CLASS (self)->have_any_ready_slaves (self, slaves);
+		g_slist_free (slaves);
+
+		if (ready_slaves == FALSE) {
+			nm_log_info (LOGD_DEVICE | LOGD_IP4,
+			             "(%s): IPv4 config waiting until slaves are ready",
+			             nm_device_get_ip_iface (self));
+			return NM_ACT_STAGE_RETURN_WAIT;
+		}
+	}
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2670,6 +2729,25 @@ done:
 	return ret;
 }
 
+static gboolean
+ip6_requires_slaves (NMConnection *connection)
+{
+	NMSettingIP6Config *s_ip6;
+	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	if (s_ip6)
+		method = nm_setting_ip6_config_get_method (s_ip6);
+
+	/* SLAAC, DHCP, and Link-Local depend on connectivity (and thus slaves)
+	 * to complete addressing.  SLAAC and DHCP obviously need a peer to
+	 * provide a prefix, while Link-Local must perform DAD on the local link.
+	 */
+	return    g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	       || g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0
+	       || g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0;
+}
+
 static NMActStageReturn
 act_stage3_ip6_config_start (NMDevice *self,
                              NMIP6Config **out_config,
@@ -2683,6 +2761,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 	int conf_use_tempaddr;
 	NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 	const char *ip6_privacy_str = "0\n";
+	GSList *slaves;
+	gboolean ready_slaves;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2690,6 +2770,22 @@ act_stage3_ip6_config_start (NMDevice *self,
 	g_assert (connection);
 
 	ip_iface = nm_device_get_ip_iface (self);
+
+	if (priv->is_master && ip6_requires_slaves (connection)) {
+		/* If the master has no ready slaves, and depends on slaves for
+		 * a successful IPv6 attempt, then postpone IPv6 addressing.
+		 */
+		slaves = nm_device_master_get_slaves (self);
+		ready_slaves = NM_DEVICE_GET_CLASS (self)->have_any_ready_slaves (self, slaves);
+		g_slist_free (slaves);
+
+		if (ready_slaves == FALSE) {
+			nm_log_info (LOGD_DEVICE | LOGD_IP6,
+			             "(%s): IPv6 config waiting until slaves are ready",
+			             ip_iface);
+			return NM_ACT_STAGE_RETURN_WAIT;
+		}
+	}
 
 	update_accept_ra_save (self);
 	update_ip6_privacy_save (self);
@@ -4464,6 +4560,8 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	klass->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
+	klass->have_any_ready_slaves = have_any_ready_slaves;
+
 	klass->check_connection_available = check_connection_available;
 	klass->hw_is_up = hw_is_up;
 	klass->hw_bring_up = hw_bring_up;
