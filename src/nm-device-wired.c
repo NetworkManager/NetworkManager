@@ -343,7 +343,7 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 	gboolean result, carrier;
 	guint32 caps;
 
-	result = NM_DEVICE_GET_CLASS(dev)->hw_bring_up (dev, no_firmware);
+	result = NM_DEVICE_CLASS(nm_device_wired_parent_class)->hw_bring_up (dev, no_firmware);
 	if (result) {
 		caps = nm_device_get_capabilities (dev);
 		if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {

@@ -136,7 +136,7 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 	guint i = 20;
 
 	while (i-- > 0 && !success) {
-		success = NM_DEVICE_GET_CLASS (dev)->hw_bring_up (dev, no_firmware);
+		success = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->hw_bring_up (dev, no_firmware);
 		g_usleep (50);
 	}
 
