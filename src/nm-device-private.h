@@ -65,7 +65,10 @@ void nm_device_activate_schedule_ip6_config_result (NMDevice *device, NMIP6Confi
 void nm_device_activate_schedule_ip6_config_timeout (NMDevice *device);
 
 gboolean nm_device_activate_ip4_state_in_conf (NMDevice *device);
+gboolean nm_device_activate_ip4_state_in_wait (NMDevice *device);
+
 gboolean nm_device_activate_ip6_state_in_conf (NMDevice *device);
+gboolean nm_device_activate_ip6_state_in_wait (NMDevice *device);
 
 void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
 void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);

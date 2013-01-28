@@ -3458,6 +3458,13 @@ nm_device_activate_ip4_state_in_conf (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == IP_CONF;
 }
 
+gboolean
+nm_device_activate_ip4_state_in_wait (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == IP_WAIT;
+}
+
 static gboolean
 nm_device_activate_ip6_config_commit (gpointer user_data)
 {
@@ -3548,6 +3555,13 @@ nm_device_activate_ip6_state_in_conf (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	return NM_DEVICE_GET_PRIVATE (self)->ip6_state == IP_CONF;
+}
+
+gboolean
+nm_device_activate_ip6_state_in_wait (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	return NM_DEVICE_GET_PRIVATE (self)->ip6_state == IP_WAIT;
 }
 
 static void
