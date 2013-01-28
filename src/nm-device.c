@@ -1015,6 +1015,28 @@ nm_device_master_get_slaves (NMDevice *dev)
 }
 
 /**
+ * nm_device_master_get_slave_by_ifindex:
+ * @dev: the master device
+ * @ifindex: the slave's interface index
+ *
+ * Returns: the slave with the given @ifindex of which @device is the master,
+ *   or %NULL if no device with @ifinidex is a slave of @device.
+ */
+NMDevice *
+nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex)
+{
+	GSList *iter;
+
+	for (iter = NM_DEVICE_GET_PRIVATE (dev)->slaves; iter; iter = g_slist_next (iter)) {
+		SlaveInfo *info = iter->data;
+
+		if (nm_device_get_ip_ifindex (info->slave) == ifindex)
+			return info->slave;
+	}
+	return NULL;
+}
+
+/**
  * nm_device_is_master:
  * @dev: the device
  *
