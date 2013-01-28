@@ -2516,9 +2516,14 @@ nm_system_bridge_attach (int master_ifindex,
 	                             mif ? mif : master_iface,
 	                             slave_ifindex,
 	                             sif ? sif : slave_iface);
-	if (err < 0 && err != -EBUSY) {
-		nm_log_err (LOGD_DEVICE, "(%s): failed to attach slave %s: %s",
-		            master_iface, slave_iface, strerror (-err));
+	if (err < 0) {
+		if (err == -EBUSY) {
+			/* Interface already attached to the given bridge */
+			err = 0;
+		} else {
+			nm_log_err (LOGD_DEVICE, "(%s): failed to attach slave %s: %s",
+			            master_iface, slave_iface, strerror (-err));
+		}
 	}
 
 out:
