@@ -732,7 +732,7 @@ echo "  libnl: $with_libnl"
 echo "  session tracking: $with_session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
 if test "${enable_polkit}" = "yes"; then
-	if test "${enable_modify_system}"; then
+	if test "${enable_modify_system}" = "yes"; then
 		echo "  policykit: yes (permissive modify.system)"
 	else
 		echo "  policykit: yes (restrictive modify.system)"
