@@ -267,6 +267,7 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, 15),           /* 8 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_MAY_FAIL, 12),                /* 9 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, 15),             /* 10 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, 14),           /* 11 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
@@ -279,7 +280,8 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
                                               NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS","\
                                               NM_SETTING_IP6_CONFIG_NEVER_DEFAULT","\
                                               NM_SETTING_IP6_CONFIG_MAY_FAIL","\
-                                              NM_SETTING_IP6_CONFIG_IP6_PRIVACY
+                                              NM_SETTING_IP6_CONFIG_IP6_PRIVACY","\
+                                              NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME
 #define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
@@ -1423,6 +1425,7 @@ setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 	nmc->allowed_fields[8].value = nm_setting_ip6_config_get_never_default (s_ip6) ? _("yes") : _("no");
 	nmc->allowed_fields[9].value = nm_setting_ip6_config_get_may_fail (s_ip6) ? _("yes") : _("no");
 	nmc->allowed_fields[10].value = ip6_privacy_str;
+	nmc->allowed_fields[11].value = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
