@@ -170,13 +170,11 @@ set_carrier (NMDeviceWired *self,
              const gboolean carrier,
              const gboolean defer_action)
 {
-	NMDeviceWiredPrivate *priv;
+	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
+	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState state;
 	guint32 caps;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
 	if (priv->carrier == carrier)
 		return;
 
@@ -187,22 +185,31 @@ set_carrier (NMDeviceWired *self,
 	 * doesn't support carrier detect.  These devices assume
 	 * the carrier is always up.
 	 */
-	caps = nm_device_get_capabilities (NM_DEVICE (self));
+	caps = nm_device_get_capabilities (device);
 	g_return_if_fail (caps & NM_DEVICE_CAP_CARRIER_DETECT);
 
 	priv->carrier = carrier;
 
-	state = nm_device_get_state (NM_DEVICE (self));
+	state = nm_device_get_state (device);
 	if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
-		nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (NM_DEVICE (self)),
+		nm_log_info (LOGD_HW | NM_DEVICE_WIRED_LOG_LEVEL (device),
 		             "(%s): carrier now %s (device state %d%s)",
-		             nm_device_get_iface (NM_DEVICE (self)),
+		             nm_device_get_iface (device),
 		             carrier ? "ON" : "OFF",
 		             state,
 		             defer_action ? ", deferring action for 4 seconds" : "");
 	}
 
 	g_object_notify (G_OBJECT (self), "carrier");
+
+	/* Retry IP configuration for master devices now that the carrier is on */
+	if (nm_device_is_master (device) && priv->carrier) {
+		if (nm_device_activate_ip4_state_in_wait (device))
+			nm_device_activate_stage3_ip4_start (device);
+
+		if (nm_device_activate_ip6_state_in_wait (device))
+			nm_device_activate_stage3_ip6_start (device);
+	}
 
 	if (defer_action)
 		priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
@@ -406,6 +413,36 @@ connection_match_config (NMDevice *self, const GSList *connections)
 	return NULL;
 }
 
+static NMActStageReturn
+act_stage3_ip4_config_start (NMDevice *device,
+                             NMIP4Config **out_config,
+                             NMDeviceStateReason *reason)
+{
+	if (nm_device_is_master (device) && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
+		nm_log_info (LOGD_IP4 | NM_DEVICE_WIRED_LOG_LEVEL (device),
+		             "(%s): IPv4 config waiting until carrier is on",
+		             nm_device_get_ip_iface (device));
+		return NM_ACT_STAGE_RETURN_WAIT;
+	}
+
+	return NM_DEVICE_CLASS (nm_device_wired_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
+}
+
+static NMActStageReturn
+act_stage3_ip6_config_start (NMDevice *device,
+                             NMIP6Config **out_config,
+                             NMDeviceStateReason *reason)
+{
+	if (nm_device_is_master (device) && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
+		nm_log_info (LOGD_IP6 | NM_DEVICE_WIRED_LOG_LEVEL (device),
+		             "(%s): IPv6 config waiting until carrier is on",
+		             nm_device_get_ip_iface (device));
+		return NM_ACT_STAGE_RETURN_WAIT;
+	}
+
+	return NM_DEVICE_CLASS (nm_device_wired_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
+}
+
 static void
 dispose (GObject *object)
 {
@@ -448,6 +485,8 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->is_available = is_available;
 	parent_class->connection_match_config = connection_match_config;
+	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 
 	wired_class->carrier_action = carrier_action;
 }
