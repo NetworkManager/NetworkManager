@@ -94,33 +94,39 @@ static NmcOutputField nmc_fields_setting_wired[] = {
 
 /* Available fields for NM_SETTING_802_1X_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_8021X[] = {
-	SETTING_FIELD ("name", 10),                                         /* 0 */
-	SETTING_FIELD (NM_SETTING_802_1X_EAP, 10),                          /* 1 */
-	SETTING_FIELD (NM_SETTING_802_1X_IDENTITY, 15),                     /* 2 */
-	SETTING_FIELD (NM_SETTING_802_1X_ANONYMOUS_IDENTITY, 15),           /* 3 */
-	SETTING_FIELD (NM_SETTING_802_1X_PAC_FILE, 15),                     /* 4 */
-	SETTING_FIELD (NM_SETTING_802_1X_CA_CERT, 10),                      /* 5 */
-	SETTING_FIELD (NM_SETTING_802_1X_CA_PATH, 10),                      /* 6 */
-	SETTING_FIELD (NM_SETTING_802_1X_SUBJECT_MATCH, 10),                /* 7 */
-	SETTING_FIELD (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, 10),           /* 8 */
-	SETTING_FIELD (NM_SETTING_802_1X_CLIENT_CERT, 10),                  /* 9 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPVER, 10),               /* 10 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPLABEL, 10),             /* 11 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, 10),     /* 12 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTH, 10),                  /* 13 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTHEAP, 10),               /* 14 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_CERT, 20),               /* 15 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_PATH, 20),               /* 16 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, 10),         /* 17 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, 10),    /* 18 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, 20),           /* 19 */
-	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD, 10),                     /* 20 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY, 15),                  /* 21 */
-	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, 20),         /* 22 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, 20),           /* 23 */
-	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, 20),  /* 24 */
-	SETTING_FIELD (NM_SETTING_802_1X_PIN, 8),                           /* 25 */
-	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),              /* 26 */
+	SETTING_FIELD ("name", 10),                                              /* 0 */
+	SETTING_FIELD (NM_SETTING_802_1X_EAP, 10),                               /* 1 */
+	SETTING_FIELD (NM_SETTING_802_1X_IDENTITY, 15),                          /* 2 */
+	SETTING_FIELD (NM_SETTING_802_1X_ANONYMOUS_IDENTITY, 15),                /* 3 */
+	SETTING_FIELD (NM_SETTING_802_1X_PAC_FILE, 15),                          /* 4 */
+	SETTING_FIELD (NM_SETTING_802_1X_CA_CERT, 10),                           /* 5 */
+	SETTING_FIELD (NM_SETTING_802_1X_CA_PATH, 10),                           /* 6 */
+	SETTING_FIELD (NM_SETTING_802_1X_SUBJECT_MATCH, 10),                     /* 7 */
+	SETTING_FIELD (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, 10),                /* 8 */
+	SETTING_FIELD (NM_SETTING_802_1X_CLIENT_CERT, 10),                       /* 9 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPVER, 10),                    /* 10 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_PEAPLABEL, 10),                  /* 11 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, 10),          /* 12 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTH, 10),                       /* 13 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_AUTHEAP, 10),                    /* 14 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_CERT, 20),                    /* 15 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CA_PATH, 20),                    /* 16 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, 10),              /* 17 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, 10),         /* 18 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, 20),                /* 19 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD, 10),                          /* 20 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_FLAGS, 20),                    /* 21 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_RAW, 20),                      /* 22 */
+	SETTING_FIELD (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, 20),                /* 23 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY, 15),                       /* 24 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, 20),              /* 25 */
+	SETTING_FIELD (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, 20),        /* 26 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, 20),                /* 27 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, 20),       /* 28 */
+	SETTING_FIELD (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS, 20), /* 29 */
+	SETTING_FIELD (NM_SETTING_802_1X_PIN, 8),                                /* 30 */
+	SETTING_FIELD (NM_SETTING_802_1X_PIN_FLAGS, 20),                         /* 31 */
+	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),                   /* 32 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_802_1X_ALL     "name"","\
@@ -144,11 +150,17 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
                                           NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES","\
                                           NM_SETTING_802_1X_PHASE2_CLIENT_CERT","\
                                           NM_SETTING_802_1X_PASSWORD","\
+                                          NM_SETTING_802_1X_PASSWORD_FLAGS","\
+                                          NM_SETTING_802_1X_PASSWORD_RAW","\
+                                          NM_SETTING_802_1X_PASSWORD_RAW_FLAGS","\
                                           NM_SETTING_802_1X_PRIVATE_KEY","\
                                           NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD","\
+                                          NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS","\
                                           NM_SETTING_802_1X_PHASE2_PRIVATE_KEY","\
                                           NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD","\
+                                          NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS","\
                                           NM_SETTING_802_1X_PIN","\
+                                          NM_SETTING_802_1X_PIN_FLAGS","\
                                           NM_SETTING_802_1X_SYSTEM_CA_CERTS
 #define NMC_FIELDS_SETTING_802_1X_COMMON  NMC_FIELDS_SETTING_802_1X_ALL
 
@@ -167,7 +179,8 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, 39),     /* 10 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_MTU, 6),                        /* 11 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 10),                       /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 25),                       /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN, 10),                    /* 14 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
@@ -183,26 +196,30 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST","\
                                             NM_SETTING_WIRELESS_MTU","\
                                             NM_SETTING_WIRELESS_SEEN_BSSIDS","\
-                                            NM_SETTING_WIRELESS_SEC
+                                            NM_SETTING_WIRELESS_SEC","\
+                                            NM_SETTING_WIRELESS_HIDDEN
 #define NMC_FIELDS_SETTING_WIRELESS_COMMON  NMC_FIELDS_SETTING_WIRELESS_ALL
 
 /* Available fields for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_wireless_security[] = {
-	SETTING_FIELD ("name", 25),                                      /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, 10),       /* 1 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 15),  /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, 10),       /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PROTO, 10),          /* 4 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, 10),       /* 5 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_GROUP, 10),          /* 6 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, 15),  /* 7 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, 10),       /* 8 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, 10),       /* 9 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, 10),       /* 10 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, 10),       /* 11 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PSK, 6),             /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, 15),  /* 13 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, 15),   /* 14 */
+	SETTING_FIELD ("name", 25),                                           /* 0 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, 10),            /* 1 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 15),       /* 2 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, 10),            /* 3 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PROTO, 10),               /* 4 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, 10),            /* 5 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_GROUP, 10),               /* 6 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, 15),       /* 7 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, 10),            /* 8 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, 10),            /* 9 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, 10),            /* 10 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, 10),            /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, 20),       /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, 15),        /* 13 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PSK, 6),                  /* 14 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, 20),           /* 15 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, 15),       /* 16 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, 20), /* 17 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL     "name"","\
@@ -217,9 +234,12 @@ static NmcOutputField nmc_fields_setting_wireless_security[] = {
                                                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY1","\
                                                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY2","\
                                                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY3","\
+                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS","\
+                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE","\
                                                      NM_SETTING_WIRELESS_SECURITY_PSK","\
+                                                     NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS","\
                                                      NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD","\
-                                                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE
+                                                     NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS
 #define NMC_FIELDS_SETTING_WIRELESS_SECURITY_COMMON  NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL
 
 /* Available fields for NM_SETTING_IP4_CONFIG_SETTING_NAME */
@@ -352,32 +372,36 @@ static NmcOutputField nmc_fields_setting_pppoe[] = {
 	SETTING_FIELD (NM_SETTING_PPPOE_SERVICE, 12),                      /* 1 */
 	SETTING_FIELD (NM_SETTING_PPPOE_USERNAME, 15),                     /* 2 */
 	SETTING_FIELD (NM_SETTING_PPPOE_PASSWORD, 15),                     /* 3 */
+	SETTING_FIELD (NM_SETTING_PPPOE_PASSWORD_FLAGS, 20),               /* 4 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_PPPOE_ALL     "name"","\
                                          NM_SETTING_PPPOE_SERVICE","\
                                          NM_SETTING_PPPOE_USERNAME","\
-                                         NM_SETTING_PPPOE_PASSWORD
-#define NMC_FIELDS_SETTING_PPPOE_COMMON  NMC_FIELDS_SETTING_PPP_ALL
+                                         NM_SETTING_PPPOE_PASSWORD","\
+                                         NM_SETTING_PPPOE_PASSWORD_FLAGS
+#define NMC_FIELDS_SETTING_PPPOE_COMMON  NMC_FIELDS_SETTING_PPPOE_ALL
 
 /* Available fields for NM_SETTING_ADSL_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_adsl[] = {
 	SETTING_FIELD ("name", 10),                                /* 0 */
 	SETTING_FIELD (NM_SETTING_ADSL_USERNAME, 15),              /* 1 */
 	SETTING_FIELD (NM_SETTING_ADSL_PASSWORD, 15),              /* 2 */
-	SETTING_FIELD (NM_SETTING_ADSL_VPI, 10),                   /* 3 */
-	SETTING_FIELD (NM_SETTING_ADSL_VCI, 10),                   /* 4 */
+	SETTING_FIELD (NM_SETTING_ADSL_PASSWORD_FLAGS, 20),        /* 3 */
+	SETTING_FIELD (NM_SETTING_ADSL_PROTOCOL, 10),              /* 4 */
 	SETTING_FIELD (NM_SETTING_ADSL_ENCAPSULATION, 10),         /* 5 */
-	SETTING_FIELD (NM_SETTING_ADSL_PROTOCOL, 10),              /* 6 */
+	SETTING_FIELD (NM_SETTING_ADSL_VPI, 10),                   /* 6 */
+	SETTING_FIELD (NM_SETTING_ADSL_VCI, 10),                   /* 7 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_ADSL_ALL     "name"","\
                                         NM_SETTING_ADSL_USERNAME","\
                                         NM_SETTING_ADSL_PASSWORD","\
-                                        NM_SETTING_ADSL_VPI","\
-                                        NM_SETTING_ADSL_VCI","\
+                                        NM_SETTING_ADSL_PASSWORD_FLAGS","\
+                                        NM_SETTING_ADSL_PROTOCOL","\
                                         NM_SETTING_ADSL_ENCAPSULATION","\
-                                        NM_SETTING_ADSL_PROTOCOL
+                                        NM_SETTING_ADSL_VPI","\
+                                        NM_SETTING_ADSL_VCI
 #define NMC_FIELDS_SETTING_ADSL_COMMON  NMC_FIELDS_SETTING_ADSL_ALL
 
 /* Available fields for NM_SETTING_GSM_SETTING_NAME */
@@ -386,23 +410,27 @@ static NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD (NM_SETTING_GSM_NUMBER, 10),                         /* 1 */
 	SETTING_FIELD (NM_SETTING_GSM_USERNAME, 15),                       /* 2 */
 	SETTING_FIELD (NM_SETTING_GSM_PASSWORD, 15),                       /* 3 */
-	SETTING_FIELD (NM_SETTING_GSM_APN, 25),                            /* 4 */
-	SETTING_FIELD (NM_SETTING_GSM_NETWORK_ID, 12),                     /* 5 */
-	SETTING_FIELD (NM_SETTING_GSM_NETWORK_TYPE, 15),                   /* 6 */
-	SETTING_FIELD (NM_SETTING_GSM_ALLOWED_BANDS, 15),                  /* 7 */
-	SETTING_FIELD (NM_SETTING_GSM_PIN, 10),                            /* 8 */
-	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY, 10),                      /* 9 */
+	SETTING_FIELD (NM_SETTING_GSM_PASSWORD_FLAGS, 20),                 /* 4 */
+	SETTING_FIELD (NM_SETTING_GSM_APN, 25),                            /* 5 */
+	SETTING_FIELD (NM_SETTING_GSM_NETWORK_ID, 12),                     /* 6 */
+	SETTING_FIELD (NM_SETTING_GSM_NETWORK_TYPE, 15),                   /* 7 */
+	SETTING_FIELD (NM_SETTING_GSM_ALLOWED_BANDS, 15),                  /* 8 */
+	SETTING_FIELD (NM_SETTING_GSM_PIN, 10),                            /* 9 */
+	SETTING_FIELD (NM_SETTING_GSM_PIN_FLAGS, 20),                      /* 10 */
+	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY, 10),                      /* 11 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_GSM_ALL     "name"","\
                                        NM_SETTING_GSM_NUMBER","\
                                        NM_SETTING_GSM_USERNAME","\
                                        NM_SETTING_GSM_PASSWORD","\
+                                       NM_SETTING_GSM_PASSWORD_FLAGS","\
                                        NM_SETTING_GSM_APN","\
                                        NM_SETTING_GSM_NETWORK_ID","\
                                        NM_SETTING_GSM_NETWORK_TYPE","\
                                        NM_SETTING_GSM_ALLOWED_BANDS","\
                                        NM_SETTING_GSM_PIN","\
+                                       NM_SETTING_GSM_PIN_FLAGS","\
                                        NM_SETTING_GSM_HOME_ONLY
 #define NMC_FIELDS_SETTING_GSM_COMMON  NMC_FIELDS_SETTING_GSM_ALL
 
@@ -412,12 +440,14 @@ static NmcOutputField nmc_fields_setting_cdma[] = {
 	SETTING_FIELD (NM_SETTING_CDMA_NUMBER, 15),                        /* 1 */
 	SETTING_FIELD (NM_SETTING_CDMA_USERNAME, 15),                      /* 2 */
 	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD, 15),                      /* 3 */
+	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD_FLAGS, 20),                /* 4 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_CDMA_ALL     "name"","\
                                         NM_SETTING_CDMA_NUMBER","\
                                         NM_SETTING_CDMA_USERNAME","\
-                                        NM_SETTING_CDMA_PASSWORD
+                                        NM_SETTING_CDMA_PASSWORD","\
+                                        NM_SETTING_CDMA_PASSWORD_FLAGS
 #define NMC_FIELDS_SETTING_CDMA_COMMON  NMC_FIELDS_SETTING_CDMA_ALL
 
 /* Available fields for NM_SETTING_BLUETOOTH_SETTING_NAME */
@@ -572,15 +602,15 @@ wep_key_type_to_string (NMWepKeyType type)
 }
 
 static char *
-blob_cert_to_string (const GByteArray *array)
+byte_array_to_string (const GByteArray *array)
 {
 	GString *cert = NULL;
 	int i;
 
-	if (array->len > 0)
+	if (array && array->len > 0)
 		cert = g_string_new (NULL);
 
-	for (i = 0; i < array->len; i++) {
+	for (i = 0; array && i < array->len; i++) {
 		g_string_append_printf (cert, "%02X", array->data[i]);
 	}
 
@@ -697,6 +727,34 @@ ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy)
 	default:
 		return g_strdup_printf (_("%d (unknown)"), ip6_privacy);
 	}
+}
+
+static char *
+secret_flags_to_string (guint32 flags)
+{
+	GString *flag_str;
+
+	if (flags == 0)
+		return g_strdup (_("0 (none)"));
+
+	flag_str = g_string_new (NULL);
+	g_string_printf (flag_str, "%d (", flags);
+
+	if (flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+		g_string_append (flag_str, _("agent-owned, "));
+	if (flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
+		g_string_append (flag_str, _("not saved, "));
+	if (flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+		g_string_append (flag_str, _("not required, "));
+
+	if (flag_str->str[flag_str->len-1] == '(')
+		g_string_assign (flag_str, _("unknown"));
+	else
+		g_string_truncate (flag_str, flag_str->len-2);  /* chop off trailing ', ' */
+
+	g_string_append_c (flag_str, ')');
+
+	return g_string_free (flag_str, FALSE);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -909,7 +967,8 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	NMSetting8021xCKScheme scheme;
 	GString *eap_str, *alt_sub_match, *phase2_alt_sub_match;
 	char *ca_cert_str = NULL, *client_cert_str = NULL, *phase2_ca_cert_str = NULL;
-	char *phase2_client_cert_str = NULL, *private_key_str = NULL, *phase2_private_key_str = NULL;
+	char *phase2_client_cert_str = NULL, *private_key_str = NULL, *phase2_private_key_str = NULL, *pswd_raw_str = NULL;
+	char *pswd_flags, *pswd_raw_flags, *priv_key_pswd_flags, *phase2_priv_key_pswd_flags, *pin_flags;
 	int i;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
@@ -930,37 +989,37 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	}
 	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		ca_cert_str = blob_cert_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
+		ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
 
 	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		client_cert_str = blob_cert_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
+		client_cert_str = byte_array_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		client_cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
 
 	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_ca_cert_str = blob_cert_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
+		phase2_ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
 
 	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_client_cert_str = blob_cert_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
+		phase2_client_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_client_cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
 
 	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		private_key_str = blob_cert_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
+		private_key_str = byte_array_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		private_key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
 
 	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_private_key_str = blob_cert_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
+		phase2_private_key_str = byte_array_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
 
@@ -973,6 +1032,14 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	for (i = 0; i < nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021X); i++)
 		g_string_append_printf (phase2_alt_sub_match, "%s,", nm_setting_802_1x_get_phase2_altsubject_match (s_8021X, i));
 	g_string_truncate (phase2_alt_sub_match, phase2_alt_sub_match->len-1);  /* chop off trailing ',' */
+
+	pswd_raw_str = byte_array_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
+
+	pswd_flags = secret_flags_to_string (nm_setting_802_1x_get_password_flags (s_8021X));
+	pswd_raw_flags = secret_flags_to_string (nm_setting_802_1x_get_password_raw_flags (s_8021X));
+	priv_key_pswd_flags = secret_flags_to_string (nm_setting_802_1x_get_private_key_password_flags (s_8021X));
+	phase2_priv_key_pswd_flags = secret_flags_to_string (nm_setting_802_1x_get_phase2_private_key_password_flags (s_8021X));
+	pin_flags = secret_flags_to_string (nm_setting_802_1x_get_pin_flags (s_8021X));
 
 	nmc->allowed_fields[0].value = NM_SETTING_802_1X_SETTING_NAME;
 	nmc->allowed_fields[1].value = eap_str->str;
@@ -995,12 +1062,18 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	nmc->allowed_fields[18].value = phase2_alt_sub_match->str;
 	nmc->allowed_fields[19].value = phase2_client_cert_str;
 	nmc->allowed_fields[20].value = nm_setting_802_1x_get_password (s_8021X);
-	nmc->allowed_fields[21].value = private_key_str;
-	nmc->allowed_fields[22].value = nm_setting_802_1x_get_private_key_password (s_8021X);
-	nmc->allowed_fields[23].value = phase2_private_key_str;
-	nmc->allowed_fields[24].value = nm_setting_802_1x_get_phase2_private_key_password (s_8021X);
-	nmc->allowed_fields[25].value = nm_setting_802_1x_get_pin (s_8021X);
-	nmc->allowed_fields[26].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
+	nmc->allowed_fields[21].value = pswd_flags;
+	nmc->allowed_fields[22].value = pswd_raw_str;
+	nmc->allowed_fields[23].value = pswd_raw_flags;
+	nmc->allowed_fields[24].value = private_key_str;
+	nmc->allowed_fields[25].value = nm_setting_802_1x_get_private_key_password (s_8021X);
+	nmc->allowed_fields[26].value = priv_key_pswd_flags;
+	nmc->allowed_fields[27].value = phase2_private_key_str;
+	nmc->allowed_fields[28].value = nm_setting_802_1x_get_phase2_private_key_password (s_8021X);
+	nmc->allowed_fields[29].value = phase2_priv_key_pswd_flags;
+	nmc->allowed_fields[30].value = nm_setting_802_1x_get_pin (s_8021X);
+	nmc->allowed_fields[31].value = pin_flags;
+	nmc->allowed_fields[32].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -1011,6 +1084,12 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	g_free (phase2_client_cert_str);
 	g_free (private_key_str);
 	g_free (phase2_private_key_str);
+	g_free (pswd_flags);
+	g_free (pswd_raw_str);
+	g_free (pswd_raw_flags);
+	g_free (priv_key_pswd_flags);
+	g_free (phase2_priv_key_pswd_flags);
+	g_free (pin_flags);
 	g_string_free (eap_str, TRUE);
 	g_string_free (alt_sub_match, TRUE);
 	g_string_free (phase2_alt_sub_match, TRUE);
@@ -1084,6 +1163,7 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 	nmc->allowed_fields[11].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
 	nmc->allowed_fields[12].value = seen_bssids->str;
 	nmc->allowed_fields[13].value = nm_setting_wireless_get_security (s_wireless);
+	nmc->allowed_fields[14].value = nm_setting_wireless_get_hidden (s_wireless) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -1106,7 +1186,7 @@ gboolean
 setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, NmCli *nmc)
 {
 	int i;
-	char *wep_tx_keyidx_str, *wep_key_type_str;
+	char *wep_tx_keyidx_str, *wep_key_type_str, *wep_flags, *psk_flags, *leap_flags;
 	GString *protos, *pairwises, *groups;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
@@ -1140,6 +1220,10 @@ setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, Nm
 	}
 	wep_key_type_str = wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (s_wireless_sec));
 
+	wep_flags = secret_flags_to_string (nm_setting_wireless_security_get_wep_key_flags (s_wireless_sec));
+	psk_flags = secret_flags_to_string (nm_setting_wireless_security_get_psk_flags (s_wireless_sec));
+	leap_flags = secret_flags_to_string (nm_setting_wireless_security_get_leap_password_flags (s_wireless_sec));
+
 	nmc->allowed_fields[0].value = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
 	nmc->allowed_fields[2].value = wep_tx_keyidx_str;
@@ -1152,15 +1236,21 @@ setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, Nm
 	nmc->allowed_fields[9].value = nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1);
 	nmc->allowed_fields[10].value = nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2);
 	nmc->allowed_fields[11].value = nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3);
-	nmc->allowed_fields[12].value = nm_setting_wireless_security_get_psk (s_wireless_sec);
-	nmc->allowed_fields[13].value = nm_setting_wireless_security_get_leap_password (s_wireless_sec);
-	nmc->allowed_fields[14].value = wep_key_type_str;
+	nmc->allowed_fields[12].value = wep_flags;
+	nmc->allowed_fields[13].value = wep_key_type_str;
+	nmc->allowed_fields[14].value = nm_setting_wireless_security_get_psk (s_wireless_sec);
+	nmc->allowed_fields[15].value = psk_flags;
+	nmc->allowed_fields[16].value = nm_setting_wireless_security_get_leap_password (s_wireless_sec);
+	nmc->allowed_fields[17].value = leap_flags;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	g_free (wep_tx_keyidx_str);
 	g_free (wep_key_type_str);
+	g_free (wep_flags);
+	g_free (psk_flags);
+	g_free (leap_flags);
 	g_string_free (protos, TRUE);
 	g_string_free (pairwises, TRUE);
 	g_string_free (groups, TRUE);
@@ -1535,6 +1625,7 @@ setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc)
 gboolean
 setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 {
+	char *pswd_flags;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1546,13 +1637,18 @@ setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
+	pswd_flags = secret_flags_to_string (nm_setting_pppoe_get_password_flags (s_pppoe));
+
 	nmc->allowed_fields[0].value = NM_SETTING_PPPOE_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_pppoe_get_service (s_pppoe);
 	nmc->allowed_fields[2].value = nm_setting_pppoe_get_username (s_pppoe);
 	nmc->allowed_fields[3].value = nm_setting_pppoe_get_password (s_pppoe);
+	nmc->allowed_fields[4].value = pswd_flags;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	g_free (pswd_flags);
 
 	return TRUE;
 }
@@ -1560,7 +1656,7 @@ setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 gboolean
 setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 {
-	char *network_type_str, *allowed_bands_str;
+	char *network_type_str, *allowed_bands_str, *pswd_flags, *pin_flags;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1575,22 +1671,29 @@ setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 	network_type_str = g_strdup_printf ("%d", nm_setting_gsm_get_network_type (s_gsm));
 	allowed_bands_str = allowed_bands_to_string (nm_setting_gsm_get_allowed_bands (s_gsm));
 
+	pswd_flags = secret_flags_to_string (nm_setting_gsm_get_password_flags (s_gsm));
+	pin_flags = secret_flags_to_string (nm_setting_gsm_get_pin_flags (s_gsm));
+
 	nmc->allowed_fields[0].value = NM_SETTING_GSM_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_gsm_get_number (s_gsm);
 	nmc->allowed_fields[2].value = nm_setting_gsm_get_username (s_gsm);
 	nmc->allowed_fields[3].value = nm_setting_gsm_get_password (s_gsm);
-	nmc->allowed_fields[4].value = nm_setting_gsm_get_apn (s_gsm);
-	nmc->allowed_fields[5].value = nm_setting_gsm_get_network_id (s_gsm);
-	nmc->allowed_fields[6].value = network_type_str;
-	nmc->allowed_fields[7].value = allowed_bands_str;
-	nmc->allowed_fields[8].value = nm_setting_gsm_get_pin (s_gsm);
-	nmc->allowed_fields[9].value = nm_setting_gsm_get_home_only (s_gsm) ? _("yes") : _("no");
+	nmc->allowed_fields[4].value = pswd_flags;
+	nmc->allowed_fields[5].value = nm_setting_gsm_get_apn (s_gsm);
+	nmc->allowed_fields[6].value = nm_setting_gsm_get_network_id (s_gsm);
+	nmc->allowed_fields[7].value = network_type_str;
+	nmc->allowed_fields[8].value = allowed_bands_str;
+	nmc->allowed_fields[9].value = nm_setting_gsm_get_pin (s_gsm);
+	nmc->allowed_fields[10].value = pin_flags;
+	nmc->allowed_fields[11].value = nm_setting_gsm_get_home_only (s_gsm) ? _("yes") : _("no");
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
 	g_free (network_type_str);
 	g_free (allowed_bands_str);
+	g_free (pswd_flags);
+	g_free (pin_flags);
 
 	return TRUE;
 }
@@ -1598,6 +1701,7 @@ setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 gboolean
 setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
 {
+	char *pswd_flags;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1609,13 +1713,18 @@ setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
+	pswd_flags = secret_flags_to_string (nm_setting_cdma_get_password_flags (s_cdma));
+
 	nmc->allowed_fields[0].value = NM_SETTING_CDMA_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_cdma_get_number (s_cdma);
 	nmc->allowed_fields[2].value = nm_setting_cdma_get_username (s_cdma);
 	nmc->allowed_fields[3].value = nm_setting_cdma_get_password (s_cdma);
+	nmc->allowed_fields[4].value = pswd_flags;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+
+	g_free (pswd_flags);
 
 	return TRUE;
 }
@@ -1883,6 +1992,7 @@ setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
 gboolean
 setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 {
+	char *pswd_flags;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1894,19 +2004,23 @@ setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
+	pswd_flags = secret_flags_to_string (nm_setting_adsl_get_password_flags (s_adsl));
+
 	nmc->allowed_fields[0].value = NM_SETTING_ADSL_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_adsl_get_username (s_adsl);
 	nmc->allowed_fields[2].value = nm_setting_adsl_get_password (s_adsl);
-	nmc->allowed_fields[3].value = g_strdup_printf ("%d", nm_setting_adsl_get_vpi (s_adsl));
-	nmc->allowed_fields[4].value = g_strdup_printf ("%d", nm_setting_adsl_get_vci (s_adsl));
+	nmc->allowed_fields[3].value = pswd_flags;
+	nmc->allowed_fields[4].value = nm_setting_adsl_get_protocol (s_adsl);
 	nmc->allowed_fields[5].value = nm_setting_adsl_get_encapsulation (s_adsl);
-	nmc->allowed_fields[6].value = nm_setting_adsl_get_protocol (s_adsl);
+	nmc->allowed_fields[6].value = g_strdup_printf ("%d", nm_setting_adsl_get_vpi (s_adsl));
+	nmc->allowed_fields[7].value = g_strdup_printf ("%d", nm_setting_adsl_get_vci (s_adsl));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free ((char*) nmc->allowed_fields[3].value);
-	g_free ((char*) nmc->allowed_fields[4].value);
+	g_free (pswd_flags);
+	g_free ((char*) nmc->allowed_fields[6].value);
+	g_free ((char*) nmc->allowed_fields[7].value);
 
 	return TRUE;
 }
