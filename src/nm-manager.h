@@ -46,6 +46,7 @@ typedef enum {
 	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
 	NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE, /*< nick=UnsupportedConnectionType >*/
 	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
+	NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,     /*< nick=AutoconnectNotAllowed >*/
 } NMManagerError;
 
 #define NM_MANAGER_VERSION "version"

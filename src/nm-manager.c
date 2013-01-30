@@ -2529,6 +2529,8 @@ ensure_master_active_connection (NMManager *self,
 					                                            nm_device_get_path (master_device),
 					                                            dbus_sender,
 					                                            error);
+					if (!master_ac)
+						g_prefix_error (error, "%s", "Master device activation failed: ");
 					g_slist_free (connections);
 					return master_ac;
 				}
@@ -2569,24 +2571,30 @@ ensure_master_active_connection (NMManager *self,
 			if (master_state != NM_DEVICE_STATE_DISCONNECTED)
 				continue;
 
-			return nm_manager_activate_connection (self,
-			                                       master_connection,
-			                                       NULL,
-			                                       nm_device_get_path (candidate),
-			                                       dbus_sender,
-			                                       error);
+			master_ac = nm_manager_activate_connection (self,
+			                                            master_connection,
+			                                            NULL,
+			                                            nm_device_get_path (candidate),
+			                                            dbus_sender,
+			                                            error);
+			if (!master_ac)
+				g_prefix_error (error, "%s", "Master device activation failed: ");
+			return master_ac;
 		}
 
 		/* Device described by master_connection may be a virtual one that's
 		 * not created yet.
 		 */
 		if (!found_device && connection_needs_virtual_device (master_connection)) {
-			return nm_manager_activate_connection (self,
-			                                       master_connection,
-			                                       NULL,
-			                                       NULL,
-			                                       dbus_sender,
-			                                       error);
+			master_ac = nm_manager_activate_connection (self,
+			                                            master_connection,
+			                                            NULL,
+			                                            NULL,
+			                                            dbus_sender,
+			                                            error);
+			if (!master_ac)
+				g_prefix_error (error, "%s", "Master device activation failed: ");
+			return master_ac;
 		}
 
 		g_set_error (error,
@@ -2771,6 +2779,16 @@ nm_manager_activate_connection (NMManager *manager,
 	if (state < NM_DEVICE_STATE_DISCONNECTED) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
 			                 "Device not managed by NetworkManager or unavailable");
+		return NULL;
+	}
+
+	/* If this is an autoconnect request, but the device isn't allowing autoconnect
+	 * right now, we reject it.
+	 */
+	if (!dbus_sender && !nm_device_autoconnect_allowed (device)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,
+		             "%s does not allow automatic connections at this time",
+		             nm_device_get_iface (device));
 		return NULL;
 	}
 
