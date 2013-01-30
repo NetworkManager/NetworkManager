@@ -206,11 +206,8 @@ AC_CHECK_LIB([dl], [dladdr], LIBDL="-ldl", LIBDL="")
 AC_SUBST(LIBDL)
 
 dnl
-dnl Checks for new dbus-glib property access function
+dnl Checks for dbus-glib
 dnl
-AC_CHECK_LIB([dbus-glib-1], [dbus_glib_global_set_disable_legacy_property_access], ac_have_dg_prop="1", ac_have_dg_prop="0")
-AC_DEFINE_UNQUOTED(HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS, $ac_have_dg_prop, [Define if you have a dbus-glib with dbus_glib_global_set_disable_legacy_property_access()])
-
 PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)

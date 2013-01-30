@@ -506,16 +506,10 @@ main (int argc, char *argv[])
 	dbus_threads_init_default ();
 #endif
 
-#ifndef HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS
-#error HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS not defined
-#endif
-
-#if HAVE_DBUS_GLIB_DISABLE_LEGACY_PROP_ACCESS
 	/* Ensure that non-exported properties don't leak out, and that the
 	 * introspection 'access' permissions are respected.
 	 */
 	dbus_glib_global_set_disable_legacy_property_access ();
-#endif
 
 	nm_logging_start (become_daemon);
 
