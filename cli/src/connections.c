@@ -3272,6 +3272,80 @@ error:
 
 /*----------------------------------------------------------------------------*/
 
+typedef char * (*ReadLineFunc)     (const char *);
+typedef void   (*AddHistoryFunc)   (const char *);
+typedef int    (*RlInsertTextFunc) (char *);
+
+typedef struct {
+	ReadLineFunc readline_func;
+	AddHistoryFunc add_history_func;
+	RlInsertTextFunc rl_insert_text_func;
+	void **rl_startup_hook_x;
+} EditLibSymbols;
+
+static EditLibSymbols edit_lib_symbols;
+
+static GModule *
+load_cmd_line_edit_lib (void)
+{
+	GModule *module;
+	char *lib_path;
+	int i;
+	static const char * const edit_lib_table[] = {
+	    "libreadline.so.6", /* GNU Readline library version 6 - latest */
+	    "libreadline.so.5", /* GNU Readline library version 5 - previous */
+	    "libedit.so.0",     /* NetBSD Editline library port (http://www.thrysoee.dk/editline/) */
+	};
+
+	/* Try to load a library for line editing */
+	for (i = 0; i < G_N_ELEMENTS (edit_lib_table); i++) {
+		lib_path = g_module_build_path (NULL, edit_lib_table[i]);
+		module = g_module_open (lib_path, G_MODULE_BIND_LOCAL);
+		g_free (lib_path);
+		if (module)
+			break;
+	}
+	if (!module)
+		return NULL;
+
+	if (!g_module_symbol (module, "readline", (gpointer) (&edit_lib_symbols.readline_func)))
+		goto error;
+	if (!g_module_symbol (module, "add_history", (gpointer) (&edit_lib_symbols.add_history_func)))
+		goto error;
+	if (!g_module_symbol (module, "rl_insert_text", (gpointer) (&edit_lib_symbols.rl_insert_text_func)))
+		goto error;
+	if (!g_module_symbol (module, "rl_startup_hook", (gpointer) (&edit_lib_symbols.rl_startup_hook_x)))
+		goto error;
+
+	return module;
+error:
+	g_module_close (module);
+	return NULL;
+}
+
+static char *
+readline_x (const char *prompt)
+{
+	char *str;
+
+	if (edit_lib_symbols.readline_func) {
+		str = edit_lib_symbols.readline_func (prompt);
+		/* Return NULL, not empty string */
+		if (str && *str == '\0') {
+			g_free (str);
+			str = NULL;
+		}
+	} else
+		str = nmc_get_user_input (prompt);
+
+	if (edit_lib_symbols.add_history_func && str && *str)
+		edit_lib_symbols.add_history_func (str);
+
+	return str;
+}
+
+/*----------------------------------------------------------------------------*/
+
 static void
 editor_show_connection (NMConnection *connection, NmCli *nmc)
 {
@@ -3547,7 +3621,7 @@ ask_check_property (const char *arg,
 
 	if (!arg) {
 		printf (_("Available properties: %s\n"), valid_props_str);
-		prop_name_user = nmc_get_user_input (EDITOR_PROMPT_PROPERTY);
+		prop_name_user = readline_x (EDITOR_PROMPT_PROPERTY);
 	} else
 		prop_name_user = g_strdup (arg);
 
@@ -3648,8 +3722,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	menu_ctx.valid_props_str = NULL;
 
 	while (cmd_loop) {
-		cmd_user = nmc_get_user_input (menu_ctx.main_prompt);
-		if (!cmd_user)
+		cmd_user = readline_x (menu_ctx.main_prompt);
+		if (!cmd_user || *cmd_user == '\0')
 			continue;
 		cmd = parse_editor_main_cmd (g_strstrip (cmd_user), &cmd_arg);
 
@@ -3680,7 +3754,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					prop_val_user = nmc_get_user_input (tmp_prompt);
+					prop_val_user = readline_x (tmp_prompt);
 					g_free (tmp_prompt);
 
 					/* Set property value */
@@ -3738,7 +3812,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					cmd_arg_v = nmc_get_user_input (tmp_prompt);
+					cmd_arg_v = readline_x (tmp_prompt);
 					g_free (tmp_prompt);
 				}
 
@@ -3803,7 +3877,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					break;
 
 				prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-				prop_val_user = nmc_get_user_input (prompt);
+				prop_val_user = readline_x (prompt);
 				g_free (prompt);
 
 				set_result = nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err);
@@ -4113,6 +4187,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	char *tmp_str;
 	GError *error = NULL;
 	GError *err1 = NULL;
+	GModule *edit_lib_module = NULL;
 	nmc_arg_t exp_args[] = { {"type",     TRUE, &type,     FALSE},
 	                         {"con-name", TRUE, &con_name, FALSE},
 	                         {NULL} };
@@ -4126,6 +4201,19 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
+	/* Load line editing library */
+	if (!(edit_lib_module = load_cmd_line_edit_lib ())) {
+		printf (_(">>> Command-line editing is not available. "
+		          "Consider installing a line editing library to enable the feature. <<<\n"
+		          "Supported libraries are:\n"
+		          "  - GNU Readline    (libreadline) http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html\n"
+		          "  - NetBSD Editline (libedit)     http://www.thrysoee.dk/editline/\n"));
+		edit_lib_symbols.readline_func = NULL;
+		edit_lib_symbols.add_history_func = NULL;
+		edit_lib_symbols.rl_insert_text_func = NULL;
+		edit_lib_symbols.rl_startup_hook_x = NULL;
+	}
+
 	connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
 	tmp_str = get_valid_options_string (nmc_valid_connection_types);
 
@@ -4136,7 +4224,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 			printf (_("Error: invalid connection type; %s\n"), err1->message);
 		g_clear_error (&err1);
 
-		type_ask = nmc_get_user_input (EDITOR_PROMPT_CON_TYPE);
+		type_ask = readline_x (EDITOR_PROMPT_CON_TYPE);
 		type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 		connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
 		g_free (type_ask);
@@ -4177,6 +4265,9 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Run menu loop */
 	editor_menu_main (nmc, connection, connection_type);
+
+	if (edit_lib_module)
+		g_module_close (edit_lib_module);
 
 	if (connection)
 		g_object_unref (connection);
