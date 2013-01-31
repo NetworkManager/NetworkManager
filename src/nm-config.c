@@ -59,79 +59,6 @@ nm_config_error_quark (void)
 
 /************************************************************************/
 
-static void
-nm_config_init (NMConfig *config)
-{
-}
-
-static void
-dispose (GObject *object)
-{
-	NMConfig *config = NM_CONFIG (object);
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-
-	if (priv->path) {
-		g_free (priv->path);
-		priv->path = NULL;
-	}
-	if (priv->plugins) {
-		g_strfreev (priv->plugins);
-		priv->plugins = NULL;
-	}
-	if (priv->dhcp_client) {
-		g_free (priv->dhcp_client);
-		priv->dhcp_client = NULL;
-	}
-	if (priv->dns_plugins) {
-		g_strfreev (priv->dns_plugins);
-		priv->dns_plugins = NULL;
-	}
-	if (priv->log_level) {
-		g_free (priv->log_level);
-		priv->log_level = NULL;
-	}
-	if (priv->log_domains) {
-		g_free (priv->log_domains);
-		priv->log_domains = NULL;
-	}
-	if (priv->connectivity_uri) {
-		g_free (priv->connectivity_uri);
-		priv->connectivity_uri = NULL;
-	}
-	if (priv->connectivity_response) {
-		g_free (priv->connectivity_response);
-		priv->connectivity_response = NULL;
-	}
-
-	G_OBJECT_CLASS (nm_config_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *gobject)
-{
-	singleton = NULL;
-	G_OBJECT_CLASS (nm_config_parent_class)->finalize (gobject);
-}
-
-
-static void
-nm_config_class_init (NMConfigClass *config_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
-
-	g_type_class_add_private (config_class, sizeof (NMConfigPrivate));
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-}
-
-NMConfig *
-nm_config_get (void)
-{
-	g_assert (singleton);
-	g_object_ref (singleton);
-	return singleton;
-}
-
 const char *
 nm_config_get_path (NMConfig *config)
 {
@@ -273,6 +200,16 @@ fill_from_file (NMConfig *config,
 	return success;
 }
 
+/************************************************************************/
+
+NMConfig *
+nm_config_get (void)
+{
+	g_assert (singleton);
+	g_object_ref (singleton);
+	return singleton;
+}
+
 /* call this function only once! */
 NMConfig *
 nm_config_new (const char *cli_config_path,
@@ -353,3 +290,69 @@ nm_config_new (const char *cli_config_path,
 	g_clear_error (&local);
 	return singleton;
 }
+
+static void
+nm_config_init (NMConfig *config)
+{
+}
+
+static void
+dispose (GObject *object)
+{
+	NMConfig *config = NM_CONFIG (object);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+
+	if (priv->path) {
+		g_free (priv->path);
+		priv->path = NULL;
+	}
+	if (priv->plugins) {
+		g_strfreev (priv->plugins);
+		priv->plugins = NULL;
+	}
+	if (priv->dhcp_client) {
+		g_free (priv->dhcp_client);
+		priv->dhcp_client = NULL;
+	}
+	if (priv->dns_plugins) {
+		g_strfreev (priv->dns_plugins);
+		priv->dns_plugins = NULL;
+	}
+	if (priv->log_level) {
+		g_free (priv->log_level);
+		priv->log_level = NULL;
+	}
+	if (priv->log_domains) {
+		g_free (priv->log_domains);
+		priv->log_domains = NULL;
+	}
+	if (priv->connectivity_uri) {
+		g_free (priv->connectivity_uri);
+		priv->connectivity_uri = NULL;
+	}
+	if (priv->connectivity_response) {
+		g_free (priv->connectivity_response);
+		priv->connectivity_response = NULL;
+	}
+
+	G_OBJECT_CLASS (nm_config_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *gobject)
+{
+	singleton = NULL;
+	G_OBJECT_CLASS (nm_config_parent_class)->finalize (gobject);
+}
+
+
+static void
+nm_config_class_init (NMConfigClass *config_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+
+	g_type_class_add_private (config_class, sizeof (NMConfigPrivate));
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
+}
+
