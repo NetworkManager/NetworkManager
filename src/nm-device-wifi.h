@@ -48,6 +48,7 @@ typedef enum {
 	NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,      /*< nick=AccessPointNotFound >*/
 	NM_WIFI_ERROR_SCAN_NOT_ALLOWED,            /*< nick=ScanNotAllowed >*/
 	NM_WIFI_ERROR_AP_MODE_UNSUPPORTED,         /*< nick=ApModeUnsupported >*/
+	NM_WIFI_ERROR_ADHOC_MODE_UNSUPPORTED,      /*< nick=AdhocModeUnsupported >*/
 } NMWifiError;
 
 #define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"

@@ -1016,6 +1016,7 @@ check_connection_compatible (NMDevice *device,
 	NMSettingWireless *s_wireless;
 	const GByteArray *mac;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
+	const char *mode;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -1071,8 +1072,17 @@ check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	/* Early exit if supplicant or device don't support AP mode */
-	if (g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0) {
+	/* Early exit if supplicant or device doesn't support requested mode */
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0) {
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
+			g_set_error_literal (error,
+			                     NM_WIFI_ERROR,
+			                     NM_WIFI_ERROR_ADHOC_MODE_UNSUPPORTED,
+			                     "Ad-Hoc mode is not supported by this device.");
+			return FALSE;
+		}
+	} else if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
 		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
 			g_set_error_literal (error,
 			                     NM_WIFI_ERROR,

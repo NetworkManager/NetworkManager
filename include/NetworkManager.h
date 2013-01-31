@@ -157,6 +157,7 @@ typedef enum {
  * @NM_WIFI_DEVICE_CAP_WPA: device supports WPA1 authentication
  * @NM_WIFI_DEVICE_CAP_RSN: device supports WPA2/RSN authentication
  * @NM_WIFI_DEVICE_CAP_AP: device supports Access Point mode
+ * @NM_WIFI_DEVICE_CAP_ADHOC: device supports Ad-Hoc mode
  *
  * 802.11 specific device encryption and authentication capabilities.
  **/
@@ -168,7 +169,8 @@ typedef enum {
 	NM_WIFI_DEVICE_CAP_CIPHER_CCMP   = 0x00000008,
 	NM_WIFI_DEVICE_CAP_WPA           = 0x00000010,
 	NM_WIFI_DEVICE_CAP_RSN           = 0x00000020,
-	NM_WIFI_DEVICE_CAP_AP            = 0x00000040
+	NM_WIFI_DEVICE_CAP_AP            = 0x00000040,
+	NM_WIFI_DEVICE_CAP_ADHOC         = 0x00000080
 } NMDeviceWifiCapabilities;
 
 
