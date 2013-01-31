@@ -556,6 +556,12 @@ wext_get_caps (WifiDataWext *wext, struct iw_range *range)
 		caps &= ~WPA_CAPS;
 	}
 
+	/* There's no way to detect Ad-Hoc/AP mode support with WEXT
+	 * (other than actually trying to do it), so just assume that
+	 * Ad-Hoc is supported and AP isn't.
+	 */
+	caps |= NM_WIFI_DEVICE_CAP_ADHOC;
+
 	return caps;
 }
 
