@@ -178,12 +178,6 @@ crypto_decrypt (const char *cipher,
 	}
 
 	output = g_malloc0 (data->len);
-	if (!output) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Not enough memory for decrypted key buffer."));
-		return NULL;
-	}
 
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {
@@ -346,12 +340,6 @@ crypto_encrypt (const char *cipher,
 		padded_buf[data->len + i] = (guint8) (pad_len & 0xFF);
 
 	output = g_malloc0 (output_len);
-	if (!output) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Could not allocate memory for encrypting."));
-		return NULL;
-	}
 
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {

@@ -1393,11 +1393,6 @@ is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac)
 		return FALSE;
 
 	config = g_key_file_new ();
-	if (!config) {
-		nm_log_warn (LOGD_SETTINGS, "not enough memory to load config file.");
-		return FALSE;
-	}
-
 	g_key_file_set_list_separator (config, ',');
 	if (!g_key_file_load_from_file (config, priv->config_file, G_KEY_FILE_NONE, NULL))
 		goto out;
@@ -1465,8 +1460,6 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 		goto cleanup;
 
 	config = g_key_file_new ();
-	if (!config)
-		goto cleanup;
 
 	if (nm_connection_get_setting_wired (NM_CONNECTION (wired)))
 		hwaddr_type = ARPHRD_ETHER;

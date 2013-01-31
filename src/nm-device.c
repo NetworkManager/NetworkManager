@@ -2732,9 +2732,6 @@ ip6_use_tempaddr (void)
 	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
 
 	keyfile = g_key_file_new ();
-	if (keyfile == NULL)
-		goto done;
-
 	if (!g_key_file_load_from_data (keyfile, sysctl_data, len + strlen (group_name), G_KEY_FILE_NONE, NULL))
 		goto done;
 

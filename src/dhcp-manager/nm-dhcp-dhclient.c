@@ -474,10 +474,6 @@ dhclient_start (NMDHCPClient *client,
 	pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
 		                        ipv6 ? "6" : "",
 		                        iface);
-	if (!pid_file) {
-		nm_log_warn (log_domain, "(%s): not enough memory for dhcpcd options.", iface);
-		return -1;
-	}
 
 	/* Kill any existing dhclient from the pidfile */
 	binary_name = g_path_get_basename (priv->path);
@@ -492,10 +488,6 @@ dhclient_start (NMDHCPClient *client,
 
 	g_free (priv->lease_file);
 	priv->lease_file = get_dhclient_leasefile (iface, uuid, ipv6);
-	if (!priv->lease_file) {
-		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
-		return -1;
-	}
 
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) priv->path);

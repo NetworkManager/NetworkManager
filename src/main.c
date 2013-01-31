@@ -234,12 +234,6 @@ parse_state_file (const char *filename,
 	g_return_val_if_fail (wimax_enabled != NULL, FALSE);
 
 	state_file = g_key_file_new ();
-	if (!state_file) {
-		g_set_error (error, NM_CONFIG_ERROR, NM_CONFIG_ERROR_NO_MEMORY,
-		             "Not enough memory to load state file %s.", filename);
-		return FALSE;
-	}
-
 	g_key_file_set_list_separator (state_file, ',');
 	if (!g_key_file_load_from_file (state_file, filename, G_KEY_FILE_KEEP_COMMENTS, &tmp_error)) {
 		gboolean ret = FALSE;

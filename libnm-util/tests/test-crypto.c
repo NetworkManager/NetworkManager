@@ -69,10 +69,6 @@ dump_key_to_pem (const char *key, gsize key_len, int key_type)
 	}
 
 	str = g_string_new (NULL);
-	if (!str) {
-		g_warning ("Couldn't allocate buffer to write out key.");
-		goto out;
-	}
 
 	g_string_append (str, start_tag);
 	g_string_append_c (str, '\n');
@@ -122,10 +118,8 @@ file_to_byte_array (const char *filename)
 
 	if (g_file_get_contents (filename, &contents, &length, NULL)) {
 		array = g_byte_array_sized_new (length);
-		if (array) {
-			g_byte_array_append (array, (guint8 *) contents, length);
-			g_assert (array->len == length);
-		}
+		g_byte_array_append (array, (guint8 *) contents, length);
+		g_assert (array->len == length);
 		g_free (contents);
 	}
 	return array;

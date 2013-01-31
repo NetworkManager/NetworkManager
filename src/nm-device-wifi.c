@@ -2535,11 +2535,6 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	cb_data = g_slice_new0 (struct iface_con_error_cb_data);
-	if (cb_data == NULL) {
-		nm_log_err (LOGD_WIFI, "Not enough memory to process supplicant connection error.");
-		return;
-	}
-
 	cb_data->self = self;
 	cb_data->name = g_strdup (name);
 	cb_data->message = g_strdup (message);

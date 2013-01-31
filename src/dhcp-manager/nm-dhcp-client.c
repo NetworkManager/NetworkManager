@@ -1118,16 +1118,7 @@ ip4_options_to_config (NMDHCPClient *self)
 	g_return_val_if_fail (priv->options != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new ();
-	if (!ip4_config) {
-		nm_log_warn (LOGD_DHCP4, "(%s): couldn't allocate memory for an IP4Config!", priv->iface);
-		return NULL;
-	}
-
 	addr = nm_ip4_address_new ();
-	if (!addr) {
-		nm_log_warn (LOGD_DHCP4, "(%s): couldn't allocate memory for an IP4 Address!", priv->iface);
-		goto error;
-	}
 
 	str = g_hash_table_lookup (priv->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
@@ -1333,10 +1324,6 @@ ip6_options_to_config (NMDHCPClient *self)
 	}
 
 	ip6_config = nm_ip6_config_new ();
-	if (!ip6_config) {
-		nm_log_warn (LOGD_DHCP6, "(%s): couldn't allocate memory for an IP6Config!", priv->iface);
-		return NULL;
-	}
 
 	str = g_hash_table_lookup (priv->options, "new_ip6_address");
 	if (str) {

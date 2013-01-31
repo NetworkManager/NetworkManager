@@ -1564,10 +1564,8 @@ file_to_byte_array (const char *filename)
 
 	if (g_file_get_contents (filename, &contents, &length, NULL)) {
 		array = g_byte_array_sized_new (length);
-		if (array) {
-			g_byte_array_append (array, (guint8 *) contents, length);
-			g_assert (array->len == length);
-		}
+		g_byte_array_append (array, (guint8 *) contents, length);
+		g_assert (array->len == length);
 		g_free (contents);
 	}
 	return array;

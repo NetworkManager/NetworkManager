@@ -1437,8 +1437,6 @@ write_value_to_state_file (const char *filename,
 	                      FALSE);
 
 	key_file = g_key_file_new ();
-	if (!key_file)
-		return FALSE;
 
 	g_key_file_set_list_separator (key_file, ',');
 	g_key_file_load_from_file (key_file, filename, G_KEY_FILE_KEEP_COMMENTS, NULL);

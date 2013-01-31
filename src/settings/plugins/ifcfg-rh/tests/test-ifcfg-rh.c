@@ -926,12 +926,7 @@ test_read_wired_static_no_prefix (guint32 expected_prefix)
 	const char *tmp;
 
 	file = g_strdup_printf (TEST_IFCFG_STATIC_NO_PREFIX "-%u", expected_prefix);
-	ASSERT (file != NULL,
-	        "wired-static-no-prefix-read", "failed to create path to file");
-
 	expected_id = g_strdup_printf ("System test-wired-static-no-prefix-%u", expected_prefix);
-	ASSERT (expected_id != NULL,
-	        "wired-static-no-prefix-read", "failed to expected connection ID");
 
 	connection = connection_from_file (file,
 	                                   NULL,
@@ -7713,10 +7708,8 @@ file_to_byte_array (const char *filename)
 
 	if (g_file_get_contents (filename, &contents, &length, NULL)) {
 		array = g_byte_array_sized_new (length);
-		if (array) {
-			g_byte_array_append (array, (guint8 *) contents, length);
-			g_assert (array->len == length);
-		}
+		g_byte_array_append (array, (guint8 *) contents, length);
+		g_assert (array->len == length);
 		g_free (contents);
 	}
 	return array;

@@ -143,7 +143,6 @@ utils_single_quote_string (const char *str)
 			drop++;
 	}
 	new_str = g_malloc0 (slen + extra - drop + 4); /* 4 is for $''\0*/
-	if (!new_str) return NULL;
 
 	if (extra > 0)
 		new_str[j++] = '$';
@@ -179,7 +178,6 @@ utils_single_unquote_string (const char *str)
 
 	slen = strlen (str);
 	new_str = g_malloc0 (slen + 1);
-	if (!new_str) return NULL;
 
 	if (   (slen >= 2 && (str[0] == dq_char || str[0] == q_char) && str[0] == str[slen-1])
 	    || (slen >= 3 && str[0] == '$' && str[1] == q_char && str[1] == str[slen-1])) {

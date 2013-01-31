@@ -147,12 +147,6 @@ fill_from_file (NMConfig *config,
 	}
 
 	kf = g_key_file_new ();
-	if (!kf) {
-		g_set_error (error, NM_CONFIG_ERROR, NM_CONFIG_ERROR_NO_MEMORY,
-		             "Not enough memory to load config file %s", path);
-		return FALSE;
-	}
-
 	g_key_file_set_list_separator (kf, ',');
 	if (g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, error)) {
 		config->path = g_strdup (path);

@@ -111,10 +111,6 @@ ip4_start (NMDHCPClient *client,
 	uuid = nm_dhcp_client_get_uuid (client);
 
 	priv->pid_file = g_strdup_printf (NMSTATEDIR "/dhcpcd-%s.pid", iface);
-	if (!priv->pid_file) {
-		nm_log_warn (LOGD_DHCP4, "(%s): not enough memory for dhcpcd options.", iface);
-		return -1;
-	}
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
 		nm_log_warn (LOGD_DHCP4, "%s does not exist.", priv->path);

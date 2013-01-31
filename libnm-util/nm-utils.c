@@ -2144,13 +2144,6 @@ make_key (const char *salt,
 	g_return_val_if_fail (out_len != NULL, NULL);
 
 	key = g_malloc0 (digest_len + 1);
-	if (!key) {
-		g_set_error (error,
-		             NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Not enough memory to make encryption key."));
-		return NULL;
-	}
 
 	if (!crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len, error)) {
 		*out_len = 0;
@@ -2255,37 +2248,16 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 		goto out;
 
 	pem = g_string_sized_new (enc_len * 2 + 100);
-	if (!pem) {
-		g_set_error_literal (error, NM_CRYPTO_ERROR,
-		                     NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		                     _("Could not allocate memory for PEM file creation."));
-		goto out;
-	}
-
 	g_string_append (pem, "-----BEGIN RSA PRIVATE KEY-----\n");
 	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
 
 	/* Convert the salt to a hex string */
 	tmp = utils_bin2hexstr ((const char *) salt, sizeof (salt), 16);
-	if (!tmp) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Could not allocate memory for writing IV to PEM file."));
-		goto out;
-	}
-
 	g_string_append_printf (pem, "DEK-Info: DES-EDE3-CBC,%s\n\n", tmp);
 	g_free (tmp);
 
 	/* Convert the encrypted key to a base64 string */
 	p = tmp = g_base64_encode ((const guchar *) enc, enc_len);
-	if (!tmp) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Could not allocate memory for writing encrypted key to PEM file."));
-		goto out;
-	}
-
 	left = strlen (tmp);
 	while (left > 0) {
 		g_string_append_len (pem, p, (left < 64) ? left : 64);
@@ -2298,12 +2270,6 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	g_string_append (pem, "-----END RSA PRIVATE KEY-----\n");
 
 	ret = g_byte_array_sized_new (pem->len);
-	if (!ret) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Could not allocate memory for PEM file data."));
-		goto out;
-	}
 	g_byte_array_append (ret, (const unsigned char *) pem->str, pem->len);
 	if (tmp_password && out_password)
 		*out_password = g_strdup (tmp_password);

@@ -163,7 +163,6 @@ svEscape(const char *s) {
 
     newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
     new = g_malloc0(newlen);
-    if (!new) return NULL;
 
     j = 0;
     new[j++] = '"';

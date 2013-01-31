@@ -136,17 +136,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 	}
 
 	opt = g_slice_new0 (ConfigOption);
-	if (opt == NULL) {
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option.");
-		return FALSE;
-	}
-
 	opt->value = g_malloc0 ((sizeof (char) * len) + 1);
-	if (opt->value == NULL) {
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option value.");
-		g_slice_free (ConfigOption, opt);
-		return FALSE;
-	}
 	memcpy (opt->value, value, len);
 
 	opt->len = len;
@@ -207,27 +197,10 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	}
 
 	blob = g_byte_array_sized_new (value->len);
-	if (!blob) {
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config blob.");
-		return FALSE;
-	}
 	g_byte_array_append (blob, value->data, value->len);
 
 	opt = g_slice_new0 (ConfigOption);
-	if (opt == NULL) {
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option.");
-		g_byte_array_free (blob, TRUE);
-		return FALSE;
-	}
-
 	opt->value = g_strdup_printf ("blob://%s", blobid);
-	if (opt->value == NULL) {
-		nm_log_warn (LOGD_SUPPLICANT, "Couldn't allocate memory for new config option value.");
-		g_byte_array_free (blob, TRUE);
-		g_slice_free (ConfigOption, opt);
-		return FALSE;
-	}
-
 	opt->len = strlen (opt->value);
 	opt->type = type;	
 

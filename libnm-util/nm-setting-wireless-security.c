@@ -703,10 +703,6 @@ need_secrets (NMSetting *setting)
 	GPtrArray *secrets;
 
 	secrets = g_ptr_array_sized_new (4);
-	if (!secrets) {
-		g_warning ("Not enough memory to create required secrets array.");
-		return NULL;
-	}
 
 	g_assert (priv->key_mgmt);
 

@@ -140,13 +140,6 @@ write_secret_file (const char *path,
 	gboolean success = FALSE;
 
 	tmppath = g_malloc0 (strlen (path) + 10);
-	if (!tmppath) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Could not allocate memory for temporary file for '%s'",
-		             path);
-		return FALSE;
-	}
-
 	memcpy (tmppath, path, strlen (path));
 	strcat (tmppath, ".XXXXXX");
 

@@ -183,12 +183,6 @@ nm_ip6_device_new (NMIP6Manager *manager,
 	g_return_val_if_fail (hwaddr_len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 
 	device = g_slice_new0 (NMIP6Device);
-	if (!device) {
-		nm_log_err (LOGD_IP6, "(%d): out of memory creating IP6 addrconf object.",
-		            ifindex);
-		return NULL;
-	}
-
 	device->ifindex = ifindex;
 	device->iface = nm_netlink_index_to_iface (ifindex);
 	if (!device->iface) {
@@ -1606,19 +1600,7 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 static NMIP6Manager *
 nm_ip6_manager_new (void)
 {
-	NMIP6Manager *manager;
-	NMIP6ManagerPrivate *priv;
-
-	manager = g_object_new (NM_TYPE_IP6_MANAGER, NULL);
-	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
-
-	if (!priv->devices) {
-		nm_log_err (LOGD_IP6, "not enough memory to initialize IP6 manager tables");
-		g_object_unref (manager);
-		manager = NULL;
-	}
-
-	return manager;
+	return g_object_new (NM_TYPE_IP6_MANAGER, NULL);
 }
 
 static NMIP6Manager *singleton = NULL;
