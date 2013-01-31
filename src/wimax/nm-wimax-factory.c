@@ -30,18 +30,13 @@ nm_device_factory_create_device (GUdevDevice *device,
                                  const char *driver,
                                  GError **error)
 {
-	GObject *dev;
-
 	/* FIXME: check 'DEVTYPE' instead; but since we only support Intel
 	 * WiMAX devices for now this is appropriate.
 	 */
 	if (g_strcmp0 (driver, "i2400m_usb") != 0)
 		return NULL;  /* unsupported */
 
-	dev = (GObject *) nm_device_wimax_new (devpath, ifname, driver);
-	if (dev == NULL)
-		g_set_error_literal (error, 0, 0, "Failed to create WiMAX device.");
-	return dev;
+	return (GObject *) nm_device_wimax_new (devpath, ifname, driver);
 }
 
 G_MODULE_EXPORT guint32

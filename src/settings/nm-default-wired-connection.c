@@ -110,32 +110,31 @@ nm_default_wired_connection_new (const GByteArray *mac,
 	g_return_val_if_fail (defname != NULL, NULL);
 
 	self = (NMDefaultWiredConnection *) g_object_new (NM_TYPE_DEFAULT_WIRED_CONNECTION, NULL);
-	if (self) {
-		priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (self);
-		priv->device = g_object_ref (device);
-		priv->mac = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (priv->mac, mac->data, mac->len);
 
-		setting = nm_setting_connection_new ();
+	priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (self);
+	priv->device = g_object_ref (device);
+	priv->mac = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (priv->mac, mac->data, mac->len);
 
-		uuid = nm_utils_uuid_generate ();
-		g_object_set (setting,
-		              NM_SETTING_CONNECTION_ID, defname,
-		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
-		              NM_SETTING_CONNECTION_UUID, uuid,
-		              NM_SETTING_CONNECTION_READ_ONLY, read_only,
-		              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
-		              NULL);
-		g_free (uuid);
+	setting = nm_setting_connection_new ();
 
-		nm_connection_add_setting (NM_CONNECTION (self), setting);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, defname,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_READ_ONLY, read_only,
+	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
+	              NULL);
+	g_free (uuid);
 
-		/* Lock the connection to the specific device */
-		setting = nm_setting_wired_new ();
-		g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, priv->mac, NULL);
-		nm_connection_add_setting (NM_CONNECTION (self), setting);
-	}
+	nm_connection_add_setting (NM_CONNECTION (self), setting);
+
+	/* Lock the connection to the specific device */
+	setting = nm_setting_wired_new ();
+	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, priv->mac, NULL);
+	nm_connection_add_setting (NM_CONNECTION (self), setting);
 
 	return self;
 }

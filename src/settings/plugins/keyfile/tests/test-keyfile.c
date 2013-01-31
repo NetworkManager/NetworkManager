@@ -506,15 +506,10 @@ test_write_wired_connection (void)
 	guint64 timestamp = 0x12345678L;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-			"connection-write", "failed to allocate new connection");
 
 	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	ASSERT (s_con != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -530,9 +525,6 @@ test_write_wired_connection (void)
 	/* Wired setting */
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
-	ASSERT (s_wired != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	mac = g_byte_array_sized_new (ETH_ALEN);
@@ -546,9 +538,6 @@ test_write_wired_connection (void)
 	/* IP4 setting */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	ASSERT (s_ip4 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -572,9 +561,6 @@ test_write_wired_connection (void)
 	/* IP6 setting */
 
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new ());
-	ASSERT (s_ip6 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP6_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
@@ -754,15 +740,10 @@ test_write_ip6_wired_connection (void)
 	const char *gw = "dcba::beef";
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-			"connection-write", "failed to allocate new connection");
 
 	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	ASSERT (s_con != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -777,17 +758,11 @@ test_write_ip6_wired_connection (void)
 	/* Wired setting */
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
-	ASSERT (s_wired != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	ASSERT (s_ip4 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -797,9 +772,6 @@ test_write_ip6_wired_connection (void)
 	/* IP6 setting */
 
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new ());
-	ASSERT (s_ip6 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP6_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
@@ -1066,15 +1038,10 @@ test_write_wireless_connection (void)
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "connection-write", "failed to allocate new connection");
 
 	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	ASSERT (s_con != NULL,
-	        "connection-write", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -1090,9 +1057,6 @@ test_write_wireless_connection (void)
 	/* Wireless setting */
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
-	ASSERT (s_wireless != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_WIRELESS_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
 
 	bssid = g_byte_array_sized_new (ETH_ALEN);
@@ -1113,9 +1077,6 @@ test_write_wireless_connection (void)
 	/* IP4 setting */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	ASSERT (s_ip4 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -1125,9 +1086,6 @@ test_write_wireless_connection (void)
 	/* IP6 setting */
 
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new ());
-	ASSERT (s_ip6 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP6_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
@@ -1220,15 +1178,10 @@ test_write_string_ssid (void)
 	GKeyFile *keyfile;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "connection-write", "failed to allocate new connection");
 
 	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	ASSERT (s_con != NULL,
-	        "connection-write", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -1242,9 +1195,6 @@ test_write_string_ssid (void)
 	/* Wireless setting */
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
-	ASSERT (s_wireless != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_WIRELESS_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
 
 	ssid = g_byte_array_sized_new (sizeof (tmpssid));
@@ -1255,9 +1205,6 @@ test_write_string_ssid (void)
 	/* IP4 setting */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	ASSERT (s_ip4 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -1846,15 +1793,10 @@ test_write_bt_dun_connection (void)
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "connection-write", "failed to allocate new connection");
 
 	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	ASSERT (s_con != NULL,
-	        "connection-write", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -1870,9 +1812,6 @@ test_write_bt_dun_connection (void)
 	/* Bluetooth setting */
 
 	s_bt = NM_SETTING_BLUETOOTH (nm_setting_bluetooth_new ());
-	ASSERT (s_bt != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_BLUETOOTH_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_bt));
 
 	bdaddr = g_byte_array_sized_new (ETH_ALEN);
@@ -1888,9 +1827,6 @@ test_write_bt_dun_connection (void)
 	/* IP4 setting */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	ASSERT (s_ip4 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -1899,9 +1835,6 @@ test_write_bt_dun_connection (void)
 
 	/* GSM setting */
 	s_gsm = NM_SETTING_GSM (nm_setting_gsm_new ());
-	ASSERT (s_gsm != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_GSM_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_gsm));
 
 	g_object_set (s_gsm,
@@ -2106,15 +2039,10 @@ test_write_gsm_connection (void)
 	guint64 timestamp = 0x12344433L;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "connection-write", "failed to allocate new connection");
 
 	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	ASSERT (s_con != NULL,
-	        "connection-write", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -2130,9 +2058,6 @@ test_write_gsm_connection (void)
 	/* IP4 setting */
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	ASSERT (s_ip4 != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -2141,9 +2066,6 @@ test_write_gsm_connection (void)
 
 	/* GSM setting */
 	s_gsm = NM_SETTING_GSM (nm_setting_gsm_new ());
-	ASSERT (s_gsm != NULL,
-			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_GSM_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_gsm));
 
 	g_object_set (s_gsm,

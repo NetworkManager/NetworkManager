@@ -1752,8 +1752,6 @@ nm_settings_new (const char *config_file,
 	NMSettingsPrivate *priv;
 
 	self = g_object_new (NM_TYPE_SETTINGS, NULL);
-	if (!self)
-		return NULL;
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 

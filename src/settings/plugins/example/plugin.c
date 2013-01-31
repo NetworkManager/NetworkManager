@@ -852,12 +852,10 @@ nm_system_config_factory (const char *config_file)
 	if (!singleton) {
 		/* Instantiate our plugin */
 		singleton = SC_PLUGIN_EXAMPLE (g_object_new (SC_TYPE_PLUGIN_EXAMPLE, NULL));
-		if (singleton) {
-			priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (singleton);
+		priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (singleton);
 
-			/* Cache the config file path */
-			priv->conf_file = g_strdup (config_file);
-		}
+		/* Cache the config file path */
+		priv->conf_file = g_strdup (config_file);
 	} else {
 		/* This function should never be called twice */
 		g_assert_not_reached ();

@@ -62,8 +62,6 @@ nm_keyfile_connection_new (const char *full_path,
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION, NULL);
-	if (!object)
-		goto out;
 
 	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
 	priv->path = g_strdup (full_path);

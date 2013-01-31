@@ -1496,11 +1496,6 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 	}
 
 	config = nm_ip6_config_new ();
-	if (!config) {
-		nm_log_err (LOGD_IP6, "(%s): out of memory creating IP6 config object.",
-		            device->iface);
-		return NULL;
-	}
 
 	/* Make sure we refill the route and address caches, otherwise we won't get
 	 * up-to-date information here since the netlink route/addr change messages

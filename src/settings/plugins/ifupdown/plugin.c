@@ -712,10 +712,8 @@ nm_system_config_factory (const char *config_file)
 
 	if (!singleton) {
 		singleton = SC_PLUGIN_IFUPDOWN (g_object_new (SC_TYPE_PLUGIN_IFUPDOWN, NULL));
-		if (singleton) {
-			priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (singleton);
-			priv->conf_file = strdup (config_file);
-		}
+		priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (singleton);
+		priv->conf_file = strdup (config_file);
 	} else
 		g_object_ref (singleton);
 

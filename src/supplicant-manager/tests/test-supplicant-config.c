@@ -128,14 +128,9 @@ test_wifi_open (void)
 	const char *bssid_str = "11:22:33:44:55:66";
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "wifi-open", "failed to allocate new connection");
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        "wifi-open", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -149,9 +144,6 @@ test_wifi_open (void)
 
 	/* Wifi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-	ASSERT (s_wifi != NULL,
-	        "wifi-open", "failed to allocate new %s setting",
-	        NM_SETTING_WIRELESS_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
 	ssid = g_byte_array_sized_new (sizeof (ssid_data));
@@ -171,9 +163,6 @@ test_wifi_open (void)
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-	        "wifi-open", "failed to allocate new %s setting",
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
@@ -183,8 +172,6 @@ test_wifi_open (void)
 	        (error && error->message) ? error->message : "(unknown)");
 
 	config = nm_supplicant_config_new ();
-	ASSERT (config != NULL,
-	        "wifi-open", "failed to create new supplicant config");
 
 	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, TRUE, 0, TRUE);
 	ASSERT (success == TRUE,
@@ -230,14 +217,9 @@ test_wifi_wep_key (const char *detail,
 	const char *bssid_str = "11:22:33:44:55:66";
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        detail, "failed to allocate new connection");
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -251,9 +233,6 @@ test_wifi_wep_key (const char *detail,
 
 	/* Wifi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-	ASSERT (s_wifi != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_WIRELESS_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
 	ssid = g_byte_array_sized_new (sizeof (ssid_data));
@@ -274,9 +253,6 @@ test_wifi_wep_key (const char *detail,
 
 	/* Wifi Security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	ASSERT (s_wsec != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
 	g_object_set (s_wsec,
@@ -287,9 +263,6 @@ test_wifi_wep_key (const char *detail,
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
@@ -299,8 +272,6 @@ test_wifi_wep_key (const char *detail,
 	        (error && error->message) ? error->message : "(unknown)");
 
 	config = nm_supplicant_config_new ();
-	ASSERT (config != NULL,
-	        detail, "failed to create new supplicant config");
 
 	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, TRUE, 0, TRUE);
 	ASSERT (success == TRUE,
@@ -374,14 +345,9 @@ test_wifi_wpa_psk (const char *detail,
 	const char *bssid_str = "11:22:33:44:55:66";
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        detail, "failed to allocate new connection");
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -395,9 +361,6 @@ test_wifi_wpa_psk (const char *detail,
 
 	/* Wifi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-	ASSERT (s_wifi != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_WIRELESS_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
 	ssid = g_byte_array_sized_new (sizeof (ssid_data));
@@ -418,9 +381,6 @@ test_wifi_wpa_psk (const char *detail,
 
 	/* Wifi Security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	ASSERT (s_wsec != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
 	g_object_set (s_wsec,
@@ -437,9 +397,6 @@ test_wifi_wpa_psk (const char *detail,
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
@@ -449,8 +406,6 @@ test_wifi_wpa_psk (const char *detail,
 	        (error && error->message) ? error->message : "(unknown)");
 
 	config = nm_supplicant_config_new ();
-	ASSERT (config != NULL,
-	        detail, "failed to create new supplicant config");
 
 	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, TRUE, 0, TRUE);
 	ASSERT (success == TRUE,

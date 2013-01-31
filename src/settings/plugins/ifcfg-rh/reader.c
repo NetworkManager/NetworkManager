@@ -1195,11 +1195,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	gboolean never_default = FALSE, tmp_success;
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	if (!s_ip4) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Could not allocate IP4 setting");
-		return NULL;
-	}
 
 	/* First check if DEFROUTE is set for this device; DEFROUTE has the
 	 * opposite meaning from never-default. The default if DEFROUTE is not
@@ -1496,11 +1491,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
 
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	if (!s_ip6) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Could not allocate IP6 setting");
-		return NULL;
-	}
 
 	/* First check if IPV6_DEFROUTE is set for this device; IPV6_DEFROUTE has the
 	 * opposite meaning from never-default. The default if IPV6_DEFROUTE is not
@@ -3198,11 +3188,6 @@ wireless_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (*error == NULL, NULL);
 
 	connection = nm_connection_new ();
-	if (!connection) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to allocate new connection for %s.", file);
-		return NULL;
-	}
 
 	/* Wireless */
 	wireless_setting = make_wireless_setting (ifcfg, nm_controlled, unmanaged, error);
@@ -3476,11 +3461,6 @@ wired_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
 	connection = nm_connection_new ();
-	if (!connection) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to allocate new connection for %s.", file);
-		return NULL;
-	}
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
@@ -3584,11 +3564,6 @@ infiniband_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
 	connection = nm_connection_new ();
-	if (!connection) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to allocate new connection for %s.", file);
-		return NULL;
-	}
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
@@ -3693,11 +3668,6 @@ bond_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
 	connection = nm_connection_new ();
-	if (!connection) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to allocate new connection for %s.", file);
-		return NULL;
-	}
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL, _("Bond"));
 	if (!con_setting) {
@@ -3878,11 +3848,6 @@ bridge_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
 	connection = nm_connection_new ();
-	if (!connection) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to allocate new connection for %s.", file);
-		return NULL;
-	}
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BRIDGE_SETTING_NAME, NULL, _("Bridge"));
 	if (!con_setting) {
@@ -4143,11 +4108,6 @@ vlan_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
 	connection = nm_connection_new ();
-	if (!connection) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			     "Failed to allocate new connection for %s.", file);
-		return NULL;
-	}
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_VLAN_SETTING_NAME, NULL, "Vlan");
 	if (!con_setting) {

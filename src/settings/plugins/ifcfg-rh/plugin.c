@@ -859,14 +859,12 @@ nm_system_config_factory (const char *config_file)
 
 	if (!singleton) {
 		singleton = SC_PLUGIN_IFCFG (g_object_new (SC_TYPE_PLUGIN_IFCFG, NULL));
-		if (singleton) {
-			priv = SC_PLUGIN_IFCFG_GET_PRIVATE (singleton);
-			if (priv->bus)
-				dbus_g_connection_register_g_object (priv->bus,
-				                                     DBUS_OBJECT_PATH,
-				                                     G_OBJECT (singleton));
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Acquired D-Bus service %s", DBUS_SERVICE_NAME);
-		}
+		priv = SC_PLUGIN_IFCFG_GET_PRIVATE (singleton);
+		if (priv->bus)
+			dbus_g_connection_register_g_object (priv->bus,
+			                                     DBUS_OBJECT_PATH,
+			                                     G_OBJECT (singleton));
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Acquired D-Bus service %s", DBUS_SERVICE_NAME);
 	} else
 		g_object_ref (singleton);
 

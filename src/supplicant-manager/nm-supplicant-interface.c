@@ -1493,24 +1493,22 @@ nm_supplicant_interface_new (NMSupplicantManager *smgr,
 	g_return_val_if_fail (ifname != NULL, NULL);
 
 	self = g_object_new (NM_TYPE_SUPPLICANT_INTERFACE, NULL);
-	if (self) {
-		priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-		priv->smgr = g_object_ref (smgr);
-		id = g_signal_connect (priv->smgr,
-		                       "notify::" NM_SUPPLICANT_MANAGER_AVAILABLE,
-		                       G_CALLBACK (smgr_avail_cb),
-		                       self);
-		priv->smgr_avail_id = id;
+	priv->smgr = g_object_ref (smgr);
+	id = g_signal_connect (priv->smgr,
+	                       "notify::" NM_SUPPLICANT_MANAGER_AVAILABLE,
+	                       G_CALLBACK (smgr_avail_cb),
+	                       self);
+	priv->smgr_avail_id = id;
 
-		priv->dev = g_strdup (ifname);
-		priv->is_wireless = is_wireless;
-		priv->fast_supported = fast_supported;
-		priv->ap_support = ap_support;
+	priv->dev = g_strdup (ifname);
+	priv->is_wireless = is_wireless;
+	priv->fast_supported = fast_supported;
+	priv->ap_support = ap_support;
 
-		if (start_now)
-			interface_add (self, priv->is_wireless);
-	}
+	if (start_now)
+		interface_add (self, priv->is_wireless);
 
 	return self;
 }

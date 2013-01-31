@@ -590,10 +590,8 @@ nm_system_config_factory (const char *config_file)
 
 	if (!singleton) {
 		singleton = SC_PLUGIN_IFNET (g_object_new (SC_TYPE_PLUGIN_IFNET, NULL));
-		if (singleton) {
-			priv = SC_PLUGIN_IFNET_GET_PRIVATE (singleton);
-			priv->conf_file = strdup (config_file);
-		}
+		priv = SC_PLUGIN_IFNET_GET_PRIVATE (singleton);
+		priv->conf_file = strdup (config_file);
 	} else
 		g_object_ref (singleton);
 

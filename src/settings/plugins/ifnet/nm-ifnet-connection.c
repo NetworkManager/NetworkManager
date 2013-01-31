@@ -76,11 +76,6 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
-	if (!object) {
-		g_object_unref (tmp);
-		return NULL;
-	}
-
 	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
 	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, NULL);
 	g_object_unref (tmp);

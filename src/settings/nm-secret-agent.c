@@ -445,26 +445,24 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 	username = g_strdup (pw->pw_name);
 
 	self = (NMSecretAgent *) g_object_new (NM_TYPE_SECRET_AGENT, NULL);
-	if (self) {
-		priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-		priv->owner = g_strdup (owner);
-		priv->identifier = g_strdup (identifier);
-		priv->owner_uid = owner_uid;
-		priv->owner_username = g_strdup (username);
+	priv->owner = g_strdup (owner);
+	priv->identifier = g_strdup (identifier);
+	priv->owner_uid = owner_uid;
+	priv->owner_username = g_strdup (username);
 
-		hash_str = g_strdup_printf ("%08u%s", owner_uid, identifier);
-		priv->hash = g_str_hash (hash_str);
-		g_free (hash_str);
+	hash_str = g_strdup_printf ("%08u%s", owner_uid, identifier);
+	priv->hash = g_str_hash (hash_str);
+	g_free (hash_str);
 
-		priv->dbus_mgr = g_object_ref (dbus_mgr);
-		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-		priv->proxy = dbus_g_proxy_new_for_name (bus,
-	                                             owner,
-	                                             NM_DBUS_PATH_SECRET_AGENT,
-	                                             NM_DBUS_INTERFACE_SECRET_AGENT);
-		g_assert (priv->proxy);
-	}
+	priv->dbus_mgr = g_object_ref (dbus_mgr);
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->proxy = dbus_g_proxy_new_for_name (bus,
+	                                         owner,
+	                                         NM_DBUS_PATH_SECRET_AGENT,
+	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
+	g_assert (priv->proxy);
 
 	g_free (username);
 	return self;

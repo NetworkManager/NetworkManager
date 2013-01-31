@@ -133,13 +133,6 @@ init_inotify (NMInotifyHelper *self)
 
 	/* Watch the inotify descriptor for file/directory change events */
 	channel = g_io_channel_unix_new (priv->ifd);
-	if (!channel) {
-		nm_log_warn (LOGD_SETTINGS, "couldn't create new GIOChannel");
-		close (priv->ifd);
-		priv->ifd = -1;
-		return FALSE;
-	}
-
 	g_io_channel_set_flags (channel, G_IO_FLAG_NONBLOCK, NULL);
 	g_io_channel_set_encoding (channel, NULL, NULL); 
 
@@ -158,11 +151,9 @@ nm_inotify_helper_get (void)
 
 	if (!singleton) {
 		singleton = (NMInotifyHelper *) g_object_new (NM_TYPE_INOTIFY_HELPER, NULL);
-		if (!singleton)
-			return NULL;
 
 		if (!init_inotify (singleton)) {
-			g_object_unref (singleton);
+			g_clear_object (&singleton);
 			return NULL;
 		}
 	} else

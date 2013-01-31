@@ -71,9 +71,6 @@ nm_example_connection_new (const char *full_path,
 
 	/* Actually create the new NMExampleConnection object */
 	object = (GObject *) g_object_new (NM_TYPE_EXAMPLE_CONNECTION, NULL);
-	if (!object)
-		goto out;
-
 	priv = NM_EXAMPLE_CONNECTION_GET_PRIVATE (object);
 	priv->path = g_strdup (full_path);
 

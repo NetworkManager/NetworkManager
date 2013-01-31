@@ -782,11 +782,6 @@ make_ip6_setting (NMConnection *connection,
 	gboolean never_default = !has_default_ip6_route (conn_name);
 
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	if (!s_ip6) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
-			     "Could not allocate IP6 setting");
-		return;
-	}
 
 	value = ifnet_get_data (conn_name, "enable_ipv6");
 	if (value && is_true (value))
@@ -1671,8 +1666,6 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	gboolean success = FALSE;
 
 	connection = nm_connection_new ();
-	if (!connection)
-		return NULL;
 	setting = nm_connection_get_setting_connection (connection);
 	if (!setting) {
 		setting = NM_SETTING_CONNECTION (nm_setting_connection_new ());

@@ -800,8 +800,6 @@ build_supplicant_config (NMDeviceEthernet *self)
 	con_uuid = nm_connection_get_uuid (connection);
 
 	config = nm_supplicant_config_new ();
-	if (!config)
-		return NULL;
 
 	security = nm_connection_get_setting_802_1x (connection);
 	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, TRUE)) {

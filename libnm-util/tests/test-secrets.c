@@ -67,14 +67,9 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	GError *error = NULL;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        detail, "failed to allocate new connection");
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -88,16 +83,10 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 
 	/* Wired setting */
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	ASSERT (s_wired != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* Wireless security setting */
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_802_1X_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
 	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, "Bill Smith", NULL);
@@ -134,9 +123,6 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-			detail, "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
@@ -247,14 +233,9 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	GError *error = NULL;
 
 	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        detail, "failed to allocate new connection");
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
@@ -268,16 +249,10 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 
 	/* Wired setting */
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	ASSERT (s_wired != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* Wireless security setting */
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
-	ASSERT (s_8021x != NULL,
-	        detail, "failed to allocate new %s setting",
-	        NM_SETTING_802_1X_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
 	g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, "blahblah", NULL);
@@ -316,9 +291,6 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-			detail, "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);

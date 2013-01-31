@@ -91,11 +91,6 @@ nm_vpn_service_new (const char *namefile, GError **error)
 	}
 
 	self = (NMVPNService *) g_object_new (NM_TYPE_VPN_SERVICE, NULL);
-	if (!self) {
-		g_set_error (error, 0, 0, "out of memory creating VPN service object");
-		goto out;
-	}
-
 	NM_VPN_SERVICE_GET_PRIVATE (self)->name = g_strdup (name);
 	NM_VPN_SERVICE_GET_PRIVATE (self)->dbus_service = g_strdup (dbus_service);
 	NM_VPN_SERVICE_GET_PRIVATE (self)->program = g_strdup (program);
