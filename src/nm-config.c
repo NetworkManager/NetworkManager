@@ -135,15 +135,7 @@ nm_config_get_connectivity_response (NMConfig *config)
 /************************************************************************/
 
 static gboolean
-fill_from_file (NMConfig *config,
-                const char *path,
-                const char *cli_plugins,
-                const char *cli_log_level,
-                const char *cli_log_domains,
-                const char *cli_connectivity_uri,
-                const gint cli_connectivity_interval,
-                const char *cli_connectivity_response,
-                GError **error)
+fill_from_file (NMConfig *config, const char *path, GError **error)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 	GKeyFile *kf;
@@ -159,38 +151,28 @@ fill_from_file (NMConfig *config,
 	if (g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, error)) {
 		priv->path = g_strdup (path);
 
-		/* CLI provided options override config file options */
-		if (cli_plugins && strlen (cli_plugins))
-			priv->plugins = g_strsplit_set (cli_plugins, ",", 0);
-		else
+		/* Only set stuff that's not already set, as CLI options override
+		 * config file options.
+		 */
+		if (!priv->plugins)
 			priv->plugins = g_key_file_get_string_list (kf, "main", "plugins", NULL, NULL);
 
 		priv->dhcp_client = g_key_file_get_value (kf, "main", "dhcp", NULL);
 		priv->dns_plugins = g_key_file_get_string_list (kf, "main", "dns", NULL, NULL);
 
-		if (cli_log_level && strlen (cli_log_level))
-			priv->log_level = g_strdup (cli_log_level);
-		else
+		if (!priv->log_level)
 			priv->log_level = g_key_file_get_value (kf, "logging", "level", NULL);
 
-		if (cli_log_domains && strlen (cli_log_domains))
-			priv->log_domains = g_strdup (cli_log_domains);
-		else
+		if (!priv->log_domains)
 			priv->log_domains = g_key_file_get_value (kf, "logging", "domains", NULL);
 
-		if (cli_connectivity_uri && strlen (cli_connectivity_uri))
-			priv->connectivity_uri = g_strdup (cli_connectivity_uri);
-		else
+		if (!priv->connectivity_uri)
 			priv->connectivity_uri = g_key_file_get_value (kf, "connectivity", "uri", NULL);
 
-		if (cli_connectivity_interval >= 0)
-			priv->connectivity_interval = cli_connectivity_interval;
-		else
+		if (priv->connectivity_interval < 0)
 			priv->connectivity_interval = g_key_file_get_integer (kf, "connectivity", "interval", NULL);
 
-		if (cli_connectivity_response && strlen (cli_connectivity_response))
-			priv->connectivity_response = g_strdup (cli_connectivity_response);
-		else
+		if (!priv->connectivity_response)
 			priv->connectivity_response = g_key_file_get_value (kf, "connectivity", "response", NULL);
 
 		success = TRUE;
@@ -228,11 +210,29 @@ nm_config_new (const char *cli_config_path,
 	singleton = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
 	priv = NM_CONFIG_GET_PRIVATE (singleton);
 
+	/* Fill with command-line defaults */
+	if (cli_plugins && cli_plugins[0])
+		priv->plugins = g_strsplit_set (cli_plugins, ",", 0);
+
+	if (cli_log_level && cli_log_level[0])
+		priv->log_level = g_strdup (cli_log_level);
+
+	if (cli_log_domains && cli_log_domains[0])
+		priv->log_domains = g_strdup (cli_log_domains);
+
+	if (cli_connectivity_uri && cli_connectivity_uri[0])
+		priv->connectivity_uri = g_strdup (cli_connectivity_uri);
+
+	if (cli_connectivity_interval >= 0)
+		priv->connectivity_interval = cli_connectivity_interval;
+
+	if (cli_connectivity_response && cli_connectivity_response[0])
+		priv->connectivity_response = g_strdup (cli_connectivity_response);
+
+	/* Try a user-specified config file first */
 	if (cli_config_path) {
 		/* Bad user-specific config file path is a hard error */
-		if (!fill_from_file (singleton, cli_config_path, cli_plugins, cli_log_level, cli_log_domains,
-		                     cli_connectivity_uri, cli_connectivity_interval, cli_connectivity_response,
-		                     error)) {
+		if (!fill_from_file (singleton, cli_config_path, error)) {
 			g_object_unref (singleton);
 			singleton = NULL;
 		}
@@ -247,9 +247,7 @@ nm_config_new (const char *cli_config_path,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (fill_from_file (singleton, NM_OLD_SYSTEM_CONF_FILE, cli_plugins, cli_log_level, cli_log_domains,
-	                    cli_connectivity_uri, cli_connectivity_interval, cli_connectivity_response,
-	                    &local))
+	if (fill_from_file (singleton, NM_OLD_SYSTEM_CONF_FILE, &local))
 		return singleton;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
@@ -261,9 +259,7 @@ nm_config_new (const char *cli_config_path,
 	g_clear_error (&local);
 
 	/* Try the standard config file location next */
-	if (fill_from_file (singleton, NM_DEFAULT_SYSTEM_CONF_FILE, cli_plugins, cli_log_level, cli_log_domains,
-	                    cli_connectivity_uri, cli_connectivity_interval, cli_connectivity_response,
-	                    &local))
+	if (fill_from_file (singleton, NM_DEFAULT_SYSTEM_CONF_FILE, &local))
 		return singleton;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
