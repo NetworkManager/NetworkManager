@@ -36,7 +36,7 @@ typedef struct {
 	char *log_level;
 	char *log_domains;
 	char *connectivity_uri;
-	guint connectivity_interval;
+	gint connectivity_interval;
 	char *connectivity_response;
 } NMConfigPrivate;
 
@@ -120,7 +120,10 @@ nm_config_get_connectivity_interval (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, 0);
 
-	return NM_CONFIG_GET_PRIVATE (config)->connectivity_interval;
+	/* We store interval as signed internally to track whether it's
+	 * set or not, but report as unsigned to callers.
+	 */
+	return CLAMP (NM_CONFIG_GET_PRIVATE (config)->connectivity_interval, 0, G_MAXINT32);
 }
 
 const char *
@@ -170,7 +173,7 @@ fill_from_file (NMConfig *config, const char *path, GError **error)
 			priv->connectivity_uri = g_key_file_get_value (kf, "connectivity", "uri", NULL);
 
 		if (priv->connectivity_interval < 0)
-			priv->connectivity_interval = g_key_file_get_integer (kf, "connectivity", "interval", NULL);
+			priv->connectivity_interval = CLAMP (g_key_file_get_integer (kf, "connectivity", "interval", NULL), 0, G_MAXINT32);
 
 		if (!priv->connectivity_response)
 			priv->connectivity_response = g_key_file_get_value (kf, "connectivity", "response", NULL);
@@ -290,6 +293,7 @@ nm_config_new (const char *cli_config_path,
 static void
 nm_config_init (NMConfig *config)
 {
+	NM_CONFIG_GET_PRIVATE (config)->connectivity_interval = -1;
 }
 
 static void
