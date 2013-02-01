@@ -92,9 +92,6 @@ NMManager *nm_manager_new (NMSettings *settings,
                            gboolean initial_wifi_enabled,
                            gboolean initial_wwan_enabled,
                            gboolean initial_wimax_enabled,
-                           const gchar *connectivity_uri,
-                           gint connectivity_interval,
-                           const gchar *connectivity_response,
                            GError **error);
 
 NMManager *nm_manager_get (void);

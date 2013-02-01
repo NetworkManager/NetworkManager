@@ -538,9 +538,6 @@ main (int argc, char *argv[])
 	                          wifi_enabled,
 	                          wwan_enabled,
 	                          wimax_enabled,
-	                          nm_config_get_connectivity_uri (config),
-	                          nm_config_get_connectivity_interval (config),
-	                          nm_config_get_connectivity_response (config),
 	                          &error);
 	if (manager == NULL) {
 		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",

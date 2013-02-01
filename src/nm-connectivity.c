@@ -26,7 +26,7 @@
 
 #include "nm-connectivity.h"
 #include "nm-logging.h"
-#include "nm-manager.h"
+#include "nm-config.h"
 
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
@@ -190,19 +190,23 @@ nm_connectivity_stop_check (NMConnectivity *self)
 }
 
 NMConnectivity *
-nm_connectivity_new (const gchar *check_uri,
-                     guint check_interval,
-                     const gchar *check_response)
+nm_connectivity_new (void)
 {
 	NMConnectivity *self;
+	NMConfig *config;
+	const char *check_response;
+
+	config = nm_config_get ();
+	check_response = nm_config_get_connectivity_response (config);
 
 	self = g_object_new (NM_TYPE_CONNECTIVITY,
-	                     NM_CONNECTIVITY_URI, check_uri,
-	                     NM_CONNECTIVITY_INTERVAL, check_interval,
+	                     NM_CONNECTIVITY_URI, nm_config_get_connectivity_uri (config),
+	                     NM_CONNECTIVITY_INTERVAL, nm_config_get_connectivity_interval (config),
 	                     NM_CONNECTIVITY_RESPONSE, check_response ? check_response : DEFAULT_RESPONSE,
 	                     NULL);
 	g_return_val_if_fail (self != NULL, NULL);
 	update_connected (self, FALSE);
+	g_object_unref (config);
 
 	return self;
 }

@@ -4081,9 +4081,6 @@ nm_manager_new (NMSettings *settings,
                 gboolean initial_wifi_enabled,
                 gboolean initial_wwan_enabled,
                 gboolean initial_wimax_enabled,
-                const gchar *connectivity_uri,
-                gint connectivity_interval,
-                const gchar *connectivity_response,
                 GError **error)
 {
 	NMManagerPrivate *priv;
@@ -4100,7 +4097,7 @@ nm_manager_new (NMSettings *settings,
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
 #if WITH_CONCHECK
-	priv->connectivity = nm_connectivity_new (connectivity_uri, connectivity_interval, connectivity_response);
+	priv->connectivity = nm_connectivity_new ();
 
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_CONNECTED,
 	                  G_CALLBACK (connectivity_changed), singleton);

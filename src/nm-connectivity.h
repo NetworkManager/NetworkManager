@@ -53,9 +53,7 @@ typedef struct {
 GType nm_connectivity_get_type (void);
 
 
-NMConnectivity *nm_connectivity_new           (const gchar *check_uri,
-                                               guint check_interval,
-                                               const gchar *check_response);
+NMConnectivity *nm_connectivity_new           (void);
 
 void            nm_connectivity_start_check   (NMConnectivity *connectivity);
 
