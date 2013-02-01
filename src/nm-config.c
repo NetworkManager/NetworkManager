@@ -138,7 +138,7 @@ nm_config_get_connectivity_response (NMConfig *config)
 /************************************************************************/
 
 static gboolean
-fill_from_file (NMConfig *config, const char *path, GError **error)
+read_config (NMConfig *config, const char *path, GError **error)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 	GKeyFile *kf;
@@ -235,7 +235,7 @@ nm_config_new (const char *cli_config_path,
 	/* Try a user-specified config file first */
 	if (cli_config_path) {
 		/* Bad user-specific config file path is a hard error */
-		if (!fill_from_file (singleton, cli_config_path, error)) {
+		if (!read_config (singleton, cli_config_path, error)) {
 			g_object_unref (singleton);
 			singleton = NULL;
 		}
@@ -250,7 +250,7 @@ nm_config_new (const char *cli_config_path,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (fill_from_file (singleton, NM_OLD_SYSTEM_CONF_FILE, &local))
+	if (read_config (singleton, NM_OLD_SYSTEM_CONF_FILE, &local))
 		return singleton;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
@@ -262,7 +262,7 @@ nm_config_new (const char *cli_config_path,
 	g_clear_error (&local);
 
 	/* Try the standard config file location next */
-	if (fill_from_file (singleton, NM_DEFAULT_SYSTEM_CONF_FILE, &local))
+	if (read_config (singleton, NM_DEFAULT_SYSTEM_CONF_FILE, &local))
 		return singleton;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
@@ -272,8 +272,7 @@ nm_config_new (const char *cli_config_path,
 		         (local && local->message) ? local->message : "unknown");
 		g_propagate_error (error, local);
 		g_object_unref (singleton);
-		singleton = NULL;
-		return singleton;
+		return NULL;
 	}
 
 	/* If for some reason no config file exists, and NM wasn't given on on
