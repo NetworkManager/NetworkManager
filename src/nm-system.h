@@ -128,7 +128,7 @@ gboolean        nm_system_add_vlan_iface (NMConnection *connection,
                                           int parent_ifindex);
 gboolean        nm_system_del_vlan_iface (const char *iface);
 
-gboolean        nm_system_create_bridge (const char *iface);
+gboolean        nm_system_create_bridge (const char *iface, gboolean *out_exists);
 gboolean        nm_system_del_bridge (const char *iface);
 
 gboolean        nm_system_bridge_attach (int master_ifindex,

@@ -2363,14 +2363,16 @@ _bridge_create_compat (const char *iface)
 /**
  * nm_system_create_bridge:
  * @iface: Name bridging device to create
+ * @out_exists: on return, %TRUE if the bridge already exists
  *
  * Creates a new bridging device in the kernel. If a bridging device with
- * the specified name already exists, it is being reused.
+ * the specified name already exists, it is reused and no error is returned,
+ * but @out_exists is set to %TRUE.
  *
  * Returns: %TRUE on success, %FALSE on error.
  */
 gboolean
-nm_system_create_bridge (const char *iface)
+nm_system_create_bridge (const char *iface, gboolean *out_exists)
 {
 	int err;
 
@@ -2381,6 +2383,8 @@ nm_system_create_bridge (const char *iface)
 		            iface, strerror (-err));
 		return FALSE;
 	}
+	if (out_exists && err == -EEXIST)
+		*out_exists = TRUE;
 	return TRUE;
 }
 
