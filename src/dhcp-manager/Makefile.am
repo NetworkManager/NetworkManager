@@ -52,6 +52,7 @@ libdhcp_manager_la_SOURCES = \
 libdhcp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \

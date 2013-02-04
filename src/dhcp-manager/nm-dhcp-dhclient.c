@@ -53,8 +53,6 @@ typedef struct {
 	const char *def_leasefile;
 	char *lease_file;
 	char *pid_file;
-	gboolean lease_duid_found;
-	gboolean default_duid_found;
 } NMDHCPDhclientPrivate;
 
 const char *
@@ -499,36 +497,6 @@ dhclient_start (NMDHCPClient *client,
 		return -1;
 	}
 
-	if (ipv6 && duid) {
-		char *escaped = NULL;
-
-		escaped = nm_dhcp_dhclient_escape_duid (duid);
-
-		/* Save the generated DUID into the default leasefile for persistent storage */
-		if (!priv->default_duid_found) {
-			nm_log_dbg (LOGD_DHCP6, "Saving DHCPv6 DUID '%s' to leasefile %s",
-			            escaped, priv->def_leasefile);
-			if (!nm_dhcp_dhclient_save_duid (priv->def_leasefile, escaped, &error)) {
-				g_assert (error);
-				nm_log_warn (LOGD_DHCP6, "Could not save DUID: %s", error->message);
-				g_clear_error (&error);
-			}
-		}
-
-		/* Save the DUID to the network-specific leasefile so it'll actually get used */
-		if (!priv->lease_duid_found) {
-			nm_log_dbg (LOGD_DHCP6, "Saving DHCPv6 DUID '%s' to leasefile %s",
-			            escaped, priv->lease_file);
-			if (!nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error)) {
-				g_assert (error);
-				nm_log_warn (LOGD_DHCP6, "Could not save DUID: %s", error->message);
-				g_clear_error (&error);
-			}
-		}
-
-		g_free (escaped);
-	}
-
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) priv->path);
 
@@ -675,7 +643,6 @@ get_duid (NMDHCPClient *client)
 	                                    TRUE);
 	nm_log_dbg (LOGD_DHCP, "Looking for DHCPv6 DUID in '%s'.", leasefile);
 	duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
-	priv->lease_duid_found = !!duid;
 	g_free (leasefile);
 
 	if (error) {
@@ -690,7 +657,6 @@ get_duid (NMDHCPClient *client)
 		/* Otherwise read the default machine-wide DUID */
 		nm_log_dbg (LOGD_DHCP, "Looking for default DHCPv6 DUID in '%s'.", priv->def_leasefile);
 		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
-		priv->default_duid_found = !!duid;
 		if (error) {
 			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
 			             priv->def_leasefile,

@@ -25,10 +25,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
-#include <net/if_arp.h>
+#include <uuid/uuid.h>
 
 #include "nm-utils.h"
 #include "nm-logging.h"
@@ -325,38 +323,58 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	return priv->pid ? TRUE : FALSE;
 }
 
-struct duid_header {
-	uint16_t duid_type;
-	uint16_t hw_type;
-	uint32_t time;
-	/* link-layer address follows */
-} __attribute__((__packed__));
-
-#define DUID_TIME_EPOCH 946684800
-
-/* Generate a DHCP Unique Identifier for DHCPv6 using the
- * DUID-LLT method (see RFC 3315 s9.2), following Debian's
- * netcfg DUID-LL generation method.
- */
 static GByteArray *
-generate_duid (const GByteArray *hwaddr)
+generate_duid_from_machine_id (void)
 {
 	GByteArray *duid;
-	struct duid_header p;
-	int arptype;
+	char *contents = NULL;
+	GError *error = NULL;
+	GChecksum *sum;
+	guint8 buffer[32]; /* SHA256 digest size */
+	gsize sumlen = sizeof (buffer);
+	const guint16 duid_type = g_htons (4);
+	uuid_t uuid;
+	int ret;
 
-	g_return_val_if_fail (hwaddr != NULL, NULL);
+	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
+	 * where our configured SYSCONFDIR is.
+	 */
+	if (!g_file_get_contents ("/etc/machine-id", &contents, NULL, &error)) {
+		nm_log_warn (LOGD_DHCP6, "Failed to read " SYSCONFDIR "/machine-id to generate DHCPv6 DUID: (%d) %s",
+			         error ? error->code : -1,
+			         error ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return NULL;
+	}
 
-	memset (&p, 0, sizeof (p));
-	p.duid_type = g_htons(1);
-	arptype = nm_utils_hwaddr_type (hwaddr->len);
-	g_assert (arptype == ARPHRD_ETHER || arptype == ARPHRD_INFINIBAND);
-	p.hw_type = g_htons (arptype);
-	p.time = g_htonl (time (NULL) - DUID_TIME_EPOCH);
+	contents = g_strstrip (contents);
+	ret = uuid_parse (contents, uuid);
+	g_free (contents);
 
-	duid = g_byte_array_sized_new (sizeof (p) + hwaddr->len);
-	g_byte_array_append (duid, (const guint8 *) &p, sizeof (p));
-	g_byte_array_append (duid, hwaddr->data, hwaddr->len);
+	if (ret != 0) {
+		nm_log_warn (LOGD_DHCP6, "Failed to parse " SYSCONFDIR "/machine-id to generate DHCPv6 DUID.");
+		return NULL;
+	}
+
+	/* Hash the machine ID so it's not leaked to the network */
+	sum = g_checksum_new (G_CHECKSUM_SHA256);
+	g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
+	g_checksum_get_digest (sum, buffer, &sumlen);
+	g_checksum_free (sum);
+
+	/* Generate a DHCP Unique Identifier for DHCPv6 using the
+	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
+	 *
+	 * u16: type (DUID-UUID = 4)
+	 * u8[16]: UUID bytes
+	 */
+	duid = g_byte_array_sized_new (18);
+	g_byte_array_append (duid, (guint8 *) &duid_type, sizeof (duid_type));
+
+	/* Since SHA256 is 256 bits, but UUID is 128 bits, we just take the first
+	 * 128 bits of the SHA256 as the DUID-UUID.
+	 */
+	g_byte_array_append (duid, buffer, 16);
 
 	return duid;
 }
@@ -364,8 +382,18 @@ generate_duid (const GByteArray *hwaddr)
 static GByteArray *
 get_duid (NMDHCPClient *self)
 {
-	/* generate a default DUID */
-	return generate_duid (NM_DHCP_CLIENT_GET_PRIVATE (self)->hwaddr);
+	static GByteArray *duid = NULL;
+	GByteArray *copy = NULL;
+
+	if (G_UNLIKELY (duid == NULL))
+		duid = generate_duid_from_machine_id ();
+
+	if (G_LIKELY (duid)) {
+		copy = g_byte_array_sized_new (duid->len);
+		g_byte_array_append (copy, duid->data, duid->len);
+	}
+
+	return copy;
 }
 
 static char *
