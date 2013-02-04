@@ -1411,6 +1411,79 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 }
 
 /**
+ * nm_utils_wep_key_valid:
+ * @key: a string that might be a WEP key
+ * @wep_type: the #NMWepKeyType type of the WEP key
+ *
+ * Checks if @key is a valid WEP key
+ *
+ * Returns: %TRUE if @key is a WEP key, %FALSE if not
+ */
+gboolean
+nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
+{
+	int keylen, i;
+
+	if (!key)
+		return FALSE;
+
+	keylen = strlen (key);
+	if (wep_type == NM_WEP_KEY_TYPE_KEY || NM_WEP_KEY_TYPE_UNKNOWN) {
+		if (keylen == 10 || keylen == 26) {
+			/* Hex key */
+			for (i = 0; i < keylen; i++) {
+				if (!g_ascii_isxdigit (key[i]))
+					return FALSE;
+			}
+		} else if (keylen == 5 || keylen == 13) {
+			/* ASCII key */
+			for (i = 0; i < keylen; i++) {
+				if (!g_ascii_isprint (key[i]))
+					return FALSE;
+			}
+		} else
+			return FALSE;
+
+	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
+		if (!keylen || keylen > 64)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_wpa_psk_valid:
+ * @psk: a string that might be a WPA PSK
+ *
+ * Checks if @psk is a valid WPA PSK
+ *
+ * Returns: %TRUE if @psk is a WPA PSK, %FALSE if not
+ */
+gboolean
+nm_utils_wpa_psk_valid (const char *psk)
+{
+	int psklen, i;
+
+	if (!psk)
+		return FALSE;
+
+	psklen = strlen (psk);
+	if (psklen < 8 || psklen > 64)
+		return FALSE;
+
+	if (psklen == 64) {
+		/* Hex PSK */
+		for (i = 0; i < psklen; i++) {
+			if (!g_ascii_isxdigit (psk[i]))
+				return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+/**
  * nm_utils_ip4_addresses_from_gvalue:
  * @value: gvalue containing a GPtrArray of GArrays of guint32s
  *

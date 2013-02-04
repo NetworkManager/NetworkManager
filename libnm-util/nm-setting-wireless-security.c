@@ -695,63 +695,6 @@ nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *settin
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wep_key_type;
 }
 
-static gboolean
-verify_wep_key (const char *key, NMWepKeyType wep_type)
-{
-	int keylen, i;
-
-	if (!key)
-		return FALSE;
-
-	keylen = strlen (key);
-	if (wep_type == NM_WEP_KEY_TYPE_KEY || NM_WEP_KEY_TYPE_UNKNOWN) {
-		if (keylen == 10 || keylen == 26) {
-			/* Hex key */
-			for (i = 0; i < keylen; i++) {
-				if (!g_ascii_isxdigit (key[i]))
-					return FALSE;
-			}
-		} else if (keylen == 5 || keylen == 13) {
-			/* ASCII key */
-			for (i = 0; i < keylen; i++) {
-				if (!g_ascii_isprint (key[i]))
-					return FALSE;
-			}
-		} else
-			return FALSE;
-
-	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
-		if (!keylen || keylen > 64)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
-verify_wpa_psk (const char *psk)
-{
-	int psklen, i;
-
-	if (!psk)
-		return FALSE;
-
-	psklen = strlen (psk);
-	if (psklen < 8 || psklen > 64)
-		return FALSE;
-
-	if (psklen == 64) {
-		/* Hex PSK */
-		for (i = 0; i < psklen; i++) {
-			if (!g_ascii_isxdigit (psk[i]))
-				return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
-
 static GPtrArray *
 need_secrets (NMSetting *setting)
 {
@@ -769,19 +712,19 @@ need_secrets (NMSetting *setting)
 
 	/* Static WEP */
 	if (strcmp (priv->key_mgmt, "none") == 0) {
-		if ((priv->wep_tx_keyidx == 0) && !verify_wep_key (priv->wep_key0, priv->wep_key_type)) {
+		if ((priv->wep_tx_keyidx == 0) && !nm_utils_wep_key_valid (priv->wep_key0, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 			return secrets;
 		}
-		if ((priv->wep_tx_keyidx == 1) && !verify_wep_key (priv->wep_key1, priv->wep_key_type)) {
+		if ((priv->wep_tx_keyidx == 1) && !nm_utils_wep_key_valid (priv->wep_key1, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 			return secrets;
 		}
-		if ((priv->wep_tx_keyidx == 2) && !verify_wep_key (priv->wep_key2, priv->wep_key_type)) {
+		if ((priv->wep_tx_keyidx == 2) && !nm_utils_wep_key_valid (priv->wep_key2, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 			return secrets;
 		}
-		if ((priv->wep_tx_keyidx == 3) && !verify_wep_key (priv->wep_key3, priv->wep_key_type)) {
+		if ((priv->wep_tx_keyidx == 3) && !nm_utils_wep_key_valid (priv->wep_key3, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 			return secrets;
 		}
@@ -791,7 +734,7 @@ need_secrets (NMSetting *setting)
 	/* WPA-PSK infrastructure and adhoc */
 	if (   (strcmp (priv->key_mgmt, "wpa-none") == 0)
 	    || (strcmp (priv->key_mgmt, "wpa-psk") == 0)) {
-		if (!verify_wpa_psk (priv->psk)) {
+		if (!nm_utils_wpa_psk_valid (priv->psk)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PSK);
 			return secrets;
 		}
@@ -921,28 +864,28 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->wep_key0 && !verify_wep_key (priv->wep_key0, priv->wep_key_type)) {
+	if (priv->wep_key0 && !nm_utils_wep_key_valid (priv->wep_key0, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 		return FALSE;
 	}
-	if (priv->wep_key1 && !verify_wep_key (priv->wep_key1, priv->wep_key_type)) {
+	if (priv->wep_key1 && !nm_utils_wep_key_valid (priv->wep_key1, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 		return FALSE;
 	}
-	if (priv->wep_key2 && !verify_wep_key (priv->wep_key2, priv->wep_key_type)) {
+	if (priv->wep_key2 && !nm_utils_wep_key_valid (priv->wep_key2, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 		return FALSE;
 	}
-	if (priv->wep_key3 && !verify_wep_key (priv->wep_key3, priv->wep_key_type)) {
+	if (priv->wep_key3 && !nm_utils_wep_key_valid (priv->wep_key3, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -958,7 +901,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->psk && !verify_wpa_psk (priv->psk)) {
+	if (priv->psk && !nm_utils_wpa_psk_valid (priv->psk)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,

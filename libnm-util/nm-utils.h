@@ -90,6 +90,9 @@ gboolean nm_utils_security_valid (NMUtilsSecurityType type,
 gboolean nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
                                           NMDeviceWifiCapabilities wifi_caps);
 
+gboolean nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type);
+gboolean nm_utils_wpa_psk_valid (const char *psk);
+
 GSList *nm_utils_ip4_addresses_from_gvalue (const GValue *value);
 void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
 
