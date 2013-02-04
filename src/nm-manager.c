@@ -2317,23 +2317,32 @@ udev_device_removed_cb (NMUdevManager *manager,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 	guint32 ifindex;
-	const char *iface = g_udev_device_get_name (udev_device);
-
-	/* Ignore PPP interfaces as they are the IP interface of a device,
-	 * but they come and go when the device gets activated or deactivated.
-	 * We don't want their transient nature to affect their master device.
-	 */
-	if (strncmp (iface, "ppp", 3) == 0)
-		return;
 
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
 	if (!device) {
-		/* On removal we won't always be able to read properties anymore, as
-		 * they may have already been removed from sysfs.  Instead, we just
-		 * have to fall back to the device's interface name.
+		GSList *iter;
+		const char *iface = g_udev_device_get_name (udev_device);
+
+		/* On removal we aren't always be able to read properties like IFINDEX
+		 * anymore, as they may have already been removed from sysfs.  So we
+		 * have to fall back on device name (eg, interface name).
+		 *
+		 * Also, some devices (namely PPPoE (pppX), ADSL (nasX, pppX), and
+		 * mobile broadband (pppX, bnepX)) create a kernel netdevice for IP
+		 * communication (called the "IP interface" in NM) as part of the
+		 * connection process and thus the IP interface lifetime does not
+		 * correspond to the NMDevice lifetime.  For these devices we must
+		 * ignore removal events for the IP interface name otherwise the
+		 * NMDevice would be removed. Hence the usage here of
+		 * nm_device_get_iface() rather than nm_device_get_ip_iface().
 		 */
-		device = find_device_by_ip_iface (self, iface);
+		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+			if (g_strcmp0 (nm_device_get_iface (NM_DEVICE (iter->data)), iface) == 0) {
+				device = iter->data;
+				break;
+			}
+		}
 	}
 
 	if (device)
