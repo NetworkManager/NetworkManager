@@ -380,7 +380,7 @@ escape_duid (const GByteArray *duid)
 	while (i < duid->len) {
 		if (s->len)
 			g_string_append_c (s, ':');
-		g_string_append_printf (s, "%02x", duid->data[i]);
+		g_string_append_printf (s, "%02x", duid->data[i++]);
 	}
 	return g_string_free (s, FALSE);
 }
