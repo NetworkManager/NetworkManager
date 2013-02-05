@@ -833,8 +833,10 @@ show_device_info (gpointer data, gpointer user_data)
 					NMDevice *slave = g_ptr_array_index (slaves, idx);
 					const char *iface = nm_device_get_iface (slave);
 
-					g_string_append (bond_slaves_str, iface);
-					g_string_append_c (bond_slaves_str, ' ');
+					if (iface) {
+						g_string_append (bond_slaves_str, iface);
+						g_string_append_c (bond_slaves_str, ' ');
+					}
 				}
 				if (bond_slaves_str->len > 0)
 					g_string_truncate (bond_slaves_str, bond_slaves_str->len-1);  /* Chop off last space */
@@ -1018,7 +1020,7 @@ do_devices_list (NmCli *nmc, int argc, char **argv)
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
-			if (!strcmp (dev_iface, iface))
+			if (!g_strcmp0 (dev_iface, iface))
 				device = candidate;
 		}
 		if (!device) {
@@ -1182,7 +1184,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		const char *dev_iface = nm_device_get_iface (candidate);
 
-		if (!strcmp (dev_iface, iface))
+		if (!g_strcmp0 (dev_iface, iface))
 			device = candidate;
 	}
 
@@ -1321,7 +1323,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
-			if (!strcmp (dev_iface, iface)) {
+			if (!g_strcmp0 (dev_iface, iface)) {
 				device = candidate;
 				break;
 			}
@@ -1517,7 +1519,7 @@ find_wifi_device_by_iface (const GPtrArray *devices, const char *iface, int *idx
 
 		if (iface) {
 			/* If a iface was specified then use it. */
-			if (strcmp (dev_iface, iface) == 0) {
+			if (g_strcmp0 (dev_iface, iface) == 0) {
 				device = candidate;
 				break;
 			}
@@ -1968,7 +1970,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
-			if (!strcmp (dev_iface, iface)) {
+			if (!g_strcmp0 (dev_iface, iface)) {
 				device = candidate;
 				break;
 			}

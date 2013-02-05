@@ -531,9 +531,12 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 	devices = nm_active_connection_get_devices (active);
 	for (i = 0; devices && (i < devices->len); i++) {
 		NMDevice *device = g_ptr_array_index (devices, i);
+		const char *dev_iface = nm_device_get_iface (device);
 
-		g_string_append (dev_str, nm_device_get_iface (device));
-		g_string_append_c (dev_str, ',');
+		if (dev_iface) {
+			g_string_append (dev_str, dev_iface);
+			g_string_append_c (dev_str, ',');
+		}
 	}
 	if (dev_str->len > 0)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
@@ -1087,7 +1090,7 @@ find_device_for_connection (NmCli *nmc,
 
 			if (iface) {
 				const char *dev_iface = nm_device_get_iface (dev);
-				if (   !strcmp (dev_iface, iface)
+				if (   !g_strcmp0 (dev_iface, iface)
 				    && nm_device_connection_compatible (dev, connection, NULL)) {
 					found_device = dev;
 				}
