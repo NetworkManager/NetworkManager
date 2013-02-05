@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2012 Red Hat, Inc.
+ * Copyright (C) 2004 - 2013 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -76,6 +76,14 @@ typedef struct {
 
 	gboolean dns_touched;
 } NMDnsManagerPrivate;
+
+enum {
+	CONFIG_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 
 typedef struct {
@@ -746,6 +754,10 @@ update_dns (NMDnsManager *self,
 	if (success == FALSE)
 		success = update_resolv_conf (domain, searches, nameservers, error);
 
+	/* signal that resolv.conf was changed */
+	if (success)
+		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
+
 	if (searches)
 		g_strfreev (searches);
 	if (nameservers)
@@ -1145,9 +1157,20 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+	g_type_class_add_private (object_class, sizeof (NMDnsManagerPrivate));
+
+	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	g_type_class_add_private (object_class, sizeof (NMDnsManagerPrivate));
+	/* signals */
+	signals[CONFIG_CHANGED] =
+		g_signal_new ("config-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDnsManagerClass, config_changed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 }
 

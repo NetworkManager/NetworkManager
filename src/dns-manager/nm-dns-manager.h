@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2004 - 2005 Colin Walters <walters@redhat.com>
- * Copyright (C) 2004 - 2010 Red Hat, Inc.
+ * Copyright (C) 2004 - 2013 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  *   and others
  */
@@ -60,6 +60,9 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
+
+	/* Signals */
+	void (*config_changed) (NMDnsManager *mgr);
 } NMDnsManagerClass;
 
 GType nm_dns_manager_get_type (void);
