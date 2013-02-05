@@ -15,6 +15,8 @@ SUBDIRS= \
 	wifi \
 	settings
 
+@GNOME_CODE_COVERAGE_RULES@
+
 if WITH_WIMAX
 SUBDIRS += wimax
 endif

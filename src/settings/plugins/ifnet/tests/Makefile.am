@@ -1,26 +1,40 @@
 if ENABLE_TESTS
 
+@GNOME_CODE_COVERAGE_RULES@
+
 INCLUDES=-I$(srcdir)/../ \
 	 -I$(top_srcdir)/libnm-glib \
 	 -I$(top_srcdir)/libnm-util \
 	 -I$(top_builddir)/libnm-util \
 	 -I$(top_srcdir)/include \
 	 -I$(top_builddir)/include \
-	 -I$(top_srcdir)/src/settings
+	 -I$(top_srcdir)/src/settings \
+	 -I$(top_srcdir)/src/wifi
 
 noinst_PROGRAMS = check_ifnet
-check_ifnet_SOURCES = test_all.c
+check_ifnet_SOURCES = \
+	test_all.c \
+	../connection_parser.c \
+	../net_parser.c \
+	../net_utils.c \
+	../wpa_parser.c
 
 check_ifnet_CPPFLAGS = \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"'
+	$(CODE_COVERAGE_CFLAGS) \
+	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
+	-DSYSCONFDIR=\"nonexistent\"
+
+check_ifnet_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS)
 
 check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
-		    $(builddir)/../lib-ifnet-io.la \
-		    $(CHECK_LIBS) \
-		    $(GLIB_LIBS) \
-		    $(LIBM)
+	$(CHECK_LIBS) \
+	$(GLIB_LIBS) \
+	$(LIBM) \
+	$(top_builddir)/src/wifi/libwifi-utils.la
+
 check-local: check_ifnet
 	$(abs_builddir)/check_ifnet $(abs_srcdir) $(abs_builddir)
 

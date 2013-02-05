@@ -6,12 +6,15 @@ INCLUDES = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../
 
 noinst_PROGRAMS = test-ifupdown
 
 test_ifupdown_SOURCES = \
-	test-ifupdown.c
+	test-ifupdown.c \
+	../interface_parser.c \
+	../parser.c
 
 test_ifupdown_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
@@ -21,7 +24,6 @@ test_ifupdown_CPPFLAGS = \
 test_ifupdown_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(builddir)/../libifupdown-io.la \
 	$(DBUS_LIBS)
 
 check-local: test-ifupdown

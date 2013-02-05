@@ -18,6 +18,8 @@ SUBDIRS = \
 	examples \
 	vapi
 
+@GNOME_CODE_COVERAGE_RULES@
+
 EXTRA_DIST = \
 	CONTRIBUTING \
 	NetworkManager.pc.in \

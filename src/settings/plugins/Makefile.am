@@ -1,5 +1,7 @@
 SUBDIRS=keyfile example
 
+@GNOME_CODE_COVERAGE_RULES@
+
 if CONFIG_PLUGIN_IFCFG_RH
 SUBDIRS+=ifcfg-rh
 endif

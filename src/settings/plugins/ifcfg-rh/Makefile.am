@@ -1,5 +1,7 @@
 SUBDIRS = . tests
 
+@GNOME_CODE_COVERAGE_RULES@
+
 nm-ifcfg-rh-glue.h: nm-ifcfg-rh.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ifcfg_rh --mode=glib-server --output=$@ $<
 
