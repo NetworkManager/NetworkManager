@@ -21,5 +21,9 @@ generate_settings_spec_LDADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
-EXTRA_DIST = doc-generator.xsl check-exports.sh glib-mkenums \
+EXTRA_DIST = \
+	doc-generator.xsl \
+	manpages-docbook.xsl \
+	check-exports.sh \
+	glib-mkenums \
 	$(GENERATE_SETTINGS_SPEC_SOURCE)
