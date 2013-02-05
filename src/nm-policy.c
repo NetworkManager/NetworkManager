@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2012 Red Hat, Inc.
+ * Copyright (C) 2004 - 2013 Red Hat, Inc.
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
@@ -62,6 +62,10 @@ struct NMPolicy {
 	NMDevice *default_device6;
 
 	HostnameThread *lookup;
+	guint32 lookup_ipv4_addr;          /* IPv4 for reverse lookup */
+	struct in6_addr *lookup_ipv6_addr; /* IPv6 for reverse lookup */
+	NMDnsManager *dns_manager;
+	gulong config_changed_id;
 
 	gint reset_retries_id;  /* idle handler for resetting the retries count */
 
@@ -237,6 +241,15 @@ _set_hostname (NMPolicy *policy,
 	 * there was no valid hostname to start with.
 	 */
 
+	/* Clear lookup adresses if we have a hostname, so that we didn't
+	 * restart reverse lookup thread later.
+	 */
+	if (new_hostname) {
+		policy->lookup_ipv4_addr = 0;
+		g_free (policy->lookup_ipv6_addr);
+		policy->lookup_ipv6_addr = NULL;
+	}
+
 	/* Don't change the hostname or update DNS this is the first time we're
 	 * trying to change the hostname, and it's not actually changing.
 	 */
@@ -398,7 +411,8 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		g_assert (addr4); /* checked for > 1 address above */
 
 		/* Start the hostname lookup thread */
-		policy->lookup = hostname4_thread_new (nm_ip4_address_get_address (addr4), lookup_callback, policy);
+		policy->lookup_ipv4_addr = nm_ip4_address_get_address (addr4);
+		policy->lookup = hostname4_thread_new (policy->lookup_ipv4_addr, lookup_callback, policy);
 	} else if (best6) {
 		NMIP6Config *ip6_config;
 		NMIP6Address *addr6;
@@ -416,7 +430,9 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		g_assert (addr6); /* checked for > 1 address above */
 
 		/* Start the hostname lookup thread */
-		policy->lookup = hostname6_thread_new (nm_ip6_address_get_address (addr6), lookup_callback, policy);
+		policy->lookup_ipv6_addr = g_malloc0 (sizeof (struct in6_addr));
+		memcpy (policy->lookup_ipv6_addr, nm_ip6_address_get_address (addr6), sizeof (struct in6_addr));
+		policy->lookup = hostname6_thread_new (policy->lookup_ipv6_addr, lookup_callback, policy);
 	}
 
 	if (!policy->lookup) {
@@ -1792,6 +1808,43 @@ firewall_started (NMFirewallManager *manager,
 }
 
 static void
+dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	/* Restart a thread for reverse-DNS lookup after we are signalled that
+	 * DNS changed. Because the result from a previous run may not be right
+	 * (race in updating DNS and doing the reverse lookup).
+	 */
+
+	/* Stop a lookup thread if any. */
+	if (policy->lookup) {
+		hostname_thread_kill (policy->lookup);
+		policy->lookup = NULL;
+	}
+
+	/* Re-start the hostname lookup thread if we don't have hostname yet. */
+	if (policy->lookup_ipv4_addr) {
+		char buf[INET_ADDRSTRLEN];
+		struct in_addr addr = { .s_addr = policy->lookup_ipv4_addr };
+		
+		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
+			strcpy (buf, "(unknown)");
+		nm_log_dbg (LOGD_DNS, "restarting IPv4 reverse-lookup thread for address %s'", buf);
+
+		policy->lookup = hostname4_thread_new (policy->lookup_ipv4_addr, lookup_callback, policy);
+	} else if (policy->lookup_ipv6_addr) {
+		char buf[INET6_ADDRSTRLEN];
+
+		if (!inet_ntop (AF_INET6, policy->lookup_ipv6_addr, buf, sizeof (buf)))
+			strcpy (buf, "(unknown)");
+		nm_log_dbg (LOGD_DNS, "restarting IPv6 reverse-lookup thread for address %s'", buf);
+
+		policy->lookup = hostname6_thread_new (policy->lookup_ipv6_addr, lookup_callback, policy);
+	}
+}
+
+static void
 connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
@@ -1917,6 +1970,10 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	                       G_CALLBACK (firewall_started), policy);
 	policy->fw_started_id = id;
 
+	policy->dns_manager = nm_dns_manager_get (NULL);
+	policy->config_changed_id = g_signal_connect (policy->dns_manager, "config-changed",
+	                                              G_CALLBACK (dns_config_changed), policy);
+
 	_connect_manager_signal (policy, "state-changed", global_state_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
@@ -1955,6 +2012,7 @@ nm_policy_destroy (NMPolicy *policy)
 		hostname_thread_kill (policy->lookup);
 		policy->lookup = NULL;
 	}
+	g_free (policy->lookup_ipv6_addr);
 
 	g_slist_foreach (policy->pending_activation_checks, (GFunc) activate_data_free, NULL);
 	g_slist_free (policy->pending_activation_checks);
@@ -1964,6 +2022,9 @@ nm_policy_destroy (NMPolicy *policy)
 
 	g_signal_handler_disconnect (policy->fw_manager, policy->fw_started_id);
 	g_object_unref (policy->fw_manager);
+
+	g_signal_handler_disconnect (policy->dns_manager, policy->config_changed_id);
+	g_object_unref (policy->dns_manager);
 
 	for (iter = policy->manager_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (policy->manager, GPOINTER_TO_UINT (iter->data));
