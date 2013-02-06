@@ -165,6 +165,8 @@ static GSList * remove_one_device (NMManager *manager,
                                    NMDevice *device,
                                    gboolean quitting);
 
+static void rfkill_change_wifi (const char *desc, gboolean enabled);
+
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -4155,6 +4157,12 @@ nm_manager_new (NMSettings *settings,
 	                  NM_BLUEZ_MANAGER_BDADDR_REMOVED,
 	                  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
 	                  singleton);
+
+	/* Force kernel WiFi rfkill state to follow NM saved wifi state in case
+	 * the BIOS doesn't save rfkill state, and to be consistent with user
+	 * changes to the WirelessEnabled property which toggles kernel rfkill.
+	 */
+	rfkill_change_wifi (priv->radio_states[RFKILL_TYPE_WLAN].desc, initial_wifi_enabled);
 
 	return singleton;
 }
