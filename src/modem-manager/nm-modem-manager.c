@@ -511,19 +511,23 @@ modem_manager_1_name_owner_changed (MMManager *modem_manager_1,
                                     GParamSpec *pspec,
                                     NMModemManager *self)
 {
+	gchar *name_owner;
+
 	/* Quit poking, if any */
 	if (self->priv->modem_manager_1_poke_id) {
 		g_source_remove (self->priv->modem_manager_1_poke_id);
 		self->priv->modem_manager_1_poke_id = 0;
 	}
 
-	if (!g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (modem_manager_1))) {
+	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (modem_manager_1));
+	if (!name_owner) {
 		nm_log_info (LOGD_MB, "ModemManager disappeared from bus");
 		schedule_modem_manager_1_relaunch (self, 0);
 		return;
 	}
 
 	/* Available! */
+	g_free (name_owner);
 	modem_manager_1_available (self);
 }
 
