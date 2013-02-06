@@ -233,8 +233,6 @@ _set_hostname (NMPolicy *policy,
                const char *new_hostname,
                const char *msg)
 {
-	NMDnsManager *dns_mgr;
-
 	/* The incoming hostname *can* be NULL, which will get translated to
 	 * 'localhost.localdomain' or such in the hostname policy code, but we
 	 * keep cur_hostname = NULL in the case because we need to know that
@@ -268,9 +266,7 @@ _set_hostname (NMPolicy *policy,
 	policy->cur_hostname = g_strdup (new_hostname);
 	policy->hostname_changed = TRUE;
 
-	dns_mgr = nm_dns_manager_get (NULL);
-	nm_dns_manager_set_hostname (dns_mgr, policy->cur_hostname);
-	g_object_unref (dns_mgr);
+	nm_dns_manager_set_hostname (policy->dns_manager, policy->cur_hostname);
 
 	if (nm_policy_set_system_hostname (policy->cur_hostname, msg))
 		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL);
@@ -1280,7 +1276,6 @@ device_state_changed (NMDevice *device,
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
 	NMSettingConnection *s_con;
-	NMDnsManager *dns_mgr;
 
 	if (connection)
 		g_object_set_data (G_OBJECT (connection), FAILURE_REASON_TAG, GUINT_TO_POINTER (0));
@@ -1338,20 +1333,18 @@ device_state_changed (NMDevice *device,
 
 		/* Add device's new IPv4 and IPv6 configs to DNS */
 
-		dns_mgr = nm_dns_manager_get (NULL);
-		nm_dns_manager_begin_updates (dns_mgr, __func__);
+		nm_dns_manager_begin_updates (policy->dns_manager, __func__);
 
 		ip4_config = nm_device_get_ip4_config (device);
 		if (ip4_config)
-			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_add_ip4_config (policy->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		ip6_config = nm_device_get_ip6_config (device);
 		if (ip6_config)
-			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_add_ip6_config (policy->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 
 		update_routing_and_dns (policy, FALSE);
 
-		nm_dns_manager_end_updates (dns_mgr, __func__);
-		g_object_unref (dns_mgr);
+		nm_dns_manager_end_updates (policy->dns_manager, __func__);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
@@ -1403,16 +1396,14 @@ device_ip4_config_changed (NMDevice *device,
                            gpointer user_data)
 {
 	NMPolicy *policy = user_data;
-	NMDnsManager *dns_mgr;
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 
-	dns_mgr = nm_dns_manager_get (NULL);
-	nm_dns_manager_begin_updates (dns_mgr, __func__);
+	nm_dns_manager_begin_updates (policy->dns_manager, __func__);
 
 	/* Old configs get removed immediately */
 	if (old_config)
-		nm_dns_manager_remove_ip4_config (dns_mgr, old_config);
+		nm_dns_manager_remove_ip4_config (policy->dns_manager, old_config);
 
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
@@ -1420,8 +1411,8 @@ device_ip4_config_changed (NMDevice *device,
 	 */
 	if (!nm_device_is_activating (device)) {
 		if (new_config)
-			nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-		update_ip4_dns (policy, dns_mgr);
+			nm_dns_manager_add_ip4_config (policy->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		update_ip4_dns (policy, policy->dns_manager);
 
 		/* Only change routing if something actually changed */
 		diff = nm_ip4_config_diff (new_config, old_config);
@@ -1429,8 +1420,7 @@ device_ip4_config_changed (NMDevice *device,
 			update_ip4_routing (policy, TRUE);
 	}
 
-	nm_dns_manager_end_updates (dns_mgr, __func__);
-	g_object_unref (dns_mgr);
+	nm_dns_manager_end_updates (policy->dns_manager, __func__);
 }
 
 static void
@@ -1440,16 +1430,14 @@ device_ip6_config_changed (NMDevice *device,
                            gpointer user_data)
 {
 	NMPolicy *policy = user_data;
-	NMDnsManager *dns_mgr;
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 
-	dns_mgr = nm_dns_manager_get (NULL);
-	nm_dns_manager_begin_updates (dns_mgr, __func__);
+	nm_dns_manager_begin_updates (policy->dns_manager, __func__);
 
 	/* Old configs get removed immediately */
 	if (old_config)
-		nm_dns_manager_remove_ip6_config (dns_mgr, old_config);
+		nm_dns_manager_remove_ip6_config (policy->dns_manager, old_config);
 
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
@@ -1457,8 +1445,8 @@ device_ip6_config_changed (NMDevice *device,
 	 */
 	if (!nm_device_is_activating (device)) {
 		if (new_config)
-			nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-		update_ip6_dns (policy, dns_mgr);
+			nm_dns_manager_add_ip6_config (policy->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		update_ip6_dns (policy, policy->dns_manager);
 
 		/* Only change routing if something actually changed */
 		diff = nm_ip6_config_diff (new_config, old_config);
@@ -1466,8 +1454,7 @@ device_ip6_config_changed (NMDevice *device,
 			update_ip6_routing (policy, TRUE);
 	}
 
-	nm_dns_manager_end_updates (dns_mgr, __func__);
-	g_object_unref (dns_mgr);
+	nm_dns_manager_end_updates (policy->dns_manager, __func__);
 }
 
 static void
