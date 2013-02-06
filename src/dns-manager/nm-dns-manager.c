@@ -74,11 +74,7 @@ typedef struct {
 
 	GSList *plugins;
 
-	/* This is a hack because SUSE's netconfig always wants changes
-	 * associated with a network interface, but sometimes a change isn't
-	 * associated with a network interface (like hostnames).
-	 */
-	char *last_iface;
+	gboolean dns_touched;
 } NMDnsManagerPrivate;
 
 
@@ -158,14 +154,19 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 }
 
 static void
-merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
+merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 {
 	guint32 num, i;
+	const char *iface;
+
+	iface = g_object_get_data (G_OBJECT (src), IP_CONFIG_IFACE_TAG);
+	g_assert (iface);
 
 	num = nm_ip6_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++) {
 		const struct in6_addr *addr;
 		char buf[INET6_ADDRSTRLEN];
+		char *tmp;
 
 		addr = nm_ip6_config_get_nameserver (src, i);
 
@@ -176,7 +177,6 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src, const char *iface)
 		} else {
 			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
 				if (IN6_IS_ADDR_LINKLOCAL (addr) && strchr (buf, '%') == NULL) {
-					char *tmp;
 					tmp = g_strdup_printf ("%s%%%s", buf, iface);
 					add_string_item (rc->nameservers, tmp);
 					g_free (tmp);
@@ -261,7 +261,6 @@ dispatch_netconfig (const char *domain,
                     char **nameservers,
                     const char *nis_domain,
                     char **nis_servers,
-                    const char *iface,
                     GError **error)
 {
 	char *str, *tmp;
@@ -273,16 +272,10 @@ dispatch_netconfig (const char *domain,
 	if (pid < 0)
 		return FALSE;
 
-	// FIXME: this is wrong. We are not writing out the iface-specific
-	// resolv.conf data, we are writing out an already-fully-merged
-	// resolv.conf. Assuming netconfig works in the obvious way, then
-	// there are various failure modes, such as, eg, bringing up a VPN on
-	// eth0, then bringing up wlan0, then bringing down the VPN. Because
-	// NMDnsManager would have claimed that the VPN DNS server was also
-	// part of the wlan0 config, it will remain in resolv.conf after the
-	// VPN goes down, even though it is presumably no longer reachable
-	// at that point.
-	write_to_netconfig (fd, "INTERFACE", iface);
+	/* NM is writing already-merged DNS information to netconfig, so it
+	 * does not apply to a specific network interface.
+	 */
+	write_to_netconfig (fd, "INTERFACE", "NetworkManager");
 
 	if (searches) {
 		str = g_strjoinv (" ", searches);
@@ -404,7 +397,6 @@ static gboolean
 dispatch_resolvconf (const char *domain,
                      char **searches,
                      char **nameservers,
-                     const char *iface,
                      GError **error)
 {
 	char *cmd;
@@ -416,7 +408,7 @@ dispatch_resolvconf (const char *domain,
 
 	if (domain || searches || nameservers) {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
-		nm_log_info (LOGD_DNS, "(%s): writing resolv.conf to %s", iface, RESOLVCONF_PATH);
+		nm_log_info (LOGD_DNS, "Writing DNS information to %s", RESOLVCONF_PATH);
 		if ((f = popen (cmd, "w")) == NULL)
 			g_set_error (error,
 			             NM_DNS_MANAGER_ERROR,
@@ -430,7 +422,7 @@ dispatch_resolvconf (const char *domain,
 		}
 	} else {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -d ", "NetworkManager", NULL);
-		nm_log_info (LOGD_DNS, "(%s): removing resolv.conf from %s", iface, RESOLVCONF_PATH);
+		nm_log_info (LOGD_DNS, "Removing DNS information from %s", RESOLVCONF_PATH);
 		if (nm_spawn_process (cmd) == 0)
 			retval = TRUE;
 	}
@@ -445,7 +437,6 @@ static gboolean
 update_resolv_conf (const char *domain,
                     char **searches,
                     char **nameservers,
-                    const char *iface,
                     GError **error)
 {
 	char *tmp_resolv_conf;
@@ -569,7 +560,6 @@ compute_hash (NMDnsManager *self, guint8 buffer[HASH_LEN])
 
 static gboolean
 update_dns (NMDnsManager *self,
-            const char *iface,
             gboolean no_caching,
             GError **error)
 {
@@ -589,12 +579,9 @@ update_dns (NMDnsManager *self,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_DNS, "updating resolv.conf");
+	priv->dns_touched = TRUE;
 
-	if (iface && (iface != priv->last_iface)) {
-		g_free (priv->last_iface);
-		priv->last_iface = g_strdup (iface);
-	}
+	nm_log_dbg (LOGD_DNS, "updating resolv.conf");
 
 	/* Update hash with config we're applying */
 	compute_hash (self, priv->hash);
@@ -611,9 +598,9 @@ update_dns (NMDnsManager *self,
 		merge_one_ip4_config (&rc, priv->ip4_device_config);
 
 	if (priv->ip6_vpn_config)
-		merge_one_ip6_config (&rc, priv->ip6_vpn_config, iface);
+		merge_one_ip6_config (&rc, priv->ip6_vpn_config);
 	if (priv->ip6_device_config)
-		merge_one_ip6_config (&rc, priv->ip6_device_config, iface);
+		merge_one_ip6_config (&rc, priv->ip6_device_config);
 
 	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
 		if (   (iter->data == priv->ip4_vpn_config)
@@ -629,7 +616,7 @@ update_dns (NMDnsManager *self,
 		} else if (NM_IS_IP6_CONFIG (iter->data)) {
 			NMIP6Config *config = NM_IP6_CONFIG (iter->data);
 
-			merge_one_ip6_config (&rc, config, iface);
+			merge_one_ip6_config (&rc, config);
 		} else
 			g_assert_not_reached ();
 	}
@@ -721,8 +708,7 @@ update_dns (NMDnsManager *self,
 		                           vpn_configs,
 		                           dev_configs,
 		                           other_configs,
-		                           priv->hostname,
-					   iface)) {
+		                           priv->hostname)) {
 			nm_log_warn (LOGD_DNS, "DNS: plugin %s update failed", plugin_name);
 
 			/* If the plugin failed to update, we shouldn't write out a local
@@ -747,19 +733,18 @@ update_dns (NMDnsManager *self,
 	}
 
 #ifdef RESOLVCONF_PATH
-	success = dispatch_resolvconf (domain, searches, nameservers, iface, error);
+	success = dispatch_resolvconf (domain, searches, nameservers, error);
 #endif
 
 #ifdef NETCONFIG_PATH
 	if (success == FALSE) {
 		success = dispatch_netconfig (domain, searches, nameservers,
-		                              nis_domain, nis_servers,
-		                              iface, error);
+		                              nis_domain, nis_servers, error);
 	}
 #endif
 
 	if (success == FALSE)
-		success = update_resolv_conf (domain, searches, nameservers, iface, error);
+		success = update_resolv_conf (domain, searches, nameservers, error);
 
 	if (searches)
 		g_strfreev (searches);
@@ -775,7 +760,6 @@ static void
 plugin_failed (NMDnsPlugin *plugin, gpointer user_data)
 {
 	NMDnsManager *self = NM_DNS_MANAGER (user_data);
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 
 	/* Errors with non-caching plugins aren't fatal */
@@ -783,7 +767,7 @@ plugin_failed (NMDnsPlugin *plugin, gpointer user_data)
 		return;
 
 	/* Disable caching until the next DNS update */
-	if (!update_dns (self, priv->last_iface, TRUE, &error)) {
+	if (!update_dns (self, TRUE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -806,6 +790,8 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
 
+	g_object_set_data_full (G_OBJECT (config), IP_CONFIG_IFACE_TAG, g_strdup (iface), g_free);
+
 	switch (cfg_type) {
 	case NM_DNS_IP_CONFIG_TYPE_VPN:
 		priv->ip4_vpn_config = config;
@@ -821,7 +807,7 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
-	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -832,15 +818,12 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 }
 
 gboolean
-nm_dns_manager_remove_ip4_config (NMDnsManager *mgr,
-                                  const char *iface,
-                                  NMIP4Config *config)
+nm_dns_manager_remove_ip4_config (NMDnsManager *mgr, NMIP4Config *config)
 {
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
@@ -858,12 +841,14 @@ nm_dns_manager_remove_ip4_config (NMDnsManager *mgr,
 
 	g_object_unref (config);
 
-	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
+
+	g_object_set_data (G_OBJECT (config), IP_CONFIG_IFACE_TAG, NULL);
 
 	return TRUE;
 }
@@ -883,6 +868,8 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
 
+	g_object_set_data_full (G_OBJECT (config), IP_CONFIG_IFACE_TAG, g_strdup (iface), g_free);
+
 	switch (cfg_type) {
 	case NM_DNS_IP_CONFIG_TYPE_VPN:
 		priv->ip6_vpn_config = config;
@@ -898,7 +885,7 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
-	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -909,15 +896,12 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 }
 
 gboolean
-nm_dns_manager_remove_ip6_config (NMDnsManager *mgr,
-                                  const char *iface,
-                                  NMIP6Config *config)
+nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config)
 {
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
@@ -935,12 +919,14 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr,
 
 	g_object_unref (config);	
 
-	if (!priv->updates_queue && !update_dns (mgr, iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
+
+	g_object_set_data (G_OBJECT (config), IP_CONFIG_IFACE_TAG, NULL);
 
 	return TRUE;
 }
@@ -973,7 +959,7 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 	 * wants one.  But hostname changes are system-wide and *not* tied to a
 	 * specific interface, so netconfig can't really handle this.  Fake it.
 	 */
-	if (!priv->updates_queue && !update_dns (mgr, priv->last_iface, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -1023,7 +1009,7 @@ nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
 
 	/* Commit all the outstanding changes */
 	nm_log_dbg (LOGD_DNS, "(%s): committing DNS changes (%d)", func, priv->updates_queue);
-	if (!update_dns (mgr, priv->last_iface, FALSE, &error)) {
+	if (!update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 			         error ? error->code : -1,
 			         error && error->message ? error->message : "(unknown)");
@@ -1124,20 +1110,16 @@ dispose (GObject *object)
 		g_slist_free (priv->plugins);
 		priv->plugins = NULL;
 
-		/* If last_iface is NULL, this means we haven't done a DNS update before,
-		 * so no reason to try and take down entries from resolv.conf.
+		/* If we're quitting leave a valid resolv.conf in place, not one
+		 * pointing to 127.0.0.1 if any plugins were active.  Thus update
+		 * DNS after disposing of all plugins.  But if we haven't done any
+		 * DNS updates yet, there's no reason to touch resolv.conf on shutdown.
 		 */
-		if (priv->last_iface != NULL) {
-			/* If we're quitting leave a valid resolv.conf in place, not one
-			 * pointing to 127.0.0.1 if any plugins were active.  Thus update
-			 * DNS after disposing of all plugins.
-			 */
-			if (!update_dns (self, priv->last_iface, TRUE, &error)) {
-				nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
-				             error ? error->code : -1,
-				             error && error->message ? error->message : "(unknown)");
-				g_clear_error (&error);
-			}
+		if (priv->dns_touched && !update_dns (self, TRUE, &error)) {
+			nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
+			             error ? error->code : -1,
+			             error && error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
 		}
 
 		g_slist_foreach (priv->configs, (GFunc) g_object_unref, NULL);
@@ -1154,7 +1136,6 @@ finalize (GObject *object)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (object);
 
 	g_free (priv->hostname);
-	g_free (priv->last_iface);
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->finalize (object);
 }

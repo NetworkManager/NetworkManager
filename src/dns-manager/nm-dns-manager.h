@@ -75,18 +75,14 @@ gboolean nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
                                         NMIP4Config *config,
                                         NMDnsIPConfigType cfg_type);
 
-gboolean nm_dns_manager_remove_ip4_config (NMDnsManager *mgr,
-                                           const char *iface,
-                                           NMIP4Config *config);
+gboolean nm_dns_manager_remove_ip4_config (NMDnsManager *mgr, NMIP4Config *config);
 
 gboolean nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
                                         const char *iface,
                                         NMIP6Config *config,
                                         NMDnsIPConfigType cfg_type);
 
-gboolean nm_dns_manager_remove_ip6_config (NMDnsManager *mgr,
-                                           const char *iface,
-                                           NMIP6Config *config);
+gboolean nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config);
 
 void nm_dns_manager_set_hostname (NMDnsManager *mgr,
                                   const char *hostname);

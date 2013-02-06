@@ -32,6 +32,8 @@
 #define NM_DNS_PLUGIN_FAILED "failed"
 #define NM_DNS_PLUGIN_CHILD_QUIT "child-quit"
 
+#define IP_CONFIG_IFACE_TAG "dns-manager-iface"
+
 typedef struct {
 	GObject parent;
 } NMDnsPlugin;
@@ -53,8 +55,7 @@ typedef struct {
 	                    const GSList *vpn_configs,
 	                    const GSList *dev_configs,
 	                    const GSList *other_configs,
-	                    const char *hostname,
-	                    const char *iface);
+	                    const char *hostname);
 
 	/* Subclasses should override and return TRUE if they start a local
 	 * caching nameserver that listens on localhost and would block any
@@ -92,8 +93,7 @@ gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                const GSList *vpn_configs,
                                const GSList *dev_configs,
                                const GSList *other_configs,
-                               const char *hostname,
-                               const char *iface);
+                               const char *hostname);
 
 /* For subclasses/plugins */
 

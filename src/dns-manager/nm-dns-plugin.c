@@ -56,8 +56,7 @@ nm_dns_plugin_update (NMDnsPlugin *self,
                       const GSList *vpn_configs,
                       const GSList *dev_configs,
                       const GSList *other_configs,
-                      const char *hostname,
-                      const char *iface)
+                      const char *hostname)
 {
 	g_return_val_if_fail (NM_DNS_PLUGIN_GET_CLASS (self)->update != NULL, FALSE);
 
@@ -65,8 +64,7 @@ nm_dns_plugin_update (NMDnsPlugin *self,
 	                                               vpn_configs,
 	                                               dev_configs,
 	                                               other_configs,
-	                                               hostname,
-						       iface);
+	                                               hostname);
 }
 
 static gboolean

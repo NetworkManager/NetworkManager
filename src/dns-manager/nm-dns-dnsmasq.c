@@ -183,19 +183,23 @@ error:
 }
 
 static gboolean
-add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split, const char *iface)
+add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 {
 	const struct in6_addr *addr;
 	char *buf;
 	int n, i;
 	gboolean added = FALSE;
+	const char *iface;
+
+	iface = g_object_get_data (G_OBJECT (ip6), IP_CONFIG_IFACE_TAG);
+	g_assert (iface);
 
 	if (split) {
 		if (nm_ip6_config_get_num_nameservers (ip6) == 0)
 			return FALSE;
 
 		/* FIXME: it appears that dnsmasq can only handle one nameserver
-		 * per domain (at the manpage seems to indicate that) so only use
+		 * per domain (at least the manpage seems to indicate that) so only use
 		 * the first nameserver here.
 		 */
 		addr = nm_ip6_config_get_nameserver (ip6, 0);
@@ -247,8 +251,7 @@ update (NMDnsPlugin *plugin,
         const GSList *vpn_configs,
         const GSList *dev_configs,
         const GSList *other_configs,
-        const char *hostname,
-        const char *iface)
+        const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	GString *conf;
@@ -274,7 +277,7 @@ update (NMDnsPlugin *plugin,
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), TRUE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), TRUE, iface);
+			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), TRUE);
 	}
 
 	/* Now add interface configs without split DNS */
@@ -282,7 +285,7 @@ update (NMDnsPlugin *plugin,
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE, iface);
+			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
 	}
 
 	/* And any other random configs */
@@ -290,7 +293,7 @@ update (NMDnsPlugin *plugin,
 		if (NM_IS_IP4_CONFIG (iter->data))
 			add_ip4_config (conf, NM_IP4_CONFIG (iter->data), FALSE);
 		else if (NM_IS_IP6_CONFIG (iter->data))
-			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE, iface);
+			add_ip6_config (conf, NM_IP6_CONFIG (iter->data), FALSE);
 	}
 
 	/* Write out the config file */

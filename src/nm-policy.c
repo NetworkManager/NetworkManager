@@ -1396,7 +1396,7 @@ device_ip4_config_changed (NMDevice *device,
 
 	/* Old configs get removed immediately */
 	if (old_config)
-		nm_dns_manager_remove_ip4_config (dns_mgr, ip_iface, old_config);
+		nm_dns_manager_remove_ip4_config (dns_mgr, old_config);
 
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
@@ -1433,7 +1433,7 @@ device_ip6_config_changed (NMDevice *device,
 
 	/* Old configs get removed immediately */
 	if (old_config)
-		nm_dns_manager_remove_ip6_config (dns_mgr, ip_iface, old_config);
+		nm_dns_manager_remove_ip6_config (dns_mgr, old_config);
 
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
@@ -1608,7 +1608,7 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config) {
 		/* Remove the VPN connection's IP4 config from DNS */
-		nm_dns_manager_remove_ip4_config (mgr, ip_iface, ip4_config);
+		nm_dns_manager_remove_ip4_config (mgr, ip4_config);
 
 		/* Re-apply routes and addresses of the VPN connection's parent interface,
 		 * which the VPN might have overridden.
@@ -1629,7 +1629,7 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config) {
 		/* Remove the VPN connection's IP6 config from DNS */
-		nm_dns_manager_remove_ip6_config (mgr, ip_iface, ip6_config);
+		nm_dns_manager_remove_ip6_config (mgr, ip6_config);
 
 		/* Re-apply routes and addresses of the VPN connection's parent interface,
 		 * which the VPN might have overridden.
