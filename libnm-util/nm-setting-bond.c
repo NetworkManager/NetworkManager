@@ -18,12 +18,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2012 Red Hat, Inc.
+ * (C) Copyright 2011 - 2013 Red Hat, Inc.
  */
 
 #include <string.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-bond.h"
 #include "nm-param-spec-specialized.h"
@@ -361,18 +362,20 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *arp_ip_target = NULL;
 
 	if (!priv->interface_name || !strlen(priv->interface_name)) {
-		g_set_error (error,
-		             NM_SETTING_BOND_ERROR,
-		             NM_SETTING_BOND_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_BOND_INTERFACE_NAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_BOND_ERROR,
+		                     NM_SETTING_BOND_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_BOND_INTERFACE_NAME);
 		return FALSE;
 	}
 
 	if (!nm_utils_iface_valid_name (priv->interface_name)) {
-		g_set_error (error,
-		             NM_SETTING_BOND_ERROR,
-		             NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BOND_INTERFACE_NAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_BOND_ERROR,
+		                     NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_BOND_INTERFACE_NAME);
 		return FALSE;
 	}
 
@@ -382,10 +385,12 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		    || !value[0]
 		    || (strlen (value) > 200)
 		    || strchr (value, ' ')) {
-			g_set_error_literal (error,
-			                     NM_SETTING_BOND_ERROR,
-			                     NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			                     key);
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             _("invalid option '%s' or its value '%s'"),
+			             key, value);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 	}
@@ -402,7 +407,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_BOND_ERROR,
 		             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+		             _("only one of '%s' and '%s' can be set"),
+		             NM_SETTING_BOND_OPTION_MIIMON,
 		             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+		g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 	}
 
 	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
@@ -410,14 +418,18 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_BOND_ERROR,
 		             NM_SETTING_BOND_ERROR_MISSING_OPTION,
+		             _("setting '%s' is required"),
 		             NM_SETTING_BOND_OPTION_MODE);
+		g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
 	if (!_nm_utils_string_in_list (value, valid_modes)) {
 		g_set_error (error,
 		             NM_SETTING_BOND_ERROR,
 		             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-		             NM_SETTING_BOND_OPTION_MODE);
+		             _("'%s' is not a valid value for '%s'"),
+		             value, NM_SETTING_BOND_OPTION_MODE);
+		g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
 
@@ -428,7 +440,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+			             _("'%s=%s' is incompatible with '%s > 0'"),
+			             NM_SETTING_BOND_OPTION_MODE, value, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
+			return FALSE;
 		}
 	}
 	if (g_slist_find_custom (all_settings, NM_SETTING_INFINIBAND_SETTING_NAME, find_setting_by_name)) {
@@ -436,7 +451,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             NM_SETTING_BOND_OPTION_MODE);
+			             _("'%s=%s' is not a valid configuration for '%s'"),
+			             NM_SETTING_BOND_OPTION_MODE, value, NM_SETTING_INFINIBAND_SETTING_NAME);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 	}
@@ -447,14 +464,18 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             NM_SETTING_BOND_OPTION_UPDELAY);
+			             _("'%s' option requires setting '%s' option"),
+			             NM_SETTING_BOND_OPTION_UPDELAY, NM_SETTING_BOND_OPTION_MIIMON);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 		if (g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_DOWNDELAY)) {
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             NM_SETTING_BOND_OPTION_DOWNDELAY);
+			             _("'%s' option requires setting '%s' option"),
+			             NM_SETTING_BOND_OPTION_DOWNDELAY, NM_SETTING_BOND_OPTION_MIIMON);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 	}
@@ -472,7 +493,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_MISSING_OPTION,
-			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+			             _("'%s' option requires setting '%s' option"),
+			             NM_SETTING_BOND_OPTION_ARP_INTERVAL, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 
@@ -482,7 +505,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             _("'%s' option is empty"),
 			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 
@@ -492,7 +517,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error (error,
 				             NM_SETTING_BOND_ERROR,
 				             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-				             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+				             _("'%s' is not a valid IPv4 address for '%s' option"),
+				             NM_SETTING_BOND_OPTION_ARP_IP_TARGET, addrs[i]);
+				g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 				return FALSE;
 			}
 		}
@@ -502,7 +529,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+			             _("'%s' option requires setting '%s' option"),
+			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+			g_prefix_error (error, "%s: ", NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
 	}

@@ -20,12 +20,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
 #include <net/ethernet.h>
+#include <glib/gi18n.h>
 
 #include "nm-param-spec-specialized.h"
 #include "nm-dbus-glib-types.h"
@@ -146,33 +147,38 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (setting);
 
 	if (!priv->bdaddr) {
-		g_set_error (error,
-		             NM_SETTING_BLUETOOTH_ERROR,
-		             NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_BLUETOOTH_BDADDR);
+		g_set_error_literal (error,
+		                     NM_SETTING_BLUETOOTH_ERROR,
+		                     NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_BDADDR);
 		return FALSE;
 	}
 
 	if (priv->bdaddr && priv->bdaddr->len != ETH_ALEN) {
-		g_set_error (error,
-		             NM_SETTING_BLUETOOTH_ERROR,
-		             NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BLUETOOTH_BDADDR);
+		g_set_error_literal (error,
+		                     NM_SETTING_BLUETOOTH_ERROR,
+		                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_BDADDR);
 		return FALSE;
 	}
 
 	if (!priv->type) {
-		g_set_error (error,
-		             NM_SETTING_BLUETOOTH_ERROR,
-		             NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_BLUETOOTH_TYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_BLUETOOTH_ERROR,
+		                     NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
 		   !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
 		g_set_error (error,
 		             NM_SETTING_BLUETOOTH_ERROR,
 		             NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BLUETOOTH_TYPE);
+		             _("'%s' is not a valid value for the property"),
+		             priv->type);
+		g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	}
 
@@ -192,7 +198,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BLUETOOTH_ERROR,
 			             NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND,
-			             NM_SETTING_BLUETOOTH_TYPE);
+			             _("requires '%s' or '%s' setting"),
+			             NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME);
+			g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_TYPE);
 			return FALSE;
 		}
 	}

@@ -19,11 +19,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
+
 #include "nm-setting-pppoe.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
@@ -157,24 +159,27 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingPPPOEPrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (setting);
 
 	if (!priv->username) {
-		g_set_error (error,
-		             NM_SETTING_PPPOE_ERROR,
-		             NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_PPPOE_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_PPPOE_ERROR,
+		                     NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
 	} else if (!strlen (priv->username)) {
-		g_set_error (error,
-		             NM_SETTING_PPPOE_ERROR,
-		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_PPPOE_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_PPPOE_ERROR,
+		                     NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
 	}
 
 	if (priv->service && !strlen (priv->service)) {
-		g_set_error (error,
-		             NM_SETTING_PPPOE_ERROR,
-		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_PPPOE_SERVICE);
+		g_set_error_literal (error,
+		                     NM_SETTING_PPPOE_ERROR,
+		                     NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_PPPOE_SERVICE);
 		return FALSE;
 	}
 

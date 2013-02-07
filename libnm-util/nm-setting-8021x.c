@@ -19,12 +19,14 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2012 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
+
 #include "nm-setting-8021x.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
@@ -2111,31 +2113,35 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 
 	if (phase2) {
 		if (!priv->phase2_client_cert) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			return FALSE;
 		} else if (!priv->phase2_client_cert->len) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			return FALSE;
 		}
 
 		/* Private key is required for TLS */
 		if (!priv->phase2_private_key) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 			return FALSE;
 		} else if (!priv->phase2_private_key->len) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 			return FALSE;
 		}
 
@@ -2145,7 +2151,9 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
 				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+				             _("has to match '%s' property for PKCS#12"),
+				             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+				g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 				return FALSE;
 			}
 
@@ -2155,37 +2163,43 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
 				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+				             _("has to match '%s' property for PKCS#12"),
+				             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+				g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 				return FALSE;
 			}
 		}
 	} else {
 		if (!priv->client_cert) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_CLIENT_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_CLIENT_CERT);
 			return FALSE;
 		} else if (!priv->client_cert->len) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_CLIENT_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_CLIENT_CERT);
 			return FALSE;
 		}
 
 		/* Private key is required for TLS */
 		if (!priv->private_key) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_PRIVATE_KEY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PRIVATE_KEY);
 			return FALSE;
 		} else if (!priv->private_key->len) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PRIVATE_KEY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PRIVATE_KEY);
 			return FALSE;
 		}
 
@@ -2195,7 +2209,9 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
 				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_802_1X_CLIENT_CERT);
+				             _("has to match '%s' property for PKCS#12"),
+				             NM_SETTING_802_1X_PRIVATE_KEY);
+				g_prefix_error (error, "%s: ", NM_SETTING_802_1X_CLIENT_CERT);
 				return FALSE;
 			}
 
@@ -2205,7 +2221,9 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
 				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_802_1X_CLIENT_CERT);
+				             _("has to match '%s' property for PKCS#12"),
+				             NM_SETTING_802_1X_PRIVATE_KEY);
+				g_prefix_error (error, "%s: ", NM_SETTING_802_1X_CLIENT_CERT);
 				return FALSE;
 			}
 		}
@@ -2222,25 +2240,29 @@ verify_ttls (NMSetting8021x *self, gboolean phase2, GError **error)
 	if (   (!priv->identity || !strlen (priv->identity))
 	    && (!priv->anonymous_identity || !strlen (priv->anonymous_identity))) {
 		if (!priv->identity) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_IDENTITY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_IDENTITY);
 		} else if (!strlen (priv->identity)) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_IDENTITY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_IDENTITY);
 		} else if (!priv->anonymous_identity) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
 		} else {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
 		}
 		return FALSE;
 	}
@@ -2248,25 +2270,29 @@ verify_ttls (NMSetting8021x *self, gboolean phase2, GError **error)
 	if (   (!priv->phase2_auth || !strlen (priv->phase2_auth))
 	    && (!priv->phase2_autheap || !strlen (priv->phase2_autheap))) {
 		if (!priv->phase2_auth) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_AUTH);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_AUTH);
 		} else if (!strlen (priv->phase2_auth)) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_AUTH);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_AUTH);
 		} else if (!priv->phase2_autheap) {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_AUTHEAP);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_AUTHEAP);
 		} else {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_AUTHEAP);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_AUTHEAP);
 		}
 		return FALSE;
 	}
@@ -2280,15 +2306,17 @@ verify_identity (NMSetting8021x *self, gboolean phase2, GError **error)
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
 	if (!priv->identity) {
-		g_set_error (error,
-		             NM_SETTING_802_1X_ERROR,
-		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_802_1X_IDENTITY);
+		g_set_error_literal (error,
+		                     NM_SETTING_802_1X_ERROR,
+		                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_IDENTITY);
 	} else if (!strlen (priv->identity)) {
-		g_set_error (error,
-		             NM_SETTING_802_1X_ERROR,
-		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_IDENTITY);
+		g_set_error_literal (error,
+		                     NM_SETTING_802_1X_ERROR,
+		                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_IDENTITY);
 	}
 
 	return TRUE;
@@ -2428,10 +2456,11 @@ verify_cert (GByteArray *array, const char *prop_name, GError **error)
 		break;
 	}
 
-	g_set_error (error,
-	             NM_SETTING_802_1X_ERROR,
-	             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-	             "%s", prop_name);
+	g_set_error_literal (error,
+	                     NM_SETTING_802_1X_ERROR,
+	                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+	                     _("property is invalid"));
+	g_prefix_error (error, "%s: ", prop_name);
 	return FALSE;
 }
 
@@ -2452,18 +2481,20 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	if (!priv->eap) {
-		g_set_error (error,
-		             NM_SETTING_802_1X_ERROR,
-		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_802_1X_EAP);
+		g_set_error_literal (error,
+		                     NM_SETTING_802_1X_ERROR,
+		                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_EAP);
 		return FALSE;
 	}
 
 	if (!_nm_utils_string_slist_validate (priv->eap, valid_eap)) {
-		g_set_error (error,
-		             NM_SETTING_802_1X_ERROR,
-		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_EAP);
+		g_set_error_literal (error,
+		                     NM_SETTING_802_1X_ERROR,
+		                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_EAP);
 		return FALSE;
 	}
 
@@ -2487,7 +2518,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PHASE1_PEAPVER);
+		             _("'%s' is not a valid value for the property"),
+		             priv->phase1_peapver);
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE1_PEAPVER);
 		return FALSE;
 	}
 
@@ -2495,7 +2528,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PHASE1_PEAPLABEL);
+		             _("'%s' is not a valid value for the property"),
+		             priv->phase1_peaplabel);
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE1_PEAPLABEL);
 		return FALSE;
 	}
 
@@ -2503,7 +2538,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING);
+		             _("'%s' is not a valid value for the property"),
+		             priv->phase1_fast_provisioning);
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING);
 		return FALSE;
 	}
 
@@ -2511,7 +2548,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PHASE2_AUTH);
+		             _("'%s' is not a valid value for the property"),
+		             priv->phase2_auth);
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_AUTH);
 		return FALSE;
 	}
 
@@ -2519,7 +2558,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_802_1X_PHASE2_AUTHEAP);
+		             _("'%s' is not a valid value for the property"),
+		             priv->phase2_autheap);
+		g_prefix_error (error, "%s: ", NM_SETTING_802_1X_PHASE2_AUTHEAP);
 		return FALSE;
 	}
 

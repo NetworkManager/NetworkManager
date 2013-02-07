@@ -18,12 +18,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2012 Red Hat, Inc.
+ * (C) Copyright 2011 - 2013 Red Hat, Inc.
  */
 
 #include <stdlib.h>
 #include <string.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-vlan.h"
 #include "nm-param-spec-specialized.h"
@@ -482,7 +483,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_VLAN_ERROR,
 		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_VLAN_INTERFACE_NAME);
+		             _("'%s' is not a valid interface name"),
+		             priv->iface_name);
+		g_prefix_error (error, "%s: ", NM_SETTING_VLAN_INTERFACE_NAME);
 		return FALSE;
 	}
 
@@ -502,7 +505,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 					g_set_error (error,
 					             NM_SETTING_VLAN_ERROR,
 					             NM_SETTING_VLAN_ERROR_INVALID_PARENT,
-					             NM_SETTING_CONNECTION_MASTER);
+					             _("'%s' value doesn't match '%s=%s'"),
+					             priv->parent, NM_SETTING_CONNECTION_MASTER, master);
+					g_prefix_error (error, "%s: ", NM_SETTING_VLAN_PARENT);
 					return FALSE;
 				}
 			}
@@ -511,7 +516,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_VLAN_ERROR,
 			             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_VLAN_PARENT);
+			             _("'%s' is neither an UUID nor an interface name"),
+			             priv->parent);
+			g_prefix_error (error, "%s: ", NM_SETTING_VLAN_PARENT);
 			return FALSE;
 		} 
 	} else {
@@ -522,7 +529,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_VLAN_ERROR,
 			             NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,
-			             NM_SETTING_VLAN_PARENT);
+			             _("property is not specified and neither is '%s:%s'"),
+			             NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
+			g_prefix_error (error, "%s: ", NM_SETTING_VLAN_PARENT);
 			return FALSE;
 		}
 	}
@@ -530,10 +539,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (priv->flags & ~(NM_VLAN_FLAG_REORDER_HEADERS |
 	                    NM_VLAN_FLAG_GVRP |
 	                    NM_VLAN_FLAG_LOOSE_BINDING)) {
-		g_set_error (error,
-		             NM_SETTING_VLAN_ERROR,
-		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_VLAN_FLAGS);
+		g_set_error_literal (error,
+		                     NM_SETTING_VLAN_ERROR,
+		                     NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
+		                     _("flags are invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_VLAN_FLAGS);
 		return FALSE;
 	}
 
@@ -541,7 +551,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_VLAN_ERROR,
 		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_VLAN_CARRIER_DETECT);
+		             _("'%s' is not a valid value for the property"),
+		             priv->carrier_detect);
+		g_prefix_error (error, "%s: ", NM_SETTING_VLAN_CARRIER_DETECT);
 		return FALSE;
 	}
 

@@ -16,11 +16,12 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 Red Hat, Inc.
+ * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
 #include <linux/if_infiniband.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-infiniband.h"
 #include "nm-param-spec-specialized.h"
@@ -159,10 +160,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
 
 	if (priv->mac_address && priv->mac_address->len != INFINIBAND_ALEN) {
-		g_set_error (error,
-		             NM_SETTING_INFINIBAND_ERROR,
-		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_INFINIBAND_MAC_ADDRESS);
+		g_set_error_literal (error,
+		                     NM_SETTING_INFINIBAND_ERROR,
+		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -173,10 +175,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (priv->mtu > 65520)
 			priv->mtu = 65520;
 	} else {
-		g_set_error (error,
-		             NM_SETTING_INFINIBAND_ERROR,
-		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_INFINIBAND_TRANSPORT_MODE);
+		g_set_error_literal (error,
+		                     NM_SETTING_INFINIBAND_ERROR,
+		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_TRANSPORT_MODE);
 		return FALSE;
 	}
 
@@ -184,7 +187,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_INFINIBAND_ERROR,
 		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_INFINIBAND_CARRIER_DETECT);
+		             _("'%s' is not a valid value for the property"),
+		             priv->carrier_detect);
+		g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_CARRIER_DETECT);
 		return FALSE;
 	}
 

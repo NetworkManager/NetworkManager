@@ -20,14 +20,16 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2011 - 2013 Red Hat, Inc.
  */
+
+#include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-adsl.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
 #include "nm-utils.h"
-#include <string.h>
 
 /**
  * SECTION:nm-setting-adsl
@@ -204,34 +206,39 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (setting);
 
 	if (!priv->username) {
-		g_set_error (error,
-		             NM_SETTING_ADSL_ERROR,
-		             NM_SETTING_ADSL_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_ADSL_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_ADSL_ERROR,
+		                     NM_SETTING_ADSL_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_USERNAME);
 		return FALSE;
 	} else if (!strlen (priv->username)) {
-		g_set_error (error,
-		             NM_SETTING_ADSL_ERROR,
-		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_ADSL_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_ADSL_ERROR,
+		                     NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_USERNAME);
 		return FALSE;
 	}
 
 	if (priv->password && !strlen (priv->password)) {
-		g_set_error (error,
-		             NM_SETTING_ADSL_ERROR,
-		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_ADSL_PASSWORD);
+		g_set_error_literal (error,
+		                     NM_SETTING_ADSL_ERROR,
+		                     NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_PASSWORD);
 		return FALSE;
 	}
 
 	if (strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) &&
-		strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE) &&
-		strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
+	    strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE) &&
+	    strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
 		g_set_error (error,
 		             NM_SETTING_ADSL_ERROR,
 		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_ADSL_PROTOCOL);
+		             _("'%s' is not a valid value for the property"),
+		             priv->protocol);
+		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_PROTOCOL);
 		return FALSE;
 	}
 
@@ -240,7 +247,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_ADSL_ERROR,
 		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_ADSL_ENCAPSULATION);
+		             _("'%s' is not a valid value for the property"),
+		             priv->encapsulation);
+		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_ENCAPSULATION);
 		return FALSE;
 	}
 

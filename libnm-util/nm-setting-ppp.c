@@ -19,9 +19,11 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
+
+#include <glib/gi18n.h>
 
 #include "nm-setting-ppp.h"
 #include "nm-setting-private.h"
@@ -385,7 +387,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_PPP_ERROR,
 			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_PPP_MRU);
+			             _("'%d' is out of valid range <128-16384>"),
+			             priv->mru);
+			g_prefix_error (error, "%s: ", NM_SETTING_PPP_MRU);
 			return FALSE;
 		}
 	}
@@ -396,7 +400,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_PPP_ERROR,
 			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_PPP_LCP_ECHO_FAILURE);
+			             _("setting this property requires non-zero '%s' property"),
+			             NM_SETTING_PPP_LCP_ECHO_INTERVAL);
+			g_prefix_error (error, "%s: ", NM_SETTING_PPP_LCP_ECHO_FAILURE);
 			return FALSE;
 		}
 	}

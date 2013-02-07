@@ -18,13 +18,14 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 Red Hat, Inc.
+ * (C) Copyright 2012 - 2013 Red Hat, Inc.
  */
 
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-bridge-port.h"
 #include "nm-utils.h"
@@ -151,7 +152,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_BRIDGE_PORT_ERROR,
 		             NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BRIDGE_PORT_PRIORITY);
+		             _("'%d' is not a valid value for the property (should be <= %d)"),
+		             priv->priority, BR_MAX_PORT_PRIORITY);
+		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_PORT_PRIORITY);
 		return FALSE;
 	}
 
@@ -159,7 +162,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_BRIDGE_PORT_ERROR,
 		             NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BRIDGE_PORT_PATH_COST);
+		             _("'%d' is not a valid value for the property (should be <= %d)"),
+		             priv->path_cost, BR_MAX_PATH_COST);
+		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_PORT_PATH_COST);
 		return FALSE;
 	}
 

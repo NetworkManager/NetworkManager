@@ -19,13 +19,15 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <config.h>
 #include <string.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
+
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-param-spec-specialized.h"
@@ -784,10 +786,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
 	if (!priv->key_mgmt) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 		return FALSE;
 	}
 
@@ -795,7 +798,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+		             _("'%s' is not a valid value for the property"),
+		             priv->key_mgmt);
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 		return FALSE;
 	}
 
@@ -805,21 +810,25 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X,
-			             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+			             _("'%s' security requires '%s=%s'"),
+			             "leap", NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x");
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 			return FALSE;
 		}
 		if (!priv->leap_username) {
-			g_set_error (error,
-			             NM_SETTING_WIRELESS_SECURITY_ERROR,
-			             NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME,
-			             NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+			g_set_error_literal (error,
+			                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+			                     NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 			return FALSE;
 		}
 		if (priv->leap_password && !strlen (priv->leap_password)) {
-			g_set_error (error,
-			             NM_SETTING_WIRELESS_SECURITY_ERROR,
-			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
+			g_set_error_literal (error,
+			                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+			                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
 			return FALSE;
 		}
 	} else {
@@ -830,17 +839,20 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error (error,
 				             NM_SETTING_WIRELESS_SECURITY_ERROR,
 				             NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING,
-				             NULL);
+				             _("'%s' security requires '%s' setting presence"),
+				             priv->key_mgmt, NM_SETTING_802_1X_SETTING_NAME);
+				g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 				return FALSE;
 			}
 		}
 	}
 
 	if (priv->leap_username && !strlen (priv->leap_username)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 		return FALSE;
 	}
 
@@ -848,68 +860,78 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
+		             _("'%d' value is out of range <0-3>"),
+		             priv->wep_tx_keyidx);
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
 		return FALSE;
 	}
 
 	if (priv->wep_key_type > NM_WEP_KEY_TYPE_LAST) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE);
 		return FALSE;
 	}
 
 	if (priv->wep_key0 && !nm_utils_wep_key_valid (priv->wep_key0, priv->wep_key_type)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 		return FALSE;
 	}
 	if (priv->wep_key1 && !nm_utils_wep_key_valid (priv->wep_key1, priv->wep_key_type)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 		return FALSE;
 	}
 	if (priv->wep_key2 && !nm_utils_wep_key_valid (priv->wep_key2, priv->wep_key_type)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 		return FALSE;
 	}
 	if (priv->wep_key3 && !nm_utils_wep_key_valid (priv->wep_key3, priv->wep_key_type)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 		return FALSE;
 	}
 
 	if (priv->auth_alg && !_nm_utils_string_in_list (priv->auth_alg, valid_auth_algs)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 		return FALSE;
 	}
 
 	if (priv->psk && !nm_utils_wpa_psk_valid (priv->psk)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_PSK);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_PSK);
 		return FALSE;
 	}
 
 	if (priv->proto && !_nm_utils_string_slist_validate (priv->proto, valid_protos)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_PROTO);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_PROTO);
 		return FALSE;
 	}
 
@@ -935,23 +957,27 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error (error,
 				             NM_SETTING_WIRELESS_SECURITY_ERROR,
 				             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+				             _("'%s' connections require '%s' in this property"),
+				             NM_SETTING_WIRELESS_MODE_ADHOC, "none");
+				g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 				return FALSE;
 			}
 		} else if (!_nm_utils_string_slist_validate (priv->pairwise, valid_pairwise)) {
-			g_set_error (error,
-			             NM_SETTING_WIRELESS_SECURITY_ERROR,
-			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+			g_set_error_literal (error,
+			                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+			                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+			                    _("property is invalid"));
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 			return FALSE;
 		}
 	}
 
 	if (priv->group && !_nm_utils_string_slist_validate (priv->group, valid_groups)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_GROUP);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR,
+		                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_GROUP);
 		return FALSE;
 	}
 
@@ -961,7 +987,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP,
-			             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+			             _("'%s' can only be used with '%s=%s' (WEP)"),
+			             "shared", NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none");
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 			return FALSE;
 		}
 	}

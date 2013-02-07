@@ -19,11 +19,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2012 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
+
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-param-spec-specialized.h"
@@ -647,44 +649,51 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
 	if (!priv->id) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_CONNECTION_ID);
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_ID);
 		return FALSE;
 	} else if (!strlen (priv->id)) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_CONNECTION_ID);
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_ID);
 		return FALSE;
 	}
 
 	if (!priv->uuid) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_CONNECTION_UUID);
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_UUID);
 		return FALSE;
 	} else if (!nm_utils_is_uuid (priv->uuid)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_CONNECTION_UUID);
+		             _("'%s' is not a valid UUID"),
+		             priv->uuid);
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_UUID);
 		return FALSE;
 	}
 
 	if (!priv->type) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_CONNECTION_TYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	} else if (!strlen (priv->type)) {
-		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_CONNECTION_TYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	}
 
@@ -693,7 +702,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
-		             NM_SETTING_CONNECTION_TYPE);
+		             _("requires presence of '%s' setting in the connection"),
+		             priv->type);
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	}
 
@@ -712,10 +723,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 			if (strcmp (nm_setting_ip4_config_get_method (s_ip4),
 			            NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-				g_set_error (error,
-				             NM_SETTING_CONNECTION_ERROR,
-				             NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
-				             "No IP configuration allowed for bonding slave");
+				g_set_error_literal (error,
+				                     NM_SETTING_CONNECTION_ERROR,
+				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
+				                     _("IPv4 configuration is not allowed for bonding slave"));
+				g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
 		}
@@ -728,10 +740,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 			if (strcmp (nm_setting_ip6_config_get_method (s_ip6),
 			            NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-				g_set_error (error,
-				             NM_SETTING_CONNECTION_ERROR,
-				             NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
-				             "No IPv6 configuration allowed for bonding slave");
+				g_set_error_literal (error,
+				                     NM_SETTING_CONNECTION_ERROR,
+				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
+				                     _("IPv6 configuration is not allowed for bonding slave"));
+				g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
 		}

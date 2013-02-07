@@ -19,11 +19,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
+
 #include "nm-setting-gsm.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -272,10 +274,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (setting);
 
 	if (priv->number && !priv->number[0]) {
-		g_set_error (error,
-		             NM_SETTING_GSM_ERROR,
-		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_GSM_NUMBER);
+		g_set_error_literal (error,
+		                     NM_SETTING_GSM_ERROR,
+		                     NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_GSM_NUMBER);
 		return FALSE;
 	}
 
@@ -287,7 +290,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_GSM_ERROR,
 			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_GSM_APN);
+			             _("property value '%s' is empty or too long (>64)"),
+			             priv->apn);
+			g_prefix_error (error, "%s: ", NM_SETTING_GSM_APN);
 			return FALSE;
 		}
 
@@ -317,25 +322,29 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error (error,
 				             NM_SETTING_GSM_ERROR,
 				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_GSM_APN);
+				             _("'%s' contains invalid char(s) (use [A-Za-z._-])"),
+				             priv->apn);
+				g_prefix_error (error, "%s: ", NM_SETTING_GSM_APN);
 				return FALSE;
 			}
 		}
 	}
 
 	if (priv->username && !strlen (priv->username)) {
-		g_set_error (error,
-		             NM_SETTING_GSM_ERROR,
-		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_GSM_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_GSM_ERROR,
+		                     NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_GSM_USERNAME);
 		return FALSE;
 	}
 
 	if (priv->password && !strlen (priv->password)) {
-		g_set_error (error,
-		             NM_SETTING_GSM_ERROR,
-		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_GSM_USERNAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_GSM_ERROR,
+		                     NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_GSM_USERNAME);
 		return FALSE;
 	}
 
@@ -348,7 +357,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_GSM_ERROR,
 			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_GSM_NETWORK_ID);
+			             _("'%s' length is invalid (should be 5 or 6 digits)"),
+			             priv->network_id);
+			g_prefix_error (error, "%s: ", NM_SETTING_GSM_NETWORK_ID);
 			return FALSE;
 		}
 
@@ -357,7 +368,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error (error,
 				             NM_SETTING_GSM_ERROR,
 				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
-				             NM_SETTING_GSM_NETWORK_ID);
+				             _("'%s' is not a number"),
+				             priv->network_id);
+				g_prefix_error (error, "%s: ", NM_SETTING_GSM_NETWORK_ID);
 				return FALSE;
 			}
 		}

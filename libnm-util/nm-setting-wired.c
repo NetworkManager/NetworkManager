@@ -19,14 +19,15 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
 #include <net/ethernet.h>
-#include <dbus/dbus-glib.h>
 #include <netinet/ether.h>
+#include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-wired.h"
 #include "nm-param-spec-specialized.h"
@@ -452,7 +453,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_PORT);
+		             _("'%s' is not a valid ethernet port value"),
+		             priv->port);
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_PORT);
 		return FALSE;
 	}
 
@@ -460,15 +463,18 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_DUPLEX);
+		             _("'%s' is not a valid duplex value"),
+		             priv->duplex);
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_DUPLEX);
 		return FALSE;
 	}
 
 	if (priv->device_mac_address && priv->device_mac_address->len != ETH_ALEN) {
-		g_set_error (error,
-		             NM_SETTING_WIRED_ERROR,
-		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_MAC_ADDRESS);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRED_ERROR,
+		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     _("is not a valid MAC address"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -480,25 +486,29 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_WIRED_ERROR,
 			             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+			             _("'%s' is not a valid MAC address"),
+			             (const char *) mac_blacklist_iter->data);
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
 			return FALSE;
 		}
 	}
 
 	if (   priv->s390_subchannels
 	    && !(priv->s390_subchannels->len == 3 || priv->s390_subchannels->len == 2)) {
-		g_set_error (error,
-		             NM_SETTING_WIRED_ERROR,
-		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_S390_SUBCHANNELS);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRED_ERROR,
+		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_S390_SUBCHANNELS);
 		return FALSE;
 	}
 
 	if (priv->s390_nettype && !_nm_utils_string_in_list (priv->s390_nettype, valid_nettype)) {
-		g_set_error (error,
-			         NM_SETTING_WIRED_ERROR,
-			         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-			         NM_SETTING_WIRED_S390_NETTYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRED_ERROR,
+		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_S390_NETTYPE);
 		return FALSE;
 	}
 
@@ -508,18 +518,21 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		    || !strlen (value)
 		    || (strlen (value) > 200)) {
 			g_set_error (error,
-				         NM_SETTING_WIRED_ERROR,
-				         NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_WIRED_S390_OPTIONS);
+			             NM_SETTING_WIRED_ERROR,
+			             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			             _("invalid '%s' or its value '%s'"),
+			             key, value);
+			g_prefix_error (error, "%s: ", NM_SETTING_WIRED_S390_OPTIONS);
 			return FALSE;
 		}
 	}
 
 	if (priv->cloned_mac_address && priv->cloned_mac_address->len != ETH_ALEN) {
-		g_set_error (error,
-		             NM_SETTING_WIRED_ERROR,
-		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
+		g_set_error_literal (error,
+		                     NM_SETTING_WIRED_ERROR,
+		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     _("is not a valid MAC address"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -527,7 +540,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRED_CARRIER_DETECT);
+		             _("'%s' is not a valid value for the property"),
+		             priv->carrier_detect);
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRED_CARRIER_DETECT);
 		return FALSE;
 	}
 

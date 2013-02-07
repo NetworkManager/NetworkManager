@@ -18,13 +18,14 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2012 Red Hat, Inc.
+ * (C) Copyright 2011 - 2013 Red Hat, Inc.
  */
 
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting-bridge.h"
 #include "nm-param-spec-specialized.h"
@@ -244,10 +245,12 @@ check_range (guint32 val,
              GError **error)
 {
 	if ((val != 0) && (val < min || val > max)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_BRIDGE_ERROR,
-		                     NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
-		                     prop);
+		g_set_error (error,
+		             NM_SETTING_BRIDGE_ERROR,
+		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
+		             _("value '%d' is out of range <%d-%d>"),
+		             val, min, max);
+		g_prefix_error (error, "%s: ", prop);
 		return FALSE;
 	}
 	return TRUE;
@@ -259,10 +262,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (setting);
 
 	if (!priv->interface_name || !strlen(priv->interface_name)) {
-		g_set_error (error,
-		             NM_SETTING_BRIDGE_ERROR,
-		             NM_SETTING_BRIDGE_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_BRIDGE_INTERFACE_NAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_BRIDGE_ERROR,
+		                     NM_SETTING_BRIDGE_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_INTERFACE_NAME);
 		return FALSE;
 	}
 
@@ -270,7 +274,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_BRIDGE_ERROR,
 		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_BRIDGE_INTERFACE_NAME);
+		             _("'%s' is not a valid interface name"),
+		             priv->interface_name);
+		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_INTERFACE_NAME);
 		return FALSE;
 	}
 

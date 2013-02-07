@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2012 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -26,6 +26,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
+
 #include "nm-setting-vpn.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
@@ -380,27 +382,30 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	if (!priv->service_type) {
-		g_set_error (error,
-		             NM_SETTING_VPN_ERROR,
-		             NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
-		             NM_SETTING_VPN_SERVICE_TYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_VPN_ERROR,
+		                     NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s: ", NM_SETTING_VPN_SERVICE_TYPE);
 		return FALSE;
 	}
 
 	if (!strlen (priv->service_type)) {
-		g_set_error (error,
-		             NM_SETTING_VPN_ERROR,
-		             NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_VPN_SERVICE_TYPE);
+		g_set_error_literal (error,
+		                     NM_SETTING_VPN_ERROR,
+		                     NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_VPN_SERVICE_TYPE);
 		return FALSE;
 	}
 
 	/* default username can be NULL, but can't be zero-length */
 	if (priv->user_name && !strlen (priv->user_name)) {
-		g_set_error (error,
-		             NM_SETTING_VPN_ERROR,
-		             NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_VPN_USER_NAME);
+		g_set_error_literal (error,
+		                     NM_SETTING_VPN_ERROR,
+		                     NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s: ", NM_SETTING_VPN_USER_NAME);
 		return FALSE;
 	}
 
