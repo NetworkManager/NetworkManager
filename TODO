@@ -116,23 +116,6 @@ the VPN because WiFi choked for 10 seconds, but reconnect the VPN if it was
 connected before the drop.
 
 
-* VPN autoconnect (bgo #560471)
-
-We should add a property to the NMSettingConnection object in
-libnm-util/nm-setting-connection.c called "vpns" that is a string list,
-containing a list of Connection UUIDs that should be activated when the base
-connection itself is activated.  This will allow a VPN connection to be
-started every time another connection is started, so that if you choose you're
-always on the VPN in your favorite coffee shop.
-
-The NM_DEVICE_STATE_SECONDARIES state was added specifically for cases like
-this.  Thus, after the base device has IP connectivity, but before it has
-signaled that it's fully activated, the device should enter the SECONDARIES
-state and kick off activation of the given VPN connection.  Only after this
-VPN connection has successfully connected should the base device to the
-NM_DEVICE_STATE_ACTIVATED state.
-
-
 * VPN and IPv6
 
 The internal VPN capability should support IPv6.  Essentially, the D-Bus
