@@ -34,25 +34,6 @@ NM_STATE_CONNECTED_LOCAL, NM_STATE_CONNECTED_SITE, or NM_STATE_CONNECTED_GLOBAL
 based on it and the device's state.
 
 
-* Real Access Point mode support
-
-Now that NetworkManager requires wpa_supplicant 0.7.x or later, we can add
-full Access Point (AP) mode support.  NetworkManager currently implements
-connection sharing via AdHoc mode support, which has some limitations.  Instead,
-we should check whether the wifi device supports AP mode, and if so, use
-that mode instead.  wpa_supplicant has support for a "lightweight AP" mode which
-we should use.  Witold Sowa started this support a while ago and wrote the new
-D-Bus API for wpa_supplicant that makes all this possible, but some NM pieces
-are still missing.  If the wifi driver supports AP mode, then in
-src/supplicant-manager/ NM should send an AP-mode config instead of sending
-the adhoc config.
-
-Note that some devices (airo, ipw2100, ipw2200, iwl3945, iwl4965, atmel, zd1201)
-will never support AP mode due to firmware limitations, so we clearly must still
-provide Ad-Hoc connection sharing support for those devices and switch between
-Ad-Hoc and AP mode depending on device capabilities.
-
-
 * Implement NM_DEVICE_STATE_DISCONNECTING
 
 To allow for "pre-down" scenarios, this state should be implemented before a
