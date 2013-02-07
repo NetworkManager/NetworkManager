@@ -179,7 +179,7 @@ get_capabilities_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 
 	nm_log_dbg (LOGD_SUPPLICANT, "AP mode is %ssupported",
 	            (priv->ap_support == AP_SUPPORT_YES) ? "" :
-	                (priv->ap_support == AP_SUPPORT_NO) ? "not " : " possibly");
+	                (priv->ap_support == AP_SUPPORT_NO) ? "not " : "possibly ");
 
 	/* EAP-FAST */
 	priv->fast_supported = FALSE;
