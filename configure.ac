@@ -725,7 +725,6 @@ echo "  nmrundir: $nmrundir"
 echo
 
 echo "Platform:"
-echo "  libnl: $with_libnl"
 echo "  session tracking: $with_session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
 if test "${enable_polkit}" = "yes"; then
