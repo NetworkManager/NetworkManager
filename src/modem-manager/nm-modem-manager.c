@@ -540,6 +540,7 @@ modem_manager_1_available (NMModemManager *self)
 
 static void schedule_modem_manager_1_relaunch (NMModemManager *self,
                                                guint n_seconds);
+static void ensure_client                     (NMModemManager *self);
 
 static void
 modem_manager_1_name_owner_changed (MMManager *modem_manager_1,
@@ -563,7 +564,18 @@ modem_manager_1_name_owner_changed (MMManager *modem_manager_1,
 
 	/* Available! */
 	g_free (name_owner);
-	modem_manager_1_available (self);
+
+	/* Hack alert: GDBusObjectManagerClient won't signal neither 'object-added'
+	 * nor 'object-removed' if it was created while there was no ModemManager in
+	 * the bus. This hack avoids this issue until we get a GIO with the fix
+	 * included... */
+	modem_manager_1_clear_signals (self);
+	g_clear_object (&self->priv->modem_manager_1);
+	ensure_client (self);
+
+	/* Whenever GDBusObjectManagerClient is fixed, we can just do the following:
+	 * modem_manager_1_available (self);
+	 */
 }
 
 static void
