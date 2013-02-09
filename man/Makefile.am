@@ -24,11 +24,3 @@ man_MANS +=				\
 	nm-settings.5
 
 endif
-
-EXTRA_DIST =				\
-	NetworkManager.8.in		\
-	NetworkManager.conf.5.in	\
-	nm-system-settings.conf.5.in	\
-	nm-tool.1.in			\
-	nm-online.1.in			\
-	nmcli.1.in
