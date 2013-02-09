@@ -355,9 +355,6 @@ endif
 
 NetworkManager_LDFLAGS = -rdynamic
 
-NetworkManagerdir = $(datadir)/NetworkManager
-NetworkManager_DATA = gdb-cmd
-
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = org.freedesktop.NetworkManager.conf
 
