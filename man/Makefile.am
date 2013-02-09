@@ -25,7 +25,7 @@ man_MANS =				\
 	nm-tool.1			\
 	nm-online.1			\
 	nmcli.1				\
-	$(GENERATED_FILES)
+	nm-settings.5
 
 EXTRA_DIST =				\
 	$(man_MANS)			\
