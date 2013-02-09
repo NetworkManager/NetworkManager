@@ -32,6 +32,12 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix canceling secrets requests in GUI agents
 * Always enable Proactive Key Caching (PKC, also called OKC) for WPA Enterprise
     WiFi configurations
+* libnl 3.2.7 or later is required
+* The internal crashdump handling has been removed
+* A DHCPv6 DUID is now generated from /etc/machine-id and sent to the DHCPv6 server
+* Bond interfaces now wait for a ready slave before starting automatic IP configuration
+* The kernel WiFi rfkill state is now synced to the user-requested WirelessEnabled
+    state at startup
 
 
 ==============================================
