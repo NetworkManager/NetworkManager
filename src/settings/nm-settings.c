@@ -587,7 +587,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	gboolean keyfile_added = FALSE;
 	gboolean success = TRUE;
 
-	for (iter = plugins; *iter; iter++) {
+	for (iter = plugins; iter && *iter; iter++) {
 		GModule *plugin;
 		char *full_name, *path;
 		const char *pname = *iter;
@@ -1768,12 +1768,10 @@ nm_settings_new (const char *config_file,
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	priv->bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
-	if (plugins) {
-		/* Load the plugins; fail if a plugin is not found. */
-		if (!load_plugins (self, plugins, error)) {
-			g_object_unref (self);
-			return NULL;
-		}
+	/* Load the plugins; fail if a plugin is not found. */
+	if (!load_plugins (self, plugins, error)) {
+		g_object_unref (self);
+		return NULL;
 	}
 
 	unmanaged_specs_changed (NULL, self);
