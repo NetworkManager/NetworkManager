@@ -297,6 +297,7 @@ nm_act_request_add_share_rule (NMActRequest *req,
 static void
 device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 {
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 	NMActiveConnectionState ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
 	/* Set NMActiveConnection state based on the device's state */
@@ -318,6 +319,13 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
+
+		/* No longer need to pay attention to device state */
+		if (priv->device && priv->device_state_id) {
+			g_signal_handler_disconnect (priv->device, priv->device_state_id);
+			priv->device_state_id = 0;
+		}
+		g_clear_object (&priv->device);
 		break;
 	default:
 		break;
