@@ -132,7 +132,7 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 }
 
 /**
- * nm_wimax_nsp_filter_connections:
+ * nm_wimax_nsp_connection_valid:
  * @nsp: an #NMWimaxNsp to validate @connection against
  * @connection: an #NMConnection to validate against @nsp
  *
