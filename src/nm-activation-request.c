@@ -298,6 +298,7 @@ static void
 device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 {
 	NMActiveConnectionState ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+	NMActiveConnectionState prev_ac_state = nm_active_connection_get_state (NM_ACTIVE_CONNECTION (self));
 
 	/* Set NMActiveConnection state based on the device's state */
 	switch (nm_device_get_state (device)) {
@@ -329,7 +330,11 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 		nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (self), FALSE);
 	}
 
-	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self), ac_state);
+	/* Only set new state if we are not in DEACTIVATED. Those connections
+	 * will be removed. See _active_connection_cleanup() in nm-manager.c
+	 */
+	if (prev_ac_state != NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
+		nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self), ac_state);
 }
 
 /********************************************************************/
