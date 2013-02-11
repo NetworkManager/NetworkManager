@@ -464,6 +464,8 @@ active_connection_state_to_string (NMActiveConnectionState state)
 		return _("activated");
 	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
 		return _("deactivating");
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
+		return _("deactivated");
 	case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
 	default:
 		return _("unknown");
