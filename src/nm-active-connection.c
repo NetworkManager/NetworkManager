@@ -101,6 +101,10 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	if (priv->state == new_state)
 		return;
 
+	/* DEACTIVATED is a terminal state */
+	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
+		g_return_if_fail (new_state != NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+
 	old_state = priv->state;
 	priv->state = new_state;
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
@@ -109,6 +113,12 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (priv->connection),
 		                                         (guint64) time (NULL), TRUE);
+	}
+
+	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+		/* Device is no longer relevant when deactivated */
+		g_clear_object (&priv->device);
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEVICES);
 	}
 }
 
