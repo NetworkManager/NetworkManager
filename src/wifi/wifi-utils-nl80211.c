@@ -564,6 +564,15 @@ struct nl80211_device_info {
 	gboolean success;
 };
 
+#define WLAN_CIPHER_SUITE_USE_GROUP 0x000FAC00
+#define WLAN_CIPHER_SUITE_WEP40     0x000FAC01
+#define WLAN_CIPHER_SUITE_TKIP      0x000FAC02
+#define WLAN_CIPHER_SUITE_CCMP      0x000FAC04
+#define WLAN_CIPHER_SUITE_WEP104    0x000FAC05
+#define WLAN_CIPHER_SUITE_AES_CMAC  0x000FAC06
+#define WLAN_CIPHER_SUITE_GCMP      0x000FAC08
+#define WLAN_CIPHER_SUITE_SMS4      0x00147201
+
 static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -674,22 +683,26 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		num = nla_len (tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
 		for (i = 0; i < num; i++) {
 			switch (ciphers[i]) {
-			case 0x000fac01:
+			case WLAN_CIPHER_SUITE_WEP40:
 				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40;
 				break;
-			case 0x000fac05:
+			case WLAN_CIPHER_SUITE_WEP104:
 				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
 				break;
-			case 0x000fac02:
+			case WLAN_CIPHER_SUITE_TKIP:
 				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP |
 					      NM_WIFI_DEVICE_CAP_WPA;
 				break;
-			case 0x000fac04:
+			case WLAN_CIPHER_SUITE_CCMP:
 				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP |
 					      NM_WIFI_DEVICE_CAP_RSN;
 				break;
+			case WLAN_CIPHER_SUITE_AES_CMAC:
+			case WLAN_CIPHER_SUITE_GCMP:
+			case WLAN_CIPHER_SUITE_SMS4:
+				break;
 			default:
-				nm_log_err (LOGD_HW | LOGD_WIFI, "Don't know the meaning of NL80211_ATTR_CIPHER_SUITES %#8.8x.", ciphers[i]);
+				nm_log_dbg (LOGD_HW | LOGD_WIFI, "Don't know the meaning of NL80211_ATTR_CIPHER_SUITE %#8.8x.", ciphers[i]);
 				break;
 			}
 		}
