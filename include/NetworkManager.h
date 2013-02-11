@@ -17,7 +17,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 - 2012 Red Hat, Inc.
+ * (C) Copyright 2004 - 2013 Red Hat, Inc.
  */
 
 #ifndef NETWORK_MANAGER_H
@@ -111,6 +111,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_BOND: a bond master interface
  * @NM_DEVICE_TYPE_VLAN: an 802.1Q VLAN interface
  * @NM_DEVICE_TYPE_ADSL: ADSL modem
+ * @NM_DEVICE_TYPE_BRIDGE: a bridge master interface
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
