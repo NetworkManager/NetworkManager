@@ -41,6 +41,8 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
+#include "nm-remote-connection.h"
+#include "nm-types.h"
 #include "nm-glib-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
@@ -84,6 +86,7 @@ typedef struct {
 	NMDeviceStateReason reason;
 
 	NMActiveConnection *active_connection;
+	GPtrArray *available_connections;
 
 	GUdevClient *client;
 	char *product;
@@ -112,6 +115,7 @@ enum {
 	PROP_IP_INTERFACE,
 	PROP_DEVICE_TYPE,
 	PROP_ACTIVE_CONNECTION,
+	PROP_AVAILABLE_CONNECTIONS,
 
 	LAST_PROP
 };
@@ -173,6 +177,7 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_STATE,             &priv->state },
 		{ NM_DEVICE_STATE_REASON,      &priv->state, demarshal_state_reason },
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
+		{ NM_DEVICE_AVAILABLE_CONNECTIONS, &priv->available_connections, NULL, NM_TYPE_REMOTE_CONNECTION },
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
@@ -332,6 +337,15 @@ dispose (GObject *object)
 	g_clear_object (&priv->client);
 	g_clear_object (&priv->active_connection);
 
+	if (priv->available_connections) {
+		int i;
+
+		for (i = 0; i < priv->available_connections->len; i++)
+			g_object_unref (priv->available_connections->pdata[i]);
+		g_ptr_array_free (priv->available_connections, TRUE);
+		priv->available_connections = NULL;
+	}
+
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
 
@@ -422,6 +436,9 @@ get_property (GObject *object,
 		break;
 	case PROP_ACTIVE_CONNECTION:
 		g_value_set_object (value, nm_device_get_active_connection (device));
+		break;
+	case PROP_AVAILABLE_CONNECTIONS:
+		g_value_set_boxed (value, nm_device_get_available_connections (device));
 		break;
 	case PROP_PRODUCT:
 		g_value_set_string (value, nm_device_get_product (device));
@@ -716,6 +733,19 @@ nm_device_class_init (NMDeviceClass *device_class)
 		                      "Active Connection",
 		                      NM_TYPE_ACTIVE_CONNECTION,
 		                      G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:available-connections:
+	 *
+	 * The available connections (#NMRemoteConnection) of the device
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_AVAILABLE_CONNECTIONS,
+		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS,
+							 "AvailableConnections",
+							 "Available Connections",
+							 NM_TYPE_OBJECT_ARRAY,
+							 G_PARAM_READABLE));
 
 	/**
 	 * NMDevice:vendor:
@@ -1254,6 +1284,26 @@ nm_device_get_active_connection (NMDevice *device)
 
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->active_connection;
+}
+
+/**
+ * nm_device_get_available_connections:
+ * @device: a #NMDevice
+ *
+ * Gets the #NMRemoteConnections currently known to the daemon that could
+ * be activated on @device.
+ *
+ * Returns: (element-type NMClient.RemoteConnection): the #GPtrArray
+ * containing #NMRemoteConnections. This is the internal copy used by
+ * the connection, and must not be modified.
+ **/
+const GPtrArray *
+nm_device_get_available_connections (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return handle_ptr_array_return (NM_DEVICE_GET_PRIVATE (device)->available_connections);
 }
 
 /* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
