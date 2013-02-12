@@ -98,10 +98,6 @@ signal_handling_thread (void *arg)
 			/* Reread config stuff like system config files, VPN service files, etc */
 			nm_log_info (LOGD_CORE, "caught signal %d, not supported yet.", signo);
 			break;
-		case SIGUSR1:
-			/* Play with log levels or something */
-			nm_log_info (LOGD_CORE, "caught signal %d, not supported yet.", signo);
-			break;
 		default:
 			nm_log_err (LOGD_CORE, "caught unexpected signal %d", signo);
 			break;
@@ -127,7 +123,6 @@ setup_signals (void)
 	sigaddset (&signal_set, SIGHUP);
 	sigaddset (&signal_set, SIGINT);
 	sigaddset (&signal_set, SIGTERM);
-	sigaddset (&signal_set, SIGUSR1);
 
 	/* Block all signals of interest. */
 	status = pthread_sigmask (SIG_BLOCK, &signal_set, &old_sig_mask);
