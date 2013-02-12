@@ -385,9 +385,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	GHashTable *settings;
 
 	if (!dbus_g_proxy_call (priv->proxy, "GetSettings", error,
-	                        G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
 	                        G_TYPE_INVALID,
-	                        DBUS_TYPE_G_MAP_OF_VARIANT, &settings,
+	                        DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
 	                        G_TYPE_INVALID))
 		return FALSE;
 
