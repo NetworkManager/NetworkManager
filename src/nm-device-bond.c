@@ -224,20 +224,6 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-spec_match_list (NMDevice *device, const GSList *specs)
-{
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
-	char *hwaddr;
-	gboolean matched;
-
-	hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len));
-	matched = nm_match_spec_hwaddr (specs, hwaddr);
-	g_free (hwaddr);
-
-	return matched;
-}
-
-static gboolean
 bond_match_config (NMDevice *self, NMConnection *connection)
 {
 	NMSettingBond *s_bond;
@@ -462,7 +448,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;

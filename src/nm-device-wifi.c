@@ -3428,20 +3428,6 @@ get_type_capabilities (NMDevice *dev)
 
 
 static gboolean
-spec_match_list (NMDevice *device, const GSList *specs)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-	char *hwaddr;
-	gboolean matched;
-
-	hwaddr = nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER);
-	matched = nm_match_spec_hwaddr (specs, hwaddr);
-	g_free (hwaddr);
-
-	return matched;
-}
-
-static gboolean
 hwaddr_matches (NMDevice *device,
                 NMConnection *connection,
                 const guint8 *other_hwaddr,
@@ -3779,7 +3765,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
-	parent_class->spec_match_list = spec_match_list;
 	parent_class->hwaddr_matches = hwaddr_matches;
 
 	parent_class->state_changed = device_state_changed;

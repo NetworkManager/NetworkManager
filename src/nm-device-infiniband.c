@@ -333,20 +333,6 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-spec_match_list (NMDevice *device, const GSList *specs)
-{
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
-	char *hwaddr;
-	gboolean matched;
-
-	hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, ARPHRD_INFINIBAND);
-	matched = nm_match_spec_hwaddr (specs, hwaddr);
-	g_free (hwaddr);
-
-	return matched;
-}
-
-static gboolean
 infiniband_match_config (NMDevice *self, NMConnection *connection)
 {
 	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (self);
@@ -476,7 +462,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 	parent_class->hwaddr_matches = hwaddr_matches;
 

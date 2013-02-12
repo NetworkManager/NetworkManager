@@ -284,6 +284,8 @@ static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
 
 static gboolean check_connection_available (NMDevice *device, NMConnection *connection);
 
+static gboolean spec_match_list (NMDevice *device, const GSList *specs);
+
 static void _clear_available_connections (NMDevice *device, gboolean do_signal);
 
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
@@ -4745,6 +4747,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	klass->have_any_ready_slaves = have_any_ready_slaves;
 
+	klass->spec_match_list = spec_match_list;
 	klass->check_connection_available = check_connection_available;
 	klass->hw_is_up = hw_is_up;
 	klass->hw_bring_up = hw_bring_up;
@@ -5468,6 +5471,22 @@ nm_device_spec_match_list (NMDevice *device, const GSList *specs)
 	if (NM_DEVICE_GET_CLASS (device)->spec_match_list)
 		return NM_DEVICE_GET_CLASS (device)->spec_match_list (device, specs);
 	return FALSE;
+}
+
+static gboolean
+spec_match_list (NMDevice *device, const GSList *specs)
+{
+	const guint8 *hwaddr;
+	guint hwaddr_len = 0;
+	char *hwaddr_str;
+	gboolean matched;
+
+	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
+	hwaddr_str = nm_utils_hwaddr_ntoa (hwaddr, nm_utils_hwaddr_type (hwaddr_len));
+	matched = nm_match_spec_hwaddr (specs, hwaddr_str);
+	g_free (hwaddr_str);
+
+	return matched;
 }
 
 static gboolean

@@ -355,21 +355,6 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-spec_match_list (NMDevice *device, const GSList *specs)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
-	char *hwaddr;
-	gboolean matched;
-	int itype = nm_utils_hwaddr_type (priv->hw_addr_len);
-
-	hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, itype);
-	matched = nm_match_spec_hwaddr (specs, hwaddr);
-	g_free (hwaddr);
-
-	return matched;
-}
-
-static gboolean
 vlan_match_config (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
@@ -673,7 +658,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
-	parent_class->spec_match_list = spec_match_list;
 	parent_class->connection_match_config = connection_match_config;
 
 	/* properties */

@@ -1352,17 +1352,11 @@ static gboolean
 spec_match_list (NMDevice *device, const GSList *specs)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
-	char *hwaddr;
-	gboolean matched;
 
-	hwaddr = nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER);
-	matched = nm_match_spec_hwaddr (specs, hwaddr);
-	g_free (hwaddr);
+	if (priv->subchannels && nm_match_spec_s390_subchannels (specs, priv->subchannels))
+		return TRUE;
 
-	if (!matched && priv->subchannels)
-		matched = nm_match_spec_s390_subchannels (specs, priv->subchannels);
-
-	return matched;
+	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->spec_match_list (device, specs);
 }
 
 static NMConnection *
