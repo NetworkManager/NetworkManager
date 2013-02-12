@@ -25,6 +25,9 @@ spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
 settings-spec.xml: $(top_builddir)/tools/generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
 	$(top_builddir)/tools/generate-settings-spec book $@
 
+# Top-level SGML file includes (depends on) settings-spec.xml
+$(DOC_MAIN_SGML_FILE): settings-spec.xml
+
 all: $(GENERATED_FILES)
 
 ####################################
