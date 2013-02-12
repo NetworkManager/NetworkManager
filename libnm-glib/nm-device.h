@@ -63,6 +63,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_STATE "state"
 #define NM_DEVICE_STATE_REASON "state-reason"
 #define NM_DEVICE_ACTIVE_CONNECTION "active-connection"
+#define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 #define NM_DEVICE_VENDOR "vendor"
 #define NM_DEVICE_PRODUCT "product"
 
@@ -115,6 +116,7 @@ NMDHCP6Config *      nm_device_get_dhcp6_config     (NMDevice *device);
 NMDeviceState        nm_device_get_state            (NMDevice *device);
 NMDeviceState        nm_device_get_state_reason     (NMDevice *device, NMDeviceStateReason *reason);
 NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
+const GPtrArray *    nm_device_get_available_connections(NMDevice *device);
 const char *         nm_device_get_product          (NMDevice *device);
 const char *         nm_device_get_vendor           (NMDevice *device);
 
