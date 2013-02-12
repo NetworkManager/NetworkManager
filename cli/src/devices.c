@@ -155,10 +155,12 @@ static NmcOutputField nmc_fields_dev_list_wifi_prop[] = {
 	{"WPA2",       N_("WPA2"),         6, NULL, 0},  /* 3 */
 	{"TKIP",       N_("TKIP"),         6, NULL, 0},  /* 4 */
 	{"CCMP",       N_("CCMP"),         6, NULL, 0},  /* 5 */
+	{"AP",         N_("AP"),           6, NULL, 0},  /* 6 */
+	{"ADHOC",      N_("ADHOC"),        6, NULL, 0},  /* 7 */
 	{NULL,         NULL,               0, NULL, 0}
 };
-#define NMC_FIELDS_DEV_LIST_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP"
-#define NMC_FIELDS_DEV_LIST_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP"
+#define NMC_FIELDS_DEV_LIST_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
+#define NMC_FIELDS_DEV_LIST_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
 
 #if WITH_WIMAX
 /* Available fields for 'dev list' - wimax properties part */
@@ -678,6 +680,8 @@ show_device_info (gpointer data, gpointer user_data)
 				nmc->allowed_fields[3].value = (wcaps & NM_WIFI_DEVICE_CAP_RSN) ? _("yes") : _("no");
 				nmc->allowed_fields[4].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP) ? _("yes") : _("no");
 				nmc->allowed_fields[5].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no");
+				nmc->allowed_fields[6].value = (wcaps & NM_WIFI_DEVICE_CAP_AP) ? _("yes") : _("no");
+				nmc->allowed_fields[7].value = (wcaps & NM_WIFI_DEVICE_CAP_ADHOC) ? _("yes") : _("no");
 
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
