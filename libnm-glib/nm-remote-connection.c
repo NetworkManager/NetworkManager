@@ -33,6 +33,8 @@
 #include "nm-glib-compat.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"
+#define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
+#define NM_REMOTE_CONNECTION_DBUS_PATH "dbus-path"
 
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
 static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
@@ -45,6 +47,8 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNE
 enum {
 	PROP_0,
 	PROP_BUS,
+	PROP_DBUS_CONNECTION,
+	PROP_DBUS_PATH,
 
 	LAST_PROP
 };
@@ -471,8 +475,15 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_BUS:
+	case PROP_DBUS_CONNECTION:
 		/* Construct only */
-		priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		if (g_value_get_boxed (value))
+			priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		break;
+	case PROP_DBUS_PATH:
+		/* Construct only */
+		if (g_value_get_string (value))
+			nm_connection_set_path (NM_CONNECTION (object), g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -515,10 +526,26 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	g_object_class_install_property
 		(object_class, PROP_BUS,
 		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS,
-						 "DBusGConnection",
-						 "DBusGConnection",
-						 DBUS_TYPE_G_CONNECTION,
-						 G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+							 "DBusGConnection",
+							 "DBusGConnection",
+							 DBUS_TYPE_G_CONNECTION,
+							 G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+
+	/* These are needed so _nm_object_create() can create NMRemoteConnections */
+	g_object_class_install_property
+		(object_class, PROP_DBUS_CONNECTION,
+		 g_param_spec_boxed (NM_REMOTE_CONNECTION_DBUS_CONNECTION,
+		                     "DBusGConnection",
+		                     "DBusGConnection",
+		                     DBUS_TYPE_G_CONNECTION,
+		                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_DBUS_PATH,
+		 g_param_spec_string (NM_REMOTE_CONNECTION_DBUS_PATH,
+		                      "Object Path",
+		                      "DBus Object Path",
+		                      NULL,
+		                      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	/**
