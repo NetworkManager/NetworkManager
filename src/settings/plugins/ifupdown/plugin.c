@@ -535,7 +535,7 @@ SCPluginIfupdown_get_unmanaged_specs (NMSystemConfigInterface *config)
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
 	GSList *specs = NULL;
 	GHashTableIter iter;
-	gpointer value;
+	gpointer key, value;
 
 	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
 		return NULL;
@@ -544,13 +544,16 @@ SCPluginIfupdown_get_unmanaged_specs (NMSystemConfigInterface *config)
 	             g_hash_table_size (priv->well_known_ifaces));
 
 	g_hash_table_iter_init (&iter, priv->well_known_ifaces);
-	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		GUdevDevice *device = G_UDEV_DEVICE (value);
+		const char *iface = key;
 		const char *address;
 
 		address = g_udev_device_get_sysfs_attr (device, "address");
 		if (address)
 			specs = g_slist_append (specs, g_strdup_printf ("mac:%s", address));
+		else
+			specs = g_slist_append (specs, g_strdup_printf ("interface-name:%s", iface));
 	}
 	return specs;
 }

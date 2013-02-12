@@ -374,25 +374,29 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 {
 	GSList **list = (GSList **) user_data;
 	gchar *conn_name = (gchar *) key;
-	const char *unmanaged_spec;
+	const char *mac;
+	char *unmanaged_spec;
 	GSList *iter;
 
 	if (is_managed (conn_name))
 		return;
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Checking unmanaged: %s", conn_name);
-	unmanaged_spec = ifnet_get_data (conn_name, "mac");
-	if (!unmanaged_spec)
-		return;
+	mac = ifnet_get_data (conn_name, "mac");
+	if (mac)
+		unmanaged_spec = g_strdup_printf ("mac:%s", mac);
+	else
+		unmanaged_spec = g_strdup_printf ("interface-name:%s", conn_name);
 
 	/* Just return if the unmanaged spec is already in the list */
 	for (iter = *list; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((char *) iter->data, unmanaged_spec))
+		if (!strcmp ((char *) iter->data, unmanaged_spec)) {
+			g_free (unmanaged_spec);
 			return;
+		}
 	}
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Add unmanaged: %s", unmanaged_spec);
-	*list =
-	    g_slist_prepend (*list, g_strdup_printf ("mac:%s", unmanaged_spec));
+	*list = g_slist_prepend (*list, unmanaged_spec);
 }
 
 static GSList *

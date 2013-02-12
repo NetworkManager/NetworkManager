@@ -363,11 +363,24 @@ nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *setting)
 		nm_ip6_config_set_never_default (ip6_config, TRUE);
 }
 
+static gboolean
+nm_match_spec_string (const GSList *specs, const char *match)
+{
+	const GSList *iter;
+
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		if (!strcmp ((const char *) iter->data, match))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 gboolean
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
-	const GSList *iter;
 	char *hwaddr_match, *p;
+	gboolean matched;
 
 	g_return_val_if_fail (hwaddr != NULL, FALSE);
 
@@ -378,15 +391,23 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 		p++;
 	}
 
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((const char *) iter->data, hwaddr_match)) {
-			g_free (hwaddr_match);
-			return TRUE;
-		}
-	}
-
+	matched = nm_match_spec_string (specs, hwaddr_match);
 	g_free (hwaddr_match);
-	return FALSE;
+	return matched;
+}
+
+gboolean
+nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
+{
+	char *iface_match;
+	gboolean matched;
+
+	g_return_val_if_fail (interface_name != NULL, FALSE);
+
+	iface_match = g_strdup_printf ("interface-name:%s", interface_name);
+	matched = nm_match_spec_string (specs, iface_match);
+	g_free (iface_match);
+	return matched;
 }
 
 #define BUFSIZE 10

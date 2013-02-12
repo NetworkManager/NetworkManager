@@ -33,6 +33,7 @@
 #include <nm-connection.h>
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
+#include <nm-utils.h>
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -521,8 +522,9 @@ add_connection (NMSystemConfigInterface *config,
 /* This function returns a list of "unmanaged device specs" which represent
  * a list of devices that NetworkManager should not manage.  Each unmanaged
  * spec item has a specific format starting with a "tag" and followed by
- * tag-specific data.  The only currently specified item is "mac:" followed
- * by the MAC address of the interface NM should not manage.  This function
+ * tag-specific data.  The only currently specified items are "mac:" followed
+ * by the MAC address of the interface NM should not manage, or "interface-name:"
+ * followed by the name of the interface NM should not manage.  This function
  * reads the list of unmanaged devices from wherever the plugin wants to
  * store them and returns that list to NetworkManager.
  */
@@ -533,7 +535,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	GKeyFile *key_file;
 	GSList *specs = NULL;
 	GError *error = NULL;
-	char *str, **macs;
+	char *str, **ids;
 	int i;
 
 	if (!priv->conf_file)
@@ -551,11 +553,11 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	if (!str)
 		goto out;
 
-	macs = g_strsplit (str, ";", -1);
-	for (i = 0; macs[i] != NULL; i++) {
+	ids = g_strsplit (str, ";", -1);
+	for (i = 0; ids[i] != NULL; i++) {
 		/* Verify unmanaged specification and add it to the list */
-		if (strlen (macs[i]) > 4 && !strncmp (macs[i], "mac:", 4) && ether_aton (macs[i] + 4)) {
-			char *p = macs[i];
+		if (!strncmp (ids[i], "mac:", 4) && ether_aton (ids[i] + 4)) {
+			char *p = ids[i];
 
 			/* To accept uppercase MACs in configuration file, we have to
 			 * convert values to lowercase here. Unmanaged MACs in specs are
@@ -566,14 +568,16 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 				p++;
 			}
 
-			specs = g_slist_append (specs, macs[i]);
+			specs = g_slist_append (specs, ids[i]);
+		} else if (!strncmp (ids[i], "interface-name:", 10) && nm_utils_iface_valid_name (ids[i] + 10)) {
+			specs = g_slist_append (specs, ids[i]);
 		} else {
-			g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, macs[i]);
-			g_free (macs[i]);
+			g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, ids[i]);
+			g_free (ids[i]);
 		}
 	}
 
-	g_free (macs); /* Yes, g_free, not g_strfreev because we need the strings in the list */
+	g_free (ids); /* Yes, g_free, not g_strfreev because we need the strings in the list */
 	g_free (str);
 
 out:

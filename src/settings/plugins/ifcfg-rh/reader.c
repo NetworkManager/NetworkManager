@@ -2971,7 +2971,6 @@ make_wireless_setting (shvarFile *ifcfg,
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
 
-			/* A connection can only be unmanaged if we know the MAC address */
 			if (!nm_controlled) {
 				*unmanaged = g_strdup_printf ("mac:%02x:%02x:%02x:%02x:%02x:%02x",
 				                              array->data[0], array->data[1], array->data[2],
@@ -2979,11 +2978,6 @@ make_wireless_setting (shvarFile *ifcfg,
 			}
 
 			g_byte_array_free (array, TRUE);
-		} else if (!nm_controlled) {
-			/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
-			 * the user that the device cannot be unmanaged.
-			 */
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
 		}
 	} else {
 		g_object_unref (s_wireless);
@@ -3296,7 +3290,6 @@ make_wired_setting (shvarFile *ifcfg,
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 
-			/* A connection can only be unmanaged if we know the MAC address */
 			if (!nm_controlled) {
 				*unmanaged = g_strdup_printf ("mac:%02x:%02x:%02x:%02x:%02x:%02x",
 				                              mac->data[0], mac->data[1], mac->data[2],
@@ -3394,13 +3387,6 @@ make_wired_setting (shvarFile *ifcfg,
 		g_strfreev (options);
 	}
 	g_free (value);
-
-	if (!nm_controlled && !*unmanaged) {
-		/* If NM_CONTROLLED=no but there wasn't a MAC address or z/VM
-		 * subchannels, notify the user that the device cannot be unmanaged.
-		 */
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR or SUBCHANNELS was missing; device will be managed");
-	}
 
 	mac = NULL;
 	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &mac, error)) {
@@ -3542,7 +3528,6 @@ make_infiniband_setting (shvarFile *ifcfg,
 		if (mac) {
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 
-			/* A connection can only be unmanaged if we know the MAC address */
 			if (!nm_controlled) {
 				char *mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_INFINIBAND);
 				*unmanaged = g_strdup_printf ("mac:%s", mac_str);
@@ -3560,13 +3545,6 @@ make_infiniband_setting (shvarFile *ifcfg,
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected", NULL);
 	else
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
-
-	if (!nm_controlled && !*unmanaged) {
-		/* If NM_CONTROLLED=no but there wasn't a MAC address, notify
-		   the user that the device cannot be unmanaged.
-		 */
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but HWADDR was missing; device will be managed");
-	}
 
 	value = svGetValue(ifcfg, "CARRIER_DETECT", FALSE);
 	if (!value || !strlen (value)) {
@@ -4189,6 +4167,25 @@ vlan_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+static void
+ensure_unmanaged (shvarFile *ifcfg,
+                  char **unmanaged)
+{
+	char *value;
+
+	if (*unmanaged)
+		return;
+
+	value = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (value) {
+		*unmanaged = g_strdup_printf ("interface-name:%s", value);
+		g_free (value);
+		return;
+	}
+
+	PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
+}
+
 NMConnection *
 connection_from_file (const char *filename,
                       const char *network_file,  /* for unit tests only */
@@ -4325,10 +4322,8 @@ connection_from_file (const char *filename,
 		             "Unknown connection type '%s'", type);
 	}
 
-	if (nm_controlled) {
-		g_free (*unmanaged);
-		*unmanaged = NULL;
-	}
+	if (!nm_controlled)
+		ensure_unmanaged (parsed, unmanaged);
 
 	g_free (type);
 

@@ -5504,6 +5504,9 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	matched = nm_match_spec_hwaddr (specs, hwaddr_str);
 	g_free (hwaddr_str);
 
+	if (!matched)
+		matched = nm_match_spec_interface_name (specs, nm_device_get_iface (device));
+
 	return matched;
 }
 

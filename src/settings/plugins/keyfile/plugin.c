@@ -34,6 +34,7 @@
 #include <nm-connection.h>
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
+#include <nm-utils.h>
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -455,7 +456,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
 		for (i = 0; udis[i] != NULL; i++) {
 			/* Verify unmanaged specification and add it to the list */
-			if (strlen (udis[i]) > 4 && !strncmp (udis[i], "mac:", 4) && ether_aton (udis[i] + 4)) {
+			if (!strncmp (udis[i], "mac:", 4) && ether_aton (udis[i] + 4)) {
 				char *p = udis[i];
 
 				/* To accept uppercase MACs in configuration file, we have to convert values to lowercase here.
@@ -464,6 +465,8 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 					*p = g_ascii_tolower (*p);
 					p++;
 				}
+				specs = g_slist_append (specs, udis[i]);
+			} else if (!strncmp (udis[i], "interface-name:", 10) && nm_utils_iface_valid_name (udis[i] + 10)) {
 				specs = g_slist_append (specs, udis[i]);
 			} else {
 				g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);

@@ -41,6 +41,7 @@ void nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *set
 
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
+gboolean nm_match_spec_interface_name (const GSList *specs, const char *interface_name);
 
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
