@@ -2458,7 +2458,15 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
 		cleanup_association_attempt (self, FALSE);
+
+		/* If the device is already in UNAVAILABLE state then the state change
+		 * is a NOP and the interface won't be re-acquired in the device state
+		 * change handler.  So ensure we have a new one here so that we're
+		 * ready if the supplicant comes back.
+		 */
 		supplicant_interface_release (self);
+		supplicant_interface_acquire (self);
+
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
