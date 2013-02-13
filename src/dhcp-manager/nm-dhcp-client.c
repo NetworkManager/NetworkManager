@@ -323,6 +323,32 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	return priv->pid ? TRUE : FALSE;
 }
 
+/* uuid_parse does not work for machine-id, so we use our own converter */
+static gboolean
+machine_id_parse (const char *in, uuid_t uu)
+{
+	const char *cp;
+	int i;
+	char buf[3];
+
+	g_return_val_if_fail (in != NULL, FALSE);
+	g_return_val_if_fail (strlen (in) == 32, FALSE);
+
+	for (i = 0; i < 32; i++, cp++) {
+		if (!g_ascii_isxdigit (in[i]))
+			return FALSE;
+	}
+
+	buf[2] = 0;
+	cp = in;
+	for (i = 0; i < 16; i++) {
+		buf[0] = *cp++;
+		buf[1] = *cp++;
+		uu[i] = ((unsigned char) strtoul (buf, NULL, 16)) & 0xFF;
+	}
+	return TRUE;
+}
+
 static GByteArray *
 generate_duid_from_machine_id (void)
 {
@@ -334,7 +360,7 @@ generate_duid_from_machine_id (void)
 	gsize sumlen = sizeof (buffer);
 	const guint16 duid_type = g_htons (4);
 	uuid_t uuid;
-	int ret;
+	gboolean success;
 
 	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
 	 * where our configured SYSCONFDIR is.
@@ -348,10 +374,10 @@ generate_duid_from_machine_id (void)
 	}
 
 	contents = g_strstrip (contents);
-	ret = uuid_parse (contents, uuid);
+	success = machine_id_parse (contents, uuid);
 	g_free (contents);
 
-	if (ret != 0) {
+	if (!success) {
 		nm_log_warn (LOGD_DHCP6, "Failed to parse " SYSCONFDIR "/machine-id to generate DHCPv6 DUID.");
 		return NULL;
 	}
