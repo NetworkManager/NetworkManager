@@ -455,8 +455,9 @@ dhclient_start (NMDHCPClient *client,
 	GError *error = NULL;
 	const char *iface, *uuid, *system_bus_address;
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
-	gboolean ipv6;
+	gboolean ipv6, success;
 	guint log_domain;
+	char *escaped;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
@@ -495,6 +496,20 @@ dhclient_start (NMDHCPClient *client,
 	if (!priv->lease_file) {
 		nm_log_warn (log_domain, "(%s): not enough memory for dhclient options.", iface);
 		return -1;
+	}
+
+	/* Save the DUID to the leasefile dhclient will actually use */
+	if (ipv6) {
+		escaped = nm_dhcp_dhclient_escape_duid (duid);
+		success = nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error);
+		g_free (escaped);
+		if (!success) {
+			nm_log_warn (log_domain, "(%s): failed to save DUID to %s: (%d) %s.",
+			             iface, priv->lease_file,
+			             error ? error->code : -1,
+			             error && error->message ? error->message : "(unknown)");
+			return -1;
+		}
 	}
 
 	argv = g_ptr_array_new ();
