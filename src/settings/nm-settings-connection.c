@@ -1734,14 +1734,9 @@ static void
 nm_settings_connection_init (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	static guint32 dbus_counter = 0;
-	char *dbus_path;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
-	dbus_path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, dbus_counter++);
-	nm_connection_set_path (NM_CONNECTION (self), dbus_path);
-	g_free (dbus_path);
 	priv->visible = FALSE;
 
 	priv->session_monitor = nm_session_monitor_get ();
