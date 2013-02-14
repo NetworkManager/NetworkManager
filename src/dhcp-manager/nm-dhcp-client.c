@@ -405,23 +405,6 @@ generate_duid_from_machine_id (void)
 	return duid;
 }
 
-static GByteArray *
-get_duid (NMDHCPClient *self)
-{
-	static GByteArray *duid = NULL;
-	GByteArray *copy = NULL;
-
-	if (G_UNLIKELY (duid == NULL))
-		duid = generate_duid_from_machine_id ();
-
-	if (G_LIKELY (duid)) {
-		copy = g_byte_array_sized_new (duid->len);
-		g_byte_array_append (copy, duid->data, duid->len);
-	}
-
-	return copy;
-}
-
 static char *
 escape_duid (const GByteArray *duid)
 {
@@ -437,6 +420,31 @@ escape_duid (const GByteArray *duid)
 		g_string_append_printf (s, "%02x", duid->data[i++]);
 	}
 	return g_string_free (s, FALSE);
+}
+
+static GByteArray *
+get_duid (NMDHCPClient *self)
+{
+	static GByteArray *duid = NULL;
+	GByteArray *copy = NULL;
+	char *escaped;
+
+	if (G_UNLIKELY (duid == NULL)) {
+		duid = generate_duid_from_machine_id ();
+
+		if (nm_logging_level_enabled (LOGL_DEBUG)) {
+			escaped = escape_duid (duid);
+			nm_log_dbg (LOGD_DHCP6, "Generated DUID from machine-id: %s", escaped);
+			g_free (escaped);
+		}
+	}
+
+	if (G_LIKELY (duid)) {
+		copy = g_byte_array_sized_new (duid->len);
+		g_byte_array_append (copy, duid->data, duid->len);
+	}
+
+	return copy;
 }
 
 gboolean
