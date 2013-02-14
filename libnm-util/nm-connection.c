@@ -1658,8 +1658,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PATH:
-		if (g_value_get_string (value))
-			nm_connection_set_path (connection, g_value_get_string (value));
+		nm_connection_set_path (connection, g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

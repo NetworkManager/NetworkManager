@@ -467,6 +467,43 @@ nm_remote_connection_init (NMRemoteConnection *self)
 {
 }
 
+static GObject *
+constructor (GType type, guint n_construct_properties,
+             GObjectConstructParam *construct_properties)
+{
+	static GParamSpec *nm_connection_path = NULL;
+	static GParamSpec *nm_remote_connection_dbus_path = NULL;
+	int i, path_index = -1, dbus_path_index = -1;
+
+	if (!nm_connection_path) {
+		nm_connection_path =
+			g_object_class_find_property (g_type_class_peek (NM_TYPE_CONNECTION),
+			                              NM_CONNECTION_PATH);
+		nm_remote_connection_dbus_path =
+			g_object_class_find_property (g_type_class_peek (NM_TYPE_REMOTE_CONNECTION),
+			                              NM_REMOTE_CONNECTION_DBUS_PATH);
+	}
+
+	/* Find the two properties */
+	for (i = 0; i < n_construct_properties; i++) {
+		if (construct_properties[i].pspec == nm_connection_path)
+			path_index = i;
+		else if (construct_properties[i].pspec == nm_remote_connection_dbus_path)
+			dbus_path_index = i;
+	}
+	g_assert (path_index != -1 && dbus_path_index != -1);
+
+	/* If NMRemoteConnection:dbus-path is set, and NMConnection:path
+	 * is not, then copy the value of the former to the latter.
+	 */
+	if (g_value_get_string (construct_properties[dbus_path_index].value) &&
+	    !g_value_get_string (construct_properties[path_index].value))
+		construct_properties[path_index].value = construct_properties[dbus_path_index].value;
+
+	return G_OBJECT_CLASS (nm_remote_connection_parent_class)->
+		constructor (type, n_construct_properties, construct_properties);
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -481,9 +518,7 @@ set_property (GObject *object, guint prop_id,
 			priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
 		break;
 	case PROP_DBUS_PATH:
-		/* Construct only */
-		if (g_value_get_string (value))
-			nm_connection_set_path (NM_CONNECTION (object), g_value_get_string (value));
+		/* Don't need to do anything; see constructor(). */
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -518,6 +553,7 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	g_type_class_add_private (object_class, sizeof (NMRemoteConnectionPrivate));
 
 	/* virtual methods */
+	object_class->constructor = constructor;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->constructed = constructed;
