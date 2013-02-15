@@ -530,4 +530,6 @@ https://bugzilla.gnome.org/ \(em product \fINetworkManager\fP.
 .BR nm\-tool (1),
 .BR nm\-online (1),
 .BR NetworkManager (8),
-.BR nm\-settings (5).
+.BR nm\-settings (5),
+.BR nm\applet (1),
+.BR nm\-connection\-editor (1).
