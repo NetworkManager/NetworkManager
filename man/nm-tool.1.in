@@ -14,4 +14,6 @@ The \fInm-tool\fP utility provides information about NetworkManager, device,
 and wireless networks.
 .SH SEE ALSO
 .BR NetworkManager (8),
+.BR nm\-applet (1),
+.BR nm\-connection\-editor (1).
 

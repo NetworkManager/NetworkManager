@@ -151,5 +151,7 @@ which logs all PPP and PPTP frames and client/server exchanges.
 .BR nm\-online (1),
 .BR nmcli (1),
 .BR NetworkManager.conf (5),
-.BR nm\-settings (5).
+.BR nm\-settings (5),
+.BR nm\-applet (1),
+.BR nm\-connection\-editor (1).
 
