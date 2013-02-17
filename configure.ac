@@ -669,6 +669,7 @@ callouts/tests/Makefile
 tools/Makefile
 cli/Makefile
 cli/src/Makefile
+cli/completion/Makefile
 test/Makefile
 initscript/RedHat/NetworkManager
 initscript/Debian/NetworkManager
