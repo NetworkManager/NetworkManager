@@ -340,7 +340,13 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_CARRIER_DETECT,
 		 g_param_spec_string (NM_SETTING_INFINIBAND_CARRIER_DETECT,
 		                      "Carrier-detect",
-		                      "Controls whether device carrier affects this connection.",
+		                      "Controls whether device carrier affects this connection. "
+		                      "Possible values are 'no', meaning the connection completely "
+		                      "ignores carrier; 'yes', meaning the connection can only be "
+		                      "activated if carrier is present, and will be deactivated "
+		                      "automatically if carrier is lost; and 'on-activate', meaning "
+		                      "the connection can only be activated if carrier is present, "
+		                      "but will not be deactivated if carrier is lost.",
 		                      "yes",
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }
