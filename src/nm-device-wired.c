@@ -124,7 +124,7 @@ set_carrier (NMDeviceWired *self,
              gboolean carrier)
 {
 	NMDevice *device = NM_DEVICE (self);
-	NMDeviceWiredPrivate *priv;
+	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
 	guint32 caps;
 
 	if (priv->carrier == carrier)
