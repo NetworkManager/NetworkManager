@@ -76,6 +76,7 @@ static NmcOutputField nmc_fields_setting_wired[] = {
 	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS, 20),        /* 9 */
 	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE, 15),            /* 10 */
 	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS, 20),            /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRED_CARRIER_DETECT, 13),          /* 12 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
@@ -89,7 +90,8 @@ static NmcOutputField nmc_fields_setting_wired[] = {
                                          NM_SETTING_WIRED_MTU","\
                                          NM_SETTING_WIRED_S390_SUBCHANNELS","\
                                          NM_SETTING_WIRED_S390_NETTYPE","\
-                                         NM_SETTING_WIRED_S390_OPTIONS
+                                         NM_SETTING_WIRED_S390_OPTIONS","\
+                                         NM_SETTING_WIRED_CARRIER_DETECT
 #define NMC_FIELDS_SETTING_WIRED_COMMON  NMC_FIELDS_SETTING_WIRED_ALL
 
 /* Available fields for NM_SETTING_802_1X_SETTING_NAME */
@@ -510,12 +512,14 @@ static NmcOutputField nmc_fields_setting_infiniband[] = {
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MAC_ADDRESS, 61),             /* 1 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MTU, 6),                      /* 2 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_TRANSPORT_MODE, 12),          /* 3 */
+	SETTING_FIELD (NM_SETTING_INFINIBAND_CARRIER_DETECT, 13),          /* 4 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_INFINIBAND_ALL     "name"","\
                                               NM_SETTING_INFINIBAND_MAC_ADDRESS","\
                                               NM_SETTING_INFINIBAND_MTU","\
-                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE
+                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE","\
+                                              NM_SETTING_INFINIBAND_CARRIER_DETECT
 #define NMC_FIELDS_SETTING_INFINIBAND_COMMON  NMC_FIELDS_SETTING_INFINIBAND_ALL
 
 /* Available fields for NM_SETTING_BOND_SETTING_NAME */
@@ -539,6 +543,7 @@ static NmcOutputField nmc_fields_setting_vlan[] = {
 	SETTING_FIELD (NM_SETTING_VLAN_FLAGS, 45),                         /* 4 */
 	SETTING_FIELD (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, 22),          /* 5 */
 	SETTING_FIELD (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, 22),           /* 6 */
+	SETTING_FIELD (NM_SETTING_VLAN_CARRIER_DETECT, 13),                /* 7 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_VLAN_ALL     "name"","\
@@ -547,7 +552,8 @@ static NmcOutputField nmc_fields_setting_vlan[] = {
                                         NM_SETTING_VLAN_ID","\
                                         NM_SETTING_VLAN_FLAGS","\
                                         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP","\
-                                        NM_SETTING_VLAN_EGRESS_PRIORITY_MAP
+                                        NM_SETTING_VLAN_EGRESS_PRIORITY_MAP","\
+                                        NM_SETTING_VLAN_CARRIER_DETECT
 #define NMC_FIELDS_SETTING_VLAN_COMMON  NMC_FIELDS_SETTING_VLAN_ALL
 
 /* Available fields for NM_SETTING_BRIDGE_SETTING_NAME */
@@ -946,6 +952,7 @@ setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
 	nmc->allowed_fields[9].value = s390_channels_s->str;
 	nmc->allowed_fields[10].value = nm_setting_wired_get_s390_nettype (s_wired);
 	nmc->allowed_fields[11].value = s390_options_s->str;
+	nmc->allowed_fields[12].value = nm_setting_wired_get_carrier_detect (s_wired);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -1903,6 +1910,7 @@ setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc)
 	nmc->allowed_fields[1].value = mac_str;
 	nmc->allowed_fields[2].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
 	nmc->allowed_fields[3].value = nm_setting_infiniband_get_transport_mode (s_infiniband);
+	nmc->allowed_fields[4].value = nm_setting_infiniband_get_carrier_detect (s_infiniband);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -1977,6 +1985,7 @@ setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
 	nmc->allowed_fields[4].value = vlan_flags_str;
 	nmc->allowed_fields[5].value = vlan_ingress_prio_str;
 	nmc->allowed_fields[6].value = vlan_egress_prio_str;
+	nmc->allowed_fields[7].value = nm_setting_vlan_get_carrier_detect (s_vlan);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
