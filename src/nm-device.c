@@ -339,7 +339,7 @@ update_accept_ra_save (NMDevice *self)
 	if (!nm_utils_get_proc_sys_net_value_with_bounds (priv->ip6_accept_ra_path,
 	                                                  ip_iface,
 	                                                  &priv->ip6_accept_ra_save,
-	                                                  0, 1)) {
+	                                                  0, 2)) {
 		g_free (priv->ip6_accept_ra_path);
 		priv->ip6_accept_ra_path = NULL;
 	}
