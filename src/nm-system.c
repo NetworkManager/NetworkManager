@@ -1167,7 +1167,7 @@ add_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 	g_return_val_if_fail (route != NULL, -ENOMEM);
 
 	/* Add the new default route */
-	err = nm_netlink_route6_add (route, &in6addr_any, 0, gw, NLM_F_CREATE);
+	err = nm_netlink_route6_add (route, &in6addr_any, 0, gw, NLM_F_CREATE | NLM_F_REPLACE);
 	if (err == -NLE_EXIST)
 		err = 0;
 
