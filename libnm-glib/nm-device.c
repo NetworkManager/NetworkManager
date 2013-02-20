@@ -738,6 +738,8 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * NMDevice:available-connections:
 	 *
 	 * The available connections (#NMRemoteConnection) of the device
+	 *
+	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
@@ -1296,6 +1298,8 @@ nm_device_get_active_connection (NMDevice *device)
  * Returns: (element-type NMClient.RemoteConnection): the #GPtrArray
  * containing #NMRemoteConnections. This is the internal copy used by
  * the connection, and must not be modified.
+ *
+ * Since: 0.9.8
  **/
 const GPtrArray *
 nm_device_get_available_connections (NMDevice *device)

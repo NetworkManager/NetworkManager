@@ -356,6 +356,7 @@ request_scan_cb (DBusGProxy *proxy,
  * instructs NM to perform scanning. Use nm_device_wifi_get_access_points()
  * to get available access points.
  *
+ * Since: 0.9.8
  **/
 void
 nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
