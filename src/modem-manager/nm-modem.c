@@ -55,6 +55,7 @@ typedef struct {
 	char *path;
 	char *control_port;
 	char *data_port;
+	char *ppp_iface;
 	guint32 ip_method;
 
 	NMPPPManager *ppp_manager;
@@ -146,8 +147,8 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	gboolean dns_workaround = FALSE;
 
 	/* Notify about the new data port to use */
-	g_free (priv->data_port);
-	priv->data_port = g_strdup (iface);
+	g_free (priv->ppp_iface);
+	priv->ppp_iface = g_strdup (iface);
 	g_object_notify (G_OBJECT (self), NM_MODEM_DATA_PORT);
 
 	/* Work around a PPP bug (#1732) which causes many mobile broadband
@@ -561,6 +562,9 @@ deactivate (NMModem *self, NMDevice *device)
 		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
 		break;
 	}
+
+	g_free (priv->ppp_iface);
+	priv->ppp_iface = NULL;
 }
 
 /*****************************************************************************/
@@ -655,7 +659,12 @@ nm_modem_get_data_port (NMModem *self)
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
-	return NM_MODEM_GET_PRIVATE (self)->data_port;
+	/* The ppp_iface takes precedence over the data interface when PPP is used,
+	 * since data_iface is the TTY over which PPP is run, and that TTY can't
+	 * do IP.  The caller really wants the thing that's doing IP.
+	 */
+	return NM_MODEM_GET_PRIVATE (self)->ppp_iface ?
+		NM_MODEM_GET_PRIVATE (self)->ppp_iface : NM_MODEM_GET_PRIVATE (self)->data_port;
 }
 
 /*****************************************************************************/
@@ -712,7 +721,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->control_port);
 		break;
 	case PROP_DATA_PORT:
-		g_value_set_string (value, priv->data_port);
+		g_value_set_string (value, nm_modem_get_data_port (NM_MODEM (object)));
 		break;
 	case PROP_UID:
 		g_value_set_string (value, priv->uid);
