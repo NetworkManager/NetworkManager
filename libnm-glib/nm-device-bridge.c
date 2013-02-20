@@ -66,6 +66,8 @@ enum {
  * Registers an error quark for #NMDeviceBridge if necessary.
  *
  * Returns: the error quark used for #NMDeviceBridge errors.
+ *
+ * Since: 0.9.8
  **/
 GQuark
 nm_device_bridge_error_quark (void)
@@ -85,6 +87,8 @@ nm_device_bridge_error_quark (void)
  * Creates a new #NMDeviceBridge.
  *
  * Returns: (transfer full): a new device
+ *
+ * Since: 0.9.8
  **/
 GObject *
 nm_device_bridge_new (DBusGConnection *connection, const char *path)
@@ -110,6 +114,8 @@ nm_device_bridge_new (DBusGConnection *connection, const char *path)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Since: 0.9.8
  **/
 const char *
 nm_device_bridge_get_hw_address (NMDeviceBridge *device)
@@ -127,6 +133,8 @@ nm_device_bridge_get_hw_address (NMDeviceBridge *device)
  * Whether the device has carrier.
  *
  * Returns: %TRUE if the device has carrier
+ *
+ * Since: 0.9.8
  **/
 gboolean
 nm_device_bridge_get_carrier (NMDeviceBridge *device)
@@ -146,6 +154,8 @@ nm_device_bridge_get_carrier (NMDeviceBridge *device)
  * Returns: (element-type NMClient.Device): the #GPtrArray containing
  * #NMDevice<!-- -->s that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
+ *
+ * Since: 0.9.8
  **/
 const GPtrArray *
 nm_device_bridge_get_slaves (NMDeviceBridge *device)
@@ -309,6 +319,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 	 * NMDeviceBridge:hw-address:
 	 *
 	 * The hardware (MAC) address of the device.
+	 *
+	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
@@ -322,6 +334,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 	 * NMDeviceBridge:carrier:
 	 *
 	 * Whether the device has carrier.
+	 *
+	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
@@ -335,6 +349,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 	 * NMDeviceBridge:slaves:
 	 *
 	 * The devices (#NMDevice) slaved to the bridge device.
+	 *
+	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,

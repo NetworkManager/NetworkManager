@@ -1056,6 +1056,8 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
  * Gets NetworkManager current logging level and domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Since: 0.9.8
  **/
 gboolean
 nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
@@ -1095,6 +1097,8 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
  * Sets NetworkManager logging level and/or domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
+ *
+ * Since: 0.9.8
  **/
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
