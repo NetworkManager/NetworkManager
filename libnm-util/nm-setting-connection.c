@@ -541,6 +541,8 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
  * @setting: the #NMSettingConnection
  *
  * Returns: the number of configured secondary connection UUIDs
+ *
+ * Since: 0.9.8
  **/
 guint32
 nm_setting_connection_get_num_secondaries (NMSettingConnection *setting)
@@ -556,6 +558,8 @@ nm_setting_connection_get_num_secondaries (NMSettingConnection *setting)
  * @idx: the zero-based index of the secondary connection UUID entry
  *
  * Returns: the secondary connection UUID at index @idx
+ *
+ * Since: 0.9.8
  **/
 const char *
 nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
@@ -579,6 +583,8 @@ nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
  *
  * Returns: %TRUE if the secondary connection UUID was added; %FALSE if the UUID
  * was already present
+ *
+ * Since: 0.9.8
  **/
 gboolean
 nm_setting_connection_add_secondary (NMSettingConnection *setting,
@@ -607,6 +613,8 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
  * @idx: index number of the secondary connection UUID
  *
  * Removes the secondary coonnection UUID at index @idx.
+ *
+ * Since: 0.9.8
  **/
 void
 nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 idx)
@@ -1134,6 +1142,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * List of connection UUIDs that should be activated when the base connection
 	 * itself is activated.
+	 *
+	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECONDARIES,

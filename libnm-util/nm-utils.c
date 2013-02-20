@@ -1215,6 +1215,8 @@ device_supports_ap_ciphers (guint32 dev_caps,
  *
  * Returns: TRUE if the device capabilities are compatible with the desired
  * @type, FALSE if they are not.
+ *
+ * Since: 0.9.8
  **/
 gboolean
 nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
@@ -1418,6 +1420,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
  * Checks if @key is a valid WEP key
  *
  * Returns: %TRUE if @key is a WEP key, %FALSE if not
+ *
+ * Since: 0.9.8
  */
 gboolean
 nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
@@ -1459,6 +1463,8 @@ nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
  * Checks if @psk is a valid WPA PSK
  *
  * Returns: %TRUE if @psk is a WPA PSK, %FALSE if not
+ *
+ * Since: 0.9.8
  */
 gboolean
 nm_utils_wpa_psk_valid (const char *psk)
@@ -2676,6 +2682,8 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
  * function in net/core/dev.c.
  *
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
+ *
+ * Since: 0.9.8
  */
 gboolean
 nm_utils_iface_valid_name (const char *name)
@@ -2707,6 +2715,8 @@ nm_utils_iface_valid_name (const char *name)
  * Checks if @str is a UUID
  *
  * Returns: %TRUE if @str is a UUID, %FALSE if not
+ *
+ * Since: 0.9.8
  */
 gboolean
 nm_utils_is_uuid (const char *str)
