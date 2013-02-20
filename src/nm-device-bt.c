@@ -1150,13 +1150,12 @@ mm_name_owner_changed (NMDBusManager *dbus_mgr,
 	gboolean new_owner_good;
 
 	/* Can't handle the signal if its not from the modem service */
-	if (strcmp (MM_OLD_DBUS_SERVICE, name) != 0)
-		return;
-
+	if (   strcmp (MM_OLD_DBUS_SERVICE, name) != 0
 #if WITH_MODEM_MANAGER_1
-	if (strcmp (MM_NEW_DBUS_SERVICE, name) != 0)
-		return;
+	    && strcmp (MM_NEW_DBUS_SERVICE, name) != 0
 #endif
+	    )
+		return;
 
 	old_owner_good = (old_owner && strlen (old_owner));
 	new_owner_good = (new_owner && strlen (new_owner));
