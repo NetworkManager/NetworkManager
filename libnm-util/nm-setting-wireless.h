@@ -90,6 +90,8 @@ GQuark nm_setting_wireless_error_quark (void);
  *
  * Indicates AP/master mode where the wireless device is started as an access
  * point/hotspot.
+ *
+ * Since: 0.9.8
  */
 #define NM_SETTING_WIRELESS_MODE_AP     "ap"
 

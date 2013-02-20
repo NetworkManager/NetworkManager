@@ -137,6 +137,8 @@ nm_setting_ip6_config_get_method (NMSettingIP6Config *setting)
  * property.
  *
  * Returns: the configured hostname to send to the DHCP server
+ *
+ * Since: 0.9.8
  **/
 const char *
 nm_setting_ip6_config_get_dhcp_hostname (NMSettingIP6Config *setting)
@@ -903,6 +905,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:dhcp-hostname:
 	 *
 	 * The specified name will be sent to the DHCP server when acquiring a lease.
+	 *
+	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,
