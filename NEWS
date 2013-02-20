@@ -35,9 +35,18 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * libnl 3.2.7 or later is required
 * The internal crashdump handling has been removed
 * A DHCPv6 DUID is now generated from /etc/machine-id and sent to the DHCPv6 server
+    if not overridden by an administrator-defined DUID
 * Bond interfaces now wait for a ready slave before starting automatic IP configuration
 * The kernel WiFi rfkill state is now synced to the user-requested WirelessEnabled
     state at startup
+* Fix issue with duplicate ActiveConnection objects if a connection was reactivated
+    on a device
+* Fix race when looking up hostname and concurrently updating DNS
+* Always load the 'keyfile' settings plugin, even if no plugins are specified
+* Add a new WiFi device ADHOC capability; not all devices/drivers support IBSS mode
+* Fix an issue with quick wpa_supplicant restarts not being noticed
+* Expose the AvailableConnections property through libnm-glib
+* Fix usage of libnm-glib's NMRemoteConnection from GObject Introspection bindings
 
 
 ==============================================
