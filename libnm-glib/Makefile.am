@@ -182,7 +182,7 @@ libnm_glib_test_la_CFLAGS = \
 	-DLIBNM_GLIB_TEST
 
 libnm_glib_test_la_SOURCES = \
-	$(li0bnminclude_HEADERS) \
+	$(libnminclude_HEADERS) \
 	$(libnm_glib_la_SOURCES)
 
 libnm_glib_test_la_LIBADD = \
