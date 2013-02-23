@@ -1008,7 +1008,7 @@ pk_add_cb (NMAuthChain *chain,
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");
 	} else {
 		/* Authorized */
@@ -1232,7 +1232,7 @@ pk_hostname_cb (NMAuthChain *chain,
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");
 	} else {
 		/* Set the hostname in all plugins */

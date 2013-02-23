@@ -34,7 +34,6 @@ typedef enum {
 	NM_SETTINGS_ERROR_SECRETS_REQUEST_CANCELED,    /*< nick=SecretsRequestCanceled >*/
 	NM_SETTINGS_ERROR_PERMISSION_DENIED,           /*< nick=PermissionDenied >*/
 	NM_SETTINGS_ERROR_INVALID_SETTING,             /*< nick=InvalidSetting >*/
-	NM_SETTINGS_ERROR_NOT_PRIVILEGED,              /*< nick=NotPrivileged >*/
 	NM_SETTINGS_ERROR_ADD_NOT_SUPPORTED,           /*< nick=AddNotSupported >*/
 	NM_SETTINGS_ERROR_UPDATE_NOT_SUPPORTED,        /*< nick=UpdateNotSupported >*/
 	NM_SETTINGS_ERROR_DELETE_NOT_SUPPORTED,        /*< nick=DeleteNotSupported >*/
