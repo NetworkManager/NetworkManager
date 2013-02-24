@@ -551,6 +551,7 @@ finalize (GObject *object)
 	g_free (priv->port);
 	g_free (priv->duplex);
 	g_free (priv->s390_nettype);
+	g_free (priv->carrier_detect);
 
 	g_hash_table_destroy (priv->s390_options);
 

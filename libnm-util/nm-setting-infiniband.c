@@ -202,6 +202,7 @@ finalize (GObject *object)
 {
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
 
+	g_free (priv->carrier_detect);
 	g_free (priv->transport_mode);
 	if (priv->mac_address)
 		g_byte_array_free (priv->mac_address, TRUE);

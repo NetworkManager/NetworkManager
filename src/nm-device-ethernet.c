@@ -450,6 +450,7 @@ update_permanent_hw_address (NMDevice *dev)
 		g_object_notify (G_OBJECT (dev), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
 	}
 
+	g_free (epaddr);
 	close (fd);
 }
 

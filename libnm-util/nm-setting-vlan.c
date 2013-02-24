@@ -667,6 +667,7 @@ finalize (GObject *object)
 
 	g_free (priv->iface_name);
 	g_free (priv->parent);
+	g_free (priv->carrier_detect);
 	nm_utils_slist_free (priv->ingress_priority_map, g_free);
 	nm_utils_slist_free (priv->egress_priority_map, g_free);
 }

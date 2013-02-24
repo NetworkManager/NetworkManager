@@ -4517,6 +4517,7 @@ finalize (GObject *object)
 		g_object_unref (priv->fw_manager);
 
 	g_free (priv->udi);
+	g_free (priv->path);
 	g_free (priv->iface);
 	g_free (priv->ip_iface);
 	g_free (priv->driver);

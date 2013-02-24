@@ -216,6 +216,7 @@ finalize (GObject *object)
 
 	if (priv->bdaddr)
 		g_byte_array_free (priv->bdaddr, TRUE);
+	g_free (priv->type);
 
 	G_OBJECT_CLASS (nm_setting_bluetooth_parent_class)->finalize (object);
 }

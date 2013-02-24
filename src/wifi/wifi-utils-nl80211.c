@@ -164,6 +164,7 @@ wifi_nl80211_deinit (WifiData *parent)
 		nl_socket_free (nl80211->nl_sock);
 	if (nl80211->nl_cb)
 		nl_cb_put (nl80211->nl_cb);
+	g_free (nl80211->freqs);
 }
 
 struct nl80211_iface_info {
