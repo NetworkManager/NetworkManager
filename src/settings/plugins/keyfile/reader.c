@@ -41,6 +41,7 @@
 #include <string.h>
 
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 #include "nm-system-config-interface.h"
 #include "reader.h"
 #include "common.h"
@@ -375,8 +376,10 @@ ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfi
 	GPtrArray *list;
 	int i;
 
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
 	list = g_ptr_array_new_with_free_func (
 		ipv6 ? (GDestroyNotify) g_value_array_free : (GDestroyNotify) g_array_unref);
+	G_GNUC_END_IGNORE_DEPRECATIONS;
 
 	for (i = -1; i < 1000; i++) {
 		const char **key_basename;

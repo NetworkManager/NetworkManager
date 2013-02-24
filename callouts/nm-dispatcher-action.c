@@ -38,6 +38,7 @@
 
 #include "nm-dispatcher-action.h"
 #include "nm-dispatcher-utils.h"
+#include "nm-glib-compat.h"
 
 #define NMD_SCRIPT_DIR NMCONFDIR "/dispatcher.d"
 

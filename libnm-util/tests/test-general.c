@@ -39,6 +39,7 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-serial.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)

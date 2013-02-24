@@ -29,6 +29,7 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 static GSList *requests = NULL;
 

@@ -31,6 +31,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 G_DEFINE_TYPE (NMModemGeneric, nm_modem_generic, NM_TYPE_MODEM)
 

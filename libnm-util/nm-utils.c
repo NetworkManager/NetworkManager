@@ -42,6 +42,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "NetworkManager.h"
+#include "nm-glib-compat.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
