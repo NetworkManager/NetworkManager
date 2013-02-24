@@ -75,6 +75,8 @@ nm_policy_hosts_clean_etc_hosts (void)
 	}
 
 	new = nm_policy_get_etc_hosts (contents, contents_len);
+	g_free (contents);
+
 	if (new && new->len) {
 		nm_log_dbg (LOGD_DNS, "Cleaning leftovers from /etc/hosts");
 

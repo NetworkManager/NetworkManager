@@ -2670,7 +2670,7 @@ fill_8021x (shvarFile *ifcfg,
 	NMSetting8021x *s_8021x;
 	shvarFile *keys = NULL;
 	char *value;
-	char **list, **iter;
+	char **list = NULL, **iter;
 
 	value = svGetValue (ifcfg, "IEEE_8021X_EAP_METHODS", FALSE);
 	if (!value) {
@@ -2729,7 +2729,6 @@ fill_8021x (shvarFile *ifcfg,
 		}
 		g_free (lower);
 	}
-	g_strfreev (list);
 
 	if (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 0) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
@@ -2737,11 +2736,15 @@ fill_8021x (shvarFile *ifcfg,
 		goto error;
 	}
 
+	if (list)
+		g_strfreev (list);
 	if (keys)
 		svCloseFile (keys);
 	return s_8021x;
 
 error:
+	if (list)
+		g_strfreev (list);
 	if (keys)
 		svCloseFile (keys);
 	g_object_unref (s_8021x);
