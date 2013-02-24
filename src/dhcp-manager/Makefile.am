@@ -58,7 +58,8 @@ libdhcp_manager_la_CPPFLAGS = \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\"
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libdhcp_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
@@ -67,4 +68,21 @@ libdhcp_manager_la_LIBADD = \
 	$(builddir)/libdhcp-dhclient.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
+
+################### dhclient helper ###################
+
+libexec_PROGRAMS = nm-dhcp-helper
+
+nm_dhcp_helper_SOURCES = nm-dhcp-helper.c
+
+nm_dhcp_helper_CPPFLAGS = $(DBUS_CFLAGS) -DNMRUNDIR=\"$(nmrundir)\"
+
+nm_dhcp_helper_LDADD = $(DBUS_LIBS)
+
+
+# FIXME: remove when dbus-glib >= 0.100 is required
+dbusservicedir = $(DBUS_SYS_DIR)
+dbusservice_DATA = nm-dhcp-helper.conf
+
+EXTRA_DIST = $(dbusservice_DATA)
 

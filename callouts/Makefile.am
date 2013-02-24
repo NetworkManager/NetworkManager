@@ -10,24 +10,12 @@ noinst_LTLIBRARIES = \
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = \
-	nm-dhcp-client.conf \
 	nm-dispatcher.conf \
 	nm-avahi-autoipd.conf
 
 libexec_PROGRAMS = \
-	nm-dhcp-client.action \
 	nm-dispatcher.action \
 	nm-avahi-autoipd.action
-
-nm_dhcp_client_action_SOURCES = \
-	nm-dhcp-client-action.c
-
-nm_dhcp_client_action_CPPFLAGS = \
-	$(DBUS_CFLAGS) \
-	-DNMCONFDIR=\"$(nmconfdir)\" \
-	-DLIBEXECDIR=\"$(libexecdir)\"
-
-nm_dhcp_client_action_LDADD = $(DBUS_LIBS)
 
 
 nm_avahi_autoipd_action_SOURCES = \

@@ -45,7 +45,7 @@ G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
 
-#define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
+#define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-helper"
 
 typedef struct {
 	const char *path;

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2010 Red Hat, Inc.
+ * Copyright (C) 2005 - 2013 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  *
  */
@@ -56,10 +56,12 @@ nm_dhcp_manager_error_quark (void)
     return ret;
 }
 
-#define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
 #define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
+
+#define PRIV_SOCK_PATH NMRUNDIR "/private-dhcp"
+#define PRIV_SOCK_TAG  "dhcp"
 
 static NMDHCPManager *singleton = NULL;
 
@@ -70,6 +72,10 @@ typedef struct {
 	GetLeaseConfigFunc  get_lease_config_func;
 
 	NMDBusManager *     dbus_mgr;
+	guint               new_conn_id;
+	guint               dis_conn_id;
+	GHashTable *        proxies;
+
 	GHashTable *        clients;
 	DBusGProxy *        proxy;
 	NMHostnameProvider *hostname_provider;
@@ -240,6 +246,48 @@ out:
 	g_free (reason);
 }
 
+#if HAVE_DBUS_GLIB_100
+static void
+new_connection_cb (NMDBusManager *mgr,
+                   DBusGConnection *connection,
+                   NMDHCPManager *self)
+{
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	DBusGProxy *proxy;
+
+	/* Create a new proxy for the client */
+	proxy = dbus_g_proxy_new_for_peer (connection, "/", NM_DHCP_CLIENT_DBUS_IFACE);
+	dbus_g_proxy_add_signal (proxy,
+	                         "Event",
+	                         DBUS_TYPE_G_MAP_OF_VARIANT,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy,
+	                             "Event",
+	                             G_CALLBACK (nm_dhcp_manager_handle_event),
+	                             self,
+	                             NULL);
+	g_hash_table_insert (priv->proxies, connection, proxy);
+}
+
+static void
+dis_connection_cb (NMDBusManager *mgr,
+                   DBusGConnection *connection,
+                   NMDHCPManager *self)
+{
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	DBusGProxy *proxy;
+
+	proxy = g_hash_table_lookup (priv->proxies, connection);
+	if (proxy) {
+		dbus_g_proxy_disconnect_signal (proxy,
+		                                "Event",
+		                                G_CALLBACK (nm_dhcp_manager_handle_event),
+		                                self);
+		g_hash_table_remove (priv->proxies, connection);
+	}
+}
+#endif
+
 static GType
 get_client_type (const char *client, GError **error)
 {
@@ -297,9 +345,11 @@ NMDHCPManager *
 nm_dhcp_manager_get (void)
 {
 	NMDHCPManagerPrivate *priv;
-	DBusGConnection *g_connection;
 	const char *client;
 	GError *error = NULL;
+#if !HAVE_DBUS_GLIB_100
+	DBusGConnection *g_connection;
+#endif
 
 	if (singleton)
 		return g_object_ref (singleton);
@@ -326,23 +376,34 @@ nm_dhcp_manager_get (void)
 	g_assert (priv->clients);
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
+
+#if HAVE_DBUS_GLIB_100
+	/* Register the socket our DHCP clients will return lease info on */
+	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
+	priv->new_conn_id = g_signal_connect (priv->dbus_mgr,
+	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
+	                                      (GCallback) new_connection_cb,
+	                                      singleton);
+	priv->dis_conn_id = g_signal_connect (priv->dbus_mgr,
+	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
+	                                      (GCallback) dis_connection_cb,
+	                                      singleton);
+#else
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	priv->proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                         NM_DHCP_CLIENT_DBUS_SERVICE,
+	                                         "org.freedesktop.nm_dhcp_client",
 	                                         "/",
 	                                         NM_DHCP_CLIENT_DBUS_IFACE);
 	g_assert (priv->proxy);
-
 	dbus_g_proxy_add_signal (priv->proxy,
 	                         "Event",
 	                         DBUS_TYPE_G_MAP_OF_VARIANT,
 	                         G_TYPE_INVALID);
-
 	dbus_g_proxy_connect_signal (priv->proxy, "Event",
 	                             G_CALLBACK (nm_dhcp_manager_handle_event),
 	                             singleton,
 	                             NULL);
-
+#endif
 	return singleton;
 }
 
@@ -600,6 +661,10 @@ nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
 static void
 nm_dhcp_manager_init (NMDHCPManager *manager)
 {
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+
+	/* Maps DBusGConnection :: DBusGProxy */
+	priv->proxies = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
 }
 
 static void
@@ -614,6 +679,24 @@ dispose (GObject *object)
 			remove_client (NM_DHCP_MANAGER (object), NM_DHCP_CLIENT (iter->data));
 		g_list_free (values);
 	}
+
+	if (priv->new_conn_id) {
+		g_signal_handler_disconnect (priv->dbus_mgr, priv->new_conn_id);
+		priv->new_conn_id = 0;
+	}
+	if (priv->dis_conn_id) {
+		g_signal_handler_disconnect (priv->dbus_mgr, priv->dis_conn_id);
+		priv->dis_conn_id = 0;
+	}
+	g_object_unref (priv->dbus_mgr);
+	priv->dbus_mgr = NULL;
+
+	if (priv->proxies) {
+		g_hash_table_destroy (priv->proxies);
+		priv->proxies = NULL;
+	}
+	if (priv->proxy)
+		g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->dispose (object);
 }
@@ -630,10 +713,6 @@ finalize (GObject *object)
 
 	if (priv->clients)
 		g_hash_table_destroy (priv->clients);
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
-	if (priv->dbus_mgr)
-		g_object_unref (priv->dbus_mgr);
 
 	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->finalize (object);
 }
