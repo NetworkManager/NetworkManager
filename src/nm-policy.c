@@ -25,6 +25,8 @@
 #include <errno.h>
 #include <netdb.h>
 
+#include <gio/gio.h>
+
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-wifi-ap.h"
@@ -37,7 +39,6 @@
 #include "nm-system.h"
 #include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-policy-hostname.h"
 #include "nm-manager-auth.h"
 #include "nm-firewall-manager.h"
 #include "nm-dispatcher.h"
@@ -61,9 +62,9 @@ struct NMPolicy {
 	NMDevice *default_device4;
 	NMDevice *default_device6;
 
-	HostnameThread *lookup;
-	guint32 lookup_ipv4_addr;          /* IPv4 for reverse lookup */
-	struct in6_addr *lookup_ipv6_addr; /* IPv6 for reverse lookup */
+	GResolver *resolver;
+	GInetAddress *lookup_addr;
+	GCancellable *lookup_cancellable;
 	NMDnsManager *dns_manager;
 	gulong config_changed_id;
 
@@ -228,6 +229,43 @@ get_best_ip6_device (NMManager *manager)
 	return best;
 }
 
+#define FALLBACK_HOSTNAME4 "localhost.localdomain"
+
+static gboolean
+set_system_hostname (const char *new_hostname, const char *msg)
+{
+	char old_hostname[HOST_NAME_MAX + 1];
+	const char *name;
+	int ret;
+
+	if (new_hostname)
+		g_warn_if_fail (strlen (new_hostname));
+
+	old_hostname[HOST_NAME_MAX] = '\0';
+	errno = 0;
+	ret = gethostname (old_hostname, HOST_NAME_MAX);
+	if (ret != 0) {
+		nm_log_warn (LOGD_DNS, "couldn't get the system hostname: (%d) %s",
+		             errno, strerror (errno));
+	} else {
+		/* Don't set the hostname if it isn't actually changing */
+		if (   (new_hostname && !strcmp (old_hostname, new_hostname))
+		       || (!new_hostname && !strcmp (old_hostname, FALLBACK_HOSTNAME4)))
+			return FALSE;
+	}
+
+	name = (new_hostname && strlen (new_hostname)) ? new_hostname : FALLBACK_HOSTNAME4;
+
+	nm_log_info (LOGD_DNS, "Setting system hostname to '%s' (%s)", name, msg);
+	ret = sethostname (name, strlen (name));
+	if (ret != 0) {
+		nm_log_warn (LOGD_DNS, "couldn't set the system hostname to '%s': (%d) %s",
+		             name, errno, strerror (errno));
+	}
+
+	return (ret == 0);
+}
+
 static void
 _set_hostname (NMPolicy *policy,
                const char *new_hostname,
@@ -239,14 +277,11 @@ _set_hostname (NMPolicy *policy,
 	 * there was no valid hostname to start with.
 	 */
 
-	/* Clear lookup adresses if we have a hostname, so that we didn't
-	 * restart reverse lookup thread later.
+	/* Clear lookup adresses if we have a hostname, so that we don't
+	 * restart the reverse lookup thread later.
 	 */
-	if (new_hostname) {
-		policy->lookup_ipv4_addr = 0;
-		g_free (policy->lookup_ipv6_addr);
-		policy->lookup_ipv6_addr = NULL;
-	}
+	if (new_hostname)
+		g_clear_object (&policy->lookup_addr);
 
 	/* Don't change the hostname or update DNS this is the first time we're
 	 * trying to change the hostname, and it's not actually changing.
@@ -268,31 +303,34 @@ _set_hostname (NMPolicy *policy,
 
 	nm_dns_manager_set_hostname (policy->dns_manager, policy->cur_hostname);
 
-	if (nm_policy_set_system_hostname (policy->cur_hostname, msg))
+	if (set_system_hostname (policy->cur_hostname, msg))
 		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL);
 }
 
 static void
-lookup_callback (HostnameThread *thread,
-                 int result,
-                 const char *hostname,
+lookup_callback (GObject *source,
+                 GAsyncResult *result,
                  gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
-	char *msg;
+	const char *hostname;
+	GError *error = NULL;
 
-	/* Update the hostname if the calling lookup thread is the in-progress one */
-	if (!hostname_thread_is_dead (thread) && (thread == policy->lookup)) {
-		policy->lookup = NULL;
-		if (!hostname) {
-			/* Fall back to localhost.localdomain */
-			msg = g_strdup_printf ("address lookup failed: %d", result);
-			_set_hostname (policy, NULL, msg);
-			g_free (msg);
-		} else
-			_set_hostname (policy, hostname, "from address lookup");
+	hostname = g_resolver_lookup_by_address_finish (G_RESOLVER (source), result, &error);
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		/* Don't touch policy; it may have been freed already */
+		g_error_free (error);
+		return;
 	}
-	hostname_thread_free (thread);
+
+	if (hostname)
+		_set_hostname (policy, hostname, "from address lookup");
+	else {
+		_set_hostname (policy, NULL, error->message);
+		g_error_free (error);
+	}
+
+	g_clear_object (&policy->lookup_cancellable);
 }
 
 static void
@@ -303,9 +341,9 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	g_return_if_fail (policy != NULL);
 
-	if (policy->lookup) {
-		hostname_thread_kill (policy->lookup);
-		policy->lookup = NULL;
+	if (policy->lookup_cancellable) {
+		g_cancellable_cancel (policy->lookup_cancellable);
+		g_clear_object (&policy->lookup_cancellable);
 	}
 
 	/* Hostname precedence order:
@@ -393,6 +431,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	if (best4) {
 		NMIP4Config *ip4_config;
 		NMIP4Address *addr4;
+		guint32 addrbytes;
 
 		ip4_config = nm_device_get_ip4_config (best4);
 		if (   !ip4_config
@@ -406,12 +445,13 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
 		g_assert (addr4); /* checked for > 1 address above */
 
-		/* Start the hostname lookup thread */
-		policy->lookup_ipv4_addr = nm_ip4_address_get_address (addr4);
-		policy->lookup = hostname4_thread_new (policy->lookup_ipv4_addr, lookup_callback, policy);
-	} else if (best6) {
+		addrbytes = nm_ip4_address_get_address (addr4);
+		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *)&addrbytes,
+		                                                     G_SOCKET_FAMILY_IPV4);
+	} else {
 		NMIP6Config *ip6_config;
 		NMIP6Address *addr6;
+		const struct in6_addr *addrbytes;
 
 		ip6_config = nm_device_get_ip6_config (best6);
 		if (   !ip6_config
@@ -425,16 +465,16 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
 		g_assert (addr6); /* checked for > 1 address above */
 
-		/* Start the hostname lookup thread */
-		policy->lookup_ipv6_addr = g_malloc0 (sizeof (struct in6_addr));
-		memcpy (policy->lookup_ipv6_addr, nm_ip6_address_get_address (addr6), sizeof (struct in6_addr));
-		policy->lookup = hostname6_thread_new (policy->lookup_ipv6_addr, lookup_callback, policy);
+		addrbytes = nm_ip6_address_get_address (addr6);
+		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *)&addrbytes,
+		                                                     G_SOCKET_FAMILY_IPV6);
 	}
 
-	if (!policy->lookup) {
-		/* Fall back to 'localhost.localdomain' */
-		_set_hostname (policy, NULL, "error starting hostname thread");
-	}
+	policy->lookup_cancellable = g_cancellable_new ();
+	g_resolver_lookup_by_address_async (policy->resolver,
+	                                    policy->lookup_addr,
+	                                    policy->lookup_cancellable,
+	                                    lookup_callback, policy);
 }
 
 static void
@@ -1805,29 +1845,21 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 	 */
 
 	/* Stop a lookup thread if any. */
-	if (policy->lookup) {
-		hostname_thread_kill (policy->lookup);
-		policy->lookup = NULL;
+	if (policy->lookup_cancellable) {
+		g_cancellable_cancel (policy->lookup_cancellable);
+		g_clear_object (&policy->lookup_cancellable);
 	}
 
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
-	if (policy->lookup_ipv4_addr) {
-		char buf[INET_ADDRSTRLEN];
-		struct in_addr addr = { .s_addr = policy->lookup_ipv4_addr };
-		
-		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
-			strcpy (buf, "(unknown)");
-		nm_log_dbg (LOGD_DNS, "restarting IPv4 reverse-lookup thread for address %s'", buf);
+	if (policy->lookup_addr) {
+		nm_log_dbg (LOGD_DNS, "restarting reverse-lookup thread for address %s'",
+		            g_inet_address_to_string (policy->lookup_addr));
 
-		policy->lookup = hostname4_thread_new (policy->lookup_ipv4_addr, lookup_callback, policy);
-	} else if (policy->lookup_ipv6_addr) {
-		char buf[INET6_ADDRSTRLEN];
-
-		if (!inet_ntop (AF_INET6, policy->lookup_ipv6_addr, buf, sizeof (buf)))
-			strcpy (buf, "(unknown)");
-		nm_log_dbg (LOGD_DNS, "restarting IPv6 reverse-lookup thread for address %s'", buf);
-
-		policy->lookup = hostname6_thread_new (policy->lookup_ipv6_addr, lookup_callback, policy);
+		policy->lookup_cancellable = g_cancellable_new ();
+		g_resolver_lookup_by_address_async (policy->resolver,
+		                                    policy->lookup_addr,
+		                                    policy->lookup_cancellable,
+		                                    lookup_callback, policy);
 	}
 }
 
@@ -1961,6 +1993,8 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	policy->config_changed_id = g_signal_connect (policy->dns_manager, "config-changed",
 	                                              G_CALLBACK (dns_config_changed), policy);
 
+	policy->resolver = g_resolver_get_default ();
+
 	_connect_manager_signal (policy, "state-changed", global_state_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_SLEEPING, sleeping_changed);
@@ -1992,14 +2026,13 @@ nm_policy_destroy (NMPolicy *policy)
 
 	g_return_if_fail (policy != NULL);
 
-	/* Tell any existing hostname lookup thread to die, it'll get cleaned up
-	 * by the lookup thread callback.
-	  */
-	if (policy->lookup) {
-		hostname_thread_kill (policy->lookup);
-		policy->lookup = NULL;
+	/* Tell any existing hostname lookup thread to die. */
+	if (policy->lookup_cancellable) {
+		g_cancellable_cancel (policy->lookup_cancellable);
+		g_clear_object (&policy->lookup_cancellable);
 	}
-	g_free (policy->lookup_ipv6_addr);
+	g_clear_object (&policy->lookup_addr);
+	g_clear_object (&policy->resolver);
 
 	g_slist_foreach (policy->pending_activation_checks, (GFunc) activate_data_free, NULL);
 	g_slist_free (policy->pending_activation_checks);

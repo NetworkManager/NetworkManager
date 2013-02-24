@@ -168,8 +168,6 @@ NetworkManager_SOURCES = \
 		nm-policy.h \
 		nm-policy-hosts.c \
 		nm-policy-hosts.h \
-		nm-policy-hostname.c \
-		nm-policy-hostname.h \
 		NetworkManagerUtils.c \
 		NetworkManagerUtils.h \
 		nm-system.c \
