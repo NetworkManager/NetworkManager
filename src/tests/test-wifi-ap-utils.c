@@ -312,7 +312,7 @@ test_open_ap_empty_connection (void)
 /*******************************************/
 
 static void
-test_open_ap_leap_connection_1 (gboolean add_wifi)
+test_open_ap_leap_connection_1 (gconstpointer add_wifi)
 {
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
@@ -374,7 +374,7 @@ test_open_ap_leap_connection_2 (void)
 /*******************************************/
 
 static void
-test_open_ap_wep_connection (gboolean add_wifi)
+test_open_ap_wep_connection (gconstpointer add_wifi)
 {
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
@@ -660,8 +660,10 @@ error_code_for_idx (guint32 idx, guint num)
 }
 
 static void
-test_ap_wpa_eap_connection_1 (guint32 idx)
+test_ap_wpa_eap_connection_1 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
+
 	test_ap_wpa_eap_connection_base (NULL, NULL,
 	                                 flags_for_idx (idx),
 	                                 wpa_flags_for_idx (idx),
@@ -672,8 +674,10 @@ test_ap_wpa_eap_connection_1 (guint32 idx)
 }
 
 static void
-test_ap_wpa_eap_connection_2 (guint idx)
+test_ap_wpa_eap_connection_2 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
+
 	test_ap_wpa_eap_connection_base (NULL, NULL,
 	                                 flags_for_idx (idx),
 	                                 wpa_flags_for_idx (idx),
@@ -684,8 +688,10 @@ test_ap_wpa_eap_connection_2 (guint idx)
 }
 
 static void
-test_ap_wpa_eap_connection_3 (guint idx)
+test_ap_wpa_eap_connection_3 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
+
 	test_ap_wpa_eap_connection_base (NULL, "open",
 	                                 flags_for_idx (idx),
 	                                 wpa_flags_for_idx (idx),
@@ -696,8 +702,10 @@ test_ap_wpa_eap_connection_3 (guint idx)
 }
 
 static void
-test_ap_wpa_eap_connection_4 (guint idx)
+test_ap_wpa_eap_connection_4 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
+
 	test_ap_wpa_eap_connection_base (NULL, "shared",
 	                                 flags_for_idx (idx),
 	                                 wpa_flags_for_idx (idx),
@@ -708,8 +716,10 @@ test_ap_wpa_eap_connection_4 (guint idx)
 }
 
 static void
-test_ap_wpa_eap_connection_5 (guint idx)
+test_ap_wpa_eap_connection_5 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
+
 	test_ap_wpa_eap_connection_base ("wpa-eap", "open",
 	                                 flags_for_idx (idx),
 	                                 wpa_flags_for_idx (idx),
@@ -756,7 +766,7 @@ test_priv_ap_empty_connection (void)
 /*******************************************/
 
 static void
-test_priv_ap_leap_connection_1 (gboolean add_wifi)
+test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
 {
 	NMConnection *src, *expected;
 	const char *ssid = "blahblah";
@@ -1050,8 +1060,9 @@ test_priv_ap_wpa_psk_connection_5 (void)
 /*******************************************/
 
 static void
-test_wpa_ap_empty_connection (guint idx)
+test_wpa_ap_empty_connection (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src, *expected;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	const char *ssid = "blahblah";
@@ -1086,8 +1097,9 @@ test_wpa_ap_empty_connection (guint idx)
 /*******************************************/
 
 static void
-test_wpa_ap_leap_connection_1 (guint idx)
+test_wpa_ap_leap_connection_1 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src;
 	const char *ssid = "blahblah";
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
@@ -1121,8 +1133,9 @@ test_wpa_ap_leap_connection_1 (guint idx)
 /*******************************************/
 
 static void
-test_wpa_ap_leap_connection_2 (guint idx)
+test_wpa_ap_leap_connection_2 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	const KeyData src_wsec[] = {
@@ -1154,8 +1167,9 @@ test_wpa_ap_leap_connection_2 (guint idx)
 /*******************************************/
 
 static void
-test_wpa_ap_dynamic_wep_connection (guint idx)
+test_wpa_ap_dynamic_wep_connection (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src;
 	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 	const KeyData src_wsec[] = {
@@ -1186,8 +1200,9 @@ test_wpa_ap_dynamic_wep_connection (guint idx)
 /*******************************************/
 
 static void
-test_wpa_ap_wpa_psk_connection_1 (guint idx)
+test_wpa_ap_wpa_psk_connection_1 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *expected;
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
@@ -1205,8 +1220,9 @@ test_wpa_ap_wpa_psk_connection_1 (guint idx)
 }
 
 static void
-test_wpa_ap_wpa_psk_connection_2 (guint idx)
+test_wpa_ap_wpa_psk_connection_2 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *expected;
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
@@ -1224,8 +1240,9 @@ test_wpa_ap_wpa_psk_connection_2 (guint idx)
 }
 
 static void
-test_wpa_ap_wpa_psk_connection_3 (guint idx)
+test_wpa_ap_wpa_psk_connection_3 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *expected;
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
@@ -1243,8 +1260,9 @@ test_wpa_ap_wpa_psk_connection_3 (guint idx)
 }
 
 static void
-test_wpa_ap_wpa_psk_connection_4 (guint idx)
+test_wpa_ap_wpa_psk_connection_4 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	test_ap_wpa_psk_connection_base (NULL, "shared",
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
 	                                 wpa_flags_for_idx (idx),
@@ -1253,8 +1271,9 @@ test_wpa_ap_wpa_psk_connection_4 (guint idx)
 }
 
 static void
-test_wpa_ap_wpa_psk_connection_5 (guint idx)
+test_wpa_ap_wpa_psk_connection_5 (gconstpointer data)
 {
+	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *expected;
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
@@ -1324,117 +1343,213 @@ test_strength_wext (void)
 
 /*******************************************/
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, (gconstpointer) d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
 	gsize i;
 
 	g_type_init ();
 	g_test_init (&argc, &argv, NULL);
 
-	suite = g_test_get_root ();
-
-	g_test_suite_add (suite, TESTCASE (test_lock_bssid, NULL));
+	g_test_add_func ("/wifi/lock_bssid",
+	                 test_lock_bssid);
 
 	/* Open AP tests; make sure that connections to be completed that have
 	 * various security-related settings already set cause the completion
 	 * to fail.
 	 */
-	g_test_suite_add (suite, TESTCASE (test_open_ap_empty_connection, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_leap_connection_1, TRUE));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_leap_connection_1, FALSE));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_leap_connection_2, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wep_connection, TRUE));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wep_connection, FALSE));
+	g_test_add_func ("/wifi/open_ap/empty_connection",
+	                 test_open_ap_empty_connection);
+	g_test_add_data_func ("/wifi/open_ap/leap_connection/1",
+	                      (gconstpointer) TRUE,
+	                      test_open_ap_leap_connection_1);
+	g_test_add_data_func ("/wifi/open_ap/leap_connection/1_no_add_wifi",
+	                      (gconstpointer) FALSE,
+	                      test_open_ap_leap_connection_1);
+	g_test_add_func ("/wifi/open_ap/leap_connection/2",
+	                 test_open_ap_leap_connection_2);
+	g_test_add_data_func ("/wifi/open_ap/wep_connection",
+	                      (gconstpointer) TRUE,
+	                      test_open_ap_wep_connection);
+	g_test_add_data_func ("/wifi/open_ap/wep_connection",
+	                      (gconstpointer) FALSE,
+	                      test_open_ap_wep_connection);
 
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_1, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_2, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_3, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_4, NULL));
-	g_test_suite_add (suite, TESTCASE (test_open_ap_wpa_psk_connection_5, NULL));
+	g_test_add_func ("/wifi/open_ap/wpa_psk_connection/1",
+	                 test_open_ap_wpa_psk_connection_1);
+	g_test_add_func ("/wifi/open_ap/wpa_psk_connection/2",
+	                 test_open_ap_wpa_psk_connection_2);
+	g_test_add_func ("/wifi/open_ap/wpa_psk_connection/3",
+	                 test_open_ap_wpa_psk_connection_3);
+	g_test_add_func ("/wifi/open_ap/wpa_psk_connection/4",
+	                 test_open_ap_wpa_psk_connection_4);
+	g_test_add_func ("/wifi/open_ap/wpa_psk_connection/5",
+	                 test_open_ap_wpa_psk_connection_5);
 
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_OPEN));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_OPEN));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_OPEN));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_OPEN));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_OPEN));
+	g_test_add_data_func ("/wifi/open_ap/wpa_eap_connection/1",
+	                      (gconstpointer) IDX_OPEN,
+	                      test_ap_wpa_eap_connection_1);
+	g_test_add_data_func ("/wifi/open_ap/wpa_eap_connection/2",
+	                      (gconstpointer) IDX_OPEN,
+	                      test_ap_wpa_eap_connection_2);
+	g_test_add_data_func ("/wifi/open_ap/wpa_eap_connection/3",
+	                      (gconstpointer) IDX_OPEN,
+	                      test_ap_wpa_eap_connection_3);
+	g_test_add_data_func ("/wifi/open_ap/wpa_eap_connection/4",
+	                      (gconstpointer) IDX_OPEN,
+	                      test_ap_wpa_eap_connection_4);
+	g_test_add_data_func ("/wifi/open_ap/wpa_eap_connection/5",
+	                      (gconstpointer) IDX_OPEN,
+	                      test_ap_wpa_eap_connection_5);
 
 	/* WEP AP tests */
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_empty_connection, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_leap_connection_1, FALSE));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_leap_connection_2, FALSE));
+	g_test_add_func ("/wifi/priv_ap/empty_connection",
+	                 test_priv_ap_empty_connection);
+	g_test_add_data_func ("/wifi/priv_ap/leap_connection/1",
+	                      (gconstpointer) FALSE,
+	                      test_priv_ap_leap_connection_1);
+	g_test_add_func ("/wifi/priv_ap/leap_connection/2",
+	                 test_priv_ap_leap_connection_2);
 
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_dynamic_wep_1, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_dynamic_wep_2, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_dynamic_wep_3, NULL));
+	g_test_add_func ("/wifi/priv_ap/dynamic_wep/1",
+	                 test_priv_ap_dynamic_wep_1);
+	g_test_add_func ("/wifi/priv_ap/dynamic_wep/2",
+	                 test_priv_ap_dynamic_wep_2);
+	g_test_add_func ("/wifi/priv_ap/dynamic_wep/3",
+	                 test_priv_ap_dynamic_wep_3);
 
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_1, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_2, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_3, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_4, NULL));
-	g_test_suite_add (suite, TESTCASE (test_priv_ap_wpa_psk_connection_5, NULL));
+	g_test_add_func ("/wifi/priv_ap/wpa_psk_connection/1",
+	                 test_priv_ap_wpa_psk_connection_1);
+	g_test_add_func ("/wifi/priv_ap/wpa_psk_connection/2",
+	                 test_priv_ap_wpa_psk_connection_2);
+	g_test_add_func ("/wifi/priv_ap/wpa_psk_connection/3",
+	                 test_priv_ap_wpa_psk_connection_3);
+	g_test_add_func ("/wifi/priv_ap/wpa_psk_connection/4",
+	                 test_priv_ap_wpa_psk_connection_4);
+	g_test_add_func ("/wifi/priv_ap/wpa_psk_connection/5",
+	                 test_priv_ap_wpa_psk_connection_5);
 
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, IDX_PRIV));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, IDX_PRIV));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, IDX_PRIV));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, IDX_PRIV));
-	g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, IDX_PRIV));
+	g_test_add_data_func ("/wifi/priv_ap/wpa_eap_connection/1",
+	                      (gconstpointer) IDX_PRIV,
+	                      test_ap_wpa_eap_connection_1);
+	g_test_add_data_func ("/wifi/priv_ap/wpa_eap_connection/2",
+	                      (gconstpointer) IDX_PRIV,
+	                      test_ap_wpa_eap_connection_2);
+	g_test_add_data_func ("/wifi/priv_ap/wpa_eap_connection/3",
+	                      (gconstpointer) IDX_PRIV,
+	                      test_ap_wpa_eap_connection_3);
+	g_test_add_data_func ("/wifi/priv_ap/wpa_eap_connection/4",
+	                      (gconstpointer) IDX_PRIV,
+	                      test_ap_wpa_eap_connection_4);
+	g_test_add_data_func ("/wifi/priv_ap/wpa_eap_connection/5",
+	                      (gconstpointer) IDX_PRIV,
+	                      test_ap_wpa_eap_connection_5);
 
 	/* WPA-PSK tests */
 	for (i = IDX_WPA_PSK_PTKIP_GTKIP; i <= IDX_WPA_RSN_PSK_PCCMP_GCCMP; i++) {
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, i));
+		g_test_add_data_func ("/wifi/wpa_psk/empty_connection",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_empty_connection);
+		g_test_add_data_func ("/wifi/wpa_psk/leap_connection/1",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_leap_connection_1);
+		g_test_add_data_func ("/wifi/wpa_psk/leap_connection/2",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_leap_connection_2);
 
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, i));
+		g_test_add_data_func ("/wifi/wpa_psk/dynamic_wep_connection",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_dynamic_wep_connection);
 
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, i));
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_psk_connection/1",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_1);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_psk_connection/2",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_2);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_psk_connection/3",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_3);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_psk_connection/4",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_4);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_psk_connection/5",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_5);
 
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, i));
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_eap_connection/1",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_1);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_eap_connection/2",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_2);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_eap_connection/3",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_3);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_eap_connection/4",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_4);
+		g_test_add_data_func ("/wifi/wpa_psk/wpa_eap_connection/5",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_5);
 	}
 
 	/* RSN-PSK tests */
 	for (i = IDX_WPA_RSN_PSK_PTKIP_PCCMP_GTKIP; i <= IDX_RSN_PSK_PTKIP_PCCMP_GTKIP; i++) {
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_empty_connection, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_1, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_leap_connection_2, i));
+		g_test_add_data_func ("/wifi/rsn_psk/empty_connection",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_empty_connection);
+		g_test_add_data_func ("/wifi/rsn_psk/leap_connection/1",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_leap_connection_1);
+		g_test_add_data_func ("/wifi/rsn_psk/leap_connection/2",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_leap_connection_2);
 
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_dynamic_wep_connection, i));
+		g_test_add_data_func ("/wifi/rsn_psk/dynamic_wep_connection",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_dynamic_wep_connection);
 
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_1, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_2, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_3, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_4, i));
-		g_test_suite_add (suite, TESTCASE (test_wpa_ap_wpa_psk_connection_5, i));
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_psk_connection/1",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_1);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_psk_connection/2",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_2);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_psk_connection/3",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_3);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_psk_connection/4",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_4);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_psk_connection/5",
+		                      (gconstpointer) i,
+		                      test_wpa_ap_wpa_psk_connection_5);
 
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_1, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_2, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_3, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_4, i));
-		g_test_suite_add (suite, TESTCASE (test_ap_wpa_eap_connection_5, i));
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_eap_connection/1",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_1);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_eap_connection/2",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_2);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_eap_connection/3",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_3);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_eap_connection/4",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_4);
+		g_test_add_data_func ("/wifi/rsn_psk/wpa_eap_connection/5",
+		                      (gconstpointer) i,
+		                      test_ap_wpa_eap_connection_5);
 	}
 
 	/* Scanned signal strength conversion tests */
-	g_test_suite_add (suite, TESTCASE (test_strength_dbm, NULL));
-	g_test_suite_add (suite, TESTCASE (test_strength_percent, NULL));
-	g_test_suite_add (suite, TESTCASE (test_strength_wext, NULL));
+	g_test_add_func ("/wifi/strength/dbm",
+	                 test_strength_dbm);
+	g_test_add_func ("/wifi/strength/percent",
+	                 test_strength_percent);
+	g_test_add_func ("/wifi/strength/wext",
+	                 test_strength_wext);
 
 	return g_test_run ();
 }
-

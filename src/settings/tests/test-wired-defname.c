@@ -120,27 +120,16 @@ test_defname_multiple_conflicts (void)
 
 /*******************************************/
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
-
 	g_type_init ();
 	g_test_init (&argc, &argv, NULL);
 
-	suite = g_test_get_root ();
-
-	g_test_suite_add (suite, TESTCASE (test_defname_no_connections, NULL));
-	g_test_suite_add (suite, TESTCASE (test_defname_no_conflict, NULL));
-	g_test_suite_add (suite, TESTCASE (test_defname_conflict, NULL));
-	g_test_suite_add (suite, TESTCASE (test_defname_multiple_conflicts, NULL));
+	g_test_add_func ("/defname/no_connections", test_defname_no_connections);
+	g_test_add_func ("/defname/no_conflict", test_defname_no_conflict);
+	g_test_add_func ("/defname/conflict", test_defname_conflict);
+	g_test_add_func ("/defname/multiple_conflicts", test_defname_multiple_conflicts);
 
 	return g_test_run ();
 }

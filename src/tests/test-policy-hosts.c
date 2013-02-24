@@ -150,26 +150,15 @@ test_hosts_leftover_double_newline (void)
 
 /*******************************************/
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
-
 	g_test_init (&argc, &argv, NULL);
 
-	suite = g_test_get_root ();
-
-	g_test_suite_add (suite, TESTCASE (test_hosts_generic, NULL));
-	g_test_suite_add (suite, TESTCASE (test_hosts_generic_no_boilerplate, NULL));
-	g_test_suite_add (suite, TESTCASE (test_hosts_leftover, NULL));
-	g_test_suite_add (suite, TESTCASE (test_hosts_leftover_double_newline, NULL));
+	g_test_add_func ("/hosts/generic", test_hosts_generic);
+	g_test_add_func ("/hosts/generic_no_boilerplate", test_hosts_generic_no_boilerplate);
+	g_test_add_func ("/hosts/leftover", test_hosts_leftover);
+	g_test_add_func ("/hosts/leftover_double_newline", test_hosts_leftover_double_newline);
 
 	return g_test_run ();
 }

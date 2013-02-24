@@ -904,17 +904,9 @@ test19_read_static_ipv4_plen (const char *path)
 }
 
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
 	GError *error = NULL;
 
 	g_type_init ();
@@ -924,29 +916,45 @@ int main (int argc, char **argv)
 
 	g_test_init (&argc, &argv, NULL);
 
-	suite = g_test_get_root ();
-
 	if (0)
 		dump_blocks ();
 
-	g_test_suite_add (suite, TESTCASE (test1_ignore_line_before_first_block, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test2_wrapped_line, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test3_wrapped_multiline_multiarg, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test4_allow_auto_is_auto, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test5_allow_auto_multiarg, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test6_mixed_whitespace, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test7_long_line, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test8_long_line_wrapped, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test9_wrapped_lines_in_block, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test11_complex_wrap, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test12_complex_wrap_split_word, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test13_more_mixed_whitespace, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test14_mixed_whitespace_block_start, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test15_trailing_space, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test16_missing_newline, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test17_read_static_ipv4, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test18_read_static_ipv6, TEST_ENI_DIR));
-	g_test_suite_add (suite, TESTCASE (test19_read_static_ipv4_plen, TEST_ENI_DIR));
+	g_test_add_data_func ("/ifupdate/ignore_line_before_first_block", TEST_ENI_DIR,
+	                      (GTestDataFunc) test1_ignore_line_before_first_block);
+	g_test_add_data_func ("/ifupdate/wrapped_line", TEST_ENI_DIR,
+	                      (GTestDataFunc) test2_wrapped_line);
+	g_test_add_data_func ("/ifupdate/wrapped_multiline_multiarg", TEST_ENI_DIR,
+	                      (GTestDataFunc) test3_wrapped_multiline_multiarg);
+	g_test_add_data_func ("/ifupdate/allow_auto_is_auto", TEST_ENI_DIR,
+	                      (GTestDataFunc) test4_allow_auto_is_auto);
+	g_test_add_data_func ("/ifupdate/allow_auto_multiarg", TEST_ENI_DIR,
+	                      (GTestDataFunc) test5_allow_auto_multiarg);
+	g_test_add_data_func ("/ifupdate/mixed_whitespace", TEST_ENI_DIR,
+	                      (GTestDataFunc) test6_mixed_whitespace);
+	g_test_add_data_func ("/ifupdate/long_line", TEST_ENI_DIR,
+	                      (GTestDataFunc) test7_long_line);
+	g_test_add_data_func ("/ifupdate/long_line_wrapped", TEST_ENI_DIR,
+	                      (GTestDataFunc) test8_long_line_wrapped);
+	g_test_add_data_func ("/ifupdate/wrapped_lines_in_block", TEST_ENI_DIR,
+	                      (GTestDataFunc) test9_wrapped_lines_in_block);
+	g_test_add_data_func ("/ifupdate/complex_wrap", TEST_ENI_DIR,
+	                      (GTestDataFunc) test11_complex_wrap);
+	g_test_add_data_func ("/ifupdate/complex_wrap_split_word", TEST_ENI_DIR,
+	                      (GTestDataFunc) test12_complex_wrap_split_word);
+	g_test_add_data_func ("/ifupdate/more_mixed_whitespace", TEST_ENI_DIR,
+	                      (GTestDataFunc) test13_more_mixed_whitespace);
+	g_test_add_data_func ("/ifupdate/mixed_whitespace_block_start", TEST_ENI_DIR,
+	                      (GTestDataFunc) test14_mixed_whitespace_block_start);
+	g_test_add_data_func ("/ifupdate/trailing_space", TEST_ENI_DIR,
+	                      (GTestDataFunc) test15_trailing_space);
+	g_test_add_data_func ("/ifupdate/missing_newline", TEST_ENI_DIR,
+	                      (GTestDataFunc) test16_missing_newline);
+	g_test_add_data_func ("/ifupdate/read_static_ipv4", TEST_ENI_DIR,
+	                      (GTestDataFunc) test17_read_static_ipv4);
+	g_test_add_data_func ("/ifupdate/read_static_ipv6", TEST_ENI_DIR,
+	                      (GTestDataFunc) test18_read_static_ipv6);
+	g_test_add_data_func ("/ifupdate/read_static_ipv4_plen", TEST_ENI_DIR,
+	                      (GTestDataFunc) test19_read_static_ipv4_plen);
 
 	return g_test_run ();
 }

@@ -342,17 +342,9 @@ test_remove_connection (void)
 
 /*******************************************************************/
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
     char *service_argv[3] = { NULL, NULL, NULL };
 	int ret;
 	GError *error = NULL;
@@ -390,12 +382,10 @@ int main (int argc, char **argv)
 	settings = nm_remote_settings_new (bus);
 	test_assert (settings != NULL);
 
-	suite = g_test_get_root ();
-
-	g_test_suite_add (suite, TESTCASE (test_add_connection, NULL));
-	g_test_suite_add (suite, TESTCASE (test_make_invisible, NULL));
-	g_test_suite_add (suite, TESTCASE (test_make_visible, NULL));
-	g_test_suite_add (suite, TESTCASE (test_remove_connection, NULL));
+	g_test_add_func ("/remote_settings/add_connection", test_add_connection);
+	g_test_add_func ("/remote_settings/make_invisible", test_make_invisible);
+	g_test_add_func ("/remote_settings/make_visible", test_make_visible);
+	g_test_add_func ("/remote_settings/remove_connection", test_remove_connection);
 
 	ret = g_test_run ();
 

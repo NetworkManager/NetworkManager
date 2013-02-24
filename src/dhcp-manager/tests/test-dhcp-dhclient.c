@@ -393,37 +393,26 @@ test_write_existing_commented_duid (void)
 
 /*******************************************/
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
-
 	g_test_init (&argc, &argv, NULL);
 
 	g_type_init ();
 
-	suite = g_test_get_root ();
+	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
+	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
+	g_test_add_func ("/dhcp/dhclient/override_hostname", test_override_hostname);
+	g_test_add_func ("/dhcp/dhclient/existing_alsoreq", test_existing_alsoreq);
+	g_test_add_func ("/dhcp/dhclient/existing_multiline_alsoreq", test_existing_multiline_alsoreq);
+	g_test_add_func ("/dhcp/dhclient/duids", test_duids);
 
-	g_test_suite_add (suite, TESTCASE (test_orig_missing, NULL));
-	g_test_suite_add (suite, TESTCASE (test_override_client_id, NULL));
-	g_test_suite_add (suite, TESTCASE (test_override_hostname, NULL));
-	g_test_suite_add (suite, TESTCASE (test_existing_alsoreq, NULL));
-	g_test_suite_add (suite, TESTCASE (test_existing_multiline_alsoreq, NULL));
-	g_test_suite_add (suite, TESTCASE (test_duids, NULL));
+	g_test_add_func ("/dhcp/dhclient/read_duid_from_leasefile", test_read_duid_from_leasefile);
+	g_test_add_func ("/dhcp/dhclient/read_commented_duid_from_leasefile", test_read_commented_duid_from_leasefile);
 
-	g_test_suite_add (suite, TESTCASE (test_read_duid_from_leasefile, NULL));
-	g_test_suite_add (suite, TESTCASE (test_read_commented_duid_from_leasefile, NULL));
-
-	g_test_suite_add (suite, TESTCASE (test_write_duid, NULL));
-	g_test_suite_add (suite, TESTCASE (test_write_existing_duid, NULL));
-	g_test_suite_add (suite, TESTCASE (test_write_existing_commented_duid, NULL));
+	g_test_add_func ("/dhcp/dhclient/write_duid", test_write_duid);
+	g_test_add_func ("/dhcp/dhclient/write_existing_duid", test_write_existing_duid);
+	g_test_add_func ("/dhcp/dhclient/write_existing_commented_duid", test_write_existing_commented_duid);
 
 	return g_test_run ();
 }

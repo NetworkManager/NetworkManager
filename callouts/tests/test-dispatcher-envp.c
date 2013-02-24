@@ -630,31 +630,20 @@ test_up_empty_vpn_iface (const char *path)
 
 /*******************************************/
 
-#if GLIB_CHECK_VERSION(2,25,12)
-typedef GTestFixtureFunc TCFunc;
-#else
-typedef void (*TCFunc)(void);
-#endif
-
-#define TESTCASE(t, d) g_test_create_case (#t, 0, d, NULL, (TCFunc) t, NULL)
-
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GTestSuite *suite;
-
 	g_assert (argc > 1);
 
 	g_test_init (&argc, &argv, NULL);
 	g_type_init ();
 
-	suite = g_test_get_root ();
+	g_test_add_data_func ("/dispatcher/old_up", argv[1], (GTestDataFunc) test_old_up);
+	g_test_add_data_func ("/dispatcher/old_down", argv[1], (GTestDataFunc) test_old_down);
+	g_test_add_data_func ("/dispatcher/old_vpn_up", argv[1], (GTestDataFunc) test_old_vpn_up);
+	g_test_add_data_func ("/dispatcher/old_vpn_down", argv[1], (GTestDataFunc) test_old_vpn_down);
 
-	g_test_suite_add (suite, TESTCASE (test_old_up, argv[1]));
-	g_test_suite_add (suite, TESTCASE (test_old_down, argv[1]));
-	g_test_suite_add (suite, TESTCASE (test_old_vpn_up, argv[1]));
-	g_test_suite_add (suite, TESTCASE (test_old_vpn_down, argv[1]));
-
-	g_test_suite_add (suite, TESTCASE (test_up_empty_vpn_iface, argv[1]));
+	g_test_add_data_func ("/dispatcher/up_empty_vpn_iface", argv[1], (GTestDataFunc) test_up_empty_vpn_iface);
 
 	return g_test_run ();
 }
