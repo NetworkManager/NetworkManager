@@ -40,7 +40,7 @@
 #include "iwmxsdk.h"
 
 static WIMAX_API_DEVICE_ID g_api;
-static GStaticMutex add_remove_mutex = G_STATIC_MUTEX_INIT;
+static GMutex add_remove_mutex;
 
 /* Misc utilities */
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
@@ -132,7 +132,7 @@ typedef struct {
 	void *user_data;
 } NewSdkCallback;
 
-GStaticMutex new_callbacks_mutex = G_STATIC_MUTEX_INIT;
+static GMutex new_callbacks_mutex;
 static GSList *new_callbacks = NULL;
 
 void iwmx_sdk_new_callback_register(WimaxNewWmxsdkFunc callback, void *user_data)
@@ -144,9 +144,9 @@ void iwmx_sdk_new_callback_register(WimaxNewWmxsdkFunc callback, void *user_data
 	cb->callback = callback;
 	cb->user_data = user_data;
 
-	g_static_mutex_lock (&new_callbacks_mutex);
+	g_mutex_lock (&new_callbacks_mutex);
 	new_callbacks = g_slist_append (new_callbacks, cb);
-	g_static_mutex_unlock (&new_callbacks_mutex);
+	g_mutex_unlock (&new_callbacks_mutex);
 }
 
 void iwmx_sdk_new_callback_unregister(WimaxNewWmxsdkFunc callback, void *user_data)
@@ -154,7 +154,7 @@ void iwmx_sdk_new_callback_unregister(WimaxNewWmxsdkFunc callback, void *user_da
 	GSList *iter;
 	NewSdkCallback *found = NULL;
 
-	g_static_mutex_lock (&new_callbacks_mutex);
+	g_mutex_lock (&new_callbacks_mutex);
 	for (iter = new_callbacks; iter; iter = g_slist_next (iter)) {
 		NewSdkCallback *cb = iter->data;
 
@@ -168,20 +168,20 @@ void iwmx_sdk_new_callback_unregister(WimaxNewWmxsdkFunc callback, void *user_da
 		new_callbacks = g_slist_remove (new_callbacks, found);
 		g_free (found);
 	}
-	g_static_mutex_unlock (&new_callbacks_mutex);
+	g_mutex_unlock (&new_callbacks_mutex);
 }
 
 static void iwmx_sdk_call_new_callbacks(struct wmxsdk *wmxsdk)
 {
 	GSList *iter;
 
-	g_static_mutex_lock (&new_callbacks_mutex);
+	g_mutex_lock (&new_callbacks_mutex);
 	for (iter = new_callbacks; iter; iter = g_slist_next (iter)) {
 		NewSdkCallback *cb = iter->data;
 
 		cb->callback (wmxsdk, cb->user_data);
 	}
-	g_static_mutex_unlock (&new_callbacks_mutex);
+	g_mutex_unlock (&new_callbacks_mutex);
 }
 
 /****************************************************************/
@@ -760,9 +760,9 @@ WIMAX_API_DEVICE_STATUS iwmxsdk_status_get(struct wmxsdk *wmxsdk)
 {
 	WIMAX_API_DEVICE_STATUS status;
 
-	g_mutex_lock(wmxsdk->status_mutex);
+	g_mutex_lock(&wmxsdk->status_mutex);
 	status = wmxsdk->status;
-	g_mutex_unlock(wmxsdk->status_mutex);
+	g_mutex_unlock(&wmxsdk->status_mutex);
 	return status;
 }
 
@@ -821,7 +821,7 @@ int iwmx_sdk_connect(struct wmxsdk *wmxsdk, const char *nsp_name)
 	WIMAX_API_DEVICE_STATUS dev_status;
 	char sdk_name[MAX_SIZE_OF_NSP_NAME];
 
-	g_mutex_lock(wmxsdk->connect_mutex);
+	g_mutex_lock(&wmxsdk->connect_mutex);
 	/* Guess what the current radio state is; if it is ON
 	 * already, don't redo it. */
 	dev_status = iwmxsdk_status_get(wmxsdk);
@@ -874,7 +874,7 @@ int iwmx_sdk_connect(struct wmxsdk *wmxsdk, const char *nsp_name)
 
 error_cant_do:
 error_get_status:
-	g_mutex_unlock(wmxsdk->connect_mutex);
+	g_mutex_unlock(&wmxsdk->connect_mutex);
 	return result;
 }
 
@@ -924,7 +924,7 @@ int iwmx_sdk_disconnect(struct wmxsdk *wmxsdk)
 	UINT32 errstr_size = sizeof(errstr);
 	WIMAX_API_DEVICE_STATUS dev_status;
 
-	g_mutex_lock(wmxsdk->connect_mutex);
+	g_mutex_lock(&wmxsdk->connect_mutex);
 	/* Guess what the current radio state is; if it is ON
 	 * already, don't redo it. */
 	dev_status = iwmx_sdk_get_device_status(wmxsdk);
@@ -964,7 +964,7 @@ int iwmx_sdk_disconnect(struct wmxsdk *wmxsdk)
 		result = -EINPROGRESS;
 error_cant_do:
 error_get_status:
-	g_mutex_unlock(wmxsdk->connect_mutex);
+	g_mutex_unlock(&wmxsdk->connect_mutex);
 	return result;
 }
 
@@ -1024,10 +1024,10 @@ static void __iwmx_sdk_state_change_cb(WIMAX_API_DEVICE_ID *device_id,
 	           status, iwmx_sdk_dev_status_to_str (status),
 	           reason, iwmx_sdk_reason_to_str (reason));
 
-	g_mutex_lock(wmxsdk->status_mutex);
+	g_mutex_lock(&wmxsdk->status_mutex);
 	old_status = wmxsdk->status;
 	wmxsdk->status = status;
-	g_mutex_unlock(wmxsdk->status_mutex);
+	g_mutex_unlock(&wmxsdk->status_mutex);
 
 	_schedule_state_change(wmxsdk, status, old_status, reason, pi);
 }
@@ -1044,9 +1044,9 @@ static void __iwmx_sdk_scan_common_cb(WIMAX_API_DEVICE_ID *device_id,
 {
 	struct wmxsdk *wmxsdk = deviceid_to_wmxsdk(device_id);
 
-	g_static_mutex_lock(&wmxsdk->network_mutex);
+	g_mutex_lock(&wmxsdk->network_mutex);
 	_schedule_scan_result(wmxsdk, nsp_list, nsp_list_size);
-	g_static_mutex_unlock(&wmxsdk->network_mutex);
+	g_mutex_unlock(&wmxsdk->network_mutex);
 }
 
 /*
@@ -1210,9 +1210,9 @@ static int iwmx_sdk_setup(struct wmxsdk *wmxsdk)
 	if ((int) status < 0)
 		status = WIMAX_API_DEVICE_STATUS_UnInitialized;
 
-	g_mutex_lock(wmxsdk->status_mutex);
+	g_mutex_lock(&wmxsdk->status_mutex);
 	wmxsdk->status = status;
-	g_mutex_unlock(wmxsdk->status_mutex);
+	g_mutex_unlock(&wmxsdk->status_mutex);
 
 	_schedule_state_change(wmxsdk,
 	                       status,
@@ -1286,14 +1286,12 @@ static struct wmxsdk *wmxsdk_new(void)
 		memset(wmxsdk, 0, sizeof(*wmxsdk));
 
 		wmxsdk->refcount = 1;
-		g_static_mutex_init(&wmxsdk->network_mutex);
+		g_mutex_init(&wmxsdk->network_mutex);
 
 		wmxsdk->status = WIMAX_API_DEVICE_STATUS_UnInitialized;
-		wmxsdk->status_mutex = g_mutex_new();
-		g_assert(wmxsdk->status_mutex);
+		g_mutex_init(&wmxsdk->status_mutex);
 
-		wmxsdk->connect_mutex = g_mutex_new();
-		g_assert(wmxsdk->connect_mutex);
+		g_mutex_init(&wmxsdk->connect_mutex);
 	}
 	return wmxsdk;
 }
@@ -1307,8 +1305,8 @@ struct wmxsdk *wmxsdk_ref(struct wmxsdk *wmxsdk)
 void wmxsdk_unref(struct wmxsdk *wmxsdk)
 {
 	if (g_atomic_int_dec_and_test(&wmxsdk->refcount)) {
-		g_mutex_free(wmxsdk->status_mutex);
-		g_mutex_free(wmxsdk->connect_mutex);
+		g_mutex_clear(&wmxsdk->status_mutex);
+		g_mutex_clear(&wmxsdk->connect_mutex);
 		memset(wmxsdk, 0, sizeof(*wmxsdk));
 		free(wmxsdk);
 	}
@@ -1394,7 +1392,7 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 	char errstr[512];
 	UINT32 errstr_size = sizeof(errstr);
 
-	g_static_mutex_lock(&add_remove_mutex);
+	g_mutex_lock(&add_remove_mutex);
 
 	nm_log_dbg(LOGD_WIMAX, "cb: handle %u index #%u is %d", devid->sdkHandle,
 	           devid->deviceIndex, presence);
@@ -1438,7 +1436,7 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 	}
 
 out:
-	g_static_mutex_unlock(&add_remove_mutex);
+	g_mutex_unlock(&add_remove_mutex);
 }
 
 /*

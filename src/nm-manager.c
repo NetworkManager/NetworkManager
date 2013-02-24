@@ -3855,9 +3855,7 @@ firmware_dir_changed (GFileMonitor *monitor,
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGED:
-#if GLIB_CHECK_VERSION(2,23,4)
 	case G_FILE_MONITOR_EVENT_MOVED:
-#endif
 	case G_FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (!priv->fw_changed_id) {

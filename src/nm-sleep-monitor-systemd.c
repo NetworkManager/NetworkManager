@@ -35,20 +35,11 @@
 #define SD_PATH              "/org/freedesktop/login1"
 #define SD_INTERFACE         "org.freedesktop.login1.Manager"
 
-/* Do we have GDBus (glib >= 2.26) and GUnixFDList (glib >= 2.30) support ? */
-#if GLIB_CHECK_VERSION(2,30,0)
-#define IS_GDBUS_UNIXFD_AVAILABLE 1
-#endif
-
 
 struct _NMSleepMonitor {
 	GObject parent_instance;
 
-#if defined(IS_GDBUS_UNIXFD_AVAILABLE)
 	GDBusProxy *sd_proxy;
-#else
-	DBusGProxy *sd_proxy;
-#endif
 	gint inhibit_fd;
 };
 
@@ -83,8 +74,6 @@ drop_inhibitor (NMSleepMonitor *self)
 	return FALSE;
 }
 
-#if defined(IS_GDBUS_UNIXFD_AVAILABLE)
-/* Great! We have GDBus (glib >= 2.26) and GUnixFDList (glib >= 2.30) */
 static void
 inhibit_done (GObject      *source,
               GAsyncResult *result,
@@ -170,136 +159,6 @@ sleep_setup (NMSleepMonitor *self)
 	g_object_unref (bus);
 	g_signal_connect (self->sd_proxy, "g-signal", G_CALLBACK (signal_cb), self);
 }
-
-#else
-
-/* GDBus nor GUnixFDList available. We have to get by with dbus-glib and libdbus */
-static void
-inhibit_done (DBusPendingCall *pending,
-              gpointer user_data)
-{
-	NMSleepMonitor *self = user_data;
-	DBusMessage *reply;
-	DBusError error;
-	int mtype;
-
-	dbus_error_init (&error);
-	reply = dbus_pending_call_steal_reply (pending);
-	g_assert (reply);
-
-	mtype = dbus_message_get_type (reply);
-	switch (mtype) {
-	case DBUS_MESSAGE_TYPE_ERROR:
-		dbus_set_error_from_message (&error, reply);
-		nm_log_warn (LOGD_SUSPEND, "Inhibit() failed: %s", error.message ? error.message : "unknown");
-		break;
-	case DBUS_MESSAGE_TYPE_METHOD_RETURN:
-		if (!dbus_message_get_args (reply,
-		                            &error,
-		                            DBUS_TYPE_UNIX_FD, &self->inhibit_fd,
-		                            DBUS_TYPE_INVALID)) {
-			nm_log_warn (LOGD_SUSPEND, "Inhibit() reply parsing failed: %s",
-			                          error.message ? error.message : "unknown");
-			break;
-		}
-		nm_log_dbg (LOGD_SUSPEND, "Inhibitor fd is %d", self->inhibit_fd);
-		break;
-	default:
-		nm_log_warn (LOGD_SUSPEND, "Invalid Inhibit() reply message type %d", mtype);
-		break;
-	}
-
-	dbus_message_unref (reply);
-	dbus_error_free (&error);
-}
-
-static void
-take_inhibitor (NMSleepMonitor *self)
-{
-	NMDBusManager *dbus_mgr;
-	DBusConnection *bus;
-	DBusMessage *message = NULL;
-	DBusPendingCall *pending = NULL;
-	const char *arg_what = "sleep";
-	const char *arg_who = g_get_user_name ();
-	const char *arg_why = "inhibited";
-	const char *arg_mode = "delay";
-
-	g_assert (self->inhibit_fd == -1);
-
-	nm_log_dbg (LOGD_SUSPEND, "Taking systemd sleep inhibitor");
-
-	dbus_mgr = nm_dbus_manager_get ();
-	bus = nm_dbus_manager_get_dbus_connection (dbus_mgr);
-	g_assert (bus);
-	g_object_unref (dbus_mgr);
-
-	if (!(message = dbus_message_new_method_call (SD_NAME,
-	                                              SD_PATH,
-	                                              SD_INTERFACE,
-	                                              "Inhibit"))) {
-		nm_log_warn (LOGD_SUSPEND, "Unable to call Inhibit()");
-		return;
-	}
-	if (!dbus_message_append_args (message,
-	                               DBUS_TYPE_STRING, &arg_what,
-	                               DBUS_TYPE_STRING, &arg_who,
-	                               DBUS_TYPE_STRING, &arg_why,
-	                               DBUS_TYPE_STRING, &arg_mode,
-	                               DBUS_TYPE_INVALID)) {
-		nm_log_warn (LOGD_SUSPEND, "Unable to call Inhibit()");
-		goto done;
-	}
-
-	if (!dbus_connection_send_with_reply (bus, message, &pending, -1))
-		goto done;
-
-	if (!dbus_pending_call_set_notify (pending, inhibit_done, self, NULL)) {
-		dbus_pending_call_cancel (pending);
-		dbus_pending_call_unref (pending);
-	}
-
-done:
-	if (message)
-		dbus_message_unref (message);
-}
-
-static void
-signal_cb (DBusGProxy *proxy, gboolean about_to_suspend, gpointer data)
-{
-	NMSleepMonitor *self = data;
-
-	nm_log_dbg (LOGD_SUSPEND, "Received PrepareForSleep signal: %d", about_to_suspend);
-
-	if (about_to_suspend) {
-		g_signal_emit (self, signals[SLEEPING], 0);
-		drop_inhibitor (self);
-	} else {
-		take_inhibitor (self);
-		g_signal_emit (self, signals[RESUMING], 0);
-	}
-}
-
-static void
-sleep_setup (NMSleepMonitor *self)
-{
-	NMDBusManager *dbus_mgr;
-	DBusGConnection *bus;
-
-	dbus_mgr = nm_dbus_manager_get ();
-	bus = nm_dbus_manager_get_connection (dbus_mgr);
-	self->sd_proxy = dbus_g_proxy_new_for_name (bus, SD_NAME, SD_PATH, SD_INTERFACE);
-	g_object_unref (dbus_mgr);
-
-	if (self->sd_proxy) {
-		dbus_g_proxy_add_signal (self->sd_proxy, "PrepareForSleep", G_TYPE_BOOLEAN, G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (self->sd_proxy, "PrepareForSleep",
-		                             G_CALLBACK (signal_cb),
-		                             self, NULL);
-	} else
-		nm_log_warn (LOGD_SUSPEND, "could not initialize systemd-logind D-Bus proxy");
-}
-#endif  /* IS_GDBUS_UNIXFD_AVAILABLE */
 
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)

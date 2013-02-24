@@ -64,13 +64,13 @@ struct wmxsdk {
 	WimaxRemovedFunc removed_cb;
 	void *callback_data;
 
-	GStaticMutex network_mutex;
+	GMutex network_mutex;
 
 	WIMAX_API_DEVICE_STATUS status;
 	WIMAX_API_MEDIA_STATUS media_status;
-	GMutex *status_mutex;
+	GMutex status_mutex;
 
-	GMutex *connect_mutex;
+	GMutex connect_mutex;
 
 	char name[100];
 	char ifname[16];

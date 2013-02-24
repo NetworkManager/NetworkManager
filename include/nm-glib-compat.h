@@ -29,53 +29,6 @@
 
 #include "nm-gvaluearray-compat.h"
 
-#if !GLIB_CHECK_VERSION(2,31,0)
-#define g_value_set_schar g_value_set_char
-#define g_value_get_schar g_value_get_char
-#endif
-
-#if !GLIB_CHECK_VERSION(2,30,0)
-#define G_VALUE_INIT  { 0, { { 0 } } }
-#endif
-
-#if !GLIB_CHECK_VERSION(2,28,0)
-#define g_simple_async_result_take_error(result, error) \
-	G_STMT_START { \
-		GError *__error = error; \
-		g_simple_async_result_set_from_error (result, __error); \
-		g_error_free (__error); \
-	} G_STMT_END
-
-#define g_clear_object(object_ptr) \
-	G_STMT_START { \
-		GObject **__obj_p = (gpointer) (object_ptr); \
-		if (*__obj_p) { \
-			g_object_unref (*__obj_p); \
-			*__obj_p = NULL; \
-		} \
-	} G_STMT_END
-
-#endif
-
-#ifndef G_DEFINE_BOXED_TYPE
-#define G_DEFINE_BOXED_TYPE(t,p,d,f) \
-GType \
-p##_get_type (void) \
-{ \
-    static volatile gsize g_define_type_id__volatile = 0; \
- \
-    if (g_once_init_enter (&g_define_type_id__volatile)) { \
-        GType g_define_type_id = \
-            g_boxed_type_register_static( \
-                g_intern_static_string(#t), \
-                (GBoxedCopyFunc) d, \
-                (GBoxedFreeFunc) f); \
-        g_once_init_leave (&g_define_type_id__volatile, g_define_type_id); \
-    } \
-    return g_define_type_id__volatile; \
-}
-#endif
-
 #if !GLIB_CHECK_VERSION(2,34,0)
 static inline void
 g_type_ensure (GType type)
