@@ -212,15 +212,16 @@ PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-GLIB_VERSION_DEFINES="-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_26 '-DGLIB_VERSION_MAX_ALLOWED=G_ENCODE_VERSION(2,34)'"
-
-# dbus-glib uses GValueArray, which is deprecated as of GLib 2.32.
-# Set GLIB_VERSION_MIN_REQUIRED to something less than that to avoid
-# getting warnings. (GLIB_VERSION_2_26 is the oldest defined version.)
-DBUS_CFLAGS="$DBUS_CFLAGS $GLIB_VERSION_DEFINES"
-
 PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.32 gmodule-2.0)
-GLIB_CFLAGS="$GLIB_CFLAGS $GLIB_VERSION_DEFINES"
+
+dnl GLIB_VERSION_MIN_REQUIRED should match the version above.
+dnl GLIB_VERSION_MAX_ALLOWED should be the largest version for which there
+dnl is a GLIB_CHECK_VERSION check. We currently have to use
+dnl G_ENCODE_VERSION(2,34) here rather than GLIB_VERSION_2_34, because
+dnl GLib 2.32 did not handle future version defines correctly.
+
+GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 '-DGLIB_VERSION_MAX_ALLOWED=G_ENCODE_VERSION(2,34)'"
+
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
