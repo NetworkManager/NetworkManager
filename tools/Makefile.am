@@ -25,5 +25,4 @@ EXTRA_DIST = \
 	doc-generator.xsl \
 	manpages-docbook.xsl \
 	check-exports.sh \
-	glib-mkenums \
 	$(GENERATE_SETTINGS_SPEC_SOURCE)
