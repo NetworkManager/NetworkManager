@@ -909,7 +909,7 @@ show_device_info (gpointer data, gpointer user_data)
 			/* available-connections */
 			avail_cons = nm_device_get_available_connections (device);
 			ac_paths_str = g_string_new (NULL);
-			if (avail_cons->len) {
+			if (avail_cons && avail_cons->len) {
 				ac_arr = g_new (char *, avail_cons->len + 1);
 				ac_arr[avail_cons->len] = NULL;
 			}
