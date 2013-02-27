@@ -180,27 +180,46 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			const char *script, *err;
 			DispatchResult result;
 
-			if (   (G_VALUE_TYPE (g_value_array_get_nth (item, 0)) == G_TYPE_STRING)
-			    && (G_VALUE_TYPE (g_value_array_get_nth (item, 1)) == G_TYPE_UINT)
-			    && (G_VALUE_TYPE (g_value_array_get_nth (item, 2)) == G_TYPE_STRING)) {
-				/* result */
-				tmp = g_value_array_get_nth (item, 1);
-				result = g_value_get_uint (tmp);
-				if (result != DISPATCH_RESULT_SUCCESS) {
-					/* script */
-					tmp = g_value_array_get_nth (item, 0);
-					script = g_value_get_string (tmp);
+			if (item->n_values != 3) {
+				nm_log_dbg (LOGD_CORE, "Unexpected number of items in "
+				                       "dispatcher result (got %d, expectd 3)",
+				                       item->n_values);
+				goto next;
+			}
 
-					/* error */
-					tmp = g_value_array_get_nth (item, 2);
-					err = g_value_get_string (tmp);
+			/* Script */
+			tmp = g_value_array_get_nth (item, 0);
+			if (G_VALUE_TYPE (tmp) != G_TYPE_STRING) {
+				nm_log_dbg (LOGD_CORE, "Dispatcher result %d element 0 invalid type %s",
+				            i, G_VALUE_TYPE_NAME (tmp));
+				goto next;
+			}
+			script = g_value_get_string (tmp);
 
-					nm_log_warn (LOGD_CORE, "Dispatcher script %s: %s",
-					             dispatch_result_to_string (result), err);
-				}
-			} else
-				nm_log_dbg (LOGD_CORE, "Dispatcher result element %d invalid type", i);
+			/* Result */
+			tmp = g_value_array_get_nth (item, 1);
+			if (G_VALUE_TYPE (tmp) != G_TYPE_UINT) {
+				nm_log_dbg (LOGD_CORE, "Dispatcher result %d element 1 invalid type %s",
+				            i, G_VALUE_TYPE_NAME (tmp));
+				goto next;
+			}
+			result = g_value_get_uint (tmp);
 
+			/* Error */
+			tmp = g_value_array_get_nth (item, 2);
+			if (G_VALUE_TYPE (tmp) != G_TYPE_STRING) {
+				nm_log_dbg (LOGD_CORE, "Dispatcher result %d element 2 invalid type %s",
+				            i, G_VALUE_TYPE_NAME (tmp));
+				goto next;
+			}
+			err = g_value_get_string (tmp);
+
+			if (result != DISPATCH_RESULT_SUCCESS) {
+				nm_log_warn (LOGD_CORE, "Dispatcher script %s: %s",
+				             dispatch_result_to_string (result), err);
+			}
+
+next:
 			g_value_array_free (item);
 		}
 		g_ptr_array_free (results, TRUE);
