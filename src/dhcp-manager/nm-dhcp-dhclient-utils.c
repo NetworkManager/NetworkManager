@@ -168,6 +168,10 @@ nm_dhcp_dhclient_create_config (const char *interface,
 					continue;
 			}
 
+			/* Ignore 'script' since we pass our own */
+			if (g_str_has_prefix (p, "script "))
+				continue;
+
 			/* Check for "also require" */
 			if (!strncmp (p, ALSOREQ_TAG, strlen (ALSOREQ_TAG))) {
 				in_alsoreq = TRUE;
