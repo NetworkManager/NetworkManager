@@ -891,6 +891,30 @@ _nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest
 	g_string_free (printable, FALSE);
 }
 
+static gboolean
+validate_gvalue_array (GValueArray *elements, guint n_expected, ...)
+{
+	va_list args;
+	GValue *tmp;
+	int i;
+	gboolean valid = FALSE;
+
+	if (n_expected != elements->n_values)
+		return FALSE;
+
+	va_start (args, n_expected);
+	for (i = 0; i < n_expected; i++) {
+		tmp = g_value_array_get_nth (elements, i);
+		if (G_VALUE_TYPE (tmp) != va_arg (args, GType))
+			goto done;
+	}
+	valid = TRUE;
+
+done:
+	va_end (args);
+	return valid;
+}
+
 static void
 _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GValue *dest_value)
 {
@@ -916,10 +940,10 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 
 		g_string_append (printable, "{ ");
 		elements = (GValueArray *) g_ptr_array_index (ptr_array, i++);
-		if (   (elements->n_values != 3)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
+		if (!validate_gvalue_array (elements, 3,
+		                            DBUS_TYPE_G_UCHAR_ARRAY,
+		                            G_TYPE_UINT,
+		                            DBUS_TYPE_G_UCHAR_ARRAY)) {
 			g_string_append (printable, "invalid }");
 			continue;
 		}
@@ -991,11 +1015,11 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 
 		g_string_append (printable, "{ ");
 		elements = (GValueArray *) g_ptr_array_index (ptr_array, i++);
-		if (   (elements->n_values != 4)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 3)) != G_TYPE_UINT)) {
+		if (!validate_gvalue_array (elements, 4,
+		                            DBUS_TYPE_G_UCHAR_ARRAY,
+		                            G_TYPE_UINT,
+		                            DBUS_TYPE_G_UCHAR_ARRAY,
+		                            G_TYPE_UINT)) {
 			g_string_append (printable, "invalid");
 			continue;
 		}
@@ -1072,10 +1096,7 @@ _nm_utils_convert_old_ip6_addr_array (const GValue *src_value, GValue *dst_value
 		GByteArray *ba;
 
 		src_addr_array = (GValueArray *) g_ptr_array_index (src_outer_array, i);
-
-		if (   (src_addr_array->n_values != 2)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (src_addr_array, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (src_addr_array, 1)) != G_TYPE_UINT)) {
+		if (!validate_gvalue_array (src_addr_array, 2, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT)) {
 			g_warning ("%s: invalid old IPv6 address type", __func__);
 			return;
 		}
@@ -1777,15 +1798,9 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 			continue;
 		}
 
-		if (   (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)) {
-			g_warning ("%s: ignoring invalid IP6 address structure", __func__);
-			continue;
-		}
-
-		/* Check optional 3rd element (gateway) */
-		if (   elements->n_values == 3
-		    && (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
+		/* Third element (gateway) is optional */
+		if (   !validate_gvalue_array (elements, 2, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT)
+		    && !validate_gvalue_array (elements, 3, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, DBUS_TYPE_G_UCHAR_ARRAY)) {
 			g_warning ("%s: ignoring invalid IP6 address structure", __func__);
 			continue;
 		}
@@ -1912,11 +1927,11 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 		guint prefix, metric;
 		NMIP6Route *route;
 
-		if (   (route_values->n_values != 4)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (route_values, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
-			|| (G_VALUE_TYPE (g_value_array_get_nth (route_values, 1)) != G_TYPE_UINT)
-		    || (G_VALUE_TYPE (g_value_array_get_nth (route_values, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)
-			|| (G_VALUE_TYPE (g_value_array_get_nth (route_values, 3)) != G_TYPE_UINT)) {
+		if (!validate_gvalue_array (route_values, 4,
+		                            DBUS_TYPE_G_UCHAR_ARRAY,
+		                            G_TYPE_UINT,
+		                            DBUS_TYPE_G_UCHAR_ARRAY,
+		                            G_TYPE_UINT)) {
 			g_warning ("Ignoring invalid IP6 route");
 			continue;
 		}
