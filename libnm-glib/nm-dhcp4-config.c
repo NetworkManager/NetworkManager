@@ -163,8 +163,7 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
 	 *
 	 * The #GHashTable containing options of the configuration.
 	 *
-	 * Type: GLib.HashTable
-	 * Element-Type: utf8,GObject.Value
+	 * Type: GLib.HashTable(utf8,GObject.Value)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
