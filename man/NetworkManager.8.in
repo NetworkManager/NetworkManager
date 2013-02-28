@@ -147,7 +147,6 @@ NetworkManager itself.
 When set to anything, causes NetworkManager to turn on PPP debugging in pppd,
 which logs all PPP and PPTP frames and client/server exchanges.
 .SH SEE ALSO
-.BR nm\-tool (1),
 .BR nm\-online (1),
 .BR nmcli (1),
 .BR NetworkManager.conf (5),

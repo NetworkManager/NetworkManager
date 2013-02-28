@@ -261,6 +261,5 @@ URI for connectivity checking.  If missing, defaults to "NetworkManager is onlin
 .sp
 .BR NetworkManager (8),
 .BR nmcli (1),
-.BR nm\-tool (1),
 .BR nm\-online (1),
 .BR nm\-settings (5).

@@ -58,6 +58,5 @@ Offline or not online within given timeout
 Unspecified error
 
 .SH SEE ALSO
-.BR nm\-tool (1),
 .BR nmcli (1),
 .BR NetworkManager(8).

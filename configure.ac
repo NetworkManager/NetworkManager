@@ -686,7 +686,6 @@ man/Makefile
 man/NetworkManager.8
 man/NetworkManager.conf.5
 man/nm-system-settings.conf.5
-man/nm-tool.1
 man/nm-online.1
 man/nmcli.1
 po/Makefile.in

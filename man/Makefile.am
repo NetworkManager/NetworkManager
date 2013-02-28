@@ -18,7 +18,6 @@ man_MANS +=				\
 	NetworkManager.8		\
 	NetworkManager.conf.5		\
 	nm-system-settings.conf.5	\
-	nm-tool.1			\
 	nm-online.1			\
 	nmcli.1				\
 	nm-settings.5

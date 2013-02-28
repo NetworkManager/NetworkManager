@@ -162,7 +162,6 @@ system-settings/src
 test/libnm-glib-test
 test/libnm_glib_test
 test/nm-online
-test/nm-tool
 test/nmtestdevices
 libnm-util/test-crypto
 libnm-util/tests/test-crypto

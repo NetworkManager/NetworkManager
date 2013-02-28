@@ -12,16 +12,9 @@ AM_CPPFLAGS = \
 	-DDATADIR=\"$(datadir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"
 
-bin_PROGRAMS = nm-tool nm-online
+bin_PROGRAMS = nm-online
 
 noinst_PROGRAMS = libnm-glib-test
-
-nm_tool_SOURCES = nm-tool.c
-nm_tool_LDADD = \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(DBUS_LIBS) \
-	$(GLIB_LIBS)
 
 nm_online_SOURCES = nm-online.c
 nm_online_LDADD = \
