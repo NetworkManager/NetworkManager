@@ -49,9 +49,11 @@ static NmcOutputField nmc_fields_nm_status[] = {
 #if WITH_WIMAX
 #define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
+#define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #else
 #define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
+#define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN"
 #endif
 #define NMC_FIELDS_NM_STATUS_COMMON  "RUNNING,STATE,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_NETWORKING     "NETWORKING"
@@ -114,16 +116,26 @@ usage_general (void)
 }
 
 static void
-usage_switch (void)
+usage_networking (void)
 {
 	fprintf (stderr,
-	         _("Usage: nmcli switch { COMMAND | help }\n\n"
+	         _("Usage: nmcli networking { COMMAND | help }\n\n"
+	         "  COMMAND := { [on/off] }\n\n"
+	         "\n"
+	         ));
+}
+
+static void
+usage_radio (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli radio { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	         "  COMMAND := { all | networking | wifi | wwan | wimax }\n\n"
-	         "  all|networking|wifi|wwan|wimax [on/off]\n"
+	         "  COMMAND := { all | wifi | wwan | wimax }\n\n"
+	         "  all|wifi|wwan|wimax [on/off]\n"
 #else
-	         "  COMMAND := { all | networking | wifi | wwan }\n\n"
-	         "  all|networking|wifi|wwan [on/off]\n"
+	         "  COMMAND := { all | wifi | wwan }\n\n"
+	         "  all|wifi|wwan [on/off]\n"
 #endif
 	         "\n"
 	         ));
@@ -161,7 +173,7 @@ nm_state_to_string (NMState state)
 }
 
 static gboolean
-show_nm_status (NmCli *nmc, const char *pretty_header_name, gboolean only_switches, gboolean new_cmd)
+show_nm_status (NmCli *nmc, const char *pretty_header_name, gboolean new_cmd, const char *print_flds)
 {
 	gboolean nm_running;
 	NMState state = NM_STATE_UNKNOWN;
@@ -173,8 +185,8 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, gboolean only_switch
 #endif
 	GError *error = NULL;
 	const char *fields_str;
-	const char *fields_all =    new_cmd ? (only_switches ? NMC_FIELDS_NM_STATUS_SWITCH : NMC_FIELDS_NM_STATUS_ALL) : NMC_FIELDS_NM_STATUS_ALL_OLD;
-	const char *fields_common = new_cmd ? (only_switches ? NMC_FIELDS_NM_STATUS_SWITCH : NMC_FIELDS_NM_STATUS_COMMON) : NMC_FIELDS_NM_STATUS_COMMON_OLD;
+	const char *fields_all =    new_cmd ? (print_flds ? print_flds : NMC_FIELDS_NM_STATUS_ALL) : NMC_FIELDS_NM_STATUS_ALL_OLD;
+	const char *fields_common = new_cmd ? (print_flds ? print_flds : NMC_FIELDS_NM_STATUS_COMMON) : NMC_FIELDS_NM_STATUS_COMMON_OLD;
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -415,7 +427,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto finish;
 		}
-		show_nm_status (nmc, NULL, FALSE, TRUE);
+		show_nm_status (nmc, NULL, TRUE, NULL);
 	}
 
 	if (argc > 0) {
@@ -425,7 +437,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto finish;
 			}
-			show_nm_status (nmc, NULL, FALSE, TRUE);
+			show_nm_status (nmc, NULL, TRUE, NULL);
 		}
 		else if (matches (*argv, "permissions") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
@@ -454,7 +466,6 @@ finish:
 	return nmc->return_value;
 }
 
-
 static gboolean
 nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
 {
@@ -471,7 +482,7 @@ nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
 		nmc->print_output = NMC_PRINT_TERSE;
 
 	nmc->required_fields = g_strdup (switch_name);
-	return show_nm_status (nmc, header, TRUE, TRUE);
+	return show_nm_status (nmc, header, TRUE, NMC_FIELDS_NM_STATUS_SWITCH);
 }
 
 static gboolean
@@ -495,10 +506,40 @@ nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolea
 }
 
 /*
- * Entry point function for switch commands 'nmcli switch'
+ * Entry point function for 'nmcli networking'
  */
 NMCResultCode
-do_switch (NmCli *nmc, int argc, char **argv)
+do_networking (NmCli *nmc, int argc, char **argv)
+{
+	gboolean enable_flag;
+
+	if (argc == 0)
+		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
+	else if (argc > 0) {
+		if (   matches (*argv, "help") == 0
+		    || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
+		    || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+			usage_networking ();
+		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
+
+			nmc->get_client (nmc); /* create NMClient */
+			nm_client_networking_set_enabled (nmc->client, enable_flag);
+		} else {
+			usage_networking ();
+			g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		}
+	}
+
+	quit ();
+	return nmc->return_value;
+}
+
+/*
+ * Entry point function for radio switch commands 'nmcli radio'
+ */
+NMCResultCode
+do_radio (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	gboolean enable_flag;
@@ -510,47 +551,34 @@ do_switch (NmCli *nmc, int argc, char **argv)
 			g_error_free (error);
 			goto finish;
 		}
-		show_nm_status (nmc, _("Network switches"), TRUE, TRUE);
+		show_nm_status (nmc, _("Radio switches"), TRUE, NMC_FIELDS_NM_STATUS_RADIO);
 	}
 
 	if (argc > 0) {
 		if (matches (*argv, "all") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show all switches */
+				/* no argument, show all radio switches */
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					g_error_free (error);
 					goto finish;
 				}
-				show_nm_status (nmc, _("Network switches"), TRUE, TRUE);
+				show_nm_status (nmc, _("Radio switches"), TRUE, NMC_FIELDS_NM_STATUS_RADIO);
 			} else {
 				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 					goto finish;
 
 				nmc->get_client (nmc); /* create NMClient */
-				nm_client_networking_set_enabled (nmc->client, enable_flag);
 				nm_client_wireless_set_enabled (nmc->client, enable_flag);
 				nm_client_wimax_set_enabled (nmc->client, enable_flag);
 				nm_client_wwan_set_enabled (nmc->client, enable_flag);
 			}
 		}
-		else if (matches (*argv, "networking") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current state of networking */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking switch"));
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-				
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_networking_set_enabled (nmc->client, enable_flag);
-			}
-		}
 		else if (matches (*argv, "wifi") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WiFi state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi switch"));
+				nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
 			} else {
 				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 					goto finish;
@@ -561,8 +589,8 @@ do_switch (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches (*argv, "wwan") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current WWAN state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN switch"));
+				/* no argument, show current WWAN (mobile broadband) state */
+				nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
 			} else {
 				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 					goto finish;
@@ -575,7 +603,7 @@ do_switch (NmCli *nmc, int argc, char **argv)
 		else if (matches (*argv, "wimax") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WiMAX state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WIMAX, _("WiMAX switch"));
+				nmc_switch_show (nmc, NMC_FIELDS_NM_WIMAX, _("WiMAX radio switch"));
 			} else {
 				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
 					goto finish;
@@ -588,11 +616,11 @@ do_switch (NmCli *nmc, int argc, char **argv)
 		else if (   matches (*argv, "help") == 0
 		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
 		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
-			usage_switch ();
+			usage_radio ();
 		}
 		else {
-			usage_switch ();
-			g_string_printf (nmc->return_text, _("Error: 'switch' command '%s' is not valid."), *argv);
+			usage_radio ();
+			g_string_printf (nmc->return_text, _("Error: 'radio' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
