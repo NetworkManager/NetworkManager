@@ -47,6 +47,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
+#include "nm-dbus-helpers-private.h"
 
 static GType _nm_device_type_for_path (DBusGConnection *connection,
                                        const char *path);
@@ -319,10 +320,7 @@ constructed (GObject *object)
 	/* Catch a subclass setting the wrong type */
 	g_warn_if_fail (G_OBJECT_TYPE (object) == _nm_device_gtype_from_dtype (priv->device_type));
 
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-											 NM_DBUS_SERVICE,
-											 nm_object_get_path (NM_OBJECT (object)),
-											 NM_DBUS_INTERFACE_DEVICE);
+	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE);
 
 	register_properties (NM_DEVICE (object));
 
@@ -849,10 +847,7 @@ _nm_device_type_for_path (DBusGConnection *connection,
 	GValue value = G_VALUE_INIT;
 	NMDeviceType nm_dtype;
 
-	proxy = dbus_g_proxy_new_for_name (connection,
-									   NM_DBUS_SERVICE,
-									   path,
-									   "org.freedesktop.DBus.Properties");
+	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
 	if (!proxy) {
 		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
 		return G_TYPE_INVALID;
@@ -951,8 +946,7 @@ _nm_device_type_for_path_async (DBusGConnection *connection,
 	async_data->callback = callback;
 	async_data->user_data = user_data;
 
-	proxy = dbus_g_proxy_new_for_name (connection, NM_DBUS_SERVICE, path,
-	                                   "org.freedesktop.DBus.Properties");
+	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
 	dbus_g_proxy_begin_call (proxy, "Get",
 	                         async_got_type, async_data, NULL,
 	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,

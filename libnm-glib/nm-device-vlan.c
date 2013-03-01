@@ -219,17 +219,11 @@ register_properties (NMDeviceVlan *device)
 static void
 constructed (GObject *object)
 {
-	NMDeviceVlanPrivate *priv;
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_device_vlan_parent_class)->constructed (object);
 
-	priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-	                                         NM_DBUS_SERVICE,
-	                                         nm_object_get_path (NM_OBJECT (object)),
-	                                         NM_DBUS_INTERFACE_DEVICE_VLAN);
-
+	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_VLAN);
 	register_properties (NM_DEVICE_VLAN (object));
 }
 

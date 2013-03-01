@@ -39,6 +39,9 @@ typedef struct {
 	GType object_type;
 } NMPropertiesInfo;
 
+DBusGProxy *_nm_object_new_proxy (NMObject *self,
+                                  const char *path,
+                                  const char *interface);
 
 void _nm_object_register_properties (NMObject *object,
 									 DBusGProxy *proxy,

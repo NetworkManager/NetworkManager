@@ -32,6 +32,7 @@
 #include "nm-glib-compat.h"
 #include "nm-types.h"
 #include "nm-glib-marshal.h"
+#include "nm-dbus-helpers-private.h"
 
 #define DEBUG 0
 
@@ -157,10 +158,9 @@ constructed (GObject *object)
 	if (G_OBJECT_CLASS (nm_object_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_object_parent_class)->constructed (object);
 
-	priv->properties_proxy = dbus_g_proxy_new_for_name (priv->connection,
-	                                                    NM_DBUS_SERVICE,
-	                                                    priv->path,
-	                                                    "org.freedesktop.DBus.Properties");
+	priv->properties_proxy = _nm_object_new_proxy (NM_OBJECT (object),
+	                                               NULL,
+	                                               "org.freedesktop.DBus.Properties");
 }
 
 static gboolean
@@ -1450,3 +1450,12 @@ _nm_object_reload_properties_finish (NMObject *object, GAsyncResult *result, GEr
 
 	return g_simple_async_result_get_op_res_gboolean (simple);
 }
+
+DBusGProxy *
+_nm_object_new_proxy (NMObject *self, const char *path, const char *interface)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+
+	return _nm_dbus_new_proxy_for_connection (priv->connection, path ? path : priv->path, interface);
+}
+

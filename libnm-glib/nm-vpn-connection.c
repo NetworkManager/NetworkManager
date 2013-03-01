@@ -167,16 +167,11 @@ register_properties (NMVPNConnection *connection)
 static void
 constructed (GObject *object)
 {
-	NMVPNConnectionPrivate *priv;
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
-
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-									 NM_DBUS_SERVICE,
-									 nm_object_get_path (NM_OBJECT (object)),
-									 NM_DBUS_INTERFACE_VPN_CONNECTION);
+	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_VPN_CONNECTION);
 
 	dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__UINT_UINT,
 	                                   G_TYPE_NONE,

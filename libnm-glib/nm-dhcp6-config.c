@@ -90,21 +90,13 @@ register_properties (NMDHCP6Config *config)
 static void
 constructed (GObject *object)
 {
-	DBusGConnection *connection;
-	NMDHCP6ConfigPrivate *priv;
+	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->constructed (object);
 
-	priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
-	connection = nm_object_get_connection (NM_OBJECT (object));
-
-	priv->proxy = dbus_g_proxy_new_for_name (connection,
-										   NM_DBUS_SERVICE,
-										   nm_object_get_path (NM_OBJECT (object)),
-										   NM_DBUS_INTERFACE_DHCP6_CONFIG);
-
+	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DHCP6_CONFIG);
 	register_properties (NM_DHCP6_CONFIG (object));
 }
 

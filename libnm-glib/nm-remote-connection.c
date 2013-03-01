@@ -29,8 +29,10 @@
 #include <nm-setting-connection.h>
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
+#include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-dbus-helpers-private.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"
 #define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
@@ -359,16 +361,14 @@ nm_remote_connection_new (DBusGConnection *bus,
 static void
 constructed (GObject *object)
 {
-	NMRemoteConnectionPrivate *priv;
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 	g_assert (priv->bus);
 	g_assert (nm_connection_get_path (NM_CONNECTION (object)));
 
-	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                         NM_DBUS_SERVICE,
-	                                         nm_connection_get_path (NM_CONNECTION (object)),
-	                                         NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
+	                                                 nm_connection_get_path (NM_CONNECTION (object)),
+	                                                 NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 

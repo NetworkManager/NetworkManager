@@ -258,11 +258,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->constructed (object);
 
-	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-	                                         NM_DBUS_SERVICE,
-	                                         nm_object_get_path (NM_OBJECT (object)),
-	                                         NM_DBUS_INTERFACE_DEVICE_BLUETOOTH);
-
+	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_BLUETOOTH);
 	register_properties (NM_DEVICE_BT (object));
 }
 

@@ -1477,20 +1477,13 @@ constructor (GType type,
 static void
 constructed (GObject *object)
 {
-	DBusGConnection *connection;
-	NMClientPrivate *priv;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	nm_utils_init (NULL);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
 
-	priv = NM_CLIENT_GET_PRIVATE (object);
-	connection = nm_object_get_connection (NM_OBJECT (object));
-
-	priv->client_proxy = dbus_g_proxy_new_for_name (connection,
-										   NM_DBUS_SERVICE,
-										   nm_object_get_path (NM_OBJECT (object)),
-										   NM_DBUS_INTERFACE);
+	priv->client_proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE);
 
 	register_properties (NM_CLIENT (object));
 
@@ -1502,7 +1495,7 @@ constructed (GObject *object)
 	                             object,
 	                             NULL);
 
-	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
+	priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 	                                             DBUS_SERVICE_DBUS,
 	                                             DBUS_PATH_DBUS,
 	                                             DBUS_INTERFACE_DBUS);

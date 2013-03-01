@@ -219,19 +219,11 @@ nm_ip6_config_get_routes (NMIP6Config *config)
 static void
 constructed (GObject *object)
 {
-	DBusGConnection *connection;
-	NMIP6ConfigPrivate *priv;
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_ip6_config_parent_class)->constructed (object);
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (object);
-	connection = nm_object_get_connection (NM_OBJECT (object));
-
-	priv->proxy = dbus_g_proxy_new_for_name (connection,
-	                                         NM_DBUS_SERVICE,
-	                                         nm_object_get_path (NM_OBJECT (object)),
-	                                         NM_DBUS_INTERFACE_IP6_CONFIG);
-
+	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_IP6_CONFIG);
 	register_properties (NM_IP6_CONFIG (object));
 }
 

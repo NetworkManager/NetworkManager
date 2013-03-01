@@ -29,6 +29,8 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
+#include "nm-object-private.h"
+#include "nm-dbus-helpers-private.h"
 #include "nm-glib-compat.h"
 
 static void nm_remote_settings_initable_iface_init (GInitableIface *iface);
@@ -893,10 +895,9 @@ constructed (GObject *object)
 	                             G_CALLBACK (name_owner_changed),
 	                             object, NULL);
 
-	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                         NM_DBUS_SERVICE,
-	                                         NM_DBUS_PATH_SETTINGS,
-	                                         NM_DBUS_IFACE_SETTINGS);
+	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
+	                                                 NM_DBUS_PATH_SETTINGS,
+	                                                 NM_DBUS_IFACE_SETTINGS);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
@@ -913,10 +914,9 @@ constructed (GObject *object)
 
 
 	/* D-Bus properties proxy */
-	priv->props_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                               NM_DBUS_SERVICE,
-	                                               NM_DBUS_PATH_SETTINGS,
-	                                               "org.freedesktop.DBus.Properties");
+	priv->props_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
+	                                                       NM_DBUS_PATH_SETTINGS,
+	                                                       "org.freedesktop.DBus.Properties");
 	g_assert (priv->props_proxy);
 
 	/* Monitor properties */

@@ -23,13 +23,11 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include "nm-glib-compat.h"
-
-#include <NetworkManager.h>
-
+#include "NetworkManager.h"
 #include "nm-secret-agent.h"
 #include "nm-glib-enum-types.h"
 #include "nm-glib-marshal.h"
-#include "NetworkManager.h"
+#include "nm-dbus-helpers-private.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,
                                            GHashTable *connection_hash,
@@ -826,10 +824,9 @@ nm_secret_agent_init (NMSecretAgent *self)
 	                             G_CALLBACK (name_owner_changed),
 	                             self, NULL);
 
-	priv->manager_proxy = dbus_g_proxy_new_for_name (priv->bus,
-	                                                 NM_DBUS_SERVICE,
-	                                                 NM_DBUS_PATH_AGENT_MANAGER,
-	                                                 NM_DBUS_INTERFACE_AGENT_MANAGER);
+	priv->manager_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
+	                                                         NM_DBUS_PATH_AGENT_MANAGER,
+	                                                         NM_DBUS_INTERFACE_AGENT_MANAGER);
 	if (!priv->manager_proxy) {
 		g_warning ("Couldn't create NM agent manager proxy.");
 		return;
