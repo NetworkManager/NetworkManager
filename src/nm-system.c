@@ -91,59 +91,6 @@ ip4_dest_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 dest_prefix)
 	return FALSE;
 }
 
-static struct rtnl_route *
-nm_system_device_set_ip4_route (int ifindex, 
-                                guint32 ip4_dest,
-                                guint32 ip4_prefix,
-                                guint32 ip4_gateway,
-                                guint32 metric,
-                                int mss)
-{
-	struct nl_sock *nlh;
-	struct rtnl_route *route;
-	int err;
-
-	g_return_val_if_fail (ifindex > 0, NULL);
-
-	nlh = nm_netlink_get_default_handle ();
-	g_return_val_if_fail (nlh != NULL, NULL);
-
-	route = nm_netlink_route_new (ifindex, AF_INET, mss,
-	                              NMNL_PROP_PRIO, metric,
-	                              NULL);
-	g_return_val_if_fail (route != NULL, NULL);
-
-	/* Add the route */
-	err = nm_netlink_route4_add (route, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
-	if (err == -NLE_OBJ_NOTFOUND && ip4_gateway) {
-		/* Gateway might be over a bridge; try adding a route to gateway first */
-		struct rtnl_route *route2;
-
-		route2 = nm_netlink_route_new (ifindex, AF_INET, mss, NULL);
-		if (route2) {
-			/* Add route to gateway over bridge */
-			err = nm_netlink_route4_add (route2, &ip4_gateway, 32, NULL, 0);
-			if (!err) {
-				err = nm_netlink_route4_add (route, &ip4_dest, ip4_prefix, &ip4_gateway, 0);
-				if (err)
-					nm_netlink_route_delete (route2);
-			}
-			rtnl_route_put (route2);
-		}
-	}
-
-	if (err) {
-		nm_log_err (LOGD_DEVICE | LOGD_IP4,
-		            "(%s): failed to set IPv4 route: %s",
-		            nm_platform_link_get_name (ifindex), nl_geterror (err));
-
-		rtnl_route_put (route);
-		route = NULL;
-	}
-
-	return route;
-}
-
 NMPlatformIP4Route *
 nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
@@ -243,42 +190,42 @@ nm_system_apply_ip4_config (int ifindex,
 	}
 
 	if (flags & NM_IP4_COMPARE_FLAG_ROUTES) {
-		for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
-			NMIP4Route *route = nm_ip4_config_get_route (config, i);
-			struct rtnl_route *tmp;
+		int count = nm_ip4_config_get_num_routes (config);
+		NMIP4Route *config_route;
+		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
+		NMPlatformIP4Route route;
+
+		for (i = 0; i < count; i++) {
+			config_route = nm_ip4_config_get_route (config, i);
+			memset (&route, 0, sizeof (route));
+			route.network = nm_ip4_route_get_dest (config_route);
+			route.plen = nm_ip4_route_get_prefix (config_route);
+			route.gateway = nm_ip4_route_get_next_hop (config_route);
+			route.metric = priority;
 
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
 			 */
-			if (ip4_dest_in_same_subnet (config,
-			                             nm_ip4_route_get_dest (route),
-			                             nm_ip4_route_get_prefix (route)))
+			if (ip4_dest_in_same_subnet (config, route.network, route.plen))
 				continue;
 
-			/* Don't add the route if it doesn't have a gateway and the connection
+			/* Don't add the default route when and the connection
 			 * is never supposed to be the default connection.
 			 */
-			if (   nm_ip4_config_get_never_default (config)
-			    && nm_ip4_route_get_dest (route) == 0)
+			if (nm_ip4_config_get_never_default (config) && route.network == 0)
 				continue;
 
-			tmp = nm_system_device_set_ip4_route (ifindex,
-			                                      nm_ip4_route_get_dest (route),
-			                                      nm_ip4_route_get_prefix (route),
-			                                      nm_ip4_route_get_next_hop (route),
-			                                      nm_ip4_route_get_metric (route),
-			                                      nm_ip4_config_get_mss (config));
-			rtnl_route_put (tmp);
+			g_array_append_val (routes, route);
 		}
+
+		nm_platform_ip4_route_sync (ifindex, routes);
+		g_array_unref (routes);
 	}
 
 	if (flags & NM_IP4_COMPARE_FLAG_MTU) {
 		if (nm_ip4_config_get_mtu (config))
 			nm_platform_link_set_mtu (ifindex, nm_ip4_config_get_mtu (config));
 	}
-
-	if (priority > 0)
-		nm_system_device_set_priority (ifindex, config, priority);
 
 	return TRUE;
 }
@@ -475,35 +422,35 @@ nm_system_apply_ip6_config (int ifindex,
 	}
 
 	if (flags & NM_IP6_COMPARE_FLAG_ROUTES) {
-		const char *iface = nm_platform_link_get_name (ifindex);
+		int count = nm_ip6_config_get_num_routes (config);
+		NMIP6Route *config_route;
+		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), count);
+		NMPlatformIP6Route route;
 
-		for (i = 0; i < nm_ip6_config_get_num_routes (config); i++) {
-			NMIP6Route *route = nm_ip6_config_get_route (config, i);
-			int err;
+		for (i = 0; i < count; i++) {
+			config_route = nm_ip6_config_get_route (config, i);
+			memset (&route, 0, sizeof (route));
+			route.network = *nm_ip6_route_get_dest (config_route);
+			route.plen = nm_ip6_route_get_prefix (config_route);
+			route.gateway = *nm_ip6_route_get_next_hop (config_route);
 
-			/* Don't add the route if it doesn't have a gateway and the connection
-			 * is never supposed to be the default connection.
+			/* Don't add the route if it's more specific than one of the subnets
+			 * the device already has an IP address on.
 			 */
-			if (   nm_ip6_config_get_never_default (config)
-			    && IN6_IS_ADDR_UNSPECIFIED (nm_ip6_route_get_dest (route)))
+			if (ip6_dest_in_same_subnet (config, &route.network, route.plen))
 				continue;
 
-			err = nm_system_set_ip6_route (ifindex,
-			                               nm_ip6_route_get_dest (route),
-			                               nm_ip6_route_get_prefix (route),
-			                               nm_ip6_route_get_next_hop (route),
-			                               nm_ip6_route_get_metric (route),
-			                               nm_ip6_config_get_mss (config),
-			                               RTPROT_UNSPEC,
-			                               RT_TABLE_UNSPEC,
-			                               NULL);
-			if (err && (err != -NLE_EXIST)) {
-				nm_log_err (LOGD_DEVICE | LOGD_IP6,
-				            "(%s): failed to set IPv6 route: %s",
-				            iface ? iface : "unknown",
-				            nl_geterror (err));
-			}
+			/* Don't add the default route when and the connection
+			 * is never supposed to be the default connection.
+			 */
+			if (nm_ip6_config_get_never_default (config) && IN6_IS_ADDR_UNSPECIFIED (&route.network))
+				continue;
+
+			g_array_append_val (routes, route);
 		}
+
+		nm_platform_ip6_route_sync (ifindex, routes);
+		g_array_unref (routes);
 	}
 
 // FIXME

@@ -547,7 +547,7 @@ deactivate (NMModem *self, NMDevice *device)
 	case MM_MODEM_IP_METHOD_DHCP:
 		ifindex = nm_device_get_ip_ifindex (device);
 		if (ifindex > 0) {
-			nm_system_iface_flush_routes (ifindex, AF_UNSPEC);
+			nm_platform_route_flush (ifindex);
 			nm_platform_address_flush (ifindex);
 			nm_platform_link_set_down (ifindex);
 		}

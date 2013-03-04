@@ -4034,7 +4034,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
 	gboolean tried_ipv6 = FALSE;
-	int ifindex, family;
+	int ifindex;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -4103,9 +4103,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
-	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
 	if (ifindex > 0) {
-		nm_system_iface_flush_routes (ifindex, family);
+		nm_platform_route_flush (ifindex);
 		nm_platform_address_flush (ifindex);
 	}
 
