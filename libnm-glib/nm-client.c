@@ -1220,6 +1220,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		poke_wireless_devices_with_rf_status (client);
 		free_devices (client, TRUE);
 		free_active_connections (client, TRUE);
+		update_permissions (client, NULL);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
 		priv->wwan_enabled = FALSE;
@@ -1236,6 +1237,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (client), FALSE);
 		_nm_object_reload_properties_async (NM_OBJECT (client), updated_properties, client);
+		client_recheck_permissions (priv->client_proxy, client);
 	}
 }
 
