@@ -53,7 +53,6 @@
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
 #include "nm-netlink-utils.h"
-#include "nm-netlink-compat.h"
 
 #include <netlink/route/addr.h>
 #include <netlink/route/route.h>

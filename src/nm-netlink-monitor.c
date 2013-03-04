@@ -46,7 +46,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include "nm-netlink-compat.h"
 #include "nm-netlink-monitor.h"
 #include "nm-logging.h"
 

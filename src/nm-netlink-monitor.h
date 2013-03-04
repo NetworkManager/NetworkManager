@@ -91,8 +91,6 @@ gboolean          nm_netlink_monitor_get_flags_sync   (NMNetlinkMonitor *monitor
                                                        guint32 *ifflags,
                                                        GError **error);
 
-#include "nm-netlink-compat.h"
-
 /* Generic utility functions */
 int               nm_netlink_iface_to_index     (const char *iface);
 char *            nm_netlink_index_to_iface     (int idx);

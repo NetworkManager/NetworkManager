@@ -49,7 +49,6 @@
 #include "nm-logging.h"
 #include "nm-netlink-monitor.h"
 #include "nm-netlink-utils.h"
-#include "nm-netlink-compat.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-connection.h"
