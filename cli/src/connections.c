@@ -3508,6 +3508,314 @@ editor_main_help (const char *command)
 	}
 }
 
+typedef enum {
+	NMC_EDITOR_SUB_CMD_UNKNOWN = 0,
+	NMC_EDITOR_SUB_CMD_SET,
+	NMC_EDITOR_SUB_CMD_ADD,
+	NMC_EDITOR_SUB_CMD_CHANGE,
+	NMC_EDITOR_SUB_CMD_REMOVE,
+	NMC_EDITOR_SUB_CMD_DESCRIBE,
+	NMC_EDITOR_SUB_CMD_PRINT,
+	NMC_EDITOR_SUB_CMD_BACK,
+	NMC_EDITOR_SUB_CMD_HELP,
+	NMC_EDITOR_SUB_CMD_QUIT
+} NmcEditorSubCmd;
+
+static NmcEditorSubCmd
+parse_editor_sub_cmd (const char *cmd, char **cmd_arg)
+{
+	NmcEditorSubCmd editor_cmd = NMC_EDITOR_SUB_CMD_UNKNOWN;
+	char **vec;
+
+	vec = g_strsplit_set (cmd, " \t", 2);
+	if (g_strv_length (vec) < 1) {
+		if (cmd_arg)
+			*cmd_arg = NULL;
+		return NMC_EDITOR_SUB_CMD_UNKNOWN;
+	}
+
+	if (matches (vec[0], "set") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_SET;
+	else if (matches (vec[0], "add") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_ADD;
+	else if (matches (vec[0], "change") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_CHANGE;
+	else if (matches (vec[0], "remove") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_REMOVE;
+	else if (matches (vec[0], "describe") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_DESCRIBE;
+	else if (matches (vec[0], "print") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_PRINT;
+	else if (matches (vec[0], "back") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_BACK;
+	else if (matches (vec[0], "help") == 0 || strcmp (vec[0], "?") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_HELP;
+	else if (matches (vec[0], "quit") == 0)
+		editor_cmd = NMC_EDITOR_SUB_CMD_QUIT;
+
+	/* set pointer to command argument */
+	if (cmd_arg)
+		*cmd_arg = g_strdup (vec[1]);
+
+	g_strfreev (vec);
+	return editor_cmd;
+}
+
+static void
+editor_sub_help (void)
+{
+	printf ("------------------------------------------------------------------------------\n");
+	/* TRANSLATORS: do not translate command names and keywords before ::
+	 *              However, you should translate terms enclosed in <>.
+	 */
+	printf (_("---[ Property menu ]---\n"
+	          "set      [<value>]               :: set new value\n"
+	          "add      [<value>]               :: add new option to the property\n"
+	          "change                           :: change current value\n"
+	          "remove   [<index> | <option>]    :: delete the value\n"
+	          "describe                         :: describe property\n"
+	          "print    [setting | connection]  :: print property (setting/connection) value(s)\n"
+	          "back                             :: go to upper level\n"
+	          "help/?   [<command>]             :: print this help or command description\n"
+	          "quit                             :: exit nmcli\n"));
+	printf ("------------------------------------------------------------------------------\n");
+}
+
+static void
+editor_sub_usage (const char *command)
+{
+
+	if (!command)
+		editor_sub_help ();
+	else {
+		/* detailed command descriptions */
+		NmcEditorSubCmd cmdsub = parse_editor_sub_cmd (command, NULL);
+
+		switch (cmdsub) {
+		case NMC_EDITOR_SUB_CMD_SET:
+			printf (_("set [<value>]  :: set new value\n\n"
+			          "This command sets provided <value> to this property\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_ADD:
+			printf (_("add [<value>]  :: add new option to the property\n\n"
+			          "This command add provided <value> to this property, if "
+			          "the property is of a container type. For single-valued "
+			          "properties it replaces the value (same as 'set').\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_CHANGE:
+			printf (_("change  :: change current value\n\n"
+			          "Displays current value and allows editing it.\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_REMOVE:
+			printf (_("remove [<index>|<option>]  :: delete the value\n\n"
+			          "Removes the property value (sets it to default).\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_DESCRIBE:
+			printf (_("describe  :: describe property\n\n"
+			          "Shows property description. You can consult nm-settings(5) "
+			          "manual page to see all NM settings and properties.\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_PRINT:
+			printf (_("print [property|setting|connection]  :: print property (setting, connection) value(s)\n\n"
+			          "Shows property value. Providing an argument you can also display "
+			          "values for the whole setting or connection.\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_BACK:
+			printf (_("back  :: go to upper menu level\n\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_HELP:
+			printf (_("help/? [<command>]  :: help for nmcli commands\n\n"));
+			break;
+		case NMC_EDITOR_SUB_CMD_QUIT:
+			printf (_("quit  :: exit nmcli\n\n"
+			          "This command exits nmcli. When the connection being edited "
+			          "is not saved, the user is asked to confirm the action.\n"));
+			break;
+		default:
+			printf (_("Unknown command: '%s'\n"), command);
+			break;
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+
+static void
+print_property_description (NMSetting *setting, const char *prop_name)
+{
+	char *desc;
+
+	desc = nmc_setting_get_property_desc (setting, prop_name);
+	printf ("\n=== [%s] ===\n%s\n", prop_name, desc);
+	g_free (desc);
+}
+
+static void
+print_setting_description (NMSetting *setting)
+{
+	/* Show description of all properties */
+	char **all_props;
+	int i;
+
+	all_props = nmc_setting_get_valid_properties (setting);
+	printf (("<<< %s >>>\n"), nm_setting_get_name (setting));
+	for (i = 0; all_props && all_props[i]; i++)
+		print_property_description (setting, all_props[i]);
+	g_strfreev (all_props);
+}
+
+/*
+ * Submenu for detailed property editation
+ * Return: TRUE - continue;  FALSE - should quit
+ */
+static gboolean
+property_edit_submenu (NmCli *nmc, NMConnection *connection, NMSetting *curr_setting, const char *prop_name)
+{
+	NmcEditorSubCmd cmdsub;
+	gboolean cmd_property_loop = TRUE;
+	gboolean should_quit = FALSE;
+	char *prop_val_user, *tmp_prompt;
+	gboolean set_result;
+	GError *tmp_err = NULL;
+	char *prompt;
+	char *tmp_str;
+	GValue prop_g_value = G_VALUE_INIT;
+
+	prompt = g_strdup_printf (_("nmcli %s.%s> "), nm_setting_get_name (curr_setting), prop_name);
+	while (cmd_property_loop) {
+		char *cmd_property_user;
+		char *cmd_property_arg;
+		cmd_property_user = readline_x (prompt);
+		if (!cmd_property_user || *cmd_property_user == '\0')
+			continue;
+		cmdsub = parse_editor_sub_cmd (g_strstrip (cmd_property_user), &cmd_property_arg);
+
+		switch (cmdsub) {
+		case NMC_EDITOR_SUB_CMD_SET:
+		case NMC_EDITOR_SUB_CMD_ADD:
+			/* list, arrays,...: SET replaces the whole property value
+			 *                   ADD adds the new value(s)
+			 * single values:  : both SET and ADD sets the new value
+			 */
+			if (!cmd_property_arg) {
+				tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
+				prop_val_user = readline_x (tmp_prompt);
+				g_free (tmp_prompt);
+			} else
+				prop_val_user = g_strdup (cmd_property_arg);
+
+			/* nmc_setting_set_property() only adds new value, thus we have to
+			 * remove the original value and save it for error cases.
+			 */
+			if (cmdsub == NMC_EDITOR_SUB_CMD_SET) {
+				nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
+				nmc_property_set_default_value (curr_setting, prop_name);
+			}
+
+			set_result = nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err);
+			g_free (prop_val_user);
+			if (!set_result) {
+				printf (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
+				g_clear_error (&tmp_err);
+				if (cmdsub == NMC_EDITOR_SUB_CMD_SET)
+					nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
+			}
+			if (G_IS_VALUE (&prop_g_value))
+				g_value_unset (&prop_g_value);
+			break;
+
+		case NMC_EDITOR_SUB_CMD_CHANGE:
+			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
+			prop_val_user = readline_x (tmp_prompt);
+
+			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
+			nmc_property_set_default_value (curr_setting, prop_name);
+
+			if (!nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err)) {
+				printf (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
+				g_clear_error (&tmp_err);
+				nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
+			}
+			g_free (prop_val_user);
+			g_free (tmp_prompt);
+			if (G_IS_VALUE (&prop_g_value))
+				g_value_unset (&prop_g_value);
+			break;
+
+		case NMC_EDITOR_SUB_CMD_REMOVE:
+			if (cmd_property_arg) {
+				unsigned long val_int = G_MAXUINT32;
+				char *option = NULL;
+
+				if (!nmc_string_to_uint (cmd_property_arg, TRUE, 0, G_MAXUINT32, &val_int))
+					option = g_strdup (cmd_property_arg);
+
+				if (!nmc_setting_remove_property_option (curr_setting, prop_name,
+				                                         option ? g_strstrip (option) : NULL,
+				                                         (guint32) val_int,
+				                                         &tmp_err)) {
+					printf (_("Error: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+				}
+				g_free (option);
+			} else
+				nmc_property_set_default_value (curr_setting, prop_name);
+			break;
+
+		case NMC_EDITOR_SUB_CMD_DESCRIBE:
+			/* Show property description */
+			print_property_description (curr_setting, prop_name);
+			break;
+
+		case NMC_EDITOR_SUB_CMD_PRINT:
+			/* Print current connection settings/properties */
+			if (cmd_property_arg) {
+				if (matches (cmd_property_arg, "setting") == 0)
+					editor_show_setting (curr_setting, nmc);
+				else if (   matches (cmd_property_arg, "connection") == 0
+				         || matches (cmd_property_arg, "all") == 0)
+					editor_show_connection (connection, nmc);
+				else
+					printf (_("Unknown command argument: '%s'\n"), cmd_property_arg);
+			} else {
+				printf ("%s: %s\n",
+				        prop_name,
+				        nmc_setting_get_property (curr_setting, prop_name, NULL));
+			}
+			break;
+
+		case NMC_EDITOR_SUB_CMD_BACK:
+			cmd_property_loop = FALSE;
+			break;
+
+		case NMC_EDITOR_SUB_CMD_HELP:
+			editor_sub_usage (cmd_property_arg);
+			break;
+
+		case NMC_EDITOR_SUB_CMD_QUIT:
+			do {
+				tmp_str = nmc_get_user_input (_("Do you really want to quit? [y/n]\n"));
+			} while (!tmp_str);
+			if (matches (tmp_str, "yes") == 0) {
+				cmd_property_loop = FALSE;
+				should_quit = TRUE;  /* we will quit nmcli */
+			}
+			g_free (tmp_str);
+			break;
+
+		case NMC_EDITOR_SUB_CMD_UNKNOWN:
+		default:
+			printf (_("Unknown command: '%s'\n"), cmd_property_user);
+			break;
+		}
+		g_free (cmd_property_user);
+		g_free (cmd_property_arg);
+	}
+	g_free (prompt);
+
+	return !should_quit;
+}
+
 /*
  * Split 'str' in the following format:  [[[setting.]property] [value]]
  * and return the components in 'setting', 'property' and 'value'
@@ -3668,30 +3976,6 @@ menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
 	menu_ctx->valid_props = nmc_setting_get_valid_properties (menu_ctx->curr_setting);
 	g_free (menu_ctx->valid_props_str);
 	menu_ctx->valid_props_str = g_strjoinv (", ", menu_ctx->valid_props);
-}
-
-static void
-print_property_description (NMSetting *setting, const char *prop_name)
-{
-	char *desc;
-
-	desc = nmc_setting_get_property_desc (setting, prop_name);
-	printf ("\n=== [%s] ===\n%s\n", prop_name, desc);
-	g_free (desc);
-}
-
-static void
-print_setting_description (NMSetting *setting)
-{
-	/* Show description of all properties */
-	char **all_props;
-	int i;
-
-	all_props = nmc_setting_get_valid_properties (setting);
-	printf (("<<< %s >>>\n"), nm_setting_get_name (setting));
-	for (i = 0; all_props && all_props[i]; i++)
-		print_property_description (setting, all_props[i]);
-	g_strfreev (all_props);
 }
 
 static gboolean
@@ -3864,11 +4148,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			}
 			if (menu_ctx.level == 1 || cmd_arg_s) {
 				/* level 1 - setting selected */
-				char *prop_val_user = NULL;
 				const char *prop_name;
-				char *prompt;
-				GError *tmp_err = NULL;
-				gboolean set_result;
 
 				prop_name = ask_check_property (cmd_arg_p,
 				                                (const char **) menu_ctx.valid_props,
@@ -3876,16 +4156,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (!prop_name)
 					break;
 
-				prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-				prop_val_user = readline_x (prompt);
-				g_free (prompt);
-
-				set_result = nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err);
-				g_free (prop_val_user);
-				if (!set_result) {
-					fprintf (stdout, _("Error: property '%s' set failure: %s\n"), prop_name, tmp_err->message);
-					g_clear_error (&tmp_err);
-				}
+				/* submenu - level 2 - editing properties */
+				cmd_loop = property_edit_submenu (nmc, connection, menu_ctx.curr_setting, prop_name);
 			}
 			break;
 
