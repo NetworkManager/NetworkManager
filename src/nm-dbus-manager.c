@@ -351,6 +351,45 @@ nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
 	return _get_caller_info (self, NULL, connection, message, out_sender, out_uid);
 }
 
+gboolean
+nm_dbus_manager_get_unix_user (NMDBusManager *self,
+                               const char *sender,
+                               gulong *out_uid)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	DBusError error;
+
+	g_return_val_if_fail (sender != NULL, FALSE);
+	g_return_val_if_fail (out_uid != NULL, FALSE);
+
+	/* Check if it's a private connection sender, which we fake */
+	for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
+		PrivateServer *s = iter->data;
+		GHashTableIter hiter;
+		const char *priv_sender;
+
+		g_hash_table_iter_init (&hiter, s->connections);
+		while (g_hash_table_iter_next (&hiter, NULL, (gpointer) &priv_sender)) {
+			if (g_strcmp0 (sender, priv_sender) == 0) {
+				*out_uid = 0;
+				return TRUE;
+			}
+		}
+	}
+
+	/* Otherwise, a bus connection */
+	dbus_error_init (&error);
+	*out_uid = dbus_bus_get_unix_user (priv->connection, sender, &error);
+	if (dbus_error_is_set (&error)) {
+		nm_log_warn (LOGD_CORE, "Failed to get unix user for dbus sender '%s': %s",
+		             sender, error.message);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 /**************************************************************/
 
 #if HAVE_DBUS_GLIB_100

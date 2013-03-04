@@ -89,6 +89,10 @@ gboolean nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                           char **out_sender,
                                           gulong *out_uid);
 
+gboolean nm_dbus_manager_get_unix_user (NMDBusManager *self,
+                                        const char *sender,
+                                        gulong *out_uid);
+
 gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                                        DBusConnection *connection,
                                                        DBusMessage *message,

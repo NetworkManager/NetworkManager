@@ -2766,8 +2766,7 @@ nm_manager_activate_connection (NMManager *manager,
 {
 	NMManagerPrivate *priv;
 	NMDevice *device = NULL;
-	gulong sender_uid = 0;
-	DBusError dbus_error;
+	gulong sender_uid = G_MAXULONG;
 	NMDeviceState state;
 	char *iface;
 	NMDevice *master_device = NULL;
@@ -2783,17 +2782,15 @@ nm_manager_activate_connection (NMManager *manager,
 
 	/* Get the UID of the user that originated the request, if any */
 	if (dbus_sender) {
-		dbus_error_init (&dbus_error);
-		sender_uid = dbus_bus_get_unix_user (nm_dbus_manager_get_dbus_connection (priv->dbus_mgr),
-		                                     dbus_sender,
-		                                     &dbus_error);
-		if (dbus_error_is_set (&dbus_error)) {
+		if (!nm_dbus_manager_get_unix_user (priv->dbus_mgr, dbus_sender, &sender_uid)) {
 			g_set_error_literal (error,
 			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_PERMISSION_DENIED,
 			                     "Failed to get unix user for dbus sender");
-			dbus_error_free (&dbus_error);
 			return NULL;
 		}
+	} else {
+		/* No sender means an internal/automatic activation request */
+		sender_uid = 0;
 	}
 
 	/* VPN ? */
