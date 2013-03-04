@@ -109,6 +109,12 @@ void nm_dbus_manager_private_server_register (NMDBusManager *self,
                                               const char *path,
                                               const char *tag);
 
+DBusGProxy *nm_dbus_manager_new_proxy (NMDBusManager *self,
+                                       DBusGMethodInvocation *context,
+                                       const char *name,
+                                       const char *path,
+                                       const char *iface);
+
 #if !HAVE_DBUS_GLIB_GMI_GET_CONNECTION
 DBusGConnection *dbus_g_method_invocation_get_g_connection (DBusGMethodInvocation *context);
 #endif

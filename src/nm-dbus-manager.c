@@ -831,6 +831,50 @@ nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object)
 	}
 }
 
+/**
+ * nm_dbus_manager_new_proxy:
+ * @self: the #NMDBusManager
+ * @context: the method call context this proxy should be created
+ * @name: any name on the message bus
+ * @path: name of the object instance to call methods on
+ * @iface: name of the interface to call methods on
+ *
+ * Creates a new proxy for a name on a given bus.  Since the process which
+ * called the D-Bus method could be coming from a private connection or the
+ * system bus connection, differnet proxies must be created for each case.  This
+ * function abstracts that.
+ *
+ * Returns: a #DBusGProxy capable of calling D-Bus methods of the calling process
+ */
+DBusGProxy *
+nm_dbus_manager_new_proxy (NMDBusManager *self,
+                           DBusGMethodInvocation *context,
+                           const char *name,
+                           const char *path,
+                           const char *iface)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *connection;
+	GSList *iter;
+	const char *owner;
+
+	connection = dbus_g_method_invocation_get_g_connection (context);
+	g_assert (connection);
+
+	/* Might be a private connection, for which we fake a sender */
+	for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
+		PrivateServer *s = iter->data;
+
+		owner = private_server_get_connection_owner (s, connection);
+		if (owner) {
+			g_assert_cmpstr (owner, ==, name);
+			return dbus_g_proxy_new_for_peer (connection, path, iface);
+		}
+	}
+
+	return dbus_g_proxy_new_for_name (connection, name, path, iface);
+}
+
 #if !HAVE_DBUS_GLIB_GMI_GET_CONNECTION
 struct _HACKDBusGMethodInvocation {
   DBusGConnection *connection;
