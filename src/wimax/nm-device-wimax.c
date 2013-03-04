@@ -19,6 +19,7 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>

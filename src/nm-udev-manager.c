@@ -19,6 +19,8 @@
  */
 
 #include <config.h>
+
+#include <string.h>
 #include <net/if_arp.h>
 
 #include <gmodule.h>
