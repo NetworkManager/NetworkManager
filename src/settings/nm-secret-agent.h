@@ -47,7 +47,7 @@ typedef struct {
 
 GType nm_secret_agent_get_type (void);
 
-NMSecretAgent *nm_secret_agent_new (NMDBusManager *dbus_mgr,
+NMSecretAgent *nm_secret_agent_new (DBusGMethodInvocation *context,
                                     const char *owner,
                                     const char *identifier,
                                     uid_t owner_uid);

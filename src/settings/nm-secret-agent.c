@@ -29,6 +29,7 @@
 
 #include "NetworkManager.h"
 #include "nm-secret-agent.h"
+#include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
 
@@ -50,7 +51,6 @@ typedef struct {
 
 	GSList *permissions;
 
-	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
 
 	GHashTable *requests;
@@ -419,14 +419,14 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 /*************************************************************/
 
 NMSecretAgent *
-nm_secret_agent_new (NMDBusManager *dbus_mgr,
+nm_secret_agent_new (DBusGMethodInvocation *context,
                      const char *owner,
                      const char *identifier,
                      uid_t owner_uid)
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
-	DBusGConnection *bus;
+	NMDBusManager *dbus_mgr;
 	char *hash_str, *username;
 	struct passwd *pw;
 
@@ -450,13 +450,14 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 	priv->hash = g_str_hash (hash_str);
 	g_free (hash_str);
 
-	priv->dbus_mgr = g_object_ref (dbus_mgr);
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	priv->proxy = dbus_g_proxy_new_for_name (bus,
+	dbus_mgr = nm_dbus_manager_get ();
+	priv->proxy = nm_dbus_manager_new_proxy (dbus_mgr,
+	                                         context,
 	                                         owner,
 	                                         NM_DBUS_PATH_SECRET_AGENT,
 	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (priv->proxy);
+	g_object_unref (dbus_mgr);
 
 	g_free (username);
 	return self;
@@ -489,7 +490,6 @@ dispose (GObject *object)
 
 		g_hash_table_destroy (priv->requests);
 		g_object_unref (priv->proxy);
-		g_object_unref (priv->dbus_mgr);
 	}
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->dispose (object);

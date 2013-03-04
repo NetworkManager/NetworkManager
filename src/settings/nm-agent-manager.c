@@ -305,7 +305,7 @@ impl_agent_manager_register (NMAgentManager *self,
 	}
 
 	/* Success, add the new agent */
-	agent = nm_secret_agent_new (priv->dbus_mgr, sender, identifier, sender_uid);
+	agent = nm_secret_agent_new (context, sender, identifier, sender_uid);
 	if (!agent) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,
