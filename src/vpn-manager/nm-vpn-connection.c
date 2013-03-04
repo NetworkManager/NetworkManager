@@ -165,7 +165,7 @@ vpn_cleanup (NMVPNConnection *connection)
 	if (priv->ip_ifindex) {
 		nm_platform_link_set_down (priv->ip_ifindex);
 		nm_system_iface_flush_routes (priv->ip_ifindex, AF_UNSPEC);
-		nm_system_iface_flush_addresses (priv->ip_ifindex, AF_UNSPEC);
+		nm_platform_address_flush (priv->ip_ifindex);
 	}
 
 	if (priv->gw_route) {

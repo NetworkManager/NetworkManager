@@ -144,198 +144,6 @@ nm_system_device_set_ip4_route (int ifindex,
 	return route;
 }
 
-static gboolean
-sync_addresses (int ifindex,
-                int family,
-				struct rtnl_addr **addrs,
-				int num_addrs)
-{
-	struct nl_sock *nlh;
-	struct nl_cache *addr_cache = NULL;
-	struct rtnl_addr *filter_addr = NULL, *match_addr;
-	struct nl_object *match;
-	struct nl_addr *nladdr;
-	int i, err;
-	guint32 log_domain = (family == AF_INET) ? LOGD_IP4 : LOGD_IP6;
-	char buf[INET6_ADDRSTRLEN + 1];
-	const char *iface = NULL;
-	gboolean success = FALSE;
-
-	log_domain |= LOGD_DEVICE;
-
-	nlh = nm_netlink_get_default_handle ();
-	if (!nlh)
-		return FALSE;
-
-	err = rtnl_addr_alloc_cache (nlh, &addr_cache);
-	if (err < 0)
-		return FALSE;
-
-	filter_addr = rtnl_addr_alloc ();
-	if (!filter_addr)
-		goto out;
-
-	rtnl_addr_set_ifindex (filter_addr, ifindex);
-	if (family)
-		rtnl_addr_set_family (filter_addr, family);
-
-	iface = nm_platform_link_get_name (ifindex);
-	if (!iface)
-		goto out;
-
-	nm_log_dbg (log_domain, "(%s): syncing addresses (family %d)", iface, family);
-
-	/* Walk through the cache, comparing the addresses already on
-	 * the interface to the addresses in addrs.
-	 */
-	for (match = nl_cache_get_first (addr_cache); match; match = nl_cache_get_next (match)) {
-		gboolean buf_valid = FALSE;
-		match_addr = (struct rtnl_addr *) match;
-
-		/* Skip addresses not on our interface */
-		if (!nl_object_match_filter (match, (struct nl_object *) filter_addr))
-			continue;
-
-		if (addrs) {
-			for (i = 0; i < num_addrs; i++) {
-				if (addrs[i] && nl_object_identical (match, (struct nl_object *) addrs[i]))
-					break;
-			}
-
-			if (addrs[i]) {
-				/* match == addrs[i], so remove it from addrs so we don't
-				 * try to add it to the interface again below.
-				 */
-				rtnl_addr_put (addrs[i]);
-				addrs[i] = NULL;
-				continue;
-			}
-		}
-
-		nladdr = rtnl_addr_get_local (match_addr);
-
-		/* Don't delete IPv6 link-local addresses; they don't belong to NM */
-		if (rtnl_addr_get_family (match_addr) == AF_INET6) {
-			struct in6_addr *tmp;
-
-			if (rtnl_addr_get_scope (match_addr) == RT_SCOPE_LINK) {
-				nm_log_dbg (log_domain, "(%s): ignoring IPv6 link-local address", iface);
-				continue;
-			}
-
-			tmp = nl_addr_get_binary_addr (nladdr);
-			if (inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
-				buf_valid = TRUE;
-		} else if (rtnl_addr_get_family (match_addr) == AF_INET) {
-			struct in_addr *tmp;
-
-			tmp = nl_addr_get_binary_addr (nladdr);
-			if (inet_ntop (AF_INET, tmp, buf, sizeof (buf)))
-				buf_valid = TRUE;
-		}
-
-		if (buf_valid) {
-			nm_log_dbg (log_domain, "(%s): removing address '%s/%d'",
-			            iface, buf, rtnl_addr_get_prefixlen (match_addr));
-		}
-
-		/* Otherwise, match_addr should be removed from the interface. */
-		err = rtnl_addr_delete (nlh, match_addr, 0);
-		if (err < 0) {
-			nm_log_err (log_domain, "(%s): error %d returned from rtnl_addr_delete(): %s",
-						iface, err, nl_geterror (err));
-		}
-	}
-
-	/* Now add the remaining new addresses */
-	for (i = 0; i < num_addrs; i++) {
-		struct in6_addr *in6tmp;
-		struct in_addr *in4tmp;
-		gboolean buf_valid = FALSE;
-
-		if (!addrs[i])
-			continue;
-
-		nladdr = rtnl_addr_get_local (addrs[i]);
-		if (rtnl_addr_get_family (addrs[i]) == AF_INET6) {
-			in6tmp = nl_addr_get_binary_addr (nladdr);
-			if (inet_ntop (AF_INET6, in6tmp, buf, sizeof (buf)))
-				buf_valid = TRUE;
-		} else if (rtnl_addr_get_family (addrs[i]) == AF_INET) {
-			in4tmp = nl_addr_get_binary_addr (nladdr);
-			if (inet_ntop (AF_INET, in4tmp, buf, sizeof (buf)))
-				buf_valid = TRUE;
-		}
-
-		if (buf_valid) {
-			nm_log_dbg (log_domain, "(%s): adding address '%s/%d'",
-			            iface, buf, nl_addr_get_prefixlen (nladdr));
-		}
-
-		err = rtnl_addr_add (nlh, addrs[i], 0);
-		if (err < 0 && (err != -NLE_EXIST)) {
-			nm_log_err (log_domain,
-			            "(%s): error %d returned from rtnl_addr_add():\n%s",
-			            iface, err, nl_geterror (err));
-		}
-
-		rtnl_addr_put (addrs[i]);
-	}
-	g_free (addrs);
-	success = TRUE;
-
-out:
-	if (filter_addr)
-		rtnl_addr_put (filter_addr);
-	if (addr_cache)
-		nl_cache_free (addr_cache);
-	return success;
-}
-
-static gboolean
-add_ip4_addresses (NMIP4Config *config, int ifindex)
-{
-	const char *iface;
-	int num_addrs, i;
-	guint32 flags = 0;
-	gboolean did_gw = FALSE;
-	struct rtnl_addr **addrs;
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-
-	iface = nm_platform_link_get_name (ifindex);
-	if (!iface)
-		return FALSE;
-
-	num_addrs = nm_ip4_config_get_num_addresses (config);
-	addrs = g_new0 (struct rtnl_addr *, num_addrs + 1);
-
-	for (i = 0; i < num_addrs; i++) {
-		NMIP4Address *addr;
-
-		addr = nm_ip4_config_get_address (config, i);
-		g_assert (addr);
-
-		flags = NM_RTNL_ADDR_DEFAULT;
-		if (nm_ip4_address_get_gateway (addr) && !did_gw) {
-			if (nm_ip4_config_get_ptp_address (config))
-				flags |= NM_RTNL_ADDR_PTP_ADDR;
-			did_gw = TRUE;
-		}
-
-		addrs[i] = nm_ip4_config_to_rtnl_addr (config, i, flags);
-		if (!addrs[i]) {
-			nm_log_warn (LOGD_DEVICE | LOGD_IP4,
-			             "(%s): couldn't create rtnl address!",
-			             iface ? iface : "unknown");
-			continue;
-		}
-		rtnl_addr_set_ifindex (addrs[i], ifindex);
-	}
-
-	return sync_addresses (ifindex, AF_INET, addrs, num_addrs);
-}
-
 struct rtnl_route *
 nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
@@ -399,9 +207,21 @@ nm_system_apply_ip4_config (int ifindex,
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	if (flags & NM_IP4_COMPARE_FLAG_ADDRESSES) {
-		if (!add_ip4_addresses (config, ifindex))
-			return FALSE;
-		sleep (1);
+		int count = nm_ip4_config_get_num_addresses (config);
+		NMIP4Address *config_address;
+		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Address), count);
+		NMPlatformIP4Address address;
+
+		for (i = 0; i < count; i++) {
+			config_address = nm_ip4_config_get_address (config, i);
+			memset (&address, 0, sizeof (address));
+			address.address = nm_ip4_address_get_address (config_address);
+			address.plen = nm_ip4_address_get_prefix (config_address);
+			g_array_append_val (addresses, address);
+		}
+
+		nm_platform_ip4_address_sync (ifindex, addresses);
+		g_array_unref (addresses);
 	}
 
 	if (flags & NM_IP4_COMPARE_FLAG_ROUTES) {
@@ -590,41 +410,6 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	return route;
 }
 
-static gboolean
-add_ip6_addresses (NMIP6Config *config, int ifindex)
-{
-	const char *iface;
-	int num_addrs, i;
-	struct rtnl_addr **addrs;
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-
-	iface = nm_platform_link_get_name (ifindex);
-	if (!iface)
-		return FALSE;
-
-	num_addrs = nm_ip6_config_get_num_addresses (config);
-	addrs = g_new0 (struct rtnl_addr *, num_addrs + 1);
-
-	for (i = 0; i < num_addrs; i++) {
-		NMIP6Address *addr;
-
-		addr = nm_ip6_config_get_address (config, i);
-		g_assert (addr);
-
-		addrs[i] = nm_ip6_config_to_rtnl_addr (config, i, NM_RTNL_ADDR_DEFAULT);
-		if (!addrs[i]) {
-			nm_log_warn (LOGD_DEVICE | LOGD_IP6,
-			             "(%s): couldn't create rtnl address!",
-			             iface ? iface : "unknown");
-			continue;
-		}
-		rtnl_addr_set_ifindex (addrs[i], ifindex);
-	}
-
-	return sync_addresses (ifindex, AF_INET6, addrs, num_addrs);
-}
-
 /*
  * nm_system_apply_ip6_config
  *
@@ -643,9 +428,21 @@ nm_system_apply_ip6_config (int ifindex,
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	if (flags & NM_IP6_COMPARE_FLAG_ADDRESSES) {
-		if (!add_ip6_addresses (config, ifindex))
-			return FALSE;
-		sleep (1); // FIXME?
+		int count = nm_ip6_config_get_num_addresses (config);
+		NMIP6Address *config_address;
+		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Address), count);
+		NMPlatformIP6Address address;
+
+		for (i = 0; i < count; i++) {
+			config_address = nm_ip6_config_get_address (config, i);
+			memset (&address, 0, sizeof (address));
+			address.address = *nm_ip6_address_get_address (config_address);
+			address.plen = nm_ip6_address_get_prefix (config_address);
+			g_array_append_val (addresses, address);
+		}
+
+		nm_platform_ip6_address_sync (ifindex, addresses);
+		g_array_unref (addresses);
 	}
 
 	if (flags & NM_IP6_COMPARE_FLAG_ROUTES) {
@@ -1078,20 +875,6 @@ out:
 		rtnl_route_put (gw_route);
 	return success;
 }
-
-/*
- * nm_system_iface_flush_addresses
- *
- * Flush all network addresses associated with a network device
- *
- */
-gboolean
-nm_system_iface_flush_addresses (int ifindex, int family)
-{
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	return sync_addresses (ifindex, family, NULL, 0);
-}
-
 
 static struct rtnl_route *
 delete_one_route (struct rtnl_route *route,

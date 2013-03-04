@@ -48,7 +48,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-netlink-utils.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-connection.h"
@@ -4107,7 +4106,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	family = tried_ipv6 ? AF_UNSPEC : AF_INET;
 	if (ifindex > 0) {
 		nm_system_iface_flush_routes (ifindex, family);
-		nm_system_iface_flush_addresses (ifindex, family);
+		nm_platform_address_flush (ifindex);
 	}
 
 	/* Clean up nameservers and addresses */
@@ -6072,11 +6071,9 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 		for (iter = leases; iter; iter = g_slist_next (iter)) {
 			NMIP4Config *ip4_config = iter->data;
 			NMIP4Address *addr = nm_ip4_config_get_address (ip4_config, 0);
-			struct in_addr tmp = { .s_addr = nm_ip4_address_get_address (addr) };
 
-			if (addr && nm_netlink_find_address (nm_device_get_ip_ifindex (self),
-			                                     AF_INET,
-			                                     &tmp,
+			if (addr && nm_platform_ip4_address_exists (nm_device_get_ip_ifindex (self),
+			                                     nm_ip4_address_get_address (addr),
 			                                     nm_ip4_address_get_prefix (addr))) {
 				found = TRUE; /* Yay, device has same address as a lease */
 				break;
@@ -6111,12 +6108,10 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 		num = nm_setting_ip4_config_get_num_addresses (s_ip4);
 		for (i = 0; i < num; i++) {
 			NMIP4Address *addr = nm_setting_ip4_config_get_address (s_ip4, i);
-			struct in_addr tmp = { .s_addr = nm_ip4_address_get_address (addr) };
 
-			if (!nm_netlink_find_address (nm_device_get_ip_ifindex (self),
-						      AF_INET,
-						      &tmp,
-						      nm_ip4_address_get_prefix (addr)))
+			if (!nm_platform_ip4_address_exists (nm_device_get_ip_ifindex (self),
+					nm_ip4_address_get_address (addr),
+					nm_ip4_address_get_prefix (addr)))
 				return FALSE;
 		}
 	}
