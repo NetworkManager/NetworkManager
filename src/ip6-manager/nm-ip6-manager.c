@@ -124,8 +124,6 @@ typedef struct {
 
 	time_t last_solicitation;
 
-	guint ip6flags_poll_id;
-
 	guint32 ra_flags;
 } NMIP6Device;
 
@@ -162,8 +160,6 @@ nm_ip6_device_destroy (NMIP6Device *device)
 		g_array_free (device->dnssl_domains, TRUE);
 	if (device->dnssl_timeout_id)
 		g_source_remove (device->dnssl_timeout_id);
-	if (device->ip6flags_poll_id)
-		g_source_remove (device->ip6flags_poll_id);
 
 	g_slice_free (NMIP6Device, device);
 }
@@ -432,12 +428,6 @@ finish_addrconf (gpointer user_data)
 	device->finish_addrconf_id = 0;
 	device->addrconf_complete = TRUE;
 	ifindex = device->ifindex;
-
-	/* We're done, stop polling IPv6 flags */
-	if (device->ip6flags_poll_id) {
-		g_source_remove (device->ip6flags_poll_id);
-		device->ip6flags_poll_id = 0;
-	}
 
 	/* And tell listeners that addrconf is complete */
 	if (info->success) {
@@ -1316,6 +1306,10 @@ netlink_notification (NMNetlinkMonitor *monitor, struct nl_msg *msg, gpointer us
 	case RTM_NEWROUTE:
 	case RTM_DELROUTE:
 		device = process_route_change (manager, msg);
+		/* Once we have received an RTM_NEWROUTE, the IPv6 flags might have been
+		 * set. But we need to request an RTM_NEWLINK to find out what they actually are.
+		 */
+		nm_netlink_monitor_request_ip6_info (monitor, NULL);
 		break;
 	case RTM_NEWNDUSEROPT:
 		device = process_nduseropt (manager, msg);
@@ -1379,13 +1373,6 @@ nm_ip6_manager_prepare_interface (NMIP6Manager *manager,
 	return TRUE;
 }
 
-static gboolean
-poll_ip6_flags (gpointer user_data)
-{
-	nm_netlink_monitor_request_ip6_info (NM_NETLINK_MONITOR (user_data), NULL);
-	return TRUE;
-}
-
 void
 nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 {
@@ -1422,8 +1409,6 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 		g_usleep (200);
 		nm_utils_do_sysctl (device->disable_ip6_path, "0");
 	}
-
-	device->ip6flags_poll_id = g_timeout_add_seconds (1, poll_ip6_flags, priv->monitor);
 
 	/* Kick off the initial IPv6 flags request */
 	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
