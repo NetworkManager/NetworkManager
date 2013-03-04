@@ -335,15 +335,6 @@ auth_call_complete (AuthCall *call)
 	return FALSE;
 }
 
-static void
-auth_call_schedule_early_finish (AuthCall *call, GError *error)
-{
-	if (!call->chain->error)
-		call->chain->error = error;
-	if (!call->idle_id)
-		call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
-}
-
 #if WITH_POLKIT
 static void
 pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
@@ -391,6 +382,14 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 #endif
 
+static void
+auth_call_schedule_complete_with_error (AuthCall *call, const char *msg)
+{
+	if (!call->chain->error)
+		call->chain->error = g_error_new_literal (DBUS_GERROR, DBUS_GERROR_FAILED, msg);
+	call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+}
+
 gboolean
 nm_auth_chain_add_call (NMAuthChain *self,
                         const char *permission,
@@ -414,7 +413,7 @@ nm_auth_chain_add_call (NMAuthChain *self,
 
 	if (self->authority == NULL) {
 		/* No polkit, no authorization */
-		auth_call_schedule_early_finish (call, g_error_new_literal (0, 0, "PolicyKit unavailable"));
+		auth_call_schedule_complete_with_error (call, "PolicyKit not running");
 		g_object_unref (subject);
 		return FALSE;
 	}
@@ -439,7 +438,7 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	/* When PolicyKit is disabled, everything is authorized */
 	call = auth_call_new (self, permission);
 	nm_auth_chain_set_data (self, permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
-	auth_call_schedule_early_finish (call, NULL);
+	call->idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
 #endif
 
 	return TRUE;
