@@ -189,14 +189,14 @@ nmc_string_screen_width (const char *start, const char *end)
 }
 
 void
-set_val_str (NmcOutputField fields_array[], guint32 idx, const char *value)
+set_val_str (NmcOutputField fields_array[], guint32 idx, char *value)
 {
 	fields_array[idx].flags = 0;
 	fields_array[idx].value = value;
 }
 
 void
-set_val_arr (NmcOutputField fields_array[], guint32 idx, const char **value)
+set_val_arr (NmcOutputField fields_array[], guint32 idx, char **value)
 {
 	fields_array[idx].flags = NMC_OF_FLAG_ARRAY;
 	fields_array[idx].value = value;

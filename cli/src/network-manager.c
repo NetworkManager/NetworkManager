@@ -194,16 +194,16 @@ show_nm_status (NmCli *nmc)
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
 	nmc->allowed_fields[0].value = nm_running ? _("running") : _("not running");
-	nmc->allowed_fields[1].value = nm_running ? nm_client_get_version (nmc->client) : _("unknown");
-	nmc->allowed_fields[2].value = nm_state_to_string (state);
-	nmc->allowed_fields[3].value = net_enabled_str;
-	nmc->allowed_fields[4].value = wireless_hw_enabled_str;
-	nmc->allowed_fields[5].value = wireless_enabled_str;
-	nmc->allowed_fields[6].value = wwan_hw_enabled_str;
-	nmc->allowed_fields[7].value = wwan_enabled_str;
+	nmc->allowed_fields[1].value = nm_running ? (char *) nm_client_get_version (nmc->client) : _("unknown");
+	nmc->allowed_fields[2].value = (char *) nm_state_to_string (state);
+	nmc->allowed_fields[3].value = (char *) net_enabled_str;
+	nmc->allowed_fields[4].value = (char *) wireless_hw_enabled_str;
+	nmc->allowed_fields[5].value = (char *) wireless_enabled_str;
+	nmc->allowed_fields[6].value = (char *) wwan_hw_enabled_str;
+	nmc->allowed_fields[7].value = (char *) wwan_enabled_str;
 #if WITH_WIMAX
-	nmc->allowed_fields[8].value = wimax_hw_enabled_str;
-	nmc->allowed_fields[9].value = wimax_enabled_str;
+	nmc->allowed_fields[8].value = (char *) wimax_hw_enabled_str;
+	nmc->allowed_fields[9].value = (char *) wimax_enabled_str;
 #endif
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
@@ -327,8 +327,8 @@ show_nm_permissions (NmCli *nmc)
 	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
 		NMClientPermissionResult perm_result = nm_client_get_permission_result (nmc->client, perm);
 
-		set_val_str (nmc->allowed_fields, 0, permission_to_string (perm));
-		set_val_str (nmc->allowed_fields, 1, permission_result_to_string (perm_result));
+		set_val_str (nmc->allowed_fields, 0, (char *) permission_to_string (perm));
+		set_val_str (nmc->allowed_fields, 1, (char *) permission_result_to_string (perm_result));
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 	}

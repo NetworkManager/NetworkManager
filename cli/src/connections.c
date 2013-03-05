@@ -310,14 +310,14 @@ show_connection (NMConnection *data, gpointer user_data)
 		timestamp_real = timestamp;
 		strftime (timestamp_real_str, sizeof (timestamp_real_str), "%c", localtime (&timestamp_real));
 
-		nmc->allowed_fields[0].value = nm_setting_connection_get_id (s_con);
-		nmc->allowed_fields[1].value = nm_setting_connection_get_uuid (s_con);
-		nmc->allowed_fields[2].value = nm_setting_connection_get_connection_type (s_con);
+		nmc->allowed_fields[0].value = (char *) nm_setting_connection_get_id (s_con);
+		nmc->allowed_fields[1].value = (char *) nm_setting_connection_get_uuid (s_con);
+		nmc->allowed_fields[2].value = (char *) nm_setting_connection_get_connection_type (s_con);
 		nmc->allowed_fields[3].value = timestamp_str;
 		nmc->allowed_fields[4].value = timestamp ? timestamp_real_str : _("never");
 		nmc->allowed_fields[5].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
 		nmc->allowed_fields[6].value = nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no");
-		nmc->allowed_fields[7].value = nm_connection_get_path (connection);
+		nmc->allowed_fields[7].value = (char *) nm_connection_get_path (connection);
 
 		nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
 		print_fields (nmc->print_fields, nmc->allowed_fields);
@@ -544,19 +544,19 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
 
 	/* Fill field values */
-	nmc_fields_con_status[0].value = nmc_fields_status_details_groups[0].name;
+	nmc_fields_con_status[0].value = (char *) nmc_fields_status_details_groups[0].name;
 	nmc_fields_con_status[1].value = _("N/A");
-	nmc_fields_con_status[2].value = nm_active_connection_get_uuid (active);
+	nmc_fields_con_status[2].value = (char *) nm_active_connection_get_uuid (active);
 	nmc_fields_con_status[3].value = dev_str->str;
-	nmc_fields_con_status[4].value = active_connection_state_to_string (state);
+	nmc_fields_con_status[4].value = (char *) active_connection_state_to_string (state);
 	nmc_fields_con_status[5].value = nm_active_connection_get_default (active) ? _("yes") : _("no");
 	nmc_fields_con_status[6].value = nm_active_connection_get_default6 (active) ? _("yes") : _("no");
-	nmc_fields_con_status[7].value = nm_active_connection_get_specific_object (active);
+	nmc_fields_con_status[7].value = (char *) nm_active_connection_get_specific_object (active);
 	nmc_fields_con_status[8].value = NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no");
-	nmc_fields_con_status[9].value = nm_object_get_path (NM_OBJECT (active));
-	nmc_fields_con_status[10].value = nm_active_connection_get_connection (active);
+	nmc_fields_con_status[9].value = (char *) nm_object_get_path (NM_OBJECT (active));
+	nmc_fields_con_status[10].value = (char *) nm_active_connection_get_connection (active);
 	nmc_fields_con_status[11].value = _("N/A");
-	nmc_fields_con_status[12].value = nm_active_connection_get_master (active);
+	nmc_fields_con_status[12].value = (char *) nm_active_connection_get_master (active);
 
 	for (iter = con_list; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = (NMConnection *) iter->data;
@@ -568,8 +568,8 @@ fill_in_fields_con_status (NMActiveConnection *active, GSList *con_list)
 			g_assert (s_con != NULL);
 
 			/* Fill field values that depend on NMConnection */
-			nmc_fields_con_status[1].value = nm_setting_connection_get_id (s_con);
-			nmc_fields_con_status[11].value = nm_setting_connection_get_zone (s_con);
+			nmc_fields_con_status[1].value = (char *) nm_setting_connection_get_id (s_con);
+			nmc_fields_con_status[11].value = (char *) nm_setting_connection_get_zone (s_con);
 
 			success = TRUE;
 			break;
@@ -859,13 +859,13 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 			vpn_state_str = g_strdup_printf ("%d - %s", vpn_state, vpn_connection_state_to_string (vpn_state));
 
 			/* Print values */
-			set_val_str (nmc->allowed_fields, 0, nmc_fields_status_details_groups[2].name);
+			set_val_str (nmc->allowed_fields, 0, (char *) nmc_fields_status_details_groups[2].name);
 			set_val_str (nmc->allowed_fields, 1, type_str);
-			set_val_str (nmc->allowed_fields, 2, username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
-			set_val_str (nmc->allowed_fields, 3, get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
+			set_val_str (nmc->allowed_fields, 2, (char *) (username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME)));
+			set_val_str (nmc->allowed_fields, 3, (char *) get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
 			set_val_str (nmc->allowed_fields, 4, banner_str);
 			set_val_str (nmc->allowed_fields, 5, vpn_state_str);
-			set_val_arr (nmc->allowed_fields, 6, (const char **) vpn_data_array);
+			set_val_arr (nmc->allowed_fields, 6, vpn_data_array);
 
 			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 			print_fields (nmc->print_fields, nmc->allowed_fields);

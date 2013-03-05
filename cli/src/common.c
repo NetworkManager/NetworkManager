@@ -159,12 +159,12 @@ print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
 		wins_arr[i] = NULL;
 	}
 
-	set_val_str (nmc->allowed_fields, 0, group_prefix);
-	set_val_arr (nmc->allowed_fields, 1, (const char **) addr_arr);
-	set_val_arr (nmc->allowed_fields, 2, (const char **) route_arr);
-	set_val_arr (nmc->allowed_fields, 3, (const char **) dns_arr);
-	set_val_arr (nmc->allowed_fields, 4, (const char **) domain_arr);
-	set_val_arr (nmc->allowed_fields, 5, (const char **) wins_arr);
+	set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
+	set_val_arr (nmc->allowed_fields, 1, addr_arr);
+	set_val_arr (nmc->allowed_fields, 2, route_arr);
+	set_val_arr (nmc->allowed_fields, 3, dns_arr);
+	set_val_arr (nmc->allowed_fields, 4, domain_arr);
+	set_val_arr (nmc->allowed_fields, 5, wins_arr);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -257,11 +257,11 @@ print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix)
 		domain_arr[i] = NULL;
 	}
 
-	set_val_str (nmc->allowed_fields, 0, group_prefix);
-	set_val_arr (nmc->allowed_fields, 1, (const char **) addr_arr);
-	set_val_arr (nmc->allowed_fields, 2, (const char **) route_arr);
-	set_val_arr (nmc->allowed_fields, 3, (const char **) dns_arr);
-	set_val_arr (nmc->allowed_fields, 4, (const char **) domain_arr);
+	set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
+	set_val_arr (nmc->allowed_fields, 1, addr_arr);
+	set_val_arr (nmc->allowed_fields, 2, route_arr);
+	set_val_arr (nmc->allowed_fields, 3, dns_arr);
+	set_val_arr (nmc->allowed_fields, 4, domain_arr);
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -303,8 +303,8 @@ print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
 			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
 		options_arr[i] = NULL;
 
-		set_val_str (nmc->allowed_fields, 0, group_prefix);
-		set_val_arr (nmc->allowed_fields, 1, (const char **) options_arr);
+		set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
+		set_val_arr (nmc->allowed_fields, 1, options_arr);
 
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -345,8 +345,8 @@ print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
 			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
 		options_arr[i] = NULL;
 
-		set_val_str (nmc->allowed_fields, 0, group_prefix);
-		set_val_arr (nmc->allowed_fields, 1, (const char **) options_arr);
+		set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
+		set_val_arr (nmc->allowed_fields, 1, options_arr);
 
 		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */

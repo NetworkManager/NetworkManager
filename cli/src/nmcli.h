@@ -72,7 +72,7 @@ typedef struct {
 	const char *name;       /* Field's name */
 	const char *name_l10n;  /* Field's name for translation */
 	int width;              /* Width in screen columns */
-	const void *value;      /* Value of current field - char* or char** */
+	void *value;            /* Value of current field - char* or char** */
 	guint32 flags;          /* Flags */
 } NmcOutputField;
 
