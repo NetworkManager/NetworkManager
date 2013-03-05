@@ -21,7 +21,6 @@
 #include "logging/nm-logging.h"
 #include "nm-netlink-utils.h"
 #include "nm-netlink-monitor.h"
-#include "nm-netlink-compat.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -126,14 +125,18 @@ nm_netlink_route_new (int ifindex,
 {
 	va_list var_args;
 	struct rtnl_route *route;
+	struct rtnl_nexthop *nexthop;
 	NmNlProp prop = NMNL_PROP_INVALID;
 	int value;
 
 	route = rtnl_route_alloc ();
 	g_return_val_if_fail (route != NULL, NULL);
 
-	if (ifindex > 0)
-		rtnl_route_set_oif (route, ifindex);
+	if (ifindex > 0) {
+		nexthop = rtnl_route_nh_alloc();
+		rtnl_route_nh_set_ifindex (nexthop, ifindex);
+		rtnl_route_add_nexthop (route, nexthop);
+	}
 	if (family != AF_UNSPEC)
 		rtnl_route_set_family (route, family);
 	if (mss > 0)
@@ -223,7 +226,10 @@ _route_add (struct rtnl_route *route,
 
 		if (gw_addr) {
 			nl_addr_set_prefixlen (gw_addr, 0);
-			rtnl_route_set_gateway (route, gw_addr);
+			if (rtnl_route_get_nnexthops (route) == 1)
+				rtnl_route_nh_set_gateway (rtnl_route_nexthop_n (route, 0), gw_addr);
+			else
+				nm_log_warn (LOGD_DEVICE, "Netlink didn't have exactly one nexthop.");
 			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
 			nl_addr_put (gw_addr);
 		} else
@@ -350,7 +356,7 @@ dump_route (struct rtnl_route *route)
 	}
 
 	nm_log_dbg (log_level, "  route idx %d family %s (%d) addr %s/%d",
-	            rtnl_route_get_oif (route),
+	            rtnl_route_nh_get_ifindex (rtnl_route_nexthop_n (route, 0)),
 	            sf, family,
 	            strlen (buf4) ? buf4 : (strlen (buf6) ? buf6 : "<unknown>"),
 	            prefixlen);
@@ -378,11 +384,15 @@ foreach_route_cb (struct nl_object *object, void *user_data)
 	if (info->out_route)
 		return;
 
+	/* Only care about single-nexthop routes */
+	if (rtnl_route_get_nnexthops (route) != 1)
+		return;
+
 	if (nm_logging_level_enabled (LOGL_DEBUG))
 		dump_route (route);
 
 	if (   info->ifindex > 0
-	    && rtnl_route_get_oif (route) != info->ifindex)
+	    && rtnl_route_nh_get_ifindex (rtnl_route_nexthop_n (route, 0)) != info->ifindex)
 		return;
 
 	if (   info->scope != RT_SCOPE_UNIVERSE
