@@ -454,60 +454,6 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 }
 
 /*
- * Find out whether NetworkManager is running (via D-Bus NameHasOwner), assuring
- * NetworkManager won't be autostart (by D-Bus) if not running.
- * We can't use NMClient (nm_client_get_manager_running()) because NMClient
- * constructor calls GetPermissions of NM_DBUS_SERVICE, which would autostart
- * NetworkManger if it is configured as D-Bus launchable service.
- */
-gboolean
-nmc_is_nm_running (NmCli *nmc, GError **error)
-{
-	DBusGConnection *connection = NULL;
-	DBusGProxy *proxy = NULL;
-	GError *err = NULL;
-	gboolean has_owner = FALSE;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Couldn't connect to system bus: %s"), err->message);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_propagate_error (error, err);
-		goto done;
-	}
-
-	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   "org.freedesktop.DBus",
-	                                   "/org/freedesktop/DBus",
-	                                   "org.freedesktop.DBus");
-	if (!proxy) {
-		g_string_printf (nmc->return_text, _("Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		if (error)
-			g_set_error_literal (error, NMCLI_ERROR, 0, nmc->return_text->str);
-		goto done;
-	}
-
-	if (!org_freedesktop_DBus_name_has_owner (proxy, NM_DBUS_SERVICE, &has_owner, &err)) {
-		g_string_printf (nmc->return_text, _("Error: NameHasOwner request failed: %s"),
-		                 (err && err->message) ? err->message : _("(unknown)"));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_propagate_error (error, err);
-		goto done;
-	}
-
-done:
-	if (connection)
-		dbus_g_connection_unref (connection);
-	if (proxy)
-		g_object_unref (proxy);
-
-	return has_owner;
-}
-
-/*
 * Compare versions of nmcli and NM daemon.
 * Return: TRUE  - the versions match (when only major and minor match, print a warning)
 *         FALSE - versions mismatch

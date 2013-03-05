@@ -998,15 +998,11 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
@@ -1018,7 +1014,6 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.header_name = _("Status of devices");
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	for (i = 0; devices && (i < devices->len); i++) {
 		NMDevice *device = g_ptr_array_index (devices, i);
@@ -1035,7 +1030,6 @@ static NMCResultCode
 do_devices_list (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *devices;
-	GError *error = NULL;
 	NMDevice *device = NULL;
 	const char *iface = NULL;
 	gboolean iface_specified = FALSE;
@@ -1060,22 +1054,17 @@ do_devices_list (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 
 	if (iface_specified) {
@@ -1174,7 +1163,6 @@ static NMCResultCode
 do_device_disconnect (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *devices;
-	GError *error = NULL;
 	NMDevice *device = NULL;
 	const char *iface = NULL;
 	gboolean iface_specified = FALSE;
@@ -1226,22 +1214,17 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	for (i = 0; devices && (i < devices->len); i++) {
 		NMDevice *candidate = g_ptr_array_index (devices, i);
@@ -1359,15 +1342,11 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
@@ -1378,7 +1357,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("WiFi scan list");
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	if (iface) {
 		/* Device specified - list only APs of this interface */
@@ -1667,7 +1645,6 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	GByteArray *bssid2_arr = NULL;
 	const GPtrArray *devices;
 	int devices_idx;
-	GError *error = NULL;
 
 	/* Default timeout for waiting for operation completion */
 	nmc->timeout = 90;
@@ -1778,22 +1755,17 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 
 	/* Find a device to activate the connection on */
@@ -2006,15 +1978,11 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
@@ -2025,7 +1993,6 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("WiMAX NSP list");
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	if (iface) {
 		/* Device specified - list only NSPs of this interface */

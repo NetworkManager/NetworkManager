@@ -888,25 +888,19 @@ static NMCResultCode
 do_connections_status (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *active_cons;
-	GError *err = NULL;
 	GError *err1 = NULL;
 
 	nmc->should_wait = FALSE;
 
-	if (!nmc_is_nm_running (nmc, &err)) {
-		if (err) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), err->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (err);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	/* Get active connections */
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 
-	/* Get active connections */
-	nmc->get_client (nmc);
 	active_cons = nm_client_get_active_connections (nmc->client);
 
 	if (argc == 0) {
@@ -1555,20 +1549,14 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
-		goto error;
-	}
-
 	/* create NMClient */
 	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		goto error;
+	}
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -1624,7 +1612,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	NMActiveConnection *active = NULL;
-	GError *error = NULL;
 	const GPtrArray *active_cons;
 	const char *con_path;
 	const char *active_path;
@@ -1668,20 +1655,14 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
-		goto error;
-	}
-
 	/* create NMClient */
 	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		goto error;
+	}
 
 	con_path = nm_connection_get_path (connection);
 
@@ -1734,7 +1715,6 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	NMConnection *connection = NULL;
 	const char *selector = NULL;
 	const char *id = NULL;
-	GError *error = NULL;
 
 	while (argc > 0) {
 		if (strcmp (*argv, "id") == 0 || strcmp (*argv, "uuid") == 0) {
@@ -1759,15 +1739,12 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	/* create NMClient */
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
 

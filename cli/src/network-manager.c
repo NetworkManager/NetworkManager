@@ -163,12 +163,13 @@ show_nm_status (NmCli *nmc)
 		return nmc->return_value;
 	}
 
-	nm_running = nmc_is_nm_running (nmc, NULL);
+	nmc->get_client (nmc); /* create NMClient */
+
+	nm_running = nm_client_get_manager_running (nmc->client);
 	if (nm_running) {
 		if (!nmc_versions_match (nmc))
 			goto error;
 
-		nmc->get_client (nmc); /* create NMClient */
 		state = nm_client_get_state (nmc->client);
 		net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 		wireless_hw_enabled_str = nm_client_wireless_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
@@ -306,19 +307,13 @@ show_nm_permissions (NmCli *nmc)
 		return nmc->return_value;
 	}
 
-	if (!nmc_is_nm_running (nmc, &error)) {
-		if (error) {
-			g_string_printf (nmc->return_text, _("Error: Can't find out if NetworkManager is running: %s."), error->message);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			g_error_free (error);
-		} else {
-			g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		}
+	nmc->get_client (nmc); /* create NMClient */
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
 	}
-
-	nmc->get_client (nmc); /* create NMClient */
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("NetworkManager permissions");
@@ -424,10 +419,10 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("Networking enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (nmc_is_nm_running (nmc, NULL)) {
-					nmc->get_client (nmc); /* create NMClient */
+				nmc->get_client (nmc); /* create NMClient */
+				if (nm_client_get_manager_running (nmc->client))
 					nmc->allowed_fields[3].value = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-				} else
+				else
 					nmc->allowed_fields[3].value = _("unknown");
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -479,10 +474,10 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("WiFi enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (nmc_is_nm_running (nmc, NULL)) {
-					nmc->get_client (nmc); /* create NMClient */
+				nmc->get_client (nmc); /* create NMClient */
+				if (nm_client_get_manager_running (nmc->client))
 					nmc->allowed_fields[5].value = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-				} else
+				else
 					nmc->allowed_fields[5].value = _("unknown");
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -517,10 +512,10 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("WWAN enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (nmc_is_nm_running (nmc, NULL)) {
-					nmc->get_client (nmc); /* create NMClient */
+				nmc->get_client (nmc); /* create NMClient */
+				if (nm_client_get_manager_running (nmc->client))
 					nmc->allowed_fields[7].value = nm_client_wwan_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-				} else
+				else
 					nmc->allowed_fields[7].value = _("unknown");
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
@@ -556,10 +551,10 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 				nmc->print_fields.header_name = _("WiMAX enabled");
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 
-				if (nmc_is_nm_running (nmc, NULL)) {
-					nmc->get_client (nmc); /* create NMClient */
+				nmc->get_client (nmc); /* create NMClient */
+				if (nm_client_get_manager_running (nmc->client))
 					nmc->allowed_fields[9].value = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-				} else
+				else
 					nmc->allowed_fields[9].value = _("unknown");
 				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
 				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
