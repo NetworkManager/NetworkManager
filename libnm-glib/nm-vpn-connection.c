@@ -136,6 +136,7 @@ vpn_state_changed_proxy (DBusGProxy *proxy,
 	if (priv->vpn_state != vpn_state) {
 		priv->vpn_state = vpn_state;
 		g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
+		g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
 	}
 }
 
