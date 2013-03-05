@@ -31,8 +31,6 @@
 
 #include "nm-ip6-manager.h"
 #include "nm-netlink-monitor.h"
-#include "nm-netlink-utils.h"
-#include "nm-netlink-compat.h"
 #include "NetworkManagerUtils.h"
 #include "nm-marshal.h"
 #include "nm-logging.h"
@@ -823,7 +821,7 @@ dump_route_change (NMIP6Device *device, struct nlmsghdr *hdr, struct rtnl_route 
 
 	event = hdr->nlmsg_type == RTM_NEWROUTE ? "new" : "lost";
 	dst = rtnl_route_get_dst (rtnlroute);
-	gateway = rtnl_route_get_gateway (rtnlroute);
+	gateway = rtnl_route_nh_get_gateway (rtnl_route_nexthop_n (rtnlroute, 0));
 	if (dst)
 		nl_addr2str (dst, dst_str, 40);
 	if (gateway)
@@ -876,6 +874,7 @@ process_route_change (NMIP6Manager *manager, struct nl_msg *msg)
 	struct nlmsghdr *hdr;
 	struct rtnl_route *rtnlroute;
 	int old_size;
+	int ifindex;
 
 	hdr = nlmsg_hdr (msg);
 	rtnlroute = NULL;
@@ -893,7 +892,14 @@ process_route_change (NMIP6Manager *manager, struct nl_msg *msg)
 		return NULL;
 	}
 
-	device = nm_ip6_manager_get_device (manager, rtnl_route_get_oif (rtnlroute));
+	/* Only care about single-nexthop routes. */
+	if (rtnl_route_get_nnexthops (rtnlroute) != 1) {
+		rtnl_route_put (rtnlroute);
+		return NULL;
+	}
+
+	ifindex = rtnl_route_nh_get_ifindex (rtnl_route_nexthop_n (rtnlroute, 0));
+	device = nm_ip6_manager_get_device (manager, ifindex);
 
 	old_size = nl_cache_nitems (priv->route_cache);
 	nl_cache_include (priv->route_cache, (struct nl_object *)rtnlroute, NULL, NULL);
@@ -1471,8 +1477,10 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 	struct in6_addr *addr;
 	NMIP6Address *ip6addr;
 	struct rtnl_route *rtnlroute;
+	struct rtnl_nexthop *nexthop;
 	struct nl_addr *nldest, *nlgateway;
 	const struct in6_addr *dest, *gateway;
+	int plen;
 	uint32_t metric;
 	NMIP6Route *ip6route;
 	int i;
@@ -1500,10 +1508,15 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 
 	/* Add routes */
 	for (rtnlroute = FIRST_ROUTE (priv->route_cache); rtnlroute; rtnlroute = NEXT_ROUTE (rtnlroute)) {
-		/* Make sure it's an IPv6 route for this device */
-		if (rtnl_route_get_oif (rtnlroute) != device->ifindex)
+		/* Only care about single-nexthop routes */
+		if (rtnl_route_get_nnexthops (rtnlroute) != 1)
 			continue;
+		nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+
+		/* Make sure it's an IPv6 route for this device */
 		if (rtnl_route_get_family (rtnlroute) != AF_INET6)
+			continue;
+		if (rtnl_route_nh_get_ifindex (nexthop) != device->ifindex)
 			continue;
 
 		/* And ignore cache/cloned routes as they aren't part of the interface's
@@ -1516,13 +1529,14 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		if (!nldest || nl_addr_get_family (nldest) != AF_INET6)
 			continue;
 		dest = nl_addr_get_binary_addr (nldest);
+		plen = nl_addr_get_prefixlen (nldest);
 
-		nlgateway = rtnl_route_get_gateway (rtnlroute);
+		nlgateway = rtnl_route_nh_get_gateway (nexthop);
 		if (!nlgateway || nl_addr_get_family (nlgateway) != AF_INET6)
 			continue;
 		gateway = nl_addr_get_binary_addr (nlgateway);
 
-		if (rtnl_route_get_dst_len (rtnlroute) == 0) {
+		if (plen == 0) {
 			/* Default gateway route; cache the router's address for later */
 			if (!nm_ip6_config_get_gateway (config))
 				nm_ip6_config_set_gateway (config, gateway);
@@ -1538,7 +1552,7 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 
 		ip6route = nm_ip6_route_new ();
 		nm_ip6_route_set_dest (ip6route, dest);
-		nm_ip6_route_set_prefix (ip6route, rtnl_route_get_dst_len (rtnlroute));
+		nm_ip6_route_set_prefix (ip6route, plen);
 		nm_ip6_route_set_next_hop (ip6route, gateway);
 		rtnl_route_get_metric(rtnlroute, 1, &metric);
 		if (metric != UINT_MAX)
