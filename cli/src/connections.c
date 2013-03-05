@@ -1244,85 +1244,6 @@ vpn_connection_state_cb (NMVPNConnection *vpn,
 	}
 }
 
-/* --- VPN state workaround BEGIN --- */
-static NMVPNConnectionState
-dbus_get_vpn_state (const char *path)
-{
-	DBusGConnection *connection;
-	DBusGProxy *proxy;
-	GError *error = NULL;
-	GValue value = G_VALUE_INIT;
-	NMVPNConnectionState state = NM_VPN_CONNECTION_STATE_UNKNOWN;
-
-	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   NM_DBUS_SERVICE,
-	                                   path,
-	                                   "org.freedesktop.DBus.Properties");
-	if (!proxy) {
-		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
-		dbus_g_connection_unref (connection);
-		return NM_VPN_CONNECTION_STATE_UNKNOWN;
-	}
-
-	/* Get VpnState property for object 'path' through D-Bus Get() call. */
-	if (dbus_g_proxy_call (proxy,
-	                       "Get", &error,
-	                       G_TYPE_STRING, NM_DBUS_INTERFACE_VPN_CONNECTION,
-	                       G_TYPE_STRING, "VpnState",
-	                       G_TYPE_INVALID,
-	                       G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
-
-		state = g_value_get_uint (&value);
-	} else {
-		g_warning ("Error in getting active connection 'Vpn' property: (%d) %s",
-		           error->code, error->message);
-		g_error_free (error);
-	}
-
-	g_object_unref (proxy);
-	dbus_g_connection_unref (connection);
-
-	return state;
-}
-
-typedef struct {
-	NmCli *nmc;
-	NMVPNConnection *vpn;
-} VpnGetStateInfo;
-
-static gboolean
-get_vpn_state_cb (gpointer user_data)
-{
-	VpnGetStateInfo *info = (VpnGetStateInfo *) user_data;
-	NmCli *nmc = info->nmc;
-	NMVPNConnection *vpn = info->vpn;
-	NMVPNConnectionState state;
-
-	if (!NM_IS_OBJECT (vpn)) {
-		/* Active connection failed and dissapeared, quit. */
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
-		g_free (info);
-		return FALSE;
-	}
-
-	state = dbus_get_vpn_state (nm_object_get_path (NM_OBJECT (vpn)));
-
-	vpn_connection_state_cb (vpn, state, NM_VPN_CONNECTION_STATE_REASON_UNKNOWN, nmc);
-
-	if (   state == NM_VPN_CONNECTION_STATE_ACTIVATED
-	    || state == NM_VPN_CONNECTION_STATE_FAILED
-	    || state == NM_VPN_CONNECTION_STATE_DISCONNECTED) {
-
-		g_free (info);
-		return FALSE;
-	} else
-		return TRUE;
-}
-/* --- VPN state workaround END --- */
-
 static gboolean
 timeout_cb (gpointer user_data)
 {
@@ -1362,14 +1283,8 @@ progress_vpn_cb (gpointer user_data)
 	NMVPNConnection *vpn = (NMVPNConnection *) user_data;
 	const char *str;
 
-	/* VPN state workaround */
-#if 0
 	str = NM_IS_VPN_CONNECTION (vpn) ?
 	        vpn_connection_state_to_string (nm_vpn_connection_get_vpn_state (vpn)) :
-	        "";
-#endif
-	str = NM_IS_OBJECT (vpn) ?
-	        vpn_connection_state_to_string (dbus_get_vpn_state (nm_object_get_path (NM_OBJECT (vpn)))) :
 	        "";
 
 	nmc_terminal_show_progress (str);
@@ -1406,8 +1321,6 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 			quit ();
 		} else {
 			if (NM_IS_VPN_CONNECTION (active)) {
-				VpnGetStateInfo *vpn_info;
-
 				/* Monitor VPN state */
 				g_signal_connect (G_OBJECT (active), "vpn-state-changed", G_CALLBACK (vpn_connection_state_cb), nmc);
 
@@ -1417,19 +1330,6 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 						g_source_remove (progress_id);
 					progress_id = g_timeout_add (120, progress_vpn_cb, NM_VPN_CONNECTION (active));
 				}
-
-				/* --- workaround BEGIN --- */
-				/* There is a bug in libnm-glib or dbus-glib - 'vpn-state-changed' signal
-				 * is never issued. After inspection it appears that PropertiesChanged and
-				 * VpnStateChanged D-Bus signals are not processed, even if they are seen
-				 * on D-Bus (checked via dbus-monitor). Until the bug is identified and
-				 * fixed, we check the VPN state every second.
-				 */
-				vpn_info = g_malloc0 (sizeof (VpnGetStateInfo));
-				vpn_info->nmc = nmc;
-				vpn_info->vpn = NM_VPN_CONNECTION (active);
-				g_timeout_add_seconds (1, get_vpn_state_cb, vpn_info);
-				/* --- workaround END --- */
 			} else {
 				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), nmc);
 
