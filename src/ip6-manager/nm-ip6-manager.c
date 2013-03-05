@@ -1620,7 +1620,7 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 	g_assert (priv->nlh);
 	rtnl_addr_alloc_cache (priv->nlh, &priv->addr_cache);
 	g_assert (priv->addr_cache);
-	rtnl_route_alloc_cache (priv->nlh, NETLINK_ROUTE, NL_AUTO_PROVIDE, &priv->route_cache);
+	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
 	g_assert (priv->route_cache);
 
 }
