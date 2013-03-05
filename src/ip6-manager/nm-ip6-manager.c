@@ -1617,10 +1617,12 @@ nm_ip6_manager_init (NMIP6Manager *manager)
 	                                     G_CALLBACK (netlink_notification), manager);
 
 	priv->nlh = nm_netlink_get_default_handle ();
+	g_assert (priv->nlh);
 	rtnl_addr_alloc_cache (priv->nlh, &priv->addr_cache);
-	g_warn_if_fail (priv->addr_cache != NULL);
+	g_assert (priv->addr_cache);
 	rtnl_route_alloc_cache (priv->nlh, NETLINK_ROUTE, NL_AUTO_PROVIDE, &priv->route_cache);
-	g_warn_if_fail (priv->route_cache != NULL);
+	g_assert (priv->route_cache);
+
 }
 
 static void
