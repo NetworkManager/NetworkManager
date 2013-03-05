@@ -589,6 +589,9 @@ nm_secret_agent_register (NMSecretAgent *self)
 	g_return_val_if_fail (class->save_secrets != NULL, FALSE);
 	g_return_val_if_fail (class->delete_secrets != NULL, FALSE);
 
+	if (!priv->nm_owner && !priv->private_bus)
+		return FALSE;
+
 	priv->suppress_auto = FALSE;
 
 	/* Export our secret agent interface before registering with the manager */
@@ -630,6 +633,9 @@ nm_secret_agent_unregister (NMSecretAgent *self)
 	g_return_val_if_fail (priv->registered == TRUE, FALSE);
 	g_return_val_if_fail (priv->bus != NULL, FALSE);
 	g_return_val_if_fail (priv->manager_proxy != NULL, FALSE);
+
+	if (!priv->nm_owner && !priv->private_bus)
+		return FALSE;
 
 	dbus_g_proxy_call_no_reply (priv->manager_proxy, "Unregister", G_TYPE_INVALID);
 
@@ -829,6 +835,8 @@ nm_secret_agent_init (NMSecretAgent *self)
 		                             "NameOwnerChanged",
 		                             G_CALLBACK (name_owner_changed),
 		                             self, NULL);
+
+		get_nm_owner (self);
 	}
 
 	priv->manager_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
@@ -839,7 +847,8 @@ nm_secret_agent_init (NMSecretAgent *self)
 		return;
 	}
 
-	priv->auto_register_id = g_idle_add (auto_register_cb, self);
+	if (priv->nm_owner || priv->private_bus)
+		priv->auto_register_id = g_idle_add (auto_register_cb, self);
 }
 
 static void

@@ -32,6 +32,8 @@ global:
 	nm_client_activate_connection;
 	nm_client_add_and_activate_connection;
 	nm_client_deactivate_connection;
+	nm_client_error_get_type;
+	nm_client_error_quark;
 	nm_client_get_active_connections;
 	nm_client_get_device_by_iface;
 	nm_client_get_device_by_path;

@@ -70,6 +70,9 @@ typedef struct {
 
 typedef struct {
 	DBusGConnection *connection;
+	DBusGProxy *bus_proxy;
+	gboolean nm_running;
+
 	char *path;
 	DBusGProxy *properties_proxy;
 	GSList *property_interfaces;
@@ -121,6 +124,27 @@ nm_object_error_quark (void)
 }
 
 static void
+proxy_name_owner_changed (DBusGProxy *proxy,
+                          const char *name,
+                          const char *old_owner,
+                          const char *new_owner,
+                          gpointer user_data)
+{
+	NMObject *self = NM_OBJECT (user_data);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+
+	if (g_strcmp0 (name, NM_DBUS_SERVICE) == 0) {
+		gboolean old_good = (old_owner && old_owner[0]);
+		gboolean new_good = (new_owner && new_owner[0]);
+
+		if (!old_good && new_good)
+			priv->nm_running = TRUE;
+		else if (old_good && !new_good)
+			priv->nm_running = FALSE;
+	}
+}
+
+static void
 nm_object_init (NMObject *object)
 {
 }
@@ -153,14 +177,31 @@ constructor (GType type,
 static void
 constructed (GObject *object)
 {
+	NMObject *self = NM_OBJECT (object);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	if (G_OBJECT_CLASS (nm_object_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_object_parent_class)->constructed (object);
 
-	priv->properties_proxy = _nm_object_new_proxy (NM_OBJECT (object),
-	                                               NULL,
-	                                               "org.freedesktop.DBus.Properties");
+	priv->properties_proxy = _nm_object_new_proxy (self, NULL, "org.freedesktop.DBus.Properties");
+
+	if (_nm_object_is_connection_private (self))
+		priv->nm_running = TRUE;
+	else {
+		priv->bus_proxy = dbus_g_proxy_new_for_name (priv->connection,
+		                                             DBUS_SERVICE_DBUS,
+		                                             DBUS_PATH_DBUS,
+		                                             DBUS_INTERFACE_DBUS);
+		g_assert (priv->bus_proxy);
+
+		dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                         G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->bus_proxy,
+		                             "NameOwnerChanged",
+		                             G_CALLBACK (proxy_name_owner_changed),
+		                             object, NULL);
+	}
 }
 
 static gboolean
@@ -168,25 +209,70 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (initable);
 
+	if (priv->bus_proxy) {
+		if (!dbus_g_proxy_call (priv->bus_proxy,
+		                        "NameHasOwner", error,
+		                        G_TYPE_STRING, NM_DBUS_SERVICE,
+		                        G_TYPE_INVALID,
+		                        G_TYPE_BOOLEAN, &priv->nm_running,
+		                        G_TYPE_INVALID))
+			return FALSE;
+	}
+
 	priv->inited = TRUE;
 	return _nm_object_reload_properties (NM_OBJECT (initable), error);
+}
+
+/* Takes ownership of @error */
+static void
+init_async_complete (GSimpleAsyncResult *simple, GError *error)
+{
+	if (error)
+		g_simple_async_result_take_error (simple, error);
+	else
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
 }
 
 static void
 init_async_got_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GSimpleAsyncResult *simple = user_data;
 	GError *error = NULL;
 
-	priv->inited = TRUE;
-	if (_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
+	NM_OBJECT_GET_PRIVATE (object)->inited = TRUE;
+	if (!_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error))
+		g_assert (error);
+	init_async_complete (simple, error);
+}
 
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
+static void
+init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
+                                gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	NMObject *self;
+	NMObjectPrivate *priv;
+	GError *error = NULL;
+
+	self = NM_OBJECT (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+	priv = NM_OBJECT_GET_PRIVATE (self);
+
+	if (!dbus_g_proxy_end_call (proxy, call, &error,
+	                            G_TYPE_BOOLEAN, &priv->nm_running,
+	                            G_TYPE_INVALID)) {
+		init_async_complete (simple, error);
+		return;
+	}
+
+	if (!priv->nm_running) {
+		priv->inited = TRUE;
+		init_async_complete (simple, NULL);
+		return;
+	}
+
+	_nm_object_reload_properties_async (self, init_async_got_properties, simple);
 }
 
 static void
@@ -194,10 +280,21 @@ init_async (GAsyncInitable *initable, int io_priority,
             GCancellable *cancellable, GAsyncReadyCallback callback,
             gpointer user_data)
 {
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (initable);
 	GSimpleAsyncResult *simple;
 
 	simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
-	_nm_object_reload_properties_async (NM_OBJECT (initable), init_async_got_properties, simple);
+
+	if (_nm_object_is_connection_private (NM_OBJECT (initable)))
+		_nm_object_reload_properties_async (NM_OBJECT (initable), init_async_got_properties, simple);
+	else {
+		/* Check if NM is running */
+		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
+			                     init_async_got_manager_running,
+			                     simple, NULL,
+			                     G_TYPE_STRING, NM_DBUS_SERVICE,
+			                     G_TYPE_INVALID);
+	}
 }
 
 static gboolean
@@ -230,6 +327,7 @@ dispose (GObject *object)
 	priv->property_interfaces = NULL;
 
 	g_clear_object (&priv->properties_proxy);
+	g_clear_object (&priv->bus_proxy);
 
 	if (priv->connection) {
 		dbus_g_connection_unref (priv->connection);
@@ -1031,7 +1129,7 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 	GHashTableIter pp;
 	gpointer name, info;
 
-	if (!priv->property_interfaces)
+	if (!priv->property_interfaces || !priv->nm_running)
 		return TRUE;
 
 	for (p = priv->property_interfaces; p; p = p->next) {
@@ -1095,6 +1193,9 @@ _nm_object_reload_property (NMObject *object,
 	g_return_if_fail (interface != NULL);
 	g_return_if_fail (prop_name != NULL);
 
+	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
+		return;
+
 	if (!dbus_g_proxy_call_with_timeout (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
 							"Get", 15000, &err,
 							G_TYPE_STRING, interface,
@@ -1131,6 +1232,9 @@ _nm_object_set_property (NMObject *object,
 	g_return_if_fail (interface != NULL);
 	g_return_if_fail (prop_name != NULL);
 	g_return_if_fail (G_IS_VALUE (value));
+
+	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
+		return;
 
 	if (!dbus_g_proxy_call_with_timeout (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
 	                                     "Set", 2000, NULL,
@@ -1283,6 +1387,9 @@ _nm_object_reload_pseudo_property (NMObject *object,
 
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (name != NULL);
+
+	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
+		return;
 
 	ppi = g_hash_table_lookup (priv->pseudo_properties, name);
 	g_return_if_fail (ppi != NULL);

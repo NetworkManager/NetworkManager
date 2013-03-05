@@ -64,8 +64,7 @@ typedef struct {
 
 	DBusGProxy *dbus_proxy;
 
-	guint fetch_id;
-	gboolean fetching;
+	DBusGProxyCall *listcon_call;
 } NMRemoteSettingsPrivate;
 
 enum {
@@ -384,10 +383,8 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 
 	/* Let listeners know that all connections have been found */
 	priv->init_left--;
-	if (priv->init_left == 0) {
-		priv->fetching = FALSE;
+	if (priv->init_left == 0)
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
-	}
 }
 
 static NMRemoteConnection *
@@ -433,12 +430,15 @@ fetch_connections_done (DBusGProxy *proxy,
 	GError *error = NULL;
 	int i;
 
+	g_warn_if_fail (priv->listcon_call == call);
+	priv->listcon_call = NULL;
+
 	if (!dbus_g_proxy_end_call (proxy, call, &error, 
 	                            DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &connections,
 	                            G_TYPE_INVALID)) {
-		/* Ignore settings service spawn errors */
 		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
-		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)) {
+		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)
+		    && priv->service_running) {
 			g_warning ("%s: error fetching connections: (%d) %s.",
 			           __func__,
 				       error->code,
@@ -447,16 +447,14 @@ fetch_connections_done (DBusGProxy *proxy,
 		g_clear_error (&error);
 
 		/* We tried to read connections and failed */
-		priv->fetching = FALSE;
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
 		return;
 	}
 
 	/* Let listeners know we are done getting connections */
-	if (connections->len == 0) {
-		priv->fetching = FALSE;
+	if (connections->len == 0)
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
-	} else {
+	else {
 		priv->init_left = connections->len;
 		for (i = 0; i < connections->len; i++) {
 			char *path = g_ptr_array_index (connections, i);
@@ -467,20 +465,6 @@ fetch_connections_done (DBusGProxy *proxy,
 	}
 
 	g_ptr_array_free (connections, TRUE);
-}
-
-static gboolean
-fetch_connections (gpointer user_data)
-{
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-
-	priv->fetch_id = 0;
-
-	dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
-	                         fetch_connections_done, self, NULL,
-	                         G_TYPE_INVALID);
-	return FALSE;
 }
 
 /**
@@ -566,6 +550,9 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 
 	_nm_remote_settings_ensure_inited (settings);
 
+	if (!priv->service_running)
+		return FALSE;
+
 	info = g_malloc0 (sizeof (AddConnectionInfo));
 	info->self = settings;
 	info->callback = callback;
@@ -606,17 +593,6 @@ clear_one_hash (GHashTable *table)
 	g_slist_free (list);
 
 	g_hash_table_remove_all (table);
-}
-
-static gboolean
-remove_connections (gpointer user_data)
-{
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-
-	clear_one_hash (priv->pending);
-	clear_one_hash (priv->connections);
-	return FALSE;
 }
 
 typedef struct {
@@ -669,6 +645,9 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
 	_nm_remote_settings_ensure_inited (settings);
+
+	if (!priv->service_running)
+		return FALSE;
 
 	info = g_malloc0 (sizeof (SaveHostnameInfo));
 	info->settings = settings;
@@ -738,20 +717,22 @@ name_owner_changed (DBusGProxy *proxy,
 	const char *sname = NM_DBUS_SERVICE;
 
 	if (!strcmp (name, sname)) {
-		if (priv->fetch_id)
-			g_source_remove (priv->fetch_id);
-
 		if (new_owner && strlen (new_owner) > 0) {
-			priv->fetch_id = g_idle_add (fetch_connections, self);
 			priv->service_running = TRUE;
+
+			priv->listcon_call = dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
+			                                              fetch_connections_done, self, NULL,
+			                                              G_TYPE_INVALID);
 
 			dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
 			                         nm_appeared_got_properties, self, NULL,
 			                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
 			                         G_TYPE_INVALID);
 		} else {
-			priv->fetch_id = g_idle_add (remove_connections, self);
 			priv->service_running = FALSE;
+
+			clear_one_hash (priv->pending);
+			clear_one_hash (priv->connections);
 
 			/* Clear properties */
 			g_free (priv->hostname);
@@ -760,6 +741,11 @@ name_owner_changed (DBusGProxy *proxy,
 
 			priv->can_modify = FALSE;
 			g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_CAN_MODIFY);
+
+			if (priv->listcon_call) {
+				dbus_g_proxy_cancel_call (priv->proxy, priv->listcon_call);
+				priv->listcon_call = NULL;
+			}
 		}
 		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_SERVICE_RUNNING);
 	}
@@ -782,7 +768,11 @@ name_owner_changed (DBusGProxy *proxy,
 NMRemoteSettings *
 nm_remote_settings_new (DBusGConnection *bus)
 {
-	return g_object_new (NM_TYPE_REMOTE_SETTINGS, NM_REMOTE_SETTINGS_BUS, bus, NULL);
+	NMRemoteSettings *self;
+
+	self = g_object_new (NM_TYPE_REMOTE_SETTINGS, NM_REMOTE_SETTINGS_BUS, bus, NULL);
+	_nm_remote_settings_ensure_inited (self);
+	return self;
 }
 
 static void
@@ -913,10 +903,6 @@ constructed (GObject *object)
 	                             object,
 	                             NULL);
 
-	priv->fetching = TRUE;
-	priv->fetch_id = g_idle_add (fetch_connections, object);
-
-
 	/* D-Bus properties proxy */
 	priv->props_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
 	                                                       NM_DBUS_PATH_SETTINGS,
@@ -961,6 +947,10 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 			return TRUE;
 	} else
 		priv->service_running = TRUE;
+
+	priv->listcon_call = dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
+	                                              fetch_connections_done, NM_REMOTE_SETTINGS (initable), NULL,
+	                                              G_TYPE_INVALID);
 
 	/* Get properties */
 	if (!dbus_g_proxy_call (priv->props_proxy, "GetAll", error,
@@ -1020,14 +1010,12 @@ init_async_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
 	} else
 		g_simple_async_result_take_error (init_data->result, error);
 
-	if (priv->fetching) {
-		/* Still creating initial connections; wait for that to complete */
-		g_signal_connect (init_data->settings, "connections-read",
-		                  G_CALLBACK (init_read_connections), init_data);
-		return;
-	}
-
-	init_async_complete (init_data);
+	/* Read connections and wait for the result */
+	priv->listcon_call = dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
+	                                              fetch_connections_done, init_data->settings, NULL,
+	                                              G_TYPE_INVALID);
+	g_signal_connect (init_data->settings, "connections-read",
+	                  G_CALLBACK (init_read_connections), init_data);
 }
 
 static void
@@ -1107,11 +1095,6 @@ dispose (GObject *object)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-
-	if (priv->fetch_id) {
-		g_source_remove (priv->fetch_id);
-		priv->fetch_id = 0;
-	}
 
 	while (g_slist_length (priv->add_list))
 		add_connection_info_dispose (self, (AddConnectionInfo *) priv->add_list->data);

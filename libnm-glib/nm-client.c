@@ -116,6 +116,29 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
 static void client_device_added (NMObject *client, NMObject *device);
 static void client_device_removed (NMObject *client, NMObject *device);
 
+/**********************************************************************/
+
+/**
+ * nm_client_error_quark:
+ *
+ * Registers an error quark for #NMClient if necessary.
+ *
+ * Returns: the error quark used for #NMClient errors.
+ *
+ * Since: 0.9.10
+ **/
+GQuark
+nm_client_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-client-error-quark");
+	return quark;
+}
+
+/**********************************************************************/
+
 static void
 nm_client_init (NMClient *client)
 {
@@ -427,12 +450,15 @@ typedef struct {
 	NMClientAddActivateFn add_act_fn;
 	char *active_path;
 	char *new_connection_path;
+	guint idle_id;
 	gpointer user_data;
 } ActivateInfo;
 
 static void
 activate_info_free (ActivateInfo *info)
 {
+	if (info->idle_id)
+		g_source_remove (info->idle_id);
 	g_free (info->active_path);
 	g_free (info->new_connection_path);
 	memset (info, 0, sizeof (*info));
@@ -535,6 +561,23 @@ activate_cb (DBusGProxy *proxy,
 	}
 }
 
+static gboolean
+activate_nm_not_running (gpointer user_data)
+{
+	ActivateInfo *info = user_data;
+	GError *error;
+
+	info->idle_id = 0;
+
+	error = g_error_new_literal (NM_CLIENT_ERROR,
+	                             NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+	                             "NetworkManager is not running");
+	activate_info_complete (info, NULL, error);
+	activate_info_free (info);
+	g_clear_error (&error);
+	return FALSE;
+}
+
 /**
  * nm_client_activate_connection:
  * @client: a #NMClient
@@ -581,6 +624,11 @@ nm_client_activate_connection (NMClient *client,
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
+
+	if (priv->manager_running == FALSE) {
+		info->idle_id = g_idle_add (activate_nm_not_running, info);
+		return;
+	}
 
 	dbus_g_proxy_begin_call (priv->client_proxy, "ActivateConnection",
 	                         activate_cb, info, NULL,
@@ -664,12 +712,16 @@ nm_client_add_and_activate_connection (NMClient *client,
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
-	dbus_g_proxy_begin_call (priv->client_proxy, "AddAndActivateConnection",
-	                         add_activate_cb, info, NULL,
-	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
-	                         DBUS_TYPE_G_OBJECT_PATH, nm_object_get_path (NM_OBJECT (device)),
-	                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
-	                         G_TYPE_INVALID);
+	if (priv->manager_running) {
+		dbus_g_proxy_begin_call (priv->client_proxy, "AddAndActivateConnection",
+		                         add_activate_cb, info, NULL,
+		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+		                         DBUS_TYPE_G_OBJECT_PATH, nm_object_get_path (NM_OBJECT (device)),
+		                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
+		                         G_TYPE_INVALID);
+	} else
+		info->idle_id = g_idle_add (activate_nm_not_running, info);
+
 	g_hash_table_unref (hash);
 }
 
@@ -703,8 +755,10 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
-	// FIXME: return errors
 	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!priv->manager_running)
+		return;
+
 	path = nm_object_get_path (NM_OBJECT (active));
 	if (!dbus_g_proxy_call (priv->client_proxy, "DeactivateConnection", &error,
 	                        DBUS_TYPE_G_OBJECT_PATH, path,
@@ -772,13 +826,16 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
+	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+		return;
+
 	g_value_init (&value, G_TYPE_BOOLEAN);
 	g_value_set_boolean (&value, enabled);
 
 	_nm_object_set_property (NM_OBJECT (client),
-					    NM_DBUS_INTERFACE,
-					    "WirelessEnabled",
-					    &value);
+	                         NM_DBUS_INTERFACE,
+	                         "WirelessEnabled",
+	                         &value);
 }
 
 /**
@@ -828,6 +885,9 @@ nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+		return;
 
 	g_value_init (&value, G_TYPE_BOOLEAN);
 	g_value_set_boolean (&value, enabled);
@@ -885,6 +945,9 @@ nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
 	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+		return;
 
 	g_value_init (&value, G_TYPE_BOOLEAN);
 	g_value_set_boolean (&value, enabled);
@@ -985,6 +1048,9 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
+	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+		return;
+
 	if (!dbus_g_proxy_call (NM_CLIENT_GET_PRIVATE (client)->client_proxy, "Enable", &err,
 	                        G_TYPE_BOOLEAN, enable,
 	                        G_TYPE_INVALID,
@@ -1062,28 +1128,30 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
 gboolean
 nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
 {
-	GError *err = NULL;
+	NMClientPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!level && !domains)
-		return TRUE;
-
-	if (!dbus_g_proxy_call (NM_CLIENT_GET_PRIVATE (client)->client_proxy, "GetLogging", &err,
-	                        G_TYPE_INVALID,
-	                        G_TYPE_STRING, level,
-	                        G_TYPE_STRING, domains,
-	                        G_TYPE_INVALID)) {
-		if (error)
-			*error = g_error_copy (err);
-		g_error_free (err);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!priv->manager_running) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
 		return FALSE;
 	}
 
-	return TRUE;
+	if (!level && !domains)
+		return TRUE;
+
+	return dbus_g_proxy_call (priv->client_proxy, "GetLogging", error,
+	                          G_TYPE_INVALID,
+	                          G_TYPE_STRING, level,
+	                          G_TYPE_STRING, domains,
+	                          G_TYPE_INVALID);
 }
 
 /**
@@ -1103,26 +1171,28 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
 {
-	GError *err = NULL;
+	NMClientPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!level && !domains)
-		return TRUE;
-
-	if (!dbus_g_proxy_call (NM_CLIENT_GET_PRIVATE (client)->client_proxy, "SetLogging", &err,
-	                        G_TYPE_STRING, level ? level : "",
-	                        G_TYPE_STRING, domains ? domains : "",
-	                        G_TYPE_INVALID,
-	                        G_TYPE_INVALID)) {
-		if (error)
-			*error = g_error_copy (err);
-		g_error_free (err);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!priv->manager_running) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
 		return FALSE;
 	}
 
-	return TRUE;
+	if (!level && !domains)
+		return TRUE;
+
+	return dbus_g_proxy_call (priv->client_proxy, "SetLogging", error,
+	                          G_TYPE_STRING, level ? level : "",
+	                          G_TYPE_STRING, domains ? domains : "",
+	                          G_TYPE_INVALID,
+	                          G_TYPE_INVALID);
 }
 
 /****************************************************************/

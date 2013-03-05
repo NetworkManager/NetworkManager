@@ -120,6 +120,22 @@ typedef enum {
 	NM_CLIENT_PERMISSION_RESULT_NO
 } NMClientPermissionResult;
 
+/**
+ * NMClientError:
+ * @NM_CLIENT_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_CLIENT_ERROR_CONNECTION_REMOVED: an operation that requires NetworkManager
+ *   failed because NetworkManager is not running
+ *
+ * Describes errors that may result from operations involving a #NMClient.
+ *
+ **/
+typedef enum {
+	NM_CLIENT_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
+	NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,    /*< nick=ManagerNotRunning >*/
+} NMClientError;
+
+#define NM_CLIENT_ERROR nm_client_error_quark ()
+GQuark nm_client_error_quark (void);
 
 typedef struct {
 	NMObject parent;
