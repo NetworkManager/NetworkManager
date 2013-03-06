@@ -82,6 +82,7 @@ typedef struct {
 typedef struct {
 	char *id;
 	char *uuid;
+	char *interface_name;
 	char *type;
 	char *master;
 	char *slave_type;
@@ -97,6 +98,7 @@ enum {
 	PROP_0,
 	PROP_ID,
 	PROP_UUID,
+	PROP_INTERFACE_NAME,
 	PROP_TYPE,
 	PROP_PERMISSIONS,
 	PROP_AUTOCONNECT,
@@ -235,6 +237,22 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->uuid;
+}
+
+/**
+ * nm_setting_connection_get_interface_name:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:interface-name property of the connection.
+ *
+ * Returns: the connection's interface name
+ **/
+const char *
+nm_setting_connection_get_interface_name (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->interface_name;
 }
 
 /**
@@ -647,6 +665,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	GSList *iter;
 
 	if (!priv->id) {
 		g_set_error_literal (error,
@@ -679,6 +698,38 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             priv->uuid);
 		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_UUID);
 		return FALSE;
+	}
+
+	/* If the connection has a virtual interface name, it must match
+	 * the connection setting's interface name.
+	 */
+	for (iter = all_settings; iter; iter = iter->next) {
+		const char *virtual_iface;
+
+		virtual_iface = nm_setting_get_virtual_iface_name (iter->data);
+		if (virtual_iface) {
+			if (priv->interface_name) {
+				if (strcmp (priv->interface_name, virtual_iface) != 0) {
+					g_set_error (error,
+					             NM_SETTING_CONNECTION_ERROR,
+					             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+					             NM_SETTING_CONNECTION_INTERFACE_NAME);
+					return FALSE;
+				}
+			} else
+				priv->interface_name = g_strdup (virtual_iface);
+			break;
+		}
+	}
+
+	if (priv->interface_name) {
+		if (!nm_utils_iface_valid_name (priv->interface_name)) {
+			g_set_error (error,
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_CONNECTION_INTERFACE_NAME);
+			return FALSE;
+		}
 	}
 
 	if (!priv->type) {
@@ -781,6 +832,7 @@ finalize (GObject *object)
 
 	g_free (priv->id);
 	g_free (priv->uuid);
+	g_free (priv->interface_name);
 	g_free (priv->type);
 	g_free (priv->zone);
 	g_free (priv->master);
@@ -820,6 +872,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_free (priv->uuid);
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_INTERFACE_NAME:
+		g_free (priv->interface_name);
+		priv->interface_name = g_value_dup_string (value);
 		break;
 	case PROP_TYPE:
 		g_free (priv->type);
@@ -883,6 +939,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_UUID:
 		g_value_set_string (value, nm_setting_connection_get_uuid (setting));
+		break;
+	case PROP_INTERFACE_NAME:
+		g_value_set_string (value, nm_setting_connection_get_interface_name (setting));
 		break;
 	case PROP_TYPE:
 		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
@@ -982,6 +1041,28 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "connection type changes.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	/**
+	 * NMSettingConnection:interface-name:
+	 *
+	 * The name of the network interface this connection is bound to. If
+	 * not set, then the connection can be attached to any interface of the
+	 * appropriate type (subject to restrictions imposed by other settings).
+	 *
+	 * For connection types where interface names cannot easily be
+	 * made persistent (eg, mobile broadband or USB ethernet), this
+	 * property should not be used. Setting this property restricts
+	 * the interfaces a connection can be used with, and if interface
+	 * names change or are reordered the connection may be applied to
+	 * the wrong interface.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_INTERFACE_NAME,
+		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME,
+		                      "Interface name",
+		                      "Interface name to be bound to, or NULL",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingConnection:type:

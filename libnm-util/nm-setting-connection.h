@@ -68,17 +68,18 @@ typedef enum
 #define NM_SETTING_CONNECTION_ERROR nm_setting_connection_error_quark ()
 GQuark nm_setting_connection_error_quark (void);
 
-#define NM_SETTING_CONNECTION_ID          "id"
-#define NM_SETTING_CONNECTION_UUID        "uuid"
-#define NM_SETTING_CONNECTION_TYPE        "type"
-#define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"
-#define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
-#define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
-#define NM_SETTING_CONNECTION_PERMISSIONS "permissions"
-#define NM_SETTING_CONNECTION_ZONE        "zone"
-#define NM_SETTING_CONNECTION_MASTER      "master"
-#define NM_SETTING_CONNECTION_SLAVE_TYPE  "slave-type"
-#define NM_SETTING_CONNECTION_SECONDARIES "secondaries"
+#define NM_SETTING_CONNECTION_ID             "id"
+#define NM_SETTING_CONNECTION_UUID           "uuid"
+#define NM_SETTING_CONNECTION_INTERFACE_NAME "interface-name"
+#define NM_SETTING_CONNECTION_TYPE           "type"
+#define NM_SETTING_CONNECTION_AUTOCONNECT    "autoconnect"
+#define NM_SETTING_CONNECTION_TIMESTAMP      "timestamp"
+#define NM_SETTING_CONNECTION_READ_ONLY      "read-only"
+#define NM_SETTING_CONNECTION_PERMISSIONS    "permissions"
+#define NM_SETTING_CONNECTION_ZONE           "zone"
+#define NM_SETTING_CONNECTION_MASTER         "master"
+#define NM_SETTING_CONNECTION_SLAVE_TYPE     "slave-type"
+#define NM_SETTING_CONNECTION_SECONDARIES    "secondaries"
 
 /**
  * NMSettingConnection:
@@ -105,6 +106,7 @@ GType nm_setting_connection_get_type (void);
 NMSetting * nm_setting_connection_new                  (void);
 const char *nm_setting_connection_get_id               (NMSettingConnection *setting);
 const char *nm_setting_connection_get_uuid             (NMSettingConnection *setting);
+const char *nm_setting_connection_get_interface_name   (NMSettingConnection *setting);
 const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
