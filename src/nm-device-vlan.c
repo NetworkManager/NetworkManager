@@ -355,37 +355,23 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-vlan_match_config (NMDevice *device, NMConnection *connection)
+match_l2_config (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
-	const char *ifname, *parent;
 	gboolean fail_if_no_hwaddr = FALSE;
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
-	if (!s_vlan)
-		return FALSE;
+	g_assert (s_vlan);
 
-	/* Interface name */
-	ifname = nm_setting_vlan_get_interface_name (s_vlan);
-	if (g_strcmp0 (ifname, nm_device_get_ip_iface (device)) != 0)
-		return FALSE;
-
-	if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id)
-		return FALSE;
-
-	parent = nm_setting_vlan_get_parent (s_vlan);
-	if (parent) {
-		if (!match_parent (NM_DEVICE_VLAN (device), parent, NULL))
-			return FALSE;
-	} else {
+	if (   !nm_setting_vlan_get_parent (s_vlan)
+	    && !nm_setting_vlan_get_interface_name (s_vlan)) {
 		/* If there's no parent and no interface name given, then the only way
 		 * we have to identify the VLAN interface the connection matches is
 		 * a hardware-specific setting's hardware address property, so we want
 		 * to fail the match below if we there is none.
 		 */
-		 if (ifname == NULL)
-		 	fail_if_no_hwaddr = TRUE;
+		fail_if_no_hwaddr = TRUE;
 	}
 
 	/* MAC address check; we ask the parent to check our own MAC address,
@@ -396,30 +382,8 @@ vlan_match_config (NMDevice *device, NMConnection *connection)
 	if (!nm_device_hwaddr_matches (priv->parent, connection, priv->hw_addr, priv->hw_addr_len, fail_if_no_hwaddr))
 		return FALSE;
 
+	/* FIXME: any more L2 checks? */
 	return TRUE;
-}
-
-static NMConnection *
-connection_match_config (NMDevice *self, const GSList *connections)
-{
-	const GSList *iter;
-
-	/* First narrow @connections down to those that match in their
-	 * NMSettingVlan configuration.
-	 */
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = iter->data;
-
-		if (!nm_connection_is_type (candidate, NM_SETTING_VLAN_SETTING_NAME))
-			continue;
-		if (!vlan_match_config (self, candidate))
-			continue;
-		if (!nm_device_match_ip_config (self, candidate))
-			continue;
-
-		return candidate;
-	}
-	return NULL;
 }
 
 /******************************************************************/
@@ -658,7 +622,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
-	parent_class->connection_match_config = connection_match_config;
+	parent_class->match_l2_config = match_l2_config;
 
 	/* properties */
 	g_object_class_install_property

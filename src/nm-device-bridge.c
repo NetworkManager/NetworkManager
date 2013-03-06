@@ -226,51 +226,10 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-bridge_match_config (NMDevice *self, NMConnection *connection)
+match_l2_config (NMDevice *self, NMConnection *connection)
 {
-	NMSettingBridge *s_bridge;
-	const char *ifname;
-
-	s_bridge = nm_connection_get_setting_bridge (connection);
-	if (!s_bridge)
-		return FALSE;
-
-	/* Interface name */
-	ifname = nm_setting_bridge_get_interface_name (s_bridge);
-	if (g_strcmp0 (ifname, nm_device_get_ip_iface (self)) != 0)
-		return FALSE;
-
+	/* FIXME */
 	return TRUE;
-}
-
-static NMConnection *
-connection_match_config (NMDevice *self, const GSList *connections)
-{
-	const GSList *iter;
-	GSList *bridge_matches;
-	NMConnection *match;
-
-	/* First narrow @connections down to those that match in their
-	 * NMSettingBridge configuration.
-	 */
-	bridge_matches = NULL;
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (!nm_connection_is_type (candidate, NM_SETTING_BRIDGE_SETTING_NAME))
-			continue;
-		if (!bridge_match_config (self, candidate))
-			continue;
-
-		bridge_matches = g_slist_prepend (bridge_matches, candidate);
-	}
-
-	/* Now pass those to the super method, which will check IP config */
-	bridge_matches = g_slist_reverse (bridge_matches);
-	match = NM_DEVICE_CLASS (nm_device_bridge_parent_class)->connection_match_config (self, bridge_matches);
-	g_slist_free (bridge_matches);
-
-	return match;
 }
 
 /******************************************************************/
@@ -504,7 +463,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->connection_match_config = connection_match_config;
+	parent_class->match_l2_config = match_l2_config;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;

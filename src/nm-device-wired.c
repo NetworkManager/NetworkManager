@@ -299,23 +299,6 @@ is_available (NMDevice *dev, gboolean need_carrier)
 	return TRUE;
 }
 
-static NMConnection *
-connection_match_config (NMDevice *self, const GSList *connections)
-{
-	const GSList *iter;
-
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (!nm_device_match_ip_config (self, candidate))
-			continue;
-
-		return candidate;
-	}
-
-	return NULL;
-}
-
 static NMActStageReturn
 act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
@@ -384,7 +367,6 @@ nm_device_wired_class_init (NMDeviceWiredClass *klass)
 	parent_class->hw_bring_up = hw_bring_up;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->is_available = is_available;
-	parent_class->connection_match_config = connection_match_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 }

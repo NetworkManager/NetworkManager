@@ -224,51 +224,10 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-bond_match_config (NMDevice *self, NMConnection *connection)
+match_l2_config (NMDevice *self, NMConnection *connection)
 {
-	NMSettingBond *s_bond;
-	const char *ifname;
-
-	s_bond = nm_connection_get_setting_bond (connection);
-	if (!s_bond)
-		return FALSE;
-
-	/* Interface name */
-	ifname = nm_setting_bond_get_interface_name (s_bond);
-	if (g_strcmp0 (ifname, nm_device_get_ip_iface (self)) != 0)
-		return FALSE;
-
+	/* FIXME */
 	return TRUE;
-}
-
-static NMConnection *
-connection_match_config (NMDevice *self, const GSList *connections)
-{
-	const GSList *iter;
-	GSList *bond_matches;
-	NMConnection *match;
-
-	/* First narrow @connections down to those that match in their
-	 * NMSettingBond configuration.
-	 */
-	bond_matches = NULL;
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (!nm_connection_is_type (candidate, NM_SETTING_BOND_SETTING_NAME))
-			continue;
-		if (!bond_match_config (self, candidate))
-			continue;
-
-		bond_matches = g_slist_prepend (bond_matches, candidate);
-	}
-
-	/* Now pass those to the super method, which will check IP config */
-	bond_matches = g_slist_reverse (bond_matches);
-	match = NM_DEVICE_CLASS (nm_device_bond_parent_class)->connection_match_config (self, bond_matches);
-	g_slist_free (bond_matches);
-
-	return match;
 }
 
 /******************************************************************/
@@ -448,7 +407,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->connection_match_config = connection_match_config;
+	parent_class->match_l2_config = match_l2_config;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;

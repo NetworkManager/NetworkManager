@@ -333,52 +333,10 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-infiniband_match_config (NMDevice *self, NMConnection *connection)
+match_l2_config (NMDevice *self, NMConnection *connection)
 {
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (self);
-	NMSettingInfiniband *s_infiniband;
-	const GByteArray *s_mac;
-
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	if (!s_infiniband)
-		return FALSE;
-
-	/* MAC address check */
-	s_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	if (s_mac && memcmp (s_mac->data, priv->hw_addr, INFINIBAND_ALEN))
-		return FALSE;
-
+	/* FIXME */
 	return TRUE;
-}
-
-static NMConnection *
-connection_match_config (NMDevice *self, const GSList *connections)
-{
-	const GSList *iter;
-	GSList *infiniband_matches;
-	NMConnection *match;
-
-	/* First narrow @connections down to those that match in their
-	 * NMSettingInfiniband configuration.
-	 */
-	infiniband_matches = NULL;
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (!nm_connection_is_type (candidate, NM_SETTING_INFINIBAND_SETTING_NAME))
-			continue;
-		if (!infiniband_match_config (self, candidate))
-			continue;
-
-		infiniband_matches = g_slist_prepend (infiniband_matches, candidate);
-	}
-
-	/* Now pass those to the super method, which will check IP config */
-	infiniband_matches = g_slist_reverse (infiniband_matches);
-	match = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->connection_match_config (self, infiniband_matches);
-	g_slist_free (infiniband_matches);
-
-	return match;
 }
 
 static gboolean
@@ -462,7 +420,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	parent_class->connection_match_config = connection_match_config;
+	parent_class->match_l2_config = match_l2_config;
 	parent_class->hwaddr_matches = hwaddr_matches;
 
 	/* properties */

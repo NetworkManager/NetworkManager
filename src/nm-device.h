@@ -175,7 +175,7 @@ typedef struct {
 
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
 
-	NMConnection *  (* connection_match_config) (NMDevice *self, const GSList *connections);
+	gboolean        (* match_l2_config) (NMDevice *self, NMConnection *connection);
 
 	gboolean        (* hwaddr_matches) (NMDevice *self,
 	                                    NMConnection *connection,
@@ -258,8 +258,8 @@ gboolean nm_device_check_connection_compatible (NMDevice *device,
 
 gboolean nm_device_can_assume_connections (NMDevice *device);
 
-NMConnection * nm_device_connection_match_config (NMDevice *device,
-                                                  const GSList *connections);
+NMConnection * nm_device_find_assumable_connection (NMDevice *device,
+                                                    const GSList *connections);
 
 gboolean nm_device_hwaddr_matches (NMDevice *device,
                                    NMConnection *connection,

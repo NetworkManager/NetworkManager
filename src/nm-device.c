@@ -1480,7 +1480,7 @@ nm_device_can_assume_connections (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	return !!NM_DEVICE_GET_CLASS (device)->connection_match_config;
+	return !!NM_DEVICE_GET_CLASS (device)->match_l2_config;
 }
 
 static void
@@ -5569,24 +5569,31 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
-gboolean
-nm_device_match_ip_config (NMDevice *device, NMConnection *connection)
-{
-	if (!ip4_match_config (device, connection))
-		return FALSE;
-
-	/* FIXME: match IPv6 config */
-
-	return TRUE;
-}
-
 NMConnection *
-nm_device_connection_match_config (NMDevice *device, const GSList *connections)
+nm_device_find_assumable_connection (NMDevice *device, const GSList *connections)
 {
+	const GSList *iter;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
-		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);
+	if (!NM_DEVICE_GET_CLASS (device)->match_l2_config)
+		return NULL;
+
+	for (iter = connections; iter; iter = iter->next) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+
+		if (!nm_device_check_connection_compatible (device, candidate, NULL))
+			continue;
+
+		if (!ip4_match_config (device, candidate))
+			continue;
+
+		/* FIXME: match IPv6 config */
+
+		if (NM_DEVICE_GET_CLASS (device)->match_l2_config (device, candidate))
+			return candidate;
+	}
+
 	return NULL;
 }
 

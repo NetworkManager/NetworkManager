@@ -1359,39 +1359,18 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->spec_match_list (device, specs);
 }
 
-static NMConnection *
-connection_match_config (NMDevice *self, const GSList *connections)
+static gboolean
+match_l2_config (NMDevice *self, NMConnection *connection)
 {
-	const GSList *iter;
-	GSList *ether_matches;
-	NMConnection *match;
-
-	/* First narrow @connections down to those that match in their
-	 * NMSettingWired configuration.
+	/* Can't match 802.1x or PPPoE connections; they have too much state
+	 * that's impossible to get on-the-fly from PPPoE or the supplicant.
 	 */
-	ether_matches = NULL;
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	if (   nm_connection_get_setting_802_1x (connection)
+	    || nm_connection_get_setting_pppoe (connection))
+		return FALSE;
 
-		/* Can't assume 802.1x or PPPoE connections; they have too much state
-		 * that's impossible to get on-the-fly from PPPoE or the supplicant.
-		 */
-		if (   nm_connection_get_setting_802_1x (candidate)
-		    || nm_connection_get_setting_pppoe (candidate))
-			continue;
-
-		if (!match_ethernet_connection (self, candidate, NULL))
-			continue;
-
-		ether_matches = g_slist_prepend (ether_matches, candidate);
-	}
-
-	/* Now pass those to the super method, which will check IP config */
-	ether_matches = g_slist_reverse (ether_matches);
-	match = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->connection_match_config (self, ether_matches);
-	g_slist_free (ether_matches);
-
-	return match;
+	/* FIXME: do L2 checks */
+	return TRUE;
 }
 
 static gboolean
@@ -1506,7 +1485,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->deactivate = deactivate;
 	parent_class->spec_match_list = spec_match_list;
-	parent_class->connection_match_config = connection_match_config;
+	parent_class->match_l2_config = match_l2_config;
 	parent_class->hwaddr_matches = hwaddr_matches;
 
 	parent_class->state_changed = device_state_changed;
