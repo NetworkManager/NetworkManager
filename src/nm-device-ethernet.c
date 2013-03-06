@@ -546,7 +546,7 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 
 static gboolean
 match_ethernet_connection (NMDevice *device, NMConnection *connection,
-                           gboolean check_blacklist, GError **error)
+                           GError **error)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -590,9 +590,6 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 			return FALSE;
 		}
 
-		if (!check_blacklist)
-			return TRUE;
-
 		/* Check for MAC address blacklist */
 		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
 		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
@@ -626,7 +623,7 @@ get_best_auto_connection (NMDevice *dev,
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
 
-		if (match_ethernet_connection (dev, connection, TRUE, NULL))
+		if (match_ethernet_connection (dev, connection, NULL))
 			return connection;
 	}
 
@@ -1286,7 +1283,7 @@ check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
                              GError **error)
 {
-	return match_ethernet_connection (device, connection, TRUE, error);
+	return match_ethernet_connection (device, connection, error);
 }
 
 static gboolean
@@ -1389,7 +1386,7 @@ connection_match_config (NMDevice *self, const GSList *connections)
 		    || nm_connection_get_setting_pppoe (candidate))
 			continue;
 
-		if (!match_ethernet_connection (self, candidate, FALSE, NULL))
+		if (!match_ethernet_connection (self, candidate, NULL))
 			continue;
 
 		ether_matches = g_slist_prepend (ether_matches, candidate);
