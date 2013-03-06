@@ -412,48 +412,53 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	GKeyFile *key_file;
 	GSList *specs = NULL;
 	GError *error = NULL;
+	char *str;
 
 	if (!priv->conf_file)
 		return NULL;
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		char *str;
-
-		str = g_key_file_get_value (key_file, "keyfile", "unmanaged-devices", NULL);
-		if (str) {
-			char **udis;
-			int i;
-
-			udis = g_strsplit (str, ";", -1);
-			g_free (str);
-
-			for (i = 0; udis[i] != NULL; i++) {
-				/* Verify unmanaged specification and add it to the list */
-				if (strlen (udis[i]) > 4 && !strncmp (udis[i], "mac:", 4) && ether_aton (udis[i] + 4)) {
-					char *p = udis[i];
-
-					/* To accept uppercase MACs in configuration file, we have to convert values to lowercase here.
-					 * Unmanaged MACs in specs are always in lowercase. */
-					while (*p) {
-				                *p = g_ascii_tolower (*p);
-				                p++;
-				        }
-					specs = g_slist_append (specs, udis[i]);
-				} else {
-					g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
-					g_free (udis[i]);
-				}
-			}
-
-			g_free (udis); /* Yes, g_free, not g_strfreev because we need the strings in the list */
-		}
-	} else {
-		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
-		g_error_free (error);
+	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
+		g_prefix_error (&error, "Error parsing file '%s': ", priv->conf_file);
+		goto out;
 	}
 
-	g_key_file_free (key_file);
+	str = g_key_file_get_value (key_file, "keyfile", "unmanaged-devices", NULL);
+	if (str) {
+		char **udis;
+		int i;
+
+		udis = g_strsplit (str, ";", -1);
+		g_free (str);
+
+		for (i = 0; udis[i] != NULL; i++) {
+			/* Verify unmanaged specification and add it to the list */
+			if (strlen (udis[i]) > 4 && !strncmp (udis[i], "mac:", 4) && ether_aton (udis[i] + 4)) {
+				char *p = udis[i];
+
+				/* To accept uppercase MACs in configuration file, we have to convert values to lowercase here.
+				 * Unmanaged MACs in specs are always in lowercase. */
+				while (*p) {
+					*p = g_ascii_tolower (*p);
+					p++;
+				}
+				specs = g_slist_append (specs, udis[i]);
+			} else {
+				g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
+				g_free (udis[i]);
+			}
+		}
+
+		g_free (udis); /* Yes, g_free, not g_strfreev because we need the strings in the list */
+	}
+
+ out:
+	if (error) {
+		g_warning ("%s", error->message);
+		g_error_free (error);
+	}
+	if (key_file)
+		g_key_file_free (key_file);
 
 	return specs;
 }
@@ -470,14 +475,20 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 		return NULL;
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error))
-		hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
-	else {
-		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
-		g_error_free (error);
+	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
+		g_prefix_error (&error, "Error parsing file '%s': ", priv->conf_file);
+		goto out;
 	}
 
-	g_key_file_free (key_file);
+	hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
+
+ out:
+	if (error) {
+		g_warning ("%s", error->message);
+		g_error_free (error);
+	}
+	if (key_file)
+		g_key_file_free (key_file);
 
 	return hostname;
 }
@@ -485,45 +496,51 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 static gboolean
 plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 {
+	gboolean ret = FALSE;
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
-	GKeyFile *key_file;
+	GKeyFile *key_file = NULL;
 	GError *error = NULL;
-	gboolean result = FALSE;
+	char *data = NULL;
+	gsize len;
 
 	if (!priv->conf_file) {
-		g_warning ("Error saving hostname: no config file");
-		return FALSE;
+		g_set_error (&error, G_IO_ERROR, G_IO_ERROR_FAILED,
+		             "Error saving hostname: no config file");
+		goto out;
 	}
+
+	g_free (priv->hostname);
+	priv->hostname = g_strdup (hostname);
 
 	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		char *data;
-		gsize len;
-
-		g_key_file_set_string (key_file, "keyfile", "hostname", hostname);
-
-		data = g_key_file_to_data (key_file, &len, &error);
-		if (data) {
-			g_file_set_contents (priv->conf_file, data, len, &error);
-			g_free (data);
-
-			g_free (priv->hostname);
-			priv->hostname = g_strdup (hostname);
-			result = TRUE;
-		}
-
-		if (error) {
-			g_warning ("Error saving hostname: %s", error->message);
-			g_error_free (error);
-		}
-	} else {
-		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
-		g_error_free (error);
+	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
+		g_prefix_error (&error, "Error parsing file '%s': ", priv->conf_file);
+		goto out;
 	}
 
-	g_key_file_free (key_file);
+	g_key_file_set_string (key_file, "keyfile", "hostname", hostname);
 
-	return result;
+	data = g_key_file_to_data (key_file, &len, &error);
+	if (!data)
+		goto out;
+
+	if (!g_file_set_contents (priv->conf_file, data, len, &error)) {
+		g_prefix_error (&error, "Error saving hostname: ");
+		goto out;
+	}
+
+	ret = TRUE;
+
+ out:
+	if (error) {
+		g_warning ("%s", error->message);
+		g_error_free (error);
+	}
+	g_free (data);
+	if (key_file)
+		g_key_file_free (key_file);
+
+	return ret;
 }
 
 /* GObject */
