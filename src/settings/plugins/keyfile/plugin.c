@@ -405,6 +405,30 @@ add_connection (NMSystemConfigInterface *config,
 	return added;
 }
 
+static gboolean
+parse_key_file_allow_none (SCPluginKeyfilePrivate  *priv,
+                           GKeyFile                *key_file,
+                           GError                 **error)
+{
+	gboolean ret = FALSE;
+	GError *local_error = NULL;
+
+	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &local_error)) {
+		if (g_error_matches (local_error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
+			g_clear_error (&local_error);
+		else {
+			g_propagate_prefixed_error (error, local_error,
+			                            "Error parsing file '%s': ",
+			                            priv->conf_file);
+			goto out;
+		}
+	}
+	ret = TRUE;
+
+ out:
+	return ret;
+}
+
 static GSList *
 get_unmanaged_specs (NMSystemConfigInterface *config)
 {
@@ -418,10 +442,8 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 		return NULL;
 
 	key_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		g_prefix_error (&error, "Error parsing file '%s': ", priv->conf_file);
+	if (!parse_key_file_allow_none (priv, key_file, &error))
 		goto out;
-	}
 
 	str = g_key_file_get_value (key_file, "keyfile", "unmanaged-devices", NULL);
 	if (str) {
@@ -475,10 +497,8 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 		return NULL;
 
 	key_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		g_prefix_error (&error, "Error parsing file '%s': ", priv->conf_file);
+	if (!parse_key_file_allow_none (priv, key_file, &error))
 		goto out;
-	}
 
 	hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
 
@@ -513,10 +533,8 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 	priv->hostname = g_strdup (hostname);
 
 	key_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		g_prefix_error (&error, "Error parsing file '%s': ", priv->conf_file);
+	if (!parse_key_file_allow_none (priv, key_file, &error))
 		goto out;
-	}
 
 	g_key_file_set_string (key_file, "keyfile", "hostname", hostname);
 
