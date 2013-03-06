@@ -577,50 +577,27 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static NMConnection *
-get_best_auto_connection (NMDevice *device,
-                          GSList *connections,
-                          char **specific_object)
+static gboolean
+can_auto_connect (NMDevice *device,
+                  NMConnection *connection,
+                  char **specific_object)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	GSList *iter;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		NMSettingWimax *s_wimax;
-		const char *connection_type;
-		const GByteArray *mac;
+	if (!NM_DEVICE_CLASS (nm_device_wimax_parent_class)->can_auto_connect (device, connection, specific_object))
+		return FALSE;
 
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
+	for (iter = priv->nsp_list; iter; iter = iter->next) {
+		NMWimaxNsp *nsp = NM_WIMAX_NSP (iter->data);
 
-		if (!nm_setting_connection_get_autoconnect (s_con))
-			continue;
-
-		connection_type = nm_setting_connection_get_connection_type (s_con);
-		if (strcmp (connection_type, NM_SETTING_WIMAX_SETTING_NAME))
-			continue;
-
-		s_wimax = nm_connection_get_setting_wimax (connection);
-		if (!s_wimax)
-			continue;
-
-		mac = nm_setting_wimax_get_mac_address (s_wimax);
-		if (mac && memcmp (mac->data, priv->hw_addr, ETH_ALEN))
-			continue;
-
-		for (iter = priv->nsp_list; iter; iter = iter->next) {
-			NMWimaxNsp *nsp = NM_WIMAX_NSP (iter->data);
-
-			if (nm_wimax_nsp_check_compatible (nsp, connection)) {
-				*specific_object = (char *) nm_wimax_nsp_get_dbus_path (nsp);
-				return connection;
-			}
+		if (nm_wimax_nsp_check_compatible (nsp, connection)) {
+			*specific_object = (char *) nm_wimax_nsp_get_dbus_path (nsp);
+			return TRUE;
 		}
 	}
 
-	return NULL;
+	return FALSE;
 }
 
 static guint32
@@ -1491,7 +1468,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
-	device_class->get_best_auto_connection = get_best_auto_connection;
+	device_class->can_auto_connect = can_auto_connect;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->is_available = is_available;
 	device_class->act_stage1_prepare = act_stage1_prepare;

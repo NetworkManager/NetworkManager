@@ -148,38 +148,6 @@ get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
-static NMConnection *
-get_best_auto_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
-{
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (dev);
-	GSList *iter;
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingInfiniband *s_infiniband;
-
-		if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME))
-			continue;
-
-		s_infiniband = nm_connection_get_setting_infiniband (connection);
-		if (!s_infiniband)
-			continue;
-
-		if (s_infiniband) {
-			const GByteArray *mac;
-
-			mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-			if (mac && memcmp (mac->data, priv->hw_addr, INFINIBAND_ALEN))
-				continue;
-		}
-
-		return connection;
-	}
-	return NULL;
-}
-
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
@@ -414,7 +382,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->update_hw_address = update_hw_address;
 	parent_class->get_hw_address = get_hw_address;
-	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 

@@ -192,22 +192,6 @@ act_stage1_prepare (NMModem *modem,
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
-static NMConnection *
-get_best_auto_connection (NMModem *modem,
-                          GSList *connections,
-                          char **specific_object)
-{
-	GSList *iter;
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-
-		if (nm_connection_is_type (connection, NM_SETTING_CDMA_SETTING_NAME))
-			return connection;
-	}
-	return NULL;
-}
-
 static gboolean
 check_connection_compatible (NMModem *modem,
                              NMConnection *connection,
@@ -348,7 +332,6 @@ nm_modem_cdma_class_init (NMModemCdmaClass *klass)
 	object_class->dispose = dispose;
 	modem_class->get_user_pass = get_user_pass;
 	modem_class->get_setting_name = get_setting_name;
-	modem_class->get_best_auto_connection = get_best_auto_connection;
 	modem_class->check_connection_compatible = check_connection_compatible;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;

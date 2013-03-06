@@ -125,9 +125,9 @@ typedef struct {
 
 	void        (* set_enabled) (NMDevice *self, gboolean enabled);
 
-	NMConnection * (* get_best_auto_connection) (NMDevice *self,
-	                                             GSList *connections,
-	                                             char **specific_object);
+	gboolean    (* can_auto_connect) (NMDevice *self,
+	                                  NMConnection *connection,
+	                                  char **specific_object);
 
 	/* Checks whether the connection is compatible with the device using
 	 * only the devices type and characteristics.  Does not use any live

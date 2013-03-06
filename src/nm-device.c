@@ -1375,14 +1375,27 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	return g_value_get_boolean (&retval);
 }
 
+static gboolean
+can_auto_connect (NMDevice *device,
+                  NMConnection *connection,
+                  char **specific_object)
+{
+	NMSettingConnection *s_con;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!nm_setting_connection_get_autoconnect (s_con))
+		return FALSE;
+
+	return nm_device_check_connection_compatible (device, connection, NULL);
+}
+
 NMConnection *
 nm_device_get_best_auto_connection (NMDevice *dev,
                                     GSList *connections,
                                     char **specific_object)
 {
 	guint32 caps;
-	GSList *iter, *available_conns;
-	NMConnection *best_connection;
+	GSList *iter;
 	gboolean need_ignore_carrier = FALSE;
 
 	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
@@ -1400,36 +1413,22 @@ nm_device_get_best_auto_connection (NMDevice *dev,
 		need_ignore_carrier = TRUE;
 	}
 
-	if (!NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection)
-		return NULL;
-
-	available_conns = NULL;
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-		const char *carrier_detect;
-
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
-		if (!nm_setting_connection_get_autoconnect (s_con))
-			continue;
 
 		if (need_ignore_carrier) {
+			const char *carrier_detect;
+
 			carrier_detect = nm_connection_get_carrier_detect (connection);
 			if (g_strcmp0 (carrier_detect, "no") != 0)
 				continue;
 		}
 
-		available_conns = g_slist_prepend (available_conns, connection);
+		if (NM_DEVICE_GET_CLASS (dev)->can_auto_connect (dev, connection, specific_object))
+			return connection;
 	}
 
-	if (!available_conns)
-		return NULL;
-
-	best_connection = NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection (dev, available_conns, specific_object);
-
-	g_slist_free (available_conns);
-	return best_connection;
+	return NULL;
 }
 
 gboolean
@@ -4748,6 +4747,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->have_any_ready_slaves = have_any_ready_slaves;
 
 	klass->spec_match_list = spec_match_list;
+	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_available = check_connection_available;
 	klass->hw_is_up = hw_is_up;
 	klass->hw_bring_up = hw_bring_up;

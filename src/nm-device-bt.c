@@ -138,32 +138,23 @@ get_connection_bt_type (NMConnection *connection)
 	return NM_BT_CAPABILITY_NONE;
 }
 
-static NMConnection *
-get_best_auto_connection (NMDevice *device,
-                          GSList *connections,
-                          char **specific_object)
+static gboolean
+can_auto_connect (NMDevice *device,
+                  NMConnection *connection,
+                  char **specific_object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	GSList *iter;
+	guint32 bt_type;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		guint32 bt_type;
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->can_auto_connect (device, connection, specific_object))
+		return FALSE;
 
-		if (!nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME))
-			continue;
+	/* Can't auto-activate a DUN connection without ModemManager */
+	bt_type = get_connection_bt_type (connection);
+	if (bt_type == NM_BT_CAPABILITY_DUN && priv->mm_running == FALSE)
+		return FALSE;
 
-		bt_type = get_connection_bt_type (connection);
-		if (!(bt_type & priv->capabilities))
-			continue;
-
-		/* Can't auto-activate a DUN connection without ModemManager */
-		if (bt_type == NM_BT_CAPABILITY_DUN && priv->mm_running == FALSE)
-			continue;
-
-		return connection;
-	}
-	return NULL;
+	return TRUE;
 }
 
 static gboolean
@@ -1307,7 +1298,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	device_class->get_best_auto_connection = get_best_auto_connection;
+	device_class->can_auto_connect = can_auto_connect;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->deactivate = deactivate;
 	device_class->act_stage2_config = act_stage2_config;

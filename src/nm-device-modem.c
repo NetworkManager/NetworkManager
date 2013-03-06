@@ -221,16 +221,6 @@ get_generic_capabilities (NMDevice *device)
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
-static NMConnection *
-get_best_auto_connection (NMDevice *device,
-                          GSList *connections,
-                          char **specific_object)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-
-	return nm_modem_get_best_auto_connection (priv->modem, connections, specific_object);
-}
-
 static gboolean
 check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
@@ -487,7 +477,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->set_property = set_property;
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
-	device_class->get_best_auto_connection = get_best_auto_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->deactivate = deactivate;

@@ -475,18 +475,6 @@ nm_modem_act_stage2_config (NMModem *self,
 
 /*****************************************************************************/
 
-NMConnection *
-nm_modem_get_best_auto_connection (NMModem *self,
-                                   GSList *connections,
-                                   char **specific_object)
-{
-	if (NM_MODEM_GET_CLASS (self)->get_best_auto_connection)
-		return NM_MODEM_GET_CLASS (self)->get_best_auto_connection (self, connections, specific_object);
-	return NULL;
-}
-
-/*****************************************************************************/
-
 gboolean
 nm_modem_check_connection_compatible (NMModem *self,
                                       NMConnection *connection,

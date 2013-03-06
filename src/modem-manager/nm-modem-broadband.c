@@ -374,47 +374,6 @@ act_stage1_prepare (NMModem *_self,
 
 /*****************************************************************************/
 
-static NMConnection *
-get_best_auto_connection (NMModem *_self,
-                          GSList *connections,
-                          char **specific_object)
-{
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
-	MMModemCapability modem_caps;
-	GSList *iter;
-
-	modem_caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-
-		s_con = nm_connection_get_setting_connection (connection);
-		g_assert (s_con);
-
-		if (!nm_setting_connection_get_autoconnect (s_con))
-			continue;
-
-		/* If GSM settings given and our modem is 3GPP, those are the best ones */
-		if (   g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                    NM_SETTING_GSM_SETTING_NAME)
-		    && MODEM_CAPS_3GPP (modem_caps))
-			return connection;
-
-		/* If CDMA settings given and our modem is 3GPP2, return those */
-		if (   g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                    NM_SETTING_CDMA_SETTING_NAME)
-		    && MODEM_CAPS_3GPP2 (modem_caps))
-			return connection;
-
-		/* continue */
-	}
-
-	return NULL;
-}
-
-/*****************************************************************************/
-
 static gboolean
 check_connection_compatible (NMModem *_self,
                              NMConnection *connection,
@@ -1017,7 +976,6 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->set_mm_enabled = set_mm_enabled;
 	modem_class->get_user_pass = get_user_pass;
 	modem_class->get_setting_name = get_setting_name;
-	modem_class->get_best_auto_connection = get_best_auto_connection;
 	modem_class->check_connection_compatible = check_connection_compatible;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;

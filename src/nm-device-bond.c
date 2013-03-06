@@ -117,7 +117,9 @@ is_available (NMDevice *dev, gboolean need_carrier)
 }
 
 static gboolean
-match_bond_connection (NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	const char *iface;
 	NMSettingBond *s_bond;
@@ -140,30 +142,6 @@ match_bond_connection (NMDevice *device, NMConnection *connection, GError **erro
 	/* FIXME: match bond properties like mode, etc? */
 
 	return TRUE;
-}
-
-static NMConnection *
-get_best_auto_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
-{
-	GSList *iter;
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-
-		if (match_bond_connection (dev, connection, NULL))
-			return connection;
-	}
-	return NULL;
-}
-
-static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
-{
-	return match_bond_connection (device, connection, error);
 }
 
 static gboolean
@@ -403,7 +381,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->update_hw_address = update_hw_address;
 	parent_class->get_hw_address = get_hw_address;
 	parent_class->is_available = is_available;
-	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 

@@ -1389,83 +1389,49 @@ is_available (NMDevice *dev, gboolean need_carrier)
 	return TRUE;
 }
 
-static NMConnection *
-get_best_auto_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
+static gboolean
+can_auto_connect (NMDevice *dev,
+                  NMConnection *connection,
+                  char **specific_object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	GSList *iter, *ap_iter;
+	GSList *ap_iter;
+	NMSettingIP4Config *s_ip4;
+	const char *method = NULL;
+	guint64 timestamp = 0;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingWireless *s_wireless;
-		const GByteArray *mac;
-		const GSList *mac_blacklist, *mac_blacklist_iter;
-		gboolean mac_blacklist_found = FALSE;
-		NMSettingIP4Config *s_ip4;
-		const char *method = NULL;
-		guint64 timestamp = 0;
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (dev, connection, specific_object))
+		return FALSE;
 
-		if (!nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME))
-			continue;
+	/* Don't autoconnect to networks that have been tried at least once
+	 * but haven't been successful, since these are often accidental choices
+	 * from the menu and the user may not know the password.
+	 */
+	if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp)) {
+		if (timestamp == 0)
+			return FALSE;
+	}
 
-		/* Don't autoconnect to networks that have been tried at least once
-		 * but haven't been successful, since these are often accidental choices
-		 * from the menu and the user may not know the password.
-		 */
-		if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp)) {
-			if (timestamp == 0)
-				continue;
-		}
+	/* Use the connection if it's a shared connection */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4) {
+		method = nm_setting_ip4_config_get_method (s_ip4);
+		if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+			return TRUE;
+	}
 
-		s_wireless = nm_connection_get_setting_wireless (connection);
-		if (!s_wireless)
-			continue;
+	for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
+		NMAccessPoint *ap = NM_AP (ap_iter->data);
 
-		mac = nm_setting_wireless_get_mac_address (s_wireless);
-		if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
-			continue;
-
-		/* Check for MAC address blacklist */
-		mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
-		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
-		     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
-			struct ether_addr addr;
-
-			if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
-				g_warn_if_reached ();
-				continue;
-			}
-			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
-				mac_blacklist_found = TRUE;
-				break;
-			}
-		}
-		/* Found device MAC address in the blacklist - do not use this connection */
-		if (mac_blacklist_found)
-			continue;
-
-		/* Use the connection if it's a shared connection */
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4)
-			method = nm_setting_ip4_config_get_method (s_ip4);
-
-		if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-			return connection;
-
-		for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
-			NMAccessPoint *ap = NM_AP (ap_iter->data);
-
-			if (nm_ap_check_compatible (ap, connection)) {
-				/* All good; connection is usable */
-				*specific_object = (char *) nm_ap_get_dbus_path (ap);
-				return connection;
-			}
+		if (nm_ap_check_compatible (ap, connection)) {
+			/* All good; connection is usable */
+			*specific_object = (char *) nm_ap_get_dbus_path (ap);
+			return TRUE;
 		}
 	}
-	return NULL;
+
+	return FALSE;
 }
 
 static void
@@ -3751,7 +3717,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->get_hw_address = get_hw_address;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
-	parent_class->get_best_auto_connection = get_best_auto_connection;
+	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;

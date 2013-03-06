@@ -545,8 +545,9 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 }
 
 static gboolean
-match_ethernet_connection (NMDevice *device, NMConnection *connection,
-                           GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -611,23 +612,6 @@ match_ethernet_connection (NMDevice *device, NMConnection *connection,
 	}
 
 	return TRUE;
-}
-
-static NMConnection *
-get_best_auto_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
-{
-	GSList *iter;
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-
-		if (match_ethernet_connection (dev, connection, NULL))
-			return connection;
-	}
-
-	return NULL;
 }
 
 /* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
@@ -1279,14 +1263,6 @@ deactivate (NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
-{
-	return match_ethernet_connection (device, connection, error);
-}
-
-static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
@@ -1475,7 +1451,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->get_hw_address = get_hw_address;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
-	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 

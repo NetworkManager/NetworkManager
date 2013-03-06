@@ -79,10 +79,6 @@ typedef struct {
 	                                            const GSList *existing_connections,
 	                                            GError **error);
 
-	NMConnection * (*get_best_auto_connection) (NMModem *modem,
-	                                            GSList *connections,
-	                                            char **specific_object);
-
 	NMActStageReturn (*act_stage1_prepare)     (NMModem *modem,
 	                                            NMActRequest *req,
 	                                            GPtrArray **out_hints,
@@ -116,10 +112,6 @@ const char *nm_modem_get_path         (NMModem *modem);
 const char *nm_modem_get_uid          (NMModem *modem);
 const char *nm_modem_get_control_port (NMModem *modem);
 const char *nm_modem_get_data_port    (NMModem *modem);
-
-NMConnection *nm_modem_get_best_auto_connection (NMModem *self,
-                                                 GSList *connections,
-                                                 char **specific_object);
 
 gboolean nm_modem_check_connection_compatible (NMModem *self,
                                                NMConnection *connection,

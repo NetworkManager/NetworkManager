@@ -252,6 +252,14 @@ check_connection_compatible (NMDevice *device,
 	return TRUE;
 }
 
+static gboolean
+can_auto_connect (NMDevice *device,
+                  NMConnection *connection,
+                  char **specific_object)
+{
+	return FALSE;
+}
+
 #define DEFAULT_SSID "olpc-mesh"
 
 static gboolean
@@ -515,6 +523,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->update_hw_address = update_hw_address;
 	parent_class->get_hw_address = get_hw_address;
 	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->complete_connection = complete_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;

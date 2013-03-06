@@ -240,9 +240,11 @@ match_parent (NMDeviceVlan *self, const char *parent, GError **error)
 }
 
 static gboolean
-match_vlan_connection (NMDeviceVlan *self, NMConnection *connection, GError **error)
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
 	const char *parent, *iface = NULL;
 
@@ -262,7 +264,7 @@ match_vlan_connection (NMDeviceVlan *self, NMConnection *connection, GError **er
 	/* Check parent interface; could be an interface name or a UUID */
 	parent = nm_setting_vlan_get_parent (s_vlan);
 	if (parent) {
-		if (!match_parent (self, parent, error))
+		if (!match_parent (NM_DEVICE_VLAN (device), parent, error))
 			return FALSE;
 	} else {
 		/* Parent could be a MAC address in a hardware-specific setting */
@@ -279,7 +281,7 @@ match_vlan_connection (NMDeviceVlan *self, NMConnection *connection, GError **er
 	 */
 	iface = nm_connection_get_virtual_iface_name (connection);
 	if (iface) {
-		if (g_strcmp0 (nm_device_get_ip_iface (NM_DEVICE (self)), iface) != 0) {
+		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0) {
 			g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
 					     "The VLAN connection virtual interface name did not match.");
 			return FALSE;
@@ -287,30 +289,6 @@ match_vlan_connection (NMDeviceVlan *self, NMConnection *connection, GError **er
 	}
 
 	return TRUE;
-}
-
-static NMConnection *
-get_best_auto_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
-{
-	GSList *iter;
-
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-
-		if (match_vlan_connection (NM_DEVICE_VLAN (dev), connection, NULL))
-			return connection;
-	}
-	return NULL;
-}
-
-static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
-{
-	return match_vlan_connection (NM_DEVICE_VLAN (device), connection, error);
 }
 
 static gboolean
@@ -619,7 +597,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->is_available = is_available;
 
-	parent_class->get_best_auto_connection = get_best_auto_connection;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->match_l2_config = match_l2_config;
