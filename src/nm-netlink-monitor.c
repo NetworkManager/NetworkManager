@@ -85,11 +85,25 @@ G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
 
 /****************************************************************/
 
+static void
+detach (NMNetlinkMonitor *self)
+{
+	NMNetlinkMonitorPrivate *priv;
+
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+	g_return_if_fail (priv->event_id > 0);
+
+	g_source_remove (priv->event_id);
+	priv->event_id = 0;
+}
+
 static gboolean
 detach_monitor (gpointer data)
 {
 	nm_log_warn (LOGD_HW, "detaching netlink event monitor");
-	nm_netlink_monitor_detach (NM_NETLINK_MONITOR (data));
+	detach (NM_NETLINK_MONITOR (data));
 	return FALSE;
 }
 
@@ -312,6 +326,26 @@ nlh_setup (struct nl_sock *nlh,
 	return TRUE;
 }
 
+static void
+close_connection (NMNetlinkMonitor  *self)
+{
+	NMNetlinkMonitorPrivate *priv;
+
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
+	g_return_if_fail (priv->io_channel != NULL);
+
+	if (priv->event_id)
+		detach (self);
+
+	g_io_channel_shutdown (priv->io_channel,
+	                       TRUE /* flush pending data */,
+	                       NULL);
+	g_io_channel_unref (priv->io_channel);
+	priv->io_channel = NULL;
+}
+
 static gboolean
 event_connection_setup (NMNetlinkMonitor *self, GError **error)
 {
@@ -363,7 +397,7 @@ event_connection_setup (NMNetlinkMonitor *self, GError **error)
 
 error:
 	if (priv->io_channel)
-		nm_netlink_monitor_close_connection (self);
+		close_connection (self);
 
 	if (priv->nlh_event) {
 		nl_socket_free (priv->nlh_event);
@@ -434,8 +468,8 @@ error:
 	return FALSE;
 }
 
-gboolean
-nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
+static gboolean
+open_connection (NMNetlinkMonitor *self, GError **error)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
@@ -449,28 +483,8 @@ nm_netlink_monitor_open_connection (NMNetlinkMonitor *self, GError **error)
 	return TRUE;
 }
 
-void
-nm_netlink_monitor_close_connection (NMNetlinkMonitor  *self)
-{
-	NMNetlinkMonitorPrivate *priv;
-
-	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
-
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	g_return_if_fail (priv->io_channel != NULL);
-
-	if (priv->event_id)
-		nm_netlink_monitor_detach (self);
-
-	g_io_channel_shutdown (priv->io_channel,
-	                       TRUE /* flush pending data */,
-	                       NULL);
-	g_io_channel_unref (priv->io_channel);
-	priv->io_channel = NULL;
-}
-
-void
-nm_netlink_monitor_attach (NMNetlinkMonitor *self)
+static void
+attach (NMNetlinkMonitor *self)
 {
 	NMNetlinkMonitorPrivate *priv;
 
@@ -483,20 +497,6 @@ nm_netlink_monitor_attach (NMNetlinkMonitor *self)
 	priv->event_id = g_io_add_watch (priv->io_channel,
 	                                 (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
 	                                 event_handler, self);
-}
-
-void
-nm_netlink_monitor_detach (NMNetlinkMonitor *self)
-{
-	NMNetlinkMonitorPrivate *priv;
-
-	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
-
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	g_return_if_fail (priv->event_id > 0);
-
-	g_source_remove (priv->event_id);
-	priv->event_id = 0;
 }
 
 static int
@@ -529,7 +529,7 @@ nm_netlink_monitor_subscribe (NMNetlinkMonitor *self, int group, GError **error)
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
 
 	if (!priv->nlh_event) {
-		if (!nm_netlink_monitor_open_connection (self, error))
+		if (!open_connection (self, error))
 			return FALSE;
 	}
 
@@ -551,26 +551,6 @@ nm_netlink_monitor_subscribe (NMNetlinkMonitor *self, int group, GError **error)
 	return TRUE;
 }
 
-void
-nm_netlink_monitor_unsubscribe (NMNetlinkMonitor *self, int group)
-{
-	NMNetlinkMonitorPrivate *priv;
-	int subs;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (NM_IS_NETLINK_MONITOR (self));
-
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-	g_return_if_fail (priv->nlh_event != NULL);
-
-	subs = get_subs (self, group) - 1;
-	if (subs == 0)
-		nl_socket_drop_membership (priv->nlh_event, group);
-
-	/* Update # of subscriptions for this group */
-	set_subs (self, group, subs);
-}
-
 /***************************************************************/
 
 gboolean
@@ -588,25 +568,6 @@ nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *self, GError **error)
 	 * a later libnl.
 	 */
 	nl_rtgen_request (priv->nlh_event, RTM_GETLINK, AF_INET6, NLM_F_DUMP);
-
-	return TRUE;
-}
-
-gboolean
-nm_netlink_monitor_request_bridge_info (NMNetlinkMonitor *self, GError **error)
-{
-	NMNetlinkMonitorPrivate *priv;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
-
-	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
-
-	/* FIXME: nl_rtgen_request() gets the return value screwed up with
-	 * libnl-1.1; revisit this and return a proper error when we port to
-	 * a later libnl.
-	 */
-	nl_rtgen_request (priv->nlh_event, RTM_GETLINK, AF_BRIDGE, NLM_F_DUMP);
 
 	return TRUE;
 }
@@ -836,8 +797,8 @@ nm_netlink_monitor_get (void)
 		singleton = (NMNetlinkMonitor *) g_object_new (NM_TYPE_NETLINK_MONITOR, NULL);
 		g_return_val_if_fail (singleton != NULL, NULL);
 
-		if (nm_netlink_monitor_open_connection (singleton, &error)) {
-			nm_netlink_monitor_attach (singleton);
+		if (open_connection (singleton, &error)) {
+			attach (singleton);
 			/* Request initial status of cards */
 			nm_netlink_monitor_request_status (singleton);
 		} else {
@@ -872,7 +833,7 @@ finalize (GObject *object)
 		g_source_remove (priv->request_status_id);
 
 	if (priv->io_channel)
-		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
+		close_connection (NM_NETLINK_MONITOR (object));
 
 	if (priv->link_cache) {
 		nl_cache_free (priv->link_cache);

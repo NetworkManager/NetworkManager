@@ -742,7 +742,6 @@ dispose (GObject *object)
 	}
 
 	if (priv->monitor) {
-		nm_netlink_monitor_unsubscribe (priv->monitor, RTNLGRP_LINK);
 		g_object_unref (priv->monitor);
 		priv->monitor = NULL;
 	}
