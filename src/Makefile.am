@@ -310,8 +310,7 @@ NetworkManager_CPPFLAGS = \
 	-DNMPLUGINDIR=\"$(pkglibdir)\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMRUNDIR=\"$(nmrundir)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\" \
-	-DARP_DEBUG
+	-DNMSTATEDIR=\"$(nmstatedir)\"
 
 if WITH_CONCHECK
 NetworkManager_CPPFLAGS += $(LIBSOUP_CFLAGS)
