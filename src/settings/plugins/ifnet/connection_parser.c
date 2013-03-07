@@ -1678,9 +1678,12 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	if (value && !strcmp (value, "false"))
 		auto_conn = FALSE;
 	update_connection_id (connection, conn_name);
-	g_object_set (setting, NM_SETTING_CONNECTION_TYPE, type,
-		      NM_SETTING_CONNECTION_READ_ONLY, FALSE,
-		      NM_SETTING_CONNECTION_AUTOCONNECT, auto_conn, NULL);
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_TYPE, type,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, conn_name,
+	              NM_SETTING_CONNECTION_READ_ONLY, FALSE,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, auto_conn,
+	              NULL);
 
 	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type)
 	    || !strcmp (NM_SETTING_PPPOE_SETTING_NAME, type)) {

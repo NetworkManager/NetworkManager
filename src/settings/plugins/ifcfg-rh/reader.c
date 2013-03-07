@@ -155,6 +155,17 @@ make_connection_setting (const char *file,
 	              NULL);
 	g_free (uuid);
 
+	value = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (value) {
+		if (nm_utils_iface_valid_name (value)) {
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, value,
+			              NULL);
+		} else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid DEVICE name '%s'", value);
+		g_free (value);
+	}
+
 	/* Missing ONBOOT is treated as "ONBOOT=true" by the old network service */
 	g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT,
 	              svTrueValue (ifcfg, "ONBOOT", TRUE),

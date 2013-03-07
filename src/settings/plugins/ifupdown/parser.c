@@ -726,6 +726,7 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 	uuid = nm_utils_uuid_generate_from_string (uuid_base);
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, block->name,
 	              NM_SETTING_CONNECTION_ID, idstr,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_READ_ONLY, TRUE,

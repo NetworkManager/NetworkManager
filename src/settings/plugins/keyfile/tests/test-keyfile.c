@@ -2819,6 +2819,7 @@ test_write_bridge_main (void)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "br0",
 	              NULL);
 	g_free (uuid);
 
