@@ -876,7 +876,9 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 }
 
 static void
-remove_access_point (NMDeviceWifi *device, NMAccessPoint *ap)
+remove_access_point (NMDeviceWifi *device,
+                     NMAccessPoint *ap,
+                     gboolean recheck_available_connections)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 
@@ -884,7 +886,8 @@ remove_access_point (NMDeviceWifi *device, NMAccessPoint *ap)
 	priv->ap_list = g_slist_remove (priv->ap_list, ap);
 	g_object_unref (ap);
 
-	nm_device_recheck_available_connections (NM_DEVICE (device));
+	if (recheck_available_connections)
+		nm_device_recheck_available_connections (NM_DEVICE (device));
 }
 
 static void
@@ -895,10 +898,12 @@ remove_all_aps (NMDeviceWifi *self)
 	/* Remove outdated APs */
 	while (g_slist_length (priv->ap_list)) {
 		NMAccessPoint *ap = NM_AP (priv->ap_list->data);
-		remove_access_point (self, ap);
+		remove_access_point (self, ap, FALSE);
 	}
 	g_slist_free (priv->ap_list);
 	priv->ap_list = NULL;
+
+	nm_device_recheck_available_connections (NM_DEVICE (self));
 }
 
 static void
@@ -947,9 +952,8 @@ deactivate (NMDevice *dev)
 	 * list, because scanning is disabled while in Ad-Hoc mode (for stability),
 	 * and thus the AP culling never happens. (bgo #569241)
 	 */
-	if (orig_ap && nm_ap_get_fake (orig_ap)) {
-	    remove_access_point (self, orig_ap);
-	}
+	if (orig_ap && nm_ap_get_fake (orig_ap))
+	    remove_access_point (self, orig_ap, TRUE);
 
 	/* Reset MAC address back to initial address */
 	_set_hw_addr (self, priv->initial_hw_addr, "reset");
@@ -2032,7 +2036,7 @@ cull_scan_list (NMDeviceWifi *self)
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		            ssid ? "'" : "");
 
-		remove_access_point (self, outdated_ap);
+		remove_access_point (self, outdated_ap, TRUE);
 		removed++;
 	}
 	g_slist_free (outdated_list);
@@ -2223,7 +2227,7 @@ link_timeout_cb (gpointer user_data)
 		ap = nm_device_wifi_get_activation_ap (self);
 
 	if (ap)
-		remove_access_point (self, ap);
+		remove_access_point (self, ap, TRUE);
 
 	nm_device_state_changed (dev,
 	                         NM_DEVICE_STATE_FAILED,
@@ -3401,7 +3405,7 @@ activation_failure_handler (NMDevice *dev)
 			 * list because we don't have any scan or capability info
 			 * for it, and they are pretty much useless.
 			 */
-			remove_access_point (self, ap);
+			remove_access_point (self, ap, TRUE);
 		}
 	}
 }
