@@ -442,7 +442,7 @@ finish_addrconf (gpointer user_data)
 
 		nm_ip6_manager_cancel_addrconf (manager, ifindex);
 		g_signal_emit (manager, signals[ADDRCONF_COMPLETE], 0,
-		               ifindex, device->dhcp_opts, FALSE);
+		               ifindex, IP6_DHCP_OPT_NONE, FALSE);
 	}
 
 	return FALSE;
