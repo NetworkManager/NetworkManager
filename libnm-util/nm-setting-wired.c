@@ -563,6 +563,11 @@ finalize (GObject *object)
 
 	nm_utils_slist_free (priv->mac_address_blacklist, g_free);
 
+	if (priv->s390_subchannels) {
+		g_ptr_array_foreach (priv->s390_subchannels, (GFunc) g_free, NULL);
+		g_ptr_array_free (priv->s390_subchannels, TRUE);
+	}
+
 	G_OBJECT_CLASS (nm_setting_wired_parent_class)->finalize (object);
 }
 
