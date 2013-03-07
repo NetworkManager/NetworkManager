@@ -538,29 +538,23 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
-		switch (format) {
-		case NM_CRYPTO_FILE_FORMAT_X509:
+		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-			break;
-		default:
-			g_byte_array_free (data, TRUE);
-			data = NULL;
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_CA_CERT);
-			break;
-		}
 
-		if (data) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->ca_cert = data;
+				priv->ca_cert = g_byte_array_ref (data);
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->ca_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
+		} else {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_CA_CERT);
 		}
+		g_byte_array_unref (data);
 	}
 
 	return priv->ca_cert != NULL;
@@ -818,19 +812,20 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
-		/* wpa_supplicant can only use raw x509 CA certs */
+		gboolean valid = FALSE;
+
 		switch (format) {
 		case NM_CRYPTO_FILE_FORMAT_X509:
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
+			valid = TRUE;
 			break;
 		case NM_CRYPTO_FILE_FORMAT_PKCS12:
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+			valid = TRUE;
 			break;
 		default:
-			g_byte_array_free (data, TRUE);
-			data = NULL;
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -838,14 +833,15 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 			break;
 		}
 
-		if (data) {
+		if (valid) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->client_cert = data;
+				priv->client_cert = g_byte_array_ref (data);
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->client_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
 		}
+		g_byte_array_unref (data);
 	}
 
 	return priv->client_cert != NULL;
@@ -1078,29 +1074,23 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
-		switch (format) {
-		case NM_CRYPTO_FILE_FORMAT_X509:
+		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
-			break;
-		default:
-			g_byte_array_free (data, TRUE);
-			data = NULL;
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_CA_CERT);
-			break;
-		}
 
-		if (data) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->phase2_ca_cert = data;
+				priv->phase2_ca_cert = g_byte_array_ref (data);
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->phase2_ca_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
+		} else {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_CA_CERT);
 		}
+		g_byte_array_unref (data);
 	}
 
 	return priv->phase2_ca_cert != NULL;
@@ -1362,19 +1352,21 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
+		gboolean valid = FALSE;
+
 		/* wpa_supplicant can only use raw x509 CA certs */
 		switch (format) {
 		case NM_CRYPTO_FILE_FORMAT_X509:
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
+			valid = TRUE;
 			break;
 		case NM_CRYPTO_FILE_FORMAT_PKCS12:
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_PKCS12;
+			valid = TRUE;
 			break;
 		default:
-			g_byte_array_free (data, TRUE);
-			data = NULL;
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -1382,14 +1374,15 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 			break;
 		}
 
-		if (data) {
+		if (valid) {
 			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->phase2_client_cert = data;
+				priv->phase2_client_cert = g_byte_array_ref (data);
 			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->phase2_client_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
 		}
+		g_byte_array_unref (data);
 	}
 
 	return priv->phase2_client_cert != NULL;
