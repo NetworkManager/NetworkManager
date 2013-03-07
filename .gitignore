@@ -34,6 +34,7 @@ ABOUT-NLS
 *.pc
 cscope.*out
 man/*.[185]
+man/nm-settings.xml
 po/*.gmo
 po/.intltool-merge-cache
 po/NetworkManager.pot
@@ -200,5 +201,7 @@ data/NetworkManager-wait-online.service
 data/org.freedesktop.NetworkManager.service
 
 cli/src/nmcli
+
+tools/generate-settings-spec
 
 vapi/*.vapi
