@@ -4527,8 +4527,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->state);
 		break;
 	case PROP_STATE_REASON:
-		g_value_set_boxed (value,
-			dbus_g_type_specialized_construct (DBUS_G_TYPE_UINT_STRUCT));
+		g_value_take_boxed (value, dbus_g_type_specialized_construct (DBUS_G_TYPE_UINT_STRUCT));
 		dbus_g_type_struct_set (value,
 		                        0, priv->state,
 		                        1, priv->state_reason,
