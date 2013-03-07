@@ -119,7 +119,6 @@ get_client_for_pid (NMDHCPManager *manager, GPid pid)
 	GHashTableIter iter;
 	gpointer value;
 
-	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
@@ -144,7 +143,6 @@ get_client_for_iface (NMDHCPManager *manager,
 	GHashTableIter iter;
 	gpointer value;
 
-	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
 	g_return_val_if_fail (iface, NULL);
 
@@ -553,7 +551,6 @@ nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                   const char *uuid,
                                   gboolean ipv6)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);

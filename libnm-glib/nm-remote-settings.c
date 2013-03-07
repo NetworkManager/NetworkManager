@@ -186,7 +186,6 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
 {
 	NMRemoteSettingsPrivate *priv;
 
-	g_return_val_if_fail (settings != NULL, NULL);
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
@@ -214,7 +213,6 @@ nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const cha
 	GHashTableIter iter;
 	NMRemoteConnection *candidate;
 
-	g_return_val_if_fail (settings != NULL, NULL);
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
@@ -500,7 +498,6 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 	GHashTableIter iter;
 	gpointer value;
 
-	g_return_val_if_fail (settings != NULL, NULL);
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
@@ -557,9 +554,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	AddConnectionInfo *info;
 	GHashTable *new_settings;
 
-	g_return_val_if_fail (settings != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (callback != NULL, FALSE);
 
@@ -663,7 +658,6 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	NMRemoteSettingsPrivate *priv;
 	SaveHostnameInfo *info;
 
-	g_return_val_if_fail (settings != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 	g_return_val_if_fail (hostname != NULL, FALSE);
 	g_return_val_if_fail (callback != NULL, FALSE);

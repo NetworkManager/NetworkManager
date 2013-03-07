@@ -523,7 +523,6 @@ nm_udev_manager_query_devices (NMUdevManager *self)
 	GUdevEnumerator *enumerator;
 	GList *devices, *iter;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_UDEV_MANAGER (self));
 
 	enumerator = g_udev_enumerator_new (priv->client);

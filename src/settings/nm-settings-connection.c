@@ -205,7 +205,6 @@ set_visible (NMSettingsConnection *self, gboolean new_visible)
 gboolean
 nm_settings_connection_is_visible (NMSettingsConnection *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->visible;
@@ -218,7 +217,6 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 	NMSettingConnection *s_con;
 	guint32 num, i;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
@@ -269,7 +267,6 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 	guint32 num, i;
 	const char *puser;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
@@ -383,9 +380,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	GHashTable *new_settings, *hash = NULL;
 	gboolean success = FALSE;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-	g_return_val_if_fail (new != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
@@ -436,9 +431,7 @@ nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
 {
 	GError *error = NULL;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
-	g_return_if_fail (new != NULL);
 	g_return_if_fail (NM_IS_CONNECTION (new));
 
 	if (!callback)
@@ -465,7 +458,6 @@ nm_settings_connection_commit_changes (NMSettingsConnection *connection,
                                        NMSettingsConnectionCommitFunc callback,
                                        gpointer user_data)
 {
-	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (callback != NULL);
 
@@ -487,7 +479,6 @@ nm_settings_connection_delete (NMSettingsConnection *connection,
                                NMSettingsConnectionDeleteFunc callback,
                                gpointer user_data)
 {
-	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (callback != NULL);
 
@@ -1021,7 +1012,6 @@ check_writable (NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1426,7 +1416,6 @@ gboolean
 nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
                                       guint64 *out_timestamp)
 {
-	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), 0);
 
 	if (out_timestamp)
@@ -1572,7 +1561,6 @@ nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
 	char *bssid_str;
 	GSList *bssid_list = NULL;
 
-	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
 
 	g_hash_table_iter_init (&iter, priv->seen_bssids);
@@ -1593,7 +1581,6 @@ gboolean
 nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
                                        const struct ether_addr *bssid)
 {
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (bssid != NULL, FALSE);
 

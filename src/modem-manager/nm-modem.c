@@ -218,9 +218,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 	NMActStageReturn ret;
 	guint ip_timeout = 20;
 
-	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason !=	NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -281,11 +279,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	NMActRequest *req;
 	NMActStageReturn ret;
 
-	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (device != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (device_class != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_DEVICE_CLASS (device_class), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -523,9 +518,7 @@ deactivate (NMModem *self, NMDevice *device)
 	NMModemPrivate *priv;
 	int ifindex;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_MODEM (self));
-	g_return_if_fail (device != NULL);
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	priv = NM_MODEM_GET_PRIVATE (self);
@@ -586,7 +579,6 @@ nm_modem_device_state_changed (NMModem *self,
 	gboolean was_connected = FALSE, warn = TRUE;
 	NMModemPrivate *priv;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_MODEM (self));
 
 	if (old_state >= NM_DEVICE_STATE_PREPARE && old_state <= NM_DEVICE_STATE_ACTIVATED)
@@ -629,7 +621,6 @@ nm_modem_device_state_changed (NMModem *self,
 const char *
 nm_modem_get_uid (NMModem *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
 	return NM_MODEM_GET_PRIVATE (self)->uid;
@@ -638,7 +629,6 @@ nm_modem_get_uid (NMModem *self)
 const char *
 nm_modem_get_path (NMModem *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
 	return NM_MODEM_GET_PRIVATE (self)->path;
@@ -647,7 +637,6 @@ nm_modem_get_path (NMModem *self)
 const char *
 nm_modem_get_control_port (NMModem *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
 	return NM_MODEM_GET_PRIVATE (self)->control_port;
@@ -656,7 +645,6 @@ nm_modem_get_control_port (NMModem *self)
 const char *
 nm_modem_get_data_port (NMModem *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
 
 	/* The ppp_iface takes precedence over the data interface when PPP is used,

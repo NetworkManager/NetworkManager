@@ -569,7 +569,6 @@ nm_secret_agent_register (NMSecretAgent *self)
 	NMSecretAgentPrivate *priv;
 	NMSecretAgentClass *class;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (self), FALSE);
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
@@ -619,7 +618,6 @@ nm_secret_agent_unregister (NMSecretAgent *self)
 {
 	NMSecretAgentPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (self), FALSE);
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
@@ -645,7 +643,6 @@ nm_secret_agent_unregister (NMSecretAgent *self)
 gboolean
 nm_secret_agent_get_registered (NMSecretAgent *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (self), FALSE);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (self)->registered;
@@ -692,9 +689,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMSecretAgentGetSecretsFunc callback,
                              gpointer user_data)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
-	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (connection));
 	g_return_if_fail (setting_name != NULL);
@@ -729,9 +724,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
                               NMSecretAgentSaveSecretsFunc callback,
                               gpointer user_data)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
-	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (connection));
 
@@ -760,9 +753,7 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
                                 NMSecretAgentDeleteSecretsFunc callback,
                                 gpointer user_data)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SECRET_AGENT (self));
-	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (connection));
 

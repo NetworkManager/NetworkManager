@@ -91,7 +91,6 @@ get_best_ip4_device (NMManager *manager)
 	NMDevice *best = NULL;
 	int best_prio = G_MAXINT;
 
-	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
 	devices = nm_manager_get_devices (manager);
@@ -164,7 +163,6 @@ get_best_ip6_device (NMManager *manager)
 	NMDevice *best = NULL;
 	int best_prio = G_MAXINT;
 
-	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
 	devices = nm_manager_get_devices (manager);

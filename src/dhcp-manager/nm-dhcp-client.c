@@ -80,7 +80,6 @@ enum {
 GPid
 nm_dhcp_client_get_pid (NMDHCPClient *self)
 {
-	g_return_val_if_fail (self != NULL, -1);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), -1);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->pid;
@@ -89,7 +88,6 @@ nm_dhcp_client_get_pid (NMDHCPClient *self)
 const char *
 nm_dhcp_client_get_iface (NMDHCPClient *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->iface;
@@ -98,7 +96,6 @@ nm_dhcp_client_get_iface (NMDHCPClient *self)
 gboolean
 nm_dhcp_client_get_ipv6 (NMDHCPClient *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->ipv6;
@@ -107,7 +104,6 @@ nm_dhcp_client_get_ipv6 (NMDHCPClient *self)
 const char *
 nm_dhcp_client_get_uuid (NMDHCPClient *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->uuid;
@@ -188,7 +184,6 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 {
 	NMDHCPClientPrivate *priv;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -305,7 +300,6 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 {
 	NMDHCPClientPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -457,7 +451,6 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	NMDHCPClientPrivate *priv;
 	char *escaped;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -534,7 +527,6 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 {
 	NMDHCPClientPrivate *priv;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -700,7 +692,6 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	guint32 old_state;
 	guint32 new_state;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
 	g_return_if_fail (options != NULL);
 	g_return_if_fail (reason != NULL);
@@ -761,7 +752,6 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 	GHashTableIter iter;
 	gpointer iterkey, itervalue;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 	g_return_val_if_fail (func != NULL, FALSE);
 
@@ -1145,7 +1135,6 @@ ip4_options_to_config (NMDHCPClient *self)
 	char *str = NULL;
 	guint32 gwaddr = 0, prefix = 0;
 
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -1307,7 +1296,6 @@ nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
 {
 	NMDHCPClientPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -1345,7 +1333,6 @@ ip6_options_to_config (NMDHCPClient *self)
 	GHashTableIter iter;
 	gpointer key, value;
 
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -1415,7 +1402,6 @@ nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
 {
 	NMDHCPClientPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);

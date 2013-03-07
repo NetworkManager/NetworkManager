@@ -471,7 +471,6 @@ error:
 static gboolean
 open_connection (NMNetlinkMonitor *self, GError **error)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
 
 	if (!event_connection_setup (self, error))
@@ -558,7 +557,6 @@ nm_netlink_monitor_request_ip6_info (NMNetlinkMonitor *self, GError **error)
 {
 	NMNetlinkMonitorPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (self);
@@ -635,7 +633,6 @@ nm_netlink_monitor_get_flags_sync (NMNetlinkMonitor *self,
 	struct rtnl_link *filter;
 	int err;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (self), FALSE);
 	g_return_val_if_fail (ifflags != NULL, FALSE);
 

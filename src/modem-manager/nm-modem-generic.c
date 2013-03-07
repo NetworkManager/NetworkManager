@@ -237,9 +237,7 @@ static_stage3_ip4_config_start (NMModem *self,
 {
 	NMModemGenericPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason !=	NULL, NM_ACT_STAGE_RETURN_FAILURE);
 

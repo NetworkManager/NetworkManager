@@ -223,7 +223,6 @@ nm_ip6_manager_get_device (NMIP6Manager *manager, int ifindex)
 {
 	NMIP6ManagerPrivate *priv;
 
-	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_IP6_MANAGER (manager), NULL);
 
 	priv = NM_IP6_MANAGER_GET_PRIVATE (manager);

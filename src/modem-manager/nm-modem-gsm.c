@@ -172,7 +172,6 @@ ask_for_pin (NMModemGsm *self, gboolean always_ask)
 	NMModemGsmPrivate *priv;
 	guint32 tries = 0;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_MODEM_GSM (self));
 
 	priv = NM_MODEM_GSM_GET_PRIVATE (self);
@@ -241,7 +240,6 @@ do_enable (NMModemGsm *self)
 {
 	DBusGProxy *proxy;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_MODEM_GSM (self), FALSE);
 
 	NM_MODEM_GSM_GET_PRIVATE (self)->enable_delay_id = 0;

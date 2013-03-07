@@ -100,7 +100,6 @@ nm_secret_agent_get_description (NMSecretAgent *agent)
 {
 	NMSecretAgentPrivate *priv;
 
-	g_return_val_if_fail (agent != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
@@ -117,7 +116,6 @@ nm_secret_agent_get_description (NMSecretAgent *agent)
 const char *
 nm_secret_agent_get_dbus_owner (NMSecretAgent *agent)
 {
-	g_return_val_if_fail (agent != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner;
@@ -126,7 +124,6 @@ nm_secret_agent_get_dbus_owner (NMSecretAgent *agent)
 const char *
 nm_secret_agent_get_identifier (NMSecretAgent *agent)
 {
-	g_return_val_if_fail (agent != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->identifier;
@@ -135,7 +132,6 @@ nm_secret_agent_get_identifier (NMSecretAgent *agent)
 uid_t
 nm_secret_agent_get_owner_uid  (NMSecretAgent *agent)
 {
-	g_return_val_if_fail (agent != NULL, G_MAXUINT);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXUINT);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_uid;
@@ -144,7 +140,6 @@ nm_secret_agent_get_owner_uid  (NMSecretAgent *agent)
 const char *
 nm_secret_agent_get_owner_username(NMSecretAgent *agent)
 {
-	g_return_val_if_fail (agent != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_username;
@@ -153,7 +148,6 @@ nm_secret_agent_get_owner_username(NMSecretAgent *agent)
 guint32
 nm_secret_agent_get_hash  (NMSecretAgent *agent)
 {
-	g_return_val_if_fail (agent != NULL, 0);
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), 0);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->hash;

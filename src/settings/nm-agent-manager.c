@@ -1048,7 +1048,6 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	Request *req;
 
 	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
@@ -1179,7 +1178,6 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	Request *req;
 
 	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
 
 	nm_log_dbg (LOGD_SETTINGS,
@@ -1276,7 +1274,6 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	Request *req;
 
 	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
 
 	nm_log_dbg (LOGD_SETTINGS,

@@ -322,7 +322,6 @@ update_accept_ra_save (NMDevice *self)
 	const char *ip_iface;
 	char *new_path;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -358,7 +357,6 @@ update_ip6_privacy_save (NMDevice *self)
 	const char *ip_iface;
 	char *new_path;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -625,7 +623,6 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 const guint8 *
 nm_device_get_hw_address (NMDevice *dev, guint *out_len)
 {
-	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
 	g_return_val_if_fail (out_len != NULL, NULL);
 	g_return_val_if_fail (*out_len == 0, NULL);
@@ -768,7 +765,6 @@ nm_device_set_connection_provider (NMDevice *device,
 	NMDevicePrivate *priv;
 
 	g_return_if_fail (device != NULL);
-	g_return_if_fail (provider != NULL);
 	g_return_if_fail (NM_IS_CONNECTION_PROVIDER (provider));
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
@@ -1321,7 +1317,6 @@ nm_device_has_available_connection (NMDevice *self)
 gboolean
 nm_device_get_enabled (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	if (NM_DEVICE_GET_CLASS (self)->get_enabled)
@@ -1332,7 +1327,6 @@ nm_device_get_enabled (NMDevice *self)
 void
 nm_device_set_enabled (NMDevice *self, gboolean enabled)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->set_enabled)
@@ -1342,7 +1336,6 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 RfKillType
 nm_device_get_rfkill_type (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	return NM_DEVICE_GET_PRIVATE (self)->rfkill_type;
@@ -1472,9 +1465,7 @@ nm_device_check_connection_compatible (NMDevice *device,
                                        NMConnection *connection,
                                        GError **error)
 {
-	g_return_val_if_fail (device != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	if (NM_DEVICE_GET_CLASS (device)->check_connection_compatible)
@@ -1485,7 +1476,6 @@ nm_device_check_connection_compatible (NMDevice *device,
 gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
-	g_return_val_if_fail (device != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	return !!NM_DEVICE_GET_CLASS (device)->connection_match_config;
@@ -3903,7 +3893,6 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	gboolean tried_ipv6 = FALSE;
 	int ifindex, family;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason '%s') [%d]",
@@ -4040,9 +4029,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	NMDevicePrivate *priv;
 	NMConnection *connection;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (req != NULL);
 	g_return_if_fail (NM_IS_ACT_REQUEST (req));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -4135,7 +4122,6 @@ nm_device_can_interrupt_activation (NMDevice *self)
 NMDHCP4Config *
 nm_device_get_dhcp4_config (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->dhcp4_config;
@@ -4144,7 +4130,6 @@ nm_device_get_dhcp4_config (NMDevice *self)
 NMIP4Config *
 nm_device_get_ip4_config (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->ip4_config;
@@ -4262,7 +4247,6 @@ nm_device_set_ip6_config (NMDevice *self,
 NMDHCP6Config *
 nm_device_get_dhcp6_config (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->dhcp6_config;
@@ -4271,7 +4255,6 @@ nm_device_get_dhcp6_config (NMDevice *self)
 NMIP6Config *
 nm_device_get_ip6_config (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->ip6_config;
@@ -5015,7 +4998,6 @@ nm_device_set_firmware_missing (NMDevice *self, gboolean new_missing)
 {
 	NMDevicePrivate *priv;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5389,7 +5371,6 @@ nm_device_queue_state (NMDevice *self,
 {
 	NMDevicePrivate *priv;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5414,7 +5395,6 @@ nm_device_queued_state_peek (NMDevice *self)
 {
 	NMDevicePrivate *priv;
 
-	g_return_val_if_fail (self != NULL, NM_DEVICE_STATE_UNKNOWN);
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_STATE_UNKNOWN);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5481,7 +5461,6 @@ nm_device_set_managed (NMDevice *device,
 gboolean
 nm_device_spec_match_list (NMDevice *device, const GSList *specs)
 {
-	g_return_val_if_fail (device != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	if (NM_DEVICE_GET_CLASS (device)->spec_match_list)
@@ -5583,7 +5562,6 @@ nm_device_match_ip_config (NMDevice *device, NMConnection *connection)
 NMConnection *
 nm_device_connection_match_config (NMDevice *device, const GSList *connections)
 {
-	g_return_val_if_fail (device != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
@@ -5616,7 +5594,6 @@ nm_device_hwaddr_matches (NMDevice *device,
                           guint other_hwaddr_len,
                           gboolean fail_if_no_hwaddr)
 {
-	g_return_val_if_fail (device != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 	if (other_hwaddr)
 		g_return_val_if_fail (other_hwaddr_len > 0, FALSE);
@@ -5721,7 +5698,6 @@ nm_device_recheck_available_connections (NMDevice *device)
 	NMDevicePrivate *priv;
 	const GSList *connections, *iter;
 
-	g_return_if_fail (device != NULL);
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	priv = NM_DEVICE_GET_PRIVATE(device);

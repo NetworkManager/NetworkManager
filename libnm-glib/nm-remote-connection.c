@@ -130,7 +130,6 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	GHashTable *settings = NULL;
 	RemoteCall *call;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
 	g_return_if_fail (callback != NULL);
 
@@ -184,7 +183,6 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 	NMRemoteConnectionPrivate *priv;
 	RemoteCall *call;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
@@ -236,7 +234,6 @@ nm_remote_connection_get_secrets (NMRemoteConnection *self,
 	NMRemoteConnectionPrivate *priv;
 	RemoteCall *call;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
 	g_return_if_fail (callback != NULL);
 

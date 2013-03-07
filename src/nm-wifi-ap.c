@@ -756,7 +756,6 @@ nm_ap_dump (NMAccessPoint *ap, const char *prefix)
 {
 	NMAccessPointPrivate *priv;
 
-	g_return_if_fail (ap != NULL);
 	g_return_if_fail (NM_IS_AP (ap));
 
 	priv = NM_AP_GET_PRIVATE (ap);

@@ -203,7 +203,6 @@ nm_settings_for_each_connection (NMSettings *self,
 	GHashTableIter iter;
 	gpointer data;
 
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_SETTINGS (self));
 	g_return_if_fail (for_each_func != NULL);
 	
@@ -241,7 +240,6 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 	NMSettingsConnection *candidate;
 	GHashTableIter iter;
 
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
@@ -331,7 +329,6 @@ nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 {
 	NMSettingsPrivate *priv;
 
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 

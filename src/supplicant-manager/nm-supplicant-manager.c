@@ -210,7 +210,6 @@ check_capabilities (NMSupplicantManager *self)
 gboolean
 nm_supplicant_manager_available (NMSupplicantManager *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
 
 	if (die_count_exceeded (NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->die_count))

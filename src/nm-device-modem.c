@@ -196,7 +196,6 @@ modem_connected_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 NMModem *
 nm_device_modem_get_modem (NMDeviceModem *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
 
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->modem;
@@ -350,7 +349,6 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	const gchar *type_desc = NULL;
 	const gchar *ip_iface = NULL;
 
-	g_return_val_if_fail (modem != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 

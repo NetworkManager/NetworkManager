@@ -112,7 +112,6 @@ nm_bt_error_quark (void)
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 {
-	g_return_val_if_fail (self != NULL, NM_BT_CAPABILITY_NONE);
 	g_return_val_if_fail (NM_IS_DEVICE_BT (self), NM_BT_CAPABILITY_NONE);
 
 	return NM_DEVICE_BT_GET_PRIVATE (self)->capabilities;
@@ -616,9 +615,7 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	NMDeviceState state;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE_BT (self), FALSE);
-	g_return_val_if_fail (modem != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_MODEM (modem), FALSE);
 
 	priv = NM_DEVICE_BT_GET_PRIVATE (self);
@@ -691,9 +688,7 @@ nm_device_bt_modem_removed (NMDeviceBt *self, NMModem *modem)
 	NMDeviceBtPrivate *priv;
 	NMDeviceState state;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE_BT (self), FALSE);
-	g_return_val_if_fail (modem != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_MODEM (modem), FALSE);
 
 	priv = NM_DEVICE_BT_GET_PRIVATE (self);

@@ -105,7 +105,6 @@ nm_default_wired_connection_new (const GByteArray *mac,
 
 	g_return_val_if_fail (mac != NULL, NULL);
 	g_return_val_if_fail (mac->len == ETH_ALEN, NULL);
-	g_return_val_if_fail (device != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (defname != NULL, NULL);
 

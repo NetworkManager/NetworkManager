@@ -461,7 +461,6 @@ nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings,
                                 GError **error)
 {
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 	if (error)
@@ -600,7 +599,6 @@ nm_connection_diff (NMConnection *a,
 {
 	GHashTable *diffs;
 
-	g_return_val_if_fail (a != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (a), FALSE);
 	g_return_val_if_fail (out_settings != NULL, FALSE);
 	g_return_val_if_fail (*out_settings == NULL, FALSE);
@@ -752,7 +750,6 @@ nm_connection_update_secrets (NMConnection *connection,
 	gboolean success;
 	GHashTable *tmp;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);
 	if (error)
@@ -848,7 +845,6 @@ nm_connection_need_secrets (NMConnection *connection,
 	const char *name = NULL;
 	NMSetting *setting;
 
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	if (hints)
 		g_return_val_if_fail (*hints == NULL, NULL);
@@ -953,7 +949,6 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 	gpointer key, data;
 	GHashTable *ret, *setting_hash;
 
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	ret = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -998,7 +993,6 @@ nm_connection_is_type (NMConnection *connection, const char *type)
 	NMSettingConnection *s_con;
 	const char *type2;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (type != NULL, FALSE);
 
@@ -1218,7 +1212,6 @@ nm_connection_get_uuid (NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1240,7 +1233,6 @@ nm_connection_get_id (NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1298,7 +1290,6 @@ nm_connection_get_carrier_detect (NMConnection *connection)
 NMSetting8021x *
 nm_connection_get_setting_802_1x (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
@@ -1315,7 +1306,6 @@ nm_connection_get_setting_802_1x (NMConnection *connection)
 NMSettingBluetooth *
 nm_connection_get_setting_bluetooth (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
@@ -1332,7 +1322,6 @@ nm_connection_get_setting_bluetooth (NMConnection *connection)
 NMSettingBond *
 nm_connection_get_setting_bond (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingBond *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BOND);
@@ -1349,7 +1338,6 @@ nm_connection_get_setting_bond (NMConnection *connection)
 NMSettingBridge *
 nm_connection_get_setting_bridge (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingBridge *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BRIDGE);
@@ -1366,7 +1354,6 @@ nm_connection_get_setting_bridge (NMConnection *connection)
 NMSettingCdma *
 nm_connection_get_setting_cdma (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
@@ -1383,7 +1370,6 @@ nm_connection_get_setting_cdma (NMConnection *connection)
 NMSettingConnection *
 nm_connection_get_setting_connection (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -1400,7 +1386,6 @@ nm_connection_get_setting_connection (NMConnection *connection)
 NMSettingGsm *
 nm_connection_get_setting_gsm (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
@@ -1417,7 +1402,6 @@ nm_connection_get_setting_gsm (NMConnection *connection)
 NMSettingInfiniband *
 nm_connection_get_setting_infiniband (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingInfiniband *) nm_connection_get_setting (connection, NM_TYPE_SETTING_INFINIBAND);
@@ -1434,7 +1418,6 @@ nm_connection_get_setting_infiniband (NMConnection *connection)
 NMSettingIP4Config *
 nm_connection_get_setting_ip4_config (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
@@ -1451,7 +1434,6 @@ nm_connection_get_setting_ip4_config (NMConnection *connection)
 NMSettingIP6Config *
 nm_connection_get_setting_ip6_config (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
@@ -1468,7 +1450,6 @@ nm_connection_get_setting_ip6_config (NMConnection *connection)
 NMSettingOlpcMesh *
 nm_connection_get_setting_olpc_mesh (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingOlpcMesh *) nm_connection_get_setting (connection, NM_TYPE_SETTING_OLPC_MESH);
@@ -1485,7 +1466,6 @@ nm_connection_get_setting_olpc_mesh (NMConnection *connection)
 NMSettingPPP *
 nm_connection_get_setting_ppp (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
@@ -1502,7 +1482,6 @@ nm_connection_get_setting_ppp (NMConnection *connection)
 NMSettingPPPOE *
 nm_connection_get_setting_pppoe (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
@@ -1519,7 +1498,6 @@ nm_connection_get_setting_pppoe (NMConnection *connection)
 NMSettingSerial *
 nm_connection_get_setting_serial (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
@@ -1536,7 +1514,6 @@ nm_connection_get_setting_serial (NMConnection *connection)
 NMSettingVPN *
 nm_connection_get_setting_vpn (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
@@ -1553,7 +1530,6 @@ nm_connection_get_setting_vpn (NMConnection *connection)
 NMSettingWimax *
 nm_connection_get_setting_wimax (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWimax *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIMAX);
@@ -1570,7 +1546,6 @@ nm_connection_get_setting_wimax (NMConnection *connection)
 NMSettingWired *
 nm_connection_get_setting_wired (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
@@ -1587,7 +1562,6 @@ nm_connection_get_setting_wired (NMConnection *connection)
 NMSettingAdsl *
 nm_connection_get_setting_adsl (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingAdsl *) nm_connection_get_setting (connection, NM_TYPE_SETTING_ADSL);
@@ -1604,7 +1578,6 @@ nm_connection_get_setting_adsl (NMConnection *connection)
 NMSettingWireless *
 nm_connection_get_setting_wireless (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
@@ -1621,7 +1594,6 @@ nm_connection_get_setting_wireless (NMConnection *connection)
 NMSettingWirelessSecurity *
 nm_connection_get_setting_wireless_security (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
@@ -1638,7 +1610,6 @@ nm_connection_get_setting_wireless_security (NMConnection *connection)
 NMSettingBridgePort *
 nm_connection_get_setting_bridge_port (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingBridgePort *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BRIDGE_PORT);
@@ -1655,7 +1626,6 @@ nm_connection_get_setting_bridge_port (NMConnection *connection)
 NMSettingVlan *
 nm_connection_get_setting_vlan (NMConnection *connection)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingVlan *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VLAN);

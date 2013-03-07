@@ -88,7 +88,6 @@ nm_device_modem_error_quark (void)
 NMDeviceModemCapabilities
 nm_device_modem_get_modem_capabilities (NMDeviceModem *self)
 {
-	g_return_val_if_fail (self != NULL, NM_DEVICE_MODEM_CAPABILITY_NONE);
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
 	_nm_object_ensure_inited (NM_OBJECT (self));
@@ -109,7 +108,6 @@ nm_device_modem_get_modem_capabilities (NMDeviceModem *self)
 NMDeviceModemCapabilities
 nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 {
-	g_return_val_if_fail (self != NULL, NM_DEVICE_MODEM_CAPABILITY_NONE);
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NM_DEVICE_MODEM_CAPABILITY_NONE);
 
 	_nm_object_ensure_inited (NM_OBJECT (self));

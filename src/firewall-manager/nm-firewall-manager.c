@@ -175,7 +175,6 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 
 void nm_firewall_manager_cancel_call (NMFirewallManager *self, gpointer call)
 {
-	g_return_if_fail (self != NULL);
 	g_return_if_fail (NM_IS_FIREWALL_MANAGER (self));
 	dbus_g_proxy_cancel_call (NM_FIREWALL_MANAGER_GET_PRIVATE (self)->proxy,
 	                          (DBusGProxyCall *) call);

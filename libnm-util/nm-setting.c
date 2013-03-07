@@ -104,7 +104,6 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 	guint n_property_specs;
 	guint i;
 
-	g_return_val_if_fail (setting != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
@@ -481,7 +480,6 @@ nm_setting_diff (NMSetting *a,
 	gboolean results_created = FALSE;
 
 	g_return_val_if_fail (results != NULL, FALSE);
-	g_return_val_if_fail (a != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
 	if (b) {
 		g_return_val_if_fail (NM_IS_SETTING (b), FALSE);
@@ -764,7 +762,6 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	gpointer key, data;
 	GError *tmp_error = NULL;
 
-	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);
 	if (error)
@@ -851,7 +848,6 @@ nm_setting_get_secret_flags (NMSetting *setting,
                              NMSettingSecretFlags *out_flags,
                              GError **error)
 {
-	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secret_name != NULL, FALSE);
 
@@ -895,7 +891,6 @@ nm_setting_set_secret_flags (NMSetting *setting,
                              NMSettingSecretFlags flags,
                              GError **error)
 {
-	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (secret_name != NULL, FALSE);
 	g_return_val_if_fail (flags <= NM_SETTING_SECRET_FLAGS_ALL, FALSE);

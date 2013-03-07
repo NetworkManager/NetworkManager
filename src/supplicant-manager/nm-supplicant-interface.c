@@ -690,7 +690,6 @@ nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv;
 
-	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 	g_return_val_if_fail (field != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
@@ -1442,7 +1441,6 @@ nm_supplicant_interface_state_to_string (guint32 state)
 const char *
 nm_supplicant_interface_get_device (NMSupplicantInterface * self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
@@ -1451,7 +1449,6 @@ nm_supplicant_interface_get_device (NMSupplicantInterface * self)
 const char *
 nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->object_path;
@@ -1460,7 +1457,6 @@ nm_supplicant_interface_get_object_path (NMSupplicantInterface *self)
 const char *
 nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), NULL);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->dev;
@@ -1469,7 +1465,6 @@ nm_supplicant_interface_get_ifname (NMSupplicantInterface *self)
 guint
 nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 {
-	g_return_val_if_fail (self != NULL, 0);
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), 0);
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->max_scan_ssids;
