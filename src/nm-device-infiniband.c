@@ -220,6 +220,9 @@ check_connection_compatible (NMDevice *device,
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *mac;
 
+	if (!NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		g_set_error (error,
 		             NM_INFINIBAND_ERROR,

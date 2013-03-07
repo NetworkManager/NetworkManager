@@ -1461,6 +1461,25 @@ nm_device_complete_connection (NMDevice *self,
 	return success;
 }
 
+static gboolean
+check_connection_compatible (NMDevice *device,
+                             NMConnection *connection,
+                             GError **error)
+{
+	NMSettingConnection *s_con;
+	const char *config_iface, *device_iface;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	config_iface = nm_setting_connection_get_interface_name (s_con);
+	device_iface = nm_device_get_iface (device);
+	if (config_iface && strcmp (config_iface, device_iface) != 0)
+		return FALSE;
+
+	return TRUE;
+}
+
 gboolean
 nm_device_check_connection_compatible (NMDevice *device,
                                        NMConnection *connection,
@@ -1469,9 +1488,7 @@ nm_device_check_connection_compatible (NMDevice *device,
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	if (NM_DEVICE_GET_CLASS (device)->check_connection_compatible)
-		return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
-	return TRUE;
+	return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
 }
 
 gboolean
@@ -4748,6 +4765,7 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	klass->spec_match_list = spec_match_list;
 	klass->can_auto_connect = can_auto_connect;
+	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
 	klass->hw_is_up = hw_is_up;
 	klass->hw_bring_up = hw_bring_up;

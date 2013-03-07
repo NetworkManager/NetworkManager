@@ -248,6 +248,9 @@ check_connection_compatible (NMDevice *device,
 	NMSettingVlan *s_vlan;
 	const char *parent, *iface = NULL;
 
+	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	if (!s_vlan) {
 		g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,

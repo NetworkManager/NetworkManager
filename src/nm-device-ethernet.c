@@ -553,6 +553,9 @@ check_connection_compatible (NMDevice *device,
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
 
+	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_wired = nm_connection_get_setting_wired (connection);
 
 	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {

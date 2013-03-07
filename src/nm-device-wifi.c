@@ -1022,6 +1022,9 @@ check_connection_compatible (NMDevice *device,
 	const GSList *mac_blacklist, *mac_blacklist_iter;
 	const char *mode;
 
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 

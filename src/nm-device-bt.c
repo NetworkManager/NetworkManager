@@ -170,6 +170,9 @@ check_connection_compatible (NMDevice *device,
 	int addr_match = FALSE;
 	guint32 bt_type;
 
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 

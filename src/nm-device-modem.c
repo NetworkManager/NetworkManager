@@ -228,6 +228,9 @@ check_connection_compatible (NMDevice *device,
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 
+	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	return nm_modem_check_connection_compatible (priv->modem, connection, error);
 }
 

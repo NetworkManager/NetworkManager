@@ -420,6 +420,9 @@ check_connection_compatible (NMDevice *device,
 	const char *connection_type;
 	const GByteArray *mac;
 
+	if (!NM_DEVICE_CLASS (nm_device_wimax_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 

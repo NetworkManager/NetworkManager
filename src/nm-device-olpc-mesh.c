@@ -231,6 +231,9 @@ check_connection_compatible (NMDevice *device,
 	NMSettingConnection *s_con;
 	NMSettingOlpcMesh *s_mesh;
 
+	if (!NM_DEVICE_CLASS (nm_device_olpc_mesh_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 

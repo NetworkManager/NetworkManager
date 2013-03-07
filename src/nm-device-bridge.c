@@ -124,6 +124,9 @@ check_connection_compatible (NMDevice *device,
 	const char *iface;
 	NMSettingBridge *s_bridge;
 
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	if (!s_bridge || !nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_NOT_BRIDGE,

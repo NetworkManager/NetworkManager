@@ -143,6 +143,9 @@ check_connection_compatible (NMDevice *device,
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
 
+	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection, error))
+		return FALSE;
+
 	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME)) {
 		g_set_error (error,
 		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_NOT_ADSL,
