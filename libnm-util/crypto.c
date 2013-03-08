@@ -231,6 +231,7 @@ parse_old_openssl_key_file (const GByteArray *contents,
 		             _("Could not decode private key."));
 		goto parse_error;
 	}
+	g_string_free (str, TRUE);
 
 	if (lines)
 		g_strfreev (lines);
@@ -244,6 +245,8 @@ parse_old_openssl_key_file (const GByteArray *contents,
 parse_error:
 	g_free (cipher);
 	g_free (iv);
+	if (str)
+		g_string_free (str, TRUE);
 	if (lines)
 		g_strfreev (lines);
 	return NULL;
