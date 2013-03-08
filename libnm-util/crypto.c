@@ -245,11 +245,14 @@ parse_old_openssl_key_file (const GByteArray *contents,
 
 	bindata = g_byte_array_sized_new (tmp_len);
 	g_byte_array_append (bindata, tmp, tmp_len);
+	g_free (tmp);
+
 	*out_iv = iv;
 	*out_cipher = cipher;
 	return bindata;
 
 parse_error:
+	g_free (tmp);
 	g_free (cipher);
 	g_free (iv);
 	if (str)
