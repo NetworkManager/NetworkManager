@@ -258,6 +258,18 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+finalize (GObject *object)
+{
+	NMSettingPPPOEPrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (object);
+
+	g_free (priv->username);
+	g_free (priv->password);
+	g_free (priv->service);
+
+	G_OBJECT_CLASS (nm_setting_pppoe_parent_class)->finalize (object);
+}
+
+static void
 nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
@@ -268,6 +280,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
 	parent_class->need_secrets = need_secrets;
 
