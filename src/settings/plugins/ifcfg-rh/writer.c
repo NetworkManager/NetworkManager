@@ -1328,7 +1328,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 
 	svSetValue (ifcfg, "DEVICE", iface, FALSE);
 	svSetValue (ifcfg, "BRIDGING_OPTS", NULL, FALSE);
-	svSetValue (ifcfg, "STP", NULL, FALSE);
+	svSetValue (ifcfg, "STP", "no", FALSE);
 	svSetValue (ifcfg, "DELAY", NULL, FALSE);
 
 	/* Bridge options */
