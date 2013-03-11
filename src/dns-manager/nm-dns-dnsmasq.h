@@ -41,7 +41,7 @@ typedef struct {
 
 GType nm_dns_dnsmasq_get_type (void);
 
-NMDnsDnsmasq *nm_dns_dnsmasq_new (void);
+NMDnsPlugin *nm_dns_dnsmasq_new (void);
 
 #endif /* NM_DNS_DNSMASQ_H */
 

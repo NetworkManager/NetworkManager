@@ -23,17 +23,11 @@
 
 #include "config.h"
 
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/wait.h> 
-#include <unistd.h>
-#include <glib.h>
+#include <resolv.h>
+#include <stdlib.h>
 
+#include <glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-dns-manager.h"
@@ -47,11 +41,7 @@
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
 
-#ifndef RESOLV_CONF
-#define RESOLV_CONF "/etc/resolv.conf"
-#endif
-
-G_DEFINE_TYPE(NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
 #define NM_DNS_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                        NM_TYPE_DNS_MANAGER, \
@@ -60,8 +50,6 @@ G_DEFINE_TYPE(NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 #define HASH_LEN 20
 
 typedef struct {
-	gboolean disposed;
-
 	NMIP4Config *ip4_vpn_config;
 	NMIP4Config *ip4_device_config;
 	NMIP6Config *ip6_vpn_config;
@@ -350,7 +338,7 @@ write_resolv_conf (FILE *f, const char *domain,
 		g_set_error (error,
 		             NM_DNS_MANAGER_ERROR,
 		             NM_DNS_MANAGER_ERROR_SYSTEM,
-		             "Could not write " RESOLV_CONF ": %s\n",
+		             "Could not write " _PATH_RESCONF ": %s\n",
 		             g_strerror (errno));
 		return FALSE;
 	}
@@ -458,9 +446,9 @@ update_resolv_conf (const char *domain,
 	g_return_val_if_fail (error != NULL, FALSE);
 
 	/* Find the real path of resolv.conf; it could be a symlink to something */
-	resolv_conf_realpath = realpath (RESOLV_CONF, NULL);
+	resolv_conf_realpath = realpath (_PATH_RESCONF, NULL);
 	if (!resolv_conf_realpath)
-		resolv_conf_realpath = strdup (RESOLV_CONF);
+		resolv_conf_realpath = strdup (_PATH_RESCONF);
 
 	/* Build up the real path for the temp resolv.conf that we're about to
 	 * write out.
@@ -475,21 +463,21 @@ update_resolv_conf (const char *domain,
 	if ((f = fopen (tmp_resolv_conf_realpath, "w")) == NULL) {
 		do_rename = 0;
 		old_errno = errno;
-		if ((f = fopen (RESOLV_CONF, "w")) == NULL) {
+		if ((f = fopen (_PATH_RESCONF, "w")) == NULL) {
 			g_set_error (error,
 			             NM_DNS_MANAGER_ERROR,
 			             NM_DNS_MANAGER_ERROR_SYSTEM,
 			             "Could not open %s: %s\nCould not open %s: %s\n",
 			             tmp_resolv_conf_realpath,
 			             g_strerror (old_errno),
-			             RESOLV_CONF,
+			             _PATH_RESCONF,
 			             g_strerror (errno));
 			goto out;
 		}
 		/* Update tmp_resolv_conf_realpath so the error message on fclose()
 		 * failure will be correct.
 		 */
-		strcpy (tmp_resolv_conf_realpath, RESOLV_CONF);
+		strcpy (tmp_resolv_conf_realpath, _PATH_RESCONF);
 	}
 
 	write_resolv_conf (f, domain, searches, nameservers, error);
@@ -516,7 +504,7 @@ update_resolv_conf (const char *domain,
 			g_set_error (error,
 			             NM_DNS_MANAGER_ERROR,
 			             NM_DNS_MANAGER_ERROR_SYSTEM,
-			             "Could not replace " RESOLV_CONF ": %s\n",
+			             "Could not replace " _PATH_RESCONF ": %s\n",
 			             g_strerror (errno));
 		}
 	}
@@ -967,10 +955,6 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 	g_free (priv->hostname);
 	priv->hostname = g_strdup (filtered);
 
-	/* Passing the last interface here is completely bogus, but SUSE's netconfig
-	 * wants one.  But hostname changes are system-wide and *not* tied to a
-	 * specific interface, so netconfig can't really handle this.  Fake it.
-	 */
 	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
 		             error ? error->code : -1,
@@ -1043,7 +1027,7 @@ load_plugins (NMDnsManager *self, const char **plugins)
 		/* Create each configured plugin */
 		for (iter = plugins; iter && *iter; iter++) {
 			if (!strcasecmp (*iter, "dnsmasq"))
-				plugin = NM_DNS_PLUGIN (nm_dns_dnsmasq_new ());
+				plugin = nm_dns_dnsmasq_new ();
 			else {
 				nm_log_warn (LOGD_DNS, "Unknown DNS plugin '%s'", *iter);\
 				continue;
@@ -1118,29 +1102,24 @@ dispose (GObject *object)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	if (priv->disposed == FALSE) {
-		priv->disposed = TRUE;
+	g_slist_free_full (priv->plugins, g_object_unref);
+	priv->plugins = NULL;
 
-		g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
-		g_slist_free (priv->plugins);
-		priv->plugins = NULL;
-
-		/* If we're quitting leave a valid resolv.conf in place, not one
-		 * pointing to 127.0.0.1 if any plugins were active.  Thus update
-		 * DNS after disposing of all plugins.  But if we haven't done any
-		 * DNS updates yet, there's no reason to touch resolv.conf on shutdown.
-		 */
-		if (priv->dns_touched && !update_dns (self, TRUE, &error)) {
-			nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
-			             error ? error->code : -1,
-			             error && error->message ? error->message : "(unknown)");
-			g_clear_error (&error);
-		}
-
-		g_slist_foreach (priv->configs, (GFunc) g_object_unref, NULL);
-		g_slist_free (priv->configs);
-		priv->configs = NULL;
+	/* If we're quitting, leave a valid resolv.conf in place, not one
+	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
+	 * DNS after disposing of all plugins.  But if we haven't done any
+	 * DNS updates yet, there's no reason to touch resolv.conf on shutdown.
+	 */
+	if (priv->dns_touched && !update_dns (self, TRUE, &error)) {
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes on shutdown: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		priv->dns_touched = FALSE;
 	}
+
+	g_slist_free_full (priv->configs, g_object_unref);
+	priv->configs = NULL;
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
 }

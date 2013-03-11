@@ -42,7 +42,6 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Methods */
-	gboolean (*init) (NMDnsPlugin *self);
 
 	/* Called when DNS information is changed.  'vpn_configs' is a list of
 	 * NMIP4Config or NMIP6Config objects from VPN connections, while
