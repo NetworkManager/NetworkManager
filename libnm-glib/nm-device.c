@@ -53,6 +53,7 @@ static void _nm_device_type_for_path_async (DBusGConnection *connection,
                                             const char *path,
                                             NMObjectTypeCallbackFunc callback,
                                             gpointer user_data);
+gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
 
 G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
                          _nm_object_register_type_func (g_define_type_id, _nm_device_type_for_path,
@@ -128,6 +129,22 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/**
+ * nm_device_error_quark:
+ *
+ * Registers an error quark for #NMDevice if necessary.
+ *
+ * Returns: the error quark used for #NMDevice errors.
+ **/
+GQuark
+nm_device_error_quark (void)
+{
+	static GQuark quark = 0;
+
+	if (G_UNLIKELY (quark == 0))
+		quark = g_quark_from_static_string ("nm-device-error-quark");
+	return quark;
+}
 
 static void
 nm_device_init (NMDevice *device)
@@ -491,6 +508,8 @@ nm_device_class_init (NMDeviceClass *device_class)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	device_class->connection_compatible = connection_compatible;
 
 	/* properties */
 
@@ -1589,6 +1608,26 @@ nm_device_connection_valid (NMDevice *device, NMConnection *connection)
 	return nm_device_connection_compatible (device, connection, NULL);
 }
 
+gboolean
+connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+	const char *config_iface, *device_iface;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	config_iface = nm_setting_connection_get_interface_name (s_con);
+	device_iface = nm_device_get_iface (device);
+	if (config_iface && g_strcmp0 (config_iface, device_iface) != 0) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INTERFACE_MISMATCH,
+					 "The interface names of the device and the connection didn't match.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 /**
  * nm_device_connection_compatible:
  * @device: an #NMDevice to validate @connection against
@@ -1613,9 +1652,11 @@ nm_device_connection_valid (NMDevice *device, NMConnection *connection)
 gboolean
 nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	if (NM_DEVICE_GET_CLASS (device)->connection_compatible)
-		return NM_DEVICE_GET_CLASS (device)->connection_compatible (device, connection, error);
-	return FALSE;
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	return NM_DEVICE_GET_CLASS (device)->connection_compatible (device, connection, error);
 }
 
 /**

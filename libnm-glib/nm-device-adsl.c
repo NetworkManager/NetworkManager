@@ -131,7 +131,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		return FALSE;
 	}
 
-	return TRUE;
+	return NM_DEVICE_CLASS (nm_device_adsl_parent_class)->connection_compatible (device, connection, error);
 }
 
 /******************************************************************/

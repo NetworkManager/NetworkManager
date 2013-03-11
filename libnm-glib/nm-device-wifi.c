@@ -491,8 +491,6 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	NMDeviceWifiCapabilities wifi_caps;
 	const char *key_mgmt;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
@@ -554,7 +552,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		}
 	}
 
-	return TRUE;
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->connection_compatible (device, connection, error);
 }
 
 /**************************************************************/

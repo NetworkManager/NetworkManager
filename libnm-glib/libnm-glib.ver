@@ -89,6 +89,8 @@ global:
 	nm_device_connection_compatible;
 	nm_device_connection_valid;
 	nm_device_disconnect;
+	nm_device_error_get_type;
+	nm_device_error_quark;
 	nm_device_ethernet_error_get_type;
 	nm_device_ethernet_error_quark;
 	nm_device_ethernet_get_carrier;

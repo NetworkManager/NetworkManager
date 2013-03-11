@@ -143,8 +143,6 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	const GByteArray *mac;
 	guint8 *hwaddr, hwaddr_buf[INFINIBAND_ALEN];
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
@@ -178,7 +176,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		}
 	}
 
-	return TRUE;
+	return NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->connection_compatible (device, connection, error);
 }
 
 /***********************************************************/
