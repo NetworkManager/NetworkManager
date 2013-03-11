@@ -305,11 +305,6 @@ main (int argc, char *argv[])
 	gboolean become_daemon = FALSE;
 	gboolean g_fatal_warnings = FALSE;
 	char *pidfile = NULL, *state_file = NULL;
-	char *config_path = NULL, *plugins = NULL;
-	char *log_level = NULL, *log_domains = NULL;
-	char *connectivity_uri = NULL;
-	gint connectivity_interval = -1;
-	char *connectivity_response = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
@@ -330,21 +325,6 @@ main (int argc, char *argv[])
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
-		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config_path, N_("Config file location"), N_("/path/to/config.file") },
-		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
-		/* Translators: Do not translate the values in the square brackets */
-		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &log_level, N_("Log level: one of [ERR, WARN, INFO, DEBUG]"), "INFO" },
-		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &log_domains,
-		        /* Translators: Do not translate the values in the square brackets */
-		        N_("Log domains separated by ',': any combination of\n"
-		        "                                                [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
-		        "                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
-		        "                                                 AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
-		        "                                                 INFINIBAND,FIREWALL,ADSL]"),
-		        "HW,RFKILL,WIFI" },
-		{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &connectivity_uri, _("An http(s) address for checking internet connectivity"), "http://example.com" },
-		{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &connectivity_interval, _("The interval between connectivity checks (in seconds)"), "60" },
-		{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &connectivity_response, _("The expected start of the response"), N_("Bingo!") },
 		{NULL}
 	};
 
@@ -366,6 +346,7 @@ main (int argc, char *argv[])
 	g_option_context_set_ignore_unknown_options (opt_ctx, FALSE);
 	g_option_context_set_help_enabled (opt_ctx, TRUE);
 	g_option_context_add_main_entries (opt_ctx, options, NULL);
+	g_option_context_add_main_entries (opt_ctx, nm_config_get_options (), NULL);
 
 	g_option_context_set_summary (opt_ctx,
 		_("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with."));
@@ -414,8 +395,7 @@ main (int argc, char *argv[])
 		exit (1);
 
 	/* Read the config file and CLI overrides */
-	config = nm_config_new (config_path, plugins, log_level, log_domains,
-	                        connectivity_uri, connectivity_interval, connectivity_response, &error);
+	config = nm_config_new (&error);
 	if (config == NULL) {
 		fprintf (stderr, _("Failed to read configuration: (%d) %s\n"),
 		         error ? error->code : -1,
@@ -640,12 +620,6 @@ done:
 	/* Free options */
 	g_free (pidfile);
 	g_free (state_file);
-	g_free (config_path);
-	g_free (plugins);
-	g_free (log_level);
-	g_free (log_domains);
-	g_free (connectivity_uri);
-	g_free (connectivity_response);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);

@@ -45,14 +45,6 @@ typedef struct {
 GType nm_config_get_type (void);
 
 NMConfig *nm_config_get (void);
-NMConfig *nm_config_new (const char *cli_config_path,
-                         const char *cli_plugins,
-                         const char *cli_log_level,
-                         const char *cli_log_domains,
-                         const char *cli_connectivity_check_uri,
-                         const gint connectivity_check_interval,
-                         const char *cli_connectivity_check_response,
-                         GError **error);
 
 const char *nm_config_get_path (NMConfig *config);
 const char **nm_config_get_plugins (NMConfig *config);
@@ -63,6 +55,10 @@ const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_connectivity_uri (NMConfig *config);
 const guint nm_config_get_connectivity_interval (NMConfig *config);
 const char *nm_config_get_connectivity_response (NMConfig *config);
+
+/* for main.c only */
+GOptionEntry *nm_config_get_options (void);
+NMConfig *nm_config_new (GError **error);
 
 G_END_DECLS
 

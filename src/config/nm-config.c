@@ -25,6 +25,8 @@
 
 #include "nm-config.h"
 
+#include <glib/gi18n.h>
+
 #define NM_DEFAULT_SYSTEM_CONF_FILE  NMCONFDIR "/NetworkManager.conf"
 #define NM_OLD_SYSTEM_CONF_FILE      NMCONFDIR "/nm-system-settings.conf"
 
@@ -123,6 +125,40 @@ nm_config_get_connectivity_response (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->connectivity_response;
 }
 
+/************************************************************************/
+
+static char *cli_config_path;
+static char *cli_plugins;
+static char *cli_log_level;
+static char *cli_log_domains;
+static char *cli_connectivity_uri;
+static int cli_connectivity_interval = -1;
+static char *cli_connectivity_response;
+
+static GOptionEntry config_options[] = {
+	{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli_config_path, N_("Config file location"), N_("/path/to/config.file") },
+	{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli_plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
+	/* Translators: Do not translate the values in the square brackets */
+	{ "log-level", 0, 0, G_OPTION_ARG_STRING, &cli_log_level, N_("Log level: one of [ERR, WARN, INFO, DEBUG]"), "INFO" },
+	{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &cli_log_domains,
+	  /* Translators: Do not translate the values in the square brackets */
+	  N_("Log domains separated by ',': any combination of\n"
+		 "                                                [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
+		 "                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
+		 "                                                 AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
+		 "                                                 INFINIBAND,FIREWALL,ADSL]"),
+	  "HW,RFKILL,WIFI" },
+	{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &cli_connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
+	{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &cli_connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
+	{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &cli_connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
+	{NULL}
+};
+
+GOptionEntry *
+nm_config_get_options (void)
+{
+	return config_options;
+}
 
 /************************************************************************/
 
@@ -185,14 +221,7 @@ nm_config_get (void)
 
 /* call this function only once! */
 NMConfig *
-nm_config_new (const char *cli_config_path,
-               const char *cli_plugins,
-               const char *cli_log_level,
-               const char *cli_log_domains,
-               const char *cli_connectivity_uri,
-               const gint cli_connectivity_interval,
-               const char *cli_connectivity_response,
-               GError **error)
+nm_config_new (GError **error)
 {
 	GError *local = NULL;
 	NMConfigPrivate *priv = NULL;
@@ -298,6 +327,14 @@ finalize (GObject *gobject)
 	g_free (priv->connectivity_response);
 
 	singleton = NULL;
+
+	g_clear_pointer (&cli_config_path, g_free);
+	g_clear_pointer (&cli_plugins, g_free);
+	g_clear_pointer (&cli_log_level, g_free);
+	g_clear_pointer (&cli_log_domains, g_free);
+	g_clear_pointer (&cli_connectivity_uri, g_free);
+	g_clear_pointer (&cli_connectivity_response, g_free);
+
 	G_OBJECT_CLASS (nm_config_parent_class)->finalize (gobject);
 }
 

@@ -23,15 +23,44 @@
 #include <nm-config.h>
 
 static void
+setup_config (const char *config_file, ...)
+{
+	va_list ap;
+	GPtrArray *args;
+	char **argv, *arg;
+	int argc;
+	GOptionContext *context;
+
+	args = g_ptr_array_new ();
+	g_ptr_array_add (args, "test-config");
+	g_ptr_array_add (args, "--config");
+	g_ptr_array_add (args, (char *)config_file);
+
+	va_start (ap, config_file);
+	while ((arg = va_arg (ap, char *)))
+		g_ptr_array_add (args, arg);
+	va_end (ap);
+
+	argv = (char **)args->pdata;
+	argc = args->len;
+
+	context = g_option_context_new (NULL);
+	g_option_context_add_main_entries (context, nm_config_get_options (), NULL);
+	g_option_context_parse (context, &argc, &argv, NULL);
+	g_option_context_free (context);
+
+	g_ptr_array_free (args, TRUE);
+}
+
+static void
 test_config_simple (void)
 {
 	NMConfig *config;
 	GError *error = NULL;
 	const char **plugins;
 
-	config = nm_config_new (SRCDIR "/NetworkManager.conf",
-	                        NULL, NULL, NULL, NULL, -1, NULL,
-	                        &error);
+	setup_config (SRCDIR "/NetworkManager.conf", NULL);
+	config = nm_config_new (&error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_config_get_path (config), ==, SRCDIR "/NetworkManager.conf");
@@ -54,9 +83,8 @@ test_config_non_existent (void)
 	NMConfig *config;
 	GError *error = NULL;
 
-	config = nm_config_new (SRCDIR "/no-such-file",
-	                        NULL, NULL, NULL, NULL, -1, NULL,
-	                        &error);
+	setup_config (SRCDIR "/no-such-file", NULL);
+	config = nm_config_new (&error);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND);
 }
 
@@ -66,9 +94,8 @@ test_config_parse_error (void)
 	NMConfig *config;
 	GError *error = NULL;
 
-	config = nm_config_new (SRCDIR "/bad.conf",
-	                        NULL, NULL, NULL, NULL, -1, NULL,
-	                        &error);
+	setup_config (SRCDIR "/bad.conf", NULL);
+	config = nm_config_new (&error);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
 }
 
@@ -79,9 +106,11 @@ test_config_override (void)
 	GError *error = NULL;
 	const char **plugins;
 
-	config = nm_config_new (SRCDIR "/NetworkManager.conf",
-	                        "alpha,beta,gamma,delta", NULL, NULL, NULL, 12, NULL,
-	                        &error);
+	setup_config (SRCDIR "/NetworkManager.conf",
+	              "--plugins", "alpha,beta,gamma,delta",
+	              "--connectivity-interval", "12",
+	              NULL);
+	config = nm_config_new (&error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_config_get_path (config), ==, SRCDIR "/NetworkManager.conf");

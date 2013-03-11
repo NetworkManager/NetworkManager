@@ -40,6 +40,7 @@ src/dhcp-manager/nm-dhcp-dhclient-utils.c
 src/dhcp-manager/nm-dhcp-manager.c
 src/dns-manager/nm-dns-manager.c
 src/logging/nm-logging.c
+src/config/nm-config.c
 src/modem-manager/nm-modem-cdma.c
 src/modem-manager/nm-modem-gsm.c
 src/modem-manager/nm-modem-broadband.c
