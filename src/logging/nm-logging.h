@@ -108,6 +108,9 @@ char *nm_logging_domains_to_string (void);
 gboolean nm_logging_level_enabled (guint32 level);
 gboolean nm_logging_domain_enabled (guint32 domain);
 
+const char *nm_logging_all_levels_to_string (void);
+const char *nm_logging_all_domains_to_string (void);
+
 /* Undefine the nm-utils.h logging stuff to ensure errors */
 #undef nm_get_timestamp
 #undef nm_info

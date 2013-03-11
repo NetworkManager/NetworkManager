@@ -209,6 +209,25 @@ nm_logging_level_to_string (void)
 	return "";
 }
 
+const char *
+nm_logging_all_levels_to_string (void)
+{
+	static GString *str;
+
+	if (G_UNLIKELY (!str)) {
+		const LogDesc *diter;
+
+		str = g_string_new (NULL);
+		for (diter = &level_descs[0]; diter->name; diter++) {
+			if (str->len)
+				g_string_append_c (str, ',');
+			g_string_append (str, diter->name);
+		}
+	}
+
+	return str->str;
+}
+
 char *
 nm_logging_domains_to_string (void)
 {
@@ -224,6 +243,29 @@ nm_logging_domains_to_string (void)
 		}
 	}
 	return g_string_free (str, FALSE);
+}
+
+const char *
+nm_logging_all_domains_to_string (void)
+{
+	static GString *str;
+
+	if (G_UNLIKELY (!str)) {
+		const LogDesc *diter;
+
+		str = g_string_new ("DEFAULT");
+		for (diter = &domain_descs[0]; diter->name; diter++) {
+			g_string_append_c (str, ',');
+			g_string_append (str, diter->name);
+			if (diter->num == LOGD_DHCP6)
+				g_string_append (str, ",DHCP");
+			else if (diter->num == LOGD_IP6)
+				g_string_append (str, ",IP");
+		}
+		g_string_append (str, ",ALL");
+	}
+
+	return str->str;
 }
 
 gboolean

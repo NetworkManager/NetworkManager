@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #include "nm-config.h"
+#include "nm-logging.h"
 
 #include <glib/gi18n.h>
 
@@ -138,25 +139,35 @@ static char *cli_connectivity_response;
 static GOptionEntry config_options[] = {
 	{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli_config_path, N_("Config file location"), N_("/path/to/config.file") },
 	{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli_plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
-	/* Translators: Do not translate the values in the square brackets */
-	{ "log-level", 0, 0, G_OPTION_ARG_STRING, &cli_log_level, N_("Log level: one of [ERR, WARN, INFO, DEBUG]"), "INFO" },
+	{ "log-level", 0, 0, G_OPTION_ARG_STRING, &cli_log_level, N_("Log level: one of [%s]"), "INFO" },
 	{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &cli_log_domains,
-	  /* Translators: Do not translate the values in the square brackets */
-	  N_("Log domains separated by ',': any combination of\n"
-		 "                                                [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
-		 "                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
-		 "                                                 AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,\n"
-		 "                                                 INFINIBAND,FIREWALL,ADSL]"),
-	  "HW,RFKILL,WIFI" },
+	  N_("Log domains separated by ',': any combination of [%s]"),
+	  "PLATFORM,RFKILL,WIFI" },
 	{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &cli_connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
 	{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &cli_connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
 	{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &cli_connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
 	{NULL}
 };
+static gboolean config_options_inited;
 
 GOptionEntry *
 nm_config_get_options (void)
 {
+	if (!config_options_inited) {
+		int i;
+
+		for (i = 0; config_options[i].long_name; i++) {
+			if (!strcmp (config_options[i].long_name, "log-level")) {
+				config_options[i].description = g_strdup_printf (config_options[i].description,
+				                                                 nm_logging_all_levels_to_string ());
+			} else if (!strcmp (config_options[i].long_name, "log-domains")) {
+				config_options[i].description = g_strdup_printf (config_options[i].description,
+				                                                 nm_logging_all_domains_to_string ());
+			}
+		}
+		config_options_inited = TRUE;
+	}
+
 	return config_options;
 }
 
