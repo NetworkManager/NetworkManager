@@ -3,6 +3,7 @@ SUBDIRS = . tests
 @GNOME_CODE_COVERAGE_RULES@
 
 INCLUDES = \
+	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \

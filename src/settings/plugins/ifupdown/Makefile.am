@@ -4,6 +4,7 @@ SUBDIRS = . tests
 
 INCLUDES = \
 	-I$(top_srcdir)/src/logging \
+	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \

@@ -35,6 +35,7 @@
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
+#include <nm-config.h>
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -58,7 +59,7 @@ typedef struct {
 	GFileMonitor *monitor;
 	guint monitor_id;
 
-	char *conf_file;
+	const char *conf_file;
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
 
@@ -641,7 +642,6 @@ dispose (GObject *object)
 	}
 
 	g_free (priv->hostname);
-	g_free (priv->conf_file);
 
 	if (priv->hash)
 		g_hash_table_destroy (priv->hash);
@@ -687,7 +687,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 }
 
 GObject *
-nm_settings_keyfile_plugin_new (const char *config_file)
+nm_settings_keyfile_plugin_new (void)
 {
 	static SCPluginKeyfile *singleton = NULL;
 	SCPluginKeyfilePrivate *priv;
@@ -696,7 +696,7 @@ nm_settings_keyfile_plugin_new (const char *config_file)
 		singleton = SC_PLUGIN_KEYFILE (g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL));
 		priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
 
-		priv->conf_file = g_strdup (config_file);
+		priv->conf_file = nm_config_get_path (nm_config_get ());
 
 		/* plugin_set_hostname() has to be called *after* priv->conf_file is set */
 		priv->hostname = plugin_get_hostname (singleton);

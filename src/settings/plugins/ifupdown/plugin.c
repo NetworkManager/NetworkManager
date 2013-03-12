@@ -50,6 +50,7 @@
 #include "nm-inotify-helper.h"
 
 #include "nm-logging.h"
+#include "nm-config.h"
 
 #include <arpa/inet.h>
 
@@ -79,7 +80,7 @@ typedef struct {
 	GHashTable *well_known_interfaces;
 	GHashTable *well_known_ifaces;
 	gboolean unmanage_well_known;
-	char *conf_file;
+	const char *conf_file;
 
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
@@ -698,8 +699,6 @@ GObject__dispose (GObject *object)
 	if (priv->well_known_interfaces)
 		g_hash_table_destroy(priv->well_known_interfaces);
 
-	g_free (priv->conf_file);
-
 	if (priv->client)
 		g_object_unref (priv->client);
 
@@ -708,7 +707,7 @@ GObject__dispose (GObject *object)
 }
 
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (const char *config_file)
+nm_system_config_factory (void)
 {
 	static SCPluginIfupdown *singleton = NULL;
 	SCPluginIfupdownPrivate *priv;
@@ -716,7 +715,7 @@ nm_system_config_factory (const char *config_file)
 	if (!singleton) {
 		singleton = SC_PLUGIN_IFUPDOWN (g_object_new (SC_TYPE_PLUGIN_IFUPDOWN, NULL));
 		priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (singleton);
-		priv->conf_file = strdup (config_file);
+		priv->conf_file = nm_config_get_path (nm_config_get ());
 	} else
 		g_object_ref (singleton);
 

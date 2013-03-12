@@ -34,6 +34,7 @@
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
+#include <nm-config.h>
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -99,7 +100,7 @@ typedef struct {
 	 * plugin has some specific options (like unmanaged devices) that
 	 * might be changed at runtime.
 	 */
-	char *conf_file;
+	const char *conf_file;
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
 
@@ -775,8 +776,6 @@ dispose (GObject *object)
 
 	g_free (priv->hostname);
 	priv->hostname = NULL;
-	g_free (priv->conf_file);
-	priv->conf_file = NULL;
 
 	/* Chain up to the superclass */
 	G_OBJECT_CLASS (sc_plugin_example_parent_class)->dispose (object);
@@ -848,7 +847,7 @@ system_config_interface_init (NMSystemConfigInterface *sci_intf)
  * twice.
  */
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (const char *config_file)
+nm_system_config_factory (void)
 {
 	static SCPluginExample *singleton = NULL;
 	SCPluginExamplePrivate *priv;
@@ -859,7 +858,7 @@ nm_system_config_factory (const char *config_file)
 		priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (singleton);
 
 		/* Cache the config file path */
-		priv->conf_file = g_strdup (config_file);
+		priv->conf_file = nm_config_get_path (nm_config_get ());
 	} else {
 		/* This function should never be called twice */
 		g_assert_not_reached ();

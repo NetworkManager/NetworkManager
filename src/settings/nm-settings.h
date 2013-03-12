@@ -76,9 +76,7 @@ typedef struct {
 
 GType nm_settings_get_type (void);
 
-NMSettings *nm_settings_new (const char *config_file,
-                             const char **plugins,
-                             GError **error);
+NMSettings *nm_settings_new (GError **error);
 
 typedef void (*NMSettingsForEachFunc) (NMSettings *settings,
                                        NMSettingsConnection *connection,

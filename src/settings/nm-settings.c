@@ -69,6 +69,7 @@
 #include "nm-agent-manager.h"
 #include "nm-settings-utils.h"
 #include "nm-connection-provider.h"
+#include "nm-config.h"
 
 #define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
@@ -123,7 +124,7 @@ typedef struct {
 
 	NMAgentManager *agent_mgr;
 
-	char *config_file;
+	NMConfig *config;
 
 	NMSessionMonitor *session_monitor;
 	GSList *auths;
@@ -567,10 +568,9 @@ find_plugin (GSList *list, const char *pname)
 static void
 add_keyfile_plugin (NMSettings *self)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GObject *keyfile_plugin;
 
-	keyfile_plugin = nm_settings_keyfile_plugin_new (priv->config_file);
+	keyfile_plugin = nm_settings_keyfile_plugin_new ();
 	g_assert (keyfile_plugin);
 	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
 }
@@ -578,7 +578,6 @@ add_keyfile_plugin (NMSettings *self)
 static gboolean
 load_plugins (NMSettings *self, const char **plugins, GError **error)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *list = NULL;
 	const char **iter;
 	gboolean keyfile_added = FALSE;
@@ -589,7 +588,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		char *full_name, *path;
 		const char *pname = *iter;
 		GObject *obj;
-		GObject * (*factory_func) (const char *);
+		GObject * (*factory_func) (void);
 
 		/* strip leading spaces */
 		while (g_ascii_isspace (*pname))
@@ -637,7 +636,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			break;
 		}
 
-		obj = (*factory_func) (priv->config_file);
+		obj = (*factory_func) ();
 		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
 			g_set_error (error, 0, 0,
 			             "Plugin '%s' returned invalid system config object.",
@@ -1379,6 +1378,7 @@ static gboolean
 is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	const char *config_file;
 	GKeyFile *config;
 	char **list, **iter;
 	gboolean found = FALSE;
@@ -1386,12 +1386,13 @@ is_mac_auto_wired_blacklisted (NMSettings *self, const GByteArray *mac)
 
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	if (!priv->config_file)
+	config_file = nm_config_get_path (priv->config);
+	if (!config_file)
 		return FALSE;
 
 	config = g_key_file_new ();
 	g_key_file_set_list_separator (config, ',');
-	if (!g_key_file_load_from_file (config, priv->config_file, G_KEY_FILE_NONE, NULL))
+	if (!g_key_file_load_from_file (config, config_file, G_KEY_FILE_NONE, NULL))
 		goto out;
 
 	hwaddr_type = nm_utils_hwaddr_type (mac->len);
@@ -1431,6 +1432,7 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	NMSettingConnection *s_con;
 	int hwaddr_type;
 	char *tmp;
+	const char *config_file;
 	GKeyFile *config;
 	char **list, **iter, **updated;
 	gboolean found = FALSE;
@@ -1438,7 +1440,8 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	char *data;
 
 	/* If there was no config file specified, there's nothing to do */
-	if (!priv->config_file)
+	config_file = nm_config_get_path (priv->config);
+	if (!config_file)
 		goto cleanup;
 
 	/* When the default wired connection is removed (either deleted or saved
@@ -1466,7 +1469,7 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 		goto cleanup;
 
 	g_key_file_set_list_separator (config, ',');
-	g_key_file_load_from_file (config, priv->config_file, G_KEY_FILE_KEEP_COMMENTS, NULL);
+	g_key_file_load_from_file (config, config_file, G_KEY_FILE_KEEP_COMMENTS, NULL);
 
 	list = g_key_file_get_string_list (config, "main", CONFIG_KEY_NO_AUTO_DEFAULT, &len, NULL);
 	for (iter = list; iter && *iter; iter++) {
@@ -1507,7 +1510,7 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 
 		data = g_key_file_to_data (config, &len, NULL);
 		if (data) {
-			g_file_set_contents (priv->config_file, data, len, NULL);
+			g_file_set_contents (config_file, data, len, NULL);
 			g_free (data);
 		}
 	}
@@ -1741,9 +1744,7 @@ get_connections (NMConnectionProvider *provider)
 /***************************************************************/
 
 NMSettings *
-nm_settings_new (const char *config_file,
-                 const char **plugins,
-                 GError **error)
+nm_settings_new (GError **error)
 {
 	NMSettings *self;
 	NMSettingsPrivate *priv;
@@ -1752,12 +1753,12 @@ nm_settings_new (const char *config_file,
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	priv->config_file = g_strdup (config_file);
+	priv->config = nm_config_get ();
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	priv->bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
 	/* Load the plugins; fail if a plugin is not found. */
-	if (!load_plugins (self, plugins, error)) {
+	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {
 		g_object_unref (self);
 		return NULL;
 	}
@@ -1825,8 +1826,6 @@ finalize (GObject *object)
 
 	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
 	g_slist_free (priv->plugins);
-
-	g_free (priv->config_file);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->finalize (object);
 }

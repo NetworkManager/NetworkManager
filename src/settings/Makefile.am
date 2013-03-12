@@ -10,6 +10,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_builddir}/src/generated \
            -I${top_srcdir}/src/generated \
            -I${top_srcdir}/src/logging \
+           -I${top_srcdir}/src/config \
            -I${top_srcdir}/src
 
 noinst_LTLIBRARIES = libsettings.la libtest-settings-utils.la

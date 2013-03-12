@@ -494,9 +494,7 @@ main (int argc, char *argv[])
 	dns_mgr = nm_dns_manager_get ();
 	g_assert (dns_mgr != NULL);
 
-	settings = nm_settings_new (nm_config_get_path (config),
-	                            nm_config_get_plugins (config),
-	                            &error);
+	settings = nm_settings_new (&error);
 	if (!settings) {
 		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s",
 		            error && error->message ? error->message : "(unknown)");
