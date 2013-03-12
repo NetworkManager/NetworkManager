@@ -26,7 +26,8 @@ EXTRA_DIST = \
 	intltool-extract.in \
 	intltool-merge.in \
 	intltool-update.in \
-	Makefile.glib
+	Makefile.glib \
+	autogen.sh
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-tests=yes \
