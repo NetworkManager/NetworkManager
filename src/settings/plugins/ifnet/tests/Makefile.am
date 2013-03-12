@@ -8,6 +8,7 @@ INCLUDES=-I$(srcdir)/../ \
 	 -I$(top_builddir)/libnm-util \
 	 -I$(top_srcdir)/include \
 	 -I$(top_builddir)/include \
+	 -I$(top_srcdir)/src/config \
 	 -I$(top_srcdir)/src/settings \
 	 -I$(top_srcdir)/src/wifi
 

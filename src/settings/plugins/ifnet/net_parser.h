@@ -34,7 +34,6 @@ void ifnet_destroy (void);
 GList *ifnet_get_connection_names (void);
 const char *ifnet_get_data (const char *conn_name, const char *key);
 const char *ifnet_get_global_data (const char *key);
-const char *ifnet_get_global_setting (const char *group, const char *key);
 gboolean ifnet_has_network (const char *conn_name);
 
 /* Writer functions */

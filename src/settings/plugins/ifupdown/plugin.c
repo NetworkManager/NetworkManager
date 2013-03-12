@@ -80,7 +80,6 @@ typedef struct {
 	GHashTable *well_known_interfaces;
 	GHashTable *well_known_ifaces;
 	gboolean unmanage_well_known;
-	const char *conf_file;
 
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
@@ -311,7 +310,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	GHashTable *auto_ifaces;
 	if_block *block = NULL;
 	NMInotifyHelper *inotify_helper;
-	GKeyFile* keyfile;
+	char *value;
 	GError *error = NULL;
 	GList *keys, *iter;
 	const char *subsys[2] = { "net", NULL };
@@ -443,36 +442,23 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_list_free (keys);
 	g_hash_table_destroy (auto_ifaces);
 
-	/* Read the config file to find out whether to manage interfaces */
-	keyfile = g_key_file_new ();
-	if (!g_key_file_load_from_file (keyfile,
-	                                priv->conf_file,
-	                                G_KEY_FILE_NONE,
-	                                &error)) {
-		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: (%d) %s",
-		         priv->conf_file,
-		         error ? error->code : -1,
-		         error && error->message ? error->message : "(unknown)");
+	/* Check the config file to find out whether to manage interfaces */
+	value = nm_config_get_value (nm_config_get (),
+	                             IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED,
+	                             &error);
+	if (error) {
+		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: %s",
+		             nm_config_get_path (nm_config_get ()),
+		             error->message);
 	} else {
 		gboolean manage_well_known;
 		error = NULL;
 
-		manage_well_known = g_key_file_get_boolean (keyfile,
-		                                            IFUPDOWN_KEY_FILE_GROUP,
-		                                            IFUPDOWN_KEY_FILE_KEY_MANAGED,
-		                                            &error);
-		if (error) {
-			nm_log_info (LOGD_SETTINGS, "getting keyfile key '%s' in group '%s' failed: (%d) %s",
-			         IFUPDOWN_KEY_FILE_GROUP,
-			         IFUPDOWN_KEY_FILE_KEY_MANAGED,
-			         error ? error->code : -1,
-			         error && error->message ? error->message : "(unknown)");
-		} else
-			priv->unmanage_well_known = !manage_well_known;
+		manage_well_known = !g_strcmp0 (value, "true") || !g_strcmp0 (value, "1");
+		priv->unmanage_well_known = !manage_well_known;
+		g_free (value);
 	}
 	PLUGIN_PRINT ("SCPluginIfupdown", "management mode: %s", priv->unmanage_well_known ? "unmanaged" : "managed");
-	if (keyfile)
-		g_key_file_free (keyfile);
 
 	/* Add well-known interfaces */
 	keys = g_udev_client_query_by_subsystem (priv->client, "net");
@@ -715,7 +701,6 @@ nm_system_config_factory (void)
 	if (!singleton) {
 		singleton = SC_PLUGIN_IFUPDOWN (g_object_new (SC_TYPE_PLUGIN_IFUPDOWN, NULL));
 		priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (singleton);
-		priv->conf_file = nm_config_get_path (nm_config_get ());
 	} else
 		g_object_ref (singleton);
 

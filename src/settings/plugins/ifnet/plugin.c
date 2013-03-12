@@ -119,13 +119,18 @@ write_system_hostname (NMSystemConfigInterface * config,
 }
 
 static gboolean
-is_managed_plugin ()
+is_managed_plugin (void)
 {
-	const char *result = NULL;
+	char *result = NULL;
 
-	result = ifnet_get_global_setting (IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED);
-	if (result)
-		return is_true (result);
+	result = nm_config_get_value (nm_config_get (),
+	                              IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED,
+	                              NULL);
+	if (result) {
+		gboolean ret = is_true (result);
+		g_free (result);
+		return ret;
+	}
 	return IFNET_MANAGE_WELL_KNOWN_DEFAULT;
 }
 
@@ -272,9 +277,11 @@ reload_connections (gpointer config)
 
 		old = g_hash_table_lookup (priv->config_connections, conn_name);
 		if (old && new) {
-			const char *auto_refresh;
+			char *auto_refresh;
 
-			auto_refresh = ifnet_get_global_setting (IFNET_KEY_FILE_GROUP, "auto_refresh");
+			auto_refresh = nm_config_get_value (nm_config_get (),
+			                                    IFNET_KEY_FILE_GROUP, "auto_refresh",
+			                                    NULL);
 			if (auto_refresh && is_true (auto_refresh)) {
 				if (!nm_connection_compare (NM_CONNECTION (old),
 				                            NM_CONNECTION (new),
@@ -296,6 +303,7 @@ reload_connections (gpointer config)
 				                                           commit_cb, NULL);
 				g_object_unref (new);
 			}
+			g_free (auto_refresh);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else if (new) {
 			g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
@@ -566,12 +574,6 @@ sc_plugin_ifnet_class_init (SCPluginIfnetClass * req_class)
 	g_object_class_override_property (object_class,
 					  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
 					  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-}
-
-const char *
-ifnet_plugin_get_conf_file (void)
-{
-	return nm_config_get_path (nm_config_get ());
 }
 
 G_MODULE_EXPORT GObject *

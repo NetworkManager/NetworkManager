@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <nm-utils.h>
 #include <nm-system-config-interface.h>
+#include <nm-config.h>
 #include <gio/gio.h>
 #include "net_utils.h"
 #include "wpa_parser.h"
@@ -800,7 +801,7 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 
 	*hostname = NULL;
 	*client_id = NULL;
-	dhcp_client = ifnet_get_global_setting ("main", "dhcp");
+	dhcp_client = nm_config_get_dhcp_client (nm_config_get ());
 	if (dhcp_client) {
 		if (!strcmp (dhcp_client, "dhclient"))
 			g_file_get_contents (dhclient_conf, &contents, NULL,

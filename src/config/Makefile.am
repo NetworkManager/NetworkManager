@@ -14,7 +14,8 @@ libnm_config_la_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src/logging \
-	-DNMCONFDIR=\"$(nmconfdir)\"
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMSTATEDIR=\"$(nmstatedir)\"
 
 libnm_config_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

@@ -223,34 +223,6 @@ destroy_connection_config (GHashTable * conn)
 	g_hash_table_destroy (conn);
 }
 
-/* Read settings from NetworkManager's config file */
-const char *
-ifnet_get_global_setting (const char *group, const char *key)
-{
-	GError *error = NULL;
-	GKeyFile *keyfile = g_key_file_new ();
-	gchar *result = NULL;
-	const char *conf_file;
-
-	/* Get confing file name from plugin. */
-	conf_file = ifnet_plugin_get_conf_file ();
-
-	if (!g_key_file_load_from_file (keyfile,
-					conf_file,
-					G_KEY_FILE_NONE, &error)) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "loading system config file (%s) caused error: (%d) %s",
-			     conf_file,
-			     error ? error->code : -1, error
-			     && error->message ? error->message : "(unknown)");
-	} else {
-		result = g_key_file_get_string (keyfile, group, key, &error);
-	}
-	g_key_file_free (keyfile);
-
-	return result;
-}
-
 static void
 strip_function (GIOChannel * channel, gchar * line)
 {

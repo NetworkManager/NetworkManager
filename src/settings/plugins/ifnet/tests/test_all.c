@@ -33,16 +33,22 @@
 #include "net_utils.h"
 #include "wpa_parser.h"
 #include "connection_parser.h"
+#include "nm-config.h"
 
-/* Fake config file function to make the linker happy */
-const char *ifnet_plugin_get_conf_file (void);
-
-const char *
-ifnet_plugin_get_conf_file (void)
+/* Fake NMConfig handling; the values it returns don't matter, so this
+ * is easier than forcing it to read our own config file, etc.
+ */
+NMConfig *
+nm_config_get (void)
 {
-	return "/etc/foo/barasdfasdfasdfasdf";
+	return NULL;
 }
 
+const char *
+nm_config_get_dhcp_client (NMConfig *config)
+{
+	return "dhclient";
+}
 
 static void
 test_getdata ()

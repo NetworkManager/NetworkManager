@@ -18,9 +18,14 @@
  *
  */
 
+#include "config.h"
+
+#include <unistd.h>
+
 #include <glib.h>
 
 #include <nm-config.h>
+#include "nm-test-device.h"
 
 static void
 setup_config (const char *config_file, ...)
@@ -58,6 +63,7 @@ test_config_simple (void)
 	NMConfig *config;
 	GError *error = NULL;
 	const char **plugins;
+	char *value;
 
 	setup_config (SRCDIR "/NetworkManager.conf", NULL);
 	config = nm_config_new (&error);
@@ -73,6 +79,18 @@ test_config_simple (void)
 	g_assert_cmpstr (plugins[0], ==, "foo");
 	g_assert_cmpstr (plugins[1], ==, "bar");
 	g_assert_cmpstr (plugins[2], ==, "baz");
+
+	value = nm_config_get_value (config, "extra-section", "extra-key", NULL);
+	g_assert_cmpstr (value, ==, "some value");
+	g_free (value);
+
+	value = nm_config_get_value (config, "extra-section", "no-key", &error);
+	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND);
+	g_clear_error (&error);
+
+	value = nm_config_get_value (config, "no-section", "no-key", &error);
+	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND);
+	g_clear_error (&error);
 
 	g_object_unref (config);
 }
@@ -106,7 +124,7 @@ test_config_override (void)
 	GError *error = NULL;
 	const char **plugins;
 
-	setup_config (SRCDIR "/NetworkManager.conf",
+	setup_config (SRCDIR "/NetworkManager.conf", "/no/such/dir",
 	              "--plugins", "alpha,beta,gamma,delta",
 	              "--connectivity-interval", "12",
 	              NULL);
@@ -128,6 +146,67 @@ test_config_override (void)
 	g_object_unref (config);
 }
 
+static void
+test_config_no_auto_default (void)
+{
+	NMConfig *config;
+	GError *error = NULL;
+	int fd, nwrote;
+	char *state_file;
+	NMTestDevice *dev1, *dev2, *dev3, *dev4;
+
+	fd = g_file_open_tmp (NULL, &state_file, &error);
+	g_assert_no_error (error);
+
+	nwrote = write (fd, "22:22:22:22:22:22\n", 18);
+	g_assert_cmpint (nwrote, ==, 18);
+	nwrote = write (fd, "44:44:44:44:44:44\n", 18);
+	g_assert_cmpint (nwrote, ==, 18);
+	close (fd);
+
+	setup_config (SRCDIR "/NetworkManager.conf",
+	              "--no-auto-default", state_file,
+	              NULL);
+	config = nm_config_new (&error);
+	g_assert_no_error (error);
+
+	dev1 = nm_test_device_new ("11:11:11:11:11:11");
+	dev2 = nm_test_device_new ("22:22:22:22:22:22");
+	dev3 = nm_test_device_new ("33:33:33:33:33:33");
+	dev4 = nm_test_device_new ("44:44:44:44:44:44");
+
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev1)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev2)));
+	g_assert (nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev3)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev4)));
+
+	nm_config_set_ethernet_no_auto_default (config, NM_CONFIG_DEVICE (dev3));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev3)));
+
+	g_object_unref (config);
+
+	setup_config (SRCDIR "/NetworkManager.conf",
+	              "--no-auto-default", state_file,
+	              NULL);
+	config = nm_config_new (&error);
+	g_assert_no_error (error);
+
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev1)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev2)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev3)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev4)));
+
+	g_object_unref (config);
+
+	g_object_unref (dev1);
+	g_object_unref (dev2);
+	g_object_unref (dev3);
+	g_object_unref (dev4);
+
+	unlink (state_file);
+	g_free (state_file);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -137,6 +216,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/simple", test_config_simple);
 	g_test_add_func ("/config/non-existent", test_config_non_existent);
 	g_test_add_func ("/config/parse-error", test_config_parse_error);
+	g_test_add_func ("/config/no-auto-default", test_config_no_auto_default);
 
 	/* This one has to come last, because it leaves its values in
 	 * nm-config.c's global variables, and there's no way to reset

@@ -1,10 +1,18 @@
 if ENABLE_TESTS
 
 INCLUDES = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src/config
 
 noinst_PROGRAMS = \
 	test-config
+
+test_config_SOURCES = \
+	nm-test-device.c \
+	nm-test-device.h \
+	test-config.c
 
 test_config_CPPFLAGS = \
 	-DSRCDIR=\""$(srcdir)"\" \

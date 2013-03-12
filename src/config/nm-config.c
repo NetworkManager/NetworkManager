@@ -25,14 +25,19 @@
 
 #include "nm-config.h"
 #include "nm-logging.h"
+#include "nm-utils.h"
 
 #include <glib/gi18n.h>
 
-#define NM_DEFAULT_SYSTEM_CONF_FILE  NMCONFDIR "/NetworkManager.conf"
-#define NM_OLD_SYSTEM_CONF_FILE      NMCONFDIR "/nm-system-settings.conf"
+#define NM_DEFAULT_SYSTEM_CONF_FILE    NMCONFDIR "/NetworkManager.conf"
+#define NM_OLD_SYSTEM_CONF_FILE        NMCONFDIR "/nm-system-settings.conf"
+#define NM_NO_AUTO_DEFAULT_STATE_FILE  NMSTATEDIR "/no-auto-default.state"
 
 typedef struct {
 	char *path;
+	char *no_auto_default_file;
+	GKeyFile *keyfile;
+
 	char **plugins;
 	char *dhcp_client;
 	char **dns_plugins;
@@ -41,6 +46,7 @@ typedef struct {
 	char *connectivity_uri;
 	gint connectivity_interval;
 	char *connectivity_response;
+	char **no_auto_default;
 } NMConfigPrivate;
 
 static NMConfig *singleton = NULL;
@@ -126,9 +132,101 @@ nm_config_get_connectivity_response (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->connectivity_response;
 }
 
+char *
+nm_config_get_value (NMConfig *config, const char *group, const char *key, GError **error)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+
+	return g_key_file_get_string (priv->keyfile, group, key, error);
+}
+
+/************************************************************************/
+
+static void
+merge_no_auto_default_state (NMConfig *config)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+	GPtrArray *updated;
+	char **list;
+	int i, j;
+	char *data;
+
+	/* If the config already matches everything, we don't need to do anything else. */
+	if (priv->no_auto_default && !g_strcmp0 (priv->no_auto_default[0], "*"))
+		return;
+
+	updated = g_ptr_array_new ();
+	if (priv->no_auto_default) {
+		for (i = 0; priv->no_auto_default[i]; i++)
+			g_ptr_array_add (updated, priv->no_auto_default[i]);
+		g_free (priv->no_auto_default);
+	}
+
+	if (g_file_get_contents (priv->no_auto_default_file, &data, NULL, NULL)) {
+		list = g_strsplit (data, "\n", -1);
+		for (i = 0; list[i]; i++) {
+			if (!*list[i])
+				continue;
+			for (j = 0; j < updated->len; j++) {
+				if (!strcmp (list[i], updated->pdata[j]))
+					break;
+			}
+			if (j == updated->len)
+				g_ptr_array_add (updated, list[i]);
+		}
+		g_free (list);
+		g_free (data);
+	}
+
+	g_ptr_array_add (updated, NULL);
+	priv->no_auto_default = (char **) g_ptr_array_free (updated, FALSE);
+}
+
+gboolean
+nm_config_get_ethernet_can_auto_default (NMConfig *config, NMConfigDevice *device)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+
+	return !nm_config_device_spec_match_list (device, (const char **) priv->no_auto_default);
+}
+
+void
+nm_config_set_ethernet_no_auto_default (NMConfig *config, NMConfigDevice *device)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+	char *current;
+	GString *updated;
+	GError *error = NULL;
+
+	if (!nm_config_get_ethernet_can_auto_default (config, device))
+		return;
+
+	updated = g_string_new (NULL);
+	if (g_file_get_contents (priv->no_auto_default_file, &current, NULL, NULL)) {
+		g_string_append (updated, current);
+		g_free (current);
+		if (updated->str[updated->len - 1] != '\n')
+			g_string_append_c (updated, '\n');
+	}
+
+	g_string_append (updated, nm_config_device_get_hwaddr (device));
+	g_string_append_c (updated, '\n');
+
+	if (!g_file_set_contents (priv->no_auto_default_file, updated->str, updated->len, &error)) {
+		nm_log_warn (LOGD_SETTINGS, "Could not update no-auto-default.state file: %s",
+		             error->message);
+		g_error_free (error);
+	}
+
+	g_string_free (updated, TRUE);
+
+	merge_no_auto_default_state (config);
+}
+
 /************************************************************************/
 
 static char *cli_config_path;
+static char *cli_no_auto_default_file;
 static char *cli_plugins;
 static char *cli_log_level;
 static char *cli_log_domains;
@@ -138,6 +236,7 @@ static char *cli_connectivity_response;
 
 static GOptionEntry config_options[] = {
 	{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli_config_path, N_("Config file location"), N_("/path/to/config.file") },
+	{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli_no_auto_default_file, "no-auto-default.state location", NULL },
 	{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli_plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
 	{ "log-level", 0, 0, G_OPTION_ARG_STRING, &cli_log_level, N_("Log level: one of [%s]"), "INFO" },
 	{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &cli_log_domains,
@@ -216,10 +315,14 @@ read_config (NMConfig *config, const char *path, GError **error)
 		if (!priv->connectivity_response)
 			priv->connectivity_response = g_key_file_get_value (kf, "connectivity", "response", NULL);
 
-		success = TRUE;
-	}
+		if (!priv->no_auto_default)
+			priv->no_auto_default = g_key_file_get_string_list (kf, "main", "no-auto-default", NULL, NULL);
 
-	g_key_file_free (kf);
+		priv->keyfile = kf;
+		success = TRUE;
+	} else
+		g_key_file_free (kf);
+
 	return success;
 }
 
@@ -268,8 +371,9 @@ nm_config_new (GError **error)
 		if (!read_config (singleton, cli_config_path, error)) {
 			g_object_unref (singleton);
 			singleton = NULL;
+			return NULL;
 		}
-		return singleton;
+		goto got_config;
 	}
 
 	/* Even though we prefer NetworkManager.conf, we need to check the
@@ -281,7 +385,7 @@ nm_config_new (GError **error)
 
 	/* Try deprecated nm-system-settings.conf first */
 	if (read_config (singleton, NM_OLD_SYSTEM_CONF_FILE, &local))
-		return singleton;
+		goto got_config;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
 		fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
@@ -293,7 +397,7 @@ nm_config_new (GError **error)
 
 	/* Try the standard config file location next */
 	if (read_config (singleton, NM_DEFAULT_SYSTEM_CONF_FILE, &local))
-		return singleton;
+		goto got_config;
 
 	if (g_error_matches (local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND) == FALSE) {
 		fprintf (stderr, "Default config file %s invalid: (%d) %s\n",
@@ -316,6 +420,15 @@ nm_config_new (GError **error)
 
 	/* ignore error if config file not found */
 	g_clear_error (&local);
+
+ got_config:
+	/* Handle no-auto-default state file */
+	if (cli_no_auto_default_file)
+		priv->no_auto_default_file = g_strdup (cli_no_auto_default_file);
+	else
+		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
+	merge_no_auto_default_state (singleton);
+
 	return singleton;
 }
 
@@ -331,6 +444,7 @@ finalize (GObject *gobject)
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (gobject);
 
 	g_free (priv->path);
+	g_clear_pointer (&priv->keyfile, g_key_file_unref);
 	g_strfreev (priv->plugins);
 	g_free (priv->dhcp_client);
 	g_strfreev (priv->dns_plugins);
