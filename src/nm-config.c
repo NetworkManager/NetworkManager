@@ -80,7 +80,7 @@ nm_config_get_dhcp_client (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
-	return NM_CONFIG_GET_PRIVATE (config)->dhcp_client;;
+	return NM_CONFIG_GET_PRIVATE (config)->dhcp_client;
 }
 
 const char **
@@ -96,7 +96,7 @@ nm_config_get_log_level (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
-	return NM_CONFIG_GET_PRIVATE (config)->log_level;;
+	return NM_CONFIG_GET_PRIVATE (config)->log_level;
 }
 
 const char *
