@@ -1029,7 +1029,7 @@ find_vlan_parent (NMManager *self,
 					if (req) {
 						candidate = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (req));
 						if (candidate == parent_connection)
-							return parent;
+							return NM_DEVICE (iter->data);
 					}
 				}
 
