@@ -11,6 +11,7 @@ libnm_generated_la_SOURCES = \
 nm_daemon_all_sources = \
 	$(top_srcdir)/src/*.[ch] \
 	$(top_srcdir)/src/logging/*.[ch] \
+	$(top_srcdir)/src/config/*.[ch] \
 	$(top_srcdir)/src/dns-manager/*.[ch] \
 	$(top_srcdir)/src/vpn-manager/*.[ch] \
 	$(top_srcdir)/src/dhcp-manager/*.[ch] \
@@ -55,6 +56,7 @@ INCLUDES = \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/config \
 	-I${top_srcdir}/src/dns-manager \
 	-I${top_srcdir}/src/vpn-manager \
 	-I${top_srcdir}/src/dhcp-manager \

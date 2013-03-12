@@ -1,6 +1,7 @@
 SUBDIRS= \
 	generated \
 	logging \
+	config \
 	posix-signals \
 	dns-manager \
 	vpn-manager \
@@ -29,6 +30,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_builddir}/src/generated \
            -I${top_srcdir}/src/generated \
            -I${top_srcdir}/src/logging \
+           -I${top_srcdir}/src/config \
            -I${top_srcdir}/src/posix-signals \
            -I${top_srcdir}/src/dns-manager \
            -I${top_srcdir}/src/vpn-manager \
@@ -161,8 +163,6 @@ NetworkManager_SOURCES = \
 		nm-ip6-config.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
-		nm-config.h \
-		nm-config.c \
 		main.c \
 		nm-policy.c \
 		nm-policy.h \
@@ -323,6 +323,7 @@ endif
 NetworkManager_LDADD = \
 	./generated/libnm-generated.la \
 	./logging/libnm-logging.la \
+	./config/libnm-config.la \
 	./posix-signals/libnm-posix-signals.la \
 	./dns-manager/libdns-manager.la \
 	./vpn-manager/libvpn-manager.la \

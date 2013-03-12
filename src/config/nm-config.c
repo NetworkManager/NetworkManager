@@ -48,17 +48,6 @@ G_DEFINE_TYPE (NMConfig, nm_config, G_TYPE_OBJECT)
 
 /************************************************************************/
 
-GQuark
-nm_config_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-config-error");
-	return quark;
-}
-
-/************************************************************************/
-
 const char *
 nm_config_get_path (NMConfig *config)
 {

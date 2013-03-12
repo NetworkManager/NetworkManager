@@ -178,6 +178,7 @@ src/tests/test-dhcp-options
 src/tests/test-policy-hosts
 src/tests/test-wifi-ap-utils
 src/dhcp-manager/tests/test-dhcp-dhclient
+src/config/tests/test-config
 
 src/settings/plugins/keyfile/tests/test-keyfile
 src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh

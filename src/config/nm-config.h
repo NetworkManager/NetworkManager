@@ -44,13 +44,6 @@ typedef struct {
 
 GType nm_config_get_type (void);
 
-typedef enum {
-	NM_CONFIG_ERROR_NO_MEMORY = 0, /*< nick=NoMemory >*/
-} NMConfigError;
-
-#define NM_CONFIG_ERROR (nm_config_error_quark ())
-GQuark nm_config_error_quark (void);
-
 NMConfig *nm_config_get (void);
 NMConfig *nm_config_new (const char *cli_config_path,
                          const char *cli_plugins,
