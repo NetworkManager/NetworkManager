@@ -486,18 +486,13 @@ main (int argc, char *argv[])
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
+	g_assert (dbus_mgr != NULL);
 
 	vpn_manager = nm_vpn_manager_get ();
-	if (!vpn_manager) {
-		nm_log_err (LOGD_CORE, "failed to start the VPN manager.");
-		goto done;
-	}
+	g_assert (vpn_manager != NULL);
 
 	dns_mgr = nm_dns_manager_get ();
-	if (!dns_mgr) {
-		nm_log_err (LOGD_CORE, "failed to start the DNS manager.");
-		goto done;
-	}
+	g_assert (dns_mgr != NULL);
 
 	settings = nm_settings_new (nm_config_get_path (config),
 	                            nm_config_get_plugins (config),
@@ -522,33 +517,20 @@ main (int argc, char *argv[])
 	}
 
 	policy = nm_policy_new (manager, settings);
-	if (policy == NULL) {
-		nm_log_err (LOGD_CORE, "failed to initialize the policy.");
-		goto done;
-	}
+	g_assert (policy != NULL);
 
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
-	if (!sup_mgr) {
-		nm_log_err (LOGD_CORE, "failed to initialize the supplicant manager.");
-		goto done;
-	}
+	g_assert (sup_mgr != NULL);
 
 	/* Initialize DHCP manager */
 	dhcp_mgr = nm_dhcp_manager_get ();
-	if (!dhcp_mgr) {
-		nm_log_err (LOGD_CORE, "failed to start the DHCP manager: %s.", error->message);
-		goto done;
-	}
-
+	g_assert (dhcp_mgr != NULL);
 	nm_dhcp_manager_set_hostname_provider (dhcp_mgr, NM_HOSTNAME_PROVIDER (manager));
 
 	/* Initialize Firewall manager */
 	fw_mgr = nm_firewall_manager_get ();
-	if (!fw_mgr) {
-		nm_log_err (LOGD_CORE, "failed to start the Firewall manager: %s.", error->message);
-		goto done;
-	}
+	g_assert (fw_mgr != NULL);
 
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {
