@@ -4,6 +4,8 @@ EXTRA_DIST = \
 	libnm-util.deps \
 	libnm-glib.deps
 
+VAPIGEN_VAPIS = libnm-util.vapi libnm-glib.vapi
+
 if ENABLE_VAPIGEN
 include Makefile.vapigen
 
@@ -16,13 +18,13 @@ libnm_util_vapi_FILES = $(top_builddir)/libnm-util/NetworkManager-1.0.gir
 
 libnm_glib_vapi_METADATADIRS = $(srcdir)
 libnm_glib_vapi_FILES = $(top_builddir)/libnm-glib/NMClient-1.0.gir
-libnm_glib_vapi_VAPIDIRS = $(srcdir)
+libnm_glib_vapi_VAPIDIRS = $(builddir)
 libnm_glib_vapi_GIRDIRS = $(top_builddir)/libnm-util
+libnm_glib_vapi_DEPS = gio-2.0
 
-VAPIGEN_VAPIS = libnm-util.vapi libnm-glib.vapi
-
-vapidir = $(VAPIGEN_VAPIDIR)
+vapidir = $(datadir)/vala/vapi
 vapi_DATA = $(VAPIGEN_VAPIS) $(VAPIGEN_VAPIS:.vapi=.deps)
 
-
 endif
+
+CLEANFILES = $(VAPIGEN_VAPIS)
