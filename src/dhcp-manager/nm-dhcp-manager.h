@@ -93,7 +93,4 @@ NMIP4Config *nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client
                                                          GHashTable *options,
                                                          const char *reason);
 
-/* Only for main.c */
-NMDHCPManager *nm_dhcp_manager_new (const char *client, GError **error);
-
 #endif /* NM_DHCP_MANAGER_H */

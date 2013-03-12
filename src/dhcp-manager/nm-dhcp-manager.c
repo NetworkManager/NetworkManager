@@ -41,6 +41,7 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-hostname-provider.h"
+#include "nm-config.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
@@ -293,24 +294,30 @@ get_client_type (const char *client, GError **error)
 }
 
 NMDHCPManager *
-nm_dhcp_manager_new (const char *client, GError **error)
+nm_dhcp_manager_get (void)
 {
 	NMDHCPManagerPrivate *priv;
 	DBusGConnection *g_connection;
+	const char *client;
+	GError *error = NULL;
 
-	g_warn_if_fail (singleton == NULL);
+	if (singleton)
+		return g_object_ref (singleton);
 
 	singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (singleton);
 
 	/* Client-specific setup */
-	priv->client_type = get_client_type (client, error);
+	client = nm_config_get_dhcp_client (nm_config_get ());
+	priv->client_type = get_client_type (client, &error);
 	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
 		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
 	else if (priv->client_type == NM_TYPE_DHCP_DHCPCD)
 		priv->get_lease_config_func = nm_dhcp_dhcpcd_get_lease_config;
 	else {
-		nm_log_warn (LOGD_DHCP, "No usable DHCP client found! DHCP configurations will fail.");
+		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
+		             error->message);
+		g_error_free (error);
 	}
 
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
@@ -589,13 +596,6 @@ nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
 }
 
 /***************************************************/
-
-NMDHCPManager *
-nm_dhcp_manager_get (void)
-{
-	g_warn_if_fail (singleton != NULL);
-	return g_object_ref (singleton);
-}
 
 static void
 nm_dhcp_manager_init (NMDHCPManager *manager)

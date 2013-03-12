@@ -493,7 +493,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	dns_mgr = nm_dns_manager_get (nm_config_get_dns_plugins (config));
+	dns_mgr = nm_dns_manager_get ();
 	if (!dns_mgr) {
 		nm_log_err (LOGD_CORE, "failed to start the DNS manager.");
 		goto done;
@@ -535,7 +535,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Initialize DHCP manager */
-	dhcp_mgr = nm_dhcp_manager_new (nm_config_get_dhcp_client (config), &error);
+	dhcp_mgr = nm_dhcp_manager_get ();
 	if (!dhcp_mgr) {
 		nm_log_err (LOGD_CORE, "failed to start the DHCP manager: %s.", error->message);
 		goto done;

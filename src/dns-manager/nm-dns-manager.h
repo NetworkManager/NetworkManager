@@ -67,7 +67,7 @@ typedef struct {
 
 GType nm_dns_manager_get_type (void);
 
-NMDnsManager * nm_dns_manager_get (const char **plugins);
+NMDnsManager * nm_dns_manager_get (void);
 
 /* Allow changes to be batched together */
 void nm_dns_manager_begin_updates (NMDnsManager *mgr, const char *func);

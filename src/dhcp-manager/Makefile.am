@@ -7,6 +7,7 @@ INCLUDES = \
 	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/config \
 	-I${top_srcdir}/src/posix-signals \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-util \
@@ -61,6 +62,7 @@ libdhcp_manager_la_CPPFLAGS = \
 
 libdhcp_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/src/config/libnm-config.la \
 	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
 	$(builddir)/libdhcp-dhclient.la \
 	$(DBUS_LIBS) \

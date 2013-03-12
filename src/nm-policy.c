@@ -852,7 +852,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
 	NMDnsManager *mgr;
 
-	mgr = nm_dns_manager_get (NULL);
+	mgr = nm_dns_manager_get ();
 	nm_dns_manager_begin_updates (mgr, __func__);
 
 	update_ip4_dns (policy, mgr);
@@ -1609,7 +1609,7 @@ vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
 	NMIP6Config *ip6_config;
 	const char *ip_iface;
 
-	mgr = nm_dns_manager_get (NULL);
+	mgr = nm_dns_manager_get ();
 	nm_dns_manager_begin_updates (mgr, __func__);
 
 	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
@@ -1640,7 +1640,7 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	const char *ip_iface;
 	NMDevice *parent;
 
-	mgr = nm_dns_manager_get (NULL);
+	mgr = nm_dns_manager_get ();
 	nm_dns_manager_begin_updates (mgr, __func__);
 
 	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
@@ -1987,7 +1987,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	                       G_CALLBACK (firewall_started), policy);
 	policy->fw_started_id = id;
 
-	policy->dns_manager = nm_dns_manager_get (NULL);
+	policy->dns_manager = nm_dns_manager_get ();
 	policy->config_changed_id = g_signal_connect (policy->dns_manager, "config-changed",
 	                                              G_CALLBACK (dns_config_changed), policy);
 
