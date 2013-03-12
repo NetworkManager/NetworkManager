@@ -206,7 +206,6 @@ nm_connectivity_new (void)
 	                     NULL);
 	g_return_val_if_fail (self != NULL, NULL);
 	update_connected (self, FALSE);
-	g_object_unref (config);
 
 	return self;
 }
