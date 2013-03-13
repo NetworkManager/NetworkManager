@@ -1389,6 +1389,25 @@ can_auto_connect (NMDevice *device,
 	return nm_device_check_connection_compatible (device, connection, NULL);
 }
 
+/**
+ * nm_device_get_best_auto_connection:
+ * @dev: an #NMDevice
+ * @connections: (element-type #NMConnection): a list of connections
+ * @specific_object: (out) (transfer full): on output, the path of an
+ *   object associated with the returned connection, to be passed to
+ *   nm_manager_activate_connection(), or %NULL.
+ *
+ * Looks through @connections to see if there is a connection that can
+ * be auto-activated on @dev right now. This requires, at a minimum,
+ * that the connection be compatible with @dev, and that it have the
+ * #NMSettingConnection:autoconnect property set. Some devices impose
+ * additional requirements. (Eg, a Wi-Fi connection can only be
+ * activated if its SSID was seen in the last scan.)
+ *
+ * Returns: an auto-activatable #NMConnection, or %NULL if none are
+ * available.
+ */
+
 NMConnection *
 nm_device_get_best_auto_connection (NMDevice *dev,
                                     GSList *connections,
@@ -1480,6 +1499,22 @@ check_connection_compatible (NMDevice *device,
 	return TRUE;
 }
 
+/**
+ * nm_device_check_connection_compatible:
+ * @device: an #NMDevice
+ * @connection: an #NMConnection
+ * @error: return location for an error, or %NULL
+ *
+ * Checks if @connection could potentially be activated on @device.
+ * This means only that @device has the proper capabilities, and that
+ * @connection is not locked to some other device. It does not
+ * necessarily mean that @connection could be activated on @device
+ * right now. (Eg, it might refer to a Wi-Fi network that is not
+ * currently available.)
+ *
+ * Returns: #TRUE if @connection could potentially be activated on
+ *   @device.
+ */
 gboolean
 nm_device_check_connection_compatible (NMDevice *device,
                                        NMConnection *connection,
@@ -5481,6 +5516,25 @@ nm_device_set_managed (NMDevice *device,
 		nm_device_state_changed (device, NM_DEVICE_STATE_UNMANAGED, reason);
 }
 
+/**
+ * nm_device_spec_match_list:
+ * @device: an #NMDevice
+ * @specs: (element-type utf8): a list of device specs
+ *
+ * Checks if @device matches any of the specifications in @specs. The
+ * currently-supported spec types are:
+ *
+ *     "mac:00:11:22:33:44:55" - matches a device with the given
+ *     hardware address
+ *
+ *     "interface-name:foo0" - matches a device with the given
+ *     interface name
+ *
+ *     "s390-subchannels:00.11.22" - matches a device with the given
+ *     z/VM / s390 subchannels.
+ *
+ * Returns: #TRUE if @device matches one of the specs in @specs
+ */
 gboolean
 nm_device_spec_match_list (NMDevice *device, const GSList *specs)
 {
@@ -5590,6 +5644,24 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
+/**
+ * nm_device_find_assumable_connection:
+ * @device: an #NMDevice
+ * @connections: (element-type NMConnection): a list of connections
+ *
+ * Searches @connections for one that matches the currently-configured
+ * state of @device (in both L2 and L3 configuration). That is, it
+ * looks for the connection such that if you activated that connection
+ * on @device, it would result in @device having the configuration
+ * that it has now. This is used at startup to attempt to match
+ * already-active devices with corresponding #NMConnections.
+ *
+ * Some device types (eg, Wi-Fi) and subtypes (eg, PPPoE) can't be
+ * matched reliably, so this will always fail for those devices.
+ *
+ * Returns: (transfer none): an #NMConnection that matches @device's
+ *   current state, or %NULL if none match.
+ */
 NMConnection *
 nm_device_find_assumable_connection (NMDevice *device, const GSList *connections)
 {
