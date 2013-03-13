@@ -47,7 +47,8 @@ lib_LTLIBRARIES = libnm-glib.la libnm-glib-vpn.la
 libnm_glib_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(GUDEV_CFLAGS)
+	$(GUDEV_CFLAGS) \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnmincludedir = $(includedir)/libnm-glib
 libnmvpndir = $(includedir)/libnm-glib
@@ -89,6 +90,7 @@ libnmvpn_HEADERS = \
 
 libnm_glib_la_csources = \
 	nm-object.c \
+	nm-dbus-helpers.c \
 	nm-client.c \
 	nm-device.c \
 	nm-device-ethernet.c \
@@ -124,7 +126,8 @@ libnm_glib_la_private_headers = \
 	nm-types-private.h \
 	nm-object-cache.h \
 	nm-remote-connection-private.h \
-	nm-glib-marshal.h
+	nm-glib-marshal.h \
+	nm-dbus-helpers-private.h
 
 libnm_glib_la_SOURCES = \
 	$(libnm_glib_la_csources) \
@@ -179,7 +182,8 @@ libnm_glib_test_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	-DLIBNM_GLIB_TEST
+	-DLIBNM_GLIB_TEST \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnm_glib_test_la_SOURCES = \
 	$(libnminclude_HEADERS) \
