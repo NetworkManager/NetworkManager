@@ -1654,7 +1654,6 @@ finalize (GObject *object)
 	g_signal_handler_disconnect (priv->monitor, priv->netlink_id);
 
 	g_hash_table_destroy (priv->devices);
-	g_object_unref (priv->monitor);
 	nl_cache_free (priv->addr_cache);
 	nl_cache_free (priv->route_cache);
 

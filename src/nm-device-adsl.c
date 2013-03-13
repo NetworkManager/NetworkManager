@@ -725,11 +725,6 @@ dispose (GObject *object)
 		priv->netlink_id = 0;
 	}
 
-	if (priv->monitor) {
-		g_object_unref (priv->monitor);
-		priv->monitor = NULL;
-	}
-
 	g_free (priv->nas_ifname);
 	priv->nas_ifname = NULL;
 

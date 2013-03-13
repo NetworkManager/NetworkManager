@@ -344,11 +344,6 @@ dispose (GObject *object)
 		priv->link_disconnected_id = 0;
 	}
 
-	if (priv->monitor) {
-		g_object_unref (priv->monitor);
-		priv->monitor = NULL;
-	}
-
 	G_OBJECT_CLASS (nm_device_wired_parent_class)->dispose (object);
 }
 

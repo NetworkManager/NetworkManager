@@ -572,8 +572,6 @@ dispose (GObject *object)
 	if (priv->link_disconnected_id)
 		g_signal_handler_disconnect (priv->monitor, priv->link_disconnected_id);
 
-	g_object_unref (priv->monitor);
-
 	g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
 	g_object_unref (priv->parent);
 

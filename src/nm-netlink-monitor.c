@@ -704,7 +704,6 @@ nm_netlink_get_default_handle (void)
 
 	self = nm_netlink_monitor_get ();
 	nlh = NM_NETLINK_MONITOR_GET_PRIVATE (self)->nlh_sync;
-	g_object_unref (self);
 
 	return nlh;
 }
@@ -723,7 +722,6 @@ nm_netlink_iface_to_index (const char *iface)
 
 	nl_cache_refill (priv->nlh_sync, priv->link_cache);
 	idx = rtnl_link_name2i (priv->link_cache, iface);
-	g_object_unref (self);
 
 	return idx;
 }
@@ -758,7 +756,6 @@ nm_netlink_index_to_iface (int idx)
 		buf = NULL;
 	}
 
-	g_object_unref (self);
 	return buf;
 }
 
@@ -777,7 +774,6 @@ nm_netlink_index_to_rtnl_link (int idx)
 
 	nl_cache_refill (priv->nlh_sync, priv->link_cache);
 	ret = rtnl_link_get (priv->link_cache, idx);
-	g_object_unref (self);
 
 	return ret;
 }
@@ -807,8 +803,7 @@ nm_netlink_monitor_get (void)
 			g_object_unref (singleton);
 			singleton = NULL;
 		}
-	} else
-		g_object_ref (singleton);
+	}
 
 	return singleton;
 }
