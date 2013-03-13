@@ -321,7 +321,6 @@ main (int argc, char *argv[])
 	NMFirewallManager *fw_mgr = NULL;
 	NMSettings *settings = NULL;
 	NMConfig *config;
-	NMNetlinkMonitor *monitor = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 
@@ -504,9 +503,6 @@ main (int argc, char *argv[])
 	             );
 
 	main_loop = g_main_loop_new (NULL, FALSE);
-
-	/* Create netlink monitor object */
-	monitor = nm_netlink_monitor_get ();
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
