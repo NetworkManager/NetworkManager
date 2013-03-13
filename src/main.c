@@ -48,6 +48,7 @@
 #include "nm-dhcp-manager.h"
 #include "nm-firewall-manager.h"
 #include "nm-hostname-provider.h"
+#include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
 #include "nm-policy-hosts.h"
