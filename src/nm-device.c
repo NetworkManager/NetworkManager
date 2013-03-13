@@ -4339,7 +4339,10 @@ nm_device_hw_take_down (NMDevice *self, gboolean block)
 static void
 hw_take_down (NMDevice *device)
 {
-	nm_system_iface_set_up (nm_device_get_ip_ifindex (device), FALSE, NULL);
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	if (ifindex > 0)
+		nm_system_iface_set_up (ifindex, FALSE, NULL);
 }
 
 static gboolean
