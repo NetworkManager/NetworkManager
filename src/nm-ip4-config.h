@@ -111,19 +111,6 @@ void          nm_ip4_config_reset_nis_servers   (NMIP4Config *config);
 void          nm_ip4_config_set_nis_domain      (NMIP4Config *config, const char *domain);
 const char *  nm_ip4_config_get_nis_domain      (NMIP4Config *config);
 
-
-/* Flags for nm_ip4_config_to_rtnl_addr() */
-#define NM_RTNL_ADDR_NONE		0x0000
-#define NM_RTNL_ADDR_ADDR		0x0001
-#define NM_RTNL_ADDR_PTP_ADDR		0x0002
-#define NM_RTNL_ADDR_PREFIX		0x0004
-#define NM_RTNL_ADDR_BROADCAST	0x0008
-
-#define NM_RTNL_ADDR_DEFAULT		(NM_RTNL_ADDR_ADDR | NM_RTNL_ADDR_PREFIX | NM_RTNL_ADDR_BROADCAST)
-#define NM_RTNL_ADDR_PTP_DEFAULT	(NM_RTNL_ADDR_ADDR | NM_RTNL_ADDR_PREFIX | NM_RTNL_ADDR_PTP_ADDR)
-
-struct rtnl_addr *nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags);
-
 typedef enum {
 	NM_IP4_COMPARE_FLAG_NONE        = 0x00000000,  /* match nothing, kinda pointless */
 	NM_IP4_COMPARE_FLAG_ADDRESSES   = 0x00000001,

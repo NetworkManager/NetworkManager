@@ -29,11 +29,6 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
-
-#include <netlink/route/addr.h>
-#include <netlink/utils.h>
-#include <netinet/in.h>
-
 #include "nm-ip6-config-glue.h"
 #include "nm-dbus-glib-types.h"
 
@@ -71,22 +66,6 @@ enum {
 
 	LAST_PROP
 };
-
-
-static struct nl_addr *
-nm_utils_ip6_addr_to_nl_addr (const struct in6_addr *ip6_addr, guint prefix)
-{
-	struct nl_addr * nla = NULL;
-
-	if (!(nla = nl_addr_alloc (sizeof (struct in6_addr))))
-		return NULL;
-	nl_addr_set_family (nla, AF_INET6);
-	nl_addr_set_binary_addr (nla, (struct in6_addr *)ip6_addr, sizeof (struct in6_addr));
-	if (prefix)
-		nl_addr_set_prefixlen (nla, prefix);
-
-	return nla;
-}
 
 
 NMIP6Config *
@@ -504,74 +483,6 @@ nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default)
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
 
 	NM_IP6_CONFIG_GET_PRIVATE (config)->never_default = never_default;
-}
-
-/* libnl convenience/conversion functions */
-
-static int ip6_addr_to_rtnl_local (const struct in6_addr *ip6_address,
-                                   struct rtnl_addr *addr,
-                                   guint prefix)
-{
-	struct nl_addr * local = NULL;
-	int err = 0;
-
-	g_return_val_if_fail (addr != NULL, -1);
-
-	local = nm_utils_ip6_addr_to_nl_addr (ip6_address, prefix);
-	err = rtnl_addr_set_local (addr, local);
-	nl_addr_put (local);
-
-	return err;
-}
-
-static int ip6_addr_to_rtnl_peer (const struct in6_addr *ip6_address, struct rtnl_addr *addr)
-{
-	struct nl_addr * peer = NULL;
-	int err = 0;
-
-	g_return_val_if_fail (addr != NULL, -1);
-
-	peer = nm_utils_ip6_addr_to_nl_addr (ip6_address, 0);
-	err = rtnl_addr_set_peer (addr, peer);
-	nl_addr_put (peer);
-
-	return err;
-}
-
-struct rtnl_addr *
-nm_ip6_config_to_rtnl_addr (NMIP6Config *config, guint32 i, guint32 flags)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	NMIP6Address *config_addr;
-	struct rtnl_addr *addr;
-	gboolean success = TRUE;
-
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
-
-	config_addr = nm_ip6_config_get_address (config, i);
-	g_return_val_if_fail (config_addr != NULL, NULL);
-
-	if (!(addr = rtnl_addr_alloc()))
-		return NULL;
-
-	if (flags & NM_RTNL_ADDR_ADDR) {
-		success = (ip6_addr_to_rtnl_local (nm_ip6_address_get_address (config_addr),
-		                                   addr,
-		                                   nm_ip6_address_get_prefix (config_addr)) >= 0);
-	}
-
-	if (flags & NM_RTNL_ADDR_PTP_ADDR)
-		success = (ip6_addr_to_rtnl_peer (&priv->ptp_address, addr) >= 0);
-
-	if (flags & NM_RTNL_ADDR_PREFIX)
-		rtnl_addr_set_prefixlen (addr, nm_ip6_address_get_prefix (config_addr));
-
-	if (!success) {
-		rtnl_addr_put (addr);
-		addr = NULL;
-	}
-
-	return addr;
 }
 
 static gboolean

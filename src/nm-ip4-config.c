@@ -29,11 +29,6 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
-
-#include <netlink/route/addr.h>
-#include <netlink/utils.h>
-#include <netinet/in.h>
-
 #include "nm-ip4-config-glue.h"
 #include "nm-dbus-glib-types.h"
 
@@ -76,20 +71,6 @@ enum {
 
 	LAST_PROP
 };
-
-
-static struct nl_addr *
-nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
-{
-	struct nl_addr * nla = NULL;
-
-	if (!(nla = nl_addr_alloc (sizeof (in_addr_t))))
-		return NULL;
-	nl_addr_set_family (nla, AF_INET);
-	nl_addr_set_binary_addr (nla, &ip4_addr, sizeof (guint32));
-
-	return nla;
-}
 
 
 NMIP4Config *
@@ -629,95 +610,6 @@ nm_ip4_config_get_nis_domain (NMIP4Config *config)
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
 
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis_domain;
-}
-
-/* libnl convenience/conversion functions */
-
-static int ip4_addr_to_rtnl_local (guint32 ip4_address, struct rtnl_addr *addr)
-{
-	struct nl_addr * local = NULL;
-	int err = 0;
-
-	g_return_val_if_fail (addr != NULL, -1);
-
-	local = nm_utils_ip4_addr_to_nl_addr (ip4_address);
-	err = rtnl_addr_set_local (addr, local);
-	nl_addr_put (local);
-
-	return err;
-}
-
-static int ip4_addr_to_rtnl_peer (guint32 ip4_address, struct rtnl_addr *addr)
-{
-	struct nl_addr * peer = NULL;
-	int err = 0;
-
-	g_return_val_if_fail (addr != NULL, -1);
-
-	peer = nm_utils_ip4_addr_to_nl_addr (ip4_address);
-	err = rtnl_addr_set_peer (addr, peer);
-	nl_addr_put (peer);
-
-	return err;
-}
-
-static int ip4_addr_to_rtnl_broadcast (guint32 ip4_broadcast, struct rtnl_addr *addr)
-{
-	struct nl_addr	* local = NULL;
-	int err = 0;
-
-	g_return_val_if_fail (addr != NULL, -1);
-
-	local = nm_utils_ip4_addr_to_nl_addr (ip4_broadcast);
-	err = rtnl_addr_set_broadcast (addr, local);
-	nl_addr_put (local);
-
-	return err;
-}
-
-
-struct rtnl_addr *
-nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	NMIP4Address *config_addr;
-	struct rtnl_addr *addr;
-	gboolean success = TRUE;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
-
-	config_addr = nm_ip4_config_get_address (config, i);
-	g_return_val_if_fail (config_addr != NULL, NULL);
-
-	if (!(addr = rtnl_addr_alloc()))
-		return NULL;
-
-	if (flags & NM_RTNL_ADDR_ADDR)
-		success = (ip4_addr_to_rtnl_local (nm_ip4_address_get_address (config_addr), addr) >= 0);
-
-	if (flags & NM_RTNL_ADDR_PTP_ADDR)
-		success = (ip4_addr_to_rtnl_peer (priv->ptp_address, addr) >= 0);
-
-	if (flags & NM_RTNL_ADDR_PREFIX)
-		rtnl_addr_set_prefixlen (addr, nm_ip4_address_get_prefix (config_addr));
-
-	if (flags & NM_RTNL_ADDR_BROADCAST) {
-		guint32 hostmask, network, bcast, netmask;
-
-		netmask = nm_utils_ip4_prefix_to_netmask (nm_ip4_address_get_prefix (config_addr));
-		network = ntohl (nm_ip4_address_get_address (config_addr)) & ntohl (netmask);
-		hostmask = ~ntohl (netmask);
-		bcast = htonl (network | hostmask);
-
-		success = (ip4_addr_to_rtnl_broadcast (bcast, addr) >= 0);
-	}
-
-	if (!success) {
-		rtnl_addr_put (addr);
-		addr = NULL;
-	}
-
-	return addr;
 }
 
 static gboolean
