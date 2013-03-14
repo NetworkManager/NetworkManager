@@ -10,7 +10,7 @@ NetworkManager \- network management daemon
 .SH SYNOPSIS
 .B NetworkManager [\-\-version] | [\-\-help]
 .PP
-.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...] [\-\-connectivity\-uri=<uri>] [\-\-connectivity\-interval=<int>] [\-\-connectivity\-response=<resp>]
+.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -118,23 +118,6 @@ log levels and domains.
 Sets which operations are logged to the log destination (usually syslog).  By
 default, most domains are logging-enabled.  See \fBNetworkManager.conf\fP(5) for
 more information on log levels and domains.
-.TP
-.I "\-\-connectivity\-uri=<uri>
-Sets the URI of a web page that will be used for connectivity checking. By
-default connectivity checking is disabled.  See \fBNetworkManager.conf\fP(5)
-[connectivity] section for more information on connectivity checking feature.
-.TP
-.I "\-\-connectivity\-interval=<int>
-Sets the interval (in seconds) in which connection checks for the URI are done.
-0 means no checks. The default value is 300 seconds. See
-\fBNetworkManager.conf\fP(5) [connectivity] section for more information on
-connectivity checking feature.
-.TP
-.I "\-\-connectivity\-response=<resp>
-If set, it controls what body content NetworkManager checks for when requesting
-the URI for connectivity checking.  If missing, defaults to "NetworkManager is online".
-See \fBNetworkManager.conf\fP(5) [connectivity] section for more information on
-connectivity checking feature.
 
 .SH DEBUGGING
 The following environment variables are supported to help debugging.  When used

@@ -143,9 +143,11 @@ static GOptionEntry config_options[] = {
 	{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &cli_log_domains,
 	  N_("Log domains separated by ',': any combination of [%s]"),
 	  "PLATFORM,RFKILL,WIFI" },
-	{ "connectivity-uri", 0, 0, G_OPTION_ARG_STRING, &cli_connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
-	{ "connectivity-interval", 0, 0, G_OPTION_ARG_INT, &cli_connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
-	{ "connectivity-response", 0, 0, G_OPTION_ARG_STRING, &cli_connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
+
+	/* These three are hidden for now, and should eventually just go away. */
+	{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli_connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
+	{ "connectivity-interval", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &cli_connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
+	{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli_connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
 	{NULL}
 };
 static gboolean config_options_inited;
