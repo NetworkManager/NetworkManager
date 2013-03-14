@@ -1050,7 +1050,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * appropriate type (subject to restrictions imposed by other settings).
 	 *
 	 * For connection types where interface names cannot easily be
-	 * made persistent (eg, mobile broadband or USB ethernet), this
+	 * made persistent (e.g. mobile broadband or USB ethernet), this
 	 * property should not be used. Setting this property restricts
 	 * the interfaces a connection can be used with, and if interface
 	 * names change or are reordered the connection may be applied to
@@ -1060,7 +1060,17 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME,
 		                      "Interface name",
-		                      "Interface name to be bound to, or NULL",
+		                      "Interface name this connection is bound to. "
+		                      "If not set, then the connection can be attached "
+		                      "to any interface of the appropriate type (subject "
+		                      "to restrictions imposed by other settings). For "
+		                      "connection types where interface names cannot easily "
+		                      "be made persistent (e.g. mobile broadband or USB "
+		                      "ethernet), this property should not be used. Setting "
+		                      "this property restricts the interfaces a connection can "
+		                      "be used with, and if interface names change or are "
+		                      "reordered the connection may be applied to the wrong "
+		                      "interface.",
 		                      NULL,
 		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
