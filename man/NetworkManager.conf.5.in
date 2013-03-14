@@ -8,9 +8,13 @@ NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
 /etc/NetworkManager/NetworkManager.conf
 .br
+/etc/NetworkManager/conf.d/*.conf
+.br
 or
 .br
 \fI<SYSCONFDIR>\fP/NetworkManager/NetworkManager.conf
+.br
+\fI<SYSCONFDIR>\fP/NetworkManager/conf.d/*.conf
 .br
 where <SYSCONFDIR> depends on your distribution or build.
 .SH DESCRIPTION
@@ -20,6 +24,17 @@ is a configuration file for NetworkManager. It is used to set up various
 aspects of NetworkManager's behavior. The location of
 the file may be changed through use of the "\-\-config=" argument for
 \fBNetworkManager\fP (8).
+.P
+If a default
+.I NetworkManager.conf
+is provided by your distribution's packages, you should not modify it,
+since your changes may get overwritten by package updates. Instead,
+you can add additional
+.I .conf
+files to the
+.I conf.d
+directory. These will be read in order, with later files overriding
+earlier ones.
 .SH "FILE FORMAT"
 .P
 The configuration file format is so-called key file (sort of ini-style format).
@@ -34,6 +49,14 @@ Minimal system settings configuration file looks like this:
 .nf
 [main]
 plugins=keyfile
+.fi
+.P
+As an extension to the normal keyfile format, you can also append a
+value to a previously-set list-valued key by doing:
+.P
+.nf
+[main]
+plugins+=another-plugin
 .fi
 .P
 Description of sections and available keys follows:

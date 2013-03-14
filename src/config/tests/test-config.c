@@ -28,7 +28,7 @@
 #include "nm-test-device.h"
 
 static void
-setup_config (const char *config_file, ...)
+setup_config (const char *config_file, const char *config_dir, ...)
 {
 	va_list ap;
 	GPtrArray *args;
@@ -40,8 +40,10 @@ setup_config (const char *config_file, ...)
 	g_ptr_array_add (args, "test-config");
 	g_ptr_array_add (args, "--config");
 	g_ptr_array_add (args, (char *)config_file);
+	g_ptr_array_add (args, "--config-dir");
+	g_ptr_array_add (args, (char *)config_dir);
 
-	va_start (ap, config_file);
+	va_start (ap, config_dir);
 	while ((arg = va_arg (ap, char *)))
 		g_ptr_array_add (args, arg);
 	va_end (ap);
@@ -65,7 +67,7 @@ test_config_simple (void)
 	const char **plugins;
 	char *value;
 
-	setup_config (SRCDIR "/NetworkManager.conf", NULL);
+	setup_config (SRCDIR "/NetworkManager.conf", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
 	g_assert_no_error (error);
 
@@ -101,7 +103,7 @@ test_config_non_existent (void)
 	NMConfig *config;
 	GError *error = NULL;
 
-	setup_config (SRCDIR "/no-such-file", NULL);
+	setup_config (SRCDIR "/no-such-file", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND);
 }
@@ -112,7 +114,7 @@ test_config_parse_error (void)
 	NMConfig *config;
 	GError *error = NULL;
 
-	setup_config (SRCDIR "/bad.conf", NULL);
+	setup_config (SRCDIR "/bad.conf", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
 }
@@ -164,7 +166,7 @@ test_config_no_auto_default (void)
 	g_assert_cmpint (nwrote, ==, 18);
 	close (fd);
 
-	setup_config (SRCDIR "/NetworkManager.conf",
+	setup_config (SRCDIR "/NetworkManager.conf", "/no/such/dir",
 	              "--no-auto-default", state_file,
 	              NULL);
 	config = nm_config_new (&error);
@@ -185,7 +187,7 @@ test_config_no_auto_default (void)
 
 	g_object_unref (config);
 
-	setup_config (SRCDIR "/NetworkManager.conf",
+	setup_config (SRCDIR "/NetworkManager.conf", "/no/such/dir",
 	              "--no-auto-default", state_file,
 	              NULL);
 	config = nm_config_new (&error);
@@ -207,6 +209,66 @@ test_config_no_auto_default (void)
 	g_free (state_file);
 }
 
+static void
+test_config_confdir (void)
+{
+	NMConfig *config;
+	GError *error = NULL;
+	const char **plugins;
+	char *value;
+
+	setup_config (SRCDIR "/NetworkManager.conf", SRCDIR "/conf.d", NULL);
+	config = nm_config_new (&error);
+	g_assert_no_error (error);
+
+	g_assert_cmpstr (nm_config_get_path (config), ==, SRCDIR "/NetworkManager.conf");
+	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhcpcd");
+	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
+	g_assert_cmpstr (nm_config_get_log_domains (config), ==, "PLATFORM,DNS,WIFI");
+	g_assert_cmpstr (nm_config_get_connectivity_uri (config), ==, "http://example.net");
+	g_assert_cmpint (nm_config_get_connectivity_interval (config), ==, 100);
+
+	plugins = nm_config_get_plugins (config);
+	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 5);
+	g_assert_cmpstr (plugins[0], ==, "foo");
+	g_assert_cmpstr (plugins[1], ==, "bar");
+	g_assert_cmpstr (plugins[2], ==, "baz");
+	g_assert_cmpstr (plugins[3], ==, "one");
+	g_assert_cmpstr (plugins[4], ==, "two");
+
+	value = nm_config_get_value (config, "main", "extra", NULL);
+	g_assert_cmpstr (value, ==, "hello");
+	g_free (value);
+
+	value = nm_config_get_value (config, "main", "new", NULL);
+	g_assert_cmpstr (value, ==, "something"); /* not ",something" */
+	g_free (value);
+
+	value = nm_config_get_value (config, "order", "a", NULL);
+	g_assert_cmpstr (value, ==, "90");
+	g_free (value);
+	value = nm_config_get_value (config, "order", "b", NULL);
+	g_assert_cmpstr (value, ==, "10");
+	g_free (value);
+	value = nm_config_get_value (config, "order", "c", NULL);
+	g_assert_cmpstr (value, ==, "0");
+	g_free (value);
+
+	g_object_unref (config);
+}
+
+static void
+test_config_confdir_parse_error (void)
+{
+	NMConfig *config;
+	GError *error = NULL;
+
+	/* Using SRCDIR as the conf dir will pick up bad.conf */
+	setup_config (SRCDIR "/NetworkManager.conf", SRCDIR, NULL);
+	config = nm_config_new (&error);
+	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -217,6 +279,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/non-existent", test_config_non_existent);
 	g_test_add_func ("/config/parse-error", test_config_parse_error);
 	g_test_add_func ("/config/no-auto-default", test_config_no_auto_default);
+	g_test_add_func ("/config/confdir", test_config_confdir);
+	g_test_add_func ("/config/confdir-parse-error", test_config_confdir_parse_error);
 
 	/* This one has to come last, because it leaves its values in
 	 * nm-config.c's global variables, and there's no way to reset

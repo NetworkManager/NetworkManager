@@ -27,6 +27,9 @@ check-local: test-config
 
 EXTRA_DIST = \
 	NetworkManager.conf \
-	bad.conf
+	bad.conf \
+	conf.d/00-overrides.conf \
+	conf.d/10-more.conf \
+	conf.d/90-last.conf
 
 endif

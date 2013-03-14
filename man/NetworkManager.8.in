@@ -10,7 +10,7 @@ NetworkManager \- network management daemon
 .SH SYNOPSIS
 .B NetworkManager [\-\-version] | [\-\-help]
 .PP
-.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
+.B NetworkManager [\-\-no\-daemon] [\-\-pid\-file=<filename>] [\-\-state\-file=<filename>] [\-\-config=<filename>] [\-\-config-dir=<directory>] [\-\-plugins=<plugin1>,plugin2>,...] [\-\-log\-level=<level>] [\-\-log\-domains=<domain1>,<domain2>,...]
 .SH DESCRIPTION
 The \fINetworkManager\fP daemon attempts to make  networking configuration and
 operation as painless and automatic as possible by managing the primary network
@@ -100,6 +100,12 @@ specified, the default value of '<SYSCONFDIR>/NetworkManager/NetworkManager.conf
 is used with a fallback to the older 'nm\-system\-settings.conf' if located in
 the same directory; where <SYSCONFDIR> is dependent on your distribution (usually
 it's /etc).  See \fBNetworkManager.conf\fP(5) for more information on configuration
+file.
+.TP
+.I "\-\-config-dir=<directory>"
+Specify configuration directory for files that override NetworkManager.conf.  If not
+specified, the default value of '<SYSCONFDIR>/NetworkManager/conf.d'
+is used.  See \fBNetworkManager.conf\fP(5) for more information on configuration
 file.
 .TP
 .I "\-\-plugins=<plugin1>,<plugin2>, ...
