@@ -2,7 +2,7 @@
 .\"
 .\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH "NetworkManager.conf" "5" "17 January 2013" ""
+.TH "NetworkManager.conf" "5" "14 March 2013" ""
 .SH NAME
 NetworkManager.conf \- NetworkManager configuration file
 .SH SYNOPSIS
@@ -123,15 +123,22 @@ This section contains keyfile-specific options and thus only has effect when usi
 .B hostname=\fI<hostname>\fP
 Set a persistent hostname when using the \fIkeyfile\fP plugin.
 .TP
-.B unmanaged-devices=\fImac:<hwaddr>\fP;\fImac:<hwaddr>\fP;...
+.B unmanaged-devices=\fImac:<hwaddr>\fP;\fIinterface\-name:<iface name>\fP;...
 Set devices that should be ignored by NetworkManager when using the \fIkeyfile\fP
-plugin. Devices are specified in the following format: "mac:<hwaddr>", where
-<hwaddr> is MAC address of the device to be ignored, in hex-digits-and-colons notation.
-Multiple entries are separated by a semicolon. No spaces are allowed in the value.
+plugin. Devices are specified in the following format:
 .br
-Example:
+"mac:<hwaddr>" or "interface\-name:<iface name>"
+.sp
+\fI<hwaddr>\fP is MAC address of the device to be ignored, in hex-digits-and-colons notation
+.br
+\fI<iface name>\fP is the interface name of the ignored device
+.br
+Multiple entries are separated with semicolons. No spaces are allowed in the value.
+.sp
+Examples:
 .nf
-unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4
+unmanaged-devices=interface-name:em4
+unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth2
 .fi
 .SS [ifupdown]
 This section contains ifupdown-specific options and thus only has effect when using \fIifupdown\fP plugin.
