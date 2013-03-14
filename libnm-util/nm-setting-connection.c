@@ -713,7 +713,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 					g_set_error (error,
 					             NM_SETTING_CONNECTION_ERROR,
 					             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-					             NM_SETTING_CONNECTION_INTERFACE_NAME);
+					             _("'%s' doesn't match the virtual interface name '%s'"),
+					             priv->interface_name, virtual_iface);
+					g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_INTERFACE_NAME);
 					return FALSE;
 				}
 			} else
@@ -727,7 +729,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_CONNECTION_ERROR,
 			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_CONNECTION_INTERFACE_NAME);
+			             _("'%s' is not a valid interface name"),
+			             priv->interface_name);
+			g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_INTERFACE_NAME);
 			return FALSE;
 		}
 	}
