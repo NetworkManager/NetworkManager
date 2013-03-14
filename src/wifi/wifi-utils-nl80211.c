@@ -33,12 +33,12 @@
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/genl/ctrl.h>
-#include <netlink/route/link.h>
 
 #include <linux/nl80211.h>
 
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
+#include "nm-platform.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
 
@@ -820,27 +820,6 @@ error:
 	return NULL;
 }
 
-static int
-iface_to_index (struct nl_sock *nl_sock, const char *iface)
-{
-	struct nl_cache *link_cache = NULL;
-	int err, ifindex;
-
-	/* name to index */
-	err = rtnl_link_alloc_cache (nl_sock, AF_UNSPEC, &link_cache);
-	if (err < 0) {
-		nm_log_warn (LOGD_HW, "failed to allocate link cache: (%d) %s",
-		             err, nl_geterror (err));
-		return -1;
-	}
-	nl_cache_mngt_provide (link_cache);
-	nl_cache_refill (nl_sock, link_cache);
-	ifindex = rtnl_link_name2i (link_cache, iface);
-	nl_cache_free (link_cache);
-
-	return ifindex;
-}
-
 gboolean
 wifi_nl80211_is_wifi (const char *iface)
 {
@@ -860,7 +839,7 @@ wifi_nl80211_is_wifi (const char *iface)
 	if (genl_connect (nl_sock))
 		goto error;
 
-	ifindex = iface_to_index (nl_sock, iface);
+	ifindex = nm_platform_link_get_ifindex (iface);
 	if (ifindex < 0)
 		goto error;
 
