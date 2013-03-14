@@ -34,23 +34,25 @@
 
 /* Available fields for NM_SETTING_CONNECTION_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_connection[] = {
-	SETTING_FIELD ("name",  15),                            /* 0 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ID, 25),           /* 1 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_UUID, 38),         /* 2 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE, 17),         /* 3 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT, 13),  /* 4 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),    /* 5 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),    /* 6 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),  /* 7 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),         /* 8 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),       /* 9 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),   /* 10 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),  /* 11 */
+	SETTING_FIELD ("name",  15),                              /* 0 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ID, 25),             /* 1 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_UUID, 38),           /* 2 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME, 20), /* 3 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE, 17),           /* 4 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT, 13),    /* 5 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),      /* 6 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),      /* 7 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),    /* 8 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),           /* 9 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),         /* 10 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),     /* 11 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),    /* 12 */
 	{NULL, NULL, 0, NULL, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
                                               NM_SETTING_CONNECTION_ID","\
                                               NM_SETTING_CONNECTION_UUID","\
+                                              NM_SETTING_CONNECTION_INTERFACE_NAME","\
                                               NM_SETTING_CONNECTION_TYPE","\
                                               NM_SETTING_CONNECTION_AUTOCONNECT","\
                                               NM_SETTING_CONNECTION_TIMESTAMP","\
@@ -868,15 +870,16 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	nmc->allowed_fields[0].value = NM_SETTING_CONNECTION_SETTING_NAME;
 	nmc->allowed_fields[1].value = nm_setting_connection_get_id (s_con);
 	nmc->allowed_fields[2].value = nm_setting_connection_get_uuid (s_con);
-	nmc->allowed_fields[3].value = nm_setting_connection_get_connection_type (s_con);
-	nmc->allowed_fields[4].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
-	nmc->allowed_fields[5].value = timestamp_str;
-	nmc->allowed_fields[6].value = nm_setting_connection_get_read_only (s_con) ? ("yes") : _("no");
-	nmc->allowed_fields[7].value = perm->str;
-	nmc->allowed_fields[8].value = nm_setting_connection_get_zone (s_con);
-	nmc->allowed_fields[9].value = nm_setting_connection_get_master (s_con);
-	nmc->allowed_fields[10].value = nm_setting_connection_get_slave_type (s_con);
-	nmc->allowed_fields[11].value = secondaries->str;
+	nmc->allowed_fields[3].value = nm_setting_connection_get_interface_name (s_con);
+	nmc->allowed_fields[4].value = nm_setting_connection_get_connection_type (s_con);
+	nmc->allowed_fields[5].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
+	nmc->allowed_fields[6].value = timestamp_str;
+	nmc->allowed_fields[7].value = nm_setting_connection_get_read_only (s_con) ? ("yes") : _("no");
+	nmc->allowed_fields[8].value = perm->str;
+	nmc->allowed_fields[9].value = nm_setting_connection_get_zone (s_con);
+	nmc->allowed_fields[10].value = nm_setting_connection_get_master (s_con);
+	nmc->allowed_fields[11].value = nm_setting_connection_get_slave_type (s_con);
+	nmc->allowed_fields[12].value = secondaries->str;
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
