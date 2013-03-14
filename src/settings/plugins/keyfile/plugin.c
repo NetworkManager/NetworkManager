@@ -466,7 +466,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 					p++;
 				}
 				specs = g_slist_append (specs, udis[i]);
-			} else if (!strncmp (udis[i], "interface-name:", 10) && nm_utils_iface_valid_name (udis[i] + 10)) {
+			} else if (!strncmp (udis[i], "interface-name:", 15) && nm_utils_iface_valid_name (udis[i] + 15)) {
 				specs = g_slist_append (specs, udis[i]);
 			} else {
 				g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
