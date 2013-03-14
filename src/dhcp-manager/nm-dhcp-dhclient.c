@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus.h>
+#include <gio/gio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -79,13 +79,61 @@ nm_dhcp_dhclient_get_path (const char *try_first)
 	return *path;
 }
 
+/**
+ * get_dhclient_leasefile():
+ * @iface: the interface name of the device on which DHCP will be done
+ * @uuid: the connection UUID to which the returned lease should belong
+ * @ipv6: %TRUE for IPv6, %FALSE for IPv4
+ * @out_preferred_path: on return, the "most preferred" leasefile path
+ *
+ * Returns the path of an existing leasefile (if any) for this interface and
+ * connection UUID.  Also returns the "most preferred" leasefile path, which
+ * may be different than any found leasefile.
+ *
+ * Returns: an existing leasefile, or NULL if no matching leasefile could be found
+ */
 static char *
-get_dhclient_leasefile (const char * iface, const char *uuid, gboolean ipv6)
+get_dhclient_leasefile (const char *iface,
+                        const char *uuid,
+                        gboolean ipv6,
+                        char **out_preferred_path)
 {
-	return g_strdup_printf (NMSTATEDIR "/dhclient%s-%s-%s.lease",
+	char *path;
+
+	/* /var/lib/NetworkManager is the preferred leasefile path */
+	path = g_strdup_printf (NMSTATEDIR "/dhclient%s-%s-%s.lease",
 	                        ipv6 ? "6" : "",
 	                        uuid,
 	                        iface);
+	if (out_preferred_path)
+		*out_preferred_path = g_strdup (path);
+
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+
+	/* If the leasefile we're looking for doesn't exist yet in the new location
+	 * (eg, /var/lib/NetworkManager) then look in old locations to maintain
+	 * backwards compatibility with external tools (like dracut) that put
+	 * leasefiles there.
+	 */
+
+	/* Old Debian, SUSE, and Mandriva location */
+	g_free (path);
+	path = g_strdup_printf (LOCALSTATEDIR "/lib/dhcp/dhclient%s-%s-%s.lease",
+	                        ipv6 ? "6" : "", uuid, iface);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+
+	/* Old Red Hat and Fedora location */
+	g_free (path);
+	path = g_strdup_printf (LOCALSTATEDIR "/lib/dhclient/dhclient%s-%s-%s.lease",
+	                        ipv6 ? "6" : "", uuid, iface);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return path;
+
+	/* Fail */
+	g_free (path);
+	return NULL;
 }
 
 static void
@@ -141,7 +189,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 	if (ipv6)
 		return NULL;
 
-	leasefile = get_dhclient_leasefile (iface, uuid, FALSE);
+	leasefile = get_dhclient_leasefile (iface, uuid, FALSE, NULL);
 	if (!leasefile)
 		return NULL;
 
@@ -457,7 +505,7 @@ dhclient_start (NMDHCPClient *client,
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
 	gboolean ipv6, success;
 	guint log_domain;
-	char *escaped;
+	char *escaped, *preferred_leasefile_path = NULL;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
@@ -488,7 +536,30 @@ dhclient_start (NMDHCPClient *client,
 	}
 
 	g_free (priv->lease_file);
-	priv->lease_file = get_dhclient_leasefile (iface, uuid, ipv6);
+	priv->lease_file = get_dhclient_leasefile (iface, uuid, ipv6, &preferred_leasefile_path);
+	if (!priv->lease_file) {
+		/* No existing leasefile, dhclient will create one at the preferred path */
+		priv->lease_file = g_strdup (preferred_leasefile_path);
+	} else if (g_strcmp0 (priv->lease_file, preferred_leasefile_path) != 0) {
+		GFile *src = g_file_new_for_path (priv->lease_file);
+		GFile *dst = g_file_new_for_path (preferred_leasefile_path);
+
+		/* Try to copy the existing leasefile to the preferred location */
+		if (g_file_copy (src, dst, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, &error)) {
+			/* Success; use the preferred leasefile path */
+			g_free (priv->lease_file);
+			priv->lease_file = g_strdup (g_file_get_path (dst));
+		} else {
+			/* Failure; just use the existing leasefile */
+			nm_log_warn (log_domain, "Failed to copy leasefile %s to %s: (%d) %s",
+			             g_file_get_path (src), g_file_get_path (dst),
+			             error->code, error->message);
+			g_clear_error (&error);
+		}
+		g_object_unref (src);
+		g_object_unref (dst);
+	}
+	g_free (preferred_leasefile_path);
 
 	/* Save the DUID to the leasefile dhclient will actually use */
 	if (ipv6) {
@@ -647,17 +718,18 @@ get_duid (NMDHCPClient *client)
 	/* Look in interface-specific leasefile first for backwards compat */
 	leasefile = get_dhclient_leasefile (nm_dhcp_client_get_iface (client),
 	                                    nm_dhcp_client_get_uuid (client),
-	                                    TRUE);
-	nm_log_dbg (LOGD_DHCP, "Looking for DHCPv6 DUID in '%s'.", leasefile);
-	duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
-	g_free (leasefile);
+	                                    TRUE,
+	                                    NULL);
+	if (leasefile) {
+		nm_log_dbg (LOGD_DHCP, "Looking for DHCPv6 DUID in '%s'.", leasefile);
+		duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
+		g_free (leasefile);
 
-	if (error) {
-		nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
-		             leasefile,
-		             error ? error->code : -1,
-		             error ? error->message : "(unknown)");
-		g_clear_error (&error);
+		if (error) {
+			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
+			             leasefile, error->code, error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	if (!duid && priv->def_leasefile) {
