@@ -509,7 +509,8 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	hostname = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
+	if (s_ip6)
+		hostname = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
 	if (!hostname && priv->hostname_provider) {
 		hostname = nm_hostname_provider_get_hostname (priv->hostname_provider);
 		if (   g_strcmp0 (hostname, "localhost.localdomain") == 0
