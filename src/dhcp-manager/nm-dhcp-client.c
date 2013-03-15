@@ -354,39 +354,43 @@ generate_duid_from_machine_id (void)
 {
 	GByteArray *duid;
 	char *contents = NULL;
-	GError *error = NULL;
 	GChecksum *sum;
 	guint8 buffer[32]; /* SHA256 digest size */
 	gsize sumlen = sizeof (buffer);
 	const guint16 duid_type = g_htons (4);
 	uuid_t uuid;
-	gboolean success;
+	GRand *rand;
+	guint i;
+	gboolean success = FALSE;
 
 	/* Get the machine ID from /etc/machine-id; it's always in /etc no matter
-	 * where our configured SYSCONFDIR is.
+	 * where our configured SYSCONFDIR is.  Alternatively, it might be in
+	 * LOCALSTATEDIR /lib/dbus/machine-id.
 	 */
-	if (!g_file_get_contents ("/etc/machine-id", &contents, NULL, &error)) {
-		nm_log_warn (LOGD_DHCP6, "Failed to read " SYSCONFDIR "/machine-id to generate DHCPv6 DUID: (%d) %s",
-			         error ? error->code : -1,
-			         error ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return NULL;
+	if (   g_file_get_contents ("/etc/machine-id", &contents, NULL, NULL)
+	    || g_file_get_contents (LOCALSTATEDIR "/lib/dbus/machine-id", &contents, NULL, NULL)) {
+		contents = g_strstrip (contents);
+		success = machine_id_parse (contents, uuid);
+		if (success) {
+			/* Hash the machine ID so it's not leaked to the network */
+			sum = g_checksum_new (G_CHECKSUM_SHA256);
+			g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
+			g_checksum_get_digest (sum, buffer, &sumlen);
+			g_checksum_free (sum);
+		}
+		g_free (contents);
 	}
-
-	contents = g_strstrip (contents);
-	success = machine_id_parse (contents, uuid);
-	g_free (contents);
 
 	if (!success) {
-		nm_log_warn (LOGD_DHCP6, "Failed to parse " SYSCONFDIR "/machine-id to generate DHCPv6 DUID.");
-		return NULL;
-	}
+		nm_log_warn (LOGD_DHCP6, "Failed to read " SYSCONFDIR "/machine-id "
+		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
+		             "DHCPv6 DUID; creating non-persistent random DUID.");
 
-	/* Hash the machine ID so it's not leaked to the network */
-	sum = g_checksum_new (G_CHECKSUM_SHA256);
-	g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
-	g_checksum_get_digest (sum, buffer, &sumlen);
-	g_checksum_free (sum);
+		rand = g_rand_new ();
+		for (i = 0; i < sizeof (buffer) / sizeof (guint32); i++)
+			((guint32 *) buffer)[i] = g_rand_int (rand);
+		g_rand_free (rand);
+	}
 
 	/* Generate a DHCP Unique Identifier for DHCPv6 using the
 	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
@@ -431,10 +435,11 @@ get_duid (NMDHCPClient *self)
 
 	if (G_UNLIKELY (duid == NULL)) {
 		duid = generate_duid_from_machine_id ();
+		g_assert (duid);
 
 		if (nm_logging_level_enabled (LOGL_DEBUG)) {
 			escaped = escape_duid (duid);
-			nm_log_dbg (LOGD_DHCP6, "Generated DUID from machine-id: %s", escaped);
+			nm_log_dbg (LOGD_DHCP6, "Generated DUID %s", escaped);
 			g_free (escaped);
 		}
 	}
