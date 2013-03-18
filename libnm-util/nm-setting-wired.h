@@ -109,6 +109,7 @@ gboolean          nm_setting_wired_add_s390_option      (NMSettingWired *setting
                                                          const char *item);
 gboolean          nm_setting_wired_remove_s390_option   (NMSettingWired *setting,
                                                          const char *key);
+const char **     nm_setting_wired_get_valid_s390_options (NMSettingWired *setting);
 
 const char *      nm_setting_wired_get_carrier_detect   (NMSettingWired *setting);
 
