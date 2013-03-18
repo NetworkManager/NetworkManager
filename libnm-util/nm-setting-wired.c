@@ -367,7 +367,7 @@ nm_setting_wired_get_s390_option_by_key (NMSettingWired *setting,
 }
 
 /**
- * nm_setting_wired_add_s390_options:
+ * nm_setting_wired_add_s390_option:
  * @setting: the #NMSettingWired
  * @key: key name for the option
  * @value: value for the option
@@ -380,9 +380,10 @@ nm_setting_wired_get_s390_option_by_key (NMSettingWired *setting,
  * Returns: %TRUE if the option was valid and was added to the internal option
  * list, %FALSE if it was not.
  **/
-gboolean nm_setting_wired_add_s390_option (NMSettingWired *setting,
-                                           const char *key,
-                                           const char *value)
+gboolean
+nm_setting_wired_add_s390_option (NMSettingWired *setting,
+                                  const char *key,
+                                  const char *value)
 {
 	size_t value_len;
 
@@ -402,7 +403,7 @@ gboolean nm_setting_wired_add_s390_option (NMSettingWired *setting,
 }
 
 /**
- * nm_setting_wired_remove_s390_options:
+ * nm_setting_wired_remove_s390_option:
  * @setting: the #NMSettingWired
  * @key: key name for the option to remove
  *
