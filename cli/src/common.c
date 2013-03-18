@@ -23,6 +23,8 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include "common.h"
 #include "utils.h"
@@ -356,6 +358,240 @@ print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
 		return TRUE;
 	}
 	return FALSE;
+}
+
+/*
+ * Parse IPv4 address from string to NMIP4Address stucture.
+ * ip_str is the IPv4 address in the form address/prefix
+ * gw_str is the gateway address (it is optional)
+ */
+NMIP4Address *
+nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError **error)
+{
+	NMIP4Address *addr = NULL;
+	struct in_addr ip4_addr, gw_addr;
+	char *tmp;
+	char *plen;
+	long int prefix;
+
+	g_return_val_if_fail (ip_str != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	tmp = g_strdup (ip_str);
+	plen = strchr (tmp, '/');  /* prefix delimiter */
+	if (plen)
+		*plen++ = '\0';
+
+	if (inet_pton (AF_INET, tmp, &ip4_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid IPv4 address '%s'"), tmp);
+		goto finish;
+	}
+
+	prefix = 32;
+	if (plen) {
+		if (!nmc_string_to_int (plen, TRUE, 1, 32, &prefix)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid prefix '%s'; <1-32> allowed"), plen);
+			goto finish;
+		}
+	}
+
+	if (inet_pton (AF_INET, gw_str ? gw_str : "0.0.0.0", &gw_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid gateway '%s'"), gw_str);
+		goto finish;
+	}
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip4_addr.s_addr);
+	nm_ip4_address_set_prefix (addr, (guint32) prefix);
+	nm_ip4_address_set_gateway (addr, gw_addr.s_addr);
+
+finish:
+	g_free (tmp);
+	return addr;
+}
+
+/*
+ * Parse IPv6 address from string to NMIP6Address stucture.
+ * ip_str is the IPv6 address in the form address/prefix
+ * gw_str is the gateway address (it is optional)
+ */
+NMIP6Address *
+nmc_parse_and_build_ip6_address (const char *ip_str, const char *gw_str, GError **error)
+{
+	NMIP6Address *addr = NULL;
+	struct in6_addr ip_addr, gw_addr;
+	char *tmp;
+	char *plen;
+	long int prefix;
+
+	g_return_val_if_fail (ip_str != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	tmp = g_strdup (ip_str);
+	plen = strchr (tmp, '/');  /* prefix delimiter */
+	if (plen)
+		*plen++ = '\0';
+
+	if (inet_pton (AF_INET6, tmp, &ip_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid IPv6 address '%s'"), tmp);
+		goto finish;
+	}
+
+	prefix = 128;
+	if (plen) {
+		if (!nmc_string_to_int (plen, TRUE, 1, 128, &prefix)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid prefix '%s'; <0-128> allowed"), plen);
+			goto finish;
+		}
+	}
+
+	if (inet_pton (AF_INET6, gw_str ? gw_str : "::", &gw_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid gateway '%s'"), gw_str);
+		goto finish;
+	}
+
+	addr = nm_ip6_address_new ();
+	nm_ip6_address_set_address (addr, &ip_addr);
+	nm_ip6_address_set_prefix (addr, (guint32) prefix);
+	nm_ip6_address_set_gateway (addr, &gw_addr);
+
+finish:
+	g_free (tmp);
+	return addr;
+}
+
+/*
+ * Parse IPv4 routes from strings to NMIP4Route stucture.
+ * ip_str is the IPv4 route in the form of address/prefix
+ * next_hop_str is the next_hop address
+ * metric_str is the route metric
+ */
+NMIP4Route *
+nmc_parse_and_build_ip4_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error)
+{
+	NMIP4Route *route = NULL;
+	struct in_addr ip4_addr, next_hop_addr;
+	char *tmp;
+	char *plen;
+	long int prefix, metric;
+
+	g_return_val_if_fail (ip_str != NULL, NULL);
+	g_return_val_if_fail (next_hop_str != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	tmp = g_strdup (ip_str);
+	plen = strchr (tmp, '/');  /* prefix delimiter */
+	if (plen)
+		*plen++ = '\0';
+
+	if (inet_pton (AF_INET, tmp, &ip4_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid IPv4 route '%s'"), tmp);
+		goto finish;
+	}
+
+	prefix = 32;
+	if (plen) {
+		if (!nmc_string_to_int (plen, TRUE, 0, 32, &prefix)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid prefix '%s'; <0-32> allowed"), plen);
+			goto finish;
+		}
+	}
+
+	if (inet_pton (AF_INET, next_hop_str, &next_hop_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid next hop address '%s'"), next_hop_str);
+		goto finish;
+	}
+
+	metric = 0;
+	if (metric_str) {
+		if (!nmc_string_to_int (metric_str, TRUE, 0, G_MAXUINT32, &metric)) {
+			g_set_error (error, 1, 0, _("invalid metric '%s'"), metric_str);
+			goto finish;
+		}
+	}
+
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_dest (route, ip4_addr.s_addr);
+	nm_ip4_route_set_prefix (route, (guint32) prefix);
+	nm_ip4_route_set_next_hop (route, next_hop_addr.s_addr);
+	nm_ip4_route_set_metric (route, (guint32) metric);
+
+finish:
+	g_free (tmp);
+	return route;
+}
+
+/*
+ * Parse IPv6 route from strings to NMIP6Route stucture.
+ * ip_str is the IPv6 route in the form address/prefix
+ * next_hop_str is the next hop
+ * metric_str is the route metric
+ */
+NMIP6Route *
+nmc_parse_and_build_ip6_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error)
+{
+	NMIP6Route *route = NULL;
+	struct in6_addr ip_addr, next_hop_addr;
+	char *tmp;
+	char *plen;
+	long int prefix, metric;
+
+	g_return_val_if_fail (ip_str != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	tmp = g_strdup (ip_str);
+	plen = strchr (tmp, '/');  /* prefix delimiter */
+	if (plen)
+		*plen++ = '\0';
+
+	if (inet_pton (AF_INET6, tmp, &ip_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid IPv6 route '%s'"), tmp);
+		goto finish;
+	}
+
+	prefix = 128;
+	if (plen) {
+		if (!nmc_string_to_int (plen, TRUE, 0, 128, &prefix)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid prefix '%s'; <0-128> allowed"), plen);
+			goto finish;
+		}
+	}
+
+	if (inet_pton (AF_INET6, next_hop_str, &next_hop_addr) < 1) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid next hop address '%s'"), next_hop_str);
+		goto finish;
+	}
+
+	metric = 0;
+	if (metric_str) {
+		if (!nmc_string_to_int (metric_str, TRUE, 0, G_MAXUINT32, &metric)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid metric '%s'"), metric_str);
+			goto finish;
+		}
+	}
+
+	route = nm_ip6_route_new ();
+	nm_ip6_route_set_dest (route, &ip_addr);
+	nm_ip6_route_set_prefix (route, (guint32) prefix);
+	nm_ip6_route_set_next_hop (route, &next_hop_addr);
+	nm_ip6_route_set_metric (route, (guint32) metric);
+
+finish:
+	g_free (tmp);
+	return route;
 }
 
 const char *
