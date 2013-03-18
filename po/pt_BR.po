@@ -14,7 +14,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2013-03-17 15:25+0000\n"
+"POT-Creation-Date: 2013-03-18 03:24+0000\n"
 "PO-Revision-Date: 2013-03-18 00:42-0300\n"
 "Last-Translator: Rafael Ferreira <rafael.f.f1@gmail.com>\n"
 "Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
@@ -2430,7 +2430,7 @@ msgstr "definição de \"%s\" é requerido"
 #: ../libnm-util/nm-setting-bond.c:430
 #, c-format
 msgid "'%s' is not a valid value for '%s'"
-msgstr "valor \"%s\" não é válido para \"%s\""
+msgstr "\"%s\" não é um valor válido para \"%s\""
 
 #: ../libnm-util/nm-setting-bond.c:443
 #, c-format
@@ -2440,7 +2440,7 @@ msgstr "\"%s=%s\" não é compatível com \"%s > 0\""
 #: ../libnm-util/nm-setting-bond.c:454
 #, c-format
 msgid "'%s=%s' is not a valid configuration for '%s'"
-msgstr "configuração \"%s=%s\" não é válida para \"%s\""
+msgstr "\"%s=%s\" não é uma configuração válida para \"%s\""
 
 #: ../libnm-util/nm-setting-bond.c:467 ../libnm-util/nm-setting-bond.c:476
 #: ../libnm-util/nm-setting-bond.c:496 ../libnm-util/nm-setting-bond.c:532
@@ -2456,13 +2456,13 @@ msgstr "opção \"%s\" está vazia"
 #: ../libnm-util/nm-setting-bond.c:520
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
-msgstr "endereço IPv4 \"%s\" não é válido para a opção \"%s\""
+msgstr "\"%s\" não é um endereço IPv4 válido para a opção \"%s\""
 
 #: ../libnm-util/nm-setting-bridge-port.c:155
 #: ../libnm-util/nm-setting-bridge-port.c:165
 #, c-format
 msgid "'%d' is not a valid value for the property (should be <= %d)"
-msgstr "valor \"%d\" não é válido para a propriedade (deveria ser <= %d)"
+msgstr "\"%d\" não é um valor válido para a propriedade (deveria ser <= %d)"
 
 #: ../libnm-util/nm-setting-bridge.c:251
 #, c-format
@@ -2474,7 +2474,7 @@ msgstr "valor \"%d\" está fora da faixa <%d-%d>"
 #: ../libnm-util/nm-setting-vlan.c:486
 #, c-format
 msgid "'%s' is not a valid interface name"
-msgstr "nome de interface \"%s\" não é válido"
+msgstr "\"%s\" não é um nome de interface válido"
 
 #: ../libnm-util/nm-setting-cdma.c:170
 msgid "property is empty'"
@@ -2567,7 +2567,7 @@ msgstr "tamanho do SSID está fora da faixa <1-32> bytes"
 #: ../libnm-util/nm-setting-wireless.c:659
 #, c-format
 msgid "'%d' is not a valid channel"
-msgstr "canal \"%d\" não é válido"
+msgstr "\"%d\" não é um canal válido"
 
 #: ../libnm-util/nm-setting-ppp.c:390
 #, c-format
@@ -2601,12 +2601,12 @@ msgstr "sinalizadores são inválidos"
 #: ../libnm-util/nm-setting-wired.c:456
 #, c-format
 msgid "'%s' is not a valid ethernet port value"
-msgstr "valor de porta ethernet \"%s\" não é válido"
+msgstr "\"%s\" não é um valor válido de porta ethernet"
 
 #: ../libnm-util/nm-setting-wired.c:466
 #, c-format
 msgid "'%s' is not a valid duplex value"
-msgstr "valor de duplex \"%s\" não é válido"
+msgstr "\"%s\" não é um valor duplex válido"
 
 #: ../libnm-util/nm-setting-wired.c:476 ../libnm-util/nm-setting-wired.c:534
 msgid "is not a valid MAC address"
@@ -2652,12 +2652,12 @@ msgstr "\"%s\" pode ser usada apenas com \"%s=%s\" (WEP)"
 #: ../libnm-util/nm-setting-wireless.c:628
 #, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
-msgstr "modo Wi-Fi \"%s\" não é válido"
+msgstr "\"%s\" não é um modo Wi-Fi válido"
 
 #: ../libnm-util/nm-setting-wireless.c:638
 #, c-format
 msgid "'%s' is not a valid band"
-msgstr "banda \"%s\" não é válida"
+msgstr "\"%s\" não é uma banda válida"
 
 #: ../libnm-util/nm-setting-wireless.c:648
 #, c-format
