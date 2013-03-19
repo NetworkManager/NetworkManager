@@ -18,6 +18,12 @@ $(service_DATA): $(service_in_files) Makefile
 	$(edit) $< >$@
 endif
 
+examplesdir = $(docdir)/examples
+examples_DATA = server.conf
+
+server.conf: server.conf.in
+	$(edit) $< >$@
+
 edit = sed \
 	-e 's|@bindir[@]|$(bindir)|g' \
 	-e 's|@sbindir[@]|$(sbindir)|g' \
