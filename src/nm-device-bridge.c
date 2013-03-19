@@ -109,10 +109,10 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *dev, gboolean need_carrier)
+is_available (NMDevice *dev)
 {
 	if (NM_DEVICE_GET_CLASS (dev)->hw_is_up)
-		return NM_DEVICE_GET_CLASS (dev)->hw_is_up (dev) || !need_carrier;
+		return NM_DEVICE_GET_CLASS (dev)->hw_is_up (dev);
 	return FALSE;
 }
 

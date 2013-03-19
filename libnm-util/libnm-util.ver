@@ -11,7 +11,6 @@ global:
 	nm_connection_error_get_type;
 	nm_connection_error_quark;
 	nm_connection_for_each_setting_value;
-	nm_connection_get_carrier_detect;
 	nm_connection_get_id;
 	nm_connection_get_path;
 	nm_connection_get_setting;
@@ -288,7 +287,6 @@ global:
 	nm_setting_hash_flags_get_type;
 	nm_setting_infiniband_error_get_type;
 	nm_setting_infiniband_error_quark;
-	nm_setting_infiniband_get_carrier_detect;
 	nm_setting_infiniband_get_mac_address;
 	nm_setting_infiniband_get_mtu;
 	nm_setting_infiniband_get_transport_mode;
@@ -417,7 +415,6 @@ global:
 	nm_setting_vlan_clear_priorities;
 	nm_setting_vlan_error_get_type;
 	nm_setting_vlan_error_quark;
-	nm_setting_vlan_get_carrier_detect;
 	nm_setting_vlan_get_flags;
 	nm_setting_vlan_get_id;
 	nm_setting_vlan_get_interface_name;
@@ -453,7 +450,6 @@ global:
 	nm_setting_wired_error_get_type;
 	nm_setting_wired_error_quark;
 	nm_setting_wired_get_auto_negotiate;
-	nm_setting_wired_get_carrier_detect;
 	nm_setting_wired_get_cloned_mac_address;
 	nm_setting_wired_get_duplex;
 	nm_setting_wired_get_mac_address;

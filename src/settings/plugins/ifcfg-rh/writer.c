@@ -988,8 +988,6 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 	            strcmp (transport_mode, "connected") == 0 ? "yes" : "no",
 	            FALSE);
 
-	svSetValue (ifcfg, "CARRIER_DETECT", nm_setting_infiniband_get_carrier_detect (s_infiniband), FALSE);
-
 	svSetValue (ifcfg, "TYPE", TYPE_INFINIBAND, FALSE);
 
 	return TRUE;
@@ -1112,8 +1110,6 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_string_free (str, TRUE);
 	}
 
-	svSetValue (ifcfg, "CARRIER_DETECT", nm_setting_wired_get_carrier_detect (s_wired), FALSE);
-
 	svSetValue (ifcfg, "TYPE", TYPE_ETHERNET, FALSE);
 
 	return TRUE;
@@ -1230,8 +1226,6 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 			g_free (tmp);
 		}
 	}
-
-	svSetValue (ifcfg, "CARRIER_DETECT", nm_setting_vlan_get_carrier_detect (s_vlan), FALSE);
 
 	return TRUE;
 }

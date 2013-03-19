@@ -1901,21 +1901,12 @@ add_device (NMManager *self, NMDevice *device)
 	/* Check if we should assume the device's active connection by matching its
 	 * config with an existing system connection.
 	 */
-	if (   nm_device_is_available (device, FALSE)
-	    && nm_device_can_assume_connections (device)) {
+	if (nm_device_can_assume_connections (device)) {
 		GSList *connections = NULL;
 
 		connections = nm_settings_get_connections (priv->settings);
 		existing = nm_device_find_assumable_connection (device, connections);
 		g_slist_free (connections);
-
-		if (existing && !nm_device_is_available (device, TRUE)) {
-			const char *carrier_detect;
-
-			carrier_detect = nm_connection_get_carrier_detect (existing);
-			if (g_strcmp0 (carrier_detect, "no") != 0)
-				existing = NULL;
-		}
 
 		if (existing)
 			nm_log_dbg (LOGD_DEVICE, "(%s): found existing device connection '%s'",
@@ -1943,7 +1934,7 @@ add_device (NMManager *self, NMDevice *device)
 	system_create_virtual_devices (self);
 
 	/* If the device has a connection it can assume, do that now */
-	if (existing && managed) {
+	if (existing && managed && nm_device_is_available (device)) {
 		NMActiveConnection *ac;
 		GError *error = NULL;
 
@@ -2887,7 +2878,7 @@ nm_manager_activate_connection (NMManager *manager,
 			 * in the UNAVAILABLE state here.  Since we want to use it right
 			 * away, we transition it immediately to DISCONNECTED.
 			 */
-			if (   nm_device_is_available (device, FALSE)
+			if (   nm_device_is_available (device)
 			    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
 				nm_device_state_changed (device,
 				                         NM_DEVICE_STATE_DISCONNECTED,
@@ -2898,14 +2889,9 @@ nm_manager_activate_connection (NMManager *manager,
 
 	state = nm_device_get_state (device);
 	if (state < NM_DEVICE_STATE_DISCONNECTED) {
-		const char *carrier_detect = nm_connection_get_carrier_detect (connection);
-
-		if (   state != NM_DEVICE_STATE_UNAVAILABLE
-		    || g_strcmp0 (carrier_detect, "no") != 0) {
-			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-			                     "Device not managed by NetworkManager or unavailable");
-			return NULL;
-		}
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
+			                 "Device not managed by NetworkManager or unavailable");
+		return NULL;
 	}
 
 	/* If this is an autoconnect request, but the device isn't allowing autoconnect

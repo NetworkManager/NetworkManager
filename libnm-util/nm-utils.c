@@ -884,14 +884,6 @@ nm_utils_wpa_psk_valid (const char *psk)
 	return TRUE;
 }
 
-gboolean
-_nm_utils_carrier_detect_mode_valid (const char *carrier_detect)
-{
-	const char *valid_carrier_detect[] = { "no", "on-activate", "yes", NULL };
-
-	return _nm_utils_string_in_list (carrier_detect, valid_carrier_detect);
-}
-
 /**
  * nm_utils_ip4_addresses_from_gvalue:
  * @value: gvalue containing a GPtrArray of GArrays of guint32s

@@ -1220,42 +1220,6 @@ nm_connection_get_id (NMConnection *connection)
 	return nm_setting_connection_get_id (s_con);
 }
 
-
-/**
- * nm_connection_get_carrier_detect:
- * @connection: the #NMConnection
- *
- * A shortcut to return the "carrier-detect" property from the
- * connection's device-specific #NMSetting.
- *
- * Returns: the connection's "carrier-detect" property, or
- *   %NULL if the connection is for a device that does not
- *   support carrier detection.
- **/
-const char *
-nm_connection_get_carrier_detect (NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-	NMSetting *s_type;
-	const char *type, *ret;
-	char *carrier_detect;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_return_val_if_fail (s_con != NULL, NULL);
-
-	type = nm_setting_connection_get_connection_type (s_con);
-	s_type = nm_connection_get_setting_by_name (connection, type);
-	g_return_val_if_fail (s_type != NULL, NULL);
-
-	if (!g_object_class_find_property (G_OBJECT_GET_CLASS (s_type), "carrier-detect"))
-		return NULL;
-
-	g_object_get (G_OBJECT (s_type), "carrier-detect", &carrier_detect, NULL);
-	ret = g_intern_string (carrier_detect);
-	g_free (carrier_detect);
-	return ret;
-}
-
 /*************************************************************/
 
 /**

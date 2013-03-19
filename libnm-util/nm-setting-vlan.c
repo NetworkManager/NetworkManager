@@ -29,7 +29,6 @@
 #include "nm-setting-vlan.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
@@ -76,7 +75,6 @@ typedef struct {
 	guint32 flags;
 	GSList *ingress_priority_map;
 	GSList *egress_priority_map;
-	char *carrier_detect;
 } NMSettingVlanPrivate;
 
 enum {
@@ -87,7 +85,6 @@ enum {
 	PROP_FLAGS,
 	PROP_INGRESS_PRIORITY_MAP,
 	PROP_EGRESS_PRIORITY_MAP,
-	PROP_CARRIER_DETECT,
 	LAST_PROP
 };
 
@@ -437,21 +434,6 @@ nm_setting_vlan_clear_priorities (NMSettingVlan *setting, NMVlanPriorityMap map)
 	set_map (setting, map, NULL);
 }
 
-/**
- * nm_setting_vlan_get_carrier_detect:
- * @setting: the #NMSettingVlan
- *
- * Returns: the connection's carrier-detection behavior;
- *   See #NMSettingVlan:carrier-detect.
- **/
-const char *
-nm_setting_vlan_get_carrier_detect (NMSettingVlan *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), NULL);
-
-	return NM_SETTING_VLAN_GET_PRIVATE (setting)->carrier_detect;
-}
-
 /*********************************************************************/
 
 static void
@@ -547,16 +529,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->carrier_detect && !_nm_utils_carrier_detect_mode_valid (priv->carrier_detect)) {
-		g_set_error (error,
-		             NM_SETTING_VLAN_ERROR,
-		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid value for the property"),
-		             priv->carrier_detect);
-		g_prefix_error (error, "%s: ", NM_SETTING_VLAN_CARRIER_DETECT);
-		return FALSE;
-	}
-
 	return TRUE;
 }
 
@@ -613,10 +585,6 @@ set_property (GObject *object, guint prop_id,
 		priv->egress_priority_map =
 			priority_stringlist_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
 		break;
-	case PROP_CARRIER_DETECT:
-		g_free (priv->carrier_detect);
-		priv->carrier_detect = g_value_dup_string (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -662,9 +630,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_EGRESS_PRIORITY_MAP:
 		g_value_take_boxed (value, priority_maplist_to_stringlist (priv->egress_priority_map));
 		break;
-	case PROP_CARRIER_DETECT:
-		g_value_set_string (value, nm_setting_vlan_get_carrier_detect (setting));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -679,7 +644,6 @@ finalize (GObject *object)
 
 	g_free (priv->iface_name);
 	g_free (priv->parent);
-	g_free (priv->carrier_detect);
 	nm_utils_slist_free (priv->ingress_priority_map, g_free);
 	nm_utils_slist_free (priv->egress_priority_map, g_free);
 }
@@ -817,28 +781,4 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                            "'to' are unsigned integers, ie '7:3'.",
 		                            DBUS_TYPE_G_LIST_OF_STRING,
 		                            G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	/**
-	 * NMSettingVlan:carrier-detect:
-	 *
-	 * Controls whether device carrier affects this connection. Possible values
-	 * are 'no', meaning the connection completely ignores carrier; 'yes',
-	 * meaning the connection can only be activated if carrier is present,
-	 * and will be deactivated automatically if carrier is lost; and
-	 * 'on-activate', meaning the connection can only be activated if carrier
-	 * is present, but will not be deactivated if carrier is lost.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_CARRIER_DETECT,
-		 g_param_spec_string (NM_SETTING_VLAN_CARRIER_DETECT,
-		                      "Carrier-detect",
-		                      "Controls whether device carrier affects this connection. "
-		                      "Possible values are 'no', meaning the connection completely "
-		                      "ignores carrier; 'yes', meaning the connection can only be "
-		                      "activated if carrier is present, and will be deactivated "
-		                      "automatically if carrier is lost; and 'on-activate', meaning "
-		                      "the connection can only be activated if carrier is present, "
-		                      "but will not be deactivated if carrier is lost.",
-		                      "yes",
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

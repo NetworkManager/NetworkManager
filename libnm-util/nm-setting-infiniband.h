@@ -54,7 +54,6 @@ GQuark nm_setting_infiniband_error_quark (void);
 #define NM_SETTING_INFINIBAND_MAC_ADDRESS    "mac-address"
 #define NM_SETTING_INFINIBAND_MTU            "mtu"
 #define NM_SETTING_INFINIBAND_TRANSPORT_MODE "transport-mode"
-#define NM_SETTING_INFINIBAND_CARRIER_DETECT "carrier-detect"
 
 typedef struct {
 	NMSetting parent;
@@ -76,8 +75,6 @@ NMSetting *       nm_setting_infiniband_new                (void);
 const GByteArray *nm_setting_infiniband_get_mac_address    (NMSettingInfiniband *setting);
 guint32           nm_setting_infiniband_get_mtu            (NMSettingInfiniband *setting);
 const char *      nm_setting_infiniband_get_transport_mode (NMSettingInfiniband *setting);
-
-const char *      nm_setting_infiniband_get_carrier_detect (NMSettingInfiniband *setting);
 
 G_END_DECLS
 

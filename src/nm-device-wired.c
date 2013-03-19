@@ -289,11 +289,12 @@ can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *dev, gboolean need_carrier)
+is_available (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
 
-	if (need_carrier && !NM_DEVICE_WIRED_GET_PRIVATE (self)->carrier)
+	/* Can't do anything if there isn't a carrier */
+	if (!NM_DEVICE_WIRED_GET_PRIVATE (self)->carrier)
 		return FALSE;
 
 	return TRUE;

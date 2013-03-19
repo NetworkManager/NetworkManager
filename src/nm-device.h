@@ -118,8 +118,7 @@ typedef struct {
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	gboolean    (* is_available) (NMDevice *self,
-	                              gboolean need_carrier);
+	gboolean	(* is_available) (NMDevice *self);
 
 	gboolean    (* get_enabled) (NMDevice *self);
 
@@ -239,8 +238,7 @@ void            nm_device_slave_notify_enslaved (NMDevice *dev,
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
-gboolean        nm_device_is_available (NMDevice *dev,
-                                        gboolean need_carrier);
+gboolean		nm_device_is_available (NMDevice *dev);
 
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
                                                    GSList *connections,

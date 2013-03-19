@@ -1361,7 +1361,7 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-is_available (NMDevice *dev, gboolean need_carrier)
+is_available (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2369,7 +2369,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		/* If the interface can now be activated because the supplicant is now
 		 * available, transition to DISCONNECTED.
 		 */
-		if ((devstate == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device, TRUE)) {
+		if ((devstate == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);

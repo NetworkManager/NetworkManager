@@ -1226,19 +1226,8 @@ carrier_changed (GObject *object, GParamSpec *param, gpointer user_data)
 		return;
 	}
 
-	if (priv->act_request) {
-		NMConnection *connection;
-		const char *carrier_detect;
-
-		connection = nm_act_request_get_connection (priv->act_request);
-		carrier_detect = nm_connection_get_carrier_detect (connection);
-
-		if (   g_strcmp0 (carrier_detect, "no") == 0
-		    || (!carrier && g_strcmp0 (carrier_detect, "on-activate") == 0))
-			return;
-		else if (!carrier && (!carrier_detect || strcmp (carrier_detect, "yes") == 0))
-			defer_action = TRUE;
-	}
+	if (priv->act_request && !carrier)
+		defer_action = TRUE;
 
 	nm_log_info (LOGD_HW | LOGD_DEVICE, "(%s): carrier now %s (device state %d%s)",
 	             nm_device_get_iface (self),
@@ -1285,7 +1274,7 @@ nm_device_get_connection (NMDevice *self)
 }
 
 gboolean
-nm_device_is_available (NMDevice *self, gboolean need_carrier)
+nm_device_is_available (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -1293,31 +1282,8 @@ nm_device_is_available (NMDevice *self, gboolean need_carrier)
 		return FALSE;
 
 	if (NM_DEVICE_GET_CLASS (self)->is_available)
-		return NM_DEVICE_GET_CLASS (self)->is_available (self, need_carrier);
+		return NM_DEVICE_GET_CLASS (self)->is_available (self);
 	return TRUE;
-}
-
-static gboolean
-nm_device_has_available_connection (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const GSList *connections, *iter;
-
-	if (nm_device_is_available (self, TRUE))
-		return TRUE;
-	if (!nm_device_is_available (self, FALSE))
-		return FALSE;
-
-	/* We're only available if there's an ignore-carrier connection */
-	connections = nm_connection_provider_get_connections (priv->con_provider);
-	for (iter = connections; iter; iter = iter->next) {
-		const char *carrier_detect;
-
-		carrier_detect = nm_connection_get_carrier_detect (NM_CONNECTION (iter->data));
-		if (g_strcmp0 (carrier_detect, "no") == 0)
-			return TRUE;
-	}
-	return FALSE;
 }
 
 gboolean
@@ -1419,7 +1385,6 @@ nm_device_get_best_auto_connection (NMDevice *dev,
 {
 	guint32 caps;
 	GSList *iter;
-	gboolean need_ignore_carrier = FALSE;
 
 	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
 	g_return_val_if_fail (specific_object != NULL, NULL);
@@ -1430,22 +1395,8 @@ nm_device_get_best_auto_connection (NMDevice *dev,
 	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
 		return NULL;
 
-	if (!nm_device_is_available (dev, TRUE)) {
-		if (!nm_device_is_available (dev, FALSE))
-			return NULL;
-		need_ignore_carrier = TRUE;
-	}
-
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
-
-		if (need_ignore_carrier) {
-			const char *carrier_detect;
-
-			carrier_detect = nm_connection_get_carrier_detect (connection);
-			if (g_strcmp0 (carrier_detect, "no") != 0)
-				continue;
-		}
 
 		if (NM_DEVICE_GET_CLASS (dev)->can_auto_connect (dev, connection, specific_object))
 			return connection;
@@ -5352,7 +5303,7 @@ nm_device_state_changed (NMDevice *device,
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
-		if (nm_device_has_available_connection (device)) {
+		if (nm_device_is_available (device)) {
 			nm_log_dbg (LOGD_DEVICE, "(%s): device is available, will transition to DISCONNECTED",
 			            nm_device_get_iface (device));
 			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
@@ -5360,14 +5311,6 @@ nm_device_state_changed (NMDevice *device,
 			nm_log_dbg (LOGD_DEVICE, "(%s): device not yet available for transition to DISCONNECTED",
 			            nm_device_get_iface (device));
 		}
-		break;
-	case NM_DEVICE_STATE_DISCONNECTED:
-		/* If a previous connection was up despite not having carrier, then we're
-		 * actually UNAVAILABLE now.
-		 */
-		if (   old_state > NM_DEVICE_STATE_DISCONNECTED
-		    && !nm_device_is_available (device, TRUE))
-			nm_device_queue_state (device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
