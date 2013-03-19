@@ -183,12 +183,17 @@ static gboolean
 can_interrupt_activation (NMDevice *dev)
 {
 	/* Can interrupt activation if the carrier drops while activating */
+
+	if (nm_device_ignore_carrier (dev))
+		return FALSE;
 	return NM_DEVICE_VLAN_GET_PRIVATE (dev)->carrier ? FALSE : TRUE;
 }
 
 static gboolean
 is_available (NMDevice *dev)
 {
+	if (nm_device_ignore_carrier (dev))
+		return TRUE;
 	return NM_DEVICE_VLAN_GET_PRIVATE (dev)->carrier ? TRUE : FALSE;
 }
 

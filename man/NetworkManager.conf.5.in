@@ -131,6 +131,10 @@ no-auto-default=eth0,eth1
 no-auto-default=*
 .fi
 .TP
+.B ignore-carrier=\fI<device>\fP,\fI<device>\fP,... | \fI*\fP
+Set devices for which NetworkManager should ignore device carrier state when
+deciding whether to activate or deactivate connections.
+.TP
 .B dns=\fIplugin1\fP,\fIplugin2\fP, ...
 List DNS plugin names separated by ','. DNS plugins are used to provide local
 caching nameserver functionality (which speeds up DNS queries) and to push

@@ -67,6 +67,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher.h"
 #include "nm-config-device.h"
+#include "nm-config.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -266,7 +267,8 @@ typedef struct {
 	guint cp_removed_id;
 	guint cp_updated_id;
 
-	/* Deferred carrier handling */
+	/* carrier handling */
+	gboolean ignore_carrier;
 	guint carrier_action_defer_id;
 
 } NMDevicePrivate;
@@ -473,9 +475,6 @@ constructor (GType type,
 	update_accept_ra_save (dev);
 	update_ip6_privacy_save (dev);
 
-	if (g_object_class_find_property (G_OBJECT_GET_CLASS (dev), "carrier"))
-		g_signal_connect (dev, "notify::carrier", G_CALLBACK (carrier_changed), NULL);
-
 	priv->initialized = TRUE;
 	return object;
 
@@ -497,6 +496,16 @@ constructed (GObject *object)
 
 	if (NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address)
 		NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address (dev);
+
+	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
+	if (g_object_class_find_property (G_OBJECT_GET_CLASS (dev), "carrier")) {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
+		NMConfig *config = nm_config_get ();
+
+		priv->ignore_carrier = nm_config_get_ignore_carrier (config, NM_CONFIG_DEVICE (dev));
+		if (!priv->ignore_carrier)
+			g_signal_connect (dev, "notify::carrier", G_CALLBACK (carrier_changed), NULL);
+	}
 
 	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
@@ -1284,6 +1293,12 @@ nm_device_is_available (NMDevice *self)
 	if (NM_DEVICE_GET_CLASS (self)->is_available)
 		return NM_DEVICE_GET_CLASS (self)->is_available (self);
 	return TRUE;
+}
+
+gboolean
+nm_device_ignore_carrier (NMDevice *dev)
+{
+	return NM_DEVICE_GET_PRIVATE (dev)->ignore_carrier;
 }
 
 gboolean

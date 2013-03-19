@@ -61,6 +61,8 @@ const char *nm_config_get_connectivity_response (NMConfig *config);
 gboolean nm_config_get_ethernet_can_auto_default (NMConfig *config, NMConfigDevice *device);
 void     nm_config_set_ethernet_no_auto_default  (NMConfig *config, NMConfigDevice *device);
 
+gboolean nm_config_get_ignore_carrier (NMConfig *config, NMConfigDevice *device);
+
 char *nm_config_get_value (NMConfig *config, const char *group, const char *key, GError **error);
 
 /* for main.c only */

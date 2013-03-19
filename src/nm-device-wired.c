@@ -272,20 +272,26 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 	return result;
 }
 
+/* Returns %TRUE if @self is unavailable for connections because it
+ * needs carrier but does not have it.
+ */
+static gboolean
+nm_device_wired_unavailable_because_of_carrier (NMDeviceWired *self)
+{
+	NMDeviceWiredPrivate *priv = NM_DEVICE_WIRED_GET_PRIVATE (self);
+
+	return !priv->carrier && !nm_device_ignore_carrier (NM_DEVICE (self));
+}
+
 static gboolean
 can_interrupt_activation (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
-	gboolean interrupt = FALSE;
 
 	/* Devices that support carrier detect can interrupt activation
 	 * if the link becomes inactive.
 	 */
-	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT) {
-		if (NM_DEVICE_WIRED_GET_PRIVATE (self)->carrier == FALSE)
-			interrupt = TRUE;
-	}
-	return interrupt;
+	return nm_device_wired_unavailable_because_of_carrier (self);
 }
 
 static gboolean
@@ -293,11 +299,7 @@ is_available (NMDevice *dev)
 {
 	NMDeviceWired *self = NM_DEVICE_WIRED (dev);
 
-	/* Can't do anything if there isn't a carrier */
-	if (!NM_DEVICE_WIRED_GET_PRIVATE (self)->carrier)
-		return FALSE;
-
-	return TRUE;
+	return !nm_device_wired_unavailable_because_of_carrier (self);
 }
 
 static NMActStageReturn
@@ -305,7 +307,8 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	if (nm_device_is_master (device) && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
+	if (   nm_device_is_master (device)
+	    && nm_device_wired_unavailable_because_of_carrier (NM_DEVICE_WIRED (device))) {
 		nm_log_info (LOGD_IP4 | NM_DEVICE_WIRED_LOG_LEVEL (device),
 		             "(%s): IPv4 config waiting until carrier is on",
 		             nm_device_get_ip_iface (device));
@@ -320,7 +323,8 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	if (nm_device_is_master (device) && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
+	if (   nm_device_is_master (device)
+	    && nm_device_wired_unavailable_because_of_carrier (NM_DEVICE_WIRED (device))) {
 		nm_log_info (LOGD_IP6 | NM_DEVICE_WIRED_LOG_LEVEL (device),
 		             "(%s): IPv6 config waiting until carrier is on",
 		             nm_device_get_ip_iface (device));

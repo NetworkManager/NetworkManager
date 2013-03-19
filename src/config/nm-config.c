@@ -44,12 +44,16 @@ typedef struct {
 	char **plugins;
 	char *dhcp_client;
 	char **dns_plugins;
+
 	char *log_level;
 	char *log_domains;
+
 	char *connectivity_uri;
 	gint connectivity_interval;
 	char *connectivity_response;
+
 	char **no_auto_default;
+	char **ignore_carrier;
 } NMConfigPrivate;
 
 static NMConfig *singleton = NULL;
@@ -141,6 +145,14 @@ nm_config_get_value (NMConfig *config, const char *group, const char *key, GErro
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 
 	return g_key_file_get_string (priv->keyfile, group, key, error);
+}
+
+gboolean
+nm_config_get_ignore_carrier (NMConfig *config, NMConfigDevice *device)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+
+	return nm_config_device_spec_match_list (device, (const char **) priv->ignore_carrier);
 }
 
 /************************************************************************/
@@ -502,6 +514,8 @@ nm_config_new (GError **error)
 		g_key_file_set_value (priv->keyfile, "connectivity", "response", cli_connectivity_response);
 	priv->connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
 
+	priv->ignore_carrier = g_key_file_get_string_list (priv->keyfile, "main", "ignore-carrier", NULL, NULL);
+
 	return singleton;
 }
 
@@ -533,6 +547,7 @@ finalize (GObject *gobject)
 	g_free (priv->connectivity_uri);
 	g_free (priv->connectivity_response);
 	g_strfreev (priv->no_auto_default);
+	g_strfreev (priv->ignore_carrier);
 
 	singleton = NULL;
 
