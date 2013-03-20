@@ -4664,6 +4664,41 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	                        nmcli_desc ? nmcli_desc : "");
 }
 
+/*
+ * Gets setting:prop property value and returns it in 'value'.
+ * Caller is responsible for freeing the GValue resources using g_value_unset()
+ */
+gboolean
+nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value)
+{
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	if (param_spec) {
+		memset (value, 0, sizeof (GValue));
+		g_value_init (value, G_PARAM_SPEC_VALUE_TYPE (param_spec));
+		g_object_get_property (G_OBJECT (setting), prop, value);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/*
+ * Sets setting:prop property value from 'value'.
+ */
+gboolean
+nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
+{
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	if (param_spec && G_VALUE_TYPE (value) == G_PARAM_SPEC_VALUE_TYPE (param_spec)) {
+		g_object_set_property (G_OBJECT (setting), prop, value);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 
 static gboolean
