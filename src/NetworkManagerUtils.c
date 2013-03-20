@@ -363,7 +363,7 @@ nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *setting)
 		nm_ip6_config_set_never_default (ip6_config, TRUE);
 }
 
-static gboolean
+gboolean
 nm_match_spec_string (const GSList *specs, const char *match)
 {
 	const GSList *iter;

@@ -66,6 +66,7 @@
 #include "nm-manager-auth.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher.h"
+#include "nm-config-device.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -133,7 +134,10 @@ enum {
 
 /***********************************************************/
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
+static void nm_device_config_device_interface_init (NMConfigDeviceInterface *iface);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMDevice, nm_device, G_TYPE_OBJECT,
+                                  G_IMPLEMENT_INTERFACE (NM_TYPE_CONFIG_DEVICE, nm_device_config_device_interface_init))
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -5067,6 +5071,13 @@ nm_device_class_init (NMDeviceClass *klass)
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }
 
+static void
+nm_device_config_device_interface_init (NMConfigDeviceInterface *iface)
+{
+	iface->spec_match_list = (gboolean (*) (NMConfigDevice *, const GSList *)) nm_device_spec_match_list;
+	iface->get_hw_address = (const guint8 * (*) (NMConfigDevice *, guint *)) nm_device_get_hw_address;
+}
+
 void
 nm_device_set_firmware_missing (NMDevice *self, gboolean new_missing)
 {
@@ -5549,6 +5560,8 @@ nm_device_set_managed (NMDevice *device,
  *     "s390-subchannels:00.11.22" - matches a device with the given
  *     z/VM / s390 subchannels.
  *
+ *     "*" - matches any device
+ *
  * Returns: #TRUE if @device matches one of the specs in @specs
  */
 gboolean
@@ -5556,9 +5569,7 @@ nm_device_spec_match_list (NMDevice *device, const GSList *specs)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	if (NM_DEVICE_GET_CLASS (device)->spec_match_list)
-		return NM_DEVICE_GET_CLASS (device)->spec_match_list (device, specs);
-	return FALSE;
+	return NM_DEVICE_GET_CLASS (device)->spec_match_list (device, specs);
 }
 
 static gboolean
@@ -5568,6 +5579,9 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	guint hwaddr_len = 0;
 	char *hwaddr_str;
 	gboolean matched = FALSE;
+
+	if (nm_match_spec_string (specs, "*"))
+		return TRUE;
 
 	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
 	if (hwaddr && hwaddr_len) {
