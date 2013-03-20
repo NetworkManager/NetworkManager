@@ -227,6 +227,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_ip4_config (new_contents, s_ip4, hostname);
 		add_also_request (alsoreq, "rfc3442-classless-static-routes");
 		add_also_request (alsoreq, "ms-classless-static-routes");
+		add_also_request (alsoreq, "static-routes");
 		add_also_request (alsoreq, "wpad");
 		add_also_request (alsoreq, "ntp-servers");
 	}
