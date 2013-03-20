@@ -3284,6 +3284,20 @@ typedef struct {
 } EditLibSymbols;
 
 static EditLibSymbols edit_lib_symbols;
+static char *pre_input_deftext;
+
+static int
+set_deftext (void)
+{
+	if (   pre_input_deftext
+	    && edit_lib_symbols.rl_insert_text_func
+	    && edit_lib_symbols.rl_startup_hook_x) {
+		edit_lib_symbols.rl_insert_text_func (pre_input_deftext);
+		pre_input_deftext = NULL;
+		*edit_lib_symbols.rl_startup_hook_x = NULL;
+	}
+	return 0;
+}
 
 static GModule *
 load_cmd_line_edit_lib (void)
@@ -3725,6 +3739,8 @@ property_edit_submenu (NmCli *nmc, NMConnection *connection, NMSetting *curr_set
 			break;
 
 		case NMC_EDITOR_SUB_CMD_CHANGE:
+			*edit_lib_symbols.rl_startup_hook_x = set_deftext;
+			pre_input_deftext = nmc_setting_get_property (curr_setting, prop_name, NULL);
 			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
 			prop_val_user = readline_x (tmp_prompt);
 
