@@ -215,6 +215,7 @@ typedef struct {
 #endif
 
 	NMDBusManager *dbus_mgr;
+	guint          dbus_connection_changed_id;
 	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
 
@@ -4252,6 +4253,7 @@ dispose (GObject *object)
 		g_assert (dbus_connection);
 		dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
 	}
+	g_signal_handler_disconnect (priv->dbus_mgr, priv->dbus_connection_changed_id);
 	g_object_unref (priv->dbus_mgr);
 
 	if (priv->bluez_mgr)
@@ -4499,6 +4501,26 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 }
 
 static void
+dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
+                            DBusGConnection *connection,
+                            gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	DBusConnection *dbus_connection;
+
+	if (connection) {
+		dbus_connection = dbus_g_connection_get_connection (connection);
+		g_assert (dbus_connection);
+
+		/* Register property filter on new connection; there's no reason this
+		 * should fail except out-of-memory or program error; if it does fail
+		 * then there's no Manager property access control, which is bad.
+		 */
+		g_assert (dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL));
+	}
+}
+
+static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -4540,6 +4562,10 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_DISCONNECTED;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_connection_changed_id = g_signal_connect (priv->dbus_mgr,
+	                                                     NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
+	                                                     G_CALLBACK (dbus_connection_changed_cb),
+	                                                     manager);
 
 	priv->modem_manager = nm_modem_manager_get ();
 	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
