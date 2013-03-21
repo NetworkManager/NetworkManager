@@ -78,6 +78,7 @@ static const char *orig_missing_expected = \
 	"\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
@@ -109,6 +110,7 @@ static const char *override_client_id_expected = \
 	"\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
@@ -140,6 +142,7 @@ static const char *override_hostname_expected = \
 	"\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
@@ -173,6 +176,7 @@ static const char *existing_alsoreq_expected = \
 	"also request another-thing;\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
@@ -210,6 +214,7 @@ static const char *existing_multiline_alsoreq_expected = \
 	"also request blah;\n"
 	"also request rfc3442-classless-static-routes;\n"
 	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
 	"also request wpad;\n"
 	"also request ntp-servers;\n"
 	"\n";
