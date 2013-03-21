@@ -44,8 +44,7 @@ typedef struct {
 
 GType nm_default_wired_connection_get_type (void);
 
-NMDefaultWiredConnection *nm_default_wired_connection_new (const GByteArray *mac,
-                                                           NMDevice *device,
+NMDefaultWiredConnection *nm_default_wired_connection_new (NMDevice *device,
                                                            const char *defname,
                                                            gboolean read_only);
 

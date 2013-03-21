@@ -31,15 +31,14 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-marshal.h"
 #include "nm-default-wired-connection.h"
+#include "nm-device-ethernet.h"
 
 G_DEFINE_TYPE (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionPrivate))
 
 typedef struct {
-	gboolean disposed;
 	NMDevice *device;
-	GByteArray *mac;
 } NMDefaultWiredConnectionPrivate;
 
 enum {
@@ -81,10 +80,7 @@ do_delete (NMSettingsConnection *connection,
 	       NMSettingsConnectionDeleteFunc callback,
 	       gpointer user_data)
 {
-	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
-	NMDefaultWiredConnectionPrivate *priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (connection);
-
-	g_signal_emit (self, signals[DELETED], 0, priv->mac);
+	g_signal_emit (connection, signals[DELETED], 0);
 	NM_SETTINGS_CONNECTION_CLASS (nm_default_wired_connection_parent_class)->delete (connection,
 	                                                                                 callback,
 	                                                                                 user_data);
@@ -93,8 +89,7 @@ do_delete (NMSettingsConnection *connection,
 /****************************************************************/
 
 NMDefaultWiredConnection *
-nm_default_wired_connection_new (const GByteArray *mac,
-                                 NMDevice *device,
+nm_default_wired_connection_new (NMDevice *device,
                                  const char *defname,
                                  gboolean read_only)
 {
@@ -102,18 +97,17 @@ nm_default_wired_connection_new (const GByteArray *mac,
 	NMDefaultWiredConnectionPrivate *priv;
 	NMSetting *setting;
 	char *uuid;
+	const guint8 *hw_address;
+	guint len;
+	GByteArray *mac;
 
-	g_return_val_if_fail (mac != NULL, NULL);
-	g_return_val_if_fail (mac->len == ETH_ALEN, NULL);
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 	g_return_val_if_fail (defname != NULL, NULL);
 
 	self = (NMDefaultWiredConnection *) g_object_new (NM_TYPE_DEFAULT_WIRED_CONNECTION, NULL);
 
 	priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (self);
 	priv->device = g_object_ref (device);
-	priv->mac = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (priv->mac, mac->data, mac->len);
 
 	setting = nm_setting_connection_new ();
 
@@ -131,9 +125,15 @@ nm_default_wired_connection_new (const GByteArray *mac,
 	nm_connection_add_setting (NM_CONNECTION (self), setting);
 
 	/* Lock the connection to the specific device */
+	hw_address = nm_device_get_hw_address (device, &len);
+	mac = g_byte_array_sized_new (len);
+	g_byte_array_append (mac, hw_address, len);
+
 	setting = nm_setting_wired_new ();
-	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, priv->mac, NULL);
+	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 	nm_connection_add_setting (NM_CONNECTION (self), setting);
+
+	g_byte_array_unref (mac);
 
 	return self;
 }
@@ -148,11 +148,7 @@ dispose (GObject *object)
 {
 	NMDefaultWiredConnectionPrivate *priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->disposed == FALSE) {
-		priv->disposed = TRUE;
-		g_object_unref (priv->device);
-		g_byte_array_free (priv->mac, TRUE);
-	}
+	g_clear_object (&priv->device);
 
 	G_OBJECT_CLASS (nm_default_wired_connection_parent_class)->dispose (object);
 }
@@ -190,6 +186,6 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 			      G_OBJECT_CLASS_TYPE (object_class),
 			      G_SIGNAL_RUN_LAST,
 			      0, NULL, NULL,
-			      g_cclosure_marshal_VOID__POINTER,
-			      G_TYPE_NONE, 1, G_TYPE_POINTER);
+			      g_cclosure_marshal_VOID__VOID,
+			      G_TYPE_NONE, 0);
 }

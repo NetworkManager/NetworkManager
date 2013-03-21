@@ -1312,7 +1312,6 @@ have_connection_for_device (NMSettings *self, GByteArray *mac, NMDevice *device)
 	gpointer data;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingInfiniband *s_infiniband;
 	const GByteArray *setting_mac;
 	gboolean ret = FALSE;
 
@@ -1338,12 +1337,10 @@ have_connection_for_device (NMSettings *self, GByteArray *mac, NMDevice *device)
 		}
 
 		if (   strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
-		    && strcmp (ctype, NM_SETTING_INFINIBAND_SETTING_NAME)
 		    && strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
 			continue;
 
 		s_wired = nm_connection_get_setting_wired (connection);
-		s_infiniband = nm_connection_get_setting_infiniband (connection);
 
 		/* No wired setting; therefore the PPPoE connection applies to any device */
 		if (!s_wired && !strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
@@ -1351,11 +1348,9 @@ have_connection_for_device (NMSettings *self, GByteArray *mac, NMDevice *device)
 			break;
 		}
 
-		g_assert (s_wired != NULL || s_infiniband != NULL);
+		g_assert (s_wired != NULL);
 
-		setting_mac = s_wired ?
-			nm_setting_wired_get_mac_address (s_wired) :
-			nm_setting_infiniband_get_mac_address (s_infiniband);
+		setting_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_mac) {
 			/* A connection mac-locked to this device */
 			if (mac->len == setting_mac->len &&
@@ -1425,13 +1420,13 @@ out:
 
 static void
 default_wired_deleted (NMDefaultWiredConnection *wired,
-                       const GByteArray *mac,
                        NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMDevice *device;
 	NMSettingConnection *s_con;
-	int hwaddr_type;
-	char *tmp;
+	const guint8 *hw_addr_bytes;
+	char *hw_addr;
 	const char *config_file;
 	GKeyFile *config;
 	char **list, **iter, **updated;
@@ -1439,10 +1434,13 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	gsize len = 0, i;
 	char *data;
 
+	device = nm_default_wired_connection_get_device (wired);
+	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_TAG, NULL);
+
 	/* If there was no config file specified, there's nothing to do */
 	config_file = nm_config_get_path (priv->config);
 	if (!config_file)
-		goto cleanup;
+		return;
 
 	/* When the default wired connection is removed (either deleted or saved
 	 * to a new persistent connection by a plugin), write the MAC address of
@@ -1457,31 +1455,20 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 	 * been removed by the user.
 	 */
 	if (nm_setting_connection_get_read_only (s_con))
-		goto cleanup;
+		return;
+
+	hw_addr_bytes = nm_device_get_hw_address (device, NULL);
+	hw_addr = nm_utils_hwaddr_ntoa (hw_addr_bytes, ARPHRD_ETHER);
 
 	config = g_key_file_new ();
-
-	if (nm_connection_get_setting_wired (NM_CONNECTION (wired)))
-		hwaddr_type = ARPHRD_ETHER;
-	else if (nm_connection_get_setting_infiniband (NM_CONNECTION (wired)))
-		hwaddr_type = ARPHRD_INFINIBAND;
-	else
-		goto cleanup;
 
 	g_key_file_set_list_separator (config, ',');
 	g_key_file_load_from_file (config, config_file, G_KEY_FILE_KEEP_COMMENTS, NULL);
 
 	list = g_key_file_get_string_list (config, "main", CONFIG_KEY_NO_AUTO_DEFAULT, &len, NULL);
 	for (iter = list; iter && *iter; iter++) {
-		guint8 *candidate, buffer[NM_UTILS_HWADDR_LEN_MAX];
-
-		if (strcmp (g_strstrip (*iter), "*") == 0) {
-			found = TRUE;
-			break;
-		}
-
-		candidate = nm_utils_hwaddr_aton (*iter, hwaddr_type, buffer);
-		if (candidate && !memcmp (mac->data, candidate, mac->len)) {
+		if (   strcmp (*iter, "*") == 0
+		    || strcmp (*iter, hw_addr) == 0) {
 			found = TRUE;
 			break;
 		}
@@ -1489,15 +1476,13 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 
 	/* Add this device's MAC to the list */
 	if (!found) {
-		tmp = nm_utils_hwaddr_ntoa (mac->data, hwaddr_type);
-
 		/* New list; size + 1 for the new element, + 1 again for ending NULL */
 		updated = g_malloc0 (sizeof (char*) * (len + 2));
 
 		/* Copy original list and add new MAC */
 		for (i = 0; list && list[i]; i++)
 			updated[i] = list[i];
-		updated[i++] = tmp;
+		updated[i++] = hw_addr;
 		updated[i] = NULL;
 
 		g_key_file_set_string_list (config,
@@ -1506,7 +1491,6 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 		                            len + 2);
 		/* g_free() not g_strfreev() since 'updated' isn't a deep-copy */
 		g_free (updated);
-		g_free (tmp);
 
 		data = g_key_file_to_data (config, &len, NULL);
 		if (data) {
@@ -1515,14 +1499,9 @@ default_wired_deleted (NMDefaultWiredConnection *wired,
 		}
 	}
 
-	if (list)
-		g_strfreev (list);
+	g_free (hw_addr);
+	g_strfreev (list);
 	g_key_file_free (config);
-
-cleanup:
-	g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
-	                   DEFAULT_WIRED_TAG,
-	                   NULL);
 }
 
 static void
@@ -1586,7 +1565,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	const char *id;
 	char *defname;
 
-	if (!NM_IS_DEVICE_WIRED (device))
+	if (!NM_IS_DEVICE_ETHERNET (device))
 		return;
 
 	/* If the device isn't managed or it already has a default wired connection,
@@ -1609,7 +1588,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 		read_only = FALSE;
 
 	defname = nm_settings_utils_get_default_wired_name (priv->connections);
-	wired = nm_default_wired_connection_new (mac, device, defname, read_only);
+	wired = nm_default_wired_connection_new (device, defname, read_only);
 	g_free (defname);
 	if (!wired)
 		goto ignore;
