@@ -3654,6 +3654,44 @@ editor_sub_usage (const char *command)
 
 /*----------------------------------------------------------------------------*/
 
+static gboolean nmc_editor_cb_called;
+static GError *nmc_editor_error;
+static GMutex nmc_editor_mutex;
+static GCond nmc_editor_cond;
+
+/*
+ * Store 'error' to shared 'nmc_editor_error' and signal the condition
+ * so that the 'editor-thread' thread could process that.
+ */
+static void
+set_and_signal_error (GError *error)
+{
+	g_mutex_lock (&nmc_editor_mutex);
+	nmc_editor_cb_called = TRUE;
+	nmc_editor_error = error ? g_error_copy (error) : NULL;
+	g_cond_signal (&nmc_editor_cond);
+	g_mutex_unlock (&nmc_editor_mutex);
+}
+
+static void
+add_connection_editor_cb (NMRemoteSettings *settings,
+                          NMRemoteConnection *connection,
+                          GError *error,
+                          gpointer user_data)
+{
+	set_and_signal_error (error);
+}
+
+static void
+update_connection_editor_cb (NMRemoteConnection *connection,
+                             GError *error,
+                             gpointer user_data)
+{
+	set_and_signal_error (error);
+}
+
+/*----------------------------------------------------------------------------*/
+
 static void
 print_property_description (NMSetting *setting, const char *prop_name)
 {
@@ -3997,6 +4035,7 @@ menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
 static gboolean
 editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
 {
+	NMRemoteConnection *rem_con = NULL;
 	NmcEditorMainCmd cmd;
 	char *cmd_user;
 	gboolean cmd_loop = TRUE;
@@ -4022,6 +4061,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	menu_ctx.valid_props_str = NULL;
 
 	while (cmd_loop) {
+		if (!rem_con)
+			rem_con = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
+			                                                     nm_connection_get_uuid (connection));
 		cmd_user = readline_x (menu_ctx.main_prompt);
 		if (!cmd_user || *cmd_user == '\0')
 			continue;
@@ -4293,21 +4335,45 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_SAVE:
 			/* Save the connection */
 			if (nm_connection_verify (connection, &err1)) {
-				info = g_malloc0 (sizeof (AddConnectionInfo));
-				info->nmc = nmc;
-				info->con_name = g_strdup (nm_connection_get_id (connection));
-				//info->device = device;
+				if (!rem_con) {
+					/* Tell the settings service to add the new connection */
+					info = g_malloc0 (sizeof (AddConnectionInfo));
+					info->nmc = nmc;
+					info->con_name = g_strdup (nm_connection_get_id (connection));
+					nm_remote_settings_add_connection (nmc->system_settings,
+					                                   connection,
+					                                   add_connection_editor_cb,
+					                                   info);
+				} else {
+					/* Save/update already saved (existing) connection */
+					nm_connection_replace_settings_from_connection (NM_CONNECTION (rem_con),
+					                                                connection,
+					                                                NULL);
+					nm_remote_connection_commit_changes (rem_con,
+					                                     update_connection_editor_cb,
+					                                     NULL);
+				}
 
-				/* Tell the settings service to add the new connection */
-				nm_remote_settings_add_connection (nmc->system_settings,
-				                                   connection,
-				                                   add_connection_cb,
-				                                   info);
+				g_mutex_lock (&nmc_editor_mutex);
+				//FIXME: add also a timeout for cases the callback is not called
+				while (!nmc_editor_cb_called)
+					g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
 
-				// FIXME: we should run cmd loop in a thread of something,
-				// because the current way blocks glib main loop, and thus D-Bus
-				// callbacks (and all other events) can't be processed !!!
+				if (nmc_editor_error) {
+					printf (_("Error: Failed to save '%s' (%s) connection: (%d) %s\n"),
+					        nm_connection_get_id (connection),
+					        nm_connection_get_uuid (connection),
+					        nmc_editor_error->code, nmc_editor_error->message);
 
+					g_error_free (nmc_editor_error);
+				} else
+					printf (_("Connection '%s' (%s) sucessfully saved.\n"),
+					        nm_connection_get_id (connection),
+					        nm_connection_get_uuid (connection));
+
+				nmc_editor_cb_called = FALSE;
+				nmc_editor_error = NULL;
+				g_mutex_unlock (&nmc_editor_mutex);
 			} else
 				printf (_("Error: connection verification failed: %s\n"),
 				        err1 ? err1->message : _("(unknown)"));
@@ -4624,7 +4690,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	if (connection)
 		g_object_unref (connection);
 
-	nmc->should_wait = FALSE;
+	nmc->should_wait = TRUE;
 	return nmc->return_value;
 
 error:
@@ -4787,6 +4853,35 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+
+typedef struct {
+	NmCli *nmc;
+	int argc;
+	char **argv;
+} NmcEditorThreadData;
+
+static GThread *editor_thread;
+static NmcEditorThreadData editor_thread_data;
+
+/*
+ * We need to run do_connection_edit() in a thread so that
+ * glib main loop is not blocked and could receive and process D-Bus
+ * return messages.
+ */
+static gpointer
+connection_editor_thread_func (gpointer data)
+{
+	NmcEditorThreadData *td = (NmcEditorThreadData *) data;
+
+	/* run editor for editing/adding connections */
+	td->nmc->return_value = do_connection_edit (td->nmc, td->argc, td->argv);
+
+	/* quit glib main loop now that we are with this thread */
+	quit ();
+
+	return NULL;
+}
+
 static NMCResultCode
 parse_cmd (NmCli *nmc, int argc, char **argv)
 {
@@ -4827,7 +4922,11 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "edit") == 0) {
-			nmc->return_value = do_connection_edit (nmc, argc-1, argv+1);
+			editor_thread_data.nmc = nmc;
+			editor_thread_data.argc = argc - 1;
+			editor_thread_data.argv = argv + 1;
+			editor_thread = g_thread_new ("editor-thread", connection_editor_thread_func, &editor_thread_data);
+			g_thread_unref (editor_thread);
 		}
 		else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
