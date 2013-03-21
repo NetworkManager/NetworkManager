@@ -73,7 +73,7 @@ _nm_utils_convert_strv_to_ptrarray (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-_nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
+_nm_utils_convert_string_list_to_string (const GValue *src_value, GValue *dest_value)
 {
 	GSList *strings;
 	GString *printable;
@@ -83,19 +83,14 @@ _nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 
 	strings = (GSList *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
-	for (iter = strings; iter; iter = g_slist_next (iter)) {
+	printable = g_string_new (NULL);
+	for (iter = strings; iter; iter = iter->next) {
 		if (iter != strings)
-			g_string_append (printable, ", '");
-		else
-			g_string_append_c (printable, '\'');
+			g_string_append_c (printable, ',');
 		g_string_append (printable, iter->data);
-		g_string_append_c (printable, '\'');
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -104,19 +99,14 @@ _string_array_to_string (const GPtrArray *strings, GValue *dest_value)
 	GString *printable;
 	int i;
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	for (i = 0; strings && i < strings->len; i++) {
 		if (i > 0)
-			g_string_append (printable, ", '");
-		else
-			g_string_append_c (printable, '\'');
-		g_string_append (printable, g_ptr_array_index (strings, i));
-		g_string_append_c (printable, '\'');
+			g_string_append_c (printable, ',');
+		g_string_append (printable, strings->pdata[i]);
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -152,7 +142,7 @@ _nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_va
 
 	array = (GArray *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	while (array && (i < array->len)) {
 		char buf[INET_ADDRSTRLEN + 1];
 		struct in_addr addr;
@@ -165,12 +155,10 @@ _nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_va
 		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 			g_warning ("%s: error converting IP4 address 0x%X",
 			           __func__, ntohl (addr.s_addr));
-		g_string_append_printf (printable, "%u (%s)", addr.s_addr, buf);
+		g_string_append (printable, buf);
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -184,7 +172,7 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	while (ptr_array && (i < ptr_array->len)) {
 		GArray *array;
 		char buf[INET_ADDRSTRLEN + 1];
@@ -192,7 +180,7 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 		gboolean is_addr; /* array contains address x route */
 
 		if (i > 0)
-			g_string_append (printable, ", ");
+			g_string_append (printable, "; ");
 
 		g_string_append (printable, "{ ");
 		array = (GArray *) g_ptr_array_index (ptr_array, i++);
@@ -211,40 +199,31 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 			g_string_append_printf (printable, "ip = %s", buf);
 		else
 			g_string_append_printf (printable, "dst = %s", buf);
-		g_string_append (printable, ", ");
 
-		memset (buf, 0, sizeof (buf));
-		g_string_append_printf (printable, "px = %u",
+		g_string_append_printf (printable, "/%u",
 		                        g_array_index (array, guint32, 1));
 
 		if (array->len > 2) {
-			g_string_append (printable, ", ");
-
 			memset (buf, 0, sizeof (buf));
 			addr.s_addr = g_array_index (array, guint32, 2);
 			if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 				g_warning ("%s: error converting IP4 address 0x%X",
 				           __func__, ntohl (addr.s_addr));
 			if (is_addr)
-				g_string_append_printf (printable, "gw = %s", buf);
+				g_string_append_printf (printable, ", gw = %s", buf);
 			else
-				g_string_append_printf (printable, "nh = %s", buf);
+				g_string_append_printf (printable, ", nh = %s", buf);
 		}
 
 		if (array->len > 3) {
-			g_string_append (printable, ", ");
-
-			memset (buf, 0, sizeof (buf));
-			g_string_append_printf (printable, "mt = %u",
+			g_string_append_printf (printable, ", mt = %u",
 			                        g_array_index (array, guint32, 3));
 		}
 
 		g_string_append (printable, " }");
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -281,7 +260,9 @@ convert_one_string_hash_entry (gpointer key, gpointer value, gpointer user_data)
 {
 	GString *printable = (GString *) user_data;
 
-	g_string_append_printf (printable, " { '%s': %s },", (const char *) key, (const char *) value);
+	if (printable->len)
+		g_string_append_c (printable, ',');
+	g_string_append_printf (printable, "%s=%s", (const char *) key, (const char *) value);
 }
 
 static void
@@ -294,13 +275,11 @@ _nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_v
 
 	hash = (GHashTable *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	if (hash)
 		g_hash_table_foreach (hash, convert_one_string_hash_entry, printable);
-	g_string_append (printable, " ]");
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -327,8 +306,7 @@ _nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_va
 	}
 	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static gboolean
@@ -359,7 +337,7 @@ _nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest
 
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	while (ptr_array && (i < ptr_array->len)) {
 		GByteArray *bytearray;
 		char buf[INET6_ADDRSTRLEN];
@@ -376,12 +354,10 @@ _nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest
 		addr = (struct in6_addr *) bytearray->data;
 		memset (buf, 0, sizeof (buf));
 		_nm_utils_inet6_ntop (addr, buf);
-		g_string_append_printf (printable, "%s", buf);
+		g_string_append (printable, buf);
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -395,7 +371,7 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	while (ptr_array && (i < ptr_array->len)) {
 		GValueArray *elements;
 		GValue *tmp;
@@ -405,7 +381,7 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 		guint32 prefix;
 
 		if (i > 0)
-			g_string_append (printable, ", ");
+			g_string_append (printable, "; ");
 
 		g_string_append (printable, "{ ");
 		elements = (GValueArray *) g_ptr_array_index (ptr_array, i++);
@@ -428,16 +404,15 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 		memset (buf, 0, sizeof (buf));
 		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "ip = %s", buf);
-		g_string_append (printable, ", ");
 
 		/* Prefix */
 		tmp = g_value_array_get_nth (elements, 1);
 		prefix = g_value_get_uint (tmp);
 		if (prefix > 128) {
-			g_string_append (printable, "invalid }");
+			g_string_append (printable, "/invalid }");
 			continue;
 		}
-		g_string_append_printf (printable, "px = %u", prefix);
+		g_string_append_printf (printable, "/%u", prefix);
 		g_string_append (printable, ", ");
 
 		/* IPv6 Gateway */
@@ -453,10 +428,8 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 		g_string_append_printf (printable, "gw = %s", buf);
 		g_string_append (printable, " }");
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 static void
@@ -470,7 +443,7 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
-	printable = g_string_new ("[");
+	printable = g_string_new (NULL);
 	while (ptr_array && (i < ptr_array->len)) {
 		GValueArray *elements;
 		GValue *tmp;
@@ -480,7 +453,7 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 		guint32 prefix, metric;
 
 		if (i > 0)
-			g_string_append (printable, ", ");
+			g_string_append (printable, "; ");
 
 		g_string_append (printable, "{ ");
 		elements = (GValueArray *) g_ptr_array_index (ptr_array, i++);
@@ -504,16 +477,15 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 		memset (buf, 0, sizeof (buf));
 		_nm_utils_inet6_ntop (addr, buf);
 		g_string_append_printf (printable, "dst = %s", buf);
-		g_string_append (printable, ", ");
 
 		/* Prefix */
 		tmp = g_value_array_get_nth (elements, 1);
 		prefix = g_value_get_uint (tmp);
 		if (prefix > 128) {
-			g_string_append (printable, "invalid");
+			g_string_append (printable, "/invalid");
 			continue;
 		}
-		g_string_append_printf (printable, "px = %u", prefix);
+		g_string_append_printf (printable, "/%u", prefix);
 		g_string_append (printable, ", ");
 
 		/* Next hop addresses */
@@ -536,10 +508,8 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 
 		g_string_append (printable, " }");
 	}
-	g_string_append_c (printable, ']');
 
-	g_value_take_string (dest_value, printable->str);
-	g_string_free (printable, FALSE);
+	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
 #define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
@@ -608,7 +578,7 @@ _nm_value_transforms_register (void)
 		                                 _nm_utils_convert_strv_to_ptrarray);
 		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
 		                                 G_TYPE_STRING, 
-		                                 _nm_utils_convert_strv_to_string);
+		                                 _nm_utils_convert_string_list_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_STRING,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_string_array_to_string);
