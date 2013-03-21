@@ -42,7 +42,7 @@ libnm_util_include_HEADERS = 		\
 libnm_util_la_private_headers = \
 	crypto.h			\
 	nm-param-spec-specialized.h	\
-	nm-utils-private.h \
+	nm-utils-private.h		\
 	nm-setting-private.h
 
 libnm_util_la_csources = \
@@ -73,7 +73,8 @@ libnm_util_la_csources = \
 	nm-setting-wireless-security.c	\
 	nm-setting-vpn.c		\
 	nm-utils-enum-types.c		\
-	nm-utils.c
+	nm-utils.c			\
+	nm-value-transforms.c
 
 libnm_util_la_SOURCES = \
 	$(libnm_util_la_csources) \

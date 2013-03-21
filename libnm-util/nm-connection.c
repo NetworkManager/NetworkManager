@@ -127,7 +127,7 @@ static void __attribute__((constructor))
 _ensure_registered (void)
 {
 	g_type_init ();
-	_nm_utils_register_value_transformations ();
+	_nm_value_transforms_register ();
 	if (G_UNLIKELY (registered_settings == NULL))
 		registered_settings = g_hash_table_new (g_str_hash, g_str_equal);
 }

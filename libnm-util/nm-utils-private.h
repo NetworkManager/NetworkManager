@@ -32,9 +32,11 @@ gboolean    _nm_utils_string_in_list   (const char *str,
 gboolean    _nm_utils_string_slist_validate (GSList *list,
                                              const char **valid_values);
 
-void        _nm_utils_register_value_transformations (void);
+gboolean    _nm_utils_gvalue_array_validate (GValueArray *elements,
+                                             guint n_expected, ...);
 
 gboolean    _nm_utils_carrier_detect_mode_valid (const char *carrier_detect);
 
+void        _nm_value_transforms_register (void);
 
 #endif
