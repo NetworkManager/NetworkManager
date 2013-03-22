@@ -1364,39 +1364,33 @@ get_decoded_property (GUdevDevice *device, const char *property)
 	return unescaped;
 }
 
-static void
-_device_update_description (NMDevice *device)
+static char *
+_get_udev_property (NMDevice *device,
+                    const char *enc_prop,  /* ID_XXX_ENC */
+                    const char *db_prop)   /* ID_XXX_FROM_DATABASE */
 {
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	const char *subsys[3] = { "net", "tty", NULL };
 	GUdevDevice *udev_device = NULL, *tmpdev, *olddev;
 	const char *ifname;
 	guint32 count = 0;
-	const char *vendor, *model;
-
-	g_return_if_fail (NM_IS_DEVICE (device));
-	priv = NM_DEVICE_GET_PRIVATE (device);
+	char *enc_value = NULL, *db_value = NULL;
 
 	if (!priv->client) {
 		priv->client = g_udev_client_new (subsys);
 		if (!priv->client)
-			return;
+			return NULL;
 	}
 
 	ifname = nm_device_get_iface (device);
 	if (!ifname)
-		return;
+		return NULL;
 
 	udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
 	if (!udev_device)
 		udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "tty", ifname);
 	if (!udev_device)
-		return;
-
-	g_free (priv->product);
-	priv->product = NULL;
-	g_free (priv->vendor);
-	priv->vendor = NULL;
+		return NULL;
 
 	/* Walk up the chain of the device and its parents a few steps to grab
 	 * vendor and device ID information off it.
@@ -1406,43 +1400,11 @@ _device_update_description (NMDevice *device)
 	 * as g_udev_device_get_parent() returns a ref-ed object.
 	 */
 	tmpdev = g_object_ref (udev_device);
-	while ((count++ < 3) && tmpdev && (!priv->vendor || !priv->product)) {
-		if (!priv->vendor)
-			priv->vendor = get_decoded_property (tmpdev, "ID_VENDOR_ENC");
-
-		if (!priv->product)
-			priv->product = get_decoded_property (tmpdev, "ID_MODEL_ENC");
-
-		olddev = tmpdev;
-		tmpdev = g_udev_device_get_parent (tmpdev);
-		g_object_unref (olddev);
-	}
-
-	/* Unref the last device if we found what we needed before running out
-	 * of parents.
-	 */
-	if (tmpdev)
-		g_object_unref (tmpdev);
-
-	/* If we didn't get strings directly from the device, try database strings */
-
-	/* Again, ref the original device as we need to unref it every iteration
-	 * since g_udev_device_get_parent() returns a refed object.
-	 */
-	tmpdev = g_object_ref (udev_device);
-	count = 0;
-	while ((count++ < 3) && tmpdev && (!priv->vendor || !priv->product)) {
-		if (!priv->vendor) {
-			vendor = g_udev_device_get_property (tmpdev, "ID_VENDOR_FROM_DATABASE");
-			if (vendor)
-				priv->vendor = g_strdup (vendor);
-		}
-
-		if (!priv->product) {
-			model = g_udev_device_get_property (tmpdev, "ID_MODEL_FROM_DATABASE");
-			if (model)
-				priv->product = g_strdup (model);
-		}
+	while ((count++ < 3) && tmpdev && !enc_value) {
+		if (!enc_value)
+			enc_value = get_decoded_property (tmpdev, enc_prop);
+		if (!db_value)
+			db_value = g_strdup (g_udev_device_get_property (tmpdev, db_prop));
 
 		olddev = tmpdev;
 		tmpdev = g_udev_device_get_parent (tmpdev);
@@ -1458,8 +1420,15 @@ _device_update_description (NMDevice *device)
 	/* Balance the initial g_udev_client_query_by_subsystem_and_name() */
 	g_object_unref (udev_device);
 
-	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
-	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
+	/* Prefer the the encoded value which comes directly from the device
+	 * over the hwdata database value.
+	 */
+	if (enc_value) {
+		g_free (db_value);
+		return enc_value;
+	}
+
+	return db_value;
 }
 
 /**
@@ -1479,8 +1448,10 @@ nm_device_get_product (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (!priv->product)
-		_device_update_description (device);
+	if (!priv->product) {
+		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
+		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
+	}
 	return priv->product;
 }
 
@@ -1501,8 +1472,10 @@ nm_device_get_vendor (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (!priv->vendor)
-		_device_update_description (device);
+	if (!priv->vendor) {
+		priv->vendor = _get_udev_property (device, "ID_VENDOR_ENC", "ID_VENDOR_FROM_DATABASE");
+		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
+	}
 	return priv->vendor;
 }
 
