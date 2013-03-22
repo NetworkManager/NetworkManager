@@ -649,8 +649,8 @@ _nm_param_spec_specialized (const char *name,
 static void
 compare_ints (void)
 {
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 
 	g_value_init (&value1, G_TYPE_INT);
 	g_value_init (&value2, G_TYPE_INT);
@@ -669,8 +669,8 @@ compare_ints (void)
 static void
 compare_strings (void)
 {
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 	const char *str1 = "hello";
 	const char *str2 = "world";
 
@@ -688,8 +688,8 @@ compare_strings (void)
 static void
 compare_strv (void)
 {
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 	char *strv1[] = { "foo", "bar", "baz", NULL };
 	char *strv2[] = { "foo", "bar", "bar", NULL };
 	char *strv3[] = { "foo", "bar", NULL };
@@ -717,8 +717,8 @@ compare_garrays (void)
 {
 	GArray *array1;
 	GArray *array2;
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 	int i;
 
 	g_value_init (&value1, DBUS_TYPE_G_UINT_ARRAY);
@@ -752,8 +752,8 @@ compare_ptrarrays (void)
 {
 	GPtrArray *array1;
 	GPtrArray *array2;
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 
 	g_value_init (&value1, dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING));
 	array1 = g_ptr_array_new ();
@@ -785,8 +785,8 @@ compare_str_hash (void)
 {
 	GHashTable *hash1;
 	GHashTable *hash2;
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 
 	g_value_init (&value1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING));
 	g_value_init (&value2, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING));
@@ -842,8 +842,8 @@ compare_gvalue_hash (void)
 {
 	GHashTable *hash1;
 	GHashTable *hash2;
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 
 	g_value_init (&value1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
 	g_value_init (&value2, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
@@ -879,9 +879,9 @@ compare_ip6_addresses (void)
 	GByteArray *ba1;
 	GByteArray *ba2;
 	GByteArray *ba3;
-	GValue element = { 0 };
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue element = G_VALUE_INIT;
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 	struct in6_addr addr1;
 	struct in6_addr addr2;
 	struct in6_addr addr3;

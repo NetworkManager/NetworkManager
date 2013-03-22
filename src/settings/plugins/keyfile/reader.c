@@ -132,7 +132,7 @@ build_ip6_address_or_route (const char *address_str, guint32 plen, const char *g
 	struct in6_addr addr;
 	GByteArray *address;
 	GByteArray *gateway;
-	GValue value = { 0, };
+	GValue value = G_VALUE_INIT;
 	int err;
 
 	g_return_val_if_fail (address_str, NULL);

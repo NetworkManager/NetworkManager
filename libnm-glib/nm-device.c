@@ -845,7 +845,7 @@ _nm_device_type_for_path (DBusGConnection *connection,
 {
 	DBusGProxy *proxy;
 	GError *err = NULL;
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 	NMDeviceType nm_dtype;
 
 	proxy = dbus_g_proxy_new_for_name (connection,
@@ -1146,7 +1146,7 @@ nm_device_get_autoconnect (NMDevice *device)
 void
 nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect)
 {
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 

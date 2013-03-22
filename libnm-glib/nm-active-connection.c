@@ -111,7 +111,7 @@ _nm_active_connection_type_for_path (DBusGConnection *connection,
 {
 	DBusGProxy *proxy;
 	GError *error = NULL;
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 	GType type;
 
 	proxy = dbus_g_proxy_new_for_name (connection,

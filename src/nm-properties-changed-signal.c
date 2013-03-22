@@ -75,7 +75,7 @@ static void
 add_to_string (gpointer key, gpointer value, gpointer user_data)
 {
 	char *buf = (char *) user_data;
-	GValue str_val = { 0, };
+	GValue str_val = G_VALUE_INIT;
 
 	g_value_init (&str_val, G_TYPE_STRING);
 	if (!g_value_transform ((GValue *) value, &str_val)) {

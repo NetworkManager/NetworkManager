@@ -1291,7 +1291,7 @@ static guint32
 get_setting_default (NMSetting *setting, const char *prop)
 {
 	GParamSpec *pspec;
-	GValue val = { 0 };
+	GValue val = G_VALUE_INIT;
 	guint32 ret = 0;
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);

@@ -175,7 +175,7 @@ next_script (gpointer user_data)
 	results = g_ptr_array_sized_new (request->scripts->len);
 	for (i = 0; i < request->scripts->len; i++) {
 		ScriptInfo *script = g_ptr_array_index (request->scripts, i);
-		GValue elt = {0, };
+		GValue elt = G_VALUE_INIT;
 
 		item = g_value_array_new (3);
 

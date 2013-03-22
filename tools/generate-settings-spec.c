@@ -138,7 +138,7 @@ write_one_setting (FILE *f, gboolean book, SettingNewFunc func)
 		const char *key_name, *value_type, *value_desc;
 		char *default_value;
 		TypeNameElement *name_iter;
-		GValue value = { 0, };
+		GValue value = G_VALUE_INIT;
 		char *flags_str = NULL;
 
 		value_type = g_type_name (G_PARAM_SPEC_VALUE_TYPE (*iter));

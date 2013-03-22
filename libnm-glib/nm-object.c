@@ -1090,7 +1090,7 @@ _nm_object_reload_property (NMObject *object,
                             const char *interface,
                             const char *prop_name)
 {
-	GValue value = { 0, };
+	GValue value = G_VALUE_INIT;
 	GError *err = NULL;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
@@ -1281,7 +1281,7 @@ _nm_object_reload_pseudo_property (NMObject *object,
 	PseudoPropertyInfo *ppi;
 	GPtrArray *temp;
 	GError *error = NULL;
-	GValue value = { 0, };
+	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (name != NULL);
@@ -1365,7 +1365,7 @@ reload_got_pseudo_property (DBusGProxy *proxy, DBusGProxyCall *call,
 	NMObject *object = ppi->self;
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GPtrArray *temp;
-	GValue value = { 0, };
+	GValue value = G_VALUE_INIT;
 	GError *error = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call, &error,

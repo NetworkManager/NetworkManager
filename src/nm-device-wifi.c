@@ -1636,8 +1636,8 @@ scanning_allowed_accumulator (GSignalInvocationHint *ihint,
 static gboolean
 check_scanning_allowed (NMDeviceWifi *self)
 {
-	GValue instance = { 0, };
-	GValue retval = { 0, };
+	GValue instance = G_VALUE_INIT;
+	GValue retval = G_VALUE_INIT;
 
 	g_value_init (&instance, G_TYPE_OBJECT);
 	g_value_take_object (&instance, self);

@@ -1276,7 +1276,7 @@ nm_supplicant_interface_set_config (NMSupplicantInterface * self,
 	NMSupplicantInterfacePrivate *priv;
 	NMSupplicantInfo *info;
 	DBusGProxyCall *call;
-	GValue value = { 0, };
+	GValue value = G_VALUE_INIT;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_INTERFACE (self), FALSE);
 

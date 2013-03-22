@@ -92,7 +92,7 @@ get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 {
 	NMModem *self = NM_MODEM (user_data);
 	GError *error = NULL;
-	GValue value = { 0, };
+	GValue value = G_VALUE_INIT;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
 	                            G_TYPE_VALUE, &value,

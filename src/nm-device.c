@@ -1357,8 +1357,8 @@ gboolean
 nm_device_autoconnect_allowed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GValue instance = { 0, };
-	GValue retval = { 0, };
+	GValue instance = G_VALUE_INIT;
+	GValue retval = G_VALUE_INIT;
 
 	g_value_init (&instance, G_TYPE_OBJECT);
 	g_value_take_object (&instance, self);

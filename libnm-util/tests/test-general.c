@@ -145,7 +145,7 @@ test_setting_vpn_update_secrets (void)
 	NMConnection *connection;
 	NMSettingVPN *s_vpn;
 	GHashTable *settings, *vpn, *secrets;
-	GValue val = { 0 };
+	GValue val = G_VALUE_INIT;
 	gboolean success;
 	GError *error = NULL;
 	const char *tmp;
@@ -280,7 +280,7 @@ test_setting_ip6_config_old_address_array (void)
 	NMSettingIP6Config *s_ip6;
 	GPtrArray *addresses, *read_addresses;
 	GValueArray *array, *read_array;
-	GValue element = {0, }, written_value = {0, }, read_value = {0, };
+	GValue element = G_VALUE_INIT, written_value = G_VALUE_INIT, read_value = G_VALUE_INIT;
 	GByteArray *ba;
 	const guint8 addr[16] = { 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,
 	                          0x11, 0x22, 0x33, 0x44, 0x66, 0x77, 0x88, 0x99 };

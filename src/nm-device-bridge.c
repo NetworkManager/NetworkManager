@@ -222,7 +222,7 @@ set_sysfs_uint (const char *iface,
 {
 	char *path, *s;
 	GParamSpec *pspec;
-	GValue val = { 0 };
+	GValue val = G_VALUE_INIT;
 	guint32 uval = 0;
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (obj), obj_prop);

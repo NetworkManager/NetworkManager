@@ -57,8 +57,8 @@ test_defaults (GType type, const char *name)
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue value = { 0, };
-		GValue defvalue = { 0, };
+		GValue value = G_VALUE_INIT;
+		GValue defvalue = G_VALUE_INIT;
 		char *actual, *expected;
 		gboolean ok = FALSE;
 

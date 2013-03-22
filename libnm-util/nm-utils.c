@@ -1091,7 +1091,7 @@ _nm_utils_convert_old_ip6_addr_array (const GValue *src_value, GValue *dst_value
 	for (i = 0; src_outer_array && (i < src_outer_array->len); i++) {
 		GValueArray *src_addr_array;
 		GValueArray *dst_addr_array;
-		GValue element = {0, };
+		GValue element = G_VALUE_INIT;
 		GValue *src_addr, *src_prefix;
 		GByteArray *ba;
 
@@ -1867,7 +1867,7 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 	for (iter = list; iter; iter = iter->next) {
 		NMIP6Address *addr = (NMIP6Address *) iter->data;
 		GValueArray *array;
-		GValue element = {0, };
+		GValue element = G_VALUE_INIT;
 		GByteArray *ba;
 
 		array = g_value_array_new (3);
@@ -1991,7 +1991,7 @@ nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value)
 		GValueArray *array;
 		const struct in6_addr *addr;
 		GByteArray *ba;
-		GValue element = {0, };
+		GValue element = G_VALUE_INIT;
 
 		array = g_value_array_new (4);
 

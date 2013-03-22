@@ -1257,7 +1257,7 @@ dbus_get_vpn_state (const char *path)
 	DBusGConnection *connection;
 	DBusGProxy *proxy;
 	GError *error = NULL;
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 	NMVPNConnectionState state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 
 	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);

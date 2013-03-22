@@ -98,8 +98,8 @@ static void
 get_active_connection_details (DBusGConnection *bus, const char *obj_path)
 {
 	DBusGProxy *props_proxy;
-	GValue path_value = { 0 };
-	GValue serv_value = { 0 };
+	GValue path_value = G_VALUE_INIT;
+	GValue serv_value = G_VALUE_INIT;
 	GError *error = NULL;
 	const char *path = NULL, *service = NULL;
 
@@ -179,7 +179,7 @@ static void
 get_active_connections (DBusGConnection *bus, DBusGProxy *proxy)
 {
 	GError *error = NULL;
-	GValue value = { 0 };
+	GValue value = G_VALUE_INIT;
 	GPtrArray *paths = NULL;
 	int i;
 

@@ -768,7 +768,7 @@ nm_client_wireless_get_enabled (NMClient *client)
 void
 nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 {
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
@@ -825,7 +825,7 @@ nm_client_wwan_get_enabled (NMClient *client)
 void
 nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 {
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
@@ -882,7 +882,7 @@ nm_client_wimax_get_enabled (NMClient *client)
 void
 nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
 {
-	GValue value = {0,};
+	GValue value = G_VALUE_INIT;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 

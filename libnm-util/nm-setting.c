@@ -316,8 +316,8 @@ compare_property (NMSetting *setting,
 	              const GParamSpec *prop_spec,
 	              NMSettingCompareFlags flags)
 {
-	GValue value1 = { 0 };
-	GValue value2 = { 0 };
+	GValue value1 = G_VALUE_INIT;
+	GValue value2 = G_VALUE_INIT;
 	gboolean different;
 
 	/* Handle compare flags */
@@ -510,7 +510,7 @@ nm_setting_diff (NMSetting *a,
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue a_value = { 0 }, b_value = { 0 };
+		GValue a_value = G_VALUE_INIT, b_value = G_VALUE_INIT;
 		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN, tmp;
 		gboolean different = TRUE;
 
@@ -580,7 +580,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue value = { 0 };
+		GValue value = G_VALUE_INIT;
 
 		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop_spec));
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
@@ -612,7 +612,7 @@ nm_setting_clear_secrets (NMSetting *setting)
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue value = { 0 };
+		GValue value = G_VALUE_INIT;
 
 		if (prop_spec->flags & NM_SETTING_PARAM_SECRET) {
 			g_value_init (&value, prop_spec->value_type);
@@ -631,7 +631,7 @@ clear_secrets_with_flags (NMSetting *setting,
 	                      NMSettingClearSecretsWithFlagsFn func,
 	                      gpointer user_data)
 {
-	GValue value = { 0 };
+	GValue value = G_VALUE_INIT;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	/* Clear the secret if the user function says to do so */
@@ -710,7 +710,7 @@ static gboolean
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
 	GParamSpec *prop_spec;
-	GValue transformed_value = { 0 };
+	GValue transformed_value = G_VALUE_INIT;
 	gboolean success = FALSE;
 
 	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
@@ -929,7 +929,7 @@ nm_setting_to_string (NMSetting *setting)
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue value = { 0 };
+		GValue value = G_VALUE_INIT;
 		char *value_str;
 		gboolean is_serializable;
 		gboolean is_default;
