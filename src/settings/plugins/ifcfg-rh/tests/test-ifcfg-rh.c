@@ -175,7 +175,7 @@ verify_cert_or_key (NMSetting8021x *s_compare,
 
 
 static void
-test_read_minimal (void)
+test_read_basic (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -230,7 +230,7 @@ test_read_minimal (void)
 }
 
 static void
-test_read_variables_corner_cases (const char *file, const char *expected_id)
+test_read_variables_corner_cases (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -240,10 +240,12 @@ test_read_variables_corner_cases (const char *file, const char *expected_id)
 	const GByteArray *array;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_zone = "'";
+	const char *expected_id = "\"";
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
-	connection = connection_from_file (file, NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -12500,22 +12502,26 @@ test_write_bond_slave_ib (void)
 
 #define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
 
-#define TEST_IFCFG_VARIABLES_CORNER_CASES_1 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1"
+#define TPATH "/settings/plugins/ifcfg-rh/"
 
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
-	char *base;
+	gboolean success;
 
+	g_test_init (&argc, &argv, NULL);
 	g_type_init ();
 
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	success = nm_utils_init (&error);
+	g_assert_no_error (error);
+	g_assert (success);
 
-	/* The tests */
-	test_read_unmanaged ();
-	test_read_minimal ();
-	test_read_variables_corner_cases (TEST_IFCFG_VARIABLES_CORNER_CASES_1, "\"");
+	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
+
+	g_test_add_func (TPATH "unmanaged", test_read_unmanaged);
+	g_test_add_func (TPATH "basic", test_read_basic);
+	g_test_add_func (TPATH "variables-corner-cases", test_read_variables_corner_cases);
+
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
 	test_read_wired_static_no_prefix (8);
@@ -12680,9 +12686,6 @@ int main (int argc, char **argv)
 	test_write_mobile_broadband (TRUE);
 	test_write_mobile_broadband (FALSE);
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+	return g_test_run ();
 }
 
