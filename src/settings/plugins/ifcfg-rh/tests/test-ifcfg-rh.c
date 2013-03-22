@@ -74,20 +74,11 @@ connection_diff (NMConnection *a, NMConnection *b)
 }
 #endif
 
-typedef enum {
-	CK_CA_CERT = 0,
-	CK_CLIENT_CERT = 1,
-	CK_PRIV_KEY = 2
-} CertKeyType;
-
 static gboolean
-verify_cert_or_key (CertKeyType ck_type,
-                    NMSetting8021x *s_compare,
+verify_cert_or_key (NMSetting8021x *s_compare,
                     const char *file,
                     const char *privkey_password,
-                    const char *ifcfg,
-                    const char *test_name,
-                    const char *setting_key)
+                    const char *property)
 {
 	NMSetting8021x *s_8021x;
 	GError *error = NULL;
@@ -96,99 +87,87 @@ verify_cert_or_key (CertKeyType ck_type,
 	gboolean phase2 = FALSE;
 	NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
 
-	if (strstr (setting_key, "phase2"))
+	if (strstr (property, "phase2"))
 		phase2 = TRUE;
 
-	/* CA Cert */
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
 
-	if (ck_type == CK_CA_CERT) {
+	/* Load the certificate into an empty setting */
+	if (strstr (property, "ca-cert")) {
 		if (phase2)
 			success = nm_setting_802_1x_set_phase2_ca_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 		else
 			success = nm_setting_802_1x_set_ca_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
-	} else if (ck_type == CK_CLIENT_CERT) {
+	} else if (strstr (property, "client-cert")) {
 		if (phase2)
 			success = nm_setting_802_1x_set_phase2_client_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 		else
 			success = nm_setting_802_1x_set_client_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
-	} else if (ck_type == CK_PRIV_KEY) {
+	} else if (strstr (property, "private-key")) {
 		if (phase2)
 			success = nm_setting_802_1x_set_phase2_private_key (s_8021x, file, privkey_password, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 		else
 			success = nm_setting_802_1x_set_private_key (s_8021x, file, privkey_password, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 	}
-	ASSERT (success == TRUE,
-	        test_name, "failed to verify %s: could not load item for %s / %s: %s",
-	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key, error->message);
+	g_assert_no_error (error);
+	g_assert_cmpint (success, ==, TRUE);
 
-	if (ck_type == CK_CA_CERT) {
+	/* Ensure it was loaded using the PATH scheme */
+	if (strstr (property, "ca-cert")) {
 		if (phase2)
 			scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021x);
 		else
 			scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021x);
-	} else if (ck_type == CK_CLIENT_CERT) {
+	} else if (strstr (property, "client-cert")) {
 		if (phase2)
 			scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021x);
 		else
 			scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021x);
-	} else if (ck_type == CK_PRIV_KEY) {
+	} else if (strstr (property, "private-key")) {
 		if (phase2)
 			scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021x);
 		else
 			scheme = nm_setting_802_1x_get_private_key_scheme (s_8021x);
 	}
-	ASSERT (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
-	        test_name, "failed to verify %s: unexpected cert/key scheme for %s / %s",
-	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+	g_assert_cmpint (scheme, ==, NM_SETTING_802_1X_CK_SCHEME_PATH);
 
-	if (ck_type == CK_CA_CERT) {
+	/* Grab the path back out */
+	if (strstr (property, "ca-cert")) {
 		if (phase2)
 			expected = nm_setting_802_1x_get_phase2_ca_cert_path (s_8021x);
 		else
 			expected = nm_setting_802_1x_get_ca_cert_path (s_8021x);
-	} else if (ck_type == CK_CLIENT_CERT) {
+	} else if (strstr (property, "client-cert")) {
 		if (phase2)
 			expected = nm_setting_802_1x_get_phase2_client_cert_path (s_8021x);
 		else
 			expected = nm_setting_802_1x_get_client_cert_path (s_8021x);
-	} else if (ck_type == CK_PRIV_KEY) {
+	} else if (strstr (property, "private-key")) {
 		if (phase2)
 			expected = nm_setting_802_1x_get_phase2_private_key_path (s_8021x);
 		else
 			expected = nm_setting_802_1x_get_private_key_path (s_8021x);
 	}
-	ASSERT (expected != NULL,
-	        test_name, "failed to verify %s: failed to get read item for %s / %s",
-	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+	g_assert_cmpstr (expected, ==, file);
 
-	if (ck_type == CK_CA_CERT) {
+	/* Compare the path with the expected path from the real setting */
+	if (strstr (property, "ca-cert")) {
 		if (phase2)
 			setting = nm_setting_802_1x_get_phase2_ca_cert_path (s_compare);
 		else
 			setting = nm_setting_802_1x_get_ca_cert_path (s_compare);
-	} else if (ck_type == CK_CLIENT_CERT) {
+	} else if (strstr (property, "client-cert")) {
 		if (phase2)
 			setting = nm_setting_802_1x_get_phase2_client_cert_path (s_compare);
 		else
 			setting = nm_setting_802_1x_get_client_cert_path (s_compare);
-	} else if (ck_type == CK_PRIV_KEY) {
+	} else if (strstr (property, "private-key")) {
 		if (phase2)
 			setting = nm_setting_802_1x_get_phase2_private_key_path (s_compare);
 		else
 			setting = nm_setting_802_1x_get_private_key_path (s_compare);
 	}
-	ASSERT (setting != NULL,
-	        test_name, "failed to verify %s: missing %s / %s key",
-	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
-
-	ASSERT (strlen (setting) == strlen (expected),
-	        test_name, "failed to verify %s: unexpected %s / %s certificate length",
-	        test_name, NM_SETTING_802_1X_SETTING_NAME, setting_key);
-
-	ASSERT (strcmp (setting, expected) == 0,
-	        test_name, "failed to verify %s: %s / %s key certificate mismatch",
-	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+	g_assert_cmpstr (setting, ==, expected);
 
 	g_object_unref (s_8021x);
 	return TRUE;
@@ -5302,21 +5281,15 @@ test_read_wifi_wpa_eap_tls (void)
 	        NM_SETTING_802_1X_IDENTITY);
 
 	/* CA Cert */
-	verify_cert_or_key (CK_CA_CERT,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
 	                    NULL,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	                    "wifi-wpa-eap-tls-verify-8021x",
 	                    NM_SETTING_802_1X_CA_CERT);
 
 	/* Client Cert */
-	verify_cert_or_key (CK_CLIENT_CERT,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
 	                    NULL,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	                    "wifi-wpa-eap-tls-verify-8021x",
 	                    NM_SETTING_802_1X_CLIENT_CERT);
 
 	/* Private Key Password */
@@ -5334,12 +5307,9 @@ test_read_wifi_wpa_eap_tls (void)
 	        NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
 	/* Private key */
-	verify_cert_or_key (CK_PRIV_KEY,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
 	                    expected_privkey_password,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	                    "wifi-wpa-eap-tls-verify-8021x",
 	                    NM_SETTING_802_1X_PRIVATE_KEY);
 
 	g_free (unmanaged);
@@ -5439,12 +5409,9 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_802_1X_EAP);
 
 	/* CA Cert */
-	verify_cert_or_key (CK_CA_CERT,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT,
 	                    NULL,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
 	                    NM_SETTING_802_1X_CA_CERT);
 
 	/* Inner auth method */
@@ -5461,21 +5428,15 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
 
 	/* Inner CA Cert */
-	verify_cert_or_key (CK_CA_CERT,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
 	                    NULL,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
 	                    NM_SETTING_802_1X_PHASE2_CA_CERT);
 
 	/* Inner Client Cert */
-	verify_cert_or_key (CK_CLIENT_CERT,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
 	                    NULL,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
 	                    NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 
 	/* Inner Private Key Password */
@@ -5493,12 +5454,9 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 
 	/* Inner private key */
-	verify_cert_or_key (CK_PRIV_KEY,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
 	                    expected_privkey_password,
-	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
 	                    NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 
 	/* Identity */
@@ -5707,12 +5665,9 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	        NM_SETTING_802_1X_EAP);
 
 	/* CA Cert */
-	verify_cert_or_key (CK_CA_CERT,
-	                    s_8021x,
+	verify_cert_or_key (s_8021x,
 	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT,
 	                    NULL,
-	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	                    "wifi-wep-eap-ttls-chap-verify-8021x",
 	                    NM_SETTING_802_1X_CA_CERT);
 
 	/* Inner auth method */
