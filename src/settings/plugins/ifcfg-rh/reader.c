@@ -4308,12 +4308,12 @@ connection_from_file (const char *filename,
                       const char *network_file,  /* for unit tests only */
                       const char *test_type,     /* for unit tests only */
                       const char *iscsiadm_path, /* for unit tests only */
-                      char **unmanaged,
-                      char **keyfile,
-                      char **routefile,
-                      char **route6file,
+                      char **out_unmanaged,
+                      char **out_keyfile,
+                      char **out_routefile,
+                      char **out_route6file,
                       GError **error,
-                      gboolean *ignore_error)
+                      gboolean *out_ignore_error)
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
@@ -4322,16 +4322,17 @@ connection_from_file (const char *filename,
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
 	gboolean can_disable_ip4 = FALSE;
+	char *unmanaged = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
-	g_return_val_if_fail (unmanaged != NULL, NULL);
-	g_return_val_if_fail (*unmanaged == NULL, NULL);
-	g_return_val_if_fail (keyfile != NULL, NULL);
-	g_return_val_if_fail (*keyfile == NULL, NULL);
-	g_return_val_if_fail (routefile != NULL, NULL);
-	g_return_val_if_fail (*routefile == NULL, NULL);
-	g_return_val_if_fail (route6file != NULL, NULL);
-	g_return_val_if_fail (*route6file == NULL, NULL);
+	if (out_unmanaged)
+		g_return_val_if_fail (*out_unmanaged == NULL, NULL);
+	if (out_keyfile)
+		g_return_val_if_fail (*out_keyfile == NULL, NULL);
+	if (out_routefile)
+		g_return_val_if_fail (*out_routefile == NULL, NULL);
+	if (out_route6file)
+		g_return_val_if_fail (*out_route6file == NULL, NULL);
 
 	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
 	if (!network_file)
@@ -4386,8 +4387,8 @@ connection_from_file (const char *filename,
 		}
 
 		if (!strcmp (device, "lo")) {
-			if (ignore_error)
-				*ignore_error = TRUE;
+			if (out_ignore_error)
+				*out_ignore_error = TRUE;
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Ignoring loopback device config.");
 			g_free (device);
@@ -4442,28 +4443,28 @@ connection_from_file (const char *filename,
 
 	/* Construct the connection */
 	if (!strcasecmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_INFINIBAND))
-		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_BOND))
-		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_VLAN))
-		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_BRIDGE))
-		connection = bridge_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
+		connection = bridge_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Unknown connection type '%s'", type);
 	}
 
 	if (!nm_controlled)
-		ensure_unmanaged (parsed, unmanaged);
+		ensure_unmanaged (parsed, &unmanaged);
 
 	g_free (type);
 
 	/* Don't bother reading the connection fully if it's unmanaged or ignored */
-	if (!connection || *unmanaged)
+	if (!connection || unmanaged)
 		goto done;
 
 	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, error);
@@ -4520,11 +4521,19 @@ connection_from_file (const char *filename,
 		connection = NULL;
 	}
 
-	*keyfile = utils_get_keys_path (filename);
-	*routefile = utils_get_route_path (filename);
-	*route6file = utils_get_route6_path (filename);
+	if (out_keyfile)
+		*out_keyfile = utils_get_keys_path (filename);
+	if (out_routefile)
+		*out_routefile = utils_get_route_path (filename);
+	if (out_route6file)
+		*out_route6file = utils_get_route6_path (filename);
 
 done:
+	if (out_unmanaged)
+		*out_unmanaged = unmanaged;
+	else
+		g_free (unmanaged);
+
 	svCloseFile (parsed);
 	return connection;
 }
