@@ -599,21 +599,29 @@ VAPIGEN_CHECK(0.17.1.24)
 
 # Tests, utilities and documentation
 AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
+AC_ARG_WITH(valgrind, AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests (default: yes)]))
 AC_ARG_ENABLE(doc, AS_HELP_STRING([--enable-doc], [Build NetworkManager documentation (default: no)]))
 # Fallback to --with-tests and with-docs
 AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests (deprecated)]))
 AC_ARG_WITH(docs, AS_HELP_STRING([--with-docs], [Build NetworkManager documentation (deprecated)]))
 AS_IF([test -n "$with_tests"], enable_tests="$with_tests")
 AS_IF([test -n "$with_docs"], enable_doc="$with_docs")
-# Default to --enable-tests and --disable-docs
+# Default to --enable-tests --with-valgrind --disable-docs
 AS_IF([test -z "$enable_tests"], enable_tests="yes")
+AS_IF([test -z "$with_valgrind"], with_valgrind="yes")
 AS_IF([test -z "$enable_doc"], enable_doc="no")
 # Normalize values
 AS_IF([test "$enable_tests" != "yes" -a "$enable_tests" != "root"], enable_tests="no")
 AS_IF([test "$enable_doc" != "yes"], enable_doc="no")
-# Add conditionals
+# Search for tools
+AS_IF([test "$with_valgrind" == "yes"],
+	[AC_PATH_PROGS(with_valgrind, valgrind, no)])
+# Add conditionals and substitutions
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
 AM_CONDITIONAL(RUN_ROOT_TESTS, test "$enable_tests" == "root")
+AS_IF([test "with_valgrind" != "no"],
+	AC_SUBST(VALGRIND_RULES, "TESTS_ENVIRONMENT = G_SLICE=always-malloc G_DEBUG=gc-friendly $with_valgrind --quiet --error-exitcode=1 --leak-check=full --gen-suppressions=all --suppressions=\$(top_srcdir)/valgrind.suppressions"),
+	AC_SUBST(VALGRIND_RULES, []))
 AM_CONDITIONAL(ENABLE_DOC, test "$enable_doc" = "yes")
 # Add gtk-doc conditionals
 enable_gtk_doc="$enable_doc"
@@ -767,6 +775,7 @@ echo
 echo "Miscellaneous:"
 echo "  documentation: $enable_doc"
 echo "  tests: $enable_tests"
+echo "  valgrind: $with_valgrind"
 echo "  code coverage: $enable_code_coverage"
 echo
 
