@@ -1,0 +1,5 @@
+DEVICE=br0
+ONBOOT=no
+TYPE=Bridge
+BOOTPROTO=dhcp
+

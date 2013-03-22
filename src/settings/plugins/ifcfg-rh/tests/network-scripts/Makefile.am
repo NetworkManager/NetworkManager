@@ -81,6 +81,7 @@ EXTRA_DIST = \
 	ifcfg-test-wired-ctc-static \
 	ifcfg-test-bridge-main \
 	ifcfg-test-bridge-component \
+	ifcfg-test-bridge-missing-stp \
 	ifcfg-test-vlan-interface \
 	ifcfg-test-vlan-only-vlanid \
 	ifcfg-test-vlan-only-device \

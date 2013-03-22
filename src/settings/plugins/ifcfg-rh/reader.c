@@ -3792,6 +3792,7 @@ make_bridge_setting (shvarFile *ifcfg,
 	char *value;
 	guint32 u;
 	gboolean stp = FALSE;
+	gboolean stp_set = FALSE;
 
 	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
 
@@ -3809,11 +3810,18 @@ make_bridge_setting (shvarFile *ifcfg,
 		if (!strcasecmp (value, "on") || !strcasecmp (value, "yes")) {
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, TRUE, NULL);
 			stp = TRUE;
-		} else if (!strcasecmp (value, "off") || !strcasecmp (value, "no"))
+			stp_set = TRUE;
+		} else if (!strcasecmp (value, "off") || !strcasecmp (value, "no")) {
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
-		else
+			stp_set = TRUE;
+		} else
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid STP value '%s'", value);
 		g_free (value);
+	}
+
+	if (!stp_set) {
+		/* Missing or invalid STP property means "no" */
+		g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
 	}
 
 	value = svGetValue (ifcfg, "DELAY", FALSE);
