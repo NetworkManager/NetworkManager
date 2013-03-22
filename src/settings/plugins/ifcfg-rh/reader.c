@@ -4008,21 +4008,21 @@ handle_bridge_port_option (NMSetting *setting,
 }
 
 static NMSetting *
-make_bridge_port_setting (shvarFile *ifcfg, GError **error)
+make_bridge_port_setting (shvarFile *ifcfg)
 {
-	NMSetting *s_port;
+	NMSetting *s_port = NULL;
 	char *value;
 
+	g_return_val_if_fail (ifcfg != NULL, FALSE);
+
 	value = svGetValue (ifcfg, "BRIDGE", FALSE);
-	if (!value)
-		return NULL;
-	g_free (value);
-
-	s_port = nm_setting_bridge_port_new ();
-
-	value = svGetValue (ifcfg, "BRIDGING_OPTS", FALSE);
 	if (value) {
-		handle_bridging_opts (s_port, FALSE, value, handle_bridge_port_option);
+		g_free (value);
+
+		s_port = nm_setting_bridge_port_new ();
+		value = svGetValue (ifcfg, "BRIDGING_OPTS", FALSE);
+		if (value)
+			handle_bridging_opts (s_port, FALSE, value, handle_bridge_port_option);
 		g_free (value);
 	}
 
@@ -4312,7 +4312,7 @@ connection_from_file (const char *filename,
                       char **keyfile,
                       char **routefile,
                       char **route6file,
-                      GError **out_error,
+                      GError **error,
                       gboolean *ignore_error)
 {
 	NMConnection *connection = NULL;
@@ -4322,7 +4322,6 @@ connection_from_file (const char *filename,
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
 	gboolean can_disable_ip4 = FALSE;
-	GError *error = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (unmanaged != NULL, NULL);
@@ -4343,14 +4342,14 @@ connection_from_file (const char *filename,
 
 	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
-		g_set_error (out_error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Ignoring connection '%s' because it's not an ifcfg file.", filename);
 		return NULL;
 	}
 
 	parsed = svNewFile (filename);
 	if (!parsed) {
-		g_set_error (out_error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Couldn't parse file '%s'", filename);
 		return NULL;
 	}
@@ -4364,7 +4363,7 @@ connection_from_file (const char *filename,
 		if (   !strcasecmp (devtype, TYPE_TEAM)
 		    || !strcasecmp (devtype, TYPE_TEAM_PORT)) {
 			char *base_name = g_path_get_basename (filename);
-			g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			            "Ignoring team (DEVICETYPE=\"%s\") connection '%s'; teaming is not supported yet",
 			             devtype,
 			             base_name);
@@ -4381,7 +4380,7 @@ connection_from_file (const char *filename,
 
 		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {
-			g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
 			goto done;
 		}
@@ -4389,7 +4388,7 @@ connection_from_file (const char *filename,
 		if (!strcmp (device, "lo")) {
 			if (ignore_error)
 				*ignore_error = TRUE;
-			g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Ignoring loopback device config.");
 			g_free (device);
 			goto done;
@@ -4436,27 +4435,26 @@ connection_from_file (const char *filename,
 
 	if (svTrueValue (parsed, "BONDING_MASTER", FALSE) &&
 	    strcasecmp (type, TYPE_BOND)) {
-		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "BONDING_MASTER=yes key only allowed in TYPE=bond connections");
 		goto done;
 	}
 
 	/* Construct the connection */
 	if (!strcasecmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else if (!strcasecmp (type, TYPE_INFINIBAND))
-		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else if (!strcasecmp (type, TYPE_BOND))
-		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else if (!strcasecmp (type, TYPE_VLAN))
-		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else if (!strcasecmp (type, TYPE_BRIDGE))
-		connection = bridge_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, &error);
+		connection = bridge_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else {
-		g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
-		             "Unknown connection type '%s'", type);
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Unknown connection type '%s'", type);
 	}
 
 	if (!nm_controlled)
@@ -4468,7 +4466,7 @@ connection_from_file (const char *filename,
 	if (!connection || *unmanaged)
 		goto done;
 
-	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, &error);
+	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, error);
 	if (!s_ip6) {
 		g_object_unref (connection);
 		connection = NULL;
@@ -4485,7 +4483,7 @@ connection_from_file (const char *filename,
 			can_disable_ip4 = TRUE;
 	}
 
-	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, can_disable_ip4, &error);
+	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, can_disable_ip4, error);
 	if (!s_ip4) {
 		g_object_unref (connection);
 		connection = NULL;
@@ -4497,12 +4495,8 @@ connection_from_file (const char *filename,
 		nm_connection_add_setting (connection, s_ip4);
 
 	/* Bridge port? */
-	s_port = make_bridge_port_setting (parsed, &error);
-	if (error) {
-		g_object_unref (connection);
-		connection = NULL;
-		goto done;
-	} else if (s_port)
+	s_port = make_bridge_port_setting (parsed);
+	if (s_port)
 		nm_connection_add_setting (connection, s_port);
 
 	/* iSCSI / ibft connections are read-only since their settings are
@@ -4521,7 +4515,7 @@ connection_from_file (const char *filename,
 	}
 	g_free (bootproto);
 
-	if (!nm_connection_verify (connection, &error)) {
+	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);
 		connection = NULL;
 	}
@@ -4532,10 +4526,6 @@ connection_from_file (const char *filename,
 
 done:
 	svCloseFile (parsed);
-	if (error && out_error)
-		*out_error = error;
-	else
-		g_clear_error (&error);
 	return connection;
 }
 
