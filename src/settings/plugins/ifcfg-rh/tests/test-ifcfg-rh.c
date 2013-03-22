@@ -12240,6 +12240,46 @@ test_write_bridge_component (void)
 	g_object_unref (reread);
 }
 
+static void
+test_read_bridge_missing_stp (void)
+{
+	NMConnection *connection;
+	NMSettingBridge *s_bridge;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-missing-stp",
+	                                   NULL,
+	                                   TYPE_BRIDGE,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+	g_assert_no_error (error);
+
+	/* ===== Bridging SETTING ===== */
+
+	s_bridge = nm_connection_get_setting_bridge (connection);
+	g_assert (s_bridge);
+	g_assert_cmpstr (nm_setting_bridge_get_interface_name (s_bridge), ==, "br0");
+	g_assert_cmpuint (nm_setting_bridge_get_stp (s_bridge), ==, FALSE);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
 
 static void
@@ -13541,10 +13581,12 @@ int main (int argc, char **argv)
 	test_write_bond_slave ();
 	test_write_bond_slave_ib ();
 
+	/* bridging */
 	test_read_bridge_main ();
 	test_write_bridge_main ();
 	test_read_bridge_component ();
 	test_write_bridge_component ();
+	test_read_bridge_missing_stp ();
 
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();
