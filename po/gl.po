@@ -1964,7 +1964,7 @@ msgstr "LOOSE_BINDING, "
 #, c-format
 #| msgid "disabled"
 msgid "%d (disabled)"
-msgstr "0 (desactivado)"
+msgstr "%d (desactivado)"
 
 #: ../cli/src/settings.c:692
 #, c-format

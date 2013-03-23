@@ -882,7 +882,7 @@ msgstr "Greška: 'dev status': %s"
 #: ../cli/src/devices.c:1006
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
-msgstr "Greška: 'dev status': s; dozvoljena polja: %s"
+msgstr "Greška: 'dev status': %s; dozvoljena polja: %s"
 
 #: ../cli/src/devices.c:1029
 msgid "Status of devices"

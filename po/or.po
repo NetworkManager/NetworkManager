@@ -1410,7 +1410,7 @@ msgid "Error: Failed to add/activate new connection: Unknown error"
 msgstr "ତ୍ରୁଟି:ନୂତନ ସଂଯୋଗକୁ ଯୋଗ କରିବା/ସକ୍ରିୟ କରିବାରେ ବିଫଳ: ଅଜଣା ତ୍ରୁଟି"
 
 #: ../cli/src/devices.c:1613
-#, c-format
+#, fuzzy, c-format
 #| msgid "Error: %s argument is missing."
 msgid "Error: SSID or BSSID are missing."
 msgstr "ତ୍ରୁଟି: %s  SSID କିମ୍ବା BSSID ଅନୁପସ୍ଥିତ ଅଛି।"
