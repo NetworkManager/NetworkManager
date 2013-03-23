@@ -619,7 +619,7 @@ AS_IF([test "$with_valgrind" == "yes"],
 # Add conditionals and substitutions
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
 AM_CONDITIONAL(RUN_ROOT_TESTS, test "$enable_tests" == "root")
-AS_IF([test "with_valgrind" != "no"],
+AS_IF([test "$with_valgrind" != "no"],
 	AC_SUBST(VALGRIND_RULES, "TESTS_ENVIRONMENT = G_SLICE=always-malloc G_DEBUG=gc-friendly $with_valgrind --quiet --error-exitcode=1 --leak-check=full --gen-suppressions=all --suppressions=\$(top_srcdir)/valgrind.suppressions"),
 	AC_SUBST(VALGRIND_RULES, []))
 AM_CONDITIONAL(ENABLE_DOC, test "$enable_doc" = "yes")
