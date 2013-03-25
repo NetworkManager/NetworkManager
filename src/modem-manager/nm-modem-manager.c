@@ -595,10 +595,10 @@ modem_manager_1_poke_cb (GDBusConnection *connection,
 		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_FAILED)
 		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_TIMEOUT)
 		    && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND)) {
-			nm_log_warn (LOGD_MB, "error poking ModemManager: %s", error->message);
+			nm_log_dbg (LOGD_MB, "error poking ModemManager: %s", error->message);
 		}
-
 		g_error_free (error);
+
 		/* Setup timeout to relaunch */
 		schedule_modem_manager_1_relaunch (self, MODEM_POKE_INTERVAL);
 	} else
