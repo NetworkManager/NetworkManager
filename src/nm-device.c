@@ -5567,12 +5567,14 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	const guint8 *hwaddr;
 	guint hwaddr_len = 0;
 	char *hwaddr_str;
-	gboolean matched;
+	gboolean matched = FALSE;
 
 	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
-	hwaddr_str = nm_utils_hwaddr_ntoa (hwaddr, nm_utils_hwaddr_type (hwaddr_len));
-	matched = nm_match_spec_hwaddr (specs, hwaddr_str);
-	g_free (hwaddr_str);
+	if (hwaddr && hwaddr_len) {
+		hwaddr_str = nm_utils_hwaddr_ntoa (hwaddr, nm_utils_hwaddr_type (hwaddr_len));
+		matched = nm_match_spec_hwaddr (specs, hwaddr_str);
+		g_free (hwaddr_str);
+	}
 
 	if (!matched)
 		matched = nm_match_spec_interface_name (specs, nm_device_get_iface (device));
