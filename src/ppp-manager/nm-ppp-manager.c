@@ -315,7 +315,8 @@ monitor_cb (gpointer user_data)
 
 	strncpy (req.ifr_name, priv->ip_iface, sizeof (req.ifr_name));
 	if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
-		nm_log_warn (LOGD_PPP, "could not read ppp stats: %s", strerror (errno));
+		if (errno != ENODEV)
+			nm_log_warn (LOGD_PPP, "could not read ppp stats: %s", strerror (errno));
 	} else {
 		g_signal_emit (manager, signals[STATS], 0, 
 		               stats.p.ppp_ibytes,
