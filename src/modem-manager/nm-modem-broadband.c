@@ -828,7 +828,7 @@ modem_state_changed (MMModem *modem,
 	gboolean old;
 	gboolean new;
 
-	nm_log_info (LOGD_MB, "(%s) state changed, '%s' --> '%s' (reason: %s)\n",
+	nm_log_info (LOGD_MB, "(%s) modem state changed, '%s' --> '%s' (reason: %s)\n",
 	             nm_modem_get_uid (NM_MODEM (self)),
 	             mm_modem_state_get_string (old_state),
 	             mm_modem_state_get_string (new_state),
