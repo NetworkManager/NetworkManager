@@ -594,6 +594,7 @@ static NmcOutputField nmc_fields_setting_bridge_port[] = {
                                               NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE
 #define NMC_FIELDS_SETTING_BRIDGE_PORT_COMMON NMC_FIELDS_SETTING_BRIDGE_PORT_ALL
 
+/*----------------------------------------------------------------------------*/
 
 static char *
 wep_key_type_to_string (NMWepKeyType type)
@@ -765,6 +766,596 @@ secret_flags_to_string (guint32 flags)
 	return g_string_free (flag_str, FALSE);
 }
 
+static void
+vpn_data_item (const char *key, const char *value, gpointer user_data)
+{
+	GString *ret_str = (GString *) user_data;
+
+	if (ret_str->len != 0)
+		g_string_append (ret_str, ", ");
+
+	g_string_append_printf (ret_str, "%s = %s", key, value);
+}
+
+
+/* === property get functions === */
+#define DEFINE_GETTER(func_name, property_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		GValue val = G_VALUE_INIT; \
+		g_value_init (&val, G_TYPE_STRING); \
+		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		return (char *) g_value_get_string (&val); \
+	}
+
+#define DEFINE_SECRET_FLAGS_GETTER(func_name, property_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		GValue val = G_VALUE_INIT; \
+		g_value_init (&val, G_TYPE_UINT); \
+		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		return secret_flags_to_string (g_value_get_uint (&val)); \
+	}
+
+#define DEFINE_HWADDR_GETTER(func_name, property_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		GValue val = G_VALUE_INIT; \
+		GArray *array; \
+		char *hwaddr = NULL; \
+		g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY); \
+		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		array = g_value_get_boxed (&val); \
+		if (array) \
+			hwaddr = nm_utils_hwaddr_ntoa (array->data, nm_utils_hwaddr_type (array->len)); \
+		g_value_unset (&val); \
+		return hwaddr; \
+	}
+
+/* --- NM_SETTING_802_1X_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_802_1X_get_eap, NM_SETTING_802_1X_EAP)
+DEFINE_GETTER (nmc_property_802_1X_get_identity, NM_SETTING_802_1X_IDENTITY)
+DEFINE_GETTER (nmc_property_802_1X_get_anonymous_identity, NM_SETTING_802_1X_ANONYMOUS_IDENTITY)
+DEFINE_GETTER (nmc_property_802_1X_get_pac_file, NM_SETTING_802_1X_PAC_FILE)
+DEFINE_GETTER (nmc_property_802_1X_get_ca_path, NM_SETTING_802_1X_CA_PATH)
+DEFINE_GETTER (nmc_property_802_1X_get_subject_match, NM_SETTING_802_1X_SUBJECT_MATCH)
+DEFINE_GETTER (nmc_property_802_1X_get_altsubject_matches, NM_SETTING_802_1X_ALTSUBJECT_MATCHES)
+DEFINE_GETTER (nmc_property_802_1X_get_phase1_peapver, NM_SETTING_802_1X_PHASE1_PEAPVER)
+DEFINE_GETTER (nmc_property_802_1X_get_phase1_peaplabel, NM_SETTING_802_1X_PHASE1_PEAPLABEL)
+DEFINE_GETTER (nmc_property_802_1X_get_phase1_fast_provisioning, NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_auth, NM_SETTING_802_1X_PHASE2_AUTH)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_autheap, NM_SETTING_802_1X_PHASE2_AUTHEAP)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_ca_path, NM_SETTING_802_1X_PHASE2_CA_PATH)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_subject_match, NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_altsubject_matches, NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES)
+DEFINE_GETTER (nmc_property_802_1X_get_password, NM_SETTING_802_1X_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_password_flags, NM_SETTING_802_1X_PASSWORD_FLAGS)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_password_raw_flags, NM_SETTING_802_1X_PASSWORD_RAW_FLAGS)
+DEFINE_GETTER (nmc_property_802_1X_get_private_key_password, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_private_key_password_flags, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS)
+DEFINE_GETTER (nmc_property_802_1X_get_phase2_private_key_password, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_phase2_private_key_password_flags, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS)
+DEFINE_GETTER (nmc_property_802_1X_get_pin, NM_SETTING_802_1X_PIN)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_pin_flags, NM_SETTING_802_1X_PIN_FLAGS)
+DEFINE_GETTER (nmc_property_802_1X_get_system_ca_certs, NM_SETTING_802_1X_SYSTEM_CA_CERTS)
+
+static char *
+nmc_property_802_1X_get_ca_cert (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	NMSetting8021xCKScheme scheme;
+	char *ca_cert_str = NULL;
+
+	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
+
+	return ca_cert_str;
+}
+
+static char *
+nmc_property_802_1X_get_client_cert (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	NMSetting8021xCKScheme scheme;
+	char *client_cert_str = NULL;
+
+	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		client_cert_str = byte_array_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		client_cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
+
+	return client_cert_str;
+}
+
+static char *
+nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	NMSetting8021xCKScheme scheme;
+	char *phase2_ca_cert_str = NULL;
+
+	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		phase2_ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
+
+	return phase2_ca_cert_str;
+}
+
+static char *
+nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	NMSetting8021xCKScheme scheme;
+	char *phase2_client_cert_str = NULL;
+
+	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		phase2_client_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		phase2_client_cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
+
+	return phase2_client_cert_str;
+}
+
+static char *
+nmc_property_802_1X_get_password_raw (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	return byte_array_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
+}
+
+static char *
+nmc_property_802_1X_get_private_key (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	NMSetting8021xCKScheme scheme;
+	char *private_key_str = NULL;
+
+	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		private_key_str = byte_array_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		private_key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
+
+	return private_key_str;
+}
+
+static char *
+nmc_property_802_1X_get_phase2_private_key (NMSetting *setting)
+{
+	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
+	NMSetting8021xCKScheme scheme;
+	char *phase2_private_key_str = NULL;
+
+	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		phase2_private_key_str = byte_array_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
+
+	return phase2_private_key_str;
+}
+
+/* --- NM_SETTING_ADSL_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_adsl_get_username, NM_SETTING_ADSL_USERNAME)
+DEFINE_GETTER (nmc_property_adsl_get_password, NM_SETTING_ADSL_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_adsl_get_password_flags, NM_SETTING_ADSL_PASSWORD_FLAGS)
+DEFINE_GETTER (nmc_property_adsl_get_protocol, NM_SETTING_ADSL_PROTOCOL)
+DEFINE_GETTER (nmc_property_adsl_get_encapsulation, NM_SETTING_ADSL_ENCAPSULATION)
+DEFINE_GETTER (nmc_property_adsl_get_vpi, NM_SETTING_ADSL_VPI)
+DEFINE_GETTER (nmc_property_adsl_get_vci, NM_SETTING_ADSL_VCI)
+
+/* --- NM_SETTING_BLUETOOTH_SETTING_NAME property get functions --- */
+DEFINE_HWADDR_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
+DEFINE_GETTER (nmc_property_bluetooth_get_type, NM_SETTING_BLUETOOTH_TYPE)
+
+/* --- NM_SETTING_BOND_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_bond_get_interface_name, NM_SETTING_BOND_INTERFACE_NAME)
+
+static char *
+nmc_property_bond_get_options (NMSetting *setting)
+{
+	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
+	GString *bond_options_s;
+	int i;
+
+	bond_options_s = g_string_new (NULL);
+	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
+		const char *key, *value;
+
+		nm_setting_bond_get_option (s_bond, i, &key, &value);
+		g_string_append_printf (bond_options_s, "%s=%s,", key, value);
+	}
+	g_string_truncate (bond_options_s, bond_options_s->len-1);  /* chop off trailing ',' */
+
+	return g_string_free (bond_options_s, FALSE);
+}
+
+/* --- NM_SETTING_BRIDGE_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_bridge_get_interface_name, NM_SETTING_BRIDGE_INTERFACE_NAME)
+DEFINE_GETTER (nmc_property_bridge_get_stp, NM_SETTING_BRIDGE_STP)
+DEFINE_GETTER (nmc_property_bridge_get_priority, NM_SETTING_BRIDGE_PRIORITY)
+DEFINE_GETTER (nmc_property_bridge_get_forward_delay, NM_SETTING_BRIDGE_FORWARD_DELAY)
+DEFINE_GETTER (nmc_property_bridge_get_hello_time, NM_SETTING_BRIDGE_HELLO_TIME)
+DEFINE_GETTER (nmc_property_bridge_get_max_age, NM_SETTING_BRIDGE_MAX_AGE)
+DEFINE_GETTER (nmc_property_bridge_get_ageing_time, NM_SETTING_BRIDGE_AGEING_TIME)
+
+/* --- NM_SETTING_BRIDGE_PORT_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_bridge_port_get_priority, NM_SETTING_BRIDGE_PORT_PRIORITY)
+DEFINE_GETTER (nmc_property_bridge_port_get_path_cost, NM_SETTING_BRIDGE_PORT_PATH_COST)
+DEFINE_GETTER (nmc_property_bridge_port_get_hairpin_mode, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE)
+
+/* --- NM_SETTING_CDMA_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_cdma_get_number, NM_SETTING_CDMA_NUMBER)
+DEFINE_GETTER (nmc_property_cdma_get_username, NM_SETTING_CDMA_USERNAME)
+DEFINE_GETTER (nmc_property_cdma_get_password, NM_SETTING_CDMA_PASSWORD)
+
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_cdma_get_password_flags, NM_SETTING_CDMA_PASSWORD_FLAGS)
+
+/* --- NM_SETTING_CONNECTION_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_connection_get_id, NM_SETTING_CONNECTION_ID)
+DEFINE_GETTER (nmc_property_connection_get_uuid, NM_SETTING_CONNECTION_UUID)
+DEFINE_GETTER (nmc_property_connection_get_interface_name, NM_SETTING_CONNECTION_INTERFACE_NAME)
+DEFINE_GETTER (nmc_property_connection_get_type, NM_SETTING_CONNECTION_TYPE)
+DEFINE_GETTER (nmc_property_connection_get_autoconnect, NM_SETTING_CONNECTION_AUTOCONNECT)
+DEFINE_GETTER (nmc_property_connection_get_timestamp, NM_SETTING_CONNECTION_TIMESTAMP)
+DEFINE_GETTER (nmc_property_connection_get_read_only, NM_SETTING_CONNECTION_READ_ONLY)
+
+static char *
+nmc_property_connection_get_permissions (NMSetting *setting)
+{
+	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
+	GString *perm = NULL;
+	const char *perm_item;
+	const char *perm_type;
+	int i;
+
+	perm = g_string_new (NULL);
+	for (i = 0; i < nm_setting_connection_get_num_permissions (s_con); i++) {
+		nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL);
+		g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
+	}
+	if (perm->len > 0)
+		g_string_truncate (perm, perm->len-1); /* remove trailing , */
+
+	return g_string_free (perm, FALSE);
+}
+
+DEFINE_GETTER (nmc_property_connection_get_zone, NM_SETTING_CONNECTION_ZONE)
+DEFINE_GETTER (nmc_property_connection_get_master, NM_SETTING_CONNECTION_MASTER)
+DEFINE_GETTER (nmc_property_connection_get_slave_type, NM_SETTING_CONNECTION_SLAVE_TYPE)
+DEFINE_GETTER (nmc_property_connection_get_secondaries, NM_SETTING_CONNECTION_SECONDARIES)
+
+/* --- NM_SETTING_GSM_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_gsm_get_number, NM_SETTING_GSM_NUMBER)
+DEFINE_GETTER (nmc_property_gsm_get_username, NM_SETTING_GSM_USERNAME)
+DEFINE_GETTER (nmc_property_gsm_get_password, NM_SETTING_GSM_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_password_flags, NM_SETTING_GSM_PASSWORD_FLAGS)
+DEFINE_GETTER (nmc_property_gsm_get_apn, NM_SETTING_GSM_APN)
+DEFINE_GETTER (nmc_property_gsm_get_network_id, NM_SETTING_GSM_NETWORK_ID)
+DEFINE_GETTER (nmc_property_gsm_get_network_type, NM_SETTING_GSM_NETWORK_TYPE)
+
+static char *
+nmc_property_gsm_get_allowed_bands (NMSetting *setting)
+{
+	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
+	return allowed_bands_to_string (nm_setting_gsm_get_allowed_bands (s_gsm));
+}
+
+DEFINE_GETTER (nmc_property_gsm_get_pin, NM_SETTING_GSM_PIN)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_pin_flags, NM_SETTING_GSM_PIN_FLAGS)
+DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
+
+/* --- NM_SETTING_INFINIBAND_SETTING_NAME property get functions --- */
+DEFINE_HWADDR_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_ib_get_transport_mode, NM_SETTING_INFINIBAND_TRANSPORT_MODE)
+DEFINE_GETTER (nmc_property_ib_get_carrier_detect, NM_SETTING_INFINIBAND_CARRIER_DETECT)
+
+static char *
+nmc_property_ib_get_mtu (NMSetting *setting)
+{
+	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
+	int mtu;
+
+	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
+	if (mtu == 0)
+		return g_strdup (_("auto"));
+	else
+		return g_strdup_printf ("%d", nm_setting_infiniband_get_mtu (s_infiniband));
+}
+
+/* --- NM_SETTING_IP4_CONFIG_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP4_CONFIG_METHOD)
+DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP4_CONFIG_DNS)
+DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP4_CONFIG_DNS_SEARCH)
+DEFINE_GETTER (nmc_property_ipv4_get_addresses, NM_SETTING_IP4_CONFIG_ADDRESSES)
+DEFINE_GETTER (nmc_property_ipv4_get_routes, NM_SETTING_IP4_CONFIG_ROUTES)
+DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES)
+DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_send_hostname, NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME)
+DEFINE_GETTER (nmc_property_ipv4_get_never_default, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT)
+DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP4_CONFIG_MAY_FAIL)
+
+/* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP6_CONFIG_METHOD)
+DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP6_CONFIG_DNS)
+DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP6_CONFIG_DNS_SEARCH)
+DEFINE_GETTER (nmc_property_ipv6_get_addresses, NM_SETTING_IP6_CONFIG_ADDRESSES)
+DEFINE_GETTER (nmc_property_ipv6_get_routes, NM_SETTING_IP6_CONFIG_ROUTES)
+DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES)
+DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS)
+DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP6_CONFIG_NEVER_DEFAULT)
+DEFINE_GETTER (nmc_property_ipv6_get_may_fail, NM_SETTING_IP6_CONFIG_MAY_FAIL)
+DEFINE_GETTER (nmc_property_ipv6_get_dhcp_hostname, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME)
+
+static char *
+nmc_property_ipv6_get_ip6_privacy (NMSetting *setting)
+{
+	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	return ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6));
+}
+
+/* --- NM_SETTING_OLPC_MESH_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_olpc_get_channel, NM_SETTING_OLPC_MESH_CHANNEL)
+DEFINE_HWADDR_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
+
+static char *
+nmc_property_olpc_get_ssid (NMSetting *setting)
+{
+	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
+	const GByteArray *ssid;
+	char *ssid_str = NULL;
+
+	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
+	if (ssid)
+		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+
+	return ssid_str;
+}
+
+/* --- NM_SETTING_PPP_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_ppp_get_noauth, NM_SETTING_PPP_NOAUTH)
+DEFINE_GETTER (nmc_property_ppp_get_refuse_eap, NM_SETTING_PPP_REFUSE_EAP)
+DEFINE_GETTER (nmc_property_ppp_get_refuse_pap, NM_SETTING_PPP_REFUSE_PAP)
+DEFINE_GETTER (nmc_property_ppp_get_refuse_chap, NM_SETTING_PPP_REFUSE_CHAP)
+DEFINE_GETTER (nmc_property_ppp_get_refuse_mschap, NM_SETTING_PPP_REFUSE_MSCHAP)
+DEFINE_GETTER (nmc_property_ppp_get_refuse_mschapv2, NM_SETTING_PPP_REFUSE_MSCHAPV2)
+DEFINE_GETTER (nmc_property_ppp_get_nobsdcomp, NM_SETTING_PPP_NOBSDCOMP)
+DEFINE_GETTER (nmc_property_ppp_get_nodeflate, NM_SETTING_PPP_NODEFLATE)
+DEFINE_GETTER (nmc_property_ppp_get_no_vj_comp, NM_SETTING_PPP_NO_VJ_COMP)
+DEFINE_GETTER (nmc_property_ppp_get_require_mppe, NM_SETTING_PPP_REQUIRE_MPPE)
+DEFINE_GETTER (nmc_property_ppp_get_require_mppe_128, NM_SETTING_PPP_REQUIRE_MPPE_128)
+DEFINE_GETTER (nmc_property_ppp_get_mppe_stateful, NM_SETTING_PPP_MPPE_STATEFUL)
+DEFINE_GETTER (nmc_property_ppp_get_crtscts, NM_SETTING_PPP_CRTSCTS)
+DEFINE_GETTER (nmc_property_ppp_get_baud, NM_SETTING_PPP_BAUD)
+DEFINE_GETTER (nmc_property_ppp_get_mru, NM_SETTING_PPP_MRU)
+DEFINE_GETTER (nmc_property_ppp_get_mtu, NM_SETTING_PPP_MTU)
+DEFINE_GETTER (nmc_property_ppp_get_lcp_echo_failure, NM_SETTING_PPP_LCP_ECHO_FAILURE)
+DEFINE_GETTER (nmc_property_ppp_get_lcp_echo_interval, NM_SETTING_PPP_LCP_ECHO_INTERVAL)
+
+/* --- NM_SETTING_PPPOE_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_pppoe_get_service, NM_SETTING_PPPOE_SERVICE)
+DEFINE_GETTER (nmc_property_pppoe_get_username, NM_SETTING_PPPOE_USERNAME)
+DEFINE_GETTER (nmc_property_pppoe_get_password, NM_SETTING_PPPOE_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_pppoe_get_password_flags, NM_SETTING_PPPOE_PASSWORD_FLAGS)
+
+/* --- NM_SETTING_SERIAL_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_serial_get_baud, NM_SETTING_SERIAL_BAUD)
+DEFINE_GETTER (nmc_property_serial_get_bits, NM_SETTING_SERIAL_BITS)
+DEFINE_GETTER (nmc_property_serial_get_parity, NM_SETTING_SERIAL_PARITY)
+DEFINE_GETTER (nmc_property_serial_get_stopbits, NM_SETTING_SERIAL_STOPBITS)
+DEFINE_GETTER (nmc_property_serial_get_send_delay, NM_SETTING_SERIAL_SEND_DELAY)
+
+/* --- NM_SETTING_VLAN_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_vlan_get_interface_name, NM_SETTING_VLAN_INTERFACE_NAME)
+DEFINE_GETTER (nmc_property_vlan_get_parent, NM_SETTING_VLAN_PARENT)
+DEFINE_GETTER (nmc_property_vlan_get_id, NM_SETTING_VLAN_ID)
+DEFINE_GETTER (nmc_property_vlan_get_carrier_detect, NM_SETTING_VLAN_CARRIER_DETECT)
+
+
+static char *
+nmc_property_vlan_get_flags (NMSetting *setting)
+{
+	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
+	return vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan));
+}
+
+static char *
+nmc_property_vlan_get_ingress_priority_map (NMSetting *setting)
+{
+	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
+	return vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP);
+}
+
+static char *
+nmc_property_vlan_get_egress_priority_map (NMSetting *setting)
+{
+	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
+	return vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP);
+}
+
+/* --- NM_SETTING_VPN_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_vpn_get_service_type, NM_SETTING_VPN_SERVICE_TYPE)
+DEFINE_GETTER (nmc_property_vpn_get_user_name, NM_SETTING_VPN_USER_NAME)
+
+static char *
+nmc_property_vpn_get_data (NMSetting *setting)
+{
+	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	GString *data_item_str;
+
+	data_item_str = g_string_new (NULL);
+	nm_setting_vpn_foreach_data_item (s_vpn, &vpn_data_item, data_item_str);
+
+	return g_string_free (data_item_str, FALSE);
+}
+
+static char *
+nmc_property_vpn_get_secrets (NMSetting *setting)
+{
+	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	GString *secret_str;
+
+	secret_str = g_string_new (NULL);
+	nm_setting_vpn_foreach_secret (s_vpn, &vpn_data_item, secret_str);
+
+	return g_string_free (secret_str, FALSE);
+}
+
+/* --- NM_SETTING_WIMAX_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_wimax_get_network_name, NM_SETTING_WIMAX_NETWORK_NAME)
+DEFINE_HWADDR_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
+
+/* --- NM_SETTING_WIRED_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
+DEFINE_GETTER (nmc_property_wired_get_speed, NM_SETTING_WIRED_SPEED)
+DEFINE_GETTER (nmc_property_wired_get_duplex, NM_SETTING_WIRED_DUPLEX)
+DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
+DEFINE_HWADDR_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
+DEFINE_HWADDR_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wired_get_mac_address_blacklist, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST)
+DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SUBCHANNELS)
+DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
+DEFINE_GETTER (nmc_property_wired_get_s390_options, NM_SETTING_WIRED_S390_OPTIONS)
+DEFINE_GETTER (nmc_property_wired_get_carrier_detect, NM_SETTING_WIRED_CARRIER_DETECT)
+
+static char *
+nmc_property_wired_get_mtu (NMSetting *setting)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	int mtu;
+
+	mtu = nm_setting_wired_get_mtu (s_wired);
+	if (mtu == 0)
+		return g_strdup (_("auto"));
+	else
+		return g_strdup_printf ("%d", nm_setting_wired_get_mtu (s_wired));
+}
+
+/* --- NM_SETTING_WIRELESS_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_wireless_get_mode, NM_SETTING_WIRELESS_MODE)
+DEFINE_GETTER (nmc_property_wireless_get_band, NM_SETTING_WIRELESS_BAND)
+DEFINE_GETTER (nmc_property_wireless_get_channel, NM_SETTING_WIRELESS_CHANNEL)
+DEFINE_HWADDR_GETTER (nmc_property_wireless_get_bssid, NM_SETTING_WIRELESS_BSSID)
+DEFINE_GETTER (nmc_property_wireless_get_rate, NM_SETTING_WIRELESS_RATE)
+DEFINE_GETTER (nmc_property_wireless_get_tx_power, NM_SETTING_WIRELESS_TX_POWER)
+DEFINE_HWADDR_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS_MAC_ADDRESS)
+DEFINE_HWADDR_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wireless_get_mac_address_blacklist, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST)
+DEFINE_GETTER (nmc_property_wireless_get_seen_bssids, NM_SETTING_WIRELESS_SEEN_BSSIDS)
+DEFINE_GETTER (nmc_property_wireless_get_sec, NM_SETTING_WIRELESS_SEC)
+DEFINE_GETTER (nmc_property_wireless_get_hidden, NM_SETTING_WIRELESS_HIDDEN)
+
+static char *
+nmc_property_wireless_get_ssid (NMSetting *setting)
+{
+	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
+	const GByteArray *ssid;
+	char *ssid_str = NULL;
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	if (ssid)
+		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+
+	return ssid_str;
+}
+
+static char *
+nmc_property_wireless_get_mtu (NMSetting *setting)
+{
+	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
+	int mtu;
+
+	mtu = nm_setting_wireless_get_mtu (s_wireless);
+	if (mtu == 0)
+		return g_strdup (_("auto"));
+	else
+		return g_strdup_printf ("%d", nm_setting_wireless_get_mtu (s_wireless));
+}
+
+/* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_wifi_sec_get_key_mgmt, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT)
+DEFINE_GETTER (nmc_property_wifi_sec_get_wep_tx_keyidx, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX)
+DEFINE_GETTER (nmc_property_wifi_sec_get_auth_alg, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG)
+DEFINE_GETTER (nmc_property_wifi_sec_get_proto, NM_SETTING_WIRELESS_SECURITY_PROTO)
+DEFINE_GETTER (nmc_property_wifi_sec_get_pairwise, NM_SETTING_WIRELESS_SECURITY_PAIRWISE)
+DEFINE_GETTER (nmc_property_wifi_sec_get_group, NM_SETTING_WIRELESS_SECURITY_GROUP)
+DEFINE_GETTER (nmc_property_wifi_sec_get_leap_username, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_wep_key_flags, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS)
+DEFINE_GETTER (nmc_property_wifi_sec_get_psk, NM_SETTING_WIRELESS_SECURITY_PSK)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_psk_flags, NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS)
+DEFINE_GETTER (nmc_property_wifi_sec_get_leap_password, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD)
+DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_leap_password_flags, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS)
+
+static char *
+nmc_property_wifi_sec_get_wep_key0 (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0));
+}
+
+static char *
+nmc_property_wifi_sec_get_wep_key1 (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1));
+}
+
+static char *
+nmc_property_wifi_sec_get_wep_key2 (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2));
+}
+
+static char *
+nmc_property_wifi_sec_get_wep_key3 (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3));
+}
+
+static char *
+nmc_property_wifi_sec_get_wep_key_type (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	return wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (s_wireless_sec));
+}
+
+/*----------------------------------------------------------------------------*/
+
+static void
+nmc_value_transform_bool_string (const GValue *src_value,
+                                 GValue       *dest_value)
+{
+	dest_value->data[0].v_pointer = g_strdup (src_value->data[0].v_int ? "yes" : "no");
+}
+
+static void
+nmc_value_transform_char_string (const GValue *src_value,
+                                 GValue       *dest_value)
+{
+	dest_value->data[0].v_pointer = g_strdup_printf ("%c", src_value->data[0].v_uint);
+}
+
+static void __attribute__((constructor))
+register_nmcli_value_transforms (void)
+{
+	g_value_register_transform_func (G_TYPE_BOOLEAN, G_TYPE_STRING, nmc_value_transform_bool_string);
+	g_value_register_transform_func (G_TYPE_CHAR, G_TYPE_STRING, nmc_value_transform_char_string);
+}
+
 /*----------------------------------------------------------------------------*/
 
 gboolean
@@ -828,13 +1419,7 @@ setting_details (NMSetting *setting, NmCli *nmc)
 gboolean
 setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 {
-	guint64 timestamp;
-	char *timestamp_str;
-	const char *perm_item;
-	const char *perm_type;
-	GString *perm = NULL;
-	GString *secondaries = NULL;
-	int i;
+	NMSetting *setting = NM_SETTING (s_con);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -846,60 +1431,31 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	timestamp = nm_setting_connection_get_timestamp (s_con);
-	timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
-
-	/* get permissions */
-	perm = g_string_new (NULL);
-	for (i = 0; i < nm_setting_connection_get_num_permissions (s_con); i++) {
-		nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL);
-		g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
-	}
-	if (perm->len > 0)
-		g_string_truncate (perm, perm->len-1); /* remove trailing , */
-
-	/* get secondaries */
-	secondaries = g_string_new (NULL);
-	for (i = 0; i < nm_setting_connection_get_num_secondaries (s_con); i++) {
-		const char *sec_uuid = nm_setting_connection_get_secondary (s_con, i);
-		g_string_append_printf (secondaries, "%s,", sec_uuid);
-	}
-	if (secondaries->len > 0)
-		g_string_truncate (secondaries, secondaries->len-1); /* remove trailing , */
-
-	nmc->allowed_fields[0].value = NM_SETTING_CONNECTION_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_connection_get_id (s_con);
-	nmc->allowed_fields[2].value = (char *) nm_setting_connection_get_uuid (s_con);
-	nmc->allowed_fields[3].value = (char *) nm_setting_connection_get_interface_name (s_con);
-	nmc->allowed_fields[4].value = (char *) nm_setting_connection_get_connection_type (s_con);
-	nmc->allowed_fields[5].value = nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no");
-	nmc->allowed_fields[6].value = timestamp_str;
-	nmc->allowed_fields[7].value = nm_setting_connection_get_read_only (s_con) ? ("yes") : _("no");
-	nmc->allowed_fields[8].value = perm->str;
-	nmc->allowed_fields[9].value = (char *) nm_setting_connection_get_zone (s_con);
-	nmc->allowed_fields[10].value = (char *) nm_setting_connection_get_master (s_con);
-	nmc->allowed_fields[11].value = (char *) nm_setting_connection_get_slave_type (s_con);
-	nmc->allowed_fields[12].value = secondaries->str;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_connection_get_id (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_connection_get_uuid (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_connection_get_interface_name (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_connection_get_type (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_connection_get_autoconnect (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_connection_get_timestamp (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_connection_get_read_only (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_connection_get_permissions (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_connection_get_zone (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_connection_get_master (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_connection_get_slave_type (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_connection_get_secondaries (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (timestamp_str);
-	g_string_free (perm, TRUE);
-	g_string_free (secondaries, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
 {
-	const GByteArray *mac;
-	const GSList *iter;
-	const GPtrArray *s390_channels;
-	int i;
-	char *speed_str, *mtu_str, *device_mac_str = NULL, *cloned_mac_str = NULL;
-	GString *mac_blacklist_s, *s390_channels_s, *s390_options_s;
+	NMSetting *setting = NM_SETTING (s_wired);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -911,75 +1467,31 @@ setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	speed_str = g_strdup_printf ("%d", nm_setting_wired_get_speed (s_wired));
-	mtu_str = g_strdup_printf ("%d", nm_setting_wired_get_mtu (s_wired));
-	mac = nm_setting_wired_get_mac_address (s_wired);
-	if (mac)
-		device_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
-	mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	if (mac)
-		cloned_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
-
-	mac_blacklist_s = g_string_new (NULL);
-	iter = nm_setting_wired_get_mac_address_blacklist (s_wired);
-	while (iter) {
-		g_string_append_printf (mac_blacklist_s, "%s,", (char *) iter->data);
-		iter = iter->next;
-	}
-	g_string_truncate (mac_blacklist_s, mac_blacklist_s->len-1);  /* chop off trailing ',' */
-
-	s390_channels_s = g_string_new (NULL);
-	s390_channels = nm_setting_wired_get_s390_subchannels (s_wired);
-	for (i = 0; s390_channels && i < s390_channels->len; i++)
-		g_string_append_printf (s390_channels_s, "%s,", (char *) g_ptr_array_index (s390_channels, i));
-	g_string_truncate (s390_channels_s, s390_channels_s->len-1);  /* chop off trailing ',' */
-
-	s390_options_s = g_string_new (NULL);
-	for (i = 0; i < nm_setting_wired_get_num_s390_options (s_wired); i++) {
-		const char *key, *value;
-
-		nm_setting_wired_get_s390_option (s_wired, i, &key, &value);
-		g_string_append_printf (s390_options_s, "%s=%s,", key, value);
-	}
-	g_string_truncate (s390_options_s, s390_options_s->len-1);  /* chop off trailing ',' */
-
-	nmc->allowed_fields[0].value = NM_SETTING_WIRED_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_wired_get_port (s_wired);
-	nmc->allowed_fields[2].value = speed_str;
-	nmc->allowed_fields[3].value = (char *) nm_setting_wired_get_duplex (s_wired);
-	nmc->allowed_fields[4].value = nm_setting_wired_get_auto_negotiate (s_wired) ? _("yes") : _("no");
-	nmc->allowed_fields[5].value = device_mac_str;
-	nmc->allowed_fields[6].value = cloned_mac_str;
-	nmc->allowed_fields[7].value = mac_blacklist_s->str;
-	nmc->allowed_fields[8].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
-	nmc->allowed_fields[9].value = s390_channels_s->str;
-	nmc->allowed_fields[10].value = (char *) nm_setting_wired_get_s390_nettype (s_wired);
-	nmc->allowed_fields[11].value = s390_options_s->str;
-	nmc->allowed_fields[12].value = (char *) nm_setting_wired_get_carrier_detect (s_wired);
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_wired_get_port (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_wired_get_speed (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_wired_get_duplex (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_wired_get_auto_negotiate (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_wired_get_mac_address (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_wired_get_cloned_mac_address (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_wired_get_mac_address_blacklist (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_wired_get_mtu (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_wired_get_s390_subchannels (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_wired_get_s390_nettype (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_wired_get_s390_options (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_wired_get_carrier_detect (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (speed_str);
-	g_free (device_mac_str);
-	g_free (cloned_mac_str);
-	g_free (mtu_str);
-	g_string_free (mac_blacklist_s, TRUE);
-	g_string_free (s390_channels_s, TRUE);
-	g_string_free (s390_options_s, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 {
-	NMSetting8021xCKScheme scheme;
-	GString *eap_str, *alt_sub_match, *phase2_alt_sub_match;
-	char *ca_cert_str = NULL, *client_cert_str = NULL, *phase2_ca_cert_str = NULL;
-	char *phase2_client_cert_str = NULL, *private_key_str = NULL, *phase2_private_key_str = NULL, *pswd_raw_str = NULL;
-	char *pswd_flags, *pswd_raw_flags, *priv_key_pswd_flags, *phase2_priv_key_pswd_flags, *pin_flags;
-	int i;
+	NMSetting *setting = NM_SETTING (s_8021X);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -991,131 +1503,51 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	eap_str = g_string_new (NULL);
-	for (i = 0; i < nm_setting_802_1x_get_num_eap_methods (s_8021X); i++) {
-		if (i > 0)
-			g_string_append_c (eap_str, ',');
-		g_string_append (eap_str, nm_setting_802_1x_get_eap_method (s_8021X, i));
-	}
-	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
-
-	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		client_cert_str = byte_array_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		client_cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
-
-	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
-
-	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_client_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		phase2_client_cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
-
-	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		private_key_str = byte_array_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		private_key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
-
-	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_private_key_str = byte_array_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
-
-	alt_sub_match = g_string_new (NULL);
-	for (i = 0; i < nm_setting_802_1x_get_num_altsubject_matches (s_8021X); i++)
-		g_string_append_printf (alt_sub_match, "%s,", nm_setting_802_1x_get_altsubject_match (s_8021X, i));
-	g_string_truncate (alt_sub_match, alt_sub_match->len-1);  /* chop off trailing ',' */
-
-	phase2_alt_sub_match = g_string_new (NULL);
-	for (i = 0; i < nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021X); i++)
-		g_string_append_printf (phase2_alt_sub_match, "%s,", nm_setting_802_1x_get_phase2_altsubject_match (s_8021X, i));
-	g_string_truncate (phase2_alt_sub_match, phase2_alt_sub_match->len-1);  /* chop off trailing ',' */
-
-	pswd_raw_str = byte_array_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
-
-	pswd_flags = secret_flags_to_string (nm_setting_802_1x_get_password_flags (s_8021X));
-	pswd_raw_flags = secret_flags_to_string (nm_setting_802_1x_get_password_raw_flags (s_8021X));
-	priv_key_pswd_flags = secret_flags_to_string (nm_setting_802_1x_get_private_key_password_flags (s_8021X));
-	phase2_priv_key_pswd_flags = secret_flags_to_string (nm_setting_802_1x_get_phase2_private_key_password_flags (s_8021X));
-	pin_flags = secret_flags_to_string (nm_setting_802_1x_get_pin_flags (s_8021X));
-
-	nmc->allowed_fields[0].value = NM_SETTING_802_1X_SETTING_NAME;
-	nmc->allowed_fields[1].value = eap_str->str;
-	nmc->allowed_fields[2].value = (char *) nm_setting_802_1x_get_identity (s_8021X);
-	nmc->allowed_fields[3].value = (char *) nm_setting_802_1x_get_anonymous_identity (s_8021X);
-	nmc->allowed_fields[4].value = (char *) nm_setting_802_1x_get_pac_file (s_8021X);
-	nmc->allowed_fields[5].value = ca_cert_str;
-	nmc->allowed_fields[6].value = (char *) nm_setting_802_1x_get_ca_path (s_8021X);
-	nmc->allowed_fields[7].value = (char *) nm_setting_802_1x_get_subject_match (s_8021X);
-	nmc->allowed_fields[8].value = alt_sub_match->str;
-	nmc->allowed_fields[9].value = client_cert_str;
-	nmc->allowed_fields[10].value = (char *) nm_setting_802_1x_get_phase1_peapver (s_8021X);
-	nmc->allowed_fields[11].value = (char *) nm_setting_802_1x_get_phase1_peaplabel (s_8021X);
-	nmc->allowed_fields[12].value = (char *) nm_setting_802_1x_get_phase1_fast_provisioning (s_8021X);
-	nmc->allowed_fields[13].value = (char *) nm_setting_802_1x_get_phase2_auth (s_8021X);
-	nmc->allowed_fields[14].value = (char *) nm_setting_802_1x_get_phase2_autheap (s_8021X);
-	nmc->allowed_fields[15].value = phase2_ca_cert_str;
-	nmc->allowed_fields[16].value = (char *) nm_setting_802_1x_get_phase2_ca_path (s_8021X);
-	nmc->allowed_fields[17].value = (char *) nm_setting_802_1x_get_phase2_subject_match (s_8021X);
-	nmc->allowed_fields[18].value = phase2_alt_sub_match->str;
-	nmc->allowed_fields[19].value = phase2_client_cert_str;
-	nmc->allowed_fields[20].value = (char *) nm_setting_802_1x_get_password (s_8021X);
-	nmc->allowed_fields[21].value = pswd_flags;
-	nmc->allowed_fields[22].value = pswd_raw_str;
-	nmc->allowed_fields[23].value = pswd_raw_flags;
-	nmc->allowed_fields[24].value = private_key_str;
-	nmc->allowed_fields[25].value = (char *) nm_setting_802_1x_get_private_key_password (s_8021X);
-	nmc->allowed_fields[26].value = priv_key_pswd_flags;
-	nmc->allowed_fields[27].value = phase2_private_key_str;
-	nmc->allowed_fields[28].value = (char *) nm_setting_802_1x_get_phase2_private_key_password (s_8021X);
-	nmc->allowed_fields[29].value = phase2_priv_key_pswd_flags;
-	nmc->allowed_fields[30].value = (char *) nm_setting_802_1x_get_pin (s_8021X);
-	nmc->allowed_fields[31].value = pin_flags;
-	nmc->allowed_fields[32].value = nm_setting_802_1x_get_system_ca_certs (s_8021X) ? _("yes") : _("no");
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_802_1X_get_eap (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_802_1X_get_identity (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_802_1X_get_anonymous_identity (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_802_1X_get_pac_file (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_802_1X_get_ca_cert (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_802_1X_get_ca_path (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_802_1X_get_subject_match (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_802_1X_get_altsubject_matches (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_802_1X_get_client_cert (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_802_1X_get_phase1_peapver (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_802_1X_get_phase1_peaplabel (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_802_1X_get_phase1_fast_provisioning (setting));
+	set_val_str (nmc->allowed_fields, 13, nmc_property_802_1X_get_phase2_auth (setting));
+	set_val_str (nmc->allowed_fields, 14, nmc_property_802_1X_get_phase2_autheap (setting));
+	set_val_str (nmc->allowed_fields, 15, nmc_property_802_1X_get_phase2_ca_cert (setting));
+	set_val_str (nmc->allowed_fields, 16, nmc_property_802_1X_get_phase2_ca_path (setting));
+	set_val_str (nmc->allowed_fields, 17, nmc_property_802_1X_get_phase2_subject_match (setting));
+	set_val_str (nmc->allowed_fields, 18, nmc_property_802_1X_get_phase2_altsubject_matches (setting));
+	set_val_str (nmc->allowed_fields, 19, nmc_property_802_1X_get_phase2_client_cert (setting));
+	set_val_str (nmc->allowed_fields, 20, nmc_property_802_1X_get_password (setting));
+	set_val_str (nmc->allowed_fields, 21, nmc_property_802_1X_get_password_flags (setting));
+	set_val_str (nmc->allowed_fields, 22, nmc_property_802_1X_get_password_raw (setting));
+	set_val_str (nmc->allowed_fields, 23, nmc_property_802_1X_get_password_raw_flags (setting));
+	set_val_str (nmc->allowed_fields, 24, nmc_property_802_1X_get_private_key (setting));
+	set_val_str (nmc->allowed_fields, 25, nmc_property_802_1X_get_private_key_password (setting));
+	set_val_str (nmc->allowed_fields, 26, nmc_property_802_1X_get_private_key_password_flags (setting));
+	set_val_str (nmc->allowed_fields, 27, nmc_property_802_1X_get_phase2_private_key (setting));
+	set_val_str (nmc->allowed_fields, 28, nmc_property_802_1X_get_phase2_private_key_password (setting));
+	set_val_str (nmc->allowed_fields, 29, nmc_property_802_1X_get_phase2_private_key_password_flags (setting));
+	set_val_str (nmc->allowed_fields, 30, nmc_property_802_1X_get_pin (setting));
+	set_val_str (nmc->allowed_fields, 31, nmc_property_802_1X_get_pin_flags (setting));
+	set_val_str (nmc->allowed_fields, 32, nmc_property_802_1X_get_system_ca_certs (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (ca_cert_str);
-	g_free (client_cert_str);
-	g_free (phase2_ca_cert_str);
-	g_free (phase2_client_cert_str);
-	g_free (private_key_str);
-	g_free (phase2_private_key_str);
-	g_free (pswd_flags);
-	g_free (pswd_raw_str);
-	g_free (pswd_raw_flags);
-	g_free (priv_key_pswd_flags);
-	g_free (phase2_priv_key_pswd_flags);
-	g_free (pin_flags);
-	g_string_free (eap_str, TRUE);
-	g_string_free (alt_sub_match, TRUE);
-	g_string_free (phase2_alt_sub_match, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 {
-	int i;
-	const GByteArray *ssid, *bssid, *mac;
-	char *channel_str, *rate_str, *tx_power_str, *mtu_str;
-	char *device_mac_str = NULL, *cloned_mac_str = NULL, *ssid_str = NULL, *bssid_str = NULL;
-	GString *mac_blacklist, *seen_bssids;
-	const GSList *iter;
+	NMSetting *setting = NM_SETTING (s_wireless);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1127,77 +1559,33 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	if (ssid)
-		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
-	channel_str = g_strdup_printf ("%d", nm_setting_wireless_get_channel (s_wireless));
-	rate_str = g_strdup_printf ("%d", nm_setting_wireless_get_rate (s_wireless));
-	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid)
-		bssid_str = nm_utils_hwaddr_ntoa (bssid->data, ARPHRD_ETHER);
-	tx_power_str = g_strdup_printf ("%d", nm_setting_wireless_get_tx_power (s_wireless));
-	mtu_str = g_strdup_printf ("%d", nm_setting_wireless_get_mtu (s_wireless));
-	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac)
-		device_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
-	mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
-	if (mac)
-		cloned_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
-
-	mac_blacklist = g_string_new (NULL);
-	iter = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
-	while (iter) {
-		g_string_append_printf (mac_blacklist, "%s,", (char *) iter->data);
-		iter = iter->next;
-	}
-	g_string_truncate (mac_blacklist, mac_blacklist->len-1);  /* chop off trailing ',' */
-
-	seen_bssids = g_string_new (NULL);
-	for (i = 0; i < nm_setting_wireless_get_num_seen_bssids (s_wireless); i++) {
-		if (i > 0)
-			g_string_append_c (seen_bssids, ',');
-		g_string_append (seen_bssids, nm_setting_wireless_get_seen_bssid (s_wireless, i));
-	}
-
-	nmc->allowed_fields[0].value = NM_SETTING_WIRELESS_SETTING_NAME;
-	nmc->allowed_fields[1].value = ssid_str;
-	nmc->allowed_fields[2].value = (char *) nm_setting_wireless_get_mode (s_wireless);
-	nmc->allowed_fields[3].value = (char *) nm_setting_wireless_get_band (s_wireless);
-	nmc->allowed_fields[4].value = channel_str;
-	nmc->allowed_fields[5].value = bssid_str;
-	nmc->allowed_fields[6].value = rate_str;
-	nmc->allowed_fields[7].value = tx_power_str;
-	nmc->allowed_fields[8].value = device_mac_str;
-	nmc->allowed_fields[9].value = cloned_mac_str;
-	nmc->allowed_fields[10].value = mac_blacklist->str;
-	nmc->allowed_fields[11].value = strcmp (mtu_str, "0") ?  mtu_str : _("auto");
-	nmc->allowed_fields[12].value = seen_bssids->str;
-	nmc->allowed_fields[13].value = (char *) nm_setting_wireless_get_security (s_wireless);
-	nmc->allowed_fields[14].value = nm_setting_wireless_get_hidden (s_wireless) ? _("yes") : _("no");
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_wireless_get_ssid (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_wireless_get_mode (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_wireless_get_band (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_wireless_get_channel (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_wireless_get_bssid (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_wireless_get_rate (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_wireless_get_tx_power (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_wireless_get_mac_address (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_wireless_get_cloned_mac_address (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_wireless_get_mac_address_blacklist (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_wireless_get_mtu (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_wireless_get_seen_bssids (setting));
+	set_val_str (nmc->allowed_fields, 13, nmc_property_wireless_get_sec (setting));
+	set_val_str (nmc->allowed_fields, 14, nmc_property_wireless_get_hidden (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (ssid_str);
-	g_free (channel_str);
-	g_free (bssid_str);
-	g_free (rate_str);
-	g_free (tx_power_str);
-	g_free (device_mac_str);
-	g_free (cloned_mac_str);
-	g_free (mtu_str);
-	g_string_free (seen_bssids, TRUE);
-	g_string_free (mac_blacklist, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, NmCli *nmc)
 {
-	int i;
-	char *wep_tx_keyidx_str, *wep_key_type_str, *wep_flags, *psk_flags, *leap_flags;
-	GString *protos, *pairwises, *groups;
+	NMSetting *setting = NM_SETTING (s_wireless_sec);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1209,70 +1597,36 @@ setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, Nm
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	wep_tx_keyidx_str = g_strdup_printf ("%d", nm_setting_wireless_security_get_wep_tx_keyidx (s_wireless_sec));
-	protos = g_string_new (NULL);
-	for (i = 0; i < nm_setting_wireless_security_get_num_protos (s_wireless_sec); i++) {
-		if (i > 0)
-		g_string_append_c (protos, ',');
-		g_string_append (protos, nm_setting_wireless_security_get_proto (s_wireless_sec, i));
-	}
-	pairwises = g_string_new (NULL);
-	for (i = 0; i < nm_setting_wireless_security_get_num_pairwise (s_wireless_sec); i++) {
-		if (i > 0)
-		g_string_append_c (pairwises, ',');
-		g_string_append (pairwises, nm_setting_wireless_security_get_pairwise (s_wireless_sec, i));
-	}
-	groups = g_string_new (NULL);
-	for (i = 0; i < nm_setting_wireless_security_get_num_groups (s_wireless_sec); i++) {
-		if (i > 0)
-		g_string_append_c (groups, ',');
-		g_string_append (groups, nm_setting_wireless_security_get_group (s_wireless_sec, i));
-	}
-	wep_key_type_str = wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (s_wireless_sec));
-
-	wep_flags = secret_flags_to_string (nm_setting_wireless_security_get_wep_key_flags (s_wireless_sec));
-	psk_flags = secret_flags_to_string (nm_setting_wireless_security_get_psk_flags (s_wireless_sec));
-	leap_flags = secret_flags_to_string (nm_setting_wireless_security_get_leap_password_flags (s_wireless_sec));
-
-	nmc->allowed_fields[0].value = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
-	nmc->allowed_fields[2].value = wep_tx_keyidx_str;
-	nmc->allowed_fields[3].value = (char *) nm_setting_wireless_security_get_auth_alg (s_wireless_sec);
-	nmc->allowed_fields[4].value = protos->str;
-	nmc->allowed_fields[5].value = pairwises->str;
-	nmc->allowed_fields[6].value = groups->str;
-	nmc->allowed_fields[7].value = (char *) nm_setting_wireless_security_get_leap_username (s_wireless_sec);
-	nmc->allowed_fields[8].value = (char *) nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0);
-	nmc->allowed_fields[9].value = (char *) nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1);
-	nmc->allowed_fields[10].value = (char *) nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2);
-	nmc->allowed_fields[11].value = (char *) nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3);
-	nmc->allowed_fields[12].value = wep_flags;
-	nmc->allowed_fields[13].value = wep_key_type_str;
-	nmc->allowed_fields[14].value = (char *) nm_setting_wireless_security_get_psk (s_wireless_sec);
-	nmc->allowed_fields[15].value = psk_flags;
-	nmc->allowed_fields[16].value = (char *) nm_setting_wireless_security_get_leap_password (s_wireless_sec);
-	nmc->allowed_fields[17].value = leap_flags;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_wifi_sec_get_key_mgmt (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_wifi_sec_get_wep_tx_keyidx (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_wifi_sec_get_auth_alg (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_wifi_sec_get_proto (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_wifi_sec_get_pairwise (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_wifi_sec_get_group (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_wifi_sec_get_leap_username (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_wifi_sec_get_wep_key0 (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_wifi_sec_get_wep_key1 (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_wifi_sec_get_wep_key2 (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_wifi_sec_get_wep_key3 (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_wifi_sec_get_wep_key_flags (setting));
+	set_val_str (nmc->allowed_fields, 13, nmc_property_wifi_sec_get_wep_key_type (setting));
+	set_val_str (nmc->allowed_fields, 14, nmc_property_wifi_sec_get_psk (setting));
+	set_val_str (nmc->allowed_fields, 15, nmc_property_wifi_sec_get_psk_flags (setting));
+	set_val_str (nmc->allowed_fields, 16, nmc_property_wifi_sec_get_leap_password (setting));
+	set_val_str (nmc->allowed_fields, 17, nmc_property_wifi_sec_get_leap_password_flags (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (wep_tx_keyidx_str);
-	g_free (wep_key_type_str);
-	g_free (wep_flags);
-	g_free (psk_flags);
-	g_free (leap_flags);
-	g_string_free (protos, TRUE);
-	g_string_free (pairwises, TRUE);
-	g_string_free (groups, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_ip4_config_details (NMSettingIP4Config *s_ip4, NmCli *nmc)
 {
-	GString *dns_str, *dns_search_str, *addr_str, *route_str;
-	int i, num;
+	NMSetting *setting = NM_SETTING (s_ip4);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1284,130 +1638,31 @@ setting_ip4_config_details (NMSettingIP4Config *s_ip4, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	dns_str = g_string_new (NULL);
-	num = nm_setting_ip4_config_get_num_dns (s_ip4);
-	for (i = 0; i < num; i++) {
-		char buf[INET_ADDRSTRLEN];
-		guint32 ip;
-
-		ip = nm_setting_ip4_config_get_dns (s_ip4, i);
-		memset (buf, 0, sizeof (buf));
-		inet_ntop (AF_INET, (const void *) &ip, buf, sizeof (buf));
-		if (i > 0)
-			g_string_append (dns_str, ", ");
-		g_string_append (dns_str, buf);
-	}
-
-	dns_search_str = g_string_new (NULL);
-	num = nm_setting_ip4_config_get_num_dns_searches (s_ip4);
-	for (i = 0; i < num; i++) {
-		const char *domain;
-
-		domain = nm_setting_ip4_config_get_dns_search (s_ip4, i);
-		if (i > 0)
-			g_string_append (dns_search_str, ", ");
-		g_string_append (dns_search_str, domain);
-	}
-
-	addr_str = g_string_new (NULL);
-	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
-	for (i = 0; i < num; i++) {
-		char buf[INET_ADDRSTRLEN];
-		char *tmp;
-		NMIP4Address *addr;
-		guint32 ip;
-
-		if (i > 0)
-			g_string_append (addr_str, "; ");
-
-		g_string_append (addr_str, "{ ");
-
-		addr = nm_setting_ip4_config_get_address (s_ip4, i);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip4_address_get_address (addr);
-		inet_ntop (AF_INET, (const void *) &ip, buf, sizeof (buf));
-		g_string_append_printf (addr_str, "ip = %s", buf);
-
-		tmp = g_strdup_printf ("/%u", nm_ip4_address_get_prefix (addr));
-		g_string_append (addr_str, tmp);
-		g_free (tmp);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip4_address_get_gateway (addr);
-		inet_ntop (AF_INET, (const void *) &ip, buf, sizeof (buf));
-		g_string_append_printf (addr_str, ", gw = %s", buf);
-
-		g_string_append (addr_str, " }");
-	}
-
-	route_str = g_string_new (NULL);
-	num = nm_setting_ip4_config_get_num_routes (s_ip4);
-	for (i = 0; i < num; i++) {
-		char buf[INET_ADDRSTRLEN];
-		char *tmp;
-		NMIP4Route *route;
-		guint32 ip;
-
-		if (i > 0)
-			g_string_append (route_str, "; ");
-
-		g_string_append (route_str, "{ ");
-
-		route = nm_setting_ip4_config_get_route (s_ip4, i);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip4_route_get_dest (route);
-		inet_ntop (AF_INET, (const void *) &ip, buf, sizeof (buf));
-		g_string_append_printf (route_str, "dst = %s", buf);
-
-		tmp = g_strdup_printf ("/%u", nm_ip4_route_get_prefix (route));
-		g_string_append (route_str, tmp);
-		g_free (tmp);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip4_route_get_next_hop (route);
-		inet_ntop (AF_INET, (const void *) &ip, buf, sizeof (buf));
-		g_string_append_printf (route_str, ", nh = %s", buf);
-
-		tmp = g_strdup_printf (", mt = %u", nm_ip4_route_get_metric (route));
-		g_string_append (route_str, tmp);
-		g_free (tmp);
-
-		g_string_append (route_str, " }");
-	}
-
-	nmc->allowed_fields[0].value = NM_SETTING_IP4_CONFIG_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_ip4_config_get_method (s_ip4);
-	nmc->allowed_fields[2].value = dns_str->str;
-	nmc->allowed_fields[3].value = dns_search_str->str;
-	nmc->allowed_fields[4].value = addr_str->str;
-	nmc->allowed_fields[5].value = route_str->str;
-	nmc->allowed_fields[6].value = nm_setting_ip4_config_get_ignore_auto_routes (s_ip4) ? _("yes") : _("no");
-	nmc->allowed_fields[7].value = nm_setting_ip4_config_get_ignore_auto_dns (s_ip4) ? _("yes") : _("no");
-	nmc->allowed_fields[8].value = (char *) nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-	nmc->allowed_fields[9].value = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) ? _("yes") : _("no");
-	nmc->allowed_fields[10].value = (char *) nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
-	nmc->allowed_fields[11].value = nm_setting_ip4_config_get_never_default (s_ip4) ? _("yes") : _("no");
-	nmc->allowed_fields[12].value = nm_setting_ip4_config_get_may_fail (s_ip4) ? _("yes") : _("no");
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_ipv4_get_method (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_ipv4_get_dns (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_ipv4_get_dns_search (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_ipv4_get_addresses (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_ipv4_get_routes (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_ipv4_get_ignore_auto_routes (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_ipv4_get_ignore_auto_dns (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_ipv4_get_dhcp_client_id (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_ipv4_get_dhcp_send_hostname (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_ipv4_get_dhcp_hostname (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_ipv4_get_never_default (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_ipv4_get_may_fail (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_string_free (dns_str, TRUE);
-	g_string_free (dns_search_str, TRUE);
-	g_string_free (addr_str, TRUE);
-	g_string_free (route_str, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 {
-	GString *dns_str, *dns_search_str, *addr_str, *route_str;
-	char *ip6_privacy_str;
-	int i, num;
+	NMSetting *setting = NM_SETTING (s_ip6);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1419,130 +1674,30 @@ setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	dns_str = g_string_new (NULL);
-	num = nm_setting_ip6_config_get_num_dns (s_ip6);
-	for (i = 0; i < num; i++) {
-		char buf[INET6_ADDRSTRLEN];
-		const struct in6_addr *ip;
-
-		ip = nm_setting_ip6_config_get_dns (s_ip6, i);
-		memset (buf, 0, sizeof (buf));
-		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-		if (i > 0)
-			g_string_append (dns_str, ", ");
-		g_string_append (dns_str, buf);
-	}
-
-	dns_search_str = g_string_new (NULL);
-	num = nm_setting_ip6_config_get_num_dns_searches (s_ip6);
-	for (i = 0; i < num; i++) {
-		const char *domain;
-
-		domain = nm_setting_ip6_config_get_dns_search (s_ip6, i);
-		if (i > 0)
-			g_string_append (dns_search_str, ", ");
-		g_string_append (dns_search_str, domain);
-	}
-
-	addr_str = g_string_new (NULL);
-	num = nm_setting_ip6_config_get_num_addresses (s_ip6);
-	for (i = 0; i < num; i++) {
-		char buf[INET6_ADDRSTRLEN];
-		char *tmp;
-		NMIP6Address *addr;
-		const struct in6_addr *ip;
-
-		if (i > 0)
-			g_string_append (addr_str, "; ");
-
-		g_string_append (addr_str, "{ ");
-
-		addr = nm_setting_ip6_config_get_address (s_ip6, i);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip6_address_get_address (addr);
-		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-		g_string_append_printf (addr_str, "ip = %s", buf);
-
-		tmp = g_strdup_printf ("/%u", nm_ip6_address_get_prefix (addr));
-		g_string_append (addr_str, tmp);
-		g_free (tmp);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip6_address_get_gateway (addr);
-		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-		g_string_append_printf (addr_str, ", gw = %s", buf);
-
-		g_string_append (addr_str, " }");
-	}
-
-	route_str = g_string_new (NULL);
-	num = nm_setting_ip6_config_get_num_routes (s_ip6);
-	for (i = 0; i < num; i++) {
-		char buf[INET6_ADDRSTRLEN];
-		char *tmp;
-		NMIP6Route *route;
-		const struct in6_addr *ip;
-
-		if (i > 0)
-			g_string_append (route_str, "; ");
-
-		g_string_append (route_str, "{ ");
-
-		route = nm_setting_ip6_config_get_route (s_ip6, i);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip6_route_get_dest (route);
-		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-		g_string_append_printf (route_str, "dst = %s", buf);
-
-		tmp = g_strdup_printf ("/%u", nm_ip6_route_get_prefix (route));
-		g_string_append (route_str, tmp);
-		g_free (tmp);
-
-		memset (buf, 0, sizeof (buf));
-		ip = nm_ip6_route_get_next_hop (route);
-		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-		g_string_append_printf (route_str, ", nh = %s", buf);
-
-		tmp = g_strdup_printf (", mt = %u", nm_ip6_route_get_metric (route));
-		g_string_append (route_str, tmp);
-		g_free (tmp);
-
-		g_string_append (route_str, " }");
-	}
-
-	ip6_privacy_str = ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6));
-
-	nmc->allowed_fields[0].value = NM_SETTING_IP6_CONFIG_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_ip6_config_get_method (s_ip6);
-	nmc->allowed_fields[2].value = dns_str->str;
-	nmc->allowed_fields[3].value = dns_search_str->str;
-	nmc->allowed_fields[4].value = addr_str->str;
-	nmc->allowed_fields[5].value = route_str->str;
-	nmc->allowed_fields[6].value = nm_setting_ip6_config_get_ignore_auto_routes (s_ip6) ? _("yes") : _("no");
-	nmc->allowed_fields[7].value = nm_setting_ip6_config_get_ignore_auto_dns (s_ip6) ? _("yes") : _("no");
-	nmc->allowed_fields[8].value = nm_setting_ip6_config_get_never_default (s_ip6) ? _("yes") : _("no");
-	nmc->allowed_fields[9].value = nm_setting_ip6_config_get_may_fail (s_ip6) ? _("yes") : _("no");
-	nmc->allowed_fields[10].value = ip6_privacy_str;
-	nmc->allowed_fields[11].value = (char *) nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_ipv6_get_method (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_ipv6_get_dns (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_ipv6_get_dns_search (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_ipv6_get_addresses (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_ipv6_get_routes (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_ipv6_get_ignore_auto_routes (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_ipv6_get_ignore_auto_dns (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_ipv6_get_never_default (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_ipv6_get_may_fail (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_ipv6_get_ip6_privacy (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_ipv6_get_dhcp_hostname (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_string_free (dns_str, TRUE);
-	g_string_free (dns_search_str, TRUE);
-	g_string_free (addr_str, TRUE);
-	g_string_free (route_str, TRUE);
-	g_free (ip6_privacy_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_serial_details (NMSettingSerial *s_serial, NmCli *nmc)
 {
-	char *baud_str, *bits_str, *parity_str, *stopbits_str, *send_delay_str;
+	NMSetting *setting = NM_SETTING (s_serial);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1554,35 +1709,24 @@ setting_serial_details (NMSettingSerial *s_serial, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	baud_str = g_strdup_printf ("%d", nm_setting_serial_get_baud (s_serial));
-	bits_str = g_strdup_printf ("%d", nm_setting_serial_get_bits (s_serial));
-	parity_str = g_strdup_printf ("%c", nm_setting_serial_get_parity (s_serial));
-	stopbits_str = g_strdup_printf ("%d", nm_setting_serial_get_stopbits (s_serial));
-	send_delay_str = g_strdup_printf ("%" G_GUINT64_FORMAT, nm_setting_serial_get_send_delay (s_serial));
-
-	nmc->allowed_fields[0].value = NM_SETTING_SERIAL_SETTING_NAME;
-	nmc->allowed_fields[1].value = baud_str;
-	nmc->allowed_fields[2].value = bits_str;
-	nmc->allowed_fields[3].value = parity_str;
-	nmc->allowed_fields[4].value = stopbits_str;
-	nmc->allowed_fields[5].value = send_delay_str;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_serial_get_baud (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_serial_get_bits (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_serial_get_parity (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_serial_get_stopbits (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_serial_get_send_delay (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (baud_str);
-	g_free (bits_str);
-	g_free (parity_str);
-	g_free (stopbits_str);
-	g_free (send_delay_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc)
 {
-	char *baud_str, *mru_str, *mtu_str, *lcp_echo_failure_str, *lcp_echo_interval_str;
+	NMSetting *setting = NM_SETTING (s_ppp);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1594,48 +1738,37 @@ setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	baud_str = g_strdup_printf ("%d", nm_setting_ppp_get_baud (s_ppp));
-	mru_str = g_strdup_printf ("%d", nm_setting_ppp_get_mru (s_ppp));
-	mtu_str = g_strdup_printf ("%d", nm_setting_ppp_get_mtu (s_ppp));
-	lcp_echo_failure_str = g_strdup_printf ("%d", nm_setting_ppp_get_lcp_echo_failure (s_ppp));
-	lcp_echo_interval_str = g_strdup_printf ("%d", nm_setting_ppp_get_lcp_echo_interval (s_ppp));
-
-	nmc->allowed_fields[0].value = NM_SETTING_PPP_SETTING_NAME;
-	nmc->allowed_fields[1].value = nm_setting_ppp_get_noauth (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[2].value = nm_setting_ppp_get_refuse_eap (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[3].value = nm_setting_ppp_get_refuse_pap (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[4].value = nm_setting_ppp_get_refuse_chap (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[5].value = nm_setting_ppp_get_refuse_mschap (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[6].value = nm_setting_ppp_get_refuse_mschapv2 (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[7].value = nm_setting_ppp_get_nobsdcomp (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[8].value = nm_setting_ppp_get_nodeflate (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[9].value = nm_setting_ppp_get_no_vj_comp (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[10].value = nm_setting_ppp_get_require_mppe (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[11].value = nm_setting_ppp_get_require_mppe_128 (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[12].value = nm_setting_ppp_get_mppe_stateful (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[13].value = nm_setting_ppp_get_crtscts (s_ppp) ? _("yes") : _("no");
-	nmc->allowed_fields[14].value = baud_str;
-	nmc->allowed_fields[15].value = mru_str;
-	nmc->allowed_fields[16].value = mtu_str;
-	nmc->allowed_fields[17].value = lcp_echo_failure_str;
-	nmc->allowed_fields[18].value = lcp_echo_interval_str;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_ppp_get_noauth (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_ppp_get_refuse_eap (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_ppp_get_refuse_pap (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_ppp_get_refuse_chap (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_ppp_get_refuse_mschap (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_ppp_get_refuse_mschapv2 (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_ppp_get_nobsdcomp (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_ppp_get_nodeflate (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_ppp_get_no_vj_comp (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_ppp_get_require_mppe (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_ppp_get_require_mppe_128 (setting));
+	set_val_str (nmc->allowed_fields, 12, nmc_property_ppp_get_mppe_stateful (setting));
+	set_val_str (nmc->allowed_fields, 13, nmc_property_ppp_get_crtscts (setting));
+	set_val_str (nmc->allowed_fields, 14, nmc_property_ppp_get_baud (setting));
+	set_val_str (nmc->allowed_fields, 15, nmc_property_ppp_get_mru (setting));
+	set_val_str (nmc->allowed_fields, 16, nmc_property_ppp_get_mtu (setting));
+	set_val_str (nmc->allowed_fields, 17, nmc_property_ppp_get_lcp_echo_failure (setting));
+	set_val_str (nmc->allowed_fields, 18, nmc_property_ppp_get_lcp_echo_interval (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (baud_str);
-	g_free (mru_str);
-	g_free (mtu_str);
-	g_free (lcp_echo_failure_str);
-	g_free (lcp_echo_interval_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 {
-	char *pswd_flags;
+	NMSetting *setting = NM_SETTING (s_pppoe);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1647,26 +1780,23 @@ setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	pswd_flags = secret_flags_to_string (nm_setting_pppoe_get_password_flags (s_pppoe));
-
-	nmc->allowed_fields[0].value = NM_SETTING_PPPOE_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_pppoe_get_service (s_pppoe);
-	nmc->allowed_fields[2].value = (char *) nm_setting_pppoe_get_username (s_pppoe);
-	nmc->allowed_fields[3].value = (char *) nm_setting_pppoe_get_password (s_pppoe);
-	nmc->allowed_fields[4].value = pswd_flags;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_pppoe_get_service (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_pppoe_get_username (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_pppoe_get_password (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_pppoe_get_password_flags (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (pswd_flags);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 {
-	char *network_type_str, *allowed_bands_str, *pswd_flags, *pin_flags;
+	NMSetting *setting = NM_SETTING (s_gsm);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1678,40 +1808,30 @@ setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	network_type_str = g_strdup_printf ("%d", nm_setting_gsm_get_network_type (s_gsm));
-	allowed_bands_str = allowed_bands_to_string (nm_setting_gsm_get_allowed_bands (s_gsm));
-
-	pswd_flags = secret_flags_to_string (nm_setting_gsm_get_password_flags (s_gsm));
-	pin_flags = secret_flags_to_string (nm_setting_gsm_get_pin_flags (s_gsm));
-
-	nmc->allowed_fields[0].value = NM_SETTING_GSM_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_gsm_get_number (s_gsm);
-	nmc->allowed_fields[2].value = (char *) nm_setting_gsm_get_username (s_gsm);
-	nmc->allowed_fields[3].value = (char *) nm_setting_gsm_get_password (s_gsm);
-	nmc->allowed_fields[4].value = pswd_flags;
-	nmc->allowed_fields[5].value = (char *) nm_setting_gsm_get_apn (s_gsm);
-	nmc->allowed_fields[6].value = (char *) nm_setting_gsm_get_network_id (s_gsm);
-	nmc->allowed_fields[7].value = network_type_str;
-	nmc->allowed_fields[8].value = allowed_bands_str;
-	nmc->allowed_fields[9].value = (char *) nm_setting_gsm_get_pin (s_gsm);
-	nmc->allowed_fields[10].value = pin_flags;
-	nmc->allowed_fields[11].value = nm_setting_gsm_get_home_only (s_gsm) ? _("yes") : _("no");
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_gsm_get_number (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_gsm_get_username (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_gsm_get_password (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_gsm_get_password_flags (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_gsm_get_apn (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_gsm_get_network_id (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_gsm_get_network_type (setting));
+	set_val_str (nmc->allowed_fields, 8, nmc_property_gsm_get_allowed_bands (setting));
+	set_val_str (nmc->allowed_fields, 9, nmc_property_gsm_get_pin (setting));
+	set_val_str (nmc->allowed_fields, 10, nmc_property_gsm_get_pin_flags (setting));
+	set_val_str (nmc->allowed_fields, 11, nmc_property_gsm_get_home_only (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (network_type_str);
-	g_free (allowed_bands_str);
-	g_free (pswd_flags);
-	g_free (pin_flags);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
 {
-	char *pswd_flags;
+	NMSetting *setting = NM_SETTING (s_cdma);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1723,27 +1843,23 @@ setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	pswd_flags = secret_flags_to_string (nm_setting_cdma_get_password_flags (s_cdma));
-
-	nmc->allowed_fields[0].value = NM_SETTING_CDMA_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_cdma_get_number (s_cdma);
-	nmc->allowed_fields[2].value = (char *) nm_setting_cdma_get_username (s_cdma);
-	nmc->allowed_fields[3].value = (char *) nm_setting_cdma_get_password (s_cdma);
-	nmc->allowed_fields[4].value = pswd_flags;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_cdma_get_number (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_cdma_get_username (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_cdma_get_password (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_cdma_get_password_flags (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (pswd_flags);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
 {
-	const GByteArray *bdaddr;
-	char *bdaddr_str = NULL;
+	NMSetting *setting = NM_SETTING (s_bluetooth);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1755,27 +1871,21 @@ setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bluetooth);
-	if (bdaddr)
-		bdaddr_str = nm_utils_hwaddr_ntoa (bdaddr->data, ARPHRD_ETHER);
-
-	nmc->allowed_fields[0].value = NM_SETTING_BLUETOOTH_SETTING_NAME;
-	nmc->allowed_fields[1].value = bdaddr_str;
-	nmc->allowed_fields[2].value = (char *) nm_setting_bluetooth_get_connection_type (s_bluetooth);
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_bluetooth_get_bdaddr (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_bluetooth_get_type (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (bdaddr_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 {
-	const GByteArray *ssid, *dhcp_anycast;
-	char *channel_str, *ssid_str = NULL, *dhcp_anycast_str = NULL;
+	NMSetting *setting = NM_SETTING (s_olpc_mesh);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1787,44 +1897,22 @@ setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
-	if (ssid)
-		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
-	channel_str = g_strdup_printf ("%d", nm_setting_olpc_mesh_get_channel (s_olpc_mesh));
-	dhcp_anycast = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_olpc_mesh);
-	if (dhcp_anycast)
-		dhcp_anycast_str = nm_utils_hwaddr_ntoa (dhcp_anycast->data, ARPHRD_ETHER);
-
-	nmc->allowed_fields[0].value = NM_SETTING_OLPC_MESH_SETTING_NAME;
-	nmc->allowed_fields[1].value = ssid_str;
-	nmc->allowed_fields[2].value = channel_str;
-	nmc->allowed_fields[3].value = dhcp_anycast_str;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_olpc_get_ssid (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_olpc_get_channel (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_olpc_get_anycast_address (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (ssid_str);
-	g_free (channel_str);
-	g_free (dhcp_anycast_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
-}
-
-static void
-vpn_data_item (const char *key, const char *value, gpointer user_data)
-{
-	GString *ret_str = (GString *) user_data;
-
-	if (ret_str->len != 0)
-		g_string_append (ret_str, ", ");
-
-	g_string_append_printf (ret_str, "%s = %s", key, value);
 }
 
 gboolean
 setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc)
 {
-	GString *data_item_str, *secret_str;
+	NMSetting *setting = NM_SETTING (s_vpn);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1836,31 +1924,23 @@ setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	data_item_str = g_string_new (NULL);
-	secret_str = g_string_new (NULL);
-	nm_setting_vpn_foreach_data_item (s_vpn, &vpn_data_item, data_item_str);
-	nm_setting_vpn_foreach_secret (s_vpn, &vpn_data_item, secret_str);
-
-	nmc->allowed_fields[0].value = NM_SETTING_VPN_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_vpn_get_service_type (s_vpn);
-	nmc->allowed_fields[2].value = (char *) nm_setting_vpn_get_user_name (s_vpn);
-	nmc->allowed_fields[3].value = data_item_str->str;
-	nmc->allowed_fields[4].value = secret_str->str;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_vpn_get_service_type (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_vpn_get_user_name (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_vpn_get_data (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_vpn_get_secrets (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_string_free (data_item_str, TRUE);
-	g_string_free (secret_str, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc)
 {
-	const GByteArray *mac;
-	char *device_mac_str = NULL;
+	NMSetting *setting = NM_SETTING (s_wimax);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1872,27 +1952,21 @@ setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	mac = nm_setting_wimax_get_mac_address (s_wimax);
-	if (mac)
-		device_mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_ETHER);
-
-	nmc->allowed_fields[0].value = NM_SETTING_WIMAX_SETTING_NAME;
-	nmc->allowed_fields[1].value = device_mac_str;
-	nmc->allowed_fields[2].value = (char *) nm_setting_wimax_get_network_name (s_wimax);
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_wimax_get_mac_address (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_wimax_get_network_name (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (device_mac_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc)
 {
-	const GByteArray *mac;
-	char *mtu_str, *mac_str = NULL;
+	NMSetting *setting = NM_SETTING (s_infiniband);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1904,31 +1978,23 @@ setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	if (mac)
-		mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_INFINIBAND);
-	mtu_str = g_strdup_printf ("%d", nm_setting_infiniband_get_mtu (s_infiniband));
-
-	nmc->allowed_fields[0].value = NM_SETTING_INFINIBAND_SETTING_NAME;
-	nmc->allowed_fields[1].value = mac_str;
-	nmc->allowed_fields[2].value = strcmp (mtu_str, "0") ? mtu_str : _("auto");
-	nmc->allowed_fields[3].value = (char *) nm_setting_infiniband_get_transport_mode (s_infiniband);
-	nmc->allowed_fields[4].value = (char *) nm_setting_infiniband_get_carrier_detect (s_infiniband);
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_ib_get_mac_address (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_ib_get_mtu (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_ib_get_transport_mode (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_ib_get_carrier_detect (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (mac_str);
-	g_free (mtu_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_bond_details (NMSettingBond *s_bond, NmCli *nmc)
 {
-	GString *bond_options_s;
-	int i;
+	NMSetting *setting = NM_SETTING (s_bond);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1940,31 +2006,21 @@ setting_bond_details (NMSettingBond *s_bond, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	bond_options_s = g_string_new (NULL);
-	for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
-		const char *key, *value;
-
-		nm_setting_bond_get_option (s_bond, i, &key, &value);
-		g_string_append_printf (bond_options_s, "%s=%s,", key, value);
-	}
-	g_string_truncate (bond_options_s, bond_options_s->len-1);  /* chop off trailing ',' */
-
-	nmc->allowed_fields[0].value = NM_SETTING_BOND_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_bond_get_interface_name (s_bond);
-	nmc->allowed_fields[2].value = bond_options_s->str;
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_bond_get_interface_name (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_bond_get_options (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_string_free (bond_options_s, TRUE);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
 {
-	char *vlan_id_str, *vlan_flags_str, *vlan_ingress_prio_str, *vlan_egress_prio_str;
+	NMSetting *setting = NM_SETTING (s_vlan);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -1976,35 +2032,26 @@ setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	vlan_id_str = g_strdup_printf ("%d", nm_setting_vlan_get_id (s_vlan));
-	vlan_flags_str = vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan));
-	vlan_ingress_prio_str = vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP);
-	vlan_egress_prio_str = vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP);
-
-	nmc->allowed_fields[0].value = NM_SETTING_VLAN_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_vlan_get_interface_name (s_vlan);
-	nmc->allowed_fields[2].value = (char *) nm_setting_vlan_get_parent (s_vlan);
-	nmc->allowed_fields[3].value = vlan_id_str;
-	nmc->allowed_fields[4].value = vlan_flags_str;
-	nmc->allowed_fields[5].value = vlan_ingress_prio_str;
-	nmc->allowed_fields[6].value = vlan_egress_prio_str;
-	nmc->allowed_fields[7].value = (char *) nm_setting_vlan_get_carrier_detect (s_vlan);
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_vlan_get_interface_name (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_vlan_get_parent (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_vlan_get_id (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_vlan_get_flags (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_vlan_get_ingress_priority_map (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_vlan_get_egress_priority_map (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_vlan_get_carrier_detect (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (vlan_id_str);
-	g_free (vlan_flags_str);
-	g_free (vlan_ingress_prio_str);
-	g_free (vlan_egress_prio_str);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 {
-	char *pswd_flags;
+	NMSetting *setting = NM_SETTING (s_adsl);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -2016,30 +2063,26 @@ setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	pswd_flags = secret_flags_to_string (nm_setting_adsl_get_password_flags (s_adsl));
-
-	nmc->allowed_fields[0].value = NM_SETTING_ADSL_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_adsl_get_username (s_adsl);
-	nmc->allowed_fields[2].value = (char *) nm_setting_adsl_get_password (s_adsl);
-	nmc->allowed_fields[3].value = pswd_flags;
-	nmc->allowed_fields[4].value = (char *) nm_setting_adsl_get_protocol (s_adsl);
-	nmc->allowed_fields[5].value = (char *) nm_setting_adsl_get_encapsulation (s_adsl);
-	nmc->allowed_fields[6].value = g_strdup_printf ("%d", nm_setting_adsl_get_vpi (s_adsl));
-	nmc->allowed_fields[7].value = g_strdup_printf ("%d", nm_setting_adsl_get_vci (s_adsl));
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_adsl_get_username (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_adsl_get_password (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_adsl_get_password_flags (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_adsl_get_protocol (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_adsl_get_encapsulation (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_adsl_get_vpi (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_adsl_get_vci (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free (pswd_flags);
-	g_free ((char*) nmc->allowed_fields[6].value);
-	g_free ((char*) nmc->allowed_fields[7].value);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_bridge_details (NMSettingBridge *s_bridge, NmCli *nmc)
 {
+	NMSetting *setting = NM_SETTING (s_bridge);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -2051,31 +2094,26 @@ setting_bridge_details (NMSettingBridge *s_bridge, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	nmc->allowed_fields[0].value = NM_SETTING_BRIDGE_SETTING_NAME;
-	nmc->allowed_fields[1].value = (char *) nm_setting_bridge_get_interface_name (s_bridge);
-	nmc->allowed_fields[2].value = nm_setting_bridge_get_stp (s_bridge) ? _("yes") : _("no");
-	nmc->allowed_fields[3].value = g_strdup_printf ("%u", nm_setting_bridge_get_priority (s_bridge));
-	nmc->allowed_fields[4].value = g_strdup_printf ("%u", nm_setting_bridge_get_forward_delay (s_bridge));
-	nmc->allowed_fields[5].value = g_strdup_printf ("%u", nm_setting_bridge_get_hello_time (s_bridge));
-	nmc->allowed_fields[6].value = g_strdup_printf ("%u", nm_setting_bridge_get_max_age (s_bridge));
-	nmc->allowed_fields[7].value = g_strdup_printf ("%u", nm_setting_bridge_get_ageing_time (s_bridge));
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_bridge_get_interface_name (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_bridge_get_stp (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_bridge_get_priority (setting));
+	set_val_str (nmc->allowed_fields, 4, nmc_property_bridge_get_forward_delay (setting));
+	set_val_str (nmc->allowed_fields, 5, nmc_property_bridge_get_hello_time (setting));
+	set_val_str (nmc->allowed_fields, 6, nmc_property_bridge_get_max_age (setting));
+	set_val_str (nmc->allowed_fields, 7, nmc_property_bridge_get_ageing_time (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	/* free values */
-	g_free ((char*) nmc->allowed_fields[3].value);
-	g_free ((char*) nmc->allowed_fields[4].value);
-	g_free ((char*) nmc->allowed_fields[5].value);
-	g_free ((char*) nmc->allowed_fields[6].value);
-	g_free ((char*) nmc->allowed_fields[7].value);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 
 gboolean
 setting_bridge_port_details (NMSettingBridgePort *s_bridge_port, NmCli *nmc)
 {
+	NMSetting *setting = NM_SETTING (s_bridge_port);
 	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
@@ -2087,17 +2125,15 @@ setting_bridge_port_details (NMSettingBridgePort *s_bridge_port, NmCli *nmc)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
 	print_fields (nmc->print_fields, nmc->allowed_fields);  /* Print field names */
 
-	nmc->allowed_fields[0].value = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
-	nmc->allowed_fields[1].value = g_strdup_printf ("%u", nm_setting_bridge_port_get_priority (s_bridge_port));
-	nmc->allowed_fields[2].value = g_strdup_printf ("%u", nm_setting_bridge_port_get_path_cost (s_bridge_port));
-	nmc->allowed_fields[3].value = nm_setting_bridge_port_get_hairpin_mode (s_bridge_port) ? _("yes") : _("no");
+	set_val_str (nmc->allowed_fields, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (nmc->allowed_fields, 1, nmc_property_bridge_port_get_priority (setting));
+	set_val_str (nmc->allowed_fields, 2, nmc_property_bridge_port_get_path_cost (setting));
+	set_val_str (nmc->allowed_fields, 3, nmc_property_bridge_port_get_hairpin_mode (setting));
 
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
 
-	g_free ((char*) nmc->allowed_fields[1].value);
-	g_free ((char*) nmc->allowed_fields[2].value);
-
+	nmc_free_output_field_values (nmc->allowed_fields);
 	return TRUE;
 }
 

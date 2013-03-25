@@ -35,6 +35,7 @@ void nmc_terminal_show_progress (const char *str);
 int nmc_string_screen_width (const char *start, const char *end);
 void set_val_str (NmcOutputField fields_array[], guint32 index, char *value);
 void set_val_arr (NmcOutputField fields_array[], guint32 index, char **value);
+void nmc_free_output_field_values (NmcOutputField fields_array[]);
 GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error);
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
 void print_fields (const NmcPrintFields fields, const NmcOutputField field_values[]);

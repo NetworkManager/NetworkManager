@@ -203,6 +203,22 @@ set_val_arr (NmcOutputField fields_array[], guint32 idx, char **value)
 }
 
 /*
+ * Free 'value' members in array of NmcOutputField
+ */
+void
+nmc_free_output_field_values (NmcOutputField fields_array[])
+{
+	int idx = 0;
+	while (fields_array && fields_array[idx].value) {
+		if (fields_array[idx].flags & NMC_OF_FLAG_ARRAY)
+			g_strfreev (fields_array[idx].value);
+		else
+			g_free (fields_array[idx].value);
+		idx++;
+	}
+}
+
+/*
  * Parse comma separated fields in 'fields_str' according to 'fields_array'.
  * IN:  'field_str':    comma-separated fields names
  *      'fields_array': array of allowed fields
