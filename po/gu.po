@@ -3,16 +3,16 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
 #
 # Ankit Patel <ankit@redhat.com>, 2004.
-# Sweta Kothari <swkothar@redhat.com>, 2009, 2010, 2012.
+# Sweta Kothari <swkothar@redhat.com>, 2009, 2010, 2012, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: gu\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
 "cgi?product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2012-11-13 15:25+0000\n"
-"PO-Revision-Date: 2012-11-20 15:41+0530\n"
+"POT-Creation-Date: 2013-03-14 15:25+0000\n"
+"PO-Revision-Date: 2013-03-25 12:09+0530\n"
 "Last-Translator: \n"
-"Language-Team: gu_IN <kde-i18n-doc@kde.org>\n"
+"Language-Team: American English <kde-i18n-doc@kde.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,8 +22,8 @@ msgstr ""
 "\n"
 
 #: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
-#: ../cli/src/common.c:63 ../cli/src/connections.c:128
-#: ../cli/src/connections.c:162
+#: ../cli/src/common.c:63 ../cli/src/connections.c:133
+#: ../cli/src/connections.c:167
 msgid "GROUP"
 msgstr "GROUP"
 
@@ -97,7 +97,7 @@ msgstr "જોડાઇ રહ્યા છે (ગૌણ જોડાણો શ
 msgid "connected"
 msgstr "જોડાયેલ"
 
-#: ../cli/src/common.c:386 ../cli/src/connections.c:635
+#: ../cli/src/common.c:386 ../cli/src/connections.c:466
 msgid "deactivating"
 msgstr "નિષ્ક્રિય કરી રહ્યા છે"
 
@@ -105,16 +105,16 @@ msgstr "નિષ્ક્રિય કરી રહ્યા છે"
 msgid "connection failed"
 msgstr "જોડાણ નિષ્ફળ"
 
-#: ../cli/src/common.c:390 ../cli/src/connections.c:638
-#: ../cli/src/connections.c:661 ../cli/src/connections.c:1353
-#: ../cli/src/devices.c:645 ../cli/src/network-manager.c:123
+#: ../cli/src/common.c:390 ../cli/src/connections.c:471
+#: ../cli/src/connections.c:494 ../cli/src/connections.c:1189
+#: ../cli/src/devices.c:664 ../cli/src/network-manager.c:123
 #: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:188
 #: ../cli/src/network-manager.c:197 ../cli/src/network-manager.c:257
 #: ../cli/src/network-manager.c:273 ../cli/src/network-manager.c:431
 #: ../cli/src/network-manager.c:486 ../cli/src/network-manager.c:524
-#: ../cli/src/network-manager.c:563 ../cli/src/settings.c:593
-#: ../cli/src/settings.c:621 ../cli/src/utils.c:531 ../src/main.c:451
-#: ../src/main.c:470
+#: ../cli/src/network-manager.c:563 ../cli/src/settings.c:669
+#: ../cli/src/settings.c:697 ../cli/src/settings.c:759 ../cli/src/utils.c:533
+#: ../src/main.c:422 ../src/main.c:441
 msgid "unknown"
 msgstr "અજ્ઞાત"
 
@@ -331,32 +331,31 @@ msgid "ModemManager is unavailable"
 msgstr "ModemManager બિનઉપલબ્ધ છે"
 
 #: ../cli/src/common.c:558
-#| msgid "The modem could not be found"
 msgid "The Wi-Fi network could not be found"
 msgstr "Wi-Fi નેટવર્કને શોધી શક્યા નહિં"
 
 #: ../cli/src/common.c:561
-#| msgid "A dependency of the connection failed"
 msgid "A secondary connection of the base connection failed"
 msgstr "મૂળ જોડાણનું ગૌણ જોડાણ નિષ્ફળ"
 
-#: ../cli/src/common.c:564 ../cli/src/devices.c:295 ../cli/src/devices.c:311
-#: ../cli/src/devices.c:433 ../cli/src/devices.c:477
+#: ../cli/src/common.c:564 ../cli/src/devices.c:310 ../cli/src/devices.c:328
+#: ../cli/src/devices.c:450 ../cli/src/devices.c:494
 msgid "Unknown"
 msgstr "અજ્ઞાત"
 
 #. 0
 #. used only for 'GENERAL' group listing
-#: ../cli/src/connections.c:59 ../cli/src/connections.c:129
-#: ../cli/src/devices.c:107 ../cli/src/devices.c:131 ../cli/src/devices.c:141
-#: ../cli/src/devices.c:151 ../cli/src/devices.c:165 ../cli/src/devices.c:179
-#: ../cli/src/devices.c:201 ../cli/src/devices.c:217 ../cli/src/devices.c:226
+#: ../cli/src/connections.c:60 ../cli/src/connections.c:134
+#: ../cli/src/devices.c:109 ../cli/src/devices.c:134 ../cli/src/devices.c:144
+#: ../cli/src/devices.c:154 ../cli/src/devices.c:164 ../cli/src/devices.c:180
+#: ../cli/src/devices.c:194 ../cli/src/devices.c:216 ../cli/src/devices.c:232
+#: ../cli/src/devices.c:241
 msgid "NAME"
 msgstr "NAME"
 
 #. 0
 #. 1
-#: ../cli/src/connections.c:60 ../cli/src/connections.c:130
+#: ../cli/src/connections.c:61 ../cli/src/connections.c:135
 msgid "UUID"
 msgstr "UUID"
 
@@ -364,29 +363,29 @@ msgstr "UUID"
 #. 0
 #. 1
 #. 2
-#: ../cli/src/connections.c:61 ../cli/src/connections.c:163
-#: ../cli/src/devices.c:71 ../cli/src/devices.c:109 ../cli/src/devices.c:204
+#: ../cli/src/connections.c:62 ../cli/src/connections.c:168
+#: ../cli/src/devices.c:72 ../cli/src/devices.c:111 ../cli/src/devices.c:219
 msgid "TYPE"
 msgstr "TYPE"
 
 #. 2
-#: ../cli/src/connections.c:62
+#: ../cli/src/connections.c:63
 msgid "TIMESTAMP"
 msgstr "TIMESTAMP"
 
 #. 3
-#: ../cli/src/connections.c:63
+#: ../cli/src/connections.c:64
 msgid "TIMESTAMP-REAL"
 msgstr "TIMESTAMP-REAL"
 
 #. 4
 #. 13
-#: ../cli/src/connections.c:64 ../cli/src/devices.c:121
+#: ../cli/src/connections.c:65 ../cli/src/devices.c:123
 msgid "AUTOCONNECT"
 msgstr "AUTOCONNECT"
 
 #. 5
-#: ../cli/src/connections.c:65
+#: ../cli/src/connections.c:66
 msgid "READONLY"
 msgstr "READONLY"
 
@@ -395,13 +394,13 @@ msgstr "READONLY"
 #. 2
 #. 11
 #. 5
-#: ../cli/src/connections.c:66 ../cli/src/connections.c:137
-#: ../cli/src/devices.c:73 ../cli/src/devices.c:191 ../cli/src/devices.c:207
+#: ../cli/src/connections.c:67 ../cli/src/connections.c:142
+#: ../cli/src/devices.c:74 ../cli/src/devices.c:206 ../cli/src/devices.c:222
 msgid "DBUS-PATH"
 msgstr "DBUS-PATH"
 
 #. 2
-#: ../cli/src/connections.c:131
+#: ../cli/src/connections.c:136
 msgid "DEVICES"
 msgstr "DEVICES"
 
@@ -409,95 +408,83 @@ msgstr "DEVICES"
 #. 1
 #. 8
 #. 1
-#: ../cli/src/connections.c:132 ../cli/src/devices.c:72
-#: ../cli/src/devices.c:116 ../cli/src/network-manager.c:39
+#: ../cli/src/connections.c:137 ../cli/src/devices.c:73
+#: ../cli/src/devices.c:118 ../cli/src/network-manager.c:39
 msgid "STATE"
 msgstr "STATE"
 
 #. 4
-#: ../cli/src/connections.c:133
+#: ../cli/src/connections.c:138
 msgid "DEFAULT"
 msgstr "DEFAULT"
 
 #. 5
-#: ../cli/src/connections.c:134
+#: ../cli/src/connections.c:139
 msgid "DEFAULT6"
 msgstr "DEFAULT6"
 
 #. 6
-#: ../cli/src/connections.c:135
+#: ../cli/src/connections.c:140
 msgid "SPEC-OBJECT"
 msgstr "SPEC-OBJECT"
 
 #. 7
 #. 1
-#: ../cli/src/connections.c:136 ../cli/src/connections.c:150
+#: ../cli/src/connections.c:141 ../cli/src/connections.c:155
 msgid "VPN"
 msgstr "VPN"
 
 #. 9
-#: ../cli/src/connections.c:138
+#: ../cli/src/connections.c:143
 msgid "CON-PATH"
 msgstr "CON-PATH"
 
 #. 10
-#: ../cli/src/connections.c:139
+#: ../cli/src/connections.c:144
 msgid "ZONE"
 msgstr "ZONE"
 
 #. 11
-#: ../cli/src/connections.c:140
+#: ../cli/src/connections.c:145
 msgid "MASTER-PATH"
 msgstr "MASTER-PATH"
 
-#: ../cli/src/connections.c:148 ../cli/src/devices.c:82
+#: ../cli/src/connections.c:153 ../cli/src/devices.c:83
 msgid "GENERAL"
 msgstr "GENERAL"
 
 #. 0
-#: ../cli/src/connections.c:149
+#: ../cli/src/connections.c:154
 msgid "IP"
 msgstr "IP"
 
 #. 1
-#: ../cli/src/connections.c:164
+#: ../cli/src/connections.c:169
 msgid "USERNAME"
 msgstr "USERNAME"
 
 #. 2
-#: ../cli/src/connections.c:165
+#: ../cli/src/connections.c:170
 msgid "GATEWAY"
 msgstr "GATEWAY"
 
 #. 3
-#: ../cli/src/connections.c:166
+#: ../cli/src/connections.c:171
 msgid "BANNER"
 msgstr "BANNER"
 
 #. 4
-#: ../cli/src/connections.c:167
+#: ../cli/src/connections.c:172
 msgid "VPN-STATE"
 msgstr "VPN-STATE"
 
 #. 5
-#: ../cli/src/connections.c:168
+#: ../cli/src/connections.c:173
 msgid "CFG"
 msgstr "CFG"
 
-#: ../cli/src/connections.c:190
+#: ../cli/src/connections.c:195
 #, c-format
-#| msgid ""
-#| "Usage: nmcli con { COMMAND | help }\n"
-#| "  COMMAND := { list | status | up | down | delete }\n"
-#| "\n"
-#| "  list [id <id> | uuid <id>]\n"
-#| "  status [id <id> | uuid <id> | path <path>]\n"
-#| "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
-#| "nowait] [--timeout <timeout>]\n"
-#| "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--"
-#| "timeout <timeout>]\n"
-#| "  down id <id> | uuid <id>\n"
-#| "  delete id <id> | uuid <id>\n"
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
 "  COMMAND := { list | status | up | down | delete }\n"
@@ -525,356 +512,367 @@ msgstr ""
 "  delete id <id> | uuid <id>\n"
 "\n"
 
-#: ../cli/src/connections.c:251 ../cli/src/connections.c:611
+#: ../cli/src/connections.c:256 ../cli/src/connections.c:442
 #, c-format
 msgid "Error: 'con list': %s"
 msgstr "ભૂલ: 'con list': %s"
 
-#: ../cli/src/connections.c:253 ../cli/src/connections.c:613
+#: ../cli/src/connections.c:258 ../cli/src/connections.c:444
 #, c-format
 msgid "Error: 'con list': %s; allowed fields: %s"
 msgstr "ભૂલ: 'con list': %s; માન્ય થયેલ ક્ષેત્રો: %s"
 
-#: ../cli/src/connections.c:261
+#: ../cli/src/connections.c:266
 msgid "Connection details"
 msgstr "જોડાણો વિગતો"
 
-#: ../cli/src/connections.c:486
+#: ../cli/src/connections.c:317
 msgid "never"
 msgstr "કદી નહિં"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:487 ../cli/src/connections.c:488
-#: ../cli/src/connections.c:716 ../cli/src/connections.c:717
-#: ../cli/src/connections.c:719 ../cli/src/devices.c:441
-#: ../cli/src/devices.c:494 ../cli/src/devices.c:610 ../cli/src/devices.c:611
-#: ../cli/src/devices.c:612 ../cli/src/devices.c:644 ../cli/src/devices.c:671
-#: ../cli/src/devices.c:672 ../cli/src/devices.c:673 ../cli/src/devices.c:674
-#: ../cli/src/devices.c:675 ../cli/src/network-manager.c:267
-#: ../cli/src/settings.c:712 ../cli/src/settings.c:787
-#: ../cli/src/settings.c:907 ../cli/src/settings.c:1189
-#: ../cli/src/settings.c:1190 ../cli/src/settings.c:1192
-#: ../cli/src/settings.c:1194 ../cli/src/settings.c:1195
-#: ../cli/src/settings.c:1326 ../cli/src/settings.c:1327
-#: ../cli/src/settings.c:1328 ../cli/src/settings.c:1329
-#: ../cli/src/settings.c:1406 ../cli/src/settings.c:1407
-#: ../cli/src/settings.c:1408 ../cli/src/settings.c:1409
-#: ../cli/src/settings.c:1410 ../cli/src/settings.c:1411
-#: ../cli/src/settings.c:1412 ../cli/src/settings.c:1413
-#: ../cli/src/settings.c:1414 ../cli/src/settings.c:1415
-#: ../cli/src/settings.c:1416 ../cli/src/settings.c:1417
-#: ../cli/src/settings.c:1418 ../cli/src/settings.c:1489
+#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
+#: ../cli/src/connections.c:552 ../cli/src/connections.c:553
+#: ../cli/src/connections.c:555 ../cli/src/devices.c:458
+#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
+#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
+#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
+#: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
+#: ../cli/src/network-manager.c:267 ../cli/src/settings.c:875
+#: ../cli/src/settings.c:950 ../cli/src/settings.c:1086
+#: ../cli/src/settings.c:1176 ../cli/src/settings.c:1386
+#: ../cli/src/settings.c:1387 ../cli/src/settings.c:1389
+#: ../cli/src/settings.c:1391 ../cli/src/settings.c:1392
+#: ../cli/src/settings.c:1523 ../cli/src/settings.c:1524
+#: ../cli/src/settings.c:1525 ../cli/src/settings.c:1526
+#: ../cli/src/settings.c:1604 ../cli/src/settings.c:1605
+#: ../cli/src/settings.c:1606 ../cli/src/settings.c:1607
+#: ../cli/src/settings.c:1608 ../cli/src/settings.c:1609
+#: ../cli/src/settings.c:1610 ../cli/src/settings.c:1611
+#: ../cli/src/settings.c:1612 ../cli/src/settings.c:1613
+#: ../cli/src/settings.c:1614 ../cli/src/settings.c:1615
+#: ../cli/src/settings.c:1616 ../cli/src/settings.c:1698
+#: ../cli/src/settings.c:2056 ../cli/src/settings.c:2093
 msgid "yes"
 msgstr "હાં"
 
-#: ../cli/src/connections.c:487 ../cli/src/connections.c:488
-#: ../cli/src/connections.c:716 ../cli/src/connections.c:717
-#: ../cli/src/connections.c:719 ../cli/src/devices.c:441
-#: ../cli/src/devices.c:494 ../cli/src/devices.c:610 ../cli/src/devices.c:611
-#: ../cli/src/devices.c:612 ../cli/src/devices.c:644 ../cli/src/devices.c:671
-#: ../cli/src/devices.c:672 ../cli/src/devices.c:673 ../cli/src/devices.c:674
-#: ../cli/src/devices.c:675 ../cli/src/network-manager.c:269
-#: ../cli/src/settings.c:712 ../cli/src/settings.c:714
-#: ../cli/src/settings.c:787 ../cli/src/settings.c:907
-#: ../cli/src/settings.c:1189 ../cli/src/settings.c:1190
-#: ../cli/src/settings.c:1192 ../cli/src/settings.c:1194
-#: ../cli/src/settings.c:1195 ../cli/src/settings.c:1326
-#: ../cli/src/settings.c:1327 ../cli/src/settings.c:1328
-#: ../cli/src/settings.c:1329 ../cli/src/settings.c:1406
-#: ../cli/src/settings.c:1407 ../cli/src/settings.c:1408
-#: ../cli/src/settings.c:1409 ../cli/src/settings.c:1410
-#: ../cli/src/settings.c:1411 ../cli/src/settings.c:1412
-#: ../cli/src/settings.c:1413 ../cli/src/settings.c:1414
-#: ../cli/src/settings.c:1415 ../cli/src/settings.c:1416
-#: ../cli/src/settings.c:1417 ../cli/src/settings.c:1418
-#: ../cli/src/settings.c:1489
+#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
+#: ../cli/src/connections.c:552 ../cli/src/connections.c:553
+#: ../cli/src/connections.c:555 ../cli/src/devices.c:458
+#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
+#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
+#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
+#: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
+#: ../cli/src/network-manager.c:269 ../cli/src/settings.c:875
+#: ../cli/src/settings.c:877 ../cli/src/settings.c:950
+#: ../cli/src/settings.c:1086 ../cli/src/settings.c:1176
+#: ../cli/src/settings.c:1386 ../cli/src/settings.c:1387
+#: ../cli/src/settings.c:1389 ../cli/src/settings.c:1391
+#: ../cli/src/settings.c:1392 ../cli/src/settings.c:1523
+#: ../cli/src/settings.c:1524 ../cli/src/settings.c:1525
+#: ../cli/src/settings.c:1526 ../cli/src/settings.c:1604
+#: ../cli/src/settings.c:1605 ../cli/src/settings.c:1606
+#: ../cli/src/settings.c:1607 ../cli/src/settings.c:1608
+#: ../cli/src/settings.c:1609 ../cli/src/settings.c:1610
+#: ../cli/src/settings.c:1611 ../cli/src/settings.c:1612
+#: ../cli/src/settings.c:1613 ../cli/src/settings.c:1614
+#: ../cli/src/settings.c:1615 ../cli/src/settings.c:1616
+#: ../cli/src/settings.c:1698 ../cli/src/settings.c:2056
+#: ../cli/src/settings.c:2093
 msgid "no"
 msgstr "ના"
 
-#: ../cli/src/connections.c:562
+#: ../cli/src/connections.c:393
 msgid "Connection list"
 msgstr "જોડાણ યાદી"
 
-#: ../cli/src/connections.c:575 ../cli/src/connections.c:1112
-#: ../cli/src/connections.c:1650 ../cli/src/connections.c:1665
-#: ../cli/src/connections.c:1674 ../cli/src/connections.c:1684
-#: ../cli/src/connections.c:1696 ../cli/src/connections.c:1804
-#: ../cli/src/connections.c:1906 ../cli/src/devices.c:1122
-#: ../cli/src/devices.c:1132 ../cli/src/devices.c:1250
-#: ../cli/src/devices.c:1258 ../cli/src/devices.c:1622
-#: ../cli/src/devices.c:1629 ../cli/src/devices.c:1643
-#: ../cli/src/devices.c:1650 ../cli/src/devices.c:1667
-#: ../cli/src/devices.c:1678 ../cli/src/devices.c:1899
-#: ../cli/src/devices.c:1906
+#: ../cli/src/connections.c:406 ../cli/src/connections.c:948
+#: ../cli/src/connections.c:1486 ../cli/src/connections.c:1501
+#: ../cli/src/connections.c:1510 ../cli/src/connections.c:1520
+#: ../cli/src/connections.c:1532 ../cli/src/connections.c:1641
+#: ../cli/src/connections.c:1743 ../cli/src/devices.c:1192
+#: ../cli/src/devices.c:1202 ../cli/src/devices.c:1320
+#: ../cli/src/devices.c:1328 ../cli/src/devices.c:1692
+#: ../cli/src/devices.c:1699 ../cli/src/devices.c:1713
+#: ../cli/src/devices.c:1720 ../cli/src/devices.c:1737
+#: ../cli/src/devices.c:1748 ../cli/src/devices.c:1969
+#: ../cli/src/devices.c:1976
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "ભૂલ: %s દલીલ ગેરહાજર છે."
 
-#: ../cli/src/connections.c:588
+#: ../cli/src/connections.c:419
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Error: %s - આવા જોડાણ નથી."
 
-#: ../cli/src/connections.c:594 ../cli/src/connections.c:1709
-#: ../cli/src/connections.c:1821 ../cli/src/connections.c:1913
-#: ../cli/src/devices.c:906 ../cli/src/devices.c:986 ../cli/src/devices.c:1146
-#: ../cli/src/devices.c:1264 ../cli/src/devices.c:1691
-#: ../cli/src/devices.c:1912
+#: ../cli/src/connections.c:425 ../cli/src/connections.c:1545
+#: ../cli/src/connections.c:1658 ../cli/src/connections.c:1750
+#: ../cli/src/devices.c:976 ../cli/src/devices.c:1056
+#: ../cli/src/devices.c:1216 ../cli/src/devices.c:1334
+#: ../cli/src/devices.c:1761 ../cli/src/devices.c:1982
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "અજ્ઞાત પરિમાણ: %s\n"
 
-#: ../cli/src/connections.c:603
+#: ../cli/src/connections.c:434
 #, c-format
 msgid "Error: no valid parameter specified."
 msgstr "ભૂલ: યોગ્ય પરિમાણ સ્પષ્ટ થયેલ નથી."
 
-#: ../cli/src/connections.c:618 ../cli/src/connections.c:2009
-#: ../cli/src/devices.c:2123 ../cli/src/network-manager.c:599
+#: ../cli/src/connections.c:449 ../cli/src/connections.c:1846
+#: ../cli/src/devices.c:2193 ../cli/src/network-manager.c:599
 #, c-format
 msgid "Error: %s."
 msgstr "ભૂલ: %s."
 
-#: ../cli/src/connections.c:631
+#: ../cli/src/connections.c:462
 msgid "activating"
 msgstr "સક્રિય કરી રહ્યા છે"
 
-#: ../cli/src/connections.c:633
+#: ../cli/src/connections.c:464
 msgid "activated"
 msgstr "સક્રિય થયેલ છે"
 
-#: ../cli/src/connections.c:647
+#: ../cli/src/connections.c:468
+#| msgid "activated"
+msgid "deactivated"
+msgstr "અસક્રિય"
+
+#: ../cli/src/connections.c:480
 msgid "VPN connecting (prepare)"
 msgstr "VPN જોડાઇ રહ્યુ છે (તૈયાર કરો)"
 
-#: ../cli/src/connections.c:649
+#: ../cli/src/connections.c:482
 msgid "VPN connecting (need authentication)"
 msgstr "VPN જોડાઇ રહ્યુ છે (સત્તાધિકરણની જરૂર છે)"
 
-#: ../cli/src/connections.c:651
+#: ../cli/src/connections.c:484
 msgid "VPN connecting"
 msgstr "VPN જોડાઇ રહ્યુ છે"
 
-#: ../cli/src/connections.c:653
+#: ../cli/src/connections.c:486
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN જોડાઇ રહ્યુ છે (IP રૂપરેખાંકનને મેળવી રહ્યા છે)"
 
-#: ../cli/src/connections.c:655
+#: ../cli/src/connections.c:488
 msgid "VPN connected"
 msgstr "VPN જોડાયેલ છે"
 
-#: ../cli/src/connections.c:657
+#: ../cli/src/connections.c:490
 msgid "VPN connection failed"
 msgstr "VPN જોડાણ નિષ્ફળ"
 
-#: ../cli/src/connections.c:659
+#: ../cli/src/connections.c:492
 msgid "VPN disconnected"
 msgstr "VPN જોડાણ તૂટી ગયુ"
 
-#: ../cli/src/connections.c:712 ../cli/src/connections.c:722
+#: ../cli/src/connections.c:548 ../cli/src/connections.c:558
 msgid "N/A"
 msgstr "N/A"
 
-#: ../cli/src/connections.c:916 ../cli/src/connections.c:1140
+#: ../cli/src/connections.c:752 ../cli/src/connections.c:976
 #, c-format
 msgid "Error: 'con status': %s"
 msgstr "ભૂલ: 'con status': %s"
 
-#: ../cli/src/connections.c:918 ../cli/src/connections.c:1142
+#: ../cli/src/connections.c:754 ../cli/src/connections.c:978
 #, c-format
 msgid "Error: 'con status': %s; allowed fields: %s"
 msgstr "ભૂલ: 'con status': %s; માન્ય થયેલ ક્ષેત્રો: %s"
 
-#: ../cli/src/connections.c:926
+#: ../cli/src/connections.c:762
 msgid "Active connection details"
 msgstr "સક્રિય જોડાણ વિગતો"
 
-#: ../cli/src/connections.c:1062 ../cli/src/connections.c:1724
-#: ../cli/src/connections.c:1836 ../cli/src/connections.c:1927
-#: ../cli/src/devices.c:933 ../cli/src/devices.c:995 ../cli/src/devices.c:1161
-#: ../cli/src/devices.c:1294 ../cli/src/devices.c:1713
-#: ../cli/src/devices.c:1941 ../cli/src/network-manager.c:311
+#: ../cli/src/connections.c:898 ../cli/src/connections.c:1560
+#: ../cli/src/connections.c:1673 ../cli/src/connections.c:1764
+#: ../cli/src/devices.c:1003 ../cli/src/devices.c:1065
+#: ../cli/src/devices.c:1231 ../cli/src/devices.c:1364
+#: ../cli/src/devices.c:1783 ../cli/src/devices.c:2011
+#: ../cli/src/network-manager.c:311
 #, c-format
 msgid "Error: Can't find out if NetworkManager is running: %s."
 msgstr "ભૂલ: મળી શકતુ નથી જો NetworkManager ચાલી રહ્યુ હોય: %s."
 
-#: ../cli/src/connections.c:1066 ../cli/src/connections.c:1728
-#: ../cli/src/connections.c:1840 ../cli/src/connections.c:1931
-#: ../cli/src/devices.c:937 ../cli/src/devices.c:999 ../cli/src/devices.c:1165
-#: ../cli/src/devices.c:1298 ../cli/src/devices.c:1717
-#: ../cli/src/devices.c:1945 ../cli/src/network-manager.c:315
+#: ../cli/src/connections.c:902 ../cli/src/connections.c:1564
+#: ../cli/src/connections.c:1677 ../cli/src/connections.c:1768
+#: ../cli/src/devices.c:1007 ../cli/src/devices.c:1069
+#: ../cli/src/devices.c:1235 ../cli/src/devices.c:1368
+#: ../cli/src/devices.c:1787 ../cli/src/devices.c:2015
+#: ../cli/src/network-manager.c:315
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "ભૂલ: NetworkManager ચાલી રહ્યુ નથી."
 
-#: ../cli/src/connections.c:1098
+#: ../cli/src/connections.c:934
 msgid "Active connections"
 msgstr "સક્રિય જોડાણો"
 
-#: ../cli/src/connections.c:1123
+#: ../cli/src/connections.c:959
 #, c-format
 msgid "Error: '%s' is not an active connection."
 msgstr "ભૂલ: '%s' સક્રિય જોડાણ નથી."
 
-#: ../cli/src/connections.c:1128
+#: ../cli/src/connections.c:964
 #, c-format
 msgid "Error: unknown parameter: %s"
 msgstr "ભૂલ: અજ્ઞાત પરિમાણ: %s"
 
-#: ../cli/src/connections.c:1235
+#: ../cli/src/connections.c:1071
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ઉપકરણ '%s' પર સક્રિય જોડાણ નથી"
 
-#: ../cli/src/connections.c:1243
+#: ../cli/src/connections.c:1079
 msgid "no active connection or device"
 msgstr "સક્રિય જોડાણ અથવા ઉપકરણ નથી"
 
-#: ../cli/src/connections.c:1314
+#: ../cli/src/connections.c:1150
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "ઉપકરણ '%s' એ જોડાણ '%s' સાથે સુસંગત નથી"
 
-#: ../cli/src/connections.c:1317
+#: ../cli/src/connections.c:1153
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "જોડાણ '%s' માટે ઉપકરણ મળ્યુ નથી"
 
-#: ../cli/src/connections.c:1329
+#: ../cli/src/connections.c:1165
 msgid "unknown reason"
 msgstr "અજ્ઞાત કારણ"
 
-#: ../cli/src/connections.c:1331
+#: ../cli/src/connections.c:1167
 msgid "none"
 msgstr "કંઇ નહિં"
 
-#: ../cli/src/connections.c:1333
+#: ../cli/src/connections.c:1169
 msgid "the user was disconnected"
 msgstr "વપરાશકર્તાનું જોડાણ તૂટી ગયુ હતુ"
 
-#: ../cli/src/connections.c:1335
+#: ../cli/src/connections.c:1171
 msgid "the base network connection was interrupted"
 msgstr "આધાર નેટવર્ક જોડાણ અવરોધેલ હતુ"
 
-#: ../cli/src/connections.c:1337
+#: ../cli/src/connections.c:1173
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN સેવા અનિચ્છનિય રીતે બંધ થયેલ છે"
 
-#: ../cli/src/connections.c:1339
+#: ../cli/src/connections.c:1175
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN સેવા એ અયોગ્ય રૂપરેખાંકનને પાછુ મેળવેલ છે"
 
-#: ../cli/src/connections.c:1341
+#: ../cli/src/connections.c:1177
 msgid "the connection attempt timed out"
 msgstr "જોડાણનો પ્રયત્ન કરવાનો સમય સમાપ્ત થઇ ગયો"
 
-#: ../cli/src/connections.c:1343
+#: ../cli/src/connections.c:1179
 msgid "the VPN service did not start in time"
 msgstr "VPN સેવા એ સમય પર શરૂ થઇ ન હતી"
 
-#: ../cli/src/connections.c:1345
+#: ../cli/src/connections.c:1181
 msgid "the VPN service failed to start"
 msgstr "શરૂ કરતી વખતે VPN સેવા નિષ્ફળ"
 
-#: ../cli/src/connections.c:1347
+#: ../cli/src/connections.c:1183
 msgid "no valid VPN secrets"
 msgstr "યોગ્ય VPN ખાનગીઓ નથી"
 
-#: ../cli/src/connections.c:1349
+#: ../cli/src/connections.c:1185
 msgid "invalid VPN secrets"
 msgstr "અયોગ્ય VPN ખાનગીપણા"
 
-#: ../cli/src/connections.c:1351
+#: ../cli/src/connections.c:1187
 msgid "the connection was removed"
 msgstr "જોડાણને દૂર કરાયેલ હતુ"
 
-#: ../cli/src/connections.c:1368 ../cli/src/connections.c:1573
+#: ../cli/src/connections.c:1204 ../cli/src/connections.c:1409
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "જોડાણ સફળતાપૂર્વક સક્રિય થયેલ છે (D-Bus સક્રિય પાથ: %s)\n"
 
 #. Active connection failed and dissapeared, quit.
-#: ../cli/src/connections.c:1373 ../cli/src/connections.c:1474
+#: ../cli/src/connections.c:1209 ../cli/src/connections.c:1310
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "ભૂલ: જોડાણ સક્રિય કરવાનું નિષ્ફળ."
 
-#: ../cli/src/connections.c:1398
+#: ../cli/src/connections.c:1234
 #, c-format
 msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
 msgstr "VPN જોડાણ સફળતાપૂર્વક સક્રિય થયેલ છે (D-Bus સક્રિય પાથ: %s)\n"
 
-#: ../cli/src/connections.c:1406
+#: ../cli/src/connections.c:1242
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "ભૂલ: જોડાણ સક્રિય કરવાનું નિષ્ફળ: %s."
 
-#: ../cli/src/connections.c:1503 ../cli/src/devices.c:1055
+#: ../cli/src/connections.c:1339 ../cli/src/devices.c:1125
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "ભૂલ: સમયસમાપ્તિ %d સેકંડ નો સમય સમાપ્ત થઇ ગયો."
 
-#: ../cli/src/connections.c:1564
+#: ../cli/src/connections.c:1400
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "ભૂલ: જોડાણ સક્રિય કરવાનું નિષ્ફળ: %s"
 
-#: ../cli/src/connections.c:1658 ../cli/src/connections.c:1812
-#: ../cli/src/connections.c:1940
+#: ../cli/src/connections.c:1494 ../cli/src/connections.c:1649
+#: ../cli/src/connections.c:1777
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "ભૂલ: અજ્ઞાત જોડાણ: %s."
 
-#: ../cli/src/connections.c:1704 ../cli/src/devices.c:1140
-#: ../cli/src/devices.c:1686
+#: ../cli/src/connections.c:1540 ../cli/src/devices.c:1210
+#: ../cli/src/devices.c:1756
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "ભૂલ: સમયસમાપ્તિ કિંમત '%s' યોગ્ય નથી."
 
-#: ../cli/src/connections.c:1717 ../cli/src/connections.c:1829
-#: ../cli/src/connections.c:1920
+#: ../cli/src/connections.c:1553 ../cli/src/connections.c:1666
+#: ../cli/src/connections.c:1757
 #, c-format
 msgid "Error: id or uuid has to be specified."
 msgstr "ભૂલ: id અથવા uuid ને સ્પષ્ટ કરવુ જ પડશે."
 
-#: ../cli/src/connections.c:1749
+#: ../cli/src/connections.c:1586
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "ભૂલ: સુસંગત ઉપકરણ મળ્યુ નથી: %s."
 
-#: ../cli/src/connections.c:1751
+#: ../cli/src/connections.c:1588
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "ભૂલ: સુસંગત ઉપકરણ મળ્યુ નથી."
 
-#: ../cli/src/connections.c:1865
+#: ../cli/src/connections.c:1702
 #, c-format
 msgid "Warning: Connection not active\n"
 msgstr "ચેતવણી: જોડાણ સક્રિય થયેલ નથી\n"
 
-#: ../cli/src/connections.c:1879
+#: ../cli/src/connections.c:1716
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "ભૂલ: જોડાણ નિરાકરણ નિષ્ફળ: %s"
 
-#: ../cli/src/connections.c:2000
+#: ../cli/src/connections.c:1837
 #, c-format
 msgid "Error: 'con' command '%s' is not valid."
 msgstr "ભૂલ: 'con' આદેશ '%s' યોગ્ય નથી."
 
-#: ../cli/src/connections.c:2068
+#: ../cli/src/connections.c:1905
 #, c-format
 msgid "Error: could not connect to D-Bus."
 msgstr "ભૂલ: D-Bus નું જોડાણ કરી શક્યા નહિં."
 
-#: ../cli/src/connections.c:2076
+#: ../cli/src/connections.c:1913
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "ભૂલ: સિસ્ટમ સુયોજનોને મેળવી શક્યા નથી."
 
-#: ../cli/src/connections.c:2086
+#: ../cli/src/connections.c:1923
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "ભૂલ: જોડાણોને પ્રાપ્ત કરી શકાતા નથી: સુયોજનો સેવાઓ ચાલી રહી નથી."
@@ -882,278 +880,284 @@ msgstr "ભૂલ: જોડાણોને પ્રાપ્ત કરી શ�
 #. 0
 #. 9
 #. 3
-#: ../cli/src/devices.c:70 ../cli/src/devices.c:108 ../cli/src/devices.c:189
-#: ../cli/src/devices.c:205
+#: ../cli/src/devices.c:71 ../cli/src/devices.c:110 ../cli/src/devices.c:204
+#: ../cli/src/devices.c:220
 msgid "DEVICE"
 msgstr "DEVICE"
 
 #. 0
-#: ../cli/src/devices.c:83
+#: ../cli/src/devices.c:84
 msgid "CAPABILITIES"
 msgstr "CAPABILITIES"
 
 #. 1
-#: ../cli/src/devices.c:84
+#: ../cli/src/devices.c:85
 msgid "WIFI-PROPERTIES"
 msgstr "WIFI-PROPERTIES"
 
 #. 2
-#: ../cli/src/devices.c:85
+#. 5
+#: ../cli/src/devices.c:86 ../cli/src/devices.c:170
 msgid "AP"
 msgstr "AP"
 
 #. 3
-#: ../cli/src/devices.c:86
+#: ../cli/src/devices.c:87
 msgid "WIRED-PROPERTIES"
 msgstr "WIRED-PROPERTIES"
 
 #. 4
-#: ../cli/src/devices.c:87
+#: ../cli/src/devices.c:88
 msgid "WIMAX-PROPERTIES"
 msgstr "WIMAX-PROPERTIES"
 
 #. 5
 #. 0
-#: ../cli/src/devices.c:88 ../cli/src/devices.c:202
+#: ../cli/src/devices.c:89 ../cli/src/devices.c:217
 msgid "NSP"
 msgstr "NSP"
 
 #. 6
-#: ../cli/src/devices.c:89
+#: ../cli/src/devices.c:90
 msgid "IP4"
 msgstr "IP4"
 
 #. 7
-#: ../cli/src/devices.c:90
+#: ../cli/src/devices.c:91
 msgid "DHCP4"
 msgstr "DHCP4"
 
 #. 8
-#: ../cli/src/devices.c:91
+#: ../cli/src/devices.c:92
 msgid "IP6"
 msgstr "IP6"
 
 #. 9
-#: ../cli/src/devices.c:92
+#: ../cli/src/devices.c:93
 msgid "DHCP6"
 msgstr "DHCP6"
 
 #. 10
-#: ../cli/src/devices.c:93
+#: ../cli/src/devices.c:94
 msgid "BOND"
 msgstr "BOND"
 
 #. 11
-#: ../cli/src/devices.c:94
+#: ../cli/src/devices.c:95
 msgid "VLAN"
 msgstr "VLAN"
 
+#. 12
+#: ../cli/src/devices.c:96
+#| msgid "CONNECTION"
+msgid "CONNECTIONS"
+msgstr "CONNECTIONS"
+
 #. 2
-#: ../cli/src/devices.c:110
+#: ../cli/src/devices.c:112
 msgid "VENDOR"
 msgstr "VENDOR"
 
 #. 3
-#: ../cli/src/devices.c:111
+#: ../cli/src/devices.c:113
 msgid "PRODUCT"
 msgstr "PRODUCT"
 
 #. 4
-#: ../cli/src/devices.c:112
+#: ../cli/src/devices.c:114
 msgid "DRIVER"
 msgstr "DRIVER"
 
 #. 5
-#: ../cli/src/devices.c:113
+#: ../cli/src/devices.c:115
 msgid "DRIVER-VERSION"
 msgstr "DRIVER-VERSION"
 
 #. 6
-#: ../cli/src/devices.c:114
+#: ../cli/src/devices.c:116
 msgid "FIRMWARE-VERSION"
 msgstr "FIRMWARE-VERSION"
 
 #. 7
-#: ../cli/src/devices.c:115
+#: ../cli/src/devices.c:117
 msgid "HWADDR"
 msgstr "HWADDR"
 
 #. 9
-#: ../cli/src/devices.c:117
+#: ../cli/src/devices.c:119
 msgid "REASON"
 msgstr "REASON"
 
 #. 10
-#: ../cli/src/devices.c:118
+#: ../cli/src/devices.c:120
 msgid "UDI"
 msgstr "UDI"
 
 #. 11
-#: ../cli/src/devices.c:119
+#: ../cli/src/devices.c:121
 msgid "IP-IFACE"
 msgstr "IP-IFACE"
 
 #. 12
-#: ../cli/src/devices.c:120
+#: ../cli/src/devices.c:122
 msgid "NM-MANAGED"
 msgstr "NM-MANAGED"
 
 #. 14
-#: ../cli/src/devices.c:122
+#: ../cli/src/devices.c:124
 msgid "FIRMWARE-MISSING"
 msgstr "FIRMWARE-MISSING"
 
 #. 15
-#: ../cli/src/devices.c:123
+#: ../cli/src/devices.c:125
 msgid "CONNECTION"
 msgstr "CONNECTION"
 
 #. 0
-#: ../cli/src/devices.c:132
+#: ../cli/src/devices.c:135
+msgid "AVAILABLE-CONNECTION-PATHS"
+msgstr "AVAILABLE-CONNECTION-PATHS"
+
+#. 1
+#: ../cli/src/devices.c:136
+#| msgid "CONNECTION"
+msgid "AVAILABLE-CONNECTIONS"
+msgstr "AVAILABLE-CONNECTIONS"
+
+#. 0
+#: ../cli/src/devices.c:145
 msgid "CARRIER-DETECT"
 msgstr "CARRIER-DETECT"
 
 #. 1
-#: ../cli/src/devices.c:133
+#: ../cli/src/devices.c:146
 msgid "SPEED"
 msgstr "SPEED"
 
 #. 0
-#: ../cli/src/devices.c:142
+#: ../cli/src/devices.c:155
 msgid "CARRIER"
 msgstr "CARRIER"
 
 #. 0
-#: ../cli/src/devices.c:152
+#: ../cli/src/devices.c:165
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:153
+#: ../cli/src/devices.c:166
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:154
+#: ../cli/src/devices.c:167
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:155
+#: ../cli/src/devices.c:168
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:156
+#: ../cli/src/devices.c:169
 msgid "CCMP"
 msgstr "CCMP"
 
+#. 6
+#: ../cli/src/devices.c:171
+msgid "ADHOC"
+msgstr "ADHOC"
+
 #. 0
-#: ../cli/src/devices.c:166
+#: ../cli/src/devices.c:181
 msgid "CTR-FREQ"
 msgstr "CTR-FREQ"
 
 #. 1
-#: ../cli/src/devices.c:167
+#: ../cli/src/devices.c:182
 msgid "RSSI"
 msgstr "RSSI"
 
 #. 2
-#: ../cli/src/devices.c:168
+#: ../cli/src/devices.c:183
 msgid "CINR"
 msgstr "CINR"
 
 #. 3
-#: ../cli/src/devices.c:169
+#: ../cli/src/devices.c:184
 msgid "TX-POW"
 msgstr "TX-POW"
 
 #. 4
-#: ../cli/src/devices.c:170
+#: ../cli/src/devices.c:185
 msgid "BSID"
 msgstr "BSID"
 
 #. 0
-#: ../cli/src/devices.c:180
+#: ../cli/src/devices.c:195
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:181
+#: ../cli/src/devices.c:196
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:182
+#: ../cli/src/devices.c:197
 msgid "MODE"
 msgstr "MODE"
 
 #. 3
-#: ../cli/src/devices.c:183
+#: ../cli/src/devices.c:198
 msgid "FREQ"
 msgstr "FREQ"
 
 #. 4
-#: ../cli/src/devices.c:184
+#: ../cli/src/devices.c:199
 msgid "RATE"
 msgstr "RATE"
 
 #. 5
 #. 1
-#: ../cli/src/devices.c:185 ../cli/src/devices.c:203
+#: ../cli/src/devices.c:200 ../cli/src/devices.c:218
 msgid "SIGNAL"
 msgstr "SIGNAL"
 
 #. 6
-#: ../cli/src/devices.c:186
+#: ../cli/src/devices.c:201
 msgid "SECURITY"
 msgstr "SECURITY"
 
 #. 7
-#: ../cli/src/devices.c:187
+#: ../cli/src/devices.c:202
 msgid "WPA-FLAGS"
 msgstr "WPA-FLAGS"
 
 #. 8
-#: ../cli/src/devices.c:188
+#: ../cli/src/devices.c:203
 msgid "RSN-FLAGS"
 msgstr "RSN-FLAGS"
 
 #. 10
 #. 4
-#: ../cli/src/devices.c:190 ../cli/src/devices.c:206
+#: ../cli/src/devices.c:205 ../cli/src/devices.c:221
 msgid "ACTIVE"
 msgstr "ACTIVE"
 
 #. 0
-#: ../cli/src/devices.c:218
+#: ../cli/src/devices.c:233
 msgid "SLAVES"
 msgstr "SLAVES"
 
 #. 0
-#: ../cli/src/devices.c:227
-#| msgid "UUID"
+#: ../cli/src/devices.c:242
 msgid "ID"
 msgstr "ID"
 
-#: ../cli/src/devices.c:243
+#: ../cli/src/devices.c:258
 #, c-format
-#| msgid ""
-#| "Usage: nmcli dev { COMMAND | help }\n"
-#| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
-#| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi }\n"
-#| "\n"
-#| "  status\n"
-#| "  list [iface <iface>]\n"
-#| "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-#| "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
-#| "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
-#| "[iface <iface>] [bssid <BSSID>] [name <name>]\n"
-#| "               [--private] [--nowait] [--timeout <timeout>]\n"
-#| "  wimax [list [iface <iface>] [nsp <name>]]\n"
-#| "\n"
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -1187,272 +1191,272 @@ msgstr ""
 "  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:344
+#: ../cli/src/devices.c:361
 msgid "(none)"
 msgstr "(કંઇ નહિં)"
 
-#: ../cli/src/devices.c:400
+#: ../cli/src/devices.c:417
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:401
+#: ../cli/src/devices.c:418
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:410
+#: ../cli/src/devices.c:427
 msgid "Encrypted: "
 msgstr "એનક્રિપ્ટ થયેલ: "
 
-#: ../cli/src/devices.c:415
+#: ../cli/src/devices.c:432
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:417
+#: ../cli/src/devices.c:434
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:419
+#: ../cli/src/devices.c:436
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:422
+#: ../cli/src/devices.c:439
 msgid "Enterprise "
 msgstr "Enterprise "
 
-#: ../cli/src/devices.c:431
+#: ../cli/src/devices.c:448
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: ../cli/src/devices.c:432
+#: ../cli/src/devices.c:449
 msgid "Infrastructure"
 msgstr "ઇન્ફ્રાસ્ટ્રક્ચર"
 
-#: ../cli/src/devices.c:468
+#: ../cli/src/devices.c:485
 msgid "Home"
 msgstr "ઘર"
 
-#: ../cli/src/devices.c:471
+#: ../cli/src/devices.c:488
 msgid "Partner"
 msgstr "ભાગીદાર"
 
-#: ../cli/src/devices.c:474
+#: ../cli/src/devices.c:491
 msgid "Roaming"
 msgstr "ફરવુ"
 
-#: ../cli/src/devices.c:546
+#: ../cli/src/devices.c:563
 #, c-format
 msgid "Error: 'dev list': %s"
 msgstr "ભૂલ: 'dev list': %s"
 
-#: ../cli/src/devices.c:548
+#: ../cli/src/devices.c:565
 #, c-format
 msgid "Error: 'dev list': %s; allowed fields: %s"
 msgstr "ભૂલ: 'dev list': %s; માન્ય થયેલ ક્ષેત્રો: %s"
 
-#: ../cli/src/devices.c:557
+#: ../cli/src/devices.c:574
 msgid "Device details"
 msgstr "ઉપકરણ વિગતો"
 
-#: ../cli/src/devices.c:602 ../cli/src/devices.c:605 ../cli/src/devices.c:1081
-#: ../cli/src/utils.c:477
+#: ../cli/src/devices.c:621 ../cli/src/devices.c:624 ../cli/src/devices.c:1151
+#: ../cli/src/utils.c:479
 msgid "(unknown)"
 msgstr "(અજ્ઞાત)"
 
-#: ../cli/src/devices.c:614
+#: ../cli/src/devices.c:633
 msgid "not connected"
 msgstr "જોડાયેલ નથી"
 
-#: ../cli/src/devices.c:641
+#: ../cli/src/devices.c:660
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:715
+#: ../cli/src/devices.c:736
 msgid "on"
 msgstr "ચાલુ"
 
-#: ../cli/src/devices.c:715
+#: ../cli/src/devices.c:736
 msgid "off"
 msgstr "બંધ"
 
-#: ../cli/src/devices.c:923
+#: ../cli/src/devices.c:993
 #, c-format
 msgid "Error: 'dev status': %s"
 msgstr "ભૂલ: 'dev status': %s"
 
-#: ../cli/src/devices.c:925
+#: ../cli/src/devices.c:995
 #, c-format
 msgid "Error: 'dev status': %s; allowed fields: %s"
 msgstr "ભૂલ: 'dev status': %s; માન્ય થયેલ ક્ષેત્રો: %s"
 
-#: ../cli/src/devices.c:948
+#: ../cli/src/devices.c:1018
 msgid "Status of devices"
 msgstr "ઉપકરણોની પરિસ્થિતિ"
 
-#: ../cli/src/devices.c:979
+#: ../cli/src/devices.c:1049
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "ભૂલ: '%s' દલીલ ગેરહાજર છે."
 
-#: ../cli/src/devices.c:1020 ../cli/src/devices.c:1185
-#: ../cli/src/devices.c:1326 ../cli/src/devices.c:1973
+#: ../cli/src/devices.c:1090 ../cli/src/devices.c:1255
+#: ../cli/src/devices.c:1396 ../cli/src/devices.c:2043
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "ભૂલ: ઉપકરણ '%s' મળ્યુ નથી."
 
-#: ../cli/src/devices.c:1043
+#: ../cli/src/devices.c:1113
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "સફળ: ઉપકરણ '%s' નું સફળતાપૂર્વક જોડાણ તૂટી ગયુ."
 
-#: ../cli/src/devices.c:1078
+#: ../cli/src/devices.c:1148
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "ભૂલ: ઉપકરણ '%s' (%s) નું જોડાણ તૂટવામાં નિષ્ફળતા: %s"
 
-#: ../cli/src/devices.c:1091
+#: ../cli/src/devices.c:1161
 #, c-format
 msgid "Device '%s' has been disconnected.\n"
 msgstr "ઉપકરણ '%s' નું સફળતાપૂર્વક જોડાણ તૂટી ગયુ.\n"
 
-#: ../cli/src/devices.c:1154
+#: ../cli/src/devices.c:1224
 #, c-format
 msgid "Error: iface has to be specified."
 msgstr "ભૂલ: iface ને સ્પષ્ટ કરવુ જ પડશે."
 
-#: ../cli/src/devices.c:1284
+#: ../cli/src/devices.c:1354
 #, c-format
 msgid "Error: 'dev wifi': %s"
 msgstr "ભૂલ: 'dev wifi': %s"
 
-#: ../cli/src/devices.c:1286
+#: ../cli/src/devices.c:1356
 #, c-format
 msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgstr "ભૂલ: 'dev wifi': %s; માન્ય થયેલ ક્ષેત્રો: %s"
 
-#: ../cli/src/devices.c:1309
+#: ../cli/src/devices.c:1379
 msgid "WiFi scan list"
 msgstr "WiFi સ્કેન યાદી"
 
-#: ../cli/src/devices.c:1346 ../cli/src/devices.c:1400
+#: ../cli/src/devices.c:1416 ../cli/src/devices.c:1470
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "ભૂલ: bssid '%s' સાથે પ્રવેશ બિંદુ મળ્યુ નથી."
 
-#: ../cli/src/devices.c:1363
+#: ../cli/src/devices.c:1433
 #, c-format
 msgid "Error: Device '%s' is not a WiFi device."
 msgstr "ભૂલ: ઉપકરણ '%s' એ WiFi ઉપકરણ નથી."
 
-#: ../cli/src/devices.c:1431 ../cli/src/devices.c:1477
+#: ../cli/src/devices.c:1501 ../cli/src/devices.c:1547
 #, c-format
 msgid "Connection with UUID '%s' created and activated on device '%s'\n"
 msgstr "UUID '%s' સાથે જોડાણ બનાવેલ છે અને ઉપકરણ '%s' પર સક્રિય થયેલ છે\n"
 
-#: ../cli/src/devices.c:1436
+#: ../cli/src/devices.c:1506
 #, c-format
 msgid "Error: Connection activation failed: (%d) %s."
 msgstr "ભૂલ: જોડાણ સક્રિય કરવાનું નિષ્ફળ: (%d) %s."
 
-#: ../cli/src/devices.c:1461
+#: ../cli/src/devices.c:1531
 #, c-format
 msgid "Error: Failed to add/activate new connection: (%d) %s"
 msgstr "ભૂલ: નવાં જોડાણ ઉમેરવા/સક્રિય કરવાનું નિષ્ફળ: (%d) %s"
 
-#: ../cli/src/devices.c:1469
+#: ../cli/src/devices.c:1539
 #, c-format
 msgid "Error: Failed to add/activate new connection: Unknown error"
 msgstr "ભૂલ: નવાં જોડાણને ઉમેરવાનું/સક્રિય કરવામાં નિષ્ફળ: અજ્ઞાત ભૂલ"
 
-#: ../cli/src/devices.c:1613
+#: ../cli/src/devices.c:1683
 #, c-format
 msgid "Error: SSID or BSSID are missing."
 msgstr "ભૂલ: SSID અથવા BSSID ગુમ થયેલ છે."
 
-#: ../cli/src/devices.c:1636
+#: ../cli/src/devices.c:1706
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "ભૂલ: bssid દલીલ કિંમત '%s' એ માન્ય BSSID નથી."
 
-#: ../cli/src/devices.c:1660
+#: ../cli/src/devices.c:1730
 #, c-format
 msgid "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
 msgstr "ભૂલ: wep-key-type દલીલ કિંમત '%s' અયોગ્ય છે, 'key' અથવા 'phrase' ને વાપરો."
 
-#: ../cli/src/devices.c:1700
+#: ../cli/src/devices.c:1770
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr "ભૂલ: (%s) માં BSSID સાથે જોડાવું bssid દલીલમાંથી અલગ પડે છે (%s)."
 
-#: ../cli/src/devices.c:1706
+#: ../cli/src/devices.c:1776
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "ભૂલ: પરિમાણ '%s' ક્યાંતો SSID અથવા BSSID નથી."
 
-#: ../cli/src/devices.c:1735
+#: ../cli/src/devices.c:1805
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "ભૂલ: ઉપકરણ '%s' એ WiFi ઉપકરણ નથી."
 
-#: ../cli/src/devices.c:1737
+#: ../cli/src/devices.c:1807
 #, c-format
 msgid "Error: No Wi-Fi device found."
 msgstr "ભૂલ: Wi-Fi ઉપકરણ મળ્યુ નથી."
 
-#: ../cli/src/devices.c:1755
+#: ../cli/src/devices.c:1825
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "ભૂલ: SSID '%s' સાથે નેટવર્ક મળ્યુ નથી."
 
-#: ../cli/src/devices.c:1757
+#: ../cli/src/devices.c:1827
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "ભૂલ: BSSID '%s' સાથે પ્રવેશ બિંદુ મળ્યુ નથી."
 
-#: ../cli/src/devices.c:1855
+#: ../cli/src/devices.c:1925
 #, c-format
 msgid "Error: 'dev wifi' command '%s' is not valid."
 msgstr "ભૂલ: 'dev wifi' આદેશ '%s' યોગ્ય નથી."
 
-#: ../cli/src/devices.c:1931
+#: ../cli/src/devices.c:2001
 #, c-format
 msgid "Error: 'dev wimax': %s"
 msgstr "ભૂલ: 'dev wimax': %s"
 
-#: ../cli/src/devices.c:1933
+#: ../cli/src/devices.c:2003
 #, c-format
 msgid "Error: 'dev wimax': %s; allowed fields: %s"
 msgstr "ભૂલ: 'dev wimax': %s; માન્ય થયેલ ક્ષેત્રો: %s"
 
-#: ../cli/src/devices.c:1956
+#: ../cli/src/devices.c:2026
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP યાદી"
 
-#: ../cli/src/devices.c:1993
+#: ../cli/src/devices.c:2063
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "ભૂલ: નામ '%s' સાથે NSP મળ્યુ નથી."
 
-#: ../cli/src/devices.c:2004
+#: ../cli/src/devices.c:2074
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "ભૂલ: ઉપકરણ '%s' WiMAX ઉપકરણ નથી."
 
-#: ../cli/src/devices.c:2035
+#: ../cli/src/devices.c:2105
 #, c-format
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "ભૂલ: nsp '%s' સાથે પ્રવેશ બિંદુ મળ્યુ નથી."
 
-#: ../cli/src/devices.c:2062
+#: ../cli/src/devices.c:2132
 #, c-format
 msgid "Error: 'dev wimax' command '%s' is not valid."
 msgstr "ભૂલ: 'dev wimax' આદેશ '%s' માન્ય નથી."
 
-#: ../cli/src/devices.c:2115
+#: ../cli/src/devices.c:2185
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "ભૂલ: 'dev' આદેશ '%s' યોગ્ય નથી."
@@ -1625,7 +1629,7 @@ msgstr "ભૂલ: 'nm permissions': %s; માન્ય થયેલ ક્ષ�
 msgid "NetworkManager permissions"
 msgstr "NetworkManager પરવાનગીઓ"
 
-#: ../cli/src/network-manager.c:350 ../cli/src/utils.c:457
+#: ../cli/src/network-manager.c:350 ../cli/src/utils.c:459
 #, c-format
 msgid "Error: Couldn't connect to system bus: %s"
 msgstr "ભૂલ: સિસ્ટમ બસમાં જોડી શક્યા નહિં: %s"
@@ -1699,26 +1703,6 @@ msgstr "ભૂલ: 'nm' આદેશ '%s' યોગ્ય નથી."
 
 #: ../cli/src/nmcli.c:76
 #, c-format
-#| msgid ""
-#| "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
-#| "\n"
-#| "OPTIONS\n"
-#| "  -t[erse]                                   terse output\n"
-#| "  -p[retty]                                  pretty output\n"
-#| "  -m[ode] tabular|multiline                  output mode\n"
-#| "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
-#| "  -e[scape] yes|no                           escape columns separators in "
-#| "values\n"
-#| "  -n[ocheck]                                 don't check nmcli and "
-#| "NetworkManager versions\n"
-#| "  -v[ersion]                                 show program version\n"
-#| "  -h[elp]                                    print this help\n"
-#| "\n"
-#| "OBJECT\n"
-#| "  nm          NetworkManager status\n"
-#| "  con         NetworkManager connections\n"
-#| "  dev         devices managed by NetworkManager\n"
-#| "\n"
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
@@ -1823,157 +1807,175 @@ msgstr "ભૂલ: NMClient ઑબ્જેક્ટને બનાવી શ�
 msgid "Success"
 msgstr "સફળ"
 
-#: ../cli/src/settings.c:527
+#: ../cli/src/settings.c:603
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:529
+#: ../cli/src/settings.c:605
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-bit પાસફ્રેઝ)"
 
-#: ../cli/src/settings.c:532 ../cli/src/settings.c:660
+#: ../cli/src/settings.c:608 ../cli/src/settings.c:736
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (અજ્ઞાત)"
 
-#: ../cli/src/settings.c:558
+#: ../cli/src/settings.c:634
 msgid "0 (unknown)"
 msgstr "0 (અજ્ઞાત)"
 
-#: ../cli/src/settings.c:564
+#: ../cli/src/settings.c:640
 msgid "any, "
 msgstr "કોઇપણ, "
 
-#: ../cli/src/settings.c:566
+#: ../cli/src/settings.c:642
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:568
+#: ../cli/src/settings.c:644
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:570
+#: ../cli/src/settings.c:646
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:572
+#: ../cli/src/settings.c:648
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:574
+#: ../cli/src/settings.c:650
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:576
+#: ../cli/src/settings.c:652
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:578
+#: ../cli/src/settings.c:654
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:580
+#: ../cli/src/settings.c:656
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:582
+#: ../cli/src/settings.c:658
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:584
+#: ../cli/src/settings.c:660
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:586
+#: ../cli/src/settings.c:662
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:588
+#: ../cli/src/settings.c:664
 msgid "WCDMA 3GPP UMTS 1900 MHz, "
 msgstr "WCDMA 3GPP UMTS 1900 MHz, "
 
-#: ../cli/src/settings.c:590
+#: ../cli/src/settings.c:666
 msgid "WCDMA 3GPP UMTS 2600 MHz, "
 msgstr "WCDMA 3GPP UMTS 2600 MHz, "
 
-#: ../cli/src/settings.c:608
+#: ../cli/src/settings.c:684
 msgid "0 (NONE)"
 msgstr "0 (NONE)"
 
-#: ../cli/src/settings.c:614
+#: ../cli/src/settings.c:690
 msgid "REORDER_HEADERS, "
 msgstr "REORDER_HEADERS, "
 
-#: ../cli/src/settings.c:616
+#: ../cli/src/settings.c:692
 msgid "GVRP, "
 msgstr "GVRP, "
 
-#: ../cli/src/settings.c:618
+#: ../cli/src/settings.c:694
 msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
-#: ../cli/src/settings.c:654
+#: ../cli/src/settings.c:730
 #, c-format
 msgid "%d (disabled)"
 msgstr "%d (નિષ્ક્રિય)"
 
-#: ../cli/src/settings.c:656
+#: ../cli/src/settings.c:732
 #, c-format
 msgid "%d (enabled, prefer public IP)"
 msgstr "%d (સક્રિય, સાર્વજનિક IP પસંદ કર્યુ છે)"
 
-#: ../cli/src/settings.c:658
+#: ../cli/src/settings.c:734
 #, c-format
 msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (સક્રિય, કામચલાઉ IP પસંદ કર્યુ છે)"
 
-#: ../cli/src/settings.c:791 ../cli/src/settings.c:987
-#: ../cli/src/settings.c:1696
+#: ../cli/src/settings.c:746
+#| msgid "(none)"
+msgid "0 (none)"
+msgstr "૦ (કંઇ નહિં)"
+
+#: ../cli/src/settings.c:752
+msgid "agent-owned, "
+msgstr "માલિકી થયેલ ઍજન્ટ, "
+
+#: ../cli/src/settings.c:754
+#| msgid "not set"
+msgid "not saved, "
+msgstr "સંગ્રહેલ નથી, "
+
+#: ../cli/src/settings.c:756
+msgid "not required, "
+msgstr "જરૂરી નથી, "
+
+#: ../cli/src/settings.c:954 ../cli/src/settings.c:1173
+#: ../cli/src/settings.c:1914
 msgid "auto"
 msgstr "સ્વયં"
 
-#: ../cli/src/utils.c:103
+#: ../cli/src/utils.c:105
 #, c-format
 msgid "Error converting IP4 address '0x%X' to text form"
 msgstr "IP4 સરનામાં '0x%X' ને લખાણ રૂપમાં રૂપાંતર કરવામાં ભૂલ"
 
-#: ../cli/src/utils.c:131
+#: ../cli/src/utils.c:133
 #, c-format
 msgid "Error converting IP6 address '%s' to text form"
 msgstr "IP6 સરનામું '%s' ને લખાણ રૂપમાં રૂપાંતર કરતી વખતે ભૂલ"
 
-#: ../cli/src/utils.c:232
+#: ../cli/src/utils.c:234
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "ક્ષેત્ર '%s' એ એકલુ હોવુ જ જોઇએ"
 
-#: ../cli/src/utils.c:235
+#: ../cli/src/utils.c:237
 #, c-format
 msgid "invalid field '%s'"
 msgstr "અયોગ્ય ક્ષેત્ર '%s'"
 
-#: ../cli/src/utils.c:254
+#: ../cli/src/utils.c:256
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "વિકલ્પ '--terse' ને '--fields' ની જરૂર છે"
 
-#: ../cli/src/utils.c:258
+#: ../cli/src/utils.c:260
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr "વિકલ્પ '--terse' ને ચોક્કસ '--fields' વિકલ્પ કિંમતોની જરૂર છે, '%s' ની નહિં"
 
-#: ../cli/src/utils.c:468
+#: ../cli/src/utils.c:470
 #, c-format
 msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
 msgstr "ભૂલ: org.freedesktop.DBus માટે D-Bus ઑબ્જેક્ટ પ્રોક્સી બનાવી શક્યા નહિં"
 
-#: ../cli/src/utils.c:476
+#: ../cli/src/utils.c:478
 #, c-format
 msgid "Error: NameHasOwner request failed: %s"
 msgstr "ભૂલ: NameHasOwner માંગણી નિષ્ફળ: %s"
 
-#: ../cli/src/utils.c:521
+#: ../cli/src/utils.c:523
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
@@ -1982,7 +1984,7 @@ msgstr ""
 "ચેતવણી: nmcli (%s) અને NetworkManager (%s) આવૃત્તિઓ બંધબેસતી નથી. ચેતવણીઓ પર પ્રતિબંધ "
 "મૂકવા માટે --nocheck વાપરો.\n"
 
-#: ../cli/src/utils.c:530
+#: ../cli/src/utils.c:532
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
@@ -2001,116 +2003,87 @@ msgstr "PEM કી ફાઇલ પાસે છેલ્લો ટેગ '%s' �
 msgid "Doesn't look like a PEM private key file."
 msgstr "PEM ખાનગી કી ફાઇલ જેવી દેખાતી નથી."
 
-#: ../libnm-util/crypto.c:154
-#, c-format
-msgid "Not enough memory to store PEM file data."
-msgstr "PEM ફાઇલ માહિતી ને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
-
-#: ../libnm-util/crypto.c:170
+#: ../libnm-util/crypto.c:163
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: Proc-Type એ પહેલો ટેગ ન હતો."
 
-#: ../libnm-util/crypto.c:178
+#: ../libnm-util/crypto.c:171
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: અજ્ઞાત Proc-Type ટેગ '%s'."
 
-#: ../libnm-util/crypto.c:188
+#: ../libnm-util/crypto.c:181
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: DEK-Info એ બીજો ટેગ હતો નહિં."
 
-#: ../libnm-util/crypto.c:199
+#: ../libnm-util/crypto.c:192
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: IV એ DEK-Info ટેગમાં શોધાયુ નહિં."
 
-#: ../libnm-util/crypto.c:206
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: DEK-Info ટેગમાં IV નું અયોગ્ય બંધારણ."
 
-#: ../libnm-util/crypto.c:219
+#: ../libnm-util/crypto.c:212
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: અજ્ઞાત ખાનગી કી સાઇફર '%s'."
 
-#: ../libnm-util/crypto.c:238
+#: ../libnm-util/crypto.c:231
 #, c-format
 msgid "Could not decode private key."
 msgstr "ખાનગી કીને ડિકોડ કરી શકાયુ નહિં."
 
-#: ../libnm-util/crypto.c:284
+#: ../libnm-util/crypto.c:283
 msgid "Failed to find expected PKCS#8 start tag."
 msgstr "ઇચ્છિત PKCS#8 શરૂઆત ટૅગને શોધવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto.c:292
+#: ../libnm-util/crypto.c:291
 #, c-format
 msgid "Failed to find expected PKCS#8 end tag '%s'."
 msgstr "ઇચ્છિત PKCS#8 અંત ટેગ '%s' ને શોધવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto.c:312
-msgid "Not enough memory to store private key data."
-msgstr "ખાનગી કી માહિતીને સંગ્રહ કરવા પૂરતી મેમરી નથી."
-
-#: ../libnm-util/crypto.c:317
+#: ../libnm-util/crypto.c:310
 msgid "Failed to decode PKCS#8 private key."
 msgstr "PKCS#8 ખાનગી કીને ડિકોડ કરવામાં નિષ્ફળતા."
 
-#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
-#, c-format
-msgid "Not enough memory to store certificate data."
-msgstr "પ્રમાણપત્ર માહિતીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
-
-#: ../libnm-util/crypto.c:365
+#: ../libnm-util/crypto.c:352
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "IV એ લંબાઇમાં બાઇટોનું બેકી નંબર જ હોવુ જ જોઇએ."
 
-#: ../libnm-util/crypto.c:374
-#, c-format
-msgid "Not enough memory to store the IV."
-msgstr "IV ને સંગ્રહ કરવા માટે પૂરતી મેમરી નથી."
-
-#: ../libnm-util/crypto.c:385
+#: ../libnm-util/crypto.c:366
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV એ બિન-હેક્ઝાડેસિમલ આંકડાઓને સમાવે છે."
 
-#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
-#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
-#: ../libnm-util/crypto_nss.c:332
+#: ../libnm-util/crypto.c:404 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:259 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:326
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "ખાનગી કી સાઇફર '%s' એ અજ્ઞાત હતુ."
 
-#: ../libnm-util/crypto.c:432
-#, c-format
-msgid "Not enough memory to decrypt private key."
-msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવા માટે મેમરી પૂરતી નથી."
-
-#: ../libnm-util/crypto.c:497
-#, c-format
-msgid "Not enough memory to store decrypted private key."
-msgstr "ડિક્રિપ્ટ થયેલ ખાનગી કીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
-
-#: ../libnm-util/crypto.c:542
+#: ../libnm-util/crypto.c:511
 #, c-format
 msgid "Unable to determine private key type."
 msgstr "ખાનગી કી પ્રકાર ને નક્કી કરવાનું નિષ્ફળ."
 
-#: ../libnm-util/crypto.c:597
+#: ../libnm-util/crypto.c:566
 #, c-format
 msgid "PEM certificate had no start tag '%s'."
 msgstr "PEM પ્રમાણપત્ર પાસે અંત ટેગ '%s' ન હતો."
 
-#: ../libnm-util/crypto.c:606
+#: ../libnm-util/crypto.c:575
 #, c-format
 msgid "PEM certificate had no end tag '%s'."
 msgstr "PEM પ્રમાણપત્ર પાસે અંત ટેગ '%s' ન હતો."
 
-#: ../libnm-util/crypto.c:630
+#: ../libnm-util/crypto.c:593
 #, c-format
 msgid "Failed to decode certificate."
 msgstr "પ્રમાણપત્રને ડિકોડ કરવાનું નિષ્ફળ."
@@ -2129,97 +2102,87 @@ msgstr "MD5 એંજિનને પ્રારંભ કરવાનું �
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "અયોગ્ય IV લંબાઇ (ઓછામાં ઓછી %zd હોવી જ જોઇએ)."
 
-#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
-#, c-format
-msgid "Not enough memory for decrypted key buffer."
-msgstr "ડિક્રિપ્ટ થયેલ કી બફર માટે પૂરતી મેમરી નથી."
-
-#: ../libnm-util/crypto_gnutls.c:172
+#: ../libnm-util/crypto_gnutls.c:166
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr "ડિક્રિપ્શન સાઇફર સંદર્ભને પ્રારંભ કરવાનું નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:181
+#: ../libnm-util/crypto_gnutls.c:175
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr "ડિક્રિપ્શન માટે સમપ્રમાણ કીને સુયોજિત કરવામાં નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:190
+#: ../libnm-util/crypto_gnutls.c:184
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "ડિક્રિપ્શન માટે IV ને સુયોજિત કરવાનું નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:199
+#: ../libnm-util/crypto_gnutls.c:193
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવાનું નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
+#: ../libnm-util/crypto_gnutls.c:203 ../libnm-util/crypto_nss.c:257
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr "ખાનગી કી ને ડિક્રિપ્ટ કરવાનું નિષ્ફળ: અનિચ્છનિય પેડિંગ લંબાઇ."
 
-#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
+#: ../libnm-util/crypto_gnutls.c:214 ../libnm-util/crypto_nss.c:268
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવાનું નિષ્ફળ."
 
-#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
-#, c-format
-msgid "Could not allocate memory for encrypting."
-msgstr "એનક્રિપ્ટ કર્યા પછી મેમરીને ફાળવી શક્યા નહિં."
-
-#: ../libnm-util/crypto_gnutls.c:293
+#: ../libnm-util/crypto_gnutls.c:281
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr "એનક્રિપ્શન સાઇફર સંદર્ભને પ્રારંભ કરવાનું નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:302
+#: ../libnm-util/crypto_gnutls.c:290
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr "એનક્રિપ્શન માટે સમપ્રમાણ કીને સુયોજિત કરવામાં નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:312
+#: ../libnm-util/crypto_gnutls.c:300
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
 msgstr "એનક્રિપ્શન માટે IV ને સુયોજિત કરવાનું નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:321
+#: ../libnm-util/crypto_gnutls.c:309
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
 msgstr "માહિતીને એનક્રિપ્ટ કરવાનું નિષ્ફળ: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:361
+#: ../libnm-util/crypto_gnutls.c:349
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "પ્રમાણપત્ર માહિતીને પ્રારંભ કરતી વખતે ભૂલ: %s"
 
-#: ../libnm-util/crypto_gnutls.c:383
+#: ../libnm-util/crypto_gnutls.c:371
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "પ્રમાણપત્રને ડિકોડ કરી શકાયુ નહિં: %s"
 
-#: ../libnm-util/crypto_gnutls.c:407
+#: ../libnm-util/crypto_gnutls.c:395
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "PKCS#12 ડિકોડરને પ્રારંભ કરી શકાયુ નહિં: %s "
 
-#: ../libnm-util/crypto_gnutls.c:420
+#: ../libnm-util/crypto_gnutls.c:408
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "PKCS#12 ફાઇલને ડિકોડ કરી શકાયુ નહિં: %s"
 
-#: ../libnm-util/crypto_gnutls.c:432
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "PKCS#12 ફાઇલને ચકાસી શકાયુ નહિં: %s"
 
-#: ../libnm-util/crypto_gnutls.c:460
+#: ../libnm-util/crypto_gnutls.c:448
 #, c-format
 msgid "Couldn't initialize PKCS#8 decoder: %s"
 msgstr "PKCS#8 ડિકોડરનું પ્રારંભ કરી શક્યા નહિં: %s"
 
-#: ../libnm-util/crypto_gnutls.c:483
+#: ../libnm-util/crypto_gnutls.c:471
 #, c-format
 msgid "Couldn't decode PKCS#8 file: %s"
 msgstr "PKCS#8 ફાઇલને ડિકોડ કરી શક્યા નહિં: %s"
@@ -2239,123 +2202,463 @@ msgstr "MD5 સંદર્ભને પ્રારંભ કરવાનું
 msgid "Invalid IV length (must be at least %d)."
 msgstr "અયોગ્ય IV લંબાઇ (ઓછામાં ઓછી %d હોવી જ જોઇએ)."
 
-#: ../libnm-util/crypto_nss.c:192
+#: ../libnm-util/crypto_nss.c:186
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "ડિક્રિપ્શન સાઇફર સ્લોટને પ્રારંભ કરવાનું નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:202
+#: ../libnm-util/crypto_nss.c:196
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "ડિક્રિપ્શન માટે સમપ્રમાણ કીને સુયોજિત કરવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:212
+#: ../libnm-util/crypto_nss.c:206
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "ડિક્રિપ્શન માટે IV ને સુયોજિત કરવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:220
+#: ../libnm-util/crypto_nss.c:214
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "ડિક્રિપ્શન સંદર્ભને આખરી રૂપ આપવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:233
+#: ../libnm-util/crypto_nss.c:227
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "ખાનગી કી ને ડિક્રિપ્ટ કરવાનું નિષ્ફળ: %d."
 
-#: ../libnm-util/crypto_nss.c:241
+#: ../libnm-util/crypto_nss.c:235
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવાનું નિષ્ફળ: ડિક્રિપ્ટ થયેલ માહિતી ઘણી લાંબી છે."
 
-#: ../libnm-util/crypto_nss.c:252
+#: ../libnm-util/crypto_nss.c:246
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "ખાનગી કીનાં ડિક્રિપ્શનનને આખરી રૂપ આપવાનું નિષ્ફળ: %d."
 
-#: ../libnm-util/crypto_nss.c:360
+#: ../libnm-util/crypto_nss.c:348
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "એનક્રિપ્શન સાઇફર સ્લોટને પ્રારંભ કરવાનું નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:368
+#: ../libnm-util/crypto_nss.c:356
 #, c-format
 msgid "Failed to set symmetric key for encryption."
 msgstr "એનક્રિપ્શન માટે સમપ્રમાણ કીને સુયોજિત કરવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:376
+#: ../libnm-util/crypto_nss.c:364
 #, c-format
 msgid "Failed to set IV for encryption."
 msgstr "એનક્રિપ્શન માટે IV ને સુયોજિત કરવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:384
+#: ../libnm-util/crypto_nss.c:372
 #, c-format
 msgid "Failed to initialize the encryption context."
 msgstr "એનક્રિપ્શન સંદર્ભને પ્રારંભ કરવામાં નિષ્ફળ."
 
-#: ../libnm-util/crypto_nss.c:392
+#: ../libnm-util/crypto_nss.c:380
 #, c-format
 msgid "Failed to encrypt: %d."
 msgstr "એનક્રિપ્ટ કરવાનું નિષ્ફળ: %d."
 
-#: ../libnm-util/crypto_nss.c:400
+#: ../libnm-util/crypto_nss.c:388
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "એનક્રિપ્ટ કર્યા પછી માહિતીની અનિચ્છનિય સંખ્યા."
 
-#: ../libnm-util/crypto_nss.c:443
+#: ../libnm-util/crypto_nss.c:431
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "પ્રમાણપત્રને ડિકોડ કરી શકાયુ નહિં: %d"
 
-#: ../libnm-util/crypto_nss.c:478
+#: ../libnm-util/crypto_nss.c:466
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "UCS2 માં પાસવર્ડને રૂપાંતરિત કરી શકાયુ નહિં: %d"
 
-#: ../libnm-util/crypto_nss.c:506
+#: ../libnm-util/crypto_nss.c:494
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "PKCS#12 ડિકોડરને પ્રારંભ કરી શકાયુ નહિં: %d"
 
-#: ../libnm-util/crypto_nss.c:515
+#: ../libnm-util/crypto_nss.c:503
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "PKCS#12 ફાઇલને ડિકોડ કરી શકાયુ નહિં: %d"
 
-#: ../libnm-util/crypto_nss.c:524
+#: ../libnm-util/crypto_nss.c:512
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "PKCS#12 ફાઇલને ચકાસી શકાયુ નહિં: %d"
 
-#: ../libnm-util/crypto_nss.c:568
+#: ../libnm-util/crypto_nss.c:556
 msgid "Could not generate random data."
 msgstr "રેન્ડમ માહિતી ને ઉત્પન્ન કરી શક્યા નહિં."
 
-#: ../libnm-util/nm-utils.c:2078
-#, c-format
-msgid "Not enough memory to make encryption key."
-msgstr "એનક્રિપ્શન કીને બનાવવા માટે મેમરી પૂરતી નથી."
+#: ../libnm-util/nm-setting-8021x.c:2119 ../libnm-util/nm-setting-8021x.c:2136
+#: ../libnm-util/nm-setting-8021x.c:2177 ../libnm-util/nm-setting-8021x.c:2194
+#: ../libnm-util/nm-setting-8021x.c:2246 ../libnm-util/nm-setting-8021x.c:2258
+#: ../libnm-util/nm-setting-8021x.c:2276 ../libnm-util/nm-setting-8021x.c:2288
+#: ../libnm-util/nm-setting-8021x.c:2312 ../libnm-util/nm-setting-8021x.c:2487
+#: ../libnm-util/nm-setting-adsl.c:212
+#: ../libnm-util/nm-setting-bluetooth.c:153
+#: ../libnm-util/nm-setting-bluetooth.c:171
+#: ../libnm-util/nm-setting-bond.c:368 ../libnm-util/nm-setting-bridge.c:268
+#: ../libnm-util/nm-setting-cdma.c:163
+#: ../libnm-util/nm-setting-connection.c:674
+#: ../libnm-util/nm-setting-connection.c:690
+#: ../libnm-util/nm-setting-connection.c:743
+#: ../libnm-util/nm-setting-ip4-config.c:693
+#: ../libnm-util/nm-setting-ip4-config.c:703
+#: ../libnm-util/nm-setting-ip6-config.c:675
+#: ../libnm-util/nm-setting-ip6-config.c:685
+#: ../libnm-util/nm-setting-ip6-config.c:738
+#: ../libnm-util/nm-setting-olpc-mesh.c:128
+#: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:388
+#: ../libnm-util/nm-setting-wimax.c:137
+#: ../libnm-util/nm-setting-wireless-security.c:792
+#: ../libnm-util/nm-setting-wireless.c:610
+#| msgid "Error: %s argument is missing."
+msgid "property is missing"
+msgstr "ગુણધર્મ ગેરહાજર છે"
 
-#: ../libnm-util/nm-utils.c:2188
-msgid "Could not allocate memory for PEM file creation."
-msgstr "PEM ફાઇલ બનાવવા માટે મેમરી ફાળવી શક્યા નહિંી પૂરતી નથી."
+#: ../libnm-util/nm-setting-8021x.c:2126 ../libnm-util/nm-setting-8021x.c:2143
+#: ../libnm-util/nm-setting-8021x.c:2184 ../libnm-util/nm-setting-8021x.c:2201
+#: ../libnm-util/nm-setting-8021x.c:2252 ../libnm-util/nm-setting-8021x.c:2264
+#: ../libnm-util/nm-setting-8021x.c:2282 ../libnm-util/nm-setting-8021x.c:2294
+#: ../libnm-util/nm-setting-8021x.c:2318 ../libnm-util/nm-setting-adsl.c:219
+#: ../libnm-util/nm-setting-adsl.c:228 ../libnm-util/nm-setting-cdma.c:179
+#: ../libnm-util/nm-setting-cdma.c:188
+#: ../libnm-util/nm-setting-connection.c:681
+#: ../libnm-util/nm-setting-connection.c:750
+#: ../libnm-util/nm-setting-gsm.c:280 ../libnm-util/nm-setting-gsm.c:337
+#: ../libnm-util/nm-setting-gsm.c:346
+#: ../libnm-util/nm-setting-ip4-config.c:754
+#: ../libnm-util/nm-setting-ip4-config.c:763
+#: ../libnm-util/nm-setting-pppoe.c:172 ../libnm-util/nm-setting-pppoe.c:181
+#: ../libnm-util/nm-setting-vpn.c:397 ../libnm-util/nm-setting-vpn.c:407
+#: ../libnm-util/nm-setting-wimax.c:146
+#: ../libnm-util/nm-setting-wireless-security.c:822
+#: ../libnm-util/nm-setting-wireless-security.c:830
+#: ../libnm-util/nm-setting-wireless-security.c:854
+msgid "property is empty"
+msgstr "ગુણધર્મ ખાલી છે"
 
-#: ../libnm-util/nm-utils.c:2200
+#: ../libnm-util/nm-setting-8021x.c:2154 ../libnm-util/nm-setting-8021x.c:2166
+#: ../libnm-util/nm-setting-8021x.c:2212 ../libnm-util/nm-setting-8021x.c:2224
 #, c-format
-msgid "Could not allocate memory for writing IV to PEM file."
-msgstr "PEM ફાઇલમાં IV ને લખવા માટે મેમરીને ફાળવી શક્યા નહિં."
+msgid "has to match '%s' property for PKCS#12"
+msgstr "PKCS#12 માટે '%s' ગુણધર્મ બંધબેસતો હોવો જ જોઇએ"
 
-#: ../libnm-util/nm-utils.c:2212
-#, c-format
-msgid "Could not allocate memory for writing encrypted key to PEM file."
-msgstr "PEM ફાઇલમાં અનક્રિપ્ટ થયેલ કી ને લખવા માટે મેમરીને ફાળવી શક્યા નહિં."
+#: ../libnm-util/nm-setting-8021x.c:2462 ../libnm-util/nm-setting-8021x.c:2496
+#: ../libnm-util/nm-setting-bluetooth.c:162
+#: ../libnm-util/nm-setting-bond.c:377
+#: ../libnm-util/nm-setting-infiniband.c:166
+#: ../libnm-util/nm-setting-infiniband.c:181
+#: ../libnm-util/nm-setting-ip4-config.c:745
+#: ../libnm-util/nm-setting-ip6-config.c:729
+#: ../libnm-util/nm-setting-olpc-mesh.c:156
+#: ../libnm-util/nm-setting-wimax.c:155 ../libnm-util/nm-setting-wired.c:501
+#: ../libnm-util/nm-setting-wired.c:510
+#: ../libnm-util/nm-setting-wireless-security.c:873
+#: ../libnm-util/nm-setting-wireless-security.c:882
+#: ../libnm-util/nm-setting-wireless-security.c:890
+#: ../libnm-util/nm-setting-wireless-security.c:898
+#: ../libnm-util/nm-setting-wireless-security.c:906
+#: ../libnm-util/nm-setting-wireless-security.c:915
+#: ../libnm-util/nm-setting-wireless-security.c:924
+#: ../libnm-util/nm-setting-wireless-security.c:933
+#: ../libnm-util/nm-setting-wireless-security.c:969
+#: ../libnm-util/nm-setting-wireless-security.c:979
+#: ../libnm-util/nm-setting-wireless.c:670
+#: ../libnm-util/nm-setting-wireless.c:679
+#: ../libnm-util/nm-setting-wireless.c:688
+msgid "property is invalid"
+msgstr "ગુણધર્મ અયોગ્ય છે"
 
-#: ../libnm-util/nm-utils.c:2231
+#: ../libnm-util/nm-setting-8021x.c:2521 ../libnm-util/nm-setting-8021x.c:2531
+#: ../libnm-util/nm-setting-8021x.c:2541 ../libnm-util/nm-setting-8021x.c:2551
+#: ../libnm-util/nm-setting-8021x.c:2561 ../libnm-util/nm-setting-adsl.c:239
+#: ../libnm-util/nm-setting-adsl.c:250
+#: ../libnm-util/nm-setting-bluetooth.c:179
+#: ../libnm-util/nm-setting-infiniband.c:190
+#: ../libnm-util/nm-setting-vlan.c:554 ../libnm-util/nm-setting-wired.c:543
+#: ../libnm-util/nm-setting-wireless-security.c:801
 #, c-format
-msgid "Could not allocate memory for PEM file data."
-msgstr "PEM ફાઇલ માહિતી માટે મેમરી ફાળવી શક્યા નહિં."
+#| msgid "Error: '%s' is not valid argument for '%s' option."
+msgid "'%s' is not a valid value for the property"
+msgstr "'%s' એ ગુણધર્મ માટે યોગ્ય કિંમત નથી"
+
+#: ../libnm-util/nm-setting-bluetooth.c:201
+#, c-format
+msgid "requires '%s' or '%s' setting"
+msgstr "'%s' અથવા '%s' સુયોજનની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-bond.c:391
+#, c-format
+msgid "invalid option '%s' or its value '%s'"
+msgstr "અયોગ્ય વિકલ્પ '%s' અથવા તેની કિંમત '%s'"
+
+#: ../libnm-util/nm-setting-bond.c:410
+#, c-format
+msgid "only one of '%s' and '%s' can be set"
+msgstr "ફક્ત '%s'  નું એક અને '%s' ને સુયોજિત કરી શકાય છે"
+
+#: ../libnm-util/nm-setting-bond.c:421
+#, c-format
+msgid "setting '%s' is required"
+msgstr "સુયોજન '%s' ની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-bond.c:430
+#, c-format
+#| msgid "Error: '%s' is not valid argument for '%s' option."
+msgid "'%s' is not a valid value for '%s'"
+msgstr "'%s' એ '%s' માટે યોગ્ય કિંમત નથી"
+
+#: ../libnm-util/nm-setting-bond.c:443
+#, c-format
+#| msgid "device '%s' not compatible with connection '%s'"
+msgid "'%s=%s' is incompatible with '%s > 0'"
+msgstr "'%s=%s' એ '%s > 0' સાથે સુસંગત નથી"
+
+#: ../libnm-util/nm-setting-bond.c:454
+#, c-format
+#| msgid "Error: '%s' is not valid argument for '%s' option."
+msgid "'%s=%s' is not a valid configuration for '%s'"
+msgstr "'%s=%s' એ '%s' માટે યોગ્ય રૂપરેખાંકન નથી"
+
+#: ../libnm-util/nm-setting-bond.c:467 ../libnm-util/nm-setting-bond.c:476
+#: ../libnm-util/nm-setting-bond.c:496 ../libnm-util/nm-setting-bond.c:532
+#, c-format
+msgid "'%s' option requires setting '%s' option"
+msgstr "'%s' વિકલ્પને સુયોજન '%s' વિકલ્પની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-bond.c:508
+#, c-format
+msgid "'%s' option is empty"
+msgstr "'%s' વિકલ્પ ખાલી છે"
+
+#: ../libnm-util/nm-setting-bond.c:520
+#, c-format
+#| msgid "Error: '%s' is not valid argument for '%s' option."
+msgid "'%s' is not a valid IPv4 address for '%s' option"
+msgstr "'%s' એ '%s' વિકલ્પ માટે યોગ્ય IPv4 સરનામુ નથી"
+
+#: ../libnm-util/nm-setting-bridge-port.c:155
+#: ../libnm-util/nm-setting-bridge-port.c:165
+#, c-format
+msgid "'%d' is not a valid value for the property (should be <= %d)"
+msgstr "'%d' એ એક ગુણધર્મ માટે યોગ્ય કિંમત છે (<= %d હોવી જોઇએ)"
+
+#: ../libnm-util/nm-setting-bridge.c:251
+#, c-format
+msgid "value '%d' is out of range <%d-%d>"
+msgstr "કિંમત '%d' એ સીમા <%d-%d> ની બહાર છે"
+
+#: ../libnm-util/nm-setting-bridge.c:277
+#: ../libnm-util/nm-setting-connection.c:732
+#: ../libnm-util/nm-setting-vlan.c:486
+#, c-format
+msgid "'%s' is not a valid interface name"
+msgstr "'%s' એ એક યોગ્ય ઇન્ટરફેસ નામ છે"
+
+#: ../libnm-util/nm-setting-cdma.c:170
+msgid "property is empty'"
+msgstr "ગુણધર્મ ખાલી છે'"
+
+#: ../libnm-util/nm-setting-connection.c:697
+#, c-format
+msgid "'%s' is not a valid UUID"
+msgstr "'%s' એ યોગ્ય UUID નથી"
+
+#: ../libnm-util/nm-setting-connection.c:716
+#, c-format
+msgid "'%s' doesn't match the virtual interface name '%s'"
+msgstr "'%s' એ વર્ચ્યુઅલ ઇન્ટરફેસ નામ '%s' સાથે બંધબેસતુ નથી"
+
+#: ../libnm-util/nm-setting-connection.c:760
+#, c-format
+msgid "requires presence of '%s' setting in the connection"
+msgstr "જોડાણમાં '%s' સુયોજનની હાજરીની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-connection.c:784
+#| msgid "The IP configuration is no longer valid"
+msgid "IPv4 configuration is not allowed for bonding slave"
+msgstr "IPv4 રૂપરેખાંકનને બોન્ડીંગ સ્લેવ માટે પરવાનગી મળેલ નથી"
+
+#: ../libnm-util/nm-setting-connection.c:801
+#| msgid "The IP configuration is no longer valid"
+msgid "IPv6 configuration is not allowed for bonding slave"
+msgstr "IPv6 રૂપરેખાંકન બોન્ડીંગ સ્લેવ માટે પરવાનગી મળેલ નથી"
+
+#: ../libnm-util/nm-setting-gsm.c:293
+#, c-format
+msgid "property value '%s' is empty or too long (>64)"
+msgstr "ગુણધર્મ કિંમત '%s' ખાલી છે અથવા ઘણું લાંબુ છે (>64)"
+
+#: ../libnm-util/nm-setting-gsm.c:325
+#, c-format
+msgid "'%s' contains invalid char(s) (use [A-Za-z._-])"
+msgstr "'%s' એ અયોગ્ય અક્ષરોને સમાવે છે ([A-Za-z._-] વાપરો)"
+
+#: ../libnm-util/nm-setting-gsm.c:360
+#, c-format
+msgid "'%s' length is invalid (should be 5 or 6 digits)"
+msgstr "'%s' લંબાઇ અયોગ્ય છે (૫ અથવા ૬ અંકો હોવા જોઇએ)"
+
+#: ../libnm-util/nm-setting-gsm.c:371
+#, c-format
+msgid "'%s' is not a number"
+msgstr "'%s' એ સંખ્યા નથી"
+
+#: ../libnm-util/nm-setting-ip4-config.c:714
+#: ../libnm-util/nm-setting-ip4-config.c:724
+#: ../libnm-util/nm-setting-ip4-config.c:734
+#: ../libnm-util/nm-setting-ip6-config.c:697
+#: ../libnm-util/nm-setting-ip6-config.c:707
+#: ../libnm-util/nm-setting-ip6-config.c:717
+#, c-format
+msgid "this property is not allowed for '%s=%s'"
+msgstr "આ ગુણધર્મને '%s=%s' માટે પરવાનગી મળેલ નથી"
+
+#: ../libnm-util/nm-setting-ip4-config.c:777
+#, c-format
+msgid "%d. IPv4 address is invalid"
+msgstr "%d. IPv4 સરનામું અયોગ્ય છે"
+
+#: ../libnm-util/nm-setting-ip4-config.c:787
+#, c-format
+msgid "%d. IPv4 address has invalid prefix"
+msgstr "%d. IPv4 સરનામાં પાસે અયોગ્ય ઉપસર્ગ છે"
+
+#: ../libnm-util/nm-setting-ip4-config.c:803
+#, c-format
+msgid "%d. route is invalid"
+msgstr "%d. માર્ગ અયોગ્ય છે"
+
+#: ../libnm-util/nm-setting-ip4-config.c:813
+#, c-format
+msgid "%d. route has invalid prefix"
+msgstr "%d. માર્ગ પાસે અયોગ્ય ઉપસર્ગ છે"
+
+#: ../libnm-util/nm-setting-ip6-config.c:696
+#, c-format
+msgid "'%s' not allowed for %s=%s"
+msgstr "'%s' ને %s=%s માટે પરવાનગી મળેલ નથી"
+
+#: ../libnm-util/nm-setting-olpc-mesh.c:137
+#: ../libnm-util/nm-setting-wireless.c:619
+msgid "SSID length is out of range <1-32> bytes"
+msgstr "SSID લંબાઇ  સીમા <1-32> બાઇટની બહાર છે"
+
+#: ../libnm-util/nm-setting-olpc-mesh.c:146
+#: ../libnm-util/nm-setting-wireless.c:659
+#, c-format
+msgid "'%d' is not a valid channel"
+msgstr "'%d' યોગ્ય ચેનલ નથી"
+
+#: ../libnm-util/nm-setting-ppp.c:390
+#, c-format
+msgid "'%d' is out of valid range <128-16384>"
+msgstr "'%d' એ યોગ્ય <128-16384> સીમાની બહાર છે"
+
+#: ../libnm-util/nm-setting-ppp.c:403
+#, c-format
+msgid "setting this property requires non-zero '%s' property"
+msgstr "આ ગુણધર્મ સુયોજનને શૂન્ય વગરની '%s' ગુણધર્મની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-vlan.c:508
+#, c-format
+msgid "'%s' value doesn't match '%s=%s'"
+msgstr "'%s' કિંમત '%s=%s' સાથે બંધબેસતુ નથી"
+
+#: ../libnm-util/nm-setting-vlan.c:519
+#, c-format
+msgid "'%s' is neither an UUID nor an interface name"
+msgstr "'%s' એ ક્યાંતો કદી UUID અથવા ઇન્ટરફેસ નામ ન હતુ"
+
+#: ../libnm-util/nm-setting-vlan.c:532
+#, c-format
+msgid "property is not specified and neither is '%s:%s'"
+msgstr "ગુણધર્મ સ્પષ્ટ થયેલ નથી અને '%s:%s' પણ કડી સ્પષ્ટ થયેલ નથી"
+
+#: ../libnm-util/nm-setting-vlan.c:545
+msgid "flags are invalid"
+msgstr "ફ્લેગ અયોગ્ય છે"
+
+#: ../libnm-util/nm-setting-wired.c:456
+#, c-format
+msgid "'%s' is not a valid ethernet port value"
+msgstr "'%s' એ યોગ્ય ઇથરનેટ પોર્ટ કિંમત નથી"
+
+#: ../libnm-util/nm-setting-wired.c:466
+#, c-format
+msgid "'%s' is not a valid duplex value"
+msgstr "'%s' એ યોગ્ય ડુપ્લેશ કિંમત નથી"
+
+#: ../libnm-util/nm-setting-wired.c:476 ../libnm-util/nm-setting-wired.c:534
+msgid "is not a valid MAC address"
+msgstr "આ યોગ્ય MAC સરનામું નથી"
+
+#: ../libnm-util/nm-setting-wired.c:489
+#: ../libnm-util/nm-setting-wireless.c:700
+#: ../libnm-util/nm-setting-wireless.c:714
+#, c-format
+msgid "'%s' is not a valid MAC address"
+msgstr "'%s' એ યોગ્ય MAC સરનામું નથી"
+
+#: ../libnm-util/nm-setting-wired.c:523
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid '%s' or its value '%s'"
+msgstr "અયોગ્ય '%s' અથવા તેની કિંમત '%s'"
+
+#: ../libnm-util/nm-setting-wireless-security.c:813
+#, c-format
+msgid "'%s' security requires '%s=%s'"
+msgstr "'%s' સુરક્ષાને '%s=%s' ની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-wireless-security.c:842
+#, c-format
+msgid "'%s' security requires '%s' setting presence"
+msgstr "'%s' સુરક્ષાને '%s' સુયોજન હાજરીની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-wireless-security.c:863
+#, c-format
+msgid "'%d' value is out of range <0-3>"
+msgstr "'%d' એ <0-3> સીમાની બહાર છે"
+
+#: ../libnm-util/nm-setting-wireless-security.c:960
+#, c-format
+msgid "'%s' connections require '%s' in this property"
+msgstr "'%s' જોડાણોને આ ગુણધર્મમાં '%s' ની જરૂરિયાત છે"
+
+#: ../libnm-util/nm-setting-wireless-security.c:990
+#, c-format
+msgid "'%s' can only be used with '%s=%s' (WEP)"
+msgstr "'%s' ફક્ત '%s=%s' (WEP) સાથે વાપરી શકાય છે"
+
+#: ../libnm-util/nm-setting-wireless.c:628
+#, c-format
+#| msgid "Error: Device '%s' is not a Wi-Fi device."
+msgid "'%s' is not a valid Wi-Fi mode"
+msgstr "'%s' એ યોગ્ય Wi-Fi સ્થિતિમાં નથી."
+
+#: ../libnm-util/nm-setting-wireless.c:638
+#, c-format
+msgid "'%s' is not a valid band"
+msgstr "'%s' એ યોગ્ય બૅન્ડ નથી"
+
+#: ../libnm-util/nm-setting-wireless.c:648
+#, c-format
+msgid "requires setting '%s' property"
+msgstr "સુયોજન '%s' ગુણધર્મની જરૂર છે"
+
+#: ../libnm-util/nm-setting-wireless.c:726
+#, c-format
+msgid "'%s' setting is required for the connection when the property is set"
+msgstr "'%s' સુયોજનને જોડાણ માટે જરૂરિયાત છે જ્યારે ગુણધર્મ સુયોજિત હોય"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:1
 msgid "Enable or disable system networking"
@@ -2452,87 +2755,87 @@ msgstr "નિરંતર સિસ્ટમ યજમાનનામને બ
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr "સિસ્ટમ પોલિસી એ નિરંતર સિસ્ટમ યજમાનનામનાં બદલાવને અટકાવે છે"
 
-#: ../src/main.c:158
+#: ../src/main.c:130
 #, c-format
 msgid "Failed to set signal mask: %d"
 msgstr "સંકેત માસ્ક ને સુયોજિત કરવાનું નિષ્ફળ: %d"
 
-#: ../src/main.c:167
+#: ../src/main.c:139
 #, c-format
 msgid "Failed to create signal handling thread: %d"
 msgstr "સંકેત સંચાલિત થ્રેડને બનાવવામાં નિષ્ફળતા: %d"
 
-#: ../src/main.c:182
+#: ../src/main.c:154
 #, c-format
 msgid "Opening %s failed: %s\n"
 msgstr "%s ને ખોલવાનું નિષ્ફળ: %s\n"
 
-#: ../src/main.c:188
+#: ../src/main.c:160
 #, c-format
 msgid "Writing to %s failed: %s\n"
 msgstr "%s માં લખવાનું નિષ્ફળ: %s\n"
 
-#: ../src/main.c:193
+#: ../src/main.c:165
 #, c-format
 msgid "Closing %s failed: %s\n"
 msgstr "%s ને બંધ કરવાનું નિષ્ફળ: %s\n"
 
-#: ../src/main.c:236
+#: ../src/main.c:208
 #, c-format
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "NetworkManager પહેલેથી ચાલી રહ્યુ છે (pid %ld)\n"
 
-#: ../src/main.c:363
+#: ../src/main.c:328
 msgid "Print NetworkManager version and exit"
 msgstr "NetworkManager આવૃત્તિને છાપો અને બહાર નીકળો"
 
-#: ../src/main.c:364
+#: ../src/main.c:329
 msgid "Don't become a daemon"
 msgstr "ડિમન બનો નહિં"
 
-#: ../src/main.c:365
+#: ../src/main.c:330
 msgid "Make all warnings fatal"
 msgstr "બધી ચેતવણીઓને ફેટલ બનાવો"
 
-#: ../src/main.c:366
+#: ../src/main.c:331
 msgid "Specify the location of a PID file"
 msgstr "PID ફાઇલનું સ્થાન સ્પષ્ટ કરો"
 
-#: ../src/main.c:366
+#: ../src/main.c:331
 msgid "filename"
 msgstr "ફાઇલનામ"
 
-#: ../src/main.c:367
+#: ../src/main.c:332
 msgid "State file location"
 msgstr "સ્થિતિ ફાઇલ સ્થાન"
 
-#: ../src/main.c:367
+#: ../src/main.c:332
 msgid "/path/to/state.file"
 msgstr "/path/to/state.file"
 
-#: ../src/main.c:368
+#: ../src/main.c:333
 msgid "Config file location"
 msgstr "રૂપરેખાંકન ફાઇલ સ્થાન"
 
-#: ../src/main.c:368
+#: ../src/main.c:333
 msgid "/path/to/config.file"
 msgstr "/path/to/config.file"
 
-#: ../src/main.c:369
+#: ../src/main.c:334
 msgid "List of plugins separated by ','"
 msgstr "',' દ્દારા અલગ થયેલ પ્લગઇનોની યાદી"
 
-#: ../src/main.c:369
+#: ../src/main.c:334
 msgid "plugin1,plugin2"
 msgstr "પ્લગઇન1,પ્લગઇન2"
 
 #. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:371
+#: ../src/main.c:336
 msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
 msgstr "લૉગ સ્તર: [ERR, WARN, INFO, DEBUG] માંના એક"
 
 #. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:374
+#: ../src/main.c:339
 msgid ""
 "Log domains separated by ',': any combination of\n"
 "                                                [NONE,HW,RFKILL,ETHER,WIFI,"
@@ -2552,28 +2855,28 @@ msgstr ""
 "CORE,DEVICE,OLPC,WIMAX,\n"
 "                                                 INFINIBAND,FIREWALL,ADSL]"
 
-#: ../src/main.c:380
+#: ../src/main.c:345
 msgid "An http(s) address for checking internet connectivity"
 msgstr "ઇન્ટરનેટ જોડાણને ચકાસવા માટે http(s) સરનામું"
 
-#: ../src/main.c:381
+#: ../src/main.c:346
 msgid "The interval between connectivity checks (in seconds)"
 msgstr "જોડાણ ચકાસણી વચ્ચેનો અંતરાલ (સેકંડ માં)"
 
-#: ../src/main.c:382
+#: ../src/main.c:347
 msgid "The expected start of the response"
 msgstr "જવાબની ઇચ્છિત શરૂઆત"
 
-#: ../src/main.c:382
+#: ../src/main.c:347
 msgid "Bingo!"
 msgstr "બિન્ગો!"
 
-#: ../src/main.c:387
+#: ../src/main.c:352
 #, c-format
 msgid "GModules are not supported on your platform!\n"
 msgstr "GModules એ તમારાં પ્લેટફોર્મ પર આધારભૂત નથી!\n"
 
-#: ../src/main.c:406
+#: ../src/main.c:371
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -2586,41 +2889,41 @@ msgstr ""
 "વાયરલેસ કાર્ડ તેની સાથે સંકળાયેલ\n"
 "હોવા જોઇએ."
 
-#: ../src/main.c:412
+#: ../src/main.c:377
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "અયોગ્ય વિકલ્પ.  મહેરબાની કરીને યોગ્ય વિકલ્પોની યાદી ને જોવા માટે --help ને વાપરો.\n"
 
-#: ../src/main.c:422
+#: ../src/main.c:387
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "તમારે NetworkManager ને ચલાવવા રુટ તમારે રુટ હોલુ જરૂરી જ છે!\n"
 
-#: ../src/main.c:449
+#: ../src/main.c:420
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "રૂપરેખાંકનને વાંચવાનુ નિષ્ફળ: (%d) %s\n"
 
-#: ../src/main.c:460
+#: ../src/main.c:431
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  મહેરબાની કરીને યોગ્ય વિકલ્પોની યાદીને જોવા માટે --help ને વાપરો.\n"
 
-#: ../src/main.c:467
+#: ../src/main.c:438
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "સ્થિતિ ફાઇલ %s નું પદચ્છેદન કરવામાં નિષ્ફળતા: (%d) %s\n"
 
-#: ../src/main.c:484
+#: ../src/main.c:455
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "ડિમોનાઇઝ કરી શક્યા નહિં: %s [ભૂલ %u]\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:61
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:139
 msgid "# Created by NetworkManager\n"
 msgstr "# ને NetworkManager દ્દારા બનાવેલ છે\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:68
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:146
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -2629,28 +2932,28 @@ msgstr ""
 "# ને %s માંથી ભેગુ કરેલ છે\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:266
+#: ../src/dhcp-manager/nm-dhcp-manager.c:264
 msgid "no usable DHCP client could be found."
 msgstr "ન વાપરી શકાય તેવુ DHCP ક્લાઇન્ટ મળી શકે છે."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:275
+#: ../src/dhcp-manager/nm-dhcp-manager.c:273
 msgid "'dhclient' could be found."
 msgstr "'dhclient' મળી શકે છે."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:285
+#: ../src/dhcp-manager/nm-dhcp-manager.c:283
 msgid "'dhcpcd' could be found."
 msgstr "'dhcpcd' મળી શકે છે."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+#: ../src/dhcp-manager/nm-dhcp-manager.c:291
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "બિનઆધારભૂત DHCP ક્લાઇન્ટ '%s'"
 
-#: ../src/dns-manager/nm-dns-manager.c:375
+#: ../src/dns-manager/nm-dns-manager.c:376
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "નોંધ: libc સુધારનાર એ ૩ નામ સર્વરો કરતા વધારે આધારને સમાવી શકતુ નથી."
 
-#: ../src/dns-manager/nm-dns-manager.c:377
+#: ../src/dns-manager/nm-dns-manager.c:378
 msgid "The nameservers listed below may not be recognized."
 msgstr "નીચે યાદી થયેલ નામસર્વરો એ ઓળખી શકાતા નથી."
 
@@ -2659,118 +2962,130 @@ msgstr "નીચે યાદી થયેલ નામસર્વરો એ �
 msgid "Unknown log level '%s'"
 msgstr "અજ્ઞાત લોગ સ્તર '%s'"
 
-#: ../src/logging/nm-logging.c:181
+#: ../src/logging/nm-logging.c:188
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "અજ્ઞાત લોગ ડોમેઇન '%s'"
 
-#: ../src/modem-manager/nm-modem-cdma.c:280 ../src/nm-device-bt.c:351
+#: ../src/modem-manager/nm-modem-cdma.c:255
+#: ../src/modem-manager/nm-modem-broadband.c:512 ../src/nm-device-bt.c:331
 #, c-format
 msgid "CDMA connection %d"
 msgstr "Connexion CDMA %d"
 
-#: ../src/modem-manager/nm-modem-gsm.c:558 ../src/nm-device-bt.c:347
+#: ../src/modem-manager/nm-modem-gsm.c:531
+#: ../src/modem-manager/nm-modem-broadband.c:490 ../src/nm-device-bt.c:327
 #, c-format
 msgid "GSM connection %d"
 msgstr "Connexion GSM %d"
 
-#: ../src/nm-device-bond.c:192
+#: ../src/nm-device-bond.c:166
 #, c-format
 msgid "Bond connection %d"
 msgstr "બોન્ડ જોડાણ %d"
 
-#: ../src/nm-device-adsl.c:193
+#: ../src/nm-device-adsl.c:196
 #, c-format
 msgid "ADSL connection %d"
 msgstr "ADSL જોડાણ %d"
 
-#: ../src/nm-device-bt.c:322
+#: ../src/nm-device-bridge.c:164
+#, c-format
+#| msgid "Bond connection %d"
+msgid "Bridge connection %d"
+msgstr "બ્રિજ જોડાણ %d"
+
+#: ../src/nm-device-bt.c:302
 #, c-format
 msgid "PAN connection %d"
 msgstr "PAN જોડાણ %d"
 
-#: ../src/nm-device-bt.c:355
+#: ../src/nm-device-bt.c:335
 #, c-format
 msgid "DUN connection %d"
 msgstr "DUN જોડાણ %d"
 
-#: ../src/nm-device-ethernet.c:1326
+#: ../src/nm-device-ethernet.c:1294
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE જોડાણ %d"
 
-#: ../src/nm-device-ethernet.c:1326 ../src/settings/nm-settings-utils.c:50
+#: ../src/nm-device-ethernet.c:1294 ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "વાયર થયેલ જોડાણ %d"
 
-#: ../src/nm-device-infiniband.c:303
+#: ../src/nm-device-infiniband.c:270
 #, c-format
 msgid "InfiniBand connection %d"
 msgstr "InfiniBand જોડાણ %d"
 
-#: ../src/nm-device-olpc-mesh.c:311
+#: ../src/nm-device-olpc-mesh.c:304
 #, c-format
 msgid "Mesh %d"
 msgstr "મેશ %d"
 
-#: ../src/nm-device-vlan.c:362
+#: ../src/nm-device-vlan.c:310
 #, c-format
 msgid "VLAN connection %d"
 msgstr "VLAN જોડાણ %d"
 
-#: ../src/nm-manager.c:662
+#: ../src/nm-manager.c:750
 #, c-format
 msgid "VPN connection %d"
 msgstr "VPN જોડાણ %d"
 
-#: ../src/nm-netlink-monitor.c:148 ../src/nm-netlink-monitor.c:272
-#: ../src/nm-netlink-monitor.c:695
+#: ../src/nm-netlink-monitor.c:162 ../src/nm-netlink-monitor.c:286
+#: ../src/nm-netlink-monitor.c:671
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "નેટલિંક સંદેશ ને પ્રક્રિયા કરવામાં ભૂલ: %s"
 
-#: ../src/nm-netlink-monitor.c:251
+#: ../src/nm-netlink-monitor.c:265
 msgid "error occurred while waiting for data on socket"
 msgstr "ભૂલ ઉદ્ભવી જ્યારે સોકેટ પર માહિતી માટે રાહ જોઇ રહ્યા હોય"
 
-#: ../src/nm-netlink-monitor.c:296
+#: ../src/nm-netlink-monitor.c:310
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "કડી સ્થિતિને મોનિટર કરવા માટે નેટલિંકને જોડવામાં અસમર્થ: %s"
 
-#: ../src/nm-netlink-monitor.c:307
+#: ../src/nm-netlink-monitor.c:321
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
 msgstr "નેટલિંકને સંભાળવાનો શ્રેયને જવાનું સક્રિય કરવા માટે અસમર્થ: %s"
 
-#: ../src/nm-netlink-monitor.c:330 ../src/nm-netlink-monitor.c:390
+#: ../src/nm-netlink-monitor.c:364 ../src/nm-netlink-monitor.c:424
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr "કડી સ્થિતિને મોનિટર કરવા માટે નેટલિંકને સંભાળવાનું ફાળવવામાં અસમર્થ: %s"
 
-#: ../src/nm-netlink-monitor.c:415
+#: ../src/nm-netlink-monitor.c:449
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "કડી સ્થિતિને મોનિટર કરવા માટે નેટલિંક કડી કેશને ફાળવવામાં અસમર્થ: %s"
 
-#: ../src/nm-netlink-monitor.c:542
+#: ../src/nm-netlink-monitor.c:541
 #, c-format
 msgid "unable to join netlink group: %s"
 msgstr "નેટલીંક જૂથ ને જોડાવવાનું અસમર્થ: %s"
 
-#: ../src/nm-netlink-monitor.c:671 ../src/nm-netlink-monitor.c:684
+#: ../src/nm-netlink-monitor.c:647 ../src/nm-netlink-monitor.c:660
 #, c-format
 msgid "error updating link cache: %s"
 msgstr "કડી કેશને સુધારો કરતી વખતે ભૂલ: %s"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:93
+#: ../src/settings/plugins/ifcfg-rh/reader.c:110
 msgid "System"
 msgstr "સિસ્ટમ"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3663
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3680
 msgid "Bond"
 msgstr "બોન્ડ"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3860
+msgid "Bridge"
+msgstr "બ્રિજ"
 
 #: ../test/nm-online.c:111
 #, c-format
@@ -2796,6 +3111,45 @@ msgstr "NetworkManager માં સફળ જોડાણ માટે રા�
 #: ../test/nm-online.c:168 ../test/nm-online.c:177
 msgid "Invalid option.  Please use --help to see a list of valid options."
 msgstr "અયોગ્ય વિકલ્પ.  મહેરબાની કરીને યોગ્ય વિકલ્પોની યાદી ને જોવા માટે --help ને વાપરો."
+
+#~ msgid "Not enough memory to store PEM file data."
+#~ msgstr "PEM ફાઇલ માહિતી ને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
+
+#~ msgid "Not enough memory to store private key data."
+#~ msgstr "ખાનગી કી માહિતીને સંગ્રહ કરવા પૂરતી મેમરી નથી."
+
+#~ msgid "Not enough memory to store certificate data."
+#~ msgstr "પ્રમાણપત્ર માહિતીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
+
+#~ msgid "Not enough memory to store the IV."
+#~ msgstr "IV ને સંગ્રહ કરવા માટે પૂરતી મેમરી નથી."
+
+#~ msgid "Not enough memory to decrypt private key."
+#~ msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવા માટે મેમરી પૂરતી નથી."
+
+#~ msgid "Not enough memory to store decrypted private key."
+#~ msgstr "ડિક્રિપ્ટ થયેલ ખાનગી કીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
+
+#~ msgid "Not enough memory for decrypted key buffer."
+#~ msgstr "ડિક્રિપ્ટ થયેલ કી બફર માટે પૂરતી મેમરી નથી."
+
+#~ msgid "Could not allocate memory for encrypting."
+#~ msgstr "એનક્રિપ્ટ કર્યા પછી મેમરીને ફાળવી શક્યા નહિં."
+
+#~ msgid "Not enough memory to make encryption key."
+#~ msgstr "એનક્રિપ્શન કીને બનાવવા માટે મેમરી પૂરતી નથી."
+
+#~ msgid "Could not allocate memory for PEM file creation."
+#~ msgstr "PEM ફાઇલ બનાવવા માટે મેમરી ફાળવી શક્યા નહિંી પૂરતી નથી."
+
+#~ msgid "Could not allocate memory for writing IV to PEM file."
+#~ msgstr "PEM ફાઇલમાં IV ને લખવા માટે મેમરીને ફાળવી શક્યા નહિં."
+
+#~ msgid "Could not allocate memory for writing encrypted key to PEM file."
+#~ msgstr "PEM ફાઇલમાં અનક્રિપ્ટ થયેલ કી ને લખવા માટે મેમરીને ફાળવી શક્યા નહિં."
+
+#~ msgid "Could not allocate memory for PEM file data."
+#~ msgstr "PEM ફાઇલ માહિતી માટે મેમરી ફાળવી શક્યા નહિં."
 
 #~ msgid "SCOPE"
 #~ msgstr "SCOPE"
@@ -2844,9 +3198,6 @@ msgstr "અયોગ્ય વિકલ્પ.  મહેરબાની કર�
 
 #~ msgid "Device state: %d (%s)\n"
 #~ msgstr "ઉપકરણ પરિસ્થિતિ: %d (%s)\n"
-
-#~ msgid "not set"
-#~ msgstr "સુયોજિત નથી"
 
 #~ msgid "Auto %s"
 #~ msgstr "%s સ્વયં કરો"
