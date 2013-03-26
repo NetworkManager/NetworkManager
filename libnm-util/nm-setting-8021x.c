@@ -2612,6 +2612,7 @@ finalize (GObject *object)
 	g_free (priv->password);
 	if (priv->password_raw)
 		g_byte_array_free (priv->password_raw, TRUE);
+	g_free (priv->pin);
 
 	nm_utils_slist_free (priv->eap, g_free);
 	nm_utils_slist_free (priv->altsubject_matches, g_free);
@@ -2823,6 +2824,13 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
 		priv->phase2_private_key_password_flags = g_value_get_uint (value);
 		break;
+	case PROP_PIN:
+		g_free (priv->pin);
+		priv->pin = g_value_dup_string (value);
+		break;
+	case PROP_PIN_FLAGS:
+		priv->pin_flags = g_value_get_uint (value);
+		break;
 	case PROP_SYSTEM_CA_CERTS:
 		priv->system_ca_certs = g_value_get_boolean (value);
 		break;
@@ -2926,6 +2934,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
 		g_value_set_uint (value, priv->phase2_private_key_password_flags);
+		break;
+	case PROP_PIN:
+		g_value_set_string (value, priv->pin);
+		break;
+	case PROP_PIN_FLAGS:
+		g_value_set_uint (value, priv->pin_flags);
 		break;
 	case PROP_SYSTEM_CA_CERTS:
 		g_value_set_boolean (value, priv->system_ca_certs);
@@ -3585,6 +3599,33 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                    "Phase2 Private Key Password Flags",
 		                    "Flags indicating how to handle the 802.1x phase2 "
 		                    "private key password.",
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    NM_SETTING_SECRET_FLAGS_ALL,
+		                    NM_SETTING_SECRET_FLAG_NONE,
+		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	/**
+	 * NMSetting8021x:pin:
+	 *
+	 * PIN used for EAP authentication methods.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PIN,
+		 g_param_spec_string (NM_SETTING_802_1X_PIN,
+		                      "PIN",
+		                      "PIN used for EAP authentication methods.",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/**
+	 * NMSetting8021x:pin-flags:
+	 *
+	 * Flags indicating how to handle #NMSetting8021x:pin:.
+	 **/
+	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PIN_FLAGS,
+		                    "PIN Flags",
+		                    "Flags indicating how to handle the 802.1x PIN.",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
