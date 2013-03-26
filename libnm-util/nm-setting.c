@@ -152,39 +152,6 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 	return hash;
 }
 
-typedef struct {
-	GObjectClass *class;
-	guint n_params;
-	GParameter *params;
-} NMSettingFromHashInfo;
-
-static void
-one_property_cb (gpointer key, gpointer val, gpointer user_data)
-{
-	const char *prop_name = (char *) key;
-	GValue *src_value = (GValue *) val;
-	NMSettingFromHashInfo *info = (NMSettingFromHashInfo *) user_data;
-	GValue *dst_value = &info->params[info->n_params].value;
-	GParamSpec *param_spec;
-
-	param_spec = g_object_class_find_property (info->class, prop_name);
-	if (!param_spec || !(param_spec->flags & NM_SETTING_PARAM_SERIALIZE)) {
-		/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
-		g_warning ("Ignoring invalid property '%s'", prop_name);
-		return;
-	}
-
-	g_value_init (dst_value, G_VALUE_TYPE (src_value));
-	if (g_value_transform (src_value, dst_value)) {
-		info->params[info->n_params].name = prop_name;
-		info->n_params++;
-	} else {
-		g_warning ("Ignoring property '%s' with invalid type (%s)",
-		           prop_name, G_VALUE_TYPE_NAME (src_value));
-		g_value_unset (dst_value);
-	}
-}
-
 /**
  * nm_setting_new_from_hash:
  * @setting_type: the #NMSetting type which the hash contains properties for
@@ -204,28 +171,53 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 NMSetting *
 nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 {
+	GHashTableIter iter;
 	NMSetting *setting;
-	NMSettingFromHashInfo info;
+	const char *prop_name;
+	GValue *src_value;
+	GObjectClass *class;
+	guint n_params = 0;
+	GParameter *params;
 	int i;
 
 	g_return_val_if_fail (G_TYPE_IS_INSTANTIATABLE (setting_type), NULL);
 	g_return_val_if_fail (hash != NULL, NULL);
 
-	info.class = g_type_class_ref (setting_type);
-	info.n_params = 0;
-	info.params = g_new0 (GParameter, g_hash_table_size (hash));
+	/* g_type_class_ref() ensures the setting class is created if it hasn't
+	 * already been used.
+	 */
+	class = g_type_class_ref (setting_type);
+	params = g_new0 (GParameter, g_hash_table_size (hash));
 
-	g_hash_table_foreach (hash, one_property_cb, &info);
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer) &prop_name, (gpointer) &src_value)) {
+		GValue *dst_value = &params[n_params].value;
+		GParamSpec *param_spec;
 
-	setting = (NMSetting *) g_object_newv (setting_type, info.n_params, info.params);
+		param_spec = g_object_class_find_property (class, prop_name);
+		if (!param_spec || !(param_spec->flags & NM_SETTING_PARAM_SERIALIZE)) {
+			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
+			g_warning ("Ignoring invalid property '%s'", prop_name);
+			continue;
+		}
 
-	for (i = 0; i < info.n_params; i++) {
-		GValue *v = &info.params[i].value;
-		g_value_unset (v);
+		g_value_init (dst_value, G_VALUE_TYPE (src_value));
+		if (g_value_transform (src_value, dst_value))
+			params[n_params++].name = prop_name;
+		else {
+			g_warning ("Ignoring property '%s' with invalid type (%s)",
+				       prop_name, G_VALUE_TYPE_NAME (src_value));
+			g_value_unset (dst_value);
+		}
 	}
 
-	g_free (info.params);
-	g_type_class_unref (info.class);
+	setting = (NMSetting *) g_object_newv (setting_type, n_params, params);
+
+	for (i = 0; i < n_params; i++)
+		g_value_unset (&params[i].value);
+
+	g_free (params);
+	g_type_class_unref (class);
 
 	return setting;
 }

@@ -585,6 +585,26 @@ test_connection_to_hash_setting_name (void)
 }
 
 static void
+test_setting_new_from_hash (void)
+{
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *hash;
+
+	s_wsec = make_test_wsec_setting ("setting-to-hash-all");
+	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
+	g_object_unref (s_wsec);
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_new_from_hash (NM_TYPE_SETTING_WIRELESS_SECURITY, hash);
+	g_hash_table_destroy (hash);
+
+	g_assert (s_wsec);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
+	g_assert_cmpstr (nm_setting_wireless_security_get_leap_username (s_wsec), ==, "foobarbaz");
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "random psk");
+	g_object_unref (s_wsec);
+}
+
+static void
 check_permission (NMSettingConnection *s_con,
                   guint32 idx,
                   const char *expected_uname,
@@ -1476,6 +1496,8 @@ int main (int argc, char **argv)
 	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
 
 	test_connection_to_hash_setting_name ();
+	test_setting_new_from_hash ();
+
 	test_setting_connection_permissions_helpers ();
 	test_setting_connection_permissions_property ();
 
