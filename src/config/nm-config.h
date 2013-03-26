@@ -51,7 +51,7 @@ NMConfig *nm_config_get (void);
 const char *nm_config_get_path (NMConfig *config);
 const char **nm_config_get_plugins (NMConfig *config);
 const char *nm_config_get_dhcp_client (NMConfig *config);
-const char **nm_config_get_dns_plugins (NMConfig *config);
+const char *nm_config_get_dns_mode (NMConfig *config);
 const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_connectivity_uri (NMConfig *config);

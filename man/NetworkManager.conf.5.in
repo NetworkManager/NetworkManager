@@ -135,17 +135,22 @@ no-auto-default=*
 Set devices for which NetworkManager should ignore device carrier state when
 deciding whether to activate or deactivate connections.
 .TP
-.B dns=\fIplugin1\fP,\fIplugin2\fP, ...
-List DNS plugin names separated by ','. DNS plugins are used to provide local
-caching nameserver functionality (which speeds up DNS queries) and to push
-DNS data to applications that use it.
+.B dns=\fImode\fP
+Set the DNS/resolv.conf-processing mode.
 .P
 .RS
-.B "Available plugins:"
+.B "Supported modes:"
 .br
 .TP
+.I default
+The default if the key is not specified. NetworkManager will update
+resolv.conf to reflect the nameservers provided by currently active
+connections.
+.TP
 .I dnsmasq
-this plugin uses dnsmasq to provide local caching nameserver functionality.
+NetworkManager will run dnsmasq as a local caching nameserver, using
+a "split DNS" configuration if you are connected to a VPN, and then
+update resolv.conf to point to the local nameserver.
 .RE
 .SS [keyfile]
 This section contains keyfile-specific options and thus only has effect when using \fIkeyfile\fP plugin.

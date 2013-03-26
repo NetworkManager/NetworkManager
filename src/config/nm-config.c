@@ -43,7 +43,7 @@ typedef struct {
 
 	char **plugins;
 	char *dhcp_client;
-	char **dns_plugins;
+	char *dns_mode;
 
 	char *log_level;
 	char *log_domains;
@@ -88,12 +88,12 @@ nm_config_get_dhcp_client (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->dhcp_client;
 }
 
-const char **
-nm_config_get_dns_plugins (NMConfig *config)
+const char *
+nm_config_get_dns_mode (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
-	return (const char **) NM_CONFIG_GET_PRIVATE (config)->dns_plugins;
+	return NM_CONFIG_GET_PRIVATE (config)->dns_mode;
 }
 
 const char *
@@ -492,7 +492,7 @@ nm_config_new (GError **error)
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
 
 	priv->dhcp_client = g_key_file_get_value (priv->keyfile, "main", "dhcp", NULL);
-	priv->dns_plugins = g_key_file_get_string_list (priv->keyfile, "main", "dns", NULL, NULL);
+	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
 
 	if (cli_log_level && cli_log_level[0])
 		g_key_file_set_value (priv->keyfile, "logging", "level", cli_log_level);
@@ -541,7 +541,7 @@ finalize (GObject *gobject)
 	g_clear_pointer (&priv->keyfile, g_key_file_unref);
 	g_strfreev (priv->plugins);
 	g_free (priv->dhcp_client);
-	g_strfreev (priv->dns_plugins);
+	g_free (priv->dns_mode);
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->connectivity_uri);

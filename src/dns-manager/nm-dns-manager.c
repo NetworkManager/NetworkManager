@@ -61,7 +61,7 @@ typedef struct {
 	guint8 hash[HASH_LEN];  /* SHA1 hash of current DNS config */
 	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
-	GSList *plugins;
+	NMDnsPlugin *plugin;
 
 	gboolean dns_touched;
 } NMDnsManagerPrivate;
@@ -686,15 +686,15 @@ update_dns (NMDnsManager *self,
 	}
 
 	/* Let any plugins do their thing first */
-	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		NMDnsPlugin *plugin = NM_DNS_PLUGIN (iter->data);
+	if (priv->plugin) {
+		NMDnsPlugin *plugin = priv->plugin;
 		const char *plugin_name = nm_dns_plugin_get_name (plugin);
 
 		if (nm_dns_plugin_is_caching (plugin)) {
 			if (no_caching) {
 				nm_log_dbg (LOGD_DNS, "DNS: plugin %s ignored (caching disabled)",
 				            plugin_name);
-				continue;
+				goto skip;
 			}
 			caching = TRUE;
 		}
@@ -712,7 +712,11 @@ update_dns (NMDnsManager *self,
 			 */
 			caching = FALSE;
 		}
+
+	skip:
+		;
 	}
+
 	g_slist_free (vpn_configs);
 	g_slist_free (dev_configs);
 	g_slist_free (other_configs);
@@ -1015,63 +1019,16 @@ nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
 	memset (priv->prev_hash, 0, sizeof (priv->prev_hash));
 }
 
-static void
-load_plugins (NMDnsManager *self, const char **plugins)
-{
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	NMDnsPlugin *plugin;
-	const char **iter;
-	gboolean have_caching = FALSE;
-
-	if (plugins && *plugins) {
-		/* Create each configured plugin */
-		for (iter = plugins; iter && *iter; iter++) {
-			if (!strcasecmp (*iter, "dnsmasq"))
-				plugin = nm_dns_dnsmasq_new ();
-			else {
-				nm_log_warn (LOGD_DNS, "Unknown DNS plugin '%s'", *iter);\
-				continue;
-			}
-			g_assert (plugin);
-
-			/* Only one caching DNS plugin is allowed */
-			if (nm_dns_plugin_is_caching (plugin)) {
-				if (have_caching) {
-					nm_log_warn (LOGD_DNS,
-					             "Ignoring plugin %s; only one caching DNS "
-					             "plugin is allowed.",
-					             *iter);
-					g_object_unref (plugin);
-					continue;
-				}
-				have_caching = TRUE;
-			}
-
-			nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (plugin));
-			priv->plugins = g_slist_append (priv->plugins, plugin);
-			g_signal_connect (plugin, NM_DNS_PLUGIN_FAILED,
-			                  G_CALLBACK (plugin_failed),
-			                  self);
-		}
-	} else {
-		/* Create default plugins */
-	}
-}
-
 /******************************************************************/
 
 NMDnsManager *
 nm_dns_manager_get (void)
 {
 	static NMDnsManager * singleton = NULL;
-	const char **plugins;
 
 	if (!singleton) {
 		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
 		g_assert (singleton);
-
-		plugins = nm_config_get_dns_plugins (nm_config_get ());
-		load_plugins (singleton, plugins);
 	} else
 		g_object_ref (singleton);
 
@@ -1091,8 +1048,22 @@ nm_dns_manager_error_quark (void)
 static void
 nm_dns_manager_init (NMDnsManager *self)
 {
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	const char *mode;
+
 	/* Set the initial hash */
 	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
+
+	mode = nm_config_get_dns_mode (nm_config_get ());
+	if (!g_strcmp0 (mode, "dnsmasq"))
+		priv->plugin = nm_dns_dnsmasq_new ();
+	else if (mode && g_strcmp0 (mode, "default") != 0)
+		nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
+
+	if (priv->plugin) {
+		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
+		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
+	}
 }
 
 static void
@@ -1102,8 +1073,7 @@ dispose (GObject *object)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	g_slist_free_full (priv->plugins, g_object_unref);
-	priv->plugins = NULL;
+	g_clear_object (&priv->plugin);
 
 	/* If we're quitting, leave a valid resolv.conf in place, not one
 	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
