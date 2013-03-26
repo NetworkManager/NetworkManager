@@ -61,6 +61,7 @@ typedef struct {
 	guint8 hash[HASH_LEN];  /* SHA1 hash of current DNS config */
 	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
+	gboolean manage_dns;
 	NMDnsPlugin *plugin;
 
 	gboolean dns_touched;
@@ -575,6 +576,9 @@ update_dns (NMDnsManager *self,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
+	if (!priv->manage_dns)
+		return TRUE;
+
 	priv->dns_touched = TRUE;
 
 	nm_log_dbg (LOGD_DNS, "updating resolv.conf");
@@ -1055,10 +1059,16 @@ nm_dns_manager_init (NMDnsManager *self)
 	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
 
 	mode = nm_config_get_dns_mode (nm_config_get ());
-	if (!g_strcmp0 (mode, "dnsmasq"))
-		priv->plugin = nm_dns_dnsmasq_new ();
-	else if (mode && g_strcmp0 (mode, "default") != 0)
-		nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
+	if (!g_strcmp0 (mode, "none")) {
+		priv->manage_dns = FALSE;
+		nm_log_info (LOGD_DNS, "DNS: not managing " _PATH_RESCONF);
+	} else {
+		priv->manage_dns = TRUE;
+		if (!g_strcmp0 (mode, "dnsmasq"))
+			priv->plugin = nm_dns_dnsmasq_new ();
+		else if (mode && g_strcmp0 (mode, "default") != 0)
+			nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
+	}
 
 	if (priv->plugin) {
 		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
