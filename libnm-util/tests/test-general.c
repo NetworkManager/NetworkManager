@@ -195,6 +195,7 @@ test_setting_vpn_update_secrets (void)
 	ASSERT (strcmp (tmp, val2) == 0,
 	        "vpn-update-secrets", "unexpected key #2 value");
 
+	g_hash_table_destroy (settings);
 	g_object_unref (connection);
 }
 
@@ -463,6 +464,7 @@ test_setting_gsm_without_number (void)
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "", NULL);
 	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
 	g_assert_error (error, NM_SETTING_GSM_ERROR, NM_SETTING_GSM_ERROR_INVALID_PROPERTY);
+	g_error_free (error);
 }
 
 static NMSettingWirelessSecurity *
@@ -671,6 +673,7 @@ test_setting_connection_permissions_helpers (void)
 	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions in list");
 	ASSERT (strcmp (list->data, expected_perm) == 0,
 	        "setting-connection-permissions-helpers", "unexpected permission property data");
+	g_slist_free_full (list, g_free);
 
 	/* Now remove that permission and ensure we have 0 permissions */
 	nm_setting_connection_remove_permission (s_con, 0);
@@ -920,6 +923,7 @@ test_connection_diff_a_only (void)
 
 	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
 
+	g_hash_table_destroy (out_diffs);
 	g_object_unref (connection);
 }
 
@@ -969,6 +973,7 @@ test_connection_diff_different (void)
 
 	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
 
+	g_hash_table_destroy (out_diffs);
 	g_object_unref (a);
 	g_object_unref (b);
 }
@@ -1016,6 +1021,7 @@ test_connection_diff_no_secrets (void)
 
 	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
 
+	g_hash_table_destroy (out_diffs);
 	g_object_unref (a);
 	g_object_unref (b);
 }
