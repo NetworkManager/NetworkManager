@@ -425,6 +425,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	}
 
 	g_simple_async_result_complete (init_data->result);
+	g_object_unref (init_data->result);
 	g_slice_free (NMRemoteConnectionInitData, init_data);
 }
 
