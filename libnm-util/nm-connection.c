@@ -476,29 +476,6 @@ nm_connection_replace_settings (NMConnection *connection,
 	return nm_connection_verify (connection, error);
 }
 
-typedef struct {
-	NMConnection *other;
-	gboolean failed;
-	NMSettingCompareFlags flags;
-} CompareConnectionInfo;
-
-static void
-compare_one_setting (gpointer key, gpointer value, gpointer user_data)
-{
-	NMSetting *setting = (NMSetting *) value;
-	CompareConnectionInfo *info = (CompareConnectionInfo *) user_data;
-	NMSetting *other_setting;
-
-	if (info->failed)
-		return;
-
-	other_setting = nm_connection_get_setting (info->other, G_OBJECT_TYPE (setting));
-	if (other_setting)
-		info->failed = nm_setting_compare (setting, other_setting, info->flags) ? FALSE : TRUE;
-	else
-		info->failed = TRUE;
-}
-
 /**
  * nm_connection_compare:
  * @a: a #NMConnection
@@ -516,8 +493,8 @@ nm_connection_compare (NMConnection *a,
                        NMConnection *b,
                        NMSettingCompareFlags flags)
 {
-	NMConnectionPrivate *priv;
-	CompareConnectionInfo info = { b, FALSE, flags };
+	GHashTableIter iter;
+	NMSetting *src;
 
 	if (!a && !b)
 		return TRUE;
@@ -525,19 +502,21 @@ nm_connection_compare (NMConnection *a,
 	if (!a || !b)
 		return FALSE;
 
-	priv = NM_CONNECTION_GET_PRIVATE (a);
-	g_hash_table_foreach (priv->settings, compare_one_setting, &info);
-	if (info.failed == FALSE) {
-		/* compare A to B, then if that is the same compare B to A to ensure
-		 * that keys that are in B but not A will make the comparison fail.
-		 */
-		info.failed = FALSE;
-		info.other = a;
-		priv = NM_CONNECTION_GET_PRIVATE (b);
-		g_hash_table_foreach (priv->settings, compare_one_setting, &info);
+	/* A / B: ensure all settings in A match corresponding ones in B */
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (a)->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &src)) {
+		NMSetting *cmp = nm_connection_get_setting (b, G_OBJECT_TYPE (src));
+
+		if (!cmp || !nm_setting_compare (src, cmp, flags))
+			return FALSE;
 	}
 
-	return info.failed ? FALSE : TRUE;
+	/* B / A: ensure settings in B that are not in A make the comparison fail */
+	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (a)->settings) !=
+		g_hash_table_size (NM_CONNECTION_GET_PRIVATE (b)->settings))
+		return FALSE;
+
+	return TRUE;
 }
 
 

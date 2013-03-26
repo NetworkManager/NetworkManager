@@ -818,6 +818,78 @@ new_test_connection (void)
 	return connection;
 }
 
+static void
+test_connection_compare_same (void)
+{
+	NMConnection *a, *b;
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+	g_assert (nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_compare_key_only_in_a (void)
+{
+	NMConnection *a, *b;
+	NMSettingConnection *s_con;
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (gulong) 0, NULL);
+
+	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_compare_setting_only_in_a (void)
+{
+	NMConnection *a, *b;
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+	nm_connection_remove_setting (b, NM_TYPE_SETTING_IP4_CONFIG);
+	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_compare_key_only_in_b (void)
+{
+	NMConnection *a, *b;
+	NMSettingConnection *s_con;
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (gulong) 0, NULL);
+
+	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_compare_setting_only_in_b (void)
+{
+	NMConnection *a, *b;
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+	nm_connection_remove_setting (a, NM_TYPE_SETTING_IP4_CONFIG);
+	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
 typedef struct {
 	const char *key_name;
 	guint32 result;
@@ -1406,6 +1478,13 @@ int main (int argc, char **argv)
 	test_connection_to_hash_setting_name ();
 	test_setting_connection_permissions_helpers ();
 	test_setting_connection_permissions_property ();
+
+	test_connection_compare_same ();
+	test_connection_compare_key_only_in_a ();
+	test_connection_compare_setting_only_in_a ();
+	test_connection_compare_key_only_in_b ();
+	test_connection_compare_setting_only_in_b ();
+
 	test_connection_diff_a_only ();
 	test_connection_diff_same ();
 	test_connection_diff_different ();
