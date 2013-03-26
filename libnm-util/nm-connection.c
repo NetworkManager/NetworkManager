@@ -1010,16 +1010,6 @@ nm_connection_for_each_setting_value (NMConnection *connection,
 		nm_setting_enumerate_values (NM_SETTING (value), func, user_data);
 }
 
-static void
-dump_setting (gpointer key, gpointer value, gpointer user_data)
-{
-	char *str;
-
-	str = nm_setting_to_string (NM_SETTING (value));
-	g_print ("%s\n", str);
-	g_free (str);
-}
-
 /**
  * nm_connection_dump:
  * @connection: the #NMConnection
@@ -1031,9 +1021,19 @@ dump_setting (gpointer key, gpointer value, gpointer user_data)
 void
 nm_connection_dump (NMConnection *connection)
 {
+	GHashTableIter iter;
+	NMSetting *setting;
+	const char *setting_name;
+	char *str;
+
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, dump_setting, NULL);
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting)) {
+		str = nm_setting_to_string (setting);
+		g_print ("%s\n", str);
+		g_free (str);
+	}
 }
 
 /**
