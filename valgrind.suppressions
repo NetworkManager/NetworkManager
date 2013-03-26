@@ -1,0 +1,76 @@
+{
+  NSS_NoDB_Init
+  Memcheck:Leak
+  ...
+  fun:NSS_NoDB_Init
+  ...
+}
+{
+  g_type_init_with_debug_flags
+  Memcheck:Leak
+  ...
+  fun:g_type_init_with_debug_flags
+  ...
+}
+{
+  g_type_register_static
+  Memcheck:Leak
+  ...
+  fun:g_type_register_static
+  ...
+}
+{
+  g_param_spec_boxed
+  Memcheck:Leak
+  ...
+  fun:g_param_spec_boxed
+  ...
+}
+{
+  g_type_add_interface_static
+  Memcheck:Leak
+  ...
+  fun:g_type_add_interface_static
+  ...
+}
+{
+  g_signal_type_cclosure_new
+  Memcheck:Leak
+  fun:calloc
+  fun:g_malloc0
+  fun:g_closure_new_simple
+  fun:g_signal_type_cclosure_new
+  fun:g_signal_new
+  ...
+}
+{
+   dbus_g_value_types_init
+   Memcheck:Leak
+   fun:realloc
+   fun:g_realloc
+   fun:g_type_set_qdata
+   fun:_dbus_g_value_types_init
+   fun:dbus_g_bus_get
+   ...
+}
+{
+   type_iface_vtable_base_init_Wm
+   Memcheck:Leak
+   fun:malloc
+   fun:g_malloc
+   fun:g_memdup
+   fun:type_iface_vtable_base_init_Wm
+   fun:g_type_class_ref
+   ...
+}
+{
+   g_type_create_instance
+   Memcheck:Leak
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_type_create_instance
+   fun:g_object_constructor
+   ...
+}
