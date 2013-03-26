@@ -1150,12 +1150,6 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 	return connection;
 }
 
-static void
-duplicate_cb (gpointer key, gpointer value, gpointer user_data)
-{
-	nm_connection_add_setting (NM_CONNECTION (user_data), nm_setting_duplicate (NM_SETTING (value)));
-}
-
 /**
  * nm_connection_duplicate:
  * @connection: the #NMConnection to duplicate
@@ -1169,12 +1163,17 @@ NMConnection *
 nm_connection_duplicate (NMConnection *connection)
 {
 	NMConnection *dup;
+	GHashTableIter iter;
+	NMSetting *setting;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	dup = nm_connection_new ();
 	nm_connection_set_path (dup, nm_connection_get_path (connection));
-	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, duplicate_cb, dup);
+
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
+		nm_connection_add_setting (dup, nm_setting_duplicate (setting));
 
 	return dup;
 }
