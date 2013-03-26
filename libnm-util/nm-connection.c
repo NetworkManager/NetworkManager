@@ -333,7 +333,8 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 	g_return_if_fail (NM_IS_SETTING (setting));
 
 	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-					 g_strdup (G_OBJECT_TYPE_NAME (setting)), setting);
+	                     (gpointer) G_OBJECT_TYPE_NAME (setting),
+	                     setting);
 }
 
 /**
@@ -371,7 +372,7 @@ nm_connection_get_setting (NMConnection *connection, GType setting_type)
 	g_return_val_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING), NULL);
 
 	return (NMSetting *) g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-									  g_type_name (setting_type));
+	                                          g_type_name (setting_type));
 }
 
 /**
@@ -1638,7 +1639,7 @@ nm_connection_init (NMConnection *connection)
 {
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 }
 
 static void
