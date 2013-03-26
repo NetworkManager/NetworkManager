@@ -818,6 +818,8 @@ finalize (GObject *object)
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (self);
 
 	g_free (priv->method);
+	g_free (priv->dhcp_hostname);
+	g_free (priv->dhcp_client_id);
 
 	g_array_free (priv->dns, TRUE);
 
