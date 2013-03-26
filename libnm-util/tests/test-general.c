@@ -604,6 +604,180 @@ test_setting_new_from_hash (void)
 	g_object_unref (s_wsec);
 }
 
+static NMConnection *
+new_test_connection (void)
+{
+	NMConnection *connection;
+	NMSetting *setting;
+	char *uuid;
+	guint64 timestamp = time (NULL);
+
+	connection = nm_connection_new ();
+
+	setting = nm_setting_connection_new ();
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_CONNECTION_ID, "foobar",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
+	              NULL);
+	g_free (uuid);
+	nm_connection_add_setting (connection, setting);
+
+	setting = nm_setting_wired_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_WIRED_MTU, 1592,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	setting = nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	return connection;
+}
+
+static GValue *
+string_to_gvalue (const char *str)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_STRING);
+	g_value_set_string (val, str);
+	return val;
+}
+
+static void
+destroy_gvalue (gpointer data)
+{
+	g_value_unset ((GValue *) data);
+	g_slice_free (GValue, data);
+}
+
+static GHashTable *
+new_connection_hash (char **out_uuid,
+                     const char **out_expected_id,
+                     const char **out_expected_ip6_method)
+{
+	GHashTable *hash;
+	GHashTable *setting;
+
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
+
+	*out_uuid = nm_utils_uuid_generate ();
+	*out_expected_id = "My happy connection";
+	*out_expected_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
+
+	/* Connection setting */
+	setting = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+	g_hash_table_insert (setting,
+	                     g_strdup (NM_SETTING_NAME),
+	                     string_to_gvalue (NM_SETTING_CONNECTION_SETTING_NAME));
+	g_hash_table_insert (setting,
+	                     g_strdup (NM_SETTING_CONNECTION_ID),
+	                     string_to_gvalue (*out_expected_id));
+	g_hash_table_insert (setting,
+	                     g_strdup (NM_SETTING_CONNECTION_UUID),
+	                     string_to_gvalue (*out_uuid));
+	g_hash_table_insert (setting,
+	                     g_strdup (NM_SETTING_CONNECTION_TYPE),
+	                     string_to_gvalue (NM_SETTING_WIRED_SETTING_NAME));
+	g_hash_table_insert (hash, g_strdup (NM_SETTING_CONNECTION_SETTING_NAME), setting);
+
+	/* Wired setting */
+	setting = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+	g_hash_table_insert (hash, g_strdup (NM_SETTING_WIRED_SETTING_NAME), setting);
+
+	/* IP6 */
+	setting = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+	g_hash_table_insert (setting,
+	                     g_strdup (NM_SETTING_IP6_CONFIG_METHOD),
+	                     string_to_gvalue (*out_expected_ip6_method));
+	g_hash_table_insert (hash, g_strdup (NM_SETTING_IP6_CONFIG_SETTING_NAME), setting);
+
+	return hash;
+}
+
+static void
+test_connection_replace_settings ()
+{
+	NMConnection *connection;
+	GHashTable *new_settings;
+	GError *error = NULL;
+	gboolean success;
+	NMSettingConnection *s_con;
+	NMSettingIP6Config *s_ip6;
+	char *uuid = NULL;
+	const char *expected_id = NULL, *expected_method = NULL;
+
+	connection = new_test_connection ();
+
+	new_settings = new_connection_hash (&uuid, &expected_id, &expected_method);
+	g_assert (new_settings);
+
+	/* Replace settings and test */
+	success = nm_connection_replace_settings (connection, new_settings, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, uuid);
+
+	g_assert (nm_connection_get_setting_wired (connection));
+	g_assert (!nm_connection_get_setting_ip4_config (connection));
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
+
+	g_free (uuid);
+	g_hash_table_destroy (new_settings);
+	g_object_unref (connection);
+}
+
+static void
+test_connection_new_from_hash ()
+{
+	NMConnection *connection;
+	GHashTable *new_settings;
+	GError *error = NULL;
+	NMSettingConnection *s_con;
+	NMSettingIP6Config *s_ip6;
+	char *uuid = NULL;
+	const char *expected_id = NULL, *expected_method = NULL;
+
+	new_settings = new_connection_hash (&uuid, &expected_id, &expected_method);
+	g_assert (new_settings);
+
+	/* Replace settings and test */
+	connection = nm_connection_new_from_hash (new_settings, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, uuid);
+
+	g_assert (nm_connection_get_setting_wired (connection));
+	g_assert (!nm_connection_get_setting_ip4_config (connection));
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
+
+	g_free (uuid);
+	g_hash_table_destroy (new_settings);
+	g_object_unref (connection);
+}
+
 static void
 check_permission (NMSettingConnection *s_con,
                   guint32 idx,
@@ -799,43 +973,6 @@ test_setting_connection_permissions_property (void)
 	        "setting-connection-permissions-property", "unexpected failure removing permission");
 
 	g_object_unref (s_con);
-}
-
-static NMConnection *
-new_test_connection (void)
-{
-	NMConnection *connection;
-	NMSetting *setting;
-	char *uuid;
-	guint64 timestamp = time (NULL);
-
-	connection = nm_connection_new ();
-
-	setting = nm_setting_connection_new ();
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_CONNECTION_ID, "foobar",
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
-	              NULL);
-	g_free (uuid);
-	nm_connection_add_setting (connection, setting);
-
-	setting = nm_setting_wired_new ();
-	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_WIRED_MTU, 1592,
-	              NULL);
-	nm_connection_add_setting (connection, setting);
-
-	setting = nm_setting_ip4_config_new ();
-	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
-	              NULL);
-	nm_connection_add_setting (connection, setting);
-
-	return connection;
 }
 
 static void
@@ -1497,6 +1634,8 @@ int main (int argc, char **argv)
 
 	test_connection_to_hash_setting_name ();
 	test_setting_new_from_hash ();
+	test_connection_replace_settings ();
+	test_connection_new_from_hash ();
 
 	test_setting_connection_permissions_helpers ();
 	test_setting_connection_permissions_property ();

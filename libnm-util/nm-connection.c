@@ -302,20 +302,6 @@ nm_connection_create_setting (const char *name)
 	return setting;
 }
 
-static void
-parse_one_setting (gpointer key, gpointer value, gpointer user_data)
-{
-	NMConnection *connection = (NMConnection *) user_data;
-	GType type;
-	NMSetting *setting = NULL;
-
-	type = nm_connection_lookup_setting_type ((char *) key);
-	if (type)
-		setting = nm_setting_new_from_hash (type, (GHashTable *) value);
-	if (setting)
-		nm_connection_add_setting (connection, setting);
-}
-
 /**
  * nm_connection_add_setting:
  * @connection: a #NMConnection
@@ -448,6 +434,27 @@ validate_permissions_type (GHashTable *hash, GError **error)
 	return TRUE;
 }
 
+static gboolean
+hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
+{
+	GHashTableIter iter;
+	const char *setting_name;
+	GHashTable *setting_hash;
+	NMSetting *setting = NULL;
+	GType type;
+
+	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	g_hash_table_iter_init (&iter, new);
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+		type = nm_connection_lookup_setting_type (setting_name);
+		if (type)
+			setting = nm_setting_new_from_hash (type, setting_hash);
+		if (setting)
+			nm_connection_add_setting (connection, setting);
+	}
+	return nm_connection_verify (connection, error);
+}
+
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
@@ -469,11 +476,7 @@ nm_connection_replace_settings (NMConnection *connection,
 
 	if (!validate_permissions_type (new_settings, error))
 		return FALSE;
-
-	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
-	g_hash_table_foreach (new_settings, parse_one_setting, connection);
-
-	return nm_connection_verify (connection, error);
+	return hash_to_connection (connection, new_settings, error);
 }
 
 /**
@@ -1140,13 +1143,10 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 		return NULL;
 
 	connection = nm_connection_new ();
-	g_hash_table_foreach (hash, parse_one_setting, connection);
-
-	if (!nm_connection_verify (connection, error)) {
+	if (!hash_to_connection (connection, hash, error)) {
 		g_object_unref (connection);
 		return NULL;
 	}
-
 	return connection;
 }
 
