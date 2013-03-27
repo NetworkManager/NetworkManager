@@ -39,6 +39,9 @@ typedef struct {
 
 typedef struct {
 	NMPlatformLink link;
+
+	int vlan_parent;
+	int vlan_id;
 } NMFakePlatformLink;
 
 #define NM_FAKE_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_PLATFORM, NMFakePlatformPrivate))
@@ -93,6 +96,8 @@ type_to_type_name (NMLinkType type)
 		return "bond";
 	case NM_LINK_TYPE_TEAM:
 		return "team";
+	case NM_LINK_TYPE_VLAN:
+		return "vlan";
 	case NM_LINK_TYPE_NONE:
 	default:
 		return NULL;
@@ -261,6 +266,7 @@ link_set_up (NMPlatform *platform, int ifindex)
 	switch (device->link.type) {
 	case NM_LINK_TYPE_GENERIC:
 	case NM_LINK_TYPE_DUMMY:
+	case NM_LINK_TYPE_VLAN:
 		device->link.connected = TRUE;
 		break;
 	case NM_LINK_TYPE_BRIDGE:
@@ -456,6 +462,51 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 	auto_g_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
 
 	return sysctl_get (platform, path);
+}
+
+static gboolean
+vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
+{
+	NMFakePlatformLink *device;
+
+	if (!link_add (platform, name, NM_LINK_TYPE_VLAN))
+		return FALSE;
+
+	device = link_get (platform, link_get_ifindex (platform, name));
+
+	g_return_val_if_fail (device, FALSE);
+
+	device->vlan_id = vlan_id;
+	device->vlan_parent = parent;
+
+	return TRUE;
+}
+
+static gboolean
+vlan_get_info (NMPlatform *platform, int ifindex, int *parent, int *vlan_id)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	g_return_val_if_fail (device, FALSE);
+
+	if (parent)
+		*parent = device->vlan_parent;
+	if (vlan_id)
+		*vlan_id = device->vlan_id;
+
+	return TRUE;
+}
+
+static gboolean
+vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
+{
+	return !!link_get (platform, ifindex);
+}
+
+static gboolean
+vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
+{
+	return !!link_get (platform, ifindex);
 }
 
 /******************************************************************/
@@ -898,6 +949,11 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->master_get_option = master_get_option;
 	platform_class->slave_set_option = slave_set_option;
 	platform_class->slave_get_option = slave_get_option;
+
+	platform_class->vlan_add = vlan_add;
+	platform_class->vlan_get_info = vlan_get_info;
+	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
+	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

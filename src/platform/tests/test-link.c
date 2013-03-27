@@ -9,6 +9,9 @@
 #define BOGUS_NAME "nm-bogus-device"
 #define BOGUS_IFINDEX INT_MAX
 #define SLAVE_NAME "nm-test-slave"
+#define PARENT_NAME "nm-test-parent"
+#define VLAN_ID 4077
+#define VLAN_FLAGS 0
 
 static void
 link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, SignalData *data)
@@ -89,6 +92,13 @@ test_bogus(void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_supports_vlans (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
+
+	g_assert (!nm_platform_vlan_get_info (BOGUS_IFINDEX, NULL, NULL));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_vlan_set_ingress_map (BOGUS_IFINDEX, 0, 0));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_vlan_set_egress_map (BOGUS_IFINDEX, 0, 0));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
 }
 
 static void
@@ -127,6 +137,17 @@ virtual_add (NMLinkType link_type, const char *name, SignalData *link_added, Sig
 		}
 	case NM_LINK_TYPE_TEAM:
 		return nm_platform_team_add (name);
+	case NM_LINK_TYPE_VLAN:
+		/* Don't call link_callback for the bridge interface */
+		if (nm_platform_bridge_add (PARENT_NAME))
+			accept_signal (link_added);
+		g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (PARENT_NAME)));
+		accept_signal (link_changed);
+
+		return nm_platform_vlan_add (name,
+			nm_platform_link_get_ifindex (PARENT_NAME),
+			VLAN_ID, 0);
+
 	default:
 		g_error ("Link type %d unhandled.", link_type);
 	}
@@ -234,6 +255,7 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 {
 	int ifindex;
 	char *value;
+	int vlan_parent, vlan_id;
 
 	SignalData *link_added = add_signal ("link-added", link_callback);
 	SignalData *link_changed = add_signal ("link-changed", link_callback);
@@ -247,6 +269,12 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 	g_assert (ifindex >= 0);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, link_type);
 	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, link_typename);
+	if (link_type == NM_LINK_TYPE_VLAN) {
+		g_assert (nm_platform_vlan_get_info (ifindex, &vlan_parent, &vlan_id));
+		g_assert_cmpint (vlan_parent, ==, nm_platform_link_get_ifindex (PARENT_NAME));
+		g_assert_cmpint (vlan_id, ==, VLAN_ID);
+		no_error ();
+	}
 	accept_signal (link_added);
 
 	/* Add again */
@@ -312,6 +340,12 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 	g_assert (!nm_platform_link_delete_by_name (DEVICE_NAME));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
+	/* VLAN: Delete parent */
+	if (link_type == NM_LINK_TYPE_VLAN) {
+		g_assert (nm_platform_link_delete_by_name (PARENT_NAME));
+		accept_signal (link_removed);
+	}
+
 	/* No pending signal */
 	free_signal (link_added);
 	free_signal (link_changed);
@@ -334,6 +368,12 @@ static void
 test_team (void)
 {
 	test_virtual (NM_LINK_TYPE_TEAM, "team");
+}
+
+static void
+test_vlan ()
+{
+	test_virtual (NM_LINK_TYPE_VLAN, "vlan");
 }
 
 static void
@@ -491,8 +531,10 @@ main (int argc, char **argv)
 	/* Clean up */
 	nm_platform_link_delete_by_name (DEVICE_NAME);
 	nm_platform_link_delete_by_name (SLAVE_NAME);
+	nm_platform_link_delete_by_name (PARENT_NAME);
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (SLAVE_NAME));
+	g_assert (!nm_platform_link_exists (PARENT_NAME));
 
 	g_test_add_func ("/link/bogus", test_bogus);
 	g_test_add_func ("/link/loopback", test_loopback);
@@ -500,6 +542,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/link/virtual/bridge", test_bridge);
 	g_test_add_func ("/link/virtual/bond", test_bond);
 	g_test_add_func ("/link/virtual/team", test_team);
+	g_test_add_func ("/link/virtual/vlan", test_vlan);
 
 	if (strcmp (g_type_name (G_TYPE_FROM_INSTANCE (nm_platform_get ())), "NMFakePlatform"))
 		g_test_add_func ("/link/external", test_external);

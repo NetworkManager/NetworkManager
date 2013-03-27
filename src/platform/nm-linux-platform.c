@@ -273,6 +273,8 @@ type_to_string (NMLinkType type)
 		return "bond";
 	case NM_LINK_TYPE_TEAM:
 		return "team";
+	case NM_LINK_TYPE_VLAN:
+		return "vlan";
 	default:
 		g_warning ("Wrong type: %d", type);
 		return NULL;
@@ -313,6 +315,8 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_BOND, "bond");
 	else if (!strcmp (type, "team"))
 		return_type (NM_LINK_TYPE_TEAM, "team");
+	else if (!strcmp (type, "vlan"))
+		return_type (NM_LINK_TYPE_VLAN, "vlan");
 	else
 		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
@@ -1104,6 +1108,63 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	return !(features->features[block].active & (1 << bit));
 }
 
+static int
+vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
+{
+	struct nl_object *object = build_rtnl_link (0, name, NM_LINK_TYPE_VLAN);
+	struct rtnl_link *rtnllink = (struct rtnl_link *) object;
+	unsigned int kernel_flags;
+
+	kernel_flags = 0;
+	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
+		kernel_flags |= VLAN_FLAG_REORDER_HDR;
+	if (vlan_flags & NM_VLAN_FLAG_GVRP)
+		kernel_flags |= VLAN_FLAG_GVRP;
+	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
+		kernel_flags |= VLAN_FLAG_LOOSE_BINDING;
+
+	rtnl_link_set_link (rtnllink, parent);
+	rtnl_link_vlan_set_id (rtnllink, vlan_id);
+	rtnl_link_vlan_set_flags (rtnllink, vlan_flags);
+
+	return add_object (platform, object);
+}
+
+static gboolean
+vlan_get_info (NMPlatform *platform, int ifindex, int *parent, int *vlan_id)
+{
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
+
+	if (parent)
+		*parent = rtnllink ? rtnl_link_get_link (rtnllink) : 0;
+	if (vlan_id)
+		*vlan_id = rtnllink ? rtnl_link_vlan_get_id (rtnllink) : 0;
+
+	return !!rtnllink;
+}
+
+static gboolean
+vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
+{
+	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
+
+	g_assert (change);
+	rtnl_link_vlan_set_egress_map (change, from, to);
+
+	return link_change (platform, ifindex, change);
+}
+
+static gboolean
+vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
+{
+	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
+
+	g_assert (change);
+	rtnl_link_vlan_set_egress_map (change, from, to);
+
+	return link_change (platform, ifindex, change);
+}
+
 static gboolean
 link_refresh (NMPlatform *platform, int ifindex, int nle)
 {
@@ -1689,6 +1750,11 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->master_get_option = master_get_option;
 	platform_class->slave_set_option = slave_set_option;
 	platform_class->slave_get_option = slave_get_option;
+
+	platform_class->vlan_add = vlan_add;
+	platform_class->vlan_get_info = vlan_get_info;
+	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
+	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

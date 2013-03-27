@@ -20,6 +20,7 @@ dump_interface (NMPlatformLink *link)
 	const NMPlatformIP4Route *ip4_route;
 	char networkstr[INET6_ADDRSTRLEN];
 	char gatewaystr[INET6_ADDRSTRLEN];
+	int vlan_id, vlan_parent;
 	int i;
 
 	g_assert (link->up || !link->connected);
@@ -34,6 +35,9 @@ dump_interface (NMPlatformLink *link)
 	if (link->master)
 		printf (" master %d", link->master);
 	printf ("\n");
+	nm_platform_vlan_get_info (link->ifindex, &vlan_parent, &vlan_id);
+	if (vlan_parent)
+		printf ("    vlan parent %d id %d\n", vlan_parent, vlan_id);
 
 	if (nm_platform_link_supports_carrier_detect (link->ifindex))
 		printf ("    feature carrier-detect\n");

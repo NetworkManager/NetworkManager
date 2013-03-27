@@ -53,6 +53,21 @@ do_sysctl_get (char **argv)
 	return !!value;
 }
 
+static int
+parse_ifindex (const char *str)
+{
+	char *endptr;
+	int ifindex = 0;
+
+	ifindex = strtol (str, &endptr, 10);
+
+	if (*endptr) {
+		ifindex = nm_platform_link_get_ifindex (str);
+	}
+
+	return ifindex;
+}
+
 static gboolean
 do_link_get_all (char **argv)
 {
@@ -96,6 +111,17 @@ do_team_add (char **argv)
 }
 
 static gboolean
+do_vlan_add (char **argv)
+{
+	const char *name = *argv++;
+	int parent = parse_ifindex (*argv++);
+	int vlanid = strtol (*argv++, NULL, 10);
+	guint32 vlan_flags = strtol (*argv++, NULL, 10);
+
+	return nm_platform_vlan_add (name, parent, vlanid, vlan_flags);
+}
+
+static gboolean
 do_link_exists (char **argv)
 {
 	gboolean value = nm_platform_link_exists (argv[0]);
@@ -103,21 +129,6 @@ do_link_exists (char **argv)
 	print_boolean (value);
 
 	return TRUE;
-}
-
-static int
-parse_ifindex (const char *str)
-{
-	char *endptr;
-	int ifindex = 0;
-
-	ifindex = strtol (str, &endptr, 10);
-
-	if (*endptr) {
-		ifindex = nm_platform_link_get_ifindex (str);
-	}
-
-	return ifindex;
 }
 
 #define LINK_CMD(cmdname) \
@@ -238,6 +249,41 @@ do_slave_get_option (char **argv)
 	printf ("%s\n", value);
 
 	return !!value;
+}
+
+static gboolean
+do_vlan_get_info (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	int parent;
+	int vlanid;
+
+	if (!nm_platform_vlan_get_info (ifindex, &parent, &vlanid))
+		return FALSE;
+
+	printf ("%d %d\n", parent, vlanid);
+
+	return TRUE;
+}
+
+static gboolean
+do_vlan_set_ingress_map (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	int from = strtol (*argv++, NULL, 10);
+	int to = strtol (*argv++, NULL, 10);
+
+	return nm_platform_vlan_set_ingress_map (ifindex, from, to);
+}
+
+static gboolean
+do_vlan_set_egress_map (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	int from = strtol (*argv++, NULL, 10);
+	int to = strtol (*argv++, NULL, 10);
+
+	return nm_platform_vlan_set_egress_map (ifindex, from, to);
 }
 
 static gboolean
@@ -487,6 +533,7 @@ static const command_t commands[] = {
 	{ "bridge-add", "add bridge interface", do_bridge_add, 1, "<ifname>" },
 	{ "bond-add", "add bond interface", do_bond_add, 1, "<ifname>" },
 	{ "team-add", "add team interface", do_team_add, 1, "<ifname>" },
+	{ "vlan-add", "add vlan interface", do_vlan_add, 4, "<ifname> <parent> <vlanid> <vlanflags>" },
 	{ "link-exists", "check ifname for existance", do_link_exists, 1, "<ifname>" },
 	{ "link-delete", "delete interface", do_link_delete, 1, "<ifname/ifindex>" },
 	{ "link-get-ifindex>", "get interface index", do_link_get_ifindex, 1, "<ifname>" },
@@ -514,6 +561,11 @@ static const command_t commands[] = {
 		"<ifname/ifindex> <option>" },
 	{ "link-slave-get-option", "get slave option", do_slave_get_option, 2,
 		"<ifname/ifindex> <option>" },
+	{ "vlan-get-info", "get vlan info", do_vlan_get_info, 1, "<ifname/ifindex>" },
+	{ "vlan-set-ingress-map", "set vlan ingress map", do_vlan_set_ingress_map, 3,
+		"<ifname/ifindex> <from> <to>" },
+	{ "vlan-set-egress-map", "set vlan egress map", do_vlan_set_egress_map, 3,
+		"<ifname/ifindex> <from> <to>" },
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip4-address-add", "add IPv4 address", do_ip4_address_add, 2, "<ifname/ifindex> <address>/<plen>" },

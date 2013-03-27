@@ -695,6 +695,36 @@ nm_platform_team_add (const char *name)
 	return nm_platform_link_add (name, NM_LINK_TYPE_TEAM);
 }
 
+/**
+ * nm_platform_vlan_add:
+ * @name: New interface name
+ * @vlanid: VLAN identifier
+ * @vlanflags: VLAN flags from libnm-util
+ *
+ * Create a software VLAN device.
+ */
+gboolean
+nm_platform_vlan_add (const char *name, int parent, int vlanid, guint32 vlanflags)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (parent >= 0, FALSE);
+	g_return_val_if_fail (vlanid >= 0, FALSE);
+	g_return_val_if_fail (name, FALSE);
+	g_return_val_if_fail (klass->vlan_add, FALSE);
+
+	if (nm_platform_link_exists (name)) {
+		debug ("link already exists: %s", name);
+		platform->error = NM_PLATFORM_ERROR_EXISTS;
+		return FALSE;
+	}
+
+	debug ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
+		name, parent, vlanid, vlanflags);
+	return klass->vlan_add (platform, name, parent, vlanid, vlanflags);
+}
+
 gboolean
 nm_platform_master_set_option (int ifindex, const char *option, const char *value)
 {
@@ -743,6 +773,49 @@ nm_platform_slave_get_option (int ifindex, const char *option)
 	g_return_val_if_fail (klass->slave_set_option, FALSE);
 
 	return klass->slave_get_option (platform, ifindex, option);
+}
+
+gboolean
+nm_platform_vlan_get_info (int ifindex, int *parent, int *vlanid)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (klass->vlan_get_info, FALSE);
+
+	if (parent)
+		*parent = 0;
+	if (vlanid)
+		*vlanid = 0;
+
+	if (nm_platform_link_get_type (ifindex) != NM_LINK_TYPE_VLAN)
+		return FALSE;
+
+	return klass->vlan_get_info (platform, ifindex, parent, vlanid);
+}
+
+gboolean
+nm_platform_vlan_set_ingress_map (int ifindex, int from, int to)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (klass->vlan_set_ingress_map, FALSE);
+
+	debug ("link: setting vlan ingress map for %d from %d to %d", ifindex, from, to);
+	return klass->vlan_set_ingress_map (platform, ifindex, from, to);
+}
+
+gboolean
+nm_platform_vlan_set_egress_map (int ifindex, int from, int to)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (klass->vlan_set_egress_map, FALSE);
+
+	debug ("link: setting vlan egress map for %d from %d to %d", ifindex, from, to);
+	return klass->vlan_set_egress_map (platform, ifindex, from, to);
 }
 
 /******************************************************************/
