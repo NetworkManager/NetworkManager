@@ -41,12 +41,16 @@ typedef enum {
 	NM_LINK_TYPE_LOOPBACK,
 	NM_LINK_TYPE_ETHERNET,
 	NM_LINK_TYPE_DUMMY,
+	NM_LINK_TYPE_BRIDGE,
+	NM_LINK_TYPE_BOND,
+	NM_LINK_TYPE_TEAM,
 } NMLinkType;
 
 typedef struct {
 	int ifindex;
 	char name[IFNAMSIZ];
 	NMLinkType type;
+	int master;
 	gboolean up;
 	gboolean connected;
 	gboolean arp;
@@ -139,6 +143,10 @@ typedef struct {
 	gboolean (*link_supports_carrier_detect) (NMPlatform *, int ifindex);
 	gboolean (*link_supports_vlans) (NMPlatform *, int ifindex);
 
+	gboolean (*link_enslave) (NMPlatform *, int master, int slave);
+	gboolean (*link_release) (NMPlatform *, int master, int slave);
+	gboolean (*link_get_master) (NMPlatform *, int slave);
+
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
 	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen);
@@ -199,6 +207,8 @@ enum {
 	NM_PLATFORM_ERROR_NOT_FOUND,
 	/* object already exists */
 	NM_PLATFORM_ERROR_EXISTS,
+	/* object is not a slave */
+	NM_PLATFORM_ERROR_NOT_SLAVE
 };
 
 /******************************************************************/
@@ -216,6 +226,9 @@ const char *nm_platform_get_error_msg (void);
 
 GArray *nm_platform_link_get_all (void);
 gboolean nm_platform_dummy_add (const char *name);
+gboolean nm_platform_bridge_add (const char *name);
+gboolean nm_platform_bond_add (const char *name);
+gboolean nm_platform_team_add (const char *name);
 gboolean nm_platform_link_exists (const char *name);
 gboolean nm_platform_link_delete (int ifindex);
 gboolean nm_platform_link_delete_by_name (const char *ifindex);
@@ -233,6 +246,10 @@ gboolean nm_platform_link_uses_arp (int ifindex);
 
 gboolean nm_platform_link_supports_carrier_detect (int ifindex);
 gboolean nm_platform_link_supports_vlans (int ifindex);
+
+gboolean nm_platform_link_enslave (int master, int slave);
+gboolean nm_platform_link_release (int master, int slave);
+int nm_platform_link_get_master (int slave);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

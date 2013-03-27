@@ -266,6 +266,12 @@ type_to_string (NMLinkType type)
 	switch (type) {
 	case NM_LINK_TYPE_DUMMY:
 		return "dummy";
+	case NM_LINK_TYPE_BRIDGE:
+		return "bridge";
+	case NM_LINK_TYPE_BOND:
+		return "bond";
+	case NM_LINK_TYPE_TEAM:
+		return "team";
 	default:
 		g_warning ("Wrong type: %d", type);
 		return NULL;
@@ -293,6 +299,12 @@ link_extract_type (struct rtnl_link *rtnllink)
 		}
 	else if (!g_strcmp0 (type, "dummy"))
 		return NM_LINK_TYPE_DUMMY;
+	else if (!g_strcmp0 (type, "bridge"))
+		return NM_LINK_TYPE_BRIDGE;
+	else if (!g_strcmp0 (type, "bond"))
+		return NM_LINK_TYPE_BOND;
+	else if (!g_strcmp0 (type, "team"))
+		return NM_LINK_TYPE_TEAM;
 	else
 		return NM_LINK_TYPE_UNKNOWN;
 }
@@ -310,6 +322,53 @@ link_init (NMPlatformLink *info, struct rtnl_link *rtnllink)
 	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
+	info->master = rtnl_link_get_master (rtnllink);
+}
+
+/* Hack: Empty bridges and bonds have IFF_LOWER_UP flag and therefore they break
+ * the carrier detection. This hack makes nm-platform think they don't have the
+ * IFF_LOWER_UP flag. This seems to also apply to bonds (specifically) with all
+ * slaves down.
+ *
+ * Note: This is still a bit racy but when NetworkManager asks for enslaving a slave,
+ * nm-platform will do that synchronously and will immediately ask for both master
+ * and slave information after the enslaving request. After the synchronous call, the
+ * master carrier is already updated with the slave carrier in mind.
+ *
+ * https://bugzilla.redhat.com/show_bug.cgi?id=910348
+ */
+static void
+hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct rtnl_link *rtnllink;
+	int ifindex;
+	struct nl_object *slave;
+
+	if (!object)
+		return;
+	if (strcmp (nl_object_get_type (object), "route/link"))
+		return;
+
+	rtnllink = (struct rtnl_link *) object;
+
+	ifindex = rtnl_link_get_ifindex (rtnllink);
+
+	switch (link_extract_type (rtnllink)) {
+	case NM_LINK_TYPE_BRIDGE:
+	case NM_LINK_TYPE_BOND:
+		for (slave = nl_cache_get_first (priv->link_cache); slave; slave = nl_cache_get_next (slave)) {
+			struct rtnl_link *rtnlslave = (struct rtnl_link *) slave;
+			if (rtnl_link_get_master (rtnlslave) == ifindex
+					&& rtnl_link_get_flags (rtnlslave) & IFF_LOWER_UP)
+				return;
+		}
+		break;
+	default:
+		return;
+	}
+
+	rtnl_link_unset_flags (rtnllink, IFF_LOWER_UP);
 }
 
 static void
@@ -480,6 +539,8 @@ process_nl_error (NMPlatform *platform, int nle)
 	}
 }
 
+static struct nl_object * build_rtnl_link (int ifindex, const char *name, NMLinkType type);
+
 static gboolean
 refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
 {
@@ -497,6 +558,8 @@ refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
 
 	g_return_val_if_fail (kernel_object, FALSE);
 
+	hack_empty_master_iff_lower_up (platform, kernel_object);
+
 	if (cached_object) {
 		nl_cache_remove (cached_object);
 		nle = nl_cache_add (cache, kernel_object);
@@ -507,6 +570,24 @@ refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
 	}
 
 	announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED);
+
+	/* Refresh the master device (even on enslave/release) */
+	if (object_type_from_nl_object (kernel_object) == LINK) {
+		int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
+		int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
+		struct nl_object *master_object;
+
+		if (kernel_master) {
+			master_object = build_rtnl_link (kernel_master, NULL, NM_LINK_TYPE_NONE);
+			refresh_object (platform, master_object, 0);
+			nl_object_put (master_object);
+		}
+		if (cached_master && cached_master != kernel_master) {
+			master_object = build_rtnl_link (cached_master, NULL, NM_LINK_TYPE_NONE);
+			refresh_object (platform, master_object, 0);
+			nl_object_put (master_object);
+		}
+	}
 
 	return TRUE;
 }
@@ -577,6 +658,8 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	kernel_object = get_kernel_object (priv->nlh, object);
 
 	debug ("netlink event (type %d)", event);
+
+	hack_empty_master_iff_lower_up (platform, kernel_object);
 
 	/* Removed object */
 	switch (event) {
@@ -882,6 +965,46 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 		return FALSE;
 
 	return !(edata.features.features[0].active & NETIF_F_VLAN_CHALLENGED);
+}
+
+static gboolean
+link_refresh (NMPlatform *platform, int ifindex, int nle)
+{
+	auto_nl_object struct nl_object *object = build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_NONE);
+
+	return refresh_object (platform, object, nle);
+}
+
+static gboolean
+link_enslave (NMPlatform *platform, int master, int slave)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	return link_refresh (platform, slave, rtnl_link_enslave_ifindex (priv->nlh, master, slave));
+}
+
+static gboolean
+link_release (NMPlatform *platform, int master, int slave)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	return link_refresh (platform, slave, rtnl_link_release_ifindex (priv->nlh, slave));
+}
+
+static int
+link_get_master (NMPlatform *platform, int slave)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink;
+	int result;
+
+	rtnllink = rtnl_link_get (priv->link_cache, slave);
+	g_assert (rtnllink);
+
+	result = rtnl_link_get_master (rtnllink);
+	g_assert (result >= 0);
+
+	return result;
 }
 
 /******************************************************************/
@@ -1344,6 +1467,10 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
+
+	platform_class->link_enslave = link_enslave;
+	platform_class->link_release = link_release;
+	platform_class->link_get_master = link_get_master;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

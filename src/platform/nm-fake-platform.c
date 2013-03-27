@@ -171,7 +171,26 @@ link_get_type (NMPlatform *platform, int ifindex)
 static void
 link_changed (NMPlatform *platform, NMPlatformLink *device)
 {
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
 	g_signal_emit_by_name (platform, "link-changed", device);
+
+	if (device->master) {
+		NMPlatformLink *master = link_get (platform, device->master);
+
+		g_return_if_fail (master != device);
+
+		master->connected = FALSE;
+		for (i = 0; i < priv->links->len; i++) {
+			NMPlatformLink *slave = &g_array_index (priv->links, NMPlatformLink, i);
+
+			if (slave && slave->master == master->ifindex && slave->connected)
+				master->connected = TRUE;
+		}
+
+		link_changed (platform, master);
+	}
 }
 
 static gboolean
@@ -187,6 +206,11 @@ link_set_up (NMPlatform *platform, int ifindex)
 	case NM_LINK_TYPE_GENERIC:
 	case NM_LINK_TYPE_DUMMY:
 		device->connected = TRUE;
+		break;
+	case NM_LINK_TYPE_BRIDGE:
+	case NM_LINK_TYPE_BOND:
+	case NM_LINK_TYPE_TEAM:
+		device->connected = FALSE;
 		break;
 	default:
 		device->connected = FALSE;
@@ -299,6 +323,53 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 		return TRUE;
 	}
 }
+
+static gboolean
+link_enslave (NMPlatform *platform, int master, int slave)
+{
+	NMPlatformLink *device = link_get (platform, slave);
+
+	g_return_val_if_fail (device, FALSE);
+
+	device->master = master;
+
+	link_changed (platform, device);
+
+	return TRUE;
+}
+
+static gboolean
+link_release (NMPlatform *platform, int master_idx, int slave_idx)
+{
+	NMPlatformLink *master = link_get (platform, master_idx);
+	NMPlatformLink *slave = link_get (platform, slave_idx);
+
+	g_return_val_if_fail (master, FALSE);
+	g_return_val_if_fail (slave, FALSE);
+
+	if (slave->master != master->ifindex) {
+		platform->error = NM_PLATFORM_ERROR_NOT_SLAVE;
+		return FALSE;
+	}
+
+	slave->master = 0;
+
+	link_changed (platform, slave);
+	link_changed (platform, master);
+
+	return TRUE;
+}
+
+static int
+link_get_master (NMPlatform *platform, int slave)
+{
+	NMPlatformLink *device = link_get (platform, slave);
+
+	g_return_val_if_fail (device, FALSE);
+
+	return device->master;
+}
+
 
 /******************************************************************/
 
@@ -732,6 +803,10 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
+
+	platform_class->link_enslave = link_enslave;
+	platform_class->link_release = link_release;
+	platform_class->link_get_master = link_get_master;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

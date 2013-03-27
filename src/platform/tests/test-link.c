@@ -6,6 +6,7 @@
 #define DEVICE_NAME "nm-test-device"
 #define BOGUS_NAME "nm-bogus-device"
 #define BOGUS_IFINDEX INT_MAX
+#define SLAVE_NAME "nm-test-slave"
 
 static void
 link_callback (NMPlatform *platform, NMPlatformLink *received, SignalData *data)
@@ -95,6 +96,185 @@ test_loopback (void)
 
 	g_assert (nm_platform_link_supports_carrier_detect (LO_INDEX));
 	g_assert (!nm_platform_link_supports_vlans (LO_INDEX));
+}
+
+static int
+virtual_add (NMLinkType link_type, const char *name, SignalData *link_added, SignalData *link_changed)
+{
+	switch (link_type) {
+	case NM_LINK_TYPE_DUMMY:
+		return nm_platform_dummy_add (name);
+	case NM_LINK_TYPE_BRIDGE:
+		return nm_platform_bridge_add (name);
+	case NM_LINK_TYPE_BOND:
+		return nm_platform_bond_add (name);
+	case NM_LINK_TYPE_TEAM:
+		return nm_platform_team_add (name);
+	default:
+		g_error ("Link type %d unhandled.", link_type);
+	}
+}
+
+static void
+test_slave (int master, int type, SignalData *link_added, SignalData *master_changed, SignalData *link_removed)
+{
+	int ifindex;
+	SignalData *link_changed = add_signal ("link-changed", link_callback);
+
+	g_assert (virtual_add (type, SLAVE_NAME, link_added, link_changed));
+	ifindex = nm_platform_link_get_ifindex (SLAVE_NAME);
+	g_assert (ifindex > 0);
+	accept_signal (link_added);
+
+	/* Set the slave up to see whether master's IFF_LOWER_UP is set correctly.
+	 *
+	 * See https://bugzilla.redhat.com/show_bug.cgi?id=910348
+	 */
+	g_assert (nm_platform_link_set_down (ifindex));
+	g_assert (!nm_platform_link_is_up (ifindex));
+	accept_signal (link_changed);
+
+	/* Enslave */
+	link_changed->ifindex = ifindex;
+	g_assert (nm_platform_link_enslave (master, ifindex)); no_error ();
+	g_assert (nm_platform_link_get_master (ifindex) == master); no_error ();
+	accept_signal (link_changed);
+	accept_signal (master_changed);
+
+	/* Set master up */
+	g_assert (nm_platform_link_set_up (master));
+	accept_signal (master_changed);
+
+	/* Master with a disconnected slave is disconnected
+	 *
+	 * For some reason, bonding and teaming slaves are automatically set up. We
+	 * need to set them back down for this test.
+	 */
+	switch (nm_platform_link_get_type (master)) {
+	case NM_LINK_TYPE_BOND:
+	case NM_LINK_TYPE_TEAM:
+		g_assert (nm_platform_link_set_down (ifindex));
+		accept_signal (link_changed);
+		accept_signal (master_changed);
+		break;
+	default:
+		break;
+	}
+	g_assert (!nm_platform_link_is_up (ifindex));
+	g_assert (!nm_platform_link_is_connected (ifindex));
+	g_assert (!nm_platform_link_is_connected (master));
+
+	/* Set slave up and see if master gets up too */
+	g_assert (nm_platform_link_set_up (ifindex)); no_error ();
+	g_assert (nm_platform_link_is_connected (ifindex));
+	g_assert (nm_platform_link_is_connected (master));
+	accept_signal (link_changed);
+	accept_signal (master_changed);
+
+	/* Enslave again
+	 *
+	 * Gracefully succeed if already enslaved.
+	 */
+	g_assert (nm_platform_link_enslave (master, ifindex)); no_error ();
+	accept_signal (link_changed);
+	accept_signal (master_changed);
+
+	/* Release */
+	g_assert (nm_platform_link_release (master, ifindex));
+	g_assert (nm_platform_link_get_master (ifindex) == 0); no_error ();
+	accept_signal (link_changed);
+	accept_signal (master_changed);
+
+	/* Release again */
+	g_assert (!nm_platform_link_release (master, ifindex));
+	error (NM_PLATFORM_ERROR_NOT_SLAVE);
+
+	/* Remove */
+	g_assert (nm_platform_link_delete (ifindex));
+	no_error ();
+	accept_signal (link_removed);
+
+	free_signal (link_changed);
+}
+
+static void
+test_virtual (NMLinkType link_type)
+{
+	int ifindex;
+
+	SignalData *link_added = add_signal ("link-added", link_callback);
+	SignalData *link_changed = add_signal ("link-changed", link_callback);
+	SignalData *link_removed = add_signal ("link-removed", link_callback);
+
+	/* Add */
+	g_assert (virtual_add (link_type, DEVICE_NAME, link_added, link_changed));
+	no_error ();
+	g_assert (nm_platform_link_exists (DEVICE_NAME));
+	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
+	g_assert (ifindex >= 0);
+	g_assert (nm_platform_link_get_type (ifindex) == link_type);
+	accept_signal (link_added);
+
+	/* Add again */
+	g_assert (!virtual_add (link_type, DEVICE_NAME, link_added, link_changed));
+	error (NM_PLATFORM_ERROR_EXISTS);
+
+	/* Set ARP/NOARP */
+	g_assert (nm_platform_link_uses_arp (ifindex));
+	g_assert (nm_platform_link_set_noarp (ifindex));
+	g_assert (!nm_platform_link_uses_arp (ifindex));
+	accept_signal (link_changed);
+	g_assert (nm_platform_link_set_arp (ifindex));
+	g_assert (nm_platform_link_uses_arp (ifindex));
+	accept_signal (link_changed);
+
+	/* Enslave and release */
+	switch (link_type) {
+	case NM_LINK_TYPE_BRIDGE:
+	case NM_LINK_TYPE_BOND:
+	case NM_LINK_TYPE_TEAM:
+		link_changed->ifindex = ifindex;
+		test_slave (ifindex, NM_LINK_TYPE_DUMMY, link_added, link_changed, link_removed);
+		link_changed->ifindex = 0;
+		break;
+	default:
+		break;
+	}
+
+	/* Delete */
+	g_assert (nm_platform_link_delete_by_name (DEVICE_NAME));
+	no_error ();
+	g_assert (!nm_platform_link_exists (DEVICE_NAME)); no_error ();
+	g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_NONE);
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	accept_signal (link_removed);
+
+	/* Delete again */
+	g_assert (!nm_platform_link_delete_by_name (DEVICE_NAME));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+
+	/* No pending signal */
+	free_signal (link_added);
+	free_signal (link_changed);
+	free_signal (link_removed);
+}
+
+static void
+test_bridge (void)
+{
+	test_virtual (NM_LINK_TYPE_BRIDGE);
+}
+
+static void
+test_bond (void)
+{
+	test_virtual (NM_LINK_TYPE_BOND);
+}
+
+static void
+test_team (void)
+{
+	test_virtual (NM_LINK_TYPE_TEAM);
 }
 
 static void
@@ -249,11 +429,16 @@ main (int argc, char **argv)
 
 	/* Clean up */
 	nm_platform_link_delete_by_name (DEVICE_NAME);
+	nm_platform_link_delete_by_name (SLAVE_NAME);
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
+	g_assert (!nm_platform_link_exists (SLAVE_NAME));
 
 	g_test_add_func ("/link/bogus", test_bogus);
 	g_test_add_func ("/link/loopback", test_loopback);
 	g_test_add_func ("/link/internal", test_internal);
+	g_test_add_func ("/link/virtual/bridge", test_bridge);
+	g_test_add_func ("/link/virtual/bond", test_bond);
+	g_test_add_func ("/link/virtual/team", test_team);
 
 	if (strcmp (g_type_name (G_TYPE_FROM_INSTANCE (nm_platform_get ())), "NMFakePlatform"))
 		g_test_add_func ("/link/external", test_external);

@@ -16,6 +16,12 @@ type_to_string (NMLinkType type)
 		return "ethernet";
 	case NM_LINK_TYPE_DUMMY:
 		return "dummy";
+	case NM_LINK_TYPE_BRIDGE:
+		return "bridge";
+	case NM_LINK_TYPE_BOND:
+		return "bond";
+	case NM_LINK_TYPE_TEAM:
+		return "team";
 	default:
 		return "unknown-type";
 	}
@@ -46,6 +52,8 @@ dump_interface (NMPlatformLink *link)
 		printf (" DOWN");
 	if (!link->arp)
 		printf (" noarp");
+	if (link->master)
+		printf (" master %d", link->master);
 	printf ("\n");
 
 	if (nm_platform_link_supports_carrier_detect (link->ifindex))

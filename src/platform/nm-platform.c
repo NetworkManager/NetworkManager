@@ -502,6 +502,118 @@ nm_platform_link_set_noarp (int ifindex)
 	return klass->link_set_noarp (platform, ifindex);
 }
 
+/**
+ * nm_platform_link_enslave:
+ * @master: Interface index of the master
+ * @slave: Interface index of the slave
+ *
+ * Enslave @slave to @master.
+ */
+gboolean
+nm_platform_link_enslave (int master, int slave)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (master > 0, FALSE);
+	g_return_val_if_fail (slave> 0, FALSE);
+	g_return_val_if_fail (klass->link_enslave, FALSE);
+
+	debug ("link: enslaving '%s' (%d) to master '%s' (%d)",
+		nm_platform_link_get_name (slave), slave,
+		nm_platform_link_get_name (master), master);
+	return klass->link_enslave (platform, master, slave);
+}
+
+/**
+ * nm_platform_link_release:
+ * @master: Interface index of the master
+ * @slave: Interface index of the slave
+ *
+ * Release @slave from @master.
+ */
+gboolean
+nm_platform_link_release (int master, int slave)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (master > 0, FALSE);
+	g_return_val_if_fail (slave > 0, FALSE);
+	g_return_val_if_fail (klass->link_release, FALSE);
+
+	if (nm_platform_link_get_master (slave) != master) {
+		platform->error = NM_PLATFORM_ERROR_NOT_SLAVE;
+		return FALSE;
+	}
+
+	debug ("link: releasing '%s' (%d) from master '%s' (%d)",
+		nm_platform_link_get_name (slave), slave,
+		nm_platform_link_get_name (master), master);
+	return klass->link_release (platform, master, slave);
+}
+
+/**
+ * nm_platform_link_get_master:
+ * @slave: Interface index of the slave.
+ *
+ * Returns: Interfase index of the slave's master.
+ */
+int
+nm_platform_link_get_master (int slave)
+{
+	reset_error ();
+
+	g_assert (platform);
+	g_return_val_if_fail (slave >= 0, FALSE);
+	g_return_val_if_fail (klass->link_get_master, FALSE);
+
+	if (!nm_platform_link_get_name (slave)) {
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return 0;
+	}
+	return klass->link_get_master (platform, slave);
+}
+
+/**
+ * nm_platform_bridge_add:
+ * @name: New interface name
+ *
+ * Create a virtual bridge.
+ */
+gboolean
+nm_platform_bridge_add (const char *name)
+{
+	debug ("link: adding bridge '%s'", name);
+	return nm_platform_link_add (name, NM_LINK_TYPE_BRIDGE);
+}
+
+/**
+ * nm_platform_bond_add:
+ * @name: New interface name
+ *
+ * Create a virtual bonding device.
+ */
+gboolean
+nm_platform_bond_add (const char *name)
+{
+	debug ("link: adding bond '%s'", name);
+	return nm_platform_link_add (name, NM_LINK_TYPE_BOND);
+}
+
+/**
+ * nm_platform_team_add:
+ * @name: New interface name
+ *
+ * Create a virtual teaming device.
+ */
+gboolean
+nm_platform_team_add (const char *name)
+{
+	debug ("link: adding team '%s'", name);
+	return nm_platform_link_add (name, NM_LINK_TYPE_TEAM);
+}
+
 /******************************************************************/
 
 GArray *
