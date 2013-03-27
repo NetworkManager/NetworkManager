@@ -30,6 +30,8 @@
 
 typedef struct {
 	GArray *links;
+	GArray *ip4_addresses;
+	GArray *ip6_addresses;
 } NMFakePlatformPrivate;
 
 #define NM_FAKE_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_PLATFORM, NMFakePlatformPrivate))
@@ -266,12 +268,185 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 
 /******************************************************************/
 
+static GArray *
+ip4_address_get_all (NMPlatform *platform, int ifindex)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	GArray *addresses;
+	NMPlatformIP4Address *address;
+	int count = 0, i;
+
+	/* Count addresses */
+	for (i = 0; i < priv->ip4_addresses->len; i++) {
+		address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+		if (address && address->ifindex == ifindex)
+			count++;
+	}
+
+	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Address), count);
+
+	/* Fill addresses */
+	for (i = 0; i < priv->ip4_addresses->len; i++) {
+		address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+		if (address && address->ifindex == ifindex)
+			g_array_append_val (addresses, *address);
+	}
+
+	return addresses;
+}
+
+static GArray *
+ip6_address_get_all (NMPlatform *platform, int ifindex)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	GArray *addresses;
+	NMPlatformIP6Address *address;
+	int count = 0, i;
+
+	/* Count addresses */
+	for (i = 0; i < priv->ip6_addresses->len; i++) {
+		address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
+		if (address && address->ifindex == ifindex)
+			count++;
+	}
+
+	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Address), count);
+
+	/* Fill addresses */
+	count = 0;
+	for (i = 0; i < priv->ip6_addresses->len; i++) {
+		address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
+		if (address && address->ifindex == ifindex)
+			g_array_append_val (addresses, *address);
+	}
+
+	return addresses;
+}
+
+static gboolean
+ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	NMPlatformIP4Address address;
+
+	memset (&address, 0, sizeof (address));
+	address.ifindex = ifindex;
+	address.address = addr;
+	address.plen = plen;
+
+	g_array_append_val (priv->ip4_addresses, address);
+
+	g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_ADDED, &address);
+
+	return TRUE;
+}
+
+static gboolean
+ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	NMPlatformIP6Address address;
+
+	memset (&address, 0, sizeof (address));
+	address.ifindex = ifindex;
+	address.address = addr;
+	address.plen = plen;
+
+	g_array_append_val (priv->ip6_addresses, address);
+
+	g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_ADDED, &address);
+
+	return TRUE;
+}
+
+static gboolean
+ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
+	for (i = 0; i < priv->ip4_addresses->len; i++) {
+		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+
+		if (address->ifindex == ifindex && address->plen == plen && address->address == addr) {
+			NMPlatformIP4Address deleted_address;
+
+			memcpy (&deleted_address, address, sizeof (deleted_address));
+			memset (address, 0, sizeof (*address));
+			g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_REMOVED, &deleted_address);
+			return TRUE;
+		}
+	}
+
+	g_assert_not_reached ();
+}
+
+static gboolean
+ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
+	for (i = 0; i < priv->ip6_addresses->len; i++) {
+		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
+
+		if (address->ifindex == ifindex && address->plen == plen
+				&& IN6_ARE_ADDR_EQUAL (&address->address, &addr)) {
+			NMPlatformIP6Address deleted_address;
+
+			memcpy (&deleted_address, address, sizeof (deleted_address));
+			memset (address, 0, sizeof (*address));
+			g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_REMOVED, &deleted_address);
+			return TRUE;
+		}
+	}
+
+	g_assert_not_reached ();
+}
+
+static gboolean
+ip4_address_exists (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
+	for (i = 0; i < priv->ip4_addresses->len; i++) {
+		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+
+		if (address->ifindex == ifindex && address->plen == plen && address->address == addr)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
+ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
+	for (i = 0; i < priv->ip6_addresses->len; i++) {
+		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
+
+		if (address->ifindex == ifindex && address->plen == plen &&
+				IN6_ARE_ADDR_EQUAL (&address->address, &addr))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/******************************************************************/
+
 static void
 nm_fake_platform_init (NMFakePlatform *fake_platform)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (fake_platform);
 
 	priv->links = g_array_new (TRUE, TRUE, sizeof (NMPlatformLink));
+	priv->ip4_addresses = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Address));
+	priv->ip6_addresses = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Address));
 }
 
 static gboolean
@@ -297,6 +472,8 @@ nm_fake_platform_finalize (GObject *object)
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (object);
 
 	g_array_unref (priv->links);
+	g_array_unref (priv->ip4_addresses);
+	g_array_unref (priv->ip6_addresses);
 
 	G_OBJECT_CLASS (nm_fake_platform_parent_class)->finalize (object);
 }
@@ -328,4 +505,13 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_is_up = link_is_up;
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
+
+	platform_class->ip4_address_get_all = ip4_address_get_all;
+	platform_class->ip6_address_get_all = ip6_address_get_all;
+	platform_class->ip4_address_add = ip4_address_add;
+	platform_class->ip6_address_add = ip6_address_add;
+	platform_class->ip4_address_delete = ip4_address_delete;
+	platform_class->ip6_address_delete = ip6_address_delete;
+	platform_class->ip4_address_exists = ip4_address_exists;
+	platform_class->ip6_address_exists = ip6_address_exists;
 }

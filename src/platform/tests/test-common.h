@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "nm-logging.h"
 #include "nm-platform.h"

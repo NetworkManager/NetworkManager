@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "nm-platform.h"
 #include "nm-logging.h"
@@ -37,6 +38,12 @@ enum {
 	LINK_ADDED,
 	LINK_CHANGED,
 	LINK_REMOVED,
+	IP4_ADDRESS_ADDED,
+	IP4_ADDRESS_CHANGED,
+	IP4_ADDRESS_REMOVED,
+	IP6_ADDRESS_ADDED,
+	IP6_ADDRESS_CHANGED,
+	IP6_ADDRESS_REMOVED,
 	LAST_SIGNAL
 };
 
@@ -473,6 +480,128 @@ nm_platform_link_set_noarp (int ifindex)
 
 /******************************************************************/
 
+GArray *
+nm_platform_ip4_address_get_all (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (klass->ip4_address_get_all, NULL);
+
+	return klass->ip4_address_get_all (platform, ifindex);
+}
+
+GArray *
+nm_platform_ip6_address_get_all (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (klass->ip6_address_get_all, NULL);
+
+	return klass->ip6_address_get_all (platform, ifindex);
+}
+
+gboolean
+nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (klass->ip4_address_add, FALSE);
+
+	if (nm_platform_ip4_address_exists (ifindex, address, plen)) {
+		debug ("address already exists");
+		platform->error = NM_PLATFORM_ERROR_EXISTS;
+		return FALSE;
+	}
+
+	debug ("address: adding IPv4 address");
+	return klass->ip4_address_add (platform, ifindex, address, plen);
+}
+
+gboolean
+nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (klass->ip6_address_add, FALSE);
+
+	if (nm_platform_ip6_address_exists (ifindex, address, plen)) {
+		debug ("address already exists");
+		platform->error = NM_PLATFORM_ERROR_EXISTS;
+		return FALSE;
+	}
+
+	debug ("address: adding IPv6 address");
+	return klass->ip6_address_add (platform, ifindex, address, plen);
+}
+
+gboolean
+nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (klass->ip4_address_delete, FALSE);
+
+	if (!nm_platform_ip4_address_exists (ifindex, address, plen)) {
+		debug ("address doesn't exists");
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return FALSE;
+	}
+
+	debug ("address: deleting IPv4 address");
+	return klass->ip4_address_delete (platform, ifindex, address, plen);
+}
+
+gboolean
+nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (klass->ip6_address_delete, FALSE);
+
+	if (!nm_platform_ip6_address_exists (ifindex, address, plen)) {
+		debug ("address doesn't exists");
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return FALSE;
+	}
+
+	debug ("address: deleting IPv6 address");
+	return klass->ip6_address_delete (platform, ifindex, address, plen);
+}
+
+gboolean
+nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen)
+{
+	reset_error ();
+
+	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (klass->ip4_address_exists, FALSE);
+
+	return klass->ip4_address_exists (platform, ifindex, address, plen);
+}
+
+gboolean
+nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen)
+{
+	reset_error ();
+
+	g_return_val_if_fail (plen > 0, FALSE);
+	g_return_val_if_fail (klass->ip6_address_exists, FALSE);
+
+	return klass->ip6_address_exists (platform, ifindex, address, plen);
+}
+
+/******************************************************************/
+
 static void
 log_link_added (NMPlatform *p, NMPlatformLink *info, gpointer user_data)
 {
@@ -489,6 +618,66 @@ static void
 log_link_removed (NMPlatform *p, NMPlatformLink *info, gpointer user_data)
 {
 	debug ("signal: link removed: '%s' (%d)", info->name, info->ifindex);
+}
+
+static void
+log_ip4_address (NMPlatformIP4Address *address, const char *change_type)
+{
+	char addr[INET_ADDRSTRLEN];
+	int plen = address->plen;
+	const char *name = nm_platform_link_get_name (address->ifindex);
+
+	inet_ntop (AF_INET, &address->address, addr, sizeof (addr));
+
+	debug ("signal: address %s: %s/%d dev %s", change_type, addr, plen, name);
+}
+
+static void
+log_ip4_address_added (NMPlatform *p, NMPlatformIP4Address *address, gpointer user_data)
+{
+	log_ip4_address (address, "added");
+}
+
+static void
+log_ip4_address_changed (NMPlatform *p, NMPlatformIP4Address *address, gpointer user_data)
+{
+	log_ip4_address (address, "changed");
+}
+
+static void
+log_ip4_address_removed (NMPlatform *p, NMPlatformIP4Address *address, gpointer user_data)
+{
+	log_ip4_address (address, "removed");
+}
+
+static void
+log_ip6_address (NMPlatformIP6Address *address, const char *change_type)
+{
+	char addr[INET6_ADDRSTRLEN];
+	int plen = address->plen;
+	const char *name = nm_platform_link_get_name (address->ifindex);
+
+	inet_ntop (AF_INET6, &address->address, addr, sizeof (addr));
+
+	debug ("signal: address %s: %s/%d dev %s", change_type, addr, plen, name);
+}
+
+static void
+log_ip6_address_added (NMPlatform *p, NMPlatformIP6Address *address, gpointer user_data)
+{
+	log_ip6_address (address, "added");
+}
+
+static void
+log_ip6_address_changed (NMPlatform *p, NMPlatformIP6Address *address, gpointer user_data)
+{
+	log_ip6_address (address, "changed");
+}
+
+static void
+log_ip6_address_removed (NMPlatform *p, NMPlatformIP6Address *address, gpointer user_data)
+{
+	log_ip6_address (address, "removed");
 }
 
 /******************************************************************/
@@ -516,4 +705,10 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	SIGNAL (LINK_ADDED, log_link_added)
 	SIGNAL (LINK_CHANGED, log_link_changed)
 	SIGNAL (LINK_REMOVED, log_link_removed)
+	SIGNAL (IP4_ADDRESS_ADDED, log_ip4_address_added)
+	SIGNAL (IP4_ADDRESS_CHANGED, log_ip4_address_changed)
+	SIGNAL (IP4_ADDRESS_REMOVED, log_ip4_address_removed)
+	SIGNAL (IP6_ADDRESS_ADDED, log_ip6_address_added)
+	SIGNAL (IP6_ADDRESS_CHANGED, log_ip6_address_changed)
+	SIGNAL (IP6_ADDRESS_REMOVED, log_ip6_address_removed)
 }

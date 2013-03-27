@@ -52,6 +52,18 @@ typedef struct {
 	gboolean arp;
 } NMPlatformLink;
 
+typedef struct {
+	int ifindex;
+	in_addr_t address;
+	int plen;
+} NMPlatformIP4Address;
+
+typedef struct {
+	int ifindex;
+	struct in6_addr address;
+	int plen;
+} NMPlatformIP6Address;
+
 /******************************************************************/
 
 /* NMPlatform abstract class and its implementations provide a layer between
@@ -107,6 +119,15 @@ typedef struct {
 	gboolean (*link_is_up) (NMPlatform *, int ifindex);
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
+
+	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
+	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
+	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen);
+	gboolean (*ip6_address_add) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
+	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen);
+	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
+	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
+	gboolean (*ip6_address_exists) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -123,6 +144,12 @@ typedef struct {
 #define NM_PLATFORM_LINK_ADDED "link-added"
 #define NM_PLATFORM_LINK_CHANGED "link-changed"
 #define NM_PLATFORM_LINK_REMOVED "link-removed"
+#define NM_PLATFORM_IP4_ADDRESS_ADDED "ip4-address-added"
+#define NM_PLATFORM_IP4_ADDRESS_CHANGED "ip4-address-changed"
+#define NM_PLATFORM_IP4_ADDRESS_REMOVED "ip4-address-removed"
+#define NM_PLATFORM_IP6_ADDRESS_ADDED "ip6-address-added"
+#define NM_PLATFORM_IP6_ADDRESS_CHANGED "ip6-address-changed"
+#define NM_PLATFORM_IP6_ADDRESS_REMOVED "ip6-address-removed"
 
 /* NMPlatform error codes */
 enum {
@@ -163,5 +190,14 @@ gboolean nm_platform_link_set_noarp (int ifindex);
 gboolean nm_platform_link_is_up (int ifindex);
 gboolean nm_platform_link_is_connected (int ifindex);
 gboolean nm_platform_link_uses_arp (int ifindex);
+
+GArray *nm_platform_ip4_address_get_all (int ifindex);
+GArray *nm_platform_ip6_address_get_all (int ifindex);
+gboolean nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen);
+gboolean nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen);
+gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
+gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);
 
 #endif /* NM_PLATFORM_H */

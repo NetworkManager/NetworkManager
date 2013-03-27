@@ -30,6 +30,7 @@
 #include <netlink/cache.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
+#include <netlink/route/addr.h>
 
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
@@ -45,6 +46,7 @@ typedef struct {
 	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
 	struct nl_cache *link_cache;
+	struct nl_cache *address_cache;
 	GIOChannel *event_channel;
 	guint event_id;
 } NMLinuxPlatformPrivate;
@@ -76,11 +78,39 @@ put_nl_object (void *ptr)
 	}
 }
 
+#define auto_nl_addr __attribute__((cleanup(put_nl_addr)))
+static void
+put_nl_addr (void *ptr)
+{
+	struct nl_addr **object = ptr;
+
+	if (object && *object) {
+		nl_addr_put (*object);
+		*object = NULL;
+	}
+}
+
 /* libnl doesn't use const where due */
 #define nl_addr_build(family, addr, addrlen) nl_addr_build (family, (gpointer) addr, addrlen)
 
+/* rtnl_addr_set_prefixlen fails to update the nl_addr prefixlen */
+static void
+nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
+{
+	struct nl_addr *nladdr;
+
+	rtnl_addr_set_prefixlen (rtnladdr, plen);
+
+	nladdr = rtnl_addr_get_local (rtnladdr);
+	if (nladdr)
+		nl_addr_set_prefixlen (nladdr, plen);
+}
+#define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
+
 typedef enum {
 	LINK,
+	IP4_ADDRESS,
+	IP6_ADDRESS,
 	N_TYPES
 } ObjectType;
 
@@ -98,7 +128,16 @@ object_type_from_nl_object (const struct nl_object *object)
 
 	if (!strcmp (nl_object_get_type (object), "route/link"))
 		return LINK;
-	else
+	else if (!strcmp (nl_object_get_type (object), "route/addr")) {
+		switch (rtnl_addr_get_family ((struct rtnl_addr *) object)) {
+		case AF_INET:
+			return IP4_ADDRESS;
+		case AF_INET6:
+			return IP6_ADDRESS;
+		default:
+			g_assert_not_reached ();
+		}
+	} else
 		g_assert_not_reached ();
 }
 
@@ -172,6 +211,9 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	switch (object_type_from_nl_object (object)) {
 	case LINK:
 		return rtnl_link_add (sock, (struct rtnl_link *) object, NLM_F_CREATE);
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		return rtnl_addr_add (sock, (struct rtnl_addr *) object, NLM_F_CREATE);
 	default:
 		g_assert_not_reached ();
 	}
@@ -184,6 +226,9 @@ delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	switch (object_type_from_nl_object (object)) {
 	case LINK:
 		return rtnl_link_delete (sock, (struct rtnl_link *) object);
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		return rtnl_addr_delete (sock, (struct rtnl_addr *) object, 0);
 	default:
 		g_assert_not_reached ();
 	}
@@ -245,12 +290,42 @@ link_init (NMPlatformLink *info, struct rtnl_link *rtnllink)
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
 }
 
+static void
+init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
+{
+	struct nl_addr *nladdr = rtnl_addr_get_local (rtnladdr);
+
+	g_assert (nladdr);
+
+	memset (address, 0, sizeof (*address));
+
+	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
+	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
+	g_assert (nl_addr_get_len (nladdr) == sizeof (address->address));
+	memcpy (&address->address, nl_addr_get_binary_addr (nladdr), sizeof (address->address));
+}
+
+static void
+init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
+{
+	struct nl_addr *nladdr = rtnl_addr_get_local (rtnladdr);
+
+	memset (address, 0, sizeof (*address));
+
+	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
+	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
+	g_assert (nl_addr_get_len (nladdr) == sizeof (address->address));
+	memcpy (&address->address, nl_addr_get_binary_addr (nladdr), sizeof (address->address));
+}
+
 /******************************************************************/
 
 /* Object and cache manipulation */
 
 static const char *signal_by_type_and_status[N_TYPES][N_STATUSES] = {
 	{ NM_PLATFORM_LINK_ADDED, NM_PLATFORM_LINK_CHANGED, NM_PLATFORM_LINK_REMOVED },
+	{ NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
+	{ NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
 };
 
 static struct nl_cache *
@@ -261,6 +336,9 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 	switch (object_type_from_nl_object (object)) {
 	case LINK:
 		return priv->link_cache;
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		return priv->address_cache;
 	default:
 		g_assert_not_reached ();
 	}
@@ -279,6 +357,22 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 
 			link_init (&device, (struct rtnl_link *) object);
 			g_signal_emit_by_name (platform, sig, &device);
+		}
+		return;
+	case IP4_ADDRESS:
+		{
+			NMPlatformIP4Address address;
+
+			init_ip4_address (&address, (struct rtnl_addr *) object);
+			g_signal_emit_by_name (platform, sig, &address);
+		}
+		return;
+	case IP6_ADDRESS:
+		{
+			NMPlatformIP6Address address;
+
+			init_ip6_address (&address, (struct rtnl_addr *) object);
+			g_signal_emit_by_name (platform, sig, &address);
 		}
 		return;
 	default:
@@ -404,6 +498,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	/* Removed object */
 	switch (event) {
 	case RTM_DELLINK:
+	case RTM_DELADDR:
 		/* Ignore inconsistent deletion
 		 *
 		 * Quick external deletion and addition can be occasionally
@@ -420,6 +515,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 
 		return NL_OK;
 	case RTM_NEWLINK:
+	case RTM_NEWADDR:
 		/* Ignore inconsistent addition or change (kernel will send a good one)
 		 *
 		 * Quick sequence of RTM_NEWLINK notifications can be occasionally
@@ -642,6 +738,137 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 
 /******************************************************************/
 
+static int
+ip_address_mark_all (NMPlatform *platform, int family, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_object *object;
+	int count = 0;
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
+		nl_object_unmark (object);
+		if (rtnl_addr_get_family ((struct rtnl_addr *) object) != family)
+			continue;
+		if (rtnl_addr_get_ifindex ((struct rtnl_addr *) object) != ifindex)
+			continue;
+		nl_object_mark (object);
+		count++;
+	}
+
+	return count;
+}
+
+static GArray *
+ip4_address_get_all (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GArray *addresses;
+	NMPlatformIP4Address address;
+	struct nl_object *object;
+	int count;
+
+	count = ip_address_mark_all (platform, AF_INET, ifindex);
+	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Address), count);
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
+		if (nl_object_is_marked (object)) {
+			init_ip4_address (&address, (struct rtnl_addr *) object);
+			g_array_append_val (addresses, address);
+			nl_object_unmark (object);
+		}
+	}
+
+	return addresses;
+}
+
+static GArray *
+ip6_address_get_all (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GArray *addresses;
+	NMPlatformIP6Address address;
+	struct nl_object *object;
+	int count;
+
+	count = ip_address_mark_all (platform, AF_INET6, ifindex);
+	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Address), count);
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
+		if (nl_object_is_marked (object)) {
+			init_ip6_address (&address, (struct rtnl_addr *) object);
+			g_array_append_val (addresses, address);
+			nl_object_unmark (object);
+		}
+	}
+
+	return addresses;
+}
+
+static struct nl_object *
+build_rtnl_addr (int family, int ifindex, gconstpointer addr, int plen)
+{
+	struct rtnl_addr *rtnladdr = rtnl_addr_alloc ();
+	int addrlen = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
+	auto_nl_addr struct nl_addr *nladdr = nl_addr_build (family, addr, addrlen);
+	int nle;
+
+	g_assert (rtnladdr && nladdr);
+
+	rtnl_addr_set_ifindex (rtnladdr, ifindex);
+	nle = rtnl_addr_set_local (rtnladdr, nladdr);
+	g_assert (!nle);
+	rtnl_addr_set_prefixlen (rtnladdr, plen);
+
+	return (struct nl_object *) rtnladdr;
+}
+
+static gboolean
+ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+{
+	return add_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, plen));
+}
+
+static gboolean
+ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+{
+	return add_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, plen));
+}
+
+static gboolean
+ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+{
+	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, plen));
+}
+
+static gboolean
+ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+{
+	return delete_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, plen));
+}
+
+static gboolean
+ip_address_exists (NMPlatform *platform, int family, int ifindex, gconstpointer addr, int plen)
+{
+	auto_nl_object struct nl_object *object = build_rtnl_addr (family, ifindex, addr, plen);
+	auto_nl_object struct nl_object *cached_object = nl_cache_search (choose_cache (platform, object), object);
+
+	return !!cached_object;
+}
+
+static gboolean
+ip4_address_exists (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+{
+	return ip_address_exists (platform, AF_INET, ifindex, &addr, plen);
+}
+
+static gboolean
+ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+{
+	return ip_address_exists (platform, AF_INET6, ifindex, &addr, plen);
+}
+
+/******************************************************************/
+
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
@@ -735,6 +962,7 @@ setup (NMPlatform *platform)
 	g_assert (!nle);
 	nle = nl_socket_add_memberships (priv->nlh_event,
 			RTNLGRP_LINK,
+			RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
 			NULL);
 	g_assert (!nle);
 	debug ("Netlink socket for events established: %d", nl_socket_get_local_port (priv->nlh_event));
@@ -753,7 +981,8 @@ setup (NMPlatform *platform)
 
 	/* Allocate netlink caches */
 	rtnl_link_alloc_cache (priv->nlh, AF_UNSPEC, &priv->link_cache);
-	g_assert (priv->link_cache);
+	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
+	g_assert (priv->link_cache && priv->address_cache);
 
 	return TRUE;
 }
@@ -769,6 +998,7 @@ nm_linux_platform_finalize (GObject *object)
 	nl_socket_free (priv->nlh);
 	nl_socket_free (priv->nlh_event);
 	nl_cache_free (priv->link_cache);
+	nl_cache_free (priv->address_cache);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }
@@ -802,4 +1032,13 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_is_up = link_is_up;
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
+
+	platform_class->ip4_address_get_all = ip4_address_get_all;
+	platform_class->ip6_address_get_all = ip6_address_get_all;
+	platform_class->ip4_address_add = ip4_address_add;
+	platform_class->ip6_address_add = ip6_address_add;
+	platform_class->ip4_address_delete = ip4_address_delete;
+	platform_class->ip6_address_delete = ip6_address_delete;
+	platform_class->ip4_address_exists = ip4_address_exists;
+	platform_class->ip6_address_exists = ip6_address_exists;
 }
