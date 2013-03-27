@@ -51,26 +51,23 @@ nm_dhcp4_config_init (NMDHCP4Config *config)
 {
 }
 
-static void
-copy_options (gpointer key, gpointer data, gpointer user_data)
-{
-	GHashTable *options = (GHashTable *) user_data;
-	GValue *value = (GValue *) data;
-
-	g_hash_table_insert (options, g_strdup (key), g_value_dup_string (value));
-}
-
 static gboolean
 demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
 	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 	GHashTable *new_options;
+	GHashTableIter iter;
+	const char *key;
+	GValue *opt;
 
 	g_hash_table_remove_all (priv->options);
 
 	new_options = g_value_get_boxed (value);
-	if (new_options)
-		g_hash_table_foreach (new_options, copy_options, priv->options);
+	if (new_options) {
+		g_hash_table_iter_init (&iter, new_options);
+		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &opt))
+			g_hash_table_insert (priv->options, g_strdup (key), g_value_dup_string (opt));
+	}
 
 	_nm_object_queue_notify (object, NM_DHCP4_CONFIG_OPTIONS);
 	return TRUE;
