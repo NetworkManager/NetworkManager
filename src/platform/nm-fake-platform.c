@@ -57,6 +57,13 @@ link_init (NMPlatformLink *device, int ifindex, int type, const char *name)
 	device->type = type;
 	if (name)
 		strcpy (device->name, name);
+	switch (device->type) {
+	case NM_LINK_TYPE_DUMMY:
+		device->arp = FALSE;
+		break;
+	default:
+		device->arp = TRUE;
+	}
 }
 
 static NMPlatformLink *
@@ -157,6 +164,106 @@ link_get_type (NMPlatform *platform, int ifindex)
 	return device ? device->type : NM_LINK_TYPE_NONE;
 }
 
+static void
+link_changed (NMPlatform *platform, NMPlatformLink *device)
+{
+	g_signal_emit_by_name (platform, "link-changed", device);
+}
+
+static gboolean
+link_set_up (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	device->up = TRUE;
+	switch (device->type) {
+	case NM_LINK_TYPE_GENERIC:
+	case NM_LINK_TYPE_DUMMY:
+		device->connected = TRUE;
+		break;
+	default:
+		device->connected = FALSE;
+		g_error ("Unexpected device type: %d", device->type);
+	}
+
+	link_changed (platform, device);
+
+	return TRUE;
+}
+
+static gboolean
+link_set_down (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	device->up = FALSE;
+	device->connected = FALSE;
+
+	link_changed (platform, device);
+
+	return TRUE;
+}
+
+static gboolean
+link_set_arp (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	device->arp = TRUE;
+
+	link_changed (platform, device);
+
+	return TRUE;
+}
+
+static gboolean
+link_set_noarp (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	device->arp = FALSE;
+
+	link_changed (platform, device);
+
+	return TRUE;
+}
+
+static gboolean
+link_is_up (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	return device ? device->up : FALSE;
+}
+
+static gboolean
+link_is_connected (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	return device ? device->connected : FALSE;
+}
+
+static gboolean
+link_uses_arp (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	return device ? device->arp : FALSE;
+}
+
 /******************************************************************/
 
 static void
@@ -213,4 +320,12 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_get_ifindex = link_get_ifindex;
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
+
+	platform_class->link_set_up = link_set_up;
+	platform_class->link_set_down = link_set_down;
+	platform_class->link_set_arp = link_set_arp;
+	platform_class->link_set_noarp = link_set_noarp;
+	platform_class->link_is_up = link_is_up;
+	platform_class->link_is_connected = link_is_connected;
+	platform_class->link_uses_arp = link_uses_arp;
 }

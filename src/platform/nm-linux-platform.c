@@ -240,6 +240,9 @@ link_init (NMPlatformLink *info, struct rtnl_link *rtnllink)
 	info->ifindex = rtnl_link_get_ifindex (rtnllink);
 	strcpy (info->name, rtnl_link_get_name (rtnllink));
 	info->type = link_extract_type (rtnllink);
+	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
+	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
+	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
 }
 
 /******************************************************************/
@@ -503,6 +506,24 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type)
 }
 
 static gboolean
+link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *orig;
+
+	orig = rtnl_link_get (priv->link_cache, ifindex);
+
+	if (!orig) {
+		debug ("link not found: %d", ifindex);
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return FALSE;
+	}
+
+	return refresh_object (platform, (struct nl_object *) orig,
+			rtnl_link_change (priv->nlh, orig, change, 0));
+}
+
+static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
 	return delete_object (platform, build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_NONE));
@@ -542,6 +563,81 @@ link_get_type (NMPlatform *platform, int ifindex)
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 
 	return link_extract_type (rtnllink);
+}
+
+static guint32
+link_get_flags (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink;
+
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+
+	if (!rtnllink) {
+		debug ("link not found: %d", ifindex);
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return IFF_NOARP;
+	}
+
+	return rtnl_link_get_flags (rtnllink);
+}
+
+static gboolean
+link_is_up (NMPlatform *platform, int ifindex)
+{
+	return !!(link_get_flags (platform, ifindex) & IFF_UP);
+}
+
+static gboolean
+link_is_connected (NMPlatform *platform, int ifindex)
+{
+	return !!(link_get_flags (platform, ifindex) & IFF_LOWER_UP);
+}
+
+static gboolean
+link_uses_arp (NMPlatform *platform, int ifindex)
+{
+	return !(link_get_flags (platform, ifindex) & IFF_NOARP);
+}
+
+static gboolean
+link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboolean value)
+{
+	auto_nl_object struct rtnl_link *change;
+
+	change = rtnl_link_alloc ();
+	g_return_val_if_fail (change != NULL, FALSE);
+
+	if (value)
+		rtnl_link_set_flags (change, flags);
+	else
+		rtnl_link_unset_flags (change, flags);
+
+	return link_change (platform, ifindex, change);
+}
+
+static gboolean
+link_set_up (NMPlatform *platform, int ifindex)
+{
+	return link_change_flags (platform, ifindex, IFF_UP, TRUE);
+}
+
+static gboolean
+link_set_down (NMPlatform *platform, int ifindex)
+{
+	return link_change_flags (platform, ifindex, IFF_UP, FALSE);
+}
+
+static gboolean
+link_set_arp (NMPlatform *platform, int ifindex)
+{
+	return link_change_flags (platform, ifindex, IFF_NOARP, FALSE);
+}
+
+static gboolean
+link_set_noarp (NMPlatform *platform, int ifindex)
+{
+	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE);
 }
 
 /******************************************************************/
@@ -698,4 +794,12 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_ifindex = link_get_ifindex;
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
+
+	platform_class->link_set_up = link_set_up;
+	platform_class->link_set_down = link_set_down;
+	platform_class->link_set_arp = link_set_arp;
+	platform_class->link_set_noarp = link_set_noarp;
+	platform_class->link_is_up = link_is_up;
+	platform_class->link_is_connected = link_is_connected;
+	platform_class->link_uses_arp = link_uses_arp;
 }

@@ -47,6 +47,9 @@ typedef struct {
 	int ifindex;
 	char name[IFNAMSIZ];
 	NMLinkType type;
+	gboolean up;
+	gboolean connected;
+	gboolean arp;
 } NMPlatformLink;
 
 /******************************************************************/
@@ -96,6 +99,14 @@ typedef struct {
 	int (*link_get_ifindex) (NMPlatform *, const char *name);
 	const char *(*link_get_name) (NMPlatform *, int ifindex);
 	NMLinkType (*link_get_type) (NMPlatform *, int ifindex);
+
+	gboolean (*link_set_up) (NMPlatform *, int ifindex);
+	gboolean (*link_set_down) (NMPlatform *, int ifindex);
+	gboolean (*link_set_arp) (NMPlatform *, int ifindex);
+	gboolean (*link_set_noarp) (NMPlatform *, int ifindex);
+	gboolean (*link_is_up) (NMPlatform *, int ifindex);
+	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
+	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -144,5 +155,13 @@ gboolean nm_platform_link_delete_by_name (const char *ifindex);
 int nm_platform_link_get_ifindex (const char *name);
 const char *nm_platform_link_get_name (int ifindex);
 NMLinkType nm_platform_link_get_type (int ifindex);
+
+gboolean nm_platform_link_set_up (int ifindex);
+gboolean nm_platform_link_set_down (int ifindex);
+gboolean nm_platform_link_set_arp (int ifindex);
+gboolean nm_platform_link_set_noarp (int ifindex);
+gboolean nm_platform_link_is_up (int ifindex);
+gboolean nm_platform_link_is_connected (int ifindex);
+gboolean nm_platform_link_uses_arp (int ifindex);
 
 #endif /* NM_PLATFORM_H */

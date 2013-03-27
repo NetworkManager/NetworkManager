@@ -348,6 +348,129 @@ nm_platform_link_get_type (int ifindex)
 	return klass->link_get_type (platform, ifindex);
 }
 
+/**
+ * nm_platform_link_is_up:
+ * @ifindex: Interface index
+ *
+ * Check if the interface is up.
+ */
+gboolean
+nm_platform_link_is_up (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_is_up, FALSE);
+
+	return klass->link_is_up (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_is_connected:
+ * @ifindex: Interface index
+ *
+ * Check if the interface is connected.
+ */
+gboolean
+nm_platform_link_is_connected (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_is_connected, FALSE);
+
+	return klass->link_is_connected (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_uses_arp:
+ * @ifindex: Interface index
+ *
+ * Check if the interface is configured to use ARP.
+ */
+gboolean
+nm_platform_link_uses_arp (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_uses_arp, FALSE);
+
+	return klass->link_uses_arp (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_set_up:
+ * @ifindex: Interface index
+ *
+ * Bring the interface up.
+ */
+gboolean
+nm_platform_link_set_up (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (klass->link_set_up, FALSE);
+
+	debug ("link: setting up '%s' (%d)", nm_platform_link_get_name (ifindex), ifindex);
+	return klass->link_set_up (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_set_down:
+ * @ifindex: Interface index
+ *
+ * Take the interface down.
+ */
+gboolean
+nm_platform_link_set_down (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (klass->link_set_down, FALSE);
+
+	debug ("link: setting down '%s' (%d)", nm_platform_link_get_name (ifindex), ifindex);
+	return klass->link_set_down (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_set_arp:
+ * @ifindex: Interface index
+ *
+ * Enable ARP on the interface.
+ */
+gboolean
+nm_platform_link_set_arp (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_set_arp, FALSE);
+
+	debug ("link: setting arp '%s' (%d)", nm_platform_link_get_name (ifindex), ifindex);
+	return klass->link_set_arp (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_set_noarp:
+ * @ifindex: Interface index
+ *
+ * Disable ARP on the interface.
+ */
+gboolean
+nm_platform_link_set_noarp (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_set_noarp, FALSE);
+
+	debug ("link: setting noarp '%s' (%d)", nm_platform_link_get_name (ifindex), ifindex);
+	return klass->link_set_noarp (platform, ifindex);
+}
+
 /******************************************************************/
 
 static void

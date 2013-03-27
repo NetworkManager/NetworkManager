@@ -23,7 +23,15 @@ type_to_string (NMLinkType type)
 static void
 dump_interface (NMPlatformLink *link)
 {
+	g_assert (link->up || !link->connected);
+
 	printf ("%d: %s: %s", link->ifindex, link->name, type_to_string (link->type));
+	if (link->up)
+		printf (" %s", link->connected ? "CONNECTED" : "DISCONNECTED");
+	else
+		printf (" DOWN");
+	if (!link->arp)
+		printf (" noarp");
 	printf ("\n");
 }
 

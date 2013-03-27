@@ -63,6 +63,21 @@ test_bogus(void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_type (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
+
+	g_assert (!nm_platform_link_set_up (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_set_down (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_set_arp (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_set_noarp (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_is_up (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_is_connected (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_uses_arp (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
 }
 
 static void
@@ -101,6 +116,27 @@ test_internal (void)
 	g_assert (ifindex > 0);
 	g_assert (!g_strcmp0 (nm_platform_link_get_name (ifindex), DEVICE_NAME));
 	g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_DUMMY);
+
+	/* Up/connected */
+	g_assert (!nm_platform_link_is_up (ifindex)); no_error ();
+	g_assert (!nm_platform_link_is_connected (ifindex)); no_error ();
+	g_assert (nm_platform_link_set_up (ifindex)); no_error ();
+	g_assert (nm_platform_link_is_up (ifindex)); no_error ();
+	g_assert (nm_platform_link_is_connected (ifindex)); no_error ();
+	accept_signal (link_changed);
+	g_assert (nm_platform_link_set_down (ifindex)); no_error ();
+	g_assert (!nm_platform_link_is_up (ifindex)); no_error ();
+	g_assert (!nm_platform_link_is_connected (ifindex)); no_error ();
+	accept_signal (link_changed);
+
+	/* arp/noarp */
+	g_assert (!nm_platform_link_uses_arp (ifindex));
+	g_assert (nm_platform_link_set_arp (ifindex));
+	g_assert (nm_platform_link_uses_arp (ifindex));
+	accept_signal (link_changed);
+	g_assert (nm_platform_link_set_noarp (ifindex));
+	g_assert (!nm_platform_link_uses_arp (ifindex));
+	accept_signal (link_changed);
 
 	/* Delete device */
 	g_assert (nm_platform_link_delete (ifindex));
@@ -145,6 +181,33 @@ test_external (void)
 	g_assert (ifindex > 0);
 	g_assert (!g_strcmp0 (nm_platform_link_get_name (ifindex), DEVICE_NAME));
 	g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_DUMMY);
+
+	/* Up/connected/arp */
+	g_assert (!nm_platform_link_is_up (ifindex));
+	g_assert (!nm_platform_link_is_connected (ifindex));
+	g_assert (!nm_platform_link_uses_arp (ifindex));
+	run_command ("ip link set %s up", DEVICE_NAME);
+	wait_signal (link_changed);
+	g_assert (nm_platform_link_is_up (ifindex));
+	g_assert (nm_platform_link_is_connected (ifindex));
+	run_command ("ip link set %s down", DEVICE_NAME);
+	wait_signal (link_changed);
+	g_assert (!nm_platform_link_is_up (ifindex));
+	g_assert (!nm_platform_link_is_connected (ifindex));
+	/* This test doesn't trigger a netlink event at least on
+	 * 3.8.2-206.fc18.x86_64. Disabling the waiting and checking code
+	 * because of that.
+	 */
+	run_command ("ip link set %s arp on", DEVICE_NAME);
+#if 0
+	wait_signal (link_changed);
+	g_assert (nm_platform_link_uses_arp (ifindex));
+#endif
+	run_command ("ip link set %s arp off", DEVICE_NAME);
+#if 0
+	wait_signal (link_changed);
+	g_assert (!nm_platform_link_uses_arp (ifindex));
+#endif
 
 	run_command ("ip link del %s", DEVICE_NAME);
 	wait_signal (link_removed);
