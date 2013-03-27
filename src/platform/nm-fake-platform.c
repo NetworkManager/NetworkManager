@@ -40,6 +40,7 @@ typedef struct {
 typedef struct {
 	NMPlatformLink link;
 
+	GBytes *address;
 	int vlan_parent;
 	int vlan_id;
 } NMFakePlatformLink;
@@ -123,6 +124,7 @@ link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 	default:
 		device->link.arp = TRUE;
 	}
+	device->address = NULL;
 }
 
 static NMFakePlatformLink *
@@ -352,6 +354,35 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
 	return device ? device->link.arp : FALSE;
+}
+
+static gboolean
+link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t len)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (device->address)
+		g_bytes_unref (device->address);
+
+	device->address = g_bytes_new (addr, len);
+
+	link_changed (platform, link_get (platform, ifindex));
+
+	return TRUE;
+}
+
+static gconstpointer
+link_get_address (NMPlatform *platform, int ifindex, size_t *length)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (!device || !device->address) {
+		if (length)
+			*length = 0;
+		return NULL;
+	}
+
+	return g_bytes_get_data (device->address, length);
 }
 
 static gboolean
@@ -896,8 +927,14 @@ static void
 nm_fake_platform_finalize (GObject *object)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (object);
+	int i;
 
 	g_hash_table_unref (priv->options);
+	for (i = 0; i < priv->links->len; i++) {
+		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
+
+		g_bytes_unref (device->address);
+	}
 	g_array_unref (priv->links);
 	g_array_unref (priv->ip4_addresses);
 	g_array_unref (priv->ip6_addresses);
@@ -938,6 +975,9 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_is_up = link_is_up;
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
+
+	platform_class->link_set_address = link_set_address;
+	platform_class->link_get_address = link_get_address;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;

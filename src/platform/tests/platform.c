@@ -184,6 +184,52 @@ LINK_CMD_GET (is_up, boolean)
 LINK_CMD_GET (is_connected, boolean)
 LINK_CMD_GET (uses_arp, boolean)
 
+static gboolean
+do_link_set_address (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	char *hex = *argv++;
+	int hexlen = strlen (hex);
+	char address[hexlen/2];
+	char *endptr;
+	int i;
+
+	g_assert (!(hexlen % 2));
+
+	for (i = 0; i < sizeof (address); i++) {
+		char digit[3];
+
+		digit[0] = hex[2*i];
+		digit[1] = hex[2*i+1];
+		digit[2] = '\0';
+
+		address[i] = strtoul (digit, &endptr, 16);
+		g_assert (!*endptr);
+	}
+
+	return nm_platform_link_set_address (ifindex, address, sizeof (address));
+}
+
+static gboolean
+do_link_get_address (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	const char *address;
+	size_t length;
+	int i;
+
+	address = nm_platform_link_get_address (ifindex, &length);
+
+	if (!address || length <= 0)
+		return FALSE;
+
+	for (i = 0; i < length; i++)
+		printf ("%02x", address[i]);
+	printf ("\n");
+
+	return TRUE;
+}
+
 LINK_CMD_GET (supports_carrier_detect, boolean)
 LINK_CMD_GET (supports_vlans, boolean)
 
@@ -546,6 +592,8 @@ static const command_t commands[] = {
 	{ "link-is-up", "check if interface is up", do_link_is_up, 1, "<ifname/ifindex>" },
 	{ "link-is-connected", "check interface carrier", do_link_is_connected, 1, "<ifname/ifindex>" },
 	{ "link-uses-arp", "check whether interface uses arp", do_link_uses_arp, 1, "<ifname/ifindex>" },
+	{ "link-get-address", "print link address", do_link_get_address, 1, "<ifname/ifindex>" },
+	{ "link-set-address", "set link address", do_link_set_address, 2, "<ifname/ifindex> <hex>" },
 	{ "link-supports-carrier-detect", "check whether interface supports carrier detect",
 		do_link_supports_carrier_detect, 1, "<ifname/ifindex>" },
 	{ "link-supports-vlans", "check whether interface supports VLANs",

@@ -493,6 +493,48 @@ nm_platform_link_uses_arp (int ifindex)
 	return klass->link_uses_arp (platform, ifindex);
 }
 
+/**
+ * nm_platform_link_set_address:
+ * @ifindex: Interface index
+ * @address: The new MAC address
+ *
+ * Set interface MAC address.
+ */
+gboolean
+nm_platform_link_set_address (int ifindex, gconstpointer address, size_t length)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (address, FALSE);
+	g_return_val_if_fail (length > 0, FALSE);
+	g_return_val_if_fail (klass->link_set_address, FALSE);
+
+	debug ("link: setting '%s' (%d) hardware address", nm_platform_link_get_name (ifindex), ifindex);
+	return klass->link_set_address (platform, ifindex, address, length);
+}
+
+/**
+ * nm_platform_link_get_address:
+ * @ifindex: Interface index
+ * @length: Pointer to a variable to store address length
+ *
+ * Saves interface hardware address to @address.
+ */
+gconstpointer
+nm_platform_link_get_address (int ifindex, size_t *length)
+{
+	reset_error ();
+
+	if (length)
+		*length = 0;
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (klass->link_get_address, NULL);
+
+	return klass->link_get_address (platform, ifindex, length);
+}
+
 gboolean
 nm_platform_link_supports_carrier_detect (int ifindex)
 {

@@ -58,6 +58,8 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, Sign
 static void
 test_bogus(void)
 {
+	size_t addrlen;
+
 	g_assert (!nm_platform_link_exists (BOGUS_NAME));
 	no_error ();
 	g_assert (!nm_platform_link_delete (BOGUS_IFINDEX));
@@ -86,6 +88,12 @@ test_bogus(void)
 	g_assert (!nm_platform_link_is_connected (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_uses_arp (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+
+	g_assert (!nm_platform_link_get_address (BOGUS_IFINDEX, &addrlen));
+	g_assert (!addrlen);
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_get_address (BOGUS_IFINDEX, NULL));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_link_supports_carrier_detect (BOGUS_IFINDEX));
@@ -382,6 +390,9 @@ test_internal (void)
 	SignalData *link_added = add_signal (NM_PLATFORM_LINK_ADDED, link_callback);
 	SignalData *link_changed = add_signal (NM_PLATFORM_LINK_CHANGED, link_callback);
 	SignalData *link_removed = add_signal (NM_PLATFORM_LINK_REMOVED, link_callback);
+	const char mac[6] = { 0x00, 0xff, 0x11, 0xee, 0x22, 0xdd };
+	const char *address;
+	size_t addrlen;
 	int ifindex;
 
 	/* Check the functions for non-existent devices */
@@ -429,6 +440,15 @@ test_internal (void)
 	/* Features */
 	g_assert (!nm_platform_link_supports_carrier_detect (ifindex));
 	g_assert (nm_platform_link_supports_vlans (ifindex));
+
+	/* Set MAC address */
+	g_assert (nm_platform_link_set_address (ifindex, mac, sizeof (mac)));
+	address = nm_platform_link_get_address (ifindex, &addrlen);
+	g_assert (addrlen == sizeof(mac));
+	g_assert (!memcmp (address, mac, addrlen));
+	address = nm_platform_link_get_address (ifindex, NULL);
+	g_assert (!memcmp (address, mac, addrlen));
+	accept_signal (link_changed);
 
 	/* Delete device */
 	g_assert (nm_platform_link_delete (ifindex));

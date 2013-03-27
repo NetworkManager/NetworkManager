@@ -21,6 +21,8 @@ dump_interface (NMPlatformLink *link)
 	char networkstr[INET6_ADDRSTRLEN];
 	char gatewaystr[INET6_ADDRSTRLEN];
 	int vlan_id, vlan_parent;
+	const char *address;
+	size_t addrlen;
 	int i;
 
 	g_assert (link->up || !link->connected);
@@ -43,6 +45,14 @@ dump_interface (NMPlatformLink *link)
 		printf ("    feature carrier-detect\n");
 	if (nm_platform_link_supports_vlans (link->ifindex))
 		printf ("    feature vlans\n");
+
+	address = nm_platform_link_get_address (link->ifindex, &addrlen);
+	if (address) {
+		printf ("    link-address ");
+		for (i = 0; i < addrlen; i++)
+			printf ("%s%02hhx", i ? ":" : "", address[i]);
+		printf ("\n");
+	}
 
 	ip4_addresses = nm_platform_ip4_address_get_all (link->ifindex);
 	ip6_addresses = nm_platform_ip6_address_get_all (link->ifindex);

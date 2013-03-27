@@ -159,6 +159,9 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	gconstpointer (*link_get_address) (NMPlatform *, int ifindex, size_t *length);
+	gboolean (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
+
 	gboolean (*link_supports_carrier_detect) (NMPlatform *, int ifindex);
 	gboolean (*link_supports_vlans) (NMPlatform *, int ifindex);
 
@@ -260,6 +263,9 @@ gboolean nm_platform_link_set_noarp (int ifindex);
 gboolean nm_platform_link_is_up (int ifindex);
 gboolean nm_platform_link_is_connected (int ifindex);
 gboolean nm_platform_link_uses_arp (int ifindex);
+
+gconstpointer nm_platform_link_get_address (int ifindex, size_t *length);
+gboolean nm_platform_link_set_address (int ifindex, const void *address, size_t length);
 
 gboolean nm_platform_link_supports_carrier_detect (int ifindex);
 gboolean nm_platform_link_supports_vlans (int ifindex);

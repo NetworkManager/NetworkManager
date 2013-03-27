@@ -1108,6 +1108,37 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	return !(features->features[block].active & (1 << bit));
 }
 
+static gboolean
+link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
+{
+	auto_nl_object struct rtnl_link *change = NULL;
+	auto_nl_addr struct nl_addr *nladdr = NULL;
+
+	change = rtnl_link_alloc ();
+	g_return_val_if_fail (change, FALSE);
+
+	nladdr = nl_addr_build (AF_LLC, address, length);
+	g_return_val_if_fail (nladdr, FALSE);
+
+	rtnl_link_set_addr (change, nladdr);
+
+	return link_change (platform, ifindex, change);
+}
+
+static gconstpointer
+link_get_address (NMPlatform *platform, int ifindex, size_t *length)
+{
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
+	struct nl_addr *nladdr;
+
+	nladdr = rtnllink ? rtnl_link_get_addr (rtnllink) : NULL;
+
+	if (length)
+		*length = nladdr ? nl_addr_get_len (nladdr) : 0;
+
+	return nladdr ? nl_addr_get_binary_addr (nladdr) : NULL;
+}
+
 static int
 vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
 {
@@ -1739,6 +1770,9 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_is_up = link_is_up;
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
+
+	platform_class->link_get_address = link_get_address;
+	platform_class->link_set_address = link_set_address;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
