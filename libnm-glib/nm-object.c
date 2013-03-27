@@ -1399,6 +1399,7 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 
 	if (!priv->property_interfaces && !priv->pseudo_properties) {
 		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
 		return;
 	}
 
