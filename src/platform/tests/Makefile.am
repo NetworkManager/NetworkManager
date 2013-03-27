@@ -22,7 +22,9 @@ noinst_PROGRAMS = \
 	test-link-fake \
 	test-link-linux \
 	test-address-fake \
-	test-address-linux
+	test-address-linux \
+	test-route-fake \
+	test-route-linux
 
 EXTRA_DIST = test-common.h
 
@@ -78,6 +80,28 @@ test_address_linux_CPPFLAGS = \
 	-DKERNEL_HACKS=1
 test_address_linux_LDADD = $(COMMON_LDADD)
 
+test_route_fake_SOURCES = \
+	test-route.c \
+	test-common.c \
+	${srcdir}/../nm-platform.c \
+	${srcdir}/../nm-fake-platform.c
+test_route_fake_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-DSETUP=nm_fake_platform_setup \
+	-DKERNEL_HACKS=0
+test_route_fake_LDADD = $(COMMON_LDADD)
+
+test_route_linux_SOURCES = \
+	test-route.c \
+	test-common.c \
+	${srcdir}/../nm-platform.c \
+	${srcdir}/../nm-linux-platform.c
+test_route_linux_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-DSETUP=nm_linux_platform_setup \
+	-DKERNEL_HACKS=1
+test_route_linux_LDADD = $(COMMON_LDADD)
+
 # Unfortunately, we cannot run nm-linux-platform-test as an automatic test
 # program by default, as it requires root access and modifies kernel
 # configuration.
@@ -85,8 +109,8 @@ test_address_linux_LDADD = $(COMMON_LDADD)
 # However, we can check whether the fake platform fakes platform behavior
 # correctly.
 @VALGRIND_RULES@
-TESTS = ./test-link-fake ./test-address-fake
-ROOTTESTS = ./test-link-linux ./test-address-linux
+TESTS = ./test-link-fake ./test-address-fake ./test-route-fake
+ROOTTESTS = ./test-link-linux ./test-address-linux ./test-route-linux
 
 # If explicitly enabled, we can run the root tests
 if RUN_ROOT_TESTS

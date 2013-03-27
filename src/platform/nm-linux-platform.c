@@ -31,6 +31,7 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/addr.h>
+#include <netlink/route/route.h>
 
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
@@ -47,6 +48,7 @@ typedef struct {
 	struct nl_sock *nlh_event;
 	struct nl_cache *link_cache;
 	struct nl_cache *address_cache;
+	struct nl_cache *route_cache;
 	GIOChannel *event_channel;
 	guint event_id;
 } NMLinuxPlatformPrivate;
@@ -111,6 +113,8 @@ typedef enum {
 	LINK,
 	IP4_ADDRESS,
 	IP6_ADDRESS,
+	IP4_ROUTE,
+	IP6_ROUTE,
 	N_TYPES
 } ObjectType;
 
@@ -134,6 +138,15 @@ object_type_from_nl_object (const struct nl_object *object)
 			return IP4_ADDRESS;
 		case AF_INET6:
 			return IP6_ADDRESS;
+		default:
+			g_assert_not_reached ();
+		}
+	} else if (!strcmp (nl_object_get_type (object), "route/route")) {
+		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
+		case AF_INET:
+			return IP4_ROUTE;
+		case AF_INET6:
+			return IP6_ROUTE;
 		default:
 			g_assert_not_reached ();
 		}
@@ -214,6 +227,9 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	case IP4_ADDRESS:
 	case IP6_ADDRESS:
 		return rtnl_addr_add (sock, (struct rtnl_addr *) object, NLM_F_CREATE);
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE);
 	default:
 		g_assert_not_reached ();
 	}
@@ -229,6 +245,9 @@ delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	case IP4_ADDRESS:
 	case IP6_ADDRESS:
 		return rtnl_addr_delete (sock, (struct rtnl_addr *) object, 0);
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		return rtnl_route_delete (sock, (struct rtnl_route *) object, 0);
 	default:
 		g_assert_not_reached ();
 	}
@@ -318,6 +337,46 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 	memcpy (&address->address, nl_addr_get_binary_addr (nladdr), sizeof (address->address));
 }
 
+static void
+init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
+{
+	struct nl_addr *dst, *gw;
+	struct rtnl_nexthop *nexthop;
+
+	g_assert (rtnl_route_get_nnexthops (rtnlroute) == 1);
+	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+	dst = rtnl_route_get_dst (rtnlroute);
+	gw = rtnl_route_nh_get_gateway (nexthop);
+
+	memset (route, 0, sizeof (*route));
+	route->ifindex = rtnl_route_nh_get_ifindex (nexthop);
+	route->plen = nl_addr_get_prefixlen (dst);
+	memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
+	if (gw)
+		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
+	route->metric = rtnl_route_get_priority (rtnlroute);
+}
+
+static void
+init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
+{
+	struct nl_addr *dst, *gw;
+	struct rtnl_nexthop *nexthop;
+
+	g_assert (rtnl_route_get_nnexthops (rtnlroute) == 1);
+	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+	dst = rtnl_route_get_dst (rtnlroute);
+	gw = rtnl_route_nh_get_gateway (nexthop);
+
+	memset (route, 0, sizeof (*route));
+	route->ifindex = rtnl_route_nh_get_ifindex (nexthop);
+	route->plen = nl_addr_get_prefixlen (dst);
+	memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
+	if (gw)
+		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
+	route->metric = rtnl_route_get_priority (rtnlroute);
+}
+
 /******************************************************************/
 
 /* Object and cache manipulation */
@@ -326,6 +385,8 @@ static const char *signal_by_type_and_status[N_TYPES][N_STATUSES] = {
 	{ NM_PLATFORM_LINK_ADDED, NM_PLATFORM_LINK_CHANGED, NM_PLATFORM_LINK_REMOVED },
 	{ NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
 	{ NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
+	{ NM_PLATFORM_IP4_ROUTE_ADDED, NM_PLATFORM_IP4_ROUTE_CHANGED, NM_PLATFORM_IP4_ROUTE_REMOVED },
+	{ NM_PLATFORM_IP6_ROUTE_ADDED, NM_PLATFORM_IP6_ROUTE_CHANGED, NM_PLATFORM_IP6_ROUTE_REMOVED }
 };
 
 static struct nl_cache *
@@ -339,6 +400,9 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 	case IP4_ADDRESS:
 	case IP6_ADDRESS:
 		return priv->address_cache;
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		return priv->route_cache;
 	default:
 		g_assert_not_reached ();
 	}
@@ -373,6 +437,22 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 
 			init_ip6_address (&address, (struct rtnl_addr *) object);
 			g_signal_emit_by_name (platform, sig, &address);
+		}
+		return;
+	case IP4_ROUTE:
+		{
+			NMPlatformIP4Route route;
+
+			init_ip4_route (&route, (struct rtnl_route *) object);
+			g_signal_emit_by_name (platform, sig, &route);
+		}
+		return;
+	case IP6_ROUTE:
+		{
+			NMPlatformIP6Route route;
+
+			init_ip6_route (&route, (struct rtnl_route *) object);
+			g_signal_emit_by_name (platform, sig, &route);
 		}
 		return;
 	default:
@@ -869,6 +949,165 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 
 /******************************************************************/
 
+static int
+ip_route_mark_all (NMPlatform *platform, int family, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_object *object;
+	int count = 0;
+
+	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
+		struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
+		struct rtnl_nexthop *nexthop;
+
+		nl_object_unmark (object);
+		if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST)
+			continue;
+		if (rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN)
+			continue;
+		if (rtnl_route_get_family (rtnlroute) != family)
+			continue;
+		if (rtnl_route_get_nnexthops (rtnlroute) != 1)
+			continue;
+		nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+		if (rtnl_route_nh_get_ifindex (nexthop) != ifindex)
+			continue;
+		nl_object_mark (object);
+		count++;
+	}
+
+	return count;
+}
+
+static GArray *
+ip4_route_get_all (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GArray *routes;
+	NMPlatformIP4Route route;
+	struct nl_object *object;
+	int count = 0;
+
+	count = ip_route_mark_all (platform, AF_INET, ifindex);
+	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Route), count);
+
+	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
+		if (nl_object_is_marked (object)) {
+			init_ip4_route (&route, (struct rtnl_route *) object);
+			g_array_append_val (routes, route);
+			nl_object_unmark (object);
+		}
+	}
+
+	return routes;
+}
+
+static GArray *
+ip6_route_get_all (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GArray *routes;
+	NMPlatformIP6Route route;
+	struct nl_object *object;
+	int count;
+
+	count = ip_route_mark_all (platform, AF_INET6, ifindex);
+	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Route), count);
+
+	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
+		if (nl_object_is_marked (object)) {
+			init_ip6_route (&route, (struct rtnl_route *) object);
+			g_array_append_val (routes, route);
+			nl_object_unmark (object);
+		}
+	}
+
+	return routes;
+}
+
+static struct nl_object *
+build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gconstpointer gateway, int metric, int mss)
+{
+	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
+	struct rtnl_nexthop *nexthop = rtnl_route_nh_alloc ();
+	int addrlen = (family == AF_INET) ? sizeof (in_addr_t) : sizeof (struct in6_addr);
+	auto_nl_addr struct nl_addr *dst = nl_addr_build (family, network, addrlen);
+	auto_nl_addr struct nl_addr *gw = nl_addr_build (family, gateway, addrlen);
+
+	g_assert (rtnlroute && dst && gw && nexthop);
+
+	nl_addr_set_prefixlen (dst, plen);
+
+	rtnl_route_set_table (rtnlroute, RT_TABLE_MAIN);
+	rtnl_route_set_tos (rtnlroute, 0);
+	rtnl_route_set_dst (rtnlroute, dst);
+	rtnl_route_set_priority (rtnlroute, metric);
+
+	rtnl_route_nh_set_ifindex (nexthop, ifindex);
+	if (!nl_addr_iszero (gw))
+		rtnl_route_nh_set_gateway (nexthop, gw);
+	rtnl_route_add_nexthop (rtnlroute, nexthop);
+
+	if (mss > 0)
+		rtnl_route_set_metric (rtnlroute, RTAX_ADVMSS, mss);
+
+	return (struct nl_object *) rtnlroute;
+}
+
+static gboolean
+ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen, in_addr_t gateway, int metric, int mss)
+{
+	return add_object (platform, build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, mss));
+}
+
+static gboolean
+ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss)
+{
+	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, mss));
+}
+
+static gboolean
+ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
+		in_addr_t gateway, int metric)
+{
+	return delete_object (platform, build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0));
+}
+
+static gboolean
+ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen,
+		struct in6_addr gateway, int metric)
+{
+	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, 0));
+}
+
+static gboolean
+ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen,
+		gpointer gateway, int metric)
+{
+	auto_nl_object struct nl_object *object = build_rtnl_route (
+			family, ifindex, network, plen, gateway, metric, 0);
+	auto_nl_object struct nl_object *cached_object = nl_cache_search (
+			choose_cache (platform, object), object);
+
+	return !!cached_object;
+}
+
+static gboolean
+ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
+		in_addr_t gateway, int metric)
+{
+	return ip_route_exists (platform, AF_INET, ifindex, &network, plen, &gateway, metric);
+}
+
+static gboolean
+ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen,
+		struct in6_addr gateway, int metric)
+{
+	return ip_route_exists (platform, AF_INET6, ifindex, &network, plen, &gateway, metric);
+}
+
+/******************************************************************/
+
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
@@ -982,7 +1221,8 @@ setup (NMPlatform *platform)
 	/* Allocate netlink caches */
 	rtnl_link_alloc_cache (priv->nlh, AF_UNSPEC, &priv->link_cache);
 	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
-	g_assert (priv->link_cache && priv->address_cache);
+	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
+	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
 
 	return TRUE;
 }
@@ -999,6 +1239,7 @@ nm_linux_platform_finalize (GObject *object)
 	nl_socket_free (priv->nlh_event);
 	nl_cache_free (priv->link_cache);
 	nl_cache_free (priv->address_cache);
+	nl_cache_free (priv->route_cache);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }
@@ -1041,4 +1282,13 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip6_address_delete = ip6_address_delete;
 	platform_class->ip4_address_exists = ip4_address_exists;
 	platform_class->ip6_address_exists = ip6_address_exists;
+
+	platform_class->ip4_route_get_all = ip4_route_get_all;
+	platform_class->ip6_route_get_all = ip6_route_get_all;
+	platform_class->ip4_route_add = ip4_route_add;
+	platform_class->ip6_route_add = ip6_route_add;
+	platform_class->ip4_route_delete = ip4_route_delete;
+	platform_class->ip6_route_delete = ip6_route_delete;
+	platform_class->ip4_route_exists = ip4_route_exists;
+	platform_class->ip6_route_exists = ip6_route_exists;
 }

@@ -44,6 +44,12 @@ enum {
 	IP6_ADDRESS_ADDED,
 	IP6_ADDRESS_CHANGED,
 	IP6_ADDRESS_REMOVED,
+	IP4_ROUTE_ADDED,
+	IP4_ROUTE_CHANGED,
+	IP4_ROUTE_REMOVED,
+	IP6_ROUTE_ADDED,
+	IP6_ROUTE_CHANGED,
+	IP6_ROUTE_REMOVED,
 	LAST_SIGNAL
 };
 
@@ -600,6 +606,129 @@ nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen)
 	return klass->ip6_address_exists (platform, ifindex, address, plen);
 }
 
+GArray *
+nm_platform_ip4_route_get_all (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
+
+	return klass->ip4_route_get_all (platform, ifindex);
+}
+
+GArray *
+nm_platform_ip6_route_get_all (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
+
+	return klass->ip6_route_get_all (platform, ifindex);
+}
+
+gboolean
+nm_platform_ip4_route_add (int ifindex,
+		in_addr_t network, int plen,
+		in_addr_t gateway, int metric, int mss)
+{
+	reset_error ();
+
+	g_return_val_if_fail (platform, FALSE);
+	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
+	g_return_val_if_fail (metric >= 0, FALSE);
+	g_return_val_if_fail (mss >= 0, FALSE);
+	g_return_val_if_fail (klass->ip4_route_add, FALSE);
+
+	if (nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric)) {
+		debug ("route already exists");
+		platform->error = NM_PLATFORM_ERROR_EXISTS;
+		return FALSE;
+	}
+
+	return klass->ip4_route_add (platform, ifindex, network, plen, gateway, metric, mss);
+}
+
+gboolean
+nm_platform_ip6_route_add (int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss)
+{
+	g_return_val_if_fail (platform, FALSE);
+	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
+	g_return_val_if_fail (metric >= 0, FALSE);
+	g_return_val_if_fail (mss >= 0, FALSE);
+	g_return_val_if_fail (klass->ip6_route_add, FALSE);
+
+	if (nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric)) {
+		debug ("route already exists");
+		platform->error = NM_PLATFORM_ERROR_EXISTS;
+		return FALSE;
+	}
+
+	return klass->ip6_route_add (platform, ifindex, network, plen, gateway, metric, mss);
+}
+
+gboolean
+nm_platform_ip4_route_delete (int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric)
+{
+	reset_error ();
+
+	g_return_val_if_fail (platform, FALSE);
+	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
+
+	if (!nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric)) {
+		debug ("route not found");
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return FALSE;
+	}
+
+	return klass->ip4_route_delete (platform,ifindex, network, plen, gateway, metric);
+}
+
+gboolean
+nm_platform_ip6_route_delete (int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric)
+{
+	reset_error ();
+
+	g_return_val_if_fail (platform, FALSE);
+	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
+
+	if (!nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric)) {
+		debug ("route not found");
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return FALSE;
+	}
+
+	return klass->ip6_route_delete (platform, ifindex, network, plen, gateway, metric);
+}
+
+gboolean
+nm_platform_ip4_route_exists (int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric)
+{
+	reset_error ();
+
+	g_return_val_if_fail (platform, FALSE);
+	g_return_val_if_fail (klass->ip4_route_exists, FALSE);
+
+	return klass->ip4_route_exists (platform,ifindex, network, plen, gateway, metric);
+}
+
+gboolean
+nm_platform_ip6_route_exists (int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric)
+{
+	reset_error ();
+
+	g_return_val_if_fail (platform, FALSE);
+	g_return_val_if_fail (klass->ip6_route_exists, FALSE);
+
+	return klass->ip6_route_exists (platform, ifindex, network, plen, gateway, metric);
+}
+
 /******************************************************************/
 
 static void
@@ -680,6 +809,70 @@ log_ip6_address_removed (NMPlatform *p, NMPlatformIP6Address *address, gpointer 
 	log_ip6_address (address, "removed");
 }
 
+static void
+log_ip4_route (NMPlatformIP4Route *route, const char *change_type)
+{
+	char network[INET_ADDRSTRLEN];
+	char gateway[INET_ADDRSTRLEN];
+	int plen = route->plen;
+	const char *name = nm_platform_link_get_name (route->ifindex);
+
+	inet_ntop (AF_INET, &route->network, network, sizeof (network));
+	inet_ntop (AF_INET, &route->gateway, gateway, sizeof (gateway));
+
+	debug ("signal: route %s: %s/%d via %s dev %s", change_type, network, plen, gateway, name);
+}
+
+static void
+log_ip4_route_added (NMPlatform *p, NMPlatformIP4Route *route, gpointer user_data)
+{
+	log_ip4_route (route, "added");
+}
+
+static void
+log_ip4_route_changed (NMPlatform *p, NMPlatformIP4Route *route, gpointer user_data)
+{
+	log_ip4_route (route, "changed");
+}
+
+static void
+log_ip4_route_removed (NMPlatform *p, NMPlatformIP4Route *route, gpointer user_data)
+{
+	log_ip4_route (route, "removed");
+}
+
+static void
+log_ip6_route (NMPlatformIP6Route *route, const char *change_type)
+{
+	char network[INET6_ADDRSTRLEN];
+	char gateway[INET6_ADDRSTRLEN];
+	int plen = route->plen;
+	const char *name = nm_platform_link_get_name (route->ifindex);
+
+	inet_ntop (AF_INET6, &route->network, network, sizeof (network));
+	inet_ntop (AF_INET6, &route->gateway, gateway, sizeof (gateway));
+
+	debug ("signal: route %s: %s/%d via %s dev %s", change_type, network, plen, gateway, name);
+}
+
+static void
+log_ip6_route_added (NMPlatform *p, NMPlatformIP6Route *route, gpointer user_data)
+{
+	log_ip6_route (route, "added");
+}
+
+static void
+log_ip6_route_changed (NMPlatform *p, NMPlatformIP6Route *route, gpointer user_data)
+{
+	log_ip6_route (route, "changed");
+}
+
+static void
+log_ip6_route_removed (NMPlatform *p, NMPlatformIP6Route *route, gpointer user_data)
+{
+	log_ip6_route (route, "removed");
+}
+
 /******************************************************************/
 
 static void
@@ -711,4 +904,10 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	SIGNAL (IP6_ADDRESS_ADDED, log_ip6_address_added)
 	SIGNAL (IP6_ADDRESS_CHANGED, log_ip6_address_changed)
 	SIGNAL (IP6_ADDRESS_REMOVED, log_ip6_address_removed)
+	SIGNAL (IP4_ROUTE_ADDED, log_ip4_route_added)
+	SIGNAL (IP4_ROUTE_CHANGED, log_ip4_route_changed)
+	SIGNAL (IP4_ROUTE_REMOVED, log_ip4_route_removed)
+	SIGNAL (IP6_ROUTE_ADDED, log_ip6_route_added)
+	SIGNAL (IP6_ROUTE_CHANGED, log_ip6_route_changed)
+	SIGNAL (IP6_ROUTE_REMOVED, log_ip6_route_removed)
 }

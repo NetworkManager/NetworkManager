@@ -64,6 +64,22 @@ typedef struct {
 	int plen;
 } NMPlatformIP6Address;
 
+typedef struct {
+	int ifindex;
+	in_addr_t network;
+	int plen;
+	in_addr_t gateway;
+	int metric;
+} NMPlatformIP4Route;
+
+typedef struct {
+	int ifindex;
+	struct in6_addr network;
+	int plen;
+	struct in6_addr gateway;
+	int metric;
+} NMPlatformIP6Route;
+
 /******************************************************************/
 
 /* NMPlatform abstract class and its implementations provide a layer between
@@ -128,6 +144,21 @@ typedef struct {
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_exists) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
+
+	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex);
+	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex);
+	gboolean (*ip4_route_add) (NMPlatform *, int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int prio, int mss);
+	gboolean (*ip6_route_add) (NMPlatform *, int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int prio, int mss);
+	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric);
+	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric);
+	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric);
+	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -150,6 +181,12 @@ typedef struct {
 #define NM_PLATFORM_IP6_ADDRESS_ADDED "ip6-address-added"
 #define NM_PLATFORM_IP6_ADDRESS_CHANGED "ip6-address-changed"
 #define NM_PLATFORM_IP6_ADDRESS_REMOVED "ip6-address-removed"
+#define NM_PLATFORM_IP4_ROUTE_ADDED "ip4-route-added"
+#define NM_PLATFORM_IP4_ROUTE_CHANGED "ip4-route-changed"
+#define NM_PLATFORM_IP4_ROUTE_REMOVED "ip4-route-removed"
+#define NM_PLATFORM_IP6_ROUTE_ADDED "ip6-route-added"
+#define NM_PLATFORM_IP6_ROUTE_CHANGED "ip6-route-changed"
+#define NM_PLATFORM_IP6_ROUTE_REMOVED "ip6-route-removed"
 
 /* NMPlatform error codes */
 enum {
@@ -199,5 +236,21 @@ gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int ple
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);
+
+GArray *nm_platform_ip4_route_get_all (int ifindex);
+GArray *nm_platform_ip6_route_get_all (int ifindex);
+gboolean nm_platform_route_set_metric (int ifindex, int metric);
+gboolean nm_platform_ip4_route_add (int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric, int mss);
+gboolean nm_platform_ip6_route_add (int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss);
+gboolean nm_platform_ip4_route_delete (int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric);
+gboolean nm_platform_ip6_route_delete (int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric);
+gboolean nm_platform_ip4_route_exists (int ifindex,
+		in_addr_t network, int plen, in_addr_t gateway, int metric);
+gboolean nm_platform_ip6_route_exists (int ifindex,
+		struct in6_addr network, int plen, struct in6_addr gateway, int metric);
 
 #endif /* NM_PLATFORM_H */
