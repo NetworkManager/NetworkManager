@@ -3,6 +3,7 @@ SUBDIRS= \
 	logging \
 	config \
 	posix-signals \
+	platform \
 	dns-manager \
 	vpn-manager \
 	dhcp-manager \
@@ -37,6 +38,7 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/src/dhcp-manager \
            -I${top_srcdir}/src/ip6-manager \
            -I${top_srcdir}/src/supplicant-manager \
+           -I${top_srcdir}/src/platform \
            -I${top_srcdir}/src/dnsmasq-manager \
            -I${top_srcdir}/src/modem-manager \
            -I$(top_srcdir)/src/bluez-manager \
@@ -326,6 +328,7 @@ NetworkManager_LDADD = \
 	./logging/libnm-logging.la \
 	./config/libnm-config.la \
 	./posix-signals/libnm-posix-signals.la \
+	./platform/libnm-platform.la \
 	./dns-manager/libdns-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \

@@ -74,3 +74,13 @@
    fun:g_object_constructor
    ...
 }
+{
+   g_signal_new_class_handler
+   Memcheck:Leak
+   ...
+   fun:g_closure_new_simple
+   fun:g_cclosure_new
+   fun:g_signal_new_class_handler
+   ...
+}
+

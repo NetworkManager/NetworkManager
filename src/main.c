@@ -42,6 +42,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "nm-policy.h"
+#include "nm-linux-platform.h"
 #include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
@@ -483,6 +484,9 @@ main (int argc, char *argv[])
 	             );
 
 	main_loop = g_main_loop_new (NULL, FALSE);
+
+	/* Set up platform interaction layer */
+	nm_linux_platform_setup ();
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
