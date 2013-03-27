@@ -78,6 +78,11 @@ test_bogus(void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_uses_arp (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
+
+	g_assert (!nm_platform_link_supports_carrier_detect (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_supports_vlans (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
 }
 
 static void
@@ -87,6 +92,9 @@ test_loopback (void)
 	g_assert (nm_platform_link_get_type (LO_INDEX) == NM_LINK_TYPE_LOOPBACK);
 	g_assert (nm_platform_link_get_ifindex (LO_NAME) == LO_INDEX);
 	g_assert (!g_strcmp0 (nm_platform_link_get_name (LO_INDEX), LO_NAME));
+
+	g_assert (nm_platform_link_supports_carrier_detect (LO_INDEX));
+	g_assert (!nm_platform_link_supports_vlans (LO_INDEX));
 }
 
 static void
@@ -137,6 +145,10 @@ test_internal (void)
 	g_assert (nm_platform_link_set_noarp (ifindex));
 	g_assert (!nm_platform_link_uses_arp (ifindex));
 	accept_signal (link_changed);
+
+	/* Features */
+	g_assert (!nm_platform_link_supports_carrier_detect (ifindex));
+	g_assert (nm_platform_link_supports_vlans (ifindex));
 
 	/* Delete device */
 	g_assert (nm_platform_link_delete (ifindex));

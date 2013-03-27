@@ -25,6 +25,9 @@
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <linux/if_arp.h>
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
 #include <netlink/netlink.h>
 #include <netlink/object.h>
 #include <netlink/cache.h>
@@ -816,6 +819,66 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE);
 }
 
+static gboolean
+ethtool_get (const char *name, gpointer edata)
+{
+	struct ifreq ifr;
+	int fd;
+
+	memset (&ifr, 0, sizeof (ifr));
+	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_data = edata;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		error ("ethtool: Could not open socket.");
+		return FALSE;
+	}
+
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		debug ("ethtool: Request failed: %s", strerror (errno));
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static gboolean
+link_supports_carrier_detect (NMPlatform *platform, int ifindex)
+{
+	const char *name = nm_platform_link_get_name (ifindex);
+	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
+
+	/* We ignore the result and only return FALSE on error */
+	return name && ethtool_get (name, &edata);
+}
+
+#define NETIF_F_VLAN_CHALLENGED (1 << 10)
+
+static gboolean
+link_supports_vlans (NMPlatform *platform, int ifindex)
+{
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
+	const char *name = nm_platform_link_get_name (ifindex);
+	struct {
+		struct ethtool_gfeatures features;
+		struct ethtool_get_features_block features_block;
+	} edata = { .features = { .cmd = ETHTOOL_GFEATURES, .size = 1 } };
+
+	/* Only ARPHDR_ETHER links can possibly support VLANs. Thanks to Dan Winship
+	 * for pointing this out.
+	 */
+	if (!rtnllink || rtnl_link_get_arptype (rtnllink) != ARPHRD_ETHER)
+		return FALSE;
+
+	if (!name || !ethtool_get (name, &edata))
+		return FALSE;
+
+	return !(edata.features.features[0].active & NETIF_F_VLAN_CHALLENGED);
+}
+
 /******************************************************************/
 
 static int
@@ -1273,6 +1336,9 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_is_up = link_is_up;
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
+
+	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
+	platform_class->link_supports_vlans = link_supports_vlans;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

@@ -136,6 +136,9 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	gboolean (*link_supports_carrier_detect) (NMPlatform *, int ifindex);
+	gboolean (*link_supports_vlans) (NMPlatform *, int ifindex);
+
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
 	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen);
@@ -227,6 +230,9 @@ gboolean nm_platform_link_set_noarp (int ifindex);
 gboolean nm_platform_link_is_up (int ifindex);
 gboolean nm_platform_link_is_connected (int ifindex);
 gboolean nm_platform_link_uses_arp (int ifindex);
+
+gboolean nm_platform_link_supports_carrier_detect (int ifindex);
+gboolean nm_platform_link_supports_vlans (int ifindex);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

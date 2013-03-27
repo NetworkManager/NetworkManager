@@ -268,6 +268,38 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 	return device ? device->arp : FALSE;
 }
 
+static gboolean
+link_supports_carrier_detect (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	switch (device->type) {
+	case NM_LINK_TYPE_DUMMY:
+		return FALSE;
+	default:
+		return TRUE;
+	}
+}
+
+static gboolean
+link_supports_vlans (NMPlatform *platform, int ifindex)
+{
+	NMPlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return FALSE;
+
+	switch (device->type) {
+	case NM_LINK_TYPE_LOOPBACK:
+		return FALSE;
+	default:
+		return TRUE;
+	}
+}
+
 /******************************************************************/
 
 static GArray *
@@ -697,6 +729,9 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_is_up = link_is_up;
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
+
+	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
+	platform_class->link_supports_vlans = link_supports_vlans;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

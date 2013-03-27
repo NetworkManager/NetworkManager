@@ -412,6 +412,24 @@ nm_platform_link_uses_arp (int ifindex)
 	return klass->link_uses_arp (platform, ifindex);
 }
 
+gboolean
+nm_platform_link_supports_carrier_detect (int ifindex)
+{
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_supports_carrier_detect, FALSE);
+
+	return klass->link_supports_carrier_detect (platform, ifindex);
+}
+
+gboolean
+nm_platform_link_supports_vlans (int ifindex)
+{
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_supports_vlans, FALSE);
+
+	return klass->link_supports_vlans (platform, ifindex);
+}
+
 /**
  * nm_platform_link_set_up:
  * @ifindex: Interface index

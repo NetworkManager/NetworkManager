@@ -48,6 +48,11 @@ dump_interface (NMPlatformLink *link)
 		printf (" noarp");
 	printf ("\n");
 
+	if (nm_platform_link_supports_carrier_detect (link->ifindex))
+		printf ("    feature carrier-detect\n");
+	if (nm_platform_link_supports_vlans (link->ifindex))
+		printf ("    feature vlans\n");
+
 	ip4_addresses = nm_platform_ip4_address_get_all (link->ifindex);
 	ip6_addresses = nm_platform_ip6_address_get_all (link->ifindex);
 
