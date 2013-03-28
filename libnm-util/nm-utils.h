@@ -20,7 +20,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2012 Red Hat, Inc.
+ * (C) Copyright 2005 - 2013 Red Hat, Inc.
  */
 
 #ifndef NM_UTILS_H
@@ -140,6 +140,10 @@ int         nm_utils_hwaddr_type  (int len) G_GNUC_PURE;
 char       *nm_utils_hwaddr_ntoa  (gconstpointer addr, int type);
 GByteArray *nm_utils_hwaddr_atoba (const char *asc, int type);
 guint8     *nm_utils_hwaddr_aton  (const char *asc, int type, gpointer buffer);
+
+char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
+int   nm_utils_hex2byte   (const char *hex);
+char *nm_utils_hexstr2bin (const char *hex, size_t len);
 
 gboolean    nm_utils_iface_valid_name(const char *name);
 

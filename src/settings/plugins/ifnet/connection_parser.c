@@ -55,7 +55,7 @@ update_connection_id (NMConnection *connection, const char *conn_name)
 
 	name_len = strlen (conn_name);
 	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
-		idstr = utils_hexstr2bin (conn_name + 2, name_len - 2);
+		idstr = nm_utils_hexstr2bin (conn_name + 2, name_len - 2);
 	} else
 		idstr = g_strdup_printf ("%s", conn_name);
 	uuid_base = idstr;
@@ -973,7 +973,7 @@ make_wireless_connection_setting (const char *conn_name,
 				goto error;
 
 			}
-			tmp = utils_hexstr2bin (p, value_len - 2);
+			tmp = nm_utils_hexstr2bin (p, value_len - 2);
 			ssid_len = (value_len - 2) / 2;
 			converted = g_malloc0 (ssid_len + 1);
 			memcpy (converted, tmp, ssid_len);
@@ -1141,7 +1141,7 @@ add_one_wep_key (const char *ssid,
 
 		}
 
-		converted = utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
+		converted = nm_utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
 		g_free (tmp);
 	} else {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,

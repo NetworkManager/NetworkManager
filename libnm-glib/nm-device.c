@@ -46,6 +46,7 @@
 #include "nm-glib-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-utils.h"
 
 static GType _nm_device_type_for_path (DBusGConnection *connection,
                                        const char *path);
@@ -1329,33 +1330,6 @@ nm_device_get_available_connections (NMDevice *device)
 	return handle_ptr_array_return (NM_DEVICE_GET_PRIVATE (device)->available_connections);
 }
 
-/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
-
-static int hex2num (char c)
-{
-	if (c >= '0' && c <= '9')
-		return c - '0';
-	if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
-	return -1;
-}
-
-static int hex2byte (const char *hex)
-{
-	int a, b;
-	a = hex2num(*hex++);
-	if (a < 0)
-		return -1;
-	b = hex2num(*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
-/* End from hostap */
-
 static char *
 get_decoded_property (GUdevDevice *device, const char *property)
 {
@@ -1371,7 +1345,7 @@ get_decoded_property (GUdevDevice *device, const char *property)
 	n = unescaped = g_malloc0 (len + 1);
 	while (*p) {
 		if ((len >= 4) && (*p == '\\') && (*(p+1) == 'x')) {
-			*n++ = (char) hex2byte (p + 2);
+			*n++ = (char) nm_utils_hex2byte (p + 2);
 			p += 4;
 			len -= 4;
 		} else {

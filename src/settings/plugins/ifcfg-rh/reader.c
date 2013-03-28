@@ -3056,7 +3056,7 @@ make_wireless_setting (shvarFile *ifcfg,
 				p++;
 			}
 
-			tmp = utils_hexstr2bin (value + 2, value_len - 2);
+			tmp = nm_utils_hexstr2bin (value + 2, value_len - 2);
 			ssid_len  = (value_len - 2) / 2;
 			memcpy (buf, tmp, ssid_len);
 			p = &buf[0];

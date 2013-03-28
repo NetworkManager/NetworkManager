@@ -34,8 +34,7 @@
 #include "nm-logging.h"
 #include "nm-setting.h"
 #include "NetworkManagerUtils.h"
-
-static char *hexstr2bin (const char *hex, size_t len);
+#include "nm-utils.h"
 
 #define NM_SUPPLICANT_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                              NM_TYPE_SUPPLICANT_CONFIG, \
@@ -538,7 +537,7 @@ add_wep_key (NMSupplicantConfig *self,
 	if (   (wep_type == NM_WEP_KEY_TYPE_UNKNOWN)
 	    || (wep_type == NM_WEP_KEY_TYPE_KEY)) {
 		if ((key_len == 10) || (key_len == 26)) {
-			value = hexstr2bin (key, strlen (key));
+			value = nm_utils_hexstr2bin (key, strlen (key));
 			success = nm_supplicant_config_add_option (self, name, value, key_len / 2, TRUE);
 			g_free (value);
 			if (!success) {
@@ -599,7 +598,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 
 		if (psk_len == 64) {
 			/* Hex PSK */
-			value = hexstr2bin (psk, psk_len);
+			value = nm_utils_hexstr2bin (psk, psk_len);
 			success = nm_supplicant_config_add_option (self, "psk", value, psk_len / 2, TRUE);
 			g_free (value);
 			if (!success) {
@@ -1045,57 +1044,4 @@ nm_supplicant_config_add_no_security (NMSupplicantConfig *self)
 {
 	return nm_supplicant_config_add_option (self, "key_mgmt", "NONE", -1, FALSE);
 }
-
-/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
-
-static int hex2num (char c)
-{
-	if (c >= '0' && c <= '9')
-		return c - '0';
-	if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
-	return -1;
-}
-
-static int hex2byte (const char *hex)
-{
-	int a, b;
-	a = hex2num(*hex++);
-	if (a < 0)
-		return -1;
-	b = hex2num(*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
-static char *
-hexstr2bin (const char *hex, size_t len)
-{
-	size_t       i;
-	int          a;
-	const char * ipos = hex;
-	char *       buf = NULL;
-	char *       opos;
-
-	/* Length must be a multiple of 2 */
-	if ((len % 2) != 0)
-		return NULL;
-
-	opos = buf = g_malloc0 ((len / 2) + 1);
-	for (i = 0; i < len; i += 2) {
-		a = hex2byte (ipos);
-		if (a < 0) {
-			g_free (buf);
-			return NULL;
-		}
-		*opos++ = a;
-		ipos += 2;
-	}
-	return buf;
-}
-
-/* End from hostap */
 

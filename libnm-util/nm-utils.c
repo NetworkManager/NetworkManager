@@ -21,7 +21,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2012 Red Hat, Inc.
+ * (C) Copyright 2005 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -1559,44 +1559,6 @@ make_key (const char *salt,
 	return key;
 }
 
-/*
- * utils_bin2hexstr
- *
- * Convert a byte-array into a hexadecimal string.
- *
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- *
- */
-static char *
-utils_bin2hexstr (const char *bytes, int len, int final_len)
-{
-	static char hex_digits[] = "0123456789abcdef";
-	char *result;
-	int i;
-	gsize buflen = (len * 2) + 1;
-
-	g_return_val_if_fail (bytes != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
-	if (final_len > -1)
-		g_return_val_if_fail (final_len < buflen, NULL);
-
-	result = g_malloc0 (buflen);
-	for (i = 0; i < len; i++)
-	{
-		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
-		result[2*i+1] = hex_digits[bytes[i] & 0xf];
-	}
-	/* Cut converted key off at the correct length for this cipher type */
-	if (final_len > -1)
-		result[final_len] = '\0';
-	else
-		result[buflen - 1] = '\0';
-
-	return result;
-}
-
 /**
  * nm_utils_rsa_key_encrypt:
  * @data: RSA private key data to be encrypted
@@ -1636,7 +1598,7 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	if (!in_password) {
 		if (!crypto_randomize (pw_buf, sizeof (pw_buf), error))
 			return NULL;
-		in_password = tmp_password = utils_bin2hexstr ((const char *) pw_buf, sizeof (pw_buf), -1);
+		in_password = tmp_password = nm_utils_bin2hexstr ((const char *) pw_buf, sizeof (pw_buf), -1);
 	}
 
 	if (!crypto_randomize (salt, sizeof (salt), error))
@@ -1655,7 +1617,7 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
 
 	/* Convert the salt to a hex string */
-	tmp = utils_bin2hexstr ((const char *) salt, sizeof (salt), 16);
+	tmp = nm_utils_bin2hexstr ((const char *) salt, sizeof (salt), 16);
 	g_string_append_printf (pem, "DEK-Info: DES-EDE3-CBC,%s\n\n", tmp);
 	g_free (tmp);
 
@@ -2062,6 +2024,115 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
 
 	return g_string_free (out, FALSE);
 }
+
+/**
+ * nm_utils_bin2hexstr:
+ * @bytes: an array of bytes
+ * @len: the length of the @bytes array
+ * @final_len: an index where to cut off the returned string, or -1
+ *
+ * Converts a byte-array @bytes into a hexadecimal string.
+ * If @final_len is greater than -1, the returned string is terminated at
+ * that index (returned_string[final_len] == '\0'),
+ *
+ * Return value: (transfer full): the textual form of @bytes
+ *
+ * Since: 0.9.10
+ *
+ * Code originally by Alex Larsson <alexl@redhat.com> and
+ *  copyright Red Hat, Inc. under terms of the LGPL.
+ */
+char *
+nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
+{
+	static char hex_digits[] = "0123456789abcdef";
+	char *result;
+	int i;
+	gsize buflen = (len * 2) + 1;
+
+	g_return_val_if_fail (bytes != NULL, NULL);
+	g_return_val_if_fail (len > 0, NULL);
+	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
+	if (final_len > -1)
+		g_return_val_if_fail (final_len < buflen, NULL);
+
+	result = g_malloc0 (buflen);
+	for (i = 0; i < len; i++)
+	{
+		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
+		result[2*i+1] = hex_digits[bytes[i] & 0xf];
+	}
+	/* Cut converted key off at the correct length for this cipher type */
+	if (final_len > -1)
+		result[final_len] = '\0';
+	else
+		result[buflen - 1] = '\0';
+
+	return result;
+}
+
+/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
+/**
+ * nm_utils_hex2byte:
+ * @hex: a string representing a hex byte
+ *
+ * Converts a hex string (2 characters) into its byte representation.
+ *
+ * Return value: a byte, or -1 if @hex doesn't represent a hex byte
+ *
+ * Since: 0.9.10
+ */
+int
+nm_utils_hex2byte (const char *hex)
+{
+	int a, b;
+	a = g_ascii_xdigit_value (*hex++);
+	if (a < 0)
+		return -1;
+	b = g_ascii_xdigit_value (*hex++);
+	if (b < 0)
+		return -1;
+	return (a << 4) | b;
+}
+
+/**
+ * nm_utils_hexstr2bin:
+ * @hex: an hex string
+ * @len: the length of the @hex string (it has to be even)
+ *
+ * Converts a hexadecimal string @hex into a byte-array. The returned array
+ * length is @len/2.
+ *
+ * Return value: (transfer full): a array of bytes, or %NULL on error
+ *
+ * Since: 0.9.10
+ */
+char *
+nm_utils_hexstr2bin (const char *hex, size_t len)
+{
+	size_t       i;
+	int          a;
+	const char * ipos = hex;
+	char *       buf = NULL;
+	char *       opos;
+
+	/* Length must be a multiple of 2 */
+	if ((len % 2) != 0)
+		return NULL;
+
+	opos = buf = g_malloc0 ((len / 2) + 1);
+	for (i = 0; i < len; i += 2) {
+		a = nm_utils_hex2byte (ipos);
+		if (a < 0) {
+			g_free (buf);
+			return NULL;
+		}
+		*opos++ = a;
+		ipos += 2;
+	}
+	return buf;
+}
+/* End from hostap */
 
 /**
  * nm_utils_iface_valid_name:

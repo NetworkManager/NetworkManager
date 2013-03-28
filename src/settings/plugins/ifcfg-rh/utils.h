@@ -26,10 +26,6 @@
 #include "shvar.h"
 #include "common.h"
 
-char *utils_bin2hexstr (const char *bytes, int len, int final_len);
-
-char *utils_hexstr2bin (const char *hex, size_t len);
-
 char *utils_single_quote_string (const char *str);
 
 char *utils_single_unquote_string (const char *str);

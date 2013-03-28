@@ -68,8 +68,6 @@ gchar *strip_string (gchar *str, gchar t);
 gboolean is_managed (const char *conn_name);
 
 GQuark ifnet_plugin_error_quark (void);
-gchar *utils_hexstr2bin (const gchar * hex, size_t len);
-gchar *utils_bin2hexstr (const gchar * bytes, int len, int final_len);
 
 gboolean is_hex (const char *value);
 gboolean is_ascii (const char *value);
