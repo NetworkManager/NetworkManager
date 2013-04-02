@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- Mode: python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 
-import glib
-import gobject
+from __future__ import print_function
+
+from gi.repository import GLib, GObject
 import sys
 import dbus
 import dbus.service
@@ -21,7 +22,7 @@ class UnknownPropertyException(dbus.DBusException):
 class PermissionDeniedException(dbus.DBusException):
     _dbus_error_name = IFACE_SETTINGS + '.PermissionDenied'
 
-mainloop = gobject.MainLoop()
+mainloop = GObject.MainLoop()
 
 class Connection(dbus.service.Object):
     def __init__(self, bus, object_path, settings, remove_func):
@@ -72,10 +73,10 @@ class Settings(dbus.service.Object):
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='a{sa{sv}}', out_signature='o')
     def AddConnection(self, settings):
-        path = "/org/freedesktop/NetworkManager/Settings/Connection/%d" % self.counter
+        path = "/org/freedesktop/NetworkManager/Settings/Connection/{0}".format(self.counter)
         self.counter = self.counter + 1
         self.connections[path] = Connection(self.bus, path, settings, self.delete_connection)
-        print "Added connection %s" % path
+        print("Added connection {0}".format(path))
         return path
 
     def delete_connection(self, connection):
@@ -114,16 +115,16 @@ def main():
     if not bus.request_name("org.freedesktop.NetworkManager"):
         sys.exit(1)
 
-    print "Service started"
+    print("Service started")
 
-    gobject.timeout_add_seconds(20, quit_cb, None)
+    GLib.timeout_add_seconds(20, quit_cb, None)
 
     try:
         mainloop.run()
-    except Exception, e:
+    except Exception as e:
         pass
 
-    print "Service stopped"
+    print("Service stopped")
     sys.exit(0)
 
 if __name__ == '__main__':
