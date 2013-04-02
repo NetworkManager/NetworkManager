@@ -223,13 +223,16 @@ nm_setting_vpn_get_data_item (NMSettingVPN *setting, const char *key)
  *
  * Deletes a key/value relationship previously established by
  * nm_setting_vpn_add_data_item().
+ *
+ * Returns: %TRUE if the data item was found and removed from the internal list,
+ * %FALSE if it was not.
  **/
-void
+gboolean
 nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
 {
-	g_return_if_fail (NM_IS_SETTING_VPN (setting));
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
 
-	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
+	return g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
 }
 
 static void
@@ -347,13 +350,16 @@ nm_setting_vpn_get_secret (NMSettingVPN *setting, const char *key)
  *
  * Deletes a key/value relationship previously established by
  * nm_setting_vpn_add_secret().
+ *
+ * Returns: %TRUE if the secret was found and removed from the internal list,
+ * %FALSE if it was not.
  **/
-void
+gboolean
 nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
 {
-	g_return_if_fail (NM_IS_SETTING_VPN (setting));
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
 
-	g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
+	return g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
 }
 
 /**
