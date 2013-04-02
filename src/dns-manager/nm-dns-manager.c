@@ -561,7 +561,6 @@ compute_hash (NMDnsManager *self, guint8 buffer[HASH_LEN])
 			nm_ip6_config_hash (NM_IP6_CONFIG (iter->data), sum, TRUE);
 	}
 
-	memset (buffer, 0, sizeof (buffer));
 	g_checksum_get_digest (sum, buffer, &len);
 	g_checksum_free (sum);
 }
