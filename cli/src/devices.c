@@ -263,7 +263,7 @@ usage (void)
 #endif
 	         "  status\n"
 	         "  list [iface <iface>]\n"
-	         "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+	         "  disconnect <iface> [--nowait] [--timeout <timeout>]\n"
 	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
 	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n"
 	         "               [--private] [--nowait] [--timeout <timeout>]\n"
@@ -1185,44 +1185,41 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 	} else {
-		while (argc > 0) {
-			if (strcmp (*argv, "iface") == 0) {
-				if (next_arg (&argc, &argv) != 0) {
-					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					goto error;
-				}
-
-				iface = *argv;
-			} else if (strcmp (*argv, "--nowait") == 0) {
-				wait = FALSE;
-			} else if (strcmp (*argv, "--timeout") == 0) {
-				if (next_arg (&argc, &argv) != 0) {
-					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					goto error;
-				}
-
-				errno = 0;
-				nmc->timeout = strtol (*argv, NULL, 10);
-				if (errno || nmc->timeout < 0) {
-					g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					goto error;
-				}
-
-			} else {
-				fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
-			}
-
-			next_arg (&argc, &argv);
-		}
+		iface = *argv;
 	}
 
 	if (!iface) {
 		g_string_printf (nmc->return_text, _("Error: No interface specified."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
+	}
+	next_arg (&argc, &argv);
+
+	while (argc > 0) {
+		if (strcmp (*argv, "--nowait") == 0) {
+			wait = FALSE;
+		} else if (strcmp (*argv, "--timeout") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+
+			errno = 0;
+			nmc->timeout = strtol (*argv, NULL, 10);
+			if (errno || nmc->timeout < 0) {
+				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+
+		} else {
+			g_string_printf (nmc->return_text, _("Error: unknown argument '%s'."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+
+		next_arg (&argc, &argv);
 	}
 
 	nmc->get_client (nmc);
