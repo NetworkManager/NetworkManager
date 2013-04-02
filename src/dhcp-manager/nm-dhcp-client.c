@@ -359,7 +359,7 @@ generate_duid_from_machine_id (void)
 	gsize sumlen = sizeof (buffer);
 	const guint16 duid_type = g_htons (4);
 	uuid_t uuid;
-	GRand *rand;
+	GRand *generator;
 	guint i;
 	gboolean success = FALSE;
 
@@ -386,10 +386,10 @@ generate_duid_from_machine_id (void)
 		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
 		             "DHCPv6 DUID; creating non-persistent random DUID.");
 
-		rand = g_rand_new ();
+		generator = g_rand_new ();
 		for (i = 0; i < sizeof (buffer) / sizeof (guint32); i++)
-			((guint32 *) buffer)[i] = g_rand_int (rand);
-		g_rand_free (rand);
+			((guint32 *) buffer)[i] = g_rand_int (generator);
+		g_rand_free (generator);
 	}
 
 	/* Generate a DHCP Unique Identifier for DHCPv6 using the
