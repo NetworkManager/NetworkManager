@@ -194,16 +194,15 @@ usage (void)
 	fprintf (stderr,
 	         _("Usage: nmcli connection { COMMAND | help }\n"
 	         "  COMMAND := { show | up | down | delete }\n\n"
-	         "  show configured [[id|uuid|path] <ID>]\n"
-	         "  show active [[id|uuid|path|apath] <ID>]\n"
+	         "  show configured [[ id | uuid | path ] <ID>]\n\n"
+	         "  show active     [[ id | uuid | path | apath ] <ID>]\n\n"
 #if WITH_WIMAX
-	         "  up [id|uuid|path] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n"
+	         "  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n\n"
 #else
-	         "  up [id|uuid|path] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n"
+	         "  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n\n"
 #endif
-	         "  down [id|uuid|path|apath] <ID>\n"
-	         "  delete [id|uuid|path] <ID>\n"
-	         "\n"
+	         "  down [ id | uuid | path | apath ] <ID>\n\n"
+	         "  delete [ id | uuid | path ] <ID>\n\n"
 	         ));
 }
 

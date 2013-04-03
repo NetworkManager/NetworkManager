@@ -118,10 +118,9 @@ usage_general (void)
 	fprintf (stderr,
 	         _("Usage: nmcli general { COMMAND | help }\n\n"
 	         "  COMMAND := { status | permissions | logging }\n\n"
-	         "  status\n"
-	         "  permissions\n"
-	         "  logging [level <log level>] [domains <log domains>]\n"
-	         "\n"
+	         "  status\n\n"
+	         "  permissions\n\n"
+	         "  logging [level <log level>] [domains <log domains>]\n\n"
 	         ));
 }
 
@@ -130,8 +129,7 @@ usage_networking (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli networking { COMMAND | help }\n\n"
-	         "  COMMAND := { [on/off] }\n\n"
-	         "\n"
+	         "  COMMAND := { [ on | off ] }\n\n"
 	         ));
 }
 
@@ -142,12 +140,11 @@ usage_radio (void)
 	         _("Usage: nmcli radio { COMMAND | help }\n\n"
 #if WITH_WIMAX
 	         "  COMMAND := { all | wifi | wwan | wimax }\n\n"
-	         "  all|wifi|wwan|wimax [on/off]\n"
+	         "  all | wifi | wwan | wimax [ on | off ]\n\n"
 #else
 	         "  COMMAND := { all | wifi | wwan }\n\n"
-	         "  all|wifi|wwan [on/off]\n"
+	         "  all | wifi | wwan [ on | off ]\n\n"
 #endif
-	         "\n"
 	         ));
 }
 

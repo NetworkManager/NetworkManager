@@ -261,17 +261,16 @@ usage (void)
 #else
 	         "  COMMAND := { status | show | disconnect | wifi }\n\n"
 #endif
-	         "  status\n"
-	         "  show [<iface>]\n"
-	         "  disconnect <iface> [--nowait] [--timeout <timeout>]\n"
-	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
-	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n"
-	         "               [--private] [--nowait] [--timeout <timeout>]\n"
-	         "  wifi scan [[iface] <iface>]\n"
+	         "  status\n\n"
+	         "  show [<iface>]\n\n"
+	         "  disconnect <iface> [--nowait] [--timeout <timeout>]\n\n"
+	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n\n"
+	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n\n"
+	         "               [--private] [--nowait] [--timeout <timeout>]\n\n"
+	         "  wifi scan [[iface] <iface>]\n\n"
 #if WITH_WIMAX
-	         "  wimax [list [iface <iface>] [nsp <name>]]\n"
+	         "  wimax [list [iface <iface>] [nsp <name>]]\n\n"
 #endif
-	         "\n"
 	         ));
 }
 
