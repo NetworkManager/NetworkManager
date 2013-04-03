@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include "nm-platform.h"
 #include "nm-logging.h"
@@ -171,6 +172,54 @@ reset_error (void)
 {
 	g_assert (platform);
 	platform->error = NM_PLATFORM_ERROR_NONE;
+}
+
+/******************************************************************/
+
+/**
+ * nm_platform_sysctl_set:
+ * @path: Absolute option path
+ * @value: Value to write
+ *
+ * This function is intended to be used for writing values to sysctl-style
+ * virtual runtime configuration files. This includes not only /proc/sys
+ * but also for example /sys/class.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_sysctl_set (const char *path, const char *value)
+{
+	reset_error ();
+
+	g_return_val_if_fail (path, FALSE);
+	g_return_val_if_fail (value, FALSE);
+	g_return_val_if_fail (klass->sysctl_set, FALSE);
+
+	/* Don't write outside known locations */
+	g_assert (g_str_has_prefix (path, "/proc/sys")
+			|| g_str_has_prefix (path, "/sys"));
+	/* Don't write to suspicious locations */
+	g_assert (!strstr (path, ".."));
+
+	return klass->sysctl_set (platform, path, value);
+}
+
+/**
+ * nm_platform_sysctl_get:
+ * @path: Absolute path to sysctl
+ *
+ * Returns: (transfer full): Contents of the virtual sysctl file.
+ */
+char *
+nm_platform_sysctl_get (const char *path)
+{
+	reset_error ();
+
+	g_return_val_if_fail (path, NULL);
+	g_return_val_if_fail (klass->sysctl_get, NULL);
+
+	return klass->sysctl_get (platform, path);
 }
 
 /******************************************************************/

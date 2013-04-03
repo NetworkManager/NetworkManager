@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <linux/if_arp.h>
@@ -721,6 +722,70 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		error ("Unknown netlink event: %d", event);
 		return NL_OK;
 	}
+}
+
+/******************************************************************/
+
+static gboolean
+sysctl_set (NMPlatform *platform, const char *path, const char *value)
+{
+	int fd, len, nwrote, tries;
+	char *actual;
+
+	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	fd = open (path, O_WRONLY | O_TRUNC);
+	if (fd == -1) {
+		error ("sysctl: failed to open '%s': (%d) %s",
+				path, errno, strerror (errno));
+		return FALSE;
+	}
+
+	debug ("sysctl: setting '%s' to '%s'", path, value);
+
+	/* Most sysfs and sysctl options don't care about a trailing LF, while some
+	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
+	 * sysctl support partial writes so the LF must be added to the string we're
+	 * about to write.
+	 */
+	actual = g_strdup_printf ("%s\n", value);
+
+	/* Try to write the entire value three times if a partial write occurs */
+	len = strlen (actual);
+	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
+		errno = 0;
+		nwrote = write (fd, actual, len);
+		if (nwrote == -1) {
+			if (errno == EINTR) {
+				error ("sysctl: interrupted, will try again");
+				continue;
+			}
+			break;
+		}
+	}
+	if (nwrote != len && errno != EEXIST) {
+		error ("sysctl: failed to set '%s' to '%s': (%d) %s",
+		             path, value, errno, strerror (errno));
+	}
+
+	g_free (actual);
+	close (fd);
+	return (nwrote == len);
+}
+
+static char *
+sysctl_get (NMPlatform *platform, const char *path)
+{
+	GError *error = NULL;
+	char *contents;
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		error ("error reading %s: %s", path, error->message);
+		return NULL;
+	}
+
+	return g_strstrip (contents);
 }
 
 /******************************************************************/
@@ -1449,6 +1514,9 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	object_class->finalize = nm_linux_platform_finalize;
 
 	platform_class->setup = setup;
+
+	platform_class->sysctl_set = sysctl_set;
+	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;

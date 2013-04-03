@@ -29,6 +29,7 @@
 #define debug(format, ...) nm_log_dbg (LOGD_PLATFORM, format, __VA_ARGS__)
 
 typedef struct {
+	GHashTable *options;
 	GArray *links;
 	GArray *ip4_addresses;
 	GArray *ip6_addresses;
@@ -49,6 +50,24 @@ nm_fake_platform_setup (void)
 }
 
 /******************************************************************/
+
+static gboolean
+sysctl_set (NMPlatform *platform, const char *path, const char *value)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+
+	g_hash_table_insert (priv->options, g_strdup (path), g_strdup (value));
+
+	return TRUE;
+}
+
+static char *
+sysctl_get (NMPlatform *platform, const char *path)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+
+	return g_strdup (g_hash_table_lookup (priv->options, path));
+}
 
 static void
 link_init (NMPlatformLink *device, int ifindex, int type, const char *name)
@@ -735,6 +754,7 @@ nm_fake_platform_init (NMFakePlatform *fake_platform)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (fake_platform);
 
+	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->links = g_array_new (TRUE, TRUE, sizeof (NMPlatformLink));
 	priv->ip4_addresses = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Address));
 	priv->ip6_addresses = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Address));
@@ -764,6 +784,7 @@ nm_fake_platform_finalize (GObject *object)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (object);
 
+	g_hash_table_unref (priv->options);
 	g_array_unref (priv->links);
 	g_array_unref (priv->ip4_addresses);
 	g_array_unref (priv->ip6_addresses);
@@ -785,6 +806,9 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	object_class->finalize = nm_fake_platform_finalize;
 
 	platform_class->setup = setup;
+
+	platform_class->sysctl_set = sysctl_set;
+	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;

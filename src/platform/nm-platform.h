@@ -125,6 +125,9 @@ typedef struct {
 
 	gboolean (*setup) (NMPlatform *);
 
+	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
+	char * (*sysctl_get) (NMPlatform *, const char *path);
+
 	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *, const char *name, NMLinkType type);
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
@@ -223,6 +226,9 @@ void nm_platform_free (void);
 
 int nm_platform_get_error (void);
 const char *nm_platform_get_error_msg (void);
+
+gboolean nm_platform_sysctl_set (const char *path, const char *value);
+char *nm_platform_sysctl_get (const char *path);
 
 GArray *nm_platform_link_get_all (void);
 gboolean nm_platform_dummy_add (const char *name);
