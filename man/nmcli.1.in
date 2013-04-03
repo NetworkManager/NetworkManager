@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "17 January 2013"
+.TH NMCLI "1" "8 April 2013"
 
 .SH NAME
 nmcli \(en command\(hyline tool for controlling NetworkManager
@@ -33,7 +33,8 @@ nmcli \(en command\(hyline tool for controlling NetworkManager
 .sp
 
 .IR OBJECT " := { "
-.BR nm " | " con " | " dev " } "
+.BR general " | " networking " | " radio " | " connection " | " device
+.RI " }"
 .sp
 
 .IR OPTIONS " := { "
@@ -47,6 +48,10 @@ nmcli \(en command\(hyline tool for controlling NetworkManager
 \fB\-f\fR[\fIields\fR] <field1,field2,...> | all | common
 .br
 \fB\-e\fR[\fIscape\fR] yes | no
+.br
+\fB\-n\fR[\fIocheck\fR]
+.br
+\fB\-a\fR[\fIsk\fR]
 .br
 \fB\-v\fR[\fIersion\fR]
 .br
@@ -94,8 +99,9 @@ producing more structured information, that cannot be displayed on a single
 line, default is \fImultiline\fP. Currenly, they are:
 .br
 .nf
-  'nmcli con list id|uuid <name>'
-  'nmcli dev list'
+  'nmcli connection show configured <ID>'
+  'nmcli connection show active <ID>'
+  'nmcli device show'
 .fi
 \fItabular\fP   \(en Output is a table where each line describes a single entry.
 Columns define particular properties of the entry.
@@ -120,6 +126,15 @@ Whether to escape ':' and '\\' characters in terse tabular mode.  The escape
 character is '\\'.
 If omitted, default is \fIyes\fP.
 .TP
+.B \-n, \-\-nocheck
+This option can be used to force \fInmcli\fP to skip checking \fInmcli\fP and
+\fINetworkManager\fP version compatibility. Use it with care, because using
+incompatible versions may produce incorrect results.
+.TP
+.B \-a, \-\-ask
+When using this option \fInmcli\fP will stop and ask for any missing required
+arguments, so do not use this option for non-interactive purposes like scripts.
+.TP
 .B \-v, \-\-version
 Show \fInmcli\fP version.
 .TP
@@ -127,19 +142,20 @@ Show \fInmcli\fP version.
 Print help information.
 .SS \fIOBJECT\fP
 .TP
-.B nm
-NetworkManager
+.B general
+General NetworkManager status and operations
 .br
-Use this object to inquire and change state of NetworkManager.
+Use this object to show NetworkManager status and permissions. You can also get
+and change NetworkManager logging level and domains.
 .TP
-.SS \fICOMMAND\fP := { status | permissions | enable | sleep | wifi | wwan | wimax }
+.SS \fICOMMAND\fP := { status | permissions | logging }
 .sp
 .RS
 .TP
 .B status
 .br
-Show overall status of NetworkManager. This is the default action, when no
-command is provided to \fInm\fP object.
+Show overall status of NetworkManager. This is the default action, when no additional
+command is provided for \fIgeneral\fP object.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
@@ -149,8 +165,8 @@ No simple reference.
 .B permissions
 .br
 Show the permissions a caller has for various authenticated operations that
-NetworkManager provides, like enable/disable networking, changing Wi\(hyFi, WWAN,
-and WiMAX state, modifying connections, etc.
+NetworkManager provides, like enable/disable networking, changing Wi\(hyFi,
+WWAN, and WiMAX state, modifying connections, etc.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
@@ -159,7 +175,33 @@ method:    GetPermissions
 arguments: none
 .fi
 .TP
-.B enable [true|false]
+.B logging [level <log level>] [domains <log domains>]
+.br
+Get and change \fINetworkManager\fP logging level and domains. Without any argument
+current logging level and domains are shown. In order to change logging state, provide
+\fIlevel\fP and/or \fIdomains\fP parameters. See \fBNetworkManager.conf\fP for available
+level and domain values.
+.br
+.nf
+\fBReference to D\(hyBus:\fP
+interface: org.freedesktop.NetworkManager
+method:    GetLogging, SetLogging
+arguments: none or level,domains
+.fi
+.RE
+
+.TP
+.B networking
+Get or set general networking state of NetworkManager
+.br
+Use this object to show NetworkManager networking status, or enable/disable
+networking. Disabling networking changes all devices to 'unmanaged' state.
+.TP
+.SS \fICOMMAND\fP := { [ on | off ] }
+.sp
+.RS
+.TP
+.B [ on | off ]
 .br
 Get networking\(hyenabled status or enable/disable networking by NetworkManager.
 All interfaces managed by NetworkManager are deactivated when networking has
@@ -171,25 +213,22 @@ interface: org.freedesktop.NetworkManager
 method:    Enable
 arguments: TRUE or FALSE
 .fi
+.RE
+
 .TP
-.B sleep [true|false]
+.B radio
+Get or set radio switches state
 .br
-Get sleep status or put to sleep/awake NetworkManager. All interfaces managed
-by NetworkManager are deactivated when it falls asleep. This command is not
-meant for user to enable/disable networking, use \fIenable\fP for that. D\(hyBus
-\fISleep\fP method is designed to put NetworkManager to sleep or awake for
-suspending/resuming the computer.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    Sleep
-arguments: TRUE or FALSE
-.fi
+Use this object to show radio switches status, or enable/disable
+the switches.
 .TP
-.B wifi [on|off]
+.SS \fICOMMAND\fP := { all | wifi | wwan | wimax }
+.sp
+.RS
+.TP
+.B wifi [ on | off ]
 .br
-Inquire or set status of Wi\(hyFi in NetworkManager. If no arguments are supplied,
+Show or set status of Wi\(hyFi in NetworkManager. If no arguments are supplied,
 Wi\(hyFi status is printed; \fIon\fP enables Wi\(hyFi; \fIoff\fP disables Wi\(hyFi.
 .br
 .nf
@@ -197,19 +236,20 @@ Wi\(hyFi status is printed; \fIon\fP enables Wi\(hyFi; \fIoff\fP disables Wi\(hy
 No simple reference.
 .fi
 .TP
-.B wwan [on|off]
+.B wwan [ on | off ]
 .br
-Inquire or set status of WWAN in NetworkManager. If no arguments are supplied,
-WWAN status is printed; \fIon\fP enables WWAN; \fIoff\fP disables WWAN.
+Show or set status of WWAN (mobile broadband) in NetworkManager. If no arguments
+are supplied, mobile broadband status is printed; \fIon\fP enables mobile broadband,
+\fIoff\fP disables it.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
 No simple reference.
 .fi
 .TP
-.B wimax [on|off]
+.B wimax [ on | off ]
 .br
-Inquire or set status of WiMAX in NetworkManager. If no arguments are supplied,
+Show or set status of WiMAX in NetworkManager. If no arguments are supplied,
 WiMAX status is printed; \fIon\fP enables WiMAX; \fIoff\fP disables WiMAX.
 .br
 Note: WiMAX support is a compile\(hytime decision, so it may be unavailable on some
@@ -218,47 +258,81 @@ installations.
 \fBReference to D\(hyBus:\fP
 No simple reference.
 .fi
+.TP
+.B all [ on | off ]
+.br
+Show or set all previously mentioned radio switches at the same time.
+.br
+.nf
+\fBReference to D\(hyBus:\fP
+No simple reference.
+.fi
 .RE
 
 .TP
-.B con
-Connections
+.B connection
+NetworkManager connections
 .br
-Get information about NetworkManager's connections.
+Get information about \fINetworkManager\fP connections and manage them.
 .TP
-.SS \fICOMMAND\fP := { list | status | up | down | delete }
+.SS \fICOMMAND\fP := { show | up | down | delete }
 .sp
 .RS
 .TP
-.B list [id <id> | uuid <id>]
+.B show active     [[ id | uuid | path | apath ] <ID>]
 .br
-List configured connections.  Without a parameter, all connections
-are listed.  In order to get connection details, \fIid\fP with connection's
-name or \fIuuid\fP with connection's UUID shall be specified.  When no command
-is given to the \fIcon\fP object, the default action is 'nmcli con list'.
+Shows active connections.  Without a parameter, all active connections
+are listed.  In order to show the connection details, \fI<ID>\fP must be
+provided. \fIid\fP, \fIuuid\fP, \fIpath\fP and \fIapath\fP keywords can be used
+if \fI<ID>\fP is ambiguous.
+.RS
+.PP
+Optional <ID>-specifying keywords are:
+.IP \fIid\fP 13
+\(en the <ID> denotes a connection name
+.IP \fIuuid\fP 13
+\(en the <ID> denotes a connection UUID
+.IP \fIpath\fP 13
+\(en the <ID> denotes a D-Bus static connection path
+in the format of /org/freedesktop/NetworkManager/Settings/<num> or just <num>
+.IP \fIapath\fP 13
+\(en the <ID> denotes a D-Bus active connection path
+in the format of /org/freedesktop/NetworkManager/ActiveConnection/<num> or just <num>
+.PP
+.br
+.nf
+\fBReference to D\(hyBus:\fP
+No simple reference.
+.fi
+.RE
+.TP
+.B show configured [[ id | uuid | path ] <ID>]
+.br
+Shows configured connections.  Without a parameter, all connections
+are listed.  In order to show connection details, \fI<ID>\fP must be
+provided. \fIid\fP, \fIuuid\fP and \fIpath\fP keywords can be used if
+\fI<ID>\fP is ambiguous. See \fBshow active\fP above for the description of
+the keywords.
+.br
+When no command is given to the \fIconnection\fP object, the default action
+is 'nmcli connection show configured'.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
 No simple reference.
 .fi
 .TP
-.B status
+.B up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]
 .br
-Print status of active connections.
+Activate a connection.  The connection is identified by its name, UUID or D-Bus
+path. If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP or \fIpath\fP can be
+used. When requiring a particular device to activate the connection on, the
+\fIiface\fP option with interface name should be given. In case of a VPN
+connection, the \fIiface\fP option specify the device of the base connection.
+The \fIap\fP option specify what particular AP should be used in case of
+a Wi\(hyFi connection.
 .br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
-.TP
-.B up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [\-\-nowait] [\-\-timeout <timeout>]
-.br
-Activate a connection.  The connection is identified by its name using \fIid\fP
-or UUID using \fIuuid\fP. When requiring a particular device to activate the
-connection on, the \fIiface\fP option with interface name should be given. In
-case of a VPN connection, the \fIiface\fP option specify the device of the base
-connection. The \fIap\fP option specify what particular AP should be used in case
-of a Wi\(hyFi connection.
+See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 .RS
 .PP
 Available options are:
@@ -281,13 +355,15 @@ method:    ActivateConnection
 arguments: according to arguments
 .fi
 .RE
-
 .TP
-.B down id <id> | uuid <id>
+.B down [ id | uuid | path | apath ] <ID>
 .br
 Deactivate a connection.
-The connection is identified by its name using \fIid\fP
-or UUID using \fIuuid\fP.
+The connection is identified by its name, UUID or D-Bus path.
+If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, \fIpath\fP or
+\fIapath\fP can be used.
+.br
+See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
@@ -296,10 +372,13 @@ method:    DeactivateConnection
 arguments: according to arguments
 .fi
 .TP
-.B delete id <id> | uuid <id>
+.B delete [ id | uuid | path ] <ID>
 .br
-Delete a configured connection. The connection to delete is specified with
-\fIid\fP (connection name) or \fIuuid\fP (connection UUID).
+Delete a configured connection. The connection to delete is identified by
+its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
+\fIuuid\fP or \fIpath\fP can be used.
+.br
+See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
@@ -310,37 +389,38 @@ arguments: none
 .RE
 
 .TP
-.B dev
-Devices
+.B device
+NetworkManager devices
 .br
-Get information about devices.
+Get information about devices and manage them.
 .TP
-.SS \fICOMMAND\fP := { status | list | disconnect | wifi }
+.SS \fICOMMAND\fP := { status | show | disconnect | wifi | wimax }
 .sp
 .RS
 .TP
 .B status
 .br
-Print status of devices.  This is the default action, when no command
-is specified to \fIdev\fP object.
+Print status of devices.
+.br
+This is the default action if no command is specified to \fIdevice\fP object.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
 No simple reference.
 .fi
 .TP
-.B list [iface <iface>]
+.B show [<iface>]
 .br
-Get detailed information about devices.  Without an argument, all devices are
-examined. To get information for a specific device, the \fIiface\fP argument
-with the interface name should be provided.
+Show detailed information about devices.  Without an argument, all devices are
+examined. To get information for a specific device, the interface name has
+to be provided.
 .br
 .nf
 \fBReference to D\(hyBus:\fP
 No simple reference.
 .fi
 .TP
-.B disconnect iface <iface> [\-\-nowait] [\-\-timeout <timeout>]
+.B disconnect <iface> [--nowait] [--timeout <timeout>]
 .br
 Disconnect a device and prevent the device from automatically activating further
 connections without user/manual intervention.
@@ -410,6 +490,40 @@ method:    AddAndActivateConnection
 arguments: according to arguments
 .fi
 .RE
+.TP
+.B wifi scan [[iface] <iface>]
+.br
+Request that \fINetworkManager\fP immediately scan for available access points.
+NetworkManager scans Wi\(hyFi networks periodically, but in some cases it can be
+useful to start scanning manually (e.g. after resuming the computer).
+This command doesn't show the APs, use 'nmcli device wifi list' for that.
+.TP
+.B wimax [list [iface <iface>] [nsp <name>]]
+.br
+List available WiMAX NSP. The \fIiface\fP and \fInsp\fP options
+can be used to list networks for a particular interface or with a specific
+NSP, respectively.
+.br
+.nf
+\fBReference to D\(hyBus:\fP
+No simple reference.
+.fi
+.RS
+.PP
+Available options are:
+.IP \fI\-\-nowait\fP 13
+\(en exit immediately without waiting for command completion
+.IP \fI\-\-timeout\fP 13
+\(en how long to wait for command completion (default is 10 s)
+.PP
+.br
+.nf
+\fBReference to D\(hyBus:\fP
+interface: org.freedesktop.NetworkManager.Device
+method:    Disconnect
+arguments: none
+.fi
+.RE
 
 .SH ENVIRONMENT VARIABLES
 \fInmcli\fP's behavior is affected by the following environment variables.
@@ -462,54 +576,67 @@ NetworkManager is not running
 \fInmcli\fP and \fINetworkManager\fP versions mismatch
 
 .SH EXAMPLES
-.IP "\fB\f(CWnmcli \-t \-f RUNNING nm\fP\fP"
+.IP "\fB\f(CWnmcli \-t \-f RUNNING general\fP\fP"
 .IP
 tells you whether NetworkManager is running or not.
 
-.IP "\fB\f(CWnmcli \-t \-f STATE nm\fP\fP"
+.IP "\fB\f(CWnmcli \-t \-f STATE general\fP\fP"
 .IP
 shows the overall status of NetworkManager.
 
-.IP "\fB\f(CWnmcli nm wifi off\fP\fP"
+.IP "\fB\f(CWnmcli radio wifi off\fP\fP"
 .IP
 switches Wi\(hyFi off.
 
-.IP "\fB\f(CWnmcli \-p con list\fP\fP"
+.IP "\fB\f(CWnmcli connection show configured\fP\fP"
 .IP
 lists all connections NetworkManager has.
 
-.IP "\fB\f(CWnmcli \-f name,autoconnect con list\fP\fP"
+.IP "\fB\f(CWnmcli \-p \-m multiline \-f all con show c\fP\fP"
 .IP
-lists all connections' names and their autoconnect settings.
+shows all configured connections in multiline mode.
 
-.IP "\fB\f(CWnmcli con list id \(dq\&My wired connection\(dq\&\fP\fP"
+.IP "\fB\f(CWnmcli \-p connection show active\fP\fP"
 .IP
-lists all details of the connection with "My wired connection" name.
+lists all currently active connections.
 
-.IP "\fB\f(CWnmcli \-p con up id \(dq\&My wired connection\(dq\& iface eth0\fP\fP"
+.IP "\fB\f(CWnmcli \-p connection show active \(dq\&My default em1\(dq\&\fP\fP"
+.IP
+shows details for "My default em1" active connection, like IP, DHCP 
+information.
+
+.IP "\fB\f(CWnmcli \-f name,autoconnect c s c\fP\fP"
+.IP
+shows all connections' names and their autoconnect settings.
+
+.IP "\fB\f(CWnmcli con s c \(dq\&My wired connection\(dq\&\fP\fP"
+.IP
+shows all details of the connection with "My wired connection" name.
+
+.IP "\fB\f(CWnmcli \-p con up \(dq\&My wired connection\(dq\& iface eth0\fP\fP"
 .IP
 activates the connection with name "My wired connection" on interface eth0.
 The \-p option makes nmcli show progress of the activation.
 
-.IP "\fB\f(CWnmcli con up uuid 6b028a27\-6dc9\-4411\-9886\-e9ad1dd43761 ap 00:3A:98:7C:42:D3\fP\fP"
+.IP "\fB\f(CWnmcli con up 6b028a27\-6dc9\-4411\-9886\-e9ad1dd43761 ap 00:3A:98:7C:42:D3\fP\fP"
 .IP
 connects the Wi\(hyFi connection with UUID 6b028a27\-6dc9\-4411\-9886\-e9ad1dd43761 to the AP
 with BSSID 00:3A:98:7C:42:D3.
 
-.IP "\fB\f(CWnmcli dev status\fP\fP"
+.IP "\fB\f(CWnmcli device status\fP\fP"
 .IP
 shows the status for all devices.
 
-.IP "\fB\f(CWnmcli dev disconnect iface em2\fP\fP"
+.IP "\fB\f(CWnmcli dev disconnect em2\fP\fP"
 .IP
 disconnects a connection on interface em2 and marks the device as unavailable for
 auto\(hyconnecting. That's why no connection will automatically be activated on the
 device until the device's "autoconnect" is set to TRUE or user manually activates
 a connection.
 
-.IP "\fB\f(CWnmcli \-f GENERAL,WIFI\-PROPERTIES dev list iface wlan0\fP\fP"
+.IP "\fB\f(CWnmcli \-f GENERAL,WIFI\-PROPERTIES dev show wlan0\fP\fP"
 .IP
-lists details for wlan0 interface; only GENERAL and WIFI\-PROPERTIES sections will be shown.
+shows details for wlan0 interface; only GENERAL and WIFI\-PROPERTIES sections will be shown.
 
 .IP "\fB\f(CWnmcli dev wifi\fP\fP"
 .IP
@@ -529,6 +656,7 @@ https://bugzilla.gnome.org/ \(em product \fINetworkManager\fP.
 .SH SEE ALSO
 .BR nm\-online (1),
 .BR NetworkManager (8),
+.BR NetworkManager.conf (5),
 .BR nm\-settings (5),
-.BR nm\applet (1),
+.BR nm\-applet (1),
 .BR nm\-connection\-editor (1).
