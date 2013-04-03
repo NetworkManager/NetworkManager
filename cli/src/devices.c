@@ -66,7 +66,7 @@
 #include "devices.h"
 
 
-/* Available fields for 'dev status' */
+/* Available fields for 'device status' */
 static NmcOutputField nmc_fields_dev_status[] = {
 	{"DEVICE",    N_("DEVICE"),      10, NULL, 0},  /* 0 */
 	{"TYPE",      N_("TYPE"),        17, NULL, 0},  /* 1 */
@@ -189,7 +189,7 @@ static NmcOutputField nmc_fields_dev_show_wimax_prop[] = {
 #define NMC_FIELDS_DEV_SHOW_WIMAX_PROP_COMMON  "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 #endif
 
-/* Available fields for 'dev wifi list' */
+/* Available fields for 'device wifi list' */
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
 	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
 	{"SSID",       N_("SSID"),        33, NULL, 0},  /* 1 */
@@ -211,7 +211,7 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
 #if WITH_WIMAX
-/* Available fields for 'dev wimax list' */
+/* Available fields for 'device wimax list' */
 static NmcOutputField nmc_fields_dev_wimax_list[] = {
 	{"NAME",       N_("NAME"),        15, NULL, 0},  /* 0 */
 	{"NSP",        N_("NSP"),         33, NULL, 0},  /* 1 */
@@ -991,9 +991,10 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'dev status': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: 'device status': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'dev status': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_STATUS_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'device status': %s; allowed fields: %s"),
+			                 error->message, NMC_FIELDS_DEV_STATUS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
@@ -1337,9 +1338,10 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'dev wifi': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: 'device wifi': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'dev wifi': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_WIFI_LIST_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'device wifi': %s; allowed fields: %s"),
+			                 error->message, NMC_FIELDS_DEV_WIFI_LIST_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
@@ -1358,7 +1360,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 	/* Print headers */
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.header_name = _("WiFi scan list");
+	nmc->print_fields.header_name = _("Wi-Fi scan list");
 
 	devices = nm_client_get_devices (nmc->client);
 	if (iface) {
@@ -1411,7 +1413,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				show_acces_point_info (device, nmc);
 			}
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiFi device."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), iface);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1979,7 +1981,7 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 		} else if (matches (*argv, "scan") == 0) {
 			nmc->return_value = do_device_wifi_scan (nmc, argc-1, argv+1);
 		} else {
-			g_string_printf (nmc->return_text, _("Error: 'dev wifi' command '%s' is not valid."), *argv);
+			g_string_printf (nmc->return_text, _("Error: 'device wifi' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
@@ -2055,9 +2057,10 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 
 	if (error) {
 		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'dev wimax': %s"), error->message);
+			g_string_printf (nmc->return_text, _("Error: 'device wimax': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'dev wimax': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_WIMAX_LIST_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'device wimax': %s; allowed fields: %s"),
+			                 error->message, NMC_FIELDS_DEV_WIMAX_LIST_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
@@ -2181,7 +2184,7 @@ do_device_wimax (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wimax_list (nmc, argc-1, argv+1);
 		}
 		else {
-			g_string_printf (nmc->return_text, _("Error: 'dev wimax' command '%s' is not valid."), *argv);
+			g_string_printf (nmc->return_text, _("Error: 'device wimax' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
