@@ -33,6 +33,12 @@ edit = sed \
 EXTRA_DIST = \
 	NetworkManager.service.in \
 	NetworkManager-wait-online.service.in \
-	org.freedesktop.NetworkManager.service.in
+	org.freedesktop.NetworkManager.service.in \
+	server.conf.in
 
-CLEANFILES = NetworkManager.service NetworkManager-wait-online.service org.freedesktop.NetworkManager.service
+CLEANFILES = \
+	NetworkManager.service \
+	NetworkManager-wait-online.service \
+	org.freedesktop.NetworkManager.service \
+	server.conf
+
