@@ -26,6 +26,7 @@
 #include "nm-config.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
+#include "nm-glib-compat.h"
 
 #include <gio/gio.h>
 #include <glib/gi18n.h>
