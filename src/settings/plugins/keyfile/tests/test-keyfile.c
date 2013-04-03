@@ -1223,7 +1223,7 @@ test_write_string_ssid (void)
 	keyfile = g_key_file_new ();
 	ASSERT (g_key_file_load_from_file (keyfile, testfile, 0, NULL) == TRUE,
 	        "string-ssid-verify", "failed to load keyfile to verify");
-	tmp = g_key_file_get_string (keyfile, NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID, NULL);
+	tmp = g_key_file_get_string (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, NULL);
 	ASSERT (tmp, "string-ssid-verify", "failed to load 'ssid' key from file");
 	ASSERT (strlen (tmp) == sizeof (tmpssid),
 	        "string-ssid-verify", "reread SSID and expected were different sizes");
@@ -1345,7 +1345,7 @@ test_write_intlist_ssid (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	intlist = g_key_file_get_integer_list (keyfile, NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID, &len, &error);
+	intlist = g_key_file_get_integer_list (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, &len, &error);
 	g_assert_no_error (error);
 	g_assert (intlist);
 	g_assert_cmpint (len, ==, sizeof (tmpssid));
@@ -1501,7 +1501,7 @@ test_write_intlike_ssid (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	tmp = g_key_file_get_string (keyfile, NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID, &error);
+	tmp = g_key_file_get_string (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, &error);
 	g_assert_no_error (error);
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "101");
@@ -1589,7 +1589,7 @@ test_write_intlike_ssid_2 (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	tmp = g_key_file_get_string (keyfile, NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID, &error);
+	tmp = g_key_file_get_string (keyfile, "wifi", NM_SETTING_WIRELESS_SSID, &error);
 	g_assert_no_error (error);
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "11\\;12\\;13\\;");
@@ -2998,6 +2998,255 @@ test_write_bridge_component (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_new_wired_group_name (void)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	const GByteArray *array;
+	guint8 expected_mac[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_New_Wired_Group_Name", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Wired setting */
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1400);
+
+	array = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, ETH_ALEN);
+	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_new_wired_group_name (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	char *uuid;
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+	GKeyFile *kf;
+	char *s;
+	gint mtu;
+
+	connection = nm_connection_new ();
+	g_assert (connection);
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_assert (s_con);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired New Group Name",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	g_assert (s_wired);
+	g_object_set (s_wired, NM_SETTING_WIRED_MTU, 1400, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
+	kf = g_key_file_new ();
+	success = g_key_file_load_from_file (kf, testfile, G_KEY_FILE_NONE, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s = g_key_file_get_string (kf, NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (s, ==, "ethernet");
+	g_free (s);
+
+	mtu = g_key_file_get_integer (kf, "ethernet", NM_SETTING_WIRED_MTU, &error);
+	g_assert_no_error (error);
+	g_assert_cmpint (mtu, ==, 1400);
+
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
+static void
+test_read_new_wireless_group_names (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	const GByteArray *array;
+	const char *expected_ssid = "foobar";
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_New_Wireless_Group_Names", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Wifi setting */
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wifi);
+
+	array = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (array->data, expected_ssid, array->len), ==, 0);
+
+	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
+
+	g_assert_cmpstr (nm_setting_wireless_get_security (s_wifi), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* Wifi security setting */
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	g_assert (s_wsec);
+	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
+	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "s3cu4e passphrase");
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_new_wireless_group_names (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	char *uuid;
+	GByteArray *ssid;
+	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
+	const char *expected_psk = "asdfasdfasdfa12315";
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+	GKeyFile *kf;
+	char *s;
+
+	connection = nm_connection_new ();
+
+	/* Connection setting */
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write New Wireless Group Names",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* WiFi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (tmpssid));
+	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+	              NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	/* WiFi security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, expected_psk,
+	              NULL);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (testfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
+	kf = g_key_file_new ();
+	success = g_key_file_load_from_file (kf, testfile, G_KEY_FILE_NONE, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s = g_key_file_get_string (kf, NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (s, ==, "wifi");
+	g_free (s);
+
+	s = g_key_file_get_string (kf, "wifi", NM_SETTING_WIRELESS_MODE, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (s, ==, NM_SETTING_WIRELESS_MODE_INFRA);
+	g_free (s);
+
+	s = g_key_file_get_string (kf, "wifi", NM_SETTING_WIRELESS_SEC, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (s, ==, "wifi-security");
+	g_free (s);
+
+	s = g_key_file_get_string (kf, "wifi-security", NM_SETTING_WIRELESS_SECURITY_PSK, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (s, ==, expected_psk);
+	g_free (s);
+
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
 
 int main (int argc, char **argv)
 {
@@ -3054,6 +3303,11 @@ int main (int argc, char **argv)
 	test_write_bridge_main ();
 	test_read_bridge_component ();
 	test_write_bridge_component ();
+
+	test_read_new_wired_group_name ();
+	test_write_new_wired_group_name ();
+	test_read_new_wireless_group_names ();
+	test_write_new_wireless_group_names ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

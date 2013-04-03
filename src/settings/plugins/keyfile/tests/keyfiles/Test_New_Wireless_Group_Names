@@ -1,0 +1,17 @@
+[connection]
+id=Test New Wireless Group Names
+uuid=2f962388-e5f3-45af-a62c-ac220b8f7baa
+type=wifi
+
+[wifi]
+ssid=foobar
+mode=infrastructure
+security=wifi-security
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=s3cu4e passphrase
+
+[ipv4]
+method=auto
+

@@ -26,5 +26,54 @@
 
 gboolean nm_keyfile_plugin_utils_should_ignore_file (const char *filename);
 
+const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name);
+
+const char *nm_keyfile_plugin_get_setting_name_for_alias (const char *alias);
+
+/*********************************************************/
+
+/* List helpers */
+#define DEFINE_KF_LIST_WRAPPER_PROTO(stype, get_ctype, set_ctype) \
+get_ctype nm_keyfile_plugin_kf_get_##stype##_list (GKeyFile *kf, \
+                                                   const char *group, \
+                                                   const char *key, \
+                                                   gsize *out_length, \
+                                                   GError **error); \
+\
+void nm_keyfile_plugin_kf_set_##stype##_list  (GKeyFile *kf, \
+                                               const char *group, \
+                                               const char *key, \
+                                               set_ctype list[], \
+                                               gsize length);
+DEFINE_KF_LIST_WRAPPER_PROTO(integer, gint*, gint)
+DEFINE_KF_LIST_WRAPPER_PROTO(string, gchar**, const gchar* const)
+
+/* Single-value helpers */
+#define DEFINE_KF_WRAPPER_PROTO(stype, get_ctype, set_ctype) \
+get_ctype nm_keyfile_plugin_kf_get_##stype (GKeyFile *kf, \
+                                            const char *group, \
+                                            const char *key, \
+                                            GError **error); \
+\
+void nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
+                                       const char *group, \
+                                       const char *key, \
+                                       set_ctype value);
+DEFINE_KF_WRAPPER_PROTO(string, gchar*, const gchar*)
+DEFINE_KF_WRAPPER_PROTO(integer, gint, gint)
+DEFINE_KF_WRAPPER_PROTO(boolean, gboolean, gboolean)
+DEFINE_KF_WRAPPER_PROTO(value, gchar*, const gchar*)
+
+/* Misc */
+gchar ** nm_keyfile_plugin_kf_get_keys    (GKeyFile *kf,
+                                           const char *group,
+                                           gsize *out_length,
+                                           GError **error);
+
+gboolean nm_keyfile_plugin_kf_has_key     (GKeyFile *kf,
+                                           const char *group,
+                                           const char *key,
+                                           GError **error);
+
 #endif  /* _UTILS_H_ */
 

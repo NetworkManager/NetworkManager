@@ -46,6 +46,32 @@
 #include "nm-glib-compat.h"
 #include "writer.h"
 #include "common.h"
+#include "utils.h"
+
+/* Some setting properties also contain setting names, such as
+ * NMSettingConnection's 'type' property (which specifies the base type of the
+ * connection, eg ethernet or wifi) or the 802-11-wireless setting's
+ * 'security' property which specifies whether or not the AP requires
+ * encrpytion.  This function handles translating those properties' values
+ * from the real setting name to the more-readable alias.
+ */
+static void
+setting_alias_writer (GKeyFile *file,
+                      const char *keyfile_dir,
+                      const char *uuid,
+                      NMSetting *setting,
+                      const char *key,
+                      const GValue *value)
+{
+	const char *str, *alias;
+
+	str = g_value_get_string (value);
+	alias = nm_keyfile_plugin_get_alias_for_setting_name (str);
+	nm_keyfile_plugin_kf_set_string (file,
+	                                 nm_setting_get_name (setting),
+	                                 key,
+	                                 alias ? alias : str);
+}
 
 static gboolean
 write_array_of_uint (GKeyFile *file,
@@ -65,7 +91,7 @@ write_array_of_uint (GKeyFile *file,
 	for (i = 0; i < array->len; i++)
 		tmp_array[i] = g_array_index (array, int, i);
 
-	g_key_file_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
+	nm_keyfile_plugin_kf_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
 	g_free (tmp_array);
 	return TRUE;
 }
@@ -102,7 +128,7 @@ ip4_dns_writer (GKeyFile *file,
 			list[num++] = g_strdup (buf);
 	}
 
-	g_key_file_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
+	nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
 	g_strfreev (list);
 }
 
@@ -149,7 +175,7 @@ write_ip4_values (GKeyFile *file,
 
 		if (success) {
 			key_name = g_strdup_printf ("%s%d", key, j + 1);
-			g_key_file_set_string (file, setting_name, key_name, output->str);
+			nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
 			g_free (key_name);
 		}
 
@@ -232,7 +258,7 @@ ip6_dns_writer (GKeyFile *file,
 			list[num++] = g_strdup (buf);
 	}
 
-	g_key_file_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
+	nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
 	g_strfreev (list);
 }
 
@@ -337,7 +363,7 @@ ip6_addr_writer (GKeyFile *file,
 		if (ip6_addr) {
 			/* Write it out */
 			key_name = g_strdup_printf ("address%d", j++);
-			g_key_file_set_string (file, setting_name, key_name, ip6_addr);
+			nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, ip6_addr);
 			g_free (key_name);
 			g_free (ip6_addr);
 		}
@@ -380,7 +406,7 @@ ip6_route_writer (GKeyFile *file,
 
 		/* Write it out */
 		key_name = g_strdup_printf ("route%d", j++);
-		g_key_file_set_string (file, setting_name, key_name, output->str);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
 		g_free (key_name);
 
 		g_string_free (output, TRUE);
@@ -415,7 +441,7 @@ mac_address_writer (GKeyFile *file,
 	}
 
 	mac = nm_utils_hwaddr_ntoa (array->data, type);
-	g_key_file_set_string (file, setting_name, key, mac);
+	nm_keyfile_plugin_kf_set_string (file, setting_name, key, mac);
 	g_free (mac);
 }
 
@@ -453,7 +479,7 @@ write_hash_of_string (GKeyFile *file,
 		}
 
 		if (write_item)
-			g_key_file_set_string (file, group_name, property, data);
+			nm_keyfile_plugin_kf_set_string (file, group_name, property, data);
 	}
 }
 
@@ -505,13 +531,13 @@ ssid_writer (GKeyFile *file,
 				ssid[j++] = array->data[i];
 			}
 		}
-		g_key_file_set_string (file, setting_name, key, ssid);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, key, ssid);
 		g_free (ssid);
 	} else {
 		tmp_array = g_new (gint, array->len);
 		for (i = 0; i < array->len; i++)
 			tmp_array[i] = (int) array->data[i];
-		g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
+		nm_keyfile_plugin_kf_set_integer_list (file, setting_name, key, tmp_array, array->len);
 		g_free (tmp_array);
 	}
 }
@@ -537,7 +563,7 @@ password_raw_writer (GKeyFile *file,
 	tmp_array = g_new (gint, array->len);
 	for (i = 0; i < array->len; i++)
 		tmp_array[i] = (int) array->data[i];
-	g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
+	nm_keyfile_plugin_kf_set_integer_list (file, setting_name, key, tmp_array, array->len);
 	g_free (tmp_array);
 }
 
@@ -702,7 +728,7 @@ cert_writer (GKeyFile *file,
 				path++;
 		}
 
-		g_key_file_set_string (file, setting_name, key, path);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, key, path);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		const GByteArray *blob;
 		gboolean success;
@@ -732,7 +758,7 @@ cert_writer (GKeyFile *file,
 		success = write_cert_key_file (new_path, blob, &error);
 		if (success) {
 			/* Write the path value to the keyfile */
-			g_key_file_set_string (file, setting_name, key, new_path);
+			nm_keyfile_plugin_kf_set_string (file, setting_name, key, new_path);
 		} else {
 			g_warning ("Failed to write certificate/key %s: %s", new_path, error->message);
 			g_error_free (error);
@@ -760,6 +786,9 @@ typedef struct {
  * in struct in6_addr internally, but as string in keyfiles.
  */
 static KeyWriter key_writers[] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,
+	  NM_SETTING_CONNECTION_TYPE,
+	  setting_alias_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  ip4_addr_writer },
@@ -784,6 +813,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	  mac_address_writer },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_SEC,
+	  setting_alias_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
 	  mac_address_writer },
@@ -895,21 +927,21 @@ write_setting_value (NMSetting *setting,
 
 		str = g_value_get_string (value);
 		if (str)
-			g_key_file_set_string (info->keyfile, setting_name, key, str);
+			nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, str);
 	} else if (type == G_TYPE_UINT)
-		g_key_file_set_integer (info->keyfile, setting_name, key, (int) g_value_get_uint (value));
+		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_uint (value));
 	else if (type == G_TYPE_INT)
-		g_key_file_set_integer (info->keyfile, setting_name, key, g_value_get_int (value));
+		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, g_value_get_int (value));
 	else if (type == G_TYPE_UINT64) {
 		char *numstr;
 
 		numstr = g_strdup_printf ("%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
-		g_key_file_set_value (info->keyfile, setting_name, key, numstr);
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 		g_free (numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
-		g_key_file_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
+		nm_keyfile_plugin_kf_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
-		g_key_file_set_integer (info->keyfile, setting_name, key, (int) g_value_get_schar (value));
+		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_schar (value));
 	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
 		GByteArray *array;
 
@@ -922,7 +954,7 @@ write_setting_value (NMSetting *setting,
 			for (i = 0; i < array->len; i++)
 				tmp_array[i] = (int) array->data[i];
 
-			g_key_file_set_integer_list (info->keyfile, setting_name, key, tmp_array, array->len);
+			nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, array->len);
 			g_free (tmp_array);
 		}
 	} else if (type == DBUS_TYPE_G_LIST_OF_STRING) {
@@ -938,7 +970,7 @@ write_setting_value (NMSetting *setting,
 			for (iter = list; iter; iter = iter->next)
 				array[i++] = iter->data;
 
-			g_key_file_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, i);
+			nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, i);
 			g_free (array);
 		}
 	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {

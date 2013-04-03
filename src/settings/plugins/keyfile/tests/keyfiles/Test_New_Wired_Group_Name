@@ -1,0 +1,13 @@
+
+[connection]
+id=Test Wired Connection
+uuid=4e80a56d-c99f-4aad-a6dd-b449bc398c57
+type=ethernet
+
+[ethernet]
+mac-address=00:11:22:33:44:55
+mtu=1400
+
+[ipv4]
+method=auto
+

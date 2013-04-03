@@ -45,6 +45,31 @@
 #include "nm-system-config-interface.h"
 #include "reader.h"
 #include "common.h"
+#include "utils.h"
+
+/* Some setting properties also contain setting names, such as
+ * NMSettingConnection's 'type' property (which specifies the base type of the
+ * connection, eg ethernet or wifi) or the 802-11-wireless setting's
+ * 'security' property which specifies whether or not the AP requires
+ * encrpytion.  This function handles translating those properties' values
+ * to the real setting name if they are an alias.
+ */
+static void
+setting_alias_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	char *s;
+	const char *key_setting_name;
+
+	s = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
+	if (s) {
+		key_setting_name = nm_keyfile_plugin_get_setting_name_for_alias (s);
+		g_object_set (G_OBJECT (setting),
+		              key, key_setting_name ? key_setting_name : s,
+		              NULL);
+		g_free (s);
+	}
+}
 
 static gboolean
 read_array_of_uint (GKeyFile *file,
@@ -56,7 +81,7 @@ read_array_of_uint (GKeyFile *file,
 	int i;
 	gint *tmp;
 
-	tmp = g_key_file_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
+	tmp = nm_keyfile_plugin_kf_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
 	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
 	g_return_val_if_fail (array != NULL, FALSE);
 
@@ -284,7 +309,7 @@ read_one_ip_address_or_route (GKeyFile *file,
 	gpointer result;
 	char *address_str, *plen_str, *gateway_str, *metric_str, *value, *current, *error;
 
-	current = value = g_key_file_get_string (file, setting_name, key_name, NULL);
+	current = value = nm_keyfile_plugin_kf_get_string (file, setting_name, key_name, NULL);
 	if (!value)
 		return NULL;
 
@@ -418,7 +443,7 @@ ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 	char **list, **iter;
 	int ret;
 
-	list = g_key_file_get_string_list (keyfile, setting_name, key, &length, NULL);
+	list = nm_keyfile_plugin_kf_get_string_list (keyfile, setting_name, key, &length, NULL);
 	if (!list || !g_strv_length (list))
 		return;
 
@@ -451,7 +476,7 @@ ip6_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 	char **list, **iter;
 	int ret;
 
-	list = g_key_file_get_string_list (keyfile, setting_name, key, &length, NULL);
+	list = nm_keyfile_plugin_kf_get_string_list (keyfile, setting_name, key, &length, NULL);
 	if (!list || !g_strv_length (list))
 		return;
 
@@ -489,7 +514,7 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 	gsize length;
 	int i, type;
 
-	p = tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
+	p = tmp_string = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
 	if (tmp_string) {
 		/* Look for enough ':' characters to signify a MAC address */
 		i = 0;
@@ -508,7 +533,7 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 
 	if (array == NULL) {
 		/* Old format; list of ints */
-		tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
+		tmp_list = nm_keyfile_plugin_kf_get_integer_list (keyfile, setting_name, key, &length, NULL);
 		type = nm_utils_hwaddr_type (length);
 		if (type < 0) {
 			array = g_byte_array_sized_new (length);
@@ -546,12 +571,12 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	char *value;
 	const char *setting_name = nm_setting_get_name (setting);
 
-	keys = g_key_file_get_keys (file, setting_name, NULL, NULL);
+	keys = nm_keyfile_plugin_kf_get_keys (file, setting_name, NULL, NULL);
 	if (!keys || !*keys)
 		return;
 
 	for (iter = keys; *iter; iter++) {
-		value = g_key_file_get_string (file, setting_name, *iter, NULL);
+		value = nm_keyfile_plugin_kf_get_string (file, setting_name, *iter, NULL);
 		if (!value)
 			continue;
 
@@ -595,7 +620,7 @@ get_uchar_array (GKeyFile *keyfile,
 	/* New format: just a string
 	 * Old format: integer list; e.g. 11;25;38;
 	 */
-	tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
+	tmp_string = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
 	if (tmp_string) {
 		GRegex *regex;
 		GMatchInfo *match_info;
@@ -620,7 +645,7 @@ get_uchar_array (GKeyFile *keyfile,
 
 	if (!array) {
 		/* Old format; list of ints */
-		tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
+		tmp_list = nm_keyfile_plugin_kf_get_integer_list (keyfile, setting_name, key, &length, NULL);
 		array = g_byte_array_sized_new (length);
 		for (i = 0; i < length; i++) {
 			int val = tmp_list[i];
@@ -821,6 +846,10 @@ typedef struct {
  * in struct in6_addr internally, but as string in keyfiles.
  */
 static KeyParser key_parsers[] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,
+	  NM_SETTING_CONNECTION_TYPE,
+	  TRUE,
+	  setting_alias_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  FALSE,
@@ -865,6 +894,10 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_WIRELESS_BSSID,
 	  TRUE,
 	  mac_address_parser },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_SEC,
+	  TRUE,
+	  setting_alias_parser },
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
 	  NM_SETTING_BLUETOOTH_BDADDR,
 	  TRUE,
@@ -964,7 +997,7 @@ read_one_setting_value (NMSetting *setting,
 	 * like IP addresses and routes where more than one value is actually
 	 * encoded by the setting property, this won't be true.
 	 */
-	if (check_for_key && !g_key_file_has_key (info->keyfile, setting_name, key, &err)) {
+	if (check_for_key && !nm_keyfile_plugin_kf_has_key (info->keyfile, setting_name, key, &err)) {
 		/* Key doesn't exist or an error ocurred, thus nothing to do. */
 		if (err) {
 			g_warning ("Error loading setting '%s' value: %s", setting_name, err->message);
@@ -986,30 +1019,30 @@ read_one_setting_value (NMSetting *setting,
 	if (type == G_TYPE_STRING) {
 		char *str_val;
 
-		str_val = g_key_file_get_string (info->keyfile, setting_name, key, NULL);
+		str_val = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key, NULL);
 		g_object_set (setting, key, str_val, NULL);
 		g_free (str_val);
 	} else if (type == G_TYPE_UINT) {
 		int int_val;
 
-		int_val = g_key_file_get_integer (info->keyfile, setting_name, key, NULL);
+		int_val = nm_keyfile_plugin_kf_get_integer (info->keyfile, setting_name, key, NULL);
 		if (int_val < 0)
 			g_warning ("Casting negative value (%i) to uint", int_val);
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_INT) {
 		int int_val;
 
-		int_val = g_key_file_get_integer (info->keyfile, setting_name, key, NULL);
+		int_val = nm_keyfile_plugin_kf_get_integer (info->keyfile, setting_name, key, NULL);
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_BOOLEAN) {
 		gboolean bool_val;
 
-		bool_val = g_key_file_get_boolean (info->keyfile, setting_name, key, NULL);
+		bool_val = nm_keyfile_plugin_kf_get_boolean (info->keyfile, setting_name, key, NULL);
 		g_object_set (setting, key, bool_val, NULL);
 	} else if (type == G_TYPE_CHAR) {
 		int int_val;
 
-		int_val = g_key_file_get_integer (info->keyfile, setting_name, key, NULL);
+		int_val = nm_keyfile_plugin_kf_get_integer (info->keyfile, setting_name, key, NULL);
 		if (int_val < G_MININT8 || int_val > G_MAXINT8)
 			g_warning ("Casting value (%i) to char", int_val);
 
@@ -1018,7 +1051,7 @@ read_one_setting_value (NMSetting *setting,
 		char *tmp_str;
 		guint64 uint_val;
 
-		tmp_str = g_key_file_get_value (info->keyfile, setting_name, key, NULL);
+		tmp_str = nm_keyfile_plugin_kf_get_value (info->keyfile, setting_name, key, NULL);
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
 		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
@@ -1028,7 +1061,7 @@ read_one_setting_value (NMSetting *setting,
 		gsize length;
 		int i;
 
-		tmp = g_key_file_get_integer_list (info->keyfile, setting_name, key, &length, NULL);
+		tmp = nm_keyfile_plugin_kf_get_integer_list (info->keyfile, setting_name, key, &length, NULL);
 
 		array = g_byte_array_sized_new (length);
 		for (i = 0; i < length; i++) {
@@ -1052,7 +1085,7 @@ read_one_setting_value (NMSetting *setting,
 		int i;
 		GSList *list = NULL;
 
-		sa = g_key_file_get_string_list (info->keyfile, setting_name, key, &length, NULL);
+		sa = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
 		for (i = 0; i < length; i++)
 			list = g_slist_prepend (list, sa[i]);
 
@@ -1075,16 +1108,18 @@ read_one_setting_value (NMSetting *setting,
 }
 
 static NMSetting *
-read_setting (GKeyFile *file, const char *keyfile_path, const char *setting_name)
+read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 {
 	NMSetting *setting;
 	ReadInfo info = { file, keyfile_path };
+	const char *alias;
 
-	setting = nm_connection_create_setting (setting_name);
+	alias = nm_keyfile_plugin_get_setting_name_for_alias (group);
+	setting = nm_connection_create_setting (alias ? alias : group);
 	if (setting)
 		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
 	else
-		g_warning ("Invalid setting name '%s'", setting_name);
+		g_warning ("Invalid setting name '%s'", group);
 
 	return setting;
 }
@@ -1094,11 +1129,11 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 {
 	char **keys, **iter;
 
-	keys = g_key_file_get_keys (file, VPN_SECRETS_GROUP, NULL, NULL);
+	keys = nm_keyfile_plugin_kf_get_keys (file, VPN_SECRETS_GROUP, NULL, NULL);
 	for (iter = keys; *iter; iter++) {
 		char *secret;
 
-		secret = g_key_file_get_string (file, VPN_SECRETS_GROUP, *iter, NULL);
+		secret = nm_keyfile_plugin_kf_get_string (file, VPN_SECRETS_GROUP, *iter, NULL);
 		if (secret) {
 			nm_setting_vpn_add_secret (s_vpn, *iter, secret);
 			g_free (secret);

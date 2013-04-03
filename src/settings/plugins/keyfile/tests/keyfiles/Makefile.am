@@ -16,7 +16,9 @@ KEYFILES = \
 	Test_Wired_TLS_Path_Missing \
 	Test_InfiniBand_Connection \
 	Test_Bridge_Main \
-	Test_Bridge_Component
+	Test_Bridge_Component \
+	Test_New_Wired_Group_Name \
+	Test_New_Wireless_Group_Names
 
 CERTS = \
 	test-ca-cert.pem \
