@@ -120,6 +120,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 {
 	int ifindex;
 	SignalData *link_changed = add_signal ("link-changed", link_callback);
+	char *value;
 
 	g_assert (virtual_add (type, SLAVE_NAME, link_added, link_changed));
 	ifindex = nm_platform_link_get_ifindex (SLAVE_NAME);
@@ -179,6 +180,20 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 	accept_signal (link_changed);
 	accept_signal (master_changed);
 
+	/* Set slave option */
+	switch (type) {
+	case NM_LINK_TYPE_BRIDGE:
+		g_assert (nm_platform_slave_set_option (ifindex, "priority", "789"));
+		no_error ();
+		value = nm_platform_slave_get_option (ifindex, "priority");
+		no_error ();
+		g_assert (!g_strcmp0 (value, "789"));
+		g_free (value);
+		break;
+	default:
+		break;
+	}
+
 	/* Release */
 	g_assert (nm_platform_link_release (master, ifindex));
 	g_assert (nm_platform_link_get_master (ifindex) == 0); no_error ();
@@ -201,6 +216,7 @@ static void
 test_virtual (NMLinkType link_type)
 {
 	int ifindex;
+	char *value;
 
 	SignalData *link_added = add_signal ("link-added", link_callback);
 	SignalData *link_changed = add_signal ("link-changed", link_callback);
@@ -227,6 +243,29 @@ test_virtual (NMLinkType link_type)
 	g_assert (nm_platform_link_set_arp (ifindex));
 	g_assert (nm_platform_link_uses_arp (ifindex));
 	accept_signal (link_changed);
+
+	/* Set master option */
+	switch (link_type) {
+	case NM_LINK_TYPE_BRIDGE:
+		g_assert (nm_platform_master_set_option (ifindex, "forward_delay", "789"));
+		no_error ();
+		value = nm_platform_master_get_option (ifindex, "forward_delay");
+		no_error ();
+		g_assert (!g_strcmp0 (value, "789"));
+		g_free (value);
+		break;
+	case NM_LINK_TYPE_BOND:
+		g_assert (nm_platform_master_set_option (ifindex, "mode", "active-backup"));
+		no_error ();
+		value = nm_platform_master_get_option (ifindex, "mode");
+		no_error ();
+		/* When reading back, the output looks slightly different. */
+		g_assert (g_str_has_prefix (value, "active-backup"));
+		g_free (value);
+		break;
+	default:
+		break;
+	}
 
 	/* Enslave and release */
 	switch (link_type) {

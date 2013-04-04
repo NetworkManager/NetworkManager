@@ -149,6 +149,10 @@ typedef struct {
 	gboolean (*link_enslave) (NMPlatform *, int master, int slave);
 	gboolean (*link_release) (NMPlatform *, int master, int slave);
 	gboolean (*link_get_master) (NMPlatform *, int slave);
+	gboolean (*master_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
+	char * (*master_get_option) (NMPlatform *, int ifindex, const char *option);
+	gboolean (*slave_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
+	char * (*slave_get_option) (NMPlatform *, int ifindex, const char *option);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -256,6 +260,10 @@ gboolean nm_platform_link_supports_vlans (int ifindex);
 gboolean nm_platform_link_enslave (int master, int slave);
 gboolean nm_platform_link_release (int master, int slave);
 int nm_platform_link_get_master (int slave);
+gboolean nm_platform_master_set_option (int ifindex, const char *option, const char *value);
+char *nm_platform_master_get_option (int ifindex, const char *option);
+gboolean nm_platform_slave_set_option (int ifindex, const char *option, const char *value);
+char *nm_platform_slave_get_option (int ifindex, const char *option);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);
@@ -281,5 +289,17 @@ gboolean nm_platform_ip4_route_exists (int ifindex,
 		in_addr_t network, int plen, in_addr_t gateway, int metric);
 gboolean nm_platform_ip6_route_exists (int ifindex,
 		struct in6_addr network, int plen, struct in6_addr gateway, int metric);
+
+#define auto_g_free __attribute__((cleanup(put_g_free)))
+static void __attribute__((unused))
+put_g_free (void *ptr)
+{
+	gpointer *object = ptr;
+
+	if (object && *object) {
+		g_free (*object);
+		*object = NULL;
+	}
+}
 
 #endif /* NM_PLATFORM_H */

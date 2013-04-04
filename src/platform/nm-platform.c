@@ -663,6 +663,56 @@ nm_platform_team_add (const char *name)
 	return nm_platform_link_add (name, NM_LINK_TYPE_TEAM);
 }
 
+gboolean
+nm_platform_master_set_option (int ifindex, const char *option, const char *value)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (option, FALSE);
+	g_return_val_if_fail (value, FALSE);
+	g_return_val_if_fail (klass->master_set_option, FALSE);
+
+	return klass->master_set_option (platform, ifindex, option, value);
+}
+
+char *
+nm_platform_master_get_option (int ifindex, const char *option)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (option, FALSE);
+	g_return_val_if_fail (klass->master_set_option, FALSE);
+
+	return klass->master_get_option (platform, ifindex, option);
+}
+
+gboolean
+nm_platform_slave_set_option (int ifindex, const char *option, const char *value)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (option, FALSE);
+	g_return_val_if_fail (value, FALSE);
+	g_return_val_if_fail (klass->slave_set_option, FALSE);
+
+	return klass->slave_set_option (platform, ifindex, option, value);
+}
+
+char *
+nm_platform_slave_get_option (int ifindex, const char *option)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (option, FALSE);
+	g_return_val_if_fail (klass->slave_set_option, FALSE);
+
+	return klass->slave_get_option (platform, ifindex, option);
+}
+
 /******************************************************************/
 
 GArray *

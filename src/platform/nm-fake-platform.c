@@ -389,6 +389,37 @@ link_get_master (NMPlatform *platform, int slave)
 	return device->master;
 }
 
+static gboolean
+master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
+{
+	auto_g_free char *path = g_strdup_printf ("master:%d:%s", master, option);
+
+	return sysctl_set (platform, path, value);
+}
+
+static char *
+master_get_option (NMPlatform *platform, int master, const char *option)
+{
+	auto_g_free char *path = g_strdup_printf ("master:%d:%s", master, option);
+
+	return sysctl_get (platform, path);
+}
+
+static gboolean
+slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
+{
+	auto_g_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
+
+	return sysctl_set (platform, path, value);
+}
+
+static char *
+slave_get_option (NMPlatform *platform, int slave, const char *option)
+{
+	auto_g_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
+
+	return sysctl_get (platform, path);
+}
 
 /******************************************************************/
 
@@ -831,6 +862,10 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
 	platform_class->link_get_master = link_get_master;
+	platform_class->master_set_option = master_set_option;
+	platform_class->master_get_option = master_get_option;
+	platform_class->slave_set_option = slave_set_option;
+	platform_class->slave_get_option = slave_get_option;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;
