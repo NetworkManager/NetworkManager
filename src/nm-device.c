@@ -4038,6 +4038,9 @@ nm_device_set_ip4_config (NMDevice *self,
 				nm_ip4_config_export (new_config);
 			_update_ip4_address (self);
 		}
+
+		if (!success && reason)
+			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
@@ -4089,6 +4092,9 @@ nm_device_set_ip6_config (NMDevice *self,
 			if (!nm_ip6_config_get_dbus_path (new_config))
 				nm_ip6_config_export (new_config);
 		}
+
+		if (!success && reason)
+			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
