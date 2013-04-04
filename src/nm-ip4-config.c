@@ -27,6 +27,7 @@
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 
 #include <netlink/route/addr.h>
@@ -95,6 +96,49 @@ NMIP4Config *
 nm_ip4_config_new (void)
 {
 	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG, NULL);
+}
+
+NMIP4Config *
+nm_ip4_config_new_for_interface (int ifindex)
+{
+	NMIP4Config *ip4;
+	GArray *addrs_array, *routes_array;
+	NMPlatformIP4Address *addrs;
+	NMPlatformIP4Route *routes;
+	NMIP4Address *addr;
+	NMIP4Route *route;
+	int i;
+
+	addrs_array = nm_platform_ip4_address_get_all (ifindex);
+	if (addrs_array->len == 0) {
+		g_array_unref (addrs_array);
+		return NULL;
+	}
+
+	ip4 = nm_ip4_config_new ();
+
+	addrs = (NMPlatformIP4Address *)addrs_array->data;
+	for (i = 0; i < addrs_array->len; i++) {
+		addr = nm_ip4_address_new ();
+		nm_ip4_address_set_address (addr, addrs[i].address);
+		nm_ip4_address_set_prefix (addr, addrs[i].plen);
+		nm_ip4_config_take_address (ip4, addr);
+	}
+	g_array_unref (addrs_array);
+
+	routes_array = nm_platform_ip4_route_get_all (ifindex);
+	routes = (NMPlatformIP4Route *)routes_array->data;
+	for (i = 0; i < routes_array->len; i++) {
+		route = nm_ip4_route_new ();
+		nm_ip4_route_set_dest (route, routes[i].network);
+		nm_ip4_route_set_prefix (route, routes[i].plen);
+		nm_ip4_route_set_next_hop (route, routes[i].gateway);
+		nm_ip4_route_set_metric (route, routes[i].metric);
+		nm_ip4_config_take_route (ip4, route);
+	}
+	g_array_unref (routes_array);
+
+	return ip4;
 }
 
 void

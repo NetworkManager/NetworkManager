@@ -549,6 +549,10 @@ show_device_info (gpointer data, gpointer user_data)
 	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 	gboolean was_output = FALSE;
+	NMIP4Config *cfg4;
+	NMIP6Config *cfg6;
+	NMDHCP4Config *dhcp4;
+	NMDHCP6Config *dhcp6;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -813,28 +817,26 @@ show_device_info (gpointer data, gpointer user_data)
 #endif
 
 		/* IP configuration info */
-		if (state == NM_DEVICE_STATE_ACTIVATED) {
-			NMIP4Config *cfg4 = nm_device_get_ip4_config (device);
-			NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
-			NMDHCP4Config *dhcp4 = nm_device_get_dhcp4_config (device);
-			NMDHCP6Config *dhcp6 = nm_device_get_dhcp6_config (device);
+		cfg4 = nm_device_get_ip4_config (device);
+		cfg6 = nm_device_get_ip6_config (device);
+		dhcp4 = nm_device_get_dhcp4_config (device);
+		dhcp6 = nm_device_get_dhcp6_config (device);
 
-			/* IP4 */
-			if (cfg4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[7].name))
-				was_output = print_ip4_config (cfg4, nmc, nmc_fields_dev_show_sections[7].name);
+		/* IP4 */
+		if (cfg4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[7].name))
+			was_output = print_ip4_config (cfg4, nmc, nmc_fields_dev_show_sections[7].name);
 
-			/* DHCP4 */
-			if (dhcp4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[8].name))
-				was_output = print_dhcp4_config (dhcp4, nmc, nmc_fields_dev_show_sections[8].name);
+		/* DHCP4 */
+		if (dhcp4 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[8].name))
+			was_output = print_dhcp4_config (dhcp4, nmc, nmc_fields_dev_show_sections[8].name);
 
-			/* IP6 */
-			if (cfg6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[9].name))
-				was_output = print_ip6_config (cfg6, nmc, nmc_fields_dev_show_sections[9].name);
+		/* IP6 */
+		if (cfg6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[9].name))
+			was_output = print_ip6_config (cfg6, nmc, nmc_fields_dev_show_sections[9].name);
 
-			/* DHCP6 */
-			if (dhcp6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[10].name))
-				was_output = print_dhcp6_config (dhcp6, nmc, nmc_fields_dev_show_sections[10].name);
-		}
+		/* DHCP6 */
+		if (dhcp6 && !strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[10].name))
+			was_output = print_dhcp6_config (dhcp6, nmc, nmc_fields_dev_show_sections[10].name);
 
 		/* Bond-specific information */
 		if ((NM_IS_DEVICE_BOND (device))) {

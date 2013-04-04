@@ -29,6 +29,7 @@ test_dhcp_options_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/src/dhcp-manager/libdhcp-manager.la \
 	$(top_builddir)/src/libtest-dhcp.la \
+	$(top_builddir)/src/platform/libnm-platform.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 

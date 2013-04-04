@@ -50,6 +50,8 @@ GType nm_ip6_config_get_type (void);
 
 
 NMIP6Config * nm_ip6_config_new                 (void);
+NMIP6Config * nm_ip6_config_new_for_interface   (int ifindex);
+
 void          nm_ip6_config_export              (NMIP6Config *config);
 const char *  nm_ip6_config_get_dbus_path       (NMIP6Config *config);
 

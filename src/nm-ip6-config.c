@@ -27,6 +27,7 @@
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 
 #include <netlink/route/addr.h>
@@ -92,6 +93,49 @@ NMIP6Config *
 nm_ip6_config_new (void)
 {
 	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG, NULL);
+}
+
+NMIP6Config *
+nm_ip6_config_new_for_interface (int ifindex)
+{
+	NMIP6Config *ip6;
+	GArray *addrs_array, *routes_array;
+	NMPlatformIP6Address *addrs;
+	NMPlatformIP6Route *routes;
+	NMIP6Address *addr;
+	NMIP6Route *route;
+	int i;
+
+	addrs_array = nm_platform_ip6_address_get_all (ifindex);
+	if (addrs_array->len == 0) {
+		g_array_unref (addrs_array);
+		return NULL;
+	}
+
+	ip6 = nm_ip6_config_new ();
+
+	addrs = (NMPlatformIP6Address *)addrs_array->data;
+	for (i = 0; i < addrs_array->len; i++) {
+		addr = nm_ip6_address_new ();
+		nm_ip6_address_set_address (addr, &addrs[i].address);
+		nm_ip6_address_set_prefix (addr, addrs[i].plen);
+		nm_ip6_config_take_address (ip6, addr);
+	}
+	g_array_unref (addrs_array);
+
+	routes_array = nm_platform_ip6_route_get_all (ifindex);
+	routes = (NMPlatformIP6Route *)routes_array->data;
+	for (i = 0; i < routes_array->len; i++) {
+		route = nm_ip6_route_new ();
+		nm_ip6_route_set_dest (route, &routes[i].network);
+		nm_ip6_route_set_prefix (route, routes[i].plen);
+		nm_ip6_route_set_next_hop (route, &routes[i].gateway);
+		nm_ip6_route_set_metric (route, routes[i].metric);
+		nm_ip6_config_take_route (ip6, route);
+	}
+	g_array_unref (routes_array);
+
+	return ip6;
 }
 
 void

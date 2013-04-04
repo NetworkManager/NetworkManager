@@ -51,6 +51,8 @@ GType nm_ip4_config_get_type (void);
 
 
 NMIP4Config * nm_ip4_config_new                 (void);
+NMIP4Config * nm_ip4_config_new_for_interface   (int ifindex);
+
 void          nm_ip4_config_export              (NMIP4Config *config);
 const char *  nm_ip4_config_get_dbus_path       (NMIP4Config *config);
 

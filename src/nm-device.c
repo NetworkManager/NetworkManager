@@ -68,6 +68,7 @@
 #include "nm-dispatcher.h"
 #include "nm-config-device.h"
 #include "nm-config.h"
+#include "nm-platform.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -169,6 +170,7 @@ typedef struct {
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
+	guint queued_ip_config_id;
 
 	char *        udi;
 	char *        path;
@@ -312,10 +314,32 @@ static const char *state_to_string (NMDeviceState state);
 static void carrier_changed (GObject *object, GParamSpec *param, gpointer user_data);
 static void carrier_action_defer_clear (NMDevice *self);
 
+static void nm_device_queued_ip_config_change_clear (NMDevice *self);
+static void update_ip_config (NMDevice *self);
+static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, gpointer user_data);
+
+static const char const *platform_ip_signals[] = {
+	NM_PLATFORM_IP4_ADDRESS_ADDED,
+	NM_PLATFORM_IP4_ADDRESS_CHANGED,
+	NM_PLATFORM_IP4_ADDRESS_REMOVED,
+	NM_PLATFORM_IP4_ROUTE_ADDED,
+	NM_PLATFORM_IP4_ROUTE_CHANGED,
+	NM_PLATFORM_IP4_ROUTE_REMOVED,
+	NM_PLATFORM_IP6_ADDRESS_ADDED,
+	NM_PLATFORM_IP6_ADDRESS_CHANGED,
+	NM_PLATFORM_IP6_ADDRESS_REMOVED,
+	NM_PLATFORM_IP6_ROUTE_ADDED,
+	NM_PLATFORM_IP6_ROUTE_CHANGED,
+	NM_PLATFORM_IP6_ROUTE_REMOVED,
+};
+static const int n_platform_ip_signals = G_N_ELEMENTS (platform_ip_signals);
+
 static void
 nm_device_init (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPlatform *platform;
+	int i;
 
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	priv->capabilities = NM_DEVICE_CAP_NONE;
@@ -325,6 +349,13 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
+
+	/* Watch for external IP config changes */
+	platform = nm_platform_get ();
+	for (i = 0; i < n_platform_ip_signals; i++) {
+		g_signal_connect (platform, platform_ip_signals[i],
+		                  G_CALLBACK (device_ip_changed), self);
+	}
 }
 
 static void
@@ -478,6 +509,7 @@ constructor (GType type,
 
 	update_accept_ra_save (dev);
 	update_ip6_privacy_save (dev);
+	update_ip_config (dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -3973,6 +4005,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
+	nm_device_queued_ip_config_change_clear (self);
 
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
@@ -4446,6 +4479,7 @@ dispose (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean take_down = TRUE;
+	NMPlatform *platform;
 
 	if (priv->disposed || !priv->initialized)
 		goto out;
@@ -4479,6 +4513,7 @@ dispose (GObject *object)
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
+	nm_device_queued_ip_config_change_clear (self);
 
 	/* Clean up and stop DHCP */
 	dhcp4_cleanup (self, take_down, FALSE);
@@ -4540,6 +4575,9 @@ dispose (GObject *object)
 	activation_source_clear (self, TRUE, AF_INET6);
 
 	clear_act_request (self);
+
+	platform = nm_platform_get ();
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
 
 out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
@@ -4672,9 +4710,16 @@ set_property (GObject *object, guint prop_id,
 }
 
 static gboolean
-_is_connected (NMDeviceState state)
+has_ip_config (NMDevice *self)
 {
-	return (state >= NM_DEVICE_STATE_IP_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->ip4_config && !priv->ip6_config)
+		return FALSE;
+
+	return (   (   priv->state >= NM_DEVICE_STATE_IP_CONFIG
+	            && priv->state <= NM_DEVICE_STATE_DEACTIVATING)
+	        || (priv->state == NM_DEVICE_STATE_UNMANAGED));
 }
 
 static void
@@ -4683,13 +4728,10 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceState state;
 	const char *ac_path = NULL;
 	GPtrArray *array;
 	GHashTableIter iter;
 	NMConnection *connection;
-
-	state = nm_device_get_state (self);
 
 	switch (prop_id) {
 	case PROP_UDI:
@@ -4699,7 +4741,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->iface);
 		break;
 	case PROP_IP_IFACE:
-		if (_is_connected (state))
+		if (has_ip_config (self))
 			g_value_set_string (value, nm_device_get_ip_iface (self));
 		else
 			g_value_set_string (value, NULL);
@@ -4723,25 +4765,25 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->ip4_address);
 		break;
 	case PROP_IP4_CONFIG:
-		if (_is_connected (state) && priv->ip4_config)
+		if (has_ip_config (self) && priv->ip4_config)
 			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_DHCP4_CONFIG:
-		if (_is_connected (state) && priv->dhcp4_client)
+		if (has_ip_config (self) && priv->dhcp4_client)
 			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_IP6_CONFIG:
-		if (_is_connected (state) && priv->ip6_config)
+		if (has_ip_config (self) && priv->ip6_config)
 			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_DHCP6_CONFIG:
-		if (_is_connected (state) && priv->dhcp6_client)
+		if (has_ip_config (self) && priv->dhcp6_client)
 			g_value_set_boxed (value, nm_dhcp6_config_get_dbus_path (priv->dhcp6_config));
 		else
 			g_value_set_boxed (value, "/");
@@ -5515,6 +5557,78 @@ nm_device_get_state (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
 
 	return NM_DEVICE_GET_PRIVATE (device)->state;
+}
+
+static void
+update_ip_config (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
+	NMIP4Config *ip4_config;
+	NMIP6Config *ip6_config;
+	int ifindex;
+
+	if (priv->state != NM_DEVICE_STATE_UNMANAGED)
+		return;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (!ifindex)
+		return;
+
+	ip4_config = nm_ip4_config_new_for_interface (ifindex);
+	ip6_config = nm_ip6_config_new_for_interface (ifindex);
+
+	nm_device_set_ip4_config (self, ip4_config, TRUE, &ignored);
+	nm_device_set_ip6_config (self, ip6_config, TRUE, &ignored);
+
+	if (ip4_config)
+		g_object_unref (ip4_config);
+	if (ip6_config)
+		g_object_unref (ip6_config);
+}
+
+static gboolean
+queued_ip_config_change (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* Wait for any queued state changes */
+	if (priv->queued_state.id)
+		return TRUE;
+
+	priv->queued_ip_config_id = 0;
+	update_ip_config (self);
+	return FALSE;
+}
+
+static void
+device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, gpointer user_data)
+{
+	NMDevice *self = user_data;
+
+	if (nm_device_get_ip_ifindex (self) == ifindex) {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+		if (!priv->queued_ip_config_id)
+			priv->queued_ip_config_id = g_idle_add (queued_ip_config_change, self);
+
+		nm_log_dbg (LOGD_DEVICE, "(%s): queued IP config change",
+		            nm_device_get_iface (self));
+	}
+}
+
+void
+nm_device_queued_ip_config_change_clear (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->queued_ip_config_id) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued IP config change",
+		            nm_device_get_iface (self));
+		g_source_remove (priv->queued_ip_config_id);
+		priv->queued_ip_config_id = 0;
+	}
 }
 
 gboolean
