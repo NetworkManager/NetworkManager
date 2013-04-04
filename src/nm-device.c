@@ -1463,8 +1463,12 @@ check_connection_compatible (NMDevice *device,
 
 	config_iface = nm_setting_connection_get_interface_name (s_con);
 	device_iface = nm_device_get_iface (device);
-	if (config_iface && strcmp (config_iface, device_iface) != 0)
+	if (config_iface && strcmp (config_iface, device_iface) != 0) {
+		g_set_error (error,
+		             NM_DEVICE_ERROR, NM_DEVICE_ERROR_CONNECTION_INVALID,
+		             "The connection is not valid for this interface.");
 		return FALSE;
+	}
 
 	return TRUE;
 }
