@@ -202,6 +202,7 @@ policy/org.freedesktop.NetworkManager.policy.in
 data/NetworkManager.service
 data/NetworkManager-wait-online.service
 data/org.freedesktop.NetworkManager.service
+data/server.conf
 
 cli/src/nmcli
 
