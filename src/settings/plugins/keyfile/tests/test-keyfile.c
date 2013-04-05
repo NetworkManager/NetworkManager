@@ -1151,11 +1151,8 @@ test_read_string_ssid (void)
 	        TEST_STRING_SSID_FILE,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
-	ASSERT (memcmp (array->data, expected_ssid, sizeof (expected_ssid)) == 0,
-	        "connection-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_STRING_SSID_FILE,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SSID);
+	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
+	g_assert (memcmp (array->data, expected_ssid, array->len) == 0);
 
 	g_object_unref (connection);
 }
