@@ -1634,6 +1634,8 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	char **arg_arr = NULL;
 	char **arg_ptr = argv;
 	int arg_num = argc;
+	GString *invalid_cons = NULL;
+	gboolean del_info_free = FALSE;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
@@ -1644,7 +1646,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	if (!nm_client_get_manager_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
+		goto finish;
 	}
 
 	if (argc == 0) {
@@ -1656,13 +1658,14 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No connection specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			goto finish;
 		}
 	}
 
 	del_info = g_malloc0 (sizeof (DeleteStateInfo));
 	del_info->nmc = nmc;
 	del_info->counter = 0;
+	del_info_free = TRUE;
 
 	while (arg_num > 0) {
 		const char *selector = NULL;
@@ -1674,21 +1677,31 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			if (next_arg (&arg_num, &arg_ptr) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
+				goto finish;
 			}
 		}
 
 		connection = find_connection (nmc->system_connections, selector, *arg_ptr);
 		if (!connection) {
-			g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), *arg_ptr);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
+			if (nmc->print_output != NMC_PRINT_TERSE)
+				printf (_("Error: unknown connection: %s\n"), *arg_ptr);
+
+			if (!invalid_cons)
+				invalid_cons = g_string_new (NULL);
+			g_string_append_printf (invalid_cons, "'%s', ", *arg_ptr);
+
+			/* take the next argument and continue */
+			next_arg (&arg_num, &arg_ptr);
+			continue;
 		}
 
 		/* We need to wait a bit so that nmcli's permissions can be checked.
 		 * We will exit when D-Bus return (error) messages are received.
 		 */
 		nmc->should_wait = TRUE;
+
+		/* del_info deallocation is handled in delete_cb() */
+		del_info_free = FALSE;
 
 		del_info->counter++;
 
@@ -1698,13 +1711,18 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		next_arg (&arg_num, &arg_ptr);
 	}
 
+finish:
+	if (del_info_free)
+		g_free (del_info);
 	g_strfreev (arg_arr);
-	return nmc->return_value;
 
-error:
-	nmc->should_wait = FALSE;
-	g_free (del_info);
-	g_strfreev (arg_arr);
+	if (invalid_cons) {
+		g_string_truncate (invalid_cons, invalid_cons->len-2);  /* truncate trailing ", " */
+		g_string_printf (nmc->return_text, _("Error: cannot delete unknown connection(s): %s."),
+		                 invalid_cons->str);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		g_string_free (invalid_cons, TRUE);
+	}
 	return nmc->return_value;
 }
 
