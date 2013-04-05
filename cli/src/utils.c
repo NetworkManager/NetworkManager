@@ -254,6 +254,60 @@ nmc_terminal_show_progress (const char *str)
 		idx = 0;
 }
 
+const char *
+nmc_term_color_sequence (NmcTermColor color)
+{
+	switch (color) {
+        case NMC_TERM_COLOR_BLACK:
+		return "\33[30m";
+		break;
+        case NMC_TERM_COLOR_RED:
+		return "\33[31m";
+		break;
+        case NMC_TERM_COLOR_GREEN:
+		return "\33[32m";
+		break;
+        case NMC_TERM_COLOR_YELLOW:
+		return "\33[33m";
+		break;
+        case NMC_TERM_COLOR_BLUE:
+		return "\33[34m";
+		break;
+        case NMC_TERM_COLOR_MAGENTA:
+		return "\33[35m";
+		break;
+        case NMC_TERM_COLOR_CYAN:
+		return "\33[36m";
+		break;
+        case NMC_TERM_COLOR_WHITE:
+		return "\33[37m";
+		break;
+	default:
+		return "";
+		break;
+	}
+}
+
+char *
+nmc_colorize (NmcTermColor color, const char *fmt, ...)
+{
+	va_list args;
+	char *str;
+	const char *ansi_color, *color_end;
+
+	va_start (args, fmt);
+	str = g_strdup_vprintf (fmt, args);
+	va_end (args);
+
+	ansi_color = nmc_term_color_sequence (color);
+	if (*ansi_color)
+		color_end = "\33[0m";
+	else
+		color_end = "";
+
+	return g_strdup_printf ("%s%s%s", ansi_color, str, color_end);
+}
+
 /*
  * Convert string to signed integer.
  * If required, the resulting number is checked to be in the <min,max> range.

@@ -67,6 +67,8 @@ char *nmc_ip4_address_as_string (guint32 ip, GError **error);
 char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
+const char *nmc_term_color_sequence (NmcTermColor color);
+char *nmc_colorize (NmcTermColor color, const char * fmt, ...);
 char *nmc_get_user_input (const char *ask_str);
 int nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);

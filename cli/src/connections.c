@@ -3398,6 +3398,7 @@ typedef enum {
 	NMC_EDITOR_MAIN_CMD_SAVE,
 	NMC_EDITOR_MAIN_CMD_BACK,
 	NMC_EDITOR_MAIN_CMD_HELP,
+	NMC_EDITOR_MAIN_CMD_NMCLI,
 	NMC_EDITOR_MAIN_CMD_QUIT,
 } NmcEditorMainCmd;
 
@@ -3432,6 +3433,8 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_HELP;
 	else if (matches (vec[0], "quit") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_QUIT;
+	else if (matches (vec[0], "nmcli") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_NMCLI;
 
 	/* set pointer to command argument */
 	if (cmd_arg)
@@ -3457,6 +3460,7 @@ editor_main_usage (void)
 	          "save                                 :: save the connection\n"
 	          "back                                 :: go one level up (back)\n"
 	          "help/?   [<command>]                 :: print this help\n"
+	          "nmcli    <conf-option> <value>       :: nmcli configuration\n"
 	          "quit                                 :: exit nmcli\n"));
 	printf ("------------------------------------------------------------------------------\n");
 }
@@ -3509,6 +3513,24 @@ editor_main_help (const char *command)
 			break;
 		case NMC_EDITOR_MAIN_CMD_HELP:
 			printf (_("help/? [<command>]  :: help for the nmcli commands\n\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_NMCLI:
+			printf (_("nmcli <conf-option> <value>  :: nmcli configuration\n\n"
+			          "Configures nmcli. The following options are available:\n"
+			          "status-line yes | no\n"
+			          "prompt-color <0-8>\n"
+			          "  0 = normal\n"
+			          "  1 = \33[30mblack\33[0m\n"
+			          "  2 = \33[31mred\33[0m\n"
+			          "  3 = \33[32mgreen\33[0m\n"
+			          "  4 = \33[33myellow\33[0m\n"
+			          "  5 = \33[34mblue\33[0m\n"
+			          "  6 = \33[35mmagenta\33[0m\n"
+			          "  7 = \33[36mcyan\33[0m\n"
+			          "  8 = \33[37mwhite\33[0m\n"
+			          "\n"
+			          "Examples: nmcli> nmcli status-line yes\n"
+			          "          nmcli> nmcli prompt-color 3\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_QUIT:
 			printf (_("quit  :: exit nmcli\n\n"
@@ -3716,12 +3738,33 @@ print_setting_description (NMSetting *setting)
 	g_strfreev (all_props);
 }
 
+static void
+editor_show_status_line (NMConnection *connection, gboolean dirty)
+{
+	NMSettingConnection *s_con;
+	const char *con_type, *con_id, *con_uuid;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	con_type = nm_setting_connection_get_connection_type (s_con);
+	con_id = nm_connection_get_id (connection);
+	con_uuid = nm_connection_get_uuid (connection);
+
+	/* TRANSLATORS: status line in nmcli connection editor */
+	printf (_("[ Connection type: %s | name: %s | UUID: %s | dirty: %s ]\n"),
+	        con_type, con_id, con_uuid, dirty ? _("yes") : _("no"));
+}
+
 /*
  * Submenu for detailed property editation
  * Return: TRUE - continue;  FALSE - should quit
  */
 static gboolean
-property_edit_submenu (NmCli *nmc, NMConnection *connection, NMSetting *curr_setting, const char *prop_name)
+property_edit_submenu (NmCli *nmc,
+                       NMConnection *connection,
+                       NMRemoteConnection *rem_con,
+                       NMSetting *curr_setting,
+                       const char *prop_name)
 {
 	NmcEditorSubCmd cmdsub;
 	gboolean cmd_property_loop = TRUE;
@@ -3731,12 +3774,21 @@ property_edit_submenu (NmCli *nmc, NMConnection *connection, NMSetting *curr_set
 	GError *tmp_err = NULL;
 	char *prompt;
 	char *tmp_str;
+	gboolean dirty;
 	GValue prop_g_value = G_VALUE_INIT;
 
-	prompt = g_strdup_printf (_("nmcli %s.%s> "), nm_setting_get_name (curr_setting), prop_name);
+	prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s.%s> ",
+	                       nm_setting_get_name (curr_setting), prop_name);
+
 	while (cmd_property_loop) {
 		char *cmd_property_user;
 		char *cmd_property_arg;
+
+		/* Connection is dirty? (not saved or differs from the saved) */
+		dirty = !nm_connection_compare (connection, NM_CONNECTION (rem_con), NM_SETTING_COMPARE_FLAG_EXACT);
+		if (nmc->editor_status_line)
+			editor_show_status_line (connection, dirty);
+
 		cmd_property_user = readline_x (prompt);
 		if (!cmd_property_user || *cmd_property_user == '\0')
 			continue;
@@ -4005,11 +4057,12 @@ typedef	struct {
 
 static void
 menu_switch_to_level0 (NmcEditorMenuContext *menu_ctx,
-                       const char *prompt)
+                       const char *prompt,
+                       NmcTermColor prompt_color)
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = g_strdup (prompt);
+	menu_ctx->main_prompt = nmc_colorize (prompt_color, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -4020,11 +4073,12 @@ menu_switch_to_level0 (NmcEditorMenuContext *menu_ctx,
 static void
 menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
                        NMSetting *setting,
-                       const char *setting_name)
+                       const char *setting_name,
+                       NmcTermColor prompt_color)
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = g_strdup_printf ("nmcli %s> ", setting_name);
+	menu_ctx->main_prompt = nmc_colorize (prompt_color, "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = nmc_setting_get_valid_properties (menu_ctx->curr_setting);
@@ -4047,6 +4101,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	char *valid_settings_str = NULL;
 	AddConnectionInfo *info = NULL;
 	char *tmp_str;
+	gboolean dirty;
 	GError *err1 = NULL;
 	NmcEditorMenuContext menu_ctx;
 
@@ -4055,7 +4110,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	printf (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
-	menu_ctx.main_prompt = g_strdup (BASE_PROMPT);
+	menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, BASE_PROMPT);
 	menu_ctx.curr_setting = NULL;
 	menu_ctx.valid_props = NULL;
 	menu_ctx.valid_props_str = NULL;
@@ -4064,6 +4119,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		if (!rem_con)
 			rem_con = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
 			                                                     nm_connection_get_uuid (connection));
+
+		/* Connection is dirty? (not saved or differs from the saved) */
+		dirty = !nm_connection_compare (connection, NM_CONNECTION (rem_con), NM_SETTING_COMPARE_FLAG_EXACT);
+		if (nmc->editor_status_line)
+			editor_show_status_line (connection, dirty);
+
 		cmd_user = readline_x (menu_ctx.main_prompt);
 		if (!cmd_user || *cmd_user == '\0')
 			continue;
@@ -4197,7 +4258,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				}
 
 				/* Switch to level 1 */
-				menu_switch_to_level1 (&menu_ctx, setting, setting_name);
+				menu_switch_to_level1 (&menu_ctx, setting, setting_name, nmc->editor_prompt_color);
 
 				if (!cmd_arg_s) {
 					printf (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
@@ -4215,7 +4276,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					break;
 
 				/* submenu - level 2 - editing properties */
-				cmd_loop = property_edit_submenu (nmc, connection, menu_ctx.curr_setting, prop_name);
+				cmd_loop = property_edit_submenu (nmc, connection, rem_con, menu_ctx.curr_setting, prop_name);
 			}
 			break;
 
@@ -4384,13 +4445,43 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_BACK:
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
-				menu_switch_to_level0 (&menu_ctx, BASE_PROMPT);
+				menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
 			}
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_HELP:
 			/* Print command help */
 			editor_main_help (cmd_arg);
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_NMCLI:
+			if (cmd_arg_p && matches (cmd_arg_p, "status-line") == 0) {
+				GError *tmp_err = NULL;
+				gboolean bb;
+				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
+					printf (_("Error: status-line: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+				} else
+					nmc->editor_status_line = bb;
+			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color") == 0) {
+				unsigned long color;
+				if (!nmc_string_to_uint (cmd_arg_v ? g_strstrip (cmd_arg_v) : "X",
+				                         TRUE, 0, 8, &color))
+					printf (_("Error: bad color number: '%s'; use <0-8>\n"),
+					        cmd_arg_v ? cmd_arg_v : "");
+				else {
+					nmc->editor_prompt_color = color;
+					g_free (menu_ctx.main_prompt);
+					if (menu_ctx.level == 0)
+						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, BASE_PROMPT);
+					else
+						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s> ",
+						                                     nm_setting_get_name (menu_ctx.curr_setting));
+				}
+			} else
+				printf (_("Invalid configuration option '%s'; allowed [%s]\n"),
+				        cmd_arg_v ? cmd_arg_v : "", "status-line, prompt-color");
+
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_QUIT:

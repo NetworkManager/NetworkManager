@@ -87,6 +87,18 @@ typedef struct {
 	int indent;           /* Indent by this number of spaces */
 } NmcPrintFields;
 
+typedef enum {
+	NMC_TERM_COLOR_NORMAL  = 0,
+	NMC_TERM_COLOR_BLACK   = 1,
+	NMC_TERM_COLOR_RED     = 2,
+	NMC_TERM_COLOR_GREEN   = 3,
+	NMC_TERM_COLOR_YELLOW  = 4,
+	NMC_TERM_COLOR_BLUE    = 5,
+	NMC_TERM_COLOR_MAGENTA = 6,
+	NMC_TERM_COLOR_CYAN    = 7,
+	NMC_TERM_COLOR_WHITE   = 8
+} NmcTermColor;
+
 /* NmCli - main structure */
 typedef struct _NmCli {
 	NMClient *client;                                 /* Pointer to NMClient of libnm-glib */
@@ -112,6 +124,8 @@ typedef struct _NmCli {
 	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 	gboolean nocheck_ver;                             /* Don't check nmcli and NM versions: option '--nocheck' */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
+	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
+	NmcTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
 } NmCli;
 
 /* Error quark for GError domain */

@@ -327,6 +327,8 @@ nmc_init (NmCli *nmc)
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
+	nmc->editor_status_line = FALSE;
+	nmc->editor_prompt_color = NMC_TERM_COLOR_NORMAL;
 }
 
 static void
