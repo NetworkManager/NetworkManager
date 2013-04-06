@@ -62,6 +62,7 @@ gboolean nmc_string_to_uint (const char *str,
                              unsigned long int min,
                              unsigned long int max,
                              unsigned long int *value);
+gboolean nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error);
 char *nmc_ip4_address_as_string (guint32 ip, GError **error);
 char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);

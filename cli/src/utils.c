@@ -327,6 +327,27 @@ nmc_string_to_uint (const char *str,
 	return nmc_string_to_uint_base (str, 10, range_check, min, max, value);
 }
 
+gboolean
+nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error)
+{
+	const char *s_true[] = { "true", "yes", "on", NULL };
+	const char *s_false[] = { "false", "no", "off", NULL };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (nmc_string_is_valid (str, s_true, NULL))
+		*val_bool = TRUE;
+	else if (nmc_string_is_valid (str, s_false, NULL))
+		*val_bool = FALSE;
+	else {
+		g_set_error (error, 1, 0,
+		             _("'%s' is not valid; use [%s] or [%s]"),
+		             str, "true, yes, on", "false, no, off");
+		return FALSE;
+	}
+	return TRUE;
+}
+
 /*
  * Ask user for input and return the string.
  * The caller is responsible for freeing the returned string.
