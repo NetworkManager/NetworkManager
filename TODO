@@ -264,6 +264,14 @@ network connections change.  NetworkManager is a perfect place to do this since
 it tracks which network connections are active, and it already queries the
 network for automatic proxy configuration via DHCP and WPAD.
 
+However, proxy handling is complicated and may require use of Javascript to
+parse PAC files provided by WPAD, and this is not something NetworkManager
+should do itself.  Instead, that should be left to "proxy handlers", or external
+utilities like libproxy or pacrunner that take raw proxy information, parse it,
+and tell applications what proxy server to use for a specific network resource.
+NetworkManager should provide all the proxy information it can find to these
+external proxy handlers via the D-Bus interface and dispatcher scripts.
+
 We should add a new NMSetting subclass called NMSettingProxy that holds
 necessary proxy configuration.  The properties of this setting should be a
 superset of what is provided in the Firefox proxy configuration screen and the
@@ -291,22 +299,19 @@ Proxy control panel; this should include at a minimum:
 After completing IP configuration but still during the NM_DEVICE_STATE_IP_CONFIG
 activation stage, NetworkManager would merge the automatically supplied proxy
 configuration (from DHCP's WPAD option) with user-provided overrides from the
-NMSettingProxy and send the results to the system.  The 'default' connection's
-proxy configuration would be preferred, so we'd have to update proxy
-configuration from nm-policy.c the same time we update DNS information and the
-default route.
+NMSettingProxy export the resulting proxy configuration via D-Bus and dispatcher
+scripts.  The 'default' connection's proxy configuration would be preferred, so
+we'd have to update proxy configuration from nm-policy.c the same time we update
+DNS information and the default route.
 
-The merged proxy configuration would then be sent to the system.  There is no
-canonical proxy daemon in-use, so we should have plugins (if not separate
-shared libraries, then certainly encapsulated source files that implement a
-common glib GInterface or are subclasses of eg a parent NMProxyHandler class)
-that handle different system proxy handlers.  Some of the proxy handlers are:
+Merged proxy information should be exposed in two places.  First, it should be
+exported over D-Bus as a property of the org.freedesktop.NetworkManager.Device
+interface.  This property should be named "ProxyInfo" and should have the
+D-Bus signature "a{sv}" (eg, dictionary) and should mirror the properties from
+the NMSettingProxy object.
 
-  libproxy: need to figure out how it gets proxy info and have NM write merged
-             proxy config out to that location
-  pacrunner: a D-Bus enabled daemon, NM would call D-Bus methods of the
-               pacrunner service with the proxy information
-  GNOME/KDE: how do these desktop environments retrieve proxy configuration?
+Second, it should be exported via the dispatcher to dispatcher scripts when
+with the "up" and "down" events.
 
 
 * Better Tablet/Mobile Behavior
