@@ -303,6 +303,54 @@ nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int 
 }
 
 /*
+ * Check whether 'input' is contained in 'allowed' array. It performs case
+ * insensitive comparison and supports shortcut strings if they are unique.
+ * Returns: a pointer to found string in allowed array on success or NULL.
+ * On failure: error->code : 0 - string not found; 1 - string is ambiguous
+ */
+const char *
+nmc_string_is_valid (const char *input, const char **allowed, GError **error)
+{
+	const char **p;
+	size_t input_ln, p_len;
+	gboolean prev_match = FALSE;
+	const char *ret = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	if (!input || !*input)
+		goto finish;
+
+	input_ln = strlen (input);
+	for (p = allowed; p && *p; p++) {
+		p_len = strlen (*p);
+		if (g_ascii_strncasecmp (input, *p, input_ln) == 0) {
+			if (input_ln == p_len) {
+				ret = *p;
+				break;
+			}
+			if (!prev_match)
+				ret = *p;
+			else {
+				g_set_error (error, 1, 1, _("'%s' is ambiguous (%s x %s)"),
+				             input, ret, *p);
+				return NULL;
+			}
+			prev_match = TRUE;
+		}
+	}
+
+finish:
+	if (ret == NULL) {
+		char *valid_vals = g_strjoinv (", ", (char **) allowed);
+		g_set_error (error, 1, 0, _("'%s' not among [%s]"),
+		             input ? input : "", valid_vals);
+		g_free (valid_vals);
+	}
+	return ret;
+}
+
+/*
  * Find out how many columns an UTF-8 string occupies on the screen
  */
 int
