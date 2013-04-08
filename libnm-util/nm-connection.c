@@ -1218,6 +1218,22 @@ nm_connection_get_setting_connection (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_setting_generic:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingGeneric the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingGeneric if the connection contains one, otherwise NULL
+ **/
+NMSettingGeneric *
+nm_connection_get_setting_generic (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingGeneric *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GENERIC);
+}
+
+/**
  * nm_connection_get_setting_gsm:
  * @connection: the #NMConnection
  *

@@ -28,6 +28,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-ppp.h		\
 	nm-setting-pppoe.h		\
 	nm-setting-serial.h		\
+	nm-setting-generic.h		\
 	nm-setting-gsm.h		\
 	nm-setting-cdma.h		\
 	nm-setting-olpc-mesh.h		\
@@ -64,6 +65,7 @@ libnm_util_la_csources = \
 	nm-setting-ppp.c		\
 	nm-setting-pppoe.c		\
 	nm-setting-serial.c		\
+	nm-setting-generic.c		\
 	nm-setting-gsm.c		\
 	nm-setting-cdma.c		\
 	nm-setting-olpc-mesh.c		\

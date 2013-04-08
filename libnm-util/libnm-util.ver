@@ -23,6 +23,7 @@ global:
 	nm_connection_get_setting_by_name;
 	nm_connection_get_setting_cdma;
 	nm_connection_get_setting_connection;
+	nm_connection_get_setting_generic;
 	nm_connection_get_setting_gsm;
 	nm_connection_get_setting_infiniband;
 	nm_connection_get_setting_ip4_config;
@@ -264,6 +265,9 @@ global:
 	nm_setting_enumerate_values;
 	nm_setting_error_get_type;
 	nm_setting_error_quark;
+	nm_setting_generic_error_get_type;
+	nm_setting_generic_error_quark;
+	nm_setting_generic_get_type;
 	nm_setting_get_name;
 	nm_setting_get_secret_flags;
 	nm_setting_get_type;
