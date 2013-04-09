@@ -708,8 +708,6 @@ initscript/linexa/networkmanager
 introspection/Makefile
 introspection/all.xml
 man/Makefile
-man/NetworkManager.8
-man/NetworkManager.conf.5
 man/nm-system-settings.conf.5
 man/nm-online.1
 man/nmcli.1

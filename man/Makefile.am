@@ -14,6 +14,22 @@ nm-settings.xml: $(top_builddir)/tools/generate-settings-spec $(top_builddir)/li
 	$(top_builddir)/tools/generate-settings-spec refentry $(builddir)/$@
 CLEANFILES += nm-settings.xml
 
+XSLTPROC_FLAGS = \
+        --nonet \
+        --stringparam man.output.quietly 1 \
+        --stringparam funcsynopsis.style ansi \
+        --stringparam man.th.extra1.suppress 1 \
+        --stringparam man.authors.section.enabled 0 \
+        --stringparam man.copyright.section.enabled 0
+
+XSLTPROC_MAN_FLAGS = $(XSLTPROC_FLAGS) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+
+%.8: %.xml
+	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
+
+%.5: %.xml
+	$(AM_V_GEN) xsltproc $(XSLTPROC_MAN_FLAGS) $<
+
 man_MANS +=				\
 	NetworkManager.8		\
 	NetworkManager.conf.5		\
