@@ -33,6 +33,10 @@ void _nm_register_setting (const char *name,
                            const GType type,
                            const guint32 priority,
                            const GQuark error_quark);
+gboolean _nm_setting_is_base_type (NMSetting *setting);
+GType _nm_setting_lookup_setting_type (const char *name);
+GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
+gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 /* Ensure the setting's GType is registered at library load time */
 #define NM_SETTING_REGISTER_TYPE(x) \

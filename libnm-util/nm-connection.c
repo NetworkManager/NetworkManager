@@ -28,7 +28,6 @@
 #include <string.h>
 #include "nm-connection.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
@@ -121,114 +120,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /*************************************************************/
 
-static GHashTable *registered_settings = NULL;
-
-static void __attribute__((constructor))
-_ensure_registered (void)
-{
-	g_type_init ();
-	_nm_value_transforms_register ();
-	if (G_UNLIKELY (registered_settings == NULL))
-		registered_settings = g_hash_table_new (g_str_hash, g_str_equal);
-}
-
-typedef struct {
-	GType type;
-	guint32 priority;
-	GQuark error_quark;
-} SettingInfo;
-
-/*
- * _nm_register_setting:
- * @name: the name of the #NMSetting object to register
- * @type: the #GType of the #NMSetting
- * @priority: the sort priority of the setting, see below
- * @error_quark: the setting's error quark
- *
- * INTERNAL ONLY: registers a setting's internal properties, like its priority
- * and its error quark type, with libnm-util.
- *
- * A setting's priority should roughly follow the OSI layer model, but it also
- * controls which settings get asked for secrets first.  Thus settings which
- * relate to things that must be working first, like hardware, should get a
- * higher priority than things which layer on top of the hardware.  For example,
- * the GSM/CDMA settings should provide secrets before the PPP setting does,
- * because a PIN is required to unlock the device before PPP can even start.
- * Even settings without secrets should be assigned the right priority.
- *
- * 0: reserved for the Connection setting
- *
- * 1: hardware-related settings like Ethernet, WiFi, Infiniband, Bridge, etc.
- * These priority 1 settings are also "base types", which means that at least
- * one of them is required for the connection to be valid, and their name is
- * valid in the 'type' property of the Connection setting.
- *
- * 2: hardware-related auxiliary settings that require a base setting to be
- * successful first, like WiFi security, 802.1x, etc.
- *
- * 3: hardware-independent settings that are required before IP connectivity
- * can be established, like PPP, PPPoE, etc.
- *
- * 4: IP-level stuff
- */
-void
-_nm_register_setting (const char *name,
-                      const GType type,
-                      const guint32 priority,
-                      const GQuark error_quark)
-{
-	SettingInfo *info;
-
-	g_return_if_fail (name != NULL);
-	g_return_if_fail (type != G_TYPE_INVALID);
-	g_return_if_fail (type != G_TYPE_NONE);
-	g_return_if_fail (error_quark != 0);
-	g_return_if_fail (priority <= 4);
-
-	_ensure_registered ();
-
-	if (G_LIKELY (g_hash_table_lookup (registered_settings, name)))
-		return;
-
-	if (priority == 0)
-		g_assert_cmpstr (name, ==, NM_SETTING_CONNECTION_SETTING_NAME);
-
-	info = g_slice_new0 (SettingInfo);
-	info->type = type;
-	info->priority = priority;
-	info->error_quark = error_quark;
-	g_hash_table_insert (registered_settings, (gpointer) name, info);
-}
-
-static guint32
-_get_setting_priority (NMSetting *setting)
-{
-	GHashTableIter iter;
-	SettingInfo *info;
-
-	_ensure_registered ();
-
-	g_hash_table_iter_init (&iter, registered_settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
-		if (G_OBJECT_TYPE (setting) == info->type)
-			return info->priority;
-	}
-	return G_MAXUINT32;
-}
-
-static gboolean
-_is_setting_base_type (NMSetting *setting)
-{
-	/* Historical oddity: PPPoE is a base-type even though it's not
-	 * priority 1.  It needs to be sorted *after* lower-level stuff like
-	 * WiFi security or 802.1x for secrets, but it's still allowed as a
-	 * base type.
-	 */
-	return _get_setting_priority (setting) == 1 || NM_IS_SETTING_PPPOE (setting);
-}
-
-/*************************************************************/
-
 /**
  * nm_connection_lookup_setting_type:
  * @name: a setting name
@@ -240,18 +131,7 @@ _is_setting_base_type (NMSetting *setting)
 GType
 nm_connection_lookup_setting_type (const char *name)
 {
-	SettingInfo *info;
-
-	g_return_val_if_fail (name != NULL, G_TYPE_NONE);
-
-	_ensure_registered ();
-
-	info = g_hash_table_lookup (registered_settings, name);
-	if (info)
-		return info->type;
-
-	g_warning ("Unknown setting '%s'", name);
-	return G_TYPE_INVALID;
+	return _nm_setting_lookup_setting_type (name);
 }
 
 /**
@@ -266,17 +146,7 @@ nm_connection_lookup_setting_type (const char *name)
 GType
 nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
 {
-	SettingInfo *info;
-	GHashTableIter iter;
-
-	_ensure_registered ();
-
-	g_hash_table_iter_init (&iter, registered_settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
-		if (info->error_quark == error_quark)
-			return info->type;
-	}
-	return G_TYPE_INVALID;
+	return _nm_setting_lookup_setting_type_by_quark (error_quark);
 }
 
 /**
@@ -737,7 +607,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!_is_setting_base_type (base)) {
+	if (!_nm_setting_is_base_type (base)) {
 		g_set_error (error,
 			         NM_CONNECTION_ERROR,
 			         NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
@@ -827,21 +697,6 @@ nm_connection_update_secrets (NMConnection *connection,
 	return success;
 }
 
-static gint
-setting_priority_compare (gconstpointer a, gconstpointer b)
-{
-	guint32 prio_a, prio_b;
-
-	prio_a = _get_setting_priority (NM_SETTING (a));
-	prio_b = _get_setting_priority (NM_SETTING (b));
-
-	if (prio_a < prio_b)
-		return -1;
-	else if (prio_a == prio_b)
-		return 0;
-	return 1;
-}
-
 /**
  * nm_connection_need_secrets:
  * @connection: the #NMConnection
@@ -881,7 +736,7 @@ nm_connection_need_secrets (NMConnection *connection,
 	/* Get list of settings in priority order */
 	g_hash_table_iter_init (&hiter, priv->settings);
 	while (g_hash_table_iter_next (&hiter, NULL, (gpointer) &setting))
-		settings = g_slist_insert_sorted (settings, setting, setting_priority_compare);
+		settings = g_slist_insert_sorted (settings, setting, _nm_setting_compare_priority);
 
 	for (iter = settings; iter; iter = g_slist_next (iter)) {
 		GPtrArray *secrets;
