@@ -57,6 +57,9 @@ enum {
 
 #define MODEM_CAPS_3GPP2(caps) (caps & (MM_MODEM_CAPABILITY_CDMA_EVDO))
 
+/* Maximum time to keep the DBus call waiting for a connection result */
+#define MODEM_CONNECT_TIMEOUT_SECS 120
+
 /*****************************************************************************/
 
 #define NM_MODEM_BROADBAND_ERROR (nm_modem_broadband_error_quark ())
@@ -360,6 +363,7 @@ act_stage1_prepare (NMModem *_self,
 		if (!self->priv->simple_iface)
 			self->priv->simple_iface = mm_object_get_modem_simple (self->priv->modem_object);
 
+		g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (self->priv->simple_iface), MODEM_CONNECT_TIMEOUT_SECS * 1000);
 		mm_modem_simple_connect (self->priv->simple_iface,
 		                         self->priv->connect_properties,
 		                         NULL,
