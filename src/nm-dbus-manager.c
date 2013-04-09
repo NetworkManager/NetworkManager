@@ -248,7 +248,6 @@ nm_dbus_manager_private_server_register (NMDBusManager *self,
 		priv->private_servers = g_slist_append (priv->private_servers, s);
 }
 
-#if HAVE_DBUS_GLIB_100
 static const char *
 private_server_get_connection_owner (PrivateServer *s, DBusGConnection *connection)
 {
@@ -257,7 +256,6 @@ private_server_get_connection_owner (PrivateServer *s, DBusGConnection *connecti
 
 	return g_hash_table_lookup (s->connections, dbus_g_connection_get_connection (connection));
 }
-#endif
 
 /**************************************************************/
 
