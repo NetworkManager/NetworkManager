@@ -304,8 +304,8 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 	}
 	g_free (property_specs);
 
-	/* Don't return empty hashes */
-	if (g_hash_table_size (hash) < 1) {
+	/* Don't return empty hashes, except for base types */
+	if (g_hash_table_size (hash) < 1 && !_nm_setting_is_base_type (setting)) {
 		g_hash_table_destroy (hash);
 		hash = NULL;
 	}
