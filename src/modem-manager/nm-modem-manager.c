@@ -102,11 +102,6 @@ clear_modem_manager_support (NMModemManager *self)
 		g_object_unref (self->priv->proxy);
 		self->priv->proxy = NULL;
 	}
-
-	if (self->priv->dbus_mgr) {
-		g_object_unref (self->priv->dbus_mgr);
-		self->priv->dbus_mgr = NULL;
-	}
 }
 
 static gboolean
@@ -806,6 +801,11 @@ dispose (GObject *object)
 	if (self->priv->modems) {
 		g_hash_table_foreach_remove (self->priv->modems, remove_one_modem, object);
 		g_hash_table_destroy (self->priv->modems);
+	}
+
+	if (self->priv->dbus_mgr) {
+		g_object_unref (self->priv->dbus_mgr);
+		self->priv->dbus_mgr = NULL;
 	}
 
 	/* Chain up to the parent class */
