@@ -5528,6 +5528,7 @@ _try_add_available_connection (NMDevice *self, NMConnection *connection)
 			g_hash_table_insert (NM_DEVICE_GET_PRIVATE (self)->available_connections,
 					             g_object_ref (connection),
 					             GUINT_TO_POINTER (1));
+			return TRUE;
 		}
 	}
 	return FALSE;
