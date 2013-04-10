@@ -1477,7 +1477,7 @@ dispose (GObject *object)
 		g_hash_table_destroy (priv->requests);
 
 		g_object_unref (priv->session_monitor);
-		g_object_unref (priv->dbus_mgr);
+		priv->dbus_mgr = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->dispose (object);

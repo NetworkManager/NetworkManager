@@ -1175,19 +1175,18 @@ void
 nm_vpn_connection_activate (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv;
-	NMDBusManager *dbus_mgr;
+	DBusGConnection *bus;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 	g_return_if_fail (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_PREPARE);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (dbus_mgr),
+	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	priv->proxy = dbus_g_proxy_new_for_name (bus,
 	                                         nm_vpn_connection_get_service (connection),
 	                                         NM_VPN_DBUS_PLUGIN_PATH,
 	                                         NM_VPN_DBUS_PLUGIN_INTERFACE);
-	g_object_unref (dbus_mgr);
 
 	dbus_g_proxy_add_signal (priv->proxy, "Failure", G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Failure",

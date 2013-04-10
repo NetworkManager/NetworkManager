@@ -687,7 +687,6 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (priv->dbus_mgr, priv->dis_conn_id);
 		priv->dis_conn_id = 0;
 	}
-	g_object_unref (priv->dbus_mgr);
 	priv->dbus_mgr = NULL;
 
 	if (priv->proxies) {

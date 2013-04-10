@@ -134,14 +134,12 @@ fill_vpn_props (NMIP4Config *ip4_config,
 typedef struct {
 	DispatcherFunc callback;
 	gpointer user_data;
-	NMDBusManager *dbus_mgr;
 } DispatchInfo;
 
 static void
 dispatcher_info_free (DispatchInfo *info)
 {
 	requests = g_slist_remove (requests, info);
-	g_object_unref (info->dbus_mgr);
 	g_free (info);
 }
 
@@ -273,7 +271,6 @@ _dispatcher_call (DispatcherAction action,
                   DispatcherFunc callback,
                   gpointer user_data)
 {
-	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
 	DBusGConnection *g_connection;
 	GHashTable *connection_hash;
@@ -295,15 +292,13 @@ _dispatcher_call (DispatcherAction action,
 	if (action == DISPATCHER_ACTION_VPN_UP)
 		g_return_val_if_fail (vpn_ip4_config != NULL, NULL);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+	g_connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 	proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                   NM_DISPATCHER_DBUS_SERVICE,
 	                                   NM_DISPATCHER_DBUS_PATH,
 	                                   NM_DISPATCHER_DBUS_IFACE);
 	if (!proxy) {
 		nm_log_err (LOGD_CORE, "could not get dispatcher proxy!");
-		g_object_unref (dbus_mgr);
 		return NULL;
 	}
 
@@ -342,7 +337,6 @@ _dispatcher_call (DispatcherAction action,
 	info = g_malloc0 (sizeof (*info));
 	info->callback = callback;
 	info->user_data = user_data;
-	info->dbus_mgr = dbus_mgr;
 
 	/* Send the action to the dispatcher */
 	call = dbus_g_proxy_begin_call_with_timeout (proxy, "Action",

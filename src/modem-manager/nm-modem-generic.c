@@ -37,7 +37,6 @@ G_DEFINE_TYPE (NMModemGeneric, nm_modem_generic, NM_TYPE_MODEM)
 #define NM_MODEM_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_GENERIC, NMModemGenericPrivate))
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
 	DBusGProxy *props_proxy;
 
@@ -354,9 +353,6 @@ modem_properties_changed (DBusGProxy *proxy,
 static void
 nm_modem_generic_init (NMModemGeneric *self)
 {
-	NMModemGenericPrivate *priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
-
-	priv->dbus_mgr = nm_dbus_manager_get ();
 }
 
 static GObject*
@@ -374,7 +370,7 @@ constructor (GType type,
 
 	priv = NM_MODEM_GENERIC_GET_PRIVATE (object);
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 	priv->proxy = dbus_g_proxy_new_for_name (bus,
 	                                         MM_OLD_DBUS_SERVICE,
 	                                         nm_modem_get_path (NM_MODEM (object)),
@@ -414,11 +410,6 @@ dispose (GObject *object)
 	if (priv->props_proxy) {
 		g_object_unref (priv->props_proxy);
 		priv->props_proxy = NULL;
-	}
-
-	if (priv->dbus_mgr) {
-		g_object_unref (priv->dbus_mgr);
-		priv->dbus_mgr = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_modem_generic_parent_class)->dispose (object);

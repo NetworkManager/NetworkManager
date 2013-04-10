@@ -95,7 +95,6 @@ void
 nm_wimax_nsp_export_to_dbus (NMWimaxNsp *self)
 {
 	NMWimaxNspPrivate *priv;
-	NMDBusManager *mgr;
 	static guint32 counter = 0;
 
 	g_return_if_fail (NM_IS_WIMAX_NSP (self));
@@ -104,10 +103,8 @@ nm_wimax_nsp_export_to_dbus (NMWimaxNsp *self)
 
 	g_return_if_fail (priv->dbus_path == NULL);
 
-	mgr = nm_dbus_manager_get ();
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_WIMAX_NSP "/%d", counter++);
-	nm_dbus_manager_register_object (mgr, priv->dbus_path, self);
-	g_object_unref (mgr);
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, self);
 }
 
 const char *

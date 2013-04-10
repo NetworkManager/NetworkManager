@@ -1650,7 +1650,7 @@ dispose (GObject *object)
 		nm_auth_chain_unref ((NMAuthChain *) iter->data);
 	g_slist_free (priv->auths);
 
-	g_object_unref (priv->dbus_mgr);
+	priv->dbus_mgr = NULL;
 
 	g_object_unref (priv->session_monitor);
 	g_object_unref (priv->agent_mgr);

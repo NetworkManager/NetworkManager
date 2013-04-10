@@ -79,16 +79,15 @@ NMDBusManager *
 nm_dbus_manager_get (void)
 {
 	static NMDBusManager *singleton = NULL;
+	static gsize once = 0;
 
-	if (!singleton) {
-		singleton = NM_DBUS_MANAGER (g_object_new (NM_TYPE_DBUS_MANAGER, NULL));
+	if (g_once_init_enter (&once)) {
+		singleton = (NMDBusManager *) g_object_new (NM_TYPE_DBUS_MANAGER, NULL);
+		g_assert (singleton);
 		if (!nm_dbus_manager_init_bus (singleton))
 			start_reconnection_timeout (singleton);
-	} else {
-		g_object_ref (singleton);
+		g_once_init_leave (&once, 1);
 	}
-
-	g_assert (singleton);
 	return singleton;
 }
 

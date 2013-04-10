@@ -1235,7 +1235,7 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (priv->dbus_mgr, priv->mm_watch_id);
 		priv->mm_watch_id = 0;
 	}
-	g_clear_object (&priv->dbus_mgr);
+	priv->dbus_mgr = NULL;
 
 	g_clear_object (&priv->type_proxy);
 	g_clear_object (&priv->dev_proxy);

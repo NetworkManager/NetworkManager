@@ -426,7 +426,6 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
-	NMDBusManager *dbus_mgr;
 	char *hash_str, *username;
 	struct passwd *pw;
 
@@ -450,14 +449,12 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	priv->hash = g_str_hash (hash_str);
 	g_free (hash_str);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	priv->proxy = nm_dbus_manager_new_proxy (dbus_mgr,
+	priv->proxy = nm_dbus_manager_new_proxy (nm_dbus_manager_get (),
 	                                         context,
 	                                         owner,
 	                                         NM_DBUS_PATH_SECRET_AGENT,
 	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (priv->proxy);
-	g_object_unref (dbus_mgr);
 
 	g_free (username);
 	return self;

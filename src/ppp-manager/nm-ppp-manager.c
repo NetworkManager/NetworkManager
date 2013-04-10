@@ -76,7 +76,6 @@ typedef struct {
 	gboolean disposed;
 
 	GPid pid;
-	NMDBusManager *dbus_manager;
 	char *dbus_path;
 
 	char *parent_iface;
@@ -147,20 +146,12 @@ constructor (GType type,
 	object = G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructor (type,
 	                                                                    n_construct_params,
 	                                                                    construct_params);
-	if (!object)
-		return NULL;
-
-	priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-	priv->dbus_manager = nm_dbus_manager_get ();
-	if (!priv->dbus_manager) {
-		g_object_unref (object);
-		return NULL;
+	if (object) {
+		priv = NM_PPP_MANAGER_GET_PRIVATE (object);
+		priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
+		connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+		dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
 	}
-
-	connection = nm_dbus_manager_get_connection (priv->dbus_manager);
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
-	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
-
 	return object;
 }
 
@@ -178,9 +169,6 @@ dispose (GObject *object)
 			g_object_unref (priv->act_req);
 			priv->act_req = NULL;
 		}
-
-		g_object_unref (priv->dbus_manager);
-		priv->dbus_manager = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);

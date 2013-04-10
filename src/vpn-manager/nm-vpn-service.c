@@ -450,7 +450,7 @@ dispose (GObject *object)
 	clear_quit_timeout (self);
 	service_quit (self);
 
-	g_object_unref (priv->dbus_mgr);
+	priv->dbus_mgr = NULL;
 
 	g_free (priv->name);
 	g_free (priv->dbus_service);

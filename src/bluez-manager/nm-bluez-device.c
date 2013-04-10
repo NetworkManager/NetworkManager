@@ -378,7 +378,6 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 {
 	NMBluezDevice *self;
 	NMBluezDevicePrivate *priv;
-	NMDBusManager *dbus_mgr;
 	DBusGConnection *connection;
 
 	g_return_val_if_fail (path != NULL, NULL);
@@ -414,14 +413,12 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 	                  G_CALLBACK (cp_connections_loaded),
 	                  self);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	connection = nm_dbus_manager_get_connection (dbus_mgr);
+	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 
 	priv->proxy = dbus_g_proxy_new_for_name (connection,
 	                                         BLUEZ_SERVICE,
 	                                         priv->path,
 	                                         BLUEZ_DEVICE_INTERFACE);
-	g_object_unref (dbus_mgr);
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,

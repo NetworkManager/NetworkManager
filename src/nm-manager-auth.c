@@ -150,15 +150,11 @@ nm_auth_chain_new (DBusGMethodInvocation *context,
 {
 	gulong sender_uid = G_MAXULONG;
 	char *sender = NULL;
-	NMDBusManager *dbus_mgr;
 	NMAuthChain *chain = NULL;
 
 	g_return_val_if_fail (context != NULL, NULL);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	g_assert (dbus_mgr);
-
-	if (nm_dbus_manager_get_caller_info (dbus_mgr,
+	if (nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
 	                                     context,
 	                                     &sender,
 	                                     &sender_uid)) {
@@ -169,7 +165,6 @@ nm_auth_chain_new (DBusGMethodInvocation *context,
 		*out_error_desc = "Unable to determine request UID and sender.";
 
 	g_free (sender);
-	g_object_unref (dbus_mgr);
 	return chain;
 }
 

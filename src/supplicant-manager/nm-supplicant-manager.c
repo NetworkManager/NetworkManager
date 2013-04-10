@@ -378,7 +378,7 @@ dispose (GObject *object)
 	if (priv->dbus_mgr) {
 		if (priv->name_owner_id)
 			g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
-		g_object_unref (G_OBJECT (priv->dbus_mgr));
+		priv->dbus_mgr = NULL;
 	}
 
 	g_hash_table_destroy (priv->ifaces);

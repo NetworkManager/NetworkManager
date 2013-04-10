@@ -317,7 +317,6 @@ void
 nm_ap_export_to_dbus (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
-	NMDBusManager *mgr;
 	static guint32 counter = 0;
 
 	g_return_if_fail (NM_IS_AP (ap));
@@ -329,10 +328,8 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
 		return;
 	}
 
-	mgr = nm_dbus_manager_get ();
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
-	nm_dbus_manager_register_object (mgr, priv->dbus_path, ap);
-	g_object_unref (mgr);
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, ap);
 }
 
 /*

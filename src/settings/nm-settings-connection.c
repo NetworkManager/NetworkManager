@@ -82,7 +82,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	gboolean disposed;
 
-	NMDBusManager *dbus_mgr;
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
@@ -919,7 +918,6 @@ pk_auth_cb (NMAuthChain *chain,
 static gboolean
 check_user_in_acl (NMConnection *connection,
                    DBusGMethodInvocation *context,
-                   NMDBusManager *dbus_mgr,
                    NMSessionMonitor *session_monitor,
                    gulong *out_sender_uid,
                    GError **error)
@@ -932,7 +930,7 @@ check_user_in_acl (NMConnection *connection,
 	g_return_val_if_fail (session_monitor != NULL, FALSE);
 
 	/* Get the caller's UID */
-	if (!nm_dbus_manager_get_caller_info (dbus_mgr, context, NULL, &sender_uid)) {
+	if (!nm_dbus_manager_get_caller_info (nm_dbus_manager_get (), context, NULL, &sender_uid)) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -970,7 +968,6 @@ auth_start (NMSettingsConnection *self,
 
 	if (!check_user_in_acl (NM_CONNECTION (self),
 	                        context,
-	                        priv->dbus_mgr,
 	                        priv->session_monitor,
 	                        &sender_uid,
 	                        &error)) {
@@ -1230,7 +1227,6 @@ impl_settings_connection_update (NMSettingsConnection *self,
 	 */
 	if (!check_user_in_acl (tmp,
 	                        context,
-	                        priv->dbus_mgr,
 	                        priv->session_monitor,
 	                        NULL,
 	                        &error)) {
@@ -1721,8 +1717,6 @@ nm_settings_connection_init (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
 	priv->visible = FALSE;
 
 	priv->session_monitor = nm_session_monitor_get ();
@@ -1773,7 +1767,6 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (priv->session_monitor, priv->session_changed_id);
 	g_object_unref (priv->session_monitor);
 	g_object_unref (priv->agent_mgr);
-	g_object_unref (priv->dbus_mgr);
 
 out:
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);

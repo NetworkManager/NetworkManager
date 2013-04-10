@@ -212,13 +212,10 @@ void
 nm_active_connection_export (NMActiveConnection *self)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
-	NMDBusManager *dbus_mgr;
 	static guint32 counter = 0;
 
 	priv->path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
-	dbus_mgr = nm_dbus_manager_get ();
-	nm_dbus_manager_register_object (dbus_mgr, priv->path, self);
-	g_object_unref (dbus_mgr);
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
 
 gboolean

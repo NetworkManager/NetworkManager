@@ -802,10 +802,7 @@ dispose (GObject *object)
 		g_hash_table_destroy (self->priv->modems);
 	}
 
-	if (self->priv->dbus_mgr) {
-		g_object_unref (self->priv->dbus_mgr);
-		self->priv->dbus_mgr = NULL;
-	}
+	self->priv->dbus_mgr = NULL;
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_modem_manager_parent_class)->dispose (object);

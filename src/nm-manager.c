@@ -4150,7 +4150,7 @@ dispose (GObject *object)
 		dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
 	}
 	g_signal_handler_disconnect (priv->dbus_mgr, priv->dbus_connection_changed_id);
-	g_object_unref (priv->dbus_mgr);
+	priv->dbus_mgr = NULL;
 
 	if (priv->bluez_mgr)
 		g_object_unref (priv->bluez_mgr);

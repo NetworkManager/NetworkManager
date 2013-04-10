@@ -1595,8 +1595,7 @@ dispose (GObject *object)
 
 	g_free (priv->dev);
 
-	if (priv->dbus_mgr)
-		g_object_unref (priv->dbus_mgr);
+	priv->dbus_mgr = NULL;
 
 	if (priv->cfg)
 		g_object_unref (priv->cfg);

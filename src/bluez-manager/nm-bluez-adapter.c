@@ -229,7 +229,6 @@ nm_bluez_adapter_new (const char *path, NMConnectionProvider *provider)
 {
 	NMBluezAdapter *self;
 	NMBluezAdapterPrivate *priv;
-	NMDBusManager *dbus_mgr;
 	DBusGConnection *connection;
 
 	self = (NMBluezAdapter *) g_object_new (NM_TYPE_BLUEZ_ADAPTER,
@@ -242,14 +241,12 @@ nm_bluez_adapter_new (const char *path, NMConnectionProvider *provider)
 
 	priv->provider = provider;
 
-	dbus_mgr = nm_dbus_manager_get ();
-	connection = nm_dbus_manager_get_connection (dbus_mgr);
+	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 
 	priv->proxy = dbus_g_proxy_new_for_name (connection,
 	                                         BLUEZ_SERVICE,
 	                                         priv->path,
 	                                         BLUEZ_ADAPTER_INTERFACE);
-	g_object_unref (dbus_mgr);
 
 	dbus_g_proxy_add_signal (priv->proxy, "DeviceCreated",
 	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);

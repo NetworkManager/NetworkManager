@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <gio/gio.h>
 #include "nm-logging.h"
@@ -73,11 +72,9 @@ upower_resuming_cb (DBusGProxy *proxy, gpointer user_data)
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
-        NMDBusManager *dbus_mgr;
         DBusGConnection *bus;
 
-        dbus_mgr = nm_dbus_manager_get ();
-        bus = nm_dbus_manager_get_connection (dbus_mgr);
+        bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
         self->upower_proxy = dbus_g_proxy_new_for_name (bus,
                                                         UPOWER_DBUS_SERVICE,
                                                         "/org/freedesktop/UPower",
@@ -94,7 +91,6 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
                                              self, NULL);
         } else
                 nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
-        g_object_unref (dbus_mgr);
 }
 
 static void

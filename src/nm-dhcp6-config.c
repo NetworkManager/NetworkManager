@@ -140,12 +140,9 @@ nm_dhcp6_config_init (NMDHCP6Config *self)
 {
 	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
 	static guint32 counter = 0;
-	NMDBusManager *dbus_mgr;
 
-	dbus_mgr = nm_dbus_manager_get ();
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/DHCP6Config/%d", counter++);
-	nm_dbus_manager_register_object (dbus_mgr, priv->dbus_path, self);
-	g_object_unref (dbus_mgr);
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, self);
 
 	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
 }

@@ -347,7 +347,7 @@ dispose (GObject *object)
 	if (priv->dbus_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, name_owner_changed_cb, self);
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, self);
-		g_object_unref (priv->dbus_mgr);
+		priv->dbus_mgr = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
