@@ -116,16 +116,6 @@ the VPN because WiFi choked for 10 seconds, but reconnect the VPN if it was
 connected before the drop.
 
 
-* VPN and IPv6
-
-The internal VPN capability should support IPv6.  Essentially, the D-Bus
-interface between NetworkManager and the VPN service daemons should be extended
-with an IP6Config signal that passes up the IPv6 addressing and routing details
-if the VPN daemon is IPv6 capable.  NM should then process those details like it
-does with IPv4.  include/NetworkManagerVPN.h should be updated with key/value
-pairs defining the various IPv6 attributes much like the IPv4 ones are defined.
-
-
 * VPN IP Methods
 
 Some VPNs (openvpn with TAP for example) require that DHCP is run on a
