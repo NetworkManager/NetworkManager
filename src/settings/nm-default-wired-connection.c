@@ -98,7 +98,7 @@ nm_default_wired_connection_new (NMDevice *device,
 	NMSetting *setting;
 	char *uuid;
 	const guint8 *hw_address;
-	guint len;
+	guint len = 0;
 	GByteArray *mac;
 
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
