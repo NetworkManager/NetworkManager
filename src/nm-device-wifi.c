@@ -1136,7 +1136,7 @@ check_connection_available (NMDevice *device, NMConnection *connection)
 	 * at any time.
 	 */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, "adhoc") == 0)
+	if (g_str_equal (mode, "adhoc") || g_str_equal (mode, "ap"))
 		return TRUE;
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either */
