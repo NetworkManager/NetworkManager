@@ -27,7 +27,8 @@ EXTRA_DIST = \
 	intltool-merge.in \
 	intltool-update.in \
 	Makefile.glib \
-	autogen.sh
+	autogen.sh \
+	valgrind.suppressions
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-tests=yes \
