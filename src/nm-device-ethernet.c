@@ -1054,13 +1054,13 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		req = nm_device_get_act_request (NM_DEVICE (self));
 		g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-		s_wired = NM_SETTING_WIRED (device_get_setting (dev, NM_TYPE_SETTING_WIRED));
-		g_assert (s_wired);
-
-		/* Set device MAC address if the connection wants to change it */
-		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		if (cloned_mac && (cloned_mac->len == ETH_ALEN))
-			_set_hw_addr (self, (const guint8 *) cloned_mac->data, "set");
+		s_wired = (NMSettingWired *) device_get_setting (dev, NM_TYPE_SETTING_WIRED);
+		if (s_wired) {
+			/* Set device MAC address if the connection wants to change it */
+			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+			if (cloned_mac && (cloned_mac->len == ETH_ALEN))
+				_set_hw_addr (self, (const guint8 *) cloned_mac->data, "set");
+		}
 	}
 
 	return ret;
