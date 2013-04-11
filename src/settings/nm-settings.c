@@ -1307,7 +1307,6 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	const GByteArray *setting_mac;
 	const guint8 *hwaddr;
 	guint hwaddr_len = 0;
-	gboolean ret = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 
@@ -1320,27 +1319,21 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		const char *ctype, *iface;
 
 		s_con = nm_connection_get_setting_connection (connection);
+
+		iface = nm_setting_connection_get_interface_name (s_con);
+		if (iface && strcmp (iface, nm_device_get_iface (device)) != 0)
+			continue;
+
 		ctype = nm_setting_connection_get_connection_type (s_con);
-
-		iface = nm_connection_get_virtual_iface_name (connection);
-		if (iface) {
-			if (!strcmp (iface, nm_device_get_iface (device))) {
-				ret = TRUE;
-				break;
-			} else
-				continue;
-		}
-
 		if (   strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
 		    && strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
 			continue;
 
 		s_wired = nm_connection_get_setting_wired (connection);
 
-		/* No wired setting; therefore the PPPoE connection applies to any device */
 		if (!s_wired && !strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
-			ret = TRUE;
-			break;
+			/* No wired setting; therefore the PPPoE connection applies to any device */
+			return TRUE;
 		}
 
 		g_assert (s_wired != NULL);
@@ -1349,18 +1342,15 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		if (setting_mac) {
 			/* A connection mac-locked to this device */
 			if (hwaddr_len == setting_mac->len &&
-				!memcmp (setting_mac->data, hwaddr, hwaddr_len)) {
-				ret = TRUE;
-				break;
-			}
+				!memcmp (setting_mac->data, hwaddr, hwaddr_len))
+				return TRUE;
 		} else {
 			/* A connection that applies to any wired device */
-			ret = TRUE;
-			break;
+			return TRUE;
 		}
 	}
 
-	return ret;
+	return FALSE;
 }
 
 #define DEFAULT_WIRED_TAG "default-wired"
