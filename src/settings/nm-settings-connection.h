@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2011 Red Hat, Inc.
+ * (C) Copyright 2008 - 2013 Red Hat, Inc.
  */
 
 #ifndef NM_SETTINGS_CONNECTION_H
@@ -35,15 +35,17 @@ G_BEGIN_DECLS
 #define NM_IS_SETTINGS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTINGS_CONNECTION))
 #define NM_SETTINGS_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionClass))
 
+/* Signals */
 #define NM_SETTINGS_CONNECTION_UPDATED "updated"
 #define NM_SETTINGS_CONNECTION_REMOVED "removed"
 #define NM_SETTINGS_CONNECTION_GET_SECRETS "get-secrets"
 #define NM_SETTINGS_CONNECTION_CANCEL_SECRETS "cancel-secrets"
 
+/* Properties */
 #define NM_SETTINGS_CONNECTION_VISIBLE "visible"
+#define NM_SETTINGS_CONNECTION_UNSAVED "unsaved"
 
 typedef struct _NMSettingsConnection NMSettingsConnection;
-
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
 typedef void (*NMSettingsConnectionCommitFunc) (NMSettingsConnection *connection,
@@ -82,6 +84,7 @@ void nm_settings_connection_commit_changes (NMSettingsConnection *connection,
 
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,
+                                                  gboolean update_unsaved,
                                                   GError **error);
 
 void nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
@@ -121,6 +124,8 @@ gboolean nm_settings_connection_check_permission (NMSettingsConnection *self,
                                                   const char *permission);
 
 void nm_settings_connection_signal_remove (NMSettingsConnection *self);
+
+gboolean nm_settings_connection_get_unsaved (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
                                                guint64 *out_timestamp);

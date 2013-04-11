@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2012 Red Hat, Inc.
+ * (C) Copyright 2008 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -40,6 +40,7 @@
 #include "nm-manager-auth.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
+#include "nm-properties-changed-signal.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
@@ -69,6 +70,7 @@ G_DEFINE_TYPE (NMSettingsConnection, nm_settings_connection, NM_TYPE_CONNECTION)
 enum {
 	PROP_0 = 0,
 	PROP_VISIBLE,
+	PROP_UNSAVED,
 };
 
 enum {
@@ -85,6 +87,13 @@ typedef struct {
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
+
+	/* TRUE if the connection has not yet been saved to disk,
+	 * or it it contains changes that have not been saved to disk.
+	 */
+	gboolean unsaved;
+
+	guint updated_idle_id;
 
 	GSList *pending_auths; /* List of pending authentication requests */
 	gboolean visible; /* Is this connection is visible by some session? */
@@ -366,12 +375,45 @@ secrets_cleared_cb (NMSettingsConnection *self)
 	priv->agent_secrets = NULL;
 }
 
+static gboolean
+emit_updated (NMSettingsConnection *self)
+{
+	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->updated_idle_id = 0;
+	g_signal_emit (self, signals[UPDATED], 0);
+	return FALSE;
+}
+
+static void
+set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->unsaved != now_unsaved) {
+		priv->unsaved = now_unsaved;
+		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_UNSAVED);
+	}
+}
+
+static void
+changed_cb (NMSettingsConnection *self, gpointer user_data)
+{
+	gboolean update_unsaved = !!user_data;
+
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (update_unsaved)
+		set_unsaved (self, TRUE);
+	if (priv->updated_idle_id == 0)
+		priv->updated_idle_id = g_idle_add ((GSourceFunc) emit_updated, self);
+}
+
 /* Update the settings of this connection to match that of 'new_connection',
  * taking care to make a private copy of secrets.
  */
 gboolean
 nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          NMConnection *new_connection,
+                                         gboolean update_unsaved,
                                          GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
@@ -389,6 +431,11 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
 		return TRUE;
 	}
+
+	/* Disconnect the changed signal to ensure we don't set Unsaved when
+	 * it's not required.
+	 */
+	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 
 	if (nm_connection_replace_settings_from_connection (NM_CONNECTION (self),
 	                                                    new_connection,
@@ -411,7 +458,15 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		}
 
 		nm_settings_connection_recheck_visibility (self);
+
+		/* Manually emit changed signal since we disconnected the handler, but
+		 * only update Unsaved if the caller wanted us to.
+		 */
+		changed_cb (self, GUINT_TO_POINTER (update_unsaved));
 	}
+
+	g_signal_handlers_unblock_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+
 	return success;
 }
 
@@ -438,13 +493,28 @@ nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 	g_return_if_fail (NM_IS_CONNECTION (new_connection));
 
-	if (nm_settings_connection_replace_settings (self, new_connection, &error)) {
+	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, &error)) {
 		nm_settings_connection_commit_changes (self, callback ? callback : ignore_cb, user_data);
 	} else {
 		if (callback)
 			callback (self, error, user_data);
 		g_clear_error (&error);
 	}
+}
+
+static void
+commit_changes (NMSettingsConnection *self,
+                NMSettingsConnectionCommitFunc callback,
+                gpointer user_data)
+{
+	/* Subclasses only call this function if the save was successful, so at
+	 * this point the connection is synced to disk and no longer unsaved.
+	 */
+	set_unsaved (self, FALSE);
+
+	g_object_ref (self);
+	callback (self, NULL, user_data);
+	g_object_unref (self);
 }
 
 void
@@ -487,17 +557,6 @@ nm_settings_connection_delete (NMSettingsConnection *connection,
 		callback (connection, error, user_data);
 		g_error_free (error);
 	}
-}
-
-static void
-commit_changes (NMSettingsConnection *connection,
-                NMSettingsConnectionCommitFunc callback,
-                gpointer user_data)
-{
-	g_object_ref (connection);
-	g_signal_emit (connection, signals[UPDATED], 0);
-	callback (connection, NULL, user_data);
-	g_object_unref (connection);
 }
 
 static void
@@ -1397,6 +1456,14 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 	g_signal_emit_by_name (self, "unregister");
 }
 
+gboolean
+nm_settings_connection_get_unsaved (NMSettingsConnection *self)
+{
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->unsaved;
+}
+
+/**************************************************************/
+
 /**
  * nm_settings_connection_get_timestamp:
  * @connection: the #NMSettingsConnection
@@ -1729,7 +1796,8 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->seen_bssids = g_hash_table_new_full (mac_hash, mac_equal, g_free, g_free);
 
-	g_signal_connect (self, "secrets-cleared", G_CALLBACK (secrets_cleared_cb), NULL);
+	g_signal_connect (self, NM_CONNECTION_SECRETS_CLEARED, G_CALLBACK (secrets_cleared_cb), NULL);
+	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 }
 
 static void
@@ -1742,6 +1810,11 @@ dispose (GObject *object)
 	if (priv->disposed)
 		goto out;
 	priv->disposed = TRUE;
+
+	if (priv->updated_idle_id) {
+		g_source_remove (priv->updated_idle_id);
+		priv->updated_idle_id = 0;
+	}
 
 	if (priv->system_secrets)
 		g_object_unref (priv->system_secrets);
@@ -1776,9 +1849,14 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (object);
+
 	switch (prop_id) {
 	case PROP_VISIBLE:
-		g_value_set_boolean (value, NM_SETTINGS_CONNECTION_GET_PRIVATE (object)->visible);
+		g_value_set_boolean (value, priv->visible);
+		break;
+	case PROP_UNSAVED:
+		g_value_set_boolean (value, priv->unsaved);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1818,6 +1896,16 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		                       FALSE,
 		                       G_PARAM_READABLE));
 
+	g_object_class_install_property
+		(object_class, PROP_UNSAVED,
+		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED,
+		                       "Unsaved",
+		                       "TRUE when the connection has not yet been saved "
+		                       "to permanent storage (eg disk) or when it "
+		                       "has been changed but not yet saved.",
+		                       FALSE,
+		                       G_PARAM_READABLE));
+
 	/* Signals */
 	signals[UPDATED] = 
 		g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,
@@ -1847,6 +1935,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
-	                                 &dbus_glib_nm_settings_connection_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (class),
+	                                        &dbus_glib_nm_settings_connection_object_info);
 }

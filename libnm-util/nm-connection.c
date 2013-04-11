@@ -414,9 +414,12 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	 */
 	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
 
-	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
-		nm_connection_add_setting (connection, nm_setting_duplicate (setting));
+	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (new_connection)->settings)) {
+		g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
+			nm_connection_add_setting (connection, nm_setting_duplicate (setting));
+	} else
+		g_signal_emit (connection, signals[CHANGED], 0);
 
 	return nm_connection_verify (connection, error);
 }

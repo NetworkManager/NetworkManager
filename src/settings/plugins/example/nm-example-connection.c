@@ -77,7 +77,10 @@ nm_example_connection_new (const char *full_path,
 	/* Update our settings with what was read from the file or what got passed
 	 * in as a source NMConnection.
 	 */
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, error)) {
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                              tmp,
+	                                              TRUE,
+	                                              error)) {
 		g_object_unref (object);
 		object = NULL;
 		goto out;

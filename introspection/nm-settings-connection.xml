@@ -88,6 +88,16 @@
             </tp:docstring>
         </signal>
 
+        <property name="Unsaved" type="b" access="read">
+            <tp:docstring>
+                If set, indicates that the in-memory state of the
+                connection does not match the on-disk state. This flag
+                will be set when UpdateUnsaved() is called or when any
+                connection details change, and cleared when the connection
+                is saved to disk via Save() or from internal operations.
+            </tp:docstring>
+        </property>
+
     </interface>
 
 </node>

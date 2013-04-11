@@ -109,6 +109,7 @@ nm_ifcfg_connection_new (const char *full_path,
 	char *routefile = NULL;
 	char *route6file = NULL;
 	NMInotifyHelper *ih;
+	gboolean update_unsaved = TRUE;
 
 	g_return_val_if_fail (full_path != NULL, NULL);
 
@@ -125,6 +126,9 @@ nm_ifcfg_connection_new (const char *full_path,
 		                            ignore_error);
 		if (!tmp)
 			return NULL;
+
+		/* If we just read the connection from disk, it's clearly not Unsaved */
+		update_unsaved = FALSE;
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
@@ -134,7 +138,10 @@ nm_ifcfg_connection_new (const char *full_path,
 		goto out;
 
 	/* Update our settings with what was read from the file */
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, error)) {
+	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                             tmp,
+	                                             update_unsaved,
+	                                             error)) {
 		g_object_unref (object);
 		object = NULL;
 		goto out;

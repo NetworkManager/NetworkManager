@@ -49,6 +49,7 @@ nm_keyfile_connection_new (const char *full_path,
 	NMKeyfileConnectionPrivate *priv;
 	NMConnection *tmp;
 	const char *uuid;
+	gboolean update_unsaved = TRUE;
 
 	g_return_val_if_fail (full_path != NULL, NULL);
 
@@ -59,6 +60,9 @@ nm_keyfile_connection_new (const char *full_path,
 		tmp = nm_keyfile_plugin_connection_from_file (full_path, error);
 		if (!tmp)
 			return NULL;
+
+		/* If we just read the connection from disk, it's clearly not Unsaved */
+		update_unsaved = FALSE;
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION, NULL);
@@ -67,7 +71,10 @@ nm_keyfile_connection_new (const char *full_path,
 	priv->path = g_strdup (full_path);
 
 	/* Update our settings with what was read from the file */
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, error)) {
+	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                              tmp,
+	                                              update_unsaved,
+	                                              error)) {
 		g_object_unref (object);
 		object = NULL;
 		goto out;

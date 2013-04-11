@@ -62,6 +62,7 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 	NMConnection *tmp;
 	GObject *object;
 	GError *error = NULL;
+	gboolean update_unsaved = TRUE;
 
 	g_return_val_if_fail (conn_name != NULL, NULL);
 
@@ -73,11 +74,17 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 			g_error_free (error);
 			return NULL;
 		}
+
+		/* If we just read the connection from disk, it's clearly not Unsaved */
+		update_unsaved = FALSE;
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
 	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
-	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object), tmp, NULL);
+	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                         tmp,
+	                                         update_unsaved,
+	                                         NULL);
 	g_object_unref (tmp);
 
 	return NM_IFNET_CONNECTION (object);
