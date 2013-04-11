@@ -18,7 +18,8 @@ KEYFILES = \
 	Test_Bridge_Main \
 	Test_Bridge_Component \
 	Test_New_Wired_Group_Name \
-	Test_New_Wireless_Group_Names
+	Test_New_Wireless_Group_Names \
+	Test_Missing_Vlan_Setting
 
 CERTS = \
 	test-ca-cert.pem \

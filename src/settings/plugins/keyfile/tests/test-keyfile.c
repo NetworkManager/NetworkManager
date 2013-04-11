@@ -3247,6 +3247,28 @@ test_write_new_wireless_group_names (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_missing_vlan_setting (void)
+{
+	NMConnection *connection;
+	NMSettingVlan *s_vlan;
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Setting", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Ensure the VLAN setting exists */
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 0);
+
+	g_object_unref (connection);
+}
 
 int main (int argc, char **argv)
 {
@@ -3308,6 +3330,8 @@ int main (int argc, char **argv)
 	test_write_new_wired_group_name ();
 	test_read_new_wireless_group_names ();
 	test_write_new_wireless_group_names ();
+
+	test_read_missing_vlan_setting ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);
