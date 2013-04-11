@@ -1125,11 +1125,11 @@ check_connection_available (NMDevice *device, NMConnection *connection)
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 
-	/* Ad-Hoc connections are always available because they may be started
-	 * at any time.
+	/* Ad-Hoc and AP connections are always available because they may be
+	 * started at any time.
 	 */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_str_equal (mode, "adhoc") || g_str_equal (mode, "ap"))
+	if (g_strcmp0 (mode, "adhoc") == 0 || g_strcmp0 (mode, "ap") == 0)
 		return TRUE;
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either */
