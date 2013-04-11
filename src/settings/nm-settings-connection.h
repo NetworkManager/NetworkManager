@@ -81,11 +81,11 @@ void nm_settings_connection_commit_changes (NMSettingsConnection *connection,
                                             gpointer user_data);
 
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
-                                                  NMConnection *new_settings,
+                                                  NMConnection *new_connection,
                                                   GError **error);
 
 void nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
-                                                NMConnection *new_settings,
+                                                NMConnection *new_connection,
                                                 NMSettingsConnectionCommitFunc callback,
                                                 gpointer user_data);
 

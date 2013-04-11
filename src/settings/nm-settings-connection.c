@@ -373,21 +373,28 @@ secrets_cleared_cb (NMSettingsConnection *self)
  */
 gboolean
 nm_settings_connection_replace_settings (NMSettingsConnection *self,
-                                         NMConnection *new,
+                                         NMConnection *new_connection,
                                          GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
-	GHashTable *new_settings, *hash = NULL;
+	GHashTable *hash = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (new), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	new_settings = nm_connection_to_hash (new, NM_SETTING_HASH_FLAG_ALL);
-	g_assert (new_settings);
-	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, error)) {
+	/* Do nothing if there's nothing to update */
+	if (nm_connection_compare (NM_CONNECTION (self),
+	                           new_connection,
+	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
+		return TRUE;
+	}
+
+	if (nm_connection_replace_settings_from_connection (NM_CONNECTION (self),
+	                                                    new_connection,
+	                                                    error)) {
 		/* Cache the just-updated system secrets in case something calls
 		 * nm_connection_clear_secrets() and clears them.
 		 */
@@ -407,7 +414,6 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 
 		nm_settings_connection_recheck_visibility (self);
 	}
-	g_hash_table_destroy (new_settings);
 	return success;
 }
 
@@ -425,30 +431,20 @@ ignore_cb (NMSettingsConnection *connection,
  */
 void
 nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
-                                           NMConnection *new,
+                                           NMConnection *new_connection,
                                            NMSettingsConnectionCommitFunc callback,
                                            gpointer user_data)
 {
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
-	g_return_if_fail (NM_IS_CONNECTION (new));
+	g_return_if_fail (NM_IS_CONNECTION (new_connection));
 
-	if (!callback)
-		callback = ignore_cb;
-
-	/* Do nothing if there's nothing to update */
-	if (nm_connection_compare (NM_CONNECTION (self),
-	                           NM_CONNECTION (new),
-	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
-		callback (self, NULL, user_data);
-		return;
-	}
-
-	if (nm_settings_connection_replace_settings (self, new, &error)) {
-		nm_settings_connection_commit_changes (self, callback, user_data);
+	if (nm_settings_connection_replace_settings (self, new_connection, &error)) {
+		nm_settings_connection_commit_changes (self, callback ? callback : ignore_cb, user_data);
 	} else {
-		callback (self, error, user_data);
+		if (callback)
+			callback (self, error, user_data);
 		g_clear_error (&error);
 	}
 }
