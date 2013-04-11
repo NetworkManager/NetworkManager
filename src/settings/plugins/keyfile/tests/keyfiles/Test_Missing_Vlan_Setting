@@ -1,0 +1,11 @@
+# Settings with all default values are not written, including
+# VLAN settings with a VLAN ID of 0, which is the default value.
+
+[connection]
+id=Test Missing Vlan Setting
+uuid=4e80a56d-c99f-4aad-a6dd-b449bc398c57
+type=vlan
+autoconnect=true
+
+[802-3-ethernet]
+mac-address=00:11:22:33:44:55

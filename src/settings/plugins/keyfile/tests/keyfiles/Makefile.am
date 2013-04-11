@@ -16,7 +16,8 @@ KEYFILES = \
 	Test_Wired_TLS_Path_Missing \
 	Test_InfiniBand_Connection \
 	Test_Bridge_Main \
-	Test_Bridge_Component
+	Test_Bridge_Component \
+	Test_Missing_Vlan_Setting
 
 CERTS = \
 	test-ca-cert.pem \

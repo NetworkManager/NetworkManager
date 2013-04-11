@@ -1157,15 +1157,23 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 
 	/* Make sure that we have the base device type setting even if
 	 * the keyfile didn't include it, which can happen when the base
-	 * device type setting is all default values (like ethernet).
+	 * device type setting is all default values (like ethernet where
+	 * the MAC address isn't given, or VLAN when the VLAN ID is zero).
 	 */
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		ctype = nm_setting_connection_get_connection_type (s_con);
 		setting = nm_connection_get_setting_by_name (connection, ctype);
-		if (ctype) {
-			if (!setting && !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME))
-				nm_connection_add_setting (connection, nm_setting_wired_new ());
+		if (ctype && !setting) {
+			NMSetting *base_setting;
+			GType base_setting_type;
+
+			base_setting_type = nm_connection_lookup_setting_type (ctype);
+			if (base_setting_type != G_TYPE_INVALID) {
+				base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
+				g_assert (base_setting);
+				nm_connection_add_setting (connection, base_setting);
+			}
 		}
 	}
 
