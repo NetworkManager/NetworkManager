@@ -743,6 +743,68 @@ test_connection_replace_settings ()
 }
 
 static void
+test_connection_replace_settings_from_connection ()
+{
+	NMConnection *connection, *replacement;
+	GError *error = NULL;
+	gboolean success;
+	NMSettingConnection *s_con;
+	NMSetting *setting;
+	GByteArray *ssid;
+	char *uuid = NULL;
+	const char *expected_id = "Awesome connection";
+
+	connection = new_test_connection ();
+	g_assert (connection);
+
+	replacement = nm_connection_new ();
+	g_assert (replacement);
+
+	/* New connection setting */
+	setting = nm_setting_connection_new ();
+	g_assert (setting);
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, expected_id,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	nm_connection_add_setting (replacement, setting);
+
+	/* New wifi setting */
+	setting = nm_setting_wireless_new ();
+	g_assert (setting);
+
+	ssid = g_byte_array_new ();
+	g_byte_array_append (ssid, (const guint8 *) "1234567", 7);
+	g_object_set (setting,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NULL);
+	g_byte_array_free (ssid, TRUE);
+	nm_connection_add_setting (replacement, setting);
+
+	/* Replace settings and test */
+	success = nm_connection_replace_settings_from_connection (connection, replacement, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, uuid);
+
+	g_assert (!nm_connection_get_setting_wired (connection));
+	g_assert (!nm_connection_get_setting_ip6_config (connection));
+	g_assert (nm_connection_get_setting_wireless (connection));
+
+	g_free (uuid);
+	g_object_unref (replacement);
+	g_object_unref (connection);
+}
+
+static void
 test_connection_new_from_hash ()
 {
 	NMConnection *connection;
@@ -1634,6 +1696,7 @@ int main (int argc, char **argv)
 	test_connection_to_hash_setting_name ();
 	test_setting_new_from_hash ();
 	test_connection_replace_settings ();
+	test_connection_replace_settings_from_connection ();
 	test_connection_new_from_hash ();
 
 	test_setting_connection_permissions_helpers ();

@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -477,6 +477,45 @@ nm_connection_replace_settings (NMConnection *connection,
 	if (!validate_permissions_type (new_settings, error))
 		return FALSE;
 	return hash_to_connection (connection, new_settings, error);
+}
+
+/**
+ * nm_connection_replace_settings_from_connection:
+ * @connection: a #NMConnection
+ * @new_connection: a #NMConnection to replace the settings of @connection with
+ * @error: location to store error, or %NULL
+ *
+ * Deep-copies the settings of @new_conenction and replaces the settings of @connection
+ * with the copied settings.
+ *
+ * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
+ * if they were not
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_connection_replace_settings_from_connection (NMConnection *connection,
+                                                NMConnection *new_connection,
+                                                GError **error)
+{
+	GHashTableIter iter;
+	NMSetting *setting;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
+
+	/* No need to validate permissions like nm_connection_replace_settings()
+	 * since we're dealing with an NMConnection which has already done that.
+	 */
+	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
+
+	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
+		nm_connection_add_setting (connection, nm_setting_duplicate (setting));
+
+	return nm_connection_verify (connection, error);
 }
 
 /**

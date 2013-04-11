@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2013 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -134,6 +134,10 @@ NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
 gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GHashTable *new_settings,
                                               GError **error);
+
+gboolean      nm_connection_replace_settings_from_connection (NMConnection *connection,
+                                                              NMConnection *new_connection,
+                                                              GError **error);
 
 gboolean      nm_connection_compare       (NMConnection *a,
                                            NMConnection *b,
