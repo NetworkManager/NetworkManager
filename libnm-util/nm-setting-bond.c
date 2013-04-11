@@ -264,6 +264,8 @@ gboolean nm_setting_bond_add_option (NMSettingBond *setting,
 	} else if (!strcmp (name, NM_SETTING_BOND_OPTION_ARP_INTERVAL))
 		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_MIIMON);
 
+	g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
+
 	return TRUE;
 }
 
@@ -282,10 +284,15 @@ gboolean
 nm_setting_bond_remove_option (NMSettingBond *setting,
                                const char *name)
 {
+	gboolean found;
+
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
 	g_return_val_if_fail (validate_option (name), FALSE);
 
-	return g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
+	found = g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
+	if (found)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
+	return found;
 }
 
 /**

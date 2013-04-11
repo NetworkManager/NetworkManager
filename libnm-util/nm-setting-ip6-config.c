@@ -212,6 +212,7 @@ nm_setting_ip6_config_add_dns (NMSettingIP6Config *setting, const struct in6_add
 	copy = g_malloc0 (sizeof (struct in6_addr));
 	memcpy (copy, addr, sizeof (struct in6_addr));
 	priv->dns = g_slist_append (priv->dns, copy);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
 
 	return TRUE;
 }
@@ -237,6 +238,7 @@ nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
 
 	g_free (elt->data);
 	priv->dns = g_slist_delete_link (priv->dns, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
 }
 
 /**
@@ -252,6 +254,7 @@ nm_setting_ip6_config_clear_dns (NMSettingIP6Config *setting)
 
 	nm_utils_slist_free (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns, g_free);
 	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
 }
 
 /**
@@ -316,6 +319,7 @@ nm_setting_ip6_config_add_dns_search (NMSettingIP6Config *setting,
 	}
 
 	priv->dns_search = g_slist_append (priv->dns_search, g_strdup (dns_search));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
 	return TRUE;
 }
 
@@ -340,6 +344,7 @@ nm_setting_ip6_config_remove_dns_search (NMSettingIP6Config *setting, guint32 i)
 
 	g_free (elt->data);
 	priv->dns_search = g_slist_delete_link (priv->dns_search, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
 }
 
 /**
@@ -355,6 +360,7 @@ nm_setting_ip6_config_clear_dns_searches (NMSettingIP6Config *setting)
 
 	nm_utils_slist_free (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
 	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
 }
 
 /**
@@ -423,6 +429,7 @@ nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
 	g_return_val_if_fail (copy != NULL, FALSE);
 
 	priv->addresses = g_slist_append (priv->addresses, copy);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 	return TRUE;
 }
 
@@ -447,6 +454,7 @@ nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
 
 	nm_ip6_address_unref ((NMIP6Address *) elt->data);
 	priv->addresses = g_slist_delete_link (priv->addresses, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 }
 
 /**
@@ -464,6 +472,7 @@ nm_setting_ip6_config_clear_addresses (NMSettingIP6Config *setting)
 
 	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
 	priv->addresses = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 }
 
 /**
@@ -531,6 +540,7 @@ nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
 	g_return_val_if_fail (copy != NULL, FALSE);
 
 	priv->routes = g_slist_append (priv->routes, copy);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 	return TRUE;
 }
 
@@ -555,6 +565,7 @@ nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
 
 	nm_ip6_route_unref ((NMIP6Route *) elt->data);
 	priv->routes = g_slist_delete_link (priv->routes, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 }
 
 /**
@@ -572,6 +583,7 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 
 	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
 	priv->routes = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 }
 
 /**

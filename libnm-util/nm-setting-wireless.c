@@ -648,9 +648,10 @@ nm_setting_wireless_add_seen_bssid (NMSettingWireless *setting,
 		}
 	}
 
-	if (!found)
+	if (!found) {
 		priv->seen_bssids = g_slist_prepend (priv->seen_bssids, lower_bssid);
-	else
+		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SEEN_BSSIDS);
+	} else
 		g_free (lower_bssid);
 
 	return !found;

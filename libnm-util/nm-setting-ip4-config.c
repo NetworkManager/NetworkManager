@@ -193,6 +193,7 @@ nm_setting_ip4_config_add_dns (NMSettingIP4Config *setting, guint32 dns)
 	}
 
 	g_array_append_val (priv->dns, dns);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 	return TRUE;
 }
 
@@ -214,6 +215,7 @@ nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
 	g_return_if_fail (i <= priv->dns->len);
 
 	g_array_remove_index (priv->dns, i);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 }
 
 /**
@@ -231,6 +233,7 @@ nm_setting_ip4_config_clear_dns (NMSettingIP4Config *setting)
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
 	g_array_remove_range (priv->dns, 0, priv->dns->len);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 }
 
 /**
@@ -295,6 +298,7 @@ nm_setting_ip4_config_add_dns_search (NMSettingIP4Config *setting,
 	}
 
 	priv->dns_search = g_slist_append (priv->dns_search, g_strdup (dns_search));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS_SEARCH);
 	return TRUE;
 }
 
@@ -319,6 +323,7 @@ nm_setting_ip4_config_remove_dns_search (NMSettingIP4Config *setting, guint32 i)
 
 	g_free (elt->data);
 	priv->dns_search = g_slist_delete_link (priv->dns_search, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS_SEARCH);
 }
 
 /**
@@ -334,6 +339,7 @@ nm_setting_ip4_config_clear_dns_searches (NMSettingIP4Config *setting)
 
 	nm_utils_slist_free (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
 	NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS_SEARCH);
 }
 
 /**
@@ -402,6 +408,7 @@ nm_setting_ip4_config_add_address (NMSettingIP4Config *setting,
 	g_return_val_if_fail (copy != NULL, FALSE);
 
 	priv->addresses = g_slist_append (priv->addresses, copy);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 	return TRUE;
 }
 
@@ -426,6 +433,7 @@ nm_setting_ip4_config_remove_address (NMSettingIP4Config *setting, guint32 i)
 
 	nm_ip4_address_unref ((NMIP4Address *) elt->data);
 	priv->addresses = g_slist_delete_link (priv->addresses, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 }
 
 /**
@@ -443,6 +451,7 @@ nm_setting_ip4_config_clear_addresses (NMSettingIP4Config *setting)
 
 	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 	priv->addresses = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 }
 
 /**
@@ -510,6 +519,7 @@ nm_setting_ip4_config_add_route (NMSettingIP4Config *setting,
 	g_return_val_if_fail (copy != NULL, FALSE);
 
 	priv->routes = g_slist_append (priv->routes, copy);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ROUTES);
 	return TRUE;
 }
 
@@ -534,6 +544,7 @@ nm_setting_ip4_config_remove_route (NMSettingIP4Config *setting, guint32 i)
 
 	nm_ip4_route_unref ((NMIP4Route *) elt->data);
 	priv->routes = g_slist_delete_link (priv->routes, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ROUTES);
 }
 
 /**
@@ -551,6 +562,7 @@ nm_setting_ip4_config_clear_routes (NMSettingIP4Config *setting)
 
 	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 	priv->routes = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ROUTES);
 }
 
 /**

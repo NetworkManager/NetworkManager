@@ -413,6 +413,7 @@ nm_setting_connection_add_permission (NMSettingConnection *setting,
 	p = permission_new (pitem);
 	g_return_val_if_fail (p != NULL, FALSE);
 	priv->permissions = g_slist_append (priv->permissions, p);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
 
 	return TRUE;
 }
@@ -439,6 +440,7 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
 
 	permission_free ((Permission *) iter->data);
 	priv->permissions = g_slist_delete_link (priv->permissions, iter);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
 }
 
 
@@ -624,6 +626,7 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
 	}
 
 	priv->secondaries = g_slist_append (priv->secondaries, g_strdup (sec_uuid));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
 	return TRUE;
 }
 
@@ -650,6 +653,7 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
 
 	g_free (elt->data);
 	priv->secondaries = g_slist_delete_link (priv->secondaries, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
 }
 
 static gint

@@ -222,11 +222,13 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 static void
 set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
 {
-	if (map == NM_VLAN_INGRESS_MAP)
+	if (map == NM_VLAN_INGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->ingress_priority_map = list;
-	else if (map == NM_VLAN_EGRESS_MAP)
+		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+	} else if (map == NM_VLAN_EGRESS_MAP) {
 		NM_SETTING_VLAN_GET_PRIVATE (self)->egress_priority_map = list;
-	else
+		g_object_notify (G_OBJECT (self), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
+	} else
 		g_assert_not_reached ();
 }
 
@@ -269,6 +271,10 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 		if (p->from == item->from) {
 			p->to = item->to;
 			g_free (item);
+			if (map == NM_VLAN_INGRESS_MAP)
+				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+			else
+				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
 			return TRUE;
 		}
 	}
@@ -373,6 +379,10 @@ nm_setting_vlan_add_priority (NMSettingVlan *setting,
 		item = iter->data;
 		if (item->from == from) {
 			item->to = to;
+			if (map == NM_VLAN_INGRESS_MAP)
+				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP);
+			else
+				g_object_notify (G_OBJECT (setting), NM_SETTING_VLAN_EGRESS_PRIORITY_MAP);
 			return TRUE;
 		}
 	}

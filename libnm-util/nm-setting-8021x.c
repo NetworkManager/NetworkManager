@@ -248,6 +248,7 @@ nm_setting_802_1x_add_eap_method (NMSetting8021x *setting, const char *eap)
 	}
 
 	priv->eap = g_slist_append (priv->eap, g_ascii_strdown (eap, -1));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_EAP);
 	return TRUE;
 }
 
@@ -272,6 +273,7 @@ nm_setting_802_1x_remove_eap_method (NMSetting8021x *setting, guint32 i)
 
 	g_free (elt->data);
 	priv->eap = g_slist_delete_link (priv->eap, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_EAP);
 }
 
 /**
@@ -290,6 +292,7 @@ nm_setting_802_1x_clear_eap_methods (NMSetting8021x *setting)
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 	nm_utils_slist_free (priv->eap, g_free);
 	priv->eap = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_EAP);
 }
 
 /**
@@ -534,8 +537,10 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 		priv->ca_cert = NULL;
 	}
 
-	if (!cert_path)
+	if (!cert_path) {
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CA_CERT);
 		return TRUE;
+	}
 
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
@@ -559,6 +564,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
+	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CA_CERT);
 	return priv->ca_cert != NULL;
 }
 
@@ -647,6 +653,7 @@ nm_setting_802_1x_add_altsubject_match (NMSetting8021x *setting,
 	}
 
 	priv->altsubject_matches = g_slist_append (priv->altsubject_matches, g_strdup (altsubject_match));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
 	return TRUE;
 }
 
@@ -671,6 +678,7 @@ nm_setting_802_1x_remove_altsubject_match (NMSetting8021x *setting, guint32 i)
 
 	g_free (elt->data);
 	priv->altsubject_matches = g_slist_delete_link (priv->altsubject_matches, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
 }
 
 /**
@@ -689,6 +697,7 @@ nm_setting_802_1x_clear_altsubject_matches (NMSetting8021x *setting)
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 	nm_utils_slist_free (priv->altsubject_matches, g_free);
 	priv->altsubject_matches = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
 }
 
 /**
@@ -809,8 +818,10 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 		priv->client_cert = NULL;
 	}
 
-	if (!cert_path)
+	if (!cert_path) {
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CLIENT_CERT);
 		return TRUE;
+	}
 
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
@@ -846,6 +857,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
+	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CLIENT_CERT);
 	return priv->client_cert != NULL;
 }
 
@@ -1070,8 +1082,10 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 		priv->phase2_ca_cert = NULL;
 	}
 
-	if (!cert_path)
+	if (!cert_path) {
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CA_CERT);
 		return TRUE;
+	}
 
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
@@ -1095,6 +1109,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
+	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CA_CERT);
 	return priv->phase2_ca_cert != NULL;
 }
 
@@ -1185,6 +1200,7 @@ nm_setting_802_1x_add_phase2_altsubject_match (NMSetting8021x *setting,
 
 	priv->phase2_altsubject_matches = g_slist_append (priv->altsubject_matches,
 													  g_strdup (phase2_altsubject_match));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 	return TRUE;
 }
 
@@ -1209,6 +1225,7 @@ nm_setting_802_1x_remove_phase2_altsubject_match (NMSetting8021x *setting, guint
 
 	g_free (elt->data);
 	priv->phase2_altsubject_matches = g_slist_delete_link (priv->phase2_altsubject_matches, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 }
 
 /**
@@ -1227,6 +1244,7 @@ nm_setting_802_1x_clear_phase2_altsubject_matches (NMSetting8021x *setting)
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 	nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
 	priv->phase2_altsubject_matches = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 }
 
 /**
@@ -1349,8 +1367,10 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 		priv->phase2_client_cert = NULL;
 	}
 
-	if (!cert_path)
+	if (!cert_path) {
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 		return TRUE;
+	}
 
 	data = crypto_load_and_verify_certificate (cert_path, &format, error);
 	if (data) {
@@ -1387,6 +1407,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
+	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 	return priv->phase2_client_cert != NULL;
 }
 
@@ -1615,6 +1636,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean key_cleared = FALSE, password_cleared = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
@@ -1650,13 +1672,22 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 		memset (priv->private_key->data, 0, priv->private_key->len);
 		g_byte_array_free (priv->private_key, TRUE);
 		priv->private_key = NULL;
+		key_cleared = TRUE;
 	}
 
-	g_free (priv->private_key_password);
-	priv->private_key_password = NULL;
+	if (priv->private_key_password) {
+		g_free (priv->private_key_password);
+		priv->private_key_password = NULL;
+		password_cleared = TRUE;
+	}
 
-	if (key_path == NULL)
+	if (key_path == NULL) {
+		if (key_cleared)
+			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY);
+		if (password_cleared)
+			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 		return TRUE;
+	}
 
 	priv->private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
@@ -1678,7 +1709,12 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 
 		priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
 		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CLIENT_CERT);
 	}
+
+	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY);
+	if (password_cleared || password)
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
 	if (out_format)
 		*out_format = format;
@@ -1908,6 +1944,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean key_cleared = FALSE, password_cleared = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 
@@ -1943,13 +1980,22 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 		memset (priv->phase2_private_key->data, 0, priv->phase2_private_key->len);
 		g_byte_array_free (priv->phase2_private_key, TRUE);
 		priv->phase2_private_key = NULL;
+		key_cleared = TRUE;
 	}
 
-	g_free (priv->phase2_private_key_password);
-	priv->phase2_private_key_password = NULL;
+	if (priv->phase2_private_key_password) {
+		g_free (priv->phase2_private_key_password);
+		priv->phase2_private_key_password = NULL;
+		password_cleared = TRUE;
+	}
 
-	if (key_path == NULL)
+	if (key_path == NULL) {
+		if (key_cleared)
+			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+		if (password_cleared)
+			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 		return TRUE;
+	}
 
 	priv->phase2_private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
@@ -1971,7 +2017,12 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 
 		priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
 		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 	}
+
+	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+	if (password_cleared || password)
+		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 
 	if (out_format)
 		*out_format = format;

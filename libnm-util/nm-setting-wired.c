@@ -497,6 +497,7 @@ nm_setting_wired_add_s390_option (NMSettingWired *setting,
 	g_hash_table_insert (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options,
 	                     g_strdup (key),
 	                     g_strdup (value));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_S390_OPTIONS);
 	return TRUE;
 }
 
@@ -515,11 +516,16 @@ gboolean
 nm_setting_wired_remove_s390_option (NMSettingWired *setting,
                                      const char *key)
 {
+	gboolean found;
+
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (strlen (key), FALSE);
 
-	return g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
+	found = g_hash_table_remove (NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options, key);
+	if (found)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_S390_OPTIONS);
+	return found;
 }
 
 /**

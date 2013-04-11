@@ -63,6 +63,13 @@ G_BEGIN_DECLS
 #define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_CONNECTION))
 #define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
 
+/* Signals */
+#define NM_CONNECTION_SECRETS_UPDATED "secrets-updated"
+#define NM_CONNECTION_SECRETS_CLEARED "secrets-cleared"
+#define NM_CONNECTION_CHANGED         "changed"
+
+/* Properties */
+#define NM_CONNECTION_PATH "path"
 
 /**
  * NMConnectionError:
@@ -90,8 +97,6 @@ typedef enum
 
 #define NM_CONNECTION_ERROR nm_connection_error_quark ()
 GQuark nm_connection_error_quark (void);
-
-#define NM_CONNECTION_PATH "path"
 
 /**
  * NMConnection:

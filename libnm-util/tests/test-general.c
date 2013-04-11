@@ -38,6 +38,9 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-serial.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-bond.h"
+#include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
@@ -1661,6 +1664,416 @@ test_hwaddr_aton_malformed (void)
 	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:a@%%", ARPHRD_ETHER, buf) == NULL);
 }
 
+static void
+test_connection_changed_cb (NMConnection *connection, gboolean *data)
+{
+	*data = TRUE;
+}
+
+#define ASSERT_CHANGED(statement) \
+{ \
+	changed = FALSE; \
+	statement; \
+	g_assert (changed); \
+}
+
+#define ASSERT_UNCHANGED(statement) \
+{ \
+	changed = FALSE; \
+	statement; \
+	g_assert (!changed); \
+}
+
+static void
+test_connection_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+
+	connection = new_test_connection ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	/* Add new setting */
+	ASSERT_CHANGED (nm_connection_add_setting (connection, nm_setting_vlan_new ()));
+
+	/* Remove existing setting */
+	ASSERT_CHANGED (nm_connection_remove_setting (connection, NM_TYPE_SETTING_VLAN));
+
+	/* Remove non-existing setting */
+	ASSERT_UNCHANGED (nm_connection_remove_setting (connection, NM_TYPE_SETTING_VLAN));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_connection_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingConnection *s_con;
+	char *uuid;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	ASSERT_CHANGED (g_object_set (s_con, NM_SETTING_CONNECTION_ID, "adfadfasdfaf", NULL));
+
+	ASSERT_CHANGED (nm_setting_connection_add_permission (s_con, "user", "billsmith", NULL));
+	ASSERT_CHANGED (nm_setting_connection_remove_permission (s_con, 0));
+	ASSERT_UNCHANGED (nm_setting_connection_remove_permission (s_con, 1));
+
+	uuid = nm_utils_uuid_generate ();
+	ASSERT_CHANGED (nm_setting_connection_add_secondary (s_con, uuid));
+	ASSERT_CHANGED (nm_setting_connection_remove_secondary (s_con, 0));
+	ASSERT_UNCHANGED (nm_setting_connection_remove_secondary (s_con, 1));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_bond_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingBond *s_bond;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_bond = (NMSettingBond *) nm_setting_bond_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_bond));
+
+	ASSERT_CHANGED (nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY, "10"));
+	ASSERT_CHANGED (nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY));
+	ASSERT_UNCHANGED (nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_UPDELAY));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_ip4_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingIP4Config *s_ip4;
+	NMIP4Address *addr;
+	NMIP4Route *route;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, 0x1122));
+	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 0));
+	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 1));
+
+	nm_setting_ip4_config_add_dns (s_ip4, 0x3344);
+	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns (s_ip4));
+
+	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns_search (s_ip4, 0));
+	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns_search (s_ip4, 1));
+
+	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns_searches (s_ip4));
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, 0x2233);
+	nm_ip4_address_set_prefix (addr, 24);
+	ASSERT_CHANGED (nm_setting_ip4_config_add_address (s_ip4, addr));
+	ASSERT_CHANGED (nm_setting_ip4_config_remove_address (s_ip4, 0));
+	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_address (s_ip4, 1));
+
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	ASSERT_CHANGED (nm_setting_ip4_config_clear_addresses (s_ip4));
+
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_dest (route, 0x2233);
+	nm_ip4_route_set_prefix (route, 24);
+
+	ASSERT_CHANGED (nm_setting_ip4_config_add_route (s_ip4, route));
+	ASSERT_CHANGED (nm_setting_ip4_config_remove_route (s_ip4, 0));
+	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_route (s_ip4, 1));
+
+	nm_setting_ip4_config_add_route (s_ip4, route);
+	ASSERT_CHANGED (nm_setting_ip4_config_clear_routes (s_ip4));
+
+	nm_ip4_address_unref (addr);
+	nm_ip4_route_unref (route);
+	g_object_unref (connection);
+}
+
+static void
+test_setting_ip6_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingIP6Config *s_ip6;
+	NMIP6Address *addr;
+	NMIP6Route *route;
+	const struct in6_addr t = { { { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 } } };
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, &t));
+	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 0));
+	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 1));
+
+	nm_setting_ip6_config_add_dns (s_ip6, &t);
+	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns (s_ip6));
+
+	ASSERT_CHANGED (nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns_search (s_ip6, 0));
+	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns_search (s_ip6, 1));
+
+	nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com");
+	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns_searches (s_ip6));
+
+	addr = nm_ip6_address_new ();
+	nm_ip6_address_set_address (addr, &t);
+	nm_ip6_address_set_prefix (addr, 64);
+
+	ASSERT_CHANGED (nm_setting_ip6_config_add_address (s_ip6, addr));
+	ASSERT_CHANGED (nm_setting_ip6_config_remove_address (s_ip6, 0));
+	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_address (s_ip6, 1));
+
+	nm_setting_ip6_config_add_address (s_ip6, addr);
+	ASSERT_CHANGED (nm_setting_ip6_config_clear_addresses (s_ip6));
+
+	route = nm_ip6_route_new ();
+	nm_ip6_route_set_dest (route, &t);
+	nm_ip6_route_set_prefix (route, 128);
+
+	ASSERT_CHANGED (nm_setting_ip6_config_add_route (s_ip6, route));
+	ASSERT_CHANGED (nm_setting_ip6_config_remove_route (s_ip6, 0));
+	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_route (s_ip6, 1));
+
+	nm_setting_ip6_config_add_route (s_ip6, route);
+	ASSERT_CHANGED (nm_setting_ip6_config_clear_routes (s_ip6));
+
+	nm_ip6_address_unref (addr);
+	nm_ip6_route_unref (route);
+	g_object_unref (connection);
+}
+
+static void
+test_setting_vlan_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingVlan *s_vlan;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_vlan));
+
+	ASSERT_CHANGED (nm_setting_vlan_add_priority (s_vlan, NM_VLAN_INGRESS_MAP, 1, 3));
+	ASSERT_CHANGED (nm_setting_vlan_remove_priority (s_vlan, NM_VLAN_INGRESS_MAP, 0));
+	ASSERT_UNCHANGED (nm_setting_vlan_remove_priority (s_vlan, NM_VLAN_INGRESS_MAP, 1));
+	ASSERT_CHANGED (nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_INGRESS_MAP, "1:3"));
+	ASSERT_CHANGED (nm_setting_vlan_clear_priorities (s_vlan, NM_VLAN_INGRESS_MAP));
+
+	ASSERT_CHANGED (nm_setting_vlan_add_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1, 3));
+	ASSERT_CHANGED (nm_setting_vlan_remove_priority (s_vlan, NM_VLAN_EGRESS_MAP, 0));
+	ASSERT_UNCHANGED (nm_setting_vlan_remove_priority (s_vlan, NM_VLAN_EGRESS_MAP, 1));
+	ASSERT_CHANGED (nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_EGRESS_MAP, "1:3"));
+	ASSERT_CHANGED (nm_setting_vlan_clear_priorities (s_vlan, NM_VLAN_EGRESS_MAP));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_vpn_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingVPN *s_vpn;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
+
+	ASSERT_CHANGED (nm_setting_vpn_add_data_item (s_vpn, "foobar", "baz"));
+	ASSERT_CHANGED (nm_setting_vpn_remove_data_item (s_vpn, "foobar"));
+	ASSERT_UNCHANGED (nm_setting_vpn_remove_data_item (s_vpn, "not added"));
+
+	ASSERT_CHANGED (nm_setting_vpn_add_secret (s_vpn, "foobar", "baz"));
+	ASSERT_CHANGED (nm_setting_vpn_remove_secret (s_vpn, "foobar"));
+	ASSERT_UNCHANGED (nm_setting_vpn_remove_secret (s_vpn, "not added"));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_wired_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingWired *s_wired;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	ASSERT_CHANGED (nm_setting_wired_add_s390_option (s_wired, "portno", "1"));
+	ASSERT_CHANGED (nm_setting_wired_remove_s390_option (s_wired, "portno"));
+	ASSERT_UNCHANGED (nm_setting_wired_remove_s390_option (s_wired, "layer2"));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_wireless_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingWireless *s_wifi;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ASSERT_CHANGED (nm_setting_wireless_add_seen_bssid (s_wifi, "00:11:22:33:44:55"));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_wireless_security_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSettingWirelessSecurity *s_wsec;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	/* Protos */
+	ASSERT_CHANGED (nm_setting_wireless_security_add_proto (s_wsec, "wpa"));
+	ASSERT_CHANGED (nm_setting_wireless_security_remove_proto (s_wsec, 0));
+	ASSERT_UNCHANGED (nm_setting_wireless_security_remove_proto (s_wsec, 1));
+
+	nm_setting_wireless_security_add_proto (s_wsec, "wep");
+	ASSERT_CHANGED (nm_setting_wireless_security_clear_protos (s_wsec));
+
+	/* Pairwise ciphers */
+	ASSERT_CHANGED (nm_setting_wireless_security_add_pairwise (s_wsec, "wep40"));
+	ASSERT_CHANGED (nm_setting_wireless_security_remove_pairwise (s_wsec, 0));
+	ASSERT_UNCHANGED (nm_setting_wireless_security_remove_pairwise (s_wsec, 1));
+
+	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+	ASSERT_CHANGED (nm_setting_wireless_security_clear_pairwise (s_wsec));
+
+	/* Group ciphers */
+	ASSERT_CHANGED (nm_setting_wireless_security_add_group (s_wsec, "ccmp"));
+	ASSERT_CHANGED (nm_setting_wireless_security_remove_group (s_wsec, 0));
+	ASSERT_UNCHANGED (nm_setting_wireless_security_remove_group (s_wsec, 1));
+
+	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+	ASSERT_CHANGED (nm_setting_wireless_security_clear_groups (s_wsec));
+
+	/* WEP key secret flags */
+	ASSERT_CHANGED (g_assert (nm_setting_set_secret_flags (NM_SETTING (s_wsec), "wep-key0", NM_SETTING_SECRET_FLAG_AGENT_OWNED, NULL)));
+	ASSERT_CHANGED (g_assert (nm_setting_set_secret_flags (NM_SETTING (s_wsec), "wep-key1", NM_SETTING_SECRET_FLAG_AGENT_OWNED, NULL)));
+	ASSERT_CHANGED (g_assert (nm_setting_set_secret_flags (NM_SETTING (s_wsec), "wep-key2", NM_SETTING_SECRET_FLAG_AGENT_OWNED, NULL)));
+	ASSERT_CHANGED (g_assert (nm_setting_set_secret_flags (NM_SETTING (s_wsec), "wep-key3", NM_SETTING_SECRET_FLAG_AGENT_OWNED, NULL)));
+
+	g_object_unref (connection);
+}
+
+static void
+test_setting_802_1x_changed_signal (void)
+{
+	NMConnection *connection;
+	gboolean changed = FALSE;
+	NMSetting8021x *s_8021x;
+
+	connection = nm_connection_new ();
+	g_signal_connect (connection,
+	                  NM_CONNECTION_CHANGED,
+	                  (GCallback) test_connection_changed_cb,
+	                  &changed);
+
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	/* EAP methods */
+	ASSERT_CHANGED (nm_setting_802_1x_add_eap_method (s_8021x, "tls"));
+	ASSERT_CHANGED (nm_setting_802_1x_remove_eap_method (s_8021x, 0));
+	ASSERT_UNCHANGED (nm_setting_802_1x_remove_eap_method (s_8021x, 1));
+
+	nm_setting_802_1x_add_eap_method (s_8021x, "ttls");
+	ASSERT_CHANGED (nm_setting_802_1x_clear_eap_methods (s_8021x));
+
+	/* alternate subject matches */
+	ASSERT_CHANGED (nm_setting_802_1x_add_altsubject_match (s_8021x, "EMAIL:server@example.com"));
+	ASSERT_CHANGED (nm_setting_802_1x_remove_altsubject_match (s_8021x, 0));
+	ASSERT_UNCHANGED (nm_setting_802_1x_remove_altsubject_match (s_8021x, 1));
+
+	nm_setting_802_1x_add_altsubject_match (s_8021x, "EMAIL:server@example.com");
+	ASSERT_CHANGED (nm_setting_802_1x_clear_altsubject_matches (s_8021x));
+
+	/* phase2 alternate subject matches */
+	ASSERT_CHANGED (nm_setting_802_1x_add_phase2_altsubject_match (s_8021x, "EMAIL:server@example.com"));
+	ASSERT_CHANGED (nm_setting_802_1x_remove_phase2_altsubject_match (s_8021x, 0));
+	ASSERT_UNCHANGED (nm_setting_802_1x_remove_phase2_altsubject_match (s_8021x, 1));
+
+	nm_setting_802_1x_add_phase2_altsubject_match (s_8021x, "EMAIL:server@example.com");
+	ASSERT_CHANGED (nm_setting_802_1x_clear_phase2_altsubject_matches (s_8021x));
+
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -1719,6 +2132,18 @@ int main (int argc, char **argv)
 	test_hwaddr_aton_ib_normal ();
 	test_hwaddr_aton_no_leading_zeros ();
 	test_hwaddr_aton_malformed ();
+
+	test_connection_changed_signal ();
+	test_setting_connection_changed_signal ();
+	test_setting_bond_changed_signal ();
+	test_setting_ip4_changed_signal ();
+	test_setting_ip6_changed_signal ();
+	test_setting_vlan_changed_signal ();
+	test_setting_vpn_changed_signal ();
+	test_setting_wired_changed_signal ();
+	test_setting_wireless_changed_signal ();
+	test_setting_wireless_security_changed_signal ();
+	test_setting_802_1x_changed_signal ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

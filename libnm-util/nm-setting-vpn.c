@@ -196,6 +196,7 @@ nm_setting_vpn_add_data_item (NMSettingVPN *setting,
 
 	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
 	                     g_strdup (key), g_strdup (item));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_DATA);
 }
 
 /**
@@ -230,9 +231,14 @@ nm_setting_vpn_get_data_item (NMSettingVPN *setting, const char *key)
 gboolean
 nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
 {
+	gboolean found;
+
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
 
-	return g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
+	found = g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
+	if (found)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_DATA);
+	return found;
 }
 
 static void
@@ -323,6 +329,7 @@ nm_setting_vpn_add_secret (NMSettingVPN *setting,
 
 	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets,
 	                     g_strdup (key), g_strdup (secret));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
 }
 
 /**
@@ -357,9 +364,14 @@ nm_setting_vpn_get_secret (NMSettingVPN *setting, const char *key)
 gboolean
 nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
 {
+	gboolean found;
+
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
 
-	return g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
+	found = g_hash_table_remove (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
+	if (found)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
+	return found;
 }
 
 /**
@@ -511,6 +523,9 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 	} else
 		g_set_error_literal (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, key);
 
+	if (success)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
+
 	return success;
 }
 
@@ -562,6 +577,7 @@ set_secret_flags (NMSetting *setting,
 	g_hash_table_insert (NM_SETTING_VPN_GET_PRIVATE (setting)->data,
 	                     g_strdup_printf ("%s-flags", secret_name),
 	                     g_strdup_printf ("%u", flags));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
 	return TRUE;
 }
 
@@ -643,6 +659,7 @@ clear_secrets_with_flags (NMSetting *setting,
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	GHashTableIter iter;
 	const char *secret;
+	gboolean changed = TRUE;
 
 	if (priv->secrets == NULL)
 		return;
@@ -653,9 +670,14 @@ clear_secrets_with_flags (NMSetting *setting,
 		NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		nm_setting_get_secret_flags (setting, secret, &flags, NULL);
-		if (func (setting, pspec->name, flags, user_data) == TRUE)
+		if (func (setting, pspec->name, flags, user_data) == TRUE) {
 			g_hash_table_iter_remove (&iter);
+			changed = TRUE;
+		}
 	}
+
+	if (changed)
+		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
 }
 
 static void

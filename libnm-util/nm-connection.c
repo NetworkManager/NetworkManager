@@ -113,6 +113,7 @@ enum {
 enum {
 	SECRETS_UPDATED,
 	SECRETS_CLEARED,
+	CHANGED,
 	LAST_SIGNAL
 };
 
@@ -172,6 +173,14 @@ nm_connection_create_setting (const char *name)
 	return setting;
 }
 
+static void
+setting_changed_cb (NMSetting *setting,
+                    GParamSpec *pspec,
+                    NMConnection *self)
+{
+	g_signal_emit (self, signals[CHANGED], 0);
+}
+
 /**
  * nm_connection_add_setting:
  * @connection: a #NMConnection
@@ -191,6 +200,10 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
 	                     (gpointer) G_OBJECT_TYPE_NAME (setting),
 	                     setting);
+	/* Listen for property changes so we can emit the 'changed' signal */
+	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
+
+	g_signal_emit (connection, signals[CHANGED], 0);
 }
 
 /**
@@ -204,10 +217,21 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 void
 nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 {
+	NMConnectionPrivate *priv;
+	NMSetting *setting;
+	const char *setting_name;
+
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING));
 
-	g_hash_table_remove (NM_CONNECTION_GET_PRIVATE (connection)->settings, g_type_name (setting_type));
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	setting_name = g_type_name (setting_type);
+	setting = g_hash_table_lookup (priv->settings, setting_name);
+	if (setting) {
+		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, connection);
+		g_hash_table_remove (priv->settings, setting_name);
+		g_signal_emit (connection, signals[CHANGED], 0);
+	}
 }
 
 /**
@@ -339,14 +363,18 @@ nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings,
                                 GError **error)
 {
+	gboolean valid = FALSE;
+
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	if (!validate_permissions_type (new_settings, error))
-		return FALSE;
-	return hash_to_connection (connection, new_settings, error);
+	if (validate_permissions_type (new_settings, error)) {
+		valid = hash_to_connection (connection, new_settings, error);
+		g_signal_emit (connection, signals[CHANGED], 0);
+	}
+	return valid;
 }
 
 /**
@@ -728,8 +756,10 @@ nm_connection_update_secrets (NMConnection *connection,
 		}
 	}
 
-	if (updated)
+	if (updated) {
 		g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
+		g_signal_emit (connection, signals[CHANGED], 0);
+	}
 
 	return success;
 }
@@ -815,6 +845,7 @@ nm_connection_clear_secrets (NMConnection *connection)
 		nm_setting_clear_secrets (setting);
 
 	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
+	g_signal_emit (connection, signals[CHANGED], 0);
 }
 
 /**
@@ -841,6 +872,7 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 		nm_setting_clear_secrets_with_flags (setting, func, user_data);
 
 	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
+	g_signal_emit (connection, signals[CHANGED], 0);
 }
 
 /**
@@ -1537,16 +1569,30 @@ nm_connection_init (NMConnection *connection)
 }
 
 static void
+dispose (GObject *object)
+{
+	NMConnection *self = NM_CONNECTION (object);
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMSetting *setting;
+
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
+		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, self);
+		g_hash_table_iter_remove (&iter);
+	}
+
+	G_OBJECT_CLASS (nm_connection_parent_class)->dispose (object);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMConnection *connection = NM_CONNECTION (object);
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	g_hash_table_destroy (priv->settings);
-	priv->settings = NULL;
-
 	g_free (priv->path);
-	priv->path = NULL;
 
 	G_OBJECT_CLASS (nm_connection_parent_class)->finalize (object);
 }
@@ -1593,6 +1639,7 @@ nm_connection_class_init (NMConnectionClass *klass)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	/* Properties */
@@ -1623,7 +1670,7 @@ nm_connection_class_init (NMConnectionClass *klass)
 	* have been changed.
 	*/
 	signals[SECRETS_UPDATED] =
-		g_signal_new ("secrets-updated",
+		g_signal_new (NM_CONNECTION_SECRETS_UPDATED,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMConnectionClass, secrets_updated),
@@ -1640,7 +1687,25 @@ nm_connection_class_init (NMConnectionClass *klass)
 	* are cleared.
 	*/
 	signals[SECRETS_CLEARED] =
-		g_signal_new ("secrets-cleared",
+		g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+	/**
+	* NMConnection::changed:
+	* @connection: the object on which the signal is emitted
+	*
+	* The ::changed signal is emitted when any property of any property
+	* (including secrets) of any setting of the connection is modified,
+	* or when settings are added or removed.
+	*
+	* Since: 0.9.10
+	*/
+	signals[CHANGED] =
+		g_signal_new (NM_CONNECTION_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL,

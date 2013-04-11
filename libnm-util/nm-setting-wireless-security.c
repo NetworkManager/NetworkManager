@@ -228,6 +228,7 @@ nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, cons
 	}
 
 	priv->proto = g_slist_append (priv->proto, g_ascii_strdown (proto, -1));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
 	return TRUE;
 }
 
@@ -252,6 +253,7 @@ nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, g
 
 	g_free (elt->data);
 	priv->proto = g_slist_delete_link (priv->proto, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
 }
 
 /**
@@ -271,6 +273,7 @@ nm_setting_wireless_security_clear_protos (NMSettingWirelessSecurity *setting)
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	nm_utils_slist_free (priv->proto, g_free);
 	priv->proto = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
 }
 
 /**
@@ -339,6 +342,7 @@ nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, c
 	}
 
 	priv->pairwise = g_slist_append (priv->pairwise, g_ascii_strdown (pairwise, -1));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 	return TRUE;
 }
 
@@ -364,6 +368,7 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
 
 	g_free (elt->data);
 	priv->pairwise = g_slist_delete_link (priv->pairwise, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 }
 
 /**
@@ -383,6 +388,7 @@ nm_setting_wireless_security_clear_pairwise (NMSettingWirelessSecurity *setting)
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	nm_utils_slist_free (priv->pairwise, g_free);
 	priv->pairwise = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 }
 
 /**
@@ -452,6 +458,7 @@ nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, cons
 	}
 
 	priv->group = g_slist_append (priv->group, g_ascii_strdown (group, -1));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
 	return TRUE;
 }
 
@@ -477,6 +484,7 @@ nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, g
 
 	g_free (elt->data);
 	priv->group = g_slist_delete_link (priv->group, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
 }
 
 /**
@@ -496,6 +504,7 @@ nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 	nm_utils_slist_free (priv->group, g_free);
 	priv->group = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
 }
 
 /**
@@ -622,18 +631,22 @@ nm_setting_wireless_security_set_wep_key (NMSettingWirelessSecurity *setting, gu
 	case 0:
 		g_free (priv->wep_key0);
 		priv->wep_key0 = g_strdup (key);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 		break;
 	case 1:
 		g_free (priv->wep_key1);
 		priv->wep_key1 = g_strdup (key);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 		break;
 	case 2:
 		g_free (priv->wep_key2);
 		priv->wep_key2 = g_strdup (key);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 		break;
 	case 3:
 		g_free (priv->wep_key3);
 		priv->wep_key3 = g_strdup (key);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 		break;
 	default:
 		g_assert_not_reached ();
@@ -1118,16 +1131,20 @@ set_property (GObject *object, guint prop_id,
 		priv->leap_username = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY0:
-		nm_setting_wireless_security_set_wep_key (setting, 0, g_value_get_string (value));
+		g_free (priv->wep_key0);
+		priv->wep_key0 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY1:
-		nm_setting_wireless_security_set_wep_key (setting, 1, g_value_get_string (value));
+		g_free (priv->wep_key1);
+		priv->wep_key1 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY2:
-		nm_setting_wireless_security_set_wep_key (setting, 2, g_value_get_string (value));
+		g_free (priv->wep_key2);
+		priv->wep_key2 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY3:
-		nm_setting_wireless_security_set_wep_key (setting, 3, g_value_get_string (value));
+		g_free (priv->wep_key3);
+		priv->wep_key3 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY_FLAGS:
 		priv->wep_key_flags = g_value_get_uint (value);
