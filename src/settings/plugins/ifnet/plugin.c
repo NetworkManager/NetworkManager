@@ -335,54 +335,36 @@ reload_connections (gpointer config)
 	g_list_free (conn_names);
 }
 
-static void
-check_flagged_secrets (NMSetting  *setting,
-                       const char *key,
-                       const GValue *value,
-                       GParamFlags flags,
-                       gpointer user_data)
-{
-	gboolean *is_system_secret = user_data;
-
-	if (flags & NM_SETTING_PARAM_SECRET) {
-		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
-
-		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE) {
-			*is_system_secret = TRUE;
-		}
-	}
-}
-
 static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *source,
+                gboolean save_to_disk,
                 GError **error)
 {
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
-	gboolean has_flagged_secrets = FALSE;
-	NMSettingConnection *s_con;
+	NMIfnetConnection *new = NULL;
 
-	s_con = nm_connection_get_setting_connection (source);
-	g_assert (s_con);
-
-	/* If the connection is not available for all users, ignore
-	 * it as this plugin only deals with System Connections */
-	if (nm_setting_connection_get_num_permissions (s_con))
+	/* Ensure we reject attempts to add the connection long before we're
+	 * asked to write it to disk.
+	 */
+	if (!ifnet_can_write_connection (source, error))
 		return NULL;
 
-	/* If the connection has flagged secrets, ignore
-	 * it as this plugin does not deal with user agent service */
-	nm_connection_for_each_setting_value (source, check_flagged_secrets, &has_flagged_secrets);
-	if (has_flagged_secrets)
-		return NULL;
+	if (save_to_disk) {
+		if (!ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL, NULL, error))
+			return NULL;
+		reload_connections (config);
+		new = g_hash_table_lookup (priv->connections, nm_connection_get_uuid (source));
+	} else {
+		new = nm_ifnet_connection_new (source, NULL);
+		if (new) {
+			g_hash_table_insert (priv->connections,
+			                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
+			                     new);
+		}
+	}
 
-	if (!ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL, NULL, error))
-		return NULL;
-
-	reload_connections (config);
-	return g_hash_table_lookup (priv->connections, nm_connection_get_uuid (source));
+	return (NMSettingsConnection *) new;
 }
 
 static void

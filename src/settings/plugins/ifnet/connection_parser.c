@@ -43,6 +43,7 @@
 #include "wpa_parser.h"
 #include "connection_parser.h"
 #include "nm-ifnet-connection.h"
+#include "errors.h"
 
 static char *
 connection_id_from_ifnet_name (const char *conn_name)
@@ -2806,16 +2807,11 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 	gboolean wired = FALSE, pppoe = TRUE;
 	const char *new_name = NULL;
 
-	s_con =
-	    NM_SETTING_CONNECTION (nm_connection_get_setting
-				   (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
-			     "Missing '%s' setting",
-			     NM_SETTING_CONNECTION_SETTING_NAME);
+	if (!ifnet_can_write_connection (connection, error))
 		return FALSE;
-	}
 
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
 
 	type = nm_setting_connection_get_connection_type (s_con);
 	if (!type) {
@@ -2908,6 +2904,66 @@ ifnet_delete_connection_in_parsers (const char *conn_name,
 	}
 
 	return result;
+}
+
+static void
+check_unsupported_secrets (NMSetting  *setting,
+                           const char *key,
+                           const GValue *value,
+                           GParamFlags flags,
+                           gpointer user_data)
+{
+	gboolean *unsupported_secret = user_data;
+
+	if (flags & NM_SETTING_PARAM_SECRET) {
+		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
+
+		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
+			*unsupported_secret = TRUE;
+	}
+}
+
+gboolean
+ifnet_can_write_connection (NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+	gboolean has_unsupported_secrets = FALSE;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	/* If the connection is not available for all users, ignore
+	 * it as this plugin only deals with System Connections */
+	if (nm_setting_connection_get_num_permissions (s_con)) {
+		g_set_error_literal (error, IFNET_PLUGIN_ERROR, 0,
+		                     "The ifnet plugin does not support non-system-wide connections.");
+		return FALSE;
+	}
+
+	/* If the connection has flagged secrets, ignore
+	 * it as this plugin does not deal with user agent service */
+	nm_connection_for_each_setting_value (connection,
+	                                      check_unsupported_secrets,
+	                                      &has_unsupported_secrets);
+	if (has_unsupported_secrets) {
+		g_set_error_literal (error, IFNET_PLUGIN_ERROR, 0,
+		                     "The ifnet plugin only supports persistent system secrets.");
+		return FALSE;
+	}
+
+	/* Only support wired, wifi, and PPPoE */
+	if (   !nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)
+	    && !nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)
+	    && !nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
+		g_set_error (error, IFNET_PLUGIN_ERROR, 0,
+		             "The ifnet plugin cannot write the connection '%s' (type '%s')",
+		             nm_connection_get_id (connection),
+		             nm_setting_connection_get_connection_type (s_con));
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /* get the available wired name(eth*). */
@@ -3003,6 +3059,9 @@ ifnet_add_new_connection (NMConnection *connection,
 	const char *type;
 	gchar *new_type, *new_name = NULL;
 
+	if (!ifnet_can_write_connection (connection, error))
+		return FALSE;
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	type = nm_setting_connection_get_connection_type (s_con);
@@ -3053,3 +3112,4 @@ out:
 		*out_new_name = new_name;
 	return success;
 }
+

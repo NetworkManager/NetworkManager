@@ -45,7 +45,9 @@ lib_ifnet_io_la_SOURCES = \
 	net_utils.h\
 	net_utils.c\
 	wpa_parser.h\
-	wpa_parser.c
+	wpa_parser.c \
+	errors.h \
+	errors.c
 
 lib_ifnet_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \

@@ -24,6 +24,8 @@
 #include <nm-connection.h>
 #include "net_parser.h"
 
+gboolean ifnet_can_write_connection (NMConnection *connection, GError **error);
+
 NMConnection *ifnet_update_connection_from_config_block (const char *conn_name,
                                                          const char *basepath,
                                                          GError **error);

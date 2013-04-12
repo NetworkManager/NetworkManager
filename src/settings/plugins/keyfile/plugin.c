@@ -78,8 +78,6 @@ _internal_new_connection (SCPluginKeyfile *self,
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	NMKeyfileConnection *connection;
 
-	g_return_val_if_fail (full_path != NULL, NULL);
-
 	connection = nm_keyfile_connection_new (source, full_path, error);
 	if (connection) {
 		g_hash_table_insert (priv->connections,
@@ -347,17 +345,20 @@ get_connections (NMSystemConfigInterface *config)
 static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
+                gboolean save_to_disk,
                 GError **error)
 {
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
 	NMSettingsConnection *added = NULL;
 	char *path = NULL;
 
-	/* Write it out first, then add the connection to our internal list */
-	if (nm_keyfile_plugin_write_connection (connection, NULL, &path, error)) {
-		added = _internal_new_connection (self, path, connection, error);
-		g_free (path);
+	if (save_to_disk) {
+		if (!nm_keyfile_plugin_write_connection (connection, NULL, &path, error))
+			return NULL;
 	}
+		
+	added = _internal_new_connection (self, path, connection, error);
+	g_free (path);
 	return added;
 }
 

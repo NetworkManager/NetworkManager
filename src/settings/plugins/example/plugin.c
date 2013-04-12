@@ -503,6 +503,7 @@ get_connections (NMSystemConfigInterface *config)
 static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
+                gboolean save_to_disk,
                 GError **error)
 {
 	SCPluginExample *self = SC_PLUGIN_EXAMPLE (config);
@@ -513,10 +514,11 @@ add_connection (NMSystemConfigInterface *config,
 	 * way we don't trigger the new NMSettingsConnection subclass' file watch
 	 * functions needlessly.
 	 */
-	if (write_connection (connection, NULL, &path, error)) {
-		added = _internal_new_connection (self, path, connection, error);
-		g_free (path);
-	}
+	if (save_to_disk && !write_connection (connection, NULL, &path, error))
+		return NULL;
+
+	added = _internal_new_connection (self, path, connection, error);
+	g_free (path);
 	return added;
 }
 

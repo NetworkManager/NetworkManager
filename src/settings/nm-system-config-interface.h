@@ -110,12 +110,14 @@ struct _NMSystemConfigInterface {
 	GSList * (*get_unmanaged_specs) (NMSystemConfigInterface *config);
 
 	/*
-	 * Save the given connection to backing storage, and return a new
+	 * Initialize the plugin-specific connection and return a new
 	 * NMSettingsConnection subclass that contains the same settings as the
-	 * original connection.
+	 * original connection.  The connection should only be saved to backing
+	 * storage if @save_to_disk is TRUE.
 	 */
 	NMSettingsConnection * (*add_connection) (NMSystemConfigInterface *config,
 	                                          NMConnection *connection,
+	                                          gboolean save_to_disk,
 	                                          GError **error);
 
 	/* Signals */
@@ -139,6 +141,7 @@ GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface 
 
 NMSettingsConnection *nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                                                  NMConnection *connection,
+                                                                 gboolean save_to_disk,
                                                                  GError **error);
 
 G_END_DECLS

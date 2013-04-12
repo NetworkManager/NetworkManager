@@ -18,7 +18,8 @@ check_ifnet_SOURCES = \
 	../connection_parser.c \
 	../net_parser.c \
 	../net_utils.c \
-	../wpa_parser.c
+	../wpa_parser.c \
+	../errors.c
 
 check_ifnet_CPPFLAGS = \
 	$(CHECK_CFLAGS) \

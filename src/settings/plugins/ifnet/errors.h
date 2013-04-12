@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager system settings service - keyfile plugin
+/* NetworkManager system settings service
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,28 +15,16 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 Red Hat, Inc.
+ * (C) Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef _WRITER_H_
-#define _WRITER_H_
+#ifndef __ERRORS_H__
+#define __ERRORS_H__
 
-#include <sys/types.h>
 #include <glib.h>
-#include <nm-connection.h>
 
-gboolean writer_can_write_connection (NMConnection *connection,
-                                      GError **error);
+#define IFNET_PLUGIN_ERROR (ifnet_plugin_error_quark ())
+GQuark ifnet_plugin_error_quark (void);
 
-gboolean writer_new_connection (NMConnection *connection,
-                                const char *ifcfg_dir,
-                                char **out_filename,
-                                GError **error);
+#endif  /* __ERRORS_H__ */
 
-gboolean writer_update_connection (NMConnection *connection,
-                                   const char *ifcfg_dir,
-                                   const char *filename,
-                                   const char *keyfile,
-                                   GError **error);
-
-#endif /* _WRITER_H_ */

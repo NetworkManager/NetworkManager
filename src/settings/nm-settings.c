@@ -100,6 +100,10 @@ static void impl_settings_add_connection (NMSettings *self,
                                           GHashTable *settings,
                                           DBusGMethodInvocation *context);
 
+static void impl_settings_add_connection_unsaved (NMSettings *self,
+                                                  GHashTable *settings,
+                                                  DBusGMethodInvocation *context);
+
 static void impl_settings_save_hostname (NMSettings *self,
                                          const char *hostname,
                                          DBusGMethodInvocation *context);
@@ -894,6 +898,7 @@ remove_default_wired_connection (NMSettings *self,
 static NMSettingsConnection *
 add_new_connection (NMSettings *self,
                     NMConnection *connection,
+                    gboolean save_to_disk,
                     GError **error)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
@@ -927,14 +932,20 @@ add_new_connection (NMSettings *self,
 		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
 		GError *add_error = NULL;
 
-		g_clear_error (error);
-		added = nm_system_config_interface_add_connection (plugin, connection, &add_error);
+		added = nm_system_config_interface_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
 			claim_connection (self, added, TRUE);
 			return added;
 		}
-		g_propagate_error (error, add_error);
+		nm_log_dbg (LOGD_SETTINGS, "Failed to add %s/'%s': %s",
+		            nm_connection_get_uuid (connection),
+		            nm_connection_get_id (connection),
+		            add_error ? add_error->message : "(unknown)");
+		g_clear_error (&add_error);
 	}
+
+	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_ADD_FAILED,
+	                     "No plugin supported adding this connection");
 	return NULL;
 }
 
@@ -986,13 +997,14 @@ pk_add_cb (NMAuthChain *chain,
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthCallResult result;
-	GError *error = NULL, *add_error = NULL;
+	GError *error = NULL;
 	NMConnection *connection;
 	NMSettingsConnection *added = NULL;
 	NMSettingsAddCallback callback;
 	gpointer callback_data;
 	gulong caller_uid;
 	const char *perm;
+	gboolean save_to_disk;
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
@@ -1013,15 +1025,8 @@ pk_add_cb (NMAuthChain *chain,
 		/* Authorized */
 		connection = nm_auth_chain_get_data (chain, "connection");
 		g_assert (connection);
-		added = add_new_connection (self, connection, &add_error);
-		if (!added) {
-			error = g_error_new (NM_SETTINGS_ERROR,
-			                     NM_SETTINGS_ERROR_ADD_FAILED,
-			                     "Saving connection failed: (%d) %s",
-			                     add_error ? add_error->code : -1,
-			                     (add_error && add_error->message) ? add_error->message : "(unknown)");
-			g_clear_error (&add_error);
-		}
+		save_to_disk = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "save-to-disk"));
+		added = add_new_connection (self, connection, save_to_disk, &error);
 	}
 
 	callback = nm_auth_chain_get_data (chain, "callback");
@@ -1036,19 +1041,6 @@ pk_add_cb (NMAuthChain *chain,
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
-}
-
-static void
-add_cb (NMSettings *self,
-        NMSettingsConnection *connection,
-        GError *error,
-        DBusGMethodInvocation *context,
-        gpointer user_data)
-{
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else
-		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (connection)));
 }
 
 /* FIXME: remove if/when kernel supports adhoc wpa */
@@ -1086,6 +1078,7 @@ is_adhoc_wpa (NMConnection *connection)
 void
 nm_settings_add_connection (NMSettings *self,
                             NMConnection *connection,
+                            gboolean save_to_disk,
                             DBusGMethodInvocation *context,
                             NMSettingsAddCallback callback,
                             gpointer user_data)
@@ -1178,6 +1171,7 @@ nm_settings_add_connection (NMSettings *self,
 		nm_auth_chain_set_data (chain, "callback", callback, NULL);
 		nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
 		nm_auth_chain_set_data_ulong (chain, "caller-uid", caller_uid);
+		nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
 	} else {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -1188,22 +1182,57 @@ nm_settings_add_connection (NMSettings *self,
 }
 
 static void
-impl_settings_add_connection (NMSettings *self,
-                              GHashTable *settings,
-                              DBusGMethodInvocation *context)
+impl_settings_add_connection_add_cb (NMSettings *self,
+                                     NMSettingsConnection *connection,
+                                     GError *error,
+                                     DBusGMethodInvocation *context,
+                                     gpointer user_data)
+{
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (connection)));
+}
+
+static void
+impl_settings_add_connection_helper (NMSettings *self,
+                                     GHashTable *settings,
+                                     gboolean save_to_disk,
+                                     DBusGMethodInvocation *context)
 {
 	NMConnection *connection;
 	GError *error = NULL;
 
 	connection = nm_connection_new_from_hash (settings, &error);
 	if (connection) {
-		nm_settings_add_connection (self, connection, context, add_cb, NULL);
+		nm_settings_add_connection (self,
+		                            connection,
+		                            save_to_disk,
+		                            context,
+		                            impl_settings_add_connection_add_cb,
+		                            NULL);
 		g_object_unref (connection);
 	} else {
 		g_assert (error);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
+}
+
+static void
+impl_settings_add_connection (NMSettings *self,
+                              GHashTable *settings,
+                              DBusGMethodInvocation *context)
+{
+	impl_settings_add_connection_helper (self, settings, TRUE, context);
+}
+
+static void
+impl_settings_add_connection_unsaved (NMSettings *self,
+                                      GHashTable *settings,
+                                      DBusGMethodInvocation *context)
+{
+	impl_settings_add_connection_helper (self, settings, FALSE, context);
 }
 
 static void
@@ -1406,7 +1435,7 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	g_assert (id);
 
 	remove_default_wired_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
-	added = add_new_connection (self, NM_CONNECTION (wired), &error);
+	added = add_new_connection (self, NM_CONNECTION (wired), TRUE, &error);
 	if (added) {
 		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (wired), delete_cb, NULL);
 

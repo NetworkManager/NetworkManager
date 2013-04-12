@@ -2105,12 +2105,11 @@ write_connection (NMConnection *connection,
 	gboolean no_8021x = FALSE;
 	gboolean wired = FALSE;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Missing '%s' setting", NM_SETTING_CONNECTION_SETTING_NAME);
+	if (!writer_can_write_connection (connection, error))
 		return FALSE;
-	}
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
 
 	if (filename) {
 		/* For existing connections, 'filename' should be full path to ifcfg file */
@@ -2233,6 +2232,30 @@ out:
 		svCloseFile (ifcfg);
 	g_free (ifcfg_name);
 	return success;
+}
+
+gboolean
+writer_can_write_connection (NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+
+	if (   (   nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)
+	        && !nm_connection_get_setting_pppoe (connection))
+	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
+		return TRUE;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+	             "The ifcfg-rh plugin cannot write the connection '%s' (type '%s' pppoe %d)",
+	             nm_connection_get_id (connection),
+	             nm_setting_connection_get_connection_type (s_con),
+	             !!nm_connection_get_setting_pppoe (connection));
+	return FALSE;
 }
 
 gboolean

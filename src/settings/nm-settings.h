@@ -94,6 +94,7 @@ typedef void (*NMSettingsAddCallback) (NMSettings *settings,
 
 void nm_settings_add_connection (NMSettings *self,
                                  NMConnection *connection,
+                                 gboolean save_to_disk,
                                  DBusGMethodInvocation *context,
                                  NMSettingsAddCallback callback,
                                  gpointer user_data);

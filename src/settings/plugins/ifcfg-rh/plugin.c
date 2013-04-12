@@ -452,17 +452,26 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 static NMSettingsConnection *
 add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
+                gboolean save_to_disk,
                 GError **error)
 {
 	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
 	NMIfcfgConnection *added = NULL;
 	char *path = NULL;
 
-	/* Write it out first, then add the connection to our internal list */
-	if (writer_new_connection (connection, IFCFG_DIR, &path, error)) {
-		added = _internal_new_connection (self, path, connection, error);
-		g_free (path);
+	/* Ensure we reject attempts to add the connection long before we're
+	 * asked to write it to disk.
+	 */
+	if (!writer_can_write_connection (connection, error))
+		return NULL;
+
+	if (save_to_disk) {
+		if (!writer_new_connection (connection, IFCFG_DIR, &path, error))
+			return NULL;
 	}
+
+	added = _internal_new_connection (self, path, connection, error);
+	g_free (path);
 	return (NMSettingsConnection *) added;
 }
 

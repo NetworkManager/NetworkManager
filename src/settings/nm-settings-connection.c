@@ -52,6 +52,10 @@ static void impl_settings_connection_update (NMSettingsConnection *connection,
                                              GHashTable *new_settings,
                                              DBusGMethodInvocation *context);
 
+static void impl_settings_connection_update_unsaved (NMSettingsConnection *connection,
+                                                     GHashTable *new_settings,
+                                                     DBusGMethodInvocation *context);
+
 static void impl_settings_connection_delete (NMSettingsConnection *connection,
                                              DBusGMethodInvocation *context);
 
@@ -1159,7 +1163,25 @@ typedef struct {
 	DBusGMethodInvocation *context;
 	NMAgentManager *agent_mgr;
 	gulong sender_uid;
+	NMConnection *new_settings;
+	gboolean save_to_disk;
 } UpdateInfo;
+
+static void
+update_complete (NMSettingsConnection *self,
+                 UpdateInfo *info,
+                 GError *error)
+{
+	if (error)
+		dbus_g_method_return_error (info->context, error);
+	else
+		dbus_g_method_return (info->context);
+
+	g_clear_object (&info->agent_mgr);
+	g_clear_object (&info->new_settings);
+	memset (info, 0, sizeof (*info));
+	g_free (info);
+}
 
 static void
 con_update_cb (NMSettingsConnection *self,
@@ -1169,9 +1191,7 @@ con_update_cb (NMSettingsConnection *self,
 	UpdateInfo *info = user_data;
 	NMConnection *for_agent;
 
-	if (error)
-		dbus_g_method_return_error (info->context, error);
-	else {
+	if (!error) {
 		/* Dupe the connection so we can clear out non-agent-owned secrets,
 		 * as agent-owned secrets are the only ones we send back be saved.
 		 * Only send secrets to agents of the same UID that called update too.
@@ -1186,9 +1206,7 @@ con_update_cb (NMSettingsConnection *self,
 		dbus_g_method_return (info->context);
 	}
 
-	g_object_unref (info->agent_mgr);
-	memset (info, 0, sizeof (*info));
-	g_free (info);
+	update_complete (self, info, error);
 }
 
 static void
@@ -1198,32 +1216,36 @@ update_auth_cb (NMSettingsConnection *self,
                 GError *error,
                 gpointer data)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMConnection *new_settings = data;
-	UpdateInfo *info;
+	UpdateInfo *info = data;
+	GError *local = NULL;
 
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else {
-		info = g_malloc0 (sizeof (*info));
-		info->context = context;
-		info->agent_mgr = g_object_ref (priv->agent_mgr);
-		info->sender_uid = sender_uid;
-
-		/* Cache the new secrets from the agent, as stuff like inotify-triggered
-		 * changes to connection's backing config files will blow them away if
-		 * they're in the main connection.
-		 */
-		update_agent_secrets_cache (self, new_settings);
-
-		/* Update and commit our settings. */
-		nm_settings_connection_replace_and_commit (self,
-			                                       new_settings,
-			                                       con_update_cb,
-			                                       info);
+	if (error) {
+		update_complete (self, info, error);
+		return;
 	}
 
-	g_object_unref (new_settings);
+	info->sender_uid = sender_uid;
+
+	/* Cache the new secrets from the agent, as stuff like inotify-triggered
+	 * changes to connection's backing config files will blow them away if
+	 * they're in the main connection.
+	 */
+	update_agent_secrets_cache (self, info->new_settings);
+
+	if (info->save_to_disk) {
+		nm_settings_connection_replace_and_commit (self,
+		                                           info->new_settings,
+		                                           con_update_cb,
+		                                           info);
+	} else {
+		/* Do nothing if there's nothing to update */
+		if (!nm_connection_compare (NM_CONNECTION (self), info->new_settings, NM_SETTING_COMPARE_FLAG_EXACT)) {
+			if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, &local))
+				g_assert (local);
+		}
+		con_update_cb (self, local, info);
+		g_clear_error (&local);
+	}
 }
 
 static const char *
@@ -1253,13 +1275,15 @@ get_modify_permission_update (NMConnection *old, NMConnection *new)
 }
 
 static void
-impl_settings_connection_update (NMSettingsConnection *self,
-                                 GHashTable *new_settings,
-                                 DBusGMethodInvocation *context)
+impl_settings_connection_update_helper (NMSettingsConnection *self,
+                                        GHashTable *new_settings,
+                                        DBusGMethodInvocation *context,
+                                        gboolean save_to_disk)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *tmp;
 	GError *error = NULL;
+	UpdateInfo *info;
 
 	/* If the connection is read-only, that has to be changed at the source of
 	 * the problem (ex a system settings plugin that can't write connections out)
@@ -1295,11 +1319,34 @@ impl_settings_connection_update (NMSettingsConnection *self,
 		return;
 	}
 
+	info = g_malloc0 (sizeof (*info));
+	info->context = context;
+	info->agent_mgr = g_object_ref (priv->agent_mgr);
+	info->sender_uid = G_MAXULONG;
+	info->save_to_disk = save_to_disk;
+	info->new_settings = tmp;
+
 	auth_start (self,
 	            context,
-	            get_modify_permission_update (NM_CONNECTION (self), tmp),
+	            get_modify_permission_update (NM_CONNECTION (self), info->new_settings),
 	            update_auth_cb,
-	            tmp);
+	            info);
+}
+
+static void
+impl_settings_connection_update (NMSettingsConnection *self,
+                                 GHashTable *new_settings,
+                                 DBusGMethodInvocation *context)
+{
+	impl_settings_connection_update_helper (self, new_settings, context, TRUE);
+}
+
+static void
+impl_settings_connection_update_unsaved (NMSettingsConnection *self,
+                                         GHashTable *new_settings,
+                                         DBusGMethodInvocation *context)
+{
+	impl_settings_connection_update_helper (self, new_settings, context, FALSE);
 }
 
 static void

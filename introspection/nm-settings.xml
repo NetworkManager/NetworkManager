@@ -56,6 +56,27 @@
       </arg>
     </method>
 
+    <method name="AddConnectionUnsaved">
+      <tp:docstring>
+        Add new connection but do not save it to disk immediately.  This
+        operation does not start the network connection unless (1) device is
+        idle and able to connect to the network described by the new connection,
+        and (2) the connection is allowed to be started automatically.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection_unsaved"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="connection" type="a{sa{sv}}" direction="in">
+        <tp:docstring>
+          Connection settings and properties.
+        </tp:docstring>
+      </arg>
+      <arg name="path" type="o" direction="out">
+        <tp:docstring>
+          Object path of the new connection that was just added.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <method name="SaveHostname">
       <tp:docstring>
         Save the hostname to persistent configuration.

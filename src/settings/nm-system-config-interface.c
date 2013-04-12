@@ -150,13 +150,14 @@ nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 NMSettingsConnection *
 nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                            NMConnection *connection,
+                                           gboolean save_to_disk,
                                            GError **error)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection)
-		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection, error);
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection, save_to_disk, error);
 
 	return NULL;
 }

@@ -95,17 +95,6 @@ is_true (const char *str)
 	return FALSE;
 }
 
-GQuark
-ifnet_plugin_error_quark (void)
-{
-	static GQuark error_quark = 0;
-
-	if (G_UNLIKELY (error_quark == 0))
-		error_quark =
-		    g_quark_from_static_string ("ifnet-plugin-error-quark");
-	return error_quark;
-}
-
 static char *
 find_default_gateway_str (char *str)
 {

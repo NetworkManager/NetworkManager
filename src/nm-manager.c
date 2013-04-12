@@ -3089,6 +3089,7 @@ add_and_activate_auth_done (PendingActivation *pending, GError *error)
 		/* Basic sender auth checks performed; try to add the connection */
 		nm_settings_add_connection (priv->settings,
                                     pending->connection,
+                                    TRUE,
                                     pending->context,
                                     activation_add_done,
                                     pending);
