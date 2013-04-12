@@ -408,8 +408,8 @@ nm_setting_vlan_remove_priority (NMSettingVlan *setting,
 	list = get_map (setting, map);
 	g_return_if_fail (idx < g_slist_length (list));
 
-	item = g_slist_nth_data (list, idx);
-	priority_map_free ((PriorityMap *) item);
+	item = g_slist_nth (list, idx);
+	priority_map_free ((PriorityMap *) (item->data));
 	set_map (setting, map, g_slist_delete_link (list, item));
 }
 
