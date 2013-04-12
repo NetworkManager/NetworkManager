@@ -284,6 +284,7 @@ static gboolean nm_device_set_ip4_config (NMDevice *dev,
                                           NMDeviceStateReason *reason);
 static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           NMIP6Config *config,
+                                          gboolean assumed,
                                           NMDeviceStateReason *reason);
 
 static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
@@ -2516,7 +2517,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	/* Merge user overrides into the composite config */
 	nm_utils_merge_ip6_config (composite, nm_connection_get_setting_ip6_config (connection));
 
-	success = nm_device_set_ip6_config (self, composite, out_reason);
+	success = nm_device_set_ip6_config (self, composite, FALSE, out_reason);
 	g_object_unref (composite);
 	return success;
 }
@@ -4011,7 +4012,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
-	nm_device_set_ip6_config (self, NULL, &ignored);
+	nm_device_set_ip6_config (self, NULL, FALSE, &ignored);
 }
 
 static void
@@ -4242,6 +4243,7 @@ nm_device_set_ip4_config (NMDevice *self,
 static gboolean
 nm_device_set_ip6_config (NMDevice *self,
                           NMIP6Config *new_config,
+                          gboolean assumed,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -4272,9 +4274,10 @@ nm_device_set_ip6_config (NMDevice *self,
 	if (new_config) {
 		priv->ip6_config = g_object_ref (new_config);
 
-		success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
+		if (!assumed)
+			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
 
-		if (success) {
+		if (success || assumed) {
 			/* Export over D-Bus */
 			if (!nm_ip6_config_get_dbus_path (new_config))
 				nm_ip6_config_export (new_config);
