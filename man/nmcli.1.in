@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "8 April 2013"
+.TH NMCLI "1" "13 April 2013"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -230,7 +230,7 @@ NetworkManager connections
 .br
 Get information about \fINetworkManager\fP connections and manage them.
 .TP
-.SS \fICOMMAND\fP := { show | up | down | delete }
+.SS \fICOMMAND\fP := { show | up | down | add | delete }
 .sp
 .RS
 .TP
@@ -310,6 +310,179 @@ If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, \fIpath\fP or
 \fIapath\fP can be used.
 .br
 See \fBshow active\fP above for the description of the <ID>-specifying keywords.
+.TP
+.B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS
+.br
+Add a connection for NetworkManager. Arguments differ according to connection types, see bellow.
+.RS
+.TP
+.B COMMON_OPTIONS:
+.IP "\fItype <type>\fP" 42
+\(en connection type; see bellow \fBTYPE_SPECIFIC_OPTIONS\fP for allowed values; (mandatory)
+.IP "\fI[con-name <connection name>]\fP" 42
+\(en connection name (when not provided a default name is generated: <type>[-<ifname>][-<num>])
+.IP "\fI[autoconnect yes|no]\fP" 42
+\(en whether the connection can auto-connect or not
+.IP "\fI[ifname <ifname>]\fP" 42
+\(en interface to bind the connection to
+.RE
+.RS
+.TP
+.B TYPE_SPECIFIC_OPTIONS:
+.TP
+.B ethernet:
+.IP "\fI[mac <MAC address>]\fP" 42
+\(en MAC address of the device this connection is locked to
+.IP "\fI[cloned-mac <cloned MAC address>]\fP" 42
+\(en cloned MAC
+.IP "\fI[mtu <MTU>]\fP" 42
+\(en MTU
+.RE
+.RS
+.TP
+.B wifi:
+.IP "\fI[mac <MAC address>]\fP" 42
+\(en MAC address of the device this connection is locked to
+.IP "\fI[cloned-mac <cloned MAC address>]\fP" 42
+\(en cloned MAC
+.IP "\fI[mtu <MTU>]\fP" 42
+\(en MAC
+.IP "\fI[ssid <SSID>]\fP" 42
+\(en SSID
+.RE
+.RS
+.TP
+.B wimax:
+.IP "\fI[mac <MAC address>]\fP" 42
+\(en MAC address of the device this connection is locked to
+.IP "\fI[nsp <NSP>]\fP" 42
+\(en Network Service Provider name
+.RE
+.RS
+.TP
+.B gsm:
+.IP "\fIapn <APN>\fP" 42
+\(en APN - GSM Access Point Name
+.IP "\fI[user <username>]\fP" 42
+\(en user name
+.IP "\fI[password <password>]\fP" 42
+\(en password
+.RE
+.RS
+.TP
+.B cdma:
+.IP "\fI[user <username>]\fP" 42
+\(en user name
+.IP "\fI[password <password>]\fP" 42
+\(en password
+.RE
+.RS
+.TP
+.B infiniband:
+.IP "\fI[mac <MAC address>]\fP" 42
+\(en MAC address of the device this connection is locked to (InfiniBand MAC is 20 bytes)
+.IP "\fI[mtu <MTU>]\fP" 42
+\(en MTU
+.IP "\fI[transport-mode <mode>]\fP" 42
+\(en InfiniBand transport mode
+.RE
+.RS
+.TP
+.B bluetooth:
+.IP "\fI[addr <bluetooth address>]\fP" 42
+\(en Bluetooth device address (MAC)
+.IP "\fI[bt-type panu|dun-gsm|dun-cdma]\fP" 42
+\(en Bluetooth connection type
+.RE
+.RS
+.TP
+.B vlan:
+.IP "\fIdev <parent device (connection UUID, ifname, or MAC)\fP" 42
+\(en parent device this VLAN is on
+.IP "\fI[id <VLAN id>]\fP" 42
+\(en VLAN ID
+.IP "\fI[flags <VLAN flags>]\fP" 42
+\(en flags
+.IP "\fI[ingress <ingress priority mapping>]\fP" 42
+\(en VLAN ingress priority mapping
+.IP "\fI[egress <egress priority mapping>]\fP" 42
+\(en VLAN egress priority mapping
+.IP "\fI[mtu <MTU>]\fP" 42
+\(en MTU
+.RE
+.RS
+.TP
+.B bond:
+.IP "\fI[mode balance-rr|active-backup|balance-xor|broadcast|802.3ad|balance-tlb|balance-alb]\fP" 42
+\(en bonding mode
+.IP "\fI[miimon <num>]\fP" 42
+\(en miimon
+.IP "\fI[downdelay <num>]\fP" 42
+\(en downdelay
+.IP "\fI[updelay <num>]\fP" 42
+\(en updelay
+.IP "\fI[arp_interval <num>]\fP" 42
+\(en ARP interval
+.IP "\fI[arp_ip_traget <num>]\fP" 42
+\(en ARP IP target
+.RE
+.RS
+.TP
+.B bond-slave:
+.IP "\fImaster <master (ifname or connection UUID)\fP" 42
+\(en name of bridge master interface
+.RE
+.RS
+.TP
+.B bridge:
+.IP "\fI[stp yes|no>]\fP" 42
+\(en controls whether Spanning Tree Protocol (STP) is enabled for this bridge
+.IP "\fI[priority <num>]\fP" 42
+\(en sets STP priority
+.IP "\fI[forward-delay <2-30>]\fP" 42
+\(en STP forwarding delay, in seconds
+.IP "\fI[hello-time <1-10>]\fP" 42
+\(en STP hello time, in seconds
+.IP "\fI[max-age <6-42>]\fP" 42
+\(en STP maximum message age, in seconds
+.IP "\fI[ageing-time <0-1000000>]\fP" 42
+\(en the ethernet MAC address aging time, in seconds
+.RE
+.RS
+.TP
+.B bridge-slave:
+.IP "\fImaster <master (ifname or connection UUID)\fP" 42
+\(en name of bridge master interface
+.IP "\fI[priority <0-63>]\fP" 42
+\(en STP priority of this slave
+.IP "\fI[path-cost <1-65535>]\fP" 42
+\(en STP port cost for destinations via this slave
+.IP "\fI[hairpin yes|no]\fP" 42
+\(en 'hairpin mode' for the slave, which allows frames
+to be sent back out through the slave the frame was received on
+.RE
+.RS
+.TP
+.B vpn:
+.IP "\fIvpn-type vpnc|openvpn|pptp|openconnect|openswan\fP" 42
+\(en VPN type
+.IP "\fI[user <username>]\fP" 42
+\(en VPN username
+.RE
+.RS
+.TP
+.B olpc-mesh:
+.IP "\fI[ssid <SSID>]\fP" 42
+\(en SSID
+.RE
+.RS
+.TP
+.B IP_OPTIONS:
+.IP "\fI[ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\fP" 42
+\(en IPv4 addresses
+.IP "\fI[ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\fP" 42
+\(en IPv6 addresses
+.RE
 .TP
 .B delete [ id | uuid | path ] <ID>
 .br
@@ -536,6 +709,16 @@ creates a new connection named "My cafe" and then connects it to "Cafe Hotspot 1
 using "caffeine" password. This is mainly useful when connecting to "Cafe Hotspot 1" for
 the first time. Next time, it is better to use 'nmcli con up id "My cafe"' so that the
 existing connection profile can be used and no additional is created.
+
+.IP "\fB\f(CWnmcli connection add type ethernet autoconnect no ifname eth0\fP\fP"
+.IP
+non-interactively adds an ethernet connection tied to eth0 interface with auto IP configuration (DHCP),
+and disables the connection's auto-connect flag.
+
+.IP "\fB\f(CWnmcli c a ifname maxipes\-fik type vlan dev eth0 id 55\fP\fP"
+.IP
+non-interactively adds a VLAN connection with ID 55. The connection will use eth0 and the VLAN interface
+will be named maxipes\(hyfik.
 
 .SH BUGS
 There are probably some bugs.  If you find a bug, please report it to
