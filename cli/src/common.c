@@ -801,3 +801,64 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	}
 }
 
+
+/* Max priority values from libnm-util/nm-setting-vlan.c */
+#define MAX_SKB_PRIO   G_MAXUINT32
+#define MAX_8021P_PRIO 7  /* Max 802.1p priority */
+
+/*
+ * Parse VLAN priority mappings from the following format: 2:1,3:4,7:3
+ * and verify if the priority numbers are valid
+ *
+ * Return: string array with split maps, or NULL on error
+ * Caller is responsible for freeing the array.
+ */
+char **
+nmc_vlan_parse_priority_maps (const char *priority_map,
+                              NMVlanPriorityMap map_type,
+                              GError **error)
+{
+	char **mapping = NULL, **iter;
+	unsigned long from, to, from_max, to_max;
+
+	g_return_val_if_fail (priority_map != NULL, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	if (map_type == NM_VLAN_INGRESS_MAP) {
+		from_max = MAX_8021P_PRIO;
+		to_max = MAX_SKB_PRIO;
+	} else {
+		from_max = MAX_SKB_PRIO;
+		to_max = MAX_8021P_PRIO;
+	}
+
+	mapping = g_strsplit (priority_map, ",", 0);
+	for (iter = mapping; iter && *iter; iter++) {
+		char *left, *right;
+
+		left = g_strstrip (*iter);
+		right = strchr (left, ':');
+		if (!right) {
+			g_set_error (error, 1, 0, _("invalid priority map '%s'"), *iter);
+			g_strfreev (mapping);
+			return NULL;
+		}
+		*right++ = '\0';
+
+		if (!nmc_string_to_uint (left, TRUE, 0, from_max, &from)) {
+			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
+			             left, from_max);
+			g_strfreev (mapping);
+			return NULL;
+		}
+		if (!nmc_string_to_uint (right, TRUE, 0, to_max, &to)) {
+			g_set_error (error, 1, 0, _("priority '%s' is not valid (<0-%ld>)"),
+			             right, to_max);
+			g_strfreev (mapping);
+			return NULL;
+		}
+		*(right-1) = ':'; /* Put back ':' */
+	}
+	return mapping;
+}
+

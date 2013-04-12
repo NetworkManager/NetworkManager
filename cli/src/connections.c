@@ -204,7 +204,74 @@ usage (void)
 	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n\n"
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
-	         "  delete [ id | uuid | path ] <ID>\n\n"
+	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	         "  delete [ id | uuid | path ] <ID>\n\n\n"
+	         ));
+}
+
+static void
+usage_connection_add (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection add { OPTIONS | help }\n"
+	         "  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	         "  COMMON_OPTIONS:\n"
+	         "                  type <type>\n"
+	         "                  [con-name <connection name>]\n"
+	         "                  [autoconnect yes|no]\n"
+	         "                  [ifname <interface name>]\n\n"
+	         "  TYPE_SPECIFIC_OPTIONS:\n"
+	         "    ethernet:     [mac <MAC address>]\n"
+	         "                  [cloned-mac <cloned MAC address>]\n"
+	         "                  [mtu <MTU>]\n\n"
+	         "    wifi:         [mac <MAC address>]\n"
+	         "                  [cloned-mac <cloned MAC address>]\n"
+	         "                  [mtu <MTU>]\n"
+	         "                  [ssid <SSID>]\n\n"
+	         "    wimax:        [mac <MAC address>]\n"
+	         "                  [nsp <NSP>]\n\n"
+	         "    gsm:          apn <APN>]\n"
+	         "                  [user <username>]\n"
+	         "                  [password <password>]\n\n"
+	         "    cdma:         [user <username>]\n"
+	         "                  [password <password>]\n\n"
+	         "    infiniband:   [mac <MAC address>]\n"
+	         "                  [mtu <MTU>]\n"
+	         "                  [transport-mode <mode>]\n\n"
+	         "    bluetooth:    [addr <bluetooth address>]\n"
+	         "                  [bt-type panu|dun-gsm|dun-cdma]\n"
+	         "                  [transport-mode datagram | connected]\n\n"
+	         "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)\n"
+	         "                  [id <VLAN id>]\n"
+	         "                  [flags <VLAN flags>]\n"
+	         "                  [ingress <ingress priority mapping>]\n"
+	         "                  [egress <egress priority mapping>]\n"
+	         "                  [mtu <MTU>]\n\n"
+	         "    bond:         [mode balance-rr|active-backup|balance-xor|broadcast|802.3ad|balance-tlb|balance-alb]\n"
+	         "                  [miimon <num>]\n"
+	         "                  [downdelay <num>]\n"
+	         "                  [updelay <num>]\n"
+	         "                  [arp_interval <num>]\n"
+	         "                  [arp_ip_traget <num>]\n\n"
+	         "    bond-slave:   master <master (ifname or connection UUID)\n\n"
+	         "    bridge:       [stp yes|no>]\n"
+	         "                  [priority <num>]\n"
+	         "                  [forward-delay <2-30>]\n"
+	         "                  [hello-time <1-10>]\n"
+	         "                  [max-age <6-40>]\n"
+	         "                  [ageing-time <0-1000000>]\n\n"
+	         "    bridge-slave: master <master (ifname or connection UUID)\n"
+	         "                  [priority <0-63>]\n"
+	         "                  [path-cost <1-65535>]\n"
+	         "                  [hairpin yes|no]\n\n"
+	         "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+	         "                  [user <username>]\n\n"
+	         "    olpc-mesh:    ssid <SSID>\n"
+	         "                  [channel <1-13>]\n"
+	         "                  [dhcp-anycast <MAC address>]\n\n"
+	         "  IP_OPTIONS:\n"
+	         "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+	         "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 	         ));
 }
 
@@ -213,6 +280,7 @@ static const char *real_con_commands[] = {
 	"show",
 	"up",
 	"down",
+	"add",
 	"delete",
 	NULL
 };
@@ -1652,6 +1720,1315 @@ error:
 	return nmc->return_value;
 }
 
+/*----------------------------------------------------------------------------*/
+
+typedef struct NameItem {
+	const char *name;
+	const char *alias;
+} NameItem;
+
+/* Available connection types */
+static const NameItem nmc_valid_connection_types[] = {
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet"  },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,   "wifi"      },
+	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL        },
+	{ NM_SETTING_GSM_SETTING_NAME,        NULL        },
+	{ NM_SETTING_CDMA_SETTING_NAME,       NULL        },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL        },
+	{ NM_SETTING_ADSL_SETTING_NAME,       NULL        },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL        },
+	{ NM_SETTING_VPN_SETTING_NAME,        NULL        },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh" },
+	{ NM_SETTING_VLAN_SETTING_NAME,       NULL        },
+	{ NM_SETTING_BOND_SETTING_NAME,       NULL        },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL        },
+	{ "bond-slave",                       NULL        },
+	{ "bridge-slave",                     NULL        },
+	{ NULL, NULL }
+};
+
+/*
+ * Return an alias for the 'name' if exists, else return the 'name'.
+ * The returned string must not be freed.
+ */
+static const char *
+get_name_alias (const char *name, const NameItem array[])
+{
+	const NameItem *iter = &array[0];
+
+	if (!name)
+		return NULL;
+
+        while (iter && iter->name) {
+		if (!strcmp (name, iter->name)) {
+			if (iter->alias)
+				return iter->alias;
+			else
+				return iter->name;
+		}
+		iter++;
+	}
+	return name;
+}
+
+/*
+ * Construct a string with names and aliases from the array formatted as:
+ * "name (alias), name, name (alias), name, name"
+ *
+ * Returns: string; the caller is responsible for freeing it.
+ */
+static char *
+get_valid_options_string (const NameItem array[])
+{
+	const NameItem *iter = &array[0];
+	GString *str;
+
+	str = g_string_sized_new (150);
+	while (iter && iter->name) {
+		if (str->len)
+			g_string_append (str, ", ");
+		if (iter->alias)
+			g_string_append_printf (str, "%s (%s)", iter->name, iter->alias);
+		else
+			g_string_append (str, iter->name);
+		iter++;
+	}
+	return g_string_free (str, FALSE);
+}
+
+/*
+ * Check if 'val' is valid string in either array->name or array->alias.
+ * It accepts shorter string provided they are not ambiguous.
+ * 'val' == NULL doesn't hurt.
+ *
+ * Returns: pointer to array->name string or NULL on failure.
+ * The returned string must not be freed.
+ */
+static const char *
+check_valid_name (const char *val, const NameItem array[], GError **error)
+{
+	const NameItem *iter;
+	GPtrArray *tmp_arr;
+	const char *str;
+	GError *tmp_err = NULL;
+
+	/* Create a temporary array that can be used in nmc_string_is_valid() */
+	tmp_arr = g_ptr_array_sized_new (30);
+	iter = &array[0];
+	while (iter && iter->name) {
+		g_ptr_array_add (tmp_arr, (gpointer) iter->name);
+		if (iter->alias)
+			g_ptr_array_add (tmp_arr, (gpointer) iter->alias);
+		iter++;
+	}
+	g_ptr_array_add (tmp_arr, (gpointer) NULL);
+
+	/* Check string validity */
+	str = nmc_string_is_valid (val, (const char **) tmp_arr->pdata, &tmp_err);
+	if (!str) {
+		if (tmp_err->code == 1)
+			g_propagate_error (error, tmp_err);
+		else {
+			/* We want to handle aliases, so construct own error message */
+			char *err_str = get_valid_options_string (array);
+			g_set_error (error, 1, 0, _("'%s' not among [%s]"),
+			             val ? val : "", err_str);
+			g_free (err_str);
+			g_clear_error (&tmp_err);
+		}
+		g_ptr_array_free (tmp_arr, TRUE);
+		return NULL;
+	}
+
+	/* Return a pointer to the found string in passed 'array' */
+	iter = &array[0];
+	while (iter && iter->name) {
+		if (   (iter->name && g_strcmp0 (iter->name, str) == 0)
+		    || (iter->alias && g_strcmp0 (iter->alias, str) == 0)) {
+			g_ptr_array_free (tmp_arr, TRUE);
+			return iter->name;
+		}
+		iter++;
+	}
+	/* We should not really come here */
+	g_ptr_array_free (tmp_arr, TRUE);
+	g_set_error (error, 1, 0, _("Unknown error"));
+	return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+
+static gboolean
+check_and_convert_mac (const char *mac,
+                       GByteArray **mac_array,
+                       int type,
+                       const char *keyword,
+                       GError **error)
+{
+	g_return_val_if_fail (mac_array != NULL && *mac_array == NULL, FALSE);
+
+	if (mac) {
+		*mac_array = nm_utils_hwaddr_atoba (mac, type);
+		if (!*mac_array) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: '%s': '%s' is not a valid %s MAC address."),
+			             keyword, mac, type == ARPHRD_INFINIBAND ? _("InfiniBand") : "");
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+static char *
+unique_bond_bridge_ifname (GSList *list, const char *type,  const char *try_name)
+{
+	NMConnection *connection;
+	NMSetting *setting;
+	char *new_name;
+	unsigned int num = 1;
+	GSList *iterator = list;
+	const char *ifname_property;
+	char *ifname_val = NULL;
+
+	ifname_property = strcmp (type, NM_SETTING_BOND_SETTING_NAME) == 0 ?
+	                    NM_SETTING_BOND_INTERFACE_NAME :
+	                    NM_SETTING_BRIDGE_INTERFACE_NAME;
+
+	new_name = g_strdup (try_name);
+	while (iterator) {
+		connection = NM_CONNECTION (iterator->data);
+		setting = nm_connection_get_setting_by_name (connection, type);
+		if (!setting) {
+			iterator = g_slist_next (iterator);
+			continue;
+		}
+
+		g_object_get (setting, ifname_property, &ifname_val, NULL);
+		if (g_strcmp0 (new_name, ifname_val) == 0) {
+			g_free (new_name);
+			new_name = g_strdup_printf ("%s%d", try_name, num++);
+			iterator = list;
+		} else
+			iterator = g_slist_next (iterator);
+		g_free (ifname_val);
+	}
+	return new_name;
+}
+
+static gboolean
+bridge_prop_string_to_uint (const char *str,
+                            const char *nmc_arg,
+                            GType bridge_type,
+                            const char *propname,
+                            unsigned long *out_val,
+                            GError **error)
+{
+	GParamSpecUInt *pspec;
+
+	pspec = (GParamSpecUInt *) g_object_class_find_property (g_type_class_peek (bridge_type),
+	                                                         propname);
+	g_assert (G_IS_PARAM_SPEC_UINT (pspec));
+
+	if (!nmc_string_to_uint (str, TRUE, pspec->minimum, pspec->maximum, out_val)) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("Error: '%s': '%s' is not valid; use <%d-%d>."),
+		             nmc_arg, str, pspec->minimum, pspec->maximum);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+complete_connection_by_type (NMConnection *connection,
+                             const char *con_type,
+                             GSList *all_connections,
+                             gboolean ask,
+                             int argc,
+                             char **argv,
+                             GError **error)
+{
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingInfiniband *s_infiniband;
+	NMSettingWireless *s_wifi;
+	NMSettingWimax *s_wimax;
+	NMSettingGsm *s_gsm;
+	NMSettingCdma *s_cdma;
+	NMSettingBluetooth *s_bt;
+	NMSettingVlan *s_vlan;
+	NMSettingBond *s_bond;
+	NMSettingBridge *s_bridge;
+	NMSettingBridgePort *s_bridge_port;
+	NMSettingVPN *s_vpn;
+	NMSettingOlpcMesh *s_olpc_mesh;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	NMIP4Address *ip4addr = NULL;
+	NMIP6Address *ip6addr = NULL;
+	const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	if (!strcmp (con_type, NM_SETTING_WIRED_SETTING_NAME)) {
+		/* Build up the settings required for 'ethernet' */
+		gboolean success = FALSE;
+		const char *mtu = NULL;
+		unsigned long mtu_int;
+		const char *mac = NULL;
+		const char *cloned_mac = NULL;
+		GByteArray *array = NULL;
+		GByteArray *cloned_array = NULL;
+		nmc_arg_t exp_args[] = { {"mtu",        TRUE, &mtu,        FALSE},
+		                         {"mac",        TRUE, &mac,        FALSE},
+		                         {"cloned-mac", TRUE, &cloned_mac, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (mtu) {
+			if (!nmc_string_to_uint (mtu, TRUE, 0, G_MAXUINT32, &mtu_int)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'mtu': '%s' is not valid."), mtu);
+				return FALSE;
+			}
+		}
+		if (!check_and_convert_mac (mac, &array, ARPHRD_ETHER, "mac", error))
+			goto cleanup_wired;
+		if (!check_and_convert_mac (cloned_mac, &cloned_array, ARPHRD_ETHER, "cloned-mac", error))
+			goto cleanup_wired;
+
+		/* Add ethernet setting */
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+		if (mtu)
+			g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu_int, NULL);
+		if (array)
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, array, NULL);
+		if (cloned_array)
+			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, cloned_array, NULL);
+
+		success = TRUE;
+cleanup_wired:
+		if (array)
+			g_byte_array_free (array, TRUE);
+		if (cloned_array)
+			g_byte_array_free (cloned_array, TRUE);
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		/* Build up the settings required for 'infiniband' */
+		const char *mtu = NULL;
+		unsigned long mtu_int;
+		const char *mac = NULL;
+		GByteArray *array = NULL;
+		const char *mode = "datagram";  /* 'datagram' mode is default */
+		nmc_arg_t exp_args[] = { {"mtu",            TRUE, &mtu,  FALSE},
+		                         {"mac",            TRUE, &mac,  FALSE},
+		                         {"transport-mode", TRUE, &mode, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (mtu) {
+			if (!nmc_string_to_uint (mtu, TRUE, 0, G_MAXUINT32, &mtu_int)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'mtu': '%s' is not valid."), mtu);
+				return FALSE;
+			}
+		}
+		if (!check_and_convert_mac (mac, &array, ARPHRD_INFINIBAND, "mac", error))
+			return FALSE;
+
+		/* Add 'infiniband' setting */
+		s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
+
+		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, mode, NULL);
+		if (mtu)
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu_int, NULL);
+		if (array) {
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
+			g_byte_array_free (array, TRUE);
+		}
+
+	} else if (!strcmp (con_type, NM_SETTING_WIRELESS_SETTING_NAME)) {
+		/* Build up the settings required for 'wifi' */
+		gboolean success = FALSE;
+		char *ssid_ask = NULL;
+		const char *ssid = NULL;
+		GByteArray *ssid_arr = NULL;
+		const char *mtu = NULL;
+		unsigned long mtu_int;
+		const char *mac = NULL;
+		GByteArray *mac_array = NULL;
+		const char *cloned_mac = NULL;
+		GByteArray *cloned_mac_array = NULL;
+		nmc_arg_t exp_args[] = { {"ssid",       TRUE, &ssid,       !ask},
+		                         {"mtu",        TRUE, &mtu,        FALSE},
+		                         {"mac",        TRUE, &mac,        FALSE},
+		                         {"cloned-mac", TRUE, &cloned_mac, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!ssid && ask)
+			ssid = ssid_ask = nmc_get_user_input (_("SSID: "));
+		if (!ssid) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'ssid' is required."));
+			return FALSE;
+		}
+		if (mtu) {
+			if (!nmc_string_to_uint (mtu, TRUE, 0, G_MAXUINT32, &mtu_int)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'mtu': '%s' is not valid."), mtu);
+				return FALSE;
+			}
+		}
+		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+			goto cleanup_wifi;
+		if (!check_and_convert_mac (cloned_mac, &cloned_mac_array, ARPHRD_ETHER, "cloned-mac", error))
+			goto cleanup_wifi;
+
+		/* Add wifi setting */
+		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+		ssid_arr = g_byte_array_sized_new (strlen (ssid));
+		g_byte_array_append (ssid_arr, (const guint8 *) ssid, strlen (ssid));
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid_arr, NULL);
+
+		if (mtu)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_MTU, mtu_int, NULL);
+		if (mac_array)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, mac_array, NULL);
+		if (cloned_mac_array)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, cloned_mac_array, NULL);
+
+		success = TRUE;
+cleanup_wifi:
+		g_free (ssid_ask);
+		if (ssid_arr)
+			g_byte_array_free (ssid_arr, TRUE);
+		if (mac_array)
+			g_byte_array_free (mac_array, TRUE);
+		if (cloned_mac_array)
+			g_byte_array_free (cloned_mac_array, TRUE);
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_WIMAX_SETTING_NAME)) {
+		/* Build up the settings required for 'wimax' */
+		const char *nsp_name = NULL;
+		char *nsp_name_ask = NULL;
+		const char *mac = NULL;
+		GByteArray *mac_array = NULL;
+		nmc_arg_t exp_args[] = { {"nsp", TRUE, &nsp_name, !ask},
+		                         {"mac", TRUE, &mac,      FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!nsp_name && ask)
+			nsp_name = nsp_name_ask = nmc_get_user_input (_("WiMAX NSP name: "));
+		if (!nsp_name) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'nsp' is required."));
+			return FALSE;
+		}
+		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error)) {
+			g_free (nsp_name_ask);
+			return FALSE;
+		}
+
+		/* Add 'wimax' setting */
+		s_wimax = (NMSettingWimax *) nm_setting_wimax_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wimax));
+		g_object_set (s_wimax, NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
+
+		if (mac_array) {
+			g_object_set (s_wimax, NM_SETTING_WIMAX_MAC_ADDRESS, mac_array, NULL);
+			g_byte_array_free (mac_array, TRUE);
+		}
+
+		g_free (nsp_name_ask);
+
+	} else if (   !strcmp (con_type, NM_SETTING_GSM_SETTING_NAME)
+	           || !strcmp (con_type, NM_SETTING_CDMA_SETTING_NAME)) {
+		/* Build up the settings required for 'gsm' or 'cdma' mobile broadband */
+		const char *apn = NULL;
+		char *apn_ask = NULL;
+		const char *user = NULL;
+		const char *password = NULL;
+		gboolean is_gsm;
+		int i = 0;
+		nmc_arg_t gsm_args[] = { {NULL}, {NULL}, {NULL}, /* placeholders */
+		                         {NULL} };
+
+		is_gsm = !strcmp (con_type, NM_SETTING_GSM_SETTING_NAME);
+
+		if (is_gsm)
+			gsm_args[i++] = (nmc_arg_t) {"apn", TRUE, &apn, !ask};
+		gsm_args[i++] = (nmc_arg_t) {"user",     TRUE, &user,     FALSE};
+		gsm_args[i++] = (nmc_arg_t) {"password", TRUE, &password, FALSE};
+		gsm_args[i++] = (nmc_arg_t) {NULL};
+
+		if (!nmc_parse_args (gsm_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!apn && ask && is_gsm)
+			apn = apn_ask = nmc_get_user_input (_("APN: "));
+		if (!apn && is_gsm) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'apn' is required."));
+			return FALSE;
+		}
+
+		if (is_gsm) {
+			g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME, NULL);
+
+			/* Add 'gsm' setting */
+			s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+			g_object_set (s_gsm,
+			              NM_SETTING_GSM_NUMBER, "*99#",
+			              NM_SETTING_GSM_APN, apn,
+			              NM_SETTING_GSM_USERNAME, user,
+			              NM_SETTING_GSM_PASSWORD, password,
+			              NULL);
+			g_free (apn_ask);
+		} else {
+			g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, NM_SETTING_CDMA_SETTING_NAME, NULL);
+
+			/* Add 'cdma' setting */
+			s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_cdma));
+			g_object_set (s_cdma,
+			              NM_SETTING_CDMA_NUMBER, "#777",
+			              NM_SETTING_CDMA_USERNAME, user,
+			              NM_SETTING_CDMA_PASSWORD, password,
+			              NULL);
+		}
+
+	} else if (!strcmp (con_type, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+		/* Build up the settings required for 'bluetooth' */
+		const char *addr = NULL;
+		char *addr_ask = NULL;
+		const char *bt_type = NM_SETTING_BLUETOOTH_TYPE_PANU;  /* 'panu' is default */
+		GByteArray *array = NULL;
+		nmc_arg_t exp_args[] = { {"addr",    TRUE, &addr,    !ask},
+		                         {"bt-type", TRUE, &bt_type, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!addr && ask)
+			addr = addr_ask = nmc_get_user_input (_("Bluetooth device address: "));
+		if (!addr) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'addr' is required."));
+			return FALSE;
+		}
+
+		/* Add 'bluetooth' setting */
+		s_bt = (NMSettingBluetooth *) nm_setting_bluetooth_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_bt));
+
+		if (!check_and_convert_mac (addr, &array, ARPHRD_ETHER, "addr", error)) {
+			g_free (addr_ask);
+			return FALSE;
+		}
+		if (array) {
+			g_object_set (s_bt, NM_SETTING_BLUETOOTH_BDADDR, array, NULL);
+			g_byte_array_free (array, TRUE);
+		}
+		g_free (addr_ask);
+
+		/* 'dun' type requires adding 'gsm' or 'cdma' setting */
+		if (   !strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
+		    || !strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm")) {
+			bt_type = NM_SETTING_BLUETOOTH_TYPE_DUN;
+			s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+			g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
+//			g_object_set (s_gsm, NM_SETTING_GSM_APN, "FIXME", NULL;
+
+		} else if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma")) {
+			bt_type = NM_SETTING_BLUETOOTH_TYPE_DUN;
+			s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_cdma));
+			g_object_set (s_cdma, NM_SETTING_CDMA_NUMBER, "#777", NULL);
+
+		} else if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+			/* no op */
+		} else {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."),
+			             bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU, NM_SETTING_BLUETOOTH_TYPE_DUN,
+			             NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm", NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma");
+			return FALSE;
+		}
+		g_object_set (s_bt, NM_SETTING_BLUETOOTH_TYPE, bt_type, NULL);
+
+	} else if (!strcmp (con_type, NM_SETTING_VLAN_SETTING_NAME)) {
+		/* Build up the settings required for 'vlan' */
+		gboolean success = FALSE;
+		const char *ifname = NULL;
+		const char *parent = NULL;
+		char *parent_ask = NULL;
+		const char *vlan_id = NULL;
+		char *vlan_id_ask = NULL;
+		unsigned long id = 0;
+		const char *flags = NULL;
+		unsigned long flags_int = 0;
+		const char *ingress = NULL, *egress = NULL;
+		char **ingress_arr = NULL, **egress_arr = NULL, **p;
+		const char *mtu = NULL;
+		unsigned long mtu_int;
+		GByteArray *addr_array = NULL;
+		nmc_arg_t exp_args[] = { {"dev",     TRUE, &parent,  !ask},
+		                         {"id",      TRUE, &vlan_id, !ask},
+		                         {"flags",   TRUE, &flags,   FALSE},
+		                         {"ingress", TRUE, &ingress, FALSE},
+		                         {"egress",  TRUE, &egress,  FALSE},
+		                         {"mtu",     TRUE, &mtu,     FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!parent && ask)
+			parent = parent_ask = nmc_get_user_input (_("VLAN parent device or connection UUID: "));
+		if (!parent) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'dev' is required."));
+			return FALSE;
+		}
+		if (!vlan_id && ask)
+			vlan_id = vlan_id_ask = nmc_get_user_input (_("VLAN ID <0-4095>: "));
+		if (!vlan_id) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'id' is required."));
+			goto cleanup_vlan;
+		}
+		if (vlan_id) {
+			if (!nmc_string_to_uint (vlan_id, TRUE, 0, 4095, &id)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'id': '%s' is not valid; use <0-4095>."),
+				             vlan_id);
+				goto cleanup_vlan;
+			}
+		}
+
+		if (   !(addr_array = nm_utils_hwaddr_atoba (parent, ARPHRD_ETHER))
+		    && !nm_utils_is_uuid (parent)
+		    && !nm_utils_iface_valid_name (parent)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'dev': '%s' is neither UUID, interface name, nor MAC."),
+			             parent);
+			goto cleanup_vlan;
+		}
+
+		/* ifname is taken from connection's ifname */
+		ifname = nm_setting_connection_get_interface_name (s_con);
+
+		if (mtu) {
+			if (!nmc_string_to_uint (mtu, TRUE, 0, G_MAXUINT32, &mtu_int)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'mtu': '%s' is not valid."), mtu);
+				goto cleanup_vlan;
+			}
+		}
+		if (flags) {
+			if (!nmc_string_to_uint (flags, TRUE, 0, 7, &flags_int)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'flags': '%s' is not valid; use <0-7>."),
+				             flags);
+				goto cleanup_vlan;
+			}
+		}
+		if (ingress) {
+			GError *err = NULL;
+			if (!(ingress_arr = nmc_vlan_parse_priority_maps (ingress, NM_VLAN_INGRESS_MAP, &err))) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'ingress': '%s' is not valid; %s "),
+				             ingress,  err->message);
+				g_clear_error (&err);
+				goto cleanup_vlan;
+			}
+		}
+		if (egress) {
+			GError *err = NULL;
+			if (!(egress_arr = nmc_vlan_parse_priority_maps (egress, NM_VLAN_EGRESS_MAP, &err))) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'egress': '%s' is not valid; %s "),
+				             egress, err->message);
+				g_clear_error (&err);
+				goto cleanup_vlan;
+			}
+		}
+
+		/* Add 'vlan' setting */
+		s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_vlan));
+
+		/* Add 'wired' setting if necessary */
+		if (mtu || addr_array) {
+			s_wired = (NMSettingWired *) nm_setting_wired_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+			if (mtu)
+				g_object_set (s_wired, NM_SETTING_WIRED_MTU, (guint32) mtu_int, NULL);
+			if (addr_array)
+				g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, addr_array, NULL);
+		}
+
+		/* Set 'vlan' properties */
+		if (!addr_array)
+			g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
+
+		if (ifname)
+			g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, ifname, NULL);
+		g_object_set (s_vlan, NM_SETTING_VLAN_ID, id, NULL);
+
+		if (flags)
+			g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, (guint32) flags_int, NULL);
+		for (p = ingress_arr; p && *p; p++)
+			nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_INGRESS_MAP, *p);
+		for (p = egress_arr; p && *p; p++)
+			nm_setting_vlan_add_priority_str (s_vlan, NM_VLAN_EGRESS_MAP, *p);
+
+		success = TRUE;
+cleanup_vlan:
+		if (addr_array)
+			g_byte_array_free (addr_array, TRUE);
+		g_free (parent_ask);
+		g_free (vlan_id_ask);
+		g_strfreev (ingress_arr);
+		g_strfreev (egress_arr);
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_BOND_SETTING_NAME)) {
+		/* Build up the settings required for 'bond' */
+		char *bond_ifname = NULL;
+		const char *ifname = NULL;
+		const char *bond_mode = NULL;
+		const char *bond_miimon = NULL;
+		const char *bond_downdelay = NULL;
+		const char *bond_updelay = NULL;
+		const char *bond_arpinterval = NULL;
+		const char *bond_arpiptarget = NULL;
+		nmc_arg_t exp_args[] = { {"mode",          TRUE, &bond_mode,        FALSE},
+		                         {"miimon",        TRUE, &bond_miimon,      FALSE},
+		                         {"downdelay",     TRUE, &bond_downdelay,   FALSE},
+		                         {"updelay",       TRUE, &bond_updelay,     FALSE},
+		                         {"arp-interval",  TRUE, &bond_arpinterval, FALSE},
+		                         {"arp-ip-target", TRUE, &bond_arpiptarget, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		/* Use connection's ifname as 'bond' ifname if exists, else generate one */
+		ifname = nm_setting_connection_get_interface_name (s_con);
+		if (!ifname)
+			bond_ifname = unique_bond_bridge_ifname (all_connections,
+			                                         NM_SETTING_BOND_SETTING_NAME,
+			                                         "nm-bond");
+		else
+			bond_ifname = g_strdup (ifname);
+
+		/* Add 'bond' setting */
+		s_bond = (NMSettingBond *) nm_setting_bond_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_bond));
+
+		/* Set bond options */
+		g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, bond_ifname, NULL);
+		if (bond_mode)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MODE, bond_mode);
+		if (bond_miimon)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON, bond_miimon);
+		if (bond_downdelay)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY, bond_downdelay);
+		if (bond_updelay)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_UPDELAY, bond_updelay);
+		if (bond_arpinterval)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL, bond_arpinterval);
+		if (bond_arpiptarget)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, bond_arpiptarget);
+
+		g_free (bond_ifname);
+
+	} else if (!strcmp (con_type, "bond-slave")) {
+		/* Build up the settings required for 'bond-slave' */
+		const char *master = NULL;
+		char *master_ask = NULL;
+		const char *type = NULL;
+		nmc_arg_t exp_args[] = { {"master", TRUE, &master, !ask},
+		                         {"type",   TRUE, &type,   FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
+			return FALSE;
+
+		if (!master && ask)
+			master = master_ask = nmc_get_user_input (_("Bond master: "));
+		if (!master) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'master' is required."));
+			return FALSE;
+		}
+
+		if (type)
+			printf (_("Warning: 'type' is currently ignored. "
+			          "We only support ethernet slaves for now.\n"));
+
+		/* Change properties in 'connection' setting */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+		              NM_SETTING_CONNECTION_MASTER, master,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+		              NULL);
+
+		/* Add ethernet setting */
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+		g_free (master_ask);
+
+	} else if (!strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		/* Build up the settings required for 'bridge' */
+		gboolean success = FALSE;
+		char *bridge_ifname = NULL;
+		const char *ifname = NULL;
+		const char *stp = NULL;
+		const char *priority = NULL;
+		const char *fwd_delay = NULL;
+		const char *hello_time = NULL;
+		const char *max_age = NULL;
+		const char *ageing_time = NULL;
+		gboolean stp_bool;
+		unsigned long stp_prio_int, fwd_delay_int, hello_time_int,
+		              max_age_int, ageing_time_int;
+		nmc_arg_t exp_args[] = { {"stp",           TRUE, &stp,         FALSE},
+		                         {"priority",      TRUE, &priority,    FALSE},
+		                         {"forward-delay", TRUE, &fwd_delay,   FALSE},
+		                         {"hello-time",    TRUE, &hello_time,  FALSE},
+		                         {"max-age",       TRUE, &max_age,     FALSE},
+		                         {"ageing-time",   TRUE, &ageing_time, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		/* Use connection's ifname as 'bridge' ifname if exists, else generate one */
+		ifname = nm_setting_connection_get_interface_name (s_con);
+		if (!ifname)
+			bridge_ifname = unique_bond_bridge_ifname (all_connections,
+			                                           NM_SETTING_BRIDGE_SETTING_NAME,
+			                                           "nm-bridge");
+		else
+			bridge_ifname = g_strdup (ifname);
+
+		if (stp) {
+			GError *tmp_err = NULL;
+			if (!nmc_string_to_bool (stp, &stp_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'stp': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_bridge;
+			}
+		}
+
+		/* Add 'bond' setting */
+		/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
+		s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_bridge));
+
+		if (priority)
+			if (!bridge_prop_string_to_uint (priority, "priority", NM_TYPE_SETTING_BRIDGE,
+			                                 NM_SETTING_BRIDGE_PRIORITY, &stp_prio_int, error))
+				goto cleanup_bridge;
+		if (fwd_delay)
+			if (!bridge_prop_string_to_uint (fwd_delay, "forward-delay", NM_TYPE_SETTING_BRIDGE,
+			                                 NM_SETTING_BRIDGE_FORWARD_DELAY, &fwd_delay_int, error))
+				goto cleanup_bridge;
+		if (hello_time)
+			if (!bridge_prop_string_to_uint (hello_time, "hello-time", NM_TYPE_SETTING_BRIDGE,
+			                                 NM_SETTING_BRIDGE_HELLO_TIME, &hello_time_int, error))
+				goto cleanup_bridge;
+		if (max_age)
+			if (!bridge_prop_string_to_uint (max_age, "max-age", NM_TYPE_SETTING_BRIDGE,
+			                                 NM_SETTING_BRIDGE_MAX_AGE, &max_age_int, error))
+				goto cleanup_bridge;
+		if (ageing_time)
+			if (!bridge_prop_string_to_uint (ageing_time, "ageing-time", NM_TYPE_SETTING_BRIDGE,
+			                                 NM_SETTING_BRIDGE_AGEING_TIME, &ageing_time_int, error))
+				goto cleanup_bridge;
+
+		/* Set bridge options */
+		g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, bridge_ifname, NULL);
+		if (stp)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, stp_bool, NULL);
+		if (priority)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_PRIORITY, stp_prio_int, NULL);
+		if (fwd_delay)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY, fwd_delay_int, NULL);
+		if (hello_time)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME, hello_time_int, NULL);
+		if (max_age)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAX_AGE, max_age_int, NULL);
+		if (ageing_time)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME, ageing_time_int, NULL);
+
+		success = TRUE;
+cleanup_bridge:
+		g_free (bridge_ifname);
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, "bridge-slave")) {
+		/* Build up the settings required for 'bridge-slave' */
+		gboolean success = FALSE;
+		const char *master = NULL;
+		char *master_ask = NULL;
+		const char *type = NULL;
+		const char *priority = NULL;
+		const char *path_cost = NULL;
+		const char *hairpin = NULL;
+		unsigned long prio_int, path_cost_int;
+		gboolean hairpin_bool;
+		nmc_arg_t exp_args[] = { {"master",    TRUE, &master,    !ask},
+		                         {"type",      TRUE, &type,      FALSE},
+		                         {"priority",  TRUE, &priority,  FALSE},
+		                         {"path-cost", TRUE, &path_cost, FALSE},
+		                         {"hairpin",   TRUE, &hairpin,   FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
+			return FALSE;
+
+		if (!master && ask)
+			master = master_ask = nmc_get_user_input (_("Bridge master: "));
+		if (!master) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'master' is required."));
+			return FALSE;
+		}
+		if (!nm_utils_is_uuid (master) && !nm_utils_iface_valid_name (master)) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'master': '%s' is not valid UUID nor interface."),
+			             master);
+			goto cleanup_bridge_slave;
+		}
+
+		if (type)
+			printf (_("Warning: 'type' is currently ignored. "
+			          "We only support ethernet slaves for now.\n"));
+
+		/* Add 'bridge-port' setting */
+		/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
+		s_bridge_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_bridge_port));
+
+		if (priority)
+			if (!bridge_prop_string_to_uint (priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
+			                                 NM_SETTING_BRIDGE_PORT_PRIORITY, &prio_int, error))
+				goto cleanup_bridge_slave;
+		if (path_cost)
+			if (!bridge_prop_string_to_uint (path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
+			                                 NM_SETTING_BRIDGE_PORT_PATH_COST, &path_cost_int, error))
+				goto cleanup_bridge_slave;
+		if (hairpin) {
+			GError *tmp_err = NULL;
+			if (!nmc_string_to_bool (hairpin, &hairpin_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'hairpin': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_bridge_slave;
+			}
+		}
+
+		/* Change properties in 'connection' setting */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+		              NM_SETTING_CONNECTION_MASTER, master,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+		              NULL);
+
+		/* Add ethernet setting */
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+		if (priority)
+			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PRIORITY, prio_int, NULL);
+		if (path_cost)
+			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PATH_COST, path_cost_int, NULL);
+		if (hairpin)
+			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, hairpin_bool, NULL);
+
+		success = TRUE;
+cleanup_bridge_slave:
+		g_free (master_ask);
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_VPN_SETTING_NAME)) {
+		/* Build up the settings required for 'vpn' */
+		const char *valid_vpns[] = { "openvpn", "vpnc", "pptp", "openconnect", "openswan", NULL };
+		const char *vpn_type = NULL;
+		char *vpn_type_ask = NULL;
+		const char *user = NULL;
+		const char *st;
+		char *service_type;
+		GError *tmp_err = NULL;
+		nmc_arg_t exp_args[] = { {"vpn-type", TRUE, &vpn_type, !ask},
+		                         {"user",     TRUE, &user,      FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!vpn_type && ask)
+			vpn_type = vpn_type_ask = nmc_get_user_input (_("VPN type: "));
+		if (!vpn_type) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'vpn-type' is required."));
+			return FALSE;
+		}
+
+		if (!(st = nmc_string_is_valid (vpn_type, valid_vpns, &tmp_err))) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'vpn-type': %s."), tmp_err->message);
+			g_clear_error (&tmp_err);
+			g_free (vpn_type_ask);
+			return FALSE;
+		}
+		service_type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, st);
+
+		/* Add 'vpn' setting */
+		s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_vpn));
+
+		g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, service_type, NULL);
+		g_object_set (s_vpn, NM_SETTING_VPN_USER_NAME, user, NULL);
+
+		g_free (vpn_type_ask);
+		g_free (service_type);
+
+	} else if (!strcmp (con_type, NM_SETTING_OLPC_MESH_SETTING_NAME)) {
+		/* Build up the settings required for 'olpc' */
+		char *ssid_ask = NULL;
+		const char *ssid = NULL;
+		GByteArray *ssid_arr;
+		const char *channel = NULL;
+		unsigned long chan;
+		const char *dhcp_anycast = NULL;
+		GByteArray *array = NULL;
+		nmc_arg_t exp_args[] = { {"ssid",         TRUE, &ssid,         !ask},
+		                         {"channel",      TRUE, &channel,      FALSE},
+		                         {"dhcp-anycast", TRUE, &dhcp_anycast, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!ssid && ask)
+			ssid = ssid_ask = nmc_get_user_input (_("SSID: "));
+		if (!ssid) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'ssid' is required."));
+			return FALSE;
+		}
+
+		if (channel) {
+			if (!nmc_string_to_uint (channel, TRUE, 1, 13, &chan)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'channel': '%s' is not valid; use <1-13>."),
+				             channel);
+				g_free (ssid_ask);
+				return FALSE;
+			}
+		}
+		if (!check_and_convert_mac (dhcp_anycast, &array, ARPHRD_ETHER, "dhcp-anycast", error)) {
+			g_free (ssid_ask);
+			return FALSE;
+		}
+
+		/* Add OLPC mesh setting */
+		s_olpc_mesh = (NMSettingOlpcMesh *) nm_setting_olpc_mesh_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_olpc_mesh));
+
+		ssid_arr = g_byte_array_sized_new (strlen (ssid));
+		g_byte_array_append (ssid_arr, (const guint8 *) ssid, strlen (ssid));
+		g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_SSID, ssid_arr, NULL);
+		if (channel)
+			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, chan, NULL);
+		else
+			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, 1, NULL);
+		if (array) {
+			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, array, NULL);
+			g_byte_array_free (array, TRUE);
+		}
+
+		g_byte_array_free (ssid_arr, TRUE);
+		g_free (ssid_ask);
+
+	} else {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("Error: '%s' is a not valid connection type."),
+		             con_type);
+		return FALSE;
+	}
+
+	/* Read and add IP configuration */
+	if (   strcmp (con_type, "bond-slave") != 0
+	    && strcmp (con_type, "bridge-slave") != 0) {
+		nmc_arg_t exp_args[] = { {"ip4", TRUE, &ip4, FALSE}, {"gw4", TRUE, &gw4, FALSE},
+		                         {"ip6", TRUE, &ip6, FALSE}, {"gw6", TRUE, &gw6, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
+			return FALSE;
+
+		if (ip4) {
+			ip4addr = nmc_parse_and_build_ip4_address (ip4, gw4, error);
+			if (!ip4addr) {
+				g_prefix_error (error, _("Error: "));
+				return FALSE;
+			}
+		}
+		if (ip4addr) {
+			s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+			nm_setting_ip4_config_add_address (s_ip4, ip4addr);
+			g_object_set (s_ip4,
+			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+			              NULL);
+			nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+			nm_ip4_address_unref (ip4addr);
+		}
+
+		if (ip6) {
+			ip6addr = nmc_parse_and_build_ip6_address (ip6, gw6, error);
+			if (!ip6addr) {
+				g_prefix_error (error, _("Error: "));
+				return FALSE;
+			}
+		}
+		if (ip6addr) {
+			s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+			nm_setting_ip6_config_add_address (s_ip6, ip6addr);
+			g_object_set (s_ip6,
+			              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+			              NULL);
+			nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+			nm_ip6_address_unref (ip6addr);
+		}
+	}
+
+	return TRUE;
+}
+
+static char *
+unique_connection_name (GSList *list, const char *try_name)
+{
+	NMConnection *connection;
+	const char *name;
+	char *new_name;
+	unsigned int num = 1;
+	GSList *iterator = list;
+
+	new_name = g_strdup (try_name);
+	while (iterator) {
+		connection = NM_CONNECTION (iterator->data);
+
+		name = nm_connection_get_id (connection);
+		if (g_strcmp0 (new_name, name) == 0) {
+			g_free (new_name);
+			new_name = g_strdup_printf ("%s-%d", try_name, num++);
+			iterator = list;
+		}
+		iterator = g_slist_next (iterator);
+	}
+	return new_name;
+}
+
+typedef struct {
+	NmCli *nmc;
+	char *con_name;
+} AddConnectionInfo;
+
+static void
+add_connection_cb (NMRemoteSettings *settings,
+                   NMRemoteConnection *connection,
+                   GError *error,
+                   gpointer user_data)
+{
+	AddConnectionInfo *info = (AddConnectionInfo *) user_data;
+	NmCli *nmc = info->nmc;
+
+	if (error) {
+		g_string_printf (nmc->return_text,
+		                 _("Error: Failed to add '%s' connection: (%d) %s"),
+		                 info->con_name, error->code, error->message);
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+	} else {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			printf (_("Connection '%s' (%s) successfully added.\n"),
+			        nm_connection_get_id (NM_CONNECTION (connection)),
+			        nm_connection_get_uuid (NM_CONNECTION (connection)));
+	}
+
+	g_free (info->con_name);
+	g_free (info);
+	quit ();
+}
+
+static NMCResultCode
+do_connection_add (NmCli *nmc, int argc, char **argv)
+{
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con;
+	char *uuid;
+	char *default_name = NULL;
+	const char *type = NULL;
+	char *type_ask = NULL;
+	const char *con_name = NULL;
+	const char *autoconnect = NULL;
+	gboolean auto_bool = TRUE;
+	const char *ifname = NULL;
+	AddConnectionInfo *info = NULL;
+	const char *setting_name;
+	GError *error = NULL;
+	nmc_arg_t exp_args[] = { {"type",        TRUE, &type,        !nmc->ask},
+	                         {"con-name",    TRUE, &con_name,    FALSE},
+	                         {"autoconnect", TRUE, &autoconnect, FALSE},
+	                         {"ifname",      TRUE, &ifname,      FALSE},
+	                         {NULL} };
+
+	nmc->return_value = NMC_RESULT_SUCCESS;
+
+	if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
+		g_string_assign (nmc->return_text, error->message);
+		nmc->return_value = error->code;
+		g_clear_error (&error);
+		goto error;
+	}
+
+	if (!type && nmc->ask) {
+		char *types_tmp = get_valid_options_string (nmc_valid_connection_types);
+		printf ("Valid types: [%s]\n", types_tmp);
+		type = type_ask = nmc_get_user_input (_("Connection type: "));
+		g_free (types_tmp);
+	}
+	if (!type) {
+		g_string_printf (nmc->return_text, _("Error: 'type' argument is required."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	if (!(setting_name = check_valid_name (type, nmc_valid_connection_types, &error))) {
+		g_string_printf (nmc->return_text, _("Error: invalid connection type; %s."),
+		                 error->message);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		g_clear_error (&error);
+		goto error;
+	}
+	if (autoconnect) {
+		GError *tmp_err = NULL;
+		if (!nmc_string_to_bool (autoconnect, &auto_bool, &tmp_err)) {
+			g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
+			                 tmp_err->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			g_clear_error (&tmp_err);
+			goto error;
+		}
+	}
+	if (ifname) {
+		if (!nm_utils_iface_valid_name (ifname)) {
+			g_string_printf (nmc->return_text,
+			                 _("Error: 'ifname': '%s' is not a valid interface."),
+			                 ifname);
+			goto error;
+		}
+	}
+
+	/* Create a new connection object */
+	connection = nm_connection_new ();
+
+	/* Build up the 'connection' setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	uuid = nm_utils_uuid_generate ();
+	if (con_name)
+		default_name = g_strdup (con_name);
+	else {
+		char *try_name = ifname ?
+		                     g_strdup_printf ("%s-%s", get_name_alias (setting_name, nmc_valid_connection_types), ifname)
+		                   : g_strdup (get_name_alias (setting_name, nmc_valid_connection_types));
+		default_name = unique_connection_name (nmc->system_connections, try_name);
+		g_free (try_name);
+	}
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, default_name,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, setting_name,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, auto_bool,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
+	              NULL);
+	g_free (uuid);
+	g_free (default_name);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	if (!complete_connection_by_type (connection,
+	                                  setting_name,
+	                                  nmc->system_connections,
+	                                  nmc->ask,
+	                                  argc,
+	                                  argv,
+	                                  &error)) {
+		g_string_assign (nmc->return_text, error->message);
+		nmc->return_value = error->code;
+		g_clear_error (&error);
+		goto error;
+	}
+
+	nmc->should_wait = TRUE;
+
+	info = g_malloc0 (sizeof (AddConnectionInfo));
+	info->nmc = nmc;
+	info->con_name = g_strdup (nm_connection_get_id (connection));
+
+	/* Tell the settings service to add the new connection */
+	nm_remote_settings_add_connection (nmc->system_settings,
+	                                   connection,
+	                                   add_connection_cb,
+	                                   info);
+
+	if (connection)
+		g_object_unref (connection);
+
+	return nmc->return_value;
+
+error:
+	if (connection)
+		g_object_unref (connection);
+	g_free (type_ask);
+
+	nmc->should_wait = FALSE;
+	return nmc->return_value;
+}
+
 typedef struct {
 	NmCli *nmc;
 	int counter;
@@ -1806,6 +3183,13 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches(*argv, "down") == 0) {
 			nmc->return_value = do_connection_down (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "add") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_add ();
+				nmc->should_wait = FALSE;
+			} else
+				nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);

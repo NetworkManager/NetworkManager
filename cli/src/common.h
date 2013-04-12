@@ -46,4 +46,9 @@ NMIP6Route *nmc_parse_and_build_ip6_route (const char *ip_str, const char *next_
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
 
+char **
+nmc_vlan_parse_priority_maps (const char *priority_map,
+                              NMVlanPriorityMap map_type,
+                              GError **error);
+
 #endif /* NMC_COMMON_H */
