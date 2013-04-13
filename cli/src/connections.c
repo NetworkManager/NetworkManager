@@ -214,6 +214,7 @@ usage (void)
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	         "  modify [ id | uuid | path ] <ID> <setting>.<property> <value>\n\n"
 	         "  edit [ id | uuid | path ] <ID>  |  [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	         "  delete [ id | uuid | path ] <ID>\n\n"
 	         "  reload\n\n\n"
@@ -294,6 +295,7 @@ static const char *real_con_commands[] = {
 	"up",
 	"down",
 	"add",
+	"modify",
 	"edit",
 	"delete",
 	"reload",
@@ -5131,6 +5133,162 @@ error:
 }
 
 
+static void
+modify_connection_cb (NMRemoteConnection *connection,
+                      GError *error,
+                      gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+
+        if (error) {
+		g_string_printf (nmc->return_text,
+		                 _("Error: Failed to modify connection '%s': (%d) %s"),
+		                 nm_connection_get_id (NM_CONNECTION (connection)),
+		                 error->code, error->message);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	} else {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			printf (_("Connection '%s' (%s) successfully modified.\n"),
+		                nm_connection_get_id (NM_CONNECTION (connection)),
+		                nm_connection_get_uuid (NM_CONNECTION (connection)));
+	}
+	quit ();
+}
+
+static NMCResultCode
+do_connection_modify (NmCli *nmc, int argc, char **argv)
+{
+	NMConnection *connection = NULL;
+	NMRemoteConnection *rc = NULL;
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+	const char *con_type;
+	const char *name;
+	const char *selector = NULL;
+	const char *set_prop;
+	char *value = NULL;
+	char **strv = NULL;
+	const char *setting_name;
+	char *property_name = NULL;
+	GError *error = NULL;
+
+	nmc->should_wait = FALSE;
+
+	if (argc == 0) {
+		g_string_printf (nmc->return_text, _("Error: No arguments provided."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	if (   strcmp (*argv, "id") == 0
+	    || strcmp (*argv, "uuid") == 0
+	    || strcmp (*argv, "path") == 0) {
+
+		selector = *argv;
+		if (next_arg (&argc, &argv) != 0) {
+			g_string_printf (nmc->return_text, _("Error: %s argument is missing."),
+			                 selector);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		name = *argv;
+	}
+	name = *argv;
+	next_arg (&argc, &argv);
+	set_prop = *argv;
+	next_arg (&argc, &argv);
+	value = g_strjoinv (" ", argv);
+
+	if (!name) {
+		g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	if (!set_prop) {
+		g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	/* NULL value means deleting/setting default property value */
+
+	/* create NMClient */
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		goto finish;
+	}
+
+	connection = find_connection (nmc->system_connections, selector, name);
+	if (!connection) {
+		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	strv = g_strsplit (set_prop, ".", 2);
+	if (g_strv_length (strv) != 2) {
+		g_string_printf (nmc->return_text, _("Error: invalid <setting>.<property> '%s'."),
+		                 set_prop);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+
+	rc = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
+	                                                nm_connection_get_uuid (connection));
+
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (rc));
+	g_assert (s_con);
+	con_type = nm_setting_connection_get_connection_type (s_con);
+
+	setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type), &error);
+	if (!setting_name) {
+		g_string_printf (nmc->return_text, _("Error: invalid or not allowed setting '%s': %s."),
+		                 strv[0], error->message);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	setting = nm_connection_get_setting_by_name (NM_CONNECTION (rc), setting_name);
+	if (!setting) {
+		NmcSettingNewFunc new_setting_func = nmc_setting_new_func (setting_name);
+		if (!new_setting_func) {
+			/* This should really not happen */
+			g_string_printf (nmc->return_text,
+			                 "Error: don't know how to create '%s' setting.",
+			                 setting_name);
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			goto finish;
+		}
+		setting = new_setting_func ();
+		g_assert (setting);
+		nm_connection_add_setting (NM_CONNECTION (rc), setting);
+	}
+
+	property_name = is_property_valid (setting, strv[1], &error);
+	if (!property_name) {
+		g_string_printf (nmc->return_text, _("Error: invalid property '%s': %s."),
+		                 strv[1], error->message);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+	if (!nmc_setting_set_property (setting, property_name, value, &error)) {
+		g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
+		                 strv[0], strv[1], error->message);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto finish;
+	}
+
+	nm_remote_connection_commit_changes (rc,
+	                                     modify_connection_cb,
+	                                     nmc);
+finish:
+	nmc->should_wait = (nmc->return_value == NMC_RESULT_SUCCESS);
+	g_free (value);
+	g_free (property_name);
+	g_strfreev (strv);
+	g_clear_error (&error);
+	return nmc->return_value;
+}
+
 
 typedef struct {
 	NmCli *nmc;
@@ -5361,6 +5519,9 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches(*argv, "reload") == 0) {
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "modify") == 0) {
+			nmc->return_value = do_connection_modify (nmc, argc-1, argv+1);
 		}
 		else if (nmc_arg_is_help (*argv)) {
 			usage ();
