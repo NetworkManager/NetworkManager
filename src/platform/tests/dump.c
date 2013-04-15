@@ -36,6 +36,7 @@ dump_interface (NMPlatformLink *link)
 		printf (" noarp");
 	if (link->master)
 		printf (" master %d", link->master);
+	printf (" mtu %d", link->mtu);
 	printf ("\n");
 	nm_platform_vlan_get_info (link->ifindex, &vlan_parent, &vlan_id);
 	if (vlan_parent)

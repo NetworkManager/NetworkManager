@@ -12,6 +12,7 @@
 #define PARENT_NAME "nm-test-parent"
 #define VLAN_ID 4077
 #define VLAN_FLAGS 0
+#define MTU 1357
 
 static void
 link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, SignalData *data)
@@ -94,6 +95,10 @@ test_bogus(void)
 	g_assert (!addrlen);
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_address (BOGUS_IFINDEX, NULL));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_set_mtu (BOGUS_IFINDEX, MTU));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_get_mtu (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_link_supports_carrier_detect (BOGUS_IFINDEX));
@@ -448,6 +453,12 @@ test_internal (void)
 	g_assert (!memcmp (address, mac, addrlen));
 	address = nm_platform_link_get_address (ifindex, NULL);
 	g_assert (!memcmp (address, mac, addrlen));
+	accept_signal (link_changed);
+
+	/* Set MTU */
+	g_assert (nm_platform_link_set_mtu (ifindex, MTU));
+	no_error ();
+	g_assert_cmpint (nm_platform_link_get_mtu (ifindex), ==, MTU);
 	accept_signal (link_changed);
 
 	/* Delete device */

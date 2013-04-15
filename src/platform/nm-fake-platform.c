@@ -386,6 +386,27 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 }
 
 static gboolean
+link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (device) {
+		device->link.mtu = mtu;
+		link_changed (platform, device);
+	}
+
+	return !!device;
+}
+
+static guint32
+link_get_mtu (NMPlatform *platform, int ifindex)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	return device ? device->link.mtu : 0;
+}
+
+static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -978,6 +999,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_address = link_get_address;
+	platform_class->link_get_mtu = link_get_mtu;
+	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;

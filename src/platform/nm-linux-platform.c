@@ -335,6 +335,7 @@ link_init (NMPlatformLink *info, struct rtnl_link *rtnllink)
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
 	info->master = rtnl_link_get_master (rtnllink);
+	info->mtu = rtnl_link_get_mtu (rtnllink);
 }
 
 /* Hack: Empty bridges and bonds have IFF_LOWER_UP flag and therefore they break
@@ -1139,6 +1140,26 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 	return nladdr ? nl_addr_get_binary_addr (nladdr) : NULL;
 }
 
+static gboolean
+link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
+{
+	auto_nl_object struct rtnl_link *change;
+
+	change = rtnl_link_alloc ();
+	g_return_val_if_fail (change != NULL, FALSE);
+	rtnl_link_set_mtu (change, mtu);
+
+	return link_change (platform, ifindex, change);
+}
+
+static guint32
+link_get_mtu (NMPlatform *platform, int ifindex)
+{
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
+
+	return rtnllink ? rtnl_link_get_mtu (rtnllink) : 0;
+}
+
 static int
 vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
 {
@@ -1773,6 +1794,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_get_address = link_get_address;
 	platform_class->link_set_address = link_set_address;
+	platform_class->link_get_mtu = link_get_mtu;
+	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;

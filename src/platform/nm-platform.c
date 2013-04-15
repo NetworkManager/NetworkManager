@@ -626,6 +626,43 @@ nm_platform_link_set_noarp (int ifindex)
 }
 
 /**
+ * nm_platform_link_set_mtu:
+ * @ifindex: Interface index
+ * @mtu: The new MTU value
+ *
+ * Set interface MTU.
+ */
+gboolean
+nm_platform_link_set_mtu (int ifindex, guint32 mtu)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (mtu > 0, FALSE);
+	g_return_val_if_fail (klass->link_set_mtu, FALSE);
+
+	debug ("link: setting '%s' (%d) mtu %d", nm_platform_link_get_name (ifindex), ifindex, mtu);
+	return klass->link_set_mtu (platform, ifindex, mtu);
+}
+
+/**
+ * nm_platform_link_get_mtu:
+ * @ifindex: Interface index
+ *
+ * Returns: MTU value for the interface or 0 on error.
+ */
+guint32
+nm_platform_link_get_mtu (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, 0);
+	g_return_val_if_fail (klass->link_get_mtu, 0);
+
+	return klass->link_get_mtu (platform, ifindex);
+}
+
+/**
  * nm_platform_link_enslave:
  * @master: Interface index of the master
  * @slave: Interface index of the slave

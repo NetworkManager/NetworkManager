@@ -230,6 +230,16 @@ do_link_get_address (char **argv)
 	return TRUE;
 }
 
+static gboolean
+do_link_set_mtu (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	int mtu = strtoul (*argv++, NULL, 10);
+
+	return nm_platform_link_set_mtu (ifindex, mtu);
+}
+
+LINK_CMD_GET (get_mtu, decimal);
 LINK_CMD_GET (supports_carrier_detect, boolean)
 LINK_CMD_GET (supports_vlans, boolean)
 
@@ -594,6 +604,8 @@ static const command_t commands[] = {
 	{ "link-uses-arp", "check whether interface uses arp", do_link_uses_arp, 1, "<ifname/ifindex>" },
 	{ "link-get-address", "print link address", do_link_get_address, 1, "<ifname/ifindex>" },
 	{ "link-set-address", "set link address", do_link_set_address, 2, "<ifname/ifindex> <hex>" },
+	{ "link-get-mtu", "print link mtu", do_link_get_mtu, 1, "<ifname/ifindex>" },
+	{ "link-set-mtu", "set link mtu", do_link_set_mtu, 2, "<ifname/ifindex> <mtu>" },
 	{ "link-supports-carrier-detect", "check whether interface supports carrier detect",
 		do_link_supports_carrier_detect, 1, "<ifname/ifindex>" },
 	{ "link-supports-vlans", "check whether interface supports VLANs",
