@@ -214,7 +214,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			g_return_val_if_fail (!nle, NULL);
 			object = nl_cache_search (cache, needle);
 
-			nl_cache_put (cache);
+			nl_cache_free (cache);
 			return object;
 		}
 	}
