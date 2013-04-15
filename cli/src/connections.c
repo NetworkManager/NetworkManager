@@ -195,6 +195,10 @@ extern GMainLoop *loop;
 static ArgsInfo args_info;
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
+/* for readline TAB completion */
+static const char *nmc_completion_con_type = NULL;
+static NMSetting *nmc_completion_setting = NULL;
+
 static void
 usage (void)
 {
@@ -3272,15 +3276,27 @@ error:
 
 /*----------------------------------------------------------------------------*/
 
-typedef char * (*ReadLineFunc)     (const char *);
-typedef void   (*AddHistoryFunc)   (const char *);
-typedef int    (*RlInsertTextFunc) (char *);
+typedef char *CPFunction ();
+typedef char **CPPFunction ();
+
+typedef char *  (*ReadLineFunc)     (const char *);
+typedef void    (*AddHistoryFunc)   (const char *);
+typedef int     (*RlInsertTextFunc) (char *);
+typedef char ** (*RlCompletionMatchesFunc) (char *, CPFunction *);
 
 typedef struct {
 	ReadLineFunc readline_func;
 	AddHistoryFunc add_history_func;
 	RlInsertTextFunc rl_insert_text_func;
 	void **rl_startup_hook_x;
+	RlCompletionMatchesFunc completion_matches_func;
+	void **rl_attempted_completion_function_x;
+	void **rl_completion_entry_function_x;
+	char **rl_line_buffer_x;
+	char **rl_prompt_x;
+	int *rl_attempted_completion_over_x;
+	int *rl_completion_append_character_x;
+	const char **rl_completer_word_break_characters_x;
 } EditLibSymbols;
 
 static EditLibSymbols edit_lib_symbols;
@@ -3297,6 +3313,285 @@ set_deftext (void)
 		*edit_lib_symbols.rl_startup_hook_x = NULL;
 	}
 	return 0;
+}
+
+static char *
+gen_nmcli_cmds (char *text, int state, const char **commands)
+{
+	static int list_idx, len;
+	const char *name;
+
+	if (!state) {
+		list_idx = 0;
+		len = strlen (text);
+	}
+
+	/* Return the next name which partially matches from the command list. */
+	while ((name = commands[list_idx])) {
+		list_idx++;
+
+		if (strncmp (name, text, len) == 0)
+			return g_strdup (name);
+	}
+	return NULL;
+}
+
+static char *
+gen_nmcli_cmds_menu (char *text, int state)
+{
+	const char *commands[] = { "goto", "set", "describe", "print", "verify",
+	                           "save", "back", "help", "quit", "nmcli",
+	                            NULL };
+	return gen_nmcli_cmds (text, state, commands);
+}
+
+static char *
+gen_nmcli_cmds_submenu (char *text, int state)
+{
+	const char *commands[] = { "set", "add", "change", "remove", "describe",
+	                           "print", "back", "help", "quit",
+	                            NULL };
+	return gen_nmcli_cmds (text, state, commands);
+}
+
+static char *
+gen_cmd_nmcli (char *text, int state)
+{
+	const char *commands[] = { "status-line", "prompt-color", NULL };
+	return gen_nmcli_cmds (text, state, commands);
+}
+
+static char *
+gen_cmd_verify0 (char *text, int state)
+{
+	const char *commands[] = { "all", NULL };
+	return gen_nmcli_cmds (text, state, commands);
+}
+
+static char *
+gen_cmd_print2 (char *text, int state)
+{
+	const char *commands[] = { "setting", "connection", "all", NULL };
+	return gen_nmcli_cmds (text, state, commands);
+}
+
+static char *
+gen_connection_types (char *text, int state)
+{
+	static int list_idx, len;
+	const char *c_type;
+
+	if (!state) {
+		list_idx = 0;
+		len = strlen (text);
+	}
+
+	while (   (c_type = nmc_valid_connection_types[list_idx].alias)
+	       || (c_type = nmc_valid_connection_types[list_idx].name)) {
+		list_idx++;
+		if (!strncmp (text, c_type, len))
+			return g_strdup (c_type);
+	}
+	return NULL;
+}
+
+static char *
+gen_setting_names (char *text, int state)
+{
+	static int list_idx, len;
+	const char *s_name;
+	const NameItem *valid_settings_arr;
+
+	if (!state) {
+		list_idx = 0;
+		len = strlen (text);
+	}
+
+	valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
+	if (!valid_settings_arr)
+		return NULL;
+	while (   (s_name = valid_settings_arr[list_idx].alias)
+	       || (s_name = valid_settings_arr[list_idx].name)) {
+		list_idx++;
+		if (!strncmp (text, s_name, len))
+			return g_strdup (s_name);
+	}
+	return NULL;
+}
+
+static char *
+gen_property_names (char *text, int state)
+{
+	NmcSettingNewFunc new_func;
+	NMSetting *setting = NULL;
+	char **valid_props = NULL;
+	char *ret = NULL;
+	char *line = g_strdup (*edit_lib_symbols.rl_line_buffer_x);
+	const char *setting_name;
+	char *text_p = text;
+	char **strv = NULL;
+	const NameItem *valid_settings_arr;
+	const char *p1;
+
+	/* Try to get the setting from 'line' - setting_name.partial_property */
+	p1 = strchr (line, '.');
+	if (p1) {
+		while (p1 > line && !g_ascii_isspace (*p1))
+			p1--;
+
+		strv = g_strsplit (p1+1, ".", 2);
+		if (g_strv_length (strv) == 2)
+			text_p = strv[1];
+		else
+			text_p = "";
+
+		valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
+		setting_name = check_valid_name (strv[0], valid_settings_arr, NULL);
+		new_func = nmc_setting_new_func (setting_name);
+		if (!new_func)
+			goto finish;
+		setting = new_func ();
+	}
+	/* Else take the current setting, if any */
+	if (!setting)
+		setting = nmc_completion_setting ? g_object_ref (nmc_completion_setting) : NULL;
+	if (!setting)
+		goto finish;
+
+	valid_props = nmc_setting_get_valid_properties (setting);
+	ret = gen_nmcli_cmds (text_p, state, (const char **) valid_props);
+
+finish:
+	g_free (line);
+	g_strfreev (strv);
+	g_strfreev (valid_props);
+	if (setting)
+		g_object_unref (setting);
+	return ret;
+}
+
+/*
+ * Helper function to parse line for completion:
+ * TRUE -  complete when "cmd ", "cmd stri"
+ * FALSE - don't complete when already "cmd string "
+ * Examples:
+ * "describe "                - return TRUE
+ * "describe ipv"             - return TRUE
+ * "describe 802-1x "         - return FALSE
+ * "describe connection.i"    - return TRUE
+ * "describe connection.id "  - return FALSE
+ */
+static gboolean
+should_complete_cmd (const char *line, const char *cmd)
+{
+	if (g_str_has_prefix (line, cmd)) {
+		const char *p1 = line + strlen (cmd);
+		const char *p2;
+
+		while (*p1 && g_ascii_isspace (*p1))
+			p1++;
+		p2 = p1;
+		while (*p2 && !g_ascii_isspace (*p2))
+			p2++;
+		if (*p2 == '\0')
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/*
+ * Attempt to complete on the contents of TEXT.  START and END show the
+ * region of TEXT that contains the word to complete.  We can use the
+ * entire line in case we want to do some simple parsing.  Return the
+ * array of matches, or NULL if there aren't any.
+ */
+static char **
+nmcli_editor_tab_completion (char *text, int start, int end)
+{
+	char **match_array = NULL;
+	const char *line = *edit_lib_symbols.rl_line_buffer_x;
+	const char *prompt = *edit_lib_symbols.rl_prompt_x;
+	CPFunction *generator_func = NULL;
+	gboolean copy_char;
+	const char *p1;
+	char *p2, *prompt_tmp;
+
+	/* Restore standard append character to space */
+	*edit_lib_symbols.rl_completion_append_character_x = ' ';
+
+	/* Filter out possible ANSI color escape sequences */
+	p1 = prompt;
+	p2 = prompt_tmp = g_strdup (prompt);
+	copy_char = TRUE;
+	while (*p1) {
+		if (*p1 == '\33')
+			copy_char = FALSE;
+		if (copy_char)
+			*p2++ = *p1;
+		if (!copy_char && *p1 == 'm')
+			copy_char = TRUE;
+		p1++;
+	}
+	*p2 = '\0';
+
+	/* Choose the right generator function */
+	if (strcmp (prompt_tmp, EDITOR_PROMPT_CON_TYPE) == 0)
+		generator_func = gen_connection_types;
+	else if (strcmp (prompt_tmp, EDITOR_PROMPT_SETTING) == 0)
+		generator_func = gen_setting_names;
+	else if (strcmp (prompt_tmp, EDITOR_PROMPT_PROPERTY) == 0)
+		generator_func = gen_property_names;
+	else if (g_str_has_prefix (prompt_tmp, "nmcli")) {
+		if (!strchr (prompt_tmp, '.')) {
+			int level = g_str_has_prefix (prompt_tmp, "nmcli>") ? 0 : 1;
+
+			/* Main menu  - level 0,1 */
+			if (start == 0)
+				generator_func = gen_nmcli_cmds_menu;
+			else {
+				if (should_complete_cmd (line, "goto ")) {
+					if (level == 0 && !strchr (line, '.'))
+						generator_func = gen_setting_names;
+					else
+						generator_func = gen_property_names;
+				} else if (   should_complete_cmd (line, "set ")
+				           || should_complete_cmd (line, "describe ")) {
+					if (level == 0 && !strchr (line, '.')) {
+						generator_func = gen_setting_names;
+						*edit_lib_symbols.rl_completion_append_character_x = '.';
+					}
+					else
+						generator_func = gen_property_names;
+				} else if (should_complete_cmd (line, "nmcli "))
+					generator_func = gen_cmd_nmcli;
+				else if (   should_complete_cmd (line, "print ")
+				         || should_complete_cmd (line, "verify "))
+					generator_func = gen_cmd_verify0;
+				else if (should_complete_cmd (line, "help "))
+					generator_func = gen_nmcli_cmds_menu;
+			}
+		} else {
+			/* Submenu - level 2 */
+			if (start == 0)
+				generator_func = gen_nmcli_cmds_submenu;
+			else {
+				if (should_complete_cmd (line, "print "))
+					generator_func = gen_cmd_print2;
+				else if (should_complete_cmd (line, "help "))
+					generator_func = gen_nmcli_cmds_submenu;
+			}
+		}
+	}
+
+	if (generator_func)
+		match_array = edit_lib_symbols.completion_matches_func (text, generator_func);
+
+	/* Disable default filename completion */
+	if (!match_array)
+		*edit_lib_symbols.rl_attempted_completion_over_x = 1;
+
+	g_free (prompt_tmp);
+	return match_array;
 }
 
 static GModule *
@@ -3330,6 +3625,33 @@ load_cmd_line_edit_lib (void)
 		goto error;
 	if (!g_module_symbol (module, "rl_startup_hook", (gpointer) (&edit_lib_symbols.rl_startup_hook_x)))
 		goto error;
+	if (!g_module_symbol (module, "rl_attempted_completion_function",
+	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_function_x)))
+		goto error;
+	if (!g_module_symbol (module, "completion_matches",
+	                      (gpointer) (&edit_lib_symbols.completion_matches_func)))
+		goto error;
+	if (!g_module_symbol (module, "rl_line_buffer",
+	                      (gpointer) (&edit_lib_symbols.rl_line_buffer_x)))
+		goto error;
+	if (!g_module_symbol (module, "rl_prompt",
+	                      (gpointer) (&edit_lib_symbols.rl_prompt_x)))
+		goto error;
+	if (!g_module_symbol (module, "rl_attempted_completion_over",
+	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_over_x)))
+		goto error;
+	if (!g_module_symbol (module, "rl_completion_append_character",
+	                      (gpointer) (&edit_lib_symbols.rl_completion_append_character_x)))
+		goto error;
+	if (!g_module_symbol (module, "rl_completer_word_break_characters",
+	                      (gpointer) (&edit_lib_symbols.rl_completer_word_break_characters_x)))
+		goto error;
+
+	/* Set a pointer to an alternative function to create matches */
+	*edit_lib_symbols.rl_attempted_completion_function_x = (CPPFunction *) nmcli_editor_tab_completion;
+
+	/* Use ' ' and '.' as word break characters */
+	*edit_lib_symbols.rl_completer_word_break_characters_x = ". ";
 
 	return module;
 error:
@@ -4256,6 +4578,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc_setting_custom_init (setting);
 					nm_connection_add_setting (connection, setting);
 				}
+				/* Set global variable for use in TAB completion */
+				nmc_completion_setting = setting;
 
 				/* Switch to level 1 */
 				menu_switch_to_level1 (&menu_ctx, setting, setting_name, nmc->editor_prompt_color);
@@ -4446,6 +4770,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
 				menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+				nmc_completion_setting = NULL;  /* for TAB completion */
 			}
 			break;
 
@@ -4771,6 +5096,9 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	printf ("\n\n");
 	printf (_("Type 'help' or '?' for available commands."));
 	printf ("\n\n");
+
+	/* Set global variable for use in TAB completion */
+	nmc_completion_con_type = connection_type;
 
 	/* Run menu loop */
 	editor_menu_main (nmc, connection, connection_type);
