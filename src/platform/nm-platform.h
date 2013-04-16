@@ -368,6 +368,9 @@ gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int ple
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses);
+gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses);
+gboolean nm_platform_address_flush (int ifindex);
 
 GArray *nm_platform_ip4_route_get_all (int ifindex);
 GArray *nm_platform_ip6_route_get_all (int ifindex);

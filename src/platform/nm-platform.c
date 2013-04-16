@@ -1155,6 +1155,135 @@ nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen)
 	return klass->ip6_address_exists (platform, ifindex, address, plen);
 }
 
+static gboolean
+array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address)
+{
+	int i;
+
+	for (i = 0; i < addresses->len; i++) {
+		if (!memcmp (&g_array_index (addresses, NMPlatformIP4Address, i), address, sizeof (*address)))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
+array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address)
+{
+	int i;
+
+	for (i = 0; i < addresses->len; i++) {
+		if (!memcmp (&g_array_index (addresses, NMPlatformIP6Address, i), address, sizeof (*address)))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/**
+ * nm_platform_ip4_address_sync:
+ * @ifindex: Interface index
+ * @known_addresses: List of addresses
+ *
+ * A convenience function to synchronize addresses for a specific interface
+ * with the least possible disturbance. It simply removes addresses that are
+ * not listed and adds addresses that are.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
+{
+	GArray *addresses;
+	NMPlatformIP4Address *address;
+	const NMPlatformIP4Address *known_address;
+	int i;
+
+	/* Delete unknown addresses */
+	addresses = nm_platform_ip4_address_get_all (ifindex);
+	for (i = 0; i < addresses->len; i++) {
+		address = &g_array_index (addresses, NMPlatformIP4Address, i);
+		address->ifindex = 0;
+
+		if (!known_addresses || !array_contains_ip4_address (known_addresses, address))
+			nm_platform_ip4_address_delete (ifindex, address->address, address->plen);
+	}
+	g_array_free (addresses, TRUE);
+
+	if (!known_addresses)
+		return TRUE;
+
+	/* Add missing addresses */
+	for (i = 0; i < known_addresses->len; i++) {
+		known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
+
+		if (!nm_platform_ip4_address_exists (ifindex, known_address->address, known_address->plen))
+			if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->plen))
+				return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_platform_ip6_address_sync:
+ * @ifindex: Interface index
+ * @known_addresses: List of addresses
+ *
+ * A convenience function to synchronize addresses for a specific interface
+ * with the least possible disturbance. It simply removes addresses that are
+ * not listed and adds addresses that are.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
+{
+	GArray *addresses;
+	NMPlatformIP6Address *address;
+	const NMPlatformIP6Address *known_address;
+	int i;
+
+	/* Delete unknown addresses */
+	addresses = nm_platform_ip6_address_get_all (ifindex);
+	for (i = 0; i < addresses->len; i++) {
+		address = &g_array_index (addresses, NMPlatformIP6Address, i);
+		address->ifindex = 0;
+
+		/* Leave link local address management to the kernel */
+		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+			continue;
+
+		if (!known_addresses || !array_contains_ip6_address (known_addresses, address))
+			nm_platform_ip6_address_delete (ifindex, address->address, address->plen);
+	}
+	g_array_free (addresses, TRUE);
+
+	if (!known_addresses)
+		return TRUE;
+
+	/* Add missing addresses */
+	for (i = 0; i < known_addresses->len; i++) {
+		known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
+
+		if (!nm_platform_ip6_address_exists (ifindex, known_address->address, known_address->plen))
+			if (!nm_platform_ip6_address_add (ifindex, known_address->address, known_address->plen))
+				return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_platform_address_flush (int ifindex)
+{
+	return nm_platform_ip4_address_sync (ifindex, NULL)
+			&& nm_platform_ip6_address_sync (ifindex, NULL);
+}
+
+/******************************************************************/
+
 GArray *
 nm_platform_ip4_route_get_all (int ifindex)
 {
