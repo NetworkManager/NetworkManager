@@ -681,7 +681,7 @@ auto_register_cb (gpointer user_data)
  * existing secrets without user interaction, or requesting entirely new
  * secrets from the user.
  *
- * VFunc: get_secrets
+ * Virtual: get_secrets
  */
 void
 nm_secret_agent_get_secrets (NMSecretAgent *self,
@@ -721,7 +721,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
  * Asyncronously ensure that all secrets inside @connection
  * are stored to disk.
  *
- * VFunc: save_secrets
+ * Virtual: save_secrets
  */
 void
 nm_secret_agent_save_secrets (NMSecretAgent *self,
@@ -752,7 +752,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
  * Asynchronously ask the agent to delete all saved secrets belonging to
  * @connection.
  *
- * VFunc: delete_secrets
+ * Virtual: delete_secrets
  */
 void
 nm_secret_agent_delete_secrets (NMSecretAgent *self,

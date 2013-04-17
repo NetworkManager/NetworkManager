@@ -195,12 +195,12 @@ typedef struct {
 
 	/* Called when the subclass should retrieve and return secrets.  Subclass
 	 * must copy or reference any arguments it may require after returning from
-	 * this method, as the arguments will freed (except for 'agent', 'callback',
+	 * this method, as the arguments will freed (except for 'self', 'callback',
 	 * and 'user_data' of course).  If the request is canceled, the callback
 	 * should still be called, but with the NM_SECRET_AGENT_ERROR_AGENT_CANCELED
 	 * error.
 	 */
-	void (*get_secrets) (NMSecretAgent *agent,
+	void (*get_secrets) (NMSecretAgent *self,
 	                     NMConnection *connection,
 	                     const char *connection_path,
 	                     const char *setting_name,
@@ -215,17 +215,17 @@ typedef struct {
 	 * call, sending the NM_SECRET_AGENT_ERROR/NM_SECRET_AGENT_ERROR_AGENT_CANCELED
 	 * error to that callback.
 	 */
-	void (*cancel_get_secrets) (NMSecretAgent *agent,
+	void (*cancel_get_secrets) (NMSecretAgent *self,
 	                            const char *connection_path,
 	                            const char *setting_name);
 
 	/* Called when the subclass should save the secrets contained in the
 	 * connection to backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'agent', 'callback', and 'user_data'
+	 * arguments will freed (except for 'self', 'callback', and 'user_data'
 	 * of course).
 	 */
-	void (*save_secrets) (NMSecretAgent *agent,
+	void (*save_secrets) (NMSecretAgent *self,
 	                      NMConnection *connection,
 	                      const char *connection_path,
 	                      NMSecretAgentSaveSecretsFunc callback,
@@ -234,10 +234,10 @@ typedef struct {
 	/* Called when the subclass should delete the secrets contained in the
 	 * connection from backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'agent', 'callback', and 'user_data'
+	 * arguments will freed (except for 'self', 'callback', and 'user_data'
 	 * of course).
 	 */
-	void (*delete_secrets) (NMSecretAgent *agent,
+	void (*delete_secrets) (NMSecretAgent *self,
 	                        NMConnection *connection,
 	                        const char *connection_path,
 	                        NMSecretAgentDeleteSecretsFunc callback,
