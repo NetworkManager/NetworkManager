@@ -102,6 +102,10 @@ global:
 	nm_device_ethernet_get_type;
 	nm_device_ethernet_new;
 	nm_device_filter_connections;
+	nm_device_generic_error_get_type;
+	nm_device_generic_error_quark;
+	nm_device_generic_get_hw_address;
+	nm_device_generic_get_type;
 	nm_device_get_active_connection;
 	nm_device_get_autoconnect;
 	nm_device_get_available_connections;

@@ -50,6 +50,7 @@
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-adsl.h"
+#include "nm-device-generic.h"
 #include "nm-system.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -2192,7 +2193,6 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	g_return_if_fail (udev_device != NULL);
 	g_return_if_fail (iface != NULL);
 	g_return_if_fail (sysfs_path != NULL);
-	g_return_if_fail (driver != NULL);
 
 	/* Most devices will have an ifindex here */
 	if (ifindex > 0) {
@@ -2232,6 +2232,9 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 		}
 	}
 
+	if (device == NULL && driver == NULL)
+		device = nm_device_generic_new (sysfs_path, iface, driver);
+
 	if (device == NULL) {
 		if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
 			device = nm_device_olpc_mesh_new (sysfs_path, iface, driver);
@@ -2267,10 +2270,25 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 				}
 			} else
 				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", iface);
-		} else if (is_adsl (udev_device))
+		} else if (is_adsl (udev_device)) {
 			device = nm_device_adsl_new (sysfs_path, iface, driver);
-		else
-			device = nm_device_ethernet_new (sysfs_path, iface, driver);
+		} else {
+			gint etype;
+			gboolean is_ctc;
+
+			/* For anything else, if it uses Ethernet encapsulation, consider it
+			 * an Ethernet device. (But some s390 CTC-type devices report 256 for
+			 * some reason, and we need to call them Ethernet too. FIXME: use
+			 * something other than interface name to detect CTC here.)
+			 */
+			etype = g_udev_device_get_sysfs_attr_as_int (udev_device, "type");
+			is_ctc = g_str_has_prefix (iface, "ctc") && (etype == 256);
+
+			if (etype == ARPHRD_ETHER || is_ctc)
+				device = nm_device_ethernet_new (sysfs_path, iface, driver);
+			else
+				device = nm_device_generic_new (sysfs_path, iface, driver);
+		}
 	}
 
 	if (device)

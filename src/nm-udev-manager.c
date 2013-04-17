@@ -353,7 +353,6 @@ dev_get_attrs (GUdevDevice *udev_device,
 	GUdevDevice *parent = NULL, *grandparent = NULL;
 	const char *ifname, *driver, *path, *subsys;
 	gint ifindex = -1;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (udev_device != NULL, FALSE);
 	g_return_val_if_fail (out_ifname != NULL, FALSE);
@@ -414,36 +413,27 @@ dev_get_attrs (GUdevDevice *udev_device,
 				driver = "easytether";
 			break;
 		}
-		
-		if (!driver) {
-			nm_log_warn (LOGD_HW, "%s: couldn't determine device driver; ignoring...", path);
-			goto out;
-		}
 	}
 
 	*out_ifname = ifname;
 	*out_path = path;
 	*out_driver = g_strdup (driver);
 	*out_ifindex = ifindex;
-	success = TRUE;
 
-out:
 	if (grandparent)
 		g_object_unref (grandparent);
 	if (parent)
 		g_object_unref (parent);
 
-	return success;
+	return TRUE;
 }
 
 static void
 net_add (NMUdevManager *self, GUdevDevice *udev_device)
 {
 	gint ifindex = -1;
-	gint etype;
 	const char *ifname = NULL, *path = NULL, *tmp;
 	char *driver = NULL;
-	gboolean is_ctc;
 
 	g_return_if_fail (udev_device != NULL);
 
@@ -452,18 +442,6 @@ net_add (NMUdevManager *self, GUdevDevice *udev_device)
 
 	if (ifindex < 0) {
 		nm_log_warn (LOGD_HW, "%s: device had invalid ifindex %d; ignoring...", path, ifindex);
-		goto out;
-	}
-
-	etype = g_udev_device_get_sysfs_attr_as_int (udev_device, "type");
-	is_ctc = (strncmp (ifname, "ctc", 3) == 0) && (etype == 256);
-
-	/* Ignore devices that don't report Ethernet encapsulation, except for
-	 * s390 CTC-type devices that report 256 for some reason.
-	 * FIXME: use something other than interface name to detect CTC here.
-	 */
-	if ((etype != ARPHRD_ETHER) && (etype != ARPHRD_INFINIBAND) && (is_ctc == FALSE)) {
-		nm_log_dbg (LOGD_HW, "(%s): ignoring interface with type %d", ifname, etype);
 		goto out;
 	}
 

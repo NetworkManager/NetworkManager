@@ -53,6 +53,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_BOND       NM_DBUS_INTERFACE_DEVICE ".Bond"
 #define NM_DBUS_INTERFACE_DEVICE_VLAN       NM_DBUS_INTERFACE_DEVICE ".Vlan"
 #define NM_DBUS_INTERFACE_DEVICE_BRIDGE     NM_DBUS_INTERFACE_DEVICE ".Bridge"
+#define NM_DBUS_INTERFACE_DEVICE_GENERIC    NM_DBUS_INTERFACE_DEVICE ".Generic"
 
 
 #define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
@@ -98,6 +99,7 @@ typedef enum {
 /**
  * NMDeviceType:
  * @NM_DEVICE_TYPE_UNKNOWN: unknown device
+ * @NM_DEVICE_TYPE_GENERIC: generic support for unrecognized device types
  * @NM_DEVICE_TYPE_ETHERNET: a wired ethernet device
  * @NM_DEVICE_TYPE_WIFI: an 802.11 WiFi device
  * @NM_DEVICE_TYPE_UNUSED1: not used
@@ -131,6 +133,7 @@ typedef enum {
 	NM_DEVICE_TYPE_VLAN       = 11,
 	NM_DEVICE_TYPE_ADSL       = 12,
 	NM_DEVICE_TYPE_BRIDGE     = 13,
+	NM_DEVICE_TYPE_GENERIC    = 14,
 } NMDeviceType;
 
 /**
