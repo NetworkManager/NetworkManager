@@ -23,10 +23,8 @@ from gi.repository import GObject, NetworkManager, NMClient
 # This example asks settings service for all configured connections.
 # Unfortunately, at this time since libnm-glib still makes heavy use of
 # GValue and GHashTable (rather than GVariant), libnm-glib isn't fully
-# usable from GObject Introspection-ready languages.  Most functions will
-# work fine, but those involving connection secrets (like
-# nm_remote_connection_get_secrets() or nm_connection_to_hash()) cause assertion
-# failures since pygobject cannot handle complex GHashTable elements.
+# usable from GObject Introspection-ready languages. Most functions will
+# work fine, but e. g. nm_connection_to_hash() causes assertion failures.
 
 main_loop = None
 

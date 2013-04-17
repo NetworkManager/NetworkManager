@@ -680,10 +680,10 @@ nm_setting_clear_secrets_with_flags (NMSetting *setting,
  * guide to what secrets may be required, because in some circumstances, there
  * is no way to conclusively determine exactly which secrets are needed.
  *
- * Returns: (transfer full) (element-type utf8): a #GPtrArray containing the property names of secrets of the
- * #NMSetting which may be required; the caller owns the array
- * and must free the each array element with g_free(), as well as the array
- * itself with g_ptr_array_free()
+ * Returns: (transfer container) (element-type utf8): a #GPtrArray containing
+ * the property names of secrets of the #NMSetting which may be required; the
+ * caller owns the array and must free it with g_ptr_array_free(), but must not
+ * free the elements.
  **/
 GPtrArray *
 nm_setting_need_secrets (NMSetting *setting)
