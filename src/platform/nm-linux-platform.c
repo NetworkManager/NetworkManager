@@ -874,9 +874,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 		struct ethtool_get_features_block features_block;
 	} edata = { .features = { .cmd = ETHTOOL_GFEATURES, .size = 1 } };
 
-	/* Only ARPHDR_ETHER links can possibly support VLANs. Thanks to Dan Winship
-	 * for pointing this out.
-	 */
+	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!rtnllink || rtnl_link_get_arptype (rtnllink) != ARPHRD_ETHER)
 		return FALSE;
 
