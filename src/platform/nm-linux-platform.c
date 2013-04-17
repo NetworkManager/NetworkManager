@@ -851,7 +851,14 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	const char *name = nm_platform_link_get_name (ifindex);
 	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
 
-	/* We ignore the result and only return FALSE on error */
+	/* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
+	 * assume the device supports carrier-detect, otherwise we assume it
+	 * doesn't.
+	 *
+	 * We don't use ETHTOOL_GLINK for carrier detect itself, so this can
+	 * be regarded as a hack. Instead, kernel should be able to report
+	 * carrier detection capability via netlink.
+	 */
 	return name && ethtool_get (name, &edata);
 }
 
