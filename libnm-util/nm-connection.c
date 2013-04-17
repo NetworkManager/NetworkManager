@@ -821,12 +821,12 @@ setting_priority_compare (gconstpointer a, gconstpointer b)
 /**
  * nm_connection_need_secrets:
  * @connection: the #NMConnection
- * @hints: (out callee-allocates) (element-type utf8) (allow-none) (transfer full):
- *   the address of a pointer to a #GPtrArray, initialized to NULL, which on
+ * @hints: (out) (element-type utf8) (allow-none) (transfer container):
+ *   the address of a pointer to a #GPtrArray, initialized to %NULL, which on
  *   return points to an allocated #GPtrArray containing the property names of
  *   secrets of the #NMSetting which may be required; the caller owns the array
- *   and must free the each array element with g_free(), as well as the array
- *   itself with g_ptr_array_free()
+ *   and must free the array itself with g_ptr_array_free(), but not free its
+ *   elements
  *
  * Returns the name of the first setting object in the connection which would
  * need secrets to make a successful connection.  The returned hints are only
