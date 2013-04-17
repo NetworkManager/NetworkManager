@@ -1,5 +1,6 @@
 *~
 .*.swp
+*.bak
 *.o
 *.lo
 *.gcno
@@ -161,6 +162,7 @@ src/NetworkManager
 src/nm-crash-logger
 src/generated/nm-marshal.*
 src/supplicant-manager/tests/test-supplicant-config
+src/dhcp-manager/nm-dhcp-helper
 system-settings/src
 test/libnm-glib-test
 test/libnm_glib_test
