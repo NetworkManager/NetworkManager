@@ -190,9 +190,9 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			if (!strcmp (argv[1], "tabular"))
+			if (matches (argv[1], "tabular") == 0)
 				nmc->multiline_output = FALSE;
-			else if (!strcmp (argv[1], "multiline"))
+			else if (matches (argv[1], "multiline") == 0)
 				nmc->multiline_output = TRUE;
 			else {
 		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
@@ -206,9 +206,9 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
-			if (!strcmp (argv[1], "yes"))
+			if (matches (argv[1], "yes") == 0)
 				nmc->escape_values = TRUE;
-			else if (!strcmp (argv[1], "no"))
+			else if (matches (argv[1], "no") == 0)
 				nmc->escape_values = FALSE;
 			else {
 		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
