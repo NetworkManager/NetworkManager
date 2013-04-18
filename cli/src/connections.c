@@ -1761,9 +1761,7 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
 		}
-		else if (   matches (*argv, "help") == 0
-		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
-		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+		else if (nmc_arg_is_help (*argv)) {
 			usage ();
 			nmc->should_wait = FALSE;
 		}

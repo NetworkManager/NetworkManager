@@ -2229,9 +2229,7 @@ do_devices (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wimax (nmc, argc-1, argv+1);
 		}
 #endif
-		else if (   matches (*argv, "help") == 0
-		         || (g_str_has_prefix (*argv, "-") &&  matches ((*argv)+1, "help") == 0)
-		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+		else if (nmc_arg_is_help (*argv)) {
 			usage ();
 		}
 		else {

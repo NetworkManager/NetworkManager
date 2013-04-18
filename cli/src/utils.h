@@ -37,6 +37,7 @@ typedef struct {
 /* === Functions === */
 int matches (const char *cmd, const char *pattern);
 int next_arg (int *argc, char ***argv);
+gboolean nmc_arg_is_help (const char *arg);
 gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);
 char *ssid_to_printable (const char *str, gsize len);
 char *nmc_ip4_address_as_string (guint32 ip, GError **error);

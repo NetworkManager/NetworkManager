@@ -542,9 +542,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 				}
 			}
 		}
-		else if (   matches (*argv, "help") == 0
-		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
-		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+		else if (nmc_arg_is_help (*argv)) {
 			usage_general ();
 		}
 		else {
@@ -611,9 +609,7 @@ do_networking (NmCli *nmc, int argc, char **argv)
 	if (argc == 0)
 		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
 	else if (argc > 0) {
-		if (   matches (*argv, "help") == 0
-		    || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
-		    || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+		if (nmc_arg_is_help (*argv)) {
 			usage_networking ();
 		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
 
@@ -708,9 +704,7 @@ do_radio (NmCli *nmc, int argc, char **argv)
 			}
 		}
 #endif
-		else if (   matches (*argv, "help") == 0
-		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
-		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+		else if (nmc_arg_is_help (*argv)) {
 			usage_radio ();
 		}
 		else {
@@ -957,9 +951,7 @@ do_network_manager (NmCli *nmc, int argc, char **argv)
 			}
 		}
 #endif
-		else if (   matches (*argv, "help") == 0
-		         || (g_str_has_prefix (*argv, "-")  && matches ((*argv)+1, "help") == 0)
-		         || (g_str_has_prefix (*argv, "--") && matches ((*argv)+2, "help") == 0)) {
+		else if (nmc_arg_is_help (*argv)) {
 			usage ();
 		}
 		else {

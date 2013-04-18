@@ -57,6 +57,17 @@ next_arg (int *argc, char ***argv)
 	return 0;
 }
 
+gboolean
+nmc_arg_is_help (const char *arg)
+{
+	if (   matches (arg, "help") == 0
+	    || (g_str_has_prefix (arg, "-")  && matches (arg+1, "help") == 0)
+	    || (g_str_has_prefix (arg, "--") && matches (arg+2, "help") == 0)) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*
  * Helper function to parse command-line arguments.
  * arg_arr: description of arguments to look for
