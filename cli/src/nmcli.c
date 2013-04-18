@@ -113,8 +113,6 @@ static const struct cmd {
 	{ "connection", do_connections },
 	{ "device",     do_devices },
 	{ "help",       do_help },
-	/* Deprecated objects; only kept for backwards compatibility */
-	{ "nm",         do_network_manager },
 	{ 0 }
 };
 

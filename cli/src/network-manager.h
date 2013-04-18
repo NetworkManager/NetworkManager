@@ -26,7 +26,4 @@ NMCResultCode do_general    (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_networking (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_radio      (NmCli *nmc, int argc, char **argv);
 
-/* Backward compatibility only */
-NMCResultCode do_network_manager (NmCli *nmc, int argc, char **argv);
-
 #endif /* NMC_NETWORK_MANAGER_H */
