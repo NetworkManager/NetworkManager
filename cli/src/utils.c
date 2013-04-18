@@ -60,6 +60,8 @@ next_arg (int *argc, char ***argv)
 gboolean
 nmc_arg_is_help (const char *arg)
 {
+	if (!arg)
+		return FALSE;
 	if (   matches (arg, "help") == 0
 	    || (g_str_has_prefix (arg, "-")  && matches (arg+1, "help") == 0)
 	    || (g_str_has_prefix (arg, "--") && matches (arg+2, "help") == 0)) {
