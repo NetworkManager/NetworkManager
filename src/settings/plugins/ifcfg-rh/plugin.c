@@ -128,7 +128,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "parsing %s ... ", path);
 	}
 
-	connection = nm_ifcfg_connection_new (path, source, &local, &ignore_error);
+	connection = nm_ifcfg_connection_new (source, path, &local, &ignore_error);
 	if (!connection) {
 		if (!ignore_error) {
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
@@ -260,7 +260,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		return;
 	}
 
-	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, NULL, &error, &ignore_error);
+	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (NULL, path, &error, &ignore_error);
 	if (!new) {
 		/* errors reading connection; remove it */
 		if (!ignore_error) {

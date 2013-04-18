@@ -45,12 +45,15 @@ typedef struct {
 
 GType nm_ifcfg_connection_get_type (void);
 
-NMIfcfgConnection *nm_ifcfg_connection_new (const char *filename,
-                                            NMConnection *source,
+NMIfcfgConnection *nm_ifcfg_connection_new (NMConnection *source,
+                                            const char *full_path,
                                             GError **error,
                                             gboolean *ignore_error);
 
 const char *nm_ifcfg_connection_get_path (NMIfcfgConnection *self);
+
+void        nm_ifcfg_connection_set_path (NMIfcfgConnection *self,
+                                          const char *ifcfg_path);
 
 const char *nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self);
 

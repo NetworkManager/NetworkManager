@@ -39,6 +39,7 @@
 #include "reader.h"
 #include "writer.h"
 #include "nm-inotify-helper.h"
+#include "utils.h"
 
 G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTION)
 
@@ -96,27 +97,24 @@ files_changed_cb (NMInotifyHelper *ih,
 }
 
 NMIfcfgConnection *
-nm_ifcfg_connection_new (const char *full_path,
-                         NMConnection *source,
+nm_ifcfg_connection_new (NMConnection *source,
+                         const char *full_path,
                          GError **error,
                          gboolean *ignore_error)
 {
 	GObject *object;
-	NMIfcfgConnectionPrivate *priv;
 	NMConnection *tmp;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	NMInotifyHelper *ih;
 	gboolean update_unsaved = TRUE;
 
-	g_return_val_if_fail (full_path != NULL, NULL);
+	g_assert (source || full_path);
 
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
 		tmp = g_object_ref (source);
 	else {
+		char *keyfile = NULL, *routefile = NULL, *route6file = NULL;
+
 		tmp = connection_from_file (full_path, NULL, NULL, NULL,
 		                            &unmanaged,
 		                            &keyfile,
@@ -124,6 +122,9 @@ nm_ifcfg_connection_new (const char *full_path,
 		                            &route6file,
 		                            error,
 		                            ignore_error);
+		g_free (keyfile);
+		g_free (routefile);
+		g_free (route6file);
 		if (!tmp)
 			return NULL;
 
@@ -134,37 +135,21 @@ nm_ifcfg_connection_new (const char *full_path,
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
 	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
 	                                   NULL);
-	if (!object)
-		goto out;
-
-	/* Update our settings with what was read from the file */
-	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                             tmp,
-	                                             update_unsaved,
-	                                             error)) {
-		g_object_unref (object);
-		object = NULL;
-		goto out;
+	if (object) {
+		/* Update our settings with what was read from the file */
+		if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+		                                             tmp,
+		                                             update_unsaved,
+		                                             error)) {
+			/* Set the path and start monitoring */
+			if (full_path)
+				nm_ifcfg_connection_set_path (NM_IFCFG_CONNECTION (object), full_path);
+		} else {
+			g_object_unref (object);
+			object = NULL;
+		}
 	}
 
-	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
-	priv->path = g_strdup (full_path);
-
-	ih = nm_inotify_helper_get ();
-	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), object);
-
-	priv->file_wd = nm_inotify_helper_add_watch (ih, full_path);
-
-	priv->keyfile = keyfile;
-	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, keyfile);
-
-	priv->routefile = routefile;
-	priv->routefile_wd = nm_inotify_helper_add_watch (ih, routefile);
-
-	priv->route6file = route6file;
-	priv->route6file_wd = nm_inotify_helper_add_watch (ih, route6file);
-
-out:
 	g_object_unref (tmp);
 	return (NMIfcfgConnection *) object;
 }
@@ -175,6 +160,74 @@ nm_ifcfg_connection_get_path (NMIfcfgConnection *self)
 	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
 
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->path;
+}
+
+static void
+path_watch_stop (NMIfcfgConnection *self)
+{
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
+	NMInotifyHelper *ih;
+
+	ih = nm_inotify_helper_get ();
+
+	if (priv->ih_event_id) {
+		g_signal_handler_disconnect (ih, priv->ih_event_id);
+		priv->ih_event_id = 0;
+	}
+
+	if (priv->file_wd >= 0) {
+		nm_inotify_helper_remove_watch (ih, priv->file_wd);
+		priv->file_wd = -1;
+	}
+
+	g_free (priv->keyfile);
+	priv->keyfile = NULL;
+	if (priv->keyfile_wd >= 0) {
+		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
+		priv->keyfile_wd = -1;
+	}
+
+	g_free (priv->routefile);
+	priv->routefile = NULL;
+	if (priv->routefile_wd >= 0) {
+		nm_inotify_helper_remove_watch (ih, priv->routefile_wd);
+		priv->routefile_wd = -1;
+	}
+
+	g_free (priv->route6file);
+	priv->route6file = NULL;
+	if (priv->route6file_wd >= 0) {
+		nm_inotify_helper_remove_watch (ih, priv->route6file_wd);
+		priv->route6file_wd = -1;
+	}
+}
+
+void
+nm_ifcfg_connection_set_path (NMIfcfgConnection *self, const char *ifcfg_path)
+{
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
+	NMInotifyHelper *ih;
+
+	g_return_if_fail (ifcfg_path != NULL);
+
+	path_watch_stop (self);
+	g_free (priv->path);
+
+	priv->path = g_strdup (ifcfg_path);
+
+	ih = nm_inotify_helper_get ();
+	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), self);
+
+	priv->file_wd = nm_inotify_helper_add_watch (ih, ifcfg_path);
+
+	priv->keyfile = utils_get_keys_path (ifcfg_path);
+	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, priv->keyfile);
+
+	priv->routefile = utils_get_route_path (ifcfg_path);
+	priv->routefile_wd = nm_inotify_helper_add_watch (ih, priv->routefile);
+
+	priv->route6file = utils_get_route6_path (ifcfg_path);
+	priv->route6file_wd = nm_inotify_helper_add_watch (ih, priv->route6file);
 }
 
 const char *
@@ -194,40 +247,54 @@ commit_changes (NMSettingsConnection *connection,
 	GError *error = NULL;
 	NMConnection *reread;
 	char *unmanaged = NULL, *keyfile = NULL, *routefile = NULL, *route6file = NULL;
-	gboolean same = FALSE;
+	gboolean same = FALSE, success = FALSE;
+	char *ifcfg_path = NULL;
 
 	/* To ensure we don't rewrite files that are only changed from other
 	 * processes on-disk, read the existing connection back in and only rewrite
 	 * it if it's really changed.
 	 */
-	reread = connection_from_file (priv->path, NULL, NULL, NULL,
-	                               &unmanaged, &keyfile, &routefile, &route6file,
-	                               NULL, NULL);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
+	if (priv->path) {
+		reread = connection_from_file (priv->path, NULL, NULL, NULL,
+		                               &unmanaged, &keyfile, &routefile, &route6file,
+		                               NULL, NULL);
+		g_free (unmanaged);
+		g_free (keyfile);
+		g_free (routefile);
+		g_free (route6file);
 
-	if (reread) {
-		same = nm_connection_compare (NM_CONNECTION (connection),
-		                              reread,
-		                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
-		                                NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS);
-		g_object_unref (reread);
+		if (reread) {
+			same = nm_connection_compare (NM_CONNECTION (connection),
+			                              reread,
+			                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+			                                 NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS);
+			g_object_unref (reread);
 
-		/* Don't bother writing anything out if in-memory and on-disk data are the same */
-		if (same) {
-			/* But chain up to parent to handle success - emits updated signal */
-			NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
-			return;
+			/* Don't bother writing anything out if in-memory and on-disk data are the same */
+			if (same) {
+				/* But chain up to parent to handle success - emits updated signal */
+				NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
+				return;
+			}
+		}
+
+		success = writer_update_connection (NM_CONNECTION (connection),
+		                                    IFCFG_DIR,
+		                                    priv->path,
+		                                    priv->keyfile,
+		                                    &error);
+	} else {
+		success = writer_new_connection (NM_CONNECTION (connection),
+		                                 IFCFG_DIR,
+		                                 &ifcfg_path,
+		                                 &error);
+		if (success) {
+			nm_ifcfg_connection_set_path (NM_IFCFG_CONNECTION (connection), ifcfg_path);
+			g_free (ifcfg_path);
 		}
 	}
 
-	if (writer_update_connection (NM_CONNECTION (connection),
-	                              IFCFG_DIR,
-	                              priv->path,
-	                              priv->keyfile,
-	                              &error)) {
+	if (success) {
 		/* Chain up to parent to handle success */
 		NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
 	} else {
@@ -244,14 +311,16 @@ do_delete (NMSettingsConnection *connection,
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 
-	g_unlink (priv->path);
-	if (priv->keyfile)
-		g_unlink (priv->keyfile);
-	if (priv->routefile)
-		g_unlink (priv->routefile);
+	if (priv->path) {
+		g_unlink (priv->path);
+		if (priv->keyfile)
+			g_unlink (priv->keyfile);
+		if (priv->routefile)
+			g_unlink (priv->routefile);
 
-	if (priv->route6file)
-		g_unlink (priv->route6file);
+		if (priv->route6file)
+			g_unlink (priv->route6file);
+	}
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
 }
@@ -266,31 +335,10 @@ nm_ifcfg_connection_init (NMIfcfgConnection *connection)
 static void
 finalize (GObject *object)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
-	NMInotifyHelper *ih;
-
 	nm_connection_clear_secrets (NM_CONNECTION (object));
 
-	ih = nm_inotify_helper_get ();
-
-	if (priv->ih_event_id)
-		g_signal_handler_disconnect (ih, priv->ih_event_id);
-
-	g_free (priv->path);
-	if (priv->file_wd >= 0)
-		nm_inotify_helper_remove_watch (ih, priv->file_wd);
-
-	g_free (priv->keyfile);
-	if (priv->keyfile_wd >= 0)
-		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
-
-	g_free (priv->routefile);
-	if (priv->routefile_wd >= 0)
-		nm_inotify_helper_remove_watch (ih, priv->routefile_wd);
-
-	g_free (priv->route6file);
-	if (priv->route6file_wd >= 0)
-		nm_inotify_helper_remove_watch (ih, priv->route6file_wd);
+	path_watch_stop (NM_IFCFG_CONNECTION (object));
+	g_free (NM_IFCFG_CONNECTION_GET_PRIVATE (object)->path);
 
 	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->finalize (object);
 }
