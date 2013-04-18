@@ -244,13 +244,17 @@ _nmcli()
                         _nmcli_list "id uuid path type con-name"
                         return 0
                         ;;
+                    modify)
+                        _nmcli_list_nl "$(_nmcli_con_id)"
+                        return 0
+                        ;;
                     delete)
                         _nmcli_list "id uuid path"
                         return 0
                         ;;
                 esac
 
-                _nmcli_list "show up down add edit delete reload help"
+                _nmcli_list "show up down add modify edit delete reload help"
                 ;;
 
             device)
