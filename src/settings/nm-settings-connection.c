@@ -368,8 +368,8 @@ secrets_cleared_cb (NMSettingsConnection *self)
 	priv->agent_secrets = NULL;
 }
 
-/* Update the settings of this connection to match that of 'new', taking care to
- * make a private copy of secrets.
+/* Update the settings of this connection to match that of 'new_connection',
+ * taking care to make a private copy of secrets.
  */
 gboolean
 nm_settings_connection_replace_settings (NMSettingsConnection *self,
@@ -424,10 +424,10 @@ ignore_cb (NMSettingsConnection *connection,
 {
 }
 
-/* Replaces the settings in this connection with those in 'new'. If any changes
- * are made, commits them to permanent storage and to any other subsystems
- * watching this connection. Before returning, 'callback' is run with the given
- * 'user_data' along with any errors encountered.
+/* Replaces the settings in this connection with those in 'new_connection'. If
+ * any changes are made, commits them to permanent storage and to any other
+ * subsystems watching this connection. Before returning, 'callback' is run
+ * with the given 'user_data' along with any errors encountered.
  */
 void
 nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
