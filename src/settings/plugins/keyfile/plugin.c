@@ -80,7 +80,7 @@ _internal_new_connection (SCPluginKeyfile *self,
 
 	g_return_val_if_fail (full_path != NULL, NULL);
 
-	connection = nm_keyfile_connection_new (full_path, source, error);
+	connection = nm_keyfile_connection_new (source, full_path, error);
 	if (connection) {
 		g_hash_table_insert (priv->connections,
 		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (connection)),
@@ -197,7 +197,7 @@ dir_changed (GFileMonitor *monitor,
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (connection) {
 			/* Update */
-			tmp = nm_keyfile_connection_new (full_path, NULL, &error);
+			tmp = nm_keyfile_connection_new (NULL, full_path, &error);
 			if (tmp) {
 				if (!nm_connection_compare (NM_CONNECTION (connection),
 				                            NM_CONNECTION (tmp),
@@ -223,7 +223,7 @@ dir_changed (GFileMonitor *monitor,
 		} else {
 			/* New */
 			PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", full_path);
-			tmp = nm_keyfile_connection_new (full_path, NULL, &error);
+			tmp = nm_keyfile_connection_new (NULL, full_path, &error);
 			if (tmp) {
 				/* Connection renames will show as different paths but same UUID */
 				connection = g_hash_table_lookup (priv->connections, nm_connection_get_uuid (NM_CONNECTION (tmp)));
