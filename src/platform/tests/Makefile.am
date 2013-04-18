@@ -23,6 +23,7 @@ PLATFORM_LDADD = $(COMMON_LDADD) $(top_builddir)/src/platform/libnm-platform.la
 noinst_PROGRAMS = \
 	dump \
 	monitor \
+	platform \
 	test-link-fake \
 	test-link-linux \
 	test-address-fake \
@@ -39,6 +40,10 @@ monitor_LDADD = $(PLATFORM_LDADD)
 dump_SOURCES = dump.c
 dump_CPPFLAGS = $(AM_CPPFLAGS)
 dump_LDADD = $(PLATFORM_LDADD)
+
+platform_SOURCES = platform.c
+platform_CPPFLAGS = $(AM_CPPFLAGS)
+platform_LDADD = $(PLATFORM_LDADD)
 
 test_link_fake_SOURCES = \
 	test-link.c \
