@@ -197,9 +197,9 @@ usage (void)
 	         "  show configured [[ id | uuid | path ] <ID>]\n\n"
 	         "  show active     [[ id | uuid | path | apath ] <ID>]\n\n"
 #if WITH_WIMAX
-	         "  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n\n"
+	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n\n"
 #else
-	         "  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n\n"
+	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n\n"
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  delete [ id | uuid | path ] <ID>\n\n"
@@ -1366,7 +1366,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	const char *con_type;
-	const char *iface = NULL;
+	const char *ifname = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
 	gboolean wait = TRUE;
@@ -1418,14 +1418,14 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	next_arg (&argc, &argv);
 
 	while (argc > 0) {
-		if (strcmp (*argv, "iface") == 0) {
+		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 
-			iface = *argv;
+			ifname = *argv;
 		}
 		else if (strcmp (*argv, "ap") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
@@ -1489,7 +1489,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
 		is_virtual = TRUE;
 
-	device_found = find_device_for_connection (nmc, connection, iface, ap, nsp, &device, &spec_object, &error);
+	device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &error);
 	/* Virtual connection may not have their interfaces created yet */
 	if (!device_found && !is_virtual) {
 		if (error)

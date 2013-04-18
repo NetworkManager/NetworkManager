@@ -322,13 +322,13 @@ is 'nmcli connection show configured'.
 No simple reference.
 .fi
 .TP
-.B up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]
+.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
 path. If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP or \fIpath\fP can be
 used. When requiring a particular device to activate the connection on, the
-\fIiface\fP option with interface name should be given. In case of a VPN
-connection, the \fIiface\fP option specify the device of the base connection.
+\fIifname\fP option with interface name should be given. In case of a VPN
+connection, the \fIifname\fP option specify the device of the base connection.
 The \fIap\fP option specify what particular AP should be used in case of
 a Wi\(hyFi connection.
 .br
@@ -336,7 +336,7 @@ See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 .RS
 .PP
 Available options are:
-.IP \fIiface\fP 13
+.IP \fIifname\fP 13
 \(en interface that will be used for activation
 .IP \fIap\fP 13
 \(en BSSID of the AP which the command should connect to (for Wi\(hyFi connections)
@@ -409,7 +409,7 @@ This is the default action if no command is specified to \fIdevice\fP object.
 No simple reference.
 .fi
 .TP
-.B show [<iface>]
+.B show [<ifname>]
 .br
 Show detailed information about devices.  Without an argument, all devices are
 examined. To get information for a specific device, the interface name has
@@ -420,7 +420,7 @@ to be provided.
 No simple reference.
 .fi
 .TP
-.B disconnect <iface> [--nowait] [--timeout <timeout>]
+.B disconnect <ifname> [--nowait] [--timeout <timeout>]
 .br
 Disconnect a device and prevent the device from automatically activating further
 connections without user/manual intervention.
@@ -441,9 +441,9 @@ arguments: none
 .fi
 .RE
 .TP
-.B wifi [list [iface <iface>] [bssid <BSSID>]]
+.B wifi [list [ifname <ifname>] [bssid <BSSID>]]
 .br
-List available Wi\(hyFi access points. The \fIiface\fP and \fIbssid\fP options
+List available Wi\(hyFi access points. The \fIifname\fP and \fIbssid\fP options
 can be used to list APs for a particular interface or with a specific BSSID,
 respectively.
 .br
@@ -452,7 +452,7 @@ respectively.
 No simple reference.
 .fi
 .TP
-.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>] [\-\-private] [\-\-nowait] [\-\-timeout <timeout>]
+.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>] [\-\-private] [\-\-nowait] [\-\-timeout <timeout>]
 .br
 Connect to a Wi\(hyFi network specified by SSID or BSSID. The command creates a new
 connection and then activates it on a device. This is a command\(hyline counterpart
@@ -469,7 +469,7 @@ Available options are:
 \(en password for secured networks (WEP or WPA)
 .IP \fIwep\-key\-type\fP 13
 \(en type of WEP secret, either \fIkey\fP for ASCII/HEX key or \fIphrase\fP for passphrase
-.IP \fIiface\fP 13
+.IP \fIifname\fP 13
 \(en interface that will be used for activation
 .IP \fIbssid\fP 13
 \(en if specified, the created connection will be restricted just for the BSSID
@@ -491,16 +491,16 @@ arguments: according to arguments
 .fi
 .RE
 .TP
-.B wifi scan [[iface] <iface>]
+.B wifi scan [[ifname] <ifname>]
 .br
 Request that \fINetworkManager\fP immediately scan for available access points.
 NetworkManager scans Wi\(hyFi networks periodically, but in some cases it can be
 useful to start scanning manually (e.g. after resuming the computer).
 This command doesn't show the APs, use 'nmcli device wifi list' for that.
 .TP
-.B wimax [list [iface <iface>] [nsp <name>]]
+.B wimax [list [ifname <ifname>] [nsp <name>]]
 .br
-List available WiMAX NSP. The \fIiface\fP and \fInsp\fP options
+List available WiMAX NSP. The \fIifname\fP and \fInsp\fP options
 can be used to list networks for a particular interface or with a specific
 NSP, respectively.
 .br
@@ -613,7 +613,7 @@ shows all connections' names and their autoconnect settings.
 .IP
 shows all details of the connection with "My wired connection" name.
 
-.IP "\fB\f(CWnmcli \-p con up \(dq\&My wired connection\(dq\& iface eth0\fP\fP"
+.IP "\fB\f(CWnmcli \-p con up \(dq\&My wired connection\(dq\& ifname eth0\fP\fP"
 .IP
 activates the connection with name "My wired connection" on interface eth0.
 The \-p option makes nmcli show progress of the activation.

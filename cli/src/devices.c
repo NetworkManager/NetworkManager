@@ -262,14 +262,14 @@ usage (void)
 	         "  COMMAND := { status | show | disconnect | wifi }\n\n"
 #endif
 	         "  status\n\n"
-	         "  show [<iface>]\n\n"
-	         "  disconnect <iface> [--nowait] [--timeout <timeout>]\n\n"
-	         "  wifi [list [iface <iface>] [bssid <BSSID>]]\n\n"
-	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [iface <iface>] [bssid <BSSID>] [name <name>]\n\n"
+	         "  show [<ifname>]\n\n"
+	         "  disconnect <ifname> [--nowait] [--timeout <timeout>]\n\n"
+	         "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
+	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]\n\n"
 	         "               [--private] [--nowait] [--timeout <timeout>]\n\n"
-	         "  wifi scan [[iface] <iface>]\n\n"
+	         "  wifi scan [[ifname] <ifname>]\n\n"
 #if WITH_WIMAX
-	         "  wimax [list [iface <iface>] [nsp <name>]]\n\n"
+	         "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
 #endif
 	         ));
 }
@@ -1032,11 +1032,11 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *devices;
 	NMDevice *device = NULL;
-	const char *iface = NULL;
+	const char *ifname = NULL;
 	int i;
 
 	if (argc == 1)
-		iface = *argv;
+		ifname = *argv;
 	else if (argc > 1) {
 		g_string_printf (nmc->return_text, _("Error: invalid extra argument '%s'."), *(argv+1));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -1056,17 +1056,17 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 
 	devices = nm_client_get_devices (nmc->client);
 
-	if (iface) {
+	if (ifname) {
 		/* Interface specified; show details only for the device */
 		for (i = 0; devices && (i < devices->len); i++) {
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
-			if (!g_strcmp0 (dev_iface, iface))
+			if (!g_strcmp0 (dev_iface, ifname))
 				device = candidate;
 		}
 		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1160,8 +1160,8 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 {
 	const GPtrArray *devices;
 	NMDevice *device = NULL;
-	const char *iface = NULL;
-	char *iface_ask = NULL;
+	const char *ifname = NULL;
+	char *ifname_ask = NULL;
 	gboolean wait = TRUE;
 	int i;
 
@@ -1170,20 +1170,19 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			iface_ask = nmc_get_user_input ("Interface: ");
-			iface = iface_ask;
+			ifname = ifname_ask = nmc_get_user_input ("Interface: ");
 			// TODO: list available devices when just Enter is pressed ?
 		}
-		if (!iface_ask) {
+		if (!ifname_ask) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
 	} else {
-		iface = *argv;
+		ifname = *argv;
 	}
 
-	if (!iface) {
+	if (!ifname) {
 		g_string_printf (nmc->return_text, _("Error: No interface specified."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
@@ -1233,12 +1232,12 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		const char *dev_iface = nm_device_get_iface (candidate);
 
-		if (!g_strcmp0 (dev_iface, iface))
+		if (!g_strcmp0 (dev_iface, ifname))
 			device = candidate;
 	}
 
 	if (!device) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;
 	}
@@ -1287,7 +1286,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	GError *error = NULL;
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
-	const char *iface = NULL;
+	const char *ifname = NULL;
 	const char *bssid_user = NULL;
 	const GPtrArray *devices;
 	const GPtrArray *aps;
@@ -1301,13 +1300,13 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
 	while (argc > 0) {
-		if (strcmp (*argv, "iface") == 0) {
+		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
-			iface = *argv;
+			ifname = *argv;
 		} else if (strcmp (*argv, "bssid") == 0 || strcmp (*argv, "hwaddr") == 0) {
 			/* hwaddr is deprecated and will be removed later */
 			if (next_arg (&argc, &argv) != 0) {
@@ -1362,20 +1361,20 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.header_name = _("Wi-Fi scan list");
 
 	devices = nm_client_get_devices (nmc->client);
-	if (iface) {
+	if (ifname) {
 		/* Device specified - list only APs of this interface */
 		for (i = 0; devices && (i < devices->len); i++) {
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
-			if (!g_strcmp0 (dev_iface, iface)) {
+			if (!g_strcmp0 (dev_iface, ifname)) {
 				device = candidate;
 				break;
 			}
 		}
 
 		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1412,7 +1411,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				show_acces_point_info (device, nmc);
 			}
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -1641,7 +1640,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	NMSettingWirelessSecurity *s_wsec;
 	AddAndActivateInfo *info;
 	const char *param_user = NULL;
-	const char *iface = NULL;
+	const char *ifname = NULL;
 	const char *bssid = NULL;
 	const char *password = NULL;
 	const char *con_name = NULL;
@@ -1680,13 +1679,13 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 	/* Get the rest of the parameters */
 	while (argc > 0) {
-		if (strcmp (*argv, "iface") == 0) {
+		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
-			iface = *argv;
+			ifname = *argv;
 		} else if (strcmp (*argv, "bssid") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
@@ -1786,11 +1785,11 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 	/* Find a device to activate the connection on */
 	devices_idx = 0;
-	device = find_wifi_device_by_iface (devices, iface, &devices_idx);
+	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
 
 	if (!device) {
-		if (iface)
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), iface);
+		if (ifname)
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
@@ -1799,8 +1798,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 	/* Find an AP to connect to */
 	ap = find_ap_on_device (device, bssid1_arr, bssid1_arr ? NULL : param_user);
-	if (!ap && !iface) {
-		/* AP not found. iface was not specified, so try finding the AP on another device. */
+	if (!ap && !ifname) {
+		/* AP not found. ifname was not specified, so try finding the AP on another device. */
 		while ((device = find_wifi_device_by_iface (devices, NULL, &devices_idx)) != NULL) {
 			ap = find_ap_on_device (device, bssid1_arr, bssid1_arr ? NULL : param_user);
 			if (ap)
@@ -1926,7 +1925,7 @@ static NMCResultCode
 do_device_wifi_scan (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
-	const char *iface = NULL;
+	const char *ifname = NULL;
 	const GPtrArray *devices;
 	int devices_idx;
 
@@ -1934,25 +1933,25 @@ do_device_wifi_scan (NmCli *nmc, int argc, char **argv)
 
 	/* Get the parameters */
 	if (argc > 0) {
-		if (strcmp (*argv, "iface") == 0) {
+		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
 		}
-		iface = *argv;
+		ifname = *argv;
 	}
 
-	/* Find Wi-Fi device to scan on. When no iface is provided, the first Wi-Fi is used. */
+	/* Find Wi-Fi device to scan on. When no ifname is provided, the first Wi-Fi is used. */
 	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	devices_idx = 0;
-	device = find_wifi_device_by_iface (devices, iface, &devices_idx);
+	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
 
 	if (!device) {
-		if (iface)
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), iface);
+		if (ifname)
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
 		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
@@ -2009,7 +2008,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	GError *error = NULL;
 	NMDevice *device = NULL;
 	NMWimaxNsp *nsp = NULL;
-	const char *iface = NULL;
+	const char *ifname = NULL;
 	const char *nsp_user = NULL;
 	const GPtrArray *devices;
 	const GPtrArray *nsps;
@@ -2022,13 +2021,13 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
 
 	while (argc > 0) {
-		if (strcmp (*argv, "iface") == 0) {
+		if (strcmp (*argv, "ifname") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
-			iface = *argv;
+			ifname = *argv;
 		} else if (strcmp (*argv, "nsp") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
@@ -2081,20 +2080,20 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.header_name = _("WiMAX NSP list");
 
 	devices = nm_client_get_devices (nmc->client);
-	if (iface) {
+	if (ifname) {
 		/* Device specified - list only NSPs of this interface */
 		for (i = 0; devices && (i < devices->len); i++) {
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
-			if (!g_strcmp0 (dev_iface, iface)) {
+			if (!g_strcmp0 (dev_iface, ifname)) {
 				device = candidate;
 				break;
 			}
 		}
 
 		if (!device) {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -2125,7 +2124,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				show_nsp_info (device, nmc);
 			}
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiMAX device."), iface);
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a WiMAX device."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
