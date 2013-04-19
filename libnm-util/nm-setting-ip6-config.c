@@ -878,7 +878,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * based hardware.  If 'link-local' is specified, then an IPv6 link-local
 	 * address will be assigned to the interface.  If 'manual' is specified,
 	 * static IP addressing is used and at least one IP address must be given
-	 * in the 'addresses' property.  If 'ignored' is specified, IPv6
+	 * in the 'addresses' property.  If 'ignore' is specified, IPv6
 	 * configuration is not done. This property must be set.  NOTE: the 'shared'
 	 * method are not yet supported.
 	 **/
@@ -896,7 +896,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						      "address will be assigned to the interface.  If "
 						      "'manual' is specified, static IP addressing is "
 						      "used and at least one IP address must be given in "
-						      " the 'addresses' property.  If 'ignored' is "
+						      " the 'addresses' property.  If 'ignore' is "
 						      "specified, IPv6 configuration is not done. This "
 						      "property must be set.  NOTE: the 'shared' method"
 						      "is not yet supported.",
