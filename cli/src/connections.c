@@ -210,7 +210,7 @@ usage (void)
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	         "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
+	         "  edit [ id | uuid | path ] <ID>  |  [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	         "  delete [ id | uuid | path ] <ID>\n\n"
 	         "  reload\n\n\n"
 	         ));
@@ -4184,21 +4184,33 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	const char *type = NULL;
 	char *type_ask = NULL;
 	const char *con_name = NULL;
+	const char *con = NULL;
+	const char *con_id = NULL;
+	const char *con_uuid = NULL;
+	const char *con_path = NULL;
+	const char *selector = NULL;
 	char *tmp_str;
 	GError *error = NULL;
 	GError *err1 = NULL;
 	GModule *edit_lib_module = NULL;
 	nmc_arg_t exp_args[] = { {"type",     TRUE, &type,     FALSE},
 	                         {"con-name", TRUE, &con_name, FALSE},
+	                         {"id",       TRUE, &con_id,   FALSE},
+	                         {"uuid",     TRUE, &con_uuid, FALSE},
+	                         {"path",     TRUE, &con_path, FALSE},
 	                         {NULL} };
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
-	if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, &error)) {
-		g_string_assign (nmc->return_text, error->message);
-		nmc->return_value = error->code;
-		g_clear_error (&error);
-		goto error;
+	if (argc == 1)
+		con = *argv;
+	else {
+		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, &error)) {
+			g_string_assign (nmc->return_text, error->message);
+			nmc->return_value = error->code;
+			g_clear_error (&error);
+			goto error;
+		}
 	}
 
 	/* Load line editing library */
@@ -4214,51 +4226,103 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		edit_lib_symbols.rl_startup_hook_x = NULL;
 	}
 
-	connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
-	tmp_str = get_valid_options_string (nmc_valid_connection_types);
-
-	while (!connection_type) {
-		if (!type)
-			printf (_("Valid connection types: %s\n"), tmp_str);
-		else
-			printf (_("Error: invalid connection type; %s\n"), err1->message);
-		g_clear_error (&err1);
-
-		type_ask = readline_x (EDITOR_PROMPT_CON_TYPE);
-		type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
-		connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
-		g_free (type_ask);
+	if (!con) {
+		if (con_id && !con_uuid && !con_path) {
+			con = con_id;
+			selector = "id";
+		} else if (con_uuid && !con_id && !con_path) {
+			con = con_uuid;
+			selector = "uuid";
+		} else if (con_path && !con_id && !con_uuid) {
+			con = con_path;
+			selector = "path";
+		} else if (!con_path && !con_id && !con_uuid) {
+			/* no-op */
+		} else {
+			g_string_printf (nmc->return_text,
+			                 _("Error: only one of 'id', uuid, or 'path' can be provided."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
 	}
-	g_free (tmp_str);
 
-	/* Create a new connection object */
-	connection = nm_connection_new ();
+	if (con) {
+		/* Existing connection */
+		NMConnection *found_con;
 
-	/* Build up the 'connection' setting */
-	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	uuid = nm_utils_uuid_generate ();
-	if (con_name)
-		default_name = g_strdup (con_name);
-	else
-		default_name = unique_connection_name (nmc->system_connections,
-		                                       get_name_alias (connection_type, nmc_valid_connection_types));
+		found_con = find_connection (nmc->system_connections, selector, con);
+		if (!found_con) {
+			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
 
-	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, default_name,
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_TYPE, connection_type,
-	              NULL);
-	g_free (uuid);
-	g_free (default_name);
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
+		/* Duplicate the connection and use that so that we need not
+		 * differentiate existing vs. new later
+		 */
+		connection = nm_connection_duplicate (found_con);
 
-	/* Initialize the new connection so that it is valid from the start */
-	editor_init_new_connection (nmc, connection);
+		s_con = nm_connection_get_setting_connection (connection);
+		g_assert (s_con);
+		connection_type = nm_setting_connection_get_connection_type (s_con);
+
+		if (type)
+			printf (_("Warning: editing existing connection '%s'; 'type' argument is ignored\n"),
+			        nm_connection_get_id (connection));
+		if (con_name)
+			printf (_("Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"),
+			        nm_connection_get_id (connection));
+	} else {
+		/* New connection */
+		connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
+		tmp_str = get_valid_options_string (nmc_valid_connection_types);
+
+		while (!connection_type) {
+			if (!type)
+				printf (_("Valid connection types: %s\n"), tmp_str);
+			else
+				printf (_("Error: invalid connection type; %s\n"), err1->message);
+			g_clear_error (&err1);
+
+			type_ask = readline_x (EDITOR_PROMPT_CON_TYPE);
+			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
+			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
+			g_free (type_ask);
+		}
+		g_free (tmp_str);
+
+		/* Create a new connection object */
+		connection = nm_connection_new ();
+
+		/* Build up the 'connection' setting */
+		s_con = (NMSettingConnection *) nm_setting_connection_new ();
+		uuid = nm_utils_uuid_generate ();
+		if (con_name)
+			default_name = g_strdup (con_name);
+		else
+			default_name = unique_connection_name (nmc->system_connections,
+			                                       get_name_alias (connection_type, nmc_valid_connection_types));
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_ID, default_name,
+		              NM_SETTING_CONNECTION_UUID, uuid,
+		              NM_SETTING_CONNECTION_TYPE, connection_type,
+		              NULL);
+		g_free (uuid);
+		g_free (default_name);
+		nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+		/* Initialize the new connection so that it is valid from the start */
+		editor_init_new_connection (nmc, connection);
+	}
 
 	printf ("\n");
 	printf (_("===| nmcli interactive connection editor |==="));
 	printf ("\n\n");
-	printf (_("Adding a new '%s' connection"), connection_type);
+	if (con)
+		printf (_("Editing existing '%s' connection: '%s'"), connection_type, con);
+	else
+		printf (_("Adding a new '%s' connection"), connection_type);
 	printf ("\n\n");
 	printf (_("Type 'help' or '?' for available commands."));
 	printf ("\n\n");
