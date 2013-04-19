@@ -488,7 +488,7 @@ path_to_scheme_value (const char *path)
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the CA certificate
  *   file (PEM or DER format).  The path must be UTF-8 encoded; use
- *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   g_filename_to_utf8() to convert if needed.  Passing %NULL with any @scheme
  *   clears the CA certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
@@ -566,7 +566,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
  *
  * Returns: the #NMSetting8021x:subject-match property. This is the
  * substring to be matched against the subject of the authentication
- * server certificate, or NULL no subject verification is to be
+ * server certificate, or %NULL no subject verification is to be
  * performed.
  **/
 const char *
@@ -759,7 +759,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the client
  *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
- *   encoded; use g_filename_to_utf8() to convert if needed.  Passing NULL with
+ *   encoded; use g_filename_to_utf8() to convert if needed.  Passing %NULL with
  *   any @scheme clears the client certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
@@ -853,7 +853,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
  *
  * Returns: the "phase 1" PEAP version to be used when authenticating with
  *  EAP-PEAP as contained in the #NMSetting8021x:phase1-peapver property.  Valid
- *  values are NULL (unset), "0" (PEAP version 0), and "1" (PEAP version 1).
+ *  values are %NULL (unset), "0" (PEAP version 0), and "1" (PEAP version 1).
  **/
 const char *
 nm_setting_802_1x_get_phase1_peapver (NMSetting8021x *setting)
@@ -869,7 +869,7 @@ nm_setting_802_1x_get_phase1_peapver (NMSetting8021x *setting)
  *
  * Returns: whether the "phase 1" PEAP label is new-style or old-style, to be
  *  used when authenticating with EAP-PEAP, as contained in the
- *  #NMSetting8021x:phase1-peaplabel property.  Valid values are NULL (unset),
+ *  #NMSetting8021x:phase1-peaplabel property.  Valid values are %NULL (unset),
  *  "0" (use old-style label), and "1" (use new-style label).  See the
  *  wpa_supplicant documentation for more details.
  **/
@@ -1024,7 +1024,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" CA
  *   certificate file (PEM or DER format).  The path must be UTF-8 encoded; use
- *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   g_filename_to_utf8() to convert if needed.  Passing %NULL with any @scheme
  *   clears the "phase2" CA certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
@@ -1102,7 +1102,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
  *
  * Returns: the #NMSetting8021x:phase2-subject-match property. This is
  * the substring to be matched against the subject of the "phase 2"
- * authentication server certificate, or NULL no subject verification
+ * authentication server certificate, or %NULL no subject verification
  * is to be performed.
  **/
 const char *
@@ -1299,7 +1299,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" client
  *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
- *   encoded; use g_filename_to_utf8() to convert if needed.  Passing NULL with
+ *   encoded; use g_filename_to_utf8() to convert if needed.  Passing %NULL with
  *   any @scheme clears the "phase2" client certificate.
  * @scheme: desired storage scheme for the certificate
  * @out_format: on successful return, the type of the certificate added
@@ -1572,7 +1572,7 @@ file_to_byte_array (const char *filename)
  * @key_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
  *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the private key file
  *   (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
- *   g_filename_to_utf8() to convert if needed.  Passing NULL with any @scheme
+ *   g_filename_to_utf8() to convert if needed.  Passing %NULL with any @scheme
  *   clears the private key.
  * @password: password used to decrypt the private key, or %NULL if the password
  *   is unknown.  If the password is given but fails to decrypt the private key,
@@ -1865,7 +1865,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  * @key_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
  *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" private
  *   key file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded;
- *   use g_filename_to_utf8() to convert if needed.  Passing NULL with any
+ *   use g_filename_to_utf8() to convert if needed.  Passing %NULL with any
  *   @scheme clears the private key.
  * @password: password used to decrypt the private key, or %NULL if the password
  *   is unknown.  If the password is given but fails to decrypt the private key,

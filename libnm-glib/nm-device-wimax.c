@@ -369,7 +369,7 @@ nm_device_wimax_get_tx_power (NMDeviceWimax *self)
  *
  * Gets the ID of the serving Base Station when the device is connected.
  *
- * Returns: the ID of the serving Base Station, or NULL
+ * Returns: the ID of the serving Base Station, or %NULL
  **/
 const char *
 nm_device_wimax_get_bsid (NMDeviceWimax *self)

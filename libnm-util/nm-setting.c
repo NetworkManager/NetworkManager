@@ -200,7 +200,7 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
  * property names and value types.
  * 
  * Returns: a new #NMSetting object populated with the properties from the
- * hash table, or NULL on failure
+ * hash table, or %NULL on failure
  **/
 NMSetting *
 nm_setting_new_from_hash (GType setting_type, GHashTable *hash)

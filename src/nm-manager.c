@@ -1229,7 +1229,7 @@ bridge_created_by_nm (NMManager *self, const char *iface)
  * If @connection requires a virtual device and one does not yet exist for it,
  * creates that device.
  *
- * Returns: the #NMDevice if successfully created, NULL if not
+ * Returns: the #NMDevice if successfully created, %NULL if not
  */
 static NMDevice *
 system_create_virtual_device (NMManager *self, NMConnection *connection)

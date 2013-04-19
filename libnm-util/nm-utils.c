@@ -292,7 +292,7 @@ nm_utils_deinit (void)
  *
  * Returns: (transfer full): an allocated string containing a UTF-8
  * representation of the SSID, which must be freed by the caller using g_free().
- * Returns NULL on errors.
+ * Returns %NULL on errors.
  **/
 char *
 nm_utils_ssid_to_utf8 (const GByteArray *ssid)
@@ -2211,7 +2211,7 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
  * nm_utils_rsa_key_encrypt:
  * @data: RSA private key data to be encrypted
  * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was NULL, a random password will be generated
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
  *  and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
