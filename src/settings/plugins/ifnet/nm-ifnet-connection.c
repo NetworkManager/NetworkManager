@@ -37,11 +37,6 @@
 G_DEFINE_TYPE (NMIfnetConnection, nm_ifnet_connection, NM_TYPE_SETTINGS_CONNECTION)
 
 #define NM_IFNET_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFNET_CONNECTION, NMIfnetConnectionPrivate))
-enum {
-	PROP_ZERO,
-	PROP_CONN_NAME,
-	_PROP_END,
-};
 
 enum {
 	IFNET_SETUP_MONITORS,
@@ -57,20 +52,20 @@ typedef struct {
 } NMIfnetConnectionPrivate;
 
 NMIfnetConnection *
-nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
+nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 {
 	NMConnection *tmp;
 	GObject *object;
 	GError *error = NULL;
 	gboolean update_unsaved = TRUE;
 
-	g_return_val_if_fail (conn_name != NULL, NULL);
+	g_return_val_if_fail (source || conn_name, NULL);
 
 	if (source)
 		tmp = g_object_ref (source);
 	else {
 		tmp = ifnet_update_connection_from_config_block (conn_name, NULL, &error);
-		if (!tmp){
+		if (!tmp) {
 			g_error_free (error);
 			return NULL;
 		}
@@ -80,6 +75,7 @@ nm_ifnet_connection_new (const char *conn_name, NMConnection *source)
 	}
 
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
+	g_assert (object);
 	NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name = g_strdup (conn_name);
 	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                         tmp,
@@ -109,28 +105,47 @@ commit_changes (NMSettingsConnection *connection,
 	GError *error = NULL;
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
 	gchar *new_name = NULL;
+	gboolean success = FALSE;
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
-	if (!ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
-	                                         priv->conn_name,
-	                                         CONF_NET_FILE,
-	                                         WPA_SUPPLICANT_CONF,
-	                                         &new_name,
-	                                         NULL,
-	                                         &error)) {
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to update %s", priv->conn_name);
+
+	if (priv->conn_name) {
+		/* Existing connection; update it */
+		success = ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
+		                                              priv->conn_name,
+		                                              CONF_NET_FILE,
+		                                              WPA_SUPPLICANT_CONF,
+		                                              &new_name,
+		                                              NULL,
+		                                              &error);
+	} else {
+		/* New connection, add it */
+		success = ifnet_add_new_connection (NM_CONNECTION (connection),
+		                                    CONF_NET_FILE,
+		                                    WPA_SUPPLICANT_CONF,
+		                                    &new_name,
+		                                    NULL,
+		                                    &error);
+		if (success)
+			reload_parsers ();
+	}
+
+	if (success) {
+		/* update connection name */
+		g_assert (new_name);
+		g_free (priv->conn_name);
+		priv->conn_name = new_name;
+
+		NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
+		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);
+	} else {
+		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to update %s",
+		              priv->conn_name ? priv->conn_name :
+		                  nm_connection_get_id (NM_CONNECTION (connection)));
 		reload_parsers ();
 		callback (connection, error, user_data);
 		g_error_free (error);
-		g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-		return;
 	}
-
-	g_free (priv->conn_name);
-	priv->conn_name = new_name;
-
-	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);
 
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 }
@@ -144,31 +159,32 @@ do_delete (NMSettingsConnection *connection,
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE (connection);
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
-	if (!ifnet_delete_connection_in_parsers (priv->conn_name, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL)) {
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to delete %s",
-			      priv->conn_name);
-		reload_parsers ();
-		callback (connection, error, user_data);
-		g_error_free (error);
-		g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-		return;
+
+	/* Only connections which exist in /etc/conf.d/net will have a conn_name */
+	if (priv->conn_name) {
+		if (!ifnet_delete_connection_in_parsers (priv->conn_name, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL)) {
+			PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to delete %s", priv->conn_name);
+			reload_parsers ();
+			callback (connection, error, user_data);
+			g_error_free (error);
+			g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
+			return;
+		}
 	}
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->delete (connection, callback, user_data);
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully deleted %s",
-		      priv->conn_name);
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
+
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully deleted %s",
+	              priv->conn_name ? priv->conn_name :
+	                  nm_connection_get_id (NM_CONNECTION (connection)));
 }
 
 static void
 finalize (GObject * object)
 {
-	NMIfnetConnectionPrivate *priv =
-	    NM_IFNET_CONNECTION_GET_PRIVATE (object);
-	g_return_if_fail (priv);
-
-	g_free (priv->conn_name);
+	g_free (NM_IFNET_CONNECTION_GET_PRIVATE (object)->conn_name);
 	G_OBJECT_CLASS (nm_ifnet_connection_parent_class)->finalize (object);
 }
 
@@ -178,8 +194,7 @@ nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (ifnet_connection_class);
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (ifnet_connection_class);
 
-	g_type_class_add_private (ifnet_connection_class,
-				  sizeof (NMIfnetConnectionPrivate));
+	g_type_class_add_private (ifnet_connection_class, sizeof (NMIfnetConnectionPrivate));
 
 	object_class->finalize = finalize;
 	settings_class->delete = do_delete;

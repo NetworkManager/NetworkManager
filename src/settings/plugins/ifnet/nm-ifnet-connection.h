@@ -44,8 +44,8 @@ typedef struct {
 
 GType nm_ifnet_connection_get_type (void);
 
-NMIfnetConnection *nm_ifnet_connection_new (const char *conn_name,
-                                            NMConnection *source);
+NMIfnetConnection *nm_ifnet_connection_new (NMConnection *source,
+                                            const char *conn_name);
 
 const char *nm_ifnet_connection_get_conn_name (NMIfnetConnection *connection);
 

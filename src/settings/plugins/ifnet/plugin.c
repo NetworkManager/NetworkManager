@@ -260,7 +260,7 @@ reload_connections (gpointer config)
 		const char *conn_name = n_iter->data;
 
 		/* read the new connection */
-		new = nm_ifnet_connection_new (conn_name, NULL);
+		new = nm_ifnet_connection_new (NULL, conn_name);
 		if (!new)
 			continue;
 
@@ -321,7 +321,12 @@ reload_connections (gpointer config)
 	/* remove deleted/unused connections */
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, (gpointer) &uuid, (gpointer) &candidate)) {
-		if (!g_hash_table_lookup (new_connections, uuid)) {
+		/* only saved connections (which have a conn_name) get removed; unsaved
+		 * ones obviously don't exist in /etc/conf.d/net yet and shouldn't get
+		 * blown away by net file changes.
+		 */
+		if (   nm_ifnet_connection_get_conn_name (NM_IFNET_CONNECTION (candidate))
+		    && !g_hash_table_lookup (new_connections, uuid)) {
 			nm_settings_connection_signal_remove (candidate);
 			g_hash_table_iter_remove (&iter);
 		}
@@ -453,16 +458,12 @@ get_connections (NMSystemConfigInterface *config)
 	NMIfnetConnection *connection;
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%p) ... get_connections.", config);
-	if (priv->unmanaged_well_known) {
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-		              "(%p) ... get_connections (managed=false): return empty list.",
-		              config);
-		return NULL;
-	}
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		if (is_managed (nm_ifnet_connection_get_conn_name (connection)))
+		const char *conn_name = nm_ifnet_connection_get_conn_name (connection);
+
+		if (!conn_name || (!priv->unmanaged_well_known && is_managed (conn_name)))
 			connections = g_slist_prepend (connections, connection);
 	}
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%p) connections count: %d",
