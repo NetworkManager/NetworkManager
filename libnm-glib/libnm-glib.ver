@@ -213,11 +213,15 @@ global:
 	nm_object_get_path;
 	nm_object_get_type;
 	nm_remote_connection_commit_changes;
+	nm_remote_connection_commit_changes_unsaved;
 	nm_remote_connection_delete;
 	nm_remote_connection_get_secrets;
 	nm_remote_connection_get_type;
+	nm_remote_connection_get_unsaved;
 	nm_remote_connection_new;
+	nm_remote_connection_save;
 	nm_remote_settings_add_connection;
+	nm_remote_settings_add_connection_unsaved;
 	nm_remote_settings_error_get_type;
 	nm_remote_settings_error_quark;
 	nm_remote_settings_get_connection_by_path;

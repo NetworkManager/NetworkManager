@@ -363,9 +363,10 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, remote);
 	} else {
 		if (addinfo) {
-			local = g_error_new_literal (NM_REMOTE_SETTINGS_ERROR,
-			                             NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
-			                             "Connection not visible or not available");
+			local = g_error_new (NM_REMOTE_SETTINGS_ERROR,
+			                     NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
+			                     "Connection not visible or not available: %s",
+			                     error ? error->message : "(unknown)");
 			add_connection_info_complete (self, addinfo, local);
 			g_error_free (local);
 		}
@@ -527,7 +528,7 @@ add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
  * @user_data: (closure): caller-specific data passed to @callback
  *
  * Requests that the remote settings service add the given settings to a new
- * connection.
+ * connection.  The connection is immediately written to disk.
  *
  * Returns: TRUE if the request was successful, FALSE if it failed
  **/
@@ -559,6 +560,63 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 
 	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 	dbus_g_proxy_begin_call (priv->proxy, "AddConnection",
+	                         add_connection_done,
+	                         info,
+	                         NULL,
+	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
+	                         G_TYPE_INVALID);
+	g_hash_table_destroy (new_settings);
+
+	priv->add_list = g_slist_append (priv->add_list, info);
+
+	return TRUE;
+}
+
+/**
+ * nm_remote_settings_add_connection_unsaved:
+ * @settings: the %NMRemoteSettings
+ * @connection: the connection to add. Note that this object's settings will be
+ *   added, not the object itself
+ * @callback: (scope async): callback to be called when the add operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Requests that the remote settings service add the given settings to a new
+ * connection.  The connection is not written to disk, which may be done at
+ * a later time by calling the connection's nm_remote_connection_commit_changes()
+ * method.
+ *
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
+                                           NMConnection *connection,
+                                           NMRemoteSettingsAddConnectionFunc callback,
+                                           gpointer user_data)
+{
+	NMRemoteSettingsPrivate *priv;
+	AddConnectionInfo *info;
+	GHashTable *new_settings;
+
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+
+	_nm_remote_settings_ensure_inited (settings);
+
+	if (!priv->service_running)
+		return FALSE;
+
+	info = g_malloc0 (sizeof (AddConnectionInfo));
+	info->self = settings;
+	info->callback = callback;
+	info->callback_data = user_data;
+
+	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	dbus_g_proxy_begin_call (priv->proxy, "AddConnectionUnsaved",
 	                         add_connection_done,
 	                         info,
 	                         NULL,

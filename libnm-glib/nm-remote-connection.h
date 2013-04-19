@@ -38,6 +38,10 @@ G_BEGIN_DECLS
 #define NM_IS_REMOTE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_REMOTE_CONNECTION))
 #define NM_REMOTE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionClass))
 
+/* Properties */
+#define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
+
+/* Signals */
 #define NM_REMOTE_CONNECTION_UPDATED         "updated"
 #define NM_REMOTE_CONNECTION_REMOVED         "removed"
 
@@ -64,30 +68,21 @@ typedef struct {
 } NMRemoteConnectionClass;
 
 /**
- * NMRemoteConnectionCommitFunc:
- * @connection: the connection for which updates are to be committed
+ * NMRemoteConnectionResultFunc:
+ * @connection: the connection for which an operation was performed
  * @error: on failure, a descriptive error
- * @user_data: user data passed to nm_remote_connection_commit_changes()
+ * @user_data: user data passed to function which began the operation
  *
- * Called when NetworkManager has committed outstanding changes to a connection
- * to backing storage as a result of nm_remote_connection_commit_changes().
+ * Called when NetworkManager has finished an asynchronous operation on a
+ * connection, like commit changes, deleting, saving, etc.
  */
-typedef void (*NMRemoteConnectionCommitFunc) (NMRemoteConnection *connection,
+typedef void (*NMRemoteConnectionResultFunc) (NMRemoteConnection *connection,
                                               GError *error,
                                               gpointer user_data);
 
-/**
- * NMRemoteConnectionDeleteFunc:
- * @connection: the connection to be deleted
- * @error: on failure, a descriptive error
- * @user_data: user data passed to nm_remote_connection_delete()
- *
- * Called when NetworkManager has deleted a connection as a result of
- * nm_remote_connection_delete().
- */
-typedef void (*NMRemoteConnectionDeleteFunc) (NMRemoteConnection *connection,
-                                              GError *error,
-                                              gpointer user_data);
+/* Backwards compatibility */
+typedef NMRemoteConnectionResultFunc NMRemoteConnectionCommitFunc;
+typedef NMRemoteConnectionResultFunc NMRemoteConnectionDeleteFunc;
 
 /**
  * NMRemoteConnectionGetSecretsFunc:
@@ -112,17 +107,28 @@ NMRemoteConnection *nm_remote_connection_new (DBusGConnection *bus,
                                               const char *path);
 
 void nm_remote_connection_commit_changes (NMRemoteConnection *connection,
-                                          NMRemoteConnectionCommitFunc callback,
+                                          NMRemoteConnectionResultFunc callback,
                                           gpointer user_data);
 
+void nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
+                                                  NMRemoteConnectionResultFunc callback,
+                                                  gpointer user_data);
+
+void nm_remote_connection_save (NMRemoteConnection *connection,
+                                NMRemoteConnectionResultFunc callback,
+                                gpointer user_data);
+
 void nm_remote_connection_delete (NMRemoteConnection *connection,
-                                  NMRemoteConnectionDeleteFunc callback,
+                                  NMRemoteConnectionResultFunc callback,
                                   gpointer user_data);
 
 void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
                                        const char *setting_name,
                                        NMRemoteConnectionGetSecretsFunc callback,
                                        gpointer user_data);
+
+gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
+
 G_END_DECLS
 
 #endif  /* __NM_REMOTE_CONNECTION__ */

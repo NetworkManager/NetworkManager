@@ -31,7 +31,25 @@ class Connection(dbus.service.Object):
         self.settings = settings
         self.remove_func = remove_func
         self.visible = True
+        self.props = {}
+        self.props['Unsaved'] = False
 
+    # Properties interface
+    @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
+    def GetAll(self, iface):
+        if iface != IFACE_CONNECTION:
+            raise UnknownInterfaceException()
+        return self.props
+
+    @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
+    def Get(self, iface, name):
+        if iface != IFACE_CONNECTION:
+            raise UnknownInterfaceException()
+        if not name in self.props.keys():
+            raise UnknownPropertyException()
+        return self.props[name]
+
+    # Connection methods
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='a{sa{sv}}')
     def GetSettings(self):
         if not self.visible:
