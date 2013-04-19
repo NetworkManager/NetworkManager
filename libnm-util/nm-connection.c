@@ -285,7 +285,7 @@ nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
  *
  * Create a new #NMSetting object of the desired type, given a setting name.
  *
- * Returns: (transfer full): the new setting object, or NULL if the setting name was unknown
+ * Returns: (transfer full): the new setting object, or %NULL if the setting name was unknown
  **/
 NMSetting *
 nm_connection_create_setting (const char *name)
@@ -348,7 +348,7 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
  * Gets the #NMSetting with the given #GType, if one has been previously added
  * to the #NMConnection.
  *
- * Returns: (transfer none): the #NMSetting, or NULL if no setting of that type was previously
+ * Returns: (transfer none): the #NMSetting, or %NULL if no setting of that type was previously
  * added to the #NMConnection
  **/
 NMSetting *
@@ -369,7 +369,7 @@ nm_connection_get_setting (NMConnection *connection, GType setting_type)
  * Gets the #NMSetting with the given name, if one has been previously added
  * the the #NMConnection.
  *
- * Returns: (transfer none): the #NMSetting, or NULL if no setting with that name was previously
+ * Returns: (transfer none): the #NMSetting, or %NULL if no setting with that name was previously
  * added to the #NMConnection
  **/
 NMSetting *
@@ -1128,9 +1128,9 @@ nm_connection_get_path (NMConnection *connection)
  * Returns the name of the virtual kernel interface which the connection
  * needs to use if specified in the settings. This function abstracts all
  * connection types which require this functionality. For all other
- * connection types, this function will return NULL.
+ * connection types, this function will return %NULL.
  *
- * Returns: Name of the kernel interface or NULL
+ * Returns: Name of the kernel interface or %NULL
  */
 const char *
 nm_connection_get_virtual_iface_name (NMConnection *connection)
@@ -1168,7 +1168,7 @@ nm_connection_new (void)
  * nm_connection_to_hash() for a description of the expected hash table.
  *
  * Returns: the new #NMConnection object, populated with settings created
- * from the values in the hash table, or NULL if the connection failed to
+ * from the values in the hash table, or %NULL if the connection failed to
  * validate
  **/
 NMConnection *
@@ -1267,7 +1267,7 @@ nm_connection_get_id (NMConnection *connection)
  *
  * A shortcut to return any #NMSetting8021x the connection might contain.
  *
- * Returns: (transfer none): an #NMSetting8021x if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSetting8021x if the connection contains one, otherwise %NULL
  **/
 NMSetting8021x *
 nm_connection_get_setting_802_1x (NMConnection *connection)
@@ -1283,7 +1283,7 @@ nm_connection_get_setting_802_1x (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingBluetooth the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingBluetooth if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingBluetooth if the connection contains one, otherwise %NULL
  **/
 NMSettingBluetooth *
 nm_connection_get_setting_bluetooth (NMConnection *connection)
@@ -1299,7 +1299,7 @@ nm_connection_get_setting_bluetooth (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingBond the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingBond if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingBond if the connection contains one, otherwise %NULL
  **/
 NMSettingBond *
 nm_connection_get_setting_bond (NMConnection *connection)
@@ -1315,7 +1315,7 @@ nm_connection_get_setting_bond (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingBridge the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingBridge if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingBridge if the connection contains one, otherwise %NULL
  **/
 NMSettingBridge *
 nm_connection_get_setting_bridge (NMConnection *connection)
@@ -1331,7 +1331,7 @@ nm_connection_get_setting_bridge (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingCdma the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingCdma if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingCdma if the connection contains one, otherwise %NULL
  **/
 NMSettingCdma *
 nm_connection_get_setting_cdma (NMConnection *connection)
@@ -1347,7 +1347,7 @@ nm_connection_get_setting_cdma (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingConnection the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingConnection if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingConnection if the connection contains one, otherwise %NULL
  **/
 NMSettingConnection *
 nm_connection_get_setting_connection (NMConnection *connection)
@@ -1363,7 +1363,7 @@ nm_connection_get_setting_connection (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingGsm the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingGsm if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingGsm if the connection contains one, otherwise %NULL
  **/
 NMSettingGsm *
 nm_connection_get_setting_gsm (NMConnection *connection)
@@ -1379,7 +1379,7 @@ nm_connection_get_setting_gsm (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingInfiniband the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingInfiniband if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingInfiniband if the connection contains one, otherwise %NULL
  **/
 NMSettingInfiniband *
 nm_connection_get_setting_infiniband (NMConnection *connection)
@@ -1395,7 +1395,7 @@ nm_connection_get_setting_infiniband (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingIP4Config the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingIP4Config if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingIP4Config if the connection contains one, otherwise %NULL
  **/
 NMSettingIP4Config *
 nm_connection_get_setting_ip4_config (NMConnection *connection)
@@ -1411,7 +1411,7 @@ nm_connection_get_setting_ip4_config (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingIP6Config the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingIP6Config if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingIP6Config if the connection contains one, otherwise %NULL
  **/
 NMSettingIP6Config *
 nm_connection_get_setting_ip6_config (NMConnection *connection)
@@ -1427,7 +1427,7 @@ nm_connection_get_setting_ip6_config (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingOlpcMesh the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingOlpcMesh if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingOlpcMesh if the connection contains one, otherwise %NULL
  **/
 NMSettingOlpcMesh *
 nm_connection_get_setting_olpc_mesh (NMConnection *connection)
@@ -1443,7 +1443,7 @@ nm_connection_get_setting_olpc_mesh (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingPPP the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingPPP if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingPPP if the connection contains one, otherwise %NULL
  **/
 NMSettingPPP *
 nm_connection_get_setting_ppp (NMConnection *connection)
@@ -1459,7 +1459,7 @@ nm_connection_get_setting_ppp (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingPPPOE the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingPPPOE if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingPPPOE if the connection contains one, otherwise %NULL
  **/
 NMSettingPPPOE *
 nm_connection_get_setting_pppoe (NMConnection *connection)
@@ -1475,7 +1475,7 @@ nm_connection_get_setting_pppoe (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingSerial the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingSerial if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingSerial if the connection contains one, otherwise %NULL
  **/
 NMSettingSerial *
 nm_connection_get_setting_serial (NMConnection *connection)
@@ -1491,7 +1491,7 @@ nm_connection_get_setting_serial (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingVPN the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingVPN if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingVPN if the connection contains one, otherwise %NULL
  **/
 NMSettingVPN *
 nm_connection_get_setting_vpn (NMConnection *connection)
@@ -1507,7 +1507,7 @@ nm_connection_get_setting_vpn (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingWimax the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingWimax if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingWimax if the connection contains one, otherwise %NULL
  **/
 NMSettingWimax *
 nm_connection_get_setting_wimax (NMConnection *connection)
@@ -1523,7 +1523,7 @@ nm_connection_get_setting_wimax (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingWired the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingWired if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingWired if the connection contains one, otherwise %NULL
  **/
 NMSettingWired *
 nm_connection_get_setting_wired (NMConnection *connection)
@@ -1539,7 +1539,7 @@ nm_connection_get_setting_wired (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingAdsl the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingAdsl if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingAdsl if the connection contains one, otherwise %NULL
  **/
 NMSettingAdsl *
 nm_connection_get_setting_adsl (NMConnection *connection)
@@ -1555,7 +1555,7 @@ nm_connection_get_setting_adsl (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingWireless the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingWireless if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingWireless if the connection contains one, otherwise %NULL
  **/
 NMSettingWireless *
 nm_connection_get_setting_wireless (NMConnection *connection)
@@ -1571,7 +1571,7 @@ nm_connection_get_setting_wireless (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingWirelessSecurity the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingWirelessSecurity if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingWirelessSecurity if the connection contains one, otherwise %NULL
  **/
 NMSettingWirelessSecurity *
 nm_connection_get_setting_wireless_security (NMConnection *connection)
@@ -1587,7 +1587,7 @@ nm_connection_get_setting_wireless_security (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingBridgePort the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingBridgePort if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingBridgePort if the connection contains one, otherwise %NULL
  **/
 NMSettingBridgePort *
 nm_connection_get_setting_bridge_port (NMConnection *connection)
@@ -1603,7 +1603,7 @@ nm_connection_get_setting_bridge_port (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingVlan the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingVlan if the connection contains one, otherwise NULL
+ * Returns: (transfer none): an #NMSettingVlan if the connection contains one, otherwise %NULL
  **/
 NMSettingVlan *
 nm_connection_get_setting_vlan (NMConnection *connection)

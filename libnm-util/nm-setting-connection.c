@@ -296,7 +296,7 @@ nm_setting_connection_get_num_permissions (NMSettingConnection *setting)
  * @out_ptype: on return, the permission type (at this time, always "user")
  * @out_pitem: on return, the permission item (formatted accoring to @ptype, see
  * #NMSettingConnection:permissions for more detail
- * @out_detail: on return, the permission detail (at this time, always NULL)
+ * @out_detail: on return, the permission detail (at this time, always %NULL)
  *
  * Retrieve one of the entries of the #NMSettingConnection:permissions property
  * of this setting.

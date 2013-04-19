@@ -90,7 +90,7 @@ nm_dhcp_dhclient_get_path (const char *try_first)
  * connection UUID.  Also returns the "most preferred" leasefile path, which
  * may be different than any found leasefile.
  *
- * Returns: an existing leasefile, or NULL if no matching leasefile could be found
+ * Returns: an existing leasefile, or %NULL if no matching leasefile could be found
  */
 static char *
 get_dhclient_leasefile (const char *iface,

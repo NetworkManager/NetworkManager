@@ -585,7 +585,7 @@ activate_nm_not_running (gpointer user_data)
  * @device: (allow-none): the #NMDevice
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
- *   wired and mobile broadband connections, and the value of NULL should be used
+ *   wired and mobile broadband connections, and the value of %NULL should be used
  *   (ie, no specific object).  For WiFi or WiMAX connections, pass the object
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
@@ -666,12 +666,12 @@ add_activate_cb (DBusGProxy *proxy,
  * nm_client_add_and_activate_connection:
  * @client: a #NMClient
  * @partial: (allow-none): an #NMConnection to add; the connection may be
- *   partially filled (or even NULL) and will be completed by NetworkManager
+ *   partially filled (or even %NULL) and will be completed by NetworkManager
  *   using the given @device and @specific_object before being added
  * @device: the #NMDevice
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
- *   wired and mobile broadband connections, and the value of NULL should be used
+ *   wired and mobile broadband connections, and the value of %NULL should be used
  *   (ie, no specific object).  For WiFi or WiMAX connections, pass the object
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the

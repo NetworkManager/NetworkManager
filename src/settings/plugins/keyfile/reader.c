@@ -214,14 +214,14 @@ build_ip6_address_or_route (const char *address_str, guint32 plen, const char *g
 
 /* On success, returns pointer to the zero-terminated field (original @current).
  * The @current * pointer target is set to point to the rest of the input
- * or NULL if there is no more input. Sets error to NULL for convenience.
+ * or %NULL if there is no more input. Sets error to %NULL for convenience.
  *
- * On failure, returns NULL (unspecified). The @current pointer target is
+ * On failure, returns %NULL (unspecified). The @current pointer target is
  * resets to its original value to allow skipping fields. The @error target
- * is set to the character that breaks the parsing or NULL if @current was NULL.
+ * is set to the character that breaks the parsing or %NULL if @current was %NULL.
  *
- * When @current target is NULL, gracefully fail returning NULL while
- * leaving the @current target NULL end setting @error to NULL;
+ * When @current target is %NULL, gracefully fail returning %NULL while
+ * leaving the @current target %NULL end setting @error to %NULL;
  */
 static char *
 read_field (char **current, char **error, const char *characters, const char *delimiters)

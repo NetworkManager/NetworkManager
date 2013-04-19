@@ -294,7 +294,7 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
  *
  * Returns a list of valid bond options.
  *
- * Returns: (transfer none): a NULL-terminated array of strings of valid bond options.
+ * Returns: (transfer none): a %NULL-terminated array of strings of valid bond options.
  **/
 const char **
 nm_setting_bond_get_valid_options  (NMSettingBond *setting)

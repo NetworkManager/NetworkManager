@@ -181,7 +181,7 @@ add_connection_info_complete (NMRemoteSettings *self,
  *
  * Returns the %NMRemoteConnection representing the connection at @path.
  *
- * Returns: (transfer none): the remote connection object on success, or NULL if the object was
+ * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
  *  not known
  **/
 NMRemoteConnection *
@@ -206,7 +206,7 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
  *
  * Returns the %NMRemoteConnection identified by @uuid.
  *
- * Returns: (transfer none): the remote connection object on success, or NULL if the object was
+ * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
  *  not known
  **/
 NMRemoteConnection *
@@ -618,7 +618,7 @@ save_hostname_cb (DBusGProxy *proxy,
 /**
  * nm_remote_settings_save_hostname:
  * @settings: the %NMRemoteSettings
- * @hostname: the new persistent hostname to set, or NULL to clear any existing
+ * @hostname: the new persistent hostname to set, or %NULL to clear any existing
  *  persistent hostname
  * @callback: (scope async) (allow-none): callback to be called when the
  * hostname operation completes

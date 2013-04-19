@@ -1266,7 +1266,7 @@ nm_device_get_state (NMDevice *device)
 /**
  * nm_device_get_state_reason:
  * @device: a #NMDevice
- * @reason: (out) (allow-none): location to store reason (#NMDeviceStateReason), or NULL
+ * @reason: (out) (allow-none): location to store reason (#NMDeviceStateReason), or %NULL
  *
  * Gets the current #NMDevice state (return value) and the reason for entering
  * the state (@reason argument).

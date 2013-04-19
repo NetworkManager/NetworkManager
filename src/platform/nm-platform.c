@@ -321,7 +321,7 @@ nm_platform_link_get_ifindex (const char *name)
  * @name: Interface name
  *
  * Returns: The interface name corresponding to the given interface index
- * or NULL.
+ * or %NULL.
  */
 const char *
 nm_platform_link_get_name (int ifindex)

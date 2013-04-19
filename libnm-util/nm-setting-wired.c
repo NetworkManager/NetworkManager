@@ -350,7 +350,7 @@ nm_setting_wired_get_s390_option (NMSettingWired *setting,
  * Returns the value associated with the s390-specific option specified by
  * @key, if it exists.
  *
- * Returns: the value, or NULL if the key/value pair was never added to the
+ * Returns: the value, or %NULL if the key/value pair was never added to the
  * setting; the value is owned by the setting and must not be modified
  **/
 const char *
@@ -428,7 +428,7 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
  *
  * Returns a list of valid s390 options.
  *
- * Returns: (transfer none): a NULL-terminated array of strings of valid s390 options.
+ * Returns: (transfer none): a %NULL-terminated array of strings of valid s390 options.
  *
  * Since: 0.9.10
  **/
