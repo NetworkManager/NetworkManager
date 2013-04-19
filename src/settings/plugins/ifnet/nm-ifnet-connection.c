@@ -95,6 +95,12 @@ nm_ifnet_connection_init (NMIfnetConnection * connection)
 {
 }
 
+const char *
+nm_ifnet_connection_get_conn_name (NMIfnetConnection *connection)
+{
+	return NM_IFNET_CONNECTION_GET_PRIVATE (connection)->conn_name;
+}
+
 static void
 commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitFunc callback,

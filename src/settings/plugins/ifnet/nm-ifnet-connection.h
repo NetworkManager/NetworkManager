@@ -47,5 +47,7 @@ GType nm_ifnet_connection_get_type (void);
 NMIfnetConnection *nm_ifnet_connection_new (const char *conn_name,
                                             NMConnection *source);
 
+const char *nm_ifnet_connection_get_conn_name (NMIfnetConnection *connection);
+
 G_END_DECLS
 #endif				/* NM_IFNET_CONNECTION_H */

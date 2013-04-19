@@ -47,7 +47,7 @@
 #define IFNET_KEY_FILE_KEY_MANAGED "managed"
 
 typedef struct {
-	GHashTable *config_connections;
+	GHashTable *connections;  /* uuid::connection */
 	gchar *hostname;
 	gboolean unmanaged_well_known;
 
@@ -183,24 +183,6 @@ monitor_file_changes (const char *filename,
 	return monitor;
 }
 
-/* Callback for nm_settings_connection_replace_and_commit. Report any errors
- * encountered when commiting connection settings updates. */
-static void
-commit_cb (NMSettingsConnection *connection, GError *error, gpointer unused)
-{
-	if (error) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "    error updating: %s",
-	             	 (error && error->message) ? error->message : "(unknown)");
-	} else {
-		NMSettingConnection *s_con;
-
-		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
-		g_assert (s_con);
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
-		              nm_setting_connection_get_id (s_con));
-	}
-}
-
 static void
 setup_monitors (NMIfnetConnection * connection, gpointer user_data)
 {
@@ -243,12 +225,15 @@ reload_connections (gpointer config)
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (config);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
 	GList *conn_names = NULL, *n_iter = NULL;
+	gboolean auto_refresh = FALSE;
+	char *str_auto_refresh;
+	GError *error = NULL;
 
 	/* save names for removing unused connections */
-	GHashTable *new_conn_names = NULL;
+	GHashTable *new_connections = NULL;
 	GHashTableIter iter;
-	gpointer key;
-	gpointer value;
+	const char *uuid;
+	NMSettingsConnection *candidate;
 
 	if (priv->unmanaged_well_known)
 		return;
@@ -258,8 +243,17 @@ reload_connections (gpointer config)
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Loading connections");
 
+	str_auto_refresh = nm_config_get_value (nm_config_get (),
+	                                        IFNET_KEY_FILE_GROUP, "auto_refresh",
+	                                        NULL);
+	if (str_auto_refresh && is_true (str_auto_refresh))
+		auto_refresh = TRUE;
+	g_free (str_auto_refresh);
+
+	new_connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+
+	/* Reread on-disk data and refresh in-memory connections from it */
 	conn_names = ifnet_get_connection_names ();
-	new_conn_names = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
 	for (n_iter = conn_names; n_iter; n_iter = g_list_next (n_iter)) {
 		NMIfnetConnection *new;
 		NMIfnetConnection *old;
@@ -275,53 +269,64 @@ reload_connections (gpointer config)
 		g_signal_connect (G_OBJECT (new), "ifnet_cancel_monitors",
 		                  G_CALLBACK (cancel_monitors), config);
 
-		old = g_hash_table_lookup (priv->config_connections, conn_name);
+		old = g_hash_table_lookup (priv->connections,
+		                           nm_connection_get_uuid (NM_CONNECTION (new)));
 		if (old && new) {
-			char *auto_refresh;
-
-			auto_refresh = nm_config_get_value (nm_config_get (),
-			                                    IFNET_KEY_FILE_GROUP, "auto_refresh",
-			                                    NULL);
-			if (auto_refresh && is_true (auto_refresh)) {
+			if (auto_refresh) {
+				/* If connection has changed, remove the old one and add the
+				 * new one to force a disconnect/reconnect with new settings
+				 */
 				if (!nm_connection_compare (NM_CONNECTION (old),
 				                            NM_CONNECTION (new),
 				                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 				                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
 
-					/* Remove and re-add to disconnect and reconnect with new settings */
 					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
-					g_hash_table_remove (priv->config_connections, conn_name);
-					g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
+					g_hash_table_remove (priv->connections,
+					                     nm_connection_get_uuid (NM_CONNECTION (old)));
+					g_hash_table_insert (priv->connections,
+					                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
+					                     g_object_ref (new));
 					if (is_managed_plugin () && is_managed (conn_name))
 						g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 				}
 			} else {
 				/* Update existing connection with new settings */
-				nm_settings_connection_replace_and_commit (NM_SETTINGS_CONNECTION (old),
-				                                           NM_CONNECTION (new),
-				                                           commit_cb, NULL);
-				g_object_unref (new);
+				if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (old),
+				                                              NM_CONNECTION (new),
+				                                              FALSE,  /* don't set Unsaved */
+				                                              &error)) {
+					/* Shouldn't ever get here as 'new' was verified by the reader already */
+					g_assert_no_error (error);
+				}
+				PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
+				              nm_connection_get_id (NM_CONNECTION (new)));
 			}
-			g_free (auto_refresh);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else if (new) {
-			g_hash_table_insert (priv->config_connections, g_strdup (conn_name), new);
+			g_hash_table_insert (priv->connections,
+			                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
+			                     g_object_ref (new));
 			if (is_managed_plugin () && is_managed (conn_name))
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 		}
-		g_hash_table_insert (new_conn_names, (gpointer) conn_name, (gpointer) conn_name);
+
+		/* Track all valid connections so we can remove deleted ones later */
+		g_hash_table_insert (new_connections,
+		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
+		                     new);
 	}
 
-	/* remove unused connections */
-	g_hash_table_iter_init (&iter, priv->config_connections);
-	while (g_hash_table_iter_next (&iter, &key, &value)) {
-		if (!g_hash_table_lookup (new_conn_names, key)) {
-			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (value));
-			g_hash_table_remove (priv->config_connections, key);
+	/* remove deleted/unused connections */
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, (gpointer) &uuid, (gpointer) &candidate)) {
+		if (!g_hash_table_lookup (new_connections, uuid)) {
+			nm_settings_connection_signal_remove (candidate);
+			g_hash_table_iter_remove (&iter);
 		}
 	}
-	g_hash_table_destroy (new_conn_names);
+	g_hash_table_destroy (new_connections);
 	g_list_free (conn_names);
 }
 
@@ -350,8 +355,7 @@ add_connection (NMSystemConfigInterface *config,
                 NMConnection *source,
                 GError **error)
 {
-	NMIfnetConnection *connection = NULL;
-	char *conn_name;
+	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 	gboolean has_flagged_secrets = FALSE;
 	NMSettingConnection *s_con;
 
@@ -366,28 +370,30 @@ add_connection (NMSystemConfigInterface *config,
 	/* If the connection has flagged secrets, ignore
 	 * it as this plugin does not deal with user agent service */
 	nm_connection_for_each_setting_value (source, check_flagged_secrets, &has_flagged_secrets);
+	if (has_flagged_secrets)
+		return NULL;
 
-	if (!has_flagged_secrets) {
-		conn_name = ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL, error);
-		if (conn_name)
-			connection = nm_ifnet_connection_new (conn_name, source);
-		reload_connections (config);
-	}
+	if (!ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL, NULL, error))
+		return NULL;
 
-	return connection ? NM_SETTINGS_CONNECTION (connection) : NULL;
+	reload_connections (config);
+	return g_hash_table_lookup (priv->connections, nm_connection_get_uuid (source));
 }
 
 static void
 check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 {
+	NMIfnetConnection *connection = NM_IFNET_CONNECTION (data);
 	GSList **list = (GSList **) user_data;
-	gchar *conn_name = (gchar *) key;
-	const char *mac;
+	const char *mac, *conn_name;
 	char *unmanaged_spec;
 	GSList *iter;
 
+	conn_name = nm_ifnet_connection_get_conn_name (connection);
+
 	if (is_managed (conn_name))
 		return;
+
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Checking unmanaged: %s", conn_name);
 	mac = ifnet_get_data (conn_name, "mac");
 	if (mac)
@@ -397,7 +403,7 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 
 	/* Just return if the unmanaged spec is already in the list */
 	for (iter = *list; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((char *) iter->data, unmanaged_spec)) {
+		if (g_str_equal (iter->data, unmanaged_spec)) {
 			g_free (unmanaged_spec);
 			return;
 		}
@@ -413,65 +419,61 @@ get_unmanaged_specs (NMSystemConfigInterface * config)
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 	GSList *list = NULL;
 
-	g_return_val_if_fail (priv->config_connections != NULL, NULL);
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "getting unmanaged specs...");
-	g_hash_table_foreach (priv->config_connections, check_unmanaged, &list);
+	g_hash_table_foreach (priv->connections, check_unmanaged, &list);
 	return list;
 }
 
 static void
-SCPluginIfnet_init (NMSystemConfigInterface * config)
+init (NMSystemConfigInterface *config)
 {
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (config);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Initializing!");
-	if (!priv->config_connections)
-		priv->config_connections =
-		    g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-					   g_object_unref);
+
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 	priv->unmanaged_well_known = !is_managed_plugin ();
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "management mode: %s",
 		      priv->unmanaged_well_known ? "unmanaged" : "managed");
-	// GFileMonitor setup
+
 	setup_monitors (NULL, config);
 	reload_connections (config);
-	/* Read hostname */
 	update_system_hostname (self);
 
 	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Initialzation complete!");
 }
 
 static GSList *
-get_connections (NMSystemConfigInterface * config)
+get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 	GSList *connections = NULL;
 	GHashTableIter iter;
-	gpointer key, value;
+	NMIfnetConnection *connection;
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%d) ... get_connections.",
-		      GPOINTER_TO_UINT (config));
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%p) ... get_connections.", config);
 	if (priv->unmanaged_well_known) {
 		PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-			      "(%d) ... get_connections (managed=false): return empty list.",
-			      GPOINTER_TO_UINT (config));
+		              "(%p) ... get_connections (managed=false): return empty list.",
+		              config);
 		return NULL;
 	}
 
-	g_hash_table_iter_init (&iter, priv->config_connections);
-	while (g_hash_table_iter_next (&iter, &key, &value))
-		if (is_managed ((gchar *) key))
-			connections = g_slist_prepend (connections, value);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%d) connections count: %d",
-		      GPOINTER_TO_UINT (config), g_slist_length (connections));
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
+		if (is_managed (nm_ifnet_connection_get_conn_name (connection)))
+			connections = g_slist_prepend (connections, connection);
+	}
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%p) connections count: %d",
+	              config, g_slist_length (connections));
 	return connections;
 }
 
 static void
 system_config_interface_init (NMSystemConfigInterface *class)
 {
-	class->init = SCPluginIfnet_init;
+	class->init = init;
 	class->get_connections = get_connections;
 	class->get_unmanaged_specs = get_unmanaged_specs;
 	class->add_connection = add_connection;
@@ -537,12 +539,14 @@ dispose (GObject * object)
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (plugin);
 
 	cancel_monitors (NULL, object);
-	if (priv->config_connections) {
-		g_hash_table_remove_all (priv->config_connections);
-		g_hash_table_destroy (priv->config_connections);
+	if (priv->connections) {
+		g_hash_table_destroy (priv->connections);
+		priv->connections = NULL;
 	}
 
 	g_free (priv->hostname);
+	priv->hostname = NULL;
+
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 	G_OBJECT_CLASS (sc_plugin_ifnet_parent_class)->dispose (object);

@@ -44,31 +44,16 @@
 #include "connection_parser.h"
 #include "nm-ifnet-connection.h"
 
-static void
-update_connection_id (NMConnection *connection, const char *conn_name)
+static char *
+connection_id_from_ifnet_name (const char *conn_name)
 {
-	gchar *idstr = NULL;
-	gchar *uuid_base = NULL;
-	gchar *uuid = NULL;
-	int name_len;
-	NMSettingConnection *setting;
+	int name_len = strlen (conn_name);
 
-	name_len = strlen (conn_name);
-	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
-		idstr = nm_utils_hexstr2bin (conn_name + 2, name_len - 2);
-	} else
-		idstr = g_strdup_printf ("%s", conn_name);
-	uuid_base = idstr;
-	uuid = nm_utils_uuid_generate_from_string (uuid_base);
-	setting = nm_connection_get_setting_connection (connection);
-	g_object_set (setting, NM_SETTING_CONNECTION_ID, idstr,
-		      NM_SETTING_CONNECTION_UUID, uuid, NULL);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-		      "update_connection_setting_from_config_block: name:%s, id:%s, uuid: %s",
-		      conn_name, idstr, uuid);
+	/* Convert a hex-encoded conn_name (only used for wifi SSIDs) to human-readable one */
+	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x")))
+		return nm_utils_hexstr2bin (conn_name + 2, name_len - 2);
 
-	g_free (uuid);
-	g_free (idstr);
+	return g_strdup (conn_name);
 }
 
 static gboolean eap_simple_reader (const char *eap_method,
@@ -1663,6 +1648,7 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	NMSettingWirelessSecurity *wsec = NULL;
 	gboolean auto_conn = TRUE;
 	const char *value = NULL;
+	gchar *id, *uuid;
 	gboolean success = FALSE;
 
 	connection = nm_connection_new ();
@@ -1677,13 +1663,26 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	value = ifnet_get_data (conn_name, "auto");
 	if (value && !strcmp (value, "false"))
 		auto_conn = FALSE;
-	update_connection_id (connection, conn_name);
+
+	/* Try to read UUID from the ifnet block, otherwise generate UUID from
+	 * the connection ID.
+	 */
+	id = connection_id_from_ifnet_name (conn_name);
+	uuid = g_strdup (ifnet_get_data (conn_name, "uuid"));
+	if (!uuid)
+		uuid = nm_utils_uuid_generate_from_string (id);
+
 	g_object_set (setting,
 	              NM_SETTING_CONNECTION_TYPE, type,
+	              NM_SETTING_CONNECTION_ID, id,
+	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, conn_name,
 	              NM_SETTING_CONNECTION_READ_ONLY, FALSE,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, auto_conn,
 	              NULL);
+	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "%s: name:%s, id:%s, uuid: %s", __func__, conn_name, id, uuid);
+	g_free (id);
+	g_free (uuid);
 
 	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type)
 	    || !strcmp (NM_SETTING_PPPOE_SETTING_NAME, type)) {
@@ -2434,14 +2433,6 @@ write_wired_setting (NMConnection *connection,
 	return TRUE;
 }
 
-static void
-write_connection_setting (NMSettingConnection *s_con, const char *conn_name)
-{
-	ifnet_set_data (conn_name, "auto",
-			nm_setting_connection_get_autoconnect (s_con) ? "true" :
-			"false");
-}
-
 static gboolean
 write_ip4_setting (NMConnection *connection, const char *conn_name, GError **error)
 {
@@ -2883,11 +2874,11 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 	}
 
 	/* Connection Setting */
-	write_connection_setting (s_con, conn_name);
+	ifnet_set_data (conn_name, "auto",
+	                nm_setting_connection_get_autoconnect (s_con) ? "true" : "false");
+	ifnet_set_data (conn_name, "uuid", nm_connection_get_uuid (connection));
 
-	/* connection id will be displayed in nm-applet */
-	update_connection_id (connection, conn_name);
-
+	/* Write changes to disk */
 	success = ifnet_flush_to_file (config_file, out_backup);
 	if (success)
 		wpa_flush_to_file (wpa_file);
@@ -2999,10 +2990,11 @@ get_wireless_name (NMConnection * connection)
 	return result;
 }
 
-char *
+gboolean
 ifnet_add_new_connection (NMConnection *connection,
                           const char *config_file,
                           const char *wpa_file,
+                          gchar **out_new_name,
                           gchar **out_backup,
                           GError **error)
 {
@@ -3055,7 +3047,9 @@ ifnet_add_new_connection (NMConnection *connection,
 	              new_name, success ? "success" : "fail");
 
 out:
-	if (!success)
+	if (!success || !out_new_name)
 		g_free (new_name);
-	return success ? new_name : NULL;
+	else if (out_new_name)
+		*out_new_name = new_name;
+	return success;
 }

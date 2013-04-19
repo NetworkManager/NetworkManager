@@ -372,13 +372,13 @@ test_add_connection (const char *basepath)
 	char *backup = NULL;
 
 	connection = ifnet_update_connection_from_config_block ("eth0", basepath, NULL);
-	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, &backup, NULL),
+	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL),
 	        "add connection", "add connection failed: %s", "eth0");
 	kill_backup (&backup);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("myxjtu2", basepath, NULL);
-	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, &backup, NULL),
+	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL),
 	        "add connection", "add connection failed: %s", "myxjtu2");
 	kill_backup (&backup);
 	g_object_unref (connection);
