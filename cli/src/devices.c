@@ -267,7 +267,7 @@ usage (void)
 	         "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]\n\n"
 	         "               [--private] [--nowait] [--timeout <timeout>]\n\n"
-	         "  wifi scan [[ifname] <ifname>]\n\n"
+	         "  wifi rescan [[ifname] <ifname>]\n\n"
 #if WITH_WIMAX
 	         "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
 #endif
@@ -1909,7 +1909,7 @@ error:
 }
 
 static void
-request_scan_cb (NMDeviceWifi *device, GError *error, gpointer user_data)
+request_rescan_cb (NMDeviceWifi *device, GError *error, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
 
@@ -1922,7 +1922,7 @@ request_scan_cb (NMDeviceWifi *device, GError *error, gpointer user_data)
 }
 
 static NMCResultCode
-do_device_wifi_scan (NmCli *nmc, int argc, char **argv)
+do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	const char *ifname = NULL;
@@ -1958,7 +1958,7 @@ do_device_wifi_scan (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nm_device_wifi_request_scan_simple (NM_DEVICE_WIFI (device), request_scan_cb, nmc);
+	nm_device_wifi_request_scan_simple (NM_DEVICE_WIFI (device), request_rescan_cb, nmc);
 
 	return nmc->return_value;
 error:
@@ -1976,8 +1976,8 @@ do_device_wifi (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wifi_list (nmc, argc-1, argv+1);
 		} else if (matches (*argv, "connect") == 0) {
 			nmc->return_value = do_device_wifi_connect_network (nmc, argc-1, argv+1);
-		} else if (matches (*argv, "scan") == 0) {
-			nmc->return_value = do_device_wifi_scan (nmc, argc-1, argv+1);
+		} else if (matches (*argv, "rescan") == 0) {
+			nmc->return_value = do_device_wifi_rescan (nmc, argc-1, argv+1);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: 'device wifi' command '%s' is not valid."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;

@@ -491,9 +491,9 @@ arguments: according to arguments
 .fi
 .RE
 .TP
-.B wifi scan [[ifname] <ifname>]
+.B wifi rescan [[ifname] <ifname>]
 .br
-Request that \fINetworkManager\fP immediately scan for available access points.
+Request that \fINetworkManager\fP immediately re-scan for available access points.
 NetworkManager scans Wi\(hyFi networks periodically, but in some cases it can be
 useful to start scanning manually (e.g. after resuming the computer).
 This command doesn't show the APs, use 'nmcli device wifi list' for that.
