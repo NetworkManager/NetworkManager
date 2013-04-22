@@ -506,6 +506,11 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
+	/* When 'connection' and 'new_connection' are the same object simply return
+	 * in order not to destroy 'connection' */
+	if (connection == new_connection)
+		return TRUE;
+
 	/* No need to validate permissions like nm_connection_replace_settings()
 	 * since we're dealing with an NMConnection which has already done that.
 	 */
