@@ -403,12 +403,10 @@ nm_vpn_connection_new (NMConnection *connection,
                        gboolean user_requested,
                        gulong user_uid)
 {
-	NMVPNConnection *self;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
-	self = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION,
+	return (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION,
 	                                         NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
 	                                         NM_ACTIVE_CONNECTION_INT_DEVICE, parent_device,
 	                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
@@ -416,10 +414,6 @@ nm_vpn_connection_new (NMConnection *connection,
 	                                         NM_ACTIVE_CONNECTION_INT_USER_UID, user_uid,
 	                                         NM_ACTIVE_CONNECTION_VPN, TRUE,
 	                                         NULL);
-	if (self)
-		nm_active_connection_export (NM_ACTIVE_CONNECTION (self));
-
-	return self;
 }
 
 static const char *

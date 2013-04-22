@@ -3092,8 +3092,10 @@ nm_manager_activate_connection (NMManager *manager,
 	                               error);
 
 activated:
-	if (ac)
+	if (ac) {
 		active_connection_add (manager, ac);
+		nm_active_connection_export (ac);
+	}
 
 	return ac;
 }

@@ -412,7 +412,6 @@ constructed (GObject *object)
 	                                          "notify::" NM_DEVICE_STATE,
 	                                          G_CALLBACK (device_state_changed),
 	                                          NM_ACT_REQUEST (object));
-	nm_active_connection_export (NM_ACTIVE_CONNECTION (object));
 }
 
 static void
