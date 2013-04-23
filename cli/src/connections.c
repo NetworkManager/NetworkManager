@@ -4095,7 +4095,6 @@ property_edit_submenu (NmCli *nmc,
 	gboolean set_result;
 	GError *tmp_err = NULL;
 	char *prompt;
-	char *tmp_str;
 	gboolean dirty;
 	GValue prop_g_value = G_VALUE_INIT;
 
@@ -4221,14 +4220,21 @@ property_edit_submenu (NmCli *nmc,
 			break;
 
 		case NMC_EDITOR_SUB_CMD_QUIT:
-			do {
-				tmp_str = nmc_get_user_input (_("Do you really want to quit? [y/n]\n"));
-			} while (!tmp_str);
-			if (matches (tmp_str, "yes") == 0) {
+			if (dirty) {
+				char *tmp_str;
+				do {
+					tmp_str = nmc_get_user_input (_("The connection is not saved. "
+					                                "Do you really want to quit? [y/n]\n"));
+				} while (!tmp_str);
+				if (matches (tmp_str, "yes") == 0) {
+					cmd_property_loop = FALSE;
+					should_quit = TRUE;  /* we will quit nmcli */
+				}
+				g_free (tmp_str);
+			} else {
 				cmd_property_loop = FALSE;
 				should_quit = TRUE;  /* we will quit nmcli */
 			}
-			g_free (tmp_str);
 			break;
 
 		case NMC_EDITOR_SUB_CMD_UNKNOWN:
@@ -4422,7 +4428,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	const NameItem *valid_settings_arr = NULL;
 	char *valid_settings_str = NULL;
 	AddConnectionInfo *info = NULL;
-	char *tmp_str;
 	gboolean dirty;
 	GError *err1 = NULL;
 	NmcEditorMenuContext menu_ctx;
@@ -4456,7 +4461,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		cmd_arg_p = NULL;
 		cmd_arg_v = NULL;
 		split_editor_main_cmd_args (cmd_arg, &cmd_arg_s, &cmd_arg_p, &cmd_arg_v);
-
 		switch (cmd) {
 		case NMC_EDITOR_MAIN_CMD_SET:
 			/* Set property value */
@@ -4810,12 +4814,17 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_QUIT:
-			do {
-				tmp_str = nmc_get_user_input (_("Do you really want to quit? [y/n]\n"));
-			} while (!tmp_str);
-			if (matches (tmp_str, "yes") == 0)
+			if (dirty) {
+				char *tmp_str;
+				do {
+					tmp_str = nmc_get_user_input (_("The connection is not saved. "
+					                                "Do you really want to quit? [y/n]\n"));
+				} while (!tmp_str);
+				if (matches (tmp_str, "yes") == 0)
+					cmd_loop = FALSE;  /* quit command loop */
+				g_free (tmp_str);
+			} else
 				cmd_loop = FALSE;  /* quit command loop */
-			g_free (tmp_str);
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_UNKNOWN:
