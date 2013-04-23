@@ -2758,6 +2758,7 @@ nm_manager_activate_connection (NMManager *manager,
 	NMDevice *master_device = NULL;
 	NMConnection *master_connection = NULL;
 	NMActiveConnection *master_ac = NULL, *ac = NULL;
+	gboolean matched;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2803,13 +2804,15 @@ nm_manager_activate_connection (NMManager *manager,
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 					                 "Failed to determine connection's virtual interface name");
 				return NULL;
-			} else if (g_strcmp0 (iface, nm_device_get_ip_iface (device)) != 0) {
+			}
+
+			matched = g_str_equal (iface, nm_device_get_ip_iface (device));
+			g_free (iface);
+			if (!matched) {
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 					                 "Device given by path did not match connection's virtual interface name");
-				g_free (iface);
 				return NULL;
 			}
-			g_free (iface);
 		}
 	} else {
 		/* Virtual connections (VLAN, bond, etc) may not specify a device
@@ -2831,6 +2834,7 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 
 		device = find_device_by_ip_iface (manager, iface);
+		g_free (iface);
 		if (!device) {
 			/* Create it */
 			device = system_create_virtual_device (manager, connection);
