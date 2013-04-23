@@ -122,7 +122,6 @@ private_server_message_filter (DBusConnection *conn,
 		               s->detail,
 		               dbus_connection_get_g_connection (conn));
 
-		dbus_connection_close (conn);
 		g_hash_table_remove (s->connections, conn);
 
 		/* Let dbus-glib process the message too */
@@ -167,6 +166,14 @@ private_server_new_connection (DBusServer *server,
 	               dbus_connection_get_g_connection (conn));
 }
 
+static void
+private_server_dbus_connection_destroy (DBusConnection *conn)
+{
+	if (dbus_connection_get_is_connected (conn))
+		dbus_connection_close (conn);
+	dbus_connection_unref (conn);
+}
+
 static PrivateServer *
 private_server_new (const char *path,
                     const char *tag,
@@ -198,7 +205,7 @@ private_server_new (const char *path,
 	dbus_server_set_new_connection_function (s->server, private_server_new_connection, s, NULL);
 
 	s->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-	                                        (GDestroyNotify) dbus_connection_unref,
+	                                        (GDestroyNotify) private_server_dbus_connection_destroy,
 	                                        g_free);
 	s->manager = manager;
 	s->tag = g_strdup (tag);
