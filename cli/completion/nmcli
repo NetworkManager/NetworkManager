@@ -240,13 +240,17 @@ _nmcli()
                         _nmcli_list "type con-name autoconnect ifname help"
                         return 0
                         ;;
+                    edit)
+                        _nmcli_list "id uuid path type con-name"
+                        return 0
+                        ;;
                     delete)
                         _nmcli_list "id uuid path"
                         return 0
                         ;;
                 esac
 
-                _nmcli_list "show up down add delete reload help"
+                _nmcli_list "show up down add edit delete reload help"
                 ;;
 
             device)
