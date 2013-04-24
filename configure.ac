@@ -295,7 +295,7 @@ AS_IF([! (echo "$with_session_tracking" | grep -q -E "^(systemd|consolekit|no)$"
 	AC_MSG_ERROR([--with-session-tracking must be systemd/consolekit/no, not $with_session_tracking]))
 # add conditionals and subtitutions
 AM_CONDITIONAL(SESSION_TRACKING_CK, test "$with_session_tracking" = "consolekit")
-AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "xwith_session_tracking" = "systemd")
+AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "$with_session_tracking" = "systemd")
 if test "$with_session_tracking" = "systemd"; then
 	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
