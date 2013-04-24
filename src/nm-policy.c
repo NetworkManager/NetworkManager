@@ -1146,13 +1146,11 @@ static void
 schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 {
 	ActivateData *data;
-	NMDeviceState state;
 
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return;
 
-	state = nm_device_get_state (device);
-	if (state < NM_DEVICE_STATE_DISCONNECTED)
+	if (!nm_device_can_activate (device))
 		return;
 
 	if (!nm_device_get_enabled (device))

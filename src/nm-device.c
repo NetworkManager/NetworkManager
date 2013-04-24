@@ -184,12 +184,14 @@ typedef struct {
 	char *        driver;
 	char *        driver_version;
 	char *        firmware_version;
-	gboolean      managed; /* whether managed by NM or not */
 	RfKillType    rfkill_type;
 	gboolean      firmware_missing;
 	GHashTable *  available_connections;
 	guint8        hw_addr[NM_UTILS_HWADDR_LEN_MAX];
 	guint         hw_addr_len;
+
+	gboolean      manager_managed; /* whether managed by NMManager or not */
+	gboolean      default_unmanaged; /* whether unmanaged by default */
 
 	guint32         ip4_address;
 
@@ -1340,6 +1342,22 @@ nm_device_is_available (NMDevice *self)
 	if (NM_DEVICE_GET_CLASS (self)->is_available)
 		return NM_DEVICE_GET_CLASS (self)->is_available (self);
 	return TRUE;
+}
+
+gboolean
+nm_device_can_activate (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->manager_managed)
+		return FALSE;
+	if (!priv->default_unmanaged && priv->state < NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
+	if (priv->state > NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
+	return nm_device_is_available (self);
 }
 
 gboolean
@@ -4123,6 +4141,21 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	             nm_device_get_iface (self),
 	             nm_connection_get_id (connection));
 
+	if (priv->state < NM_DEVICE_STATE_DISCONNECTED) {
+		g_return_if_fail (nm_device_can_activate (self));
+
+		if (priv->state == NM_DEVICE_STATE_UNMANAGED) {
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_UNAVAILABLE,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
+		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
+	}
+
 	g_warn_if_fail (priv->state == NM_DEVICE_STATE_DISCONNECTED);
 
 	priv->act_request = g_object_ref (req);
@@ -4524,7 +4557,7 @@ dispose (GObject *object)
 	g_warn_if_fail (priv->slaves == NULL);
 
 	/* Take the device itself down and clear its IPv4 configuration */
-	if (priv->managed && take_down) {
+	if (nm_device_get_managed (self) && take_down) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		nm_device_take_down (self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
@@ -4661,9 +4694,6 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
-		break;
-	case PROP_MANAGED:
-		priv->managed = g_value_get_boolean (value);
 		break;
 	case PROP_AUTOCONNECT:
 		priv->autoconnect = g_value_get_boolean (value);
@@ -4807,7 +4837,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->type);
 		break;
 	case PROP_MANAGED:
-		g_value_set_boolean (value, priv->managed);
+		g_value_set_boolean (value, nm_device_get_managed (self));
 		break;
 	case PROP_AUTOCONNECT:
 		g_value_set_boolean (value, priv->autoconnect);
@@ -5011,7 +5041,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       "Managed",
 		                       "Managed",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
@@ -5385,7 +5415,8 @@ nm_device_state_changed (NMDevice *device,
 		 * about to assume a connection since that defeats the purpose of
 		 * assuming the device's existing connection.
 		 */
-		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED &&
+		    old_state != NM_DEVICE_STATE_UNMANAGED)
 			nm_device_deactivate (device, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
@@ -5416,9 +5447,16 @@ nm_device_state_changed (NMDevice *device,
 			            nm_device_get_iface (device));
 			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		} else {
-			nm_log_dbg (LOGD_DEVICE, "(%s): device not yet available for transition to DISCONNECTED",
-			            nm_device_get_iface (device));
+			if (old_state == NM_DEVICE_STATE_UNMANAGED) {
+				nm_log_dbg (LOGD_DEVICE, "(%s): device not yet available for transition to DISCONNECTED",
+				            nm_device_get_iface (device));
+			} else if (old_state > NM_DEVICE_STATE_UNAVAILABLE && priv->default_unmanaged)
+				nm_device_queue_state (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		}
+		break;
+	case NM_DEVICE_STATE_DISCONNECTED:
+		if (old_state > NM_DEVICE_STATE_DISCONNECTED && priv->default_unmanaged)
+			nm_device_queue_state (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
@@ -5634,36 +5672,76 @@ nm_device_queued_ip_config_change_clear (NMDevice *self)
 gboolean
 nm_device_get_managed (NMDevice *device)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	return NM_DEVICE_GET_PRIVATE (device)->managed;
-}
-
-void
-nm_device_set_managed (NMDevice *device,
-                       gboolean managed,
-                       NMDeviceStateReason reason)
-{
 	NMDevicePrivate *priv;
 
-	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->managed == managed)
-		return;
 
-	priv->managed = managed;
+	if (!priv->manager_managed)
+		return FALSE;
+	else if (priv->default_unmanaged)
+		return (priv->state != NM_DEVICE_STATE_UNMANAGED);
+	else
+		return TRUE;
+}
+
+static void
+nm_device_set_managed_internal (NMDevice *device,
+                                gboolean managed,
+                                NMDeviceStateReason reason)
+{
 	nm_log_dbg (LOGD_DEVICE, "(%s): now %s",
 	            nm_device_get_iface (device),
 	            managed ? "managed" : "unmanaged");
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_MANAGED);
 
-	/* If now managed, jump to unavailable */
 	if (managed)
 		nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE, reason);
 	else
 		nm_device_state_changed (device, NM_DEVICE_STATE_UNMANAGED, reason);
+}
+
+void
+nm_device_set_manager_managed (NMDevice *device,
+                               gboolean managed,
+                               NMDeviceStateReason reason)
+{
+	NMDevicePrivate *priv;
+	gboolean was_managed, now_managed;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	was_managed = nm_device_get_managed (device);
+	priv->manager_managed = managed;
+	now_managed = nm_device_get_managed (device);
+
+	if (was_managed != now_managed)
+		nm_device_set_managed_internal (device, now_managed, reason);
+}
+
+void
+nm_device_set_default_unmanaged (NMDevice *device,
+                                 gboolean default_unmanaged)
+{
+	NMDevicePrivate *priv;
+	gboolean was_managed, now_managed;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	was_managed = nm_device_get_managed (device);
+	priv->default_unmanaged = default_unmanaged;
+	now_managed = nm_device_get_managed (device);
+
+	if (was_managed != now_managed)
+		nm_device_set_managed_internal (device, now_managed,
+		                                default_unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED :
+		                                                    NM_DEVICE_STATE_REASON_NOW_MANAGED);
 }
 
 /**

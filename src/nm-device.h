@@ -237,6 +237,8 @@ NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
 gboolean		nm_device_is_available   (NMDevice *dev);
+gboolean		nm_device_can_activate   (NMDevice *dev);
+
 gboolean		nm_device_ignore_carrier (NMDevice *dev);
 
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
@@ -279,9 +281,11 @@ void nm_device_set_enabled (NMDevice *device, gboolean enabled);
 RfKillType nm_device_get_rfkill_type (NMDevice *device);
 
 gboolean nm_device_get_managed (NMDevice *device);
-void nm_device_set_managed (NMDevice *device,
-                            gboolean managed,
-                            NMDeviceStateReason reason);
+void nm_device_set_manager_managed (NMDevice *device,
+                                    gboolean managed,
+                                    NMDeviceStateReason reason);
+void nm_device_set_default_unmanaged (NMDevice *device,
+                                      gboolean default_unmanaged);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
