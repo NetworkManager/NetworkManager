@@ -286,6 +286,48 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
+static int
+compare_devices (const void *a, const void *b)
+{
+	NMDevice *da = *(NMDevice **)a;
+	NMDevice *db = *(NMDevice **)b;
+	int cmp;
+
+	/* Sort by later device states first */
+	cmp = nm_device_get_state (db) - nm_device_get_state (da);
+	if (cmp != 0)
+		return cmp;
+
+	cmp = g_strcmp0 (nm_device_get_type_description (da),
+	                 nm_device_get_type_description (db));
+	if (cmp != 0)
+		return cmp;
+
+	return g_strcmp0 (nm_device_get_iface (da),
+	                  nm_device_get_iface (db));
+}
+
+static NMDevice **
+get_devices_sorted (NMClient *client)
+{
+	const GPtrArray *devs;
+	NMDevice **sorted;
+
+	devs = nm_client_get_devices (client);
+	if (!devs) {
+		sorted = g_new (NMDevice *, 1);
+		sorted[0] = NULL;
+		return sorted;
+	}
+
+	sorted = g_new (NMDevice *, devs->len + 1);
+	memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
+	sorted[devs->len] = NULL;
+
+	qsort (sorted, devs->len, sizeof (NMDevice *), compare_devices);
+	return sorted;
+}
+
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
@@ -922,7 +964,7 @@ static NMCResultCode
 do_devices_status (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
-	const GPtrArray *devices;
+	NMDevice **devices;
 	int i;
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_DEV_STATUS_ALL;
@@ -974,11 +1016,10 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.header_name = _("Status of devices");
 	print_fields (nmc->print_fields, nmc->allowed_fields);
 
-	devices = nm_client_get_devices (nmc->client);
-	for (i = 0; devices && (i < devices->len); i++) {
-		NMDevice *device = g_ptr_array_index (devices, i);
-		show_device_status (device, nmc);
-	}
+	devices = get_devices_sorted (nmc->client);
+	for (i = 0; devices[i]; i++)
+		show_device_status (devices[i], nmc);
+	g_free (devices);
 
 	return NMC_RESULT_SUCCESS;
 
@@ -989,7 +1030,7 @@ error:
 static NMCResultCode
 do_devices_show (NmCli *nmc, int argc, char **argv)
 {
-	const GPtrArray *devices;
+	NMDevice **devices = NULL;
 	NMDevice *device = NULL;
 	const char *ifname = NULL;
 	int i;
@@ -1013,12 +1054,12 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	devices = nm_client_get_devices (nmc->client);
+	devices = get_devices_sorted (nmc->client);
 
 	if (ifname) {
 		/* Interface specified; show details only for the device */
-		for (i = 0; devices && (i < devices->len); i++) {
-			NMDevice *candidate = g_ptr_array_index (devices, i);
+		for (i = 0; devices[i]; i++) {
+			NMDevice *candidate = devices[i];
 			const char *dev_iface = nm_device_get_iface (candidate);
 
 			if (!g_strcmp0 (dev_iface, ifname))
@@ -1032,16 +1073,15 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 		show_device_info (device, nmc);
 	} else {
 		/* Show details for all devices */
-		for (i = 0; devices && (i < devices->len); i++) {
-			NMDevice *dev = g_ptr_array_index (devices, i);
-
-			show_device_info (dev, nmc);
-			if (i != devices->len-1)
+		for (i = 0; devices[i]; i++) {
+			show_device_info (devices[i], nmc);
+			if (devices[i + 1])
 				printf ("\n"); /* Empty line */
 		}
 	}
 
 error:
+	g_free (devices);
 	return nmc->return_value;
 }
 
@@ -1117,7 +1157,7 @@ disconnect_device_cb (NMDevice *device, GError *error, gpointer user_data)
 static NMCResultCode
 do_device_disconnect (NmCli *nmc, int argc, char **argv)
 {
-	const GPtrArray *devices;
+	NMDevice **devices;
 	NMDevice *device = NULL;
 	const char *ifname = NULL;
 	char *ifname_ask = NULL;
@@ -1186,14 +1226,15 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	devices = nm_client_get_devices (nmc->client);
-	for (i = 0; devices && (i < devices->len); i++) {
-		NMDevice *candidate = g_ptr_array_index (devices, i);
+	devices = get_devices_sorted (nmc->client);
+	for (i = 0; devices[i]; i++) {
+		NMDevice *candidate = devices[i];
 		const char *dev_iface = nm_device_get_iface (candidate);
 
 		if (!g_strcmp0 (dev_iface, ifname))
 			device = candidate;
 	}
+	g_free (devices);
 
 	if (!device) {
 		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
@@ -1247,7 +1288,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	NMAccessPoint *ap = NULL;
 	const char *ifname = NULL;
 	const char *bssid_user = NULL;
-	const GPtrArray *devices;
+	NMDevice **devices = NULL;
 	const GPtrArray *aps;
 	APInfo *info;
 	int i, j;
@@ -1319,11 +1360,11 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("Wi-Fi scan list");
 
-	devices = nm_client_get_devices (nmc->client);
+	devices = get_devices_sorted (nmc->client);
 	if (ifname) {
 		/* Device specified - list only APs of this interface */
-		for (i = 0; devices && (i < devices->len); i++) {
-			NMDevice *candidate = g_ptr_array_index (devices, i);
+		for (i = 0; devices[i]; i++) {
+			NMDevice *candidate = devices[i];
 			const char *dev_iface = nm_device_get_iface (candidate);
 
 			if (!g_strcmp0 (dev_iface, ifname)) {
@@ -1379,8 +1420,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 		if (bssid_user) {
 			/* Specific AP requested - list only that */
-			for (i = 0; devices && (i < devices->len); i++) {
-				NMDevice *dev = g_ptr_array_index (devices, i);
+			for (i = 0; devices[i]; i++) {
+				NMDevice *dev = devices[i];
 
 				if (!NM_IS_DEVICE_WIFI (dev))
 					continue;
@@ -1412,8 +1453,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 		} else {
-			for (i = 0; devices && (i < devices->len); i++) {
-				NMDevice *dev = g_ptr_array_index (devices, i);
+			for (i = 0; devices[i]; i++) {
+				NMDevice *dev = devices[i];
 				if (NM_IS_DEVICE_WIFI (dev))
 					show_acces_point_info (dev, nmc);
 			}
@@ -1421,6 +1462,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	}
 
 error:
+	g_free (devices);
 	return nmc->return_value;
 }
 
