@@ -3,9 +3,10 @@
 #define DEVICE_NAME "nm-test-device"
 
 static void
-ip4_route_callback (NMPlatform *platform, NMPlatformIP4Route *received, SignalData *data)
+ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *received, SignalData *data)
 {
 	g_assert (received);
+	g_assert_cmpint (received->ifindex, ==, ifindex);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;
@@ -20,9 +21,10 @@ ip4_route_callback (NMPlatform *platform, NMPlatformIP4Route *received, SignalDa
 }
 
 static void
-ip6_route_callback (NMPlatform *platform, NMPlatformIP6Route *received, SignalData *data)
+ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *received, SignalData *data)
 {
 	g_assert (received);
+	g_assert_cmpint (received->ifindex, ==, ifindex);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;

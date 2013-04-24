@@ -483,7 +483,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformLink device;
 
 			link_init (&device, (struct rtnl_link *) object);
-			g_signal_emit_by_name (platform, sig, &device);
+			g_signal_emit_by_name (platform, sig, device.ifindex, &device);
 		}
 		return;
 	case IP4_ADDRESS:
@@ -491,7 +491,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP4Address address;
 
 			init_ip4_address (&address, (struct rtnl_addr *) object);
-			g_signal_emit_by_name (platform, sig, &address);
+			g_signal_emit_by_name (platform, sig, address.ifindex, &address);
 		}
 		return;
 	case IP6_ADDRESS:
@@ -499,7 +499,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP6Address address;
 
 			init_ip6_address (&address, (struct rtnl_addr *) object);
-			g_signal_emit_by_name (platform, sig, &address);
+			g_signal_emit_by_name (platform, sig, address.ifindex, &address);
 		}
 		return;
 	case IP4_ROUTE:
@@ -507,7 +507,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP4Route route;
 
 			init_ip4_route (&route, (struct rtnl_route *) object);
-			g_signal_emit_by_name (platform, sig, &route);
+			g_signal_emit_by_name (platform, sig, route.ifindex, &route);
 		}
 		return;
 	case IP6_ROUTE:
@@ -515,7 +515,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP6Route route;
 
 			init_ip6_route (&route, (struct rtnl_route *) object);
-			g_signal_emit_by_name (platform, sig, &route);
+			g_signal_emit_by_name (platform, sig, route.ifindex, &route);
 		}
 		return;
 	default:

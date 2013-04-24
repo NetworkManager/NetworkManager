@@ -22,7 +22,8 @@ nm_daemon_all_sources = \
 	$(top_srcdir)/src/modem-manager/*.[ch] \
 	$(top_srcdir)/src/bluez-manager/*.[ch] \
 	$(top_srcdir)/src/firewall-manager/*.[ch] \
-	$(top_srcdir)/src/settings/*.[ch]
+	$(top_srcdir)/src/settings/*.[ch] \
+	$(top_srcdir)/src/platform/*.[ch]
 
 if WITH_WIMAX
 nm_daemon_all_sources += $(top_srcdir)/src/wimax/*.[ch]
@@ -68,6 +69,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/bluez-manager \
 	-I$(top_srcdir)/src/firewall-manager \
 	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/libnm-util
 

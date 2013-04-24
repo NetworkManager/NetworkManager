@@ -27,6 +27,7 @@
 
 #include "nm-platform.h"
 #include "nm-logging.h"
+#include "nm-marshal.h"
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
@@ -974,21 +975,21 @@ nm_platform_ip6_route_exists (int ifindex,
 /******************************************************************/
 
 static void
-log_link_added (NMPlatform *p, NMPlatformLink *info, gpointer user_data)
+log_link_added (NMPlatform *p, int ifindex, NMPlatformLink *info, gpointer user_data)
 {
-	debug ("signal: link address: '%s' (%d)", info->name, info->ifindex);
+	debug ("signal: link address: '%s' (%d)", info->name, ifindex);
 }
 
 static void
-log_link_changed (NMPlatform *p, NMPlatformLink *info, gpointer user_data)
+log_link_changed (NMPlatform *p, int ifindex, NMPlatformLink *info, gpointer user_data)
 {
-	debug ("signal: link changed: '%s' (%d)", info->name, info->ifindex);
+	debug ("signal: link changed: '%s' (%d)", info->name, ifindex);
 }
 
 static void
-log_link_removed (NMPlatform *p, NMPlatformLink *info, gpointer user_data)
+log_link_removed (NMPlatform *p, int ifindex, NMPlatformLink *info, gpointer user_data)
 {
-	debug ("signal: link removed: '%s' (%d)", info->name, info->ifindex);
+	debug ("signal: link removed: '%s' (%d)", info->name, ifindex);
 }
 
 static void
@@ -1004,19 +1005,19 @@ log_ip4_address (NMPlatformIP4Address *address, const char *change_type)
 }
 
 static void
-log_ip4_address_added (NMPlatform *p, NMPlatformIP4Address *address, gpointer user_data)
+log_ip4_address_added (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
 {
 	log_ip4_address (address, "added");
 }
 
 static void
-log_ip4_address_changed (NMPlatform *p, NMPlatformIP4Address *address, gpointer user_data)
+log_ip4_address_changed (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
 {
 	log_ip4_address (address, "changed");
 }
 
 static void
-log_ip4_address_removed (NMPlatform *p, NMPlatformIP4Address *address, gpointer user_data)
+log_ip4_address_removed (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
 {
 	log_ip4_address (address, "removed");
 }
@@ -1034,19 +1035,19 @@ log_ip6_address (NMPlatformIP6Address *address, const char *change_type)
 }
 
 static void
-log_ip6_address_added (NMPlatform *p, NMPlatformIP6Address *address, gpointer user_data)
+log_ip6_address_added (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
 {
 	log_ip6_address (address, "added");
 }
 
 static void
-log_ip6_address_changed (NMPlatform *p, NMPlatformIP6Address *address, gpointer user_data)
+log_ip6_address_changed (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
 {
 	log_ip6_address (address, "changed");
 }
 
 static void
-log_ip6_address_removed (NMPlatform *p, NMPlatformIP6Address *address, gpointer user_data)
+log_ip6_address_removed (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
 {
 	log_ip6_address (address, "removed");
 }
@@ -1066,19 +1067,19 @@ log_ip4_route (NMPlatformIP4Route *route, const char *change_type)
 }
 
 static void
-log_ip4_route_added (NMPlatform *p, NMPlatformIP4Route *route, gpointer user_data)
+log_ip4_route_added (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
 {
 	log_ip4_route (route, "added");
 }
 
 static void
-log_ip4_route_changed (NMPlatform *p, NMPlatformIP4Route *route, gpointer user_data)
+log_ip4_route_changed (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
 {
 	log_ip4_route (route, "changed");
 }
 
 static void
-log_ip4_route_removed (NMPlatform *p, NMPlatformIP4Route *route, gpointer user_data)
+log_ip4_route_removed (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
 {
 	log_ip4_route (route, "removed");
 }
@@ -1098,19 +1099,19 @@ log_ip6_route (NMPlatformIP6Route *route, const char *change_type)
 }
 
 static void
-log_ip6_route_added (NMPlatform *p, NMPlatformIP6Route *route, gpointer user_data)
+log_ip6_route_added (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
 {
 	log_ip6_route (route, "added");
 }
 
 static void
-log_ip6_route_changed (NMPlatform *p, NMPlatformIP6Route *route, gpointer user_data)
+log_ip6_route_changed (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
 {
 	log_ip6_route (route, "changed");
 }
 
 static void
-log_ip6_route_removed (NMPlatform *p, NMPlatformIP6Route *route, gpointer user_data)
+log_ip6_route_removed (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
 {
 	log_ip6_route (route, "removed");
 }
@@ -1128,8 +1129,8 @@ nm_platform_init (NMPlatform *object)
 		G_SIGNAL_RUN_FIRST, \
 		G_CALLBACK (method), \
 		NULL, NULL, \
-		g_cclosure_marshal_VOID__POINTER, \
-		G_TYPE_NONE, 1, G_TYPE_POINTER); \
+		_nm_marshal_VOID__INT_POINTER, \
+		G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_POINTER); \
 
 static void
 nm_platform_class_init (NMPlatformClass *platform_class)

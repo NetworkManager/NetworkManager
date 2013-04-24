@@ -4,6 +4,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/libnm-util \
 	-I${srcdir}/.. \
 	$(GLIB_CFLAGS) \
@@ -11,7 +12,9 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_LDFLAGS = $(GLIB_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
-COMMON_LDADD = $(top_builddir)/src/logging/libnm-logging.la
+COMMON_LDADD = \
+	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/src/generated/libnm-generated.la
 PLATFORM_LDADD = $(COMMON_LDADD) $(top_builddir)/src/platform/libnm-platform.la
 
 @GNOME_CODE_COVERAGE_RULES@

@@ -9,7 +9,7 @@
 #define SLAVE_NAME "nm-test-slave"
 
 static void
-link_callback (NMPlatform *platform, NMPlatformLink *received, SignalData *data)
+link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, SignalData *data)
 {
 	
 	GArray *links;
@@ -17,6 +17,7 @@ link_callback (NMPlatform *platform, NMPlatformLink *received, SignalData *data)
 	int i;
 
 	g_assert (received);
+	g_assert_cmpint (received->ifindex, ==, ifindex);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;

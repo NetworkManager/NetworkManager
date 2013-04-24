@@ -4,6 +4,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/libnm-util \
 	-DKERNEL_HACKS=1
 
@@ -26,5 +27,6 @@ libnm_platform_la_CPPFLAGS = \
 
 libnm_platform_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \
+	$(top_builddir)/src/generated/libnm-generated.la \
 	$(GLIB_LIBS) \
 	$(LIBNL_LIBS)
