@@ -51,13 +51,21 @@ typedef enum {
 	NM_LINK_TYPE_NONE,
 	NM_LINK_TYPE_UNKNOWN,
 	NM_LINK_TYPE_GENERIC,
-	NM_LINK_TYPE_LOOPBACK,
+
+	/* Hardware types */
 	NM_LINK_TYPE_ETHERNET,
+	NM_LINK_TYPE_INFINIBAND,
+
+	/* Virtual types */
 	NM_LINK_TYPE_DUMMY,
+	NM_LINK_TYPE_LOOPBACK,
+	NM_LINK_TYPE_VLAN,
+
+	/* Virtual types with slaves */
 	NM_LINK_TYPE_BRIDGE,
 	NM_LINK_TYPE_BOND,
 	NM_LINK_TYPE_TEAM,
-	NM_LINK_TYPE_VLAN,
+
 } NMLinkType;
 
 typedef struct {

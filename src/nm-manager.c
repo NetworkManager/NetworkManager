@@ -71,6 +71,7 @@
 #include "wifi-utils.h"
 #include "nm-enum-types.h"
 #include "nm-sleep-monitor.h"
+#include "nm-platform.h"
 
 #if WITH_CONCHECK
 #include "nm-connectivity.h"
@@ -2159,31 +2160,6 @@ is_olpc_mesh (GUdevDevice *device)
 }
 
 static gboolean
-is_infiniband (GUdevDevice *device)
-{
-	gint etype = g_udev_device_get_sysfs_attr_as_int (device, "type");
-	return etype == ARPHRD_INFINIBAND;
-}
-
-static gboolean
-is_bond (int ifindex)
-{
-	return (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_BOND);
-}
-
-static gboolean
-is_bridge (int ifindex)
-{
-	return (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_BRIDGE);
-}
-
-static gboolean
-is_vlan (int ifindex)
-{
-	return (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_VLAN);
-}
-
-static gboolean
 is_adsl (GUdevDevice *device)
 {
 	return (g_strcmp0 (g_udev_device_get_subsystem (device), "atm") == 0);
@@ -2245,29 +2221,41 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 		}
 	}
 
-	if (device == NULL && driver == NULL)
-		device = nm_device_generic_new (sysfs_path, iface, driver);
-
 	if (device == NULL) {
-		if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
-			device = nm_device_olpc_mesh_new (sysfs_path, iface, driver);
-		else if (is_wireless (udev_device))
-			device = nm_device_wifi_new (sysfs_path, iface, driver);
-		else if (is_infiniband (udev_device))
-			device = nm_device_infiniband_new (sysfs_path, iface, driver);
-		else if (is_bond (ifindex))
-			device = nm_device_bond_new (sysfs_path, iface);
-		else if (is_bridge (ifindex)) {
+		NMLinkType type;
+		int parent_ifindex = -1;
+		NMDevice *parent;
 
+		type = nm_platform_link_get_type (ifindex);
+
+		switch (type) {
+		case NM_LINK_TYPE_ETHERNET:
+			if (driver == NULL)
+				device = nm_device_generic_new (sysfs_path, iface, driver);
+			else if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
+				device = nm_device_olpc_mesh_new (sysfs_path, iface, driver);
+			else if (is_wireless (udev_device))
+				device = nm_device_wifi_new (sysfs_path, iface, driver);
+			else if (is_adsl (udev_device))
+				device = nm_device_adsl_new (sysfs_path, iface, driver);
+			else
+				device = nm_device_ethernet_new (sysfs_path, iface, driver);
+			break;
+
+		case NM_LINK_TYPE_INFINIBAND:
+			device = nm_device_infiniband_new (sysfs_path, iface, driver);
+			break;
+		case NM_LINK_TYPE_BOND:
+			device = nm_device_bond_new (sysfs_path, iface);
+			break;
+		case NM_LINK_TYPE_BRIDGE:
 			/* FIXME: always create device when we handle bridges non-destructively */
 			if (bridge_created_by_nm (self, iface))
 				device = nm_device_bridge_new (sysfs_path, iface);
 			else
 				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", iface);
-		} else if (is_vlan (ifindex)) {
-			int parent_ifindex = -1;
-			NMDevice *parent;
-
+			break;
+		case NM_LINK_TYPE_VLAN:
 			/* Have to find the parent device */
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
 				parent = find_device_by_ifindex (self, parent_ifindex);
@@ -2283,24 +2271,11 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 				}
 			} else
 				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", iface);
-		} else if (is_adsl (udev_device)) {
-			device = nm_device_adsl_new (sysfs_path, iface, driver);
-		} else {
-			gint etype;
-			gboolean is_ctc;
+			break;
 
-			/* For anything else, if it uses Ethernet encapsulation, consider it
-			 * an Ethernet device. (But some s390 CTC-type devices report 256 for
-			 * some reason, and we need to call them Ethernet too. FIXME: use
-			 * something other than interface name to detect CTC here.)
-			 */
-			etype = g_udev_device_get_sysfs_attr_as_int (udev_device, "type");
-			is_ctc = g_str_has_prefix (iface, "ctc") && (etype == 256);
-
-			if (etype == ARPHRD_ETHER || is_ctc)
-				device = nm_device_ethernet_new (sysfs_path, iface, driver);
-			else
-				device = nm_device_generic_new (sysfs_path, iface, driver);
+		default:
+			device = nm_device_generic_new (sysfs_path, iface, driver);
+			break;
 		}
 	}
 

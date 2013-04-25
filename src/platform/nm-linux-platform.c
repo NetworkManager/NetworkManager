@@ -265,17 +265,18 @@ delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
 static const char *
 type_to_string (NMLinkType type)
 {
+	/* Note that this only has to support virtual types */
 	switch (type) {
 	case NM_LINK_TYPE_DUMMY:
 		return "dummy";
+	case NM_LINK_TYPE_VLAN:
+		return "vlan";
 	case NM_LINK_TYPE_BRIDGE:
 		return "bridge";
 	case NM_LINK_TYPE_BOND:
 		return "bond";
 	case NM_LINK_TYPE_TEAM:
 		return "team";
-	case NM_LINK_TYPE_VLAN:
-		return "vlan";
 	default:
 		g_warning ("Wrong type: %d", type);
 		return NULL;
@@ -299,25 +300,36 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 
 	type = rtnl_link_get_type (rtnllink);
 
-	if (!type)
+	if (!type) {
 		switch (rtnl_link_get_arptype (rtnllink)) {
 		case ARPHRD_LOOPBACK:
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
 		case ARPHRD_ETHER:
 			return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-		default:
-			return_type (NM_LINK_TYPE_GENERIC, "generic");
+		case 256:
+			/* Some s390 CTC-type devices report 256 for the encapsulation type
+			 * for some reason, but we need to call them Ethernet too. FIXME: use
+			 * something other than interface name to detect CTC here.
+			 */
+			if (g_str_has_prefix (rtnl_link_get_name (rtnllink), "ctc"))
+				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+			else
+				break;
 		}
+
+		return_type (NM_LINK_TYPE_GENERIC, "generic");
+	} else if (!strcmp (type, "ipoib"))
+		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 	else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
+	else if (!strcmp (type, "vlan"))
+		return_type (NM_LINK_TYPE_VLAN, "vlan");
 	else if (!strcmp (type, "bridge"))
 		return_type (NM_LINK_TYPE_BRIDGE, "bridge");
 	else if (!strcmp (type, "bond"))
 		return_type (NM_LINK_TYPE_BOND, "bond");
 	else if (!strcmp (type, "team"))
 		return_type (NM_LINK_TYPE_TEAM, "team");
-	else if (!strcmp (type, "vlan"))
-		return_type (NM_LINK_TYPE_VLAN, "vlan");
 	else
 		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
