@@ -269,6 +269,8 @@ type_to_string (NMLinkType type)
 	switch (type) {
 	case NM_LINK_TYPE_DUMMY:
 		return "dummy";
+	case NM_LINK_TYPE_IFB:
+		return "ifb";
 	case NM_LINK_TYPE_VETH:
 		return "veth";
 	case NM_LINK_TYPE_VLAN:
@@ -324,6 +326,8 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 	else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
+	else if (!strcmp (type, "ifb"))
+		return_type (NM_LINK_TYPE_IFB, "ifb");
 	else if (!strcmp (type, "veth"))
 		return_type (NM_LINK_TYPE_VETH, "veth");
 	else if (!strcmp (type, "vlan"))

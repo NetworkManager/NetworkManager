@@ -57,6 +57,7 @@ typedef enum {
 
 	/* Virtual types */
 	NM_LINK_TYPE_DUMMY,
+	NM_LINK_TYPE_IFB,
 	NM_LINK_TYPE_LOOPBACK,
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
