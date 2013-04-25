@@ -17,6 +17,7 @@ EXTRA_DIST = \
 	nm-device-vlan.xml \
 	nm-device-generic.xml \
 	nm-device-veth.xml \
+	nm-device-tun.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \
 	nm-ip6-config.xml \

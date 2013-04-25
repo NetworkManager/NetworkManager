@@ -352,6 +352,35 @@ do_veth_get_properties (char **argv)
 		return FALSE;
 
 	printf ("peer: %d\n", props.peer);
+
+	return TRUE;
+}
+
+static gboolean
+do_tun_get_properties (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	NMPlatformTunProperties props;
+
+	if (!nm_platform_tun_get_properties (ifindex, &props))
+		return FALSE;
+
+	printf ("mode: %s\n", props.mode);
+	if (props.owner == -1)
+		printf ("owner: none\n");
+	else
+		printf ("owner: %lu\n", (gulong) props.owner);
+	if (props.group == -1)
+		printf ("group: none\n");
+	else
+		printf ("group: %lu\n", (gulong) props.group);
+	printf ("no-pi: ");
+	print_boolean (props.no_pi);
+	printf ("vnet-hdr: ");
+	print_boolean (props.vnet_hdr);
+	printf ("multi-queue: ");
+	print_boolean (props.multi_queue);
+
 	return TRUE;
 }
 
@@ -640,6 +669,8 @@ static const command_t commands[] = {
 	{ "vlan-set-egress-map", "set vlan egress map", do_vlan_set_egress_map, 3,
 		"<ifname/ifindex> <from> <to>" },
 	{ "veth-get-properties", "get veth properties", do_veth_get_properties, 1,
+	  "<ifname/ifindex>" },
+	{ "tun-get-properties", "get tun/tap properties", do_tun_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },

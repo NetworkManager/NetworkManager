@@ -53,6 +53,7 @@
 #include "nm-device-adsl.h"
 #include "nm-device-generic.h"
 #include "nm-device-veth.h"
+#include "nm-device-tun.h"
 #include "nm-system.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
@@ -2291,6 +2292,10 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 			break;
 		case NM_LINK_TYPE_VETH:
 			device = nm_device_veth_new (sysfs_path, iface, driver);
+			break;
+		case NM_LINK_TYPE_TUN:
+		case NM_LINK_TYPE_TAP:
+			device = nm_device_tun_new (sysfs_path, iface, driver);
 			break;
 
 		default:

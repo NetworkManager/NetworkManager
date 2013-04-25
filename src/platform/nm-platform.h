@@ -59,6 +59,8 @@ typedef enum {
 	NM_LINK_TYPE_DUMMY,
 	NM_LINK_TYPE_IFB,
 	NM_LINK_TYPE_LOOPBACK,
+	NM_LINK_TYPE_TAP,
+	NM_LINK_TYPE_TUN,
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
 
@@ -114,6 +116,15 @@ typedef struct {
 typedef struct {
 	int peer;
 } NMPlatformVethProperties;
+
+typedef struct {
+	gint64 owner;
+	gint64 group;
+	const char *mode;
+	gboolean no_pi;
+	gboolean vnet_hdr;
+	gboolean multi_queue;
+} NMPlatformTunProperties;
 
 /******************************************************************/
 
@@ -197,6 +208,7 @@ typedef struct {
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
+	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -306,6 +318,7 @@ gboolean nm_platform_vlan_set_ingress_map (int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (int ifindex, int from, int to);
 
 gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
+gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

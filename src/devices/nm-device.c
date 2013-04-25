@@ -213,7 +213,6 @@ typedef struct {
 	guint           carrier_defer_id;
 	gboolean        carrier;
 	gboolean        ignore_carrier;
-	guint           link_changed_id;
 
 	/* Generic DHCP stuff */
 	NMDHCPManager * dhcp_manager;
@@ -366,6 +365,9 @@ nm_device_init (NMDevice *self)
 		g_signal_connect (platform, platform_ip_signals[i],
 		                  G_CALLBACK (device_ip_changed), self);
 	}
+
+	g_signal_connect (platform, NM_PLATFORM_LINK_CHANGED,
+	                  G_CALLBACK (link_changed_cb), self);
 }
 
 static void
@@ -556,13 +558,6 @@ constructed (GObject *object)
 		             nm_device_get_iface (NM_DEVICE (dev)),
 		             priv->carrier ? "ON" : "OFF",
 		             priv->ignore_carrier ? " (but ignored)" : "");
-
-		if (!device_has_capability (dev, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
-			NMPlatform *platform = nm_platform_get ();
-
-			priv->link_changed_id = g_signal_connect (platform, "link-changed",
-			                                          G_CALLBACK (link_changed_cb), dev);
-		}
 	} else {
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
@@ -1094,8 +1089,15 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 static void
 link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDevice *device)
 {
-	if (ifindex == nm_device_get_ifindex (device))
+	if (ifindex != nm_device_get_ifindex (device))
+		return;
+
+	if (   device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT)
+	    && !device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (device, info->connected);
+
+	if (NM_DEVICE_GET_CLASS (device)->link_changed)
+		NM_DEVICE_GET_CLASS (device)->link_changed (device);
 }
 
 static void
@@ -4628,8 +4630,6 @@ dispose (GObject *object)
 	}
 	g_free (priv->ip6_privacy_tempaddr_path);
 
-	if (priv->link_changed_id)
-		g_signal_handler_disconnect (nm_platform_get (), priv->link_changed_id);
 	if (priv->carrier_defer_id) {
 		g_source_remove (priv->carrier_defer_id);
 		priv->carrier_defer_id = 0;
@@ -4664,6 +4664,7 @@ dispose (GObject *object)
 
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
 
 out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);

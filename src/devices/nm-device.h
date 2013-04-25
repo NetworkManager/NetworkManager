@@ -192,6 +192,8 @@ typedef struct {
 
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
+
+	void            (* link_changed) (NMDevice *self);
 } NMDeviceClass;
 
 

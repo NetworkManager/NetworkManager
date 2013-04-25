@@ -26,6 +26,7 @@
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <linux/if_arp.h>
+#include <linux/if_tun.h>
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
@@ -271,6 +272,10 @@ type_to_string (NMLinkType type)
 		return "dummy";
 	case NM_LINK_TYPE_IFB:
 		return "ifb";
+	case NM_LINK_TYPE_TAP:
+		return "tap";
+	case NM_LINK_TYPE_TUN:
+		return "tun";
 	case NM_LINK_TYPE_VETH:
 		return "veth";
 	case NM_LINK_TYPE_VLAN:
@@ -328,7 +333,15 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "ifb"))
 		return_type (NM_LINK_TYPE_IFB, "ifb");
-	else if (!strcmp (type, "veth"))
+	else if (!strcmp (type, "tun")) {
+		NMPlatformTunProperties props;
+
+		if (   nm_platform_tun_get_properties (rtnl_link_get_ifindex (rtnllink), &props)
+		       && !strcmp (props.mode, "tap"))
+			return_type (NM_LINK_TYPE_TAP, "tap");
+		else
+			return_type (NM_LINK_TYPE_TUN, "tun");
+	} else if (!strcmp (type, "veth"))
 		return_type (NM_LINK_TYPE_VETH, "veth");
 	else if (!strcmp (type, "vlan"))
 		return_type (NM_LINK_TYPE_VLAN, "vlan");
@@ -1437,6 +1450,44 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 	return TRUE;
 }
 
+static gboolean
+tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *props)
+{
+	const char *ifname;
+	char *path, *val;
+	guint32 flags;
+
+	ifname = nm_platform_link_get_name (ifindex);
+	if (!ifname)
+		return FALSE;
+
+	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
+	val = nm_platform_sysctl_get (path);
+	g_free (path);
+	if (!val)
+		return FALSE;
+	props->owner = strtoll (val, NULL, 10);
+	g_free (val);
+
+	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
+	val = nm_platform_sysctl_get (path);
+	g_free (path);
+	props->group = strtoll (val, NULL, 10);
+	g_free (val);
+
+	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
+	val = nm_platform_sysctl_get (path);
+	g_free (path);
+	flags = strtoul (val, NULL, 16);
+	props->mode = ((flags & TUN_TYPE_MASK) == TUN_TUN_DEV) ? "tun" : "tap";
+	props->no_pi = !!(flags & IFF_NO_PI);
+	props->vnet_hdr = !!(flags & IFF_VNET_HDR);
+	props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
+	g_free (val);
+
+	return TRUE;
+}
+
 /******************************************************************/
 
 static int
@@ -1920,6 +1971,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->veth_get_properties = veth_get_properties;
+	platform_class->tun_get_properties = tun_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Device.Tun">
+
+    <property name="Owner" type="x" access="read">
+      <tp:docstring>
+        The uid of the tunnel owner, or -1 if it has no owner.
+      </tp:docstring>
+    </property>
+
+    <property name="Group" type="x" access="read">
+      <tp:docstring>
+        The gid of the tunnel group, or -1 if it has no owner.
+      </tp:docstring>
+    </property>
+
+    <property name="Mode" type="s" access="read">
+      <tp:docstring>
+        The tunnel mode, either "tun" or "tap".
+      </tp:docstring>
+    </property>
+
+    <property name="NoPi" type="b" access="read">
+      <tp:docstring>
+        The tunnel's "TUN_NO_PI" flag; true if no protocol info is
+	prepended to the tunnel packets.
+      </tp:docstring>
+    </property>
+
+    <property name="VnetHdr" type="b" access="read">
+      <tp:docstring>
+        The tunnel's "TUN_VNET_HDR" flag; true if the tunnel packets
+	include a virtio network header.
+      </tp:docstring>
+    </property>
+
+    <property name="MultiQueue" type="b" access="read">
+      <tp:docstring>
+        The tunnel's "TUN_TAP_MQ" flag; true if callers can connect to
+        the tap device multiple times, for multiple send/receive
+        queues.
+      </tp:docstring>
+    </property>
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+  </interface>
+</node>

@@ -912,6 +912,17 @@ nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *props)
 	return klass->veth_get_properties (platform, ifindex, props);
 }
 
+gboolean
+nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *props)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (props != NULL, FALSE);
+
+	return klass->tun_get_properties (platform, ifindex, props);
+}
+
 /******************************************************************/
 
 GArray *
