@@ -8,7 +8,7 @@ ROOT="fedora-18-$ARCH"
 TREE="/var/lib/mock/$ROOT/root"
 PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-devel
     dbus-glib-devel libgudev1-devel libuuid-devel nss-devel ppp-devel dhclient
-    bash-completion man-db man-pages vim-minimal"
+    bash-completion man-db man-pages vim-minimal gdb"
 KERNEL_URL=http://kojipkgs.fedoraproject.org/packages/kernel/3.8.5/201.fc18/i686/kernel-3.8.5-201.fc18.i686.rpm
 KERNEL=`basename "${KERNEL_URL%.rpm}"`
 #RELEASE="http://kojipkgs.fedoraproject.org/packages/fedora-release/18/1/noarch/fedora-release-18-1.noarch.rpm"
