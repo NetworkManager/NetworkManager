@@ -1,6 +1,7 @@
 include $(GLIB_MAKEFILE)
 
 SUBDIRS = \
+	. \
 	include \
 	libnm-util \
 	libnm-glib \
@@ -53,3 +54,9 @@ CLEANFILES = cscope.in.out cscope.out cscope.po.out
 .PHONY: cscope
 cscope:
 	cscope -b -q -R -Iinclude -ssrc -slibnm-glib -slibnm-util -scli/src;
+
+libgsystem_srcpath := libgsystem
+libgsystem_cflags := $(GLIB_CFLAGS) -I$(srcdir)/libgsystem
+libgsystem_libs = $(GLIB_LIBS)
+include libgsystem/Makefile-libgsystem.am
+noinst_LTLIBRARIES = libgsystem.la

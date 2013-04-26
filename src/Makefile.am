@@ -25,6 +25,7 @@ endif
 INCLUDES =				\
 	-I$(top_srcdir)/include		\
 	-I$(top_builddir)/include	\
+	-I${top_srcdir}/libgsystem	\
 	-I$(top_srcdir)/libnm-util	\
 	-I$(top_builddir)/libnm-util	\
 	-I$(top_srcdir)/callouts
@@ -42,7 +43,7 @@ sbin_PROGRAMS = NetworkManager
 NetworkManager_SOURCES = \
 	main.c
 
-NetworkManager_LDADD = libNetworkManager.la
+NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la
 
 noinst_LTLIBRARIES = libNetworkManager.la
 

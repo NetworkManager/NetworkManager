@@ -38,6 +38,7 @@
 #include <gmodule.h>
 #include <string.h>
 
+#include "gsystem-local-alloc.h"
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
@@ -305,18 +306,19 @@ main (int argc, char *argv[])
 	GOptionContext *opt_ctx = NULL;
 	gboolean become_daemon = FALSE;
 	gboolean g_fatal_warnings = FALSE;
-	char *pidfile = NULL, *state_file = NULL;
+	gs_free char *pidfile = NULL;
+	gs_free char *state_file = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
-	NMVPNManager *vpn_manager = NULL;
-	NMDnsManager *dns_mgr = NULL;
-	NMDBusManager *dbus_mgr = NULL;
-	NMSupplicantManager *sup_mgr = NULL;
-	NMDHCPManager *dhcp_mgr = NULL;
-	NMFirewallManager *fw_mgr = NULL;
-	NMSettings *settings = NULL;
-	NMConfig *config;
+	gs_unref_object NMVPNManager *vpn_manager = NULL;
+	gs_unref_object NMDnsManager *dns_mgr = NULL;
+	gs_unref_object NMDBusManager *dbus_mgr = NULL;
+	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
+	gs_unref_object NMDHCPManager *dhcp_mgr = NULL;
+	gs_unref_object NMFirewallManager *fw_mgr = NULL;
+	gs_unref_object NMSettings *settings = NULL;
+	gs_unref_object NMConfig *config = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 
@@ -579,40 +581,12 @@ done:
 	if (policy)
 		nm_policy_destroy (policy);
 
-	if (manager)
-		g_object_unref (manager);
-
-	if (settings)
-		g_object_unref (settings);
-
-	if (vpn_manager)
-		g_object_unref (vpn_manager);
-
-	if (dns_mgr)
-		g_object_unref (dns_mgr);
-
-	if (dhcp_mgr)
-		g_object_unref (dhcp_mgr);
-
-	if (sup_mgr)
-		g_object_unref (sup_mgr);
-
-	if (fw_mgr)
-		g_object_unref (fw_mgr);
-
-	if (dbus_mgr)
-		g_object_unref (dbus_mgr);
+	g_clear_object (&manager);
 
 	nm_logging_shutdown ();
 
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
-
-	g_object_unref (config);
-
-	/* Free options */
-	g_free (pidfile);
-	g_free (state_file);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);

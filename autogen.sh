@@ -13,6 +13,14 @@ PKG_NAME=NetworkManager
     exit 1
 }
 
+# Fetch submodules if needed
+if test ! -f src/libgsystem/README;
+then
+  echo "+ Setting up submodules"
+  git submodule init
+  git submodule update
+fi
+
 (cd $srcdir;
     gtkdocize || exit 1
     autopoint --force
