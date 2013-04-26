@@ -119,6 +119,15 @@ nm_device_generic_get_hw_address (NMDeviceGeneric *device)
 
 /***********************************************************/
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (device);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return priv->type_description;
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -235,6 +244,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 
+	device_class->get_type_description = get_type_description;
 	device_class->connection_compatible = connection_compatible;
 
 	/**

@@ -286,49 +286,6 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
-/* Convert device type to string. Use setting names strings to match with
- * connection type names.
- */
-static const char *
-device_type_to_string (NMDevice *device)
-{
-	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
-
-	switch (nm_device_get_device_type (device)) {
-	case NM_DEVICE_TYPE_ETHERNET:
-		return NM_SETTING_WIRED_SETTING_NAME;
-	case NM_DEVICE_TYPE_ADSL:
-		return NM_SETTING_ADSL_SETTING_NAME;
-	case NM_DEVICE_TYPE_WIFI:
-		return NM_SETTING_WIRELESS_SETTING_NAME;
-	case NM_DEVICE_TYPE_MODEM:
-		caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
-		if (caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS)
-			return NM_SETTING_GSM_SETTING_NAME;
-		else if (caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
-			return NM_SETTING_CDMA_SETTING_NAME;
-		return _("Unknown");
-	case NM_DEVICE_TYPE_BT:
-		return NM_SETTING_BLUETOOTH_SETTING_NAME;
-	case NM_DEVICE_TYPE_OLPC_MESH:
-		return NM_SETTING_OLPC_MESH_SETTING_NAME;
-#if WITH_WIMAX
-	case NM_DEVICE_TYPE_WIMAX:
-		return NM_SETTING_WIMAX_SETTING_NAME;
-#endif
-	case NM_DEVICE_TYPE_INFINIBAND:
-		return NM_SETTING_INFINIBAND_SETTING_NAME;
-	case NM_DEVICE_TYPE_BOND:
-		return NM_SETTING_BOND_SETTING_NAME;
-	case NM_DEVICE_TYPE_VLAN:
-		return NM_SETTING_VLAN_SETTING_NAME;
-	case NM_DEVICE_TYPE_BRIDGE:
-		return NM_SETTING_BRIDGE_SETTING_NAME;
-	default:
-		return _("Unknown");
-	}
-}
-
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
@@ -619,7 +576,7 @@ show_device_info (gpointer data, gpointer user_data)
 
 			nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[0].name;  /* "GENERAL"*/
 			nmc->allowed_fields[1].value = (char *) nm_device_get_iface (device);
-			nmc->allowed_fields[2].value = (char *) device_type_to_string (device);
+			nmc->allowed_fields[2].value = (char *) nm_device_get_type_description (device);
 			nmc->allowed_fields[3].value = (char *) nm_device_get_vendor (device);
 			nmc->allowed_fields[4].value = (char *) nm_device_get_product (device);
 			nmc->allowed_fields[5].value = (char *) (nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
@@ -953,7 +910,7 @@ static void
 show_device_status (NMDevice *device, NmCli *nmc)
 {
 	nmc->allowed_fields[0].value = (char *) nm_device_get_iface (device);
-	nmc->allowed_fields[1].value = (char *) device_type_to_string (device);
+	nmc->allowed_fields[1].value = (char *) nm_device_get_type_description (device);
 	nmc->allowed_fields[2].value = (char *) nmc_device_state_to_string (nm_device_get_state (device));
 	nmc->allowed_fields[3].value = (char *) nm_object_get_path (NM_OBJECT (device));
 

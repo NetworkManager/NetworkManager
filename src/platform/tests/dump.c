@@ -6,27 +6,6 @@
 #include "nm-linux-platform.h"
 #include "nm-fake-platform.h"
 
-static const char *
-type_to_string (NMLinkType type)
-{
-	switch (type) {
-	case NM_LINK_TYPE_LOOPBACK:
-		return "loopback";
-	case NM_LINK_TYPE_ETHERNET:
-		return "ethernet";
-	case NM_LINK_TYPE_DUMMY:
-		return "dummy";
-	case NM_LINK_TYPE_BRIDGE:
-		return "bridge";
-	case NM_LINK_TYPE_BOND:
-		return "bond";
-	case NM_LINK_TYPE_TEAM:
-		return "team";
-	default:
-		return "unknown-type";
-	}
-}
-
 static void
 dump_interface (NMPlatformLink *link)
 {
@@ -45,7 +24,7 @@ dump_interface (NMPlatformLink *link)
 
 	g_assert (link->up || !link->connected);
 
-	printf ("%d: %s: %s", link->ifindex, link->name, type_to_string (link->type));
+	printf ("%d: %s: %s", link->ifindex, link->name, link->type_name);
 	if (link->up)
 		printf (" %s", link->connected ? "CONNECTED" : "DISCONNECTED");
 	else

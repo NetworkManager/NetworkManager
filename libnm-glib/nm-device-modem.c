@@ -114,6 +114,20 @@ nm_device_modem_get_current_capabilities (NMDeviceModem *self)
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->current_caps;
 }
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	NMDeviceModemCapabilities caps;
+
+	caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
+	if (caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS)
+		return "gsm";
+	else if (caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
+		return "cdma";
+	else
+		return NULL;
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -232,6 +246,8 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	device_class->get_type_description = get_type_description;
 	device_class->connection_compatible = connection_compatible;
 
 	/**

@@ -77,6 +77,7 @@ typedef struct {
 	char *driver;
 	char *driver_version;
 	char *firmware_version;
+	char *type_description;
 	NMDeviceCapabilities capabilities;
 	gboolean managed;
 	gboolean firmware_missing;
@@ -1081,6 +1082,43 @@ nm_device_get_firmware_version (NMDevice *device)
 
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->firmware_version;
+}
+
+/**
+ * nm_device_get_type_description:
+ * @device: a #NMDevice
+ *
+ * Gets a (non-localized) description of the type of device that
+ * @device is.
+ *
+ * Returns: the type description of the device. This is the internal
+ * string used by the device, and must not be modified.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_device_get_type_description (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	const char *desc, *typename;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	if (priv->type_description)
+		return priv->type_description;
+
+	if (NM_DEVICE_GET_CLASS (device)->get_type_description) {
+		desc = NM_DEVICE_GET_CLASS (device)->get_type_description (device);
+		if (desc)
+			return desc;
+	}
+
+	typename = G_OBJECT_TYPE_NAME (device);
+	if (g_str_has_prefix (typename, "NMDevice"))
+		typename += 8;
+	priv->type_description = g_ascii_strdown (typename, -1);
+
+	return priv->type_description;
 }
 
 /**
