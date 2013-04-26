@@ -308,7 +308,7 @@ AC_MSG_RESULT($with_session_tracking)
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
-    PKG_CHECK_EXISTS([systemd >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])
+    PKG_CHECK_EXISTS([libsystemd-login >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])
     if test "z${have_systemd_inhibit}" = "zyes"; then
 	# Use systemd if it's new enough
 	with_suspend_resume="systemd"
@@ -321,7 +321,7 @@ fi
 case $with_suspend_resume in
     upower) ;;
     systemd)
-	PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [systemd >= 183])
+	PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])
         ;;
     *)
 	AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd])
