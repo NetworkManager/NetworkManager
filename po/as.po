@@ -7,8 +7,8 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2013-03-14 15:25+0000\n"
-"PO-Revision-Date: 2013-03-18 17:05+0530\n"
+"POT-Creation-Date: 2013-04-14 19:22+0000\n"
+"PO-Revision-Date: 2013-04-22 18:31+0530\n"
 "Last-Translator: Nilamdyuti Goswami <ngoswami@redhat.com>\n"
 "Language-Team: Assamese <kde-i18n-doc@kde.org>\n"
 "Language: as\n"
@@ -22,17 +22,17 @@ msgstr ""
 #: ../cli/src/common.c:63 ../cli/src/connections.c:133
 #: ../cli/src/connections.c:167
 msgid "GROUP"
-msgstr "GROUP"
+msgstr "দল"
 
 #. 0
 #: ../cli/src/common.c:33 ../cli/src/common.c:53
 msgid "ADDRESS"
-msgstr "ADDRESS"
+msgstr "ঠিকনা"
 
 #. 1
 #: ../cli/src/common.c:34 ../cli/src/common.c:54
 msgid "ROUTE"
-msgstr "ROUTE"
+msgstr "পথ"
 
 #. 2
 #: ../cli/src/common.c:35 ../cli/src/common.c:55
@@ -42,7 +42,7 @@ msgstr "DNS"
 #. 3
 #: ../cli/src/common.c:36 ../cli/src/common.c:56
 msgid "DOMAIN"
-msgstr "DOMAIN"
+msgstr "ডমেইন"
 
 #. 4
 #: ../cli/src/common.c:37
@@ -52,7 +52,7 @@ msgstr "WINS"
 #. 0
 #: ../cli/src/common.c:45 ../cli/src/common.c:64
 msgid "OPTION"
-msgstr "OPTION"
+msgstr "বিকল্প"
 
 #: ../cli/src/common.c:366
 msgid "unmanaged"
@@ -62,7 +62,7 @@ msgstr "অব্যৱস্থাপিত"
 msgid "unavailable"
 msgstr "উপলব্ধ নাই"
 
-#: ../cli/src/common.c:370 ../cli/src/network-manager.c:120
+#: ../cli/src/common.c:370 ../cli/src/network-manager.c:175
 msgid "disconnected"
 msgstr "বিচ্ছিন্নিত"
 
@@ -90,7 +90,7 @@ msgstr "সংযোগ কৰা (IP সংযোগ নীৰিক্ষণ �
 msgid "connecting (starting secondary connections)"
 msgstr "সংযোগ কৰা (দ্বিতীয় সংযোগসমূহ আৰম্ভ কৰা)"
 
-#: ../cli/src/common.c:384 ../cli/src/network-manager.c:116
+#: ../cli/src/common.c:384 ../cli/src/network-manager.c:171
 msgid "connected"
 msgstr "সংযুক্ত"
 
@@ -103,15 +103,16 @@ msgid "connection failed"
 msgstr "সংযোগ ব্যৰ্থ"
 
 #: ../cli/src/common.c:390 ../cli/src/connections.c:471
-#: ../cli/src/connections.c:494 ../cli/src/connections.c:1189
-#: ../cli/src/devices.c:664 ../cli/src/network-manager.c:123
-#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:188
-#: ../cli/src/network-manager.c:197 ../cli/src/network-manager.c:257
-#: ../cli/src/network-manager.c:273 ../cli/src/network-manager.c:431
-#: ../cli/src/network-manager.c:486 ../cli/src/network-manager.c:524
-#: ../cli/src/network-manager.c:563 ../cli/src/settings.c:669
-#: ../cli/src/settings.c:697 ../cli/src/settings.c:759 ../cli/src/utils.c:533
-#: ../src/main.c:422 ../src/main.c:441
+#: ../cli/src/connections.c:494 ../cli/src/connections.c:1191
+#: ../cli/src/devices.c:664 ../cli/src/devices.c:1919
+#: ../cli/src/network-manager.c:178 ../cli/src/network-manager.c:241
+#: ../cli/src/network-manager.c:244 ../cli/src/network-manager.c:253
+#: ../cli/src/network-manager.c:310 ../cli/src/network-manager.c:326
+#: ../cli/src/network-manager.c:810 ../cli/src/network-manager.c:865
+#: ../cli/src/network-manager.c:903 ../cli/src/network-manager.c:942
+#: ../cli/src/settings.c:664 ../cli/src/settings.c:692
+#: ../cli/src/settings.c:754 ../cli/src/utils.c:614 ../src/main.c:403
+#: ../src/main.c:422
 msgid "unknown"
 msgstr "অজ্ঞাত"
 
@@ -329,12 +330,10 @@ msgid "ModemManager is unavailable"
 msgstr "ModemManager উপলব্ধ নাই"
 
 #: ../cli/src/common.c:558
-#| msgid "The modem could not be found"
 msgid "The Wi-Fi network could not be found"
 msgstr "Wi-Fi নেটৱাৰ্ক পোৱা নগল"
 
 #: ../cli/src/common.c:561
-#| msgid "A dependency of the connection failed"
 msgid "A secondary connection of the base connection failed"
 msgstr "ভিত্তি সংযোগৰ এটা দ্বিতীয় সংযোগ ব্যৰ্থ হল"
 
@@ -351,7 +350,7 @@ msgstr "অজ্ঞাত"
 #: ../cli/src/devices.c:194 ../cli/src/devices.c:216 ../cli/src/devices.c:232
 #: ../cli/src/devices.c:241
 msgid "NAME"
-msgstr "NAME"
+msgstr "নাম"
 
 #. 0
 #. 1
@@ -366,7 +365,7 @@ msgstr "UUID"
 #: ../cli/src/connections.c:62 ../cli/src/connections.c:168
 #: ../cli/src/devices.c:72 ../cli/src/devices.c:111 ../cli/src/devices.c:219
 msgid "TYPE"
-msgstr "TYPE"
+msgstr "ধৰণ"
 
 #. 2
 #: ../cli/src/connections.c:63
@@ -382,12 +381,12 @@ msgstr "TIMESTAMP-REAL"
 #. 13
 #: ../cli/src/connections.c:65 ../cli/src/devices.c:123
 msgid "AUTOCONNECT"
-msgstr "AUTOCONNECT"
+msgstr "স্বসংযোগ"
 
 #. 5
 #: ../cli/src/connections.c:66
 msgid "READONLY"
-msgstr "READONLY"
+msgstr "কেৱলপঢ়িবপৰা"
 
 #. 6
 #. 8
@@ -402,7 +401,7 @@ msgstr "DBUS-PATH"
 #. 2
 #: ../cli/src/connections.c:136
 msgid "DEVICES"
-msgstr "DEVICES"
+msgstr "ডিভাইচসমূহ"
 
 #. 3
 #. 1
@@ -410,13 +409,14 @@ msgstr "DEVICES"
 #. 1
 #: ../cli/src/connections.c:137 ../cli/src/devices.c:73
 #: ../cli/src/devices.c:118 ../cli/src/network-manager.c:39
+#: ../cli/src/network-manager.c:69
 msgid "STATE"
-msgstr "STATE"
+msgstr "অৱস্থা"
 
 #. 4
 #: ../cli/src/connections.c:138
 msgid "DEFAULT"
-msgstr "DEFAULT"
+msgstr "অবিকল্পিত"
 
 #. 5
 #: ../cli/src/connections.c:139
@@ -451,7 +451,7 @@ msgstr "MASTER-PATH"
 
 #: ../cli/src/connections.c:153 ../cli/src/devices.c:83
 msgid "GENERAL"
-msgstr "GENERAL"
+msgstr "সাধাৰণ"
 
 #. 0
 #: ../cli/src/connections.c:154
@@ -461,17 +461,17 @@ msgstr "IP"
 #. 1
 #: ../cli/src/connections.c:169
 msgid "USERNAME"
-msgstr "USERNAME"
+msgstr "ব্যৱহাৰকাৰীনাম"
 
 #. 2
 #: ../cli/src/connections.c:170
 msgid "GATEWAY"
-msgstr "GATEWAY"
+msgstr "গেইটৱে"
 
 #. 3
 #: ../cli/src/connections.c:171
 msgid "BANNER"
-msgstr "BANNER"
+msgstr "বেনাৰ"
 
 #. 4
 #: ../cli/src/connections.c:172
@@ -486,7 +486,7 @@ msgstr "CFG"
 #: ../cli/src/connections.c:195
 #, c-format
 #| msgid ""
-#| "Usage: nmcli con { COMMAND | help }\n"
+#| "Usage: nmcli connection { COMMAND | help }\n"
 #| "  COMMAND := { list | status | up | down | delete }\n"
 #| "\n"
 #| "  list [id <id> | uuid <id>]\n"
@@ -497,145 +497,133 @@ msgstr "CFG"
 #| "timeout <timeout>]\n"
 #| "  down id <id> | uuid <id>\n"
 #| "  delete id <id> | uuid <id>\n"
+#| "\n"
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down | delete }\n"
+"  COMMAND := { show | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id>]\n"
-"  status [id <id> | uuid <id> | path <path>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"  show configured [[ id | uuid | path ] <ID>]\n"
+"\n"
+"  show active     [[ id | uuid | path | apath ] <ID>]\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
 "nowait] [--timeout <timeout>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
-"<timeout>]\n"
-"  down id <id> | uuid <id>\n"
-"  delete id <id> | uuid <id>\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--"
+"timeout <timeout>]\n"
+"\n"
+"  down [ id | uuid | path | apath ] <ID>\n"
+"\n"
+"  delete [ id | uuid | path ] <ID>\n"
 "\n"
 msgstr ""
 "ব্যৱহাৰ: nmcli connection { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down | delete }\n"
+"  COMMAND := { show | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id>]\n"
-"  status [id <id> | uuid <id> | path <path>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
+"  show configured [[ id | uuid | path ] <ID>]\n"
+"\n"
+"  show active     [[ id | uuid | path | apath ] <ID>]\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
 "nowait] [--timeout <timeout>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
-"<timeout>]\n"
-"  down id <id> | uuid <id>\n"
-"  delete id <id> | uuid <id>\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--"
+"timeout <timeout>]\n"
+"\n"
+"  down [ id | uuid | path | apath ] <ID>\n"
+"\n"
+"  delete [ id | uuid | path ] <ID>\n"
 "\n"
 
-#: ../cli/src/connections.c:256 ../cli/src/connections.c:442
+#: ../cli/src/connections.c:254
 #, c-format
-msgid "Error: 'con list': %s"
-msgstr "ত্ৰুটি: 'con list': %s"
+#| msgid "Error: 'con list': %s"
+msgid "Error: 'list configured': %s"
+msgstr "ত্ৰুটি: 'list configured': %s"
 
-#: ../cli/src/connections.c:258 ../cli/src/connections.c:444
+#: ../cli/src/connections.c:256
 #, c-format
-msgid "Error: 'con list': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'con list': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+#| msgid "Error: 'con list': %s; allowed fields: %s"
+msgid "Error: 'list configured': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'list configured': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
-#: ../cli/src/connections.c:266
+#: ../cli/src/connections.c:264
 msgid "Connection details"
 msgstr "সংযোগৰ বিৱৰণসমূহ"
 
-#: ../cli/src/connections.c:317
+#: ../cli/src/connections.c:315
 msgid "never"
 msgstr "কেতিয়াও নহয়"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
+#: ../cli/src/connections.c:316 ../cli/src/connections.c:317
 #: ../cli/src/connections.c:552 ../cli/src/connections.c:553
 #: ../cli/src/connections.c:555 ../cli/src/devices.c:458
 #: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
 #: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
 #: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
 #: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
-#: ../cli/src/network-manager.c:267 ../cli/src/settings.c:875
-#: ../cli/src/settings.c:950 ../cli/src/settings.c:1086
-#: ../cli/src/settings.c:1176 ../cli/src/settings.c:1386
-#: ../cli/src/settings.c:1387 ../cli/src/settings.c:1389
-#: ../cli/src/settings.c:1391 ../cli/src/settings.c:1392
-#: ../cli/src/settings.c:1523 ../cli/src/settings.c:1524
-#: ../cli/src/settings.c:1525 ../cli/src/settings.c:1526
-#: ../cli/src/settings.c:1604 ../cli/src/settings.c:1605
-#: ../cli/src/settings.c:1606 ../cli/src/settings.c:1607
-#: ../cli/src/settings.c:1608 ../cli/src/settings.c:1609
-#: ../cli/src/settings.c:1610 ../cli/src/settings.c:1611
-#: ../cli/src/settings.c:1612 ../cli/src/settings.c:1613
-#: ../cli/src/settings.c:1614 ../cli/src/settings.c:1615
-#: ../cli/src/settings.c:1616 ../cli/src/settings.c:1698
-#: ../cli/src/settings.c:2056 ../cli/src/settings.c:2093
+#: ../cli/src/network-manager.c:320
 msgid "yes"
 msgstr "হয়"
 
-#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
+#: ../cli/src/connections.c:316 ../cli/src/connections.c:317
 #: ../cli/src/connections.c:552 ../cli/src/connections.c:553
 #: ../cli/src/connections.c:555 ../cli/src/devices.c:458
 #: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
 #: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
 #: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
 #: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
-#: ../cli/src/network-manager.c:269 ../cli/src/settings.c:875
-#: ../cli/src/settings.c:877 ../cli/src/settings.c:950
-#: ../cli/src/settings.c:1086 ../cli/src/settings.c:1176
-#: ../cli/src/settings.c:1386 ../cli/src/settings.c:1387
-#: ../cli/src/settings.c:1389 ../cli/src/settings.c:1391
-#: ../cli/src/settings.c:1392 ../cli/src/settings.c:1523
-#: ../cli/src/settings.c:1524 ../cli/src/settings.c:1525
-#: ../cli/src/settings.c:1526 ../cli/src/settings.c:1604
-#: ../cli/src/settings.c:1605 ../cli/src/settings.c:1606
-#: ../cli/src/settings.c:1607 ../cli/src/settings.c:1608
-#: ../cli/src/settings.c:1609 ../cli/src/settings.c:1610
-#: ../cli/src/settings.c:1611 ../cli/src/settings.c:1612
-#: ../cli/src/settings.c:1613 ../cli/src/settings.c:1614
-#: ../cli/src/settings.c:1615 ../cli/src/settings.c:1616
-#: ../cli/src/settings.c:1698 ../cli/src/settings.c:2056
-#: ../cli/src/settings.c:2093
+#: ../cli/src/network-manager.c:322
 msgid "no"
 msgstr "নহয়"
 
-#: ../cli/src/connections.c:393
-msgid "Connection list"
-msgstr "সংযোগ তালিকা"
+#: ../cli/src/connections.c:398
+#| msgid "Editing un-named connection"
+msgid "List of configured connections"
+msgstr "সংৰূপিত সংযোগসমূহৰ তালিকা"
 
-#: ../cli/src/connections.c:406 ../cli/src/connections.c:948
-#: ../cli/src/connections.c:1486 ../cli/src/connections.c:1501
-#: ../cli/src/connections.c:1510 ../cli/src/connections.c:1520
-#: ../cli/src/connections.c:1532 ../cli/src/connections.c:1641
-#: ../cli/src/connections.c:1743 ../cli/src/devices.c:1192
-#: ../cli/src/devices.c:1202 ../cli/src/devices.c:1320
-#: ../cli/src/devices.c:1328 ../cli/src/devices.c:1692
-#: ../cli/src/devices.c:1699 ../cli/src/devices.c:1713
-#: ../cli/src/devices.c:1720 ../cli/src/devices.c:1737
-#: ../cli/src/devices.c:1748 ../cli/src/devices.c:1969
-#: ../cli/src/devices.c:1976
+#: ../cli/src/connections.c:415 ../cli/src/connections.c:951
+#: ../cli/src/connections.c:1402 ../cli/src/connections.c:1423
+#: ../cli/src/connections.c:1432 ../cli/src/connections.c:1442
+#: ../cli/src/connections.c:1454 ../cli/src/connections.c:1578
+#: ../cli/src/connections.c:1678 ../cli/src/devices.c:1198
+#: ../cli/src/devices.c:1306 ../cli/src/devices.c:1314
+#: ../cli/src/devices.c:1685 ../cli/src/devices.c:1692
+#: ../cli/src/devices.c:1706 ../cli/src/devices.c:1713
+#: ../cli/src/devices.c:1730 ../cli/src/devices.c:1741
+#: ../cli/src/devices.c:1939 ../cli/src/devices.c:2027
+#: ../cli/src/devices.c:2034
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "ত্ৰুটি: %s তৰ্ক সন্ধানহিন।"
 
-#: ../cli/src/connections.c:419
+#: ../cli/src/connections.c:429
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "ত্ৰুটি: %s - এনে ধৰণৰ কোনো সংযোগ নাই।"
 
-#: ../cli/src/connections.c:425 ../cli/src/connections.c:1545
-#: ../cli/src/connections.c:1658 ../cli/src/connections.c:1750
-#: ../cli/src/devices.c:976 ../cli/src/devices.c:1056
-#: ../cli/src/devices.c:1216 ../cli/src/devices.c:1334
-#: ../cli/src/devices.c:1761 ../cli/src/devices.c:1982
+#: ../cli/src/connections.c:442
 #, c-format
-msgid "Unknown parameter: %s\n"
-msgstr "অজ্ঞাত প্ৰাচল: %s\n"
+#| msgid "Error: 'con list': %s"
+msgid "Error: 'show configured': %s"
+msgstr "ত্ৰুটি: 'show configured': %s"
 
-#: ../cli/src/connections.c:434
+#: ../cli/src/connections.c:444
 #, c-format
-msgid "Error: no valid parameter specified."
-msgstr "ত্ৰুটি: কোনো বৈধ প্ৰাচল ধাৰ্য্য কৰা হোৱা নাই।"
+#| msgid "Error: 'con list': %s; allowed fields: %s"
+msgid "Error: 'show configured': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'show configured': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
-#: ../cli/src/connections.c:449 ../cli/src/connections.c:1846
-#: ../cli/src/devices.c:2193 ../cli/src/network-manager.c:599
+#: ../cli/src/connections.c:449 ../cli/src/connections.c:1781
+#: ../cli/src/devices.c:1918 ../cli/src/devices.c:2247
+#: ../cli/src/network-manager.c:423 ../cli/src/network-manager.c:489
+#: ../cli/src/network-manager.c:499 ../cli/src/network-manager.c:507
+#: ../cli/src/network-manager.c:517 ../cli/src/network-manager.c:539
+#: ../cli/src/network-manager.c:644 ../cli/src/network-manager.c:657
+#: ../cli/src/network-manager.c:978
 #, c-format
 msgid "Error: %s."
 msgstr "ত্ৰুটি: %s।"
@@ -649,7 +637,6 @@ msgid "activated"
 msgstr "সক্ৰিয়"
 
 #: ../cli/src/connections.c:468
-#| msgid "activated"
 msgid "deactivated"
 msgstr "নিষ্ক্ৰিয়"
 
@@ -685,206 +672,229 @@ msgstr "VPN বিচ্ছিন্নিত"
 msgid "N/A"
 msgstr "অপ্ৰযোজ্য"
 
-#: ../cli/src/connections.c:752 ../cli/src/connections.c:976
+#: ../cli/src/connections.c:757
 #, c-format
-msgid "Error: 'con status': %s"
-msgstr "ত্ৰুটি: 'con status': %s"
+#| msgid "Error: 'con list': %s"
+msgid "Error: 'list active': %s"
+msgstr "ত্ৰুটি: 'list active': %s"
 
-#: ../cli/src/connections.c:754 ../cli/src/connections.c:978
+#: ../cli/src/connections.c:759
 #, c-format
-msgid "Error: 'con status': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'con status': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+#| msgid "Error: 'con list': %s; allowed fields: %s"
+msgid "Error: 'list active': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'list active': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
-#: ../cli/src/connections.c:762
+#: ../cli/src/connections.c:767
 msgid "Active connection details"
 msgstr "সক্ৰিয় সংযোগৰ বিৱৰণ"
 
-#: ../cli/src/connections.c:898 ../cli/src/connections.c:1560
-#: ../cli/src/connections.c:1673 ../cli/src/connections.c:1764
-#: ../cli/src/devices.c:1003 ../cli/src/devices.c:1065
-#: ../cli/src/devices.c:1231 ../cli/src/devices.c:1364
-#: ../cli/src/devices.c:1783 ../cli/src/devices.c:2011
-#: ../cli/src/network-manager.c:311
-#, c-format
-msgid "Error: Can't find out if NetworkManager is running: %s."
-msgstr "ত্ৰুটি: NetworkManager চলি আছে নে নিৰ্ধাৰণ কৰিব নোৱাৰি: %s।"
-
-#: ../cli/src/connections.c:902 ../cli/src/connections.c:1564
-#: ../cli/src/connections.c:1677 ../cli/src/connections.c:1768
-#: ../cli/src/devices.c:1007 ../cli/src/devices.c:1069
-#: ../cli/src/devices.c:1235 ../cli/src/devices.c:1368
-#: ../cli/src/devices.c:1787 ../cli/src/devices.c:2015
-#: ../cli/src/network-manager.c:315
+#: ../cli/src/connections.c:905 ../cli/src/connections.c:1478
+#: ../cli/src/connections.c:1561 ../cli/src/connections.c:1647
+#: ../cli/src/devices.c:1005 ../cli/src/devices.c:1049
+#: ../cli/src/devices.c:1223 ../cli/src/devices.c:1352
+#: ../cli/src/devices.c:1777 ../cli/src/devices.c:2071
+#: ../cli/src/network-manager.c:366
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "ত্ৰুটি: NetworkManager চলি থকা নাই।"
 
 #: ../cli/src/connections.c:934
-msgid "Active connections"
-msgstr "সক্ৰিয় সংযোগসমূহ"
+#| msgid "Active connections"
+msgid "List of active connections"
+msgstr "সক্ৰিয় সংযোগসমূহৰ তালিকা"
 
-#: ../cli/src/connections.c:959
+#: ../cli/src/connections.c:965 ../cli/src/connections.c:1588
 #, c-format
 msgid "Error: '%s' is not an active connection."
 msgstr "ত্ৰুটি: '%s' এটা সক্ৰিয় সংযোগ নহয়।"
 
-#: ../cli/src/connections.c:964
+#: ../cli/src/connections.c:978
 #, c-format
-msgid "Error: unknown parameter: %s"
-msgstr "ত্ৰুটি: অজ্ঞাত প্ৰাচল: %s"
+#| msgid "Error: 'con status': %s"
+msgid "Error: 'show active': %s"
+msgstr "ত্ৰুটি: 'show active': %s"
 
-#: ../cli/src/connections.c:1071
+#: ../cli/src/connections.c:980
+#, c-format
+#| msgid "Error: 'con status': %s; allowed fields: %s"
+msgid "Error: 'show active': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'show active': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+
+#: ../cli/src/connections.c:1073
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "ডিভাইচ '%s' ত কোনো সক্ৰিয় সংযোগ নাই"
 
-#: ../cli/src/connections.c:1079
+#: ../cli/src/connections.c:1081
 msgid "no active connection or device"
 msgstr "কোনো সক্ৰিয় সংযোগ অথবা ডিভাইচ নাই"
 
-#: ../cli/src/connections.c:1150
+#: ../cli/src/connections.c:1152
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "ডিভাইচ '%s' সংযোগ '%s' ৰ সৈতে সংগত নহয়"
 
-#: ../cli/src/connections.c:1153
+#: ../cli/src/connections.c:1155
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "সংযোগ '%s' ৰ বাবে কোনো ডিভাইচ পোৱা নগল"
 
-#: ../cli/src/connections.c:1165
+#: ../cli/src/connections.c:1167
 msgid "unknown reason"
 msgstr "অজ্ঞাত কাৰণ"
 
-#: ../cli/src/connections.c:1167
+#: ../cli/src/connections.c:1169
 msgid "none"
 msgstr "কোনো নহয়"
 
-#: ../cli/src/connections.c:1169
+#: ../cli/src/connections.c:1171
 msgid "the user was disconnected"
 msgstr "ব্যৱহাৰকাৰীজনক বিচ্ছিন্ন কৰা হৈছিল"
 
-#: ../cli/src/connections.c:1171
+#: ../cli/src/connections.c:1173
 msgid "the base network connection was interrupted"
 msgstr "ভিত্তি নেটৱাৰ্ক সংযোগ বাধাগ্ৰস্থ হৈছিল"
 
-#: ../cli/src/connections.c:1173
+#: ../cli/src/connections.c:1175
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN সেৱা অপ্ৰত্যাশিতভাৱে বন্ধ হল"
 
-#: ../cli/src/connections.c:1175
+#: ../cli/src/connections.c:1177
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN সেৱায় অবৈধ সংৰূপ ঘুৰাই দিলে"
 
-#: ../cli/src/connections.c:1177
+#: ../cli/src/connections.c:1179
 msgid "the connection attempt timed out"
 msgstr "সংযোগৰ চেষ্টাৰ সময় অন্ত হল"
 
-#: ../cli/src/connections.c:1179
+#: ../cli/src/connections.c:1181
 msgid "the VPN service did not start in time"
 msgstr "VPN সেৱা সময়ত আৰম্ভ নহল"
 
-#: ../cli/src/connections.c:1181
+#: ../cli/src/connections.c:1183
 msgid "the VPN service failed to start"
 msgstr "VPN সেৱা আৰম্ভ হবলে ব্যৰ্থ হল"
 
-#: ../cli/src/connections.c:1183
+#: ../cli/src/connections.c:1185
 msgid "no valid VPN secrets"
 msgstr "কোনো বৈধ VPN গোপন তথ্য নাই"
 
-#: ../cli/src/connections.c:1185
+#: ../cli/src/connections.c:1187
 msgid "invalid VPN secrets"
 msgstr "অবৈধ VPN গোপন তথ্য"
 
-#: ../cli/src/connections.c:1187
+#: ../cli/src/connections.c:1189
 msgid "the connection was removed"
 msgstr "সংযোগ আতৰোৱা হৈছিল"
 
-#: ../cli/src/connections.c:1204 ../cli/src/connections.c:1409
+#: ../cli/src/connections.c:1206 ../cli/src/connections.c:1326
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "সংযোগ সফলভাৱে সক্ৰিয় কৰা হৈছিল (D-Bus সক্ৰিয় পথ: %s)\n"
 
-#. Active connection failed and dissapeared, quit.
-#: ../cli/src/connections.c:1209 ../cli/src/connections.c:1310
+#: ../cli/src/connections.c:1211
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "ত্ৰুটি: সংযোগৰ সক্ৰিয়কৰণ ব্যৰ্থ হল।"
 
-#: ../cli/src/connections.c:1234
+#: ../cli/src/connections.c:1236
 #, c-format
 msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
 msgstr "VPN সংযোগ সফলভাৱে সক্ৰিয় কৰা হল (D-Bus সক্ৰিয় পথ: %s)\n"
 
-#: ../cli/src/connections.c:1242
+#: ../cli/src/connections.c:1244
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "ত্ৰুটি: সংযোগৰ সক্ৰিয়কৰণ ব্যৰ্থ হল: %s।"
 
-#: ../cli/src/connections.c:1339 ../cli/src/devices.c:1125
+#: ../cli/src/connections.c:1262 ../cli/src/devices.c:1110
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "ত্ৰুটি: সময়অন্ত %d sec ৰ অৱসান ঘটিল"
 
-#: ../cli/src/connections.c:1400
+#: ../cli/src/connections.c:1317
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "ত্ৰুটি: সংযোগৰ সক্ৰিয়কৰণ ব্যৰ্থ হল: %s"
 
-#: ../cli/src/connections.c:1494 ../cli/src/connections.c:1649
-#: ../cli/src/connections.c:1777
+#: ../cli/src/connections.c:1386 ../cli/src/connections.c:1546
+#: ../cli/src/connections.c:1654
+#| msgid "Connection _name:"
+msgid "Connection (name, UUID, or path): "
+msgstr "সংযোগ (নাম, UUID, অথবা পথ):"
+
+#: ../cli/src/connections.c:1391 ../cli/src/connections.c:1551
+#: ../cli/src/connections.c:1659
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: No connection specified."
+msgstr "ত্ৰুটি: কোনো সংযোগ ধাৰ্য্য কৰা হোৱা নাই।"
+
+#: ../cli/src/connections.c:1414
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "ত্ৰুটি: অজ্ঞাত সংযোগ: %s।"
 
-#: ../cli/src/connections.c:1540 ../cli/src/devices.c:1210
-#: ../cli/src/devices.c:1756
+#: ../cli/src/connections.c:1462 ../cli/src/devices.c:1206
+#: ../cli/src/devices.c:1749
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "ত্ৰুটি: সময়অন্ত মান '%s' বৈধ নহয়।"
 
-#: ../cli/src/connections.c:1553 ../cli/src/connections.c:1666
-#: ../cli/src/connections.c:1757
+#: ../cli/src/connections.c:1467 ../cli/src/devices.c:976
+#: ../cli/src/devices.c:1320 ../cli/src/devices.c:1754
+#: ../cli/src/devices.c:2040
 #, c-format
-msgid "Error: id or uuid has to be specified."
-msgstr "ত্ৰুটি: id অথবা uuid ধাৰ্য্য কৰিব লাগিব।"
+msgid "Unknown parameter: %s\n"
+msgstr "অজ্ঞাত প্ৰাচল: %s\n"
 
-#: ../cli/src/connections.c:1586
+#: ../cli/src/connections.c:1496
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "ত্ৰুটি: কোনো উপযুক্ত ডিভাইচ পোৱা নগল: %s।"
 
-#: ../cli/src/connections.c:1588
+#: ../cli/src/connections.c:1498
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "ত্ৰুটি: কোনো উপযুক্ত ডিভাইচ পোৱা নগল।"
 
-#: ../cli/src/connections.c:1702
-#, c-format
-msgid "Warning: Connection not active\n"
-msgstr "সতৰ্কবাৰ্তা: সংযোগ সক্ৰিয় নহয়\n"
-
-#: ../cli/src/connections.c:1716
+#: ../cli/src/connections.c:1617
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "ত্ৰুটি: সংযোগ মচি পেলোৱা ব্যৰ্থ হল: %s"
 
+#: ../cli/src/connections.c:1687
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: unknown connection: %s\n"
+msgstr "ত্ৰুটি: অজ্ঞাত সংযোগ: %s\n"
+
+#. truncate trailing ", "
+#: ../cli/src/connections.c:1721
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: cannot delete unknown connection(s): %s."
+msgstr "ত্ৰুটি: অজ্ঞাত সংযোগ(সমূহ) মচি পেলাব নোৱাৰি: %s।"
+
+#: ../cli/src/connections.c:1750
+#, c-format
+msgid ""
+"Error: 'configured' or 'active' command is expected for 'connection show'."
+msgstr ""
+"ত্ৰুটি: 'connection show' ৰ বাবে 'configured' অথবা 'active' কমান্ড প্ৰত্যাশিত।"
+
+#: ../cli/src/connections.c:1772
+#, c-format
+#| msgid "Error: '%s' is not an active connection."
+msgid "Error: '%s' is not valid 'connection' command."
+msgstr "ত্ৰুটি: '%s' এটা বৈধ 'connection' কমান্ড নহয়।"
+
 #: ../cli/src/connections.c:1837
-#, c-format
-msgid "Error: 'con' command '%s' is not valid."
-msgstr "ত্ৰুটি: 'con' কমান্ড '%s' বৈধ নহয়।"
-
-#: ../cli/src/connections.c:1905
-#, c-format
-msgid "Error: could not connect to D-Bus."
-msgstr "ত্ৰুটি: D-Bus লে সংযোগ কৰিব নোৱাৰি।"
-
-#: ../cli/src/connections.c:1913
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "ত্ৰুটি: চিস্টেম সংহতিসমূহ প্ৰাপ্ত কৰিব নোৱাৰি।"
 
-#: ../cli/src/connections.c:1923
+#: ../cli/src/connections.c:1847
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "ত্ৰুটি: সংযোগ প্ৰাপ্ত কৰিব নোৱাৰি: সংহতিসমূহ সেৱা চলি থকা নাই।"
@@ -895,12 +905,12 @@ msgstr "ত্ৰুটি: সংযোগ প্ৰাপ্ত কৰিব �
 #: ../cli/src/devices.c:71 ../cli/src/devices.c:110 ../cli/src/devices.c:204
 #: ../cli/src/devices.c:220
 msgid "DEVICE"
-msgstr "DEVICE"
+msgstr "ডিভাইচ"
 
 #. 0
 #: ../cli/src/devices.c:84
 msgid "CAPABILITIES"
-msgstr "CAPABILITIES"
+msgstr "ক্ষমতাসমূহ"
 
 #. 1
 #: ../cli/src/devices.c:85
@@ -952,7 +962,7 @@ msgstr "DHCP6"
 #. 10
 #: ../cli/src/devices.c:94
 msgid "BOND"
-msgstr "BOND"
+msgstr "বান্ধনী"
 
 #. 11
 #: ../cli/src/devices.c:95
@@ -961,34 +971,33 @@ msgstr "VLAN"
 
 #. 12
 #: ../cli/src/devices.c:96
-#| msgid "CONNECTION"
 msgid "CONNECTIONS"
-msgstr "CONNECTIONS"
+msgstr "সংযোগসমূহ"
 
 #. 2
 #: ../cli/src/devices.c:112
 msgid "VENDOR"
-msgstr "VENDOR"
+msgstr "বিক্ৰেতা"
 
 #. 3
 #: ../cli/src/devices.c:113
 msgid "PRODUCT"
-msgstr "PRODUCT"
+msgstr "উৎপাদন"
 
 #. 4
 #: ../cli/src/devices.c:114
 msgid "DRIVER"
-msgstr "DRIVER"
+msgstr "ড্ৰাইভাৰ"
 
 #. 5
 #: ../cli/src/devices.c:115
 msgid "DRIVER-VERSION"
-msgstr "DRIVER-VERSION"
+msgstr "ড্ৰাইভাৰ-সংস্কৰণ"
 
 #. 6
 #: ../cli/src/devices.c:116
 msgid "FIRMWARE-VERSION"
-msgstr "FIRMWARE-VERSION"
+msgstr "ফাৰ্মৱেৰ-সংস্কৰণ"
 
 #. 7
 #: ../cli/src/devices.c:117
@@ -998,7 +1007,7 @@ msgstr "HWADDR"
 #. 9
 #: ../cli/src/devices.c:119
 msgid "REASON"
-msgstr "REASON"
+msgstr "কাৰণ"
 
 #. 10
 #: ../cli/src/devices.c:120
@@ -1013,17 +1022,17 @@ msgstr "IP-IFACE"
 #. 12
 #: ../cli/src/devices.c:122
 msgid "NM-MANAGED"
-msgstr "NM-MANAGED"
+msgstr "NM-ব্যৱস্থাপিত"
 
 #. 14
 #: ../cli/src/devices.c:124
 msgid "FIRMWARE-MISSING"
-msgstr "FIRMWARE-MISSING"
+msgstr "ফাৰ্মৱেৰ-সন্ধানহিন"
 
 #. 15
 #: ../cli/src/devices.c:125
 msgid "CONNECTION"
-msgstr "CONNECTION"
+msgstr "সংযোগ"
 
 #. 0
 #: ../cli/src/devices.c:135
@@ -1032,7 +1041,6 @@ msgstr "AVAILABLE-CONNECTION-PATHS"
 
 #. 1
 #: ../cli/src/devices.c:136
-#| msgid "CONNECTION"
 msgid "AVAILABLE-CONNECTIONS"
 msgstr "AVAILABLE-CONNECTIONS"
 
@@ -1119,7 +1127,7 @@ msgstr "BSSID"
 #. 2
 #: ../cli/src/devices.c:197
 msgid "MODE"
-msgstr "MODE"
+msgstr "অৱস্থা"
 
 #. 3
 #: ../cli/src/devices.c:198
@@ -1129,18 +1137,18 @@ msgstr "FREQ"
 #. 4
 #: ../cli/src/devices.c:199
 msgid "RATE"
-msgstr "RATE"
+msgstr "হাৰ"
 
 #. 5
 #. 1
 #: ../cli/src/devices.c:200 ../cli/src/devices.c:218
 msgid "SIGNAL"
-msgstr "SIGNAL"
+msgstr "সংকেত"
 
 #. 6
 #: ../cli/src/devices.c:201
 msgid "SECURITY"
-msgstr "SECURITY"
+msgstr "সুৰক্ষা"
 
 #. 7
 #: ../cli/src/devices.c:202
@@ -1156,23 +1164,22 @@ msgstr "RSN-FLAGS"
 #. 4
 #: ../cli/src/devices.c:205 ../cli/src/devices.c:221
 msgid "ACTIVE"
-msgstr "ACTIVE"
+msgstr "সক্ৰিয়"
 
 #. 0
 #: ../cli/src/devices.c:233
 msgid "SLAVES"
-msgstr "SLAVES"
+msgstr "স্লেইভবোৰ"
 
 #. 0
 #: ../cli/src/devices.c:242
-#| msgid "UUID"
 msgid "ID"
 msgstr "ID"
 
 #: ../cli/src/devices.c:258
 #, c-format
 #| msgid ""
-#| "Usage: nmcli dev { COMMAND | help }\n"
+#| "Usage: nmcli device { COMMAND | help }\n"
 #| "\n"
 #| "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
 #| "\n"
@@ -1190,33 +1197,49 @@ msgstr "ID"
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi }\n"
+"  COMMAND := { status | show | disconnect | wifi }\n"
 "\n"
 "  status\n"
-"  list [iface <iface>]\n"
-"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"\n"
+"  show [<iface>]\n"
+"\n"
+"  disconnect <iface> [--nowait] [--timeout <timeout>]\n"
+"\n"
 "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
 "[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+"\n"
 "               [--private] [--nowait] [--timeout <timeout>]\n"
+"\n"
+"  wifi scan [[iface] <iface>]\n"
+"\n"
 "  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 msgstr ""
 "ব্যৱহাৰ: nmcli device { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi }\n"
+"  COMMAND := { status | show | disconnect | wifi }\n"
 "\n"
 "  status\n"
-"  list [iface <iface>]\n"
-"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
+"\n"
+"  show [<iface>]\n"
+"\n"
+"  disconnect <iface> [--nowait] [--timeout <timeout>]\n"
+"\n"
 "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
 "[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+"\n"
 "               [--private] [--nowait] [--timeout <timeout>]\n"
+"\n"
+"  wifi scan [[iface] <iface>]\n"
+"\n"
 "  wimax [list [iface <iface>] [nsp <name>]]\n"
 "\n"
 
@@ -1276,20 +1299,21 @@ msgstr "ৰ'মিং"
 
 #: ../cli/src/devices.c:563
 #, c-format
-msgid "Error: 'dev list': %s"
-msgstr "ত্ৰুটি: 'dev list': %s"
+#| msgid "Error: 'dev list': %s"
+msgid "Error: 'device show': %s"
+msgstr "ত্ৰুটি: 'device show': %s"
 
 #: ../cli/src/devices.c:565
 #, c-format
-msgid "Error: 'dev list': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'dev list': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+#| msgid "Error: 'dev list': %s; allowed fields: %s"
+msgid "Error: 'device show': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'device show': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
 #: ../cli/src/devices.c:574
 msgid "Device details"
 msgstr "ডিভাইচৰ বিৱৰণ"
 
-#: ../cli/src/devices.c:621 ../cli/src/devices.c:624 ../cli/src/devices.c:1151
-#: ../cli/src/utils.c:479
+#: ../cli/src/devices.c:621 ../cli/src/devices.c:624 ../cli/src/devices.c:1136
 msgid "(unknown)"
 msgstr "(অজ্ঞাত)"
 
@@ -1314,238 +1338,534 @@ msgstr "অফ"
 
 #: ../cli/src/devices.c:993
 #, c-format
-msgid "Error: 'dev status': %s"
-msgstr "ত্ৰুটি: 'dev status': %s"
+#| msgid "Error: 'dev status': %s"
+msgid "Error: 'device status': %s"
+msgstr "ত্ৰুটি: 'device status': %s"
 
 #: ../cli/src/devices.c:995
 #, c-format
-msgid "Error: 'dev status': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'dev status': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+#| msgid "Error: 'dev status': %s; allowed fields: %s"
+msgid "Error: 'device status': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'device status': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
-#: ../cli/src/devices.c:1018
+#: ../cli/src/devices.c:1015
 msgid "Status of devices"
 msgstr "ডিভাইচসমূহৰ অৱস্থা"
 
-#: ../cli/src/devices.c:1049
+#: ../cli/src/devices.c:1041
 #, c-format
-msgid "Error: '%s' argument is missing."
-msgstr "ত্ৰুটি: '%s' তৰ্ক সন্ধানহিন।"
+#| msgid "Error: invalid 'wwan' parameter: '%s'."
+msgid "Error: invalid extra argument '%s'."
+msgstr "ত্ৰুটি: অবৈধ অতিৰিক্ত তৰ্ক '%s'।"
 
-#: ../cli/src/devices.c:1090 ../cli/src/devices.c:1255
-#: ../cli/src/devices.c:1396 ../cli/src/devices.c:2043
+#: ../cli/src/devices.c:1069 ../cli/src/devices.c:1241
+#: ../cli/src/devices.c:1378 ../cli/src/devices.c:2097
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "ত্ৰুটি: ডিভাইচ '%s' পোৱা নগল।"
 
-#: ../cli/src/devices.c:1113
+#: ../cli/src/devices.c:1098
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "সফলতা: ডিভাইচ '%s' সফলভাৱে বিচ্ছিন্ন কৰা হল।"
 
-#: ../cli/src/devices.c:1148
+#: ../cli/src/devices.c:1133
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "ত্ৰুটি: ডিভাইচ '%s' (%s) বিচ্ছিন্ন কৰা ব্যৰ্থ হল: %s"
 
-#: ../cli/src/devices.c:1161
+#: ../cli/src/devices.c:1146
 #, c-format
 msgid "Device '%s' has been disconnected.\n"
 msgstr "ডিভাইচ '%s' বিচ্ছিন্ন কৰা হৈছে।\n"
 
-#: ../cli/src/devices.c:1224
+#: ../cli/src/devices.c:1178 ../cli/src/devices.c:1187
 #, c-format
-msgid "Error: iface has to be specified."
-msgstr "ত্ৰুটি: iface ধাৰ্য্য কৰিব লাগিব।"
+#| msgid "Error: iface has to be specified."
+msgid "Error: No interface specified."
+msgstr "ত্ৰুটি: কোনো আন্তঃপৃষ্ঠ ধাৰ্য্য কৰা হোৱা নাই।"
 
-#: ../cli/src/devices.c:1354
+#: ../cli/src/devices.c:1212
 #, c-format
-msgid "Error: 'dev wifi': %s"
-msgstr "ত্ৰুটি: 'dev wifi': %s"
+#| msgid "Error: unknown parameter: %s"
+msgid "Error: unknown argument '%s'."
+msgstr "ত্ৰুটি: অজ্ঞাত তৰ্ক '%s'।"
 
-#: ../cli/src/devices.c:1356
+#: ../cli/src/devices.c:1340
 #, c-format
-msgid "Error: 'dev wifi': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'dev wifi': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+#| msgid "Error: 'dev wifi': %s"
+msgid "Error: 'device wifi': %s"
+msgstr "ত্ৰুটি: 'device wifi': %s"
 
-#: ../cli/src/devices.c:1379
-msgid "WiFi scan list"
-msgstr "WiFi স্কেন তালিকা"
+#: ../cli/src/devices.c:1342
+#, c-format
+#| msgid "Error: 'dev wifi': %s; allowed fields: %s"
+msgid "Error: 'device wifi': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'device wifi': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
-#: ../cli/src/devices.c:1416 ../cli/src/devices.c:1470
+#: ../cli/src/devices.c:1362
+#| msgid "WiFi scan list"
+msgid "Wi-Fi scan list"
+msgstr "Wi-Fi স্কেন তালিকা"
+
+#: ../cli/src/devices.c:1398 ../cli/src/devices.c:1452
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "ত্ৰুটি: bssid '%s' ৰ সৈতে অভিগম বিন্দু পোৱা নগল।"
 
-#: ../cli/src/devices.c:1433
+#: ../cli/src/devices.c:1415 ../cli/src/devices.c:1793
+#: ../cli/src/devices.c:1955
 #, c-format
-msgid "Error: Device '%s' is not a WiFi device."
-msgstr "ত্ৰুটি: ডিভাইচ '%s' এটা WiFi ডিভাইচ নহয়।"
+msgid "Error: Device '%s' is not a Wi-Fi device."
+msgstr "ত্ৰুটি: ডিভাইচ '%s' এটা Wi-Fi ডিভাইচ নহয়।"
 
-#: ../cli/src/devices.c:1501 ../cli/src/devices.c:1547
+#: ../cli/src/devices.c:1483 ../cli/src/devices.c:1529
 #, c-format
 msgid "Connection with UUID '%s' created and activated on device '%s'\n"
 msgstr "UUID '%s' ৰ সৈতে সংযোগ সৃষ্টি কৰা হল আৰু ডিভাইচ '%s' ড সক্ৰিয় কৰা হল\n"
 
-#: ../cli/src/devices.c:1506
+#: ../cli/src/devices.c:1488
 #, c-format
 msgid "Error: Connection activation failed: (%d) %s."
 msgstr "ত্ৰুটি: সংযোগৰ সক্ৰিয়কৰণ ব্যৰ্থ হল: (%d) %s।"
 
-#: ../cli/src/devices.c:1531
+#: ../cli/src/devices.c:1513
 #, c-format
 msgid "Error: Failed to add/activate new connection: (%d) %s"
 msgstr "ত্ৰুটি: নতুন সংযোগ যোগ/সক্ৰিয় কৰিবলে ব্যৰ্থ: (%d) %s"
 
-#: ../cli/src/devices.c:1539
+#: ../cli/src/devices.c:1521
 #, c-format
 msgid "Error: Failed to add/activate new connection: Unknown error"
 msgstr "ত্ৰুটি: নতুন সংযোগ যোগ/সক্ৰিয় কৰিবলে ব্যৰ্থ: অজ্ঞাত ত্ৰুটি"
 
-#: ../cli/src/devices.c:1683
+#: ../cli/src/devices.c:1675
 #, c-format
 msgid "Error: SSID or BSSID are missing."
 msgstr "ত্ৰুটি: SSID অথবা BSSID সন্ধানহিন।"
 
-#: ../cli/src/devices.c:1706
+#: ../cli/src/devices.c:1699
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "ত্ৰুটি: bssid তৰ্ক মান '%s' এটা বৈধ BSSID নহয়।"
 
-#: ../cli/src/devices.c:1730
+#: ../cli/src/devices.c:1723
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
 msgstr ""
 "ত্ৰুটি: wep-key-type তৰ্ক মান '%s' অবৈধ, 'key' অথবা 'phrase' ব্যৱহাৰ কৰক।"
 
-#: ../cli/src/devices.c:1770
+#: ../cli/src/devices.c:1763
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr "ত্ৰুটি: (%s) লে সংযোগ কৰিব লগিয়া BSSID bssid তৰ্ক (%s) পৰা পৃথক।"
 
-#: ../cli/src/devices.c:1776
+#: ../cli/src/devices.c:1769
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "ত্ৰুটি: প্ৰাচল '%s' SSID অথবা BSSID নহয়।"
 
-#: ../cli/src/devices.c:1805
-#, c-format
-msgid "Error: Device '%s' is not a Wi-Fi device."
-msgstr "ত্ৰুটি: ডিভাইচ '%s' এটা Wi-Fi ডিভাইচ নহয়।"
-
-#: ../cli/src/devices.c:1807
+#: ../cli/src/devices.c:1795 ../cli/src/devices.c:1957
 #, c-format
 msgid "Error: No Wi-Fi device found."
 msgstr "ত্ৰুটি: কোনো Wi-Fi ডিভাইচ পোৱা নগল।"
 
-#: ../cli/src/devices.c:1825
+#: ../cli/src/devices.c:1813
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "ত্ৰুটি: SSID '%s' ৰ সৈতে কোনো নেটৱাৰ্ক পোৱা নগল।"
 
-#: ../cli/src/devices.c:1827
+#: ../cli/src/devices.c:1815
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "ত্ৰুটি: BSSID '%s' ৰ সৈতে কোনো অভিগম বিন্দু পোৱা নগল।"
 
-#: ../cli/src/devices.c:1925
+#: ../cli/src/devices.c:1983
 #, c-format
-msgid "Error: 'dev wifi' command '%s' is not valid."
-msgstr "ত্ৰুটি: 'dev wifi' কমান্ড '%s' বৈধ নহয়।"
+#| msgid "Error: 'dev wifi' command '%s' is not valid."
+msgid "Error: 'device wifi' command '%s' is not valid."
+msgstr "ত্ৰুটি: 'device wifi' কমান্ড '%s' বৈধ নহয়।"
 
-#: ../cli/src/devices.c:2001
+#: ../cli/src/devices.c:2059
 #, c-format
-msgid "Error: 'dev wimax': %s"
-msgstr "ত্ৰুটি: 'dev wimax': %s"
+#| msgid "Error: 'dev wimax': %s"
+msgid "Error: 'device wimax': %s"
+msgstr "ত্ৰুটি: 'device wimax': %s"
 
-#: ../cli/src/devices.c:2003
+#: ../cli/src/devices.c:2061
 #, c-format
-msgid "Error: 'dev wimax': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'dev wimax': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+#| msgid "Error: 'dev wimax': %s; allowed fields: %s"
+msgid "Error: 'device wimax': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'device wimax': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
 
-#: ../cli/src/devices.c:2026
+#: ../cli/src/devices.c:2081
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP তালিকা"
 
-#: ../cli/src/devices.c:2063
+#: ../cli/src/devices.c:2117
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "ত্ৰুটি: নাম '%s' ৰ সৈতে NSP পোৱা নগল।"
 
-#: ../cli/src/devices.c:2074
+#: ../cli/src/devices.c:2128
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "ত্ৰুটি: ডিভাইচ '%s' এটা WiMAX ডিভাইচ নহয়।"
 
-#: ../cli/src/devices.c:2105
+#: ../cli/src/devices.c:2159
 #, c-format
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "ত্ৰুটি: nsp '%s' ৰ সৈতে অভিগম বিন্দু পোৱা নগল।"
 
-#: ../cli/src/devices.c:2132
+#: ../cli/src/devices.c:2186
 #, c-format
-msgid "Error: 'dev wimax' command '%s' is not valid."
-msgstr "ত্ৰুটি: 'dev wimax' কমান্ড '%s' বৈধ নহয়।"
+#| msgid "Error: 'dev wimax' command '%s' is not valid."
+msgid "Error: 'device wimax' command '%s' is not valid."
+msgstr "ত্ৰুটি: 'device wimax' কমান্ড '%s' বৈধ নহয়।"
 
-#: ../cli/src/devices.c:2185
+#: ../cli/src/devices.c:2239
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "ত্ৰুটি: 'dev' কমান্ড '%s' বৈধ নহয়।"
 
-#: ../cli/src/network-manager.c:37
+#: ../cli/src/network-manager.c:37 ../cli/src/network-manager.c:67
 msgid "RUNNING"
-msgstr "RUNNING"
+msgstr "চলি থকা"
 
 #. 0
-#: ../cli/src/network-manager.c:38
+#: ../cli/src/network-manager.c:38 ../cli/src/network-manager.c:68
 msgid "VERSION"
-msgstr "VERSION"
+msgstr "সংস্কৰণ"
 
 #. 2
 #: ../cli/src/network-manager.c:40
-msgid "NET-ENABLED"
-msgstr "NET-ENABLED"
+msgid "NETWORKING"
+msgstr "নেটৱাৰ্কিং"
 
 #. 3
 #: ../cli/src/network-manager.c:41
-msgid "WIFI-HARDWARE"
-msgstr "WIFI-HARDWARE"
+#| msgid "WIFI"
+msgid "WIFI-HW"
+msgstr "WIFI-HW"
 
 #. 4
-#: ../cli/src/network-manager.c:42
+#: ../cli/src/network-manager.c:42 ../cli/src/network-manager.c:72
 msgid "WIFI"
 msgstr "WIFI"
 
 #. 5
 #: ../cli/src/network-manager.c:43
-msgid "WWAN-HARDWARE"
-msgstr "WWAN-HARDWARE"
+#| msgid "WWAN"
+msgid "WWAN-HW"
+msgstr "WWAN-HW"
 
 #. 6
-#: ../cli/src/network-manager.c:44
+#: ../cli/src/network-manager.c:44 ../cli/src/network-manager.c:74
 msgid "WWAN"
 msgstr "WWAN"
 
 #. 7
 #: ../cli/src/network-manager.c:45
-msgid "WIMAX-HARDWARE"
-msgstr "WIMAX-HARDWARE"
+#| msgid "WIMAX"
+msgid "WIMAX-HW"
+msgstr "WIMAX-HW"
 
 #. 8
-#: ../cli/src/network-manager.c:46
+#: ../cli/src/network-manager.c:46 ../cli/src/network-manager.c:76
 msgid "WIMAX"
 msgstr "WIMAX"
 
-#: ../cli/src/network-manager.c:62
+#. 2
+#: ../cli/src/network-manager.c:70
+msgid "NET-ENABLED"
+msgstr "NET-ENABLED"
+
+#. 3
+#: ../cli/src/network-manager.c:71
+msgid "WIFI-HARDWARE"
+msgstr "WIFI-HARDWARE"
+
+#. 5
+#: ../cli/src/network-manager.c:73
+msgid "WWAN-HARDWARE"
+msgstr "WWAN-HARDWARE"
+
+#. 7
+#: ../cli/src/network-manager.c:75
+msgid "WIMAX-HARDWARE"
+msgstr "WIMAX-HARDWARE"
+
+#: ../cli/src/network-manager.c:94
 msgid "PERMISSION"
-msgstr "PERMISSION"
+msgstr "অনুমতি"
 
 #. 0
-#: ../cli/src/network-manager.c:63
+#: ../cli/src/network-manager.c:95
 msgid "VALUE"
-msgstr "VALUE"
+msgstr "মান"
 
-#: ../cli/src/network-manager.c:77
+#: ../cli/src/network-manager.c:103
+msgid "LEVEL"
+msgstr "স্তৰ"
+
+#. 0
+#: ../cli/src/network-manager.c:104
+#| msgid "DOMAIN"
+msgid "DOMAINS"
+msgstr "ডমেইন"
+
+#: ../cli/src/network-manager.c:119
+#, c-format
+msgid ""
+"Usage: nmcli general { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | permissions | logging }\n"
+"\n"
+"  status\n"
+"\n"
+"  permissions\n"
+"\n"
+"  logging [level <log level>] [domains <log domains>]\n"
+"\n"
+msgstr ""
+"ব্যৱহাৰ: nmcli general { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | permissions | logging }\n"
+"\n"
+"  status\n"
+"\n"
+"  permissions\n"
+"\n"
+"  logging [level <log level>] [domains <log domains>]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:131
+#, c-format
+msgid ""
+"Usage: nmcli networking { COMMAND | help }\n"
+"\n"
+"  COMMAND := { [ on | off ] }\n"
+"\n"
+msgstr ""
+"ব্যৱহাৰ: nmcli networking { COMMAND | help }\n"
+"\n"
+"  COMMAND := { [ on | off ] }\n"
+"\n"
+
+#: ../cli/src/network-manager.c:140
+#, c-format
+#| msgid ""
+#| "Usage: nmcli nm { COMMAND | help }\n"
+#| "\n"
+#| "  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
+#| "wimax }\n"
+#| "\n"
+#| "  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
+#| "\n"
+#| "  status\n"
+#| "  permissions\n"
+#| "  enable [true|false]\n"
+#| "  sleep [true|false]\n"
+#| "  wifi [on|off]\n"
+#| "  wwan [on|off]\n"
+#| "  wimax [on|off]\n"
+#| "\n"
+msgid ""
+"Usage: nmcli radio { COMMAND | help }\n"
+"\n"
+"  COMMAND := { all | wifi | wwan | wimax }\n"
+"\n"
+"  all | wifi | wwan | wimax [ on | off ]\n"
+"\n"
+"  COMMAND := { all | wifi | wwan }\n"
+"\n"
+"  all | wifi | wwan [ on | off ]\n"
+"\n"
+msgstr ""
+"ব্যৱহাৰ: nmcli radio { COMMAND | help }\n"
+"\n"
+"  COMMAND := { all | wifi | wwan | wimax }\n"
+"\n"
+"  all | wifi | wwan | wimax [ on | off ]\n"
+"\n"
+"  COMMAND := { all | wifi | wwan }\n"
+"\n"
+"  all | wifi | wwan [ on | off ]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:163
+msgid "asleep"
+msgstr "নিদ্ৰিত"
+
+#: ../cli/src/network-manager.c:165
+msgid "connecting"
+msgstr "সংযোগ কৰা হৈছে"
+
+#: ../cli/src/network-manager.c:167
+msgid "connected (local only)"
+msgstr "সংযুক্ত (কেৱল স্থানীয়)"
+
+#: ../cli/src/network-manager.c:169
+msgid "connected (site only)"
+msgstr "সংযুক্ত (কেৱল ছাইট)"
+
+#: ../cli/src/network-manager.c:173
+msgid "disconnecting"
+msgstr "বিচ্ছিন্ন কৰা হৈছে"
+
+#: ../cli/src/network-manager.c:213
+#, c-format
+#| msgid "Error: %s."
+msgid "Error: %s"
+msgstr "ত্ৰুটি: %s"
+
+#: ../cli/src/network-manager.c:215
+#, c-format
+#| msgid "Error: 'con list': %s; allowed fields: %s"
+msgid "Error: %s (allowed fields: %s)"
+msgstr "ত্ৰুটি: %s (অনুমোদিত ক্ষেত্ৰসমূহ: %s)"
+
+#: ../cli/src/network-manager.c:229 ../cli/src/network-manager.c:230
+#: ../cli/src/network-manager.c:231 ../cli/src/network-manager.c:232
+#: ../cli/src/network-manager.c:233 ../cli/src/network-manager.c:235
+#: ../cli/src/network-manager.c:236 ../cli/src/network-manager.c:808
+#: ../cli/src/network-manager.c:863 ../cli/src/network-manager.c:901
+#: ../cli/src/network-manager.c:940
+msgid "enabled"
+msgstr "সামৰ্থবান"
+
+#: ../cli/src/network-manager.c:229 ../cli/src/network-manager.c:230
+#: ../cli/src/network-manager.c:231 ../cli/src/network-manager.c:232
+#: ../cli/src/network-manager.c:233 ../cli/src/network-manager.c:235
+#: ../cli/src/network-manager.c:236 ../cli/src/network-manager.c:808
+#: ../cli/src/network-manager.c:863 ../cli/src/network-manager.c:901
+#: ../cli/src/network-manager.c:940
+msgid "disabled"
+msgstr "অসামৰ্থবান"
+
+#: ../cli/src/network-manager.c:249
+msgid "NetworkManager status"
+msgstr "NetworkManager ৰ অৱস্থা"
+
+#. Print header
+#: ../cli/src/network-manager.c:252
+msgid "running"
+msgstr "চলি আছে"
+
+#: ../cli/src/network-manager.c:252
+msgid "not running"
+msgstr "চলি থকা নাই"
+
+#: ../cli/src/network-manager.c:324
+msgid "auth"
+msgstr "auth"
+
+#: ../cli/src/network-manager.c:354
+#, c-format
+#| msgid "Error: 'nm permissions': %s"
+msgid "Error: 'general permissions': %s"
+msgstr "ত্ৰুটি: 'general permissions': %s"
+
+#: ../cli/src/network-manager.c:356
+#, c-format
+#| msgid "Error: 'nm permissions': %s; allowed fields: %s"
+msgid "Error: 'general permissions': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'general permissions': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+
+#: ../cli/src/network-manager.c:372
+msgid "NetworkManager permissions"
+msgstr "NetworkManager অনুমতিসমূহ"
+
+#: ../cli/src/network-manager.c:411
+#, c-format
+#| msgid "Error: 'con list': %s"
+msgid "Error: 'general logging': %s"
+msgstr "ত্ৰুটি: 'general logging': %s"
+
+#: ../cli/src/network-manager.c:413
+#, c-format
+#| msgid "Error: 'con list': %s; allowed fields: %s"
+msgid "Error: 'general logging': %s; allowed fields: %s"
+msgstr "ত্ৰুটি: 'general logging': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+
+#: ../cli/src/network-manager.c:430
+#| msgid "NetworkManager Applet"
+msgid "NetworkManager logging"
+msgstr "NetworkManager লগিং"
+
+#: ../cli/src/network-manager.c:452
+#, c-format
+msgid "Error: Couldn't connect to system bus: %s"
+msgstr "ত্ৰুটি: চিস্টেম বাচৰ সৈতে সংযোগ কৰিব পৰা নগল: %s"
+
+#: ../cli/src/network-manager.c:463
+#, c-format
+msgid "Error: Couldn't create D-Bus object proxy."
+msgstr "ত্ৰুটি: D-Bus অবজেক্ট প্ৰক্সি সৃষ্টি কৰিব পৰা নগল।"
+
+#: ../cli/src/network-manager.c:469
+#, c-format
+msgid "Error in sleep: %s"
+msgstr "নিদ্ৰাত ত্ৰুটি: %s"
+
+#: ../cli/src/network-manager.c:552
+#, c-format
+#| msgid "Error: 'nm' command '%s' is not valid."
+msgid "Error: 'general' command '%s' is not valid."
+msgstr "ত্ৰুটি: 'general' কমান্ড '%s' বৈধ নহয়।"
+
+#: ../cli/src/network-manager.c:571 ../cli/src/network-manager.c:795
+#: ../cli/src/network-manager.c:850 ../cli/src/network-manager.c:888
+#: ../cli/src/network-manager.c:927
+#, c-format
+#| msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgid "Error: '--fields' value '%s' is not valid here (allowed fields: %s)"
+msgstr "ত্ৰুটি: '--fields' মান '%s' ইয়াত বৈধ নহয় (অনুমোদিত ক্ষেত্ৰসমূহ: %s)"
+
+#: ../cli/src/network-manager.c:595
+#, c-format
+#| msgid "Error: invalid 'wifi' parameter: '%s'."
+msgid "Error: invalid '%s' argument: '%s' (use on/off)."
+msgstr "ত্ৰুটি: অবৈধ '%s' তৰ্ক: '%s' (on/off ব্যৱহাৰ কৰক)।"
+
+#: ../cli/src/network-manager.c:612
+#| msgid "Network"
+msgid "Networking"
+msgstr "নেটৱাৰ্কিং"
+
+#: ../cli/src/network-manager.c:624
+#, c-format
+#| msgid "Error: 'con' command '%s' is not valid."
+msgid "Error: 'networking' command '%s' is not valid."
+msgstr "ত্ৰুটি: 'networking' কমান্ড '%s' বৈধ নহয়।"
+
+#: ../cli/src/network-manager.c:649 ../cli/src/network-manager.c:662
+msgid "Radio switches"
+msgstr "ৰেডিঅ' চুইচসমূহ"
+
+#. no argument, show current WiFi state
+#: ../cli/src/network-manager.c:676
+msgid "Wi-Fi radio switch"
+msgstr "Wi-Fi ৰেডিঅ' চুইচ"
+
+#. no argument, show current WWAN (mobile broadband) state
+#: ../cli/src/network-manager.c:688
+msgid "WWAN radio switch"
+msgstr "WWAN ৰেডিঅ' চুইচ"
+
+#. no argument, show current WiMAX state
+#: ../cli/src/network-manager.c:701
+msgid "WiMAX radio switch"
+msgstr "WiMAX ৰেডিঅ' চুইচ"
+
+#: ../cli/src/network-manager.c:718
+#, c-format
+#| msgid "Error: 'con' command '%s' is not valid."
+msgid "Error: 'radio' command '%s' is not valid."
+msgstr "ত্ৰুটি: 'radio' কমান্ড '%s' বৈধ নহয়।"
+
+#: ../cli/src/network-manager.c:734
 #, c-format
 msgid ""
 "Usage: nmcli nm { COMMAND | help }\n"
@@ -1580,154 +1900,53 @@ msgstr ""
 "  wimax [on|off]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:108
-msgid "asleep"
-msgstr "নিদ্ৰিত"
-
-#: ../cli/src/network-manager.c:110
-msgid "connecting"
-msgstr "সংযোগ কৰা হৈছে"
-
-#: ../cli/src/network-manager.c:112
-msgid "connected (local only)"
-msgstr "সংযুক্ত (কেৱল স্থানীয়)"
-
-#: ../cli/src/network-manager.c:114
-msgid "connected (site only)"
-msgstr "সংযুক্ত (কেৱল ছাইট)"
-
-#: ../cli/src/network-manager.c:118
-msgid "disconnecting"
-msgstr "বিচ্ছিন্ন কৰা হৈছে"
-
-#: ../cli/src/network-manager.c:158
-#, c-format
-msgid "Error: 'nm status': %s"
-msgstr "ত্ৰুটি: 'nm status': %s"
-
-#: ../cli/src/network-manager.c:160
-#, c-format
-msgid "Error: 'nm status': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'nm status': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
-
-#. create NMClient
-#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:174
-#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:176
-#: ../cli/src/network-manager.c:177 ../cli/src/network-manager.c:179
-#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:429
-#: ../cli/src/network-manager.c:484 ../cli/src/network-manager.c:522
-#: ../cli/src/network-manager.c:561
-msgid "enabled"
-msgstr "সামৰ্থবান"
-
-#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:174
-#: ../cli/src/network-manager.c:175 ../cli/src/network-manager.c:176
-#: ../cli/src/network-manager.c:177 ../cli/src/network-manager.c:179
-#: ../cli/src/network-manager.c:180 ../cli/src/network-manager.c:429
-#: ../cli/src/network-manager.c:484 ../cli/src/network-manager.c:522
-#: ../cli/src/network-manager.c:561
-msgid "disabled"
-msgstr "অসামৰ্থবান"
-
-#: ../cli/src/network-manager.c:193
-msgid "NetworkManager status"
-msgstr "NetworkManager ৰ অৱস্থা"
-
-#. Print header
-#: ../cli/src/network-manager.c:196
-msgid "running"
-msgstr "চলি আছে"
-
-#: ../cli/src/network-manager.c:196
-msgid "not running"
-msgstr "চলি থকা নাই"
-
-#: ../cli/src/network-manager.c:271
-msgid "auth"
-msgstr "auth"
-
-#: ../cli/src/network-manager.c:301
-#, c-format
-msgid "Error: 'nm permissions': %s"
-msgstr "ত্ৰুটি: 'nm permissions': %s"
-
-#: ../cli/src/network-manager.c:303
-#, c-format
-msgid "Error: 'nm permissions': %s; allowed fields: %s"
-msgstr "ত্ৰুটি: 'nm permissions': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
-
-#: ../cli/src/network-manager.c:324
-msgid "NetworkManager permissions"
-msgstr "NetworkManager অনুমতিসমূহ"
-
-#: ../cli/src/network-manager.c:350 ../cli/src/utils.c:459
-#, c-format
-msgid "Error: Couldn't connect to system bus: %s"
-msgstr "ত্ৰুটি: চিস্টেম বাচৰ সৈতে সংযোগ কৰিব পৰা নগল: %s"
-
-#: ../cli/src/network-manager.c:361
-#, c-format
-msgid "Error: Couldn't create D-Bus object proxy."
-msgstr "ত্ৰুটি: D-Bus অবজেক্ট প্ৰক্সি সৃষ্টি কৰিব পৰা নগল।"
-
-#: ../cli/src/network-manager.c:367
-#, c-format
-msgid "Error in sleep: %s"
-msgstr "নিদ্ৰাত ত্ৰুটি: %s"
-
-#: ../cli/src/network-manager.c:416 ../cli/src/network-manager.c:471
-#: ../cli/src/network-manager.c:509 ../cli/src/network-manager.c:548
-#, c-format
-msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
-msgstr "ত্ৰুটি: '--fields' মান '%s' ইয়াত বৈধ নহয়; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
-
-#: ../cli/src/network-manager.c:424
+#: ../cli/src/network-manager.c:803
 msgid "Networking enabled"
 msgstr "নেটৱাৰ্কিং সামৰ্থবান"
 
-#: ../cli/src/network-manager.c:440
+#: ../cli/src/network-manager.c:819
 #, c-format
 msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
 msgstr "ত্ৰুটি: অবৈধ 'enable' প্ৰাচল: '%s'; 'true' অথবা 'false' ব্যৱহাৰ কৰক।"
 
-#: ../cli/src/network-manager.c:450
+#: ../cli/src/network-manager.c:829
 #, c-format
 msgid "Error: Sleeping status is not exported by NetworkManager."
 msgstr "ত্ৰুটি: নিদ্ৰা অৱস্থা NetworkManager দ্বাৰা এক্সপোৰ্ট কৰা নহয়।"
 
-#: ../cli/src/network-manager.c:458
+#: ../cli/src/network-manager.c:837
 #, c-format
 msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
 msgstr "ত্ৰুটি: অবৈধ 'sleep' প্ৰাচল: '%s'; 'true' অথবা 'false' ব্যৱহাৰ কৰক।"
 
-#: ../cli/src/network-manager.c:479
+#: ../cli/src/network-manager.c:858
 msgid "WiFi enabled"
 msgstr "WiFi সামৰ্থবান"
 
-#: ../cli/src/network-manager.c:495
+#: ../cli/src/network-manager.c:874
 #, c-format
 msgid "Error: invalid 'wifi' parameter: '%s'."
 msgstr "ত্ৰুটি: অবৈধ 'wifi' প্ৰাচল: '%s'।"
 
-#: ../cli/src/network-manager.c:517
+#: ../cli/src/network-manager.c:896
 msgid "WWAN enabled"
 msgstr "WWAN সামৰ্থবান"
 
-#: ../cli/src/network-manager.c:533
+#: ../cli/src/network-manager.c:912
 #, c-format
 msgid "Error: invalid 'wwan' parameter: '%s'."
 msgstr "ত্ৰুটি: অবৈধ 'wwan' প্ৰাচল: '%s'।"
 
-#: ../cli/src/network-manager.c:556
+#: ../cli/src/network-manager.c:935
 msgid "WiMAX enabled"
 msgstr "WiMAX সামৰ্থবান"
 
-#: ../cli/src/network-manager.c:572
+#: ../cli/src/network-manager.c:951
 #, c-format
 msgid "Error: invalid 'wimax' parameter: '%s'."
 msgstr "ত্ৰুটি: অবৈধ 'wimax' প্ৰাচল: '%s'।"
 
-#: ../cli/src/network-manager.c:588
+#: ../cli/src/network-manager.c:967
 #, c-format
 msgid "Error: 'nm' command '%s' is not valid."
 msgstr "ত্ৰুটি: 'nm' কমান্ড '%s' বৈধ নহয়।"
@@ -1750,9 +1969,9 @@ msgstr "ত্ৰুটি: 'nm' কমান্ড '%s' বৈধ নহয়।"
 #| "  -h[elp]                                    print this help\n"
 #| "\n"
 #| "OBJECT\n"
-#| "  nm          NetworkManager status\n"
-#| "  con         NetworkManager connections\n"
-#| "  dev         devices managed by NetworkManager\n"
+#| "  nm              NetworkManager's status\n"
+#| "  c[onnection]    NetworkManager's connections\n"
+#| "  d[evice]        devices managed by NetworkManager\n"
 #| "\n"
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
@@ -1766,11 +1985,14 @@ msgid ""
 "values\n"
 "  -n[ocheck]                                 don't check nmcli and "
 "NetworkManager versions\n"
+"  -a[sk]                                     ask for missing parameters\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
 "OBJECT\n"
-"  nm              NetworkManager's status\n"
+"  g[eneral]       NetworkManager's general status and operations\n"
+"  n[etworking]    overall networking control\n"
+"  r[adio]         NetworkManager radio switches\n"
 "  c[onnection]    NetworkManager's connections\n"
 "  d[evice]        devices managed by NetworkManager\n"
 "\n"
@@ -1786,250 +2008,257 @@ msgstr ""
 "values\n"
 "  -n[ocheck]                                 don't check nmcli and "
 "NetworkManager versions\n"
+"  -a[sk]                                     ask for missing parameters\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
 "OBJECT\n"
-"  nm              NetworkManager's status\n"
+"  g[eneral]       NetworkManager's general status and operations\n"
+"  n[etworking]    overall networking control\n"
+"  r[adio]         NetworkManager radio switches\n"
 "  c[onnection]    NetworkManager's connections\n"
 "  d[evice]        devices managed by NetworkManager\n"
 "\n"
 
-#: ../cli/src/nmcli.c:124
+#: ../cli/src/nmcli.c:131
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "ত্ৰুটি: অবজেক্ট '%s' অজ্ঞাত, 'nmcli help' চেষ্টা কৰি চাওক।"
 
-#: ../cli/src/nmcli.c:154
+#: ../cli/src/nmcli.c:161
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "ত্ৰুটি: বিকল্প '--terse' দ্বিতীয়বাৰ ধাৰ্য্য কৰা হৈছে।"
 
-#: ../cli/src/nmcli.c:159
+#: ../cli/src/nmcli.c:166
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr "ত্ৰুটি: বিকল্প '--terse' '--pretty' ৰ সৈতে পাৰস্পৰিকভাৱে সুকীয়া।"
 
-#: ../cli/src/nmcli.c:167
+#: ../cli/src/nmcli.c:174
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "ত্ৰুটি: বিকল্প '--pretty' দ্বিতীয় বাৰত ধাৰ্য্য কৰা হয়।"
 
-#: ../cli/src/nmcli.c:172
+#: ../cli/src/nmcli.c:179
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr "ত্ৰুটি: বিকল্পn '--pretty' '--terse' ৰ সৈতে পাৰস্পৰিকভাৱে সূকীয়া।"
 
-#: ../cli/src/nmcli.c:182 ../cli/src/nmcli.c:198
+#: ../cli/src/nmcli.c:189 ../cli/src/nmcli.c:205
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "ত্ৰুটি: '%s' বিকল্পৰ বাবে তৰ্ক সন্ধানহিন।"
 
-#: ../cli/src/nmcli.c:191 ../cli/src/nmcli.c:207
+#: ../cli/src/nmcli.c:198 ../cli/src/nmcli.c:214
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "ত্ৰুটি: '%s' '%s' বিকল্পৰ বাবে বৈধ তৰ্ক নহয়।"
 
-#: ../cli/src/nmcli.c:214
+#: ../cli/src/nmcli.c:221
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "ত্ৰুটি: '%s' বিকল্পসমূহৰ বাবে ক্ষেত্ৰসমূহ সন্ধানহিন।"
 
-#: ../cli/src/nmcli.c:222
+#: ../cli/src/nmcli.c:231
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "nmcli সঁজুলি, সংস্কৰণ %s\n"
 
-#: ../cli/src/nmcli.c:228
+#: ../cli/src/nmcli.c:237
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "ত্ৰুটি: বিকল্প '%s' অজ্ঞাত, 'nmcli -help' চেষ্টা কৰি চাওক।"
 
-#: ../cli/src/nmcli.c:247
+#: ../cli/src/nmcli.c:256
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "সংকেত %d প্ৰাপ্ত হৈছে, বন্ধ কৰা হৈছে..."
 
-#: ../cli/src/nmcli.c:272
+#: ../cli/src/nmcli.c:281
 msgid "Error: Could not create NMClient object."
 msgstr "ত্ৰুটি: NMClient অবজেক্ট সৃষ্টি কৰিব পৰা নগল।"
 
-#: ../cli/src/nmcli.c:288
+#: ../cli/src/nmcli.c:297
 msgid "Success"
 msgstr "সফলতা"
 
-#: ../cli/src/settings.c:603
+#: ../cli/src/settings.c:598
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-key)"
 
-#: ../cli/src/settings.c:605
+#: ../cli/src/settings.c:600
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128-bit পাচফ্ৰেইছ)"
 
-#: ../cli/src/settings.c:608 ../cli/src/settings.c:736
+#: ../cli/src/settings.c:603 ../cli/src/settings.c:731
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (অজ্ঞাত)"
 
-#: ../cli/src/settings.c:634
+#: ../cli/src/settings.c:629
 msgid "0 (unknown)"
 msgstr "0 (অজ্ঞাত)"
 
-#: ../cli/src/settings.c:640
+#: ../cli/src/settings.c:635
 msgid "any, "
 msgstr "যিকোনো, "
 
-#: ../cli/src/settings.c:642
+#: ../cli/src/settings.c:637
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:644
+#: ../cli/src/settings.c:639
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:646
+#: ../cli/src/settings.c:641
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:648
+#: ../cli/src/settings.c:643
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:650
+#: ../cli/src/settings.c:645
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:652
+#: ../cli/src/settings.c:647
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:654
+#: ../cli/src/settings.c:649
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:656
+#: ../cli/src/settings.c:651
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:658
+#: ../cli/src/settings.c:653
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:660
+#: ../cli/src/settings.c:655
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:662
+#: ../cli/src/settings.c:657
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:664
+#: ../cli/src/settings.c:659
 msgid "WCDMA 3GPP UMTS 1900 MHz, "
 msgstr "WCDMA 3GPP UMTS 1900 MHz, "
 
-#: ../cli/src/settings.c:666
+#: ../cli/src/settings.c:661
 msgid "WCDMA 3GPP UMTS 2600 MHz, "
 msgstr "WCDMA 3GPP UMTS 2600 MHz, "
 
-#: ../cli/src/settings.c:684
+#: ../cli/src/settings.c:679
 msgid "0 (NONE)"
 msgstr "0 (NONE)"
 
-#: ../cli/src/settings.c:690
+#: ../cli/src/settings.c:685
 msgid "REORDER_HEADERS, "
 msgstr "REORDER_HEADERS, "
 
-#: ../cli/src/settings.c:692
+#: ../cli/src/settings.c:687
 msgid "GVRP, "
 msgstr "GVRP, "
 
-#: ../cli/src/settings.c:694
+#: ../cli/src/settings.c:689
 msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
-#: ../cli/src/settings.c:730
+#: ../cli/src/settings.c:725
 #, c-format
 msgid "%d (disabled)"
 msgstr "%d (অসামৰ্থবান)"
 
-#: ../cli/src/settings.c:732
+#: ../cli/src/settings.c:727
 #, c-format
 msgid "%d (enabled, prefer public IP)"
 msgstr "%d (সামৰ্থবান, ৰাজহুৱা IP পছন্দ)"
 
-#: ../cli/src/settings.c:734
+#: ../cli/src/settings.c:729
 #, c-format
 msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (সামৰ্থবান, অস্থায়ী IP পছন্দ)"
 
-#: ../cli/src/settings.c:746
-#| msgid "(none)"
+#: ../cli/src/settings.c:741
 msgid "0 (none)"
 msgstr "0 (একো নাই)"
 
-#: ../cli/src/settings.c:752
+#: ../cli/src/settings.c:747
 msgid "agent-owned, "
 msgstr "অভিকৰ্তা-স্বত্বত,"
 
-#: ../cli/src/settings.c:754
+#: ../cli/src/settings.c:749
 msgid "not saved, "
 msgstr "সংৰক্ষিত নহয়,"
 
-#: ../cli/src/settings.c:756
-#| msgid "not registered"
+#: ../cli/src/settings.c:751
 msgid "not required, "
 msgstr "প্ৰয়োজনীয় নহয়,"
 
-#: ../cli/src/settings.c:954 ../cli/src/settings.c:1173
-#: ../cli/src/settings.c:1914
+#: ../cli/src/settings.c:1064 ../cli/src/settings.c:1232
+#: ../cli/src/settings.c:1273
 msgid "auto"
 msgstr "স্বচালিত"
 
-#: ../cli/src/utils.c:105
+#: ../cli/src/utils.c:96
+#, c-format
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: value for '%s' argument is required."
+msgstr "ত্ৰুটি: '%s' তৰ্কৰ বাবে মান প্ৰয়োজনীয়।"
+
+#: ../cli/src/utils.c:121
+#, c-format
+msgid "Error: Argument '%s' was expected, but '%s' provided."
+msgstr "ত্ৰুটি: তৰ্ক '%s' আশা কৰা হৈছিল, কিন্তু '%s' প্ৰদান কৰা হৈছে।"
+
+#: ../cli/src/utils.c:124
+#, c-format
+#| msgid "Error: missing argument for '%s' option."
+msgid "Error: Unexpected argument '%s'"
+msgstr "ত্ৰুটি: অপ্ৰত্যাশিত তৰ্ক '%s'"
+
+#: ../cli/src/utils.c:179
 #, c-format
 msgid "Error converting IP4 address '0x%X' to text form"
 msgstr "IP4 ঠিকনা '0x%X' ক লিখনী বিন্যাসলে পৰিবৰ্তন কৰোতে ত্ৰুটি"
 
-#: ../cli/src/utils.c:133
+#: ../cli/src/utils.c:207
 #, c-format
 msgid "Error converting IP6 address '%s' to text form"
 msgstr "IP6 ঠিকনা '%s' ক লিখনী বিন্যাসত পৰিবৰ্তন কৰোতে ত্ৰুটি"
 
-#: ../cli/src/utils.c:234
+#: ../cli/src/utils.c:369
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "ক্ষেত্ৰ '%s' অকলে থাকিব লাগিব"
 
-#: ../cli/src/utils.c:237
+#: ../cli/src/utils.c:372
 #, c-format
 msgid "invalid field '%s'"
 msgstr "অবৈধ ক্ষেত্ৰ '%s'"
 
-#: ../cli/src/utils.c:256
+#: ../cli/src/utils.c:391
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "বিকল্পৰ '--terse' ৰ '--fields' ধাৰ্য্য কৰাৰ প্ৰয়োজন"
 
-#: ../cli/src/utils.c:260
+#: ../cli/src/utils.c:395
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "বিকল্প '--terse' ৰ বিশেষ '--fields' বিকল্প মানসমূহ ধাৰ্য্য কৰাৰ প্ৰয়োজন, '%s' "
 "নহয়"
 
-#: ../cli/src/utils.c:470
-#, c-format
-msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
-msgstr ""
-"ত্ৰুটি: org.freedesktop.DBus ৰ বাবে D-Bus অবজেক্ট প্ৰক্সি সৃষ্টি কৰিব পৰা নগল"
-
-#: ../cli/src/utils.c:478
-#, c-format
-msgid "Error: NameHasOwner request failed: %s"
-msgstr "ত্ৰুটি: NameHasOwner অনুৰোধ ব্যৰ্থ হল: %s"
-
-#: ../cli/src/utils.c:523
+#: ../cli/src/utils.c:604
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
@@ -2039,7 +2268,7 @@ msgstr ""
 "সতৰ্কবাৰ্তা "
 "দবাবলে --nocheck ব্যৱহাৰ কৰক।\n"
 
-#: ../cli/src/utils.c:532
+#: ../cli/src/utils.c:613
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
@@ -2370,11 +2599,10 @@ msgstr "যাদৃচ্ছিক তথ্য সৃজন কৰিব প�
 #: ../libnm-util/nm-setting-ip6-config.c:685
 #: ../libnm-util/nm-setting-ip6-config.c:738
 #: ../libnm-util/nm-setting-olpc-mesh.c:128
-#: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:388
+#: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:394
 #: ../libnm-util/nm-setting-wimax.c:137
 #: ../libnm-util/nm-setting-wireless-security.c:792
 #: ../libnm-util/nm-setting-wireless.c:610
-#| msgid "Error: %s argument is missing."
 msgid "property is missing"
 msgstr "বৈশিষ্ট্য সন্ধানহিন"
 
@@ -2392,7 +2620,7 @@ msgstr "বৈশিষ্ট্য সন্ধানহিন"
 #: ../libnm-util/nm-setting-ip4-config.c:754
 #: ../libnm-util/nm-setting-ip4-config.c:763
 #: ../libnm-util/nm-setting-pppoe.c:172 ../libnm-util/nm-setting-pppoe.c:181
-#: ../libnm-util/nm-setting-vpn.c:397 ../libnm-util/nm-setting-vpn.c:407
+#: ../libnm-util/nm-setting-vpn.c:403 ../libnm-util/nm-setting-vpn.c:413
 #: ../libnm-util/nm-setting-wimax.c:146
 #: ../libnm-util/nm-setting-wireless-security.c:822
 #: ../libnm-util/nm-setting-wireless-security.c:830
@@ -2409,8 +2637,8 @@ msgstr "PKCS#12 ৰ বাবে '%s' বৈশিষ্ট্য মিল খ�
 #: ../libnm-util/nm-setting-8021x.c:2462 ../libnm-util/nm-setting-8021x.c:2496
 #: ../libnm-util/nm-setting-bluetooth.c:162
 #: ../libnm-util/nm-setting-bond.c:377
-#: ../libnm-util/nm-setting-infiniband.c:166
-#: ../libnm-util/nm-setting-infiniband.c:181
+#: ../libnm-util/nm-setting-infiniband.c:149
+#: ../libnm-util/nm-setting-infiniband.c:164
 #: ../libnm-util/nm-setting-ip4-config.c:745
 #: ../libnm-util/nm-setting-ip6-config.c:729
 #: ../libnm-util/nm-setting-olpc-mesh.c:156
@@ -2429,7 +2657,6 @@ msgstr "PKCS#12 ৰ বাবে '%s' বৈশিষ্ট্য মিল খ�
 #: ../libnm-util/nm-setting-wireless.c:670
 #: ../libnm-util/nm-setting-wireless.c:679
 #: ../libnm-util/nm-setting-wireless.c:688
-#| msgid "The property '%s' / '%s' is invalid: %d"
 msgid "property is invalid"
 msgstr "বৈশিষ্ট্য অবৈধ"
 
@@ -2438,11 +2665,8 @@ msgstr "বৈশিষ্ট্য অবৈধ"
 #: ../libnm-util/nm-setting-8021x.c:2561 ../libnm-util/nm-setting-adsl.c:239
 #: ../libnm-util/nm-setting-adsl.c:250
 #: ../libnm-util/nm-setting-bluetooth.c:179
-#: ../libnm-util/nm-setting-infiniband.c:190
-#: ../libnm-util/nm-setting-vlan.c:554 ../libnm-util/nm-setting-wired.c:543
 #: ../libnm-util/nm-setting-wireless-security.c:801
 #, c-format
-#| msgid "Error: '%s' is not valid argument for '%s' option."
 msgid "'%s' is not a valid value for the property"
 msgstr "'%s' বৈশিষ্ট্যৰ বাবে এটা বৈধ মান নহয়"
 
@@ -2468,19 +2692,16 @@ msgstr "'%s' সংহতি কৰাটো প্ৰয়োজনীয়"
 
 #: ../libnm-util/nm-setting-bond.c:430
 #, c-format
-#| msgid "Error: '%s' is not valid argument for '%s' option."
 msgid "'%s' is not a valid value for '%s'"
 msgstr "'%s' ৰ বাবে '%s' এটা বৈধ মান নহয়"
 
 #: ../libnm-util/nm-setting-bond.c:443
 #, c-format
-#| msgid "device '%s' not compatible with connection '%s'"
 msgid "'%s=%s' is incompatible with '%s > 0'"
 msgstr "'%s > 0' ৰ সৈতে '%s=%s' সংগত নহয়"
 
 #: ../libnm-util/nm-setting-bond.c:454
 #, c-format
-#| msgid "Error: '%s' is not valid argument for '%s' option."
 msgid "'%s=%s' is not a valid configuration for '%s'"
 msgstr "'%s' ৰ বাবে '%s=%s' এটা বৈধ সংৰূপ নহয়"
 
@@ -2497,7 +2718,6 @@ msgstr "'%s' বিকল্প ৰিক্ত"
 
 #: ../libnm-util/nm-setting-bond.c:520
 #, c-format
-#| msgid "Error: '%s' is not valid argument for '%s' option."
 msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "'%s' বিকল্পৰ বাবে '%s' এটা বৈধ IPv4 ঠিকনা নহয়"
 
@@ -2514,7 +2734,7 @@ msgstr "মান '%d' বিস্তাৰৰ বাহিৰ <%d-%d>"
 
 #: ../libnm-util/nm-setting-bridge.c:277
 #: ../libnm-util/nm-setting-connection.c:732
-#: ../libnm-util/nm-setting-vlan.c:486
+#: ../libnm-util/nm-setting-vlan.c:468
 #, c-format
 msgid "'%s' is not a valid interface name"
 msgstr "'%s' এটা বৈধ আন্তঃপৃষ্ঠ নাম নহয়"
@@ -2539,12 +2759,10 @@ msgid "requires presence of '%s' setting in the connection"
 msgstr "সংযোগত '%s' সংহতি উপস্থিত থকাটো প্ৰয়োজনীয়"
 
 #: ../libnm-util/nm-setting-connection.c:784
-#| msgid "The IP configuration is no longer valid"
 msgid "IPv4 configuration is not allowed for bonding slave"
 msgstr "স্লেইভ বান্ধিবলে IPv4 সংৰূপৰ অনুমতি নাই"
 
 #: ../libnm-util/nm-setting-connection.c:801
-#| msgid "The IP configuration is no longer valid"
 msgid "IPv6 configuration is not allowed for bonding slave"
 msgstr "স্লেইভ বান্ধিবলে IPv6 সংৰূপৰ অনুমতি নাই"
 
@@ -2624,22 +2842,22 @@ msgstr "'%d' বৈধ বিস্তাৰ <128-16384> ৰ বাহিৰ"
 msgid "setting this property requires non-zero '%s' property"
 msgstr "এই বৈশিষ্ট্য সংহতি কৰিবলে অ-শূণ্য '%s' বৈশিষ্ট্যৰ প্ৰয়োজন"
 
-#: ../libnm-util/nm-setting-vlan.c:508
+#: ../libnm-util/nm-setting-vlan.c:490
 #, c-format
 msgid "'%s' value doesn't match '%s=%s'"
 msgstr "'%s' মান '%s=%s' ৰ সৈতে মিল নাখায়"
 
-#: ../libnm-util/nm-setting-vlan.c:519
+#: ../libnm-util/nm-setting-vlan.c:501
 #, c-format
 msgid "'%s' is neither an UUID nor an interface name"
 msgstr "'%s' এটা UUID অথবা এটা আন্তঃপৃষ্ঠ নাম নহয়"
 
-#: ../libnm-util/nm-setting-vlan.c:532
+#: ../libnm-util/nm-setting-vlan.c:514
 #, c-format
 msgid "property is not specified and neither is '%s:%s'"
 msgstr "বৈশিষ্ট্য ধাৰ্য্যত নহয় আৰু '%s:%s' নহয়"
 
-#: ../libnm-util/nm-setting-vlan.c:545
+#: ../libnm-util/nm-setting-vlan.c:527
 msgid "flags are invalid"
 msgstr "ফ্লেগসমূহ অবৈধ"
 
@@ -2654,7 +2872,6 @@ msgid "'%s' is not a valid duplex value"
 msgstr "'%s' এটা বৈধ ডুপ্লেক্স মান নহয়"
 
 #: ../libnm-util/nm-setting-wired.c:476 ../libnm-util/nm-setting-wired.c:534
-#| msgid "C_loned MAC address:"
 msgid "is not a valid MAC address"
 msgstr "এটা বৈধ MAC ঠিকনা নহয়"
 
@@ -2667,7 +2884,6 @@ msgstr "'%s' এটা বৈধ MAC ঠিকনা নহয়"
 
 #: ../libnm-util/nm-setting-wired.c:523
 #, c-format
-#| msgid "invalid field '%s'"
 msgid "invalid '%s' or its value '%s'"
 msgstr "অবৈধ '%s' অথবা ইয়াৰ মান '%s'"
 
@@ -2698,7 +2914,6 @@ msgstr "'%s' ক কেৱল '%s=%s' (WEP) ৰ সৈতে ব্যৱহা�
 
 #: ../libnm-util/nm-setting-wireless.c:628
 #, c-format
-#| msgid "Error: Device '%s' is not a Wi-Fi device."
 msgid "'%s' is not a valid Wi-Fi mode"
 msgstr "'%s' এটা বৈধ Wi-Fi অৱস্থা নহয়"
 
@@ -2825,129 +3040,70 @@ msgstr "স্থায়ী চিস্টেম হস্টনাম পৰি
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr "চিস্টেম নীতিয়ে স্থায়ী চিস্টেম হস্টনামৰ পৰিবৰ্তন প্ৰতিৰোধ কৰে"
 
-#: ../src/main.c:130
+#: ../src/main.c:131
 #, c-format
 msgid "Failed to set signal mask: %d"
 msgstr "সংকেত মাস্ক সংহতি কৰিবলে ব্যৰ্থ: %d"
 
-#: ../src/main.c:139
+#: ../src/main.c:140
 #, c-format
 msgid "Failed to create signal handling thread: %d"
 msgstr "সংকেত নিয়ন্ত্ৰণ থ্ৰেড সৃষ্টি কৰিবলে ব্যৰ্থ: %d"
 
-#: ../src/main.c:154
+#: ../src/main.c:155
 #, c-format
 msgid "Opening %s failed: %s\n"
 msgstr "%s খোলিবলে ব্যৰ্থ: %s\n"
 
-#: ../src/main.c:160
+#: ../src/main.c:161
 #, c-format
 msgid "Writing to %s failed: %s\n"
 msgstr "%s লে লিখা ব্যৰ্থ হল: %s\n"
 
-#: ../src/main.c:165
+#: ../src/main.c:166
 #, c-format
 msgid "Closing %s failed: %s\n"
 msgstr "%s বন্ধ কৰা ব্যৰ্থ হল: %s\n"
 
-#: ../src/main.c:208
+#: ../src/main.c:209
 #, c-format
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "NetworkManager ইতিমধ্যে চলি আছে (pid %ld)\n"
 
-#: ../src/main.c:328
+#: ../src/main.c:324
 msgid "Print NetworkManager version and exit"
 msgstr "NetworkManager সংস্কৰণ প্ৰিন্ট কৰি প্ৰস্থান কৰক"
 
-#: ../src/main.c:329
+#: ../src/main.c:325
 msgid "Don't become a daemon"
 msgstr "এটা ডিমন নহব"
 
-#: ../src/main.c:330
+#: ../src/main.c:326
 msgid "Make all warnings fatal"
 msgstr "সকলো সতৰ্কবাৰ্তা মাৰাত্মক কৰক"
 
-#: ../src/main.c:331
+#: ../src/main.c:327
 msgid "Specify the location of a PID file"
 msgstr "এটা PID ফাইলৰ অৱস্থান ধাৰ্য্য কৰক"
 
-#: ../src/main.c:331
+#: ../src/main.c:327
 msgid "filename"
 msgstr "ফাইলনাম"
 
-#: ../src/main.c:332
+#: ../src/main.c:328
 msgid "State file location"
 msgstr "ফাইলৰ অৱস্থান দেখুৱাওক"
 
-#: ../src/main.c:332
+#: ../src/main.c:328
 msgid "/path/to/state.file"
 msgstr "/path/to/state.file"
 
 #: ../src/main.c:333
-msgid "Config file location"
-msgstr "Config ফাইলৰ অৱস্থান"
-
-#: ../src/main.c:333
-msgid "/path/to/config.file"
-msgstr "/path/to/config.file"
-
-#: ../src/main.c:334
-msgid "List of plugins separated by ','"
-msgstr "',' দ্বাৰা পৃথকিত প্লাগিনসমূহৰ তালিকা"
-
-#: ../src/main.c:334
-msgid "plugin1,plugin2"
-msgstr "plugin1,plugin2"
-
-#. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:336
-msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
-msgstr "লগ স্তৰ: [ERR, WARN, INFO, DEBUG] ৰ এটা"
-
-#. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:339
-msgid ""
-"Log domains separated by ',': any combination of\n"
-"                                                [NONE,HW,RFKILL,ETHER,WIFI,"
-"BT,MB,DHCP4,DHCP6,PPP,\n"
-"                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,"
-"DNS,VPN,SHARING,SUPPLICANT,\n"
-"                                                 AGENTS,SETTINGS,SUSPEND,"
-"CORE,DEVICE,OLPC,WIMAX,\n"
-"                                                 INFINIBAND,FIREWALL,ADSL]"
-msgstr ""
-"লগ ডমেইনসমূহ ',' দ্বাৰা পৃথকিত: \n"
-"                                                [NONE,HW,RFKILL,ETHER,WIFI,"
-"BT,MB,DHCP4,DHCP6,PPP,\n"
-"                                                 WIFI_SCAN,IP4,IP6,AUTOIP4,"
-"DNS,VPN,SHARING,SUPPLICANT,\n"
-"                                                 AGENTS,SETTINGS,SUSPEND,"
-"CORE,DEVICE,OLPC,WIMAX,\n"
-"                                                 INFINIBAND,FIREWALL,ADSL] ৰ "
-"যিকোনো সংযুক্তি"
-
-#: ../src/main.c:345
-msgid "An http(s) address for checking internet connectivity"
-msgstr "ইন্টাৰনেট সংযোগ নীৰিক্ষণ কৰিবলে এটা http(s) ঠিকনা"
-
-#: ../src/main.c:346
-msgid "The interval between connectivity checks (in seconds)"
-msgstr "সংযোগ নীৰিক্ষণৰ মাজৰ অন্তৰাল (ছেকেণ্ডত)"
-
-#: ../src/main.c:347
-msgid "The expected start of the response"
-msgstr "প্ৰতিক্ৰিয়াৰ প্ৰত্যাশিত আৰম্ভণি"
-
-#: ../src/main.c:347
-msgid "Bingo!"
-msgstr "Bingo!"
-
-#: ../src/main.c:352
 #, c-format
 msgid "GModules are not supported on your platform!\n"
 msgstr "GModules আপোনাৰ প্লেটফৰ্মত সমৰ্থিত নহয়!\n"
 
-#: ../src/main.c:371
+#: ../src/main.c:353
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -2960,35 +3116,35 @@ msgstr ""
 "কৰাৰ অনুমতি "
 "দিয়ে।"
 
-#: ../src/main.c:377
+#: ../src/main.c:359
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "অবৈধ বিকল্প।  বৈধ বিকল্পসমূহৰ এটা তালিকা চাবলে অনুগ্ৰহ কৰি --help ব্যৱহাৰ "
 "কৰক।\n"
 
-#: ../src/main.c:387
+#: ../src/main.c:369
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "NetworkManager চলাবলে আপুনি ৰুট হব লাগিব!\n"
 
-#: ../src/main.c:420
+#: ../src/main.c:401
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "সংৰূপ পঢ়িবলে ব্যৰ্থ: (%d) %s\n"
 
-#: ../src/main.c:431
+#: ../src/main.c:412
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "%s।  বৈধ বিকল্পসমূহৰ এটা তালিকা চাবলে অনুগ্ৰহ কৰি --help ব্যৱহাৰ কৰক।\n"
 
-#: ../src/main.c:438
+#: ../src/main.c:419
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "অৱস্থা ফাইল %s বিশ্লেষণ কৰাটো ব্যৰ্থ হল: (%d) %s\n"
 
-#: ../src/main.c:455
+#: ../src/main.c:436
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "ডিমনাইজ কৰিব পৰা নগল: %s [error %u]\n"
@@ -3006,28 +3162,28 @@ msgstr ""
 "# %s ৰ পৰা একত্ৰিত কৰা\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:264
+#: ../src/dhcp-manager/nm-dhcp-manager.c:313
 msgid "no usable DHCP client could be found."
 msgstr "কোনো ব্যৱহাৰযোগ্য DHCP ক্লাএন্ট পোৱা নগল।"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:273
+#: ../src/dhcp-manager/nm-dhcp-manager.c:322
 msgid "'dhclient' could be found."
 msgstr "'dhclient' পোৱা গল।"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:283
+#: ../src/dhcp-manager/nm-dhcp-manager.c:332
 msgid "'dhcpcd' could be found."
 msgstr "'dhcpcd' পোৱা গল।"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:291
+#: ../src/dhcp-manager/nm-dhcp-manager.c:340
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "অসমৰ্থিত DHCP ক্লাএন্ট '%s'"
 
-#: ../src/dns-manager/nm-dns-manager.c:376
+#: ../src/dns-manager/nm-dns-manager.c:366
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "NOTE: libc ৰিচ'লভাৰে ৩ টাৰ অধিক নামচাৰ্ভাৰ সমৰ্থন নকৰিবও পাৰে।"
 
-#: ../src/dns-manager/nm-dns-manager.c:378
+#: ../src/dns-manager/nm-dns-manager.c:368
 msgid "The nameservers listed below may not be recognized."
 msgstr "তলত তালিকাভুক্ত নামচাৰ্ভাৰসমূহ পৰিচিত নহবও পাৰে।"
 
@@ -3041,14 +3197,68 @@ msgstr "অজ্ঞাত লগ স্তৰ '%s'"
 msgid "Unknown log domain '%s'"
 msgstr "অজ্ঞাত লগ ডমেইন '%s'"
 
+#: ../src/config/nm-config.c:255
+msgid "Config file location"
+msgstr "Config ফাইলৰ অৱস্থান"
+
+#: ../src/config/nm-config.c:255
+msgid "/path/to/config.file"
+msgstr "/path/to/config.file"
+
+#: ../src/config/nm-config.c:256
+#| msgid "Config file location"
+msgid "Config directory location"
+msgstr "Config ডাইৰেকটৰি অৱস্থান"
+
+#: ../src/config/nm-config.c:256
+#| msgid "/path/to/config.file"
+msgid "/path/to/config/dir"
+msgstr "/path/to/config/dir"
+
+#: ../src/config/nm-config.c:258
+msgid "List of plugins separated by ','"
+msgstr "',' দ্বাৰা পৃথকিত প্লাগিনসমূহৰ তালিকা"
+
+#: ../src/config/nm-config.c:258
+msgid "plugin1,plugin2"
+msgstr "plugin1,plugin2"
+
+#: ../src/config/nm-config.c:259
+#, c-format
+#| msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
+msgid "Log level: one of [%s]"
+msgstr "লগ স্তৰ: [%s] ৰ এটা"
+
+#: ../src/config/nm-config.c:261
+#, c-format
+msgid "Log domains separated by ',': any combination of [%s]"
+msgstr "',' দ্বাৰা পৃথকিত লগ ডমেইনসমূহ: [%s] ৰ যিকোনো সংযুক্তি"
+
+#. These three are hidden for now, and should eventually just go away.
+#: ../src/config/nm-config.c:265
+msgid "An http(s) address for checking internet connectivity"
+msgstr "ইন্টাৰনেট সংযোগ নীৰিক্ষণ কৰিবলে এটা http(s) ঠিকনা"
+
+#: ../src/config/nm-config.c:266
+msgid "The interval between connectivity checks (in seconds)"
+msgstr "সংযোগ নীৰিক্ষণৰ মাজৰ অন্তৰাল (ছেকেণ্ডত)"
+
+#: ../src/config/nm-config.c:267
+msgid "The expected start of the response"
+msgstr "প্ৰতিক্ৰিয়াৰ প্ৰত্যাশিত আৰম্ভণি"
+
+#: ../src/config/nm-config.c:267
+msgid "Bingo!"
+msgstr "Bingo!"
+
 #: ../src/modem-manager/nm-modem-cdma.c:255
-#: ../src/modem-manager/nm-modem-broadband.c:512 ../src/nm-device-bt.c:331
+#: ../src/modem-manager/nm-modem-broadband.c:516 ../src/nm-device-bt.c:331
 #, c-format
 msgid "CDMA connection %d"
 msgstr "CDMA সংযোগ %d"
 
 #: ../src/modem-manager/nm-modem-gsm.c:531
-#: ../src/modem-manager/nm-modem-broadband.c:490 ../src/nm-device-bt.c:327
+#: ../src/modem-manager/nm-modem-broadband.c:494 ../src/nm-device-bt.c:327
 #, c-format
 msgid "GSM connection %d"
 msgstr "GSM সংযোগ %d"
@@ -3058,14 +3268,13 @@ msgstr "GSM সংযোগ %d"
 msgid "Bond connection %d"
 msgstr "বান্ধনী সংযোগ %d"
 
-#: ../src/nm-device-adsl.c:196
+#: ../src/nm-device-adsl.c:197
 #, c-format
 msgid "ADSL connection %d"
 msgstr "ADSL সংযোগ %d"
 
 #: ../src/nm-device-bridge.c:164
 #, c-format
-#| msgid "Bond connection %d"
 msgid "Bridge connection %d"
 msgstr "ব্ৰিজ সংযোগ %d"
 
@@ -3099,12 +3308,12 @@ msgstr "InfiniBand সংযোগ %d"
 msgid "Mesh %d"
 msgstr "মেশ %d"
 
-#: ../src/nm-device-vlan.c:310
+#: ../src/nm-device-vlan.c:315
 #, c-format
 msgid "VLAN connection %d"
 msgstr "VLAN সংযোগ %d"
 
-#: ../src/nm-manager.c:750
+#: ../src/nm-manager.c:751
 #, c-format
 msgid "VPN connection %d"
 msgstr "VPN সংযোগ %d"
@@ -3154,11 +3363,11 @@ msgstr "লিংক ক্যাশ আপডেইট কৰোতে ত্�
 msgid "System"
 msgstr "চিস্টেম"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3680
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3664
 msgid "Bond"
 msgstr "বান্ধনী"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3860
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3852
 msgid "Bridge"
 msgstr "ব্ৰিজ"
 
@@ -3188,6 +3397,60 @@ msgstr "NetworkManager ত এটা সফল সংযোগৰ বাবে �
 msgid "Invalid option.  Please use --help to see a list of valid options."
 msgstr ""
 "অবৈধ বিকল্প।  বৈধ বিকল্পসমূহৰ এটা তালিকা চাবলে অনুগ্ৰহ কৰি --help ব্যৱহাৰ কৰক।"
+
+#~ msgid "Connection list"
+#~ msgstr "সংযোগ তালিকা"
+
+#~ msgid "Error: no valid parameter specified."
+#~ msgstr "ত্ৰুটি: কোনো বৈধ প্ৰাচল ধাৰ্য্য কৰা হোৱা নাই।"
+
+#~ msgid "Error: Can't find out if NetworkManager is running: %s."
+#~ msgstr "ত্ৰুটি: NetworkManager চলি আছে নে নিৰ্ধাৰণ কৰিব নোৱাৰি: %s।"
+
+#~ msgid "Error: id or uuid has to be specified."
+#~ msgstr "ত্ৰুটি: id অথবা uuid ধাৰ্য্য কৰিব লাগিব।"
+
+#~ msgid "Warning: Connection not active\n"
+#~ msgstr "সতৰ্কবাৰ্তা: সংযোগ সক্ৰিয় নহয়\n"
+
+#~ msgid "Error: could not connect to D-Bus."
+#~ msgstr "ত্ৰুটি: D-Bus লে সংযোগ কৰিব নোৱাৰি।"
+
+#~ msgid "Error: Device '%s' is not a WiFi device."
+#~ msgstr "ত্ৰুটি: ডিভাইচ '%s' এটা WiFi ডিভাইচ নহয়।"
+
+#~ msgid "Error: 'nm status': %s"
+#~ msgstr "ত্ৰুটি: 'nm status': %s"
+
+#~ msgid "Error: 'nm status': %s; allowed fields: %s"
+#~ msgstr "ত্ৰুটি: 'nm status': %s; অনুমোদিত ক্ষেত্ৰসমূহ: %s"
+
+#~ msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+#~ msgstr ""
+#~ "ত্ৰুটি: org.freedesktop.DBus ৰ বাবে D-Bus অবজেক্ট প্ৰক্সি সৃষ্টি কৰিব পৰা নগল"
+
+#~ msgid "Error: NameHasOwner request failed: %s"
+#~ msgstr "ত্ৰুটি: NameHasOwner অনুৰোধ ব্যৰ্থ হল: %s"
+
+#~ msgid ""
+#~ "Log domains separated by ',': any combination of\n"
+#~ "                                                [NONE,HW,RFKILL,ETHER,"
+#~ "WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
+#~ "                                                 WIFI_SCAN,IP4,IP6,"
+#~ "AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
+#~ "                                                 AGENTS,SETTINGS,SUSPEND,"
+#~ "CORE,DEVICE,OLPC,WIMAX,\n"
+#~ "                                                 INFINIBAND,FIREWALL,ADSL]"
+#~ msgstr ""
+#~ "লগ ডমেইনসমূহ ',' দ্বাৰা পৃথকিত: \n"
+#~ "                                                [NONE,HW,RFKILL,ETHER,"
+#~ "WIFI,BT,MB,DHCP4,DHCP6,PPP,\n"
+#~ "                                                 WIFI_SCAN,IP4,IP6,"
+#~ "AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,\n"
+#~ "                                                 AGENTS,SETTINGS,SUSPEND,"
+#~ "CORE,DEVICE,OLPC,WIMAX,\n"
+#~ "                                                 INFINIBAND,FIREWALL,"
+#~ "ADSL] ৰ যিকোনো সংযুক্তি"
 
 #~ msgid "Not enough memory to store PEM file data."
 #~ msgstr "PEM ফাইল তথ্য সংৰক্ষণ কৰিবলে পৰ্যাপ্ত মেমৰি নাই।"
@@ -3227,9 +3490,6 @@ msgstr ""
 
 #~ msgid "Could not allocate memory for PEM file data."
 #~ msgstr "PEM ফাইল তথ্যৰ বাবে মেমৰি আবন্টন কৰিব পৰা নগল।"
-
-#~ msgid "Network"
-#~ msgstr "নেটৱাৰ্ক"
 
 #~ msgid "Manage your network connections"
 #~ msgstr "আপোনাৰ নেটৱাৰ্ক সংযোগসমূহ ব্যৱস্থাপনা কৰক"
@@ -3784,9 +4044,6 @@ msgstr ""
 #~ msgid "Requesting a VPN address for '%s'..."
 #~ msgstr "'%s' ৰ বাবে এটা VPN ঠিকনা অনুৰোধ কৰা হৈছে..."
 
-#~ msgid "NetworkManager Applet"
-#~ msgstr "NetworkManager এপ্লেট"
-
 #~ msgid "Automatically unlock this device"
 #~ msgstr "এই ডিভাইচ স্বচালিতভাৱে আনলক কৰক"
 
@@ -4318,9 +4575,6 @@ msgstr ""
 #~ msgid "Editing %s"
 #~ msgstr "%s সম্পাদন"
 
-#~ msgid "Editing un-named connection"
-#~ msgstr "নামবিহীন সংযোগ সম্পাদন"
-
 #~ msgid ""
 #~ "The connection editor could not find some required resources (the .ui "
 #~ "file was not found)."
@@ -4348,9 +4602,6 @@ msgstr ""
 
 #~ msgid "E_xport"
 #~ msgstr "এক্সপোৰ্ট কৰক (_x)"
-
-#~ msgid "Connection _name:"
-#~ msgstr "সংযোগৰ নাম (_n):"
 
 #~ msgid "Connect _automatically"
 #~ msgstr "স্বচালিতভাবে সংযোগ কৰা হ'ব (_a)"
