@@ -210,6 +210,8 @@ nm_active_connection_export (NMActiveConnection *self)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	static guint32 counter = 0;
 
+	g_assert (priv->device || priv->vpn);
+
 	priv->path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
