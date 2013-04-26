@@ -50,6 +50,7 @@ typedef enum {
 GQuark nm_device_generic_error_quark (void);
 
 #define NM_DEVICE_GENERIC_HW_ADDRESS       "hw-address"
+#define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 
 typedef struct {
 	NMDevice parent;

@@ -23,8 +23,10 @@
 #include "nm-device-generic.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
+#include "nm-platform.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
+#include "nm-glib-compat.h"
 
 #include "nm-device-generic-glue.h"
 
@@ -33,7 +35,7 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 #define NM_DEVICE_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GENERIC, NMDeviceGenericPrivate))
 
 typedef struct {
-	int dummy;
+	char *type_description;
 } NMDeviceGenericPrivate;
 
 enum {
@@ -43,6 +45,13 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_TYPE_DESCRIPTION,
+
+	LAST_PROP
+};
 
 #define NM_DEVICE_GENERIC_ERROR (nm_device_generic_error_quark ())
 
@@ -122,6 +131,67 @@ nm_device_generic_init (NMDeviceGeneric *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
+	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
+
+	if (!priv->type_description) {
+		int ifindex = nm_device_get_ip_ifindex (NM_DEVICE (self));
+
+		if (ifindex != 0)
+			priv->type_description = g_strdup (nm_platform_link_get_type_name (ifindex));
+	}
+
+	G_OBJECT_CLASS (nm_device_generic_parent_class)->constructed (object);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
+	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
+
+	g_clear_pointer (&priv->type_description, g_free);
+
+	G_OBJECT_CLASS (nm_device_generic_parent_class)->dispose (object);
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
+	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_TYPE_DESCRIPTION:
+		g_value_set_string (value, priv->type_description);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMDeviceGeneric *self = NM_DEVICE_GENERIC (object);
+	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_TYPE_DESCRIPTION:
+		priv->type_description = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_device_generic_class_init (NMDeviceGenericClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -129,9 +199,23 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceGenericPrivate));
 
+	object_class->constructed = constructed;
+	object_class->dispose = dispose;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_TYPE_DESCRIPTION,
+		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION,
+		                      "Type Description",
+		                      "Type description",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
 	signals[PROPERTIES_CHANGED] =

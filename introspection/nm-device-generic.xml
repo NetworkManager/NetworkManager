@@ -9,6 +9,12 @@
       </tp:docstring>
     </property>
 
+    <property name="TypeDescription" type="s" access="read">
+      <tp:docstring>
+        A (non-localized) description of the interface type, if known.
+      </tp:docstring>
+    </property>
+
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
             <tp:docstring>

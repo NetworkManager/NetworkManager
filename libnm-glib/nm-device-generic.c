@@ -37,16 +37,19 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *hw_address;
+	char *type_description;
 } NMDeviceGenericPrivate;
 
 enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
+	PROP_TYPE_DESCRIPTION,
 
 	LAST_PROP
 };
 
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
+#define DBUS_PROP_TYPE_DESCRIPTION "TypeDescription"
 
 /**
  * nm_device_generic_error_quark:
@@ -156,6 +159,7 @@ register_properties (NMDeviceGeneric *device)
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (device);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_GENERIC_HW_ADDRESS, &priv->hw_address },
+		{ NM_DEVICE_GENERIC_TYPE_DESCRIPTION, &priv->type_description },
 		{ NULL },
 	};
 
@@ -209,6 +213,9 @@ get_property (GObject *object,
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_address);
 		break;
+	case PROP_TYPE_DESCRIPTION:
+		g_value_set_string (value, priv->type_description);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -240,6 +247,20 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 		 g_param_spec_string (NM_DEVICE_GENERIC_HW_ADDRESS,
 		                      "Hardware Address",
 		                      "Hardware address",
+		                      NULL,
+		                      G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceGeneric:type-description:
+	 *
+	 * A description of the specific type of device this is, or %NULL
+	 * if not known.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_TYPE_DESCRIPTION,
+		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION,
+		                      "Type Description",
+		                      "Type description",
 		                      NULL,
 		                      G_PARAM_READABLE));
 }
