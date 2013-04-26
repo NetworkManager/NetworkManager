@@ -82,7 +82,7 @@ test_ip4_route ()
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
-	g_assert (routes->len == 2);
+	g_assert_cmpint (routes->len, ==, 2);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	g_array_unref (routes);
 
@@ -143,7 +143,7 @@ test_ip6_route ()
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
-	g_assert (routes->len == 2);
+	g_assert_cmpint (routes->len, ==, 2);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	g_array_unref (routes);
 

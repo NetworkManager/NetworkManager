@@ -75,7 +75,7 @@ test_ip4_address (void)
 	addrs[0].ifindex = ifindex;
 	addrs[0].address = addr;
 	addrs[0].plen = IP4_PLEN;
-	g_assert (addresses->len == 1);
+	g_assert_cmpint (addresses->len, ==, 1);
 	g_assert (!memcmp (addresses->data, addrs, sizeof (addrs)));
 	g_array_unref (addresses);
 
@@ -126,7 +126,7 @@ test_ip6_address (void)
 	addrs[0].ifindex = ifindex;
 	addrs[0].address = addr;
 	addrs[0].plen = IP6_PLEN;
-	g_assert (addresses->len == 1);
+	g_assert_cmpint (addresses->len, ==, 1);
 	g_assert (!memcmp (addresses->data, addrs, sizeof (addrs)));
 	g_array_unref (addresses);
 

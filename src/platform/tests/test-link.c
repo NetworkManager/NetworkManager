@@ -91,9 +91,9 @@ static void
 test_loopback (void)
 {
 	g_assert (nm_platform_link_exists (LO_NAME));
-	g_assert (nm_platform_link_get_type (LO_INDEX) == NM_LINK_TYPE_LOOPBACK);
-	g_assert (nm_platform_link_get_ifindex (LO_NAME) == LO_INDEX);
-	g_assert (!g_strcmp0 (nm_platform_link_get_name (LO_INDEX), LO_NAME));
+	g_assert_cmpint (nm_platform_link_get_type (LO_INDEX), ==, NM_LINK_TYPE_LOOPBACK);
+	g_assert_cmpint (nm_platform_link_get_ifindex (LO_NAME), ==, LO_INDEX);
+	g_assert_cmpstr (nm_platform_link_get_name (LO_INDEX), ==, LO_NAME);
 
 	g_assert (nm_platform_link_supports_carrier_detect (LO_INDEX));
 	g_assert (!nm_platform_link_supports_vlans (LO_INDEX));
@@ -150,7 +150,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 	/* Enslave */
 	link_changed->ifindex = ifindex;
 	g_assert (nm_platform_link_enslave (master, ifindex)); no_error ();
-	g_assert (nm_platform_link_get_master (ifindex) == master); no_error ();
+	g_assert_cmpint (nm_platform_link_get_master (ifindex), ==, master); no_error ();
 	accept_signal (link_changed);
 	accept_signal (master_changed);
 
@@ -199,7 +199,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 		no_error ();
 		value = nm_platform_slave_get_option (ifindex, "priority");
 		no_error ();
-		g_assert (!g_strcmp0 (value, "789"));
+		g_assert_cmpstr (value, ==, "789");
 		g_free (value);
 		break;
 	default:
@@ -208,7 +208,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 
 	/* Release */
 	g_assert (nm_platform_link_release (master, ifindex));
-	g_assert (nm_platform_link_get_master (ifindex) == 0); no_error ();
+	g_assert_cmpint (nm_platform_link_get_master (ifindex), ==, 0); no_error ();
 	accept_signal (link_changed);
 	accept_signal (master_changed);
 
@@ -240,7 +240,7 @@ test_virtual (NMLinkType link_type)
 	g_assert (nm_platform_link_exists (DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex >= 0);
-	g_assert (nm_platform_link_get_type (ifindex) == link_type);
+	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, link_type);
 	accept_signal (link_added);
 
 	/* Add again */
@@ -263,7 +263,7 @@ test_virtual (NMLinkType link_type)
 		no_error ();
 		value = nm_platform_master_get_option (ifindex, "forward_delay");
 		no_error ();
-		g_assert (!g_strcmp0 (value, "789"));
+		g_assert_cmpstr (value, ==, "789");
 		g_free (value);
 		break;
 	case NM_LINK_TYPE_BOND:
@@ -296,7 +296,7 @@ test_virtual (NMLinkType link_type)
 	g_assert (nm_platform_link_delete_by_name (DEVICE_NAME));
 	no_error ();
 	g_assert (!nm_platform_link_exists (DEVICE_NAME)); no_error ();
-	g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_NONE);
+	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_NONE);
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	accept_signal (link_removed);
 
@@ -353,8 +353,8 @@ test_internal (void)
 	/* Check device index, name and type */
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex > 0);
-	g_assert (!g_strcmp0 (nm_platform_link_get_name (ifindex), DEVICE_NAME));
-	g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_DUMMY);
+	g_assert_cmpstr (nm_platform_link_get_name (ifindex), ==, DEVICE_NAME);
+	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_DUMMY);
 
 	/* Up/connected */
 	g_assert (!nm_platform_link_is_up (ifindex)); no_error ();
@@ -422,8 +422,8 @@ test_external (void)
 	g_assert (nm_platform_link_exists (DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex > 0);
-	g_assert (!g_strcmp0 (nm_platform_link_get_name (ifindex), DEVICE_NAME));
-	g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_DUMMY);
+	g_assert_cmpstr (nm_platform_link_get_name (ifindex), ==, DEVICE_NAME);
+	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_DUMMY);
 
 	/* Up/connected/arp */
 	g_assert (!nm_platform_link_is_up (ifindex));
