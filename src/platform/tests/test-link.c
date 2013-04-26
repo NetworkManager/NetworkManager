@@ -107,7 +107,18 @@ virtual_add (NMLinkType link_type, const char *name, SignalData *link_added, Sig
 	case NM_LINK_TYPE_BRIDGE:
 		return nm_platform_bridge_add (name);
 	case NM_LINK_TYPE_BOND:
-		return nm_platform_bond_add (name);
+		{
+			gboolean bond0_exists = nm_platform_link_exists ("bond0");
+			gboolean result = nm_platform_bond_add (name);
+			NMPlatformError error = nm_platform_get_error ();
+
+			/* Check that bond0 is *not* automatically created. */
+			if (!bond0_exists)
+				g_assert (!nm_platform_link_exists ("bond0"));
+
+			nm_platform_set_error (error);
+			return result;
+		}
 	case NM_LINK_TYPE_TEAM:
 		return nm_platform_team_add (name);
 	default:
