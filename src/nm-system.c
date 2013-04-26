@@ -1602,6 +1602,16 @@ nm_system_add_bonding_master (const char *iface)
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
+	/* When the kernel loads the bond module, either via explicit modprobe
+	 * or automatically in response to creating a bond master, it will also
+	 * create a 'bond0' interface.  Since the bond we're about to create may
+	 * or may not be named 'bond0' prevent potential confusion about a bond
+	 * that the user didn't want by telling the bonding module not to create
+	 * bond0 automatically.
+	 */
+	if (!g_file_test ("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
+		nm_spawn_process ("modprobe bonding max_bonds=0");
+
 	sock = nm_netlink_get_default_handle ();
 
 	/* Existing bonding devices with matching name will be reused */
