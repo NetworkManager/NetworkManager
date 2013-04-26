@@ -69,6 +69,32 @@ sysctl_get (NMPlatform *platform, const char *path)
 	return g_strdup (g_hash_table_lookup (priv->options, path));
 }
 
+static const char *
+type_to_type_name (NMLinkType type)
+{
+	switch (type) {
+	case NM_LINK_TYPE_UNKNOWN:
+		return "unknown";
+	case NM_LINK_TYPE_GENERIC:
+		return "generic";
+	case NM_LINK_TYPE_LOOPBACK:
+		return "loopback";
+	case NM_LINK_TYPE_ETHERNET:
+		return "ethernet";
+	case NM_LINK_TYPE_DUMMY:
+		return "dummy";
+	case NM_LINK_TYPE_BRIDGE:
+		return "bridge";
+	case NM_LINK_TYPE_BOND:
+		return "bond";
+	case NM_LINK_TYPE_TEAM:
+		return "team";
+	case NM_LINK_TYPE_NONE:
+	default:
+		return NULL;
+	}
+}
+
 static void
 link_init (NMPlatformLink *device, int ifindex, int type, const char *name)
 {
@@ -78,6 +104,7 @@ link_init (NMPlatformLink *device, int ifindex, int type, const char *name)
 
 	device->ifindex = name ? ifindex : 0;
 	device->type = type;
+	device->type_name = type_to_type_name (type);
 	if (name)
 		strcpy (device->name, name);
 	switch (device->type) {
@@ -185,6 +212,12 @@ link_get_type (NMPlatform *platform, int ifindex)
 	NMPlatformLink *device = link_get (platform, ifindex);
 
 	return device ? device->type : NM_LINK_TYPE_NONE;
+}
+
+static const char *
+link_get_type_name (NMPlatform *platform, int ifindex)
+{
+	return type_to_type_name (link_get_type (platform, ifindex));
 }
 
 static void
@@ -841,6 +874,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_get_ifindex = link_get_ifindex;
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
+	platform_class->link_get_type_name = link_get_type_name;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

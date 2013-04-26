@@ -61,6 +61,7 @@ typedef struct {
 	int ifindex;
 	char name[IFNAMSIZ];
 	NMLinkType type;
+	const char *type_name;
 	int master;
 	gboolean up;
 	gboolean connected;
@@ -147,6 +148,7 @@ typedef struct {
 	int (*link_get_ifindex) (NMPlatform *, const char *name);
 	const char *(*link_get_name) (NMPlatform *, int ifindex);
 	NMLinkType (*link_get_type) (NMPlatform *, int ifindex);
+	const char *(*link_get_type_name) (NMPlatform *, int ifindex);
 
 	gboolean (*link_set_up) (NMPlatform *, int ifindex);
 	gboolean (*link_set_down) (NMPlatform *, int ifindex);
@@ -243,6 +245,7 @@ gboolean nm_platform_link_delete_by_name (const char *ifindex);
 int nm_platform_link_get_ifindex (const char *name);
 const char *nm_platform_link_get_name (int ifindex);
 NMLinkType nm_platform_link_get_type (int ifindex);
+const char *nm_platform_link_get_type_name (int ifindex);
 
 gboolean nm_platform_link_set_up (int ifindex);
 gboolean nm_platform_link_set_down (int ifindex);

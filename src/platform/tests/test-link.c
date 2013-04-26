@@ -2,8 +2,10 @@
 
 #define LO_INDEX 1
 #define LO_NAME "lo"
+#define LO_TYPEDESC "loopback"
 
 #define DEVICE_NAME "nm-test-device"
+#define DUMMY_TYPEDESC "dummy"
 #define BOGUS_NAME "nm-bogus-device"
 #define BOGUS_IFINDEX INT_MAX
 #define SLAVE_NAME "nm-test-slave"
@@ -65,6 +67,8 @@ test_bogus(void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_type (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_get_type_name (BOGUS_IFINDEX));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_link_set_up (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
@@ -94,6 +98,7 @@ test_loopback (void)
 	g_assert_cmpint (nm_platform_link_get_type (LO_INDEX), ==, NM_LINK_TYPE_LOOPBACK);
 	g_assert_cmpint (nm_platform_link_get_ifindex (LO_NAME), ==, LO_INDEX);
 	g_assert_cmpstr (nm_platform_link_get_name (LO_INDEX), ==, LO_NAME);
+	g_assert_cmpstr (nm_platform_link_get_type_name (LO_INDEX), ==, LO_TYPEDESC);
 
 	g_assert (nm_platform_link_supports_carrier_detect (LO_INDEX));
 	g_assert (!nm_platform_link_supports_vlans (LO_INDEX));
@@ -225,7 +230,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 }
 
 static void
-test_virtual (NMLinkType link_type)
+test_virtual (NMLinkType link_type, const char *link_typedesc)
 {
 	int ifindex;
 	char *value;
@@ -241,6 +246,7 @@ test_virtual (NMLinkType link_type)
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex >= 0);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, link_type);
+	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, link_typedesc);
 	accept_signal (link_added);
 
 	/* Add again */
@@ -298,6 +304,8 @@ test_virtual (NMLinkType link_type)
 	g_assert (!nm_platform_link_exists (DEVICE_NAME)); no_error ();
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_NONE);
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (!nm_platform_link_get_type (ifindex));
+	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	accept_signal (link_removed);
 
 	/* Delete again */
@@ -313,19 +321,19 @@ test_virtual (NMLinkType link_type)
 static void
 test_bridge (void)
 {
-	test_virtual (NM_LINK_TYPE_BRIDGE);
+	test_virtual (NM_LINK_TYPE_BRIDGE, "bridge");
 }
 
 static void
 test_bond (void)
 {
-	test_virtual (NM_LINK_TYPE_BOND);
+	test_virtual (NM_LINK_TYPE_BOND, "bond");
 }
 
 static void
 test_team (void)
 {
-	test_virtual (NM_LINK_TYPE_TEAM);
+	test_virtual (NM_LINK_TYPE_TEAM, "team");
 }
 
 static void
@@ -355,6 +363,7 @@ test_internal (void)
 	g_assert (ifindex > 0);
 	g_assert_cmpstr (nm_platform_link_get_name (ifindex), ==, DEVICE_NAME);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_DUMMY);
+	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, DUMMY_TYPEDESC);
 
 	/* Up/connected */
 	g_assert (!nm_platform_link_is_up (ifindex)); no_error ();
@@ -424,6 +433,7 @@ test_external (void)
 	g_assert (ifindex > 0);
 	g_assert_cmpstr (nm_platform_link_get_name (ifindex), ==, DEVICE_NAME);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_DUMMY);
+	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, DUMMY_TYPEDESC);
 
 	/* Up/connected/arp */
 	g_assert (!nm_platform_link_is_up (ifindex));

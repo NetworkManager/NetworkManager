@@ -279,35 +279,42 @@ type_to_string (NMLinkType type)
 	}
 }
 
+#define return_type(t, name) \
+	G_STMT_START { \
+		if (out_name) \
+			*out_name = name; \
+		return t; \
+	} G_STMT_END
+
 static NMLinkType
-link_extract_type (struct rtnl_link *rtnllink)
+link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 {
 	const char *type;
 
 	if (!rtnllink)
-		return NM_LINK_TYPE_NONE;
+		return_type (NM_LINK_TYPE_NONE, "none");
 
 	type = rtnl_link_get_type (rtnllink);
 
 	if (!type)
 		switch (rtnl_link_get_arptype (rtnllink)) {
 		case ARPHRD_LOOPBACK:
-			return NM_LINK_TYPE_LOOPBACK;
+			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
 		case ARPHRD_ETHER:
-			return NM_LINK_TYPE_ETHERNET;
+			return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
 		default:
-			return NM_LINK_TYPE_GENERIC;
+			return_type (NM_LINK_TYPE_GENERIC, "generic");
 		}
-	else if (!g_strcmp0 (type, "dummy"))
-		return NM_LINK_TYPE_DUMMY;
-	else if (!g_strcmp0 (type, "bridge"))
-		return NM_LINK_TYPE_BRIDGE;
-	else if (!g_strcmp0 (type, "bond"))
-		return NM_LINK_TYPE_BOND;
-	else if (!g_strcmp0 (type, "team"))
-		return NM_LINK_TYPE_TEAM;
+	else if (!strcmp (type, "dummy"))
+		return_type (NM_LINK_TYPE_DUMMY, "dummy");
+	else if (!strcmp (type, "bridge"))
+		return_type (NM_LINK_TYPE_BRIDGE, "bridge");
+	else if (!strcmp (type, "bond"))
+		return_type (NM_LINK_TYPE_BOND, "bond");
+	else if (!strcmp (type, "team"))
+		return_type (NM_LINK_TYPE_TEAM, "team");
 	else
-		return NM_LINK_TYPE_UNKNOWN;
+		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
 
 static void
@@ -319,7 +326,7 @@ link_init (NMPlatformLink *info, struct rtnl_link *rtnllink)
 
 	info->ifindex = rtnl_link_get_ifindex (rtnllink);
 	strcpy (info->name, rtnl_link_get_name (rtnllink));
-	info->type = link_extract_type (rtnllink);
+	info->type = link_extract_type (rtnllink, &info->type_name);
 	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
@@ -355,7 +362,7 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 
 	ifindex = rtnl_link_get_ifindex (rtnllink);
 
-	switch (link_extract_type (rtnllink)) {
+	switch (link_extract_type (rtnllink, NULL)) {
 	case NM_LINK_TYPE_BRIDGE:
 	case NM_LINK_TYPE_BOND:
 		for (slave = nl_cache_get_first (priv->link_cache); slave; slave = nl_cache_get_next (slave)) {
@@ -903,7 +910,17 @@ link_get_type (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 
-	return link_extract_type (rtnllink);
+	return link_extract_type (rtnllink, NULL);
+}
+
+static const char *
+link_get_type_name (NMPlatform *platform, int ifindex)
+{
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
+	const char *type;
+
+	link_extract_type (rtnllink, &type);
+	return type;
 }
 
 static guint32
@@ -1619,6 +1636,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_ifindex = link_get_ifindex;
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
+	platform_class->link_get_type_name = link_get_type_name;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;
