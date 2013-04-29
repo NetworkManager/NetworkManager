@@ -24,7 +24,7 @@
 .TH NMCLI "1" "8 April 2013"
 
 .SH NAME
-nmcli \(en command\(hyline tool for controlling NetworkManager
+nmcli \- command\(hyline tool for controlling NetworkManager
 .SH SYNOPSIS
 .ad l
 .B nmcli
