@@ -1,5 +1,6 @@
 /dump
 /monitor
+/platform
 /test-link-fake
 /test-link-linux
 /test-address-fake
