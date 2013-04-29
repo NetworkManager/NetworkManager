@@ -3400,7 +3400,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PASSWORD,
 						  "Password",
-						  "Password used for EAP authentication methods.",
+						  "UTF-8 encoded password used for EAP authentication methods.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
@@ -3430,7 +3430,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PASSWORD_RAW,
 		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW,
 		                             "Password byte array",
-		                             "Password used for EAP authentication methods as a byte array",
+		                             "Password used for EAP authentication "
+		                             "methods, given as a byte array to allow "
+		                             "passwords in other encodings than UTF-8 "
+		                             "to be used.  If both 'password' and "
+		                             "'password-raw' are given, 'password' is "
+		                             "preferred.",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
 		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
