@@ -1,8 +1,6 @@
 #!/bin/sh
 
-SCRIPT_NAME=`basename $0`
-NAME=${SCRIPT_NAME%%-bundle.sh}
-[ $SCRIPT_NAME = $NAME ] && NAME=nm-live-vm
+NAME=__NAME_PLACEHOLDER__
 BUNDLE=`readlink -f "$0"` || exit 1
 TEMP=`mktemp -d "$PWD/$NAME.XXXXXXXXXX"` || exit 1
 

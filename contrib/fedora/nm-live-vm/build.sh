@@ -50,7 +50,8 @@ do_live_vm() {
 do_archive() {
     echo "Creating the archive..."
     tar -czvf $NAME.tar.gz $NAME || exit 1
-    cat self-extract.sh ${NAME}.tar.gz > ${NAME}-bundle.sh || exit 1
+    EXTRACT_SCRIPT=$(sed -e "s/__NAME_PLACEHOLDER__/$NAME/g" < self-extract.sh)
+    echo "$EXTRACT_SCRIPT" | cat - ${NAME}.tar.gz > ${NAME}-bundle.sh || exit 1
     chmod +x ${NAME}-bundle.sh || exit 1
     echo "Successfully completed"
     echo
