@@ -358,7 +358,17 @@ arguments: according to arguments
 .TP
 .B down [ id | uuid | path | apath ] <ID>
 .br
-Deactivate a connection.
+Deactivate a connection from a device without preventing the device from
+further auto-activation.
+.sp
+Be aware that this command only deactivates the specified connection, but
+doesn't prevent the device, the connection was on, from performing
+auto-activation. Thus, if the connection that was downed (or another
+compatible connection) has autoconnect flag set, it will be automatically
+started on the idling device again.
+.br
+In most cases you may want to use \fIdevice disconnect\fP command instead.
+.sp
 The connection is identified by its name, UUID or D-Bus path.
 If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, \fIpath\fP or
 \fIapath\fP can be used.
