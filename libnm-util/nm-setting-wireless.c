@@ -1068,19 +1068,19 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:mac-address-blacklist:
 	 *
-	 * If specified, this connection will never apply to the WiFi device
-	 * whose permanent MAC address matches an address in the list.  Each
-	 * MAC address is in the standard hex-digits-and-colons notation.
-	 * (00:11:22:33:44:55).
+	 * A list of permanent MAC addresses of Wi-Fi devices to which this
+	 * connection should never apply.  Each MAC address should be given in the
+	 * standard hex-digits-and-colons notation (eg '00:11:22:33:44:55').
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
 		                             "MAC Address Blacklist",
-		                             "If specified, this connection will never apply to "
-		                             "the WiFi device whose permanent MAC address matches "
-		                             "an address in the list.  Each MAC address is in the "
-		                             "standard hex-digits-and-colons notation (00:11:22:33:44:55).",
+		                             "A list of permanent MAC addresses of Wi-Fi "
+		                             "devices to which this connection should "
+		                             "never apply.  Each MAC address should be "
+		                             "given in the standard hex-digits-and-colons "
+		                             "notation (eg '00:11:22:33:44:55').",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
 		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
