@@ -1325,38 +1325,44 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	/**
 	 * NMSettingWirelessSecurity:pairwise:
 	 *
-	 * If specified, will only connect to WPA networks that provide the
-	 * specified pairwise encryption capabilities.  Each element may be one of
-	 * 'wep40', 'wep104', 'tkip', or 'ccmp'.
+	 * A list of pairwise encryption algorithms which prevents connections to
+	 * Wi-Fi networks that do not utilize one of the algorithms in the list.  For
+	 * maximum compatibility leave this property empty.  Each list element may
+	 * be one of 'wep40', 'wep104', 'tkip', or 'ccmp'.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PAIRWISE,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
-							   "Pairwise",
-							   "If specified, will only connect to WPA networks "
-							   "that provide the specified pairwise encryption "
-							   "capabilities.  Each element may be one of 'wep40', "
-							   "'wep104', 'tkip', or 'ccmp'.",
-							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                       "Pairwise",
+		                       "A list of pairwise encryption algorithms which "
+		                       "prevents connections to Wi-Fi networks that do "
+		                       "not utilize one of the algorithms in the list. "
+		                       "For maximum compatibility leave this property "
+		                       "empty.  Each list element may be one of 'wep40', "
+		                       "'wep104', 'tkip' or 'ccmp'.",
+		                       DBUS_TYPE_G_LIST_OF_STRING,
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWirelessSecurity:group:
 	 *
-	 * If specified, will only connect to WPA networks that provide the
-	 * specified group/multicast encryption capabilities.  Each element may be
-	 * one of 'wep40', 'wep104', 'tkip', or 'ccmp'.
+	 * A list of group/broadcast encryption algorithms which prevents
+	 * connections to Wi-Fi networks that do not utilize one of the algorithms
+	 * in the list.  For maximum compatibility leave this property empty.  Each
+	 * list element may be one of 'wep40', 'wep104', 'tkip', or 'ccmp'.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_GROUP,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_GROUP,
-							   "Group",
-							   "If specified, will only connect to WPA networks "
-							   "that provide the specified group/multicast "
-							   "encryption capabilities.  Each element may be "
-							   "one of 'wep40', 'wep104', 'tkip', or 'ccmp'.",
-							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                       "Group",
+		                       "A list of group/broadcast encryption algorithms "
+		                       "which prevents connections to Wi-Fi networks "
+		                       "that do not utilize one of the algorithms in "
+		                       "the list.  For maximum compatibility leave this "
+		                       "property empty.  Each list element may be one "
+		                       " of 'wep40', 'wep104', 'tkip', or 'ccmp'.",
+		                       DBUS_TYPE_G_LIST_OF_STRING,
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-username:
