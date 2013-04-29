@@ -35,6 +35,17 @@
 /******************************************************************/
 
 typedef enum {
+	/* no error specified, sometimes this means the arguments were wrong */
+	NM_PLATFORM_ERROR_NONE,
+	/* object was not found */
+	NM_PLATFORM_ERROR_NOT_FOUND,
+	/* object already exists */
+	NM_PLATFORM_ERROR_EXISTS,
+	/* object is not a slave */
+	NM_PLATFORM_ERROR_NOT_SLAVE
+} NMPlatformError;
+
+typedef enum {
 	NM_LINK_TYPE_NONE,
 	NM_LINK_TYPE_UNKNOWN,
 	NM_LINK_TYPE_GENERIC,
@@ -117,7 +128,7 @@ typedef struct {
 typedef struct {
 	GObject parent;
 
-	int error;
+	NMPlatformError error;
 } NMPlatform;
 
 typedef struct {
@@ -206,18 +217,6 @@ typedef struct {
 #define NM_PLATFORM_IP6_ROUTE_CHANGED "ip6-route-changed"
 #define NM_PLATFORM_IP6_ROUTE_REMOVED "ip6-route-removed"
 
-/* NMPlatform error codes */
-enum {
-	/* no error specified, sometimes this means the arguments were wrong */
-	NM_PLATFORM_ERROR_NONE,
-	/* object was not found */
-	NM_PLATFORM_ERROR_NOT_FOUND,
-	/* object already exists */
-	NM_PLATFORM_ERROR_EXISTS,
-	/* object is not a slave */
-	NM_PLATFORM_ERROR_NOT_SLAVE
-};
-
 /******************************************************************/
 
 GType nm_platform_get_type (void);
@@ -228,7 +227,8 @@ void nm_platform_free (void);
 
 /******************************************************************/
 
-int nm_platform_get_error (void);
+void nm_platform_set_error (NMPlatformError error);
+NMPlatformError nm_platform_get_error (void);
 const char *nm_platform_get_error_msg (void);
 
 gboolean nm_platform_sysctl_set (const char *path, const char *value);

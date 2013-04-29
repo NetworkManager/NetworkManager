@@ -130,6 +130,19 @@ nm_platform_get (void)
 /******************************************************************/
 
 /**
+ * nm_platform_set_error:
+ * @error: The error code
+ *
+ * Convenience function to falsify platform->error. It can be used for example
+ * by functions that want to save the error, execute some operations and
+ * restore it.
+ */
+void nm_platform_set_error (NMPlatformError error)
+{
+	platform->error = error;
+}
+
+/**
  * nm_platform_get_error:
  *
  * Convenience function to quickly retrieve the error code of the last
@@ -137,7 +150,7 @@ nm_platform_get (void)
  *
  * Returns: Integer error code.
  */
-int
+NMPlatformError
 nm_platform_get_error (void)
 {
 	g_assert (platform);
