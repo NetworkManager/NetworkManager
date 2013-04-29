@@ -54,6 +54,8 @@
 #include "settings.h"
 #include "connections.h"
 
+/* Activation timeout waiting for bond/bridge slaves (in seconds) */
+#define BB_SLAVES_TIMEOUT 10
 
 /* Available fields for 'connection show configured' */
 static NmcOutputField nmc_fields_con_show[] = {
@@ -1356,6 +1358,40 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 	g_free (info);
 }
 
+typedef struct {
+	NmCli *nmc;
+	NMDevice *device;
+	const char *con_type;
+} UpSlavesInfo;
+
+static gboolean
+bond_bridge_slaves_check (gpointer user_data)
+{
+	UpSlavesInfo *info = (UpSlavesInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	NMDevice *device = info->device;
+	const char *con_type = info->con_type;
+	const GPtrArray *slaves = NULL;
+
+	if (strcmp (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
+		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
+	else if (strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
+		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
+	else
+		g_warning ("%s: should not be reached.", __func__);
+
+	if (!slaves) {
+		g_string_printf (nmc->return_text,
+		                 _("Error: Device '%s' is waiting for slaves before proceeding with activation."),
+		                 nm_device_get_iface (device));
+		nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
+		quit ();
+	}
+
+	g_free (info);
+	return FALSE;
+}
+
 static NMCResultCode
 do_connection_up (NmCli *nmc, int argc, char **argv)
 {
@@ -1522,6 +1558,19 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, "preparing");
+
+	/* Check for bond or bridge slaves */
+	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		UpSlavesInfo *slaves_info;
+		
+		slaves_info = g_malloc0 (sizeof (UpSlavesInfo));
+		slaves_info->nmc = nmc;
+		slaves_info->device = device;
+		slaves_info->con_type = con_type;
+
+		g_timeout_add_seconds (BB_SLAVES_TIMEOUT, bond_bridge_slaves_check, slaves_info);
+	}
 
 	g_free (line);
 	return nmc->return_value;
