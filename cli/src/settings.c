@@ -780,6 +780,9 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_STRING); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		/* Getters return allocated values, and returning the string \
+		 * the GValue copied from the object without unsetting the \
+		 * GValue fulfills that requirement. */ \
 		return (char *) g_value_get_string (&val); \
 	}
 
