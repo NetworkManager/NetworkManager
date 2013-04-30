@@ -156,24 +156,12 @@ and change NetworkManager logging level and domains.
 .br
 Show overall status of NetworkManager. This is the default action, when no additional
 command is provided for \fIgeneral\fP object.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B permissions
 .br
 Show the permissions a caller has for various authenticated operations that
 NetworkManager provides, like enable/disable networking, changing Wi\(hyFi,
 WWAN, and WiMAX state, modifying connections, etc.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    GetPermissions
-arguments: none
-.fi
 .TP
 .B logging [level <log level>] [domains <log domains>]
 .br
@@ -181,13 +169,6 @@ Get and change \fINetworkManager\fP logging level and domains. Without any argum
 current logging level and domains are shown. In order to change logging state, provide
 \fIlevel\fP and/or \fIdomains\fP parameters. See \fBNetworkManager.conf\fP for available
 level and domain values.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    GetLogging, SetLogging
-arguments: none or level,domains
-.fi
 .RE
 
 .TP
@@ -206,13 +187,6 @@ networking. Disabling networking changes all devices to 'unmanaged' state.
 Get networking\(hyenabled status or enable/disable networking by NetworkManager.
 All interfaces managed by NetworkManager are deactivated when networking has
 been disabled.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    Enable
-arguments: TRUE or FALSE
-.fi
 .RE
 
 .TP
@@ -230,22 +204,12 @@ the switches.
 .br
 Show or set status of Wi\(hyFi in NetworkManager. If no arguments are supplied,
 Wi\(hyFi status is printed; \fIon\fP enables Wi\(hyFi; \fIoff\fP disables Wi\(hyFi.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B wwan [ on | off ]
 .br
 Show or set status of WWAN (mobile broadband) in NetworkManager. If no arguments
 are supplied, mobile broadband status is printed; \fIon\fP enables mobile broadband,
 \fIoff\fP disables it.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B wimax [ on | off ]
 .br
@@ -254,19 +218,10 @@ WiMAX status is printed; \fIon\fP enables WiMAX; \fIoff\fP disables WiMAX.
 .br
 Note: WiMAX support is a compile\(hytime decision, so it may be unavailable on some
 installations.
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B all [ on | off ]
 .br
 Show or set all previously mentioned radio switches at the same time.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .RE
 
 .TP
@@ -298,12 +253,6 @@ in the format of /org/freedesktop/NetworkManager/Settings/<num> or just <num>
 .IP \fIapath\fP 13
 \(en the <ID> denotes a D-Bus active connection path
 in the format of /org/freedesktop/NetworkManager/ActiveConnection/<num> or just <num>
-.PP
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .RE
 .TP
 .B show configured [[ id | uuid | path ] <ID>]
@@ -316,11 +265,6 @@ the keywords.
 .br
 When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show configured'.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]
 .br
@@ -346,14 +290,6 @@ Available options are:
 \(en exit immediately without waiting for command completion
 .IP \fI\-\-timeout\fP 13
 \(en how long to wait for command completion (default is 90 s)
-.PP
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    ActivateConnection
-arguments: according to arguments
-.fi
 .RE
 .TP
 .B down [ id | uuid | path | apath ] <ID>
@@ -374,13 +310,6 @@ If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, \fIpath\fP or
 \fIapath\fP can be used.
 .br
 See \fBshow active\fP above for the description of the <ID>-specifying keywords.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    DeactivateConnection
-arguments: according to arguments
-.fi
 .TP
 .B delete [ id | uuid | path ] <ID>
 .br
@@ -389,13 +318,6 @@ its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
 \fIuuid\fP or \fIpath\fP can be used.
 .br
 See \fBshow active\fP above for the description of the <ID>-specifying keywords.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager.Settings.Connection
-method:    Delete
-arguments: none
-.fi
 .RE
 
 .TP
@@ -413,22 +335,12 @@ Get information about devices and manage them.
 Print status of devices.
 .br
 This is the default action if no command is specified to \fIdevice\fP object.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B show [<ifname>]
 .br
 Show detailed information about devices.  Without an argument, all devices are
 examined. To get information for a specific device, the interface name has
 to be provided.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B disconnect <ifname> [--nowait] [--timeout <timeout>]
 .br
@@ -441,14 +353,6 @@ Available options are:
 \(en exit immediately without waiting for command completion
 .IP \fI\-\-timeout\fP 13
 \(en how long to wait for command completion (default is 10 s)
-.PP
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager.Device
-method:    Disconnect
-arguments: none
-.fi
 .RE
 .TP
 .B wifi [list [ifname <ifname>] [bssid <BSSID>]]
@@ -456,11 +360,6 @@ arguments: none
 List available Wi\(hyFi access points. The \fIifname\fP and \fIbssid\fP options
 can be used to list APs for a particular interface or with a specific BSSID,
 respectively.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .TP
 .B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>] [\-\-private] [\-\-nowait] [\-\-timeout <timeout>]
 .br
@@ -491,14 +390,6 @@ Available options are:
 \(en exit immediately without waiting for command completion
 .IP \fI\-\-timeout\fP 13
 \(en how long to wait for command completion (default is 90 s)
-.PP
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager
-method:    AddAndActivateConnection
-arguments: according to arguments
-.fi
 .RE
 .TP
 .B wifi rescan [[ifname] <ifname>]
@@ -513,11 +404,6 @@ This command doesn't show the APs, use 'nmcli device wifi list' for that.
 List available WiMAX NSP. The \fIifname\fP and \fInsp\fP options
 can be used to list networks for a particular interface or with a specific
 NSP, respectively.
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-No simple reference.
-.fi
 .RS
 .PP
 Available options are:
@@ -525,14 +411,6 @@ Available options are:
 \(en exit immediately without waiting for command completion
 .IP \fI\-\-timeout\fP 13
 \(en how long to wait for command completion (default is 10 s)
-.PP
-.br
-.nf
-\fBReference to D\(hyBus:\fP
-interface: org.freedesktop.NetworkManager.Device
-method:    Disconnect
-arguments: none
-.fi
 .RE
 
 .SH ENVIRONMENT VARIABLES
