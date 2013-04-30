@@ -313,8 +313,7 @@ nm_setting_wireless_security_get_pairwise (NMSettingWirelessSecurity *setting, g
 /**
  * nm_setting_wireless_security_add_pairwise:
  * @setting: the #NMSettingWirelessSecurity
- * @pairwise: the encryption algorithm to add, one of "wep40", "wep104",
- * "tkip", or "ccmp"
+ * @pairwise: the encryption algorithm to add, one of "tkip" or "ccmp"
  *
  * Adds an encryption algorithm to the list of allowed pairwise encryption
  * algorithms.  If the list is not empty, then only access points that support
@@ -782,7 +781,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
 	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
-	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+	const char *valid_pairwise[] = { "tkip", "ccmp", NULL };
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
 	if (!priv->key_mgmt) {
@@ -1328,7 +1327,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * A list of pairwise encryption algorithms which prevents connections to
 	 * Wi-Fi networks that do not utilize one of the algorithms in the list.  For
 	 * maximum compatibility leave this property empty.  Each list element may
-	 * be one of 'wep40', 'wep104', 'tkip', or 'ccmp'.
+	 * be one of 'tkip' or 'ccmp'.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PAIRWISE,
@@ -1338,8 +1337,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                       "prevents connections to Wi-Fi networks that do "
 		                       "not utilize one of the algorithms in the list. "
 		                       "For maximum compatibility leave this property "
-		                       "empty.  Each list element may be one of 'wep40', "
-		                       "'wep104', 'tkip' or 'ccmp'.",
+		                       "empty.  Each list element may be one of 'tkip' "
+		                       "or 'ccmp'.",
 		                       DBUS_TYPE_G_LIST_OF_STRING,
 		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
