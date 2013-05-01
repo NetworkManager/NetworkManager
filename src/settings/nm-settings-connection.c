@@ -56,6 +56,9 @@ static void impl_settings_connection_update_unsaved (NMSettingsConnection *conne
                                                      GHashTable *new_settings,
                                                      DBusGMethodInvocation *context);
 
+static void impl_settings_connection_save (NMSettingsConnection *connection,
+                                           DBusGMethodInvocation *context);
+
 static void impl_settings_connection_delete (NMSettingsConnection *connection,
                                              DBusGMethodInvocation *context);
 
@@ -1249,7 +1252,7 @@ update_auth_cb (NMSettingsConnection *self,
 }
 
 static const char *
-get_modify_permission_update (NMConnection *old, NMConnection *new)
+get_update_modify_permission (NMConnection *old, NMConnection *new)
 {
 	NMSettingConnection *s_con;
 	guint32 orig_num = 0, new_num = 0;
@@ -1281,9 +1284,12 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
                                         gboolean save_to_disk)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMConnection *tmp;
+	NMConnection *tmp = NULL;
 	GError *error = NULL;
 	UpdateInfo *info;
+	const char *permission;
+
+	g_assert (new_settings != NULL || save_to_disk == TRUE);
 
 	/* If the connection is read-only, that has to be changed at the source of
 	 * the problem (ex a system settings plugin that can't write connections out)
@@ -1296,19 +1302,21 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	}
 
 	/* Check if the settings are valid first */
-	tmp = nm_connection_new_from_hash (new_settings, &error);
-	if (!tmp) {
-		g_assert (error);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
+	if (new_settings) {
+		tmp = nm_connection_new_from_hash (new_settings, &error);
+		if (!tmp) {
+			g_assert (error);
+			dbus_g_method_return_error (context, error);
+			g_error_free (error);
+			return;
+		}
 	}
 
 	/* And that the new connection settings will be visible to the user
 	 * that's sending the update request.  You can't make a connection
 	 * invisible to yourself.
 	 */
-	if (!check_user_in_acl (tmp,
+	if (!check_user_in_acl (tmp ? tmp : NM_CONNECTION (self),
 	                        context,
 	                        priv->session_monitor,
 	                        NULL,
@@ -1326,11 +1334,9 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	info->save_to_disk = save_to_disk;
 	info->new_settings = tmp;
 
-	auth_start (self,
-	            context,
-	            get_modify_permission_update (NM_CONNECTION (self), info->new_settings),
-	            update_auth_cb,
-	            info);
+	permission = get_update_modify_permission (NM_CONNECTION (self),
+	                                           tmp ? tmp : NM_CONNECTION (self));
+	auth_start (self, context, permission, update_auth_cb, info);
 }
 
 static void
@@ -1338,6 +1344,7 @@ impl_settings_connection_update (NMSettingsConnection *self,
                                  GHashTable *new_settings,
                                  DBusGMethodInvocation *context)
 {
+	g_assert (new_settings);
 	impl_settings_connection_update_helper (self, new_settings, context, TRUE);
 }
 
@@ -1346,7 +1353,19 @@ impl_settings_connection_update_unsaved (NMSettingsConnection *self,
                                          GHashTable *new_settings,
                                          DBusGMethodInvocation *context)
 {
+	g_assert (new_settings);
 	impl_settings_connection_update_helper (self, new_settings, context, FALSE);
+}
+
+static void
+impl_settings_connection_save (NMSettingsConnection *self,
+                               DBusGMethodInvocation *context)
+{
+	/* Do nothing if the connection is already synced with disk */
+	if (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->unsaved == TRUE)
+		impl_settings_connection_update_helper (self, NULL, context, TRUE);
+	else
+		dbus_g_method_return (context);
 }
 
 static void

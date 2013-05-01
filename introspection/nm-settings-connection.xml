@@ -88,6 +88,15 @@
             </arg>
         </method>
 
+        <method name="Save">
+            <tp:docstring>
+                Saves a "dirty" connection (that had previously been
+                updated with UpdateUnsaved) to persistent storage.
+            </tp:docstring>
+            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_save"/>
+            <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+        </method>
+
         <signal name="Updated">
             <tp:docstring>
                 Emitted when any settings or permissions change.  When handling
