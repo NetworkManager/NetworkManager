@@ -57,11 +57,12 @@
 #define NM_DEVICE_MANAGED          "managed"
 #define NM_DEVICE_AUTOCONNECT      "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
+#define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 #define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
 #define NM_DEVICE_IS_MASTER        "is-master"    /* Internal only */
-#define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
+#define NM_DEVICE_HW_ADDRESS       "hw-address"   /* Internal only */
 
 /* Internal signals */
 #define NM_DEVICE_AUTH_REQUEST "auth-request"
@@ -113,7 +114,7 @@ typedef struct {
 	void        (* update_hw_address) (NMDevice *self);
 	void        (* update_permanent_hw_address) (NMDevice *self);
 	void        (* update_initial_hw_address) (NMDevice *self);
-	const guint8 * (* get_hw_address) (NMDevice *self, guint *out_len);
+	guint       (* get_hw_address_length) (NMDevice *self);
 
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
@@ -176,11 +177,8 @@ typedef struct {
 
 	gboolean        (* match_l2_config) (NMDevice *self, NMConnection *connection);
 
-	gboolean        (* hwaddr_matches) (NMDevice *self,
-	                                    NMConnection *connection,
-	                                    const guint8 *other_hwaddr,
-	                                    guint other_hwaddr_len,
-	                                    gboolean fail_if_no_hwaddr);
+	const GByteArray * (* get_connection_hw_address) (NMDevice *self,
+	                                                  NMConnection *connection);
 
 	gboolean        (* enslave_slave) (NMDevice *self,
 	                                   NMDevice *slave,

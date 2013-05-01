@@ -86,7 +86,6 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
-	PROP_HW_ADDRESS,
 	PROP_PERM_HW_ADDRESS,
 	PROP_MODE,
 	PROP_BITRATE,
@@ -127,7 +126,6 @@ typedef struct Supplicant {
 struct _NMDeviceWifiPrivate {
 	gboolean          disposed;
 
-	guint8            hw_addr[ETH_ALEN];         /* Currently set MAC address */
 	guint8            perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
 	guint8            initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
 
@@ -202,8 +200,6 @@ static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
 static void schedule_scanlist_cull (NMDeviceWifi *self);
 
 static gboolean request_wireless_scan (gpointer user_data);
-
-static void update_hw_address (NMDevice *dev);
 
 /*****************************************************************/
 
@@ -837,10 +833,10 @@ static gboolean
 _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 {
 	NMDevice *dev = NM_DEVICE (self);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	const char *iface;
 	char *mac_str = NULL;
 	gboolean success = FALSE;
+	const guint8 *cur_addr = nm_device_get_hw_address (dev, NULL);
 
 	g_return_val_if_fail (addr != NULL, FALSE);
 
@@ -850,7 +846,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 
 	/* Do nothing if current MAC is same */
-	if (!memcmp (&priv->hw_addr, addr, ETH_ALEN)) {
+	if (cur_addr && !memcmp (cur_addr, addr, ETH_ALEN)) {
 		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed", iface);
 		g_free (mac_str);
 		return TRUE;
@@ -862,7 +858,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	success = nm_system_iface_set_mac (nm_device_get_ip_ifindex (dev), (struct ether_addr *) addr);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
-		update_hw_address (dev);
+		nm_device_update_hw_address (dev);
 		nm_log_info (LOGD_DEVICE | LOGD_ETHER, "(%s): %s MAC address to %s",
 		             iface, detail, mac_str);
 	} else {
@@ -2814,21 +2810,6 @@ error:
 /****************************************************************************/
 
 static void
-update_hw_address (NMDevice *dev)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (dev);
-	gsize addrlen;
-	gboolean changed = FALSE;
-
-	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
-	if (addrlen) {
-		g_return_if_fail (addrlen == ETH_ALEN);
-		if (changed)
-			g_object_notify (G_OBJECT (dev), NM_DEVICE_WIFI_HW_ADDRESS);
-	}
-}
-
-static void
 update_permanent_hw_address (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
@@ -2858,7 +2839,7 @@ update_permanent_hw_address (NMDevice *dev)
 		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): unable to read permanent MAC address (error %d)",
 		            nm_device_get_iface (dev), errno);
 		/* Fall back to current address */
-		memcpy (epaddr->data, &priv->hw_addr, ETH_ALEN);
+		memcpy (epaddr->data, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
 	}
 
 	if (memcmp (&priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
@@ -2875,35 +2856,17 @@ update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	char *mac_str = NULL;
-	guint8 *addr = priv->initial_hw_addr;
-	guint8 zero[ETH_ALEN] = {0,0,0,0,0,0};
+	char *mac_str;
 
 	/* This sets initial MAC address from current MAC address. It should only
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
-	if (!memcmp (&priv->hw_addr, &zero, ETH_ALEN))
-		update_hw_address (dev);
-
-	if (memcmp (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN))
-		memcpy (&priv->initial_hw_addr, &priv->hw_addr, ETH_ALEN);
-
-	mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-
+	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+ 
+	mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER);
 	nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): read initial MAC address %s",
 	            nm_device_get_iface (dev), mac_str);
-
 	g_free (mac_str);
-}
-
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
-
-	*out_len = ETH_ALEN;
-	return priv->hw_addr;
 }
 
 static NMActStageReturn
@@ -2986,7 +2949,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
 			nm_ap_set_broadcast (ap, FALSE);
 		else if (nm_ap_is_hotspot (ap))
-			nm_ap_set_address (ap, (const struct ether_addr *) &priv->hw_addr);
+			nm_ap_set_address (ap, (const struct ether_addr *) nm_device_get_hw_address (dev, NULL));
 
 		priv->ap_list = g_slist_prepend (priv->ap_list, ap);
 		nm_ap_export_to_dbus (ap);
@@ -3396,33 +3359,14 @@ get_type_capabilities (NMDevice *dev)
 }
 
 
-static gboolean
-hwaddr_matches (NMDevice *device,
-                NMConnection *connection,
-                const guint8 *other_hwaddr,
-                guint other_hwaddr_len,
-                gboolean fail_if_no_hwaddr)
+static const GByteArray *
+get_connection_hw_address (NMDevice *device,
+                           NMConnection *connection)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
-	const GByteArray *mac = NULL;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
-	if (s_wifi)
-		mac = nm_setting_wireless_get_mac_address (s_wifi);
-
-	if (mac) {
-		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
-		if (other_hwaddr) {
-			g_return_val_if_fail (other_hwaddr_len == ETH_ALEN, FALSE);
-			if (memcmp (mac->data, other_hwaddr, mac->len) == 0)
-				return TRUE;
-		} else if (memcmp (mac->data, priv->hw_addr, mac->len) == 0)
-			return TRUE;
-	} else if (fail_if_no_hwaddr == FALSE)
-		return TRUE;
-
-	return FALSE;
+	return s_wifi ? nm_setting_wireless_get_mac_address (s_wifi) : NULL;
 }
 
 static void
@@ -3646,9 +3590,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->hw_addr, ARPHRD_ETHER));
-		break;
 	case PROP_PERM_HW_ADDRESS:
 		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
 		break;
@@ -3716,8 +3657,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_up = is_up;
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;
-	parent_class->update_hw_address = update_hw_address;
-	parent_class->get_hw_address = get_hw_address;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->can_auto_connect = can_auto_connect;
@@ -3734,20 +3673,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
-	parent_class->hwaddr_matches = hwaddr_matches;
+	parent_class->get_connection_hw_address = get_connection_hw_address;
 
 	parent_class->state_changed = device_state_changed;
 
 	klass->scanning_allowed = scanning_allowed;
 
 	/* Properties */
-	g_object_class_install_property (object_class, PROP_HW_ADDRESS,
-		g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS,
-		                     "Active MAC Address",
-		                     "Currently set hardware MAC address",
-		                     NULL,
-		                     G_PARAM_READABLE));
-
 	g_object_class_install_property (object_class, PROP_PERM_HW_ADDRESS,
 		g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS,
 		                     "Permanent MAC Address",

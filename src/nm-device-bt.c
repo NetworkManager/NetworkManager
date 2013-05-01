@@ -63,7 +63,6 @@ typedef struct {
 	guint mm_watch_id;
 	gboolean mm_running;
 
-	guint8 hw_addr[ETH_ALEN];  /* binary representation of bdaddr */
 	char *bdaddr;
 	char *name;
 	guint32 capabilities;
@@ -83,7 +82,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_HW_ADDRESS,
 	PROP_BT_NAME,
 	PROP_BT_CAPABILITIES,
 
@@ -380,49 +378,14 @@ get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
+static const GByteArray *
+get_connection_hw_address (NMDevice *device,
+                           NMConnection *connection)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-
-	*out_len = sizeof (priv->hw_addr);
-	return priv->hw_addr;
-}
-
-static gboolean
-hwaddr_matches (NMDevice *device,
-                NMConnection *connection,
-                const guint8 *other_hwaddr,
-                guint other_hwaddr_len,
-                gboolean fail_if_no_hwaddr)
-{
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingBluetooth *s_bt;
-	const GByteArray *mac = NULL;
-	gboolean matches = FALSE;
-	GByteArray *devmac;
 
 	s_bt = nm_connection_get_setting_bluetooth (connection);
-	if (s_bt)
-		mac = nm_setting_bluetooth_get_bdaddr (s_bt);
-
-	if (mac) {
-		devmac = nm_utils_hwaddr_atoba (priv->bdaddr, ARPHRD_ETHER);
-		g_return_val_if_fail (devmac != NULL, FALSE);
-		g_return_val_if_fail (devmac->len == mac->len, FALSE);
-
-		if (other_hwaddr) {
-			g_return_val_if_fail (other_hwaddr_len == devmac->len, FALSE);
-			matches = (memcmp (mac->data, other_hwaddr, mac->len) == 0) ? TRUE : FALSE;
-		} else
-			matches = (memcmp (mac->data, devmac->data, mac->len) == 0) ? TRUE : FALSE;
-
-		g_byte_array_free (devmac, TRUE);
-		return matches;
-	} else if (fail_if_no_hwaddr == FALSE)
-		return TRUE;
-
-	return FALSE;
+	return s_bt ? nm_setting_bluetooth_get_bdaddr (s_bt) : NULL;
 }
 
 /*****************************************************************************/
@@ -1173,7 +1136,7 @@ nm_device_bt_new (const char *udi,
 	                                  NM_DEVICE_UDI, udi,
 	                                  NM_DEVICE_IFACE, bdaddr,
 	                                  NM_DEVICE_DRIVER, "bluez",
-	                                  NM_DEVICE_BT_HW_ADDRESS, bdaddr,
+	                                  NM_DEVICE_HW_ADDRESS, bdaddr,
 	                                  NM_DEVICE_BT_NAME, name,
 	                                  NM_DEVICE_BT_CAPABILITIES, capabilities,
 	                                  NM_DEVICE_MANAGED, managed,
@@ -1211,12 +1174,6 @@ set_property (GObject *object, guint prop_id,
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		/* Construct only */
-		priv->bdaddr = g_ascii_strup (g_value_get_string (value), -1);
-		if (!nm_utils_hwaddr_aton (priv->bdaddr, ARPHRD_ETHER, &priv->hw_addr))
-			nm_log_err (LOGD_HW, "Failed to convert BT address '%s'", priv->bdaddr);
-		break;
 	case PROP_BT_NAME:
 		/* Construct only */
 		priv->name = g_value_dup_string (value);
@@ -1238,9 +1195,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_set_string (value, priv->bdaddr);
-		break;
 	case PROP_BT_NAME:
 		g_value_set_string (value, priv->name);
 		break;
@@ -1310,21 +1264,12 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
-	device_class->hwaddr_matches = hwaddr_matches;
-	device_class->get_hw_address = get_hw_address;
+	device_class->get_connection_hw_address = get_connection_hw_address;
 	device_class->is_available = is_available;
 
 	device_class->state_changed = device_state_changed;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_BT_HW_ADDRESS,
-		                      "Bluetooth address",
-		                      "Bluetooth address",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
 	g_object_class_install_property
 		(object_class, PROP_BT_NAME,
 		 g_param_spec_string (NM_DEVICE_BT_NAME,

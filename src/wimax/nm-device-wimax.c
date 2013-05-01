@@ -54,7 +54,6 @@ G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
-	PROP_HW_ADDRESS,
 	PROP_ACTIVE_NSP,
 	PROP_CENTER_FREQ,
 	PROP_RSSI,
@@ -88,7 +87,6 @@ typedef struct {
 
 	gboolean enabled;
 	gboolean wimaxd_enabled;
-	guint8 hw_addr[ETH_ALEN];
 	guint activation_timeout_id;
 
 	/* Track whether stage1 (Prepare) is completed yet or not */
@@ -355,58 +353,14 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 	return NM_DEVICE_GET_CLASS (dev)->hw_bring_up (dev, no_firmware);
 }
 
-static void
-update_hw_address (NMDevice *dev)
+static const GByteArray *
+get_connection_hw_address (NMDevice *device,
+                           NMConnection *connection)
 {
-	NMDeviceWimax *self = NM_DEVICE_WIMAX (dev);
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
-	gboolean changed = FALSE;
-	gsize addrlen;
-
-	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
-	if (addrlen) {
-		g_return_if_fail (addrlen == ETH_ALEN);
-		if (changed)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_HW_ADDRESS);
-	}
-}
-
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
-{
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
-
-	*out_len = sizeof (priv->hw_addr);
-	return priv->hw_addr;
-}
-
-static gboolean
-hwaddr_matches (NMDevice *device,
-                NMConnection *connection,
-                const guint8 *other_hwaddr,
-                guint other_hwaddr_len,
-                gboolean fail_if_no_hwaddr)
-{
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMSettingWimax *s_wimax;
-	const GByteArray *mac = NULL;
 
 	s_wimax = nm_connection_get_setting_wimax (connection);
-	if (s_wimax)
-		mac = nm_setting_wimax_get_mac_address (s_wimax);
-
-	if (mac) {
-		g_return_val_if_fail (mac->len == ETH_ALEN, FALSE);
-		if (other_hwaddr) {
-			g_return_val_if_fail (other_hwaddr_len == ETH_ALEN, FALSE);
-			if (memcmp (mac->data, other_hwaddr, mac->len) == 0)
-				return TRUE;
-		} else if (memcmp (mac->data, priv->hw_addr, mac->len) == 0)
-			return TRUE;
-	} else if (fail_if_no_hwaddr == FALSE)
-		return TRUE;
-
-	return FALSE;
+	return s_wimax ? nm_setting_wimax_get_mac_address (s_wimax) : NULL;
 }
 
 static gboolean
@@ -414,7 +368,6 @@ check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
                              GError **error)
 {
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	NMSettingConnection *s_con;
 	NMSettingWimax *s_wimax;
 	const char *connection_type;
@@ -443,7 +396,7 @@ check_connection_compatible (NMDevice *device,
 	}
 
 	mac = nm_setting_wimax_get_mac_address (s_wimax);
-	if (mac && memcmp (mac->data, &priv->hw_addr, ETH_ALEN)) {
+	if (mac && memcmp (mac->data, nm_device_get_hw_address (device, NULL), ETH_ALEN)) {
 		g_set_error (error,
 					 NM_WIMAX_ERROR, NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE,
 					 "The connection's MAC address did not match this device.");
@@ -479,6 +432,7 @@ complete_connection (NMDevice *device,
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMSettingWimax *s_wimax;
 	const GByteArray *setting_mac;
+	const guint8 *hw_address;
 	char *format;
 	const char *nsp_name = NULL;
 	NMWimaxNsp *nsp = NULL;
@@ -555,9 +509,10 @@ complete_connection (NMDevice *device,
 	g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
 
 	setting_mac = nm_setting_wimax_get_mac_address (s_wimax);
+	hw_address = nm_device_get_hw_address (device, NULL);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (memcmp (setting_mac->data, &priv->hw_addr, ETH_ALEN)) {
+		if (memcmp (setting_mac->data, hw_address, ETH_ALEN)) {
 			g_set_error (error,
 				         NM_SETTING_WIMAX_ERROR,
 				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
@@ -569,9 +524,9 @@ complete_connection (NMDevice *device,
 		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default */
-		if (memcmp (&priv->hw_addr, null_mac, ETH_ALEN)) {
+		if (memcmp (hw_address, null_mac, ETH_ALEN)) {
 			mac = g_byte_array_sized_new (ETH_ALEN);
-			g_byte_array_append (mac, priv->hw_addr, ETH_ALEN);
+			g_byte_array_append (mac, hw_address, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
 		}
@@ -1384,9 +1339,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->hw_addr, ARPHRD_ETHER));
-		break;
 	case PROP_ACTIVE_NSP:
 		if (priv->current_nsp)
 			g_value_set_boxed (value, nm_wimax_nsp_get_dbus_path (priv->current_nsp));
@@ -1466,8 +1418,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 
 	device_class->take_down = take_down;
 	device_class->hw_bring_up = hw_bring_up;
-	device_class->update_hw_address = update_hw_address;
-	device_class->get_hw_address = get_hw_address;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
@@ -1478,19 +1428,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->deactivate = deactivate;
 	device_class->set_enabled = set_enabled;
-	device_class->hwaddr_matches = hwaddr_matches;
+	device_class->get_connection_hw_address = get_connection_hw_address;
 
 	device_class->state_changed = device_state_changed;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIMAX_HW_ADDRESS,
-							  "MAC Address",
-							  "Hardware MAC address",
-							  NULL,
-							  G_PARAM_READABLE));
-
 	g_object_class_install_property (object_class, PROP_ACTIVE_NSP,
 		g_param_spec_boxed (NM_DEVICE_WIMAX_ACTIVE_NSP,
 		                    "Active NSP",

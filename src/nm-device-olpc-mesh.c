@@ -72,7 +72,6 @@ G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
-	PROP_HW_ADDRESS,
 	PROP_COMPANION,
 	PROP_ACTIVE_CHANNEL,
 
@@ -93,8 +92,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 struct _NMDeviceOlpcMeshPrivate
 {
 	gboolean          dispose_has_run;
-
-	guint8            hw_addr[ETH_ALEN];
 
 	GByteArray *      ssid;
 
@@ -138,8 +135,6 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 	priv->dispose_has_run = FALSE;
 	priv->companion = NULL;
 	priv->stage1_waiting = FALSE;
-
-	memset (&priv->hw_addr, 0, sizeof (priv->hw_addr));
 }
 
 static GObject*
@@ -310,31 +305,6 @@ complete_connection (NMDevice *device,
 
 /****************************************************************************/
 
-static void
-update_hw_address (NMDevice *dev)
-{
-	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	gsize addrlen;
-	gboolean changed = FALSE;
-
-	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
-	if (addrlen) {
-		g_return_if_fail (addrlen == ETH_ALEN);
-		if (changed)
-			g_object_notify (G_OBJECT (dev), NM_DEVICE_OLPC_MESH_HW_ADDRESS);
-	}
-}
-
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
-{
-       NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
-
-       *out_len = sizeof (priv->hw_addr);
-       return priv->hw_addr;
-}
-
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
@@ -476,9 +446,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->hw_addr, ARPHRD_ETHER));
-		break;
 	case PROP_COMPANION:
 		if (priv->companion)
 			g_value_set_boxed (value, nm_device_get_path (priv->companion));
@@ -523,8 +490,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->is_up = is_up;
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;
-	parent_class->update_hw_address = update_hw_address;
-	parent_class->get_hw_address = get_hw_address;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->complete_connection = complete_connection;
@@ -535,14 +500,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->state_changed = state_changed;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_OLPC_MESH_HW_ADDRESS,
-		                      "MAC Address",
-		                      "Hardware MAC address",
-		                      NULL,
-		                      G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_COMPANION,
 		 g_param_spec_boxed (NM_DEVICE_OLPC_MESH_COMPANION,
@@ -637,16 +594,17 @@ static gboolean
 is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	const guint8 *their_addr;
-	guint their_addr_len = 0;
+	const guint8 *my_addr, *their_addr;
+	guint their_addr_len;
 	NMManager *manager;
 
 	if (!NM_IS_DEVICE_WIFI (other))
 		return FALSE;
 
+	my_addr = nm_device_get_hw_address (NM_DEVICE (self), NULL);
 	their_addr = nm_device_get_hw_address (other, &their_addr_len);
 	if (   (their_addr_len != ETH_ALEN)
-	    || (memcmp (priv->hw_addr, their_addr, ETH_ALEN) != 0))
+	    || (memcmp (my_addr, their_addr, ETH_ALEN) != 0))
 		return FALSE;
 
 	priv->companion = other;

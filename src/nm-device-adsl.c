@@ -82,7 +82,6 @@ typedef struct {
 	int           brfd;
 	int           nas_ifindex;
 	char *        nas_ifname;
-	guint8        nas_hw_addr[ETH_ALEN];
 } NMDeviceAdslPrivate;
 
 enum {
@@ -208,7 +207,6 @@ static void
 set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-	gsize addrlen;
 
 	g_return_if_fail (name != NULL);
 
@@ -223,11 +221,7 @@ set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 	priv->nas_ifname = g_strdup (name);
 
 	/* Update NAS interface's MAC address */
-	addrlen = nm_device_read_hwaddr (NM_DEVICE (self),
-	                                 priv->nas_hw_addr,
-	                                 sizeof (priv->nas_hw_addr),
-	                                 NULL);
-	g_warn_if_fail (addrlen == sizeof (priv->nas_hw_addr));
+	nm_device_update_hw_address (NM_DEVICE (self));
 }
 
 static gboolean
@@ -574,18 +568,19 @@ deactivate (NMDevice *device)
 		priv->nas_ifindex = -1;
 	g_free (priv->nas_ifname);
 	priv->nas_ifname = NULL;
-	memset (priv->nas_hw_addr, 0, sizeof (priv->nas_hw_addr));
+
+	/* Poke NMDevice to notice that our hw_address is no longer valid */
+	nm_device_update_hw_address (NM_DEVICE (self));
 }
 
 /**************************************************************/
 
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
+static guint
+get_hw_address_length (NMDevice *device)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device);
 
-	*out_len = priv->nas_ifname ? sizeof (priv->nas_hw_addr) : 0;
-	return priv->nas_hw_addr;
+	return priv->nas_ifname ? ETH_ALEN : 0;
 }
 
 static void
@@ -789,7 +784,7 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->get_hw_address = get_hw_address;
+	parent_class->get_hw_address_length = get_hw_address_length;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;

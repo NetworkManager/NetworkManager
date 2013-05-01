@@ -54,9 +54,6 @@ typedef struct {
 
 	guint vlan_id;
 
-	guint8 hw_addr[NM_UTILS_HWADDR_LEN_MAX];
-	guint hw_addr_len;
-
 	gboolean          carrier;
 	NMNetlinkMonitor *monitor;
 	gulong            link_connected_id;
@@ -73,7 +70,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_VLAN_ID,
 
@@ -152,31 +148,6 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		}
 	}
 	return success;
-}
-
-static void
-update_hw_address (NMDevice *dev)
-{
-	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	gsize addrlen;
-	gboolean changed = FALSE;
-
-	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
-	if (addrlen) {
-		priv->hw_addr_len = addrlen;
-		if (changed)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_VLAN_HW_ADDRESS);
-	}
-}
-
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
-
-	*out_len = priv->hw_addr_len;
-	return priv->hw_addr;
 }
 
 static gboolean
@@ -328,7 +299,7 @@ complete_connection (NMDevice *device,
 	 */
 	if (!nm_setting_vlan_get_parent (s_vlan)) {
 		if (!nm_device_hwaddr_matches (priv->parent, connection, NULL, 0, TRUE)) {
-			/* FIXME: put priv->hw_addr into the connection in the appropriate
+			/* FIXME: put hw_addr into the connection in the appropriate
 			 * hardware-specific setting.
 			 */
 			g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
@@ -346,6 +317,8 @@ match_l2_config (NMDevice *device, NMConnection *connection)
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
 	gboolean fail_if_no_hwaddr = FALSE;
+	const guint8 *hw_addr;
+	guint hw_addr_len;
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
@@ -365,7 +338,8 @@ match_l2_config (NMDevice *device, NMConnection *connection)
 	 * address will be in.  The VLAN device shouldn't have to know what kind
 	 * of interface the parent is.
 	 */
-	if (!nm_device_hwaddr_matches (priv->parent, connection, priv->hw_addr, priv->hw_addr_len, fail_if_no_hwaddr))
+	hw_addr = nm_device_get_hw_address (device, &hw_addr_len);
+	if (!nm_device_hwaddr_matches (priv->parent, connection, hw_addr, hw_addr_len, fail_if_no_hwaddr))
 		return FALSE;
 
 	/* FIXME: any more L2 checks? */
@@ -525,13 +499,8 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-	char *hwaddr;
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len));
-		g_value_take_string (value, hwaddr);
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, priv->carrier);
 		break;
@@ -597,8 +566,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->dispose = dispose;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->update_hw_address = update_hw_address;
-	parent_class->get_hw_address = get_hw_address;
 	parent_class->hw_bring_up = hw_bring_up;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
 	parent_class->is_available = is_available;
@@ -608,14 +575,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->match_l2_config = match_l2_config;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_VLAN_HW_ADDRESS,
-							  "Active MAC Address",
-							  "Currently set hardware MAC address",
-							  NULL,
-							  G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
 		 g_param_spec_boolean (NM_DEVICE_VLAN_CARRIER,

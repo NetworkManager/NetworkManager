@@ -46,8 +46,7 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE_WIRED)
 #define NM_BOND_ERROR (nm_bond_error_quark ())
 
 typedef struct {
-	guint8   hw_addr[NM_UTILS_HWADDR_LEN_MAX];
-	gsize    hw_addr_len;
+	int dummy;
 } NMDeviceBondPrivate;
 
 enum {
@@ -60,7 +59,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_HW_ADDRESS,
 	PROP_CARRIER,
 	PROP_SLAVES,
 
@@ -80,26 +78,23 @@ nm_bond_error_quark (void)
 
 /******************************************************************/
 
-static void
-update_hw_address (NMDevice *dev)
+static guint
+get_hw_address_length (NMDevice *device)
 {
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (dev);
-	gsize addrlen;
-	gboolean changed = FALSE;
+	GSList *slaves;
+	guint length;
 
-	addrlen = nm_device_read_hwaddr (dev, priv->hw_addr, sizeof (priv->hw_addr), &changed);
-	if (addrlen) {
-		priv->hw_addr_len = addrlen;
-		if (changed)
-			g_object_notify (G_OBJECT (dev), NM_DEVICE_BOND_HW_ADDRESS);
-	}
-}
+	/* A bond's hwaddr length depends on what kind of slaves it has;
+	 * if it has no slaves, then it doesn't have a valid hwaddr.
+	 */
+	slaves = nm_device_master_get_slaves (device);
+	if (slaves) {
+		nm_device_get_hw_address (slaves->data, &length);
+		g_slist_free (slaves);
+	} else
+		length = 0;
 
-static const guint8 *
-get_hw_address (NMDevice *device, guint *out_len)
-{
-	*out_len = NM_DEVICE_BOND_GET_PRIVATE (device)->hw_addr_len;
-	return NM_DEVICE_BOND_GET_PRIVATE (device)->hw_addr;
+	return length;
 }
 
 static guint32
@@ -329,16 +324,10 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (object);
 	GPtrArray *slaves;
 	GSList *list, *iter;
-	char *hwaddr;
 
 	switch (prop_id) {
-	case PROP_HW_ADDRESS:
-		hwaddr = nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len));
-		g_value_take_string (value, hwaddr);
-		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (object)));
 		break;
@@ -381,8 +370,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->update_hw_address = update_hw_address;
-	parent_class->get_hw_address = get_hw_address;
+	parent_class->get_hw_address_length = get_hw_address_length;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
@@ -394,14 +382,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->release_slave = release_slave;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_BOND_HW_ADDRESS,
-							  "Active MAC Address",
-							  "Currently set hardware MAC address",
-							  NULL,
-							  G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
 		 g_param_spec_boolean (NM_DEVICE_BOND_CARRIER,
