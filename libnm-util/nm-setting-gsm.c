@@ -697,20 +697,20 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    "not all devices allow frequency band control.",
 		                    NM_SETTING_GSM_BAND_UNKNOWN,
 		                    NM_SETTING_GSM_BAND_UNKNOWN
-		                     || NM_SETTING_GSM_BAND_ANY
-		                     || NM_SETTING_GSM_BAND_EGSM
-		                     || NM_SETTING_GSM_BAND_DCS
-		                     || NM_SETTING_GSM_BAND_PCS
-		                     || NM_SETTING_GSM_BAND_G850
-		                     || NM_SETTING_GSM_BAND_U2100
-		                     || NM_SETTING_GSM_BAND_U1800
-		                     || NM_SETTING_GSM_BAND_U17IV
-		                     || NM_SETTING_GSM_BAND_U800
-		                     || NM_SETTING_GSM_BAND_U850
-		                     || NM_SETTING_GSM_BAND_U900
-		                     || NM_SETTING_GSM_BAND_U17IX
-		                     || NM_SETTING_GSM_BAND_U1900
-		                     || NM_SETTING_GSM_BAND_U2600,
+		                     | NM_SETTING_GSM_BAND_ANY
+		                     | NM_SETTING_GSM_BAND_EGSM
+		                     | NM_SETTING_GSM_BAND_DCS
+		                     | NM_SETTING_GSM_BAND_PCS
+		                     | NM_SETTING_GSM_BAND_G850
+		                     | NM_SETTING_GSM_BAND_U2100
+		                     | NM_SETTING_GSM_BAND_U1800
+		                     | NM_SETTING_GSM_BAND_U17IV
+		                     | NM_SETTING_GSM_BAND_U800
+		                     | NM_SETTING_GSM_BAND_U850
+		                     | NM_SETTING_GSM_BAND_U900
+		                     | NM_SETTING_GSM_BAND_U17IX
+		                     | NM_SETTING_GSM_BAND_U1900
+		                     | NM_SETTING_GSM_BAND_U2600,
 		                    NM_SETTING_GSM_BAND_ANY,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
