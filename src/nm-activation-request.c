@@ -318,6 +318,8 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 		break;
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
 		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
 
 		/* No longer need to pay attention to device state */
