@@ -138,6 +138,30 @@ typedef enum {
 	NM_SETTING_GSM_BAND_U2600        = 0x00002000, /* WCDMA 3GPP UMTS 2600 MHz     (Class VII, internal) */
 } NMSettingGsmNetworkBand;
 
+/**
+ * NM_SETTING_GSM_BANDS_MAX:
+ *
+ * #NM_SETTING_GSM_BANDS_MAX macro indicate the maximal value that can be used
+ * as the allowed frequency bands (#NMSettingGsm:allowed-bands property).
+ *
+ * Since: 0.9.10
+ */
+#define NM_SETTING_GSM_BANDS_MAX (  NM_SETTING_GSM_BAND_UNKNOWN \
+                                  | NM_SETTING_GSM_BAND_ANY \
+                                  | NM_SETTING_GSM_BAND_EGSM \
+                                  | NM_SETTING_GSM_BAND_DCS \
+                                  | NM_SETTING_GSM_BAND_PCS \
+                                  | NM_SETTING_GSM_BAND_G850 \
+                                  | NM_SETTING_GSM_BAND_U2100 \
+                                  | NM_SETTING_GSM_BAND_U1800 \
+                                  | NM_SETTING_GSM_BAND_U17IV \
+                                  | NM_SETTING_GSM_BAND_U800 \
+                                  | NM_SETTING_GSM_BAND_U850 \
+                                  | NM_SETTING_GSM_BAND_U900 \
+                                  | NM_SETTING_GSM_BAND_U17IX \
+                                  | NM_SETTING_GSM_BAND_U1900 \
+                                  | NM_SETTING_GSM_BAND_U2600)
+
 typedef struct {
 	NMSetting parent;
 } NMSettingGsm;
