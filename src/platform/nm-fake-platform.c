@@ -661,6 +661,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 	route.plen = plen;
 	route.gateway = gateway;
 	route.metric = metric;
+	route.mss = mss;
 
 	g_array_append_val (priv->ip4_routes, route);
 
@@ -682,6 +683,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	route.plen = plen;
 	route.gateway = gateway;
 	route.metric = metric;
+	route.mss = mss;
 
 	g_array_append_val (priv->ip6_routes, route);
 

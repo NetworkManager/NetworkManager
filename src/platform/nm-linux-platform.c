@@ -418,6 +418,7 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	if (gw)
 		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
 	route->metric = rtnl_route_get_priority (rtnlroute);
+	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
 }
 
 static void
@@ -438,6 +439,7 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	if (gw)
 		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
 	route->metric = rtnl_route_get_priority (rtnlroute);
+	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
 }
 
 /******************************************************************/

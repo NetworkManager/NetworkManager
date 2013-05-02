@@ -56,7 +56,7 @@ test_ip4_route ()
 	inet_pton (AF_INET, "198.51.100.0", &gateway);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip4_route_add (ifindex, gateway, 32, INADDR_ANY, metric, 0)); no_error ();
+	g_assert (nm_platform_ip4_route_add (ifindex, gateway, 32, INADDR_ANY, metric, mss)); no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
@@ -77,11 +77,13 @@ test_ip4_route ()
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = INADDR_ANY;
 	rts[0].metric = metric;
+	rts[0].mss = mss;
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
+	rts[1].mss = mss;
 	g_assert_cmpint (routes->len, ==, 2);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	g_array_unref (routes);
@@ -116,8 +118,8 @@ test_ip6_route ()
 	inet_pton (AF_INET6, "2001:db8:a:b:0:0:0:0", &network);
 	inet_pton (AF_INET6, "2001:db8:c:d:1:2:3:4", &gateway);
 
-	/* Add gateway address */
-	g_assert (nm_platform_ip6_route_add (ifindex, gateway, 128, in6addr_any, metric, 0)); no_error ();
+	/* Add route to gateway */
+	g_assert (nm_platform_ip6_route_add (ifindex, gateway, 128, in6addr_any, metric, mss)); no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
@@ -138,11 +140,13 @@ test_ip6_route ()
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
 	rts[0].metric = metric;
+	rts[0].mss = mss;
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
+	rts[1].mss = mss;
 	g_assert_cmpint (routes->len, ==, 2);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	g_array_unref (routes);

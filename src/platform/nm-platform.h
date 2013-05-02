@@ -84,7 +84,8 @@ typedef struct {
 	in_addr_t network;
 	int plen;
 	in_addr_t gateway;
-	int metric;
+	guint metric;
+	guint mss;
 } NMPlatformIP4Route;
 
 typedef struct {
@@ -92,7 +93,8 @@ typedef struct {
 	struct in6_addr network;
 	int plen;
 	struct in6_addr gateway;
-	int metric;
+	guint metric;
+	guint mss;
 } NMPlatformIP6Route;
 
 /******************************************************************/
