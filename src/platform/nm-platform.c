@@ -1404,6 +1404,135 @@ nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, in
 	return klass->ip6_route_exists (platform, ifindex, network, plen, metric);
 }
 
+static gboolean
+array_contains_ip4_route (const GArray *routes, const NMPlatformIP4Route *route)
+{
+	int i;
+
+	for (i = 0; i < routes->len; i++) {
+		if (!memcmp (&g_array_index (routes, NMPlatformIP4Route, i), route, sizeof (*route)))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
+array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
+{
+	int i;
+
+	for (i = 0; i < routes->len; i++) {
+		if (!memcmp (&g_array_index (routes, NMPlatformIP6Route, i), route, sizeof (*route)))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/**
+ * nm_platform_ip4_route_sync:
+ * @ifindex: Interface index
+ * @known_routes: List of routes
+ *
+ * A convenience function to synchronize routes for a specific interface
+ * with the least possible disturbance. It simply removes routes that are
+ * not listed and adds routes that are.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
+{
+	GArray *routes;
+	NMPlatformIP4Route *route;
+	const NMPlatformIP4Route *known_route;
+	int i;
+
+	/* Delete unknown routes */
+	routes = nm_platform_ip4_route_get_all (ifindex);
+	for (i = 0; i < routes->len; i++) {
+		route = &g_array_index (routes, NMPlatformIP4Route, i);
+		route->ifindex = 0;
+
+		if (!known_routes || !array_contains_ip4_route (known_routes, route))
+			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
+	}
+	g_array_free (routes, TRUE);
+
+	if (!known_routes)
+		return TRUE;
+
+	/* Add missing routes */
+	for (i = 0; i < known_routes->len; i++) {
+		known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
+
+		if (!nm_platform_ip4_route_exists (ifindex,
+				known_route->network, known_route->plen, known_route->metric))
+			if (!nm_platform_ip4_route_add (ifindex,
+					known_route->network, known_route->plen, known_route->gateway,
+					known_route->metric, known_route->mss))
+				return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_platform_ip6_route_sync:
+ * @ifindex: Interface index
+ * @known_routes: List of routes
+ *
+ * A convenience function to synchronize routes for a specific interface
+ * with the least possible disturbance. It simply removes routes that are
+ * not listed and adds routes that are.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
+{
+	GArray *routes;
+	NMPlatformIP6Route *route;
+	const NMPlatformIP6Route *known_route;
+	int i;
+
+	/* Delete unknown routes */
+	routes = nm_platform_ip6_route_get_all (ifindex);
+	for (i = 0; i < routes->len; i++) {
+		route = &g_array_index (routes, NMPlatformIP6Route, i);
+		route->ifindex = 0;
+
+		if (!known_routes || !array_contains_ip6_route (known_routes, route))
+			nm_platform_ip6_route_delete (ifindex, route->network, route->plen, route->metric);
+	}
+	g_array_free (routes, TRUE);
+
+	if (!known_routes)
+		return TRUE;
+
+	/* Add missing routes */
+	for (i = 0; i < known_routes->len; i++) {
+		known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
+
+		if (!nm_platform_ip6_route_exists (ifindex,
+				known_route->network, known_route->plen, known_route->metric))
+			if (!nm_platform_ip6_route_add (ifindex,
+						known_route->network, known_route->plen, known_route->gateway,
+						known_route->metric, known_route->mss))
+				return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_platform_route_flush (int ifindex)
+{
+	return nm_platform_ip4_route_sync (ifindex, NULL)
+			&& nm_platform_ip6_route_sync (ifindex, NULL);
+}
+
 /******************************************************************/
 
 static void

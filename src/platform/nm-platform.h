@@ -383,6 +383,9 @@ gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen,
 gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric);
 gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric);
 gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, int metric);
+gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
+gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
+gboolean nm_platform_route_flush (int ifindex);
 
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))
