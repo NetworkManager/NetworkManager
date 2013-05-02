@@ -884,7 +884,7 @@ nm_platform_ip4_route_add (int ifindex,
 	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
-	if (nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric)) {
+	if (nm_platform_ip4_route_exists (ifindex, network, plen, metric)) {
 		debug ("route already exists");
 		platform->error = NM_PLATFORM_ERROR_EXISTS;
 		return FALSE;
@@ -903,7 +903,7 @@ nm_platform_ip6_route_add (int ifindex,
 	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
 
-	if (nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric)) {
+	if (nm_platform_ip6_route_exists (ifindex, network, plen, metric)) {
 		debug ("route already exists");
 		platform->error = NM_PLATFORM_ERROR_EXISTS;
 		return FALSE;
@@ -913,63 +913,60 @@ nm_platform_ip6_route_add (int ifindex,
 }
 
 gboolean
-nm_platform_ip4_route_delete (int ifindex,
-		in_addr_t network, int plen, in_addr_t gateway, int metric)
+nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric)
 {
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
-	if (!nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric)) {
+	if (!nm_platform_ip4_route_exists (ifindex, network, plen, metric)) {
 		debug ("route not found");
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 		return FALSE;
 	}
 
-	return klass->ip4_route_delete (platform,ifindex, network, plen, gateway, metric);
+	return klass->ip4_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
 nm_platform_ip6_route_delete (int ifindex,
-		struct in6_addr network, int plen, struct in6_addr gateway, int metric)
+		struct in6_addr network, int plen, int metric)
 {
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
-	if (!nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric)) {
+	if (!nm_platform_ip6_route_exists (ifindex, network, plen, metric)) {
 		debug ("route not found");
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 		return FALSE;
 	}
 
-	return klass->ip6_route_delete (platform, ifindex, network, plen, gateway, metric);
+	return klass->ip6_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
-nm_platform_ip4_route_exists (int ifindex,
-		in_addr_t network, int plen, in_addr_t gateway, int metric)
+nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric)
 {
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip4_route_exists, FALSE);
 
-	return klass->ip4_route_exists (platform,ifindex, network, plen, gateway, metric);
+	return klass->ip4_route_exists (platform,ifindex, network, plen, metric);
 }
 
 gboolean
-nm_platform_ip6_route_exists (int ifindex,
-		struct in6_addr network, int plen, struct in6_addr gateway, int metric)
+nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, int metric)
 {
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip6_route_exists, FALSE);
 
-	return klass->ip6_route_exists (platform, ifindex, network, plen, gateway, metric);
+	return klass->ip6_route_exists (platform, ifindex, network, plen, metric);
 }
 
 /******************************************************************/

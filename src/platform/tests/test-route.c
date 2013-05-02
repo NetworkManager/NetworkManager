@@ -60,9 +60,9 @@ test_ip4_route ()
 	accept_signal (route_added);
 
 	/* Add route */
-	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric)); no_error ();
+	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, metric)); no_error ();
 	g_assert (nm_platform_ip4_route_add (ifindex, network, plen, gateway, metric, mss)); no_error ();
-	g_assert (nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric)); no_error ();
+	g_assert (nm_platform_ip4_route_exists (ifindex, network, plen, metric)); no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
@@ -87,12 +87,12 @@ test_ip4_route ()
 	g_array_unref (routes);
 
 	/* Remove route */
-	g_assert (nm_platform_ip4_route_delete (ifindex, network, plen, gateway, metric)); no_error ();
-	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, gateway, metric));
+	g_assert (nm_platform_ip4_route_delete (ifindex, network, plen, metric)); no_error ();
+	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
 	/* Remove route again */
-	g_assert (!nm_platform_ip4_route_delete (ifindex, network, plen, gateway, metric));
+	g_assert (!nm_platform_ip4_route_delete (ifindex, network, plen, metric));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (route_added);
@@ -121,9 +121,9 @@ test_ip6_route ()
 	accept_signal (route_added);
 
 	/* Add route */
-	g_assert (!nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric)); no_error ();
+	g_assert (!nm_platform_ip6_route_exists (ifindex, network, plen, metric)); no_error ();
 	g_assert (nm_platform_ip6_route_add (ifindex, network, plen, gateway, metric, mss)); no_error ();
-	g_assert (nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric)); no_error ();
+	g_assert (nm_platform_ip6_route_exists (ifindex, network, plen, metric)); no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
@@ -148,12 +148,12 @@ test_ip6_route ()
 	g_array_unref (routes);
 
 	/* Remove route */
-	g_assert (nm_platform_ip6_route_delete (ifindex, network, plen, gateway, metric)); no_error ();
-	g_assert (!nm_platform_ip6_route_exists (ifindex, network, plen, gateway, metric));
+	g_assert (nm_platform_ip6_route_delete (ifindex, network, plen, metric)); no_error ();
+	g_assert (!nm_platform_ip6_route_exists (ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
 	/* Remove route again */
-	g_assert (!nm_platform_ip6_route_delete (ifindex, network, plen, gateway, metric));
+	g_assert (!nm_platform_ip6_route_delete (ifindex, network, plen, metric));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (route_added);

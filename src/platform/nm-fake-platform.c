@@ -691,8 +691,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 }
 
 static NMPlatformIP4Route *
-ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
-		in_addr_t gateway, int metric)
+ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -703,7 +702,6 @@ ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 		if (route->ifindex == ifindex
 				&& route->network == network
 				&& route->plen == plen
-				&& route->gateway == gateway
 				&& route->metric == metric)
 			return route;
 	}
@@ -712,8 +710,7 @@ ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 }
 
 static NMPlatformIP6Route *
-ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int plen,
-		struct in6_addr gateway, int metric)
+ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -724,7 +721,6 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 		if (route->ifindex == ifindex
 				&& IN6_ARE_ADDR_EQUAL (&route->network, &network)
 				&& route->plen == plen
-				&& IN6_ARE_ADDR_EQUAL (&route->gateway, &gateway)
 				&& route->metric == metric)
 			return route;
 	}
@@ -733,10 +729,9 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 }
 
 static gboolean
-ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
-		in_addr_t gateway, int metric)
+ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
-	NMPlatformIP4Route *route = ip4_route_get (platform, ifindex, network, plen, gateway, metric);
+	NMPlatformIP4Route *route = ip4_route_get (platform, ifindex, network, plen, metric);
 	NMPlatformIP4Route deleted_route;
 
 	g_assert (route);
@@ -749,10 +744,9 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 }
 
 static gboolean
-ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen,
-		struct in6_addr gateway, int metric)
+ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
 {
-	NMPlatformIP6Route *route = ip6_route_get (platform, ifindex, network, plen, gateway, metric);
+	NMPlatformIP6Route *route = ip6_route_get (platform, ifindex, network, plen, metric);
 	NMPlatformIP6Route deleted_route;
 
 	g_assert (route);
@@ -765,17 +759,15 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 }
 
 static gboolean
-ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
-		in_addr_t gateway, int metric)
+ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
-	return !!ip4_route_get (platform, ifindex, network, plen, gateway, metric);
+	return !!ip4_route_get (platform, ifindex, network, plen, metric);
 }
 
 static gboolean
-ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen,
-		struct in6_addr gateway, int metric)
+ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
 {
-	return !!ip6_route_get (platform, ifindex, network, plen, gateway, metric);
+	return !!ip6_route_get (platform, ifindex, network, plen, metric);
 }
 
 /******************************************************************/
