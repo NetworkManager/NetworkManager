@@ -5,6 +5,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src/generated \
+	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/libnm-util \
 	-DKERNEL_HACKS=1
 
