@@ -51,6 +51,7 @@
 #include "nm-device-vlan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-generic.h"
+#include "nm-device-veth.h"
 #include "nm-system.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
@@ -445,6 +446,21 @@ nm_manager_get_device_by_master (NMManager *manager, const char *master, const c
 
 		if (!strcmp (nm_device_get_iface (device), master) &&
 		    (!driver || !strcmp (nm_device_get_driver (device), driver)))
+			return device;
+	}
+
+	return NULL;
+}
+
+NMDevice *
+nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (nm_device_get_ifindex (device) == ifindex)
 			return device;
 	}
 
@@ -2271,6 +2287,9 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 				}
 			} else
 				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", iface);
+			break;
+		case NM_LINK_TYPE_VETH:
+			device = nm_device_veth_new (sysfs_path, iface, driver);
 			break;
 
 		default:

@@ -240,7 +240,8 @@ constructor (GType type,
 		priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 		ifindex = nm_device_get_ifindex (self);
 
-		g_assert (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_ETHERNET);
+		g_assert (   nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_ETHERNET
+		          || nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_VETH);
 
 		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d",
 			        nm_device_get_iface (NM_DEVICE (self)),

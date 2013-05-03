@@ -83,6 +83,8 @@ nm_sources = \
 	devices/nm-device-olpc-mesh.c \
 	devices/nm-device-olpc-mesh.h \
 	devices/nm-device-private.h \
+	devices/nm-device-veth.c \
+	devices/nm-device-veth.h \
 	devices/nm-device-vlan.c \
 	devices/nm-device-vlan.h \
 	devices/nm-device-wifi.c \
@@ -315,6 +317,7 @@ glue_sources = \
 	nm-device-infiniband-glue.h \
 	nm-device-modem-glue.h \
 	nm-device-olpc-mesh-glue.h \
+	nm-device-veth-glue.h \
 	nm-device-vlan-glue.h \
 	nm-device-wifi-glue.h \
 	nm-dhcp4-config-glue.h \

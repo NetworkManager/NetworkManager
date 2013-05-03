@@ -561,6 +561,12 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 	return !!link_get (platform, ifindex);
 }
 
+static gboolean
+veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
+{
+	return FALSE;
+}
+
 /******************************************************************/
 
 static GArray *
@@ -1017,6 +1023,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->vlan_get_info = vlan_get_info;
 	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
+
+	platform_class->veth_get_properties = veth_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

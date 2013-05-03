@@ -901,6 +901,17 @@ nm_platform_vlan_set_egress_map (int ifindex, int from, int to)
 	return klass->vlan_set_egress_map (platform, ifindex, from, to);
 }
 
+gboolean
+nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *props)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (props != NULL, FALSE);
+
+	return klass->veth_get_properties (platform, ifindex, props);
+}
+
 /******************************************************************/
 
 GArray *

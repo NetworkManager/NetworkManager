@@ -59,6 +59,7 @@ typedef enum {
 	/* Virtual types */
 	NM_LINK_TYPE_DUMMY,
 	NM_LINK_TYPE_LOOPBACK,
+	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
 
 	/* Virtual types with slaves */
@@ -109,6 +110,10 @@ typedef struct {
 	guint metric;
 	guint mss;
 } NMPlatformIP6Route;
+
+typedef struct {
+	int peer;
+} NMPlatformVethProperties;
 
 /******************************************************************/
 
@@ -190,6 +195,8 @@ typedef struct {
 	gboolean (*vlan_get_info) (NMPlatform *, int ifindex, int *parent, int *vlan_id);
 	gboolean (*vlan_set_ingress_map) (NMPlatform *, int ifindex, int from, int to);
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
+
+	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -297,6 +304,8 @@ gboolean nm_platform_vlan_add (const char *name, int parent, int vlanid, guint32
 gboolean nm_platform_vlan_get_info (int ifindex, int *parent, int *vlanid);
 gboolean nm_platform_vlan_set_ingress_map (int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (int ifindex, int from, int to);
+
+gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

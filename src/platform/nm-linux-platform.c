@@ -269,6 +269,8 @@ type_to_string (NMLinkType type)
 	switch (type) {
 	case NM_LINK_TYPE_DUMMY:
 		return "dummy";
+	case NM_LINK_TYPE_VETH:
+		return "veth";
 	case NM_LINK_TYPE_VLAN:
 		return "vlan";
 	case NM_LINK_TYPE_BRIDGE:
@@ -322,6 +324,8 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 	else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
+	else if (!strcmp (type, "veth"))
+		return_type (NM_LINK_TYPE_VETH, "veth");
 	else if (!strcmp (type, "vlan"))
 		return_type (NM_LINK_TYPE_VLAN, "vlan");
 	else if (!strcmp (type, "bridge"))
@@ -1402,6 +1406,33 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 	return link_get_option (slave, slave_category (platform, slave), option);
 }
 
+static gboolean
+veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
+{
+	const char *ifname;
+	auto_g_free struct ethtool_stats *stats = NULL;
+	int peer_ifindex_stat;
+
+	ifname = nm_platform_link_get_name (ifindex);
+	if (!ifname)
+		return FALSE;
+
+	peer_ifindex_stat = ethtool_get_stringset_index (ifname, ETH_SS_STATS, "peer_ifindex");
+	if (peer_ifindex_stat == -1) {
+		debug ("%s: peer_ifindex ethtool stat does not exist?", ifname);
+		return FALSE;
+	}
+
+	stats = g_malloc0 (sizeof (*stats) + (peer_ifindex_stat + 1) * sizeof (guint64));
+	stats->cmd = ETHTOOL_GSTATS;
+	stats->n_stats = peer_ifindex_stat + 1;
+	if (!ethtool_get (ifname, stats))
+		return FALSE;
+
+	props->peer = stats->data[peer_ifindex_stat];
+	return TRUE;
+}
+
 /******************************************************************/
 
 static int
@@ -1883,6 +1914,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->vlan_get_info = vlan_get_info;
 	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
+
+	platform_class->veth_get_properties = veth_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

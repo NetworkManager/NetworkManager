@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Device.Veth">
+
+    <property name="Peer" type="o" access="read">
+      <tp:docstring>
+        The object path of the device's peer.
+      </tp:docstring>
+    </property>
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+  </interface>
+</node>

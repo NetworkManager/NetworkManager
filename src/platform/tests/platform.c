@@ -343,6 +343,19 @@ do_vlan_set_egress_map (char **argv)
 }
 
 static gboolean
+do_veth_get_properties (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	NMPlatformVethProperties props;
+
+	if (!nm_platform_veth_get_properties (ifindex, &props))
+		return FALSE;
+
+	printf ("peer: %d\n", props.peer);
+	return TRUE;
+}
+
+static gboolean
 do_ip4_address_get_all (char **argv)
 {
 	int ifindex = parse_ifindex (argv[0]);
@@ -626,6 +639,8 @@ static const command_t commands[] = {
 		"<ifname/ifindex> <from> <to>" },
 	{ "vlan-set-egress-map", "set vlan egress map", do_vlan_set_egress_map, 3,
 		"<ifname/ifindex> <from> <to>" },
+	{ "veth-get-properties", "get veth properties", do_veth_get_properties, 1,
+	  "<ifname/ifindex>" },
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip4-address-add", "add IPv4 address", do_ip4_address_add, 2, "<ifname/ifindex> <address>/<plen>" },
