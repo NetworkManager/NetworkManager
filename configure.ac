@@ -331,7 +331,7 @@ AM_CONDITIONAL(SUSPEND_RESUME_UPOWER, test "x$with_suspend_resume" = "xupower")
 AM_CONDITIONAL(SUSPEND_RESUME_SYSTEMD, test "x$with_suspend_resume" = "xsystemd")
 
 # libnl support for the linux platform
-PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.7 libnl-route-3.0 libnl-genl-3.0)
+PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
 
