@@ -11262,6 +11262,7 @@ test_write_wifi_wep_agent_keys (void)
 
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_PASSPHRASE,
 	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, NM_SETTING_SECRET_FLAG_AGENT_OWNED,
 	              NULL);
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "asdfdjaslfjasd;flasjdfl;aksdf");
@@ -11303,8 +11304,12 @@ test_write_wifi_wep_agent_keys (void)
 	/* Remove the WEP key from the original, because it should not have been
 	 * written out to disk as it was agent-owned.  The new connection should
 	 * not have any WEP keys set.
+	 * Also the new connection should not have WEP key type set.
 	 */
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, NULL);
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_UNKNOWN,
+	              NULL);
 
 	/* Compare original and reread */
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
