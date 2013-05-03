@@ -130,7 +130,16 @@ guint32           nm_setting_wireless_get_rate               (NMSettingWireless 
 guint32           nm_setting_wireless_get_tx_power           (NMSettingWireless *setting);
 const GByteArray *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
 const GByteArray *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
-const GSList     *nm_setting_wireless_get_mac_address_blacklist (NMSettingWireless *setting);
+
+const GSList     *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
+guint32           nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting);
+const char *      nm_setting_wireless_get_mac_blacklist_item      (NMSettingWireless *setting,
+                                                                   guint32 idx);
+gboolean          nm_setting_wireless_add_mac_blacklist_item      (NMSettingWireless *setting,
+                                                                   const char *mac);
+void              nm_setting_wireless_remove_mac_blacklist_item   (NMSettingWireless *setting,
+                                                                   guint32 idx);
+
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_security           (NMSettingWireless *setting);
 gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);

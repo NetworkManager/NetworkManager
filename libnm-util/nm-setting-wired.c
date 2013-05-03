@@ -226,6 +226,106 @@ nm_setting_wired_get_mac_address_blacklist (NMSettingWired *setting)
 }
 
 /**
+ * nm_setting_wired_get_num_mac_blacklist_items:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the number of blacklisted MAC addresses
+ *
+ * Since: 0.9.10
+ **/
+guint32
+nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
+
+	return g_slist_length (NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address_blacklist);
+}
+
+/**
+ * nm_setting_wired_get_mac_blacklist_item:
+ * @setting: the #NMSettingWired
+ * @idx: the zero-based index of the MAC address entry
+ *
+ * Returns: the blacklisted MAC address string (hex-digits-and-colons notation)
+ * at index @idx
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_setting_wired_get_mac_blacklist_item (NMSettingWired *setting, guint32 idx)
+{
+	NMSettingWiredPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+	g_return_val_if_fail (idx <= g_slist_length (priv->mac_address_blacklist), NULL);
+
+	return (const char *) g_slist_nth_data (priv->mac_address_blacklist, idx);
+}
+
+/**
+ * nm_setting_wired_add_mac_blacklist_item:
+ * @setting: the #NMSettingWired
+ * @mac: the MAC address string (hex-digits-and-colons notation) to blacklist
+ *
+ * Adds a new MAC address to the #NMSettingWired:mac-address-blacklist property.
+ *
+ * Returns: %TRUE if the MAC address was added; %FALSE if the MAC address
+ * is invalid or was already present
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *mac)
+{
+	NMSettingWiredPrivate *priv;
+	GSList *iter;
+	guint8 buf[32];
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+	g_return_val_if_fail (mac != NULL, FALSE);
+
+	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf))
+		return FALSE;
+
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+	for (iter = priv->mac_address_blacklist; iter; iter = g_slist_next (iter)) {
+		if (!strcasecmp (mac, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->mac_address_blacklist = g_slist_append (priv->mac_address_blacklist,
+	                                              g_ascii_strup (mac, -1));
+	return TRUE;
+}
+
+/**
+ * nm_setting_wired_remove_mac_blacklist_item:
+ * @setting: the #NMSettingWired
+ * @idx: index number of the MAC address
+ *
+ * Removes the MAC address at index @idx from the blacklist.
+ *
+ * Since: 0.9.10
+ **/
+void
+nm_setting_wired_remove_mac_blacklist_item (NMSettingWired *setting, guint32 idx)
+{
+	NMSettingWiredPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_WIRED (setting));
+
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->mac_address_blacklist, idx);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->mac_address_blacklist = g_slist_delete_link (priv->mac_address_blacklist, elt);
+}
+
+/**
  * nm_setting_wired_get_mtu:
  * @setting: the #NMSettingWired
  *

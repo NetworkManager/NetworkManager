@@ -451,6 +451,7 @@ global:
 	nm_setting_wimax_get_network_name;
 	nm_setting_wimax_get_type;
 	nm_setting_wimax_new;
+	nm_setting_wired_add_mac_blacklist_item;
 	nm_setting_wired_add_s390_option;
 	nm_setting_wired_error_get_type;
 	nm_setting_wired_error_quark;
@@ -459,7 +460,9 @@ global:
 	nm_setting_wired_get_duplex;
 	nm_setting_wired_get_mac_address;
 	nm_setting_wired_get_mac_address_blacklist;
+	nm_setting_wired_get_mac_blacklist_item;
 	nm_setting_wired_get_mtu;
+	nm_setting_wired_get_num_mac_blacklist_items;
 	nm_setting_wired_get_num_s390_options;
 	nm_setting_wired_get_port;
 	nm_setting_wired_get_s390_nettype;
@@ -470,7 +473,9 @@ global:
 	nm_setting_wired_get_type;
 	nm_setting_wired_get_valid_s390_options;
 	nm_setting_wired_new;
+	nm_setting_wired_remove_mac_blacklist_item;
 	nm_setting_wired_remove_s390_option;
+	nm_setting_wireless_add_mac_blacklist_item;
 	nm_setting_wireless_add_seen_bssid;
 	nm_setting_wireless_ap_security_compatible;
 	nm_setting_wireless_error_get_type;
@@ -482,8 +487,10 @@ global:
 	nm_setting_wireless_get_hidden;
 	nm_setting_wireless_get_mac_address;
 	nm_setting_wireless_get_mac_address_blacklist;
+	nm_setting_wireless_get_mac_blacklist_item;
 	nm_setting_wireless_get_mode;
 	nm_setting_wireless_get_mtu;
+	nm_setting_wireless_get_num_mac_blacklist_items;
 	nm_setting_wireless_get_num_seen_bssids;
 	nm_setting_wireless_get_rate;
 	nm_setting_wireless_get_security;
@@ -492,6 +499,7 @@ global:
 	nm_setting_wireless_get_tx_power;
 	nm_setting_wireless_get_type;
 	nm_setting_wireless_new;
+	nm_setting_wireless_remove_mac_blacklist_item;
 	nm_setting_wireless_security_add_group;
 	nm_setting_wireless_security_add_pairwise;
 	nm_setting_wireless_security_add_proto;
