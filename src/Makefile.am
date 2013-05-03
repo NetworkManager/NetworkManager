@@ -237,8 +237,6 @@ nm_sources = \
 	nm-manager.h \
 	nm-netlink-monitor.c \
 	nm-netlink-monitor.h \
-	nm-netlink-utils.c \
-	nm-netlink-utils.h \
 	nm-policy-hosts.c \
 	nm-policy-hosts.h \
 	nm-policy.c \
