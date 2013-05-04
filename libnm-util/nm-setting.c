@@ -754,8 +754,8 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
  * Update the setting's secrets, given a hash table of secrets intended for that
  * setting (deserialized from D-Bus for example).
  * 
- * Returns: %TRUE if the secrets were successfully updated and the connection
- * is valid, %FALSE on failure or if the setting was never added to the connection
+ * Returns: %TRUE if the secrets were successfully updated, %FALSE on failure to
+ * update one or more of the secrets.
  **/
 gboolean
 nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
