@@ -1024,6 +1024,40 @@ ethtool_get (const char *name, gpointer edata)
 	return TRUE;
 }
 
+static int
+ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
+{
+	auto_g_free struct ethtool_sset_info *info;
+	auto_g_free struct ethtool_gstrings *strings;
+	guint32 len, i;
+
+	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
+	info->cmd = ETHTOOL_GSSET_INFO;
+	info->reserved = 0;
+	info->sset_mask = 1ULL << stringset_id;
+
+	if (!ethtool_get (ifname, info))
+		return -1;
+	if (!info->sset_mask)
+		return -1;
+
+	len = info->data[0];
+
+	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
+	strings->cmd = ETHTOOL_GSTRINGS;
+	strings->string_set = stringset_id;
+	strings->len = len;
+	if (!ethtool_get (ifname, strings))
+		return -1;
+
+	for (i = 0; i < len; i++) {
+		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
+			return i;
+	}
+
+	return -1;
+}
+
 static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
@@ -1041,26 +1075,39 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	return name && ethtool_get (name, &edata);
 }
 
-#define NETIF_F_VLAN_CHALLENGED (1 << 10)
-
 static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 	const char *name = nm_platform_link_get_name (ifindex);
-	struct {
-		struct ethtool_gfeatures features;
-		struct ethtool_get_features_block features_block;
-	} edata = { .features = { .cmd = ETHTOOL_GFEATURES, .size = 1 } };
+	auto_g_free struct ethtool_gfeatures *features;
+	int index, block, bit, size;
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!rtnllink || rtnl_link_get_arptype (rtnllink) != ARPHRD_ETHER)
 		return FALSE;
 
-	if (!name || !ethtool_get (name, &edata))
+	if (!name)
 		return FALSE;
 
-	return !(edata.features.features[0].active & NETIF_F_VLAN_CHALLENGED);
+	index = ethtool_get_stringset_index (name, ETH_SS_FEATURES, "vlan-challenged");
+	if (index == -1) {
+		debug ("vlan-challenged ethtool feature does not exist?");
+		return FALSE;
+	}
+
+	block = index /  32;
+	bit = index % 32;
+	size = block + 1;
+
+	features = g_malloc0 (sizeof (*features) + size * sizeof (struct ethtool_get_features_block));
+	features->cmd = ETHTOOL_GFEATURES;
+	features->size = size;
+
+	if (!ethtool_get (name, features))
+		return FALSE;
+
+	return !(features->features[block].active & (1 << bit));
 }
 
 static gboolean
