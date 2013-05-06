@@ -24,7 +24,6 @@
 #include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
-#include "nm-marshal.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-modem-types.h"
 #include "nm-logging.h"
@@ -385,7 +384,7 @@ constructor (GType type,
 	                                               MM_OLD_DBUS_SERVICE,
 	                                               nm_modem_get_path (NM_MODEM (object)),
 	                                               DBUS_INTERFACE_PROPERTIES);
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT,
 	                                   G_TYPE_INVALID);

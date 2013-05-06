@@ -29,7 +29,6 @@
 #include "nm-modem-cdma.h"
 #include "nm-dbus-manager.h"
 #include "nm-modem-types.h"
-#include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 
 #if WITH_MODEM_MANAGER_1
@@ -827,8 +826,7 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMModemManagerClass, modem_added),
-					  NULL, NULL,
-					  _nm_marshal_VOID__OBJECT_STRING,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_STRING);
 
 	signals[MODEM_REMOVED] =
@@ -836,7 +834,6 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMModemManagerClass, modem_removed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 1, G_TYPE_OBJECT);
 }

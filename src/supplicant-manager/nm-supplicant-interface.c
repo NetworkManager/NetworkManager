@@ -27,7 +27,6 @@
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-manager.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 #include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-call-store.h"
@@ -315,7 +314,7 @@ handle_new_bss (NMSupplicantInterface *self,
 	                     proxies);
 
 	/* Standard D-Bus PropertiesChanged signal */
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED_BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_STRV,
 	                                   G_TYPE_INVALID);
@@ -871,7 +870,7 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 	                             self,
 	                             NULL);
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   DBUS_TYPE_G_OBJECT_PATH, DBUS_TYPE_G_MAP_OF_VARIANT,
 	                                   G_TYPE_INVALID);
@@ -895,7 +894,7 @@ interface_add_done (NMSupplicantInterface *self, char *path)
 	                             self,
 	                             NULL);
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   DBUS_TYPE_G_OBJECT_PATH, G_TYPE_STRING, G_TYPE_STRING,
 	                                   G_TYPE_INVALID);
@@ -1633,8 +1632,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT_INT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INT);
 
 	signals[REMOVED] =
@@ -1642,8 +1640,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
 	signals[NEW_BSS] =
@@ -1651,8 +1648,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, new_bss),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_POINTER);
 
 	signals[BSS_UPDATED] =
@@ -1660,8 +1656,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, bss_updated),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_POINTER);
 
 	signals[BSS_REMOVED] =
@@ -1669,8 +1664,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, bss_removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__STRING,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_STRING);
 
 	signals[SCAN_DONE] =
@@ -1678,8 +1672,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_done),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__BOOLEAN,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
 	signals[CONNECTION_ERROR] =
@@ -1687,8 +1680,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_STRING,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 
 	signals[CREDENTIALS_REQUEST] =
@@ -1696,8 +1688,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, credentials_request),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_STRING,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 

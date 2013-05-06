@@ -23,7 +23,6 @@
 #include <sys/inotify.h>
 #include <glib.h>
 
-#include "nm-marshal.h"
 #include "nm-inotify-helper.h"
 #include "nm-logging.h"
 
@@ -200,8 +199,7 @@ nm_inotify_helper_class_init (NMInotifyHelperClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMInotifyHelperClass, event),
-		              NULL, NULL,
-		              _nm_marshal_VOID__POINTER_STRING,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_STRING);
 }
 

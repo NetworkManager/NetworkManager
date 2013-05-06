@@ -157,10 +157,8 @@ initscript/*/[Nn]etwork[Mm]anager
 *-bindings.h
 callouts/tests/test-dispatcher-envp
 libnm-glib/libnm-glib-test
-libnm-glib/nm-glib-marshal.*
 src/NetworkManager
 src/nm-crash-logger
-src/generated/nm-marshal.*
 src/supplicant-manager/tests/test-supplicant-config
 src/dhcp-manager/nm-dhcp-helper
 system-settings/src

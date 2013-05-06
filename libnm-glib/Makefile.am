@@ -119,8 +119,7 @@ libnm_glib_la_csources = \
 	nm-secret-agent.c \
 	nm-device-wimax.c \
 	nm-wimax-nsp.c \
-	nm-glib-enum-types.c \
-	nm-glib-marshal.c
+	nm-glib-enum-types.c
 
 libnm_glib_la_private_headers = \
 	nm-object-private.h \
@@ -128,7 +127,6 @@ libnm_glib_la_private_headers = \
 	nm-types-private.h \
 	nm-object-cache.h \
 	nm-remote-connection-private.h \
-	nm-glib-marshal.h \
 	nm-dbus-helpers-private.h
 
 libnm_glib_la_SOURCES = \
@@ -139,9 +137,6 @@ GLIB_GENERATED = nm-glib-enum-types.h nm-glib-enum-types.c
 nm_glib_enum_types_sources = $(libnminclude_HEADERS)
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-
-GLIB_GENERATED += nm-glib-marshal.h nm-glib-marshal.c
-nm_glib_marshal_sources = $(libnm_glib_la_SOURCES)
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

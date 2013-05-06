@@ -55,7 +55,6 @@
 #include "nm-dnsmasq-manager.h"
 #include "nm-dhcp4-config.h"
 #include "nm-ip6-manager.h"
-#include "nm-marshal.h"
 #include "nm-rfkill.h"
 #include "nm-firewall-manager.h"
 #include "nm-properties-changed-signal.h"
@@ -5111,8 +5110,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT_UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 3,
 		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
@@ -5121,33 +5119,29 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              0,
-		              autoconnect_allowed_accumulator, NULL,
-		              _nm_marshal_BOOLEAN__VOID,
+		              autoconnect_allowed_accumulator, NULL, NULL,
 		              G_TYPE_BOOLEAN, 0);
 
 	signals[AUTH_REQUEST] =
 		g_signal_new (NM_DEVICE_AUTH_REQUEST,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
+		              0, NULL, NULL, NULL,
 		              /* dbus-glib context, permission, allow_interaction, callback, user_data */
-		              _nm_marshal_VOID__POINTER_STRING_BOOLEAN_POINTER_POINTER,
 		              G_TYPE_NONE, 5, G_TYPE_POINTER, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[IP4_CONFIG_CHANGED] =
 		g_signal_new (NM_DEVICE_IP4_CONFIG_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              _nm_marshal_VOID__OBJECT_OBJECT,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
 	signals[IP6_CONFIG_CHANGED] =
 		g_signal_new (NM_DEVICE_IP6_CONFIG_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              _nm_marshal_VOID__OBJECT_OBJECT,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),

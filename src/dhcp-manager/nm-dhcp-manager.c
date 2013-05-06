@@ -37,7 +37,6 @@
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
-#include "nm-marshal.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-hostname-provider.h"

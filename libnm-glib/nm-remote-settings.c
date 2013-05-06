@@ -25,7 +25,6 @@
 #include <NetworkManager.h>
 #include <nm-connection.h>
 
-#include "nm-glib-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
@@ -876,7 +875,7 @@ constructed (GObject *object)
 		                                              DBUS_INTERFACE_DBUS);
 		g_assert (priv->dbus_proxy);
 
-		dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__STRING_STRING_STRING,
+		dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 		                                   G_TYPE_NONE,
 		                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 		                                   G_TYPE_INVALID);
@@ -910,7 +909,7 @@ constructed (GObject *object)
 	g_assert (priv->props_proxy);
 
 	/* Monitor properties */
-	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   DBUS_TYPE_G_MAP_OF_VARIANT,
 	                                   G_TYPE_INVALID);
@@ -1224,8 +1223,7 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	                              G_OBJECT_CLASS_TYPE (object_class),
 	                              G_SIGNAL_RUN_FIRST,
 	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, new_connection),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__OBJECT,
+	                              NULL, NULL, NULL,
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[CONNECTIONS_READ] = 
@@ -1233,8 +1231,7 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	                              G_OBJECT_CLASS_TYPE (object_class),
 	                              G_SIGNAL_RUN_FIRST,
 	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, connections_read),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__VOID,
+	                              NULL, NULL, NULL,
 	                              G_TYPE_NONE, 0);
 }
 

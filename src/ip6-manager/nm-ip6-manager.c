@@ -32,7 +32,6 @@
 #include "nm-ip6-manager.h"
 #include "nm-netlink-monitor.h"
 #include "NetworkManagerUtils.h"
-#include "nm-marshal.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
 
@@ -1678,8 +1677,7 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, addrconf_complete),
-					  NULL, NULL,
-					  _nm_marshal_VOID__INT_UINT_BOOLEAN,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_BOOLEAN);
 
 	signals[CONFIG_CHANGED] =
@@ -1687,8 +1685,7 @@ nm_ip6_manager_class_init (NMIP6ManagerClass *manager_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMIP6ManagerClass, config_changed),
-					  NULL, NULL,
-					  _nm_marshal_VOID__INT_UINT_BOOLEAN,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_UINT, G_TYPE_BOOLEAN);
 }
 

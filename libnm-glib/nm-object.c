@@ -31,7 +31,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-types.h"
-#include "nm-glib-marshal.h"
 #include "nm-dbus-helpers-private.h"
 
 #define DEBUG 0
@@ -461,8 +460,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMObjectClass, object_creation_failed),
-		              NULL, NULL,
-		              _nm_glib_marshal_VOID__POINTER_POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_POINTER);
 }
 

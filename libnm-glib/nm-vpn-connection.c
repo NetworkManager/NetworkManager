@@ -25,7 +25,6 @@
 #include "nm-vpn-connection.h"
 #include "NetworkManager.h"
 #include "nm-utils.h"
-#include "nm-glib-marshal.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"
 
@@ -174,7 +173,7 @@ constructed (GObject *object)
 
 	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_VPN_CONNECTION);
 
-	dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__UINT_UINT,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_UINT, G_TYPE_UINT,
 	                                   G_TYPE_INVALID);
@@ -268,8 +267,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 				    G_OBJECT_CLASS_TYPE (object_class),
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMVPNConnectionClass, vpn_state_changed),
-				    NULL, NULL,
-				    _nm_glib_marshal_VOID__UINT_UINT,
+				    NULL, NULL, NULL,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
 }

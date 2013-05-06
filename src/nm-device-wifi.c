@@ -42,7 +42,6 @@
 #include "nm-device-private.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
 #include "nm-supplicant-manager.h"
@@ -3737,8 +3736,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
 
@@ -3747,8 +3745,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0,
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
 
@@ -3757,8 +3754,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMDeviceWifiClass, hidden_ap_found),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
 
@@ -3771,8 +3767,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDeviceWifiClass, scanning_allowed),
-		              scanning_allowed_accumulator, NULL,
-		              _nm_marshal_BOOLEAN__VOID,
+		              scanning_allowed_accumulator, NULL, NULL,
 		              G_TYPE_BOOLEAN, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass), &dbus_glib_nm_device_wifi_object_info);

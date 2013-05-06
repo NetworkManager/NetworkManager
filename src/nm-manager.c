@@ -57,7 +57,6 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
-#include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-udev-manager.h"
 #include "nm-hostname-provider.h"
@@ -4468,7 +4467,7 @@ nm_manager_init (NMManager *manager)
 	                                              "/",
 	                                              NM_AUTOIP_DBUS_IFACE);
 	if (priv->aipd_proxy) {
-		dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+		dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 		                                   G_TYPE_NONE,
 		                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 		                                   G_TYPE_INVALID);
@@ -4636,8 +4635,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, device_added),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[DEVICE_REMOVED] =
@@ -4645,8 +4643,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, device_removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[STATE_CHANGED] =
@@ -4654,8 +4651,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, state_changed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[PROPERTIES_CHANGED] =
@@ -4666,32 +4662,28 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		g_signal_new ("check-permissions",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
 	signals[USER_PERMISSIONS_CHANGED] =
 		g_signal_new ("user-permissions-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
 	signals[ACTIVE_CONNECTION_ADDED] =
 		g_signal_new (NM_MANAGER_ACTIVE_CONNECTION_ADDED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	signals[ACTIVE_CONNECTION_REMOVED] =
 		g_signal_new (NM_MANAGER_ACTIVE_CONNECTION_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__OBJECT,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),

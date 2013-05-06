@@ -24,7 +24,6 @@
 #include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
-#include "nm-marshal.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-modem-types.h"
 #include "nm-logging.h"
@@ -876,8 +875,7 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, ppp_stats),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
 
@@ -886,8 +884,7 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, ppp_failed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[IP4_CONFIG_RESULT] =
@@ -895,8 +892,7 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, ip4_config_result),
-		              NULL, NULL,
-		              _nm_marshal_VOID__OBJECT_POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
 
 	signals[PREPARE_RESULT] =
@@ -904,8 +900,7 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, prepare_result),
-		              NULL, NULL,
-		              _nm_marshal_VOID__BOOLEAN_UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_BOOLEAN, G_TYPE_UINT);
 
 	signals[AUTH_REQUESTED] =
@@ -913,8 +908,7 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, auth_requested),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
 	signals[AUTH_RESULT] =
@@ -922,7 +916,6 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMModemClass, auth_result),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 }

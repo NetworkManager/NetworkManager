@@ -4,9 +4,7 @@ noinst_LTLIBRARIES = libnm-generated.la
 
 libnm_generated_la_SOURCES = \
 	nm-enum-types.c \
-	nm-enum-types.h \
-	nm-marshal.c \
-	nm-marshal.h
+	nm-enum-types.h
 
 nm_daemon_all_sources = \
 	$(top_srcdir)/src/*.[ch] \
@@ -48,9 +46,6 @@ GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 nm_enum_types_sources = $(nm_daemon_sources)
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-
-GLIB_GENERATED += nm-marshal.h nm-marshal.c
-nm_marshal_sources = $(nm_daemon_sources)
 
 INCLUDES = \
 	-I${top_srcdir}/include \

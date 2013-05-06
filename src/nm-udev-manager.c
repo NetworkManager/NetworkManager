@@ -27,7 +27,6 @@
 #include <gudev/gudev.h>
 
 #include "nm-udev-manager.h"
-#include "nm-marshal.h"
 #include "nm-logging.h"
 #include "nm-system.h"
 
@@ -628,8 +627,7 @@ nm_udev_manager_class_init (NMUdevManagerClass *klass)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMUdevManagerClass, device_added),
-					  NULL, NULL,
-					  _nm_marshal_VOID__POINTER_POINTER_POINTER_POINTER_INT,
+					  NULL, NULL, NULL, 
 					  G_TYPE_NONE, 5, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_INT);
 
 	signals[DEVICE_REMOVED] =
@@ -637,8 +635,7 @@ nm_udev_manager_class_init (NMUdevManagerClass *klass)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMUdevManagerClass, device_removed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[RFKILL_CHANGED] =
@@ -646,8 +643,7 @@ nm_udev_manager_class_init (NMUdevManagerClass *klass)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMUdevManagerClass, rfkill_changed),
-					  NULL, NULL,
-					  _nm_marshal_VOID__UINT_UINT,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 

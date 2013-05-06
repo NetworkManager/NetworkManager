@@ -26,7 +26,6 @@
 
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-marshal.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez-adapter.h"
 #include "nm-dbus-manager.h"
@@ -370,8 +369,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_STRING_STRING_UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[BDADDR_REMOVED] =
@@ -379,8 +377,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),
-		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_STRING,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 

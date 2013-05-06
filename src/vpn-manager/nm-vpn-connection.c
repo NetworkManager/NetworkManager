@@ -38,7 +38,6 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-vpn-plugin-bindings.h"
-#include "nm-marshal.h"
 #include "nm-active-connection.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
@@ -1606,16 +1605,14 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		g_signal_new ("vpn-state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
+		              0, NULL, NULL, NULL, 
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[INTERNAL_STATE_CHANGED] =
 		g_signal_new (NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT_UINT,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (object_class),

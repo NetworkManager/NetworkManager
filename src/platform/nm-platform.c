@@ -27,7 +27,6 @@
 
 #include "nm-platform.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
@@ -1144,8 +1143,7 @@ nm_platform_init (NMPlatform *object)
 		G_OBJECT_CLASS_TYPE (object_class), \
 		G_SIGNAL_RUN_FIRST, \
 		G_CALLBACK (method), \
-		NULL, NULL, \
-		_nm_marshal_VOID__INT_POINTER, \
+		NULL, NULL, NULL, \
 		G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_POINTER); \
 
 static void

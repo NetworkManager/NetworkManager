@@ -33,7 +33,6 @@
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
@@ -877,7 +876,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	/* Watch for BT device property changes */
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, G_TYPE_VALUE,
 	                                   G_TYPE_INVALID);
@@ -1308,8 +1307,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMDeviceBtClass, ppp_stats),
-		              NULL, NULL,
-		              _nm_marshal_VOID__UINT_UINT,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
 

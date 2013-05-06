@@ -29,7 +29,6 @@
 #include <nm-utils.h>
 
 #include "nm-dbus-glib-types.h"
-#include "nm-marshal.h"
 #include "nm-default-wired-connection.h"
 #include "nm-device-ethernet.h"
 

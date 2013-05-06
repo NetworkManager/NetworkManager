@@ -26,7 +26,6 @@
 
 #include "NetworkManager.h"
 #include "nm-dbus-manager.h"
-#include "nm-marshal.h"
 #include "nm-glib-compat.h"
 
 #include <dbus/dbus.h>
@@ -502,7 +501,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, dbus_connection_changed),
-		              NULL, NULL, _nm_marshal_VOID__POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[NAME_OWNER_CHANGED] =
@@ -510,7 +509,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, name_owner_changed),
-		              NULL, NULL, _nm_marshal_VOID__STRING_STRING_STRING,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 
 	signals[PRIVATE_CONNECTION_NEW] =
@@ -518,7 +517,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, private_connection_new),
-		              NULL, NULL, _nm_marshal_VOID__STRING_POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	signals[PRIVATE_CONNECTION_DISCONNECTED] =
@@ -526,7 +525,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, private_connection_disconnected),
-		              NULL, NULL, _nm_marshal_VOID__STRING_POINTER,
+		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 

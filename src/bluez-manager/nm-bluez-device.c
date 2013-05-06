@@ -31,7 +31,6 @@
 #include "nm-bluez-common.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 
 
 G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
@@ -424,7 +423,7 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 	                                         BLUEZ_DEVICE_INTERFACE);
 	g_object_unref (dbus_mgr);
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_STRING, G_TYPE_VALUE,
 	                                   G_TYPE_INVALID);
@@ -588,8 +587,7 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
 	                                     G_STRUCT_OFFSET (NMBluezDeviceClass, initialized),
-	                                     NULL, NULL,
-	                                     g_cclosure_marshal_VOID__BOOLEAN,
+	                                     NULL, NULL, NULL, 
 	                                     G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }
 

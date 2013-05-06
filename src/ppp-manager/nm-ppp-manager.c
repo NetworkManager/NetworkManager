@@ -52,7 +52,6 @@
 #include "nm-setting-cdma.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
-#include "nm-marshal.h"
 #include "nm-posix-signals.h"
 
 static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
@@ -256,34 +255,31 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	/* signals */
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__UINT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_UINT);
 
 	signals[IP4_CONFIG] =
 		g_signal_new ("ip4-config",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
-				    NULL, NULL,
-				    _nm_marshal_VOID__STRING_OBJECT,
-				    G_TYPE_NONE, 2,
-				    G_TYPE_STRING,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_STRING,
+		              G_TYPE_OBJECT);
 
 	signals[STATS] =
 		g_signal_new ("stats",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMPPPManagerClass, stats),
-				    NULL, NULL,
-				    _nm_marshal_VOID__UINT_UINT,
-				    G_TYPE_NONE, 2,
-				    G_TYPE_UINT, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, stats),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 							   &dbus_glib_nm_ppp_manager_object_info);

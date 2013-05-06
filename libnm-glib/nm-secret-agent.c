@@ -26,7 +26,6 @@
 #include "NetworkManager.h"
 #include "nm-secret-agent.h"
 #include "nm-glib-enum-types.h"
-#include "nm-glib-marshal.h"
 #include "nm-dbus-helpers-private.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,
@@ -824,7 +823,7 @@ nm_secret_agent_init (NMSecretAgent *self)
 		                                              DBUS_INTERFACE_DBUS);
 		g_assert (priv->dbus_proxy);
 
-		dbus_g_object_register_marshaller (_nm_glib_marshal_VOID__STRING_STRING_STRING,
+		dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 		                                   G_TYPE_NONE,
 		                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 		                                   G_TYPE_INVALID);
@@ -1010,8 +1009,7 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 		g_signal_new (NM_SECRET_AGENT_REGISTRATION_RESULT,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
+					  0, NULL, NULL, NULL,
 					  G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),

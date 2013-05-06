@@ -29,7 +29,6 @@
 #include "nm-device-private.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-rfkill.h"
-#include "nm-marshal.h"
 #include "nm-logging.h"
 #include "nm-system.h"
 
