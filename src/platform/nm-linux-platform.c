@@ -26,6 +26,7 @@
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <linux/if_arp.h>
+#include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
@@ -259,6 +260,88 @@ delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	}
 }
 
+/* nm_rtnl_link_parse_info_data(): Re-fetches a link from the kernel
+ * and parses its IFLA_INFO_DATA using a caller-provided parser.
+ *
+ * Code is stolen from rtnl_link_get_kernel(), nl_pickup(), and link_msg_parser().
+ */
+
+typedef int (*NMNLInfoDataParser) (struct nlattr *info_data, gpointer parser_data);
+
+typedef struct {
+	NMNLInfoDataParser parser;
+	gpointer parser_data;
+} NMNLInfoDataClosure;
+
+static struct nla_policy info_data_link_policy[IFLA_MAX + 1] = {
+	[IFLA_LINKINFO]	= { .type = NLA_NESTED },
+};
+
+static struct nla_policy info_data_link_info_policy[IFLA_INFO_MAX + 1] = {
+	[IFLA_INFO_DATA]	= { .type = NLA_NESTED },
+};
+
+static int
+info_data_parser (struct nl_msg *msg, void *arg)
+{
+	NMNLInfoDataClosure *closure = arg;
+	struct nlmsghdr *n = nlmsg_hdr (msg);
+	struct nlattr *tb[IFLA_MAX + 1];
+	struct nlattr *li[IFLA_INFO_MAX + 1];
+	int err;
+
+	if (!nlmsg_valid_hdr (n, sizeof (struct ifinfomsg)))
+		return -NLE_MSG_TOOSHORT;
+
+	err = nlmsg_parse (n, sizeof (struct ifinfomsg), tb, IFLA_MAX, info_data_link_policy);
+	if (err < 0)
+		return err;
+
+	if (!tb[IFLA_LINKINFO])
+		return -NLE_MISSING_ATTR;
+
+	err = nla_parse_nested (li, IFLA_INFO_MAX, tb[IFLA_LINKINFO], info_data_link_info_policy);
+	if (err < 0)
+		return err;
+
+	if (!li[IFLA_INFO_DATA])
+		return -NLE_MISSING_ATTR;
+
+	return closure->parser (li[IFLA_INFO_DATA], closure->parser_data);
+}
+
+static int
+nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
+                              NMNLInfoDataParser parser, gpointer parser_data)
+{
+	NMNLInfoDataClosure data = { .parser = parser, .parser_data = parser_data };
+	struct nl_msg *msg = NULL;
+	struct nl_cb *cb;
+	int err;
+
+	err = rtnl_link_build_get_request (ifindex, NULL, &msg);
+	if (err < 0)
+		return err;
+
+	err = nl_send_auto (sk, msg);
+	nlmsg_free (msg);
+	if (err < 0)
+		return err;
+
+	cb = nl_cb_clone (nl_socket_get_cb (sk));
+	if (cb == NULL)
+		return -NLE_NOMEM;
+	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, info_data_parser, &data);
+
+	err = nl_recvmsgs (sk, cb);
+	nl_cb_put (cb);
+	if (err < 0)
+		return err;
+
+	nl_wait_for_ack (sk);
+	return 0;
+}
+
 /******************************************************************/
 
 /* Object type specific utilities */
@@ -272,6 +355,10 @@ type_to_string (NMLinkType type)
 		return "dummy";
 	case NM_LINK_TYPE_IFB:
 		return "ifb";
+	case NM_LINK_TYPE_MACVLAN:
+		return "macvlan";
+	case NM_LINK_TYPE_MACVTAP:
+		return "macvtap";
 	case NM_LINK_TYPE_TAP:
 		return "tap";
 	case NM_LINK_TYPE_TUN:
@@ -333,6 +420,10 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "ifb"))
 		return_type (NM_LINK_TYPE_IFB, "ifb");
+	else if (!strcmp (type, "macvlan"))
+		return_type (NM_LINK_TYPE_MACVLAN, "macvlan");
+	else if (!strcmp (type, "macvtap"))
+		return_type (NM_LINK_TYPE_MACVTAP, "macvtap");
 	else if (!strcmp (type, "tun")) {
 		NMPlatformTunProperties props;
 
@@ -1488,6 +1579,63 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	return TRUE;
 }
 
+static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
+	[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
+	[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
+};
+
+static int
+macvlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
+{
+	NMPlatformMacvlanProperties *props = parser_data;
+	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
+	int err;
+
+	err = nla_parse_nested (tb, IFLA_MACVLAN_MAX, info_data,
+	                        (struct nla_policy *) macvlan_info_policy);
+	if (err < 0)
+		return err;
+
+	switch (nla_get_u32 (tb[IFLA_MACVLAN_MODE])) {
+	case MACVLAN_MODE_PRIVATE:
+		props->mode = "private";
+		break;
+	case MACVLAN_MODE_VEPA:
+		props->mode = "vepa";
+		break;
+	case MACVLAN_MODE_BRIDGE:
+		props->mode = "bridge";
+		break;
+	case MACVLAN_MODE_PASSTHRU:
+		props->mode = "passthru";
+		break;
+	default:
+		return -NLE_PARSE_ERR;
+	}
+
+	props->no_promisc = !!(nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]) & MACVLAN_FLAG_NOPROMISC);
+
+	return 0;
+}
+
+static gboolean
+macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProperties *props)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink;
+	int err;
+
+	rtnllink = link_get (platform, ifindex);
+	if (!rtnllink)
+		return FALSE;
+
+	props->parent_ifindex = rtnl_link_get_link (rtnllink);
+
+	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
+	                                    macvlan_info_data_parser, props);
+	return (err == 0);
+}
+
 /******************************************************************/
 
 static int
@@ -1972,6 +2120,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->tun_get_properties = tun_get_properties;
+	platform_class->macvlan_get_properties = macvlan_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

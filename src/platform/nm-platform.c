@@ -923,6 +923,17 @@ nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *props)
 	return klass->tun_get_properties (platform, ifindex, props);
 }
 
+gboolean
+nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (props != NULL, FALSE);
+
+	return klass->macvlan_get_properties (platform, ifindex, props);
+}
+
 /******************************************************************/
 
 GArray *

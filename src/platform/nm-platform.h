@@ -59,6 +59,8 @@ typedef enum {
 	NM_LINK_TYPE_DUMMY,
 	NM_LINK_TYPE_IFB,
 	NM_LINK_TYPE_LOOPBACK,
+	NM_LINK_TYPE_MACVLAN,
+	NM_LINK_TYPE_MACVTAP,
 	NM_LINK_TYPE_TAP,
 	NM_LINK_TYPE_TUN,
 	NM_LINK_TYPE_VETH,
@@ -125,6 +127,12 @@ typedef struct {
 	gboolean vnet_hdr;
 	gboolean multi_queue;
 } NMPlatformTunProperties;
+
+typedef struct {
+	int parent_ifindex;
+	const char *mode;
+	gboolean no_promisc;
+} NMPlatformMacvlanProperties;
 
 /******************************************************************/
 
@@ -209,6 +217,7 @@ typedef struct {
 
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
+	gboolean (*macvlan_get_properties) (NMPlatform *, int ifindex, NMPlatformMacvlanProperties *props);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -319,6 +328,7 @@ gboolean nm_platform_vlan_set_egress_map (int ifindex, int from, int to);
 
 gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);
+gboolean nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

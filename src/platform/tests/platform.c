@@ -385,6 +385,22 @@ do_tun_get_properties (char **argv)
 }
 
 static gboolean
+do_macvlan_get_properties (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	NMPlatformMacvlanProperties props;
+
+	if (!nm_platform_macvlan_get_properties (ifindex, &props))
+		return FALSE;
+
+	printf ("parent: %d\n", props.parent_ifindex);
+	printf ("mode: %s\n", props.mode);
+	printf ("no-promisc: ");
+	print_boolean (props.no_promisc);
+	return TRUE;
+}
+
+static gboolean
 do_ip4_address_get_all (char **argv)
 {
 	int ifindex = parse_ifindex (argv[0]);
@@ -671,6 +687,8 @@ static const command_t commands[] = {
 	{ "veth-get-properties", "get veth properties", do_veth_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "tun-get-properties", "get tun/tap properties", do_tun_get_properties, 1,
+	  "<ifname/ifindex>" },
+	{ "macvlan-get-properties", "get macvlan properties", do_macvlan_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },
