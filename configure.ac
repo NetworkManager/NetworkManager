@@ -702,7 +702,6 @@ initscript/Debian/NetworkManager
 initscript/Slackware/rc.networkmanager
 initscript/SUSE/networkmanager
 initscript/Arch/networkmanager
-initscript/paldo/NetworkManager
 initscript/Mandriva/networkmanager
 initscript/linexa/networkmanager
 introspection/Makefile
