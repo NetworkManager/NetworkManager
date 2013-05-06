@@ -224,62 +224,17 @@ else
 NetworkManager_SOURCES += nm-sleep-monitor-upower.c
 endif
 
-nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
-
-nm-manager-glue.h: $(top_srcdir)/introspection/nm-manager.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=$@ $<
-
+# dbus-glib glue. We define nm-device-interface-glue.h specially, because its
+# name doesn't match the general pattern.
 nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
 
-nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
+define glue_rule
+$(1): $$(top_srcdir)/introspection/$(notdir $(subst -glue.h,,$(1))).xml
+	$$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(notdir $(subst -glue.h,,$(1)))) --mode=glib-server --output=$$@ $$<
+endef
 
-nm-device-infiniband-glue.h: $(top_srcdir)/introspection/nm-device-infiniband.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_infiniband --mode=glib-server --output=$@ $<
-
-nm-device-adsl-glue.h: $(top_srcdir)/introspection/nm-device-adsl.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_adsl --mode=glib-server --output=$@ $<
-
-nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
-
-nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
-
-nm-device-olpc-mesh-glue.h: $(top_srcdir)/introspection/nm-device-olpc-mesh.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
-
-nm-device-bond-glue.h: $(top_srcdir)/introspection/nm-device-bond.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bond --mode=glib-server --output=$@ $<
-
-nm-device-bridge-glue.h: $(top_srcdir)/introspection/nm-device-bridge.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_bridge --mode=glib-server --output=$@ $<
-
-nm-device-vlan-glue.h: $(top_srcdir)/introspection/nm-device-vlan.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_vlan --mode=glib-server --output=$@ $<
-
-nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
-
-nm-ip6-config-glue.h: $(top_srcdir)/introspection/nm-ip6-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_ip6_config --mode=glib-server --output=$@ $<
-
-nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
-
-nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
-
-nm-dhcp6-config-glue.h: $(top_srcdir)/introspection/nm-dhcp6-config.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dhcp6_config --mode=glib-server --output=$@ $<
-
-nm-device-modem-glue.h: $(top_srcdir)/introspection/nm-device-modem.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_modem --mode=glib-server --output=$@ $<
-
-nm-device-generic-glue.h: $(top_srcdir)/introspection/nm-device-generic.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_generic --mode=glib-server --output=$@ $<
+$(foreach f,$(filter-out nm-device-interface-glue.h,$(filter %-glue.h,$(BUILT_SOURCES))),$(eval $(call glue_rule,$(f))))
 
 BUILT_SOURCES = \
 	nm-access-point-glue.h \
