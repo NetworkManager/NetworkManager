@@ -340,6 +340,12 @@ PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
+# pkgconfig
+AC_PATH_PROG(PKGCONFIG_PATH, pkg-config, no)
+if test x"$PKGCONFIG_PATH" = xno; then
+	AC_MSG_ERROR([pkgconfig required but not found])
+fi
+
 # Intel WiMAX SDK checks
 PKG_CHECK_MODULES(IWMX_SDK, [libiWmxSdk-0 >= 1.5.1], [have_wimax=yes],[have_wimax=no])
 AC_ARG_ENABLE(wimax, AS_HELP_STRING([--enable-wimax], [enable WiMAX support]),
@@ -348,6 +354,15 @@ if (test "${enable_wimax}" = "yes"); then
 	if test x"$have_wimax" = x"no"; then
 		AC_MSG_ERROR(Intel WiMAX SDK is required)
 	fi
+
+	# Ensure the WiMAX stack is built with libnl3; otherwise crashes happen
+	# due to symbol conflicts
+	WMX_LIB_PATH=`$PKGCONFIG_PATH --variable=libdir libiWmxSdk-0`
+	FOO=`ldd $WMX_LIB_PATH/libiWmxSdk.so.0.0.0 | grep libnl-3 2>&1`
+	if test x"$?" != "x0"; then
+		AC_MSG_ERROR([Intel WiMAX stack built with incompatible libnl version!])
+	fi
+
 	AC_SUBST(IWMX_SDK_CFLAGS)
 	AC_SUBST(IWMX_SDK_LIBS)
 	AC_DEFINE(WITH_WIMAX, 1, [Define if you have WiMAX support])
@@ -391,14 +406,9 @@ if test x"$ac_crypto" = xnss; then
   PKG_CHECK_MODULES(NSS, [nss >= 3.11])
 
   # Work around a pkg-config bug (fdo #29801) where exists != usable
-  AC_PATH_PROG(PKGCONFIG_PATH, pkg-config, no)
-  if test x"$PKGCONFIG_PATH" = xno; then
-    AC_MSG_ERROR([pkgconfig required but not found])
-  else
-    FOO=`$PKGCONFIG_PATH --cflags --libs nss`
-    if test x"$?" != "x0"; then
-      AC_MSG_ERROR([No usable NSS found])
-    fi
+  FOO=`$PKGCONFIG_PATH --cflags --libs nss`
+  if test x"$?" != "x0"; then
+    AC_MSG_ERROR([No usable NSS found])
   fi
 
   AC_SUBST(NSS_CFLAGS)
