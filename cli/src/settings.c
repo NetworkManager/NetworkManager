@@ -661,7 +661,7 @@ allowed_bands_to_string (guint32 bands)
 		g_string_append (band_str, _("WCDMA 3GPP UMTS 2600 MHz, "));
 
 	if (band_str->str[band_str->len-1] == '(')
-		g_string_assign (band_str, _("unknown"));
+		g_string_append (band_str, _("unknown"));
 	else
 		g_string_truncate (band_str, band_str->len-2);  /* chop off trailing ', ' */
 
@@ -689,7 +689,7 @@ vlan_flags_to_string (guint32 flags)
 		g_string_append (flag_str, _("LOOSE_BINDING, "));
 
 	if (flag_str->str[flag_str->len-1] == '(')
-		g_string_assign (flag_str, _("unknown"));
+		g_string_append (flag_str, _("unknown"));
 	else
 		g_string_truncate (flag_str, flag_str->len-2);  /* chop off trailing ', ' */
 
@@ -751,7 +751,7 @@ secret_flags_to_string (guint32 flags)
 		g_string_append (flag_str, _("not required, "));
 
 	if (flag_str->str[flag_str->len-1] == '(')
-		g_string_assign (flag_str, _("unknown"));
+		g_string_append (flag_str, _("unknown"));
 	else
 		g_string_truncate (flag_str, flag_str->len-2);  /* chop off trailing ', ' */
 
