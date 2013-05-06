@@ -1,5 +1,3 @@
-if ENABLE_TESTS
-
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -26,12 +24,7 @@ test_dhcp_options_CPPFLAGS = \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
 test_dhcp_options_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/src/dhcp-manager/libdhcp-manager.la \
-	$(top_builddir)/src/libtest-dhcp.la \
-	$(top_builddir)/src/platform/libnm-platform.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
 ####### policy /etc/hosts test #######
 
@@ -42,9 +35,7 @@ test_policy_hosts_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 test_policy_hosts_LDADD = \
-	-ldl \
-	$(top_builddir)/src/libtest-policy-hosts.la \
-	$(GLIB_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
 ####### wifi ap utils test #######
 
@@ -56,10 +47,7 @@ test_wifi_ap_utils_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 test_wifi_ap_utils_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/src/libtest-wifi-ap-utils.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
 ####### secret agent interface test #######
 
@@ -71,5 +59,3 @@ check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils
 	$(abs_builddir)/test-dhcp-options
 	$(abs_builddir)/test-policy-hosts
 	$(abs_builddir)/test-wifi-ap-utils
-
-endif

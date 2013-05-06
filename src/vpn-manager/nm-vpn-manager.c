@@ -31,6 +31,8 @@
 #include "nm-enum-types.h"
 #include "nm-logging.h"
 
+#define VPN_NAME_FILES_DIR NMCONFDIR "/VPN"
+
 G_DEFINE_TYPE (NMVPNManager, nm_vpn_manager, G_TYPE_OBJECT)
 
 #define NM_VPN_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_MANAGER, NMVPNManagerPrivate))

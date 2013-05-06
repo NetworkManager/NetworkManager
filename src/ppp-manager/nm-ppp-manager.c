@@ -69,7 +69,7 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 static void _ppp_cleanup  (NMPPPManager *manager);
 
-#define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
+#define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {

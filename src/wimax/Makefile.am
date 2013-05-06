@@ -1,7 +1,5 @@
 INCLUDES = \
 	-I${top_srcdir}/src \
-	-I${top_builddir}/src/generated \
-	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
@@ -32,8 +30,7 @@ libnm_device_plugin_wimax_la_LDFLAGS = -module -avoid-version
 libnm_device_plugin_wimax_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(IWMX_SDK_LIBS) \
-	$(GUDEV_LIBS) \
-	$(top_builddir)/src/generated/libnm-generated.la
+	$(GUDEV_LIBS)
 
 nm-wimax-nsp-glue.h: $(top_srcdir)/introspection/nm-wimax-nsp.xml
 	dbus-binding-tool --prefix=nm_wimax_nsp --mode=glib-server --output=$@ $<

@@ -1,118 +1,37 @@
-SUBDIRS= \
-	generated \
-	logging \
-	config \
-	posix-signals \
-	platform \
-	dns-manager \
-	vpn-manager \
-	dhcp-manager \
-	ip6-manager \
-	supplicant-manager \
-	ppp-manager \
-	dnsmasq-manager \
-	modem-manager \
-	bluez-manager \
-	firewall-manager \
-	wifi \
-	settings
+include $(GLIB_MAKEFILE)
 
 @GNOME_CODE_COVERAGE_RULES@
+
+SUBDIRS =				\
+	.				\
+	dhcp-manager			\
+	ppp-manager			\
+	settings/plugins
 
 if WITH_WIMAX
 SUBDIRS += wimax
 endif
 
-SUBDIRS += . tests
+if ENABLE_TESTS
+SUBDIRS +=				\
+	config/tests			\
+	dhcp-manager/tests		\
+	platform/tests			\
+	settings/tests			\
+	supplicant-manager/tests	\
+	tests
+endif
 
-INCLUDES = -I${top_srcdir} \
-           -I${top_builddir}/include \
-           -I${top_srcdir}/include \
-           -I${top_builddir}/src/generated \
-           -I${top_srcdir}/src/generated \
-           -I${top_srcdir}/src/logging \
-           -I${top_srcdir}/src/config \
-           -I${top_srcdir}/src/posix-signals \
-           -I${top_srcdir}/src/dns-manager \
-           -I${top_srcdir}/src/vpn-manager \
-           -I${top_srcdir}/src/dhcp-manager \
-           -I${top_srcdir}/src/ip6-manager \
-           -I${top_srcdir}/src/supplicant-manager \
-           -I${top_srcdir}/src/platform \
-           -I${top_srcdir}/src/dnsmasq-manager \
-           -I${top_srcdir}/src/modem-manager \
-           -I$(top_srcdir)/src/bluez-manager \
-           -I$(top_srcdir)/src/firewall-manager \
-           -I$(top_srcdir)/src/settings \
-           -I$(top_srcdir)/src/wifi \
-           -I${top_srcdir}/libnm-util \
-           -I${top_builddir}/libnm-util \
-           -I${top_srcdir}/callouts
+INCLUDES =				\
+	-I$(top_srcdir)/include		\
+	-I$(top_builddir)/include	\
+	-I$(top_srcdir)/libnm-util	\
+	-I$(top_builddir)/libnm-util	\
+	-I$(top_srcdir)/callouts
 
-###########################################
-# Test libraries
-###########################################
-
-noinst_LTLIBRARIES = \
-	libtest-dhcp.la \
-	libtest-policy-hosts.la \
-	libtest-wifi-ap-utils.la
-
-###########################################
-# DHCP test library
-###########################################
-
-libtest_dhcp_la_SOURCES = \
-	nm-ip4-config.c \
-	nm-ip6-config.c \
-	nm-hostname-provider.c \
-	nm-dbus-manager.c
-
-libtest_dhcp_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(LIBNL_CFLAGS) \
-	-DNMRUNDIR=\"$(nmrundir)\"
-
-libtest_dhcp_la_LIBADD = \
-	$(top_builddir)/src/generated/libnm-generated.la \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
-	$(LIBNL_LIBS)
-
-###########################################
-# Hosts policy test library
-###########################################
-
-libtest_policy_hosts_la_SOURCES = \
-	nm-policy-hosts.c \
-	nm-policy-hosts.h
-
-libtest_policy_hosts_la_CPPFLAGS = \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	$(GLIB_CFLAGS)
-
-libtest_policy_hosts_la_LIBADD = \
-	${top_builddir}/src/logging/libnm-logging.la \
-	$(GLIB_LIBS)
-
-
-###########################################
-# Wifi ap utils
-###########################################
-
-libtest_wifi_ap_utils_la_SOURCES = \
-	nm-wifi-ap-utils.c \
-	nm-wifi-ap-utils.h
-
-libtest_wifi_ap_utils_la_CPPFLAGS = \
-	$(GLIB_CFLAGS)
-
-libtest_wifi_ap_utils_la_LIBADD = \
-	${top_builddir}/libnm-util/libnm-util.la \
-	$(GLIB_LIBS)
-
+# add each subdirectory that contains a libNM source file. $(sort) is being used
+# primarily for its side effect of removing duplicates.
+INCLUDES += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d)
 
 ###########################################
 # NetworkManager
@@ -121,107 +40,280 @@ libtest_wifi_ap_utils_la_LIBADD = \
 sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
-		nm-types.h \
-		nm-call-store.c \
-		nm-call-store.h \
-		nm-device.c \
-		nm-device.h \
-		nm-device-private.h \
-		nm-device-ethernet.c \
-		nm-device-ethernet.h \
-		nm-device-adsl.c \
-		nm-device-adsl.h \
-		nm-device-wifi.c \
-		nm-device-wifi.h \
-		nm-device-wired.c \
-		nm-device-wired.h \
-		nm-device-olpc-mesh.c	\
-		nm-device-olpc-mesh.h	\
-		nm-device-bt.c \
-		nm-device-bt.h \
-		nm-device-modem.h \
-		nm-device-modem.c \
-		nm-device-infiniband.c \
-		nm-device-infiniband.h \
-		nm-device-bond.c \
-		nm-device-bond.h \
-		nm-device-bridge.c \
-		nm-device-bridge.h \
-		nm-device-vlan.c \
-		nm-device-vlan.h \
-		nm-device-generic.c \
-		nm-device-generic.h \
-		nm-wifi-ap.c \
-		nm-wifi-ap.h \
-		nm-wifi-ap-utils.c \
-		nm-wifi-ap-utils.h \
-		nm-dbus-manager.h \
-		nm-dbus-manager.c \
-		nm-udev-manager.c \
-		nm-udev-manager.h \
-		nm-device-factory.h \
-		nm-hostname-provider.c \
-		nm-hostname-provider.h \
-		nm-ip4-config.c \
-		nm-ip4-config.h \
-		nm-ip6-config.c \
-		nm-ip6-config.h \
-		nm-active-connection.h \
-		nm-active-connection.c \
-		main.c \
-		nm-policy.c \
-		nm-policy.h \
-		nm-policy-hosts.c \
-		nm-policy-hosts.h \
-		NetworkManagerUtils.c \
-		NetworkManagerUtils.h \
-		nm-system.c \
-		nm-system.h \
-		nm-manager.c \
-		nm-manager.h \
-		nm-manager-auth.c \
-		nm-manager-auth.h \
-		nm-netlink-monitor.c \
-		nm-netlink-monitor.h \
-		nm-netlink-utils.c \
-		nm-netlink-utils.h \
-		nm-activation-request.c \
-		nm-activation-request.h \
-		nm-properties-changed-signal.c \
-		nm-properties-changed-signal.h \
-		nm-dhcp4-config.c \
-		nm-dhcp4-config.h \
-		nm-dhcp6-config.c \
-		nm-dhcp6-config.h \
-		nm-rfkill.h \
-		nm-session-monitor.h \
-		nm-session-utils.c \
-		nm-session-utils.h \
-		nm-sleep-monitor.h \
-		nm-connection-provider.h \
-		nm-connection-provider.c \
-		nm-dispatcher.c \
-		nm-dispatcher.h
+	main.c
+
+NetworkManager_LDADD = libNetworkManager.la
+
+noinst_LTLIBRARIES = libNetworkManager.la
+
+libNetworkManager_la_SOURCES = \
+	bluez-manager/nm-bluez-adapter.c \
+	bluez-manager/nm-bluez-adapter.h \
+	bluez-manager/nm-bluez-common.h \
+	bluez-manager/nm-bluez-device.c \
+	bluez-manager/nm-bluez-device.h \
+	bluez-manager/nm-bluez-manager.c \
+	bluez-manager/nm-bluez-manager.h \
+	\
+	config/nm-config.c \
+	config/nm-config.h \
+	config/nm-config-device.c \
+	config/nm-config-device.h \
+	\
+	dhcp-manager/nm-dhcp-client.c \
+	dhcp-manager/nm-dhcp-client.h \
+	dhcp-manager/nm-dhcp-dhclient.c \
+	dhcp-manager/nm-dhcp-dhclient.h \
+	dhcp-manager/nm-dhcp-dhclient-utils.c \
+	dhcp-manager/nm-dhcp-dhclient-utils.h \
+	dhcp-manager/nm-dhcp-dhcpcd.c \
+	dhcp-manager/nm-dhcp-dhcpcd.h \
+	dhcp-manager/nm-dhcp-manager.c \
+	dhcp-manager/nm-dhcp-manager.h \
+	\
+	dns-manager/nm-dns-dnsmasq.c \
+	dns-manager/nm-dns-dnsmasq.h \
+	dns-manager/nm-dns-manager.c \
+	dns-manager/nm-dns-manager.h \
+	dns-manager/nm-dns-plugin.c \
+	dns-manager/nm-dns-plugin.h \
+	dns-manager/nm-dns-utils.c \
+	dns-manager/nm-dns-utils.h \
+	\
+	dnsmasq-manager/nm-dnsmasq-manager.c \
+	dnsmasq-manager/nm-dnsmasq-manager.h \
+	\
+	firewall-manager/nm-firewall-manager.c \
+	firewall-manager/nm-firewall-manager.h \
+	\
+	ip6-manager/nm-ip6-manager.c \
+	ip6-manager/nm-ip6-manager.h \
+	\
+	logging/nm-logging.c \
+	logging/nm-logging.h \
+	\
+	modem-manager/nm-modem-cdma.c \
+	modem-manager/nm-modem-cdma.h \
+	modem-manager/nm-modem-generic.c \
+	modem-manager/nm-modem-generic.h \
+	modem-manager/nm-modem-gsm.c \
+	modem-manager/nm-modem-gsm.h \
+	modem-manager/nm-modem-manager.c \
+	modem-manager/nm-modem-manager.h \
+	modem-manager/nm-modem-types.h \
+	modem-manager/nm-modem.c \
+	modem-manager/nm-modem.h \
+	\
+	platform/nm-fake-platform.c \
+	platform/nm-fake-platform.h \
+	platform/nm-linux-platform.c \
+	platform/nm-linux-platform.h \
+	platform/nm-platform.c \
+	platform/nm-platform.h \
+	\
+	posix-signals/nm-posix-signals.c \
+	posix-signals/nm-posix-signals.h \
+	\
+	ppp-manager/nm-ppp-manager-glue.h \
+	ppp-manager/nm-ppp-manager.c \
+	ppp-manager/nm-ppp-manager.h \
+	ppp-manager/nm-ppp-status.h \
+	\
+	settings/nm-agent-manager-glue.h \
+	settings/nm-agent-manager.c \
+	settings/nm-agent-manager.h \
+	settings/nm-default-wired-connection.c \
+	settings/nm-default-wired-connection.h \
+	settings/nm-inotify-helper.c \
+	settings/nm-inotify-helper.h \
+	settings/nm-secret-agent.c \
+	settings/nm-secret-agent.h \
+	settings/nm-settings-connection-glue.h \
+	settings/nm-settings-connection.c \
+	settings/nm-settings-connection.h \
+	settings/nm-settings-error.c \
+	settings/nm-settings-error.h \
+	settings/nm-settings-glue.h \
+	settings/nm-settings-utils.c \
+	settings/nm-settings-utils.h \
+	settings/nm-settings.c \
+	settings/nm-settings.h \
+	settings/nm-system-config-interface.c \
+	settings/nm-system-config-interface.h \
+	\
+	settings/plugins/keyfile/common.h \
+	settings/plugins/keyfile/errors.c \
+	settings/plugins/keyfile/nm-keyfile-connection.c \
+	settings/plugins/keyfile/nm-keyfile-connection.h \
+	settings/plugins/keyfile/plugin.c \
+	settings/plugins/keyfile/plugin.h \
+	settings/plugins/keyfile/reader.c \
+	settings/plugins/keyfile/reader.h \
+	settings/plugins/keyfile/utils.c \
+	settings/plugins/keyfile/utils.h \
+	settings/plugins/keyfile/writer.c \
+	settings/plugins/keyfile/writer.h \
+	\
+	supplicant-manager/nm-supplicant-config.c \
+	supplicant-manager/nm-supplicant-config.h \
+	supplicant-manager/nm-supplicant-interface.c \
+	supplicant-manager/nm-supplicant-interface.h \
+	supplicant-manager/nm-supplicant-manager.c \
+	supplicant-manager/nm-supplicant-manager.h \
+	supplicant-manager/nm-supplicant-settings-verify.c \
+	supplicant-manager/nm-supplicant-settings-verify.h \
+	supplicant-manager/nm-supplicant-types.h \
+	\
+	vpn-manager/nm-vpn-connection-glue.h \
+	vpn-manager/nm-vpn-connection.c \
+	vpn-manager/nm-vpn-connection.h \
+	vpn-manager/nm-vpn-manager.c \
+	vpn-manager/nm-vpn-manager.h \
+	vpn-manager/nm-vpn-service.c \
+	vpn-manager/nm-vpn-service.h \
+	\
+	wifi/wifi-utils-nl80211.c \
+	wifi/wifi-utils-nl80211.h \
+	wifi/wifi-utils-private.h \
+	wifi/wifi-utils.c \
+	wifi/wifi-utils.h \
+	\
+	nm-access-point-glue.h \
+	nm-activation-request.c \
+	nm-activation-request.h \
+	nm-active-connection-glue.h \
+	nm-active-connection.c \
+	nm-active-connection.h \
+	nm-agent-manager-glue.h \
+	nm-call-store.c \
+	nm-call-store.h \
+	nm-connection-provider.c \
+	nm-connection-provider.h \
+	nm-dbus-manager.c \
+	nm-dbus-manager.h \
+	nm-device-adsl-glue.h \
+	nm-device-adsl.c \
+	nm-device-adsl.h \
+	nm-device-bond-glue.h \
+	nm-device-bond.c \
+	nm-device-bond.h \
+	nm-device-bridge-glue.h \
+	nm-device-bridge.c \
+	nm-device-bridge.h \
+	nm-device-bt-glue.h \
+	nm-device-bt.c \
+	nm-device-bt.h \
+	nm-device-ethernet-glue.h \
+	nm-device-ethernet.c \
+	nm-device-ethernet.h \
+	nm-device-factory.h \
+	nm-device-generic-glue.h \
+	nm-device-generic.c \
+	nm-device-generic.h \
+	nm-device-infiniband-glue.h \
+	nm-device-infiniband.c \
+	nm-device-infiniband.h \
+	nm-device-interface-glue.h \
+	nm-device-modem-glue.h \
+	nm-device-modem.c \
+	nm-device-modem.h \
+	nm-device-olpc-mesh-glue.h \
+	nm-device-olpc-mesh.c	\
+	nm-device-olpc-mesh.h	\
+	nm-device-private.h \
+	nm-device-vlan-glue.h \
+	nm-device-vlan.c \
+	nm-device-vlan.h \
+	nm-device-wifi-glue.h \
+	nm-device-wifi.c \
+	nm-device-wifi.h \
+	nm-device-wired.c \
+	nm-device-wired.h \
+	nm-device.c \
+	nm-device.h \
+	nm-dhcp4-config-glue.h \
+	nm-dhcp4-config.c \
+	nm-dhcp4-config.h \
+	nm-dhcp6-config-glue.h \
+	nm-dhcp6-config.c \
+	nm-dhcp6-config.h \
+	nm-dispatcher.c \
+	nm-dispatcher.h \
+	nm-enum-types.c \
+	nm-enum-types.h \
+	nm-hostname-provider.c \
+	nm-hostname-provider.h \
+	nm-ip4-config-glue.h \
+	nm-ip4-config.c \
+	nm-ip4-config.h \
+	nm-ip6-config-glue.h \
+	nm-ip6-config.c \
+	nm-ip6-config.h \
+	nm-manager-auth.c \
+	nm-manager-auth.h \
+	nm-manager-glue.h \
+	nm-manager.c \
+	nm-manager.h \
+	nm-netlink-monitor.c \
+	nm-netlink-monitor.h \
+	nm-netlink-utils.c \
+	nm-netlink-utils.h \
+	nm-policy-hosts.c \
+	nm-policy-hosts.h \
+	nm-policy.c \
+	nm-policy.h \
+	nm-ppp-manager-glue.h \
+	nm-properties-changed-signal.c \
+	nm-properties-changed-signal.h \
+	nm-rfkill.h \
+	nm-session-monitor.h \
+	nm-session-utils.c \
+	nm-session-utils.h \
+	nm-settings-connection-glue.h \
+	nm-settings-glue.h \
+	nm-sleep-monitor.h \
+	nm-system.c \
+	nm-system.h \
+	nm-types.h \
+	nm-udev-manager.c \
+	nm-udev-manager.h \
+	nm-vpn-connection-glue.h \
+	nm-wifi-ap-utils.c \
+	nm-wifi-ap-utils.h \
+	nm-wifi-ap.c \
+	nm-wifi-ap.h \
+	NetworkManagerUtils.c \
+	NetworkManagerUtils.h
 
 if WITH_CONCHECK
-NetworkManager_SOURCES += nm-connectivity.c nm-connectivity.h
+libNetworkManager_la_SOURCES += nm-connectivity.c nm-connectivity.h
+endif
+
+if WITH_MODEM_MANAGER_1
+libNetworkManager_la_SOURCES += \
+	modem-manager/nm-modem-broadband.c \
+	modem-manager/nm-modem-broadband.h
 endif
 
 if SESSION_TRACKING_SYSTEMD
-NetworkManager_SOURCES += nm-session-monitor-systemd.c
+libNetworkManager_la_SOURCES += nm-session-monitor-systemd.c
 else
 if SESSION_TRACKING_CK
-NetworkManager_SOURCES += nm-session-monitor-ck.c
+libNetworkManager_la_SOURCES += nm-session-monitor-ck.c
 else
-NetworkManager_SOURCES += nm-session-monitor-null.c
+libNetworkManager_la_SOURCES += nm-session-monitor-null.c
 endif
 endif
 
 if SUSPEND_RESUME_SYSTEMD
-NetworkManager_SOURCES += nm-sleep-monitor-systemd.c
+libNetworkManager_la_SOURCES += nm-sleep-monitor-systemd.c
 else
 # UPower suspend/resume used whenever systemd is not enabled
-NetworkManager_SOURCES += nm-sleep-monitor-upower.c
+libNetworkManager_la_SOURCES += nm-sleep-monitor-upower.c
+endif
+
+if WITH_WEXT
+libNetworkManager_la_SOURCES += wifi/wifi-utils-wext.c wifi/wifi-utils-wext.h
 endif
 
 # dbus-glib glue. We define nm-device-interface-glue.h specially, because its
@@ -234,86 +326,76 @@ $(1): $$(top_srcdir)/introspection/$(notdir $(subst -glue.h,,$(1))).xml
 	$$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(notdir $(subst -glue.h,,$(1)))) --mode=glib-server --output=$$@ $$<
 endef
 
-$(foreach f,$(filter-out nm-device-interface-glue.h,$(filter %-glue.h,$(BUILT_SOURCES))),$(eval $(call glue_rule,$(f))))
+$(foreach f,$(filter-out nm-device-interface-glue.h,$(filter %-glue.h,$(libNetworkManager_la_SOURCES))),$(eval $(call glue_rule,$(f))))
+
+
+GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 BUILT_SOURCES = \
-	nm-access-point-glue.h \
-	nm-manager-glue.h \
-	nm-device-interface-glue.h \
-	nm-device-ethernet-glue.h \
-	nm-device-infiniband-glue.h \
-	nm-device-bond-glue.h \
-	nm-device-bridge-glue.h \
-	nm-device-vlan-glue.h \
-	nm-device-adsl-glue.h \
-	nm-device-wifi-glue.h \
-	nm-device-olpc-mesh-glue.h \
-	nm-device-bt-glue.h \
-	nm-device-modem-glue.h \
-	nm-device-generic-glue.h \
-	nm-ip4-config-glue.h \
-	nm-ip6-config-glue.h \
-	nm-active-connection-glue.h \
-	nm-dhcp4-config-glue.h \
-	nm-dhcp6-config-glue.h
+	nm-enum-types.c \
+	nm-enum-types.h \
+	$(filter %-glue.h,$(libNetworkManager_la_SOURCES))
 
-NetworkManager_CPPFLAGS = \
+
+nm_enum_types_sources = \
+	$(filter-out %-glue.h, $(libNetworkManager_la_SOURCES))
+
+if WITH_WIMAX
+nm_enum_types_sources += wimax/nm-device-wimax.h
+INCLUDES += -Iwimax
+endif
+
+AM_CPPFLAGS = \
+	$(BLUEZ_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
+	$(LIBSOUP_CFLAGS) \
+	$(MM_GLIB_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
+	\
 	-DBINDIR=\"$(bindir)\" \
-	-DSBINDIR=\"$(sbindir)\" \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DDATADIR=\"$(datadir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	\
+	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\" \
 	-DNMPLUGINDIR=\"$(pkglibdir)\" \
-	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMRUNDIR=\"$(nmrundir)\" \
-	-DNMSTATEDIR=\"$(nmstatedir)\"
-
-if WITH_CONCHECK
-NetworkManager_CPPFLAGS += $(LIBSOUP_CFLAGS)
-endif
+	-DNMSTATEDIR=\"$(nmstatedir)\" \
+	\
+	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
+	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
+	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
+	\
+	$(NULL)
 
 if SESSION_TRACKING_CK
-NetworkManager_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
+AM_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
 endif
 
-NetworkManager_LDADD = \
-	./generated/libnm-generated.la \
-	./logging/libnm-logging.la \
-	./config/libnm-config.la \
-	./posix-signals/libnm-posix-signals.la \
-	./platform/libnm-platform.la \
-	./dns-manager/libdns-manager.la \
-	./vpn-manager/libvpn-manager.la \
-	./dhcp-manager/libdhcp-manager.la \
-	./ip6-manager/libip6-manager.la \
-	./supplicant-manager/libsupplicant-manager.la \
-	./dnsmasq-manager/libdnsmasq-manager.la \
-	./ppp-manager/libppp-manager.la \
-	./modem-manager/libmodem-manager.la \
-	./bluez-manager/libbluez-manager.la \
-	./wifi/libwifi-utils.la \
-	./firewall-manager/libfirewall-manager.la \
-	./settings/libsettings.la \
+libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
+	$(BLUEZ_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
+	$(MM_GLIB_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
-	$(LIBM) \
-	$(LIBDL)
+	$(LIBDL) \
+	$(LIBM)
 
 if WITH_CONCHECK
-NetworkManager_LDADD += $(LIBSOUP_LIBS)
+libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
 endif
 
 NetworkManager_LDFLAGS = -rdynamic

@@ -41,13 +41,6 @@ libifcfg_rh_io_la_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 
-libifcfg_rh_io_la_LIBADD = \
-	$(top_builddir)/src/wifi/libwifi-utils.la \
-	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(NSS_LIBS)
-
 libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	plugin.c \
 	plugin.h \

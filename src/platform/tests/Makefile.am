@@ -1,11 +1,7 @@
-if ENABLE_TESTS
-
 AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/logging \
-	-I${top_srcdir}/src/generated \
-	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/libnm-util \
 	-I${srcdir}/.. \
 	$(GLIB_CFLAGS) \
@@ -13,10 +9,8 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_LDFLAGS = $(GLIB_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
-COMMON_LDADD = \
-	$(top_builddir)/src/logging/libnm-logging.la \
-	$(top_builddir)/src/generated/libnm-generated.la
-PLATFORM_LDADD = $(COMMON_LDADD) $(top_builddir)/src/platform/libnm-platform.la
+PLATFORM_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
 
 @GNOME_CODE_COVERAGE_RULES@
 
@@ -54,7 +48,7 @@ test_link_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
-test_link_fake_LDADD = $(COMMON_LDADD)
+test_link_fake_LDADD = $(PLATFORM_LDADD)
 
 test_link_linux_SOURCES = \
 	test-link.c \
@@ -65,7 +59,7 @@ test_link_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
-test_link_linux_LDADD = $(COMMON_LDADD)
+test_link_linux_LDADD = $(PLATFORM_LDADD)
 
 test_address_fake_SOURCES = \
 	test-address.c \
@@ -76,7 +70,7 @@ test_address_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
-test_address_fake_LDADD = $(COMMON_LDADD)
+test_address_fake_LDADD = $(PLATFORM_LDADD)
 
 test_address_linux_SOURCES = \
 	test-address.c \
@@ -87,7 +81,7 @@ test_address_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
-test_address_linux_LDADD = $(COMMON_LDADD)
+test_address_linux_LDADD = $(PLATFORM_LDADD)
 
 test_route_fake_SOURCES = \
 	test-route.c \
@@ -98,7 +92,7 @@ test_route_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
-test_route_fake_LDADD = $(COMMON_LDADD)
+test_route_fake_LDADD = $(PLATFORM_LDADD)
 
 test_route_linux_SOURCES = \
 	test-route.c \
@@ -109,7 +103,7 @@ test_route_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
-test_route_linux_LDADD = $(COMMON_LDADD)
+test_route_linux_LDADD = $(PLATFORM_LDADD)
 
 # Unfortunately, we cannot run nm-linux-platform-test as an automatic test
 # program by default, as it requires root access and modifies kernel
@@ -117,6 +111,7 @@ test_route_linux_LDADD = $(COMMON_LDADD)
 #
 # However, we can check whether the fake platform fakes platform behavior
 # correctly.
+
 @VALGRIND_RULES@
 TESTS = ./test-link-fake ./test-address-fake ./test-route-fake
 ROOTTESTS = ./test-link-linux ./test-address-linux ./test-route-linux
@@ -124,6 +119,4 @@ ROOTTESTS = ./test-link-linux ./test-address-linux ./test-route-linux
 # If explicitly enabled, we can run the root tests
 if RUN_ROOT_TESTS
 TESTS += $(ROOTTESTS)
-endif
-
 endif

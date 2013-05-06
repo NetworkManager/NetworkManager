@@ -45,10 +45,7 @@ test_ifcfg_rh_CPPFLAGS = \
 	-DSBINDIR=\"nonexistent\"
 
 test_ifcfg_rh_LDADD = \
-	$(AM_LDADD) \
-	$(top_builddir)/src/wifi/libwifi-utils.la \
-	$(top_builddir)/src/posix-signals/libnm-posix-signals.la \
-	$(LIBM)
+	$(top_builddir)/src/libNetworkManager.la
 
 test_ifcfg_rh_utils_SOURCES = \
 	test-ifcfg-rh-utils.c \

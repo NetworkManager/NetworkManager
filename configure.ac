@@ -639,7 +639,7 @@ AS_IF([test "$with_valgrind" == "yes"],
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
 AM_CONDITIONAL(RUN_ROOT_TESTS, test "$enable_tests" == "root")
 AS_IF([test "$with_valgrind" != "no"],
-	AC_SUBST(VALGRIND_RULES, "TESTS_ENVIRONMENT = G_SLICE=always-malloc G_DEBUG=gc-friendly $with_valgrind --quiet --error-exitcode=1 --leak-check=full --gen-suppressions=all --suppressions=\$(top_srcdir)/valgrind.suppressions"),
+	AC_SUBST(VALGRIND_RULES, "TESTS_ENVIRONMENT = G_SLICE=always-malloc G_DEBUG=gc-friendly \$(LIBTOOL) --mode=execute $with_valgrind --quiet --error-exitcode=1 --leak-check=full --gen-suppressions=all --suppressions=\$(top_srcdir)/valgrind.suppressions"),
 	AC_SUBST(VALGRIND_RULES, []))
 AM_CONDITIONAL(ENABLE_DOC, test "$enable_doc" = "yes")
 # Add gtk-doc conditionals
@@ -652,25 +652,11 @@ include/Makefile
 include/nm-version.h
 src/Makefile
 src/tests/Makefile
-src/generated/Makefile
-src/logging/Makefile
-src/config/Makefile
 src/config/tests/Makefile
-src/posix-signals/Makefile
-src/dns-manager/Makefile
-src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
 src/dhcp-manager/tests/Makefile
-src/ip6-manager/Makefile
-src/supplicant-manager/Makefile
 src/supplicant-manager/tests/Makefile
 src/ppp-manager/Makefile
-src/dnsmasq-manager/Makefile
-src/modem-manager/Makefile
-src/bluez-manager/Makefile
-src/wifi/Makefile
-src/firewall-manager/Makefile
-src/settings/Makefile
 src/settings/plugins/Makefile
 src/settings/plugins/ifupdown/Makefile
 src/settings/plugins/ifupdown/tests/Makefile
@@ -685,7 +671,6 @@ src/settings/plugins/keyfile/tests/Makefile
 src/settings/plugins/keyfile/tests/keyfiles/Makefile
 src/settings/plugins/example/Makefile
 src/settings/tests/Makefile
-src/platform/Makefile
 src/platform/tests/Makefile
 src/wimax/Makefile
 libnm-util/libnm-util.pc

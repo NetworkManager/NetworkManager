@@ -1,5 +1,3 @@
-if ENABLE_TESTS
-
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -19,15 +17,10 @@ test_dhcp_dhclient_CPPFLAGS = \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
 test_dhcp_dhclient_LDADD = \
-	-ldl \
-	$(top_builddir)/src/dhcp-manager/libdhcp-dhclient.la \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(GLIB_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
 check-local: test-dhcp-dhclient
 	$(abs_builddir)/test-dhcp-dhclient
-
-endif
 
 EXTRA_DIST = \
 	test-dhclient-duid.leases \

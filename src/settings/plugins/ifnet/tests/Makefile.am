@@ -30,11 +30,7 @@ check_ifnet_CPPFLAGS = \
 check_ifnet_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
-check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
-	$(CHECK_LIBS) \
-	$(GLIB_LIBS) \
-	$(LIBM) \
-	$(top_builddir)/src/wifi/libwifi-utils.la
+check_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
 
 check-local: check_ifnet
 	$(abs_builddir)/check_ifnet $(abs_srcdir) $(abs_builddir)

@@ -1,5 +1,3 @@
-if ENABLE_TESTS
-
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -19,14 +17,9 @@ test_wired_defname_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 test_wired_defname_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/src/settings/libtest-settings-utils.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
 ###########################################
 
 check-local: test-wired-defname
 	$(abs_builddir)/test-wired-defname
-
-endif

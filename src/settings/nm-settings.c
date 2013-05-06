@@ -608,7 +608,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		}
 
 		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
-		path = g_module_build_path (PLUGINDIR, full_name);
+		path = g_module_build_path (NMPLUGINDIR, full_name);
 
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {

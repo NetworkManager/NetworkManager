@@ -54,6 +54,5 @@ lib_ifnet_io_la_CPPFLAGS = \
 	-DSBINDIR=\"$(sbindir)\"
 
 lib_ifnet_io_la_LIBADD = \
-	 $(top_builddir)/src/wifi/libwifi-utils.la \
 	 $(top_builddir)/libnm-util/libnm-util.la \
 	 $(GLIB_LIBS)

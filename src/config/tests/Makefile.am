@@ -1,5 +1,3 @@
-if ENABLE_TESTS
-
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -20,8 +18,7 @@ test_config_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 test_config_LDADD = \
-	$(top_builddir)/src/config/libnm-config.la \
-	$(top_builddir)/src/logging/libnm-logging.la
+	$(top_builddir)/src/libNetworkManager.la
 
 check-local: test-config
 	$(abs_builddir)/test-config
@@ -32,5 +29,3 @@ EXTRA_DIST = \
 	conf.d/00-overrides.conf \
 	conf.d/10-more.conf \
 	conf.d/90-last.conf
-
-endif
