@@ -1167,14 +1167,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_TIMESTAMP,
 		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP,
-						  "Timestamp",
-						  "Timestamp (in seconds since the Unix Epoch) that the "
-						  "connection was last successfully activated.  Settings "
-						  "services should update the connection timestamp "
-						  "periodically when the connection is active to ensure "
-						  "that an active connection has the latest timestamp.",
-						  0, G_MAXUINT64, 0,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      "Timestamp",
+		                      "Timestamp (in seconds since the Unix Epoch) that the "
+		                      "connection was last successfully activated.  NetworkManager "
+		                      "updates the connection timestamp periodically when the "
+		                      "connection is active to ensure that an active connection "
+		                      "has the latest timestamp.",
+		                      0, G_MAXUINT64, 0,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:read-only:
