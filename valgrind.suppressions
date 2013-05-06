@@ -36,7 +36,7 @@
 {
   g_signal_type_cclosure_new
   Memcheck:Leak
-  fun:calloc
+  ...
   fun:g_malloc0
   fun:g_closure_new_simple
   fun:g_signal_type_cclosure_new
