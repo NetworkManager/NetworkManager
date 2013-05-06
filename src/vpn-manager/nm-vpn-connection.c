@@ -37,7 +37,6 @@
 #include "nm-system.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
-#include "nm-vpn-plugin-bindings.h"
 #include "nm-active-connection.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
@@ -148,7 +147,9 @@ call_plugin_disconnect (NMVPNConnection *self)
 	GError *error = NULL;
 
 	if (priv->proxy) {
-		org_freedesktop_NetworkManager_VPN_Plugin_disconnect (priv->proxy, &error);
+		dbus_g_proxy_call (priv->proxy, "Disconnect", &error,
+		                   G_TYPE_INVALID,
+		                   G_TYPE_INVALID);
 		if (error)
 			nm_log_warn (LOGD_VPN, "error disconnecting VPN: %s", error->message);
 		g_clear_error (&error);
@@ -1065,17 +1066,20 @@ nm_vpn_connection_ip_config_timeout (gpointer user_data)
 }
 
 static void
-nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data)
+nm_vpn_connection_connect_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	GError *err = NULL;
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (Connect) reply received.",
 	             nm_connection_get_id (priv->connection));
 
+	dbus_g_proxy_end_call (proxy, call, &err, G_TYPE_INVALID);
 	if (err) {
 		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.", 
 		             nm_connection_get_id (priv->connection), err->message);
+		g_error_free (err);
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
@@ -1156,10 +1160,10 @@ really_activate (NMVPNConnection *connection, const char *username)
 						    connection, NULL);
 
 	hash = _hash_with_username (priv->connection, username);
-	org_freedesktop_NetworkManager_VPN_Plugin_connect_async (priv->proxy,
-	                                                         hash,
-	                                                         nm_vpn_connection_connect_cb,
-	                                                         connection);
+	dbus_g_proxy_begin_call (priv->proxy, "Connect",
+	                         nm_vpn_connection_connect_cb, connection, NULL,
+	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+	                         G_TYPE_INVALID);
 	g_hash_table_destroy (hash);
 
 	nm_vpn_connection_set_vpn_state (connection,
@@ -1306,14 +1310,16 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 /******************************************************************************/
 
 static void
-plugin_need_secrets_cb  (DBusGProxy *proxy,
-                         char *setting_name,
-                         GError *error,
-                         gpointer user_data)
+plugin_need_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 {
 	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	GError *error = NULL;
+	char *setting_name;
 
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       G_TYPE_STRING, &setting_name,
+	                       G_TYPE_INVALID);
 	if (error) {
 		nm_log_err (LOGD_VPN, "(%s/%s) plugin NeedSecrets request #%d failed: %s %s",
 		            nm_connection_get_uuid (priv->connection),
@@ -1322,6 +1328,7 @@ plugin_need_secrets_cb  (DBusGProxy *proxy,
 		            g_quark_to_string (error->domain),
 		            error->message);
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		g_error_free (error);
 		return;
 	}
 
@@ -1385,10 +1392,10 @@ get_secrets_cb (NMSettingsConnection *connection,
 
 		/* Ask the VPN service if more secrets are required */
 		hash = _hash_with_username (priv->connection, priv->username);
-		org_freedesktop_NetworkManager_VPN_Plugin_need_secrets_async (priv->proxy,
-		                                                              hash,
-		                                                              plugin_need_secrets_cb,
-		                                                              self);
+		dbus_g_proxy_begin_call (priv->proxy, "NeedSecrets",
+		                         plugin_need_secrets_cb, self, NULL,
+		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+		                         G_TYPE_INVALID);
 		g_hash_table_destroy (hash);
 	}
 }

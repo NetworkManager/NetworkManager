@@ -40,13 +40,8 @@ libvpn_manager_la_LIBADD = \
 nm-vpn-connection-glue.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-server --output=$@ $<
 
-nm-vpn-plugin-bindings.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-client --output=$@ $<
-
-
 BUILT_SOURCES = \
-	nm-vpn-connection-glue.h \
-	nm-vpn-plugin-bindings.h
+	nm-vpn-connection-glue.h
 
 CLEANFILES = $(BUILT_SOURCES)
 

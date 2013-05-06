@@ -154,7 +154,6 @@ initscript/*/rc.networkmanager-dispatcher
 initscript/*/[Nn]etwork[Mm]anager
 
 *-glue.h
-*-bindings.h
 callouts/tests/test-dispatcher-envp
 libnm-glib/libnm-glib-test
 src/NetworkManager
