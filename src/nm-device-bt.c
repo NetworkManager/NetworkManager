@@ -1168,6 +1168,21 @@ nm_device_bt_init (NMDeviceBt *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
+	const guint8 *my_hwaddr;
+	guint my_hwaddr_len = 0;
+
+	G_OBJECT_CLASS (nm_device_bt_parent_class)->constructed (object);
+
+	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object), &my_hwaddr_len);
+	g_assert (my_hwaddr);
+	g_assert_cmpint (my_hwaddr_len, ==, ETH_ALEN);
+	priv->bdaddr = nm_utils_hwaddr_ntoa (my_hwaddr, ARPHRD_ETHER);
+}
+
+static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
@@ -1250,6 +1265,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBtPrivate));
 
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
