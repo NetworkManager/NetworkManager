@@ -9,11 +9,15 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 <refentry id="NetworkManager.conf">
   <refentryinfo>
     <title>NetworkManager.conf</title>
+    <author>NetworkManager developers</author>
   </refentryinfo>
 
   <refmeta>
     <refentrytitle>NetworkManager.conf</refentrytitle>
     <manvolnum>5</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">Configuration</refmiscinfo>
+    <refmiscinfo class="version">0.9.10</refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -350,9 +354,9 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
   <refsect1>
     <title>See Also</title>
     <para>
-      <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-      <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>

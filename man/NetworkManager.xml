@@ -4,19 +4,22 @@
         "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 <!--
-  Copyright (C) 2005 - 2013 Red Hat, Inc.
+ Copyright (C) 2005 - 2013 Red Hat, Inc.
  Copyright (C) 2005 - 2009 Novell, Inc.
  Copyright (C) 2005 Robert Love
-
 -->
 
 <refentry id="NetworkManager">
   <refentryinfo>
     <title>NetworkManager</title>
+    <author>NetworkManager developers</author>
   </refentryinfo>
   <refmeta>
     <refentrytitle>NetworkManager</refentrytitle>
     <manvolnum>8</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">Network management daemons</refmiscinfo>
+    <refmiscinfo class="version">0.9.10</refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -212,9 +215,9 @@
   <refsect1>
     <title>See Also</title>
     <para>
-      <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-      <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>
