@@ -24,7 +24,7 @@
 
 #include <glib-object.h>
 
-#include "nm-device-wired.h"
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -46,11 +46,11 @@ typedef enum
 #define NM_DEVICE_ETHERNET_SPEED "speed"
 
 typedef struct {
-	NMDeviceWired parent;
+	NMDevice parent;
 } NMDeviceEthernet;
 
 typedef struct {
-	NMDeviceWiredClass parent;
+	NMDeviceClass parent;
 
 } NMDeviceEthernetClass;
 

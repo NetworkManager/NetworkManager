@@ -87,8 +87,6 @@ nm_sources = \
 	devices/nm-device-vlan.h \
 	devices/nm-device-wifi.c \
 	devices/nm-device-wifi.h \
-	devices/nm-device-wired.c \
-	devices/nm-device-wired.h \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \

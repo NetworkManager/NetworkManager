@@ -23,7 +23,7 @@
 
 #include <glib-object.h>
 
-#include "nm-device-wired.h"
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 

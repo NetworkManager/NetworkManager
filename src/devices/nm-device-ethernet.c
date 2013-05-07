@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
+#include <linux/version.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <linux/if.h>
@@ -59,7 +60,7 @@
 #include "nm-device-ethernet-glue.h"
 
 
-G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE_WIRED)
+G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate))
 
@@ -83,6 +84,8 @@ typedef struct Supplicant {
 typedef struct {
 	guint8              perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
 	guint8              initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
+
+	guint32             speed;
 
 	Supplicant          supplicant;
 	guint               supplicant_timeout_id;
@@ -1317,6 +1320,60 @@ get_connection_hw_address (NMDevice *device,
 }
 
 static void
+get_link_speed (NMDevice *device)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	struct ifreq ifr;
+	struct ethtool_cmd edata = {
+		.cmd = ETHTOOL_GSET,
+	};
+	guint32 speed;
+	int fd;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_log_warn (LOGD_HW | LOGD_ETHER, "couldn't open ethtool control socket.");
+		return;
+	}
+
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, nm_device_get_iface (device), IFNAMSIZ);
+	ifr.ifr_data = (char *) &edata;
+
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		close (fd);
+		return;
+	}
+	close (fd);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+	speed = edata.speed;
+#else
+	speed = ethtool_cmd_speed (&edata);
+#endif
+	if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
+		speed = 0;
+
+	if (priv->speed == speed)
+		return;
+
+	priv->speed = speed;
+	g_object_notify (G_OBJECT (device), "speed");
+
+	nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): speed is now %d Mb/s",
+	            nm_device_get_iface (device), speed);
+}
+
+static void
+carrier_changed (NMDevice *device, gboolean carrier)
+{
+	if (carrier)
+		get_link_speed (device);
+
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->carrier_changed (device, carrier);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
@@ -1342,7 +1399,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
 		break;
 	case PROP_SPEED:
-		g_value_set_uint (value, nm_device_wired_get_speed (NM_DEVICE_WIRED (self)));
+		g_value_set_uint (value, priv->speed);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1392,6 +1449,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->match_l2_config = match_l2_config;
 	parent_class->get_connection_hw_address = get_connection_hw_address;
+	parent_class->carrier_changed = carrier_changed;
 
 	parent_class->state_changed = device_state_changed;
 

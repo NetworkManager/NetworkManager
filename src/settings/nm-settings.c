@@ -54,7 +54,6 @@
 #include <nm-utils.h>
 
 #include "nm-device-ethernet.h"
-#include "nm-device-wired.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
@@ -1481,7 +1480,7 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device)
 {
 	NMDefaultWiredConnection *connection;
 
-	if (!NM_IS_DEVICE_WIRED (device))
+	if (!NM_IS_DEVICE_ETHERNET (device))
 		return;
 
 	connection = (NMDefaultWiredConnection *) g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_TAG);

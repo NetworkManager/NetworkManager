@@ -23,7 +23,7 @@
 
 #include <glib-object.h>
 
-#include "nm-device-wired.h"
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -41,11 +41,11 @@ typedef enum {
 } NMInfinibandError;
 
 typedef struct {
-	NMDeviceWired parent;
+	NMDevice parent;
 } NMDeviceInfiniband;
 
 typedef struct {
-	NMDeviceWiredClass parent;
+	NMDeviceClass parent;
 
 } NMDeviceInfinibandClass;
 

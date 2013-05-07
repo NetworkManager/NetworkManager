@@ -23,7 +23,7 @@
 
 #include <glib-object.h>
 
-#include "nm-device-wired.h"
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -43,11 +43,11 @@ typedef enum {
 #define NM_DEVICE_BOND_SLAVES "slaves"
 
 typedef struct {
-	NMDeviceWired parent;
+	NMDevice parent;
 } NMDeviceBond;
 
 typedef struct {
-	NMDeviceWiredClass parent;
+	NMDeviceClass parent;
 
 } NMDeviceBondClass;
 
