@@ -688,6 +688,10 @@ NetworkManager is not running
 \fInmcli\fP and \fINetworkManager\fP versions mismatch
 
 .SH EXAMPLES
+.PP
+This section presents various examples of nmcli usage. If you want even more,
+please refer to \fInmcli-examples\fP(5) manual page.
+.sp
 .IP "\fB\f(CWnmcli \-t \-f RUNNING general\fP\fP"
 .IP
 tells you whether NetworkManager is running or not.
@@ -792,6 +796,7 @@ There are probably some bugs.  If you find a bug, please report it to
 https://bugzilla.gnome.org/ \(em product \fINetworkManager\fP.
 
 .SH SEE ALSO
+.BR nmcli\-examples (5),
 .BR nm\-online (1),
 .BR NetworkManager (8),
 .BR NetworkManager.conf (5),
