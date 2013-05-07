@@ -1423,25 +1423,6 @@ nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 	return FALSE;
 }
 
-static gboolean
-ip6_method_matches (NMConnection *connection, const char *match)
-{
-	NMSettingIP6Config *s_ip6;
-	const char *method = NULL;
-
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (s_ip6) {
-		method = nm_setting_ip6_config_get_method (s_ip6);
-		g_assert (method);
-	}
-
-	/* Treat missing IP6 setting as AUTO */
-	if (!s_ip6 && !strcmp (match, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
-		return TRUE;
-
-	return method && !strcmp (method, match);
-}
-
 static NMActStageReturn
 act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 {
@@ -2221,12 +2202,17 @@ act_stage3_ip4_config_start (NMDevice *self,
 		}
 	}
 
-	/* If we did not receive IP4 configuration information, default to DHCP */
+	/* If we did not receive IP4 configuration information, default to DHCP.
+	 * Slaves, on the other hand, never have any IP configuration themselves,
+	 * since the master handles all of that.
+	 */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		method = nm_setting_ip4_config_get_method (s_ip4);
-	else if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
+	if (priv->master) /* eg, device is a slave */
 		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+	else if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+	else
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -2245,12 +2231,12 @@ act_stage3_ip4_config_start (NMDevice *self,
 			ret = NM_ACT_STAGE_RETURN_SUCCESS;
 		} else
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
-	} else if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0) {
 		/* Nothing to do... */
 		ret = NM_ACT_STAGE_RETURN_STOP;
 	} else {
-		nm_log_warn (LOGD_IP4, "(%s): unhandled IPv4 config method; will fail",
-		             nm_device_get_ip_iface (self));
+		nm_log_warn (LOGD_IP4, "(%s): unhandled IPv4 config method '%s'; will fail",
+		             nm_device_get_ip_iface (self), method);
 	}
 
 	return ret;
@@ -2780,6 +2766,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6;
+	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 	int conf_use_tempaddr;
 	NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 	const char *ip6_privacy_str = "0\n";
@@ -2814,28 +2801,40 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
 
-	if (   ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
-	    || ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)) {
+	/* If we did not receive IP6 configuration information, default to AUTO.
+	 * Slaves, on the other hand, never have any IP configuration themselves,
+	 * since the master handles all of that.
+	 */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	if (priv->master) /* eg, device is a slave */
+		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+	else if (s_ip6)
+		method = nm_setting_ip6_config_get_method (s_ip6);
+	else
+		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
 		if (!addrconf6_start (self)) {
 			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 		} else
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		/* Router advertisements shouldn't be used in pure DHCP mode */
 		if (priv->ip6_accept_ra_path)
 			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0");
 
 		priv->dhcp6_mode = IP6_DHCP_OPT_MANAGED;
 		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
-	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		/* reset the saved RA value when ipv6 is ignored */
 		if (priv->ip6_accept_ra_path) {
 			nm_utils_do_sysctl (priv->ip6_accept_ra_path,
 			                    priv->ip6_accept_ra_save ? "1" : "0");
 		}
 		ret = NM_ACT_STAGE_RETURN_STOP;
-	} else if (ip6_method_matches (connection, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0) {
 		/* New blank config */
 		*out_config = nm_ip6_config_new ();
 		g_assert (*out_config);
@@ -2845,8 +2844,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0");
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else {
-		nm_log_warn (LOGD_IP6, "(%s): unhandled IPv6 config method; will fail",
-		             nm_device_get_ip_iface (self));
+		nm_log_warn (LOGD_IP6, "(%s): unhandled IPv6 config method '%s'; will fail",
+		             nm_device_get_ip_iface (self), method);
 	}
 
 	/* Other methods (shared) aren't implemented yet */
@@ -2858,11 +2857,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 	conf_use_tempaddr = ip6_use_tempaddr ();
 	if (conf_use_tempaddr >= 0)
 		ip6_privacy = conf_use_tempaddr;
-	else {
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6)
-			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
-	}
+	else if (s_ip6)
+		ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
 	ip6_privacy = CLAMP (ip6_privacy, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
 
 	switch (ip6_privacy) {
