@@ -52,7 +52,6 @@
 #include "nm-device-adsl.h"
 #include "nm-device-generic.h"
 #include "nm-system.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
@@ -262,7 +261,6 @@ enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	STATE_CHANGED,
-	PROPERTIES_CHANGED,
 	CHECK_PERMISSIONS,
 	USER_PERMISSIONS_CHANGED,
 	ACTIVE_CONNECTION_ADDED,
@@ -4630,7 +4628,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                      "Hostname",
 		                      "Hostname",
 		                      NULL,
-		                      G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+		                      G_PARAM_READABLE));
 
 	/* Sleeping is not exported over D-Bus */
 	g_object_class_install_property
@@ -4639,7 +4637,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                       "Sleeping",
 		                       "Sleeping",
 		                       FALSE,
-		                       G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+		                       G_PARAM_READABLE));
 
 	/* signals */
 	signals[DEVICE_ADDED] =
@@ -4665,10 +4663,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_STRUCT_OFFSET (NMManagerClass, state_changed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
-
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMManagerClass, properties_changed));
 
 	signals[CHECK_PERMISSIONS] =
 		g_signal_new ("check-permissions",
@@ -4698,8 +4692,9 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-	                                 &dbus_glib_nm_manager_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (manager_class),
+	                                        &dbus_glib_nm_manager_object_info);
 
 	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
 	dbus_g_error_domain_register (NM_LOGGING_ERROR, "org.freedesktop.NetworkManager.Logging", NM_TYPE_LOGGING_ERROR);

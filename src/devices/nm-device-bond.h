@@ -50,8 +50,6 @@ typedef struct {
 typedef struct {
 	NMDeviceWiredClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceBond *device, GHashTable *properties);
 } NMDeviceBondClass;
 
 

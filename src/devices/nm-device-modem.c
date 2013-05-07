@@ -27,10 +27,10 @@
 #include "nm-modem-cdma.h"
 #include "nm-modem-gsm.h"
 #include "nm-device-private.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-rfkill.h"
 #include "nm-logging.h"
 #include "nm-system.h"
+#include "nm-dbus-manager.h"
 
 #if WITH_MODEM_MANAGER_1
 #include "nm-modem-broadband.h"
@@ -56,8 +56,8 @@ enum {
 };
 
 enum {
-	PROPERTIES_CHANGED,
 	ENABLE_CHANGED,
+
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -506,7 +506,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                      "Modem",
 		                      "Modem",
 		                      NM_TYPE_MODEM,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_CAPABILITIES,
 		g_param_spec_uint (NM_DEVICE_MODEM_CAPABILITIES,
@@ -523,10 +523,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMDeviceModemClass, properties_changed));
-
 	signals[ENABLE_CHANGED] =
 		g_signal_new (NM_DEVICE_MODEM_ENABLE_CHANGED,
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -535,6 +531,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 					  g_cclosure_marshal_VOID__VOID,
 					  G_TYPE_NONE, 0);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (mclass),
-	                                 &dbus_glib_nm_device_modem_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (mclass),
+	                                        &dbus_glib_nm_device_modem_object_info);
 }

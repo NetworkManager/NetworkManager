@@ -37,6 +37,7 @@
 #include <errno.h>
 
 #include "nm-glib-compat.h"
+#include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
@@ -47,7 +48,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
@@ -100,7 +100,6 @@ enum {
 	ACCESS_POINT_ADDED,
 	ACCESS_POINT_REMOVED,
 	HIDDEN_AP_FOUND,
-	PROPERTIES_CHANGED,
 	SCANNING_ALLOWED,
 
 	LAST_SIGNAL
@@ -3724,14 +3723,14 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Scanning",
 		                   "Scanning",
 		                   FALSE,
-		                   G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+		                   G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, PROP_IPW_RFKILL_STATE,
 		g_param_spec_uint (NM_DEVICE_WIFI_IPW_RFKILL_STATE,
 		                   "IpwRfkillState",
 		                   "ipw rf-kill state",
 		                   RFKILL_UNBLOCKED, RFKILL_HARD_BLOCKED, RFKILL_UNBLOCKED,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
@@ -3761,10 +3760,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
 
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMDeviceWifiClass, properties_changed));
-
 	signals[SCANNING_ALLOWED] =
 		g_signal_new ("scanning-allowed",
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -3773,7 +3768,9 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              scanning_allowed_accumulator, NULL, NULL,
 		              G_TYPE_BOOLEAN, 0);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass), &dbus_glib_nm_device_wifi_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_wifi_object_info);
 
 	dbus_g_error_domain_register (NM_WIFI_ERROR, NULL, NM_TYPE_WIFI_ERROR);
 }

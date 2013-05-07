@@ -50,8 +50,6 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceVlan *device, GHashTable *properties);
 } NMDeviceVlanClass;
 
 

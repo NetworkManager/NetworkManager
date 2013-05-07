@@ -51,7 +51,6 @@ typedef struct {
 
 	/* Signals */
 	void (*ppp_stats) (NMDeviceBt *device, guint32 in_bytes, guint32 out_bytes);
-	void (*properties_changed) (NMDeviceBt *device, GHashTable *properties);
 } NMDeviceBtClass;
 
 GType nm_device_bt_get_type (void);

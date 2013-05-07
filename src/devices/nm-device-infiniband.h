@@ -49,8 +49,6 @@ typedef struct {
 typedef struct {
 	NMDeviceWiredClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceInfiniband *device, GHashTable *properties);
 } NMDeviceInfinibandClass;
 
 

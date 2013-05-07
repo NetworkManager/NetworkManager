@@ -24,9 +24,9 @@
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
 #include "nm-glib-compat.h"
+#include "nm-dbus-manager.h"
 
 #include "nm-device-generic-glue.h"
 
@@ -37,14 +37,6 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 typedef struct {
 	char *type_description;
 } NMDeviceGenericPrivate;
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
@@ -217,13 +209,9 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	/* signals */
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMDeviceGenericClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-	                                 &dbus_glib_nm_device_generic_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_generic_object_info);
 
 	dbus_g_error_domain_register (NM_DEVICE_GENERIC_ERROR, NULL, NM_TYPE_DEVICE_GENERIC_ERROR);
 }

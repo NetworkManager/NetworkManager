@@ -29,13 +29,13 @@
 
 #include "nm-device-vlan.h"
 #include "nm-logging.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-netlink-monitor.h"
 #include "nm-enum-types.h"
 #include "nm-system.h"
+#include "nm-dbus-manager.h"
 
 #include "nm-device-vlan-glue.h"
 
@@ -59,14 +59,6 @@ typedef struct {
 	gulong            link_connected_id;
 	gulong            link_disconnected_id;
 } NMDeviceVlanPrivate;
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
@@ -591,13 +583,9 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 		                    0, 4095, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	/* Signals */
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-										  G_STRUCT_OFFSET (NMDeviceVlanClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-									 &dbus_glib_nm_device_vlan_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_vlan_object_info);
 
 	dbus_g_error_domain_register (NM_VLAN_ERROR, NULL, NM_TYPE_VLAN_ERROR);
 }

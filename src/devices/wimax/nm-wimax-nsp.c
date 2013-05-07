@@ -23,19 +23,10 @@
 #include "NetworkManager.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-wimax.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-wimax-nsp-glue.h"
 #include "nm-utils.h"
 
 G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, G_TYPE_OBJECT)
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
@@ -245,11 +236,7 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *klass)
 		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
 		                    G_PARAM_READWRITE));
 
-	/* Signals */
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class,
-										  G_STRUCT_OFFSET (NMWimaxNspClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-							   &dbus_glib_nm_wimax_nsp_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_wimax_nsp_object_info);
 }

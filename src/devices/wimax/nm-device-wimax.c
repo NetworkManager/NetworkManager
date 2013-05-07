@@ -37,7 +37,7 @@
 #include "nm-device-private.h"
 #include "nm-system.h"
 #include "NetworkManagerUtils.h"
-#include "nm-properties-changed-signal.h"
+#include "nm-dbus-manager.h"
 #include "nm-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wimax.h"
@@ -67,7 +67,6 @@ enum {
 enum {
 	NSP_ADDED,
 	NSP_REMOVED,
-	PROPERTIES_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -1501,12 +1500,9 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class, G_STRUCT_OFFSET (NMDeviceWimaxClass, properties_changed));
-
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-									 &dbus_glib_nm_device_wimax_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_wimax_object_info);
 
 	dbus_g_error_domain_register (NM_WIMAX_ERROR, NULL, NM_TYPE_WIMAX_ERROR);
 }

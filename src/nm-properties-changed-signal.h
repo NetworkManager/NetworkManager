@@ -24,9 +24,8 @@
 
 #include <glib-object.h>
 
-#define NM_PROPERTY_PARAM_NO_EXPORT    (1 << (0 + G_PARAM_USER_SHIFT))
-
-guint nm_properties_changed_signal_new (GObjectClass *object_class,
-								guint class_offset);
+void nm_properties_changed_signal_add_property (GType       type,
+                                                const char *dbus_property_name,
+                                                const char *gobject_property_name);
 
 #endif /* _NM_PROPERTIES_CHANGED_SIGNAL_H_ */

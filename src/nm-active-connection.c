@@ -25,7 +25,6 @@
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-device.h"
 #include "nm-settings-connection.h"
 
@@ -76,12 +75,6 @@ enum {
 
 	LAST_PROP
 };
-
-enum {
-	PROPERTIES_CHANGED,
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
 
 /****************************************************************/
 
@@ -379,11 +372,11 @@ dispose (GObject *object)
 }
 
 static void
-nm_active_connection_class_init (NMActiveConnectionClass *vpn_class)
+nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (vpn_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (ac_class);
 
-	g_type_class_add_private (vpn_class, sizeof (NMActiveConnectionPrivate));
+	g_type_class_add_private (ac_class, sizeof (NMActiveConnectionPrivate));
 
 	/* virtual methods */
 	object_class->get_property = get_property;
@@ -462,49 +455,45 @@ nm_active_connection_class_init (NMActiveConnectionClass *vpn_class)
 		                     "Internal Connection",
 		                     "Internal connection",
 		                     NM_TYPE_CONNECTION,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_DEVICE,
 		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_DEVICE,
 		                     "Internal device",
 		                     "Internal device",
 		                     NM_TYPE_DEVICE,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_USER_REQUESTED,
 		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_USER_REQUESTED,
 		                      "User requested",
 		                      "User requested",
 		                      FALSE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_USER_UID,
 		g_param_spec_ulong (NM_ACTIVE_CONNECTION_INT_USER_UID,
 		                    "User UID",
 		                    "User UID (if user requested)",
 		                    0, G_MAXULONG, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_ASSUMED,
 		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_ASSUMED,
 		                      "Assumed",
 		                      "Assumed",
 		                      FALSE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_MASTER,
 		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_MASTER,
 		                     "Internal master device",
 		                     "Internal device",
 		                     NM_TYPE_DEVICE,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	/* Signals */
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMActiveConnectionClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (vpn_class),
-									 &dbus_glib_nm_active_connection_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (ac_class),
+	                                        &dbus_glib_nm_active_connection_object_info);
 }
 

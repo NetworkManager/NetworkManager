@@ -27,12 +27,12 @@
 
 #include "nm-device-bridge.h"
 #include "nm-logging.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
 #include "nm-system.h"
 
@@ -48,14 +48,6 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE_WIRED)
 typedef struct {
 	int dummy;
 } NMDeviceBridgePrivate;
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
@@ -430,13 +422,9 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 		                     G_PARAM_READABLE));
 
-	/* Signals */
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-										  G_STRUCT_OFFSET (NMDeviceBridgeClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-									 &dbus_glib_nm_device_bridge_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_bridge_object_info);
 
 	dbus_g_error_domain_register (NM_BRIDGE_ERROR, NULL, NM_TYPE_BRIDGE_ERROR);
 }

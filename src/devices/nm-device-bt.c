@@ -34,7 +34,6 @@
 #include "nm-device-private.h"
 #include "nm-logging.h"
 #include "ppp-manager/nm-ppp-manager.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
@@ -89,7 +88,6 @@ enum {
 
 enum {
 	PPP_STATS,
-	PROPERTIES_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -1311,12 +1309,9 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
 
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMDeviceBtClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-	                                 &dbus_glib_nm_device_bt_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_bt_object_info);
 
 	dbus_g_error_domain_register (NM_BT_ERROR, NULL, NM_TYPE_BT_ERROR);
 }

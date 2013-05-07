@@ -48,12 +48,12 @@
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-system.h"
 #include "nm-manager.h"
 #include "nm-enum-types.h"
+#include "nm-dbus-manager.h"
 #include "wifi-utils.h"
 #if HAVE_WEXT
 #include "wifi-utils-wext.h"
@@ -77,14 +77,6 @@ enum {
 
 	LAST_PROP
 };
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 #define NM_OLPC_MESH_ERROR (nm_olpc_mesh_error_quark ())
 
@@ -516,14 +508,12 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 		                   0, G_MAXUINT32, 0,
 		                   G_PARAM_READABLE));
 
-	signals[PROPERTIES_CHANGED] =
-		nm_properties_changed_signal_new (object_class,
-		                                  G_STRUCT_OFFSET (NMDeviceOlpcMeshClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass), &dbus_glib_nm_device_olpc_mesh_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_olpc_mesh_object_info);
 
 	dbus_g_error_domain_register (NM_OLPC_MESH_ERROR, NULL, 
-		NM_TYPE_OLPC_MESH_ERROR);
+	                              NM_TYPE_OLPC_MESH_ERROR);
 }
 
 static void

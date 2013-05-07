@@ -53,8 +53,6 @@ typedef struct {
 typedef struct {
 	NMDeviceWiredClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceEthernet *device, GHashTable *properties);
 } NMDeviceEthernetClass;
 
 

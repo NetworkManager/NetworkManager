@@ -42,8 +42,6 @@ typedef struct {
 typedef struct {
 	NMActiveConnectionClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMActRequest *req, GHashTable *properties);
 } NMActRequestClass;
 
 GType nm_act_request_get_type (void);

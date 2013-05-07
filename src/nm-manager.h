@@ -80,7 +80,6 @@ typedef struct {
 	void (*device_added) (NMManager *manager, NMDevice *device);
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*state_changed) (NMManager *manager, guint state);
-	void (*properties_changed) (NMManager *manager, GHashTable *properties);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);

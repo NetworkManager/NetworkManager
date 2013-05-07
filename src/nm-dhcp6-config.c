@@ -26,7 +26,6 @@
 #include "nm-dhcp6-config.h"
 #include "nm-dhcp6-config-glue.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-utils.h"
 
 
@@ -46,14 +45,6 @@ enum {
 
 	LAST_PROP
 };
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 
 NMDHCP6Config *
@@ -194,11 +185,7 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 		                     DBUS_TYPE_G_MAP_OF_VARIANT,
 		                     G_PARAM_READABLE));
 
-	/* Signals */
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class,
-								    G_STRUCT_OFFSET (NMDHCP6ConfigClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (config_class),
-									 &dbus_glib_nm_dhcp6_config_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (config_class),
+	                                        &dbus_glib_nm_dhcp6_config_object_info);
 }

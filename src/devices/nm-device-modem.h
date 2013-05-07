@@ -47,7 +47,6 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	void (*properties_changed) (NMDeviceModem *self, GHashTable *properties);
 } NMDeviceModemClass;
 
 GType nm_device_modem_get_type (void);

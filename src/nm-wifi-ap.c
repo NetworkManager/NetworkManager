@@ -30,7 +30,6 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 
-#include "nm-properties-changed-signal.h"
 #include "nm-setting-wireless.h"
 #include "nm-glib-compat.h"
 
@@ -66,14 +65,6 @@ typedef struct
 #define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
 
 G_DEFINE_TYPE (NMAccessPoint, nm_ap, G_TYPE_OBJECT)
-
-enum {
-	PROPERTIES_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
@@ -304,13 +295,9 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							G_MININT8, G_MAXINT8, 0,
 							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	/* Signals */
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class,
-								    G_STRUCT_OFFSET (NMAccessPointClass, properties_changed));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (ap_class),
-							   &dbus_glib_nm_access_point_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (ap_class),
+	                                        &dbus_glib_nm_access_point_object_info);
 }
 
 void

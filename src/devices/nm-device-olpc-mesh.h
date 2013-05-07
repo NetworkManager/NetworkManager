@@ -70,9 +70,6 @@ struct _NMDeviceOlpcMeshClass
 {
 	NMDeviceClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceOlpcMesh *device,
-	                            GHashTable *properties);
 };
 
 

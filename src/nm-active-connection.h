@@ -59,8 +59,6 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMActiveConnection *active, GHashTable *properties);
 } NMActiveConnectionClass;
 
 GType         nm_active_connection_get_type (void);

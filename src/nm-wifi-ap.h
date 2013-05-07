@@ -51,8 +51,6 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMAccessPoint *ap, GHashTable *properties);
 } NMAccessPointClass;
 
 GType nm_ap_get_type (void);

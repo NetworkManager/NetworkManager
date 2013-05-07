@@ -23,19 +23,31 @@
 #include <stdio.h>
 
 #include <dbus/dbus-glib.h>
-#ifdef DEBUG
 #include "nm-logging.h"
-#endif
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 
-#define NM_DBUS_PROPERTY_CHANGED "NM_DBUS_PROPERTY_CHANGED"
+typedef struct {
+	GHashTable *exported_props;
+	guint signal_id;
+} NMPropertiesChangedClassInfo;
 
 typedef struct {
 	GHashTable *hash;
-	gulong signal_id;
+	guint signal_id;
 	guint idle_id;
-} PropertiesChangedInfo;
+} NMPropertiesChangedInfo;
+
+static GQuark
+nm_properties_changed_signal_quark (void)
+{
+	static GQuark q;
+
+	if (G_UNLIKELY (q == 0))
+		q = g_quark_from_static_string ("nm-properties-changed-signal");
+
+	return q;
+}
 
 static void
 destroy_value (gpointer data)
@@ -46,35 +58,23 @@ destroy_value (gpointer data)
 	g_slice_free (GValue, val);
 }
 
-static PropertiesChangedInfo *
-properties_changed_info_new (void)
-{
-	PropertiesChangedInfo *info;
-
-	info = g_slice_new0 (PropertiesChangedInfo);
-	info->hash = g_hash_table_new_full (g_str_hash, g_str_equal, 
-								 (GDestroyNotify) g_free,
-								 destroy_value);
-	return info;
-}
-
 static void
 properties_changed_info_destroy (gpointer data)
 {
-	PropertiesChangedInfo *info = (PropertiesChangedInfo *) data;
+	NMPropertiesChangedInfo *info = data;
 
 	if (info->idle_id)
 		g_source_remove (info->idle_id);
 
 	g_hash_table_destroy (info->hash);
-	g_slice_free (PropertiesChangedInfo, info);
+	g_slice_free (NMPropertiesChangedInfo, info);
 }
 
-#ifdef DEBUG
 static void
 add_to_string (gpointer key, gpointer value, gpointer user_data)
 {
-	char *buf = (char *) user_data;
+	const char *name = (const char *) key;
+	GString *buf = user_data;
 	GValue str_val = G_VALUE_INIT;
 
 	g_value_init (&str_val, G_TYPE_STRING);
@@ -82,36 +82,33 @@ add_to_string (gpointer key, gpointer value, gpointer user_data)
 		if (G_VALUE_HOLDS_OBJECT (value)) {
 			GObject *obj = g_value_get_object (value);
 
-			if (g_value_get_object (value)) {
-				sprintf (buf + strlen (buf), "{%s: %p (%s)}, ",
-				         (const char *) key, obj, G_OBJECT_TYPE_NAME (obj));
-			} else {
-				sprintf (buf + strlen (buf), "{%s: %p}, ", (const char *) key, obj);
-			}
+			if (obj) {
+				g_string_append_printf (buf, "{%s: %p (%s)}, ", name, obj,
+				                        G_OBJECT_TYPE_NAME (obj));
+			} else
+				g_string_append_printf (buf, "{%s: %p}, ", name, obj);
 		} else
-			sprintf (buf + strlen (buf), "{%s: <transform error>}, ", (const char *) key);
-	} else {
-		sprintf (buf + strlen (buf), "{%s: %s}, ", (const char *) key, g_value_get_string (&str_val));
-	}
+			g_string_append_printf (buf, "{%s: <transform error>}, ", name);
+	} else
+		g_string_append_printf (buf, "{%s: %s}, ", name, g_value_get_string (&str_val));
 	g_value_unset (&str_val);
 }
-#endif
 
 static gboolean
 properties_changed (gpointer data)
 {
 	GObject *object = G_OBJECT (data);
-	PropertiesChangedInfo *info = (PropertiesChangedInfo *) g_object_get_data (object, NM_DBUS_PROPERTY_CHANGED);
+	NMPropertiesChangedInfo *info = g_object_get_qdata (object, nm_properties_changed_signal_quark ());
 
 	g_assert (info);
 
-#ifdef DEBUG
-	{
-		char buf[2048] = { 0, };
-		g_hash_table_foreach (info->hash, add_to_string, &buf);
-		nm_log_dbg (LOGD_CORE, "%s -> %s", G_OBJECT_TYPE_NAME (object), buf);
+	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		GString *buf = g_string_new (NULL);
+
+		g_hash_table_foreach (info->hash, add_to_string, buf);
+		nm_log_dbg (LOGD_CORE, "%s -> %s", G_OBJECT_TYPE_NAME (object), buf->str);
+		g_string_free (buf, TRUE);
 	}
-#endif
 
 	g_signal_emit (object, info->signal_id, 0, info->hash);
 	g_hash_table_remove_all (info->hash);
@@ -123,82 +120,122 @@ static void
 idle_id_reset (gpointer data)
 {
 	GObject *object = G_OBJECT (data);
-	PropertiesChangedInfo *info = (PropertiesChangedInfo *) g_object_get_data (object, NM_DBUS_PROPERTY_CHANGED);
+	NMPropertiesChangedInfo *info = g_object_get_qdata (object, nm_properties_changed_signal_quark ());
 
 	/* info is unset when the object is being destroyed */
 	if (info)
 		info->idle_id = 0;
 }
 
-static char*
-uscore_to_wincaps (const char *uscore)
-{
-	const char *p;
-	GString *str;
-	gboolean last_was_uscore;
-
-	last_was_uscore = TRUE;
-  
-	str = g_string_new (NULL);
-	p = uscore;
-	while (p && *p) {
-		if (*p == '-' || *p == '_')
-			last_was_uscore = TRUE;
-		else {
-			if (last_was_uscore) {
-				g_string_append_c (str, g_ascii_toupper (*p));
-				last_was_uscore = FALSE;
-			} else
-				g_string_append_c (str, *p);
-		}
-		++p;
-	}
-
-	return g_string_free (str, FALSE);
-}
-
 static void
 notify (GObject *object, GParamSpec *pspec)
 {
-	PropertiesChangedInfo *info;
+	NMPropertiesChangedClassInfo *classinfo;
+	NMPropertiesChangedInfo *info;
+	const char *dbus_property_name = NULL;
 	GValue *value;
+	GType type;
 
-	/* Ignore properties that shouldn't be exported */
-	if (pspec->flags & NM_PROPERTY_PARAM_NO_EXPORT)
+	for (type = G_OBJECT_TYPE (object); type; type = g_type_parent (type)) {
+		classinfo = g_type_get_qdata (type, nm_properties_changed_signal_quark ());
+		if (!classinfo)
+			continue;
+
+		dbus_property_name = g_hash_table_lookup (classinfo->exported_props, pspec->name);
+		if (dbus_property_name)
+			break;
+	}
+	if (!dbus_property_name) {
+		nm_log_dbg (LOGD_CORE, "ignoring notification for prop %s on type %s",
+		            pspec->name, G_OBJECT_TYPE_NAME (object));
 		return;
+	}
 
-	info = (PropertiesChangedInfo *) g_object_get_data (object, NM_DBUS_PROPERTY_CHANGED);
+	info = g_object_get_qdata (object, nm_properties_changed_signal_quark ());
 	if (!info) {
-		info = properties_changed_info_new ();
-		g_object_set_data_full (object, NM_DBUS_PROPERTY_CHANGED, info, properties_changed_info_destroy);
-		info->signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (object));
-		g_assert (info->signal_id);
+		info = g_slice_new0 (NMPropertiesChangedInfo);
+		info->hash = g_hash_table_new_full (g_str_hash, g_str_equal,
+		                                    NULL, destroy_value);
+		info->signal_id = classinfo->signal_id;
+
+		g_object_set_qdata_full (object, nm_properties_changed_signal_quark (),
+		                         info, properties_changed_info_destroy);
 	}
 
 	value = g_slice_new0 (GValue);
 	g_value_init (value, pspec->value_type);
 	g_object_get_property (object, pspec->name, value);
-	g_hash_table_insert (info->hash, uscore_to_wincaps (pspec->name), value);
+	g_hash_table_insert (info->hash, (char *) dbus_property_name, value);
 
 	if (!info->idle_id)
 		info->idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, properties_changed, object, idle_id_reset);
 }
 
-guint
-nm_properties_changed_signal_new (GObjectClass *object_class,
-						    guint class_offset)
+static NMPropertiesChangedClassInfo *
+nm_properties_changed_signal_setup_type (GType type)
 {
-	guint id;
+	NMPropertiesChangedClassInfo *classinfo;
+	NMPropertiesChangedClassInfo *parent_classinfo = NULL;
+	GObjectClass *object_class;
+	GType parent;
 
+	classinfo = g_slice_new (NMPropertiesChangedClassInfo);
+	g_type_set_qdata (type, nm_properties_changed_signal_quark (), classinfo);
+
+	object_class = g_type_class_ref (type);
 	object_class->notify = notify;
+	g_type_class_unref (object_class);
 
-	id = g_signal_new ("properties-changed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    class_offset,
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__BOXED,
-				    G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
+	classinfo->exported_props = g_hash_table_new (g_str_hash, g_str_equal);
 
-	return id;
+	/* See if we've already added the signal to a parent class. (We can't just use
+	 * g_signal_lookup() here because it prints a warning if the signal doesn't exist!)
+	 */
+	parent = g_type_parent (type);
+	while (parent) {
+		parent_classinfo = g_type_get_qdata (parent, nm_properties_changed_signal_quark ());
+		if (parent_classinfo)
+			break;
+		parent = g_type_parent (parent);
+	}
+
+	if (parent_classinfo)
+		classinfo->signal_id = parent_classinfo->signal_id;
+	else {
+		classinfo->signal_id = g_signal_new ("properties-changed",
+		                                     type,
+		                                     G_SIGNAL_RUN_FIRST,
+		                                     0,
+		                                     NULL, NULL,
+		                                     g_cclosure_marshal_VOID__BOXED,
+		                                     G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
+	}
+
+	return classinfo;
+}
+
+void
+nm_properties_changed_signal_add_property (GType       type,
+                                           const char *dbus_property_name,
+                                           const char *gobject_property_name)
+{
+	NMPropertiesChangedClassInfo *classinfo;
+	char *hyphen_name, *p;
+
+	classinfo = g_type_get_qdata (type, nm_properties_changed_signal_quark ());
+	if (!classinfo)
+		classinfo = nm_properties_changed_signal_setup_type (type);
+
+	g_hash_table_insert (classinfo->exported_props,
+	                     (char *) gobject_property_name,
+	                     (char *) dbus_property_name);
+
+	hyphen_name = g_strdup (gobject_property_name);
+	for (p = hyphen_name; *p; p++) {
+		if (*p == '_')
+			*p = '-';
+	}
+	g_hash_table_insert (classinfo->exported_props,
+	                     hyphen_name,
+	                     (char *) dbus_property_name);
 }

@@ -38,8 +38,6 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDHCP6Config *config, GHashTable *properties);
 } NMDHCP6ConfigClass;
 
 #define NM_DHCP6_CONFIG_OPTIONS "options"

@@ -5025,7 +5025,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                    "DeviceType",
 		                    "DeviceType",
 		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_MANAGED,
@@ -5057,7 +5057,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                      "Type Description",
 		                      "Device type description",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_RFKILL_TYPE,
@@ -5067,7 +5067,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                    RFKILL_TYPE_WLAN,
 		                    RFKILL_TYPE_MAX,
 		                    RFKILL_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_IFINDEX,
@@ -5075,7 +5075,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                   "Ifindex",
 		                   "Ifindex",
 		                   0, G_MAXINT, 0,
-		                   G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+		                   G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
@@ -5141,8 +5141,9 @@ nm_device_class_init (NMDeviceClass *klass)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-	                                 &dbus_glib_nm_device_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (klass),
+	                                        &dbus_glib_nm_device_object_info);
 
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }

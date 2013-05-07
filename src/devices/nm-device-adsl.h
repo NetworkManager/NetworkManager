@@ -51,8 +51,6 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceAdsl *device, GHashTable *properties);
 } NMDeviceAdslClass;
 
 GType nm_device_adsl_get_type (void);

@@ -50,8 +50,6 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	/* Signals */
-	void (*properties_changed) (NMDeviceGeneric *device, GHashTable *properties);
 } NMDeviceGenericClass;
 
 GType nm_device_generic_get_type (void);
