@@ -287,6 +287,26 @@ udev_device_removed (SCPluginIfupdown *self, GUdevDevice *device)
 }
 
 static void
+udev_device_changed (SCPluginIfupdown *self, GUdevDevice *device)
+{
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
+	const char *iface, *path;
+
+	iface = g_udev_device_get_name (device);
+	path = g_udev_device_get_sysfs_path (device);
+	if (!iface || !path)
+		return;
+
+	PLUGIN_PRINT("SCPlugin-Ifupdown", "device changed (path: %s, iface: %s)", path, iface);
+
+	if (!g_hash_table_lookup (priv->kernel_ifaces, iface))
+		return;
+
+	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
+		g_signal_emit_by_name (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+}
+
+static void
 handle_uevent (GUdevClient *client,
                const char *action,
                GUdevDevice *device,
@@ -306,6 +326,8 @@ handle_uevent (GUdevClient *client,
 		udev_device_added (self, device);
 	else if (!strcmp (action, "remove"))
 		udev_device_removed (self, device);
+	else if (!strcmp (action, "change"))
+		udev_device_changed (self, device);
 }
 
 static void
