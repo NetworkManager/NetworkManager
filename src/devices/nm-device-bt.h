@@ -39,7 +39,6 @@ typedef enum {
 	NM_BT_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMBtError;
 
-#define NM_DEVICE_BT_HW_ADDRESS   "hw-address"
 #define NM_DEVICE_BT_NAME         "name"
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
 

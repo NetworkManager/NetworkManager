@@ -41,7 +41,6 @@ typedef enum
 	NM_DEVICE_GENERIC_ERROR_CONNECTION_INCOMPATIBLE,    /*< nick=ConnectionIncompatible >*/
 } NMDeviceGenericError;
 
-#define NM_DEVICE_GENERIC_HW_ADDRESS "hw-address"
 #define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 
 typedef struct {

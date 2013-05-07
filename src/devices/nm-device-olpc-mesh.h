@@ -49,7 +49,6 @@ typedef enum
 	NM_OLPC_MESH_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMOlpcMeshError;
 
-#define NM_DEVICE_OLPC_MESH_HW_ADDRESS     "hw-address"
 #define NM_DEVICE_OLPC_MESH_COMPANION      "companion"
 #define NM_DEVICE_OLPC_MESH_BITRATE        "bitrate"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"

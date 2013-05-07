@@ -51,7 +51,6 @@ typedef enum {
 	NM_WIFI_ERROR_ADHOC_MODE_UNSUPPORTED,      /*< nick=AdhocModeUnsupported >*/
 } NMWifiError;
 
-#define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"
 #define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_WIFI_MODE                "mode"
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
