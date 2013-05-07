@@ -166,9 +166,9 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: (element-type Posix.in6_addr): a #GSList containing elements of type
- * 'struct in6_addr' which contain the addresses of nameservers of the configuration.
- * This is the internal copy used by the configuration and must not be modified.
+ * Returns: a #GSList containing elements of type 'struct in6_addr' which
+ * contain the addresses of nameservers of the configuration.  This is the
+ * internal copy used by the configuration and must not be modified.
  **/
 const GSList *
 nm_ip6_config_get_nameservers (NMIP6Config *config)
