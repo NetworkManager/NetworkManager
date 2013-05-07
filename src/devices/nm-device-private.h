@@ -34,6 +34,10 @@ enum NMActStageReturn {
 	NM_ACT_STAGE_RETURN_STOP         /* Activation stage done; nothing to do */
 };
 
+#define NM_DEVICE_CAP_NONSTANDARD_CARRIER 0x80000000
+
+#define NM_DEVICE_CAP_INTERNAL_MASK 0x80000000
+
 void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
 void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
@@ -86,5 +90,7 @@ NMDeviceState nm_device_queued_state_peek (NMDevice *device);
 gboolean nm_device_get_enslaved (NMDevice *device);
 
 NMDevice *nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex);
+
+void nm_device_set_carrier (NMDevice *device, gboolean carrier);
 
 #endif	/* NM_DEVICE_PRIVATE_H */

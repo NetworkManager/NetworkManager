@@ -40,7 +40,6 @@ typedef enum {
 	NM_BOND_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMBondError;
 
-#define NM_DEVICE_BOND_CARRIER "carrier"
 #define NM_DEVICE_BOND_SLAVES "slaves"
 
 typedef struct {

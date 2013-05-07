@@ -49,7 +49,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_CARRIER,
 
 	LAST_PROP
 };
@@ -300,9 +299,6 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
-	case PROP_CARRIER:
-		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (object)));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -344,13 +340,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->get_connection_hw_address = get_connection_hw_address;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_INFINIBAND_CARRIER,
-							   "Carrier",
-							   "Carrier",
-							   FALSE,
-							   G_PARAM_READABLE));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

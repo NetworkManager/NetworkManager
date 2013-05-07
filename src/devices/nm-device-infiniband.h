@@ -40,8 +40,6 @@ typedef enum {
 	NM_INFINIBAND_ERROR_CONNECTION_INCOMPATIBLE,       /*< nick=ConnectionIncompatible >*/
 } NMInfinibandError;
 
-#define NM_DEVICE_INFINIBAND_CARRIER "carrier"
-
 typedef struct {
 	NMDeviceWired parent;
 } NMDeviceInfiniband;

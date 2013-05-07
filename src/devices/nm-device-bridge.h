@@ -40,7 +40,6 @@ typedef enum {
 	NM_BRIDGE_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMBridgeError;
 
-#define NM_DEVICE_BRIDGE_CARRIER "carrier"
 #define NM_DEVICE_BRIDGE_SLAVES "slaves"
 
 typedef struct {

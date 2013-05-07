@@ -32,10 +32,10 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-netlink-monitor.h"
 #include "nm-enum-types.h"
 #include "nm-system.h"
 #include "nm-dbus-manager.h"
+#include "nm-netlink-monitor.h"
 
 #include "nm-device-vlan-glue.h"
 
@@ -53,24 +53,14 @@ typedef struct {
 	guint parent_state_id;
 
 	guint vlan_id;
-
-	gboolean          carrier;
-	NMNetlinkMonitor *monitor;
-	gulong            link_connected_id;
-	gulong            link_disconnected_id;
 } NMDeviceVlanPrivate;
 
 enum {
 	PROP_0,
-	PROP_CARRIER,
 	PROP_VLAN_ID,
 
 	LAST_PROP
 };
-
-static void
-set_carrier (NMDeviceVlan *self,
-             const gboolean carrier);
 
 /******************************************************************/
 
@@ -93,29 +83,6 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-get_carrier_sync (NMDeviceVlan *self)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	GError *error = NULL;
-	guint32 ifflags = 0;
-
-	/* Get initial link state */
-	if (!nm_netlink_monitor_get_flags_sync (priv->monitor,
-	                                        nm_device_get_ip_ifindex (NM_DEVICE (self)),
-	                                        &ifflags,
-	                                        &error)) {
-		nm_log_warn (LOGD_HW | LOGD_VLAN,
-		             "(%s): couldn't get carrier state: (%d) %s",
-		             nm_device_get_ip_iface (NM_DEVICE (self)),
-		             error ? error->code : -1,
-		             (error && error->message) ? error->message : "unknown");
-		g_clear_error (&error);
-	}
-
-	return !!(ifflags & IFF_LOWER_UP);
-}
-
-static gboolean
 hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	gboolean success = FALSE, carrier;
@@ -132,32 +99,28 @@ hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 		 */
 		i = 20;
 		while (i-- > 0) {
-			carrier = get_carrier_sync (NM_DEVICE_VLAN (dev));
-			set_carrier (NM_DEVICE_VLAN (dev), carrier);
+			GError *error = NULL;
+			guint32 ifflags = 0;
+
+			if (!nm_netlink_monitor_get_flags_sync (nm_netlink_monitor_get (),
+			                                        nm_device_get_ifindex (dev),
+			                                        &ifflags, &error)) {
+				nm_log_warn (LOGD_DEVICE | LOGD_VLAN,
+				             "(%s): couldn't get carrier state: %s",
+				             nm_device_get_iface (dev),
+				             error->message);
+				g_clear_error (&error);
+				break;
+			}
+
+			carrier = !!(ifflags & IFF_LOWER_UP);
+			nm_device_set_carrier (dev, carrier);
 			if (carrier)
 				break;
 			g_usleep (100);
 		}
 	}
 	return success;
-}
-
-static gboolean
-can_interrupt_activation (NMDevice *dev)
-{
-	/* Can interrupt activation if the carrier drops while activating */
-
-	if (nm_device_ignore_carrier (dev))
-		return FALSE;
-	return NM_DEVICE_VLAN_GET_PRIVATE (dev)->carrier ? FALSE : TRUE;
-}
-
-static gboolean
-is_available (NMDevice *dev)
-{
-	if (nm_device_ignore_carrier (dev))
-		return TRUE;
-	return NM_DEVICE_VLAN_GET_PRIVATE (dev)->carrier ? TRUE : FALSE;
 }
 
 /******************************************************************/
@@ -341,62 +304,6 @@ match_l2_config (NMDevice *device, NMConnection *connection)
 /******************************************************************/
 
 static void
-set_carrier (NMDeviceVlan *self,
-             const gboolean carrier)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
-	if (priv->carrier == carrier)
-		return;
-
-	priv->carrier = carrier;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_VLAN_CARRIER);
-}
-
-static void
-carrier_on (NMNetlinkMonitor *monitor, int idx, NMDevice *device)
-{
-	/* Make sure signal is for us */
-	if (idx == nm_device_get_ifindex (device))
-		set_carrier (NM_DEVICE_VLAN (device), TRUE);
-}
-
-static void
-carrier_off (NMNetlinkMonitor *monitor, int idx, NMDevice *device)
-{
-	/* Make sure signal is for us */
-	if (idx == nm_device_get_ifindex (device))
-		set_carrier (NM_DEVICE_VLAN (device), FALSE);
-}
-
-static void
-carrier_watch_init (NMDeviceVlan *self)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
-	priv->monitor = nm_netlink_monitor_get ();
-	priv->link_connected_id = g_signal_connect (priv->monitor, "carrier-on",
-	                                            G_CALLBACK (carrier_on),
-	                                            self);
-	priv->link_disconnected_id = g_signal_connect (priv->monitor, "carrier-off",
-	                                               G_CALLBACK (carrier_off),
-	                                               self);
-
-	priv->carrier = get_carrier_sync (NM_DEVICE_VLAN (self));
-
-	nm_log_info (LOGD_HW | LOGD_VLAN, "(%s): carrier is %s",
-	             nm_device_get_iface (NM_DEVICE (self)),
-	             priv->carrier ? "ON" : "OFF");
-
-	/* Request link state again just in case an error occurred getting the
-	 * initial link state.
-	 */
-	nm_netlink_monitor_request_status (priv->monitor);
-}
-
-/******************************************************************/
-
-static void
 parent_state_changed (NMDevice *parent,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
@@ -405,14 +312,17 @@ parent_state_changed (NMDevice *parent,
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
 
+	/* We'll react to our own carrier state notifications. Ignore the parent's. */
+	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
+		return;
+
 	if (new_state < NM_DEVICE_STATE_DISCONNECTED) {
 		/* If the parent becomes unavailable or unmanaged so does the VLAN */
 		nm_device_state_changed (NM_DEVICE (self), new_state, reason);
 	} else if (   new_state == NM_DEVICE_STATE_DISCONNECTED
 	           && old_state < NM_DEVICE_STATE_DISCONNECTED) {
 		/* Mark VLAN interface as available/disconnected when the parent
-		 * becomes available as a result of carrier changes or becoming
-		 * initialized.
+		 * becomes available as a result of becoming initialized.
 		 */
 		nm_device_state_changed (NM_DEVICE (self), new_state, reason);
 	}
@@ -471,8 +381,6 @@ nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
 		                                          G_CALLBACK (parent_state_changed),
 		                                          device);
 
-		carrier_watch_init (NM_DEVICE_VLAN (device));
-
 		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d", iface, ifindex);
 		nm_log_info (LOGD_HW | LOGD_ETHER, "(%s): VLAN ID %d with parent %s",
 		             iface, priv->vlan_id, nm_device_get_iface (parent));
@@ -493,9 +401,6 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_CARRIER:
-		g_value_set_boolean (value, priv->carrier);
-		break;
 	case PROP_VLAN_ID:
 		g_value_set_uint (value, priv->vlan_id);
 		break;
@@ -533,11 +438,6 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	if (priv->link_connected_id)
-		g_signal_handler_disconnect (priv->monitor, priv->link_connected_id);
-	if (priv->link_disconnected_id)
-		g_signal_handler_disconnect (priv->monitor, priv->link_disconnected_id);
-
 	g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
 	g_object_unref (priv->parent);
 
@@ -559,22 +459,12 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->hw_bring_up = hw_bring_up;
-	parent_class->can_interrupt_activation = can_interrupt_activation;
-	parent_class->is_available = is_available;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->match_l2_config = match_l2_config;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_VLAN_CARRIER,
-							   "Carrier",
-							   "Carrier",
-							   FALSE,
-							   G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_VLAN_ID,
 		 g_param_spec_uint (NM_DEVICE_VLAN_ID,

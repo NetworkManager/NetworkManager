@@ -41,12 +41,10 @@ typedef struct {
 
 typedef struct {
 	NMDeviceClass parent;
-
 } NMDeviceWiredClass;
 
 GType nm_device_wired_get_type (void);
 
-gboolean      nm_device_wired_get_carrier     (NMDeviceWired *dev);
 guint32       nm_device_wired_get_speed       (NMDeviceWired *dev);
 
 G_END_DECLS

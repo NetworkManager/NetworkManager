@@ -102,7 +102,6 @@ enum {
 	PROP_0,
 	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
-	PROP_CARRIER,
 
 	LAST_PROP
 };
@@ -1345,9 +1344,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SPEED:
 		g_value_set_uint (value, nm_device_wired_get_speed (NM_DEVICE_WIRED (self)));
 		break;
-	case PROP_CARRIER:
-		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (self)));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1415,14 +1411,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 						   "Speed",
 						   0, G_MAXUINT32, 0,
 						   G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_ETHERNET_CARRIER,
-							   "Carrier",
-							   "Carrier",
-							   FALSE,
-							   G_PARAM_READABLE));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

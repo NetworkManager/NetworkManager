@@ -42,8 +42,6 @@ typedef enum {
 	NM_ADSL_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMAdslError;
 
-#define NM_DEVICE_ADSL_CARRIER "carrier"
-
 typedef struct {
 	NMDevice parent;
 } NMDeviceAdsl;

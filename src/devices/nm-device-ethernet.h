@@ -44,7 +44,6 @@ typedef enum
 
 #define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED "speed"
-#define NM_DEVICE_ETHERNET_CARRIER "carrier"
 
 typedef struct {
 	NMDeviceWired parent;

@@ -51,7 +51,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_CARRIER,
 	PROP_SLAVES,
 
 	LAST_PROP
@@ -353,8 +352,6 @@ get_property (GObject *object, guint prop_id,
 	GSList *list, *iter;
 
 	switch (prop_id) {
-	case PROP_CARRIER:
-		g_value_set_boolean (value, nm_device_wired_get_carrier (NM_DEVICE_WIRED (object)));
 		break;
 	case PROP_SLAVES:
 		slaves = g_ptr_array_new ();
@@ -406,14 +403,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->release_slave = release_slave;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_BRIDGE_CARRIER,
-							   "Carrier",
-							   "Carrier",
-							   FALSE,
-							   G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
 		 g_param_spec_boxed (NM_DEVICE_BRIDGE_SLAVES,

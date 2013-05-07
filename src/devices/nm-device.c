@@ -111,6 +111,7 @@ enum {
 	PROP_DRIVER_VERSION,
 	PROP_FIRMWARE_VERSION,
 	PROP_CAPABILITIES,
+	PROP_CARRIER,
 	PROP_IP4_ADDRESS,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
@@ -202,6 +203,13 @@ typedef struct {
 	gulong          secrets_updated_id;
 	gulong          secrets_failed_id;
 
+	/* Link stuff */
+	guint           link_connected_id;
+	guint           link_disconnected_id;
+	guint           carrier_defer_id;
+	gboolean        carrier;
+	gboolean        ignore_carrier;
+
 	/* Generic DHCP stuff */
 	NMDHCPManager * dhcp_manager;
 	guint32         dhcp_timeout;
@@ -273,10 +281,6 @@ typedef struct {
 	guint cp_removed_id;
 	guint cp_updated_id;
 
-	/* carrier handling */
-	gboolean ignore_carrier;
-	guint carrier_action_defer_id;
-
 } NMDevicePrivate;
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
@@ -312,8 +316,9 @@ static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *conne
 
 static const char *state_to_string (NMDeviceState state);
 
-static void carrier_changed (GObject *object, GParamSpec *param, gpointer user_data);
-static void carrier_action_defer_clear (NMDevice *self);
+static void link_connected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device);
+static void link_disconnected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device);
+static void check_carrier (NMDevice *device);
 
 static void nm_device_queued_ip_config_change_clear (NMDevice *self);
 static void update_ip_config (NMDevice *self);
@@ -468,6 +473,12 @@ device_get_driver_info (const char *iface, char **driver_version, char **firmwar
 	return TRUE;
 }
 
+static gboolean
+device_has_capability (NMDevice *device, NMDeviceCapabilities caps)
+{
+	return !!(NM_DEVICE_GET_PRIVATE (device)->capabilities & caps);
+}
+
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -497,7 +508,7 @@ constructor (GType type,
 	}
 
 	priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
-	if (!(priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED)) {
+	if (!device_has_capability (dev, NM_DEVICE_CAP_NM_SUPPORTED)) {
 		nm_log_warn (LOGD_DEVICE, "(%s): Device unsupported, ignoring.", priv->iface);
 		goto error;
 	}
@@ -524,6 +535,7 @@ static void
 constructed (GObject *object)
 {
 	NMDevice *dev = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 
 	nm_device_update_hw_address (dev);
 
@@ -534,13 +546,38 @@ constructed (GObject *object)
 		NM_DEVICE_GET_CLASS (dev)->update_initial_hw_address (dev);
 
 	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
-	if (g_object_class_find_property (G_OBJECT_GET_CLASS (dev), "carrier")) {
-		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
-		NMConfig *config = nm_config_get ();
+	if (device_has_capability (dev, NM_DEVICE_CAP_CARRIER_DETECT)) {
+		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), NM_CONFIG_DEVICE (dev));
 
-		priv->ignore_carrier = nm_config_get_ignore_carrier (config, NM_CONFIG_DEVICE (dev));
-		if (!priv->ignore_carrier)
-			g_signal_connect (dev, "notify::carrier", G_CALLBACK (carrier_changed), NULL);
+		check_carrier (dev);
+		nm_log_info (LOGD_HW,
+		             "(%s): carrier is %s%s",
+		             nm_device_get_iface (NM_DEVICE (dev)),
+		             priv->carrier ? "ON" : "OFF",
+		             priv->ignore_carrier ? " (but ignored)" : "");
+
+		if (!device_has_capability (dev, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+			NMNetlinkMonitor *netlink_monitor = nm_netlink_monitor_get ();
+
+			priv->link_connected_id = g_signal_connect (netlink_monitor, "carrier-on",
+			                                            G_CALLBACK (link_connected_cb), dev);
+			priv->link_disconnected_id = g_signal_connect (netlink_monitor, "carrier-off",
+			                                               G_CALLBACK (link_disconnected_cb), dev);
+
+			/* Request link state again just in case an error occurred getting the
+			 * initial link state.
+			 *
+			 * TODO: Check if this is necessary at all.
+			 */
+			nm_netlink_monitor_request_status (netlink_monitor);
+		}
+	} else {
+		nm_log_info (LOGD_HW,
+		             "(%s): driver '%s' does not support carrier detection.",
+		             nm_device_get_iface (dev),
+		             nm_device_get_driver (dev));
+		/* Fake online link when carrier detection is not available. */
+		priv->carrier = TRUE;
 	}
 
 	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
@@ -987,6 +1024,162 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean failed)
 }
 
 static void
+carrier_changed (NMDevice *device, gboolean carrier)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->ignore_carrier || !nm_device_get_managed (device))
+		return;
+
+	if (nm_device_is_master (device)) {
+		/* Bridge/bond carrier does not affect its own activation, but
+		 * when carrier comes on, if there are slaves waiting, it will
+		 * restart them.
+		 */
+		if (!carrier)
+			return;
+
+		if (nm_device_activate_ip4_state_in_wait (device))
+			nm_device_activate_stage3_ip4_start (device);
+		if (nm_device_activate_ip6_state_in_wait (device))
+			nm_device_activate_stage3_ip6_start (device);
+
+		return;
+	} else if (nm_device_get_enslaved (device) && !carrier) {
+		/* Slaves don't deactivate when they lose carrier; for bonds
+		 * in particular that would be actively counterproductive.
+		 */
+		return;
+	}
+
+	if (carrier) {
+		g_warn_if_fail (priv->state >= NM_DEVICE_STATE_UNAVAILABLE);
+
+		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
+			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED,
+			                       NM_DEVICE_STATE_REASON_CARRIER);
+		}
+	} else {
+		g_return_if_fail (priv->state >= NM_DEVICE_STATE_UNAVAILABLE);
+
+		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
+			if (nm_device_queued_state_peek (device) >= NM_DEVICE_STATE_DISCONNECTED)
+				nm_device_queued_state_clear (device);
+		} else {
+			nm_device_queue_state (device, NM_DEVICE_STATE_UNAVAILABLE,
+			                       NM_DEVICE_STATE_REASON_CARRIER);
+		}
+	}
+}
+
+gboolean
+nm_device_has_carrier (NMDevice *device)
+{
+	return NM_DEVICE_GET_PRIVATE (device)->carrier;
+}
+
+/* Returns %TRUE if @device is unavailable for connections because it
+ * needs carrier but does not have it.
+ */
+static gboolean
+nm_device_is_unavailable_because_of_carrier (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	return !priv->carrier && !priv->ignore_carrier;
+}
+
+#define LINK_DISCONNECT_DELAY 4
+
+static gboolean
+link_disconnect_action_cb (gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	priv->carrier_defer_id = 0;
+
+	nm_log_info (LOGD_DEVICE, "(%s): link disconnected (calling deferred action)",
+	             nm_device_get_iface (device));
+
+	NM_DEVICE_GET_CLASS (device)->carrier_changed (device, FALSE);
+
+	return FALSE;
+}
+
+void
+nm_device_set_carrier (NMDevice *device, gboolean carrier)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
+	NMDeviceState state = nm_device_get_state (device);
+	const char *iface = nm_device_get_iface (device);
+
+	if (priv->carrier == carrier)
+		return;
+
+	priv->carrier = carrier;
+	g_object_notify (G_OBJECT (device), NM_DEVICE_CARRIER);
+
+	if (priv->carrier) {
+		nm_log_info (LOGD_DEVICE, "(%s): link connected", iface);
+		if (priv->carrier_defer_id) {
+			g_source_remove (priv->carrier_defer_id);
+			priv->carrier_defer_id = 0;
+		}
+		klass->carrier_changed (device, TRUE);
+	} else if (state <= NM_DEVICE_STATE_DISCONNECTED) {
+		nm_log_info (LOGD_DEVICE, "(%s): link disconnected", iface);
+		klass->carrier_changed (device, FALSE);
+	} else {
+		nm_log_info (LOGD_DEVICE, "(%s): link disconnected (deferring action for %d seconds)",
+		             iface, LINK_DISCONNECT_DELAY);
+		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
+		                                                link_disconnect_action_cb, device);
+	}
+}
+
+static void
+link_connected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device)
+{
+	if (ifindex == nm_device_get_ifindex (device))
+		nm_device_set_carrier (device, TRUE);
+}
+
+static void
+link_disconnected_cb (NMNetlinkMonitor *monitor, int ifindex, NMDevice *device)
+{
+	if (ifindex == nm_device_get_ifindex (device))
+		nm_device_set_carrier (device, FALSE);
+}
+
+static void
+check_carrier (NMDevice *device)
+{
+	GError *error = NULL;
+	guint32 ifflags = 0;
+
+	if (device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
+		/* Don't try to get an updated state, just keep the old one. */
+		return;
+	}
+
+	if (!nm_netlink_monitor_get_flags_sync (nm_netlink_monitor_get (),
+	                                        nm_device_get_ip_ifindex (device),
+	                                        &ifflags,
+	                                        &error)) {
+		nm_log_warn (LOGD_DEVICE,
+		             "(%s): couldn't get carrier state: (%d) %s",
+		             nm_device_get_ip_iface (device),
+		             error ? error->code : -1,
+		             (error && error->message) ? error->message : "unknown");
+		g_clear_error (&error);
+	}
+
+	nm_device_set_carrier (device, !!(ifflags & IFF_LOWER_UP));
+}
+
+static void
 slave_state_changed (NMDevice *slave,
                      NMDeviceState slave_new_state,
                      NMDeviceState slave_old_state,
@@ -1219,115 +1412,20 @@ nm_device_get_act_request (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->act_request;
 }
 
-static void
-carrier_action_defer_clear (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->carrier_action_defer_id) {
-		g_source_remove (priv->carrier_action_defer_id);
-		priv->carrier_action_defer_id = 0;
-	}
-}
-
-static gboolean
-carrier_action_defer_cb (gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceState state;
-
-	priv->carrier_action_defer_id = 0;
-
-	/* We know that carrier is FALSE */
-
-	state = nm_device_get_state (self);
-	if (state >= NM_DEVICE_STATE_DISCONNECTED)
-		nm_device_queue_state (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-
-	return FALSE;
-}
-
-static void
-carrier_changed (GObject *object, GParamSpec *param, gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (object);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean carrier, defer_action = FALSE;
-	NMDeviceState state;
-
-	/* Clear any previous deferred action */
-	carrier_action_defer_clear (self);
-
-	state = nm_device_get_state (self);
-	if (state < NM_DEVICE_STATE_UNAVAILABLE)
-		return;
-
-	g_object_get (object, "carrier", &carrier, NULL);
-
-	if (nm_device_is_master (self)) {
-		/* Bridge/bond carrier does not affect its own activation, but
-		 * when carrier comes on, if there are slaves waiting, it will
-		 * restart them.
-		 */
-		if (!carrier)
-			return;
-
-		if (!nm_device_activate_ip4_state_in_wait (self) &&
-		    !nm_device_activate_ip6_state_in_wait (self))
-			return;
-	} else if (nm_device_get_enslaved (self) && !carrier) {
-		/* Slaves don't deactivate when they lose carrier; for bonds
-		 * in particular that would be actively counterproductive.
-		 */
-		return;
-	}
-
-	if (priv->act_request && !carrier)
-		defer_action = TRUE;
-
-	nm_log_info (LOGD_HW | LOGD_DEVICE, "(%s): carrier now %s (device state %d%s)",
-	             nm_device_get_iface (self),
-	             carrier ? "ON" : "OFF",
-	             state,
-	             defer_action ? ", deferring action for 4 seconds" : "");
-
-	if (nm_device_is_master (self)) {
-		if (nm_device_activate_ip4_state_in_wait (self))
-			nm_device_activate_stage3_ip4_start (self);
-
-		if (nm_device_activate_ip6_state_in_wait (self))
-			nm_device_activate_stage3_ip6_start (self);
-
-		return;
-	}
-
-	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
-		if (carrier)
-			nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_CARRIER);
-		else {
-			/* clear any queued state changes if they wouldn't be valid when the
-			 * carrier is off.
-			 */
-			if (nm_device_queued_state_peek (self) >= NM_DEVICE_STATE_DISCONNECTED)
-				nm_device_queued_state_clear (self);
-		}
-	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
-		if (!carrier) {
-			if (defer_action)
-				priv->carrier_action_defer_id = g_timeout_add_seconds (4, carrier_action_defer_cb, self);
-			else
-				nm_device_queue_state (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_CARRIER);
-		}
-	}
-}
-
 NMConnection *
 nm_device_get_connection (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	return priv->act_request ? nm_act_request_get_connection (priv->act_request) : NULL;
+}
+
+static gboolean
+is_available (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	return priv->carrier || priv->ignore_carrier;
 }
 
 gboolean
@@ -1338,9 +1436,7 @@ nm_device_is_available (NMDevice *self)
 	if (priv->firmware_missing)
 		return FALSE;
 
-	if (NM_DEVICE_GET_CLASS (self)->is_available)
-		return NM_DEVICE_GET_CLASS (self)->is_available (self);
-	return TRUE;
+	return NM_DEVICE_GET_CLASS (self)->is_available (self);
 }
 
 gboolean
@@ -2420,6 +2516,14 @@ act_stage3_ip4_config_start (NMDevice *self,
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
+	if (   nm_device_is_master (self)
+	    && nm_device_is_unavailable_because_of_carrier (self)) {
+		nm_log_info (LOGD_IP4 | LOGD_DEVICE,
+		             "(%s): IPv4 config waiting until carrier is on",
+		             nm_device_get_ip_iface (self));
+		return NM_ACT_STAGE_RETURN_WAIT;
+	}
+
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
@@ -3018,6 +3122,14 @@ act_stage3_ip6_config_start (NMDevice *self,
 	gboolean ready_slaves;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	if (   nm_device_is_master (self)
+	    && nm_device_is_unavailable_because_of_carrier (self)) {
+		nm_log_info (LOGD_IP6 | LOGD_DEVICE,
+		             "(%s): IPv6 config waiting until carrier is on",
+		             nm_device_get_ip_iface (self));
+		return NM_ACT_STAGE_RETURN_WAIT;
+	}
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
@@ -4212,6 +4324,15 @@ nm_device_is_activating (NMDevice *device)
 }
 
 
+static gboolean
+can_interrupt_activation (NMDevice *device)
+{
+	/* Devices that support carrier detect can interrupt activation
+	 * if the link becomes inactive.
+	 */
+	return nm_device_is_unavailable_because_of_carrier (device);
+}
+
 gboolean
 nm_device_can_interrupt_activation (NMDevice *self)
 {
@@ -4426,8 +4547,18 @@ static gboolean
 hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
+	gboolean result;
 
-	return ifindex > 0 ? nm_system_iface_set_up (ifindex, TRUE, no_firmware) : TRUE;
+	if (!ifindex)
+		return TRUE;
+
+	result = nm_system_iface_set_up (ifindex, TRUE, no_firmware);
+
+	/* Store carrier immediately. */
+	if (result && device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT))
+		check_carrier (device);
+
+	return result;
 }
 
 void
@@ -4572,6 +4703,15 @@ dispose (GObject *object)
 	}
 	g_free (priv->ip6_privacy_tempaddr_path);
 
+	if (priv->link_connected_id)
+		g_signal_handler_disconnect (nm_netlink_monitor_get (), priv->link_connected_id);
+	if (priv->link_disconnected_id)
+		g_signal_handler_disconnect (nm_netlink_monitor_get (), priv->link_disconnected_id);
+	if (priv->carrier_defer_id) {
+		g_source_remove (priv->carrier_defer_id);
+		priv->carrier_defer_id = 0;
+	}
+
 	if (priv->cp_added_id) {
 	    g_signal_handler_disconnect (priv->con_provider, priv->cp_added_id);
 	    priv->cp_added_id = 0;
@@ -4591,8 +4731,6 @@ dispose (GObject *object)
 	    g_signal_handler_disconnect (priv->con_provider, priv->cp_updated_id);
 	    priv->cp_updated_id = 0;
 	}
-
-	carrier_action_defer_clear (self);
 
 	g_hash_table_unref (priv->available_connections);
 
@@ -4781,10 +4919,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->firmware_version);
 		break;
 	case PROP_CAPABILITIES:
-		g_value_set_uint (value, priv->capabilities);
+		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
 		break;
 	case PROP_IP4_ADDRESS:
 		g_value_set_uint (value, priv->ip4_address);
+		break;
+	case PROP_CARRIER:
+		g_value_set_boolean (value, priv->carrier);
 		break;
 	case PROP_IP4_CONFIG:
 		if (has_ip_config (self) && priv->ip4_config)
@@ -4865,7 +5006,6 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-
 static void
 nm_device_class_init (NMDeviceClass *klass)
 {
@@ -4883,6 +5023,7 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	klass->get_type_capabilities = get_type_capabilities;
 	klass->get_generic_capabilities = get_generic_capabilities;
+	klass->is_available = is_available;
 	klass->act_stage1_prepare = act_stage1_prepare;
 	klass->act_stage2_config = act_stage2_config;
 	klass->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
@@ -4898,6 +5039,8 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->hw_is_up = hw_is_up;
 	klass->hw_bring_up = hw_bring_up;
 	klass->hw_take_down = hw_take_down;
+	klass->carrier_changed = carrier_changed;
+	klass->can_interrupt_activation = can_interrupt_activation;
 
 	/* Properties */
 	g_object_class_install_property
@@ -4955,6 +5098,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                    "Capabilities",
 		                    0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_CARRIER,
+		 g_param_spec_boolean (NM_DEVICE_CARRIER,
+		                       "Carrier",
+		                       "Carrier",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_IP4_ADDRESS,

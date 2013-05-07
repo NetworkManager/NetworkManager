@@ -45,6 +45,7 @@
 #define NM_DEVICE_DRIVER_VERSION   "driver-version"
 #define NM_DEVICE_FIRMWARE_VERSION "firmware-version"
 #define NM_DEVICE_CAPABILITIES     "capabilities"
+#define NM_DEVICE_CARRIER          "carrier"
 #define NM_DEVICE_IP4_ADDRESS      "ip4-address"
 #define NM_DEVICE_IP4_CONFIG       "ip4-config"
 #define NM_DEVICE_DHCP4_CONFIG     "dhcp4-config"
@@ -99,10 +100,13 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
-	/* Hardware state, ie IFF_UP */
+	/* Hardware state (IFF_UP) */
 	gboolean        (*hw_is_up)      (NMDevice *self);
 	gboolean        (*hw_bring_up)   (NMDevice *self, gboolean *no_firmware);
 	void            (*hw_take_down)  (NMDevice *self);
+
+	/* Carrier state (IFF_LOWER_UP) */
+	void            (*carrier_changed) (NMDevice *, gboolean carrier);
 
 	/* Additional stuff required to operate the device, like a 
 	 * connection to the supplicant, Bluez, etc
@@ -239,6 +243,7 @@ NMConnection *  nm_device_get_connection	(NMDevice *dev);
 gboolean		nm_device_is_available   (NMDevice *dev);
 gboolean		nm_device_can_activate   (NMDevice *dev);
 
+gboolean        nm_device_has_carrier    (NMDevice *dev);
 gboolean		nm_device_ignore_carrier (NMDevice *dev);
 
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,

@@ -67,7 +67,6 @@ nm_adsl_error_quark (void)
 
 typedef struct {
 	gboolean      disposed;
-	gboolean      carrier;
 	guint         carrier_poll_id;
 	int           atm_index;
 
@@ -84,48 +83,14 @@ typedef struct {
 	char *        nas_ifname;
 } NMDeviceAdslPrivate;
 
-enum {
-	PROP_0,
-	PROP_CARRIER,
-
-	LAST_PROP
-};
-
 /**************************************************************/
 
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
-	guint32 caps = NM_DEVICE_CAP_NM_SUPPORTED;
-	caps |= NM_DEVICE_CAP_CARRIER_DETECT;
-	return caps;
-}
-
-static gboolean
-can_interrupt_activation (NMDevice *dev)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (dev);
-	gboolean interrupt = FALSE;
-
-	/* Devices that support carrier detect can interrupt activation
-	 * if the link becomes inactive.
-	 */
-	if (NM_DEVICE_ADSL_GET_PRIVATE (self)->carrier == FALSE)
-		interrupt = TRUE;
-
-	return interrupt;
-}
-
-static gboolean
-is_available (NMDevice *dev)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (dev);
-
-	/* Can't do anything if there isn't a carrier */
-	if (!NM_DEVICE_ADSL_GET_PRIVATE (self)->carrier)
-		return FALSE;
-
-	return TRUE;
+	return (  NM_DEVICE_CAP_NM_SUPPORTED
+	        | NM_DEVICE_CAP_CARRIER_DETECT
+	        | NM_DEVICE_CAP_NONSTANDARD_CARRIER);
 }
 
 static gboolean
@@ -576,22 +541,6 @@ get_hw_address_length (NMDevice *device)
 	return priv->nas_ifname ? ETH_ALEN : 0;
 }
 
-static void
-set_carrier (NMDeviceAdsl *self, const gboolean carrier)
-{
-	NMDeviceAdslPrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
-
-	if (priv->carrier == carrier)
-		return;
-
-	priv->carrier = carrier;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_ADSL_CARRIER);
-}
-
 static gboolean
 carrier_update_cb (gpointer user_data)
 {
@@ -619,7 +568,7 @@ carrier_update_cb (gpointer user_data)
 
 	carrier = (gboolean) atoi (contents);
 	g_free (contents);
-	set_carrier (self, carrier);
+	nm_device_set_carrier (NM_DEVICE (self), carrier);
 	return TRUE;
 }
 
@@ -721,34 +670,6 @@ dispose (GObject *object)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDeviceAdsl *self = NM_DEVICE_ADSL (object);
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
-
-	switch (prop_id) {
-	case PROP_CARRIER:
-		g_value_set_boolean (value, priv->carrier);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 nm_device_adsl_init (NMDeviceAdsl *self)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);
@@ -767,12 +688,8 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 
 	object_class->constructor  = constructor;
 	object_class->dispose      = dispose;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->can_interrupt_activation = can_interrupt_activation;
-	parent_class->is_available = is_available;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
@@ -781,15 +698,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;
-
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_ADSL_CARRIER,
-							   "Carrier",
-							   "Carrier",
-							   FALSE,
-							   G_PARAM_READABLE));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
