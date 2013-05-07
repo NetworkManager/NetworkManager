@@ -74,7 +74,7 @@
 typedef struct {
 	GUdevClient *client;
 
-	GHashTable *iface_connections;
+	GHashTable *connections;  /* /e/n/i block name :: NMIfupdownConnection */
 	gchar* hostname;
 
 	GHashTable *well_known_interfaces;
@@ -243,7 +243,7 @@ udev_device_added (SCPluginIfupdown *self, GUdevDevice *device)
 	/* if we have a configured connection for this particular iface
 	 * we want to either unmanage the device or lock it
 	 */
-	exported = (NMIfupdownConnection *) g_hash_table_lookup (priv->iface_connections, iface);
+	exported = g_hash_table_lookup (priv->connections, iface);
 	if (!exported && !g_hash_table_lookup (priv->well_known_interfaces, iface)) {
 		PLUGIN_PRINT("SCPlugin-Ifupdown",
 			"device added (path: %s, iface: %s): no ifupdown configuration found.", path, iface);
@@ -313,12 +313,15 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	char *value;
 	GError *error = NULL;
 	GList *keys, *iter;
+	GHashTableIter con_iter;
+	const char *block_name;
+	NMIfupdownConnection *connection;
 	const char *subsys[2] = { "net", NULL };
 
 	auto_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
 
-	if(!priv->iface_connections)
-		priv->iface_connections = g_hash_table_new (g_str_hash, g_str_equal);
+	if(!priv->connections)
+		priv->connections = g_hash_table_new (g_str_hash, g_str_equal);
 
 	if(!priv->well_known_ifaces)
 		priv->well_known_ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
@@ -399,18 +402,18 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			}
 
 			/* Remove any connection for this block that was previously found */
-			exported = g_hash_table_lookup (priv->iface_connections, block->name);
+			exported = g_hash_table_lookup (priv->connections, block->name);
 			if (exported) {
-				PLUGIN_PRINT("SCPlugin-Ifupdown", "deleting %s from iface_connections", block->name);
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "deleting %s from connections", block->name);
 				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
-				g_hash_table_remove (priv->iface_connections, block->name);
+				g_hash_table_remove (priv->connections, block->name);
 			}
 
 			/* add the new connection */
 			exported = nm_ifupdown_connection_new (block);
 			if (exported) {
-				PLUGIN_PRINT("SCPlugin-Ifupdown", "adding %s to iface_connections", block->name);
-				g_hash_table_insert (priv->iface_connections, block->name, exported);
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "adding %s to connections", block->name);
+				g_hash_table_insert (priv->connections, block->name, exported);
 			}
 			PLUGIN_PRINT("SCPlugin-Ifupdown", "adding iface %s to well_known_interfaces", block->name);
 			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
@@ -423,23 +426,16 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	}
 
 	/* Make 'auto' interfaces autoconnect=TRUE */
-	keys = g_hash_table_get_keys (priv->iface_connections);
-	for (iter = keys; iter; iter = g_list_next (iter)) {
-		NMIfupdownConnection *exported;
+	g_hash_table_iter_init (&con_iter, priv->connections);
+	while (g_hash_table_iter_next (&con_iter, (gpointer) &block_name, (gpointer) &connection)) {
 		NMSettingConnection *setting;
 
-		if (!g_hash_table_lookup (auto_ifaces, iter->data))
-			continue;
-
-		exported = g_hash_table_lookup (priv->iface_connections, iter->data);
-		setting = nm_connection_get_setting_connection (NM_CONNECTION (exported));
-		g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
-
-		nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
-
-		PLUGIN_PRINT("SCPlugin-Ifupdown", "autoconnect");
+		if (g_hash_table_lookup (auto_ifaces, block_name)) {
+			setting = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+			g_object_set (setting, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "autoconnect");
+		}
 	}
-	g_list_free (keys);
 	g_hash_table_destroy (auto_ifaces);
 
 	/* Check the config file to find out whether to manage interfaces */
@@ -470,7 +466,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 
 	/* Now if we're running in managed mode, let NM know there are new connections */
 	if (!priv->unmanage_well_known) {
-		GList *con_list = g_hash_table_get_values (priv->iface_connections);
+		GList *con_list = g_hash_table_get_values (priv->connections);
 		GList *cl_iter;
 
 		for (cl_iter = con_list; cl_iter; cl_iter = g_list_next (cl_iter)) {
@@ -503,7 +499,7 @@ SCPluginIfupdown_get_connections (NMSystemConfigInterface *config)
 		return NULL;
 	}
 
-	g_hash_table_iter_init (&iter, priv->iface_connections);
+	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &value))
 		connections = g_slist_prepend (connections, value);
 
