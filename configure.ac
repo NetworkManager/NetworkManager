@@ -484,6 +484,8 @@ if (test "${with_modem_manager_1}" != "no"); then
     if (test "${have_libmm_glib}" = "no"); then
         if (test "${with_modem_manager_1}" = "yes"); then
             AC_MSG_ERROR([Couldn't find libmm-glib])
+        else
+            with_modem_manager_1="no"
         fi
     else
         with_modem_manager_1="yes"
