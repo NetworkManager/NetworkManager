@@ -53,8 +53,8 @@
 #include <nm-setting-bond.h>
 #include <nm-utils.h>
 
-#include "../nm-device-ethernet.h"
-#include "../nm-device-wired.h"
+#include "nm-device-ethernet.h"
+#include "nm-device-wired.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"

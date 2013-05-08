@@ -9,7 +9,7 @@ SUBDIRS =				\
 	settings/plugins
 
 if WITH_WIMAX
-SUBDIRS += wimax
+SUBDIRS += devices/wimax
 endif
 
 if ENABLE_TESTS
@@ -59,6 +59,47 @@ libNetworkManager_la_SOURCES = \
 	config/nm-config.h \
 	config/nm-config-device.c \
 	config/nm-config-device.h \
+	\
+	devices/nm-device-interface-glue.h \
+	devices/nm-device.c \
+	devices/nm-device.h \
+	devices/nm-device-adsl-glue.h \
+	devices/nm-device-adsl.c \
+	devices/nm-device-adsl.h \
+	devices/nm-device-bond-glue.h \
+	devices/nm-device-bond.c \
+	devices/nm-device-bond.h \
+	devices/nm-device-bridge-glue.h \
+	devices/nm-device-bridge.c \
+	devices/nm-device-bridge.h \
+	devices/nm-device-bt-glue.h \
+	devices/nm-device-bt.c \
+	devices/nm-device-bt.h \
+	devices/nm-device-ethernet-glue.h \
+	devices/nm-device-ethernet.c \
+	devices/nm-device-ethernet.h \
+	devices/nm-device-factory.h \
+	devices/nm-device-generic-glue.h \
+	devices/nm-device-generic.c \
+	devices/nm-device-generic.h \
+	devices/nm-device-infiniband-glue.h \
+	devices/nm-device-infiniband.c \
+	devices/nm-device-infiniband.h \
+	devices/nm-device-modem-glue.h \
+	devices/nm-device-modem.c \
+	devices/nm-device-modem.h \
+	devices/nm-device-olpc-mesh-glue.h \
+	devices/nm-device-olpc-mesh.c \
+	devices/nm-device-olpc-mesh.h \
+	devices/nm-device-private.h \
+	devices/nm-device-vlan-glue.h \
+	devices/nm-device-vlan.c \
+	devices/nm-device-vlan.h \
+	devices/nm-device-wifi-glue.h \
+	devices/nm-device-wifi.c \
+	devices/nm-device-wifi.h \
+	devices/nm-device-wired.c \
+	devices/nm-device-wired.h \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
@@ -191,46 +232,6 @@ libNetworkManager_la_SOURCES = \
 	nm-connection-provider.h \
 	nm-dbus-manager.c \
 	nm-dbus-manager.h \
-	nm-device-adsl-glue.h \
-	nm-device-adsl.c \
-	nm-device-adsl.h \
-	nm-device-bond-glue.h \
-	nm-device-bond.c \
-	nm-device-bond.h \
-	nm-device-bridge-glue.h \
-	nm-device-bridge.c \
-	nm-device-bridge.h \
-	nm-device-bt-glue.h \
-	nm-device-bt.c \
-	nm-device-bt.h \
-	nm-device-ethernet-glue.h \
-	nm-device-ethernet.c \
-	nm-device-ethernet.h \
-	nm-device-factory.h \
-	nm-device-generic-glue.h \
-	nm-device-generic.c \
-	nm-device-generic.h \
-	nm-device-infiniband-glue.h \
-	nm-device-infiniband.c \
-	nm-device-infiniband.h \
-	nm-device-interface-glue.h \
-	nm-device-modem-glue.h \
-	nm-device-modem.c \
-	nm-device-modem.h \
-	nm-device-olpc-mesh-glue.h \
-	nm-device-olpc-mesh.c	\
-	nm-device-olpc-mesh.h	\
-	nm-device-private.h \
-	nm-device-vlan-glue.h \
-	nm-device-vlan.c \
-	nm-device-vlan.h \
-	nm-device-wifi-glue.h \
-	nm-device-wifi.c \
-	nm-device-wifi.h \
-	nm-device-wired.c \
-	nm-device-wired.h \
-	nm-device.c \
-	nm-device.h \
 	nm-dhcp4-config-glue.h \
 	nm-dhcp4-config.c \
 	nm-dhcp4-config.h \
@@ -318,7 +319,7 @@ endif
 
 # dbus-glib glue. We define nm-device-interface-glue.h specially, because its
 # name doesn't match the general pattern.
-nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
+devices/nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
 
 define glue_rule
@@ -326,7 +327,7 @@ $(1): $$(top_srcdir)/introspection/$(notdir $(subst -glue.h,,$(1))).xml
 	$$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(notdir $(subst -glue.h,,$(1)))) --mode=glib-server --output=$$@ $$<
 endef
 
-$(foreach f,$(filter-out nm-device-interface-glue.h,$(filter %-glue.h,$(libNetworkManager_la_SOURCES))),$(eval $(call glue_rule,$(f))))
+$(foreach f,$(filter-out devices/nm-device-interface-glue.h,$(filter %-glue.h,$(libNetworkManager_la_SOURCES))),$(eval $(call glue_rule,$(f))))
 
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
@@ -343,8 +344,8 @@ nm_enum_types_sources = \
 	$(filter-out %-glue.h, $(libNetworkManager_la_SOURCES))
 
 if WITH_WIMAX
-nm_enum_types_sources += wimax/nm-device-wimax.h
-INCLUDES += -Iwimax
+nm_enum_types_sources += devices/wimax/nm-device-wimax.h
+INCLUDES += -I$(top_srcdir)/src/devices/wimax
 endif
 
 AM_CPPFLAGS = \
