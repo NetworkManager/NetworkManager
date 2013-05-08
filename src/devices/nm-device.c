@@ -71,7 +71,7 @@
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
-#include "nm-device-interface-glue.h"
+#include "nm-device-glue.h"
 
 #define PENDING_IP4_CONFIG "pending-ip4-config"
 #define PENDING_IP6_CONFIG "pending-ip6-config"
@@ -5145,7 +5145,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-	                                 &dbus_glib_nm_device_interface_object_info);
+	                                 &dbus_glib_nm_device_object_info);
 
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }

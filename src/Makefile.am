@@ -60,7 +60,7 @@ libNetworkManager_la_SOURCES = \
 	config/nm-config-device.c \
 	config/nm-config-device.h \
 	\
-	devices/nm-device-interface-glue.h \
+	devices/nm-device-glue.h \
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-device-adsl-glue.h \
@@ -317,17 +317,12 @@ if WITH_WEXT
 libNetworkManager_la_SOURCES += wifi/wifi-utils-wext.c wifi/wifi-utils-wext.h
 endif
 
-# dbus-glib glue. We define nm-device-interface-glue.h specially, because its
-# name doesn't match the general pattern.
-devices/nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
-
 define glue_rule
 $(1): $$(top_srcdir)/introspection/$(notdir $(subst -glue.h,,$(1))).xml
 	$$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(notdir $(subst -glue.h,,$(1)))) --mode=glib-server --output=$$@ $$<
 endef
 
-$(foreach f,$(filter-out devices/nm-device-interface-glue.h,$(filter %-glue.h,$(libNetworkManager_la_SOURCES))),$(eval $(call glue_rule,$(f))))
+$(foreach f,$(filter %-glue.h,$(libNetworkManager_la_SOURCES)),$(eval $(call glue_rule,$(f))))
 
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
