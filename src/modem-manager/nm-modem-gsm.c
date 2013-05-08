@@ -126,27 +126,27 @@ translate_mm_error (GError *error)
 {
 	NMDeviceStateReason reason;
 
-	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_CARRIER))
+	if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_NO_CARRIER))
 		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
-	else if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_DIALTONE))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_NO_DIALTONE))
 		reason = NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE;
-	else if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_BUSY))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_BUSY))
 		reason = NM_DEVICE_STATE_REASON_MODEM_BUSY;
-	else if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_ANSWER))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_NO_ANSWER))
 		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_NOT_ALLOWED))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_NETWORK_NOT_ALLOWED))
 		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_TIMEOUT))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_NETWORK_TIMEOUT))
 		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NO_NETWORK))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_NO_NETWORK))
 		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_NOT_INSERTED))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_NOT_INSERTED))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PIN))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PUK))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PUK))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED;
-	else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG))
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_WRONG))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_WRONG;
 	else {
 		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
@@ -202,9 +202,9 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
 	else {
-		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+		if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PIN))
 			ask_for_pin (self, FALSE);
-		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG))
+		else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_WRONG))
 			ask_for_pin (self, TRUE);
 		else {
 			nm_log_warn (LOGD_MB, "GSM connection failed: (%d) %s",
@@ -320,7 +320,7 @@ stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 
-		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+		if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PIN))
 			handle_enable_pin_required (self);
 		else {
 			/* try to translate the error reason */
