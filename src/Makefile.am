@@ -46,7 +46,7 @@ NetworkManager_LDADD = libNetworkManager.la
 
 noinst_LTLIBRARIES = libNetworkManager.la
 
-libNetworkManager_la_SOURCES = \
+nm_sources = \
 	bluez-manager/nm-bluez-adapter.c \
 	bluez-manager/nm-bluez-adapter.h \
 	bluez-manager/nm-bluez-common.h \
@@ -60,42 +60,30 @@ libNetworkManager_la_SOURCES = \
 	config/nm-config-device.c \
 	config/nm-config-device.h \
 	\
-	devices/nm-device-glue.h \
 	devices/nm-device.c \
 	devices/nm-device.h \
-	devices/nm-device-adsl-glue.h \
 	devices/nm-device-adsl.c \
 	devices/nm-device-adsl.h \
-	devices/nm-device-bond-glue.h \
 	devices/nm-device-bond.c \
 	devices/nm-device-bond.h \
-	devices/nm-device-bridge-glue.h \
 	devices/nm-device-bridge.c \
 	devices/nm-device-bridge.h \
-	devices/nm-device-bt-glue.h \
 	devices/nm-device-bt.c \
 	devices/nm-device-bt.h \
-	devices/nm-device-ethernet-glue.h \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-ethernet.h \
 	devices/nm-device-factory.h \
-	devices/nm-device-generic-glue.h \
 	devices/nm-device-generic.c \
 	devices/nm-device-generic.h \
-	devices/nm-device-infiniband-glue.h \
 	devices/nm-device-infiniband.c \
 	devices/nm-device-infiniband.h \
-	devices/nm-device-modem-glue.h \
 	devices/nm-device-modem.c \
 	devices/nm-device-modem.h \
-	devices/nm-device-olpc-mesh-glue.h \
 	devices/nm-device-olpc-mesh.c \
 	devices/nm-device-olpc-mesh.h \
 	devices/nm-device-private.h \
-	devices/nm-device-vlan-glue.h \
 	devices/nm-device-vlan.c \
 	devices/nm-device-vlan.h \
-	devices/nm-device-wifi-glue.h \
 	devices/nm-device-wifi.c \
 	devices/nm-device-wifi.h \
 	devices/nm-device-wired.c \
@@ -155,12 +143,10 @@ libNetworkManager_la_SOURCES = \
 	posix-signals/nm-posix-signals.c \
 	posix-signals/nm-posix-signals.h \
 	\
-	ppp-manager/nm-ppp-manager-glue.h \
 	ppp-manager/nm-ppp-manager.c \
 	ppp-manager/nm-ppp-manager.h \
 	ppp-manager/nm-ppp-status.h \
 	\
-	settings/nm-agent-manager-glue.h \
 	settings/nm-agent-manager.c \
 	settings/nm-agent-manager.h \
 	settings/nm-default-wired-connection.c \
@@ -169,12 +155,10 @@ libNetworkManager_la_SOURCES = \
 	settings/nm-inotify-helper.h \
 	settings/nm-secret-agent.c \
 	settings/nm-secret-agent.h \
-	settings/nm-settings-connection-glue.h \
 	settings/nm-settings-connection.c \
 	settings/nm-settings-connection.h \
 	settings/nm-settings-error.c \
 	settings/nm-settings-error.h \
-	settings/nm-settings-glue.h \
 	settings/nm-settings-utils.c \
 	settings/nm-settings-utils.h \
 	settings/nm-settings.c \
@@ -205,7 +189,6 @@ libNetworkManager_la_SOURCES = \
 	supplicant-manager/nm-supplicant-settings-verify.h \
 	supplicant-manager/nm-supplicant-types.h \
 	\
-	vpn-manager/nm-vpn-connection-glue.h \
 	vpn-manager/nm-vpn-connection.c \
 	vpn-manager/nm-vpn-connection.h \
 	vpn-manager/nm-vpn-manager.c \
@@ -219,23 +202,18 @@ libNetworkManager_la_SOURCES = \
 	wifi/wifi-utils.c \
 	wifi/wifi-utils.h \
 	\
-	nm-access-point-glue.h \
 	nm-activation-request.c \
 	nm-activation-request.h \
-	nm-active-connection-glue.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
-	nm-agent-manager-glue.h \
 	nm-call-store.c \
 	nm-call-store.h \
 	nm-connection-provider.c \
 	nm-connection-provider.h \
 	nm-dbus-manager.c \
 	nm-dbus-manager.h \
-	nm-dhcp4-config-glue.h \
 	nm-dhcp4-config.c \
 	nm-dhcp4-config.h \
-	nm-dhcp6-config-glue.h \
 	nm-dhcp6-config.c \
 	nm-dhcp6-config.h \
 	nm-dispatcher.c \
@@ -244,15 +222,12 @@ libNetworkManager_la_SOURCES = \
 	nm-enum-types.h \
 	nm-hostname-provider.c \
 	nm-hostname-provider.h \
-	nm-ip4-config-glue.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
-	nm-ip6-config-glue.h \
 	nm-ip6-config.c \
 	nm-ip6-config.h \
 	nm-manager-auth.c \
 	nm-manager-auth.h \
-	nm-manager-glue.h \
 	nm-manager.c \
 	nm-manager.h \
 	nm-netlink-monitor.c \
@@ -263,22 +238,18 @@ libNetworkManager_la_SOURCES = \
 	nm-policy-hosts.h \
 	nm-policy.c \
 	nm-policy.h \
-	nm-ppp-manager-glue.h \
 	nm-properties-changed-signal.c \
 	nm-properties-changed-signal.h \
 	nm-rfkill.h \
 	nm-session-monitor.h \
 	nm-session-utils.c \
 	nm-session-utils.h \
-	nm-settings-connection-glue.h \
-	nm-settings-glue.h \
 	nm-sleep-monitor.h \
 	nm-system.c \
 	nm-system.h \
 	nm-types.h \
 	nm-udev-manager.c \
 	nm-udev-manager.h \
-	nm-vpn-connection-glue.h \
 	nm-wifi-ap-utils.c \
 	nm-wifi-ap-utils.h \
 	nm-wifi-ap.c \
@@ -287,61 +258,81 @@ libNetworkManager_la_SOURCES = \
 	NetworkManagerUtils.h
 
 if WITH_CONCHECK
-libNetworkManager_la_SOURCES += nm-connectivity.c nm-connectivity.h
+nm_sources += nm-connectivity.c nm-connectivity.h
 endif
 
 if WITH_MODEM_MANAGER_1
-libNetworkManager_la_SOURCES += \
+nm_sources += \
 	modem-manager/nm-modem-broadband.c \
 	modem-manager/nm-modem-broadband.h
 endif
 
 if SESSION_TRACKING_SYSTEMD
-libNetworkManager_la_SOURCES += nm-session-monitor-systemd.c
+nm_sources += nm-session-monitor-systemd.c
 else
 if SESSION_TRACKING_CK
-libNetworkManager_la_SOURCES += nm-session-monitor-ck.c
+nm_sources += nm-session-monitor-ck.c
 else
-libNetworkManager_la_SOURCES += nm-session-monitor-null.c
+nm_sources += nm-session-monitor-null.c
 endif
 endif
 
 if SUSPEND_RESUME_SYSTEMD
-libNetworkManager_la_SOURCES += nm-sleep-monitor-systemd.c
+nm_sources += nm-sleep-monitor-systemd.c
 else
 # UPower suspend/resume used whenever systemd is not enabled
-libNetworkManager_la_SOURCES += nm-sleep-monitor-upower.c
+nm_sources += nm-sleep-monitor-upower.c
 endif
 
 if WITH_WEXT
-libNetworkManager_la_SOURCES += wifi/wifi-utils-wext.c wifi/wifi-utils-wext.h
+nm_sources += wifi/wifi-utils-wext.c wifi/wifi-utils-wext.h
 endif
-
-define glue_rule
-$(1): $$(top_srcdir)/introspection/$(notdir $(subst -glue.h,,$(1))).xml
-	$$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(notdir $(subst -glue.h,,$(1)))) --mode=glib-server --output=$$@ $$<
-endef
-
-$(foreach f,$(filter %-glue.h,$(libNetworkManager_la_SOURCES)),$(eval $(call glue_rule,$(f))))
 
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
-BUILT_SOURCES = \
-	nm-enum-types.c \
-	nm-enum-types.h \
-	$(filter %-glue.h,$(libNetworkManager_la_SOURCES))
-
-
-nm_enum_types_sources = \
-	$(filter-out %-glue.h, $(libNetworkManager_la_SOURCES))
-
+nm_enum_types_sources = $(nm_sources)
 if WITH_WIMAX
 nm_enum_types_sources += devices/wimax/nm-device-wimax.h
 INCLUDES += -I$(top_srcdir)/src/devices/wimax
 endif
+
+BUILT_SOURCES = $(GLIB_GENERATED)
+
+
+glue_sources = \
+	nm-access-point-glue.h \
+	nm-active-connection-glue.h \
+	nm-agent-manager-glue.h \
+	nm-device-adsl-glue.h \
+	nm-device-bond-glue.h \
+	nm-device-bridge-glue.h \
+	nm-device-bt-glue.h \
+	nm-device-ethernet-glue.h \
+	nm-device-generic-glue.h \
+	nm-device-glue.h \
+	nm-device-infiniband-glue.h \
+	nm-device-modem-glue.h \
+	nm-device-olpc-mesh-glue.h \
+	nm-device-vlan-glue.h \
+	nm-device-wifi-glue.h \
+	nm-dhcp4-config-glue.h \
+	nm-dhcp6-config-glue.h \
+	nm-ip4-config-glue.h \
+	nm-ip6-config-glue.h \
+	nm-manager-glue.h \
+	nm-ppp-manager-glue.h \
+	nm-settings-connection-glue.h \
+	nm-settings-glue.h \
+	nm-vpn-connection-glue.h
+
+BUILT_SOURCES += $(glue_sources)
+
+%-glue.h: $(top_srcdir)/introspection/%.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(subst -glue.h,,$@)) --mode=glib-server --output=$@ $<
+
 
 AM_CPPFLAGS = \
 	$(BLUEZ_CFLAGS) \
@@ -376,6 +367,10 @@ AM_CPPFLAGS = \
 if SESSION_TRACKING_CK
 AM_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
 endif
+
+libNetworkManager_la_SOURCES = \
+	$(nm_sources) \
+	$(glue_sources)
 
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
