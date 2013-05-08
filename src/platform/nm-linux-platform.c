@@ -1027,8 +1027,8 @@ ethtool_get (const char *name, gpointer edata)
 static int
 ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
 {
-	auto_g_free struct ethtool_sset_info *info;
-	auto_g_free struct ethtool_gstrings *strings;
+	auto_g_free struct ethtool_sset_info *info = NULL;
+	auto_g_free struct ethtool_gstrings *strings = NULL;
 	guint32 len, i;
 
 	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
@@ -1080,7 +1080,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 	const char *name = nm_platform_link_get_name (ifindex);
-	auto_g_free struct ethtool_gfeatures *features;
+	auto_g_free struct ethtool_gfeatures *features = NULL;
 	int index, block, bit, size;
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
