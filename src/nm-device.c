@@ -4800,7 +4800,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       "IsMaster",
 		                       "IsMaster",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[STATE_CHANGED] =
