@@ -19,6 +19,7 @@ EXTRA_DIST = \
 	nm-device-veth.xml \
 	nm-device-tun.xml \
 	nm-device-macvlan.xml \
+	nm-device-vxlan.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \
 	nm-ip6-config.xml \

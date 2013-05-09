@@ -65,6 +65,7 @@ typedef enum {
 	NM_LINK_TYPE_TUN,
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
+	NM_LINK_TYPE_VXLAN,
 
 	/* Virtual types with slaves */
 	NM_LINK_TYPE_BRIDGE,
@@ -133,6 +134,24 @@ typedef struct {
 	const char *mode;
 	gboolean no_promisc;
 } NMPlatformMacvlanProperties;
+
+typedef struct {
+	int parent_ifindex;
+	guint32 id;
+	in_addr_t group;
+	in_addr_t local;
+	guint8 tos;
+	guint8 ttl;
+	gboolean learning;
+	guint32 ageing;
+	guint32 limit;
+	guint16 port_min;
+	guint16 port_max;
+	gboolean proxy;
+	gboolean rsc;
+	gboolean l2miss;
+	gboolean l3miss;
+} NMPlatformVxlanProperties;
 
 /******************************************************************/
 
@@ -218,6 +237,7 @@ typedef struct {
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
 	gboolean (*macvlan_get_properties) (NMPlatform *, int ifindex, NMPlatformMacvlanProperties *props);
+	gboolean (*vxlan_get_properties) (NMPlatform *, int ifindex, NMPlatformVxlanProperties *props);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -329,6 +349,7 @@ gboolean nm_platform_vlan_set_egress_map (int ifindex, int from, int to);
 gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);
 gboolean nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props);
+gboolean nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanProperties *props);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);
