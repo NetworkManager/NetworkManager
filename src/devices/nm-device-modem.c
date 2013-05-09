@@ -26,7 +26,7 @@
 #include "nm-modem.h"
 #include "nm-modem-old.h"
 #include "nm-device-private.h"
-#include "nm-rfkill.h"
+#include "nm-rfkill-manager.h"
 #include "nm-logging.h"
 #include "nm-system.h"
 #include "nm-dbus-manager.h"

@@ -243,7 +243,8 @@ nm_sources = \
 	nm-policy.h \
 	nm-properties-changed-signal.c \
 	nm-properties-changed-signal.h \
-	nm-rfkill.h \
+	nm-rfkill-manager.c \
+	nm-rfkill-manager.h \
 	nm-session-monitor.h \
 	nm-session-utils.c \
 	nm-session-utils.h \

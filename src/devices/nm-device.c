@@ -55,7 +55,7 @@
 #include "nm-dnsmasq-manager.h"
 #include "nm-dhcp4-config.h"
 #include "nm-ip6-manager.h"
-#include "nm-rfkill.h"
+#include "nm-rfkill-manager.h"
 #include "nm-firewall-manager.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-enum-types.h"

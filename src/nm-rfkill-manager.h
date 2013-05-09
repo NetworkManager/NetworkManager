@@ -16,11 +16,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_RFKILL_H
-#define NM_RFKILL_H
+#include <glib-object.h>
+
+#ifndef NM_RFKILL_MANAGER_H
+#define NM_RFKILL_MANAGER_H
 
 typedef enum {
 	RFKILL_UNBLOCKED = 0,
@@ -41,5 +43,30 @@ typedef enum {
 	RFKILL_TYPE_MAX = RFKILL_TYPE_UNKNOWN
 } RfKillType;
 
-#endif  /* NM_RFKILL_H */
+
+#define NM_TYPE_RFKILL_MANAGER            (nm_rfkill_manager_get_type ())
+#define NM_RFKILL_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManager))
+#define NM_RFKILL_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_RFKILL_MANAGER, NMRfkillManagerClass))
+#define NM_IS_RFKILL_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_RFKILL_MANAGER))
+#define NM_IS_RFKILL_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_RFKILL_MANAGER))
+#define NM_RFKILL_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManagerClass))
+
+typedef struct {
+	GObject parent;
+} NMRfkillManager;
+
+typedef struct {
+	GObjectClass parent;
+
+	/* signals */
+	void (*rfkill_changed) (NMRfkillManager *manager, RfKillType rtype, RfKillState state);
+} NMRfkillManagerClass;
+
+GType nm_rfkill_manager_get_type (void);
+
+NMRfkillManager *nm_rfkill_manager_new (void);
+
+RfKillState nm_rfkill_manager_get_rfkill_state (NMRfkillManager *manager, RfKillType rtype);
+
+#endif  /* NM_RFKILL_MANAGER_H */
 

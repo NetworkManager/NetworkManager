@@ -42,7 +42,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wimax.h"
 #include "nm-utils.h"
-#include "nm-rfkill.h"
+#include "nm-rfkill-manager.h"
 #include "iwmxsdk.h"
 #include "nm-enum-types.h"
 

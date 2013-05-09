@@ -27,8 +27,6 @@
 
 #include <gudev/gudev.h>
 
-#include "nm-rfkill.h"
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_UDEV_MANAGER            (nm_udev_manager_get_type ())
@@ -49,7 +47,7 @@ typedef GObject *(*NMDeviceCreatorFn) (NMUdevManager *manager,
 typedef struct {
 	GObjectClass parent;
 
-	/* Virtual functions */
+	/* signals */
 	void (*device_added) (NMUdevManager *manager,
 	                      GUdevDevice *device,
 	                      const char *iface,
@@ -58,8 +56,6 @@ typedef struct {
 	                      int ifindex);
 
 	void (*device_removed) (NMUdevManager *manager, GUdevDevice *device);
-
-	void (*rfkill_changed) (NMUdevManager *manager, RfKillType rtype, RfKillState state);
 } NMUdevManagerClass;
 
 GType nm_udev_manager_get_type (void);
@@ -67,8 +63,6 @@ GType nm_udev_manager_get_type (void);
 NMUdevManager *nm_udev_manager_new (void);
 
 void nm_udev_manager_query_devices (NMUdevManager *manager);
-
-RfKillState nm_udev_manager_get_rfkill_state (NMUdevManager *manager, RfKillType rtype);
 
 #endif /* NM_UDEV_MANAGER_H */
 

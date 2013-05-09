@@ -64,6 +64,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
 #include "nm-udev-manager.h"
+#include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
@@ -223,6 +224,7 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	guint          dbus_connection_changed_id;
 	NMUdevManager *udev_mgr;
+	NMRfkillManager *rfkill_mgr;
 	NMBluezManager *bluez_mgr;
 
 	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
@@ -1641,7 +1643,7 @@ manager_rfkill_update_one_type (NMManager *self,
 	old_rfkilled = rstate->hw_enabled && rstate->sw_enabled;
 	old_hwe = rstate->hw_enabled;
 
-	udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, rtype);
+	udev_state = nm_rfkill_manager_get_rfkill_state (priv->rfkill_mgr, rtype);
 
 	if (rstate->other_enabled_func)
 		other_state = rstate->other_enabled_func (self);
@@ -2360,10 +2362,10 @@ udev_device_removed_cb (NMUdevManager *manager,
 }
 
 static void
-udev_manager_rfkill_changed_cb (NMUdevManager *udev_mgr,
-                                RfKillType rtype,
-                                RfKillState udev_state,
-                                gpointer user_data)
+rfkill_manager_rfkill_changed_cb (NMRfkillManager *rfkill_mgr,
+                                  RfKillType rtype,
+                                  RfKillState udev_state,
+                                  gpointer user_data)
 {
 	nm_manager_rfkill_update (NM_MANAGER (user_data), rtype);
 }
@@ -3713,7 +3715,7 @@ nm_manager_start (NMManager *self)
 		if (!rstate->desc)
 			continue;
 
-		udev_state = nm_udev_manager_get_rfkill_state (priv->udev_mgr, i);
+		udev_state = nm_rfkill_manager_get_rfkill_state (priv->rfkill_mgr, i);
 		update_rstate_from_rfkill (rstate, udev_state);
 
 		if (rstate->desc) {
@@ -4070,9 +4072,11 @@ nm_manager_new (NMSettings *settings,
 	                  "device-removed",
 	                  G_CALLBACK (udev_device_removed_cb),
 	                  singleton);
-	g_signal_connect (priv->udev_mgr,
+
+	priv->rfkill_mgr = nm_rfkill_manager_new ();
+	g_signal_connect (priv->rfkill_mgr,
 	                  "rfkill-changed",
-	                  G_CALLBACK (udev_manager_rfkill_changed_cb),
+	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  singleton);
 
 	priv->bluez_mgr = nm_bluez_manager_get (NM_CONNECTION_PROVIDER (priv->settings));

@@ -34,7 +34,7 @@
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-connection.h"
-#include "nm-rfkill.h"
+#include "nm-rfkill-manager.h"
 #include "nm-connection-provider.h"
 
 /* Properties */

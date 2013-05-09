@@ -26,7 +26,7 @@
 #include <dbus/dbus.h>
 #include <net/ethernet.h>
 
-#include "nm-rfkill.h"
+#include "nm-rfkill-manager.h"
 #include "nm-device.h"
 #include "nm-wifi-ap.h"
 
