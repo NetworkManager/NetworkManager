@@ -838,6 +838,8 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type)
 {
+	int r;
+
 	if (type == NM_LINK_TYPE_BOND) {
 		/* When the kernel loads the bond module, either via explicit modprobe
 		 * or automatically in response to creating a bond master, it will also
@@ -847,7 +849,8 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type)
 		 * bond0 automatically.
 		 */
 		if (!g_file_test ("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
-			system ("modprobe bonding max_bonds=0");
+			/* Ignore return value to shut up the compiler */
+			r = system ("modprobe bonding max_bonds=0");
 	}
 
 	return add_object (platform, build_rtnl_link (0, name, type));
