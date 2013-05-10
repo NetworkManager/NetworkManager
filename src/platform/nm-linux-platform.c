@@ -292,7 +292,7 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 	const char *type;
 
 	if (!rtnllink)
-		return_type (NM_LINK_TYPE_NONE, "none");
+		return_type (NM_LINK_TYPE_NONE, NULL);
 
 	type = rtnl_link_get_type (rtnllink);
 
