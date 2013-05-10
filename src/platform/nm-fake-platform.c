@@ -37,6 +37,10 @@ typedef struct {
 	GArray *ip6_routes;
 } NMFakePlatformPrivate;
 
+typedef struct {
+	NMPlatformLink link;
+} NMFakePlatformLink;
+
 #define NM_FAKE_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_PLATFORM, NMFakePlatformPrivate))
 
 G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
@@ -96,23 +100,23 @@ type_to_type_name (NMLinkType type)
 }
 
 static void
-link_init (NMPlatformLink *device, int ifindex, int type, const char *name)
+link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 {
-	g_assert (!name || strlen (name) < sizeof(device->name));
+	g_assert (!name || strlen (name) < sizeof(device->link.name));
 
 	memset (device, 0, sizeof (*device));
 
-	device->ifindex = name ? ifindex : 0;
-	device->type = type;
-	device->type_name = type_to_type_name (type);
+	device->link.ifindex = name ? ifindex : 0;
+	device->link.type = type;
+	device->link.type_name = type_to_type_name (type);
 	if (name)
-		strcpy (device->name, name);
-	switch (device->type) {
+		strcpy (device->link.name, name);
+	switch (device->link.type) {
 	case NM_LINK_TYPE_DUMMY:
-		device->arp = FALSE;
+		device->link.arp = FALSE;
 		break;
 	default:
-		device->arp = TRUE;
+		device->link.arp = TRUE;
 	}
 }
 
@@ -153,14 +157,14 @@ static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
-	NMPlatformLink device;
+	NMFakePlatformLink device;
 
 	link_init (&device, priv->links->len, type, name);
 
 	g_array_append_val (priv->links, device);
 
-	if (device.ifindex)
-		g_signal_emit_by_name (platform, NM_PLATFORM_LINK_ADDED, device.ifindex, &device);
+	if (device.link.ifindex)
+		g_signal_emit_by_name (platform, NM_PLATFORM_LINK_ADDED, device.link.ifindex, &device.link);
 
 	return TRUE;
 }
