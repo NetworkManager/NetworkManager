@@ -2203,7 +2203,7 @@ link_timeout_cb (gpointer user_data)
 
 	nm_log_warn (LOGD_WIFI, "(%s): link timed out.", nm_device_get_iface (dev));
 
-	NM_DEVICE_WIFI_GET_PRIVATE (dev)->link_timeout_id = 0;
+	priv->link_timeout_id = 0;
 
 	/* Disconnect event while activated; the supplicant hasn't been able
 	 * to reassociate within the timeout period, so the connection must
@@ -2212,18 +2212,21 @@ link_timeout_cb (gpointer user_data)
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
 		return FALSE;
 
-	/* Remove whatever access point we used to be connected to from the list
-	 * since it failed and might no longer be visible.  If it's actually still
-	 * there, we'll find it in the next scan.
+	/* If the access point failed, and wasn't found by the supplicant when it
+	 * attempted to reconnect, then it's probably out of range or turned off.
+	 * Remove it from the list and if it's actually still present, it'll be
+	 * found in the next scan.
 	 */
-	if (priv->current_ap) {
-		ap = priv->current_ap;
-		priv->current_ap = NULL;
-	} else
-		ap = nm_device_wifi_get_activation_ap (self);
+	if (priv->ssid_found == FALSE) {
+		if (priv->current_ap) {
+			ap = priv->current_ap;
+			priv->current_ap = NULL;
+		} else
+			ap = nm_device_wifi_get_activation_ap (self);
 
-	if (ap)
-		remove_access_point (self, ap);
+		if (ap)
+			remove_access_point (self, ap);
+	}
 
 	nm_device_state_changed (dev,
 	                         NM_DEVICE_STATE_FAILED,
