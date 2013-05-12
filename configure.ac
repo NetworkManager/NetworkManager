@@ -18,7 +18,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 
 AM_INIT_AUTOMAKE([1.11 tar-ustar no-dist-gzip dist-bzip2 -Wno-portability])
 AM_MAINTAINER_MODE([enable])
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+AM_SILENT_RULES([yes])
 
 dnl Define _SYSTEM_EXTENSIONS for various things like strcasestr()
 AC_USE_SYSTEM_EXTENSIONS
@@ -28,7 +28,6 @@ dnl Require programs
 dnl
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_INSTALL
 
 # C++ only required if --enable-qt=yes
 AC_PROG_CXX
@@ -48,24 +47,9 @@ AC_SUBST(NM_MICRO_VERSION)
 AC_SUBST(NM_VERSION)
 
 dnl
-dnl Required headers
-dnl
-AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h paths.h sys/ioctl.h sys/time.h syslog.h unistd.h)
-
-dnl
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl
-AC_TYPE_MODE_T
 AC_TYPE_PID_T
-AC_HEADER_TIME
-
-dnl
-dnl Checks for library functions.
-dnl
-AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MEMCMP
-AC_CHECK_FUNCS(select socket uname)
 
 dnl
 dnl translation support
