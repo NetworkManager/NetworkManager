@@ -169,16 +169,16 @@ static inline const char *
 nm_find_dnsmasq (void)
 {
 	static const char *dnsmasq_binary_paths[] = {
+		DNSMASQ_PATH,
 		"/usr/local/sbin/dnsmasq",
 		"/usr/sbin/dnsmasq",
 		"/sbin/dnsmasq",
 		NULL
 	};
-
 	const char **dnsmasq_binary = dnsmasq_binary_paths;
 
 	while (*dnsmasq_binary != NULL) {
-		if (g_file_test (*dnsmasq_binary, G_FILE_TEST_EXISTS))
+		if (**dnsmasq_binary && g_file_test (*dnsmasq_binary, G_FILE_TEST_EXISTS))
 			break;
 		dnsmasq_binary++;
 	}

@@ -601,6 +601,16 @@ fi
 AC_DEFINE_UNQUOTED(IPTABLES_PATH, "$IPTABLES_PATH", [Define to path of iptables binary])
 AC_SUBST(IPTABLES_PATH)
 
+# dnsmasq path
+AC_ARG_WITH(dnsmasq, AS_HELP_STRING([--with-dnsmasq=/path/to/dnsmasq], [path to dnsmasq]))
+if test "x${with_dnsmasq}" = x; then
+  AC_PATH_PROG(DNSMASQ_PATH, dnsmasq, [], $PATH:/sbin:/usr/sbin)
+else
+  DNSMASQ_PATH="$with_dnsmasq"
+fi
+AC_DEFINE_UNQUOTED(DNSMASQ_PATH, "$DNSMASQ_PATH", [Define to path of dnsmasq binary])
+AC_SUBST(DNSMASQ_PATH)
+
 # system CA certificates path
 AC_ARG_WITH(system-ca-path, AS_HELP_STRING([--with-system-ca-path=/path/to/ssl/certs], [path to system CA certificates])) 
 if test "x${with_system_ca_path}" = x; then
