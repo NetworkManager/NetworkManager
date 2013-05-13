@@ -53,6 +53,7 @@ static inline const char *
 find_dnsmasq (void)
 {
 	static const char *paths[] = {
+		DNSMASQ_PATH,
 		"/usr/local/sbin/dnsmasq",
 		"/usr/sbin/dnsmasq",
 		"/sbin/dnsmasq",
@@ -61,7 +62,7 @@ find_dnsmasq (void)
 	const char **binary = paths;
 
 	while (*binary != NULL) {
-		if (g_file_test (*binary, G_FILE_TEST_EXISTS))
+		if (**binary && g_file_test (*binary, G_FILE_TEST_EXISTS))
 			return *binary;
 		binary++;
 	}
