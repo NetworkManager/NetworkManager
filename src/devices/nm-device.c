@@ -1353,9 +1353,6 @@ nm_device_can_activate (NMDevice *self)
 	if (!priv->default_unmanaged && priv->state < NM_DEVICE_STATE_DISCONNECTED)
 		return FALSE;
 
-	if (priv->state > NM_DEVICE_STATE_DISCONNECTED)
-		return FALSE;
-
 	return nm_device_is_available (self);
 }
 
