@@ -53,6 +53,8 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 .br
 \fB\-a\fR[\fIsk\fR]
 .br
+\fB\-w\fR[\fIait\fR] <seconds>
+.br
 \fB\-v\fR[\fIersion\fR]
 .br
 \fB\-h\fR[\fIelp\fR]
@@ -134,6 +136,12 @@ incompatible versions may produce incorrect results.
 .B \-a, \-\-ask
 When using this option \fInmcli\fP will stop and ask for any missing required
 arguments, so do not use this option for non-interactive purposes like scripts.
+.TP
+.B \-w, \-\-wait <seconds>
+This option sets a timeout \fInmcli\fP waits for finishing operations that
+\fINetworkManager\fP take longer time to complete, like e.g. connection activation.
+Specifying value of \fB0\fP instructs \fInmcli\fP not to wait and exit immediatelly
+with a success. Default value depends on the executed command.
 .TP
 .B \-v, \-\-version
 Show \fInmcli\fP version.
@@ -266,7 +274,7 @@ the keywords.
 When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show configured'.
 .TP
-.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]
+.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
 path. If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP or \fIpath\fP can be
@@ -275,6 +283,8 @@ used. When requiring a particular device to activate the connection on, the
 connection, the \fIifname\fP option specify the device of the base connection.
 The \fIap\fP option specify what particular AP should be used in case of
 a Wi\(hyFi connection.
+.br
+If '--wait' option is not specified, the default timeout will be 90 seconds.
 .br
 See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 .RS
@@ -286,10 +296,6 @@ Available options are:
 \(en BSSID of the AP which the command should connect to (for Wi\(hyFi connections)
 .IP \fInsp\fP 13
 \(en NSP (Network Service Provider) which the command should connect to (for WiMAX connections)
-.IP \fI\-\-nowait\fP 13
-\(en exit immediately without waiting for command completion
-.IP \fI\-\-timeout\fP 13
-\(en how long to wait for command completion (default is 90 s)
 .RE
 .TP
 .B down [ id | uuid | path | apath ] <ID>
@@ -515,18 +521,12 @@ Show detailed information about devices.  Without an argument, all devices are
 examined. To get information for a specific device, the interface name has
 to be provided.
 .TP
-.B disconnect <ifname> [--nowait] [--timeout <timeout>]
+.B disconnect <ifname>
 .br
 Disconnect a device and prevent the device from automatically activating further
 connections without user/manual intervention.
-.RS
-.PP
-Available options are:
-.IP \fI\-\-nowait\fP 13
-\(en exit immediately without waiting for command completion
-.IP \fI\-\-timeout\fP 13
-\(en how long to wait for command completion (default is 10 s)
-.RE
+.br
+If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
 .B wifi [list [ifname <ifname>] [bssid <BSSID>]]
 .br
@@ -534,7 +534,7 @@ List available Wi\(hyFi access points. The \fIifname\fP and \fIbssid\fP options
 can be used to list APs for a particular interface or with a specific BSSID,
 respectively.
 .TP
-.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>] [\-\-private] [\-\-nowait] [\-\-timeout <timeout>]
+.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>] [private yes|no]
 .br
 Connect to a Wi\(hyFi network specified by SSID or BSSID. The command creates a new
 connection and then activates it on a device. This is a command\(hyline counterpart
@@ -544,6 +544,8 @@ for the network already exists, it's better to connect through it using
 \fInmcli con up id <name>\fP. Note that only open, WEP and WPA\(hyPSK networks are
 supported at the moment. It is also supposed that IP configuration is obtained via
 DHCP.
+.br
+If '--wait' option is not specified, the default timeout will be 90 seconds.
 .RS
 .PP
 Available options are:
@@ -557,12 +559,9 @@ Available options are:
 \(en if specified, the created connection will be restricted just for the BSSID
 .IP \fIname\fP 13
 \(en if specified, the connection will use the name (else NM creates a name itself)
-.IP \fI\-\-private\fP 13
-\(en the connection will only be visible to the user who created it (else the connection is system\(hywide)
-.IP \fI\-\-nowait\fP 13
-\(en exit immediately without waiting for command completion
-.IP \fI\-\-timeout\fP 13
-\(en how long to wait for command completion (default is 90 s)
+.IP \fIprivate\fP 13
+\(en if set to \fByes\fP, the connection will only be visible to the user who created it.
+Otherwise the connection is system\(hywide, which is default.
 .RE
 .TP
 .B wifi rescan [[ifname] <ifname>]
@@ -614,7 +613,7 @@ Unknown or unspecified error
 .IP "2" 4
 Invalid user input, wrong \fInmcli\fP invocation
 .IP "3" 4
-Timeout expired (see commands with \fI\-\-timeout\fP option)
+Timeout expired (see \fI\-\-wait\fP option)
 .IP "4" 4
 Connection activation failed
 .IP "5" 4
