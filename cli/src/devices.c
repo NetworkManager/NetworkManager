@@ -263,10 +263,10 @@ usage (void)
 #endif
 	         "  status\n\n"
 	         "  show [<ifname>]\n\n"
-	         "  disconnect <ifname> [--nowait] [--timeout <timeout>]\n\n"
+	         "  disconnect <ifname>\n\n"
 	         "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]\n\n"
-	         "               [--private] [--nowait] [--timeout <timeout>]\n\n"
+	         "               [--private]\n\n"
 	         "  wifi rescan [[ifname] <ifname>]\n\n"
 #if WITH_WIMAX
 	         "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
@@ -1161,11 +1161,11 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 	NMDevice *device = NULL;
 	const char *ifname = NULL;
 	char *ifname_ask = NULL;
-	gboolean wait = TRUE;
 	int i;
 
-	/* Set default timeout for disconnect operation */
-	nmc->timeout = 10;
+	/* Set default timeout for disconnect operation. */
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -1186,37 +1186,14 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
-	next_arg (&argc, &argv);
 
-	while (argc > 0) {
-		if (strcmp (*argv, "--nowait") == 0) {
-			wait = FALSE;
-		} else if (strcmp (*argv, "--timeout") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			errno = 0;
-			nmc->timeout = strtol (*argv, NULL, 10);
-			if (errno || nmc->timeout < 0) {
-				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-		} else {
-			g_string_printf (nmc->return_text, _("Error: unknown argument '%s'."), *argv);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
-		}
-
-		next_arg (&argc, &argv);
+	if (next_arg (&argc, &argv) == 0) {
+		g_string_printf (nmc->return_text, _("Error: extra argument not allowed: '%s'."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
 	}
 
 	nmc->get_client (nmc);
-
 	if (!nm_client_get_manager_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
@@ -1242,9 +1219,11 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	/* Use nowait_flag instead of should_wait because exitting has to be postponed till disconnect_device_cb()
-	 * is called, giving NM time to check our permissions */
-	nmc->nowait_flag = !wait;
+	/*
+	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
+	 * till disconnect_device_cb() is called, giving NM time to check our permissions.
+	 */
+	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 	nm_device_disconnect (device, disconnect_device_cb, nmc);
 
@@ -1646,7 +1625,6 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	const char *password = NULL;
 	const char *con_name = NULL;
 	gboolean private = FALSE;
-	gboolean wait = TRUE;
 	gboolean wep_passphrase = FALSE;
 	GByteArray *bssid1_arr = NULL;
 	GByteArray *bssid2_arr = NULL;
@@ -1655,8 +1633,9 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	char *ssid_ask = NULL;
 	char *passwd_ask = NULL;
 
-	/* Default timeout for waiting for operation completion */
-	nmc->timeout = 90;
+	/* Set default timeout waiting for operation completion. */
+	if (nmc->timeout == -1)
+		nmc->timeout = 90;
 
 	/* Get the first compulsory argument (SSID or BSSID) */
 	if (argc > 0) {
@@ -1734,22 +1713,6 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 			con_name = *argv;
 		} else if (strcmp (*argv, "--private") == 0) {
 			private = TRUE;
-		} else if (strcmp (*argv, "--nowait") == 0) {
-			wait = FALSE;
-		} else if (strcmp (*argv, "--timeout") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			errno = 0;
-			nmc->timeout = strtol (*argv, NULL, 10);
-			if (errno || nmc->timeout < 0) {
-				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
 		} else {
 			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
 		}
@@ -1884,7 +1847,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	 * We have to delay exit after add_and_activate_cb() is called, even if
 	 * the user doesn't want to wait, in order to give NM time to check our
 	 * permissions. */
-	nmc->nowait_flag = !wait;
+	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));

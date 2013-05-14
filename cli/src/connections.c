@@ -199,9 +199,9 @@ usage (void)
 	         "  show configured [[ id | uuid | path ] <ID>]\n\n"
 	         "  show active     [[ id | uuid | path | apath ] <ID>]\n\n"
 #if WITH_WIMAX
-	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [--nowait] [--timeout <timeout>]\n\n"
+	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
 #else
-	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--timeout <timeout>]\n\n"
+	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>]\n\n"
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
@@ -1473,17 +1473,18 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
-	gboolean wait = TRUE;
 	GError *error = NULL;
 	gboolean is_virtual = FALSE;
 	const char *selector = NULL;
 	const char *name;
 	char *line = NULL;
 
-	/* Set default timeout for connection activation. It can take quite a long time.
-	 * Using 90 seconds.
+	/*
+	 * Set default timeout for connection activation.
+	 * Activation can take quite a long time, use 90 seconds.
 	 */
-	nmc->timeout = 90;
+	if (nmc->timeout == -1)
+		nmc->timeout = 90;
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -1551,23 +1552,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			nsp = *argv;
 		}
 #endif
-		else if (strcmp (*argv, "--nowait") == 0) {
-			wait = FALSE;
-		} else if (strcmp (*argv, "--timeout") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			errno = 0;
-			nmc->timeout = strtol (*argv, NULL, 10);
-			if (errno || nmc->timeout < 0) {
-				g_string_printf (nmc->return_text, _("Error: timeout value '%s' is not valid."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-		} else {
+		 else {
 			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
 		}
 
@@ -1609,7 +1594,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	 * active_connection_state_cb() is called. That gives NM time to check our permissions
 	 * and we can follow activation progress.
 	 */
-	nmc->nowait_flag = !wait;
+	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
