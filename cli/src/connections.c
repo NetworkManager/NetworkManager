@@ -247,7 +247,8 @@ usage_connection_add (void)
 	         "                  [ingress <ingress priority mapping>]\n"
 	         "                  [egress <egress priority mapping>]\n"
 	         "                  [mtu <MTU>]\n\n"
-	         "    bond:         [mode balance-rr|active-backup|balance-xor|broadcast|802.3ad|balance-tlb|balance-alb]\n"
+	         "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\n"
+	         "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
 	         "                  [miimon <num>]\n"
 	         "                  [downdelay <num>]\n"
 	         "                  [updelay <num>]\n"
@@ -2435,8 +2436,17 @@ cleanup_vlan:
 
 		/* Set bond options */
 		g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, bond_ifname, NULL);
-		if (bond_mode)
+		if (bond_mode) {
+			GError *err = NULL;
+			if (!(bond_mode = nmc_bond_validate_mode (bond_mode, &err))) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'mode': %s."), err->message);
+				g_clear_error (&err);
+				g_free (bond_ifname);
+				return FALSE;
+			}
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MODE, bond_mode);
+		}
 		if (bond_miimon)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON, bond_miimon);
 		if (bond_downdelay)

@@ -51,4 +51,6 @@ nmc_vlan_parse_priority_maps (const char *priority_map,
                               NMVlanPriorityMap map_type,
                               GError **error);
 
+const char *nmc_bond_validate_mode (const char *mode, GError **error);
+
 #endif /* NMC_COMMON_H */
