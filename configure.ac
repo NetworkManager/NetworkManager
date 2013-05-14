@@ -231,7 +231,7 @@ AC_SUBST(GUDEV_LIBS)
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 # Qt4
-PKG_CHECK_MODULES(QT, [Qt >= 4 QtCore QtDBus QtNetwork], [have_qt=yes],[have_qt=no])
+PKG_CHECK_MODULES(QT, [QtCore >= 4 QtDBus QtNetwork], [have_qt=yes],[have_qt=no])
 AC_ARG_ENABLE(qt, AS_HELP_STRING([--enable-qt], [enable Qt examples]),
                      [enable_qt=${enableval}], [enable_qt=${have_qt}])
 if (test "${enable_qt}" = "yes"); then
@@ -241,7 +241,7 @@ if (test "${enable_qt}" = "yes"); then
 	AC_SUBST(QT_CFLAGS)
 	AC_SUBST(QT_LIBS)
 	# Check for moc-qt4 and if not found then moc
-	QT4_BINDIR=`$PKG_CONFIG Qt --variable bindir`
+	QT4_BINDIR=`$PKG_CONFIG QtCore --variable moc_location`
 	AC_CHECK_PROGS(MOC, [moc-qt4 moc],, [$QT4_BINDIR:$PATH])
 fi
 AM_CONDITIONAL(WITH_QT, test "${enable_qt}" = "yes")
