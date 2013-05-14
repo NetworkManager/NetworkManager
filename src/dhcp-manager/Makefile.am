@@ -8,8 +8,12 @@ nm_dhcp_helper_LDADD = $(DBUS_LIBS)
 
 
 # FIXME: remove when dbus-glib >= 0.100 is required
-dbusservicedir = $(DBUS_SYS_DIR)
-dbusservice_DATA = nm-dhcp-helper.conf
+dhcp_helper_conf = nm-dhcp-helper.conf
 
-EXTRA_DIST = $(dbusservice_DATA)
+if !HAVE_DBUS_GLIB_100
+dbusservicedir = $(DBUS_SYS_DIR)
+dbusservice_DATA = $(dhcp_helper_conf)
+endif
+
+EXTRA_DIST = $(dhcp_helper_conf)
 
