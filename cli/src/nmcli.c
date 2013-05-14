@@ -83,6 +83,7 @@ usage (const char *prog_name)
 	         "  -e[scape] yes|no                           escape columns separators in values\n"
 	         "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
 	         "  -a[sk]                                     ask for missing parameters\n"
+	         "  -w[ait] <seconds>                          set timeout waiting for finishing operations\n"
 	         "  -v[ersion]                                 show program version\n"
 	         "  -h[elp]                                    print this help\n"
 	         "\n"
@@ -225,6 +226,21 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			nmc->nocheck_ver = TRUE;
 		} else if (matches (opt, "-ask") == 0) {
 			nmc->ask = TRUE;
+		} else if (matches (opt, "-wait") == 0) {
+			unsigned long timeout;
+			next_arg (&argc, &argv);
+			if (argc <= 1) {
+		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
+			if (!nmc_string_to_uint (argv[1], TRUE, 0, G_MAXINT, &timeout)) {
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not a valid timeout for '%s' option."),
+				                 argv[1], opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
+			nmc->timeout = (int) timeout;
 		} else if (matches (opt, "-version") == 0) {
 			printf (_("nmcli tool, version %s\n"), NMCLI_VERSION);
 			return NMC_RESULT_SUCCESS;
@@ -294,7 +310,7 @@ nmc_init (NmCli *nmc)
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->return_text = g_string_new (_("Success"));
 
-	nmc->timeout = 10;
+	nmc->timeout = -1;
 
 	nmc->system_settings = NULL;
 	nmc->system_settings_running = FALSE;
