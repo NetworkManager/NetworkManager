@@ -419,7 +419,8 @@ Add a connection for NetworkManager. Arguments differ according to connection ty
 .RS
 .TP
 .B bond:
-.IP "\fI[mode balance-rr|active-backup|balance-xor|broadcast|802.3ad|balance-tlb|balance-alb]\fP" 42
+.IP "\fI[mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\fP"
+.IP "\fI      802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\fP" 42
 \(en bonding mode
 .IP "\fI[miimon <num>]\fP" 42
 \(en miimon
