@@ -1,7 +1,5 @@
 AUTOMAKE_OPTIONS = 1.7
 
-if ENABLE_DOC
-
 XSLTPROC = xsltproc --xinclude --nonet
 XMLS = $(wildcard $(top_srcdir)/introspection/nm-*.xml)
 
@@ -15,20 +13,23 @@ OTHER_FILES= \
 
 GENERATED_FILES = spec.html settings-spec.xml
 
+if ENABLE_GTK_DOC
+
 spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
 	$(XSLTPROC) --path "$(top_builddir)/introspection:$(top_srcdir)/introspection" $(top_srcdir)/tools/doc-generator.xsl $(top_builddir)/introspection/all.xml > $@
 	mkdir -p $(builddir)/html/
 	cp $@ $(builddir)/html/
 
-# settings-spec.xml should *not* be DISTed because it must be regenerated
-# whenever the libnm-util source changes
 settings-spec.xml: $(top_builddir)/tools/generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
-	$(top_builddir)/tools/generate-settings-spec book $@
+	rm -f $(builddir)/settings-spec.xml
+	$(top_builddir)/tools/generate-settings-spec book $(builddir)/settings-spec.xml
+
+all: $(GENERATED_FILES)
+
+endif
 
 # Top-level SGML file includes (depends on) settings-spec.xml
 $(DOC_MAIN_SGML_FILE): settings-spec.xml
-
-all: $(GENERATED_FILES)
 
 ####################################
 
@@ -56,17 +57,9 @@ include $(top_srcdir)/gtk-doc.make
 
 ####################################
 
-EXTRA_DIST += spec.html
-CLEANFILES += $(GENERATED_FILES)
-
-else
-
-EXTRA_DIST =
-CLEANFILES =
-
-endif
-
-EXTRA_DIST += version.xml.in
+EXTRA_DIST += version.xml.in $(GENERATED_FILES)
 CLEANFILES += html/* tmpl/* xml/* \
 	NetworkManager-sections.txt \
-	NetworkManager-overrides.txt
+	NetworkManager-overrides.txt \
+	$(GENERATED_FILES)
+

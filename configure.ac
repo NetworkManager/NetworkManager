@@ -602,25 +602,31 @@ VAPIGEN_CHECK(0.17.1.24)
 
 # Tests, utilities and documentation
 AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
-AC_ARG_ENABLE(doc, AS_HELP_STRING([--enable-doc], [Build NetworkManager documentation (default: no)]))
-# Fallback to --with-tests and with-docs
+# Fallback to --with-tests
 AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests (deprecated)]))
-AC_ARG_WITH(docs, AS_HELP_STRING([--with-docs], [Build NetworkManager documentation (deprecated)]))
 AS_IF([test -n "$with_tests"], enable_tests="$with_tests")
-AS_IF([test -n "$with_docs"], enable_doc="$with_docs")
-# Default to --enable-tests and --disable-docs
+# Default to --enable-tests
 AS_IF([test -z "$enable_tests"], enable_tests="yes")
-AS_IF([test -z "$enable_doc"], enable_doc="no")
 # Normalize values
 AS_IF([test "$enable_tests" != "yes" -a "$enable_tests" != "root"], enable_tests="no")
-AS_IF([test "$enable_doc" != "yes"], enable_doc="no")
 # Add conditionals
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
 AM_CONDITIONAL(RUN_ROOT_TESTS, test "$enable_tests" == "root")
-AM_CONDITIONAL(ENABLE_DOC, test "$enable_doc" = "yes")
-# Add gtk-doc conditionals
-enable_gtk_doc="$enable_doc"
+
+# Backwards compatible documentation enable/disable
+AC_ARG_WITH(docs, AS_HELP_STRING([--with-docs], [Build NetworkManager documentation (deprecated, use --enable-gtk-doc)]))
+AC_ARG_ENABLE(doc, AS_HELP_STRING([--enable-doc], [Build NetworkManager documentation (deprecated, use --enable-gtk-doc)]))
+AS_IF([test "$with_docs" = "yes"], enable_gtk_doc="yes")
+AS_IF([test "$enable_doc" = "yes"], enable_gtk_doc="yes")
 GTK_DOC_CHECK(1.0)
+
+# check for pregenerated manpages to be installed
+install_pregen_manpages=no
+if test "$enable_gtk_doc" != "yes" -a -f man/nm-settings.5; then
+	install_pregen_manpages=yes
+fi
+AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xyes")
+
 
 AC_CONFIG_FILES([
 Makefile
@@ -769,7 +775,7 @@ echo "  dhcpcd: $with_dhcpcd"
 echo
 
 echo "Miscellaneous:"
-echo "  documentation: $enable_doc"
+echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
 echo "  code coverage: $enable_code_coverage"
 echo

@@ -1,5 +1,2 @@
-if ENABLE_DOC
+SUBDIRS = libnm-glib libnm-util api
 
-SUBDIRS = api libnm-glib libnm-util
-
-endif
