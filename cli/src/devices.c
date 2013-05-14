@@ -266,7 +266,7 @@ usage (void)
 	         "  disconnect <ifname>\n\n"
 	         "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]\n\n"
-	         "               [--private]\n\n"
+	         "               [private yes|no]\n\n"
 	         "  wifi rescan [[ifname] <ifname>]\n\n"
 #if WITH_WIMAX
 	         "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
@@ -1711,8 +1711,19 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 			con_name = *argv;
-		} else if (strcmp (*argv, "--private") == 0) {
-			private = TRUE;
+		} else if (strcmp (*argv, "private") == 0) {
+			GError *err_tmp = NULL;
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			if (!nmc_string_to_bool (*argv, &private, &err_tmp)) {
+				g_string_printf (nmc->return_text, _("Error: %s: %s."), *(argv-1), err_tmp->message);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				g_clear_error (&err_tmp);
+				goto error;
+			}
 		} else {
 			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
 		}

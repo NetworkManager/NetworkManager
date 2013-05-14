@@ -109,7 +109,7 @@ _nmcli()
             _nmcli_list "key phrase"
             return 0
             ;;
-        autoconnect | stp | hairpin)
+        autoconnect | stp | hairpin | private)
             _nmcli_list "yes no"
             return 0
             ;;
