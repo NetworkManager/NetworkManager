@@ -632,7 +632,6 @@ if test "$enable_gtk_doc" != "yes" \
 	install_pregen_manpages=yes
 fi
 AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xyes")
-echo "  man: $install_pregen_manpages"
 
 
 AC_CONFIG_FILES([
