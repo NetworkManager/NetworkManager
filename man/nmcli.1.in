@@ -577,14 +577,6 @@ This command doesn't show the APs, use 'nmcli device wifi list' for that.
 List available WiMAX NSP. The \fIifname\fP and \fInsp\fP options
 can be used to list networks for a particular interface or with a specific
 NSP, respectively.
-.RS
-.PP
-Available options are:
-.IP \fI\-\-nowait\fP 13
-\(en exit immediately without waiting for command completion
-.IP \fI\-\-timeout\fP 13
-\(en how long to wait for command completion (default is 10 s)
-.RE
 
 .SH ENVIRONMENT VARIABLES
 \fInmcli\fP's behavior is affected by the following environment variables.
