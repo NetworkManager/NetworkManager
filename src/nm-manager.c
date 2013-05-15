@@ -2858,6 +2858,18 @@ nm_manager_activate_connection (NMManager *manager,
 						             "Failed to create virtual interface");
 				return NULL;
 			}
+
+			/* A newly created device, if allowed to be managed by NM, will be
+			 * in the UNAVAILABLE state here.  To ensure it can be activated
+			 * immediately, we transition it to DISCONNECTED so it passes the
+			 * nm_device_can_activate() check below.
+			 */
+			if (   nm_device_is_available (device)
+			    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
+				nm_device_state_changed (device,
+				                         NM_DEVICE_STATE_DISCONNECTED,
+				                         NM_DEVICE_STATE_REASON_NONE);
+			}
 		}
 	}
 
