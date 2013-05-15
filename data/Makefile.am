@@ -8,8 +8,13 @@ systemdsystemunit_DATA = \
 NetworkManager.service: NetworkManager.service.in
 	$(edit) $< >$@
 
+if HAVE_SYSTEMD_200
 NetworkManager-wait-online.service: NetworkManager-wait-online.service.in
 	$(edit) $< >$@
+else
+NetworkManager-wait-online.service: NetworkManager-wait-online-systemd-pre200.service.in
+	$(edit) $< >$@
+endif
 
 NetworkManager-dispatcher.service: NetworkManager-dispatcher.service.in
 	$(edit) $< >$@
@@ -38,6 +43,7 @@ edit = sed \
 EXTRA_DIST = \
 	NetworkManager.service.in \
 	NetworkManager-wait-online.service.in \
+	NetworkManager-wait-online-systemd-pre200.service.in \
 	NetworkManager-dispatcher.service.in \
 	org.freedesktop.NetworkManager.service.in \
 	server.conf.in
