@@ -1053,12 +1053,12 @@ static void
 nm_device_master_release_slaves (NMDevice *self, gboolean failed)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GSList *iter;
 
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter))
-		nm_device_release_one_slave (self, ((SlaveInfo *) iter->data)->slave, failed);
-	g_slist_free (priv->slaves);
-	priv->slaves = NULL;
+	while (priv->slaves) {
+		SlaveInfo *info = priv->slaves->data;
+
+		nm_device_release_one_slave (self, info->slave, failed);
+	}
 }
 
 
