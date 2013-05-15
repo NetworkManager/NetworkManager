@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Manager Script Dispatcher Service
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.nm_dispatcher
+ExecStart=@libexecdir@/nm-dispatcher.action
+
+[Install]
+WantedBy=multi-user.target
+Alias=dbus-org.freedesktop.nm-dispatcher.service
+
