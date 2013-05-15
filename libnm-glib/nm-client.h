@@ -123,11 +123,10 @@ typedef enum {
 /**
  * NMClientError:
  * @NM_CLIENT_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_CLIENT_ERROR_CONNECTION_REMOVED: an operation that requires NetworkManager
+ * @NM_CLIENT_ERROR_MANAGER_NOT_RUNNING: an operation that requires NetworkManager
  *   failed because NetworkManager is not running
  *
  * Describes errors that may result from operations involving a #NMClient.
- *
  **/
 typedef enum {
 	NM_CLIENT_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
