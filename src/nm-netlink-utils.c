@@ -452,7 +452,7 @@ nm_netlink_foreach_route (int ifindex,
 	info.user_data = user_data;
 	info.iface = nm_netlink_index_to_iface (ifindex);
 
-	rtnl_route_alloc_cache (nm_netlink_get_default_handle (), family, NL_AUTO_PROVIDE, &cache);
+	rtnl_route_alloc_cache (nm_netlink_get_default_handle (), family, 0, &cache);
 	g_warn_if_fail (cache != NULL);
 	if (cache) {
 		nl_cache_foreach (cache, foreach_route_cb, &info);
