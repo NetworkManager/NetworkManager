@@ -2,12 +2,16 @@
 if HAVE_SYSTEMD
 systemdsystemunit_DATA = \
 	NetworkManager.service \
-	NetworkManager-wait-online.service
+	NetworkManager-wait-online.service \
+	NetworkManager-dispatcher.service
 
 NetworkManager.service: NetworkManager.service.in
 	$(edit) $< >$@
 
 NetworkManager-wait-online.service: NetworkManager-wait-online.service.in
+	$(edit) $< >$@
+
+NetworkManager-dispatcher.service: NetworkManager-dispatcher.service.in
 	$(edit) $< >$@
 
 servicedir = $(datadir)/dbus-1/system-services
@@ -28,17 +32,20 @@ edit = sed \
 	-e 's|@bindir[@]|$(bindir)|g' \
 	-e 's|@sbindir[@]|$(sbindir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@localstatedir[@]|$(localstatedir)|g'
+	-e 's|@localstatedir[@]|$(localstatedir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g'
 
 EXTRA_DIST = \
 	NetworkManager.service.in \
 	NetworkManager-wait-online.service.in \
+	NetworkManager-dispatcher.service.in \
 	org.freedesktop.NetworkManager.service.in \
 	server.conf.in
 
 CLEANFILES = \
 	NetworkManager.service \
 	NetworkManager-wait-online.service \
+	NetworkManager-dispatcher.service \
 	org.freedesktop.NetworkManager.service \
 	server.conf
 
