@@ -1,6 +1,5 @@
 [Unit]
 Description=Network Manager
-After=syslog.target
 Wants=network.target
 Before=network.target
 
@@ -18,5 +17,4 @@ KillMode=process
 [Install]
 WantedBy=multi-user.target
 Alias=dbus-org.freedesktop.NetworkManager.service
-Also=NetworkManager-wait-online.service
 
