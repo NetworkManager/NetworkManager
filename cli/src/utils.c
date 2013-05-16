@@ -147,13 +147,11 @@ nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GErr
 }
 
 /*
- *  Convert SSID to a printable form.
- *  If it is an UTF-8 string, enclose it in quotes and return it.
- *  Otherwise convert it to a hex string representation.
+ *  Convert SSID to a hex string representation.
  *  Caller has to free the returned string using g_free()
  */
 char *
-ssid_to_printable (const char *str, gsize len)
+ssid_to_hex (const char *str, gsize len)
 {
 	GString *printable;
 	char *printable_str;
@@ -161,9 +159,6 @@ ssid_to_printable (const char *str, gsize len)
 
 	if (str == NULL || len == 0)
 		return NULL;
-
-	if (g_utf8_validate (str, len, NULL))
-		return g_strdup_printf ("'%.*s'", (int) len, str);
 
 	printable = g_string_new (NULL);
 	for (i = 0; i < len; i++) {

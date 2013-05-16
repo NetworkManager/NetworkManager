@@ -1115,7 +1115,7 @@ nmc_property_olpc_get_ssid (NMSetting *setting)
 
 	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
 	if (ssid)
-		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+		ssid_str = nm_utils_ssid_to_utf8 (ssid);
 
 	return ssid_str;
 }
@@ -1260,7 +1260,7 @@ nmc_property_wireless_get_ssid (NMSetting *setting)
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	if (ssid)
-		ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+		ssid_str = nm_utils_ssid_to_utf8 (ssid);
 
 	return ssid_str;
 }

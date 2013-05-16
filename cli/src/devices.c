@@ -193,20 +193,22 @@ static NmcOutputField nmc_fields_dev_show_wimax_prop[] = {
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
 	{"NAME",       N_("NAME"),       15},  /* 0 */
 	{"SSID",       N_("SSID"),       33},  /* 1 */
-	{"BSSID",      N_("BSSID"),      19},  /* 2 */
-	{"MODE",       N_("MODE"),       16},  /* 3 */
-	{"FREQ",       N_("FREQ"),       10},  /* 4 */
-	{"RATE",       N_("RATE"),       10},  /* 5 */
-	{"SIGNAL",     N_("SIGNAL"),      8},  /* 6 */
-	{"SECURITY",   N_("SECURITY"),   10},  /* 7 */
-	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 8 */
-	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 9 */
-	{"DEVICE",     N_("DEVICE"),     10},  /* 10 */
-	{"ACTIVE",     N_("ACTIVE"),      8},  /* 11 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 12 */
+	{"SSID-HEX",   N_("SSID-HEX"),   66},  /* 2 */
+	{"BSSID",      N_("BSSID"),      19},  /* 3 */
+	{"MODE",       N_("MODE"),       16},  /* 4 */
+	{"FREQ",       N_("FREQ"),       10},  /* 5 */
+	{"RATE",       N_("RATE"),       10},  /* 6 */
+	{"SIGNAL",     N_("SIGNAL"),      8},  /* 7 */
+	{"SECURITY",   N_("SECURITY"),   10},  /* 8 */
+	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 9 */
+	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 10 */
+	{"DEVICE",     N_("DEVICE"),     10},  /* 11 */
+	{"ACTIVE",     N_("ACTIVE"),      8},  /* 12 */
+	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 13 */
 	{NULL,         NULL,              0}
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,DBUS-PATH"
+#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,"\
+                                               "WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
@@ -392,7 +394,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	const GByteArray *ssid;
 	const char *bssid;
 	NM80211Mode mode;
-	char *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
+	char *freq_str, *ssid_str, *ssid_hex_str, *bitrate_str,
+	     *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
 	char *ap_name;
 
@@ -414,7 +417,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	strength = nm_access_point_get_strength (ap);
 
 	/* Convert to strings */
-	ssid_str = ssid_to_printable ((const char *) ssid->data, ssid->len);
+	ssid_str = nm_utils_ssid_to_utf8 (ssid);
+	ssid_hex_str = ssid_to_hex ((const char *)ssid->data, ssid->len);
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u MB/s"), bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
@@ -449,19 +453,20 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	ap_name = g_strdup_printf ("AP[%d]", info->index++); /* AP */
 	set_val_str  (arr, 0, ap_name);
 	set_val_str  (arr, 1, ssid_str);
-	set_val_strc (arr, 2, bssid);
-	set_val_strc (arr, 3, mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
+	set_val_str  (arr, 2, ssid_hex_str);
+	set_val_strc (arr, 3, bssid);
+	set_val_strc (arr, 4, mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
 	                    : mode == NM_802_11_MODE_INFRA ? _("Infrastructure")
 	                    : _("Unknown"));
-	set_val_str  (arr, 4, freq_str);
-	set_val_str  (arr, 5, bitrate_str);
-	set_val_str  (arr, 6, strength_str);
-	set_val_str  (arr, 7, security_str->str);
-	set_val_str  (arr, 8, wpa_flags_str);
-	set_val_str  (arr, 9, rsn_flags_str);
-	set_val_strc (arr, 10, info->device);
-	set_val_strc (arr, 11, active ? _("yes") : _("no"));
-	set_val_strc (arr, 12, nm_object_get_path (NM_OBJECT (ap)));
+	set_val_str  (arr, 5, freq_str);
+	set_val_str  (arr, 6, bitrate_str);
+	set_val_str  (arr, 7, strength_str);
+	set_val_str  (arr, 8, security_str->str);
+	set_val_str  (arr, 9, wpa_flags_str);
+	set_val_str  (arr, 10, rsn_flags_str);
+	set_val_strc (arr, 11, info->device);
+	set_val_strc (arr, 12, active ? _("yes") : _("no"));
+	set_val_strc (arr, 13, nm_object_get_path (NM_OBJECT (ap)));
 
 	g_ptr_array_add (info->nmc->output_data, arr);
 
