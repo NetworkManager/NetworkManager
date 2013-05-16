@@ -143,12 +143,12 @@ static GArray *
 link_get_all (NMPlatform *platform)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
-	GArray *links = g_array_sized_new (TRUE, TRUE, sizeof (NMFakePlatformLink), priv->links->len);
+	GArray *links = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), priv->links->len);
 	int i;
 
 	for (i = 0; i < priv->links->len; i++)
 		if (g_array_index (priv->links, NMFakePlatformLink, i).link.ifindex)
-			g_array_append_val (links, g_array_index (priv->links, NMFakePlatformLink, i));
+			g_array_append_val (links, g_array_index (priv->links, NMFakePlatformLink, i).link);
 
 	return links;
 }
