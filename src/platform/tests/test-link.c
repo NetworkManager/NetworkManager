@@ -230,7 +230,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 }
 
 static void
-test_virtual (NMLinkType link_type, const char *link_typedesc)
+test_virtual (NMLinkType link_type, const char *link_typename)
 {
 	int ifindex;
 	char *value;
@@ -246,7 +246,7 @@ test_virtual (NMLinkType link_type, const char *link_typedesc)
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex >= 0);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, link_type);
-	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, link_typedesc);
+	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, link_typename);
 	accept_signal (link_added);
 
 	/* Add again */
