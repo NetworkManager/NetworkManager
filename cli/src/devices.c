@@ -1169,7 +1169,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			ifname = ifname_ask = nmc_get_user_input ("Interface: ");
+			ifname = ifname_ask = nmc_get_user_input (_("Interface: "));
 			// TODO: list available devices when just Enter is pressed ?
 		}
 		if (!ifname_ask) {
@@ -1646,7 +1646,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		argv++;
 	} else {
 		if (nmc->ask) {
-			ssid_ask = nmc_get_user_input ("SSID or BSSID: ");
+			ssid_ask = nmc_get_user_input (_("SSID or BSSID: "));
 			param_user = ssid_ask ? ssid_ask : "";
 			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ARPHRD_ETHER);
 		}
@@ -1825,7 +1825,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
 		/* Ask for missing password when one is expected and '--ask' is used */
 		if (!password && nmc->ask)
-			password = passwd_ask = nmc_get_user_input ("Password: ");
+			password = passwd_ask = nmc_get_user_input (_("Password: "));
 
 		if (password) {
 			if (!connection)
