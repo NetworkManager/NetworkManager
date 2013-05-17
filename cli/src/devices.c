@@ -196,18 +196,19 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 	{"SSID-HEX",   N_("SSID-HEX"),   66},  /* 2 */
 	{"BSSID",      N_("BSSID"),      19},  /* 3 */
 	{"MODE",       N_("MODE"),       16},  /* 4 */
-	{"FREQ",       N_("FREQ"),       10},  /* 5 */
-	{"RATE",       N_("RATE"),       10},  /* 6 */
-	{"SIGNAL",     N_("SIGNAL"),      8},  /* 7 */
-	{"SECURITY",   N_("SECURITY"),   10},  /* 8 */
-	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 9 */
-	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 10 */
-	{"DEVICE",     N_("DEVICE"),     10},  /* 11 */
-	{"ACTIVE",     N_("ACTIVE"),      8},  /* 12 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 13 */
+	{"CHAN",       N_("CHAN"),        6},  /* 5 */
+	{"FREQ",       N_("FREQ"),       10},  /* 6 */
+	{"RATE",       N_("RATE"),       10},  /* 7 */
+	{"SIGNAL",     N_("SIGNAL"),      8},  /* 8 */
+	{"SECURITY",   N_("SECURITY"),   10},  /* 9 */
+	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 10 */
+	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 11 */
+	{"DEVICE",     N_("DEVICE"),     10},  /* 12 */
+	{"ACTIVE",     N_("ACTIVE"),      8},  /* 13 */
+	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 14 */
 	{NULL,         NULL,              0}
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,"\
+#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,SECURITY,"\
                                                "WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
@@ -394,7 +395,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	const GByteArray *ssid;
 	const char *bssid;
 	NM80211Mode mode;
-	char *freq_str, *ssid_str, *ssid_hex_str, *bitrate_str,
+	char *channel_str, *freq_str, *ssid_str, *ssid_hex_str, *bitrate_str,
 	     *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
 	char *ap_name;
@@ -419,6 +420,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	/* Convert to strings */
 	ssid_str = nm_utils_ssid_to_utf8 (ssid);
 	ssid_hex_str = ssid_to_hex ((const char *)ssid->data, ssid->len);
+	channel_str = g_strdup_printf ("%u", nm_utils_wifi_freq_to_channel (freq));
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u MB/s"), bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
@@ -458,15 +460,16 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_strc (arr, 4, mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
 	                    : mode == NM_802_11_MODE_INFRA ? _("Infrastructure")
 	                    : _("Unknown"));
-	set_val_str  (arr, 5, freq_str);
-	set_val_str  (arr, 6, bitrate_str);
-	set_val_str  (arr, 7, strength_str);
-	set_val_str  (arr, 8, security_str->str);
-	set_val_str  (arr, 9, wpa_flags_str);
-	set_val_str  (arr, 10, rsn_flags_str);
-	set_val_strc (arr, 11, info->device);
-	set_val_strc (arr, 12, active ? _("yes") : _("no"));
-	set_val_strc (arr, 13, nm_object_get_path (NM_OBJECT (ap)));
+	set_val_str  (arr, 5, channel_str);
+	set_val_str  (arr, 6, freq_str);
+	set_val_str  (arr, 7, bitrate_str);
+	set_val_str  (arr, 8, strength_str);
+	set_val_str  (arr, 9, security_str->str);
+	set_val_str  (arr, 10, wpa_flags_str);
+	set_val_str  (arr, 11, rsn_flags_str);
+	set_val_strc (arr, 12, info->device);
+	set_val_strc (arr, 13, active ? _("yes") : _("no"));
+	set_val_strc (arr, 14, nm_object_get_path (NM_OBJECT (ap)));
 
 	g_ptr_array_add (info->nmc->output_data, arr);
 
