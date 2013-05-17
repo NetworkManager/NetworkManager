@@ -324,7 +324,7 @@ main (int argc, char *argv[])
 
 	GOptionEntry options[] = {
 		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
-		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
+		{ "no-daemon", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
@@ -426,10 +426,6 @@ main (int argc, char *argv[])
 	}
 	g_clear_error (&error);
 
-	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because
-	 * of a CLI option, it'll become TRUE after this
-	 */
-	become_daemon = !become_daemon;
 	if (become_daemon) {
 		if (daemon (0, 0) < 0) {
 			int saved_errno;
