@@ -856,22 +856,31 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type)
 	return add_object (platform, build_rtnl_link (0, name, type));
 }
 
+static struct rtnl_link *
+link_get (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+
+	if (!rtnllink)
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+
+	return rtnllink;
+}
+
 static gboolean
 link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *orig;
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
+	int nle;
 
-	orig = rtnl_link_get (priv->link_cache, ifindex);
-
-	if (!orig) {
-		debug ("link not found: %d", ifindex);
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+	if (!rtnllink)
 		return FALSE;
-	}
 
-	return refresh_object (platform, (struct nl_object *) orig,
-			rtnl_link_change (priv->nlh, orig, change, 0));
+	nle = rtnl_link_change (priv->nlh, rtnllink, change, 0);
+
+	return refresh_object (platform, (struct nl_object *) rtnllink, nle);
 }
 
 static gboolean
@@ -886,18 +895,6 @@ link_get_ifindex (NMPlatform *platform, const char *ifname)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	return rtnl_link_name2i (priv->link_cache, ifname);
-}
-
-static struct rtnl_link *
-link_get (NMPlatform *platform, int ifindex)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-
-	if (!rtnllink)
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-
-	return rtnllink;
 }
 
 static const char *
@@ -929,16 +926,10 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 static guint32
 link_get_flags (NMPlatform *platform, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink;
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 
-	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-
-	if (!rtnllink) {
-		debug ("link not found: %d", ifindex);
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+	if (!rtnllink)
 		return IFF_NOARP;
-	}
 
 	return rtnl_link_get_flags (rtnllink);
 }
@@ -1140,17 +1131,9 @@ link_release (NMPlatform *platform, int master, int slave)
 static int
 link_get_master (NMPlatform *platform, int slave)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink;
-	int result;
+	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, slave);
 
-	rtnllink = rtnl_link_get (priv->link_cache, slave);
-	g_assert (rtnllink);
-
-	result = rtnl_link_get_master (rtnllink);
-	g_assert (result >= 0);
-
-	return result;
+	return rtnllink ? rtnl_link_get_master (rtnllink) : 0;
 }
 
 static char *
