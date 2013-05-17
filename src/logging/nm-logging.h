@@ -123,7 +123,7 @@ const char *nm_logging_all_domains_to_string (void);
 #undef nm_error_str
 
 gboolean nm_logging_setup     (const char *level, const char *domains, GError **error);
-void     nm_logging_start     (gboolean become_daemon);
+void     nm_logging_start     (gboolean debug);
 void     nm_logging_shutdown  (void);
 
 #endif /* NM_LOGGING_H */

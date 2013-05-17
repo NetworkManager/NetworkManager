@@ -305,6 +305,7 @@ main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
 	gboolean become_daemon = FALSE;
+	gboolean debug = FALSE;
 	gboolean g_fatal_warnings = FALSE;
 	gs_free char *pidfile = NULL;
 	gs_free char *state_file = NULL;
@@ -325,6 +326,7 @@ main (int argc, char *argv[])
 	GOptionEntry options[] = {
 		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
 		{ "no-daemon", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
+		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, N_("Don't become a daemon, and log to stderr"), NULL },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
@@ -426,7 +428,7 @@ main (int argc, char *argv[])
 	}
 	g_clear_error (&error);
 
-	if (become_daemon) {
+	if (become_daemon && !debug) {
 		if (daemon (0, 0) < 0) {
 			int saved_errno;
 
@@ -467,7 +469,7 @@ main (int argc, char *argv[])
 	 */
 	dbus_glib_global_set_disable_legacy_property_access ();
 
-	nm_logging_start (become_daemon);
+	nm_logging_start (debug);
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;

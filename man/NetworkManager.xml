@@ -137,9 +137,13 @@
       </varlistentry>
       <varlistentry>
 	<term><option>--no-daemon</option></term>
-	<listitem><para>Do not daemonize.  This is useful for
-	debugging, and directs log output to the controlling terminal
-	in addition to syslog.
+	<listitem><para>Do not daemonize.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><option>--debug</option></term>
+	<listitem><para>Do not daemonize, and direct log output to the
+	controlling terminal in addition to syslog.
 	</para></listitem>
       </varlistentry>
       <varlistentry>

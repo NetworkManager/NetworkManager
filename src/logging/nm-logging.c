@@ -349,12 +349,12 @@ nm_log_handler (const gchar *log_domain,
 }
 
 void
-nm_logging_start (gboolean become_daemon)
+nm_logging_start (gboolean debug)
 {
-	if (become_daemon)
-		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
-	else
+	if (debug)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
+	else
+		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 
 	g_log_set_handler (G_LOG_DOMAIN, 
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
