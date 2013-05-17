@@ -274,12 +274,6 @@ ipw_rfkill_state_work (gpointer user_data)
 
 /*****************************************************************/
 
-static guint32
-get_generic_capabilities (NMDevice *dev)
-{
-	return NM_DEVICE_CAP_NM_SUPPORTED;
-}
-
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -3352,14 +3346,6 @@ can_interrupt_activation (NMDevice *dev)
 	return FALSE;
 }
 
-
-static guint32
-get_type_capabilities (NMDevice *dev)
-{
-	return NM_DEVICE_WIFI_GET_PRIVATE (dev)->capabilities;
-}
-
-
 static const GByteArray *
 get_connection_hw_address (NMDevice *device,
                            NMConnection *connection)
@@ -3652,8 +3638,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	parent_class->get_type_capabilities = get_type_capabilities;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->hw_bring_up = hw_bring_up;
 	parent_class->is_up = is_up;
 	parent_class->bring_up = bring_up;

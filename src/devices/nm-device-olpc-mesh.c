@@ -113,12 +113,6 @@ nm_olpc_mesh_error_quark (void)
 	return quark;
 }
 
-static guint32
-get_generic_capabilities (NMDevice *dev)
-{
-	return NM_DEVICE_CAP_NM_SUPPORTED;
-}
-
 static void
 nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 {
@@ -477,8 +471,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	parent_class->get_type_capabilities = NULL;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_up = is_up;
 	parent_class->bring_up = bring_up;
 	parent_class->take_down = take_down;

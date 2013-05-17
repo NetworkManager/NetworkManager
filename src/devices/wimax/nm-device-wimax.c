@@ -557,12 +557,6 @@ can_auto_connect (NMDevice *device,
 	return FALSE;
 }
 
-static guint32
-get_generic_capabilities (NMDevice *dev)
-{
-	return NM_DEVICE_CAP_NM_SUPPORTED;
-}
-
 static gboolean
 is_available (NMDevice *device)
 {
@@ -1421,7 +1415,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->can_auto_connect = can_auto_connect;
-	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->is_available = is_available;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;

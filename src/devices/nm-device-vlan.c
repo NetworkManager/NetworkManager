@@ -79,7 +79,7 @@ static guint32
 get_generic_capabilities (NMDevice *dev)
 {
 	/* We assume VLAN interfaces always support carrier detect */
-	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NM_SUPPORTED;
+	return NM_DEVICE_CAP_CARRIER_DETECT;
 }
 
 static gboolean

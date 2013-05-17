@@ -56,9 +56,6 @@ gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
 
 void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 
-guint32 nm_device_get_capabilities (NMDevice *dev);
-guint32 nm_device_get_type_capabilities (NMDevice *dev);
-
 void nm_device_activate_schedule_stage1_device_prepare (NMDevice *device);
 void nm_device_activate_schedule_stage2_device_config (NMDevice *device);
 

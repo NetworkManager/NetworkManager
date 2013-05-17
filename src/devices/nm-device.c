@@ -348,7 +348,7 @@ nm_device_init (NMDevice *self)
 	int i;
 
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
-	priv->capabilities = NM_DEVICE_CAP_NONE;
+	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
 	priv->state = NM_DEVICE_STATE_UNMANAGED;
 	priv->state_reason = NM_DEVICE_STATE_REASON_NONE;
 	priv->dhcp_timeout = 0;
@@ -507,11 +507,8 @@ constructor (GType type,
 		goto error;
 	}
 
-	priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
-	if (!device_has_capability (dev, NM_DEVICE_CAP_NM_SUPPORTED)) {
-		nm_log_warn (LOGD_DEVICE, "(%s): Device unsupported, ignoring.", priv->iface);
-		goto error;
-	}
+	if (NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities)
+		priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
 
 	priv->dhcp_manager = nm_dhcp_manager_get ();
 
@@ -601,12 +598,6 @@ hw_is_up (NMDevice *device)
 	int ifindex = nm_device_get_ip_ifindex (device);
 
 	return ifindex > 0 ? nm_system_iface_is_up (ifindex) : TRUE;
-}
-
-static guint32
-get_generic_capabilities (NMDevice *dev)
-{
-	return 0;
 }
 
 void
@@ -821,36 +812,6 @@ nm_device_get_priority (NMDevice *dev)
 		return 20;
 	}
 }
-
-
-/*
- * Accessor for capabilities
- */
-guint32
-nm_device_get_capabilities (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NM_DEVICE_CAP_NONE);
-
-	return NM_DEVICE_GET_PRIVATE (self)->capabilities;
-}
-
-/*
- * Accessor for type-specific capabilities
- */
-guint32
-nm_device_get_type_capabilities (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NM_DEVICE_CAP_NONE);
-
-	return NM_DEVICE_GET_CLASS (self)->get_type_capabilities (self);
-}
-
-static guint32
-get_type_capabilities (NMDevice *self)
-{
-	return NM_DEVICE_CAP_NONE;
-}
-
 
 const char *
 nm_device_get_type_desc (NMDevice *self)
@@ -1555,17 +1516,11 @@ nm_device_get_best_auto_connection (NMDevice *dev,
                                     GSList *connections,
                                     char **specific_object)
 {
-	guint32 caps;
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
 	g_return_val_if_fail (specific_object != NULL, NULL);
 	g_return_val_if_fail (*specific_object == NULL, NULL);
-
-	caps = nm_device_get_capabilities (dev);
-	/* Don't use devices that SUCK */
-	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
-		return NULL;
 
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
@@ -4819,9 +4774,6 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->firmware_version);
 		priv->firmware_version = g_strdup (g_value_get_string (value));
 		break;
-	case PROP_CAPABILITIES:
-		priv->capabilities = g_value_get_uint (value);
-		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
 		break;
@@ -5021,8 +4973,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 
-	klass->get_type_capabilities = get_type_capabilities;
-	klass->get_generic_capabilities = get_generic_capabilities;
 	klass->is_available = is_available;
 	klass->act_stage1_prepare = act_stage1_prepare;
 	klass->act_stage2_config = act_stage2_config;
@@ -5097,7 +5047,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                    "Capabilities",
 		                    "Capabilities",
 		                    0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,

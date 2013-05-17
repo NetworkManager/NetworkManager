@@ -454,18 +454,11 @@ static guint32
 get_generic_capabilities (NMDevice *dev)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
-	guint32	caps = NM_DEVICE_CAP_NONE;
-
-	/* cipsec devices are also explicitly unsupported at this time */
-	if (strstr (nm_device_get_iface (dev), "cipsec"))
-		return NM_DEVICE_CAP_NONE;
 
 	if (supports_ethtool_carrier_detect (self) || supports_mii_carrier_detect (self))
-		caps |= NM_DEVICE_CAP_CARRIER_DETECT;
+		return NM_DEVICE_CAP_CARRIER_DETECT;
 
-	caps |= NM_DEVICE_CAP_NM_SUPPORTED;
-
-	return caps;
+	return NM_DEVICE_CAP_NONE;
 }
 
 static gboolean

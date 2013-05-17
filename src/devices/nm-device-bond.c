@@ -91,7 +91,7 @@ get_hw_address_length (NMDevice *device)
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
-	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NM_SUPPORTED;
+	return NM_DEVICE_CAP_CARRIER_DETECT;
 }
 
 static gboolean

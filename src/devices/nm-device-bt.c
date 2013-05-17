@@ -369,12 +369,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static guint32
-get_generic_capabilities (NMDevice *dev)
-{
-	return NM_DEVICE_CAP_NM_SUPPORTED;
-}
-
 static const GByteArray *
 get_connection_hw_address (NMDevice *device,
                            NMConnection *connection)
@@ -1269,7 +1263,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->finalize = finalize;
 
 	device_class->can_auto_connect = can_auto_connect;
-	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->deactivate = deactivate;
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
