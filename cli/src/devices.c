@@ -200,15 +200,16 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 	{"FREQ",       N_("FREQ"),       10},  /* 6 */
 	{"RATE",       N_("RATE"),       10},  /* 7 */
 	{"SIGNAL",     N_("SIGNAL"),      8},  /* 8 */
-	{"SECURITY",   N_("SECURITY"),   10},  /* 9 */
-	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 10 */
-	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 11 */
-	{"DEVICE",     N_("DEVICE"),     10},  /* 12 */
-	{"ACTIVE",     N_("ACTIVE"),      8},  /* 13 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 14 */
+	{"BARS",       N_("BARS"),        6},  /* 9 */
+	{"SECURITY",   N_("SECURITY"),   10},  /* 10 */
+	{"WPA-FLAGS",  N_("WPA-FLAGS"),  25},  /* 11 */
+	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 12 */
+	{"DEVICE",     N_("DEVICE"),     10},  /* 13 */
+	{"ACTIVE",     N_("ACTIVE"),      8},  /* 14 */
+	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 15 */
 	{NULL,         NULL,              0}
 };
-#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,SECURITY,"\
+#define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,"\
                                                "WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
@@ -399,6 +400,12 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	     *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
 	char *ap_name;
+	const char *sig_level_0 = "____";
+	const char *sig_level_1 = "▂___";
+	const char *sig_level_2 = "▂▄__";
+	const char *sig_level_3 = "▂▄▆_";
+	const char *sig_level_4 = "▂▄▆█";
+	const char *sig_bars;
 
 	if (info->active_bssid) {
 		const char *current_bssid = nm_access_point_get_bssid (ap);
@@ -415,7 +422,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	freq = nm_access_point_get_frequency (ap);
 	mode = nm_access_point_get_mode (ap);
 	bitrate = nm_access_point_get_max_bitrate (ap);
-	strength = nm_access_point_get_strength (ap);
+	strength = CLAMP (nm_access_point_get_strength (ap), 0, 100);
 
 	/* Convert to strings */
 	ssid_str = nm_utils_ssid_to_utf8 (ssid);
@@ -426,6 +433,11 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	strength_str = g_strdup_printf ("%u", strength);
 	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
 	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
+	sig_bars = strength > 80 ? sig_level_4 :
+	           strength > 55 ? sig_level_3 :
+	           strength > 30 ? sig_level_2 :
+	           strength > 5  ? sig_level_1 :
+	                           sig_level_0;
 
 	security_str = g_string_new (NULL);
 	if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
@@ -464,12 +476,13 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_str  (arr, 6, freq_str);
 	set_val_str  (arr, 7, bitrate_str);
 	set_val_str  (arr, 8, strength_str);
-	set_val_str  (arr, 9, security_str->str);
-	set_val_str  (arr, 10, wpa_flags_str);
-	set_val_str  (arr, 11, rsn_flags_str);
-	set_val_strc (arr, 12, info->device);
-	set_val_strc (arr, 13, active ? _("yes") : _("no"));
-	set_val_strc (arr, 14, nm_object_get_path (NM_OBJECT (ap)));
+	set_val_strc (arr, 9, sig_bars);
+	set_val_str  (arr, 10, security_str->str);
+	set_val_str  (arr, 11, wpa_flags_str);
+	set_val_str  (arr, 12, rsn_flags_str);
+	set_val_strc (arr, 13, info->device);
+	set_val_strc (arr, 14, active ? _("yes") : _("no"));
+	set_val_strc (arr, 15, nm_object_get_path (NM_OBJECT (ap)));
 
 	g_ptr_array_add (info->nmc->output_data, arr);
 
