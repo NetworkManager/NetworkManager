@@ -173,15 +173,15 @@ static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
-	NMFakePlatformLink deleted_device;
+	NMPlatformLink deleted_device;
 
-	if (!device)
+	if (!device || !device->link.ifindex)
 		return FALSE;
 
-	memcpy (&deleted_device, device, sizeof (deleted_device));
-	memset (device, 0, sizeof (*device));
+	memcpy (&deleted_device, &device->link, sizeof (deleted_device));
+	memset (&device->link, 0, sizeof (device->link));
 
-	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_REMOVED, ifindex, &deleted_device.link);
+	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_REMOVED, ifindex, &deleted_device);
 
 	return TRUE;
 }
