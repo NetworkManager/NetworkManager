@@ -470,8 +470,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_str  (arr, 2, ssid_hex_str);
 	set_val_strc (arr, 3, bssid);
 	set_val_strc (arr, 4, mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
-	                    : mode == NM_802_11_MODE_INFRA ? _("Infrastructure")
-	                    : _("Unknown"));
+	                    : mode == NM_802_11_MODE_INFRA ? _("Infra")
+	                    : _("N/A"));
 	set_val_str  (arr, 5, channel_str);
 	set_val_str  (arr, 6, freq_str);
 	set_val_str  (arr, 7, bitrate_str);
