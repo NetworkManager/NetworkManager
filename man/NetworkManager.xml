@@ -126,28 +126,28 @@
 
     <variablelist>
       <varlistentry>
-	<term><option>--version</option></term>
+	<term><option>--version</option> | <option>-V</option></term>
 	<listitem><para>Print the NetworkManager software version and exit.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--help</option></term>
+	<term><option>--help</option> | <option>-h</option></term>
 	<listitem><para>Print NetworkManager's available options and exit.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--no-daemon</option></term>
+	<term><option>--no-daemon</option> | <option>-n</option></term>
 	<listitem><para>Do not daemonize.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--debug</option></term>
+	<term><option>--debug</option> | <option>-d</option></term>
 	<listitem><para>Do not daemonize, and direct log output to the
 	controlling terminal in addition to syslog.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><option>--pid-file</option></term>
+	<term><option>--pid-file</option> | <option>-p</option></term>
 	<listitem><para>Specify location of a PID file.  The PID file
 	is used for storing PID of the running proccess and prevents
 	running multiple instances.

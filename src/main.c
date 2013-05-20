@@ -324,11 +324,11 @@ main (int argc, char *argv[])
 	gboolean wrote_pidfile = FALSE;
 
 	GOptionEntry options[] = {
-		{ "version", 0, 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
-		{ "no-daemon", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
-		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, N_("Don't become a daemon, and log to stderr"), NULL },
+		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
+		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
+		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &debug, N_("Don't become a daemon, and log to stderr"), NULL },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
-		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
+		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
 		{NULL}
 	};
