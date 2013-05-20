@@ -206,11 +206,12 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 	{"RSN-FLAGS",  N_("RSN-FLAGS"),  25},  /* 12 */
 	{"DEVICE",     N_("DEVICE"),     10},  /* 13 */
 	{"ACTIVE",     N_("ACTIVE"),      8},  /* 14 */
-	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 15 */
+	{"IN-USE",     N_("*"),           1},  /* 15 */
+	{"DBUS-PATH",  N_("DBUS-PATH"),  46},  /* 16 */
 	{NULL,         NULL,              0}
 };
 #define NMC_FIELDS_DEV_WIFI_LIST_ALL           "SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,"\
-                                               "WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,DBUS-PATH"
+                                               "WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "SSID,BSSID,MODE,FREQ,RATE,SIGNAL,SECURITY,ACTIVE"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
@@ -482,7 +483,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_str  (arr, 12, rsn_flags_str);
 	set_val_strc (arr, 13, info->device);
 	set_val_strc (arr, 14, active ? _("yes") : _("no"));
-	set_val_strc (arr, 15, nm_object_get_path (NM_OBJECT (ap)));
+	set_val_strc (arr, 15, active ? "*" : " ");
+	set_val_strc (arr, 16, nm_object_get_path (NM_OBJECT (ap)));
 
 	g_ptr_array_add (info->nmc->output_data, arr);
 
