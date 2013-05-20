@@ -166,6 +166,7 @@ typedef struct {
 typedef struct {
 	gboolean disposed;
 	gboolean initialized;
+	gboolean in_state_changed;
 
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
@@ -5436,10 +5437,8 @@ nm_device_state_changed (NMDevice *device,
 	NMConnection *connection;
 
 	/* Track re-entry */
-	static gboolean in_state_changed = FALSE;
-
-	g_warn_if_fail (in_state_changed == FALSE);
-	in_state_changed = TRUE;
+	g_warn_if_fail (priv->in_state_changed == FALSE);
+	priv->in_state_changed = TRUE;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
@@ -5449,7 +5448,7 @@ nm_device_state_changed (NMDevice *device,
 	 */
 	if (   (priv->state == state)
 	    && !(state == NM_DEVICE_STATE_UNAVAILABLE && priv->firmware_missing)) {
-		in_state_changed = FALSE;
+		priv->in_state_changed = FALSE;
 		return;
 	}
 
@@ -5590,7 +5589,7 @@ nm_device_state_changed (NMDevice *device,
 	if (req)
 		g_object_unref (req);
 
-	in_state_changed = FALSE;
+	priv->in_state_changed = FALSE;
 }
 
 static gboolean
