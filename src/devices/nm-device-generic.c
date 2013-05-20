@@ -58,6 +58,15 @@ nm_device_generic_error_quark (void)
 
 /**************************************************************/
 
+static guint32
+get_generic_capabilities (NMDevice *dev)
+{
+	if (nm_platform_link_supports_carrier_detect (nm_device_get_ifindex (dev)))
+		return NM_DEVICE_CAP_CARRIER_DETECT;
+	else
+		return NM_DEVICE_CAP_NONE;
+}
+
 static gboolean
 is_available (NMDevice *device)
 {
@@ -190,6 +199,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
+	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 

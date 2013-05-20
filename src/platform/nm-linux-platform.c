@@ -29,6 +29,7 @@
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
+#include <linux/mii.h>
 #include <netlink/netlink.h>
 #include <netlink/object.h>
 #include <netlink/cache.h>
@@ -1058,20 +1059,70 @@ ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *s
 }
 
 static gboolean
-link_supports_carrier_detect (NMPlatform *platform, int ifindex)
+supports_ethtool_carrier_detect (const char *ifname)
 {
-	const char *name = nm_platform_link_get_name (ifindex);
 	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
 
 	/* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
 	 * assume the device supports carrier-detect, otherwise we assume it
 	 * doesn't.
-	 *
-	 * We don't use ETHTOOL_GLINK for carrier detect itself, so this can
-	 * be regarded as a hack. Instead, kernel should be able to report
-	 * carrier detection capability via netlink.
 	 */
-	return name && ethtool_get (name, &edata);
+	return ethtool_get (ifname, &edata);
+}
+
+static gboolean
+supports_mii_carrier_detect (const char *ifname)
+{
+	int fd;
+	struct ifreq ifr;
+	struct mii_ioctl_data *mii;
+	gboolean supports_mii = FALSE;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_log_err (LOGD_PLATFORM, "couldn't open control socket.");
+		return FALSE;
+	}
+
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
+
+	errno = 0;
+	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
+		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIPHY failed: %d", errno);
+		goto out;
+	}
+
+	/* If we can read the BMSR register, we assume that the card supports MII link detection */
+	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
+	mii->reg_num = MII_BMSR;
+
+	if (ioctl (fd, SIOCGMIIREG, &ifr) == 0) {
+		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIREG result 0x%X", mii->val_out);
+		supports_mii = TRUE;
+	} else {
+		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIREG failed: %d", errno);
+	}
+
+ out:
+	close (fd);
+	nm_log_dbg (LOGD_PLATFORM, "MII %s supported", supports_mii ? "is" : "not");
+	return supports_mii;	
+}
+
+static gboolean
+link_supports_carrier_detect (NMPlatform *platform, int ifindex)
+{
+	const char *name = nm_platform_link_get_name (ifindex);
+
+	if (!name)
+		return FALSE;
+
+	/* We use netlink for the actual carrier detection, but netlink can't tell
+	 * us whether the device actually supports carrier detection in the first
+	 * place. We assume any device that does implements one of these two APIs.
+	 */
+	return supports_ethtool_carrier_detect (name) || supports_mii_carrier_detect (name);
 }
 
 static gboolean

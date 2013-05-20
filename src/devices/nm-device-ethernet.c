@@ -56,6 +56,7 @@
 #include "nm-enum-types.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dbus-manager.h"
+#include "nm-platform.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -109,9 +110,6 @@ enum {
 	LAST_PROP
 };
 
-
-static gboolean supports_mii_carrier_detect (NMDeviceEthernet *dev);
-static gboolean supports_ethtool_carrier_detect (NMDeviceEthernet *dev);
 
 static GQuark
 nm_ethernet_error_quark (void)
@@ -453,12 +451,15 @@ update_initial_hw_address (NMDevice *dev)
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
-
-	if (supports_ethtool_carrier_detect (self) || supports_mii_carrier_detect (self))
-		return NM_DEVICE_CAP_CARRIER_DETECT;
-
-	return NM_DEVICE_CAP_NONE;
+	if (nm_platform_link_supports_carrier_detect (nm_device_get_ifindex (dev)))
+	    return NM_DEVICE_CAP_CARRIER_DETECT;
+	else {
+		nm_log_info (LOGD_HW,
+		             "(%s): driver '%s' does not support carrier detection.",
+		             nm_device_get_iface (dev),
+		             nm_device_get_driver (dev));
+		return NM_DEVICE_CAP_NONE;
+	}
 }
 
 static gboolean
@@ -1468,112 +1469,4 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	                                        &dbus_glib_nm_device_ethernet_object_info);
 
 	dbus_g_error_domain_register (NM_ETHERNET_ERROR, NULL, NM_TYPE_ETHERNET_ERROR);
-}
-
-
-/**************************************/
-/*    Ethtool capability detection    */
-/**************************************/
-
-static gboolean
-supports_ethtool_carrier_detect (NMDeviceEthernet *self)
-{
-	int fd;
-	struct ifreq ifr;
-	gboolean supports_ethtool = FALSE;
-	struct ethtool_cmd edata;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_HW, "couldn't open control socket.");
-		return FALSE;
-	}
-
-	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-
-	edata.cmd = ETHTOOL_GLINK;
-	ifr.ifr_data = (char *) &edata;
-
-	errno = 0;
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCETHTOOL failed: %d", errno);
-		goto out;
-	}
-
-	supports_ethtool = TRUE;
-
-out:
-	close (fd);
-	nm_log_dbg (LOGD_HW | LOGD_ETHER, "ethtool %s supported",
-	            supports_ethtool ? "is" : "not");
-	return supports_ethtool;
-}
-
-
-/**************************************/
-/*    MII capability detection        */
-/**************************************/
-#define _LINUX_IF_H
-#include <linux/mii.h>
-#undef _LINUX_IF_H
-
-static int
-mdio_read (NMDeviceEthernet *self, int fd, struct ifreq *ifr, int location)
-{
-	struct mii_ioctl_data *mii;
-	int val = -1;
-
-	g_return_val_if_fail (fd >= 0, -1);
-	g_return_val_if_fail (ifr != NULL, -1);
-
-	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
-	mii->reg_num = location;
-
-	errno = 0;
-	if (ioctl (fd, SIOCGMIIREG, ifr) == 0) {
-		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIREG result 0x%X", mii->val_out);
-		val = mii->val_out;
-	} else {
-		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIREG failed: %d", errno);
-	}
-
-	return val;
-}
-
-static gboolean
-supports_mii_carrier_detect (NMDeviceEthernet *self)
-{
-	int fd, bmsr;
-	struct ifreq ifr;
-	gboolean supports_mii = FALSE;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_HW, "couldn't open control socket.");
-		return FALSE;
-	}
-
-	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-
-	errno = 0;
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_dbg (LOGD_HW | LOGD_ETHER, "SIOCGMIIPHY failed: %d", errno);
-		goto out;
-	}
-
-	/* If we can read the BMSR register, we assume that the card supports MII link detection */
-	bmsr = mdio_read (self, fd, &ifr, MII_BMSR);
-	supports_mii = (bmsr != -1) ? TRUE : FALSE;
-	nm_log_dbg (LOGD_HW | LOGD_ETHER, "MII %s supported",
-	            supports_mii ? "is" : "not");
-
-out:
-	close (fd);
-	return supports_mii;	
 }

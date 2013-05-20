@@ -569,10 +569,6 @@ constructed (GObject *object)
 			nm_netlink_monitor_request_status (netlink_monitor);
 		}
 	} else {
-		nm_log_info (LOGD_HW,
-		             "(%s): driver '%s' does not support carrier detection.",
-		             nm_device_get_iface (dev),
-		             nm_device_get_driver (dev));
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
