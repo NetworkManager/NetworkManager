@@ -484,6 +484,8 @@ test_update_secrets_wifi_single_setting (void)
 	const char *wepkey = "11111111111111111111111111";
 	const char *tmp;
 
+	/* Test update with a hashed setting of 802-11-wireless secrets */
+
 	connection = wifi_connection_new ();
 
 	/* Build up the secrets hash */
@@ -517,6 +519,10 @@ test_update_secrets_wifi_full_hash (void)
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
 	const char *tmp;
+
+	/* Test update with a hashed connection containing only 802-11-wireless
+	 * setting and secrets.
+	 */
 
 	connection = wifi_connection_new ();
 
@@ -552,6 +558,10 @@ test_update_secrets_wifi_bad_setting_name (void)
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
 
+	/* Test that passing an invalid setting name to
+	 * nm_connection_update_secrets() fails with the correct error.
+	 */
+
 	connection = wifi_connection_new ();
 
 	/* Build up the secrets hash */
@@ -578,6 +588,10 @@ test_update_secrets_whole_connection (void)
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
+
+	/* Test calling nm_connection_update_secrets() with an entire hashed
+	 * connection including non-secrets.
+	 */
 
 	connection = wifi_connection_new ();
 
@@ -606,6 +620,8 @@ test_update_secrets_whole_connection_empty_hash (void)
 	GError *error = NULL;
 	gboolean success;
 
+	/* Test that updating secrets with an empty hash returns success */
+
 	connection = wifi_connection_new ();
 	secrets = g_hash_table_new (g_str_hash, g_str_equal);
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
@@ -622,6 +638,10 @@ test_update_secrets_whole_connection_bad_setting (void)
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
+
+	/* Test that sending a hashed connection containing an invalid setting
+	 * name fails with the right error.
+	 */
 
 	connection = wifi_connection_new ();
 
@@ -643,6 +663,59 @@ test_update_secrets_whole_connection_bad_setting (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_object_unref (connection);
+}
+
+static void
+test_update_secrets_whole_connection_empty_base_setting (void)
+{
+	NMConnection *connection;
+	GHashTable *secrets;
+	GError *error = NULL;
+	gboolean success;
+
+	/* Test that a hashed connection which does not have any hashed secrets
+	 * for the requested setting returns success.
+	 */
+
+	connection = wifi_connection_new ();
+	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	g_assert_cmpint (g_hash_table_size (secrets), ==, 1);
+	g_assert (g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SETTING_NAME));
+
+	success = nm_connection_update_secrets (connection,
+	                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                                        secrets,
+	                                        &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_hash_table_destroy (secrets);
+	g_object_unref (connection);
+}
+
+static void
+test_update_secrets_null_setting_name_with_setting_hash (void)
+{
+	NMConnection *connection;
+	GHashTable *secrets;
+	GError *error = NULL;
+	gboolean success;
+	const char *wepkey = "11111111111111111111111111";
+
+	/* Ensure that a NULL setting name and only a hashed setting fails */
+
+	connection = wifi_connection_new ();
+
+	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
+	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, uint_to_gvalue (NM_WEP_KEY_TYPE_KEY));
+
+	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
+	g_assert (!success);
+
+	g_hash_table_destroy (secrets);
 	g_object_unref (connection);
 }
 
@@ -669,6 +742,8 @@ int main (int argc, char **argv)
 	test_update_secrets_whole_connection ();
 	test_update_secrets_whole_connection_empty_hash ();
 	test_update_secrets_whole_connection_bad_setting ();
+	test_update_secrets_whole_connection_empty_base_setting ();
+	test_update_secrets_null_setting_name_with_setting_hash ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

@@ -196,11 +196,7 @@ _nm_setting_lookup_setting_type (const char *name)
 	_ensure_registered ();
 
 	info = g_hash_table_lookup (registered_settings, name);
-	if (info)
-		return info->type;
-
-	g_warning ("Unknown setting '%s'", name);
-	return G_TYPE_INVALID;
+	return info ? info->type : G_TYPE_INVALID;
 }
 
 GType

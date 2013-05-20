@@ -644,56 +644,93 @@ nm_connection_update_secrets (NMConnection *connection,
                               GError **error)
 {
 	NMSetting *setting;
-	gboolean success;
-	GHashTable *tmp;
+	gboolean success = FALSE, updated = FALSE;
+	GHashTable *setting_hash = NULL;
+	GHashTableIter iter;
+	const char *key;
+	gboolean hashed_connection = FALSE;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
+	/* Empty @secrets means success */
+	if (g_hash_table_size (secrets) == 0)
+		return TRUE;
+
+	/* For backwards compatibility, this function accepts either a hashed
+	 * connection (GHashTable of GHashTables of GValues) or a single hashed
+	 * setting (GHashTable of GValues).
+	 */
+	g_hash_table_iter_init (&iter, secrets);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
+		if (_nm_setting_lookup_setting_type (key) != G_TYPE_INVALID) {
+			/* @secrets looks like a hashed connection */
+			hashed_connection = TRUE;
+			break;
+		}
+	}
+
 	if (setting_name) {
-		/* Update just one setting */
+		/* Update just one setting's secrets */
 		setting = nm_connection_get_setting_by_name (connection, setting_name);
 		if (!setting) {
 			g_set_error_literal (error,
-				                 NM_CONNECTION_ERROR,
-				                 NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
-				                 setting_name);
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+			                     setting_name);
 			return FALSE;
 		}
 
-		/* Check if this is a hash of hashes, ie a full deserialized connection,
-		 * not just a single hashed setting.
-		 */
-		tmp = g_hash_table_lookup (secrets, setting_name);
-		success = nm_setting_update_secrets (setting, tmp ? tmp : secrets, error);
+		if (hashed_connection) {
+			setting_hash = g_hash_table_lookup (secrets, setting_name);
+			if (!setting_hash) {
+				/* The hashed connection that didn't contain any secrets for
+				 * @setting_name; just return success.
+				 */
+				success = TRUE;
+			}
+		}
+
+		if (!success) {
+			updated = success = nm_setting_update_secrets (setting,
+			                                               setting_hash ? setting_hash : secrets,
+			                                               error);
+		}
 	} else {
-		GHashTableIter iter;
-		const char *name;
+		if (!hashed_connection) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+			                     key);
+			return FALSE;
+		}
 
-		success = TRUE; /* Just in case 'secrets' has no elements */
-
-		/* Try as a serialized connection (GHashTable of GHashTables) */
+		/* Update each setting with any secrets from the hashed connection */
 		g_hash_table_iter_init (&iter, secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &tmp)) {
-			setting = nm_connection_get_setting_by_name (connection, name);
+		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &setting_hash)) {
+			setting = nm_connection_get_setting_by_name (connection, key);
 			if (!setting) {
 				g_set_error_literal (error,
-						             NM_CONNECTION_ERROR,
-						             NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
-						             name);
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+				                     key);
 				return FALSE;
 			}
 
 			/* Update the secrets for this setting */
-			success = nm_setting_update_secrets (setting, tmp, error);
-			if (success == FALSE)
+			success = nm_setting_update_secrets (setting, setting_hash, error);
+			if (success)
+				updated = TRUE;
+			else
 				break;
 		}
 	}
-	if (success)
+
+	if (updated)
 		g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
+
 	return success;
 }
 
