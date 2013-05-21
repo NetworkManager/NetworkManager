@@ -56,6 +56,7 @@
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-vxlan.h"
+#include "nm-device-gre.h"
 #include "nm-system.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
@@ -2305,6 +2306,10 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 			break;
 		case NM_LINK_TYPE_VXLAN:
 			device = nm_device_vxlan_new (sysfs_path, iface, driver);
+			break;
+		case NM_LINK_TYPE_GRE:
+		case NM_LINK_TYPE_GRETAP:
+			device = nm_device_gre_new (sysfs_path, iface, driver);
 			break;
 
 		default:

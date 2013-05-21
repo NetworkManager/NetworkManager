@@ -76,6 +76,8 @@ nm_sources = \
 	devices/nm-device-factory.h \
 	devices/nm-device-generic.c \
 	devices/nm-device-generic.h \
+	devices/nm-device-gre.c \
+	devices/nm-device-gre.h \
 	devices/nm-device-infiniband.c \
 	devices/nm-device-infiniband.h \
 	devices/nm-device-macvlan.c \
@@ -316,6 +318,7 @@ glue_sources = \
 	nm-device-ethernet-glue.h \
 	nm-device-generic-glue.h \
 	nm-device-glue.h \
+	nm-device-gre-glue.h \
 	nm-device-infiniband-glue.h \
 	nm-device-macvlan-glue.h \
 	nm-device-modem-glue.h \

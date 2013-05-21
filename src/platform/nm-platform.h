@@ -57,6 +57,8 @@ typedef enum {
 
 	/* Virtual types */
 	NM_LINK_TYPE_DUMMY,
+	NM_LINK_TYPE_GRE,
+	NM_LINK_TYPE_GRETAP,
 	NM_LINK_TYPE_IFB,
 	NM_LINK_TYPE_LOOPBACK,
 	NM_LINK_TYPE_MACVLAN,
@@ -153,6 +155,19 @@ typedef struct {
 	gboolean l3miss;
 } NMPlatformVxlanProperties;
 
+typedef struct {
+	int parent_ifindex;
+	guint16 input_flags;
+	guint16 output_flags;
+	guint32 input_key;
+	guint32 output_key;
+	in_addr_t local;
+	in_addr_t remote;
+	guint8 ttl;
+	guint8 tos;
+	gboolean path_mtu_discovery;
+} NMPlatformGreProperties;
+
 /******************************************************************/
 
 /* NMPlatform abstract class and its implementations provide a layer between
@@ -238,6 +253,7 @@ typedef struct {
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
 	gboolean (*macvlan_get_properties) (NMPlatform *, int ifindex, NMPlatformMacvlanProperties *props);
 	gboolean (*vxlan_get_properties) (NMPlatform *, int ifindex, NMPlatformVxlanProperties *props);
+	gboolean (*gre_get_properties) (NMPlatform *, int ifindex, NMPlatformGreProperties *props);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -350,6 +366,7 @@ gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties 
 gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);
 gboolean nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props);
 gboolean nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanProperties *props);
+gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

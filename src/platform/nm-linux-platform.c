@@ -25,9 +25,11 @@
 #include <fcntl.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
+#include <linux/ip.h>
 #include <linux/if_arp.h>
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
+#include <linux/if_tunnel.h>
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
@@ -353,6 +355,10 @@ type_to_string (NMLinkType type)
 	switch (type) {
 	case NM_LINK_TYPE_DUMMY:
 		return "dummy";
+	case NM_LINK_TYPE_GRE:
+		return "gre";
+	case NM_LINK_TYPE_GRETAP:
+		return "gretap";
 	case NM_LINK_TYPE_IFB:
 		return "ifb";
 	case NM_LINK_TYPE_MACVLAN:
@@ -420,6 +426,10 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 	else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
+	else if (!strcmp (type, "gre"))
+		return_type (NM_LINK_TYPE_GRE, "gre");
+	else if (!strcmp (type, "gretap"))
+		return_type (NM_LINK_TYPE_GRETAP, "gretap");
 	else if (!strcmp (type, "ifb"))
 		return_type (NM_LINK_TYPE_IFB, "ifb");
 	else if (!strcmp (type, "macvlan"))
@@ -1703,6 +1713,56 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	return (err == 0);
 }
 
+static const struct nla_policy gre_info_policy[IFLA_GRE_MAX + 1] = {
+	[IFLA_GRE_LINK]		= { .type = NLA_U32 },
+	[IFLA_GRE_IFLAGS]	= { .type = NLA_U16 },
+	[IFLA_GRE_OFLAGS]	= { .type = NLA_U16 },
+	[IFLA_GRE_IKEY]		= { .type = NLA_U32 },
+	[IFLA_GRE_OKEY]		= { .type = NLA_U32 },
+	[IFLA_GRE_LOCAL]	= { .type = NLA_U32 },
+	[IFLA_GRE_REMOTE]	= { .type = NLA_U32 },
+	[IFLA_GRE_TTL]		= { .type = NLA_U8 },
+	[IFLA_GRE_TOS]		= { .type = NLA_U8 },
+	[IFLA_GRE_PMTUDISC]	= { .type = NLA_U8 },
+};
+
+static int
+gre_info_data_parser (struct nlattr *info_data, gpointer parser_data)
+{
+	NMPlatformGreProperties *props = parser_data;
+	struct nlattr *tb[IFLA_GRE_MAX + 1];
+	int err;
+
+	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data,
+	                        (struct nla_policy *) gre_info_policy);
+	if (err < 0)
+		return err;
+
+	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
+	props->input_flags = nla_get_u16 (tb[IFLA_GRE_IFLAGS]);
+	props->output_flags = nla_get_u16 (tb[IFLA_GRE_OFLAGS]);
+	props->input_key = (props->input_flags & GRE_KEY) ? nla_get_u32 (tb[IFLA_GRE_IKEY]) : 0;
+	props->output_key = (props->output_flags & GRE_KEY) ? nla_get_u32 (tb[IFLA_GRE_OKEY]) : 0;
+	props->local = nla_get_u32 (tb[IFLA_GRE_LOCAL]);
+	props->remote = nla_get_u32 (tb[IFLA_GRE_REMOTE]);
+	props->tos = nla_get_u8 (tb[IFLA_GRE_TOS]);
+	props->ttl = nla_get_u8 (tb[IFLA_GRE_TTL]);
+	props->path_mtu_discovery = nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
+
+	return 0;
+}
+
+static gboolean
+gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *props)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int err;
+
+	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
+	                                    gre_info_data_parser, props);
+	return (err == 0);
+}
+
 /******************************************************************/
 
 static int
@@ -2189,6 +2249,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->tun_get_properties = tun_get_properties;
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
+	platform_class->gre_get_properties = gre_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

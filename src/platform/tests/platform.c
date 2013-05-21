@@ -443,6 +443,39 @@ do_vxlan_get_properties (char **argv)
 }
 
 static gboolean
+do_gre_get_properties (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	NMPlatformGreProperties props;
+	char addrstr[INET_ADDRSTRLEN];
+
+	if (!nm_platform_gre_get_properties (ifindex, &props))
+		return FALSE;
+
+	printf ("parent-ifindex: %u\n", props.parent_ifindex);
+	printf ("input-flags: %u\n", props.input_flags);
+	printf ("output-flags: %u\n", props.input_flags);
+	printf ("input-key: %u\n", props.input_key);
+	printf ("output-key: %u\n", props.output_key);
+	if (props.local)
+		inet_ntop (AF_INET, &props.local, addrstr, sizeof (addrstr));
+	else
+		strcpy (addrstr, "-");
+	printf ("local: %s\n", addrstr);
+	if (props.remote)
+		inet_ntop (AF_INET, &props.remote, addrstr, sizeof (addrstr));
+	else
+		strcpy (addrstr, "-");
+	printf ("remote: %s\n", addrstr);
+	printf ("ttl: %u\n", props.ttl);
+	printf ("tos: %u\n", props.tos);
+	printf ("path-mtu-discovery: ");
+	print_boolean (props.path_mtu_discovery);
+
+	return TRUE;
+}
+
+static gboolean
 do_ip4_address_get_all (char **argv)
 {
 	int ifindex = parse_ifindex (argv[0]);
@@ -733,6 +766,8 @@ static const command_t commands[] = {
 	{ "macvlan-get-properties", "get macvlan properties", do_macvlan_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "vxlan-get-properties", "get vxlan properties", do_vxlan_get_properties, 1,
+	  "<ifname/ifindex>" },
+	{ "gre-get-properties", "get gre properties", do_gre_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },

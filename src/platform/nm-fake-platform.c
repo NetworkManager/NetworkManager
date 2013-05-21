@@ -582,6 +582,12 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	return FALSE;
 }
 
+static gboolean
+gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *props)
+{
+	return FALSE;
+}
+
 /******************************************************************/
 
 static GArray *
@@ -1043,6 +1049,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->tun_get_properties = tun_get_properties;
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
+	platform_class->gre_get_properties = gre_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

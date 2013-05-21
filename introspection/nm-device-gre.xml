@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Device.Gre">
+
+    <property name="Parent" type="o" access="read">
+      <tp:docstring>
+        The object path of the parent device.
+      </tp:docstring>
+    </property>
+
+    <property name="InputFlags" type="q" access="read">
+      <tp:docstring>
+        The expected set of GRE flags for incoming packets. (The
+        values are specified by the GRE specification. On Linux, they
+        are defined in &lt;linux/if_tunnel.h&gt;. Eg, GRE_KEY for the
+        'Key Present' bit.)
+      </tp:docstring>
+    </property>
+
+    <property name="OutputFlags" type="q" access="read">
+      <tp:docstring>
+        The set of GRE flags to use for outgoing packets. (The
+        values are specified by the GRE specification. On Linux, they
+        are defined in &lt;linux/if_tunnel.h&gt;. Eg, GRE_KEY for the
+        'Key Present' bit.)
+      </tp:docstring>
+    </property>
+
+    <property name="InputKey" type="u" access="read">
+      <tp:docstring>
+        Expected input key (if the "Key Present" bit is set in the input flags).
+      </tp:docstring>
+    </property>
+
+    <property name="OutputKey" type="u" access="read">
+      <tp:docstring>
+        Output key (if the "Key Present" bit is set in the output flags).
+      </tp:docstring>
+    </property>
+
+    <property name="Local" type="s" access="read">
+      <tp:docstring>
+        The local end of the tunnel.
+      </tp:docstring>
+    </property>
+
+    <property name="Remote" type="s" access="read">
+      <tp:docstring>
+        The remote end of the tunnel.
+      </tp:docstring>
+    </property>
+
+    <property name="Ttl" type="y" access="read">
+      <tp:docstring>
+        The value to use in the IP TTL field for tunnel packets.
+      </tp:docstring>
+    </property>
+
+    <property name="Tos" type="y" access="read">
+      <tp:docstring>
+        The value to use in the IP ToS field for tunnel packets.
+      </tp:docstring>
+    </property>
+
+    <property name="PathMtuDiscovery" type="b" access="read">
+      <tp:docstring>
+        Whether path MTU discovery is performed.
+      </tp:docstring>
+    </property>
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+  </interface>
+</node>
