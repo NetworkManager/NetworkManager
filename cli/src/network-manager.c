@@ -167,9 +167,8 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	const char *fields_str;
 	const char *fields_all =    print_flds ? print_flds : NMC_FIELDS_NM_STATUS_ALL;
 	const char *fields_common = print_flds ? print_flds : NMC_FIELDS_NM_STATUS_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -178,8 +177,9 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_nm_status;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	tmpl = nmc_fields_nm_status;
+	tmpl_len = sizeof (nmc_fields_nm_status);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
 
 	if (error) {
 		if (error->code == 0)
@@ -218,25 +218,26 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 #endif
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
-	nmc->allowed_fields[0].value = nm_running ? _("running") : _("not running");
-	nmc->allowed_fields[1].value = nm_running ? (char *) nm_client_get_version (nmc->client) : _("unknown");
-	nmc->allowed_fields[2].value = (char *) nm_state_to_string (state);
-	nmc->allowed_fields[3].value = (char *) net_enabled_str;
-	nmc->allowed_fields[4].value = (char *) wireless_hw_enabled_str;
-	nmc->allowed_fields[5].value = (char *) wireless_enabled_str;
-	nmc->allowed_fields[6].value = (char *) wwan_hw_enabled_str;
-	nmc->allowed_fields[7].value = (char *) wwan_enabled_str;
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
+	set_val_strc (arr, 0, nm_running ? _("running") : _("not running"));
+	set_val_strc (arr, 1, nm_running ? nm_client_get_version (nmc->client) : _("unknown"));
+	set_val_strc (arr, 2, nm_state_to_string (state));
+	set_val_strc (arr, 3, net_enabled_str);
+	set_val_strc (arr, 4, wireless_hw_enabled_str);
+	set_val_strc (arr, 5, wireless_enabled_str);
+	set_val_strc (arr, 6, wwan_hw_enabled_str);
+	set_val_strc (arr, 7, wwan_enabled_str);
 #if WITH_WIMAX
-	nmc->allowed_fields[8].value = (char *) wimax_hw_enabled_str;
-	nmc->allowed_fields[9].value = (char *) wimax_enabled_str;
+	set_val_strc (arr, 8, wimax_hw_enabled_str);
+	set_val_strc (arr, 9, wimax_enabled_str);
 #endif
+	g_ptr_array_add (nmc->output_data, arr);
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+	print_data (nmc);  /* Print all data */
 
 	return TRUE;
 }
@@ -308,9 +309,8 @@ show_nm_permissions (NmCli *nmc)
 	const char *fields_str;
 	const char *fields_all =    NMC_FIELDS_NM_PERMISSIONS_ALL;
 	const char *fields_common = NMC_FIELDS_NM_PERMISSIONS_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -319,8 +319,9 @@ show_nm_permissions (NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_nm_permissions;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	tmpl = nmc_fields_nm_permissions;
+	tmpl_len = sizeof (nmc_fields_nm_permissions);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
 
 	if (error) {
 		if (error->code == 0)
@@ -341,18 +342,19 @@ show_nm_permissions (NmCli *nmc)
 		return FALSE;
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("NetworkManager permissions");
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
 	for (perm = NM_CLIENT_PERMISSION_NONE + 1; perm <= NM_CLIENT_PERMISSION_LAST; perm++) {
 		NMClientPermissionResult perm_result = nm_client_get_permission_result (nmc->client, perm);
 
-		set_val_str (nmc->allowed_fields, 0, (char *) permission_to_string (perm));
-		set_val_str (nmc->allowed_fields, 1, (char *) permission_result_to_string (perm_result));
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+		arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
+		set_val_strc (arr, 0, permission_to_string (perm));
+		set_val_strc (arr, 1, permission_result_to_string (perm_result));
+		g_ptr_array_add (nmc->output_data, arr);
 	}
+	print_data (nmc);  /* Print all data */
 
 	return TRUE;
 }
@@ -366,9 +368,8 @@ show_general_logging (NmCli *nmc)
 	const char *fields_str;
 	const char *fields_all =    NMC_FIELDS_NM_LOGGING_ALL;
 	const char *fields_common = NMC_FIELDS_NM_LOGGING_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -377,8 +378,10 @@ show_general_logging (NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_nm_logging;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	tmpl = nmc_fields_nm_logging;
+	tmpl_len = sizeof (nmc_fields_nm_logging);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
+
 	if (error) {
 		if (error->code == 0)
 			g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
@@ -399,17 +402,17 @@ show_general_logging (NmCli *nmc)
 		return FALSE;
 	}
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
 	nmc->print_fields.header_name = _("NetworkManager logging");
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
-	set_val_str (nmc->allowed_fields, 0, level);
-	set_val_str (nmc->allowed_fields, 1, domains);
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag;
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
+	set_val_str (arr, 0, level);
+	set_val_str (arr, 1, domains);
+	g_ptr_array_add (nmc->output_data, arr);
 
-	g_free (level);
-	g_free (domains);
+	print_data (nmc);  /* Print all data */
+
 	return TRUE;
 }
 

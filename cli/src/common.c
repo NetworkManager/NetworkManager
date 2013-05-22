@@ -81,17 +81,17 @@ print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
 	char **domain_arr = NULL;
 	char **wins_arr = NULL;
 	int i = 0;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (cfg4 == NULL)
 		return FALSE;
 
-	nmc->allowed_fields = nmc_fields_ip4_config;
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_IP4_CONFIG_ALL, nmc->allowed_fields, NULL);
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+	tmpl = nmc_fields_ip4_config;
+	tmpl_len = sizeof (nmc_fields_ip4_config);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_IP4_CONFIG_ALL, tmpl, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
 	list = (GSList *) nm_ip4_config_get_addresses (cfg4);
@@ -146,7 +146,7 @@ print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
 	if (ptr_array) {
 		domain_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++)
-			domain_arr[i] = g_ptr_array_index (ptr_array, i);
+			domain_arr[i] = g_strdup (g_ptr_array_index (ptr_array, i));
 
 		domain_arr[i] = NULL;
 	}
@@ -161,21 +161,19 @@ print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
 		wins_arr[i] = NULL;
 	}
 
-	set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
-	set_val_arr (nmc->allowed_fields, 1, addr_arr);
-	set_val_arr (nmc->allowed_fields, 2, route_arr);
-	set_val_arr (nmc->allowed_fields, 3, dns_arr);
-	set_val_arr (nmc->allowed_fields, 4, domain_arr);
-	set_val_arr (nmc->allowed_fields, 5, wins_arr);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_strc (arr, 0, group_prefix);
+	set_val_arr  (arr, 1, addr_arr);
+	set_val_arr  (arr, 2, route_arr);
+	set_val_arr  (arr, 3, dns_arr);
+	set_val_arr  (arr, 4, domain_arr);
+	set_val_arr  (arr, 5, wins_arr);
+	g_ptr_array_add (nmc->output_data, arr);
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+	print_data (nmc); /* Print all data */
 
-	g_strfreev (addr_arr);
-	g_strfreev (route_arr);
-	g_strfreev (dns_arr);
-	g_free (domain_arr);
-	g_strfreev (wins_arr);
+	/* Remove any previous data */
+	nmc_empty_output_fields (nmc);
 
 	return TRUE;
 }
@@ -190,17 +188,17 @@ print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix)
 	char **dns_arr = NULL;
 	char **domain_arr = NULL;
 	int i = 0;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (cfg6 == NULL)
 		return FALSE;
 
-	nmc->allowed_fields = nmc_fields_ip6_config;
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_IP6_CONFIG_ALL, nmc->allowed_fields, NULL);
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+	tmpl = nmc_fields_ip6_config;
+	tmpl_len = sizeof (nmc_fields_ip6_config);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_IP6_CONFIG_ALL, tmpl, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
 	list = (GSList *) nm_ip6_config_get_addresses (cfg6);
@@ -254,24 +252,23 @@ print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix)
 	if (ptr_array) {
 		domain_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++)
-			domain_arr[i] = g_ptr_array_index (ptr_array, i);
+			domain_arr[i] = g_strdup (g_ptr_array_index (ptr_array, i));
 
 		domain_arr[i] = NULL;
 	}
 
-	set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
-	set_val_arr (nmc->allowed_fields, 1, addr_arr);
-	set_val_arr (nmc->allowed_fields, 2, route_arr);
-	set_val_arr (nmc->allowed_fields, 3, dns_arr);
-	set_val_arr (nmc->allowed_fields, 4, domain_arr);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_strc (arr, 0, group_prefix);
+	set_val_arr  (arr, 1, addr_arr);
+	set_val_arr  (arr, 2, route_arr);
+	set_val_arr  (arr, 3, dns_arr);
+	set_val_arr  (arr, 4, domain_arr);
+	g_ptr_array_add (nmc->output_data, arr);
 
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+	print_data (nmc); /* Print all data */
 
-	g_strfreev (addr_arr);
-	g_strfreev (route_arr);
-	g_strfreev (dns_arr);
-	g_free (domain_arr);
+	/* Remove any previous data */
+	nmc_empty_output_fields (nmc);
 
 	return TRUE;
 }
@@ -280,9 +277,8 @@ gboolean
 print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
 {
 	GHashTable *table;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (dhcp4 == NULL)
 		return FALSE;
@@ -294,10 +290,11 @@ print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
 		char **options_arr = NULL;
 		int i = 0;
 
-		nmc->allowed_fields = nmc_fields_dhcp4_config;
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DHCP4_CONFIG_ALL, nmc->allowed_fields, NULL);
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+		tmpl = nmc_fields_dhcp4_config;
+		tmpl_len = sizeof (nmc_fields_dhcp4_config);
+		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DHCP4_CONFIG_ALL, tmpl, NULL);
+		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+		g_ptr_array_add (nmc->output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
 		g_hash_table_iter_init (&table_iter, table);
@@ -305,13 +302,15 @@ print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
 			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
 		options_arr[i] = NULL;
 
-		set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
-		set_val_arr (nmc->allowed_fields, 1, options_arr);
+		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+		set_val_strc (arr, 0, group_prefix);
+		set_val_arr  (arr, 1, options_arr);
+		g_ptr_array_add (nmc->output_data, arr);
 
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+		print_data (nmc); /* Print all data */
 
-		g_strfreev (options_arr);
+		/* Remove any previous data */
+		nmc_empty_output_fields (nmc);
 
 		return TRUE;
 	}
@@ -322,9 +321,8 @@ gboolean
 print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
 {
 	GHashTable *table;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	if (dhcp6 == NULL)
 		return FALSE;
@@ -336,10 +334,11 @@ print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
 		char **options_arr = NULL;
 		int i = 0;
 
-		nmc->allowed_fields = nmc_fields_dhcp6_config;
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DHCP6_CONFIG_ALL, nmc->allowed_fields, NULL);
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+		tmpl = nmc_fields_dhcp6_config;
+		tmpl_len = sizeof (nmc_fields_dhcp6_config);
+		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DHCP6_CONFIG_ALL, tmpl, NULL);
+		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+		g_ptr_array_add (nmc->output_data, arr);
 
 		options_arr = g_new (char *, g_hash_table_size (table) + 1);
 		g_hash_table_iter_init (&table_iter, table);
@@ -347,13 +346,15 @@ print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
 			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
 		options_arr[i] = NULL;
 
-		set_val_str (nmc->allowed_fields, 0, (char *) group_prefix);
-		set_val_arr (nmc->allowed_fields, 1, options_arr);
+		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+		set_val_strc (arr, 0, group_prefix);
+		set_val_arr  (arr, 1, options_arr);
+		g_ptr_array_add (nmc->output_data, arr);
 
-		nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+		print_data (nmc); /* Print all data */
 
-		g_strfreev (options_arr);
+		/* Remove any previous data */
+		nmc_empty_output_fields (nmc);
 
 		return TRUE;
 	}

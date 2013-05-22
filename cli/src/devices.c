@@ -373,15 +373,17 @@ ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 typedef struct {
 	NmCli *nmc;
 	int index;
+	guint32 output_flags;
 	const char* active_bssid;
 	const char* device;
 } APInfo;
 
 static void
-detail_access_point (gpointer data, gpointer user_data)
+fill_output_access_point (gpointer data, gpointer user_data)
 {
 	NMAccessPoint *ap = NM_ACCESS_POINT (data);
 	APInfo *info = (APInfo *) user_data;
+	NmcOutputField *arr;
 	gboolean active = FALSE;
 	NM80211ApFlags flags;
 	NM80211ApSecurityFlags wpa_flags, rsn_flags;
@@ -440,44 +442,41 @@ detail_access_point (gpointer data, gpointer user_data)
 	if (security_str->len > 0)
 		g_string_truncate (security_str, security_str->len-1);  /* Chop off last space */
 
+	arr = nmc_dup_fields_array (nmc_fields_dev_wifi_list,
+	                            sizeof (nmc_fields_dev_wifi_list),
+	                            info->output_flags);
+
 	ap_name = g_strdup_printf ("AP[%d]", info->index++); /* AP */
-	info->nmc->allowed_fields[0].value = ap_name;
-	info->nmc->allowed_fields[1].value = ssid_str;
-	info->nmc->allowed_fields[2].value = (char *) bssid;
-	info->nmc->allowed_fields[3].value = mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
-	                                   : mode == NM_802_11_MODE_INFRA ? _("Infrastructure")
-	                                   : _("Unknown");
-	info->nmc->allowed_fields[4].value = freq_str;
-	info->nmc->allowed_fields[5].value = bitrate_str;
-	info->nmc->allowed_fields[6].value = strength_str;
-	info->nmc->allowed_fields[7].value = security_str->str;
-	info->nmc->allowed_fields[8].value = wpa_flags_str;
-	info->nmc->allowed_fields[9].value = rsn_flags_str;
-	info->nmc->allowed_fields[10].value = (char *) info->device;
-	info->nmc->allowed_fields[11].value = active ? _("yes") : _("no");
-	info->nmc->allowed_fields[12].value = (char *) nm_object_get_path (NM_OBJECT (ap));
+	set_val_str  (arr, 0, ap_name);
+	set_val_str  (arr, 1, ssid_str);
+	set_val_strc (arr, 2, bssid);
+	set_val_strc (arr, 3, mode == NM_802_11_MODE_ADHOC ? _("Ad-Hoc")
+	                    : mode == NM_802_11_MODE_INFRA ? _("Infrastructure")
+	                    : _("Unknown"));
+	set_val_str  (arr, 4, freq_str);
+	set_val_str  (arr, 5, bitrate_str);
+	set_val_str  (arr, 6, strength_str);
+	set_val_str  (arr, 7, security_str->str);
+	set_val_str  (arr, 8, wpa_flags_str);
+	set_val_str  (arr, 9, rsn_flags_str);
+	set_val_strc (arr, 10, info->device);
+	set_val_strc (arr, 11, active ? _("yes") : _("no"));
+	set_val_strc (arr, 12, nm_object_get_path (NM_OBJECT (ap)));
 
-	info->nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
-	print_fields (info->nmc->print_fields, info->nmc->allowed_fields);
+	g_ptr_array_add (info->nmc->output_data, arr);
 
-	g_free (ap_name);
-	g_free (ssid_str);
-	g_free (freq_str);
-	g_free (bitrate_str);
-	g_free (strength_str);
-	g_free (wpa_flags_str);
-	g_free (rsn_flags_str);
-	g_string_free (security_str, TRUE);
+	g_string_free (security_str, FALSE);
 }
 
 #if WITH_WIMAX
 static void
-detail_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx)
+fill_output_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx, guint32 o_flags)
 {
 	NMDeviceWimax *wimax = NM_DEVICE_WIMAX (dev);
 	char *nsp_name, *quality_str;
 	const char *ntype;
 	gboolean active = FALSE;
+	NmcOutputField *arr;
 
 	switch (nm_wimax_nsp_get_network_type (nsp)) {
 	case NM_WIMAX_NSP_NETWORK_TYPE_HOME:
@@ -502,32 +501,40 @@ detail_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx)
 	quality_str = g_strdup_printf ("%u", nm_wimax_nsp_get_signal_quality (nsp));
 	nsp_name = g_strdup_printf ("NSP[%d]", idx); /* NSP */
 
-	nmc->allowed_fields[0].value = nsp_name;
-	nmc->allowed_fields[1].value = (char *) nm_wimax_nsp_get_name (nsp);
-	nmc->allowed_fields[2].value = quality_str;
-	nmc->allowed_fields[3].value = (char *) ntype;
-	nmc->allowed_fields[4].value = (char *) nm_device_get_iface (dev);
-	nmc->allowed_fields[5].value = active ? _("yes") : _("no");
-	nmc->allowed_fields[6].value = (char *) nm_object_get_path (NM_OBJECT (nsp));
+	arr = nmc_dup_fields_array (nmc_fields_dev_wimax_list,
+	                            sizeof (nmc_fields_dev_wimax_list),
+	                            o_flags);
+	set_val_str  (arr, 0, nsp_name);
+	set_val_strc (arr, 1, nm_wimax_nsp_get_name (nsp));
+	set_val_str  (arr, 2, quality_str);
+	set_val_strc (arr, 3, ntype);
+	set_val_strc (arr, 4, nm_device_get_iface (dev));
+	set_val_strc (arr, 5, active ? _("yes") : _("no"));
+	set_val_strc (arr, 6, nm_object_get_path (NM_OBJECT (nsp)));
 
-	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
-	print_fields (nmc->print_fields, nmc->allowed_fields);
-
-	g_free (nsp_name);
-	g_free (quality_str);
+	g_ptr_array_add (nmc->output_data, arr);
 }
 #endif
 
-struct cb_info {
-	NMClient *client;
-	const GPtrArray *active;
-};
+static const char *
+construct_header_name (const char *base, const char *spec)
+{
+	static char header_name[128];
+
+	if (spec == NULL)
+		return base;
+
+	g_strlcpy (header_name, base, sizeof (header_name));
+	g_strlcat (header_name, " (", sizeof (header_name));
+	g_strlcat (header_name, spec, sizeof (header_name));
+	g_strlcat (header_name, ")", sizeof (header_name));
+
+	return header_name;
+}
 
 static void
-show_device_info (gpointer data, gpointer user_data)
+show_device_info (NMDevice *device, NmCli *nmc)
 {
-	NMDevice *device = NM_DEVICE (data);
-	NmCli *nmc = (NmCli *) user_data;
 	GError *error = NULL;
 	APInfo *info;
 	const char *hwaddr = NULL;
@@ -544,14 +551,14 @@ show_device_info (gpointer data, gpointer user_data)
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_DEV_SHOW_SECTIONS_ALL;
 	char *fields_common = NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 	gboolean was_output = FALSE;
 	NMIP4Config *cfg4;
 	NMIP6Config *cfg6;
 	NMDHCP4Config *dhcp4;
 	NMDHCP6Config *dhcp6;
+	const char *base_hdr = _("Device details");
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
@@ -565,36 +572,42 @@ show_device_info (gpointer data, gpointer user_data)
 		if (error->code == 0)
 			g_string_printf (nmc->return_text, _("Error: 'device show': %s"), error->message);
 		else
-			g_string_printf (nmc->return_text, _("Error: 'device show': %s; allowed fields: %s"), error->message, NMC_FIELDS_DEV_SHOW_SECTIONS_ALL);
+			g_string_printf (nmc->return_text, _("Error: 'device show': %s; allowed fields: %s"),
+			                 error->message, NMC_FIELDS_DEV_SHOW_SECTIONS_ALL);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return;
 	}
 
 	/* Main header */
-	nmc->allowed_fields = nmc_fields_dev_show_general;
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ONLY;
-	nmc->print_fields.header_name = _("Device details");
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_GENERAL_ALL, nmc->allowed_fields, NULL);
-	print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+	nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (device));
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_GENERAL_ALL,
+	                                                 nmc_fields_dev_show_general, NULL);
+
+	nmc_fields_dev_show_general[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
+	print_required_fields (nmc, nmc_fields_dev_show_general);
 
 	/* Loop through the required sections and print them. */
 	for (k = 0; k < sections_array->len; k++) {
 		int section_idx = g_array_index (sections_array, int, k);
 
 		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
-			printf ("\n"); /* Empty line */
+			printf ("\n"); /* Print empty line between groups in tabular mode */
 
 		was_output = FALSE;
+
+		/* Remove any previous data */
+		nmc_empty_output_fields (nmc);
 
 		state = nm_device_get_state_reason (device, &reason);
 
 		/* section GENERAL */
 		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[0].name)) {
-			nmc->allowed_fields = nmc_fields_dev_show_general;
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_GENERAL_ALL, nmc->allowed_fields, NULL);
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+			tmpl = nmc_fields_dev_show_general;
+			tmpl_len = sizeof (nmc_fields_dev_show_general);
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_GENERAL_ALL, tmpl, NULL);
+			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+			g_ptr_array_add (nmc->output_data, arr);
 
 			if (NM_IS_DEVICE_ETHERNET (device))
 				hwaddr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
@@ -616,38 +629,38 @@ show_device_info (gpointer data, gpointer user_data)
 			state_str = g_strdup_printf ("%d (%s)", state, nmc_device_state_to_string (state));
 			reason_str = g_strdup_printf ("%d (%s)", reason, nmc_device_reason_to_string (reason));
 
-			nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[0].name;  /* "GENERAL"*/
-			nmc->allowed_fields[1].value = (char *) nm_device_get_iface (device);
-			nmc->allowed_fields[2].value = (char *) nm_device_get_type_description (device);
-			nmc->allowed_fields[3].value = (char *) nm_device_get_vendor (device);
-			nmc->allowed_fields[4].value = (char *) nm_device_get_product (device);
-			nmc->allowed_fields[5].value = (char *) (nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
-			nmc->allowed_fields[6].value = (char *) nm_device_get_driver_version (device);
-			nmc->allowed_fields[7].value = (char *) nm_device_get_firmware_version (device);
-			nmc->allowed_fields[8].value = (char *) (hwaddr ? hwaddr : _("(unknown)"));
-			nmc->allowed_fields[9].value = (char *) state_str;
-			nmc->allowed_fields[10].value = (char *) reason_str;
-			nmc->allowed_fields[11].value = (char *) nm_device_get_udi (device);
-			nmc->allowed_fields[12].value = (char *) nm_device_get_ip_iface (device);
-			nmc->allowed_fields[13].value = nm_device_get_managed (device) ? _("yes") : _("no");
-			nmc->allowed_fields[14].value = nm_device_get_autoconnect (device) ? _("yes") : _("no");
-			nmc->allowed_fields[15].value = nm_device_get_firmware_missing (device) ? _("yes") : _("no");
-			nmc->allowed_fields[16].value = (char *) ((acon = nm_device_get_active_connection (device)) ?
-			                                   nm_object_get_path (NM_OBJECT (acon)) : _("not connected"));
+			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+			set_val_strc (arr, 0, nmc_fields_dev_show_sections[0].name);  /* "GENERAL"*/
+			set_val_strc (arr, 1, nm_device_get_iface (device));
+			set_val_strc (arr, 2, nm_device_get_type_description (device));
+			set_val_strc (arr, 3, nm_device_get_vendor (device));
+			set_val_strc (arr, 4, nm_device_get_product (device));
+			set_val_strc (arr, 5, nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
+			set_val_strc (arr, 6, nm_device_get_driver_version (device));
+			set_val_strc (arr, 7, nm_device_get_firmware_version (device));
+			set_val_strc (arr, 8, hwaddr ? hwaddr : _("(unknown)"));
+			set_val_str  (arr, 9, state_str);
+			set_val_str  (arr, 10, reason_str);
+			set_val_strc (arr, 11, nm_device_get_udi (device));
+			set_val_strc (arr, 12, nm_device_get_ip_iface (device));
+			set_val_strc (arr, 13, nm_device_get_managed (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 14, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 15, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 16, ((acon = nm_device_get_active_connection (device)) ?
+			                         nm_object_get_path (NM_OBJECT (acon)) : _("not connected")));
+			g_ptr_array_add (nmc->output_data, arr);
 
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-			g_free (state_str);
-			g_free (reason_str);
+			print_data (nmc);  /* Print all data */
 			was_output = TRUE;
 		}
 
 		/* section CAPABILITIES */
 		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[1].name)) {
-			nmc->allowed_fields = nmc_fields_dev_show_cap;
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_CAP_ALL, nmc->allowed_fields, NULL);
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+			tmpl = nmc_fields_dev_show_cap;
+			tmpl_len = sizeof (nmc_fields_dev_show_cap);
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_CAP_ALL, tmpl, NULL);
+			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+			g_ptr_array_add (nmc->output_data, arr);
 
 			caps = nm_device_get_capabilities (device);
 			speed = 0;
@@ -659,19 +672,17 @@ show_device_info (gpointer data, gpointer user_data)
 				speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (device));
 				speed /= 1000;
 			}
-			if (speed)
-				speed_str = g_strdup_printf (_("%u Mb/s"), speed);
+			speed_str = speed ? g_strdup_printf (_("%u Mb/s"), speed) : g_strdup (_("unknown"));
 
-			nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[1].name;  /* "CAPABILITIES" */
-			nmc->allowed_fields[1].value = (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no");
-			nmc->allowed_fields[2].value = speed_str ? speed_str : _("unknown");
+			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+			set_val_strc (arr, 0, nmc_fields_dev_show_sections[1].name);  /* "CAPABILITIES" */
+			set_val_strc (arr, 1, (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no"));
+			set_val_str  (arr, 2, speed_str);
+			g_ptr_array_add (nmc->output_data, arr);
 
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
-			g_free (speed_str);
+			print_data (nmc);  /* Print all data */
 			was_output = TRUE;
 		}
-
 
 		/* Wireless specific information */
 		if ((NM_IS_DEVICE_WIFI (device))) {
@@ -684,22 +695,25 @@ show_device_info (gpointer data, gpointer user_data)
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[2].name)) {
 				wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
 
-				nmc->allowed_fields = nmc_fields_dev_show_wifi_prop;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_WIFI_PROP_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+				tmpl = nmc_fields_dev_show_wifi_prop;
+				tmpl_len = sizeof (nmc_fields_dev_show_wifi_prop);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_WIFI_PROP_ALL, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[2].name;  /* "WIFI-PROPERTIES" */
-				nmc->allowed_fields[1].value = (wcaps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104)) ? _("yes") : _("no");
-				nmc->allowed_fields[2].value = (wcaps & NM_WIFI_DEVICE_CAP_WPA) ? _("yes") : _("no");
-				nmc->allowed_fields[3].value = (wcaps & NM_WIFI_DEVICE_CAP_RSN) ? _("yes") : _("no");
-				nmc->allowed_fields[4].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP) ? _("yes") : _("no");
-				nmc->allowed_fields[5].value = (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no");
-				nmc->allowed_fields[6].value = (wcaps & NM_WIFI_DEVICE_CAP_AP) ? _("yes") : _("no");
-				nmc->allowed_fields[7].value = (wcaps & NM_WIFI_DEVICE_CAP_ADHOC) ? _("yes") : _("no");
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[2].name);  /* "WIFI-PROPERTIES" */
+				set_val_strc (arr, 1, (wcaps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104)) ?
+				                        _("yes") : _("no"));
+				set_val_strc (arr, 2, (wcaps & NM_WIFI_DEVICE_CAP_WPA) ? _("yes") : _("no"));
+				set_val_strc (arr, 3, (wcaps & NM_WIFI_DEVICE_CAP_RSN) ? _("yes") : _("no"));
+				set_val_strc (arr, 4, (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP) ? _("yes") : _("no"));
+				set_val_strc (arr, 5, (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no"));
+				set_val_strc (arr, 6, (wcaps & NM_WIFI_DEVICE_CAP_AP) ? _("yes") : _("no"));
+				set_val_strc (arr, 7, (wcaps & NM_WIFI_DEVICE_CAP_ADHOC) ? _("yes") : _("no"));
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+				print_data (nmc);  /* Print all data */
 				was_output = TRUE;
 			}
 
@@ -710,36 +724,41 @@ show_device_info (gpointer data, gpointer user_data)
 					active_bssid = active_ap ? nm_access_point_get_bssid (active_ap) : NULL;
 				}
 
-				nmc->allowed_fields = nmc_fields_dev_wifi_list;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+				tmpl = nmc_fields_dev_wifi_list;
+				tmpl_len = sizeof (nmc_fields_dev_wifi_list);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
 				info = g_malloc0 (sizeof (APInfo));
 				info->nmc = nmc;
 				info->index = 1;
+				info->output_flags = NMC_OF_FLAG_SECTION_PREFIX;
 				info->active_bssid = active_bssid;
 				info->device = nm_device_get_iface (device);
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 				if (aps && aps->len)
-					g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) info);
+					g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
 				g_free (info);
+				print_data (nmc);  /* Print all data */
 				was_output = TRUE;
 			}
 		} else if (NM_IS_DEVICE_ETHERNET (device)) {
 			/* WIRED-PROPERTIES */
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[4].name)) {
-				nmc->allowed_fields = nmc_fields_dev_show_wired_prop;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_WIRED_PROP_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+				tmpl = nmc_fields_dev_show_wired_prop;
+				tmpl_len = sizeof (nmc_fields_dev_show_wired_prop);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_WIRED_PROP_ALL, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[4].name;  /* "WIRED-PROPERTIES" */
-				nmc->allowed_fields[1].value = (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device))) ? _("on") : _("off");
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[4].name);  /* "WIRED-PROPERTIES" */
+				set_val_strc (arr, 1, (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device))) ?
+				                        _("on") : _("off"));
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+				print_data (nmc);  /* Print all data */
 				was_output = TRUE;
 			}
 		}
@@ -750,45 +769,44 @@ show_device_info (gpointer data, gpointer user_data)
 				char *cfreq = NULL, *rssi = NULL, *cinr = NULL, *txpow = NULL;
 				guint tmp_uint;
 				gint tmp_int;
-				char *bsid;
 
-				nmc->allowed_fields = nmc_fields_dev_show_wimax_prop;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_WIMAX_PROP_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-				nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[5].name;  /* "WIMAX-PROPERTIES" */
+				/* Field names */
+				tmpl = nmc_fields_dev_show_wimax_prop;
+				tmpl_len = sizeof (nmc_fields_dev_show_wimax_prop);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_WIMAX_PROP_ALL, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
 				/* Center frequency */
 				tmp_uint = nm_device_wimax_get_center_frequency (NM_DEVICE_WIMAX (device));
 				if (tmp_uint)
 					cfreq = g_strdup_printf ("%'.1f MHz", (double) tmp_uint / 1000.0);
-				nmc->allowed_fields[1].value = cfreq ? cfreq : "";
 
 				/* RSSI */
 				tmp_int = nm_device_wimax_get_rssi (NM_DEVICE_WIMAX (device));
 				if (tmp_int)
 					rssi = g_strdup_printf ("%d dBm", tmp_int);
-				nmc->allowed_fields[2].value = rssi ? rssi : "";
 
 				/* CINR */
 				tmp_int = nm_device_wimax_get_cinr (NM_DEVICE_WIMAX (device));
 				if (tmp_int)
 					cinr = g_strdup_printf ("%d dB", tmp_int);
-				nmc->allowed_fields[3].value = cinr ? cinr : "";
 
 				/* TX Power */
 				tmp_int = nm_device_wimax_get_tx_power (NM_DEVICE_WIMAX (device));
 				if (tmp_int)
 					txpow = g_strdup_printf ("%'.2f dBm", (float) tmp_int / 2.0);
-				nmc->allowed_fields[4].value = txpow ? txpow : "";
 
-				/* BSID */
-				bsid = (char *) nm_device_wimax_get_bsid (NM_DEVICE_WIMAX (device));
-				nmc->allowed_fields[5].value = bsid ? bsid : "";
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[5].name);  /* "WIMAX-PROPERTIES" */
+				set_val_str  (arr, 1, cfreq);
+				set_val_str  (arr, 2, rssi);
+				set_val_str  (arr, 3, cinr);
+				set_val_str  (arr, 4, txpow);
+				set_val_strc (arr, 5, nm_device_wimax_get_bsid (NM_DEVICE_WIMAX (device)));
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+				print_data (nmc);  /* Print all data */
 				was_output = TRUE;
 			}
 
@@ -797,19 +815,19 @@ show_device_info (gpointer data, gpointer user_data)
 				const GPtrArray *nsps;
 				int g, idx = 1;
 
-				nmc->allowed_fields = nmc_fields_dev_wimax_list;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
+				tmpl = nmc_fields_dev_wimax_list;
+				tmpl_len = sizeof (nmc_fields_dev_wimax_list);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
 				nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
 				for (g = 0; nsps && g < nsps->len; g++) {
 					NMWimaxNsp *nsp = g_ptr_array_index (nsps, g);
 
-					detail_wimax_nsp (nsp, nmc, device, idx++);
+					fill_output_wimax_nsp (nsp, nmc, device, idx++, NMC_OF_FLAG_SECTION_PREFIX);
 				}
+				print_data (nmc);  /* Print all data */
 				was_output = TRUE;
 			}
 		}
@@ -858,18 +876,20 @@ show_device_info (gpointer data, gpointer user_data)
 				if (bond_slaves_str->len > 0)
 					g_string_truncate (bond_slaves_str, bond_slaves_str->len-1);  /* Chop off last space */
 
-				nmc->allowed_fields = nmc_fields_dev_show_bond_prop;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_BOND_PROP_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+				tmpl = nmc_fields_dev_show_bond_prop;
+				tmpl_len = sizeof (nmc_fields_dev_show_bond_prop);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_BOND_PROP_ALL, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[11].name;  /* "BOND" */
-				nmc->allowed_fields[1].value = bond_slaves_str->str;
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[11].name);  /* "BOND" */
+				set_val_str  (arr, 1, bond_slaves_str->str);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+				print_data (nmc);  /* Print all data */
 
-				g_string_free (bond_slaves_str, TRUE);
+				g_string_free (bond_slaves_str, FALSE);
 				was_output = TRUE;
 			}
 		}
@@ -879,18 +899,19 @@ show_device_info (gpointer data, gpointer user_data)
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[12].name)) {
 				char * vlan_id_str = g_strdup_printf ("%u", nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device)));
 
-				nmc->allowed_fields = nmc_fields_dev_show_vlan_prop;
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_VLAN_PROP_ALL, nmc->allowed_fields, NULL);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+				tmpl = nmc_fields_dev_show_vlan_prop;
+				tmpl_len = sizeof (nmc_fields_dev_show_vlan_prop);
+				nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_VLAN_PROP_ALL, tmpl, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->allowed_fields[0].value = (char *) nmc_fields_dev_show_sections[12].name;  /* "VLAN" */
-				nmc->allowed_fields[1].value = vlan_id_str;
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[12].name);  /* "VLAN" */
+				set_val_str  (arr, 1, vlan_id_str);
+				g_ptr_array_add (nmc->output_data, arr);
 
-				nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+				print_data (nmc);  /* Print all data */
 
-				g_free (vlan_id_str);
 				was_output = TRUE;
 			}
 		}
@@ -902,10 +923,11 @@ show_device_info (gpointer data, gpointer user_data)
 			char **ac_arr = NULL;
 			int i;
 
-			nmc->allowed_fields = nmc_fields_dev_show_connections;
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_FIELD_NAMES;
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_CONNECTIONS_ALL, nmc->allowed_fields, NULL);
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
+			tmpl = nmc_fields_dev_show_connections;
+			tmpl_len = sizeof (nmc_fields_dev_show_connections);
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DEV_SHOW_CONNECTIONS_ALL, tmpl, NULL);
+			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+			g_ptr_array_add (nmc->output_data, arr);
 
 			/* available-connections */
 			avail_cons = nm_device_get_available_connections (device);
@@ -931,15 +953,15 @@ show_device_info (gpointer data, gpointer user_data)
 			if (ac_paths_str->len > 0)
 				g_string_append_c (ac_paths_str, '}');
 
-			set_val_str (nmc->allowed_fields, 0, (char *) nmc_fields_dev_show_sections[13].name);  /* "CONNECTIONS" */
-			set_val_str (nmc->allowed_fields, 1, ac_paths_str->str);
-			set_val_arr (nmc->allowed_fields, 2, ac_arr);
+			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+			set_val_strc (arr, 0, nmc_fields_dev_show_sections[13].name);  /* "CONNECTIONS" */
+			set_val_str  (arr, 1, ac_paths_str->str);
+			set_val_arr  (arr, 2, (ac_arr));
+			g_ptr_array_add (nmc->output_data, arr);
 
-			nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_SECTION_PREFIX;
-			print_fields (nmc->print_fields, nmc->allowed_fields); /* Print values */
+			print_data (nmc);  /* Print all data */
 
-			g_string_free (ac_paths_str, TRUE);
-			g_strfreev (ac_arr);
+			g_string_free (ac_paths_str, FALSE);
 			was_output = TRUE;
 		}
 	}
@@ -949,15 +971,18 @@ show_device_info (gpointer data, gpointer user_data)
 }
 
 static void
-show_device_status (NMDevice *device, NmCli *nmc)
+fill_output_device_status (NMDevice *device, NmCli *nmc)
 {
-	nmc->allowed_fields[0].value = (char *) nm_device_get_iface (device);
-	nmc->allowed_fields[1].value = (char *) nm_device_get_type_description (device);
-	nmc->allowed_fields[2].value = (char *) nmc_device_state_to_string (nm_device_get_state (device));
-	nmc->allowed_fields[3].value = (char *) nm_object_get_path (NM_OBJECT (device));
+	NmcOutputField *arr = nmc_dup_fields_array (nmc_fields_dev_status,
+	                                            sizeof (nmc_fields_dev_status),
+	                                            0);
 
-	nmc->print_fields.flags &= ~NMC_PF_FLAG_MAIN_HEADER_ADD & ~NMC_PF_FLAG_MAIN_HEADER_ONLY & ~NMC_PF_FLAG_FIELD_NAMES; /* Clear header flags */
-	print_fields (nmc->print_fields, nmc->allowed_fields);
+	set_val_strc (arr, 0, nm_device_get_iface (device));
+	set_val_strc (arr, 1, nm_device_get_type_description (device));
+	set_val_strc (arr, 2, nmc_device_state_to_string (nm_device_get_state (device)));
+	set_val_strc (arr, 3, nm_object_get_path (NM_OBJECT (device)));
+
+	g_ptr_array_add (nmc->output_data, arr);
 }
 
 static NMCResultCode
@@ -969,9 +994,8 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_DEV_STATUS_ALL;
 	char *fields_common = NMC_FIELDS_DEV_STATUS_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
 
 	while (argc > 0) {
 		fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
@@ -986,8 +1010,9 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_dev_status;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	tmpl = nmc_fields_dev_status;
+	tmpl_len = sizeof (nmc_fields_dev_status);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
 
 	if (error) {
 		if (error->code == 0)
@@ -1011,14 +1036,18 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	/* Print headers */
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
+	/* Add headers */
 	nmc->print_fields.header_name = _("Status of devices");
-	print_fields (nmc->print_fields, nmc->allowed_fields);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
 	devices = get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++)
-		show_device_status (devices[i], nmc);
+		fill_output_device_status (devices[i], nmc);
+
+	/* Now print all data */
+	print_data (nmc);
+
 	g_free (devices);
 
 	return NMC_RESULT_SUCCESS;
@@ -1074,6 +1103,7 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 	} else {
 		/* Show details for all devices */
 		for (i = 0; devices[i]; i++) {
+			nmc_empty_output_fields (nmc);
 			show_device_info (devices[i], nmc);
 			if (devices[i + 1])
 				printf ("\n"); /* Empty line */
@@ -1242,20 +1272,29 @@ show_acces_point_info (NMDevice *device, NmCli *nmc)
 	const char *active_bssid = NULL;
 	const GPtrArray *aps;
 	APInfo *info;
+	NmcOutputField *arr;
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
 		active_bssid = active_ap ? nm_access_point_get_bssid (active_ap) : NULL;
 	}
 
+	arr = nmc_dup_fields_array (nmc_fields_dev_wifi_list, sizeof (nmc_fields_dev_wifi_list),
+	                            NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
 	info = g_malloc0 (sizeof (APInfo));
 	info->nmc = nmc;
 	info->index = 1;
+	info->output_flags = 0;
 	info->active_bssid = active_bssid;
 	info->device = nm_device_get_iface (device);
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 	if (aps && aps->len)
-		g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) info);
+		g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
+
+	print_data (nmc);  /* Print all data */
+	nmc_empty_output_fields (nmc);
 	g_free (info);
 }
 
@@ -1274,9 +1313,9 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_DEV_WIFI_LIST_ALL;
 	char *fields_common = NMC_FIELDS_DEV_WIFI_LIST_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+	const char *base_hdr = _("Wi-Fi scan list");
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
@@ -1302,7 +1341,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0)
@@ -1310,8 +1348,9 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_dev_wifi_list;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	tmpl = nmc_fields_dev_wifi_list;
+	tmpl_len = sizeof (nmc_fields_dev_wifi_list);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
 
 	if (error) {
 		if (error->code == 0)
@@ -1335,10 +1374,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	/* Print headers */
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.header_name = _("Wi-Fi scan list");
-
 	devices = get_devices_sorted (nmc->client);
 	if (ifname) {
 		/* Device specified - list only APs of this interface */
@@ -1351,12 +1386,14 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				break;
 			}
 		}
-
 		if (!device) {
 			g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
+
+		/* Main header name */
+		nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, ifname);
 
 		if (NM_IS_DEVICE_WIFI (device)) {
 			if (bssid_user) {
@@ -1373,20 +1410,27 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 					g_free (bssid_up);
 				}
 				if (!ap) {
-					g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
+					g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
+					                 bssid_user);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto error;
 				}
+				/* Add headers (field names) */
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
+
 				info = g_malloc0 (sizeof (APInfo));
 				info->nmc = nmc;
 				info->index = 1;
+				info->output_flags = 0;
 				info->active_bssid = NULL;
 				info->device = nm_device_get_iface (device);
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-				detail_access_point (ap, info);
+
+				fill_output_access_point (ap, info);
+
+				print_data (nmc);  /* Print all data */
 				g_free (info);
 			} else {
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 				show_acces_point_info (device, nmc);
 			}
 		} else {
@@ -1396,7 +1440,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		}
 	} else {
 		/* List APs for all devices */
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 		if (bssid_user) {
 			/* Specific AP requested - list only that */
 			for (i = 0; devices[i]; i++) {
@@ -1404,6 +1447,12 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 				if (!NM_IS_DEVICE_WIFI (dev))
 					continue;
+
+				/* Main header name */
+				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (dev));
+
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				for (j = 0; aps && (j < aps->len); j++) {
@@ -1418,22 +1467,30 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 						info = g_malloc0 (sizeof (APInfo));
 						info->nmc = nmc;
 						info->index = 1;
+						info->output_flags = 0;
 						info->active_bssid = NULL;
 						info->device = nm_device_get_iface (dev);
-						detail_access_point (ap, info);
+						fill_output_access_point (ap, info);
 						g_free (info);
 					}
 					g_free (bssid_up);
 				}
+				print_data (nmc);  /* Print all data */
+				nmc_empty_output_fields (nmc);
 			}
 			if (!ap) {
-				g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."), bssid_user);
+				g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
+				                 bssid_user);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto error;
 			}
 		} else {
 			for (i = 0; devices[i]; i++) {
 				NMDevice *dev = devices[i];
+
+				/* Main header name */
+				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr,
+				                                                                nm_device_get_iface (dev));
 				if (NM_IS_DEVICE_WIFI (dev))
 					show_acces_point_info (dev, nmc);
 			}
@@ -1968,13 +2025,21 @@ show_nsp_info (NMDevice *device, NmCli *nmc)
 {
 	const GPtrArray *nsps;
 	int i, idx = 1;
+	NmcOutputField *arr;
+
+	/* Add headers (field names) */
+	arr = nmc_dup_fields_array (nmc_fields_dev_wimax_list, sizeof (nmc_fields_dev_wimax_list),
+	                            NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
 
 	nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
 	for (i = 0; nsps && i < nsps->len; i++) {
 		NMWimaxNsp *nsp = g_ptr_array_index (nsps, i);
 
-		detail_wimax_nsp (nsp, nmc, device, idx++);
+		fill_output_wimax_nsp (nsp, nmc, device, idx++, 0);
 	}
+	print_data (nmc);  /* Print all data */
+	nmc_empty_output_fields (nmc);
 }
 
 static NMCResultCode
@@ -1991,9 +2056,9 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_DEV_WIMAX_LIST_ALL;
 	char *fields_common = NMC_FIELDS_DEV_WIMAX_LIST_COMMON;
-	guint32 mode_flag = (nmc->print_output == NMC_PRINT_PRETTY) ? NMC_PF_FLAG_PRETTY : (nmc->print_output == NMC_PRINT_TERSE) ? NMC_PF_FLAG_TERSE : 0;
-	guint32 multiline_flag = nmc->multiline_output ? NMC_PF_FLAG_MULTILINE : 0;
-	guint32 escape_flag = nmc->escape_values ? NMC_PF_FLAG_ESCAPE : 0;
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+	const char *base_hdr = _("WiMAX NSP list");
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
@@ -2025,8 +2090,9 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	else
 		fields_str = nmc->required_fields;
 
-	nmc->allowed_fields = nmc_fields_dev_wimax_list;
-	nmc->print_fields.indices = parse_output_fields (fields_str, nmc->allowed_fields, &error);
+	tmpl = nmc_fields_dev_wimax_list;
+	tmpl_len = sizeof (nmc_fields_dev_wimax_list);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
 
 	if (error) {
 		if (error->code == 0)
@@ -2050,10 +2116,6 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	if (!nmc_versions_match (nmc))
 		goto error;
 
-	/* Print headers */
-	nmc->print_fields.flags = multiline_flag | mode_flag | escape_flag | NMC_PF_FLAG_MAIN_HEADER_ADD | NMC_PF_FLAG_FIELD_NAMES;
-	nmc->print_fields.header_name = _("WiMAX NSP list");
-
 	devices = nm_client_get_devices (nmc->client);
 	if (ifname) {
 		/* Device specified - list only NSPs of this interface */
@@ -2072,6 +2134,9 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
+
+		/* Main header name */
+		nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, ifname);
 
 		if (NM_IS_DEVICE_WIMAX (device)) {
 			if (nsp_user) {
@@ -2092,10 +2157,12 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto error;
 				}
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
-				detail_wimax_nsp (nsp, nmc, device, 1);
+				/* Add headers (field names) */
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
+				fill_output_wimax_nsp (nsp, nmc, device, 1, 0);
+				print_data (nmc);  /* Print all data */
 			} else {
-				print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 				show_nsp_info (device, nmc);
 			}
 		} else {
@@ -2105,7 +2172,6 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 		}
 	} else {
 		/* List NSPs for all devices */
-		print_fields (nmc->print_fields, nmc->allowed_fields); /* Print header */
 		if (nsp_user) {
 			/* Specific NSP requested - list only that */
 			for (i = 0; devices && (i < devices->len); i++) {
@@ -2114,6 +2180,12 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 
 				if (!NM_IS_DEVICE_WIMAX (dev))
 					continue;
+
+				/* Main header name */
+				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (dev));
+
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
 
 				nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (dev));
 				for (j = 0, nsp = NULL; nsps && (j < nsps->len); j++) {
@@ -2124,10 +2196,12 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 					nsp_up = g_ascii_strup (nsp_user, -1);
 					if (!strcmp (nsp_up, candidate_name)) {
 						nsp = candidate_nsp;
-						detail_wimax_nsp (nsp, nmc, dev, idx);
+						fill_output_wimax_nsp (nsp, nmc, dev, idx, 0);
 					}
 					g_free (nsp_up);
 				}
+				print_data (nmc);  /* Print all data */
+				nmc_empty_output_fields (nmc);
 			}
 			if (!nsp) {
 				g_string_printf (nmc->return_text, _("Error: Access point with nsp '%s' not found."), nsp_user);
@@ -2137,6 +2211,11 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 		} else {
 			for (i = 0; devices && (i < devices->len); i++) {
 				NMDevice *dev = g_ptr_array_index (devices, i);
+
+				/* Main header name */
+				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr,
+				                                                                nm_device_get_iface (dev));
+
 				if (NM_IS_DEVICE_WIMAX (dev))
 					show_nsp_info (dev, nmc);
 			}
