@@ -39,13 +39,12 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-dhcp-dhclient-utils.h"
+#include "nm-dhcp-manager.h"
 #include "nm-posix-signals.h"
 
 G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
-
-#define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-helper"
 
 typedef struct {
 	const char *path;
@@ -589,7 +588,7 @@ dhclient_start (NMDHCPClient *client,
 			g_ptr_array_add (argv, (gpointer) mode_opt);
 	}
 	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
-	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
+	g_ptr_array_add (argv, (gpointer) nm_dhcp_helper_path);
 
 	if (pid_file) {
 		g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */

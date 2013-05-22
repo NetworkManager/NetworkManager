@@ -64,6 +64,9 @@ nm_dhcp_manager_error_quark (void)
 
 static NMDHCPManager *singleton = NULL;
 
+/* default to installed helper, but can be modified for testing */
+const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
+
 typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid, gboolean ipv6);
 
 typedef struct {
@@ -726,4 +729,3 @@ nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
 	object_class->finalize = finalize;
 	object_class->dispose = dispose;
 }
-

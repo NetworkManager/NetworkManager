@@ -78,6 +78,9 @@ static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *con
 
 #define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
 
+/* default to installed helper, but can be modified for testing */
+const char *nm_device_autoipd_helper_path = LIBEXECDIR "/nm-avahi-autoipd.action";
+
 /***********************************************************/
 #define NM_DEVICE_ERROR (nm_device_error_quark ())
 
@@ -2128,7 +2131,8 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 
 	argv[i++] = (char *) (*aipd_binary);
 	argv[i++] = "--script";
-	argv[i++] = LIBEXECDIR "/nm-avahi-autoipd.action";
+	argv[i++] = (char *) nm_device_autoipd_helper_path;
+
 	if (nm_logging_level_enabled (LOGL_DEBUG))
 		argv[i++] = "--debug";
 	argv[i++] = (char *) nm_device_get_ip_iface (self);

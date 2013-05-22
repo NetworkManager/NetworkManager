@@ -93,4 +93,6 @@ NMIP4Config *nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client
                                                          GHashTable *options,
                                                          const char *reason);
 
+extern const char* nm_dhcp_helper_path;
+
 #endif /* NM_DHCP_MANAGER_H */

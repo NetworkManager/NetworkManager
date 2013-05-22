@@ -317,4 +317,7 @@ gboolean nm_device_supports_vlans (NMDevice *device);
 
 G_END_DECLS
 
+/* For testing only */
+extern const char* nm_device_autoipd_helper_path;
+
 #endif	/* NM_DEVICE_H */

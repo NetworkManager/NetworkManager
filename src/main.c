@@ -304,7 +304,7 @@ int
 main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
-	gboolean become_daemon = FALSE;
+	gboolean become_daemon = FALSE, run_from_build_dir = FALSE;
 	gboolean debug = FALSE;
 	gboolean g_fatal_warnings = FALSE;
 	gs_free char *pidfile = NULL;
@@ -330,6 +330,7 @@ main (int argc, char *argv[])
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
+		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &run_from_build_dir, "Run from build directory", NULL },
 		{NULL}
 	};
 
@@ -372,6 +373,30 @@ main (int argc, char *argv[])
 	if (getuid () != 0) {
 		fprintf (stderr, _("You must be root to run NetworkManager!\n"));
 		exit (1);
+	}
+
+	/* When running from the build directory, determine our build directory
+	 * base and set helper paths in the build tree */
+	if (run_from_build_dir) {
+		char *path, *slash;
+		int i;
+
+		/* exe is <basedir>/src/.libs/lt-NetworkManager, so chop off
+		 * the last three components */
+		path = realpath ("/proc/self/exe", NULL);
+		g_assert (path != NULL);
+		for (i = 0; i < 3; ++i) {
+			slash = strrchr (path, '/');
+			g_assert (slash != NULL);
+			*slash = '\0';
+		}
+
+		/* don't free these strings, we need them for the entire
+		 * process lifetime */
+		nm_dhcp_helper_path = g_strdup_printf ("%s/src/dhcp-manager/nm-dhcp-helper", path);
+		nm_device_autoipd_helper_path = g_strdup_printf ("%s/callouts/nm-avahi-autoipd.action", path);
+
+		g_free (path);
 	}
 
 	/* Make GIO ignore the remote VFS service; otherwise it tries to use the
