@@ -323,7 +323,7 @@ nmc_init (NmCli *nmc)
 	nmc->mode_specified = FALSE;
 	nmc->escape_values = TRUE;
 	nmc->required_fields = NULL;
-	nmc->allowed_fields = NULL;
+	nmc->output_data = g_ptr_array_new_full (20, g_free);
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
@@ -340,6 +340,8 @@ nmc_cleanup (NmCli *nmc)
 	g_slist_free (nmc->system_connections);
 
 	g_free (nmc->required_fields);
+	nmc_empty_output_fields (nmc);
+	g_ptr_array_unref (nmc->output_data);
 	if (nmc->print_fields.indices)
 		g_array_free (nmc->print_fields.indices, TRUE);
 }

@@ -462,15 +462,33 @@ nmc_string_screen_width (const char *start, const char *end)
 void
 set_val_str (NmcOutputField fields_array[], guint32 idx, char *value)
 {
-	fields_array[idx].flags = 0;
 	fields_array[idx].value = value;
+	fields_array[idx].value_is_array = FALSE;
+	fields_array[idx].free_value = TRUE;
+}
+
+void
+set_val_strc (NmcOutputField fields_array[], guint32 idx, const char *value)
+{
+	fields_array[idx].value = (char *) value;
+	fields_array[idx].value_is_array = FALSE;
+	fields_array[idx].free_value = FALSE;
 }
 
 void
 set_val_arr (NmcOutputField fields_array[], guint32 idx, char **value)
 {
-	fields_array[idx].flags = NMC_OF_FLAG_ARRAY;
 	fields_array[idx].value = value;
+	fields_array[idx].value_is_array = TRUE;
+	fields_array[idx].free_value = TRUE;
+}
+
+void
+set_val_arrc (NmcOutputField fields_array[], guint32 idx, const char **value)
+{
+	fields_array[idx].value = (char **) value;
+	fields_array[idx].value_is_array = TRUE;
+	fields_array[idx].free_value = FALSE;
 }
 
 /*
@@ -479,13 +497,17 @@ set_val_arr (NmcOutputField fields_array[], guint32 idx, char **value)
 void
 nmc_free_output_field_values (NmcOutputField fields_array[])
 {
-	int idx = 0;
-	while (fields_array && fields_array[idx].value) {
-		if (fields_array[idx].flags & NMC_OF_FLAG_ARRAY)
-			g_strfreev (fields_array[idx].value);
-		else
-			g_free (fields_array[idx].value);
-		idx++;
+	NmcOutputField *iter = fields_array;
+
+	while (iter && iter->name) {
+		if (iter->free_value) {
+			if (iter->value_is_array)
+				g_strfreev ((char **) iter->value);
+			else
+				g_free ((char *) iter->value);
+			iter->value = NULL;
+		}
+		iter++;
 	}
 }
 
@@ -551,14 +573,63 @@ nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError 
 	return TRUE;
 }
 
+NmcOutputField *
+nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags)
+{
+	NmcOutputField *row;
+
+	row = g_malloc0 (size);
+	memcpy (row, fields, size);
+	row[0].flags = flags;
+
+	return row;
+}
+
+void
+nmc_empty_output_fields (NmCli *nmc)
+{
+	guint i;
+
+	/* Free values in field structure */
+	for (i = 0; i < nmc->output_data->len; i++) {
+		NmcOutputField *fld_arr = g_ptr_array_index (nmc->output_data, i);
+		nmc_free_output_field_values (fld_arr);
+	}
+
+	/* Empty output_data array */
+	if (nmc->output_data->len > 0)
+		g_ptr_array_remove_range (nmc->output_data, 0, nmc->output_data->len);
+}
+
+static char *
+get_value_to_print (NmcOutputField *fields,
+                    gboolean field_name,
+                    const char *not_set_str,
+                    gboolean *dealloc)
+{
+	gboolean is_array = fields->value_is_array;
+	char *value;
+
+	if (field_name)
+		value = _(fields->name_l10n);
+	else
+		value = fields->value ?
+		          (is_array ? g_strjoinv (" | ", (char **) fields->value) :
+		                      (char *) fields->value) :
+		          (char *) not_set_str;
+	*dealloc = fields->value && is_array && !field_name;
+	return value;
+}
+
 /*
  * Print both headers or values of 'field_values' array.
- * Entries to print and their order are specified via indices
- * in 'fields.indices' array.
- * 'fields.flags' specify various aspects influencing the output.
+ * Entries to print and their order are specified via indices in
+ * 'nmc->print_fields.indices' array.
+ * Various flags influencing the output of fields are set up in the first item
+ * of 'field_values' array.
  */
 void
-print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
+print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 {
 	GString *str;
 	int width1, width2;
@@ -567,14 +638,15 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	char *indent_str;
 	const char *not_set_str = "--";
 	int i;
-	gboolean multiline = fields.flags & NMC_PF_FLAG_MULTILINE;
-	gboolean terse = fields.flags & NMC_PF_FLAG_TERSE;
-	gboolean pretty = fields.flags & NMC_PF_FLAG_PRETTY;
-	gboolean main_header_add = fields.flags & NMC_PF_FLAG_MAIN_HEADER_ADD;
-	gboolean main_header_only = fields.flags & NMC_PF_FLAG_MAIN_HEADER_ONLY;
-	gboolean field_names = fields.flags & NMC_PF_FLAG_FIELD_NAMES;
-	gboolean escape = fields.flags & NMC_PF_FLAG_ESCAPE;
-	gboolean section_prefix = fields.flags & NMC_PF_FLAG_SECTION_PREFIX;
+	const NmcPrintFields fields = nmc->print_fields;
+	gboolean multiline = nmc->multiline_output;
+	gboolean terse = (nmc->print_output == NMC_PRINT_TERSE);
+	gboolean pretty = (nmc->print_output == NMC_PRINT_PRETTY);
+	gboolean escape = nmc->escape_values;
+	gboolean main_header_add = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
+	gboolean main_header_only = field_values[0].flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
+	gboolean field_names = field_values[0].flags & NMC_OF_FLAG_FIELD_NAMES;
+	gboolean section_prefix = field_values[0].flags & NMC_OF_FLAG_SECTION_PREFIX;
 	gboolean main_header = main_header_add || main_header_only;
 
 	/* No headers are printed in terse mode:
@@ -606,24 +678,25 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 			for (i = 0; i < fields.indices->len; i++) {
 				char *tmp;
 				int idx = g_array_index (fields.indices, int, i);
-				guint32 value_is_array = field_values[idx].flags & NMC_OF_FLAG_ARRAY;
+				gboolean is_array = field_values[idx].value_is_array;
 
 				/* section prefix can't be an array */
-				g_assert (!value_is_array || !section_prefix || idx != 0);
+				g_assert (!is_array || !section_prefix || idx != 0);
 
 				if (section_prefix && idx == 0)  /* The first field is section prefix */
 					continue;
 
-				if (value_is_array) {
+				if (is_array) {
 					/* value is a null-terminated string array */
 					const char **p;
 					int j;
 
 					for (p = (const char **) field_values[idx].value, j = 1; p && *p; p++, j++) {
-						tmp = g_strdup_printf ("%s%s%s[%d]:", section_prefix ? (const char*) field_values[0].value : "",
-						                                      section_prefix ? "." : "",
-						                                      _(field_values[idx].name_l10n),
-						                                      j);
+						tmp = g_strdup_printf ("%s%s%s[%d]:",
+						                       section_prefix ? (const char*) field_values[0].value : "",
+						                       section_prefix ? "." : "",
+						                       _(field_values[idx].name_l10n),
+						                       j);
 						printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, *p ? *p : not_set_str);
 						g_free (tmp);
 					}
@@ -632,9 +705,10 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 					const char *hdr_name = (const char*) field_values[0].value;
 					const char *val = (const char*) field_values[idx].value;
 
-					tmp = g_strdup_printf ("%s%s%s:", section_prefix ? hdr_name : "",
-					                                  section_prefix ? "." : "",
-					                                  _(field_values[idx].name_l10n));
+					tmp = g_strdup_printf ("%s%s%s:",
+					                       section_prefix ? hdr_name : "",
+					                       section_prefix ? "." : "",
+					                       _(field_values[idx].name_l10n));
 					printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, val ? val : not_set_str);
 					g_free (tmp);
 				}
@@ -653,14 +727,8 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 
 	for (i = 0; i < fields.indices->len; i++) {
 		int idx = g_array_index (fields.indices, int, i);
-		guint32 value_is_array = field_values[idx].flags & NMC_OF_FLAG_ARRAY;
-		char *value;
-		if (field_names)
-			value = _(field_values[idx].name_l10n);
-		else
-			value = field_values[idx].value ?
-			        (value_is_array ? g_strjoinv (" | ", (char **) field_values[idx].value) : (char *) field_values[idx].value) :
-			        (char *) not_set_str;
+		gboolean dealloc;
+		char *value = get_value_to_print ((NmcOutputField *) field_values+idx, field_names, not_set_str, &dealloc);
 
 		if (terse) {
 			if (escape) {
@@ -683,7 +751,7 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 			table_width += field_values[idx].width + width1 - width2 + 1;
 		}
 
-		if (value_is_array && field_values[idx].value && !field_values)
+		if (dealloc)
 			g_free (value);
 	}
 
@@ -722,6 +790,59 @@ print_fields (const NmcPrintFields fields, const NmcOutputField field_values[])
 	}
 
 	g_string_free (str, TRUE);
+}
+
+/*
+ * Print nmc->output_data
+ *
+ * It first finds out maximal string length in columns and fill the value to
+ * 'width' member of NmcOutputField, so that columns in tabular output are
+ * properly aligned. Then each object (row in tabular) is printed using
+ * print_required_fields() function.
+ */
+void
+print_data (NmCli *nmc)
+{
+	int i, j;
+	size_t len;
+	NmcOutputField *row;
+	int num_fields = 0;
+
+	if (!nmc->output_data || nmc->output_data->len < 1)
+		return;
+
+	/* How many fields? */
+	row = g_ptr_array_index (nmc->output_data, 0);
+	while (row->name) {
+		num_fields++;
+		row++;
+	}
+
+	/* Find out maximal string lengths */
+	for (i = 0; i < num_fields; i++) {
+		size_t max_width = 0;
+		for (j = 0; j < nmc->output_data->len; j++) {
+			gboolean field_names, dealloc;
+			char *value;
+			row = g_ptr_array_index (nmc->output_data, j);
+			field_names = row[0].flags & NMC_OF_FLAG_FIELD_NAMES;
+			value = get_value_to_print (row+i, field_names, "--", &dealloc);
+			len = nmc_string_screen_width (value, NULL);
+			max_width = len > max_width ? len : max_width;
+			if (dealloc)
+				g_free (value);
+		}
+		for (j = 0; j < nmc->output_data->len; j++) {
+			row = g_ptr_array_index (nmc->output_data, j);
+			row[i].width = max_width + 1;
+		}
+	}
+
+	/* Now we can print the data. */
+	for (i = 0; i < nmc->output_data->len; i++) {
+		row = g_ptr_array_index (nmc->output_data, i);
+		print_required_fields (nmc, row);
+	}
 }
 
 /*

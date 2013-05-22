@@ -71,12 +71,17 @@ char *nmc_get_user_input (const char *ask_str);
 int nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
 int nmc_string_screen_width (const char *start, const char *end);
-void set_val_str (NmcOutputField fields_array[], guint32 index, char *value);
-void set_val_arr (NmcOutputField fields_array[], guint32 index, char **value);
+void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);
+void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *value);
+void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
+void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error);
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
-void print_fields (const NmcPrintFields fields, const NmcOutputField field_values[]);
+NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags);
+void nmc_empty_output_fields (NmCli *nmc);
+void print_required_fields (NmCli *nmc, const NmcOutputField field_values[]);
+void print_data (NmCli *nmc);
 gboolean nmc_versions_match (NmCli *nmc);
 
 #endif /* NMC_UTILS_H */
