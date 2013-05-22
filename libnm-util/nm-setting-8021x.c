@@ -507,7 +507,7 @@ path_to_scheme_value (const char *path)
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
+nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
                                const char *cert_path,
                                NMSetting8021xCKScheme scheme,
                                NMSetting8021xCKFormat *out_format,
@@ -517,7 +517,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GByteArray *data;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
 	if (cert_path) {
 		g_return_val_if_fail (g_utf8_validate (cert_path, -1, NULL), FALSE);
@@ -529,7 +529,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 	if (out_format)
 		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	/* Clear out any previous ca_cert blob */
 	if (priv->ca_cert) {
@@ -538,7 +538,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 	}
 
 	if (!cert_path) {
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CA_CERT);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CA_CERT);
 		return TRUE;
 	}
 
@@ -564,7 +564,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CA_CERT);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CA_CERT);
 	return priv->ca_cert != NULL;
 }
 
@@ -788,7 +788,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
+nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
                                    const char *cert_path,
                                    NMSetting8021xCKScheme scheme,
                                    NMSetting8021xCKFormat *out_format,
@@ -798,7 +798,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GByteArray *data;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
 	if (cert_path) {
 		g_return_val_if_fail (g_utf8_validate (cert_path, -1, NULL), FALSE);
@@ -810,7 +810,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 	if (out_format)
 		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	/* Clear out any previous ca_cert blob */
 	if (priv->client_cert) {
@@ -819,7 +819,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 	}
 
 	if (!cert_path) {
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CLIENT_CERT);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
 		return TRUE;
 	}
 
@@ -857,7 +857,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CLIENT_CERT);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
 	return priv->client_cert != NULL;
 }
 
@@ -1052,7 +1052,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
+nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
                                       const char *cert_path,
                                       NMSetting8021xCKScheme scheme,
                                       NMSetting8021xCKFormat *out_format,
@@ -1062,7 +1062,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GByteArray *data;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
 	if (cert_path) {
 		g_return_val_if_fail (g_utf8_validate (cert_path, -1, NULL), FALSE);
@@ -1074,7 +1074,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 	if (out_format)
 		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	/* Clear out any previous ca_cert blob */
 	if (priv->phase2_ca_cert) {
@@ -1083,7 +1083,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 	}
 
 	if (!cert_path) {
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CA_CERT);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
 		return TRUE;
 	}
 
@@ -1109,7 +1109,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CA_CERT);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
 	return priv->phase2_ca_cert != NULL;
 }
 
@@ -1337,7 +1337,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
+nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
                                           const char *cert_path,
                                           NMSetting8021xCKScheme scheme,
                                           NMSetting8021xCKFormat *out_format,
@@ -1347,7 +1347,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GByteArray *data;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
 	if (cert_path) {
 		g_return_val_if_fail (g_utf8_validate (cert_path, -1, NULL), FALSE);
@@ -1359,7 +1359,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 	if (out_format)
 		g_return_val_if_fail (*out_format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN, FALSE);
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	/* Clear out any previous ca_cert blob */
 	if (priv->phase2_client_cert) {
@@ -1368,7 +1368,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 	}
 
 	if (!cert_path) {
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 		return TRUE;
 	}
 
@@ -1407,7 +1407,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
 		g_byte_array_unref (data);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 	return priv->phase2_client_cert != NULL;
 }
 
@@ -1627,7 +1627,7 @@ file_to_byte_array (const char *filename)
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_private_key (NMSetting8021x *self,
+nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
                                    const char *key_path,
                                    const char *password,
                                    NMSetting8021xCKScheme scheme,
@@ -1638,7 +1638,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean key_cleared = FALSE, password_cleared = FALSE;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
 	if (key_path) {
 		g_return_val_if_fail (g_utf8_validate (key_path, -1, NULL), FALSE);
@@ -1664,7 +1664,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 		}
 	}
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	/* Clear out any previous private key data */
 	if (priv->private_key) {
@@ -1683,9 +1683,9 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 
 	if (key_path == NULL) {
 		if (key_cleared)
-			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
 		if (password_cleared)
-			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 		return TRUE;
 	}
 
@@ -1709,12 +1709,12 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *self,
 
 		priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
 		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_CLIENT_CERT);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY);
 	if (password_cleared || password)
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
 	if (out_format)
 		*out_format = format;
@@ -1935,7 +1935,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  * Returns: TRUE if the operation succeeded, FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
+nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
                                           const char *key_path,
                                           const char *password,
                                           NMSetting8021xCKScheme scheme,
@@ -1946,7 +1946,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean key_cleared = FALSE, password_cleared = FALSE;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
 	if (key_path) {
 		g_return_val_if_fail (g_utf8_validate (key_path, -1, NULL), FALSE);
@@ -1972,7 +1972,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 		}
 	}
 
-	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	/* Clear out any previous private key data */
 	if (priv->phase2_private_key) {
@@ -1991,9 +1991,9 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 
 	if (key_path == NULL) {
 		if (key_cleared)
-			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 		if (password_cleared)
-			g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 		return TRUE;
 	}
 
@@ -2017,12 +2017,12 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
 
 		priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
 		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 	if (password_cleared || password)
-		g_object_notify (G_OBJECT (self), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 
 	if (out_format)
 		*out_format = format;
