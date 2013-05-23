@@ -886,14 +886,6 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 
 	nle = rtnl_link_change (priv->nlh, rtnllink, change, 0);
 
-	/* When netlink returns this error, it usually means it failed to find
-	 * firmware for the device, especially on nm_platform_link_set_up ().
-	 * This is basically the same check as in the original code and could
-	 * potentially be improved.
-	 */
-	if (nle == -NLE_NOT_FOUND)
-		return NM_PLATFORM_ERROR_NO_FIRMWARE;
-
 	return refresh_object (platform, (struct nl_object *) rtnllink, nle);
 }
 
