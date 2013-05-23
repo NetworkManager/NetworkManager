@@ -18,7 +18,8 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#include "logging/nm-logging.h"
+#include "nm-logging.h"
+#include "nm-platform.h"
 #include "nm-netlink-utils.h"
 #include "nm-netlink-monitor.h"
 
@@ -460,7 +461,7 @@ nm_netlink_foreach_route (int ifindex,
 	info.ignore_inet6_ll_mc = ignore_inet6_ll_mc;
 	info.callback = callback;
 	info.user_data = user_data;
-	info.iface = nm_netlink_index_to_iface (ifindex);
+	info.iface = g_strdup (nm_platform_link_get_name (ifindex));
 
 	rtnl_route_alloc_cache (nm_netlink_get_default_handle (), family, 0, &cache);
 	g_warn_if_fail (cache != NULL);

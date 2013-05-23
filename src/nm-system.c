@@ -47,6 +47,7 @@
 #include <linux/if_bridge.h>
 
 #include "nm-system.h"
+#include "nm-platform.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -137,12 +138,9 @@ nm_system_device_set_ip4_route (int ifindex,
 	}
 
 	if (err) {
-		char *iface = nm_netlink_index_to_iface (ifindex);
-
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to set IPv4 route: %s",
-		            iface ? iface : "unknown", nl_geterror (err));
-		g_free (iface);
+		            nm_platform_link_get_name (ifindex), nl_geterror (err));
 
 		rtnl_route_put (route);
 		route = NULL;
@@ -165,7 +163,7 @@ sync_addresses (int ifindex,
 	int i, err;
 	guint32 log_domain = (family == AF_INET) ? LOGD_IP4 : LOGD_IP6;
 	char buf[INET6_ADDRSTRLEN + 1];
-	char *iface = NULL;
+	const char *iface = NULL;
 	gboolean success = FALSE;
 
 	log_domain |= LOGD_DEVICE;
@@ -186,7 +184,7 @@ sync_addresses (int ifindex,
 	if (family)
 		rtnl_addr_set_family (filter_addr, family);
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		goto out;
 
@@ -296,14 +294,13 @@ out:
 		rtnl_addr_put (filter_addr);
 	if (addr_cache)
 		nl_cache_free (addr_cache);
-	g_free (iface);
 	return success;
 }
 
 static gboolean
 add_ip4_addresses (NMIP4Config *config, int ifindex)
 {
-	char *iface;
+	const char *iface;
 	int num_addrs, i;
 	guint32 flags = 0;
 	gboolean did_gw = FALSE;
@@ -311,7 +308,7 @@ add_ip4_addresses (NMIP4Config *config, int ifindex)
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		return FALSE;
 
@@ -340,7 +337,6 @@ add_ip4_addresses (NMIP4Config *config, int ifindex)
 		}
 		rtnl_addr_set_ifindex (addrs[i], ifindex);
 	}
-	g_free (iface);
 
 	return sync_addresses (ifindex, AF_INET, addrs, num_addrs);
 }
@@ -445,7 +441,7 @@ nm_system_apply_ip4_config (int ifindex,
 
 	if (flags & NM_IP4_COMPARE_FLAG_MTU) {
 		if (nm_ip4_config_get_mtu (config))
-			nm_system_iface_set_mtu (ifindex, nm_ip4_config_get_mtu (config));
+			nm_platform_link_set_mtu (ifindex, nm_ip4_config_get_mtu (config));
 	}
 
 	if (priority > 0)
@@ -602,13 +598,13 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 static gboolean
 add_ip6_addresses (NMIP6Config *config, int ifindex)
 {
-	char *iface;
+	const char *iface;
 	int num_addrs, i;
 	struct rtnl_addr **addrs;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		return FALSE;
 
@@ -630,7 +626,6 @@ add_ip6_addresses (NMIP6Config *config, int ifindex)
 		}
 		rtnl_addr_set_ifindex (addrs[i], ifindex);
 	}
-	g_free (iface);
 
 	return sync_addresses (ifindex, AF_INET6, addrs, num_addrs);
 }
@@ -659,7 +654,7 @@ nm_system_apply_ip6_config (int ifindex,
 	}
 
 	if (flags & NM_IP6_COMPARE_FLAG_ROUTES) {
-		char *iface = nm_netlink_index_to_iface (ifindex);
+		const char *iface = nm_platform_link_get_name (ifindex);
 
 		for (i = 0; i < nm_ip6_config_get_num_routes (config); i++) {
 			NMIP6Route *route = nm_ip6_config_get_route (config, i);
@@ -688,7 +683,6 @@ nm_system_apply_ip6_config (int ifindex,
 				            nl_geterror (err));
 			}
 		}
-		g_free (iface);
 	}
 
 // FIXME
@@ -957,12 +951,9 @@ add_ip4_route_to_gateway (int ifindex, guint32 gw, guint32 mss)
 	/* Add direct route to the gateway */
 	err = nm_netlink_route4_add (route, &gw, 32, NULL, 0);
 	if (err) {
-		char *iface = nm_netlink_index_to_iface (ifindex);
-
 		nm_log_err (LOGD_DEVICE | LOGD_IP4,
 		            "(%s): failed to add IPv4 route to gateway (%d)",
-		            iface ? iface : "unknown", err);
-		g_free (iface);
+		            nm_platform_link_get_name (ifindex), err);
 		goto error;
 	}
 
@@ -1019,7 +1010,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 	struct nl_sock *nlh;
 	gboolean success = FALSE;
 	int err;
-	char *iface;
+	const char *iface;
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
@@ -1028,7 +1019,7 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 	if (err == 0)
 		return TRUE;
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		goto out;
 
@@ -1057,7 +1048,6 @@ nm_system_replace_default_ip4_route_vpn (int ifindex,
 out:
 	if (gw_route)
 		rtnl_route_put (gw_route);
-	g_free (iface);
 	return success;
 }
 
@@ -1072,14 +1062,14 @@ nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *gw_route = NULL;
 	gboolean success = FALSE;
-	char *iface;
+	const char *iface;
 	int err;
 
 	err = replace_default_ip4_route (ifindex, gw, mss);
 	if (err == 0)
 		return TRUE;
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		goto out;
 
@@ -1108,7 +1098,6 @@ nm_system_replace_default_ip4_route (int ifindex, guint32 gw, guint32 mss)
 out:
 	if (gw_route)
 		rtnl_route_put (gw_route);
-	g_free (iface);
 	return success;
 }
 
@@ -1132,12 +1121,9 @@ add_ip6_route_to_gateway (int ifindex, const struct in6_addr *gw, int mss)
 	/* Add direct route to the gateway */
 	err = nm_netlink_route6_add (route, gw, 128, NULL, 0);
 	if (err) {
-		char *iface = nm_netlink_index_to_iface (ifindex);
-
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
 		            "(%s): failed to add IPv6 route to gateway (%d)",
-		            iface ? iface : "unknown", err);
-		g_free (iface);
+		            nm_platform_link_get_name (ifindex), err);
 
 		rtnl_route_put (route);
 		route = NULL;
@@ -1196,7 +1182,6 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 {
 	GList *def_routes, *iter;
 	struct rtnl_route *route;
-	char *iface;
 	char gw_str[INET6_ADDRSTRLEN + 1];
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
@@ -1208,7 +1193,7 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 				nm_log_dbg (LOGD_IP6, "Setting IPv6 default route via %s", gw_str);
 		} else {
 			nm_log_dbg (LOGD_IP6, "Setting IPv6 default route via %s",
-			            nm_netlink_index_to_iface (ifindex));
+			            nm_platform_link_get_name (ifindex));
 		}
 	}
 
@@ -1224,11 +1209,9 @@ replace_default_ip6_route (int ifindex, const struct in6_addr *gw, int mss)
 	for (iter = def_routes; iter; iter = iter->next) {
 		route = iter->data;
 		if (!nm_netlink_route_delete (route)) {
-			iface = nm_netlink_index_to_iface (ifindex);
 			nm_log_err (LOGD_DEVICE | LOGD_IP6,
 			            "(%s): failed to delete existing IPv6 default route",
-			            iface);
-			g_free (iface);
+			            nm_platform_link_get_name (ifindex));
 		}
 		rtnl_route_put (route);
 	}
@@ -1248,14 +1231,14 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 {
 	struct rtnl_route *gw_route = NULL;
 	gboolean success = FALSE;
-	char *iface;
+	const char *iface;
 	int err;
 
 	err = replace_default_ip6_route (ifindex, gw, 0);
 	if (err == 0 || err == -NLE_EXIST)
 		return TRUE;
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		goto out;
 
@@ -1284,7 +1267,6 @@ nm_system_replace_default_ip6_route (int ifindex, const struct in6_addr *gw)
 out:
 	if (gw_route)
 		rtnl_route_put (gw_route);
-	g_free (iface);
 	return success;
 }
 
@@ -1300,7 +1282,7 @@ nm_system_replace_default_ip6_route_vpn (int ifindex,
 	struct nl_sock *nlh;
 	gboolean success = FALSE;
 	int err;
-	char *iface;
+	const char *iface;
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
@@ -1309,7 +1291,7 @@ nm_system_replace_default_ip6_route_vpn (int ifindex,
 	if (err == 0)
 		return TRUE;
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	if (!iface)
 		goto out;
 
@@ -1338,7 +1320,6 @@ nm_system_replace_default_ip6_route_vpn (int ifindex,
 out:
 	if (gw_route)
 		rtnl_route_put (gw_route);
-	g_free (iface);
 	return success;
 }
 
@@ -1385,11 +1366,11 @@ nm_system_iface_flush_routes (int ifindex, int family)
 {
 	guint32 log_level = LOGD_IP4 | LOGD_IP6;
 	const char *sf = "UNSPEC";
-	char *iface;
+	const char *iface;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	iface = nm_netlink_index_to_iface (ifindex);
+	iface = nm_platform_link_get_name (ifindex);
 	g_return_val_if_fail (iface != NULL, FALSE);
 
 	if (family == AF_INET) {
@@ -1408,7 +1389,6 @@ nm_system_iface_flush_routes (int ifindex, int family)
 	 */
 	nm_netlink_foreach_route (ifindex, family, RT_SCOPE_UNIVERSE, TRUE, delete_one_route, GUINT_TO_POINTER (log_level));
 
-	g_free (iface);
 	return TRUE;
 }
 
