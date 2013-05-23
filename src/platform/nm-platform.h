@@ -43,6 +43,8 @@ typedef enum {
 	NM_PLATFORM_ERROR_EXISTS,
 	/* object is not a slave */
 	NM_PLATFORM_ERROR_NOT_SLAVE
+	/* firmware is not found */
+	NM_PLATFORM_ERROR_NO_FIRMWARE
 } NMPlatformError;
 
 typedef enum {
