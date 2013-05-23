@@ -866,6 +866,9 @@ deactivate (NMDevice *dev)
 	 **/
 	set_current_ap (self, NULL, TRUE, FALSE);
 
+	/* Clear any critical protocol notification in the Wi-Fi stack */
+	wifi_utils_indicate_addressing_running (priv->wifi_data, FALSE);
+
 	/* Reset MAC address back to initial address */
 	nm_device_set_hw_addr (dev, priv->initial_hw_addr, "reset", LOGD_WIFI);
 
@@ -3056,6 +3059,53 @@ out:
 	return ret;
 }
 
+static NMActStageReturn
+act_stage3_ip4_config_start (NMDevice *device,
+                             NMIP4Config **out_config,
+                             NMDeviceStateReason *reason)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	/* Indicate that a critical protocol is about to start */
+	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
+		wifi_utils_indicate_addressing_running (priv->wifi_data, TRUE);
+
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
+}
+
+static NMActStageReturn
+act_stage3_ip6_config_start (NMDevice *device,
+                             NMIP6Config **out_config,
+                             NMDeviceStateReason *reason)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	NMConnection *connection;
+	NMSettingIP6Config *s_ip6;
+	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	if (s_ip6)
+		method = nm_setting_ip6_config_get_method (s_ip6);
+
+	/* Indicate that a critical protocol is about to start */
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
+	    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0)
+		wifi_utils_indicate_addressing_running (priv->wifi_data, TRUE);
+
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
+}
+
 static void
 ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 {
@@ -3204,6 +3254,9 @@ activation_success_handler (NMDevice *dev)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
+	/* Clear any critical protocol notification in the wifi stack */
+	wifi_utils_indicate_addressing_running (priv->wifi_data, FALSE);
+
 	/* Clear wireless secrets tries on success */
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
@@ -3273,6 +3326,9 @@ activation_failure_handler (NMDevice *dev)
 
 	/* Clear wireless secrets tries on failure */
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
+
+	/* Clear any critical protocol notification in the wifi stack */
+	wifi_utils_indicate_addressing_running (NM_DEVICE_WIFI_GET_PRIVATE (dev)->wifi_data, FALSE);
 }
 
 static gboolean
@@ -3341,6 +3397,10 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_NEED_AUTH:
 		if (priv->supplicant.iface)
 			nm_supplicant_interface_disconnect (priv->supplicant.iface);
+		break;
+	case NM_DEVICE_STATE_IP_CHECK:
+		/* Clear any critical protocol notification in the wifi stack */
+		wifi_utils_indicate_addressing_running (priv->wifi_data, FALSE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);
@@ -3571,6 +3631,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
