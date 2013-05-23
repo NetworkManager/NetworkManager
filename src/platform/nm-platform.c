@@ -175,8 +175,6 @@ nm_platform_get_error_msg (void)
 		return "object not found";
 	case NM_PLATFORM_ERROR_EXISTS:
 		return "object already exists";
-	case NM_PLATFORM_ERROR_NOT_SLAVE:
-		return "link not a slave";
 	default:
 		return "invalid error number";
 	}
