@@ -1407,6 +1407,46 @@ poll_ip6_flags (gpointer user_data)
 	return TRUE;
 }
 
+#define FIRST_ROUTE(m) ((struct rtnl_route *) nl_cache_get_first (m))
+#define NEXT_ROUTE(m) ((struct rtnl_route *) nl_cache_get_next ((struct nl_object *) m))
+
+#define FIRST_ADDR(m) ((struct rtnl_addr *) nl_cache_get_first (m))
+#define NEXT_ADDR(m) ((struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) m))
+
+static void
+wait_for_no_addresses (NMIP6Manager *self, NMIP6Device *device)
+{
+	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (self);
+	guint64 now, end;
+	gboolean has_addrs = TRUE;
+
+	now = end = g_get_real_time ();
+	end += (G_USEC_PER_SEC * 3);
+
+	while (has_addrs && now < end) {
+		struct rtnl_addr *rtnladdr;
+		struct nl_addr *nladdr;
+
+		nl_cache_refill (priv->nlh, priv->addr_cache);
+		for (has_addrs = FALSE, rtnladdr = FIRST_ADDR (priv->addr_cache);
+		     rtnladdr;
+		     rtnladdr = NEXT_ADDR (rtnladdr)) {
+
+			nladdr = rtnl_addr_get_local (rtnladdr);
+			if (   rtnl_addr_get_ifindex (rtnladdr) == device->ifindex
+			    && nladdr
+			    && nl_addr_get_family (nladdr) == AF_INET6) {
+				/* Still IPv6 addresses on the interface */
+				has_addrs = TRUE;
+				nm_log_dbg (LOGD_IP6, "(%s) waiting for cleared IPv6 addresses", device->iface);
+				g_usleep (100);
+				now = g_get_real_time ();
+				break;
+			}
+		}
+	}
+}
+
 void
 nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 {
@@ -1440,7 +1480,10 @@ nm_ip6_manager_begin_addrconf (NMIP6Manager *manager, int ifindex)
 	 */
 	if (device->target_state >= NM_IP6_DEVICE_GOT_ADDRESS) {
 		nm_utils_do_sysctl (device->disable_ip6_path, "1");
-		g_usleep (200);
+		/* Wait until all existing IPv6 addresses have been removed from the link,
+		 * to ensure they don't confuse our IPv6 addressing state machine.
+		 */
+		wait_for_no_addresses (manager, device);
 		nm_utils_do_sysctl (device->disable_ip6_path, "0");
 	}
 
@@ -1465,12 +1508,6 @@ nm_ip6_manager_cancel_addrconf (NMIP6Manager *manager, int ifindex)
 	g_hash_table_remove (NM_IP6_MANAGER_GET_PRIVATE (manager)->devices,
 	                     GINT_TO_POINTER (ifindex));
 }
-
-#define FIRST_ROUTE(m) ((struct rtnl_route *) nl_cache_get_first (m))
-#define NEXT_ROUTE(m) ((struct rtnl_route *) nl_cache_get_next ((struct nl_object *) m))
-
-#define FIRST_ADDR(m) ((struct rtnl_addr *) nl_cache_get_first (m))
-#define NEXT_ADDR(m) ((struct rtnl_addr *) nl_cache_get_next ((struct nl_object *) m))
 
 NMIP6Config *
 nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
