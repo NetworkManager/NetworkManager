@@ -421,10 +421,9 @@ conf_file_changed (GFileMonitor *monitor,
 }
 
 /* This function starts the inotify monitors that watch the plugin's config
- * file directory for new connections and changes to existing connections.
- * At this time all plugins are expected to make NM aware of changes on-the-fly
- * instead of requiring a SIGHUP or SIGUSR1 or some D-Bus method to say
- * "reload".
+ * file directory for new connections and changes to existing connections
+ * (if not disabled by NetworkManager.conf), and for changes to the plugin's
+ * non-connection config files.
  */
 static void
 setup_monitoring (NMSystemConfigInterface *config)
@@ -438,16 +437,18 @@ setup_monitoring (NMSystemConfigInterface *config)
 	 */
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
-	/* Set up the watch for our config directory */
-	file = g_file_new_for_path (EXAMPLE_DIR);
-	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
-	g_object_unref (file);
-	if (monitor) {
-		/* This registers the dir_changed() function to be called whenever
-		 * the GFileMonitor object notices a change in the directory.
-		 */
-		priv->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (dir_changed), config);
-		priv->monitor = monitor;
+	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
+		/* Set up the watch for our config directory */
+		file = g_file_new_for_path (EXAMPLE_DIR);
+		monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+		g_object_unref (file);
+		if (monitor) {
+			/* This registers the dir_changed() function to be called whenever
+			 * the GFileMonitor object notices a change in the directory.
+			 */
+			priv->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (dir_changed), config);
+			priv->monitor = monitor;
+		}
 	}
 
 	/* Set up a watch on our configuration file, basically just for watching

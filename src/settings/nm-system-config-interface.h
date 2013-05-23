@@ -89,6 +89,11 @@ struct _NMSystemConfigInterface {
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
+	/* Requests that the plugin reload all connection files from disk,
+	 * and emit signals reflecting new, changed, and removed connections.
+	 */
+	void (*reload_connections) (NMSystemConfigInterface *config);
+
 	/*
 	 * Return a string list of specifications of devices which NetworkManager
 	 * should not manage.  Returned list will be freed by the system settings
@@ -136,6 +141,8 @@ void nm_system_config_interface_init (NMSystemConfigInterface *config,
                                       gpointer unused);
 
 GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
+
+void nm_system_config_interface_reload_connections (NMSystemConfigInterface *config);
 
 GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config);
 

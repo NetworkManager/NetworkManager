@@ -104,6 +104,9 @@ static void impl_settings_add_connection_unsaved (NMSettings *self,
                                                   GHashTable *settings,
                                                   DBusGMethodInvocation *context);
 
+static void impl_settings_reload_connections (NMSettings *self,
+                                              DBusGMethodInvocation *context);
+
 static void impl_settings_save_hostname (NMSettings *self,
                                          const char *hostname,
                                          DBusGMethodInvocation *context);
@@ -1211,6 +1214,46 @@ impl_settings_add_connection_unsaved (NMSettings *self,
                                       DBusGMethodInvocation *context)
 {
 	impl_settings_add_connection_helper (self, settings, FALSE, context);
+}
+
+static void
+impl_settings_reload_connections (NMSettings *self,
+                                  DBusGMethodInvocation *context)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+	gulong caller_uid;
+	GError *error = NULL;
+
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to determine request UID.");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+	if (caller_uid != 0) {
+		nm_log_warn (LOGD_SETTINGS, "ReloadConnections: permission denied to %lu", caller_uid);
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Permission denied");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	if (!priv->connections_loaded) {
+		load_connections (self);
+	} else {
+		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+
+			nm_system_config_interface_reload_connections (plugin);
+		}
+	}
+
+	dbus_g_method_return (context, TRUE);
 }
 
 static void

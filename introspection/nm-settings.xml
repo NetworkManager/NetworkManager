@@ -62,6 +62,11 @@
         operation does not start the network connection unless (1) device is
         idle and able to connect to the network described by the new connection,
         and (2) the connection is allowed to be started automatically.
+
+        Use the 'Save' method on the connection to save these changes
+        to disk. Note that unsaved changes will be lost if the
+        connection is reloaded from disk (either automatically on file
+        change or due to an explicit ReloadConnections call).
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection_unsaved"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
@@ -73,6 +78,23 @@
       <arg name="path" type="o" direction="out">
         <tp:docstring>
           Object path of the new connection that was just added.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <method name="ReloadConnections">
+      <tp:docstring>
+        Tells NetworkManager to reload all connection files from disk,
+        including noticing any added or deleted connection files. By
+        default, connections are re-read automatically any time they
+        change, so you only need to use this command if you have set
+        "monitor-connection-files=false" in NetworkManager.conf.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_reload_connections"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="status" type="b" direction="out">
+        <tp:docstring>
+          Success or failure.
         </tp:docstring>
       </arg>
     </method>

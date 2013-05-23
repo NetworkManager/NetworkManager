@@ -205,7 +205,8 @@ usage (void)
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	         "  delete [ id | uuid | path ] <ID>\n\n\n"
+	         "  delete [ id | uuid | path ] <ID>\n\n"
+	         "  reload\n\n\n"
 	         ));
 }
 
@@ -284,6 +285,7 @@ static const char *real_con_commands[] = {
 	"down",
 	"add",
 	"delete",
+	"reload",
 	NULL
 };
 
@@ -3222,6 +3224,32 @@ finish:
 }
 
 static NMCResultCode
+do_connection_reload (NmCli *nmc, int argc, char **argv)
+{
+	GError *error = NULL;
+
+	nmc->return_value = NMC_RESULT_SUCCESS;
+	nmc->should_wait = FALSE;
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		return nmc->return_value;
+	}
+
+	if (!nm_remote_settings_reload_connections (nmc->system_settings, &error)) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		if (error->code == NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE)
+			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		else
+			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_clear_error (&error);
+	}
+
+	return nmc->return_value;
+}
+
+static NMCResultCode
 parse_cmd (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
@@ -3262,6 +3290,9 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "reload") == 0) {
+			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
 		}
 		else if (nmc_arg_is_help (*argv)) {
 			usage ();

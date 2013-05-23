@@ -231,6 +231,7 @@ global:
 	nm_remote_settings_new;
 	nm_remote_settings_new_async;
 	nm_remote_settings_new_finish;
+	nm_remote_settings_reload_connections;
 	nm_remote_settings_save_hostname;
 	nm_secret_agent_delete_secrets;
 	nm_secret_agent_error_get_type;

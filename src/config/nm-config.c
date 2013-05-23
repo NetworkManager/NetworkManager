@@ -43,6 +43,7 @@ typedef struct {
 	GKeyFile *keyfile;
 
 	char **plugins;
+	gboolean monitor_connection_files;
 	char *dhcp_client;
 	char *dns_mode;
 
@@ -79,6 +80,14 @@ nm_config_get_plugins (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return (const char **) NM_CONFIG_GET_PRIVATE (config)->plugins;
+}
+
+gboolean
+nm_config_get_monitor_connection_files (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	return NM_CONFIG_GET_PRIVATE (config)->monitor_connection_files;
 }
 
 const char *
@@ -434,6 +443,7 @@ nm_config_new (GError **error)
 	GFileInfo *info;
 	GPtrArray *confs;
 	const char *name;
+	char *value;
 	int i;
 
 	g_assert (!singleton);
@@ -491,6 +501,20 @@ nm_config_new (GError **error)
 	if (cli_plugins && cli_plugins[0])
 		g_key_file_set_value (priv->keyfile, "main", "plugins", cli_plugins);
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
+
+	value = g_key_file_get_value (priv->keyfile, "main", "monitor-connection-files", NULL);
+	if (value) {
+		if (!strcmp (value, "true") || !strcmp (value, "yes") || !strcmp (value, "on"))
+			priv->monitor_connection_files = TRUE;
+		else if (!strcmp (value, "false") || !strcmp (value, "no") || !strcmp (value, "off"))
+			priv->monitor_connection_files = FALSE;
+		else {
+			g_warning ("Unrecognized value for main.monitor-connection-files: %s. Assuming 'false'", value);
+			priv->monitor_connection_files = FALSE;
+		}
+		g_free (value);
+	} else
+		priv->monitor_connection_files = TRUE;
 
 	priv->dhcp_client = g_key_file_get_value (priv->keyfile, "main", "dhcp", NULL);
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);

@@ -31,6 +31,11 @@
             the connection to disk.  Secrets may be part of the update request
             and may sent to a Secret Agent for storage, depending on the the
             flags associated with each secret.
+
+            Use the 'Save' method to save these changes to disk. Note
+            that unsaved changes will be lost if the connection is
+            reloaded from disk (either automatically on file change or
+            due to an explicit ReloadConnections call).
           </tp:docstring>
           <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_update_unsaved"/>
           <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>

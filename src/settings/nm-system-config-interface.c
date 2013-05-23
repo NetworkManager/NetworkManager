@@ -137,6 +137,15 @@ nm_system_config_interface_get_connections (NMSystemConfigInterface *config)
 	return NULL;
 }
 
+void
+nm_system_config_interface_reload_connections (NMSystemConfigInterface *config)
+{
+	g_return_if_fail (config != NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->reload_connections)
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->reload_connections (config);
+}
+
 GSList *
 nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 {

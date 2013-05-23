@@ -66,7 +66,7 @@ typedef struct {
 
 static void system_config_interface_init (NMSystemConfigInterface *class);
 
-static void reload_connections (gpointer config);
+static void reload_connections (NMSystemConfigInterface *config);
 
 G_DEFINE_TYPE_EXTENDED (SCPluginIfnet, sc_plugin_ifnet, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE, system_config_interface_init))
@@ -191,12 +191,15 @@ setup_monitors (NMIfnetConnection * connection, gpointer user_data)
 
 	priv->hostname_monitor =
 	    monitor_file_changes (IFNET_SYSTEM_HOSTNAME_FILE,
-				  update_system_hostname, user_data);
-	priv->net_monitor =
-	    monitor_file_changes (CONF_NET_FILE, reload_connections, user_data);
-	priv->wpa_monitor =
-	    monitor_file_changes (WPA_SUPPLICANT_CONF, reload_connections,
-				  user_data);
+	                          update_system_hostname, user_data);
+	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
+		priv->net_monitor =
+			monitor_file_changes (CONF_NET_FILE, (FileChangedFn) reload_connections,
+			                      user_data);
+		priv->wpa_monitor =
+			monitor_file_changes (WPA_SUPPLICANT_CONF, (FileChangedFn) reload_connections,
+			                      user_data);
+	}
 }
 
 static void
@@ -220,7 +223,7 @@ cancel_monitors (NMIfnetConnection * connection, gpointer user_data)
 }
 
 static void
-reload_connections (gpointer config)
+reload_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (config);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
@@ -460,6 +463,7 @@ system_config_interface_init (NMSystemConfigInterface *class)
 	class->get_connections = get_connections;
 	class->get_unmanaged_specs = get_unmanaged_specs;
 	class->add_connection = add_connection;
+	class->reload_connections = reload_connections;
 }
 
 static void

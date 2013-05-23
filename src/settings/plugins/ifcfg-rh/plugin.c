@@ -44,10 +44,12 @@
 #include "plugin.h"
 #include "nm-system-config-interface.h"
 #include "nm-settings-error.h"
+#include "nm-config.h"
 
 #include "nm-ifcfg-connection.h"
 #include "nm-inotify-helper.h"
 #include "shvar.h"
+#include "reader.h"
 #include "writer.h"
 #include "utils.h"
 
@@ -64,7 +66,8 @@ static gboolean impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 
 static void connection_new_or_changed (SCPluginIfcfg *plugin,
                                        const char *path,
-                                       NMIfcfgConnection *existing);
+                                       NMIfcfgConnection *existing,
+                                       char **out_old_path);
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -109,7 +112,7 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 	path = nm_ifcfg_connection_get_path (connection);
 	g_return_if_fail (path != NULL);
 
-	connection_new_or_changed (plugin, path, connection);
+	connection_new_or_changed (plugin, path, connection, NULL);
 }
 
 static NMIfcfgConnection *
@@ -173,35 +176,6 @@ _internal_new_connection (SCPluginIfcfg *self,
 	return connection;
 }
 
-static void
-read_connections (SCPluginIfcfg *plugin)
-{
-	GDir *dir;
-	GError *err = NULL;
-
-	dir = g_dir_open (IFCFG_DIR, 0, &err);
-	if (dir) {
-		const char *item;
-
-		while ((item = g_dir_read_name (dir))) {
-			char *full_path;
-
-			if (utils_should_ignore_file (item, TRUE))
-				continue;
-
-			full_path = g_build_filename (IFCFG_DIR, item, NULL);
-			if (utils_get_ifcfg_name (full_path, TRUE))
-				_internal_new_connection (plugin, full_path, NULL, NULL);
-			g_free (full_path);
-		}
-
-		g_dir_close (dir);
-	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Can not read directory '%s': %s", IFCFG_DIR, err->message);
-		g_error_free (err);
-	}
-}
-
 /* Monitoring */
 
 static void
@@ -242,10 +216,26 @@ find_by_path (SCPluginIfcfg *self, const char *path)
 	return NULL;
 }
 
+static NMIfcfgConnection *
+find_by_uuid_from_path (SCPluginIfcfg *self, const char *path)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	char *uuid;
+
+	g_return_val_if_fail (path != NULL, NULL);
+
+	uuid = uuid_from_file (path);
+	if (uuid)
+		return g_hash_table_lookup (priv->connections, uuid);
+	else
+		return NULL;
+}
+
 static void
 connection_new_or_changed (SCPluginIfcfg *self,
                            const char *path,
-                           NMIfcfgConnection *existing)
+                           NMIfcfgConnection *existing,
+                           char **out_old_path)
 {
 	NMIfcfgConnection *new;
 	GError *error = NULL;
@@ -254,6 +244,21 @@ connection_new_or_changed (SCPluginIfcfg *self,
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (path != NULL);
+
+	if (out_old_path)
+		*out_old_path = NULL;
+
+	if (!existing) {
+		/* See if it's a rename */
+		existing = find_by_uuid_from_path (self, path);
+		if (existing) {
+			const char *old_path = nm_ifcfg_connection_get_path (existing);
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "renaming %s -> %s", old_path, path);
+			if (out_old_path)
+				*out_old_path = g_strdup (old_path);
+			nm_ifcfg_connection_set_path (existing, path);
+		}
+	}
 
 	if (!existing) {
 		/* New connection */
@@ -371,7 +376,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 		case G_FILE_MONITOR_EVENT_CREATED:
 		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 			/* Update or new */
-			connection_new_or_changed (plugin, ifcfg_path, connection);
+			connection_new_or_changed (plugin, ifcfg_path, connection, NULL);
 			break;
 		default:
 			break;
@@ -399,6 +404,65 @@ setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 	}
 }
 
+static void
+read_connections (SCPluginIfcfg *plugin)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GDir *dir;
+	GError *err = NULL;
+	const char *item;
+	GHashTable *oldconns;
+	GHashTableIter iter;
+	gpointer key, value;
+	NMIfcfgConnection *connection;
+
+	dir = g_dir_open (IFCFG_DIR, 0, &err);
+	if (!dir) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Can not read directory '%s': %s", IFCFG_DIR, err->message);
+		g_error_free (err);
+		return;
+	}
+
+	oldconns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		g_hash_table_insert (oldconns, g_strdup (nm_ifcfg_connection_get_path (value)), value);
+
+	while ((item = g_dir_read_name (dir))) {
+		char *full_path, *old_path;
+
+		if (utils_should_ignore_file (item, TRUE))
+			continue;
+
+		full_path = g_build_filename (IFCFG_DIR, item, NULL);
+		if (!utils_get_ifcfg_name (full_path, TRUE))
+			goto next;
+
+		connection = g_hash_table_lookup (oldconns, full_path);
+		g_hash_table_remove (oldconns, full_path);
+		connection_new_or_changed (plugin, full_path, connection, &old_path);
+
+		if (old_path) {
+			g_hash_table_remove (oldconns, old_path);
+			g_free (old_path);
+		}
+
+	next:
+		g_free (full_path);
+	}
+
+	g_dir_close (dir);
+
+	g_hash_table_iter_init (&iter, oldconns);
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", (char *)key);
+		g_hash_table_iter_remove (&iter);
+		remove_connection (plugin, value);
+	}
+
+	g_hash_table_destroy (oldconns);
+}
+
 static GSList *
 get_connections (NMSystemConfigInterface *config)
 {
@@ -409,7 +473,8 @@ get_connections (NMSystemConfigInterface *config)
 	NMIfcfgConnection *connection;
 
 	if (!priv->initialized) {
-		setup_ifcfg_monitoring (plugin);
+		if (nm_config_get_monitor_connection_files (nm_config_get ()))
+			setup_ifcfg_monitoring (plugin);
 		read_connections (plugin);
 		priv->initialized = TRUE;
 	}
@@ -421,6 +486,14 @@ get_connections (NMSystemConfigInterface *config)
 	}
 
 	return list;
+}
+
+static void
+reload_connections (NMSystemConfigInterface *config)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
+
+	read_connections (plugin);
 }
 
 static GSList *
@@ -854,6 +927,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
 	system_config_interface_class->add_connection = add_connection;
+	system_config_interface_class->reload_connections = reload_connections;
 	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
 	system_config_interface_class->init = init;
 }

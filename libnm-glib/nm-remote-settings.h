@@ -45,6 +45,8 @@ G_BEGIN_DECLS
  *   was removed before it was completely initialized
  * @NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE: the #NMRemoteConnection object
  *   is not visible or otherwise unreadable
+ * @NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE: NetworkManager is not running.
+ *   (Since 0.9.10)
  *
  * Describes errors that may result from operations involving a #NMRemoteSettings.
  *
@@ -53,6 +55,7 @@ typedef enum {
 	NM_REMOTE_SETTINGS_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
 	NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,     /*< nick=ConnectionRemoved >*/
 	NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE, /*< nick=ConnectionUnavailable >*/
+	NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,    /*< nick=ServiceUnavailable >*/
 } NMRemoteSettingsError;
 
 #define NM_REMOTE_SETTINGS_ERROR nm_remote_settings_error_quark ()
@@ -131,6 +134,9 @@ gboolean nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
                                                     NMConnection *connection,
                                                     NMRemoteSettingsAddConnectionFunc callback,
                                                     gpointer user_data);
+
+gboolean nm_remote_settings_reload_connections (NMRemoteSettings *settings,
+                                                GError **error);
 
 gboolean nm_remote_settings_save_hostname (NMRemoteSettings *settings,
                                            const char *hostname,

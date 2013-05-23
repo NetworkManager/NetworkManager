@@ -37,4 +37,6 @@ NMConnection *connection_from_file (const char *filename,
                                     GError **error,
                                     gboolean *ignore_error);
 
+char *uuid_from_file (const char *filename);
+
 #endif  /* __READER_H__ */

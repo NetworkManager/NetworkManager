@@ -629,6 +629,47 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 	return TRUE;
 }
 
+/**
+ * nm_remote_settings_reload_connections:
+ * @settings: the #NMRemoteSettings
+ * @error: return location for #GError
+ *
+ * Requests that the remote settings service reload all connection
+ * files from disk, adding, updating, and removing connections until
+ * the in-memory state matches the on-disk state.
+ *
+ * Return value: %TRUE on success, %FALSE on failure
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_remote_settings_reload_connections (NMRemoteSettings *settings,
+                                       GError **error)
+{
+	NMRemoteSettingsPrivate *priv;
+	gboolean success;
+
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+
+	_nm_remote_settings_ensure_inited (settings);
+
+	if (!priv->service_running) {
+		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
+		                     NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,
+		                     "NetworkManager is not running.");
+		return FALSE;
+	}
+
+	if (!dbus_g_proxy_call (priv->proxy, "ReloadConnections", error,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_BOOLEAN, &success,
+	                        G_TYPE_INVALID))
+		return FALSE;
+	return success;
+}
+
 static void
 clear_one_hash (GHashTable *table)
 {

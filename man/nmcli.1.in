@@ -238,7 +238,7 @@ NetworkManager connections
 .br
 Get information about \fINetworkManager\fP connections and manage them.
 .TP
-.SS \fICOMMAND\fP := { show | up | down | add | delete }
+.SS \fICOMMAND\fP := { show | up | down | add | delete  | reload }
 .sp
 .RS
 .TP
@@ -501,6 +501,13 @@ its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
 \fIuuid\fP or \fIpath\fP can be used.
 .br
 See \fBshow active\fP above for the description of the <ID>-specifying keywords.
+.TP
+.B reload
+.br
+Reload all connection files from disk. By default, connections are re-read
+automatically any time they change, so you only need to use this command when
+the auto-loading feature is disabled ("monitor-connection-files=false"
+in NetworkManager.conf).
 .RE
 
 .TP

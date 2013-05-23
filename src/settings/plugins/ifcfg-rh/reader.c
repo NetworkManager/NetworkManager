@@ -4251,6 +4251,34 @@ ensure_unmanaged (shvarFile *ifcfg,
 	PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
 }
 
+char *
+uuid_from_file (const char *filename)
+{
+	const char *ifcfg_name = NULL;
+	shvarFile *ifcfg;
+	char *uuid;
+
+	g_return_val_if_fail (filename != NULL, NULL);
+
+	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
+	if (!ifcfg_name)
+		return NULL;
+
+	ifcfg = svNewFile (filename);
+	if (!ifcfg)
+		return NULL;
+
+	/* Try for a UUID key before falling back to hashing the file name */
+	uuid = svGetValue (ifcfg, "UUID", FALSE);
+	if (!uuid || !strlen (uuid)) {
+		g_free (uuid);
+		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
+	}
+
+	svCloseFile (ifcfg);
+	return uuid;
+}
+
 NMConnection *
 connection_from_file (const char *filename,
                       const char *network_file,  /* for unit tests only */

@@ -97,6 +97,16 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	for available plugins.</para></listitem>
       </varlistentry>
       <varlistentry>
+	<term><varname>monitor-connection-files</varname></term>
+	<listitem><para>Whether the configured settings plugin(s)
+	should set up file monitors and immediately pick up changes
+	made to connection files while NetworkManager is running. This
+	is enabled by default; if this key is set to
+	'<literal>false</literal>', then NetworkManager will only read
+	the connection files at startup, and when explicitly requested
+	via the ReloadConnections D-Bus call.</para></listitem>
+      </varlistentry>
+      <varlistentry>
 	<term><varname>dhcp</varname></term>
 	<listitem><para>This key sets up what DHCP client
 	NetworkManager will use. Presently
