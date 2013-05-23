@@ -177,6 +177,8 @@ nm_platform_get_error_msg (void)
 		return "object already exists";
 	case NM_PLATFORM_ERROR_NOT_SLAVE:
 		return "link not a slave";
+	case NM_PLATFORM_ERROR_NO_FIRMWARE:
+		return "firmware not found";
 	default:
 		return "invalid error number";
 	}
