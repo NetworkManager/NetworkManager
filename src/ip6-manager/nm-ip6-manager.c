@@ -702,7 +702,7 @@ check_addresses (NMIP6Device *device)
 				device_set_state (device, NM_IP6_DEVICE_GOT_LINK_LOCAL);
 			device->has_linklocal = TRUE;
 		} else {
-			if (device->state < NM_IP6_DEVICE_GOT_ADDRESS)
+			if (device->state == NM_IP6_DEVICE_GOT_ROUTER_ADVERTISEMENT)
 				device_set_state (device, NM_IP6_DEVICE_GOT_ADDRESS);
 			device->has_nonlinklocal = TRUE;
 		}
@@ -806,8 +806,8 @@ nm_ip6_device_sync_from_netlink (NMIP6Device *device)
 	            state_to_string (device->state),
 	            state_to_string (device->target_state));
 
-	check_addresses (device);
 	check_ra_flags (device);
+	check_addresses (device);
 	check_addrconf_complete (device);
 }
 
