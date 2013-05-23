@@ -67,4 +67,6 @@ gboolean wifi_utils_set_mesh_channel (WifiData *data, guint32 channel);
 
 gboolean wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid);
 
+gboolean wifi_utils_indicate_addressing_running (WifiData *data, gboolean running);
+
 #endif  /* WIFI_UTILS_H */

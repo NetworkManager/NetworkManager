@@ -65,6 +65,8 @@ struct WifiData {
 
 	/* ssid == NULL means "auto SSID" */
 	gboolean (*set_mesh_ssid) (WifiData *data, const GByteArray *ssid);
+
+	gboolean (*indicate_addressing_running) (WifiData *data, gboolean running);
 };
 
 gpointer wifi_data_new (const char *iface, int ifindex, gsize len);

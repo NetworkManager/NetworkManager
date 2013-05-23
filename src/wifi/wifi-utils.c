@@ -205,3 +205,12 @@ wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
 	return data->set_mesh_ssid (data, ssid);
 }
 
+gboolean
+wifi_utils_indicate_addressing_running (WifiData *data, gboolean running)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+	if (data->indicate_addressing_running)
+		return data->indicate_addressing_running (data, running);
+	return FALSE;
+}
+
