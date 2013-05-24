@@ -441,22 +441,26 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	                           sig_level_0;
 
 	security_str = g_string_new (NULL);
-	if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
-	    &&  (wpa_flags != NM_802_11_AP_SEC_NONE)
-	    &&  (rsn_flags != NM_802_11_AP_SEC_NONE))
-		g_string_append (security_str, _("Encrypted: "));
 
 	if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
 	    && (wpa_flags == NM_802_11_AP_SEC_NONE)
-	    && (rsn_flags == NM_802_11_AP_SEC_NONE))
-		g_string_append (security_str, _("WEP "));
-	if (wpa_flags != NM_802_11_AP_SEC_NONE)
-		g_string_append (security_str, _("WPA "));
-	if (rsn_flags != NM_802_11_AP_SEC_NONE)
-		g_string_append (security_str, _("WPA2 "));
+	    && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
+		g_string_append (security_str, _("WEP"));
+		g_string_append_c (security_str, ' ');
+	}
+	if (wpa_flags != NM_802_11_AP_SEC_NONE) {
+		g_string_append (security_str, _("WPA1"));
+		g_string_append_c (security_str, ' ');
+	}
+	if (rsn_flags != NM_802_11_AP_SEC_NONE) {
+		g_string_append (security_str, _("WPA2"));
+		g_string_append_c (security_str, ' ');
+	}
 	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
-		g_string_append (security_str, _("Enterprise "));
+	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+		g_string_append   (security_str, _("802.1X"));
+		g_string_append_c (security_str, ' ');
+	}
 
 	if (security_str->len > 0)
 		g_string_truncate (security_str, security_str->len-1);  /* Chop off last space */
