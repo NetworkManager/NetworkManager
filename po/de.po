@@ -1192,20 +1192,20 @@ msgstr "Verschlüsselt: "
 
 #: ../cli/src/devices.c:414
 msgid "WEP "
-msgstr "WEP"
+msgstr "WEP "
 
 #: ../cli/src/devices.c:416
 msgid "WPA "
-msgstr "WPA"
+msgstr "WPA "
 
 #: ../cli/src/devices.c:418
 msgid "WPA2 "
-msgstr "WPA2"
+msgstr "WPA2 "
 
 # Das ergibt z.B. WPA-Enterprise, klingt komisch mit »Unternehmen«
 #: ../cli/src/devices.c:421
 msgid "Enterprise "
-msgstr "Enterprise"
+msgstr "Enterprise "
 
 #: ../cli/src/devices.c:430
 msgid "Ad-Hoc"

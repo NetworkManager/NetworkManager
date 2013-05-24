@@ -823,19 +823,19 @@ msgstr "Encriptado: "
 
 #: ../cli/src/devices.c:475
 msgid "WEP "
-msgstr "WEP"
+msgstr "WEP "
 
 #: ../cli/src/devices.c:477
 msgid "WPA "
-msgstr "WPA"
+msgstr "WPA "
 
 #: ../cli/src/devices.c:479
 msgid "WPA2 "
-msgstr "WPA2"
+msgstr "WPA2 "
 
 #: ../cli/src/devices.c:482
 msgid "Enterprise "
-msgstr "Empresa"
+msgstr "Empresa "
 
 #: ../cli/src/devices.c:491
 msgid "Ad-Hoc"
