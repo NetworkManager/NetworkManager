@@ -687,7 +687,7 @@ msgstr "FREKV"
 #. 4
 #: ../cli/src/devices.c:207
 msgid "RATE"
-msgstr "POMĚR"
+msgstr "RYCHLOST"
 
 #. 5
 #. 1
@@ -789,7 +789,7 @@ msgstr "připojuje se (kontroluje se kontektivita IP)"
 #: ../cli/src/devices.c:290
 #| msgid "connecting (getting IP configuration)"
 msgid "connecting (starting secondary connections)"
-msgstr "připojuje se (spouští se druhé připojení)"
+msgstr "připojuje se (spouští se sekundární připojení)"
 
 #: ../cli/src/devices.c:292 ../cli/src/network-manager.c:104
 msgid "connected"
