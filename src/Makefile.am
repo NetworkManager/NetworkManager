@@ -209,6 +209,8 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
+	nm-atm-manager.c \
+	nm-atm-manager.h \
 	nm-call-store.c \
 	nm-call-store.h \
 	nm-connection-provider.c \

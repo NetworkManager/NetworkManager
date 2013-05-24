@@ -64,6 +64,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
 #include "nm-udev-manager.h"
+#include "nm-atm-manager.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
@@ -224,6 +225,7 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	guint          dbus_connection_changed_id;
 	NMUdevManager *udev_mgr;
+	NMAtmManager *atm_mgr;
 	NMRfkillManager *rfkill_mgr;
 	NMBluezManager *bluez_mgr;
 
@@ -2030,6 +2032,21 @@ find_device_by_ip_iface (NMManager *self, const gchar *iface)
 }
 
 static NMDevice *
+find_device_by_iface (NMManager *self, const gchar *iface)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = iter->data;
+
+		if (g_strcmp0 (nm_device_get_iface (candidate), iface) == 0)
+			return candidate;
+	}
+	return NULL;
+}
+
+static NMDevice *
 find_device_by_ifindex (NMManager *self, guint32 ifindex)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2181,12 +2198,6 @@ is_olpc_mesh (GUdevDevice *device)
 	return (prop != NULL);
 }
 
-static gboolean
-is_adsl (GUdevDevice *device)
-{
-	return (g_strcmp0 (g_udev_device_get_subsystem (device), "atm") == 0);
-}
-
 static void
 udev_device_added_cb (NMUdevManager *udev_mgr,
                       GUdevDevice *udev_device,
@@ -2205,21 +2216,13 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	g_return_if_fail (udev_device != NULL);
 	g_return_if_fail (iface != NULL);
 	g_return_if_fail (sysfs_path != NULL);
+	g_return_if_fail (ifindex > 0);
 
-	/* Most devices will have an ifindex here */
-	if (ifindex > 0) {
-		device = find_device_by_ifindex (self, ifindex);
-		if (device) {
-			/* If it's a virtual device we may need to update its UDI */
-			g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
-			return;
-		}
-	} else {
-		/* But ATM/ADSL devices don't */
-		g_return_if_fail (is_adsl (udev_device));
-		device = find_device_by_ip_iface (self, iface);
-		if (device)
-			return;
+	device = find_device_by_ifindex (self, ifindex);
+	if (device) {
+		/* If it's a virtual device we may need to update its UDI */
+		g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
+		return;
 	}
 
 	/* Try registered device factories */
@@ -2258,8 +2261,6 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 				device = nm_device_olpc_mesh_new (sysfs_path, iface, driver);
 			else if (is_wireless (udev_device))
 				device = nm_device_wifi_new (sysfs_path, iface, driver);
-			else if (is_adsl (udev_device))
-				device = nm_device_adsl_new (sysfs_path, iface, driver);
 			else
 				device = nm_device_ethernet_new (sysfs_path, iface, driver);
 			break;
@@ -2354,6 +2355,49 @@ udev_device_removed_cb (NMUdevManager *manager,
 				device = iter->data;
 				break;
 			}
+		}
+	}
+
+	if (device)
+		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+}
+
+static void
+atm_device_added_cb (NMAtmManager *atm_mgr,
+                     const char *iface,
+                     const char *sysfs_path,
+                     const char *driver,
+                     gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMDevice *device;
+
+	g_return_if_fail (iface != NULL);
+	g_return_if_fail (sysfs_path != NULL);
+
+	device = find_device_by_iface (self, iface);
+	if (device)
+		return;
+
+	device = nm_device_adsl_new (sysfs_path, iface, driver);
+	if (device)
+		add_device (self, device);
+}
+
+static void
+atm_device_removed_cb (NMAtmManager *manager,
+                       const char *iface,
+                       gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device = NULL;
+	GSList *iter;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		if (g_strcmp0 (nm_device_get_iface (NM_DEVICE (iter->data)), iface) == 0) {
+			device = iter->data;
+			break;
 		}
 	}
 
@@ -3743,6 +3787,7 @@ nm_manager_start (NMManager *self)
 	read_nm_created_bridges (self);
 
 	nm_udev_manager_query_devices (priv->udev_mgr);
+	nm_atm_manager_query_devices (priv->atm_mgr);
 	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
 	/* Query devices again to ensure that we catch all virtual interfaces (like
@@ -4071,6 +4116,16 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->udev_mgr,
 	                  "device-removed",
 	                  G_CALLBACK (udev_device_removed_cb),
+	                  singleton);
+
+	priv->atm_mgr = nm_atm_manager_new ();
+	g_signal_connect (priv->atm_mgr,
+	                  "device-added",
+	                  G_CALLBACK (atm_device_added_cb),
+	                  singleton);
+	g_signal_connect (priv->atm_mgr,
+	                  "device-removed",
+	                  G_CALLBACK (atm_device_removed_cb),
 	                  singleton);
 
 	priv->rfkill_mgr = nm_rfkill_manager_new ();

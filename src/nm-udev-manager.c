@@ -80,6 +80,13 @@ dev_get_attrs (GUdevDevice *udev_device,
 		return FALSE;
 	}
 
+	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex"))
+		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+	else {
+		nm_log_warn (LOGD_HW, "failed to get device's ifindex");
+		return FALSE;
+	}
+
 	driver = g_udev_device_get_driver (udev_device);
 	if (!driver) {
 		/* Try the parent */
@@ -101,9 +108,6 @@ dev_get_attrs (GUdevDevice *udev_device,
 			}
 		}
 	}
-
-	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex"))
-		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
 
 	if (!driver) {
 		switch (nm_platform_link_get_type (ifindex)) {
@@ -178,30 +182,6 @@ net_remove (NMUdevManager *self, GUdevDevice *device)
 	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 }
 
-static void
-adsl_add (NMUdevManager *self, GUdevDevice *udev_device)
-{
-	gint ifindex = -1;
-	const char *ifname = NULL, *path = NULL;
-	char *driver = NULL;
-
-	g_return_if_fail (udev_device != NULL);
-
-	nm_log_dbg (LOGD_HW, "adsl_add: ATM Device detected from udev. Adding ..");
-
-	if (dev_get_attrs (udev_device, &ifname, &path, &driver, &ifindex))
-		g_signal_emit (self, signals[DEVICE_ADDED], 0, udev_device, ifname, path, driver, ifindex);
-	g_free (driver);
-}
-
-static void
-adsl_remove (NMUdevManager *self, GUdevDevice *device)
-{
-	nm_log_dbg (LOGD_HW, "adsl_remove: Removing ATM Device");
-
-	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
-}
-
 void
 nm_udev_manager_query_devices (NMUdevManager *self)
 {
@@ -222,18 +202,6 @@ nm_udev_manager_query_devices (NMUdevManager *self)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
-
-
-	enumerator = g_udev_enumerator_new (priv->client);
-	g_udev_enumerator_add_match_subsystem (enumerator, "atm");
-	g_udev_enumerator_add_match_is_initialized (enumerator);
-	devices = g_udev_enumerator_execute (enumerator);
-	for (iter = devices; iter; iter = g_list_next (iter)) {
-		adsl_add (self, G_UDEV_DEVICE (iter->data));
-		g_object_unref (G_UDEV_DEVICE (iter->data));
-	}
-	g_list_free (devices);
-	g_object_unref (enumerator);
 }
 
 static void
@@ -249,31 +217,22 @@ handle_uevent (GUdevClient *client,
 
 	/* A bit paranoid */
 	subsys = g_udev_device_get_subsystem (device);
-	g_return_if_fail (subsys != NULL);
+	g_return_if_fail (!g_strcmp0 (subsys, "net"));
 
 	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s'",
 	            action, subsys, g_udev_device_get_name (device));
 
-	g_return_if_fail (!strcmp (subsys, "net") || !strcmp (subsys, "atm"));
-
-	if (!strcmp (action, "add")) {
-		if (!strcmp (subsys, "net"))
-			net_add (self, device);
-		else if (!strcmp (subsys, "atm"))
-			adsl_add (self, device);
-	} else if (!strcmp (action, "remove")) {
-		if (!strcmp (subsys, "net"))
-			net_remove (self, device);
-		else if (!strcmp (subsys, "atm"))
-			adsl_remove (self, device);
-	}
+	if (!strcmp (action, "add"))
+		net_add (self, device);
+	else if (!strcmp (action, "remove"))
+		net_remove (self, device);
 }
 
 static void
 nm_udev_manager_init (NMUdevManager *self)
 {
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
-	const char *subsys[] = { "net", "atm", NULL };
+	const char *subsys[] = { "net", NULL };
 
 	priv->client = g_udev_client_new (subsys);
 	g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
