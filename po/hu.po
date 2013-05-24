@@ -1,27 +1,28 @@
 # Hungarian translation of NetworkManager
 # This file is distributed under the same license as the NetworkManager package.
-# Copyright (C) 2005, Free Software Foundation. Inc.
+# Copyright (C) 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013. Free Software Foundation. Inc.
 #
-# Gabor Kelemen <kelemeng at gnome dot hu>, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012.
+# Gabor Kelemen <kelemeng at gnome dot hu>, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager master\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
-"cgi?product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2012-02-09 15:25+0000\n"
-"PO-Revision-Date: 2012-02-16 04:41+0100\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&keywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2013-05-01 21:55+0000\n"
+"PO-Revision-Date: 2013-05-18 03:06+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng at gnome dot hu>\n"
-"Language-Team: Magyar <gnome-hu-list at gnome dot org>\n"
+"Language-Team: Hungarian <gnome-hu-list at gnome dot org>\n"
+"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 "X-Launchpad-Export-Date: 2010-10-02 18:28+0000\n"
-"X-Generator: Lokalize 1.0\n"
+"X-Generator: Lokalize 1.5\n"
 
 #: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
-#: ../cli/src/common.c:63 ../cli/src/connections.c:119
-#: ../cli/src/connections.c:153
+#: ../cli/src/common.c:63 ../cli/src/connections.c:135
+#: ../cli/src/connections.c:169
 msgid "GROUP"
 msgstr "CSOPORT"
 
@@ -32,7 +33,6 @@ msgstr "CÍM"
 
 #. 1
 #: ../cli/src/common.c:34 ../cli/src/common.c:54
-#| msgid "RATE"
 msgid "ROUTE"
 msgstr "ÚTVONAL"
 
@@ -56,18 +56,306 @@ msgstr "WINS"
 msgid "OPTION"
 msgstr "KAPCSOLÓ"
 
+#: ../cli/src/common.c:366
+msgid "unmanaged"
+msgstr "kezeletlen"
+
+#: ../cli/src/common.c:368
+msgid "unavailable"
+msgstr "elérhetetlen"
+
+#: ../cli/src/common.c:370 ../cli/src/network-manager.c:148
+msgid "disconnected"
+msgstr "leválasztva"
+
+#: ../cli/src/common.c:372
+msgid "connecting (prepare)"
+msgstr "kapcsolódás (előkészítés)"
+
+#: ../cli/src/common.c:374
+msgid "connecting (configuring)"
+msgstr "kapcsolódás (konfigurálás)"
+
+#: ../cli/src/common.c:376
+msgid "connecting (need authentication)"
+msgstr "kapcsolódás (hitelesítés szükséges)"
+
+#: ../cli/src/common.c:378
+msgid "connecting (getting IP configuration)"
+msgstr "kapcsolódás (IP-beállítások lekérése)"
+
+#: ../cli/src/common.c:380
+msgid "connecting (checking IP connectivity)"
+msgstr "kapcsolódás (IP-összekapcsolhatóság ellenőrzése)"
+
+#: ../cli/src/common.c:382
+msgid "connecting (starting secondary connections)"
+msgstr "kapcsolódás (másodlagos kapcsolatok indítása)"
+
+#: ../cli/src/common.c:384 ../cli/src/network-manager.c:144
+msgid "connected"
+msgstr "kapcsolódva"
+
+#: ../cli/src/common.c:386 ../cli/src/connections.c:468
+msgid "deactivating"
+msgstr "kikapcsolás"
+
+#: ../cli/src/common.c:388
+msgid "connection failed"
+msgstr "kapcsolódás sikertelen"
+
+#: ../cli/src/common.c:390 ../cli/src/connections.c:473
+#: ../cli/src/connections.c:496 ../cli/src/connections.c:1193
+#: ../cli/src/devices.c:664 ../cli/src/devices.c:1918
+#: ../cli/src/network-manager.c:151 ../cli/src/network-manager.c:214
+#: ../cli/src/network-manager.c:217 ../cli/src/network-manager.c:226
+#: ../cli/src/network-manager.c:283 ../cli/src/network-manager.c:299
+#: ../cli/src/settings.c:664 ../cli/src/settings.c:692
+#: ../cli/src/settings.c:754 ../cli/src/utils.c:627 ../src/main.c:403
+#: ../src/main.c:422
+msgid "unknown"
+msgstr "ismeretlen"
+
+#: ../cli/src/common.c:399
+msgid "No reason given"
+msgstr "Nincs megadva ok"
+
+#: ../cli/src/common.c:402
+msgid "Unknown error"
+msgstr "Ismeretlen hiba"
+
+#: ../cli/src/common.c:405
+msgid "Device is now managed"
+msgstr "Az eszköz mostantól kezelt"
+
+#: ../cli/src/common.c:408
+msgid "Device is now unmanaged"
+msgstr "Az eszköz mostantól nem kezelt"
+
+#: ../cli/src/common.c:411
+msgid "The device could not be readied for configuration"
+msgstr "Az eszköz nem készíthető fel a beállításra"
+
+#: ../cli/src/common.c:414
+msgid ""
+"IP configuration could not be reserved (no available address, timeout, etc.)"
+msgstr ""
+"Az IP-beállítások nem foglalhatók le (nem érhető el cím, időkorlát stb.)"
+
+#: ../cli/src/common.c:417
+msgid "The IP configuration is no longer valid"
+msgstr "Az IP-beállítások már nem érvényesek"
+
+#: ../cli/src/common.c:420
+msgid "Secrets were required, but not provided"
+msgstr "Titkos információkra volt szükség, de nem lettek megadva"
+
+#: ../cli/src/common.c:423
+msgid "802.1X supplicant disconnected"
+msgstr "A 802.1X-kliens bontotta a kapcsolatot"
+
+#: ../cli/src/common.c:426
+msgid "802.1X supplicant configuration failed"
+msgstr "A 802.1X-kliens beállítása meghiúsult"
+
+#: ../cli/src/common.c:429
+msgid "802.1X supplicant failed"
+msgstr "A 802.1X-kliens sikertelen"
+
+#: ../cli/src/common.c:432
+msgid "802.1X supplicant took too long to authenticate"
+msgstr "A 802.1X-kliens hitelesítése túl sokáig tartott"
+
+#: ../cli/src/common.c:435
+msgid "PPP service failed to start"
+msgstr "A PPP szolgáltatás nem indult el"
+
+#: ../cli/src/common.c:438
+msgid "PPP service disconnected"
+msgstr "PPP szolgáltatás leválasztva"
+
+#: ../cli/src/common.c:441
+msgid "PPP failed"
+msgstr "A PPP sikertelen"
+
+#: ../cli/src/common.c:444
+msgid "DHCP client failed to start"
+msgstr "A DHCP kliens nem indult el"
+
+#: ../cli/src/common.c:447
+msgid "DHCP client error"
+msgstr "DHCP-klienshiba"
+
+#: ../cli/src/common.c:450
+msgid "DHCP client failed"
+msgstr "A DHCP-kliens sikertelen"
+
+#: ../cli/src/common.c:453
+msgid "Shared connection service failed to start"
+msgstr "A megosztott kapcsolat szolgáltatás nem indult el"
+
+#: ../cli/src/common.c:456
+msgid "Shared connection service failed"
+msgstr "A megosztott kapcsolat szolgáltatás sikertelen"
+
+#: ../cli/src/common.c:459
+msgid "AutoIP service failed to start"
+msgstr "Az AutoIP szolgáltatás nem indult el"
+
+#: ../cli/src/common.c:462
+msgid "AutoIP service error"
+msgstr "AutoIP szolgáltatáshiba"
+
+#: ../cli/src/common.c:465
+msgid "AutoIP service failed"
+msgstr "Az AutoIP szolgáltatás sikertelen"
+
+#: ../cli/src/common.c:468
+msgid "The line is busy"
+msgstr "A vonal foglalt"
+
+#: ../cli/src/common.c:471
+msgid "No dial tone"
+msgstr "Nincs tárcsahang"
+
+#: ../cli/src/common.c:474
+msgid "No carrier could be established"
+msgstr "Nem hozható létre vivőjel"
+
+#: ../cli/src/common.c:477
+msgid "The dialing request timed out"
+msgstr "A tárcsázási kérés túllépte az időkorlátot"
+
+#: ../cli/src/common.c:480
+msgid "The dialing attempt failed"
+msgstr "A tárcsázási kísérlet meghiúsult"
+
+#: ../cli/src/common.c:483
+msgid "Modem initialization failed"
+msgstr "A modem előkészítése sikertelen"
+
+#: ../cli/src/common.c:486
+msgid "Failed to select the specified APN"
+msgstr "A megadott APN kiválasztása meghiúsult"
+
+#: ../cli/src/common.c:489
+msgid "Not searching for networks"
+msgstr "Nem keres hálózatokat"
+
+#: ../cli/src/common.c:492
+msgid "Network registration denied"
+msgstr "Hálózatregisztráció megtagadva"
+
+#: ../cli/src/common.c:495
+msgid "Network registration timed out"
+msgstr "A hálózatregisztráció túllépte az időkorlátot"
+
+#: ../cli/src/common.c:498
+msgid "Failed to register with the requested network"
+msgstr "A kért hálózaton való regisztráció sikertelen"
+
+#: ../cli/src/common.c:501
+msgid "PIN check failed"
+msgstr "A PIN ellenőrzése sikertelen"
+
+#: ../cli/src/common.c:504
+msgid "Necessary firmware for the device may be missing"
+msgstr "Az eszközhöz szükséges firmware hiányozhat"
+
+#: ../cli/src/common.c:507
+msgid "The device was removed"
+msgstr "Az eszköz eltávolításra került"
+
+#: ../cli/src/common.c:510
+msgid "NetworkManager went to sleep"
+msgstr "A Hálózatkezelő altatva"
+
+#: ../cli/src/common.c:513
+msgid "The device's active connection disappeared"
+msgstr "Az eszköz aktív kapcsolata eltűnt"
+
+#: ../cli/src/common.c:516
+msgid "Device disconnected by user or client"
+msgstr "Az eszközt a felhasználó vagy a kliens leválasztotta"
+
+#: ../cli/src/common.c:519
+msgid "Carrier/link changed"
+msgstr "A vivőjel/kapcsolat megváltozott"
+
+#: ../cli/src/common.c:522
+msgid "The device's existing connection was assumed"
+msgstr "Az eszköz meglévő kapcsolata felvéve"
+
+#: ../cli/src/common.c:525
+msgid "The supplicant is now available"
+msgstr "A kliens nem érhető el"
+
+#: ../cli/src/common.c:528
+msgid "The modem could not be found"
+msgstr "A modem nem található"
+
+#: ../cli/src/common.c:531
+msgid "The Bluetooth connection failed or timed out"
+msgstr "A Bluetooth kapcsolódás sikertelen, vagy túllépte az időkorlátot"
+
+#: ../cli/src/common.c:534
+msgid "GSM Modem's SIM card not inserted"
+msgstr "A GSM modem SIM kártyája nincs behelyezve"
+
+#: ../cli/src/common.c:537
+msgid "GSM Modem's SIM PIN required"
+msgstr "A GSM modem SIM PIN kódja szükséges"
+
+#: ../cli/src/common.c:540
+msgid "GSM Modem's SIM PUK required"
+msgstr "A GSM modem SIM PUK kódja szükséges"
+
+#: ../cli/src/common.c:543
+msgid "GSM Modem's SIM wrong"
+msgstr "A GSM modem SIM kódja hibás"
+
+#: ../cli/src/common.c:546
+msgid "InfiniBand device does not support connected mode"
+msgstr "Az InfiniBand eszköz nem támogatja a csatlakoztatott módot"
+
+#: ../cli/src/common.c:549
+msgid "A dependency of the connection failed"
+msgstr "A kapcsolat egyik függősége sikertelen volt"
+
+#: ../cli/src/common.c:552
+msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
+msgstr "Hiba az RFC 2684 ADSL fölötti Ethernet bridge-dzsel"
+
+#: ../cli/src/common.c:555
+msgid "ModemManager is unavailable"
+msgstr "A Modemkezelő nem érhető el"
+
+#: ../cli/src/common.c:558
+msgid "The Wi-Fi network could not be found"
+msgstr "A Wi-Fi hálózat nem található"
+
+#: ../cli/src/common.c:561
+msgid "A secondary connection of the base connection failed"
+msgstr "Az alapkapcsolat egyik másodlagos kapcsolata sikertelen"
+
+#: ../cli/src/common.c:564 ../cli/src/devices.c:310 ../cli/src/devices.c:328
+#: ../cli/src/devices.c:450 ../cli/src/devices.c:494
+msgid "Unknown"
+msgstr "Ismeretlen"
+
 #. 0
 #. used only for 'GENERAL' group listing
-#: ../cli/src/connections.c:56 ../cli/src/connections.c:120
-#: ../cli/src/devices.c:100 ../cli/src/devices.c:121 ../cli/src/devices.c:131
-#: ../cli/src/devices.c:141 ../cli/src/devices.c:155 ../cli/src/devices.c:169
-#: ../cli/src/devices.c:191
+#: ../cli/src/connections.c:62 ../cli/src/connections.c:136
+#: ../cli/src/devices.c:109 ../cli/src/devices.c:134 ../cli/src/devices.c:144
+#: ../cli/src/devices.c:154 ../cli/src/devices.c:164 ../cli/src/devices.c:180
+#: ../cli/src/devices.c:194 ../cli/src/devices.c:216 ../cli/src/devices.c:232
+#: ../cli/src/devices.c:241
 msgid "NAME"
 msgstr "NÉV"
 
 #. 0
 #. 1
-#: ../cli/src/connections.c:57 ../cli/src/connections.c:121
+#: ../cli/src/connections.c:63 ../cli/src/connections.c:137
 msgid "UUID"
 msgstr "UUID"
 
@@ -75,28 +363,29 @@ msgstr "UUID"
 #. 0
 #. 1
 #. 2
-#: ../cli/src/connections.c:58 ../cli/src/connections.c:154
-#: ../cli/src/devices.c:66 ../cli/src/devices.c:102 ../cli/src/devices.c:194
+#: ../cli/src/connections.c:64 ../cli/src/connections.c:170
+#: ../cli/src/devices.c:72 ../cli/src/devices.c:111 ../cli/src/devices.c:219
 msgid "TYPE"
 msgstr "TÍPUS"
 
 #. 2
-#: ../cli/src/connections.c:59
+#: ../cli/src/connections.c:65
 msgid "TIMESTAMP"
 msgstr "IDŐBÉLYEG"
 
 #. 3
-#: ../cli/src/connections.c:60
+#: ../cli/src/connections.c:66
 msgid "TIMESTAMP-REAL"
 msgstr "IDŐBÉLYEG-VALÓDI"
 
 #. 4
-#: ../cli/src/connections.c:61
+#. 13
+#: ../cli/src/connections.c:67 ../cli/src/devices.c:123
 msgid "AUTOCONNECT"
 msgstr "AUTO-CSATLAKOZÁS"
 
 #. 5
-#: ../cli/src/connections.c:62
+#: ../cli/src/connections.c:68
 msgid "READONLY"
 msgstr "CSAK OLVASHATÓ"
 
@@ -105,512 +394,502 @@ msgstr "CSAK OLVASHATÓ"
 #. 2
 #. 11
 #. 5
-#: ../cli/src/connections.c:63 ../cli/src/connections.c:128
-#: ../cli/src/devices.c:68 ../cli/src/devices.c:181 ../cli/src/devices.c:197
+#: ../cli/src/connections.c:69 ../cli/src/connections.c:144
+#: ../cli/src/devices.c:74 ../cli/src/devices.c:206 ../cli/src/devices.c:222
 msgid "DBUS-PATH"
 msgstr "DBUS-ÚTVONAL"
 
 #. 2
-#: ../cli/src/connections.c:122
+#: ../cli/src/connections.c:138
 msgid "DEVICES"
 msgstr "ESZKÖZÖK"
 
 #. 3
 #. 1
-#. 6
+#. 8
 #. 1
-#: ../cli/src/connections.c:123 ../cli/src/devices.c:67
-#: ../cli/src/devices.c:107 ../cli/src/network-manager.c:39
+#: ../cli/src/connections.c:139 ../cli/src/devices.c:73
+#: ../cli/src/devices.c:118 ../cli/src/network-manager.c:39
 msgid "STATE"
 msgstr "ÁLLAPOT"
 
 #. 4
-#: ../cli/src/connections.c:124
+#: ../cli/src/connections.c:140
 msgid "DEFAULT"
 msgstr "ALAPÉRTELMEZETT"
 
 #. 5
-#: ../cli/src/connections.c:125
-#| msgid "DEFAULT"
+#: ../cli/src/connections.c:141
 msgid "DEFAULT6"
 msgstr "ALAPÉRTELMEZETT6"
 
 #. 6
-#: ../cli/src/connections.c:126
+#: ../cli/src/connections.c:142
 msgid "SPEC-OBJECT"
 msgstr "SPEC-OBJEKTUM"
 
 #. 7
 #. 1
-#: ../cli/src/connections.c:127 ../cli/src/connections.c:141
+#: ../cli/src/connections.c:143 ../cli/src/connections.c:157
 msgid "VPN"
 msgstr "VPN"
 
 #. 9
-#: ../cli/src/connections.c:129
+#: ../cli/src/connections.c:145
 msgid "CON-PATH"
 msgstr "KAPCS-ÚTVONAL"
 
 #. 10
-#: ../cli/src/connections.c:130
+#: ../cli/src/connections.c:146
 msgid "ZONE"
 msgstr "ZÓNA"
 
 #. 11
-#: ../cli/src/connections.c:131
-#| msgid "DBUS-PATH"
+#: ../cli/src/connections.c:147
 msgid "MASTER-PATH"
 msgstr "ELSŐDLEGES-ÚTVONAL"
 
-#: ../cli/src/connections.c:139 ../cli/src/devices.c:77
+#: ../cli/src/connections.c:155 ../cli/src/devices.c:83
 msgid "GENERAL"
 msgstr "ÁLTALÁNOS"
 
 #. 0
-#: ../cli/src/connections.c:140
-#| msgid "TKIP"
+#: ../cli/src/connections.c:156
 msgid "IP"
 msgstr "IP"
 
 #. 1
-#: ../cli/src/connections.c:155
-#| msgid "NAME"
+#: ../cli/src/connections.c:171
 msgid "USERNAME"
 msgstr "FELHASZNÁLÓNÉV"
 
 #. 2
-#: ../cli/src/connections.c:156
+#: ../cli/src/connections.c:172
 msgid "GATEWAY"
 msgstr "ÁTJÁRÓ"
 
 #. 3
-#: ../cli/src/connections.c:157
+#: ../cli/src/connections.c:173
 msgid "BANNER"
 msgstr "FEJLÉC"
 
 #. 4
-#: ../cli/src/connections.c:158
-#| msgid "STATE"
+#: ../cli/src/connections.c:174
 msgid "VPN-STATE"
 msgstr "VPN-ÁLLAPOT"
 
 #. 5
-#: ../cli/src/connections.c:159
+#: ../cli/src/connections.c:175
 msgid "CFG"
 msgstr "KFG"
 
-#: ../cli/src/connections.c:180
+#: ../cli/src/connections.c:197
 #, c-format
 #| msgid ""
-#| "Usage: nmcli con { COMMAND | help }\n"
-#| "  COMMAND := { list | status | up | down }\n"
+#| "Usage: nmcli connection { COMMAND | help }\n"
+#| "  COMMAND := { show | up | down | delete }\n"
 #| "\n"
-#| "  list [id <id> | uuid <id>]\n"
-#| "  status\n"
-#| "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [nsp <name>] [--"
-#| "nowait] [--timeout <timeout>]\n"
-#| "  up id <id> | uuid <id> [iface <iface>] [ap <hwaddr>] [--nowait] [--"
+#| "  show configured [[ id | uuid | path ] <ID>]\n"
+#| "\n"
+#| "  show active     [[ id | uuid | path | apath ] <ID>]\n"
+#| "\n"
+#| "  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [nsp <name>] "
+#| "[--nowait] [--timeout <timeout>]\n"
+#| "\n"
+#| "  up [ id | uuid | path ] <ID> [iface <iface>] [ap <BSSID>] [--nowait] [--"
 #| "timeout <timeout>]\n"
-#| "  down id <id> | uuid <id>\n"
+#| "\n"
+#| "  down [ id | uuid | path | apath ] <ID>\n"
+#| "\n"
+#| "  delete [ id | uuid | path ] <ID>\n"
+#| "\n"
 msgid ""
-"Usage: nmcli con { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down | delete }\n"
+"Usage: nmcli connection { COMMAND | help }\n"
+"  COMMAND := { show | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id>]\n"
-"  status [id <id> | uuid <id> | path <path>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
-"nowait] [--timeout <timeout>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
-"<timeout>]\n"
-"  down id <id> | uuid <id>\n"
-"  delete id <id> | uuid <id>\n"
+"  show configured [[ id | uuid | path ] <ID>]\n"
+"\n"
+"  show active     [[ id | uuid | path | apath ] <ID>]\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] "
+"[--nowait] [--timeout <timeout>]\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--"
+"timeout <timeout>]\n"
+"\n"
+"  down [ id | uuid | path | apath ] <ID>\n"
+"\n"
+"  delete [ id | uuid | path ] <ID>\n"
+"\n"
 msgstr ""
-"Használat: nmcli con { PARANCS | help }\n"
-"  PARANCS := { list | status | up | down | delete }\n"
+"Használat: nmcli connection { PARANCS | help }\n"
+"  PARANCS := { show | up | down | delete }\n"
 "\n"
-"  list [id <azonosító> | uuid <azonosító> | system | user]\n"
-"  status [id <azonosító> | uuid <azonosító> | path <útvonal>]\n"
-"  up id <azonosító> | uuid <azonosító> [iface <csatoló>] [ap <BSSID>] [nsp "
-"<név>] [--nowait] [--timeout <időkorlát>]\n"
-"  up id <azonosító> | uuid <azonosító> [iface <csatoló>] [ap <BSSID>] [--"
+"  show configured [[ id | uuid | path ] <ID>]\n"
+"\n"
+"  show active     [[ id | uuid | path | apath ] <ID>]\n"
+"\n"
+"   up [ id | uuid | útvonal ] <azonosító> [ifname <csatoló>] [ap <BSSID>] "
+"[nsp <név>] [--nowait] [--timeout <időkorlát>]\n"
+"\n"
+"  up [ id | uuid | útvonal ] <azonosító> [ifname <csatoló>] [ap <BSSID>] [--"
 "nowait] [--timeout <időkorlát>]\n"
+"\n"
 "  down id <azonosító> | uuid <azonosító>\n"
+"\n"
 "  delete id <azonosító> | uuid <azonosító>\n"
+"\n"
 
-#: ../cli/src/connections.c:234 ../cli/src/connections.c:567
+#: ../cli/src/connections.c:256
 #, c-format
-msgid "Error: 'con list': %s"
-msgstr "Hiba: „con list”: %s"
+msgid "Error: 'list configured': %s"
+msgstr "Hiba: „list configured”: %s"
 
-#: ../cli/src/connections.c:236 ../cli/src/connections.c:569
+#: ../cli/src/connections.c:258
 #, c-format
-msgid "Error: 'con list': %s; allowed fields: %s"
-msgstr "Hiba: „con list”: %s; engedélyezett mezők: %s"
+msgid "Error: 'list configured': %s; allowed fields: %s"
+msgstr "Hiba: „list configured”: %s; engedélyezett mezők: %s"
 
-#: ../cli/src/connections.c:244
+#: ../cli/src/connections.c:266
 msgid "Connection details"
 msgstr "Kapcsolat részletei"
 
-#: ../cli/src/connections.c:442
+#: ../cli/src/connections.c:317
 msgid "never"
 msgstr "soha"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:443 ../cli/src/connections.c:444
-#: ../cli/src/connections.c:681 ../cli/src/connections.c:682
-#: ../cli/src/connections.c:684 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:639 ../cli/src/devices.c:750 ../cli/src/devices.c:751
-#: ../cli/src/devices.c:783 ../cli/src/devices.c:809 ../cli/src/devices.c:810
-#: ../cli/src/devices.c:811 ../cli/src/devices.c:812 ../cli/src/devices.c:813
-#: ../cli/src/settings.c:576 ../cli/src/settings.c:646
-#: ../cli/src/settings.c:766 ../cli/src/settings.c:1048
-#: ../cli/src/settings.c:1049 ../cli/src/settings.c:1051
-#: ../cli/src/settings.c:1053 ../cli/src/settings.c:1054
-#: ../cli/src/settings.c:1182 ../cli/src/settings.c:1183
-#: ../cli/src/settings.c:1184 ../cli/src/settings.c:1185
-#: ../cli/src/settings.c:1260 ../cli/src/settings.c:1261
-#: ../cli/src/settings.c:1262 ../cli/src/settings.c:1263
-#: ../cli/src/settings.c:1264 ../cli/src/settings.c:1265
-#: ../cli/src/settings.c:1266 ../cli/src/settings.c:1267
-#: ../cli/src/settings.c:1268 ../cli/src/settings.c:1269
-#: ../cli/src/settings.c:1270 ../cli/src/settings.c:1271
-#: ../cli/src/settings.c:1272 ../cli/src/settings.c:1343
+#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
+#: ../cli/src/connections.c:554 ../cli/src/connections.c:555
+#: ../cli/src/connections.c:557 ../cli/src/devices.c:458
+#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
+#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
+#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
+#: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
+#: ../cli/src/network-manager.c:293
 msgid "yes"
 msgstr "igen"
 
-#: ../cli/src/connections.c:443 ../cli/src/connections.c:444
-#: ../cli/src/connections.c:681 ../cli/src/connections.c:682
-#: ../cli/src/connections.c:684 ../cli/src/devices.c:586
-#: ../cli/src/devices.c:639 ../cli/src/devices.c:750 ../cli/src/devices.c:751
-#: ../cli/src/devices.c:783 ../cli/src/devices.c:809 ../cli/src/devices.c:810
-#: ../cli/src/devices.c:811 ../cli/src/devices.c:812 ../cli/src/devices.c:813
-#: ../cli/src/settings.c:576 ../cli/src/settings.c:578
-#: ../cli/src/settings.c:646 ../cli/src/settings.c:766
-#: ../cli/src/settings.c:1048 ../cli/src/settings.c:1049
-#: ../cli/src/settings.c:1051 ../cli/src/settings.c:1053
-#: ../cli/src/settings.c:1054 ../cli/src/settings.c:1182
-#: ../cli/src/settings.c:1183 ../cli/src/settings.c:1184
-#: ../cli/src/settings.c:1185 ../cli/src/settings.c:1260
-#: ../cli/src/settings.c:1261 ../cli/src/settings.c:1262
-#: ../cli/src/settings.c:1263 ../cli/src/settings.c:1264
-#: ../cli/src/settings.c:1265 ../cli/src/settings.c:1266
-#: ../cli/src/settings.c:1267 ../cli/src/settings.c:1268
-#: ../cli/src/settings.c:1269 ../cli/src/settings.c:1270
-#: ../cli/src/settings.c:1271 ../cli/src/settings.c:1272
-#: ../cli/src/settings.c:1343
+#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
+#: ../cli/src/connections.c:554 ../cli/src/connections.c:555
+#: ../cli/src/connections.c:557 ../cli/src/devices.c:458
+#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
+#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
+#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
+#: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
+#: ../cli/src/network-manager.c:295
 msgid "no"
 msgstr "nem"
 
-#: ../cli/src/connections.c:518
-msgid "Connection list"
-msgstr "Kapcsolatlista"
+#: ../cli/src/connections.c:400
+msgid "List of configured connections"
+msgstr "A beállított kapcsolatok listája"
 
-#: ../cli/src/connections.c:531 ../cli/src/connections.c:1064
-#: ../cli/src/connections.c:1808 ../cli/src/connections.c:1823
-#: ../cli/src/connections.c:1832 ../cli/src/connections.c:1842
-#: ../cli/src/connections.c:1854 ../cli/src/connections.c:1949
-#: ../cli/src/connections.c:2051 ../cli/src/devices.c:1190
-#: ../cli/src/devices.c:1200 ../cli/src/devices.c:1314
-#: ../cli/src/devices.c:1322 ../cli/src/devices.c:1535
-#: ../cli/src/devices.c:1542
+#: ../cli/src/connections.c:417 ../cli/src/connections.c:953
+#: ../cli/src/connections.c:1438 ../cli/src/connections.c:1459
+#: ../cli/src/connections.c:1468 ../cli/src/connections.c:1478
+#: ../cli/src/connections.c:1490 ../cli/src/connections.c:1627
+#: ../cli/src/connections.c:1727 ../cli/src/devices.c:1197
+#: ../cli/src/devices.c:1305 ../cli/src/devices.c:1313
+#: ../cli/src/devices.c:1684 ../cli/src/devices.c:1691
+#: ../cli/src/devices.c:1705 ../cli/src/devices.c:1712
+#: ../cli/src/devices.c:1729 ../cli/src/devices.c:1740
+#: ../cli/src/devices.c:1938 ../cli/src/devices.c:2026
+#: ../cli/src/devices.c:2033
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Hiba: az argumentum (%s) hiányzik."
 
-#: ../cli/src/connections.c:544
+#: ../cli/src/connections.c:431
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "Hiba: nincs ilyen kapcsolat: %s."
 
-#: ../cli/src/connections.c:550 ../cli/src/connections.c:1867
-#: ../cli/src/connections.c:1966 ../cli/src/connections.c:2058
-#: ../cli/src/devices.c:987 ../cli/src/devices.c:1067
-#: ../cli/src/devices.c:1214 ../cli/src/devices.c:1328
-#: ../cli/src/devices.c:1548
+#: ../cli/src/connections.c:444
 #, c-format
-msgid "Unknown parameter: %s\n"
-msgstr "Ismeretlen paraméter: %s\n"
+msgid "Error: 'show configured': %s"
+msgstr "Hiba: „show configured”: %s"
 
-#: ../cli/src/connections.c:559
+#: ../cli/src/connections.c:446
 #, c-format
-msgid "Error: no valid parameter specified."
-msgstr "Hiba: nincs megadva érvényes paraméter."
+msgid "Error: 'show configured': %s; allowed fields: %s"
+msgstr "Hiba: „show configured”: %s; engedélyezett mezők: %s"
 
-#: ../cli/src/connections.c:574 ../cli/src/connections.c:2151
-#: ../cli/src/devices.c:1756 ../cli/src/network-manager.c:456
+#: ../cli/src/connections.c:451 ../cli/src/connections.c:1828
+#: ../cli/src/devices.c:1917 ../cli/src/devices.c:2244
+#: ../cli/src/network-manager.c:396 ../cli/src/network-manager.c:426
+#: ../cli/src/network-manager.c:436 ../cli/src/network-manager.c:444
+#: ../cli/src/network-manager.c:454 ../cli/src/network-manager.c:476
+#: ../cli/src/network-manager.c:577 ../cli/src/network-manager.c:590
 #, c-format
 msgid "Error: %s."
 msgstr "Hiba: %s."
 
-#: ../cli/src/connections.c:587
+#: ../cli/src/connections.c:464
 msgid "activating"
 msgstr "aktiválás"
 
-#: ../cli/src/connections.c:589
+#: ../cli/src/connections.c:466
 msgid "activated"
 msgstr "aktiválva"
 
-#: ../cli/src/connections.c:591 ../cli/src/devices.c:261
-msgid "deactivating"
-msgstr "kikapcsolás"
+#: ../cli/src/connections.c:470
+msgid "deactivated"
+msgstr "deaktiválva"
 
-#: ../cli/src/connections.c:594 ../cli/src/connections.c:617
-#: ../cli/src/connections.c:1680 ../cli/src/devices.c:265
-#: ../cli/src/devices.c:784 ../cli/src/network-manager.c:111
-#: ../cli/src/network-manager.c:173 ../cli/src/network-manager.c:176
-#: ../cli/src/network-manager.c:185 ../cli/src/network-manager.c:291
-#: ../cli/src/network-manager.c:346 ../cli/src/network-manager.c:384
-#: ../cli/src/network-manager.c:423 ../cli/src/settings.c:531
-#: ../cli/src/utils.c:499 ../src/main.c:443 ../src/main.c:462
-msgid "unknown"
-msgstr "ismeretlen"
-
-#: ../cli/src/connections.c:603
+#: ../cli/src/connections.c:482
 msgid "VPN connecting (prepare)"
 msgstr "VPN kapcsolódás (előkészítés)"
 
-#: ../cli/src/connections.c:605
+#: ../cli/src/connections.c:484
 msgid "VPN connecting (need authentication)"
 msgstr "VPN csatlakozás (hitelesítés szükséges)"
 
-#: ../cli/src/connections.c:607
+#: ../cli/src/connections.c:486
 msgid "VPN connecting"
 msgstr "VPN csatlakozás"
 
-#: ../cli/src/connections.c:609
+#: ../cli/src/connections.c:488
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN kapcsolódás (IP-beállítások lekérése)"
 
-#: ../cli/src/connections.c:611
+#: ../cli/src/connections.c:490
 msgid "VPN connected"
 msgstr "VPN csatlakozott"
 
-#: ../cli/src/connections.c:613
+#: ../cli/src/connections.c:492
 msgid "VPN connection failed"
 msgstr "VPN csatlakozás sikertelen"
 
-#: ../cli/src/connections.c:615
+#: ../cli/src/connections.c:494
 msgid "VPN disconnected"
 msgstr "VPN leválasztva"
 
-#: ../cli/src/connections.c:868 ../cli/src/connections.c:1092
-#, c-format
-msgid "Error: 'con status': %s"
-msgstr "Hiba: „con status”: %s"
+#: ../cli/src/connections.c:550 ../cli/src/connections.c:560
+msgid "N/A"
+msgstr "---"
 
-#: ../cli/src/connections.c:870 ../cli/src/connections.c:1094
+#: ../cli/src/connections.c:759
 #, c-format
-msgid "Error: 'con status': %s; allowed fields: %s"
-msgstr "Hiba: „con status”: %s; engedélyezett mezők: %s"
+msgid "Error: 'list active': %s"
+msgstr "Hiba: „list active”: %s"
 
-#: ../cli/src/connections.c:878
-#| msgid "Active connections"
+#: ../cli/src/connections.c:761
+#, c-format
+msgid "Error: 'list active': %s; allowed fields: %s"
+msgstr "Hiba: „list active”: %s; engedélyezett mezők: %s"
+
+#: ../cli/src/connections.c:769
 msgid "Active connection details"
 msgstr "Aktív kapcsolat részletei"
 
-#: ../cli/src/connections.c:1014 ../cli/src/connections.c:1882
-#: ../cli/src/connections.c:1981 ../cli/src/connections.c:2072
-#: ../cli/src/devices.c:1014 ../cli/src/devices.c:1076
-#: ../cli/src/devices.c:1229 ../cli/src/devices.c:1358
-#: ../cli/src/devices.c:1577
-#, c-format
-msgid "Error: Can't find out if NetworkManager is running: %s."
-msgstr "Hiba: nem lehet megállapítani, hogy a Hálózatkezelő fut-e: %s."
-
-#: ../cli/src/connections.c:1018 ../cli/src/connections.c:1886
-#: ../cli/src/connections.c:1985 ../cli/src/connections.c:2076
-#: ../cli/src/devices.c:1018 ../cli/src/devices.c:1080
-#: ../cli/src/devices.c:1233 ../cli/src/devices.c:1362
-#: ../cli/src/devices.c:1581
+#: ../cli/src/connections.c:907 ../cli/src/connections.c:1514
+#: ../cli/src/connections.c:1610 ../cli/src/connections.c:1696
+#: ../cli/src/devices.c:1005 ../cli/src/devices.c:1049
+#: ../cli/src/devices.c:1222 ../cli/src/devices.c:1351
+#: ../cli/src/devices.c:1776 ../cli/src/devices.c:2070
+#: ../cli/src/network-manager.c:339
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "Hiba: a Hálózatkezelő nem fut."
 
-#: ../cli/src/connections.c:1050
-msgid "Active connections"
-msgstr "Aktív kapcsolatok"
+#: ../cli/src/connections.c:936
+msgid "List of active connections"
+msgstr "Aktív kapcsolatok listája"
 
-#: ../cli/src/connections.c:1075
+#: ../cli/src/connections.c:967 ../cli/src/connections.c:1637
 #, c-format
-#| msgid "Error: %s - no such connection."
 msgid "Error: '%s' is not an active connection."
 msgstr "Hiba: a(z) „%s” nem egy aktív kapcsolat."
 
-#: ../cli/src/connections.c:1080
+#: ../cli/src/connections.c:980
 #, c-format
-#| msgid "Unknown parameter: %s\n"
-msgid "Error: unknown parameter: %s"
-msgstr "Hiba: ismeretlen paraméter: %s"
+msgid "Error: 'show active': %s"
+msgstr "Hiba: „show active”: %s"
 
-#: ../cli/src/connections.c:1564
+#: ../cli/src/connections.c:982
+#, c-format
+msgid "Error: 'show active': %s; allowed fields: %s"
+msgstr "Hiba: „show active”: %s; engedélyezett mezők: %s"
+
+#: ../cli/src/connections.c:1075
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "nincs aktív kapcsolat a(z) „%s” eszközön"
 
-#: ../cli/src/connections.c:1572
-#, c-format
+#: ../cli/src/connections.c:1083
 msgid "no active connection or device"
 msgstr "nincs aktív kapcsolat vagy eszköz"
 
-#: ../cli/src/connections.c:1643
+#: ../cli/src/connections.c:1154
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "a(z) „%s” eszköz nem kompatibilis a(z) „%s” kapcsolattal"
 
-#: ../cli/src/connections.c:1645
+#: ../cli/src/connections.c:1157
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "nem található eszköz a(z) „%s” kapcsolathoz"
 
-#: ../cli/src/connections.c:1656
+#: ../cli/src/connections.c:1169
 msgid "unknown reason"
 msgstr "ismeretlen ok"
 
-#: ../cli/src/connections.c:1658
+#: ../cli/src/connections.c:1171
 msgid "none"
 msgstr "nincs"
 
-#: ../cli/src/connections.c:1660
+#: ../cli/src/connections.c:1173
 msgid "the user was disconnected"
 msgstr "felhasználó leválasztva"
 
-#: ../cli/src/connections.c:1662
+#: ../cli/src/connections.c:1175
 msgid "the base network connection was interrupted"
 msgstr "az alap hálózati kapcsolat megszakadt"
 
-#: ../cli/src/connections.c:1664
+#: ../cli/src/connections.c:1177
 msgid "the VPN service stopped unexpectedly"
 msgstr "a VPN szolgáltatás váratlanul leállt"
 
-#: ../cli/src/connections.c:1666
+#: ../cli/src/connections.c:1179
 msgid "the VPN service returned invalid configuration"
 msgstr "a VPN szolgáltatás érvénytelen beállításokat adott"
 
-#: ../cli/src/connections.c:1668
+#: ../cli/src/connections.c:1181
 msgid "the connection attempt timed out"
 msgstr "a csatlakozási kísérlet túllépte az időkorlátot"
 
-#: ../cli/src/connections.c:1670
+#: ../cli/src/connections.c:1183
 msgid "the VPN service did not start in time"
 msgstr "a VPN szolgáltatás nem indult el időben"
 
-#: ../cli/src/connections.c:1672
+#: ../cli/src/connections.c:1185
 msgid "the VPN service failed to start"
 msgstr "a VPN szolgáltatás nem indult el"
 
-#: ../cli/src/connections.c:1674
+#: ../cli/src/connections.c:1187
 msgid "no valid VPN secrets"
 msgstr "nincsenek érvényes VPN titkok"
 
-#: ../cli/src/connections.c:1676
+#: ../cli/src/connections.c:1189
 msgid "invalid VPN secrets"
 msgstr "érvénytelen VPN titkok"
 
-#: ../cli/src/connections.c:1678
+#: ../cli/src/connections.c:1191
 msgid "the connection was removed"
 msgstr "a kapcsolat eltávolításra került"
 
-#: ../cli/src/connections.c:1692
+#: ../cli/src/connections.c:1208 ../cli/src/connections.c:1328
 #, c-format
-msgid "state: %s\n"
-msgstr "állapot: %s\n"
+msgid "Connection successfully activated (D-Bus active path: %s)\n"
+msgstr "A kapcsolat sikeresen aktiválva (D-Bus aktív útvonal: %s)\n"
 
-#: ../cli/src/connections.c:1695 ../cli/src/connections.c:1721
-#, c-format
-msgid "Connection activated\n"
-msgstr "Kapcsolat aktiválva\n"
-
-#: ../cli/src/connections.c:1698
+#: ../cli/src/connections.c:1213
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "Hiba: a kapcsolat aktiválása meghiúsult."
 
-#: ../cli/src/connections.c:1717
+#: ../cli/src/connections.c:1238
 #, c-format
-msgid "state: %s (%d)\n"
-msgstr "állapot: %s (%d)\n"
+msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
+msgstr "A VPN kapcsolat sikeresen aktiválva (D-Bus aktív útvonal: %s)\n"
 
-#: ../cli/src/connections.c:1727
+#: ../cli/src/connections.c:1246
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Hiba: a kapcsolat aktiválása meghiúsult: %s."
 
-#: ../cli/src/connections.c:1744 ../cli/src/devices.c:1136
+#: ../cli/src/connections.c:1264 ../cli/src/devices.c:1110
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Hiba: az időkorlát (%d mp) lejárt."
 
-#: ../cli/src/connections.c:1757
+#: ../cli/src/connections.c:1319
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Hiba: a kapcsolat aktiválása meghiúsult: %s"
 
-#: ../cli/src/connections.c:1763
+#: ../cli/src/connections.c:1385
 #, c-format
-msgid "Active connection state: %s\n"
-msgstr "Aktív kapcsolat állapota: %s\n"
+msgid ""
+"Error: Device '%s' is waiting for slaves before proceeding with activation."
+msgstr "Hiba: „%s” eszköz alárendeltekre vár az aktiválás folytatása előtt."
 
-#: ../cli/src/connections.c:1764
+#: ../cli/src/connections.c:1422 ../cli/src/connections.c:1595
+#: ../cli/src/connections.c:1703
+msgid "Connection (name, UUID, or path): "
+msgstr "Kapcsolat (név, UUID vagy útvonal): "
+
+#: ../cli/src/connections.c:1427 ../cli/src/connections.c:1600
+#: ../cli/src/connections.c:1708
 #, c-format
-msgid "Active connection path: %s\n"
-msgstr "Aktív kapcsolat útvonala: %s\n"
+msgid "Error: No connection specified."
+msgstr "Hiba: Nincs megadva kapcsolat."
 
-#: ../cli/src/connections.c:1816 ../cli/src/connections.c:1957
-#: ../cli/src/connections.c:2085
+#: ../cli/src/connections.c:1450
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "Hiba: ismeretlen kapcsolat: %s."
 
-#: ../cli/src/connections.c:1862 ../cli/src/devices.c:1208
+#: ../cli/src/connections.c:1498 ../cli/src/devices.c:1205
+#: ../cli/src/devices.c:1748
 #, c-format
 msgid "Error: timeout value '%s' is not valid."
 msgstr "Hiba: a(z) „%s” időkorlát érvénytelen."
 
-#: ../cli/src/connections.c:1875 ../cli/src/connections.c:1974
-#: ../cli/src/connections.c:2065
+#: ../cli/src/connections.c:1503 ../cli/src/devices.c:976
+#: ../cli/src/devices.c:1319 ../cli/src/devices.c:1753
+#: ../cli/src/devices.c:2039
 #, c-format
-msgid "Error: id or uuid has to be specified."
-msgstr "Hiba: meg kell adni az id vagy uuid egyikét."
+msgid "Unknown parameter: %s\n"
+msgstr "Ismeretlen paraméter: %s\n"
 
-#: ../cli/src/connections.c:1903
+#: ../cli/src/connections.c:1532
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "Hiba: nem található megfelelő eszköz: %s."
 
-#: ../cli/src/connections.c:1905
+#: ../cli/src/connections.c:1534
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "Hiba: nem található megfelelő eszköz."
 
-#: ../cli/src/connections.c:2010
+#: ../cli/src/connections.c:1666
 #, c-format
-msgid "Warning: Connection not active\n"
-msgstr "Figyelmeztetés: a kapcsolat nem aktív\n"
-
-#: ../cli/src/connections.c:2024
-#, c-format
-#| msgid "Error: Connection activation failed: %s"
 msgid "Error: Connection deletion failed: %s"
 msgstr "Hiba: a kapcsolat törlése meghiúsult: %s"
 
-#: ../cli/src/connections.c:2142
+#: ../cli/src/connections.c:1736
 #, c-format
-msgid "Error: 'con' command '%s' is not valid."
-msgstr "Hiba: a(z) „%s” „con” parancs nem érvényes."
+msgid "Error: unknown connection: %s\n"
+msgstr "Hiba: ismeretlen kapcsolat: %s\n"
 
-#: ../cli/src/connections.c:2207
+#. truncate trailing ", "
+#: ../cli/src/connections.c:1770
 #, c-format
-msgid "Error: could not connect to D-Bus."
-msgstr "Hiba: nem lehet a D-Bushoz kapcsolódni."
+msgid "Error: cannot delete unknown connection(s): %s."
+msgstr "Hiba: az ismeretlen kapcsolatok nem törölhetők: %s."
 
-#: ../cli/src/connections.c:2215
+#: ../cli/src/connections.c:1799
+#, c-format
+msgid ""
+"Error: 'configured' or 'active' command is expected for 'connection show'."
+msgstr ""
+"Hiba: a „configured” vagy „active” parancs szükséges a „connection show”-hoz."
+
+#: ../cli/src/connections.c:1819
+#, c-format
+msgid "Error: '%s' is not valid 'connection' command."
+msgstr "Hiba: a(z) „%s” nem érvényes „connection” parancs."
+
+#: ../cli/src/connections.c:1884
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Hiba: a rendszer beállításai nem kérhetők le."
 
-#: ../cli/src/connections.c:2225
+#: ../cli/src/connections.c:1894
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "Hiba: nem kérhetők le a kapcsolatok: a beállító szolgáltatás nem fut."
@@ -618,750 +897,627 @@ msgstr "Hiba: nem kérhetők le a kapcsolatok: a beállító szolgáltatás nem 
 #. 0
 #. 9
 #. 3
-#: ../cli/src/devices.c:65 ../cli/src/devices.c:101 ../cli/src/devices.c:179
-#: ../cli/src/devices.c:195
+#: ../cli/src/devices.c:71 ../cli/src/devices.c:110 ../cli/src/devices.c:204
+#: ../cli/src/devices.c:220
 msgid "DEVICE"
 msgstr "ESZKÖZ"
 
 #. 0
-#: ../cli/src/devices.c:78
+#: ../cli/src/devices.c:84
 msgid "CAPABILITIES"
 msgstr "KÉPESSÉGEK"
 
 #. 1
-#: ../cli/src/devices.c:79
+#: ../cli/src/devices.c:85
 msgid "WIFI-PROPERTIES"
 msgstr "WIFI-KÉPESSÉGEK"
 
 #. 2
-#: ../cli/src/devices.c:80
+#. 5
+#: ../cli/src/devices.c:86 ../cli/src/devices.c:170
 msgid "AP"
 msgstr "AP"
 
 #. 3
-#: ../cli/src/devices.c:81
+#: ../cli/src/devices.c:87
 msgid "WIRED-PROPERTIES"
 msgstr "VEZETÉKES-TULAJDONSÁGOK"
 
 #. 4
-#: ../cli/src/devices.c:82
+#: ../cli/src/devices.c:88
 msgid "WIMAX-PROPERTIES"
 msgstr "WIMAX-TULAJDONSÁGOK"
 
 #. 5
 #. 0
-#: ../cli/src/devices.c:83 ../cli/src/devices.c:192
+#: ../cli/src/devices.c:89 ../cli/src/devices.c:217
 msgid "NSP"
 msgstr "NSP"
 
 #. 6
-#: ../cli/src/devices.c:84
-#| msgid "IP4-DNS"
+#: ../cli/src/devices.c:90
 msgid "IP4"
 msgstr "IP4"
 
 #. 7
-#: ../cli/src/devices.c:85
+#: ../cli/src/devices.c:91
 msgid "DHCP4"
 msgstr "DHCP4"
 
 #. 8
-#: ../cli/src/devices.c:86
-#| msgid "IP6-DNS"
+#: ../cli/src/devices.c:92
 msgid "IP6"
 msgstr "IP6"
 
 #. 9
-#: ../cli/src/devices.c:87
+#: ../cli/src/devices.c:93
 msgid "DHCP6"
 msgstr "DHCP6"
 
+#. 10
+#: ../cli/src/devices.c:94
+msgid "BOND"
+msgstr "BOND"
+
+#. 11
+#: ../cli/src/devices.c:95
+msgid "VLAN"
+msgstr "VLAN"
+
+#. 12
+#: ../cli/src/devices.c:96
+msgid "CONNECTIONS"
+msgstr "KAPCSOLATOK"
+
 #. 2
-#: ../cli/src/devices.c:103
+#: ../cli/src/devices.c:112
 msgid "VENDOR"
 msgstr "GYÁRTÓ"
 
 #. 3
-#: ../cli/src/devices.c:104
+#: ../cli/src/devices.c:113
 msgid "PRODUCT"
 msgstr "TERMÉK"
 
 #. 4
-#: ../cli/src/devices.c:105
+#: ../cli/src/devices.c:114
 msgid "DRIVER"
 msgstr "ILLESZTŐPROGRAM"
 
 #. 5
-#: ../cli/src/devices.c:106
+#: ../cli/src/devices.c:115
+msgid "DRIVER-VERSION"
+msgstr "ILLESZTŐPROGRAM-VERZIÓ"
+
+#. 6
+#: ../cli/src/devices.c:116
+msgid "FIRMWARE-VERSION"
+msgstr "FIRMWARE-VERZIÓ"
+
+#. 7
+#: ../cli/src/devices.c:117
 msgid "HWADDR"
 msgstr "HWCÍM"
 
-#. 7
-#: ../cli/src/devices.c:108
-#| msgid "READONLY"
+#. 9
+#: ../cli/src/devices.c:119
 msgid "REASON"
 msgstr "OK"
 
-#. 8
-#: ../cli/src/devices.c:109
+#. 10
+#: ../cli/src/devices.c:120
 msgid "UDI"
 msgstr "UDI"
 
-#. 9
-#: ../cli/src/devices.c:110
+#. 11
+#: ../cli/src/devices.c:121
 msgid "IP-IFACE"
 msgstr "IP-CSAT"
 
-#. 10
-#: ../cli/src/devices.c:111
+#. 12
+#: ../cli/src/devices.c:122
 msgid "NM-MANAGED"
 msgstr "NM-KEZELT"
 
-#. 11
-#: ../cli/src/devices.c:112
+#. 14
+#: ../cli/src/devices.c:124
 msgid "FIRMWARE-MISSING"
 msgstr "FIRMWARE-HIÁNYZIK"
 
-#. 12
-#: ../cli/src/devices.c:113
-#| msgid "AUTOCONNECT"
+#. 15
+#: ../cli/src/devices.c:125
 msgid "CONNECTION"
 msgstr "CSATLAKOZÁS"
 
 #. 0
-#: ../cli/src/devices.c:122
+#: ../cli/src/devices.c:135
+msgid "AVAILABLE-CONNECTION-PATHS"
+msgstr "ELÉRHETŐ-KAPCSOLAT-ÚTVONALAK"
+
+#. 1
+#: ../cli/src/devices.c:136
+msgid "AVAILABLE-CONNECTIONS"
+msgstr "ELÉRHETŐ-KAPCSOLATOK"
+
+#. 0
+#: ../cli/src/devices.c:145
 msgid "CARRIER-DETECT"
 msgstr "VIVŐJEL-FELISMERÉS"
 
 #. 1
-#: ../cli/src/devices.c:123
+#: ../cli/src/devices.c:146
 msgid "SPEED"
 msgstr "SEBESSÉG"
 
 #. 0
-#: ../cli/src/devices.c:132
+#: ../cli/src/devices.c:155
 msgid "CARRIER"
 msgstr "VIVŐJEL"
 
 #. 0
-#: ../cli/src/devices.c:142
+#: ../cli/src/devices.c:165
 msgid "WEP"
 msgstr "WEP"
 
 #. 1
-#: ../cli/src/devices.c:143
+#: ../cli/src/devices.c:166
 msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:144
+#: ../cli/src/devices.c:167
 msgid "WPA2"
 msgstr "WPA2"
 
 #. 3
-#: ../cli/src/devices.c:145
+#: ../cli/src/devices.c:168
 msgid "TKIP"
 msgstr "TKIP"
 
 #. 4
-#: ../cli/src/devices.c:146
+#: ../cli/src/devices.c:169
 msgid "CCMP"
 msgstr "CCMP"
 
+#. 6
+#: ../cli/src/devices.c:171
+msgid "ADHOC"
+msgstr "ADHOC"
+
 #. 0
-#: ../cli/src/devices.c:156
+#: ../cli/src/devices.c:181
 msgid "CTR-FREQ"
 msgstr "CTR-FREK"
 
 #. 1
-#: ../cli/src/devices.c:157
+#: ../cli/src/devices.c:182
 msgid "RSSI"
 msgstr "RSSI"
 
 #. 2
-#: ../cli/src/devices.c:158
+#: ../cli/src/devices.c:183
 msgid "CINR"
 msgstr "CINR"
 
 #. 3
-#: ../cli/src/devices.c:159
+#: ../cli/src/devices.c:184
 msgid "TX-POW"
 msgstr "TX-POW"
 
 #. 4
-#: ../cli/src/devices.c:160
+#: ../cli/src/devices.c:185
 msgid "BSID"
 msgstr "BSID"
 
 #. 0
-#: ../cli/src/devices.c:170
+#: ../cli/src/devices.c:195
 msgid "SSID"
 msgstr "SSID"
 
 #. 1
-#: ../cli/src/devices.c:171
+#: ../cli/src/devices.c:196
 msgid "BSSID"
 msgstr "BSSID"
 
 #. 2
-#: ../cli/src/devices.c:172
+#: ../cli/src/devices.c:197
 msgid "MODE"
 msgstr "MÓD"
 
 #. 3
-#: ../cli/src/devices.c:173
+#: ../cli/src/devices.c:198
 msgid "FREQ"
 msgstr "FREK"
 
 #. 4
-#: ../cli/src/devices.c:174
+#: ../cli/src/devices.c:199
 msgid "RATE"
 msgstr "SEBESSÉG"
 
 #. 5
 #. 1
-#: ../cli/src/devices.c:175 ../cli/src/devices.c:193
+#: ../cli/src/devices.c:200 ../cli/src/devices.c:218
 msgid "SIGNAL"
 msgstr "SZIGNÁL"
 
 #. 6
-#: ../cli/src/devices.c:176
+#: ../cli/src/devices.c:201
 msgid "SECURITY"
 msgstr "BIZTONSÁG"
 
 #. 7
-#: ../cli/src/devices.c:177
+#: ../cli/src/devices.c:202
 msgid "WPA-FLAGS"
 msgstr "WPA-JELZŐK"
 
 #. 8
-#: ../cli/src/devices.c:178
+#: ../cli/src/devices.c:203
 msgid "RSN-FLAGS"
 msgstr "RSN-JELZŐK"
 
 #. 10
 #. 4
-#: ../cli/src/devices.c:180 ../cli/src/devices.c:196
+#: ../cli/src/devices.c:205 ../cli/src/devices.c:221
 msgid "ACTIVE"
 msgstr "AKTÍV"
 
-#: ../cli/src/devices.c:213
+#. 0
+#: ../cli/src/devices.c:233
+msgid "SLAVES"
+msgstr "ALÁRENDELTEK"
+
+#. 0
+#: ../cli/src/devices.c:242
+msgid "ID"
+msgstr "AZONOSÍTÓ"
+
+#: ../cli/src/devices.c:258
 #, c-format
 #| msgid ""
-#| "Usage: nmcli dev { COMMAND | help }\n"
+#| "Usage: nmcli device { COMMAND | help }\n"
 #| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+#| "  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 #| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi }\n"
+#| "  COMMAND := { status | show | disconnect | wifi }\n"
 #| "\n"
 #| "  status\n"
-#| "  list [iface <iface>]\n"
-#| "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-#| "  wifi [list [iface <iface>] [hwaddr <hwaddr>]]\n"
+#| "\n"
+#| "  show [<iface>]\n"
+#| "\n"
+#| "  disconnect <iface> [--nowait] [--timeout <timeout>]\n"
+#| "\n"
+#| "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+#| "\n"
+#| "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+#| "[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+#| "\n"
+#| "               [--private] [--nowait] [--timeout <timeout>]\n"
+#| "\n"
+#| "  wifi scan [[iface] <iface>]\n"
+#| "\n"
 #| "  wimax [list [iface <iface>] [nsp <name>]]\n"
 #| "\n"
 msgid ""
-"Usage: nmcli dev { COMMAND | help }\n"
+"Usage: nmcli device { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi }\n"
+"  COMMAND := { status | show | disconnect | wifi }\n"
 "\n"
 "  status\n"
-"  list [iface <iface>]\n"
-"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
-"  wimax [list [iface <iface>] [nsp <name>]]\n"
+"\n"
+"  show [<ifname>]\n"
+"\n"
+"  disconnect <ifname> [--nowait] [--timeout <timeout>]\n"
+"\n"
+"  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"\n"
+"  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[ifname <ifname>] [bssid <BSSID>] [name <name>]\n"
+"\n"
+"               [--private] [--nowait] [--timeout <timeout>]\n"
+"\n"
+"  wifi rescan [[ifname] <ifname>]\n"
+"\n"
+"  wimax [list [ifname <ifname>] [nsp <name>]]\n"
 "\n"
 msgstr ""
 "Használat: nmcli dev { PARANCS | help }\n"
 "\n"
-"  PARANCS := { status | list | disconnect | wifi | wimax }\n"
+"  PARANCS := { status | show | disconnect | wifi | wimax }\n"
 "\n"
-"  PARANCS := { status | list | disconnect | wifi }\n"
+"  PARANCS := { status | show | disconnect | wifi }\n"
 "\n"
 "  status\n"
-"  list [iface <csatoló>]\n"
-"  disconnect iface <csatoló> [--nowait] [--timeout <időkorlát>]\n"
-"  wifi [list [iface <csatoló>] [bssid <hwcím>]]\n"
-"  wimax [list [iface <csatoló>] [nsp <név>]]\n"
+"\n"
+"  show [<csatolónév>]\n"
+"\n"
+"  disconnect <csatolónév> [--nowait] [--timeout <időkorlát>]\n"
+"\n"
+"  wifi [list [ifname <csatolónév>] [bssid <BSSID>]]\n"
+"\n"
+"  wifi connect <(B)SSID> [password <jelszó>] [wep-key-type key|phrase] "
+"[ifname <csatolónév>] [bssid <BSSID>] [name <név>]\n"
+"\n"
+"               [--private] [--nowait] [--timeout <időkorlát>]\n"
+"\n"
+"  wifi scan [[ifname] <csatolónév>]\n"
+"\n"
+"  wimax [list [ifname <csatolónév>] [nsp <név>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:241
-msgid "unmanaged"
-msgstr "kezeletlen"
-
-#: ../cli/src/devices.c:243
-msgid "unavailable"
-msgstr "elérhetetlen"
-
-#: ../cli/src/devices.c:245 ../cli/src/network-manager.c:108
-msgid "disconnected"
-msgstr "leválasztva"
-
-#: ../cli/src/devices.c:247
-msgid "connecting (prepare)"
-msgstr "kapcsolódás (előkészítés)"
-
-#: ../cli/src/devices.c:249
-msgid "connecting (configuring)"
-msgstr "kapcsolódás (konfigurálás)"
-
-#: ../cli/src/devices.c:251
-msgid "connecting (need authentication)"
-msgstr "kapcsolódás (hitelesítés szükséges)"
-
-#: ../cli/src/devices.c:253
-msgid "connecting (getting IP configuration)"
-msgstr "kapcsolódás (IP-beállítások lekérése)"
-
-#: ../cli/src/devices.c:255
-msgid "connecting (checking IP connectivity)"
-msgstr "kapcsolódás (IP-összekapcsolhatóság ellenőrzése)"
-
-#: ../cli/src/devices.c:257
-msgid "connecting (starting secondary connections)"
-msgstr "kapcsolódás (másodlagos kapcsolatok indítása)"
-
-#: ../cli/src/devices.c:259 ../cli/src/network-manager.c:104
-msgid "connected"
-msgstr "kapcsolódva"
-
-#: ../cli/src/devices.c:263
-msgid "connection failed"
-msgstr "kapcsolódás sikertelen"
-
-#: ../cli/src/devices.c:274
-msgid "No reason given"
-msgstr "Nincs megadva ok"
-
-#: ../cli/src/devices.c:277
-#| msgid "Unknown"
-msgid "Unknown error"
-msgstr "Ismeretlen hiba"
-
-#: ../cli/src/devices.c:280
-msgid "Device is now managed"
-msgstr "Az eszköz mostantól kezelt"
-
-#: ../cli/src/devices.c:283
-msgid "Device is now unmanaged"
-msgstr "Az eszköz mostantól nem kezelt"
-
-#: ../cli/src/devices.c:286
-#| msgid "the VPN service returned invalid configuration"
-msgid "The device could not be readied for configuration"
-msgstr "Az eszköz nem készíthető fel a beállításra"
-
-#: ../cli/src/devices.c:289
-msgid ""
-"IP configuration could not be reserved (no available address, timeout, etc)"
-msgstr ""
-"Az IP-beállítások nem foglalhatók le (nem érhető el cím, időkorlát stb.)"
-
-#: ../cli/src/devices.c:292
-msgid "The IP configuration is no longer valid"
-msgstr "Az IP-beállítások már nem érvényesek"
-
-#: ../cli/src/devices.c:295
-msgid "Secrets were required, but not provided"
-msgstr "Titkos információkra volt szükség, de nem lettek megadva"
-
-#: ../cli/src/devices.c:298
-msgid "802.1X supplicant disconnected"
-msgstr "A 802.1X-kliens bontotta a kapcsolatot"
-
-#: ../cli/src/devices.c:301
-msgid "802.1X supplicant configuration failed"
-msgstr "A 802.1X-kliens beállítása meghiúsult"
-
-#: ../cli/src/devices.c:304
-msgid "802.1X supplicant failed"
-msgstr "A 802.1X-kliens sikertelen"
-
-#: ../cli/src/devices.c:307
-msgid "802.1X supplicant took too long to authenticate"
-msgstr "A 802.1X-kliens hitelesítése túl sokáig tartott"
-
-#: ../cli/src/devices.c:310
-#| msgid "the VPN service failed to start"
-msgid "PPP service failed to start"
-msgstr "A PPP szolgáltatás nem indult el"
-
-#: ../cli/src/devices.c:313
-#| msgid "VPN disconnected"
-msgid "PPP service disconnected"
-msgstr "PPP szolgáltatás leválasztva"
-
-#: ../cli/src/devices.c:316
-msgid "PPP failed"
-msgstr "A PPP sikertelen"
-
-#: ../cli/src/devices.c:319
-#| msgid "the VPN service failed to start"
-msgid "DHCP client failed to start"
-msgstr "A DHCP kliens nem indult el"
-
-#: ../cli/src/devices.c:322
-msgid "DHCP client error"
-msgstr "DHCP-klienshiba"
-
-#: ../cli/src/devices.c:325
-#| msgid "VPN connection failed"
-msgid "DHCP client failed"
-msgstr "A DHCP-kliens sikertelen"
-
-#: ../cli/src/devices.c:328
-#| msgid "the VPN service failed to start"
-msgid "Shared connection service failed to start"
-msgstr "A megosztott kapcsolat szolgáltatás nem indult el"
-
-#: ../cli/src/devices.c:331
-#| msgid "connection failed"
-msgid "Shared connection service failed"
-msgstr "A megosztott kapcsolat szolgáltatás sikertelen"
-
-#: ../cli/src/devices.c:334
-#| msgid "the VPN service failed to start"
-msgid "AutoIP service failed to start"
-msgstr "Az AutoIP szolgáltatás nem indult el"
-
-#: ../cli/src/devices.c:337
-msgid "AutoIP service error"
-msgstr "AutoIP szolgáltatáshiba"
-
-#: ../cli/src/devices.c:340
-#| msgid "the VPN service failed to start"
-msgid "AutoIP service failed"
-msgstr "Az AutoIP szolgáltatás sikertelen"
-
-#: ../cli/src/devices.c:343
-msgid "The line is busy"
-msgstr "A vonal foglalt"
-
-#: ../cli/src/devices.c:346
-msgid "No dial tone"
-msgstr "Nincs tárcsahang"
-
-#: ../cli/src/devices.c:349
-msgid "No carrier could be established"
-msgstr "Nem hozható létre vivőjel"
-
-#: ../cli/src/devices.c:352
-msgid "The dialing request timed out"
-msgstr "A tárcsázási kérés túllépte az időkorlátot"
-
-#: ../cli/src/devices.c:355
-msgid "The dialing attempt failed"
-msgstr "A tárcsázási kísérlet meghiúsult"
-
-#: ../cli/src/devices.c:358
-#| msgid "Error: Connection activation failed."
-msgid "Modem initialization failed"
-msgstr "A modem előkészítése sikertelen"
-
 #: ../cli/src/devices.c:361
-#| msgid "Failed to decrypt the private key."
-msgid "Failed to select the specified APN"
-msgstr "A megadott APN kiválasztása meghiúsult"
-
-#: ../cli/src/devices.c:364
-msgid "Not searching for networks"
-msgstr "Nem keres hálózatokat"
-
-#: ../cli/src/devices.c:367
-#| msgid "Networking enabled"
-msgid "Network registration denied"
-msgstr "Hálózatregisztráció megtagadva"
-
-#: ../cli/src/devices.c:370
-msgid "Network registration timed out"
-msgstr "A hálózatregisztráció túllépte az időkorlátot"
-
-#: ../cli/src/devices.c:373
-msgid "Failed to register with the requested network"
-msgstr "A kért hálózaton való regisztráció sikertelen"
-
-#: ../cli/src/devices.c:376
-#| msgid "VPN connection failed"
-msgid "PIN check failed"
-msgstr "A PIN ellenőrzése sikertelen"
-
-#: ../cli/src/devices.c:379
-msgid "Necessary firmware for the device may be missing"
-msgstr "Az eszközhöz szükséges firmware hiányozhat"
-
-#: ../cli/src/devices.c:382
-#| msgid "the connection was removed"
-msgid "The device was removed"
-msgstr "Az eszköz eltávolításra került"
-
-#: ../cli/src/devices.c:385
-#| msgid "NetworkManager status"
-msgid "NetworkManager went to sleep"
-msgstr "A Hálózatkezelő altatva"
-
-#: ../cli/src/devices.c:388
-#| msgid "no active connection or device"
-msgid "The device's active connection disappeared"
-msgstr "Az eszköz aktív kapcsolata eltűnt"
-
-#: ../cli/src/devices.c:391
-msgid "Device disconnected by user or client"
-msgstr "Az eszközt a felhasználó vagy a kliens leválasztotta"
-
-#: ../cli/src/devices.c:394
-msgid "Carrier/link changed"
-msgstr "A vivőjel/kapcsolat megváltozott"
-
-#: ../cli/src/devices.c:397
-#| msgid "the connection was removed"
-msgid "The device's existing connection was assumed"
-msgstr "Az eszköz meglévő kapcsolata felvéve"
-
-#: ../cli/src/devices.c:400
-msgid "The supplicant is now available"
-msgstr "A kliens nem érhető el"
-
-#: ../cli/src/devices.c:403
-#| msgid "'dhcpcd' could be found."
-msgid "The modem could not be found"
-msgstr "A modem nem található"
-
-#: ../cli/src/devices.c:406
-#| msgid "the connection attempt timed out"
-msgid "The Bluetooth connection failed or timed out"
-msgstr "A Bluetooth kapcsolódás sikertelen, vagy túllépte az időkorlátot"
-
-#: ../cli/src/devices.c:409
-msgid "GSM Modem's SIM card not inserted"
-msgstr "A GSM modem SIM kártyája nincs behelyezve"
-
-#: ../cli/src/devices.c:412
-msgid "GSM Modem's SIM PIN required"
-msgstr "A GSM modem SIM PIN kódja szükséges"
-
-#: ../cli/src/devices.c:415
-msgid "GSM Modem's SIM PUK required"
-msgstr "A GSM modem SIM PUK kódja szükséges"
-
-#: ../cli/src/devices.c:418
-msgid "GSM Modem's SIM wrong"
-msgstr "A GSM modem SIM kódja hibás"
-
-#: ../cli/src/devices.c:421
-msgid "InfiniBand device does not support connected mode"
-msgstr "Az InfiniBand eszköz nem támogatja a csatlakoztatott módot"
-
-#: ../cli/src/devices.c:423 ../cli/src/devices.c:446 ../cli/src/devices.c:458
-#: ../cli/src/devices.c:578 ../cli/src/devices.c:622
-msgid "Unknown"
-msgstr "Ismeretlen"
-
-#: ../cli/src/devices.c:491
 msgid "(none)"
 msgstr "(semmi)"
 
-#: ../cli/src/devices.c:547
+#: ../cli/src/devices.c:417
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:548
+#: ../cli/src/devices.c:418
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:557
+#: ../cli/src/devices.c:427
 msgid "Encrypted: "
 msgstr "Titkosított: "
 
-#: ../cli/src/devices.c:562
+#: ../cli/src/devices.c:432
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:564
+#: ../cli/src/devices.c:434
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:566
+#: ../cli/src/devices.c:436
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:569
+#: ../cli/src/devices.c:439
 msgid "Enterprise "
 msgstr "Enterprise "
 
-#: ../cli/src/devices.c:578
+#: ../cli/src/devices.c:448
 msgid "Ad-Hoc"
 msgstr "Eseti"
 
-#: ../cli/src/devices.c:578
+#: ../cli/src/devices.c:449
 msgid "Infrastructure"
 msgstr "Infrastruktúra"
 
-#: ../cli/src/devices.c:613
+#: ../cli/src/devices.c:485
 msgid "Home"
 msgstr "Otthoni"
 
-#: ../cli/src/devices.c:616
+#: ../cli/src/devices.c:488
 msgid "Partner"
 msgstr "Partner"
 
-#: ../cli/src/devices.c:619
+#: ../cli/src/devices.c:491
 msgid "Roaming"
 msgstr "Barangoló"
 
-#: ../cli/src/devices.c:691
+#: ../cli/src/devices.c:563
 #, c-format
-msgid "Error: 'dev list': %s"
-msgstr "Hiba: „dev list”: %s"
+msgid "Error: 'device show': %s"
+msgstr "Hiba: „device show”: %s"
 
-#: ../cli/src/devices.c:693
+#: ../cli/src/devices.c:565
 #, c-format
-msgid "Error: 'dev list': %s; allowed fields: %s"
-msgstr "Hiba: „dev list”: %s; engedélyezett mezők: %s"
+msgid "Error: 'device show': %s; allowed fields: %s"
+msgstr "Hiba: „device show”: %s; engedélyezett mezők: %s"
 
-#: ../cli/src/devices.c:702
+#: ../cli/src/devices.c:574
 msgid "Device details"
 msgstr "Eszköz részletei"
 
-#: ../cli/src/devices.c:744 ../cli/src/devices.c:745 ../cli/src/devices.c:1152
-#: ../cli/src/utils.c:445
+#: ../cli/src/devices.c:621 ../cli/src/devices.c:624 ../cli/src/devices.c:1136
 msgid "(unknown)"
 msgstr "(ismeretlen)"
 
-#: ../cli/src/devices.c:753
-#| msgid "connected"
+#: ../cli/src/devices.c:633
 msgid "not connected"
 msgstr "nincs kapcsolat"
 
-#: ../cli/src/devices.c:780
+#: ../cli/src/devices.c:660
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:853
+#: ../cli/src/devices.c:736
 msgid "on"
 msgstr "be"
 
-#: ../cli/src/devices.c:853
+#: ../cli/src/devices.c:736
 msgid "off"
 msgstr "ki"
 
-#: ../cli/src/devices.c:1004
+#: ../cli/src/devices.c:993
 #, c-format
-msgid "Error: 'dev status': %s"
-msgstr "Hiba: „dev status”: %s"
+msgid "Error: 'device status': %s"
+msgstr "Hiba: „device status”: %s"
 
-#: ../cli/src/devices.c:1006
+#: ../cli/src/devices.c:995
 #, c-format
-msgid "Error: 'dev status': %s; allowed fields: %s"
-msgstr "Hiba: „dev status”: %s; engedélyezett mezők: %s"
+msgid "Error: 'device status': %s; allowed fields: %s"
+msgstr "Hiba: „device status”: %s; engedélyezett mezők: %s"
 
-#: ../cli/src/devices.c:1029
+#: ../cli/src/devices.c:1015
 msgid "Status of devices"
 msgstr "Eszközök állapota"
 
-#: ../cli/src/devices.c:1060
+#: ../cli/src/devices.c:1041
 #, c-format
-msgid "Error: '%s' argument is missing."
-msgstr "Hiba: „%s” argumentum hiányzik."
+msgid "Error: invalid extra argument '%s'."
+msgstr "Hiba: érvénytelen extra argumentum: „%s”."
 
-#: ../cli/src/devices.c:1101 ../cli/src/devices.c:1253
-#: ../cli/src/devices.c:1390 ../cli/src/devices.c:1609
+#: ../cli/src/devices.c:1069 ../cli/src/devices.c:1240
+#: ../cli/src/devices.c:1377 ../cli/src/devices.c:2096
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Hiba: a(z) „%s” eszköz nem található."
 
-#: ../cli/src/devices.c:1124
+#: ../cli/src/devices.c:1098
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "Siker: a(z) „%s” eszköz sikeresen leválasztva."
 
-#: ../cli/src/devices.c:1149
+#: ../cli/src/devices.c:1133
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "Hiba: a(z) „%s” (%s) eszköz leválasztása meghiúsult: %s"
 
-#: ../cli/src/devices.c:1157
+#: ../cli/src/devices.c:1146
 #, c-format
-msgid "Device state: %d (%s)\n"
-msgstr "Eszköz állapota: %d (%s)\n"
+msgid "Device '%s' has been disconnected.\n"
+msgstr "A(z) „%s” eszköz leválasztva.\n"
 
-#: ../cli/src/devices.c:1222
+#: ../cli/src/devices.c:1177 ../cli/src/devices.c:1186
 #, c-format
-msgid "Error: iface has to be specified."
-msgstr "Hiba: meg kell adni a csatolót."
+msgid "Error: No interface specified."
+msgstr "Hiba: Nincs megadva csatoló."
 
-#: ../cli/src/devices.c:1348
+#: ../cli/src/devices.c:1211
 #, c-format
-msgid "Error: 'dev wifi': %s"
-msgstr "Hiba: „dev wifi”: %s"
+msgid "Error: unknown argument '%s'."
+msgstr "Hiba: ismeretlen argumentum: „%s”."
 
-#: ../cli/src/devices.c:1350
+#: ../cli/src/devices.c:1339
 #, c-format
-msgid "Error: 'dev wifi': %s; allowed fields: %s"
-msgstr "Hiba: „dev wifi”: %s; engedélyezett mezők: %s"
+msgid "Error: 'device wifi': %s"
+msgstr "Hiba: „device wifi”: %s"
 
-#: ../cli/src/devices.c:1373
-msgid "WiFi scan list"
-msgstr "WiFi-keresési lista"
-
-#: ../cli/src/devices.c:1410 ../cli/src/devices.c:1464
+#: ../cli/src/devices.c:1341
 #, c-format
-#| msgid "Error: Access point with hwaddr '%s' not found."
+msgid "Error: 'device wifi': %s; allowed fields: %s"
+msgstr "Hiba: „device wifi”: %s; engedélyezett mezők: %s"
+
+#: ../cli/src/devices.c:1361
+msgid "Wi-Fi scan list"
+msgstr "Wi-Fi keresési lista"
+
+#: ../cli/src/devices.c:1397 ../cli/src/devices.c:1451
+#, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "Hiba: nem található a(z) „%s” BSSID-vel rendelkező hozzáférési pont,"
 
-#: ../cli/src/devices.c:1427
+#: ../cli/src/devices.c:1414 ../cli/src/devices.c:1792
+#: ../cli/src/devices.c:1954
 #, c-format
-msgid "Error: Device '%s' is not a WiFi device."
-msgstr "Hiba: a(z) „%s” eszköz nem WiFi-eszköz."
+msgid "Error: Device '%s' is not a Wi-Fi device."
+msgstr "Hiba: A(z) „%s” eszköz nem Wi-Fi eszköz."
 
-#: ../cli/src/devices.c:1491
+#: ../cli/src/devices.c:1482 ../cli/src/devices.c:1528
 #, c-format
-msgid "Error: 'dev wifi' command '%s' is not valid."
-msgstr "Hiba: a „dev wifi” parancs („%s) nem érvényes."
+msgid "Connection with UUID '%s' created and activated on device '%s'\n"
+msgstr "A kapcsolat „%s” UUID-vel létrehozva és aktiválva a(z) „%s” eszközön\n"
 
-#: ../cli/src/devices.c:1567
+#: ../cli/src/devices.c:1487
 #, c-format
-msgid "Error: 'dev wimax': %s"
-msgstr "Hiba: „dev wimax”: %s"
+msgid "Error: Connection activation failed: (%d) %s."
+msgstr "Hiba: a kapcsolat aktiválása meghiúsult: (%d) %s."
 
-#: ../cli/src/devices.c:1569
+#: ../cli/src/devices.c:1512
 #, c-format
-msgid "Error: 'dev wimax': %s; allowed fields: %s"
-msgstr "Hiba: „dev wimax”: %s; engedélyezett mezők: %s"
+msgid "Error: Failed to add/activate new connection: (%d) %s"
+msgstr "Hiba: Az új kapcsolat hozzáadása vagy aktiválása meghiúsult: (%d) %s"
 
-#: ../cli/src/devices.c:1592
+#: ../cli/src/devices.c:1520
+#, c-format
+msgid "Error: Failed to add/activate new connection: Unknown error"
+msgstr ""
+"Hiba: Az új kapcsolat hozzáadása vagy aktiválása meghiúsult: ismeretlen hiba"
+
+#: ../cli/src/devices.c:1674
+#, c-format
+msgid "Error: SSID or BSSID are missing."
+msgstr "Hiba: az SSID vagy BSSID hiányzik."
+
+#: ../cli/src/devices.c:1698
+#, c-format
+msgid "Error: bssid argument value '%s' is not a valid BSSID."
+msgstr "Hiba: a(z) „%s” BSSID argumentumérték nem érvényes BSSID."
+
+#: ../cli/src/devices.c:1722
+#, c-format
+msgid ""
+"Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
+msgstr ""
+"Hiba: a wep-key-type argumentum „%s” értéke érvénytelen, használja a „key” "
+"vagy „phrase” egyikét."
+
+#: ../cli/src/devices.c:1762
+#, c-format
+msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
+msgstr ""
+"Hiba: a csatlakozáshoz használandó BSSID (%s) eltér a bssid argumentumtól "
+"(%s)."
+
+#: ../cli/src/devices.c:1768
+#, c-format
+msgid "Error: Parameter '%s' is neither SSID nor BSSID."
+msgstr "Hiba: a paraméter („%s”) nem SSID vagy BSSID."
+
+#: ../cli/src/devices.c:1794 ../cli/src/devices.c:1956
+#, c-format
+msgid "Error: No Wi-Fi device found."
+msgstr "Hiba: nem található Wi-Fi eszköz."
+
+#: ../cli/src/devices.c:1812
+#, c-format
+msgid "Error: No network with SSID '%s' found."
+msgstr "Hiba: nem található „%s” SSID-jú hálózat."
+
+#: ../cli/src/devices.c:1814
+#, c-format
+msgid "Error: No access point with BSSID '%s' found."
+msgstr "Hiba: nem található „%s” BSSID-jú hozzáférési pont."
+
+#: ../cli/src/devices.c:1982
+#, c-format
+msgid "Error: 'device wifi' command '%s' is not valid."
+msgstr "Hiba: a „device wifi” parancs („%s) nem érvényes."
+
+#: ../cli/src/devices.c:2058
+#, c-format
+msgid "Error: 'device wimax': %s"
+msgstr "Hiba: „device wimax”: %s"
+
+#: ../cli/src/devices.c:2060
+#, c-format
+msgid "Error: 'device wimax': %s; allowed fields: %s"
+msgstr "Hiba: „device wimax”: %s; engedélyezett mezők: %s"
+
+#: ../cli/src/devices.c:2080
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP-lista"
 
-#: ../cli/src/devices.c:1629
+#: ../cli/src/devices.c:2116
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "Hiba: a(z) „%s” nevű NSP nem található."
 
-#: ../cli/src/devices.c:1640
+#: ../cli/src/devices.c:2127
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "Hiba: a(z) „%s” eszköz nem WiMAX-eszköz."
 
-#: ../cli/src/devices.c:1671
+#: ../cli/src/devices.c:2158
 #, c-format
-#| msgid "Error: Access point with hwaddr '%s' not found."
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "Hiba: nem található a(z) „%s” NSP-vel rendelkező hozzáférési pont."
 
-#: ../cli/src/devices.c:1698
+#: ../cli/src/devices.c:2185
 #, c-format
-msgid "Error: 'dev wimax' command '%s' is not valid."
-msgstr "Hiba: a „dev wimax” parancs („%s) nem érvényes."
+msgid "Error: 'device wimax' command '%s' is not valid."
+msgstr "Hiba: a „device wimax” parancs („%s) nem érvényes."
 
-#: ../cli/src/devices.c:1748
+#: ../cli/src/devices.c:2236
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "Hiba: a „dev” parancs („%s) nem érvényes."
@@ -1377,13 +1533,13 @@ msgstr "VERZIÓ"
 
 #. 2
 #: ../cli/src/network-manager.c:40
-msgid "NET-ENABLED"
-msgstr "NET-KÉPES"
+msgid "NETWORKING"
+msgstr "HÁLÓZATKEZELÉS"
 
 #. 3
 #: ../cli/src/network-manager.c:41
-msgid "WIFI-HARDWARE"
-msgstr "WIFI-HARDVER"
+msgid "WIFI-HW"
+msgstr "WIFI-HW"
 
 #. 4
 #: ../cli/src/network-manager.c:42
@@ -1392,8 +1548,8 @@ msgstr "WIFI"
 
 #. 5
 #: ../cli/src/network-manager.c:43
-msgid "WWAN-HARDWARE"
-msgstr "WWAN-HARDVER"
+msgid "WWAN-HW"
+msgstr "WWAN-HW"
 
 #. 6
 #: ../cli/src/network-manager.c:44
@@ -1402,8 +1558,8 @@ msgstr "WWAN"
 
 #. 7
 #: ../cli/src/network-manager.c:45
-msgid "WIMAX-HARDWARE"
-msgstr "WIMAX-HARDVER"
+msgid "WIMAX-HW"
+msgstr "WIMAX-HW"
 
 #. 8
 #: ../cli/src/network-manager.c:46
@@ -1411,176 +1567,225 @@ msgid "WIMAX"
 msgstr "WIMAX"
 
 #: ../cli/src/network-manager.c:67
+msgid "PERMISSION"
+msgstr "JOGOSULTSÁG"
+
+#. 0
+#: ../cli/src/network-manager.c:68
+msgid "VALUE"
+msgstr "ÉRTÉK"
+
+#: ../cli/src/network-manager.c:76
+msgid "LEVEL"
+msgstr "SZINT"
+
+#. 0
+#: ../cli/src/network-manager.c:77
+msgid "DOMAINS"
+msgstr "TARTOMÁNYOK"
+
+#: ../cli/src/network-manager.c:92
 #, c-format
 msgid ""
-"Usage: nmcli nm { COMMAND | help }\n"
+"Usage: nmcli general { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
-"\n"
-"  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+"  COMMAND := { status | permissions | logging }\n"
 "\n"
 "  status\n"
-"  enable [true|false]\n"
-"  sleep [true|false]\n"
-"  wifi [on|off]\n"
-"  wwan [on|off]\n"
-"  wimax [on|off]\n"
+"\n"
+"  permissions\n"
+"\n"
+"  logging [level <log level>] [domains <log domains>]\n"
 "\n"
 msgstr ""
-"Használat: nmcli nm { PARANCS | help }\n"
+"Használat: nmcli general { PARANCS | help }\n"
 "\n"
-"  PARANCS := { status | enable | sleep | wifi | wwan | wimax }\n"
-"\n"
-"  PARANCS := { status | enable | sleep | wifi | wwan }\n"
+"  PARANCS := { status | permissions | logging }\n"
 "\n"
 "  status\n"
-"  enable [true|false]\n"
-"  sleep [true|false]\n"
-"  wifi [on|off]\n"
-"  wwan [on|off]\n"
-"  wimax [on|off]\n"
+"\n"
+"  permissions\n"
+"\n"
+"  logging [level <naplózási szint>] [domains <naplózandó tartományok>]\n"
 "\n"
 
-#: ../cli/src/network-manager.c:96
+#: ../cli/src/network-manager.c:104
+#, c-format
+msgid ""
+"Usage: nmcli networking { COMMAND | help }\n"
+"\n"
+"  COMMAND := { [ on | off ] }\n"
+"\n"
+msgstr ""
+"Használat: nmcli networking { PARANCS | help }\n"
+"\n"
+"  PARANCS := { [ on | off ] }\n"
+"\n"
+
+#: ../cli/src/network-manager.c:113
+#, c-format
+msgid ""
+"Usage: nmcli radio { COMMAND | help }\n"
+"\n"
+"  COMMAND := { all | wifi | wwan | wimax }\n"
+"\n"
+"  all | wifi | wwan | wimax [ on | off ]\n"
+"\n"
+"  COMMAND := { all | wifi | wwan }\n"
+"\n"
+"  all | wifi | wwan [ on | off ]\n"
+"\n"
+msgstr ""
+"Használat: nmcli radio { PARANCS | help }\n"
+"\n"
+"  PARANCS := { all | wifi | wwan | wimax }\n"
+"\n"
+"  all | wifi | wwan | wimax [ on | off]\n"
+"\n"
+"  PARANCS := { all | wifi | wwan }\n"
+"\n"
+"  all | wifi | wwan [ on | off ]\n"
+"\n"
+
+#: ../cli/src/network-manager.c:136
 msgid "asleep"
 msgstr "alszik"
 
-#: ../cli/src/network-manager.c:98
+#: ../cli/src/network-manager.c:138
 msgid "connecting"
 msgstr "csatlakozás"
 
-#: ../cli/src/network-manager.c:100
+#: ../cli/src/network-manager.c:140
 msgid "connected (local only)"
 msgstr "kapcsolódva (csak helyi)"
 
-#: ../cli/src/network-manager.c:102
+#: ../cli/src/network-manager.c:142
 msgid "connected (site only)"
 msgstr "kapcsolódva (csak hely)"
 
-#: ../cli/src/network-manager.c:106
+#: ../cli/src/network-manager.c:146
 msgid "disconnecting"
 msgstr "leválasztás"
 
-#: ../cli/src/network-manager.c:146
+#: ../cli/src/network-manager.c:186
 #, c-format
-msgid "Error: 'nm status': %s"
-msgstr "Hiba: „nm status”: %s"
+msgid "Error: %s"
+msgstr "Hiba: %s"
 
-#: ../cli/src/network-manager.c:148
+#: ../cli/src/network-manager.c:188
 #, c-format
-msgid "Error: 'nm status': %s; allowed fields: %s"
-msgstr "Hiba: „nm status”: %s; engedélyezett mezők: %s"
+msgid "Error: %s (allowed fields: %s)"
+msgstr "Hiba: %s (engedélyezett mezők: %s)"
 
-#. create NMClient
-#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
-#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
-#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
-#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
-#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
-#: ../cli/src/network-manager.c:421
+#: ../cli/src/network-manager.c:202 ../cli/src/network-manager.c:203
+#: ../cli/src/network-manager.c:204 ../cli/src/network-manager.c:205
+#: ../cli/src/network-manager.c:206 ../cli/src/network-manager.c:208
+#: ../cli/src/network-manager.c:209
 msgid "enabled"
 msgstr "engedélyezve"
 
-#: ../cli/src/network-manager.c:161 ../cli/src/network-manager.c:162
-#: ../cli/src/network-manager.c:163 ../cli/src/network-manager.c:164
-#: ../cli/src/network-manager.c:165 ../cli/src/network-manager.c:167
-#: ../cli/src/network-manager.c:168 ../cli/src/network-manager.c:289
-#: ../cli/src/network-manager.c:344 ../cli/src/network-manager.c:382
-#: ../cli/src/network-manager.c:421
+#: ../cli/src/network-manager.c:202 ../cli/src/network-manager.c:203
+#: ../cli/src/network-manager.c:204 ../cli/src/network-manager.c:205
+#: ../cli/src/network-manager.c:206 ../cli/src/network-manager.c:208
+#: ../cli/src/network-manager.c:209
 msgid "disabled"
 msgstr "letiltva"
 
-#: ../cli/src/network-manager.c:181
+#: ../cli/src/network-manager.c:222
 msgid "NetworkManager status"
 msgstr "Hálózatkezelő állapota"
 
 #. Print header
-#: ../cli/src/network-manager.c:184
+#: ../cli/src/network-manager.c:225
 msgid "running"
 msgstr "fut"
 
-#: ../cli/src/network-manager.c:184
+#: ../cli/src/network-manager.c:225
 msgid "not running"
 msgstr "nem fut"
 
-#: ../cli/src/network-manager.c:215 ../cli/src/utils.c:425
-#, c-format
-msgid "Error: Couldn't connect to system bus: %s"
-msgstr "Hiba: nem lehet a rendszerbuszhoz kapcsolódni: %s"
+#: ../cli/src/network-manager.c:297
+msgid "auth"
+msgstr "auth"
 
-#: ../cli/src/network-manager.c:226
+#: ../cli/src/network-manager.c:327
 #, c-format
-msgid "Error: Couldn't create D-Bus object proxy."
-msgstr "Hiba: nem lehet a D-Bus objektumproxyhoz kapcsolódni."
+msgid "Error: 'general permissions': %s"
+msgstr "Hiba: „general permissions”: %s"
 
-#: ../cli/src/network-manager.c:232
+#: ../cli/src/network-manager.c:329
 #, c-format
-msgid "Error in sleep: %s"
-msgstr "Hiba az alváskor: %s"
+msgid "Error: 'general permissions': %s; allowed fields: %s"
+msgstr "Hiba: „general permissions”: %s; engedélyezett mezők: %s"
 
-#: ../cli/src/network-manager.c:276 ../cli/src/network-manager.c:331
-#: ../cli/src/network-manager.c:369 ../cli/src/network-manager.c:408
+#: ../cli/src/network-manager.c:345
+msgid "NetworkManager permissions"
+msgstr "Hálózatkezelő jogosultságai"
+
+#: ../cli/src/network-manager.c:384
 #, c-format
-msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
+msgid "Error: 'general logging': %s"
+msgstr "Hiba: „general logging”: %s"
+
+#: ../cli/src/network-manager.c:386
+#, c-format
+msgid "Error: 'general logging': %s; allowed fields: %s"
+msgstr "Hiba: „general logging”: %s; engedélyezett mezők: %s"
+
+#: ../cli/src/network-manager.c:403
+msgid "NetworkManager logging"
+msgstr "Hálózatkezelő naplózása"
+
+#: ../cli/src/network-manager.c:487
+#, c-format
+msgid "Error: 'general' command '%s' is not valid."
+msgstr "Hiba: a(z) „%s” „general” parancs nem érvényes."
+
+#: ../cli/src/network-manager.c:506
+#, c-format
+msgid "Error: '--fields' value '%s' is not valid here (allowed fields: %s)"
 msgstr ""
-"Hiba: a(z) „%s” „--fields” érték itt nem érvényes; engedélyezett mezők: %s"
+"Hiba: a(z) „%s” „--fields” érték itt nem érvényes (engedélyezett mezők: %s)"
 
-#: ../cli/src/network-manager.c:284
-msgid "Networking enabled"
-msgstr "Hálózatkezelés engedélyezve"
-
-#: ../cli/src/network-manager.c:300
+#: ../cli/src/network-manager.c:530
 #, c-format
-msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
-msgstr ""
-"Hiba: érvénytelen „enable” paraméter: „%s”; használja a  „true” vagy „false” "
-"egyikét."
+msgid "Error: invalid '%s' argument: '%s' (use on/off)."
+msgstr "Hiba: érvénytelen „%s” argumentum: „%s” (csak az on/off használható)."
 
-#: ../cli/src/network-manager.c:310
+#: ../cli/src/network-manager.c:547
+msgid "Networking"
+msgstr "Hálózatkezelés"
+
+#: ../cli/src/network-manager.c:557
 #, c-format
-msgid "Error: Sleeping status is not exported by NetworkManager."
-msgstr "Hiba: a Hálózatkezelő nem exportálta az alvási állapotot."
+msgid "Error: 'networking' command '%s' is not valid."
+msgstr "Hiba: a(z) „%s” „networking” parancs nem érvényes."
 
-#: ../cli/src/network-manager.c:318
+#: ../cli/src/network-manager.c:582 ../cli/src/network-manager.c:595
+msgid "Radio switches"
+msgstr "Rádiókapcsolók"
+
+#. no argument, show current WiFi state
+#: ../cli/src/network-manager.c:609
+msgid "Wi-Fi radio switch"
+msgstr "Wi-Fi rádiókapcsoló"
+
+#. no argument, show current WWAN (mobile broadband) state
+#: ../cli/src/network-manager.c:621
+msgid "WWAN radio switch"
+msgstr "WWAN rádiókapcsoló"
+
+#. no argument, show current WiMAX state
+#: ../cli/src/network-manager.c:634
+msgid "WiMAX radio switch"
+msgstr "WiMAX rádiókapcsoló"
+
+#: ../cli/src/network-manager.c:649
 #, c-format
-msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
-msgstr ""
-"Hiba: érvénytelen „sleep” paraméter: „%s”; használja a  „true” vagy „false” "
-"egyikét."
+msgid "Error: 'radio' command '%s' is not valid."
+msgstr "Hiba: a(z) „%s” „radio” parancs nem érvényes."
 
-#: ../cli/src/network-manager.c:339
-msgid "WiFi enabled"
-msgstr "WiFi engedélyezve"
-
-#: ../cli/src/network-manager.c:355
-#, c-format
-msgid "Error: invalid 'wifi' parameter: '%s'."
-msgstr "Hiba: érvénytelen „wifi” paraméter: „%s”."
-
-#: ../cli/src/network-manager.c:377
-msgid "WWAN enabled"
-msgstr "WWAN engedélyezve"
-
-#: ../cli/src/network-manager.c:393
-#, c-format
-msgid "Error: invalid 'wwan' parameter: '%s'."
-msgstr "Hiba: érvénytelen „wwan” paraméter: „%s”."
-
-#: ../cli/src/network-manager.c:416
-msgid "WiMAX enabled"
-msgstr "WiMAX engedélyezve"
-
-#: ../cli/src/network-manager.c:432
-#, c-format
-msgid "Error: invalid 'wimax' parameter: '%s'."
-msgstr "Hiba: érvénytelen „wimax” paraméter: „%s”."
-
-#: ../cli/src/network-manager.c:445
-#, c-format
-msgid "Error: 'nm' command '%s' is not valid."
-msgstr "Hiba: a(z) „%s” „nm” parancs nem érvényes."
-
-#: ../cli/src/nmcli.c:64
+#: ../cli/src/nmcli.c:76
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
@@ -1594,13 +1799,16 @@ msgid ""
 "values\n"
 "  -n[ocheck]                                 don't check nmcli and "
 "NetworkManager versions\n"
+"  -a[sk]                                     ask for missing parameters\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
 "OBJECT\n"
-"  nm          NetworkManager status\n"
-"  con         NetworkManager connections\n"
-"  dev         devices managed by NetworkManager\n"
+"  g[eneral]       NetworkManager's general status and operations\n"
+"  n[etworking]    overall networking control\n"
+"  r[adio]         NetworkManager radio switches\n"
+"  c[onnection]    NetworkManager's connections\n"
+"  d[evice]        devices managed by NetworkManager\n"
 "\n"
 msgstr ""
 "Használat: %s [KAPCSOLÓK] OBJEKTUM { PARANCS | help }\n"
@@ -1615,213 +1823,256 @@ msgstr ""
 "                                               értékekben\n"
 "  -n[ocheck]                                 ne ellenőrizze az nmcli és a\n"
 "                                               Hálózatkezelő verzióit\n"
+"  -a[sk]                                     ask for missing parameters\n"
 "  -v[ersion]                                 programverzió kiírása\n"
 "  -h[elp]                                    ezen súgó kiírása\n"
 "\n"
 "OBJEKTUM\n"
-"  nm          A Hálózatkezelő állapota\n"
-"  con         A Hálózatkezelő kapcsolatai\n"
-"  dev         A Hálózatkezelő által kezelt eszközök\n"
+"  g[eneral]       A Hálózatkezelő általános állapota és műveletei\n"
+"  n[etworking]    Általános hálózatfelügyelet\n"
+"  r[adio]         A Hálózatkezelő rádiókapcsolói\n"
+"  c[onnection]    A Hálózatkezelő kapcsolatai\n"
+"  d[evice]        A Hálózatkezelő által kezelt eszközök\n"
 "\n"
 
-#: ../cli/src/nmcli.c:109
+#: ../cli/src/nmcli.c:129
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr ""
 "Hiba: a(z) „%s” objektum ismeretlen, adja ki az „nmcli help” parancsot."
 
-#: ../cli/src/nmcli.c:139
+#: ../cli/src/nmcli.c:159
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "Hiba: a „--terse” kapcsoló másodszor lett megadva."
 
-#: ../cli/src/nmcli.c:144
+#: ../cli/src/nmcli.c:164
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr "Hiba: a „--terse” és a „--pretty” kapcsolók kölcsönösen kizáróak."
 
-#: ../cli/src/nmcli.c:152
+#: ../cli/src/nmcli.c:172
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "Hiba: a „--pretty” kapcsoló másodszor lett megadva."
 
-#: ../cli/src/nmcli.c:157
+#: ../cli/src/nmcli.c:177
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr "Hiba: a „--pretty” és „--terse” kapcsolók kölcsönösen kizáróak."
 
-#: ../cli/src/nmcli.c:167 ../cli/src/nmcli.c:183
+#: ../cli/src/nmcli.c:187 ../cli/src/nmcli.c:203
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "Hiba: a(z) „%s” kapcsoló argumentuma hiányzik."
 
-#: ../cli/src/nmcli.c:176 ../cli/src/nmcli.c:192
+#: ../cli/src/nmcli.c:196 ../cli/src/nmcli.c:212
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "Hiba: „%s” nem érvényes argumentum a(z) „%s” kapcsolóhoz."
 
-#: ../cli/src/nmcli.c:199
+#: ../cli/src/nmcli.c:219
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "Hiba: a(z) „%s” kapcsoló mezői hiányoznak."
 
-#: ../cli/src/nmcli.c:207
+#: ../cli/src/nmcli.c:229
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "nmcli eszköz, %s verzió\n"
 
-#: ../cli/src/nmcli.c:213
+#: ../cli/src/nmcli.c:235
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr ""
 "Hiba: a(z) „%s” kapcsoló ismeretlen, adja ki az „nmcli-help” parancsot."
 
-#: ../cli/src/nmcli.c:232
+#: ../cli/src/nmcli.c:254
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "%d szignál érkezett, leállítás…"
 
-#: ../cli/src/nmcli.c:257
+#: ../cli/src/nmcli.c:279
 msgid "Error: Could not create NMClient object."
 msgstr "Hiba: nem sikerült a NMClient objektumot létrehozni."
 
-#: ../cli/src/nmcli.c:273
+#: ../cli/src/nmcli.c:295
 msgid "Success"
 msgstr "Siker"
 
-#: ../cli/src/settings.c:465
+#: ../cli/src/settings.c:598
 #, c-format
 msgid "%d (hex-ascii-key)"
 msgstr "%d (hex-ascii-kulcs)"
 
-#: ../cli/src/settings.c:467
+#: ../cli/src/settings.c:600
 #, c-format
 msgid "%d (104/128-bit passphrase)"
 msgstr "%d (104/128 bites jelmondat)"
 
-#: ../cli/src/settings.c:470
+#: ../cli/src/settings.c:603 ../cli/src/settings.c:731
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (ismeretlen)"
 
-#: ../cli/src/settings.c:496
+#: ../cli/src/settings.c:629
 msgid "0 (unknown)"
 msgstr "0 (ismeretlen)"
 
-#: ../cli/src/settings.c:502
+#: ../cli/src/settings.c:635
 msgid "any, "
 msgstr "bármely, "
 
-#: ../cli/src/settings.c:504
+#: ../cli/src/settings.c:637
 msgid "900 MHz, "
 msgstr "900 MHz, "
 
-#: ../cli/src/settings.c:506
+#: ../cli/src/settings.c:639
 msgid "1800 MHz, "
 msgstr "1800 MHz, "
 
-#: ../cli/src/settings.c:508
+#: ../cli/src/settings.c:641
 msgid "1900 MHz, "
 msgstr "1900 MHz, "
 
-#: ../cli/src/settings.c:510
+#: ../cli/src/settings.c:643
 msgid "850 MHz, "
 msgstr "850 MHz, "
 
-#: ../cli/src/settings.c:512
+#: ../cli/src/settings.c:645
 msgid "WCDMA 3GPP UMTS 2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 2100 MHz, "
 
-#: ../cli/src/settings.c:514
+#: ../cli/src/settings.c:647
 msgid "WCDMA 3GPP UMTS 1800 MHz, "
 msgstr "WCDMA 3GPP UMTS 1800 MHz, "
 
-#: ../cli/src/settings.c:516
+#: ../cli/src/settings.c:649
 msgid "WCDMA 3GPP UMTS 1700/2100 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700/2100 MHz, "
 
-#: ../cli/src/settings.c:518
+#: ../cli/src/settings.c:651
 msgid "WCDMA 3GPP UMTS 800 MHz, "
 msgstr "WCDMA 3GPP UMTS 800 MHz, "
 
-#: ../cli/src/settings.c:520
+#: ../cli/src/settings.c:653
 msgid "WCDMA 3GPP UMTS 850 MHz, "
 msgstr "WCDMA 3GPP UMTS 850 MHz, "
 
-#: ../cli/src/settings.c:522
+#: ../cli/src/settings.c:655
 msgid "WCDMA 3GPP UMTS 900 MHz, "
 msgstr "WCDMA 3GPP UMTS 900 MHz, "
 
-#: ../cli/src/settings.c:524
+#: ../cli/src/settings.c:657
 msgid "WCDMA 3GPP UMTS 1700 MHz, "
 msgstr "WCDMA 3GPP UMTS 1700 MHz, "
 
-#: ../cli/src/settings.c:526
-#| msgid "WCDMA 3GPP UMTS 900 MHz, "
+#: ../cli/src/settings.c:659
 msgid "WCDMA 3GPP UMTS 1900 MHz, "
 msgstr "WCDMA 3GPP UMTS 1900 MHz, "
 
-#: ../cli/src/settings.c:528
-#| msgid "WCDMA 3GPP UMTS 2100 MHz, "
+#: ../cli/src/settings.c:661
 msgid "WCDMA 3GPP UMTS 2600 MHz, "
 msgstr "WCDMA 3GPP UMTS 2600 MHz, "
 
-#: ../cli/src/settings.c:650 ../cli/src/settings.c:846
-#: ../cli/src/settings.c:1550
+#: ../cli/src/settings.c:679
+msgid "0 (NONE)"
+msgstr "0 (NINCS)"
+
+#: ../cli/src/settings.c:685
+msgid "REORDER_HEADERS, "
+msgstr "FEJLÉCEK_ÁTRENDEZÉSE, "
+
+#: ../cli/src/settings.c:687
+msgid "GVRP, "
+msgstr "GVRP, "
+
+#: ../cli/src/settings.c:689
+msgid "LOOSE_BINDING, "
+msgstr "LAZA_ÖSSZEKAPCSOLÁS, "
+
+#: ../cli/src/settings.c:725
+#, c-format
+msgid "%d (disabled)"
+msgstr "%d (letiltva)"
+
+#: ../cli/src/settings.c:727
+#, c-format
+msgid "%d (enabled, prefer public IP)"
+msgstr "%d (engedélyezve, nyilvános IP előnyben)"
+
+#: ../cli/src/settings.c:729
+#, c-format
+msgid "%d (enabled, prefer temporary IP)"
+msgstr "%d (engedélyezve, ideiglenes IP előnyben)"
+
+#: ../cli/src/settings.c:741
+msgid "0 (none)"
+msgstr "0 (nincs)"
+
+#: ../cli/src/settings.c:747
+msgid "agent-owned, "
+msgstr "ügynök tulajdona, "
+
+#: ../cli/src/settings.c:749
+msgid "not saved, "
+msgstr "nincs mentve, "
+
+#: ../cli/src/settings.c:751
+msgid "not required, "
+msgstr "nem szükséges, "
+
+#: ../cli/src/settings.c:1064 ../cli/src/settings.c:1232
+#: ../cli/src/settings.c:1273
 msgid "auto"
 msgstr "auto"
 
-#: ../cli/src/settings.c:840 ../cli/src/settings.c:843
-#: ../cli/src/settings.c:844 ../cli/src/utils.c:247
-msgid "not set"
-msgstr "nincs beállítva"
-
-#: ../cli/src/utils.c:103
+#: ../cli/src/utils.c:109
 #, c-format
-#| msgid "%s: error converting IP4 address 0x%X"
+msgid "Error: value for '%s' argument is required."
+msgstr "Hiba: „%s” argumentum értéke kötelező."
+
+#: ../cli/src/utils.c:134
+#, c-format
+msgid "Error: Argument '%s' was expected, but '%s' provided."
+msgstr "Hiba: a várt „%s” argumentum helyett „%s” lett megadva."
+
+#: ../cli/src/utils.c:137
+#, c-format
+msgid "Error: Unexpected argument '%s'"
+msgstr "Hiba: váratlan argumentum: „%s”"
+
+#: ../cli/src/utils.c:192
+#, c-format
 msgid "Error converting IP4 address '0x%X' to text form"
 msgstr "Hiba az IP4 cím („0x%X”) szöveges formátumúvá konvertálásakor"
 
-#: ../cli/src/utils.c:131
+#: ../cli/src/utils.c:220
 #, c-format
-#| msgid "%s: error converting IP4 address 0x%X"
 msgid "Error converting IP6 address '%s' to text form"
 msgstr "Hiba az IP6 cím („%s”) szöveges formátumúvá konvertálásakor"
 
-#: ../cli/src/utils.c:200
+#: ../cli/src/utils.c:382
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "a(z) „%s” mezőnek önállónak kell lennie"
 
-#: ../cli/src/utils.c:203
+#: ../cli/src/utils.c:385
 #, c-format
 msgid "invalid field '%s'"
 msgstr "érvénytelen mező: „%s”"
 
-#: ../cli/src/utils.c:222
-#, c-format
+#: ../cli/src/utils.c:404
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "A „--terse” megköveteli a „--fields” megadását."
 
-#: ../cli/src/utils.c:226
+#: ../cli/src/utils.c:408
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "A „--terse” adott „--fields” kapcsolóértékeket követel meg, nem ezt: „%s”."
 
-#: ../cli/src/utils.c:436
-#, c-format
-msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
-msgstr ""
-"Hiba: nem sikerült a D-Bus objektumproxyt létrehozni az org.freedesktop.DBus "
-"névtérhez"
-
-#: ../cli/src/utils.c:444
-#, c-format
-msgid "Error: NameHasOwner request failed: %s"
-msgstr "Hiba: a NameHasOwner kérés meghiúsult: %s"
-
-#: ../cli/src/utils.c:489
+#: ../cli/src/utils.c:617
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
@@ -1830,7 +2081,7 @@ msgstr ""
 "Figyelmeztetés: az nmcli (%s) és a Hálózatkezelő (%s) verziói nem egyeznek. "
 "A figyelmeztetés kikapcsolásához használja a --nocheck kapcsolót.\n"
 
-#: ../cli/src/utils.c:498
+#: ../cli/src/utils.c:626
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
@@ -1850,120 +2101,89 @@ msgstr "A PEM kulcsfájl nem rendelkezik „%s” zárócímkével."
 msgid "Doesn't look like a PEM private key file."
 msgstr "Nem tűnik PEM személyes kulcs fájlnak."
 
-#: ../libnm-util/crypto.c:154
-#, c-format
-msgid "Not enough memory to store PEM file data."
-msgstr "Nincs elég memória a PEM fájl adatainak tárolásához."
-
-#: ../libnm-util/crypto.c:170
+#: ../libnm-util/crypto.c:163
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Rosszul formázott PEM fájl: a Proc-Type nem az első címke."
 
-#: ../libnm-util/crypto.c:178
+#: ../libnm-util/crypto.c:171
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Rosszul formázott PEM fájl: ismeretlen Proc-Type címke („%s”)."
 
-#: ../libnm-util/crypto.c:188
+#: ../libnm-util/crypto.c:181
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Rosszul formázott PEM fájl: A DEK-Info nem a második címke."
 
-#: ../libnm-util/crypto.c:199
+#: ../libnm-util/crypto.c:192
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Rosszul formázott PEM fájl: nem található IV a DEK-Info címkében."
 
-#: ../libnm-util/crypto.c:206
+#: ../libnm-util/crypto.c:199
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr ""
 "Rosszul formázott PEM fájl: az IV formátuma érvénytelen a DEK-Info címkében."
 
-#: ../libnm-util/crypto.c:219
+#: ../libnm-util/crypto.c:212
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr ""
 "Rosszul formázott PEM fájl: ismeretlen személyes kulcs titkosító: „%s”."
 
-#: ../libnm-util/crypto.c:238
+#: ../libnm-util/crypto.c:231
 #, c-format
 msgid "Could not decode private key."
 msgstr "A személyes kulcs nem fejthető vissza."
 
-#: ../libnm-util/crypto.c:284
+#: ../libnm-util/crypto.c:283
 msgid "Failed to find expected PKCS#8 start tag."
 msgstr "A várt PKCS#8 kezdőcímke nem található."
 
-#: ../libnm-util/crypto.c:292
+#: ../libnm-util/crypto.c:291
 #, c-format
 msgid "Failed to find expected PKCS#8 end tag '%s'."
 msgstr "A várt „%s” PKCS#8 zárócímke nem található."
 
-#: ../libnm-util/crypto.c:312
-#| msgid "Not enough memory to store certificate data."
-msgid "Not enough memory to store private key data."
-msgstr "Nincs elég memória a személyes kulcs adatainak tárolásához."
-
-#: ../libnm-util/crypto.c:317
-#| msgid "Failed to decrypt the private key."
+#: ../libnm-util/crypto.c:310
 msgid "Failed to decode PKCS#8 private key."
 msgstr "A PKCS#8 személyes kulcs visszafejtése meghiúsult."
 
-#: ../libnm-util/crypto.c:339 ../libnm-util/crypto.c:625
-#, c-format
-msgid "Not enough memory to store certificate data."
-msgstr "Nincs elég memória a tanúsítvány adatainak tárolásához."
-
-#: ../libnm-util/crypto.c:365
+#: ../libnm-util/crypto.c:352
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "Az IV hosszának páros számú bájtnak kell lennie."
 
-#: ../libnm-util/crypto.c:374
-#, c-format
-msgid "Not enough memory to store the IV."
-msgstr "Nincs elég memória az IV tárolásához."
-
-#: ../libnm-util/crypto.c:385
+#: ../libnm-util/crypto.c:366
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "Az IV nem hexadecimális számjegyeket tartalmaz."
 
-#: ../libnm-util/crypto.c:423 ../libnm-util/crypto_gnutls.c:147
-#: ../libnm-util/crypto_gnutls.c:265 ../libnm-util/crypto_nss.c:167
-#: ../libnm-util/crypto_nss.c:332
+#: ../libnm-util/crypto.c:404 ../libnm-util/crypto_gnutls.c:147
+#: ../libnm-util/crypto_gnutls.c:259 ../libnm-util/crypto_nss.c:167
+#: ../libnm-util/crypto_nss.c:326
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "A(z) „%s” személyeskulcs-titkosító ismeretlen."
 
-#: ../libnm-util/crypto.c:432
-#, c-format
-msgid "Not enough memory to decrypt private key."
-msgstr "Nincs elég memória a személyes kulcs visszafejtéséhez."
-
-#: ../libnm-util/crypto.c:497
-#, c-format
-msgid "Not enough memory to store decrypted private key."
-msgstr "Nincs elég memória a visszafejtett személyes kulcs tárolásához."
-
-#: ../libnm-util/crypto.c:542
+#: ../libnm-util/crypto.c:511
 #, c-format
 msgid "Unable to determine private key type."
 msgstr "A személyes kulcs típusa nem határozható meg."
 
-#: ../libnm-util/crypto.c:597
+#: ../libnm-util/crypto.c:566
 #, c-format
 msgid "PEM certificate had no start tag '%s'."
 msgstr "A PEM tanúsítvány nem tartalmaz kezdő „%s” címkét."
 
-#: ../libnm-util/crypto.c:606
+#: ../libnm-util/crypto.c:575
 #, c-format
 msgid "PEM certificate had no end tag '%s'."
 msgstr "A PEM tanúsítvány nem tartalmaz záró „%s” címkét."
 
-#: ../libnm-util/crypto.c:630
+#: ../libnm-util/crypto.c:593
 #, c-format
 msgid "Failed to decode certificate."
 msgstr "A tanúsítvány visszafejtése meghiúsult."
@@ -1982,101 +2202,89 @@ msgstr "Az MD5 alrendszer előkészítése meghiúsult: %s / %s."
 msgid "Invalid IV length (must be at least %zd)."
 msgstr "Érvénytelen IV hossz (legalább %zd hosszúnak kell lennie)."
 
-#: ../libnm-util/crypto_gnutls.c:164 ../libnm-util/crypto_nss.c:184
-#, c-format
-msgid "Not enough memory for decrypted key buffer."
-msgstr "Nincs elég memória a visszafejtett kulcspufferhez."
-
-#: ../libnm-util/crypto_gnutls.c:172
+#: ../libnm-util/crypto_gnutls.c:166
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr ""
 "A visszafejtési titkosító kontextusának előkészítése meghiúsult: %s /%s."
 
-#: ../libnm-util/crypto_gnutls.c:181
+#: ../libnm-util/crypto_gnutls.c:175
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr "A szimmetrikus kulcs beállítása meghiúsult a visszafejtéshez: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:190
+#: ../libnm-util/crypto_gnutls.c:184
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "Az IV beállítása meghiúsult a visszafejtéshez: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:199
+#: ../libnm-util/crypto_gnutls.c:193
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "A személyes kulcs visszafejtése meghiúsult: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:209 ../libnm-util/crypto_nss.c:263
+#: ../libnm-util/crypto_gnutls.c:203 ../libnm-util/crypto_nss.c:257
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
 msgstr "A személyes kulcs visszafejtése meghiúsult: váratlan kitöltéshossz."
 
-#: ../libnm-util/crypto_gnutls.c:220 ../libnm-util/crypto_nss.c:274
+#: ../libnm-util/crypto_gnutls.c:214 ../libnm-util/crypto_nss.c:268
 #, c-format
 msgid "Failed to decrypt the private key."
 msgstr "A személyes kulcs visszafejtése meghiúsult."
 
-#: ../libnm-util/crypto_gnutls.c:285 ../libnm-util/crypto_nss.c:352
-#, c-format
-msgid "Could not allocate memory for encrypting."
-msgstr "Nem sikerült memóriát foglalni a titkosításhoz."
-
-#: ../libnm-util/crypto_gnutls.c:293
+#: ../libnm-util/crypto_gnutls.c:281
 #, c-format
 msgid "Failed to initialize the encryption cipher context: %s / %s."
 msgstr "A titkosító kontextusának előkészítése meghiúsult: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:302
+#: ../libnm-util/crypto_gnutls.c:290
 #, c-format
 msgid "Failed to set symmetric key for encryption: %s / %s."
 msgstr "A szimmetrikus kulcs beállítása meghiúsult a titkosításhoz: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:312
+#: ../libnm-util/crypto_gnutls.c:300
 #, c-format
 msgid "Failed to set IV for encryption: %s / %s."
 msgstr "Az IV beállítása meghiúsult a titkosításhoz: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:321
+#: ../libnm-util/crypto_gnutls.c:309
 #, c-format
 msgid "Failed to encrypt the data: %s / %s."
 msgstr "Az adatot nem sikerült titkosítani: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:361
+#: ../libnm-util/crypto_gnutls.c:349
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Hiba a tanúsítvány adatainak előkészítésekor: %s"
 
-#: ../libnm-util/crypto_gnutls.c:383
+#: ../libnm-util/crypto_gnutls.c:371
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "A tanúsítvány nem fejthető vissza: %s"
 
-#: ../libnm-util/crypto_gnutls.c:407
+#: ../libnm-util/crypto_gnutls.c:395
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgstr "A PKCS#12 dekódoló nem készíthető elő: %s"
 
-#: ../libnm-util/crypto_gnutls.c:420
+#: ../libnm-util/crypto_gnutls.c:408
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
 msgstr "A PKCS#12 fájl nem fejthető vissza: %s"
 
-#: ../libnm-util/crypto_gnutls.c:432
+#: ../libnm-util/crypto_gnutls.c:420
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
 msgstr "A PKCS#12 fájl nem ellenőrizhető: %s"
 
-#: ../libnm-util/crypto_gnutls.c:460
+#: ../libnm-util/crypto_gnutls.c:448
 #, c-format
-#| msgid "Couldn't initialize PKCS#12 decoder: %s"
 msgid "Couldn't initialize PKCS#8 decoder: %s"
 msgstr "A PKCS#8 dekódoló nem készíthető elő: %s"
 
-#: ../libnm-util/crypto_gnutls.c:483
+#: ../libnm-util/crypto_gnutls.c:471
 #, c-format
-#| msgid "Couldn't decode PKCS#12 file: %s"
 msgid "Couldn't decode PKCS#8 file: %s"
 msgstr "A PKCS#8 fájl nem fejthető vissza: %s"
 
@@ -2095,138 +2303,466 @@ msgstr "Az MD5 kontextus előkészítése meghiúsult: %d."
 msgid "Invalid IV length (must be at least %d)."
 msgstr "Érvénytelen IV hossz (legalább %d hosszúnak kell lennie)."
 
-#: ../libnm-util/crypto_nss.c:192
+#: ../libnm-util/crypto_nss.c:186
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "A visszafejtési titkosítóhely előkészítése meghiúsult."
 
-#: ../libnm-util/crypto_nss.c:202
+#: ../libnm-util/crypto_nss.c:196
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "A szimmetrikus kulcs nem állítható be a visszafejtéshez."
 
-#: ../libnm-util/crypto_nss.c:212
+#: ../libnm-util/crypto_nss.c:206
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Az IV nem állítható be a visszafejtéshez."
 
-#: ../libnm-util/crypto_nss.c:220
+#: ../libnm-util/crypto_nss.c:214
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "A visszafejtési kontextus előkészítése meghiúsult."
 
-#: ../libnm-util/crypto_nss.c:233
+#: ../libnm-util/crypto_nss.c:227
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "A személyes kulcs visszafejtése meghiúsult: %d."
 
-#: ../libnm-util/crypto_nss.c:241
+#: ../libnm-util/crypto_nss.c:235
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
 "A személyes kulcs visszafejtése meghiúsult: a visszafejtett adatok túl "
 "nagyok."
 
-#: ../libnm-util/crypto_nss.c:252
+#: ../libnm-util/crypto_nss.c:246
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "A személyes kulcs visszafejtésének befejezése meghiúsult: %d."
 
-#: ../libnm-util/crypto_nss.c:360
+#: ../libnm-util/crypto_nss.c:348
 #, c-format
 msgid "Failed to initialize the encryption cipher slot."
 msgstr "A titkosítóhely előkészítése meghiúsult."
 
-#: ../libnm-util/crypto_nss.c:368
+#: ../libnm-util/crypto_nss.c:356
 #, c-format
 msgid "Failed to set symmetric key for encryption."
 msgstr "A szimmetrikus kulcs nem állítható be a titkosításhoz."
 
-#: ../libnm-util/crypto_nss.c:376
+#: ../libnm-util/crypto_nss.c:364
 #, c-format
 msgid "Failed to set IV for encryption."
 msgstr "Az IV nem állítható be a titkosításhoz."
 
-#: ../libnm-util/crypto_nss.c:384
+#: ../libnm-util/crypto_nss.c:372
 #, c-format
 msgid "Failed to initialize the encryption context."
 msgstr "A titkosítási kontextus előkészítése meghiúsult."
 
-#: ../libnm-util/crypto_nss.c:392
+#: ../libnm-util/crypto_nss.c:380
 #, c-format
 msgid "Failed to encrypt: %d."
 msgstr "A titkosítás meghiúsult: %d."
 
-#: ../libnm-util/crypto_nss.c:400
+#: ../libnm-util/crypto_nss.c:388
 #, c-format
 msgid "Unexpected amount of data after encrypting."
 msgstr "Váratlan mennyiségű adat a titkosítás után."
 
-#: ../libnm-util/crypto_nss.c:443
+#: ../libnm-util/crypto_nss.c:431
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "A tanúsítvány nem fejthető vissza: %d"
 
-#: ../libnm-util/crypto_nss.c:478
+#: ../libnm-util/crypto_nss.c:466
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
 msgstr "A jelszó nem alakítható UCS2 formátumra: %d"
 
-#: ../libnm-util/crypto_nss.c:506
+#: ../libnm-util/crypto_nss.c:494
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
 msgstr "A PKCS#12 dekódoló nem készíthető elő: %d"
 
-#: ../libnm-util/crypto_nss.c:515
+#: ../libnm-util/crypto_nss.c:503
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
 msgstr "A PKCS#12 fájl nem fejthető vissza: %d"
 
-#: ../libnm-util/crypto_nss.c:524
+#: ../libnm-util/crypto_nss.c:512
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
 msgstr "A PKCS#12 fájl nem ellenőrizhető: %d"
 
-#: ../libnm-util/crypto_nss.c:568
+#: ../libnm-util/crypto_nss.c:556
 msgid "Could not generate random data."
 msgstr "Nem sikerült a véletlen adatok előállítása."
 
-#: ../libnm-util/nm-utils.c:2034
-#, c-format
-msgid "Not enough memory to make encryption key."
-msgstr "Nincs elég memória titkosítási kulcs készítéséhez."
+#: ../libnm-util/nm-setting-8021x.c:2119 ../libnm-util/nm-setting-8021x.c:2136
+#: ../libnm-util/nm-setting-8021x.c:2177 ../libnm-util/nm-setting-8021x.c:2194
+#: ../libnm-util/nm-setting-8021x.c:2246 ../libnm-util/nm-setting-8021x.c:2258
+#: ../libnm-util/nm-setting-8021x.c:2276 ../libnm-util/nm-setting-8021x.c:2288
+#: ../libnm-util/nm-setting-8021x.c:2312 ../libnm-util/nm-setting-8021x.c:2487
+#: ../libnm-util/nm-setting-adsl.c:212
+#: ../libnm-util/nm-setting-bluetooth.c:153
+#: ../libnm-util/nm-setting-bluetooth.c:171
+#: ../libnm-util/nm-setting-bond.c:368 ../libnm-util/nm-setting-bridge.c:268
+#: ../libnm-util/nm-setting-cdma.c:163
+#: ../libnm-util/nm-setting-connection.c:674
+#: ../libnm-util/nm-setting-connection.c:690
+#: ../libnm-util/nm-setting-connection.c:743
+#: ../libnm-util/nm-setting-ip4-config.c:693
+#: ../libnm-util/nm-setting-ip4-config.c:703
+#: ../libnm-util/nm-setting-ip6-config.c:675
+#: ../libnm-util/nm-setting-ip6-config.c:685
+#: ../libnm-util/nm-setting-ip6-config.c:738
+#: ../libnm-util/nm-setting-olpc-mesh.c:128
+#: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:394
+#: ../libnm-util/nm-setting-wimax.c:137
+#: ../libnm-util/nm-setting-wireless-security.c:792
+#: ../libnm-util/nm-setting-wireless.c:610
+msgid "property is missing"
+msgstr "a tulajdonság hiányzik"
 
-#: ../libnm-util/nm-utils.c:2144
-msgid "Could not allocate memory for PEM file creation."
-msgstr "Nem sikerült memóriát foglalni PEM fájl készítéséhez."
+#: ../libnm-util/nm-setting-8021x.c:2126 ../libnm-util/nm-setting-8021x.c:2143
+#: ../libnm-util/nm-setting-8021x.c:2184 ../libnm-util/nm-setting-8021x.c:2201
+#: ../libnm-util/nm-setting-8021x.c:2252 ../libnm-util/nm-setting-8021x.c:2264
+#: ../libnm-util/nm-setting-8021x.c:2282 ../libnm-util/nm-setting-8021x.c:2294
+#: ../libnm-util/nm-setting-8021x.c:2318 ../libnm-util/nm-setting-adsl.c:219
+#: ../libnm-util/nm-setting-adsl.c:228 ../libnm-util/nm-setting-cdma.c:179
+#: ../libnm-util/nm-setting-cdma.c:188
+#: ../libnm-util/nm-setting-connection.c:681
+#: ../libnm-util/nm-setting-connection.c:750
+#: ../libnm-util/nm-setting-gsm.c:280 ../libnm-util/nm-setting-gsm.c:337
+#: ../libnm-util/nm-setting-gsm.c:346
+#: ../libnm-util/nm-setting-ip4-config.c:754
+#: ../libnm-util/nm-setting-ip4-config.c:763
+#: ../libnm-util/nm-setting-pppoe.c:172 ../libnm-util/nm-setting-pppoe.c:181
+#: ../libnm-util/nm-setting-vpn.c:403 ../libnm-util/nm-setting-vpn.c:413
+#: ../libnm-util/nm-setting-wimax.c:146
+#: ../libnm-util/nm-setting-wireless-security.c:822
+#: ../libnm-util/nm-setting-wireless-security.c:830
+#: ../libnm-util/nm-setting-wireless-security.c:854
+msgid "property is empty"
+msgstr "a tulajdonság üres"
 
-#: ../libnm-util/nm-utils.c:2156
+#: ../libnm-util/nm-setting-8021x.c:2154 ../libnm-util/nm-setting-8021x.c:2166
+#: ../libnm-util/nm-setting-8021x.c:2212 ../libnm-util/nm-setting-8021x.c:2224
 #, c-format
-msgid "Could not allocate memory for writing IV to PEM file."
-msgstr "Nem sikerült memóriát foglalni az IV írásához PEM fájlba."
+msgid "has to match '%s' property for PKCS#12"
+msgstr "egyeznie kell a(z) „%s” tulajdonsággal a PKCS#12-höz"
 
-#: ../libnm-util/nm-utils.c:2168
+#: ../libnm-util/nm-setting-8021x.c:2462 ../libnm-util/nm-setting-8021x.c:2496
+#: ../libnm-util/nm-setting-bluetooth.c:162
+#: ../libnm-util/nm-setting-bond.c:377
+#: ../libnm-util/nm-setting-infiniband.c:149
+#: ../libnm-util/nm-setting-infiniband.c:164
+#: ../libnm-util/nm-setting-ip4-config.c:745
+#: ../libnm-util/nm-setting-ip6-config.c:729
+#: ../libnm-util/nm-setting-olpc-mesh.c:156
+#: ../libnm-util/nm-setting-wimax.c:155 ../libnm-util/nm-setting-wired.c:501
+#: ../libnm-util/nm-setting-wired.c:510
+#: ../libnm-util/nm-setting-wireless-security.c:873
+#: ../libnm-util/nm-setting-wireless-security.c:882
+#: ../libnm-util/nm-setting-wireless-security.c:890
+#: ../libnm-util/nm-setting-wireless-security.c:898
+#: ../libnm-util/nm-setting-wireless-security.c:906
+#: ../libnm-util/nm-setting-wireless-security.c:915
+#: ../libnm-util/nm-setting-wireless-security.c:924
+#: ../libnm-util/nm-setting-wireless-security.c:933
+#: ../libnm-util/nm-setting-wireless-security.c:969
+#: ../libnm-util/nm-setting-wireless-security.c:979
+#: ../libnm-util/nm-setting-wireless.c:670
+#: ../libnm-util/nm-setting-wireless.c:679
+#: ../libnm-util/nm-setting-wireless.c:688
+msgid "property is invalid"
+msgstr "a tulajdonság érvénytelen"
+
+#: ../libnm-util/nm-setting-8021x.c:2521 ../libnm-util/nm-setting-8021x.c:2531
+#: ../libnm-util/nm-setting-8021x.c:2541 ../libnm-util/nm-setting-8021x.c:2551
+#: ../libnm-util/nm-setting-8021x.c:2561 ../libnm-util/nm-setting-adsl.c:239
+#: ../libnm-util/nm-setting-adsl.c:250
+#: ../libnm-util/nm-setting-bluetooth.c:179
+#: ../libnm-util/nm-setting-wireless-security.c:801
 #, c-format
-msgid "Could not allocate memory for writing encrypted key to PEM file."
+msgid "'%s' is not a valid value for the property"
+msgstr "„%s” nem érvényes érték a tulajdonsághoz"
+
+#: ../libnm-util/nm-setting-bluetooth.c:201
+#, c-format
+msgid "requires '%s' or '%s' setting"
+msgstr "a(z) „%s” vagy „%s” beállítás szükséges"
+
+#: ../libnm-util/nm-setting-bond.c:391
+#, c-format
+msgid "invalid option '%s' or its value '%s'"
+msgstr "„%s” kapcsoló vagy az értéke („%s”) érvénytelen"
+
+#: ../libnm-util/nm-setting-bond.c:410
+#, c-format
+msgid "only one of '%s' and '%s' can be set"
+msgstr "„%s” és „%s” közül csak az egyik állítható be"
+
+#: ../libnm-util/nm-setting-bond.c:421
+#, c-format
+msgid "setting '%s' is required"
+msgstr "„%s” beállítás szükséges"
+
+#: ../libnm-util/nm-setting-bond.c:430
+#, c-format
+msgid "'%s' is not a valid value for '%s'"
+msgstr "„%s” nem érvényes érték ehhez: „%s”"
+
+#: ../libnm-util/nm-setting-bond.c:443
+#, c-format
+msgid "'%s=%s' is incompatible with '%s > 0'"
+msgstr "„%s=%s” nem kompatibilis a(z) „%s > 0”-val"
+
+#: ../libnm-util/nm-setting-bond.c:454
+#, c-format
+msgid "'%s=%s' is not a valid configuration for '%s'"
+msgstr "„%s=%s” nem érvényes beállítás ehhez: „%s”"
+
+#: ../libnm-util/nm-setting-bond.c:467 ../libnm-util/nm-setting-bond.c:476
+#: ../libnm-util/nm-setting-bond.c:496 ../libnm-util/nm-setting-bond.c:532
+#, c-format
+msgid "'%s' option requires setting '%s' option"
+msgstr "„%s” beállítás megköveteli a(z) „%s” beállítás megadását"
+
+#: ../libnm-util/nm-setting-bond.c:508
+#, c-format
+msgid "'%s' option is empty"
+msgstr "„%s” beállítás üres"
+
+#: ../libnm-util/nm-setting-bond.c:520
+#, c-format
+msgid "'%s' is not a valid IPv4 address for '%s' option"
+msgstr "„%s” nem érvényes IPv4 cím a(z) „%s” beállításhoz"
+
+#: ../libnm-util/nm-setting-bridge-port.c:155
+#: ../libnm-util/nm-setting-bridge-port.c:165
+#, c-format
+msgid "'%d' is not a valid value for the property (should be <= %d)"
+msgstr "„%d” nem érvényes érték a tulajdonsághoz (<= %d kellene legyen)"
+
+#: ../libnm-util/nm-setting-bridge.c:251
+#, c-format
+msgid "value '%d' is out of range <%d-%d>"
+msgstr "„%d” érték kívül esik a tartományon: <%d-%d>"
+
+#: ../libnm-util/nm-setting-bridge.c:277
+#: ../libnm-util/nm-setting-connection.c:732
+#: ../libnm-util/nm-setting-vlan.c:468
+#, c-format
+msgid "'%s' is not a valid interface name"
+msgstr "a(z) „%s” nem érvényes csatolónév"
+
+#: ../libnm-util/nm-setting-cdma.c:170
+msgid "property is empty'"
+msgstr "a tulajdonság üres"
+
+#: ../libnm-util/nm-setting-connection.c:697
+#, c-format
+msgid "'%s' is not a valid UUID"
+msgstr "„%s” nem érvényes UUID"
+
+#: ../libnm-util/nm-setting-connection.c:716
+#, c-format
+msgid "'%s' doesn't match the virtual interface name '%s'"
+msgstr "„%s” nem egyezik a virtuális csatoló nevével („%s”)"
+
+#: ../libnm-util/nm-setting-connection.c:760
+#, c-format
+msgid "requires presence of '%s' setting in the connection"
+msgstr "megköveteli a(z) „%s” beállítás jelenlétét a kapcsolatban"
+
+#: ../libnm-util/nm-setting-connection.c:784
+msgid "IPv4 configuration is not allowed for bonding slave"
+msgstr "Az IPv4 beállítás nem engedélyezett a bond kapcsolat alárendeltjéhez"
+
+#: ../libnm-util/nm-setting-connection.c:801
+msgid "IPv6 configuration is not allowed for bonding slave"
+msgstr "Az IPv6 beállítás nem engedélyezett a bond kapcsolat alárendeltjéhez"
+
+#: ../libnm-util/nm-setting-gsm.c:293
+#, c-format
+msgid "property value '%s' is empty or too long (>64)"
+msgstr "„%s” tulajdonságérték üres vagy túl hosszú (>64)"
+
+#: ../libnm-util/nm-setting-gsm.c:325
+#, c-format
+msgid "'%s' contains invalid char(s) (use [A-Za-z._-])"
+msgstr "„%s” érvénytelen karaktereket tartalmaz (használható: [A-Za-z._-])"
+
+#: ../libnm-util/nm-setting-gsm.c:360
+#, c-format
+msgid "'%s' length is invalid (should be 5 or 6 digits)"
+msgstr "„%s” hossz érvénytelen (5 vagy 6 számjegy kellene legyen)"
+
+#: ../libnm-util/nm-setting-gsm.c:371
+#, c-format
+msgid "'%s' is not a number"
+msgstr "„%s” nem szám"
+
+#: ../libnm-util/nm-setting-ip4-config.c:714
+#: ../libnm-util/nm-setting-ip4-config.c:724
+#: ../libnm-util/nm-setting-ip4-config.c:734
+#: ../libnm-util/nm-setting-ip6-config.c:697
+#: ../libnm-util/nm-setting-ip6-config.c:707
+#: ../libnm-util/nm-setting-ip6-config.c:717
+#, c-format
+msgid "this property is not allowed for '%s=%s'"
+msgstr "ez a tulajdonság nem engedélyezett ehhez: „%s=%s”"
+
+#: ../libnm-util/nm-setting-ip4-config.c:777
+#, c-format
+msgid "%d. IPv4 address is invalid"
+msgstr "a(z) %d. IPv4 cím érvénytelen"
+
+#: ../libnm-util/nm-setting-ip4-config.c:787
+#, c-format
+msgid "%d. IPv4 address has invalid prefix"
+msgstr "a(z) %d. IPv4 cím előtagja érvénytelen"
+
+#: ../libnm-util/nm-setting-ip4-config.c:803
+#, c-format
+msgid "%d. route is invalid"
+msgstr "a(z) %d. útvonal érvénytelen"
+
+#: ../libnm-util/nm-setting-ip4-config.c:813
+#, c-format
+msgid "%d. route has invalid prefix"
+msgstr "a(z) %d. útvonal előtagja érvénytelen"
+
+#: ../libnm-util/nm-setting-ip6-config.c:696
+#, c-format
+msgid "'%s' not allowed for %s=%s"
+msgstr "„%s” nem engedélyezett ehhez: „%s=%s”"
+
+#: ../libnm-util/nm-setting-olpc-mesh.c:137
+#: ../libnm-util/nm-setting-wireless.c:619
+msgid "SSID length is out of range <1-32> bytes"
+msgstr "az SSID hossza kívül esik az <1-32> bájt tartományon"
+
+#: ../libnm-util/nm-setting-olpc-mesh.c:146
+#: ../libnm-util/nm-setting-wireless.c:659
+#, c-format
+msgid "'%d' is not a valid channel"
+msgstr "„%d” nem érvényes csatorna"
+
+#: ../libnm-util/nm-setting-ppp.c:390
+#, c-format
+msgid "'%d' is out of valid range <128-16384>"
+msgstr "„%d” kívül esik az érvényes <128-16384> tartományon"
+
+#: ../libnm-util/nm-setting-ppp.c:403
+#, c-format
+msgid "setting this property requires non-zero '%s' property"
+msgstr "ezen tulajdonság beállításához nem nulla „%s” tulajdonság szükséges"
+
+#: ../libnm-util/nm-setting-vlan.c:490
+#, c-format
+msgid "'%s' value doesn't match '%s=%s'"
+msgstr "„%s” érték nem felel meg ennek: „%s=%s”"
+
+#: ../libnm-util/nm-setting-vlan.c:501
+#, c-format
+msgid "'%s' is neither an UUID nor an interface name"
+msgstr "„%s” nem UUID vagy csatolónév"
+
+#: ../libnm-util/nm-setting-vlan.c:514
+#, c-format
+msgid "property is not specified and neither is '%s:%s'"
+msgstr "a tulajdonság nincs megadva és nem is „%s:%s”"
+
+#: ../libnm-util/nm-setting-vlan.c:527
+msgid "flags are invalid"
+msgstr "a jelzők érvénytelenek"
+
+#: ../libnm-util/nm-setting-wired.c:456
+#, c-format
+msgid "'%s' is not a valid ethernet port value"
+msgstr "„%s” nem érvényes ethernet port érték"
+
+#: ../libnm-util/nm-setting-wired.c:466
+#, c-format
+msgid "'%s' is not a valid duplex value"
+msgstr "„%s” nem érvényes duplex érték"
+
+#: ../libnm-util/nm-setting-wired.c:476 ../libnm-util/nm-setting-wired.c:534
+msgid "is not a valid MAC address"
+msgstr "nem érvényes MAC cím"
+
+#: ../libnm-util/nm-setting-wired.c:489
+#: ../libnm-util/nm-setting-wireless.c:700
+#: ../libnm-util/nm-setting-wireless.c:714
+#, c-format
+msgid "'%s' is not a valid MAC address"
+msgstr "„%s” nem érvényes MAC cím"
+
+#: ../libnm-util/nm-setting-wired.c:523
+#, c-format
+msgid "invalid '%s' or its value '%s'"
+msgstr "„%s” vagy az értéke („%s”) érvénytelen"
+
+#: ../libnm-util/nm-setting-wireless-security.c:813
+#, c-format
+msgid "'%s' security requires '%s=%s'"
+msgstr "„%s” biztonság megköveteli ezt: „%s=%s”"
+
+#: ../libnm-util/nm-setting-wireless-security.c:842
+#, c-format
+msgid "'%s' security requires '%s' setting presence"
+msgstr "„%s” biztonság megköveteli „%s” beállítás jelenlétét"
+
+#: ../libnm-util/nm-setting-wireless-security.c:863
+#, c-format
+msgid "'%d' value is out of range <0-3>"
+msgstr "„%d” érték kívül esik a <0-3> tartományon"
+
+#: ../libnm-util/nm-setting-wireless-security.c:960
+#, c-format
+msgid "'%s' connections require '%s' in this property"
+msgstr "„%s” kapcsolat ebben a tulajdonságban megköveteli ezt: „%s”"
+
+#: ../libnm-util/nm-setting-wireless-security.c:990
+#, c-format
+msgid "'%s' can only be used with '%s=%s' (WEP)"
+msgstr "„%s” csak a(z) „%s=%s” (WEP) kapcsolóval együtt használható"
+
+#: ../libnm-util/nm-setting-wireless.c:628
+#, c-format
+msgid "'%s' is not a valid Wi-Fi mode"
+msgstr "„%s” nem érvényes Wi-Fi mód"
+
+#: ../libnm-util/nm-setting-wireless.c:638
+#, c-format
+msgid "'%s' is not a valid band"
+msgstr "„%s” nem érvényes sáv"
+
+#: ../libnm-util/nm-setting-wireless.c:648
+#, c-format
+msgid "requires setting '%s' property"
+msgstr "megköveteli a(z) „%s” tulajdonság beállítását"
+
+#: ../libnm-util/nm-setting-wireless.c:726
+#, c-format
+msgid "'%s' setting is required for the connection when the property is set"
 msgstr ""
-"Nem sikerült memóriát foglalni a titkosított kulcs PEM fájlba írásához."
+"„%s” beállítás szükséges a kapcsolathoz, ha a tulajdonság be van állítva"
 
-#: ../libnm-util/nm-utils.c:2187
-#, c-format
-msgid "Could not allocate memory for PEM file data."
-msgstr "Nem sikerült memóriát foglalni a PEM fájl adatainak."
-
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:1
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:1
 msgid "Enable or disable system networking"
 msgstr "Rendszer hálózatkezelésének be- és kikapcsolása"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:2
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:2
 msgid "System policy prevents enabling or disabling system networking"
 msgstr ""
 "A rendszer házirendje megakadályozza a rendszer hálózatkezelésének be- vagy "
 "kikapcsolását"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:3
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:3
 msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
@@ -2234,206 +2770,165 @@ msgstr ""
 "Hálózatkezelő elaltatása vagy felébresztése (csak a rendszer "
 "energiagazdálkodása által használandó)"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:4
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:4
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr ""
 "A rendszer házirendje megakadályozza a Hálózatkezelő elaltatását vagy "
 "felébresztését"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:5
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:5
 msgid "Enable or disable WiFi devices"
 msgstr "WiFi eszközök be- és kikapcsolása"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:6
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:6
 msgid "System policy prevents enabling or disabling WiFi devices"
 msgstr ""
 "A rendszer házirendje megakadályozza a WiFi eszközök be- vagy kikapcsolását"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:7
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:7
 msgid "Enable or disable mobile broadband devices"
 msgstr "Mobil széles sávú eszközök be- és kikapcsolása"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:8
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:8
 msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr ""
 "A rendszer házirendje megakadályozza a mobil széles sávú eszközök be- vagy "
 "kikapcsolását"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:9
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable WiMAX mobile broadband devices"
 msgstr "WiMAX mobil széles sávú eszközök be- és kikapcsolása"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:10
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:10
 msgid ""
 "System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
 "A rendszer házirendje megakadályozza a WiMAX mobil széles sávú eszközök be- "
 "vagy kikapcsolását"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:11
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:11
 msgid "Allow control of network connections"
 msgstr "Hálózati kapcsolatok felügyeletének engedélyezése"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:12
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:12
 msgid "System policy prevents control of network connections"
 msgstr ""
 "A rendszer házirendje megakadályozza a hálózati kapcsolatok felügyeletét"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:13
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:13
 msgid "Connection sharing via a protected WiFi network"
 msgstr "Kapcsolatmegosztás védett WiFi hálózaton"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:14
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:14
 msgid "System policy prevents sharing connections via a protected WiFi network"
 msgstr ""
 "A rendszer házirendje megakadályozza a kapcsolatok megosztását védett WiFi "
 "hálózaton"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:15
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:15
 msgid "Connection sharing via an open WiFi network"
 msgstr "Kapcsolatmegosztás nyílt WiFi hálózaton"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:16
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:16
 msgid "System policy prevents sharing connections via an open WiFi network"
 msgstr ""
 "A rendszer házirendje megakadályozza a kapcsolatok megosztását nyílt WiFi "
 "hálózaton"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:17
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Modify personal network connections"
 msgstr "Személyes hálózati kapcsolatok módosítása"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:18
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:18
 msgid "System policy prevents modification of personal network settings"
 msgstr ""
 "A rendszer házirendje megakadályozza a személyes hálózati beállítások "
 "módosítását"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:19
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Modify network connections for all users"
 msgstr "Hálózati kapcsolatok módosítása minden felhasználó számára"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:20
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:20
 msgid "System policy prevents modification of network settings for all users"
 msgstr ""
 "A rendszer házirendje megakadályozza a hálózati beállítások módosítását "
 "minden felhasználó számára"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:21
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:21
 msgid "Modify persistent system hostname"
 msgstr "Állandó rendszergépnév módosítása"
 
-#: ../policy/org.freedesktop.NetworkManager.policy.in.h:22
+#: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:22
 msgid "System policy prevents modification of the persistent system hostname"
 msgstr ""
 "A rendszer házirendje megakadályozza a rendszer állandó gépnevének "
 "módosítását"
 
-#: ../src/main.c:143
+#: ../src/main.c:131
 #, c-format
-#| msgid "Failed to initialize the crypto engine: %d."
-msgid "Failed to initialize SIGTERM pipe: %d"
-msgstr "A SIGTERM adatcsatorna előkészítése meghiúsult: %d"
+msgid "Failed to set signal mask: %d"
+msgstr "A szignálmaszk beállítása meghiúsult: %d"
 
-#: ../src/main.c:174
+#: ../src/main.c:140
+#, c-format
+msgid "Failed to create signal handling thread: %d"
+msgstr "A szignálkezelő szál létrehozása meghiúsult: %d"
+
+#: ../src/main.c:155
 #, c-format
 msgid "Opening %s failed: %s\n"
 msgstr "%s megnyitása sikertelen: %s\n"
 
-#: ../src/main.c:180
+#: ../src/main.c:161
 #, c-format
 msgid "Writing to %s failed: %s\n"
 msgstr "Nem sikerült írni a(z) %s fájlba: %s\n"
 
-#: ../src/main.c:185
+#: ../src/main.c:166
 #, c-format
 msgid "Closing %s failed: %s\n"
 msgstr "%s lezárása sikertelen: %s\n"
 
-#: ../src/main.c:228
+#: ../src/main.c:209
 #, c-format
-#| msgid "Error: NetworkManager is not running."
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "A Hálózatkezelő már fut (pid: %ld)\n"
 
-#: ../src/main.c:365
-#| msgid "NetworkManager status"
+#: ../src/main.c:324
 msgid "Print NetworkManager version and exit"
 msgstr "A Hálózatkezelő verziószámának kiírása és kilépés"
 
-#: ../src/main.c:366
+#: ../src/main.c:325
 msgid "Don't become a daemon"
 msgstr "Ne démonként fusson"
 
-#: ../src/main.c:367
+#: ../src/main.c:326
 msgid "Make all warnings fatal"
 msgstr "Minden figyelmeztetés végzetes legyen"
 
-#: ../src/main.c:368
+#: ../src/main.c:327
 msgid "Specify the location of a PID file"
 msgstr "A PID fájl helyének megadása"
 
-#: ../src/main.c:368
+#: ../src/main.c:327
 msgid "filename"
 msgstr "fájlnév"
 
-#: ../src/main.c:369
+#: ../src/main.c:328
 msgid "State file location"
 msgstr "Állapotfájl helye"
 
-#: ../src/main.c:369
+#: ../src/main.c:328
 msgid "/path/to/state.file"
 msgstr "/útvonal/állapot.fájl"
 
-#: ../src/main.c:370
-msgid "Config file location"
-msgstr "Beállítófájl helye"
-
-#: ../src/main.c:370
-msgid "/path/to/config.file"
-msgstr "/útvonal/beállító.fájl"
-
-#: ../src/main.c:371
-msgid "List of plugins separated by ','"
-msgstr "Bővítmények „,”-vel elválasztott listája"
-
-#: ../src/main.c:371
-msgid "plugin1,plugin2"
-msgstr "bővítmény1,bővítmény2"
-
-#. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:373
-msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
-msgstr "Naplózási szint: az [ERR, WARN, INFO, DEBUG] egyike"
-
-#. Translators: Do not translate the values in the square brackets
-#: ../src/main.c:376
-msgid ""
-"Log domains separated by ',': any combination of\n"
-"                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,"
-"DHCP4,DHCP6,PPP,\n"
-"                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,"
-"SHARING,SUPPLICANT,\n"
-"                                           AGENTS,SETTINGS,SUSPEND,CORE,"
-"DEVICE,OLPC,WIMAX,\n"
-"                                           INFINIBAND,FIREWALL]"
-msgstr ""
-"Naplózási tartományok „,”-vel elválasztva: az alábbiak tetszőleges "
-"kombinációja:\n"
-"                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,MB,"
-"DHCP4,DHCP6,PPP,\n"
-"                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,VPN,"
-"SHARING,SUPPLICANT,\n"
-"                                           AGENTS,SETTINGS,SUSPEND,CORE,"
-"DEVICE,OLPC,WIMAX,\n"
-"                                           INFINIBAND,FIREWALL]"
-
-#: ../src/main.c:386
+#: ../src/main.c:333
 #, c-format
 msgid "GModules are not supported on your platform!\n"
 msgstr "A platform nem támogatja a GModule-okat!\n"
 
-#: ../src/main.c:405
+#: ../src/main.c:353
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -2446,44 +2941,43 @@ msgstr ""
 "lévő\n"
 "vezeték nélküli kártyáknak kapcsolódniuk kell."
 
-#: ../src/main.c:411
+#: ../src/main.c:359
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Érvénytelen kapcsoló. Az érvényes kapcsolók listájáért használja a --help "
 "kapcsolót.\n"
 
-#: ../src/main.c:421
+#: ../src/main.c:369
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "A Hálózatkezelő futtatásához rendszergazdai jogosultság szükséges!\n"
 
-#: ../src/main.c:441
+#: ../src/main.c:401
 #, c-format
-#| msgid "Failed to set IV for encryption: %s / %s."
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "A beállítások olvasása sikertelen: (%d) %s\n"
 
-#: ../src/main.c:452
+#: ../src/main.c:412
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s. Használja a --help kapcsolót az érvényes kapcsolókért.\n"
 
-#: ../src/main.c:459
+#: ../src/main.c:419
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "A(z) %s állapotfájl feldolgozása sikertelen: (%d) %s\n"
 
-#: ../src/main.c:476
+#: ../src/main.c:436
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Nem lehet démon módban elindulni: %s [hiba: %u]\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:62
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:139
 msgid "# Created by NetworkManager\n"
 msgstr "# Készítette a Hálózatkezelő\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:69
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:146
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -2492,145 +2986,467 @@ msgstr ""
 "# Összefésülve ebből: %s\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:284
+#: ../src/dhcp-manager/nm-dhcp-manager.c:313
 msgid "no usable DHCP client could be found."
 msgstr "nem található használható DHCP-kliens."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:293
+#: ../src/dhcp-manager/nm-dhcp-manager.c:322
 msgid "'dhclient' could be found."
 msgstr "A „dhclient” nem használható."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:303
+#: ../src/dhcp-manager/nm-dhcp-manager.c:332
 msgid "'dhcpcd' could be found."
 msgstr "A „dhcpd” nem használható."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:311
+#: ../src/dhcp-manager/nm-dhcp-manager.c:340
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "nem támogatott DHCP-kliens („%s”)"
 
-#: ../src/dns-manager/nm-dns-manager.c:376
+#: ../src/dns-manager/nm-dns-manager.c:366
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "MEGJEGYZÉS: a libc feloldó nem támogat háromnál több névkiszolgálót."
 
-#: ../src/dns-manager/nm-dns-manager.c:378
+#: ../src/dns-manager/nm-dns-manager.c:368
 msgid "The nameservers listed below may not be recognized."
 msgstr ""
 "Az alább felsorolt névkiszolgálók lehet, hogy nem kerülnek felismerésre."
 
-#: ../src/logging/nm-logging.c:153
+#: ../src/logging/nm-logging.c:142
 #, c-format
 msgid "Unknown log level '%s'"
 msgstr "Ismeretlen naplózási szint: „%s”"
 
-#: ../src/logging/nm-logging.c:178
+#: ../src/logging/nm-logging.c:188
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Ismeretlen naplózási tartomány: „%s”"
 
-#: ../src/modem-manager/nm-modem-cdma.c:308 ../src/nm-device-bt.c:354
+#: ../src/config/nm-config.c:255
+msgid "Config file location"
+msgstr "Beállítófájl helye"
+
+#: ../src/config/nm-config.c:255
+msgid "/path/to/config.file"
+msgstr "/útvonal/beállító.fájl"
+
+#: ../src/config/nm-config.c:256
+msgid "Config directory location"
+msgstr "Beállítókönyvtár helye"
+
+#: ../src/config/nm-config.c:256
+msgid "/path/to/config/dir"
+msgstr "/útvonal/beállító/könyvtár"
+
+#: ../src/config/nm-config.c:258
+msgid "List of plugins separated by ','"
+msgstr "Bővítmények „,”-vel elválasztott listája"
+
+#: ../src/config/nm-config.c:258
+msgid "plugin1,plugin2"
+msgstr "bővítmény1,bővítmény2"
+
+#: ../src/config/nm-config.c:259
+#, c-format
+msgid "Log level: one of [%s]"
+msgstr "Naplózási szint: az [%s] egyike"
+
+#: ../src/config/nm-config.c:261
+#, c-format
+msgid "Log domains separated by ',': any combination of [%s]"
+msgstr ""
+"Vesszővel elválasztott naplózási tartományok: [%s] tetszőleges kombinációja"
+
+#. These three are hidden for now, and should eventually just go away.
+#: ../src/config/nm-config.c:265
+msgid "An http(s) address for checking internet connectivity"
+msgstr "http(s) cím az internet elérhetőségének teszteléséhez"
+
+#: ../src/config/nm-config.c:266
+msgid "The interval between connectivity checks (in seconds)"
+msgstr "Az elérhetőségi tesztek közti idő (másodpercben)"
+
+#: ../src/config/nm-config.c:267
+msgid "The expected start of the response"
+msgstr "A válasz várt kezdete"
+
+#: ../src/config/nm-config.c:267
+msgid "Bingo!"
+msgstr "Bingo!"
+
+#: ../src/modem-manager/nm-modem-cdma.c:255
+#: ../src/modem-manager/nm-modem-broadband.c:516 ../src/nm-device-bt.c:331
 #, c-format
 msgid "CDMA connection %d"
 msgstr "%d. CDMA kapcsolat"
 
-#: ../src/modem-manager/nm-modem-gsm.c:542 ../src/nm-device-bt.c:350
+#: ../src/modem-manager/nm-modem-gsm.c:531
+#: ../src/modem-manager/nm-modem-broadband.c:494 ../src/nm-device-bt.c:327
 #, c-format
 msgid "GSM connection %d"
 msgstr "%d. GSM kapcsolat"
 
-#: ../src/nm-device-bt.c:325
+#: ../src/nm-device-bond.c:166
+#, c-format
+msgid "Bond connection %d"
+msgstr "%d. bond kapcsolat"
+
+#: ../src/nm-device-adsl.c:197
+#, c-format
+msgid "ADSL connection %d"
+msgstr "%d. ADSL kapcsolat"
+
+#: ../src/nm-device-bridge.c:164
+#, c-format
+msgid "Bridge connection %d"
+msgstr "%d. bridge kapcsolat"
+
+#: ../src/nm-device-bt.c:302
 #, c-format
 msgid "PAN connection %d"
 msgstr "%d. PAN kapcsolat"
 
-#: ../src/nm-device-bt.c:358
+#: ../src/nm-device-bt.c:335
 #, c-format
 msgid "DUN connection %d"
 msgstr "%d. DUN kapcsolat"
 
-#: ../src/nm-device-ethernet.c:1382
+#: ../src/nm-device-ethernet.c:1294
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "%d. PPPoE kapcsolat"
 
-#: ../src/nm-device-ethernet.c:1382 ../src/settings/nm-settings-utils.c:50
+#: ../src/nm-device-ethernet.c:1294 ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "%d. vezetékes kapcsolat"
 
-#: ../src/nm-device-infiniband.c:332
+#: ../src/nm-device-infiniband.c:270
 #, c-format
-#| msgid "Wired connection %d"
 msgid "InfiniBand connection %d"
 msgstr "%d. InfiniBand kapcsolat"
 
-#: ../src/nm-device-olpc-mesh.c:323
+#: ../src/nm-device-olpc-mesh.c:304
 #, c-format
 msgid "Mesh %d"
 msgstr "%d. háló"
 
-#: ../src/nm-manager.c:680
+#: ../src/nm-device-vlan.c:315
+#, c-format
+msgid "VLAN connection %d"
+msgstr "%d. VLAN kapcsolat"
+
+#: ../src/nm-manager.c:751
 #, c-format
 msgid "VPN connection %d"
 msgstr "%d. VPN kapcsolat"
 
-#: ../src/nm-netlink-monitor.c:148 ../src/nm-netlink-monitor.c:272
-#: ../src/nm-netlink-monitor.c:695
+#: ../src/nm-netlink-monitor.c:162 ../src/nm-netlink-monitor.c:286
+#: ../src/nm-netlink-monitor.c:671
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "hiba a netlink üzenet feldolgozásakor: %s"
 
-#: ../src/nm-netlink-monitor.c:251
+#: ../src/nm-netlink-monitor.c:265
 msgid "error occurred while waiting for data on socket"
 msgstr "hiba lépett fel adatokra várakozás közben a foglalaton"
 
-#: ../src/nm-netlink-monitor.c:296
+#: ../src/nm-netlink-monitor.c:310
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
 "nem lehet kapcsolódni a netlinkhez a kapcsolat állapotának megfigyelése "
 "érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:307
+#: ../src/nm-netlink-monitor.c:321
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
 msgstr ""
 "nem engedélyezhető a hálózati kapcsolatkezelő hitelesítési adatainak "
 "átadása: %s"
 
-#: ../src/nm-netlink-monitor.c:330 ../src/nm-netlink-monitor.c:390
+#: ../src/nm-netlink-monitor.c:364 ../src/nm-netlink-monitor.c:424
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
 "nem lehet netlink kezelőt lefoglalni a kapcsolat állapotának megfigyelése "
 "érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:415
+#: ../src/nm-netlink-monitor.c:449
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
 "nem lehet netlink kapcsolat-gyorsítótárat lefoglalni a kapcsolat állapotának "
 "megfigyelése érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:542
+#: ../src/nm-netlink-monitor.c:541
 #, c-format
 msgid "unable to join netlink group: %s"
 msgstr "nem lehet csatlakozni a netlink csoporthoz: %s"
 
-#: ../src/nm-netlink-monitor.c:671 ../src/nm-netlink-monitor.c:684
+#: ../src/nm-netlink-monitor.c:647 ../src/nm-netlink-monitor.c:660
 #, c-format
 msgid "error updating link cache: %s"
 msgstr "hiba a kapcsolat gyorsítótárának frissítésekor: %s"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:91
-#: ../src/settings/plugins/ifnet/connection_parser.c:51
+#: ../src/settings/plugins/ifcfg-rh/reader.c:110
 msgid "System"
 msgstr "Rendszer"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3660
-#| msgid "on"
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3664
 msgid "Bond"
 msgstr "Kapcsolódva"
+
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3852
+msgid "Bridge"
+msgstr "Bridge"
+
+#: ../test/nm-online.c:111
+#, c-format
+msgid "\rConnecting"
+msgstr "\rcsatlakozás"
+
+#: ../test/nm-online.c:142
+msgid "Time to wait for a connection, in seconds (default is 30)"
+msgstr "Kapcsolatra várakozás ennyi ideig, másodpercben (alapérték: 30)"
+
+#: ../test/nm-online.c:143
+msgid "Exit immediately if NetworkManager is not running or connecting"
+msgstr "Kilépés azonnal, ha a Hálózatkezelő nem fut vagy nem kapcsolódik"
+
+#: ../test/nm-online.c:144
+msgid "Don't print anything"
+msgstr "Ne írjon ki semmit"
+
+#: ../test/nm-online.c:162
+msgid "Waits for a successful connection in NetworkManager."
+msgstr "A Hálózatkezelő sikeres kapcsolódására vár."
+
+#: ../test/nm-online.c:168 ../test/nm-online.c:177
+msgid "Invalid option.  Please use --help to see a list of valid options."
+msgstr ""
+"Érvénytelen kapcsoló. Az érvényes kapcsolók listájáért használja a --help "
+"kapcsolót."
+
+#~ msgid "NET-ENABLED"
+#~ msgstr "NET-KÉPES"
+
+#~ msgid "WIFI-HARDWARE"
+#~ msgstr "WIFI-HARDVER"
+
+#~ msgid "WWAN-HARDWARE"
+#~ msgstr "WWAN-HARDVER"
+
+#~ msgid "WIMAX-HARDWARE"
+#~ msgstr "WIMAX-HARDVER"
+
+#~ msgid "Error: Couldn't connect to system bus: %s"
+#~ msgstr "Hiba: nem lehet a rendszerbuszhoz kapcsolódni: %s"
+
+#~ msgid "Error: Couldn't create D-Bus object proxy."
+#~ msgstr "Hiba: nem lehet a D-Bus objektumproxyhoz kapcsolódni."
+
+#~ msgid "Error in sleep: %s"
+#~ msgstr "Hiba az alváskor: %s"
+
+#~| msgid ""
+#~| "Usage: nmcli nm { COMMAND | help }\n"
+#~| "\n"
+#~| "  COMMAND := { status | enable | sleep | wifi | wwan | wimax }\n"
+#~| "\n"
+#~| "  COMMAND := { status | enable | sleep | wifi | wwan }\n"
+#~| "\n"
+#~| "  status\n"
+#~| "  enable [true|false]\n"
+#~| "  sleep [true|false]\n"
+#~| "  wifi [on|off]\n"
+#~| "  wwan [on|off]\n"
+#~| "  wimax [on|off]\n"
+#~| "\n"
+#~ msgid ""
+#~ "Usage: nmcli nm { COMMAND | help }\n"
+#~ "\n"
+#~ "  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
+#~ "wimax }\n"
+#~ "\n"
+#~ "  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
+#~ "\n"
+#~ "  status\n"
+#~ "  permissions\n"
+#~ "  enable [true|false]\n"
+#~ "  sleep [true|false]\n"
+#~ "  wifi [on|off]\n"
+#~ "  wwan [on|off]\n"
+#~ "  wimax [on|off]\n"
+#~ "\n"
+#~ msgstr ""
+#~ "Használat: nmcli nm { PARANCS | help }\n"
+#~ "\n"
+#~ "  PARANCS := { status | permissions | enable | sleep | wifi | wwan | "
+#~ "wimax }\n"
+#~ "\n"
+#~ "  PARANCS := { status | permissions | enable | sleep | wifi | wwan }\n"
+#~ "\n"
+#~ "  status\n"
+#~ "  permissions\n"
+#~ "  enable [true|false]\n"
+#~ "  sleep [true|false]\n"
+#~ "  wifi [on|off]\n"
+#~ "  wwan [on|off]\n"
+#~ "  wimax [on|off]\n"
+#~ "\n"
+
+#~ msgid "Networking enabled"
+#~ msgstr "Hálózatkezelés engedélyezve"
+
+#~ msgid "Error: invalid 'enable' parameter: '%s'; use 'true' or 'false'."
+#~ msgstr ""
+#~ "Hiba: érvénytelen „enable” paraméter: „%s”; használja a  „true” vagy "
+#~ "„false” egyikét."
+
+#~ msgid "Error: Sleeping status is not exported by NetworkManager."
+#~ msgstr "Hiba: a Hálózatkezelő nem exportálta az alvási állapotot."
+
+#~ msgid "Error: invalid 'sleep' parameter: '%s'; use 'true' or 'false'."
+#~ msgstr ""
+#~ "Hiba: érvénytelen „sleep” paraméter: „%s”; használja a  „true” vagy "
+#~ "„false” egyikét."
+
+#~ msgid "WiFi enabled"
+#~ msgstr "WiFi engedélyezve"
+
+#~ msgid "Error: invalid 'wifi' parameter: '%s'."
+#~ msgstr "Hiba: érvénytelen „wifi” paraméter: „%s”."
+
+#~ msgid "WWAN enabled"
+#~ msgstr "WWAN engedélyezve"
+
+#~ msgid "Error: invalid 'wwan' parameter: '%s'."
+#~ msgstr "Hiba: érvénytelen „wwan” paraméter: „%s”."
+
+#~ msgid "WiMAX enabled"
+#~ msgstr "WiMAX engedélyezve"
+
+#~ msgid "Error: invalid 'wimax' parameter: '%s'."
+#~ msgstr "Hiba: érvénytelen „wimax” paraméter: „%s”."
+
+#~ msgid "Error: 'nm' command '%s' is not valid."
+#~ msgstr "Hiba: a(z) „%s” „nm” parancs nem érvényes."
+
+#~ msgid "Connection list"
+#~ msgstr "Kapcsolatlista"
+
+#~ msgid "Error: no valid parameter specified."
+#~ msgstr "Hiba: nincs megadva érvényes paraméter."
+
+#~ msgid "Error: Can't find out if NetworkManager is running: %s."
+#~ msgstr "Hiba: nem lehet megállapítani, hogy a Hálózatkezelő fut-e: %s."
+
+#~ msgid "state: %s\n"
+#~ msgstr "állapot: %s\n"
+
+#~ msgid "Connection activated\n"
+#~ msgstr "Kapcsolat aktiválva\n"
+
+#~ msgid "state: %s (%d)\n"
+#~ msgstr "állapot: %s (%d)\n"
+
+#~ msgid "Active connection state: %s\n"
+#~ msgstr "Aktív kapcsolat állapota: %s\n"
+
+#~ msgid "Active connection path: %s\n"
+#~ msgstr "Aktív kapcsolat útvonala: %s\n"
+
+#~ msgid "Error: id or uuid has to be specified."
+#~ msgstr "Hiba: meg kell adni az id vagy uuid egyikét."
+
+#~ msgid "Warning: Connection not active\n"
+#~ msgstr "Figyelmeztetés: a kapcsolat nem aktív\n"
+
+#~ msgid "Error: could not connect to D-Bus."
+#~ msgstr "Hiba: nem lehet a D-Bushoz kapcsolódni."
+
+#~ msgid "Device state: %d (%s)\n"
+#~ msgstr "Eszköz állapota: %d (%s)\n"
+
+#~ msgid "Error: 'nm status': %s"
+#~ msgstr "Hiba: „nm status”: %s"
+
+#~ msgid "Error: 'nm status': %s; allowed fields: %s"
+#~ msgstr "Hiba: „nm status”: %s; engedélyezett mezők: %s"
+
+#~ msgid "Error: Couldn't create D-Bus object proxy for org.freedesktop.DBus"
+#~ msgstr ""
+#~ "Hiba: nem sikerült a D-Bus objektumproxyt létrehozni az org.freedesktop."
+#~ "DBus névtérhez"
+
+#~ msgid "Error: NameHasOwner request failed: %s"
+#~ msgstr "Hiba: a NameHasOwner kérés meghiúsult: %s"
+
+#~ msgid "Not enough memory to store PEM file data."
+#~ msgstr "Nincs elég memória a PEM fájl adatainak tárolásához."
+
+#~| msgid "Not enough memory to store certificate data."
+#~ msgid "Not enough memory to store private key data."
+#~ msgstr "Nincs elég memória a személyes kulcs adatainak tárolásához."
+
+#~ msgid "Not enough memory to store certificate data."
+#~ msgstr "Nincs elég memória a tanúsítvány adatainak tárolásához."
+
+#~ msgid "Not enough memory to store the IV."
+#~ msgstr "Nincs elég memória az IV tárolásához."
+
+#~ msgid "Not enough memory to decrypt private key."
+#~ msgstr "Nincs elég memória a személyes kulcs visszafejtéséhez."
+
+#~ msgid "Not enough memory to store decrypted private key."
+#~ msgstr "Nincs elég memória a visszafejtett személyes kulcs tárolásához."
+
+#~ msgid "Not enough memory for decrypted key buffer."
+#~ msgstr "Nincs elég memória a visszafejtett kulcspufferhez."
+
+#~ msgid "Could not allocate memory for encrypting."
+#~ msgstr "Nem sikerült memóriát foglalni a titkosításhoz."
+
+#~ msgid "Not enough memory to make encryption key."
+#~ msgstr "Nincs elég memória titkosítási kulcs készítéséhez."
+
+#~ msgid "Could not allocate memory for PEM file creation."
+#~ msgstr "Nem sikerült memóriát foglalni PEM fájl készítéséhez."
+
+#~ msgid "Could not allocate memory for writing IV to PEM file."
+#~ msgstr "Nem sikerült memóriát foglalni az IV írásához PEM fájlba."
+
+#~ msgid "Could not allocate memory for writing encrypted key to PEM file."
+#~ msgstr ""
+#~ "Nem sikerült memóriát foglalni a titkosított kulcs PEM fájlba írásához."
+
+#~ msgid "Could not allocate memory for PEM file data."
+#~ msgstr "Nem sikerült memóriát foglalni a PEM fájl adatainak."
+
+#~| msgid "Failed to initialize the crypto engine: %d."
+#~ msgid "Failed to initialize SIGTERM pipe: %d"
+#~ msgstr "A SIGTERM adatcsatorna előkészítése meghiúsult: %d"
+
+#~ msgid ""
+#~ "Log domains separated by ',': any combination of\n"
+#~ "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,"
+#~ "MB,DHCP4,DHCP6,PPP,\n"
+#~ "                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,"
+#~ "VPN,SHARING,SUPPLICANT,\n"
+#~ "                                           AGENTS,SETTINGS,SUSPEND,CORE,"
+#~ "DEVICE,OLPC,WIMAX,\n"
+#~ "                                           INFINIBAND,FIREWALL]"
+#~ msgstr ""
+#~ "Naplózási tartományok „,”-vel elválasztva: az alábbiak tetszőleges "
+#~ "kombinációja:\n"
+#~ "                                          [NONE,HW,RFKILL,ETHER,WIFI,BT,"
+#~ "MB,DHCP4,DHCP6,PPP,\n"
+#~ "                                           WIFI_SCAN,IP4,IP6,AUTOIP4,DNS,"
+#~ "VPN,SHARING,SUPPLICANT,\n"
+#~ "                                           AGENTS,SETTINGS,SUSPEND,CORE,"
+#~ "DEVICE,OLPC,WIMAX,\n"
+#~ "                                           INFINIBAND,FIREWALL]"
 
 #~ msgid "Error: Obtaining active connection for '%s' failed."
 #~ msgstr "Hiba: az aktív kapcsolat létrehozása meghiúsult ehhez: „%s”."
