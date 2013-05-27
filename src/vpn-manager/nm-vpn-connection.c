@@ -41,7 +41,6 @@
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
-#include "nm-netlink-utils.h"
 #include "nm-glib-compat.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
@@ -92,7 +91,8 @@ typedef struct {
 	char *banner;
 	guint32 mtu;
 
-	struct rtnl_route *gw_route;
+	NMPlatformIP4Route *ip4_gw_route;
+	NMPlatformIP6Route *ip6_gw_route;
 } NMVPNConnectionPrivate;
 
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
@@ -168,10 +168,22 @@ vpn_cleanup (NMVPNConnection *connection)
 		nm_platform_address_flush (priv->ip_ifindex);
 	}
 
-	if (priv->gw_route) {
-		nm_netlink_route_delete (priv->gw_route);
-		rtnl_route_put (priv->gw_route);
-		priv->gw_route = NULL;
+	if (priv->ip4_gw_route) {
+		nm_platform_ip4_route_delete (
+				priv->ip4_gw_route->ifindex,
+				priv->ip4_gw_route->network,
+				priv->ip4_gw_route->plen,
+				priv->ip4_gw_route->metric);
+		g_clear_pointer (&priv->ip4_gw_route, g_free);
+	}
+
+	if (priv->ip6_gw_route) {
+		nm_platform_ip6_route_delete (
+				priv->ip6_gw_route->ifindex,
+				priv->ip6_gw_route->network,
+				priv->ip6_gw_route->plen,
+				priv->ip6_gw_route->metric);
+		g_clear_pointer (&priv->ip6_gw_route, g_free);
 	}
 
 	g_free (priv->banner);
@@ -309,9 +321,8 @@ device_ip4_config_changed (NMDevice *device,
 
 	/* Re-add the VPN gateway route */
 	if (priv->ip4_external_gw) {
-		if (priv->gw_route)
-			rtnl_route_put (priv->gw_route);
-		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
+		g_free (&priv->ip4_gw_route);
+		priv->ip4_gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
 		                                                      priv->ip4_external_gw);
 	}
 }
@@ -330,10 +341,9 @@ device_ip6_config_changed (NMDevice *device,
 
 	/* Re-add the VPN gateway route */
 	if (priv->ip6_external_gw) {
-		if (priv->gw_route)
-			rtnl_route_put (priv->gw_route);
-		priv->gw_route = nm_system_add_ip6_vpn_gateway_route (priv->parent_dev,
-		                                                      priv->ip6_external_gw);
+		g_free (priv->ip6_gw_route);
+		priv->ip6_gw_route = nm_system_add_ip6_vpn_gateway_route (priv->parent_dev,
+		                                                          priv->ip6_external_gw);
 	}
 }
 
@@ -612,14 +622,14 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 	}
 
 	/* Add any explicit route to the VPN gateway through the parent device */
+	g_clear_pointer (&priv->ip4_gw_route, g_free);
+	g_clear_pointer (&priv->ip6_gw_route, g_free);
 	if (priv->ip4_external_gw) {
-		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
+		priv->ip4_gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev,
 		                                                      priv->ip4_external_gw);
 	} else if (priv->ip6_external_gw) {
-		priv->gw_route = nm_system_add_ip6_vpn_gateway_route (priv->parent_dev,
+		priv->ip6_gw_route = nm_system_add_ip6_vpn_gateway_route (priv->parent_dev,
 		                                                      priv->ip6_external_gw);
-	} else {
-		priv->gw_route = NULL;
 	}
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
@@ -689,7 +699,7 @@ process_generic_config (NMVPNConnection *connection,
 
 	/* Grab the interface index for address/routing operations */
 	priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
-	if (priv->ip_ifindex < 0) {
+	if (!priv->ip_ifindex) {
 		nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
 		nm_vpn_connection_config_maybe_complete (connection, FALSE);
 		return FALSE;
@@ -1500,8 +1510,9 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	if (priv->gw_route)
-		rtnl_route_put (priv->gw_route);
+	g_clear_pointer (&priv->ip4_gw_route, g_free);
+	g_clear_pointer (&priv->ip6_gw_route, g_free);
+
 	if (priv->ip6_internal_gw)
 		g_free (priv->ip6_internal_gw);
 	if (priv->ip6_external_gw)

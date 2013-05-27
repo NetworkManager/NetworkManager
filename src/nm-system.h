@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <netlink/route/route.h>
 
+#include "nm-platform.h"
 #include "nm-device.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-bond.h"
@@ -52,9 +53,9 @@ gboolean		nm_system_replace_default_ip6_route_vpn (int ifindex,
                                                          int parent_ifindex,
                                                          guint32 parent_mss);
 
-struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device,
+NMPlatformIP4Route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device,
                                                         guint32 vpn_gw);
-struct rtnl_route *nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
+NMPlatformIP6Route *nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
                                                         const struct in6_addr *vpn_gw);
 
 gboolean        nm_system_iface_flush_addresses         (int ifindex, int family);

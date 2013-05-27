@@ -144,13 +144,13 @@ nm_system_device_set_ip4_route (int ifindex,
 	return route;
 }
 
-struct rtnl_route *
+NMPlatformIP4Route *
 nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
 	NMIP4Config *parent_config;
 	guint32 parent_gw = 0, parent_prefix = 0, i;
 	NMIP4Address *tmp;
-	struct rtnl_route *route = NULL;
+	NMPlatformIP4Route *route = g_new0 (NMPlatformIP4Route, 1);
 
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 	g_return_val_if_fail (vpn_gw != 0, NULL);
@@ -171,19 +171,37 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 		}
 	}
 
-	if (!parent_gw)
+	if (!parent_gw) {
+		g_free (route);
 		return NULL;
+	}
+
+	route->ifindex = nm_device_get_ip_ifindex (parent_device);
+	route->network = vpn_gw;
+	route->plen = 32;
+	route->gateway = parent_gw;
+	route->metric = 1024;
+	route->mss = nm_ip4_config_get_mss (parent_config);
 
 	/* If the VPN gateway is in the same subnet as one of the parent device's
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
-	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix)) {
-		route = nm_system_device_set_ip4_route (nm_device_get_ip_ifindex (parent_device),
-		                                        vpn_gw, 32, 0, 0, nm_ip4_config_get_mss (parent_config));
-	} else {
-		route = nm_system_device_set_ip4_route (nm_device_get_ip_ifindex (parent_device),
-		                                        vpn_gw, 32, parent_gw, 0, nm_ip4_config_get_mss (parent_config));
+	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix))
+		route->gateway = 0;
+
+	if (!nm_platform_ip4_route_add (route->ifindex,
+	                               route->network,
+	                               route->plen,
+	                               route->gateway,
+	                               route->metric,
+	                               route->mss)) {
+		g_free (route);
+		nm_log_err (LOGD_DEVICE | LOGD_IP4,
+			"(%s): failed to add IPv4 route to VPN gateway: %s",
+			nm_device_get_iface (parent_device),
+			nm_platform_get_error_msg ());
+		return NULL;
 	}
 
 	return route;
@@ -354,16 +372,16 @@ ip6_dest_in_same_subnet (NMIP6Config *config, const struct in6_addr *dest, guint
 	return FALSE;
 }
 
-struct rtnl_route *
+NMPlatformIP6Route *
 nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
                                      const struct in6_addr *vpn_gw)
 {
 	NMIP6Config *parent_config;
 	const struct in6_addr *parent_gw = NULL;
 	guint32 parent_prefix = 0;
-	int i, err;
+	int i;
 	NMIP6Address *tmp;
-	struct rtnl_route *route = NULL;
+	NMPlatformIP6Route *route = g_new0 (NMPlatformIP6Route, 1);
 
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 	g_return_val_if_fail (vpn_gw != NULL, NULL);
@@ -385,28 +403,39 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 		}
 	}
 
-	if (!parent_gw)
+	if (!parent_gw) {
+		g_free (route);
 		return NULL;
-
-	if (ip6_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix)) {
-		err = nm_system_set_ip6_route (nm_device_get_ip_ifindex (parent_device),
-		                               vpn_gw, 128, NULL, 0,
-		                               nm_ip6_config_get_mss (parent_config),
-		                               RTPROT_UNSPEC, RT_TABLE_UNSPEC,
-		                               &route);
-	} else {
-		err = nm_system_set_ip6_route (nm_device_get_ip_ifindex (parent_device),
-		                               vpn_gw, 128, parent_gw, 0,
-		                               nm_ip6_config_get_mss (parent_config),
-		                               RTPROT_UNSPEC, RT_TABLE_UNSPEC,
-		                               &route);
 	}
 
-	if (err) {
+	route->ifindex = nm_device_get_ip_ifindex (parent_device);
+	route->network = *vpn_gw;
+	route->plen = 128;
+	route->gateway = *parent_gw;
+	route->metric = 1024;
+	route->mss = nm_ip6_config_get_mss (parent_config);
+
+	/* If the VPN gateway is in the same subnet as one of the parent device's
+	 * IP addresses, don't add the host route to it, but a route through the
+	 * parent device.
+	 */
+	if (ip6_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix))
+		route->gateway = in6addr_any;
+
+	if (!nm_platform_ip6_route_add (route->ifindex,
+	                               route->network,
+	                               route->plen,
+	                               route->gateway,
+	                               route->metric,
+	                               route->mss)) {
+		g_free (route);
 		nm_log_err (LOGD_DEVICE | LOGD_IP6,
-		            "(%s): failed to add IPv6 route to VPN gateway (%d)",
-		            nm_device_get_iface (parent_device), err);
+			"(%s): failed to add IPv6 route to VPN gateway: %s",
+			nm_device_get_iface (parent_device),
+			nm_platform_get_error_msg ());
+		return NULL;
 	}
+
 	return route;
 }
 
