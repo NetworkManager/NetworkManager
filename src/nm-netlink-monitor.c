@@ -307,6 +307,7 @@ event_connection_setup (NMNetlinkMonitor *self, GError **error)
 	GError *channel_error = NULL;
 	GIOFlags channel_flags;
 	int fd;
+	int nle;
 
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
@@ -324,6 +325,13 @@ event_connection_setup (NMNetlinkMonitor *self, GError **error)
 		goto error;
 
 	nl_socket_disable_seq_check (priv->nlh_event);
+
+	/* The default buffer size wasn't enough for the testsuites. It might just
+	 * as well happen with NetworkManager itself. For now let's hope 128KB is
+	 * good enough.
+	 */
+	nle = nl_socket_set_buffer_size (priv->nlh_event, 131072, 0);
+	g_assert (!nle);
 
 	/* Subscribe to the LINK group for internal carrier signals */
 	if (!nm_netlink_monitor_subscribe (self, RTNLGRP_LINK, error))
