@@ -83,8 +83,6 @@ type_to_type_name (NMLinkType type)
 	switch (type) {
 	case NM_LINK_TYPE_UNKNOWN:
 		return "unknown";
-	case NM_LINK_TYPE_GENERIC:
-		return "generic";
 	case NM_LINK_TYPE_LOOPBACK:
 		return "loopback";
 	case NM_LINK_TYPE_ETHERNET:
@@ -266,7 +264,6 @@ link_set_up (NMPlatform *platform, int ifindex)
 
 	device->link.up = TRUE;
 	switch (device->link.type) {
-	case NM_LINK_TYPE_GENERIC:
 	case NM_LINK_TYPE_DUMMY:
 	case NM_LINK_TYPE_VLAN:
 		device->link.connected = TRUE;

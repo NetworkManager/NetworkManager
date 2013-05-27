@@ -319,7 +319,7 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 				break;
 		}
 
-		return_type (NM_LINK_TYPE_GENERIC, "generic");
+		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 	} else if (!strcmp (type, "ipoib"))
 		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 	else if (!strcmp (type, "dummy"))

@@ -50,7 +50,6 @@ typedef enum {
 typedef enum {
 	NM_LINK_TYPE_NONE,
 	NM_LINK_TYPE_UNKNOWN,
-	NM_LINK_TYPE_GENERIC,
 
 	/* Hardware types */
 	NM_LINK_TYPE_ETHERNET,
