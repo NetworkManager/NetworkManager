@@ -30,7 +30,7 @@
 
 
 /* Helper macro to define fields */
-#define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, 0 }
+#define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, FALSE, FALSE, 0 }
 
 /* Available fields for NM_SETTING_CONNECTION_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_connection[] = {
@@ -47,7 +47,7 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),         /* 10 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),     /* 11 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),    /* 12 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
                                               NM_SETTING_CONNECTION_ID","\
@@ -78,7 +78,7 @@ static NmcOutputField nmc_fields_setting_wired[] = {
 	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS, 20),        /* 9 */
 	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE, 15),            /* 10 */
 	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS, 20),            /* 11 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
                                          NM_SETTING_WIRED_PORT","\
@@ -129,7 +129,7 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
 	SETTING_FIELD (NM_SETTING_802_1X_PIN, 8),                                /* 30 */
 	SETTING_FIELD (NM_SETTING_802_1X_PIN_FLAGS, 20),                         /* 31 */
 	SETTING_FIELD (NM_SETTING_802_1X_SYSTEM_CA_CERTS, 17),                   /* 32 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_802_1X_ALL     "name"","\
                                           NM_SETTING_802_1X_EAP","\
@@ -183,7 +183,7 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 12 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 25),                       /* 13 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN, 10),                    /* 14 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
                                             NM_SETTING_WIRELESS_SSID","\
@@ -222,7 +222,7 @@ static NmcOutputField nmc_fields_setting_wireless_security[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, 20),           /* 15 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, 15),       /* 16 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, 20), /* 17 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL     "name"","\
                                                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT","\
@@ -259,7 +259,7 @@ static NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, 14),           /* 10 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, 15),           /* 11 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_MAY_FAIL, 12),                /* 12 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
                                               NM_SETTING_IP4_CONFIG_METHOD","\
@@ -290,7 +290,7 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_MAY_FAIL, 12),                /* 9 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, 15),             /* 10 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, 14),           /* 11 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
                                               NM_SETTING_IP6_CONFIG_METHOD","\
@@ -314,7 +314,7 @@ static NmcOutputField nmc_fields_setting_serial[] = {
 	SETTING_FIELD (NM_SETTING_SERIAL_PARITY, 10),                      /* 3 */
 	SETTING_FIELD (NM_SETTING_SERIAL_STOPBITS, 10),                    /* 4 */
 	SETTING_FIELD (NM_SETTING_SERIAL_SEND_DELAY, 12),                  /* 5 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_SERIAL_ALL     "name"","\
                                           NM_SETTING_SERIAL_BAUD","\
@@ -345,7 +345,7 @@ static NmcOutputField nmc_fields_setting_ppp[] = {
 	SETTING_FIELD (NM_SETTING_PPP_MTU, 10),                            /* 16 */
 	SETTING_FIELD (NM_SETTING_PPP_LCP_ECHO_FAILURE, 17),               /* 17 */
 	SETTING_FIELD (NM_SETTING_PPP_LCP_ECHO_INTERVAL, 18),              /* 18 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_PPP_ALL     "name"","\
                                        NM_SETTING_PPP_NOAUTH","\
@@ -375,7 +375,7 @@ static NmcOutputField nmc_fields_setting_pppoe[] = {
 	SETTING_FIELD (NM_SETTING_PPPOE_USERNAME, 15),                     /* 2 */
 	SETTING_FIELD (NM_SETTING_PPPOE_PASSWORD, 15),                     /* 3 */
 	SETTING_FIELD (NM_SETTING_PPPOE_PASSWORD_FLAGS, 20),               /* 4 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_PPPOE_ALL     "name"","\
                                          NM_SETTING_PPPOE_SERVICE","\
@@ -394,7 +394,7 @@ static NmcOutputField nmc_fields_setting_adsl[] = {
 	SETTING_FIELD (NM_SETTING_ADSL_ENCAPSULATION, 10),         /* 5 */
 	SETTING_FIELD (NM_SETTING_ADSL_VPI, 10),                   /* 6 */
 	SETTING_FIELD (NM_SETTING_ADSL_VCI, 10),                   /* 7 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_ADSL_ALL     "name"","\
                                         NM_SETTING_ADSL_USERNAME","\
@@ -420,7 +420,7 @@ static NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD (NM_SETTING_GSM_PIN, 10),                            /* 9 */
 	SETTING_FIELD (NM_SETTING_GSM_PIN_FLAGS, 20),                      /* 10 */
 	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY, 10),                      /* 11 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_GSM_ALL     "name"","\
                                        NM_SETTING_GSM_NUMBER","\
@@ -443,7 +443,7 @@ static NmcOutputField nmc_fields_setting_cdma[] = {
 	SETTING_FIELD (NM_SETTING_CDMA_USERNAME, 15),                      /* 2 */
 	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD, 15),                      /* 3 */
 	SETTING_FIELD (NM_SETTING_CDMA_PASSWORD_FLAGS, 20),                /* 4 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CDMA_ALL     "name"","\
                                         NM_SETTING_CDMA_NUMBER","\
@@ -457,7 +457,7 @@ static NmcOutputField nmc_fields_setting_bluetooth[] = {
 	SETTING_FIELD ("name", 11),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_BDADDR, 19),                   /* 1 */
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_TYPE, 10),                     /* 2 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BLUETOOTH_ALL     "name"","\
                                              NM_SETTING_BLUETOOTH_BDADDR","\
@@ -470,7 +470,7 @@ static NmcOutputField nmc_fields_setting_olpc_mesh[] = {
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_SSID, 34),                     /* 1 */
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_CHANNEL, 12),                  /* 2 */
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, 17),     /* 3 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_OLPC_MESH_ALL     "name"","\
                                              NM_SETTING_OLPC_MESH_SSID","\
@@ -485,7 +485,7 @@ static NmcOutputField nmc_fields_setting_vpn[] = {
 	SETTING_FIELD (NM_SETTING_VPN_USER_NAME, 12),                      /* 2 */
 	SETTING_FIELD (NM_SETTING_VPN_DATA, 30),                           /* 3 */
 	SETTING_FIELD (NM_SETTING_VPN_SECRETS, 15),                        /* 4 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_VPN_ALL     "name"","\
                                        NM_SETTING_VPN_SERVICE_TYPE","\
@@ -499,7 +499,7 @@ static NmcOutputField nmc_fields_setting_wimax[] = {
 	SETTING_FIELD ("name", 6),                                         /* 0 */
 	SETTING_FIELD (NM_SETTING_WIMAX_MAC_ADDRESS, 19),                  /* 1 */
 	SETTING_FIELD (NM_SETTING_WIMAX_NETWORK_NAME, 40),                 /* 2 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIMAX_ALL     "name"","\
                                          NM_SETTING_WIMAX_MAC_ADDRESS","\
@@ -512,7 +512,7 @@ static NmcOutputField nmc_fields_setting_infiniband[] = {
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MAC_ADDRESS, 61),             /* 1 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MTU, 6),                      /* 2 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_TRANSPORT_MODE, 12),          /* 3 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_INFINIBAND_ALL     "name"","\
                                               NM_SETTING_INFINIBAND_MAC_ADDRESS","\
@@ -525,7 +525,7 @@ static NmcOutputField nmc_fields_setting_bond[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BOND_INTERFACE_NAME, 15),                /* 1 */
 	SETTING_FIELD (NM_SETTING_BOND_OPTIONS, 30),                       /* 2 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BOND_ALL     "name"","\
                                         NM_SETTING_BOND_INTERFACE_NAME","\
@@ -541,7 +541,7 @@ static NmcOutputField nmc_fields_setting_vlan[] = {
 	SETTING_FIELD (NM_SETTING_VLAN_FLAGS, 45),                         /* 4 */
 	SETTING_FIELD (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, 22),          /* 5 */
 	SETTING_FIELD (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, 22),           /* 6 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_VLAN_ALL     "name"","\
                                         NM_SETTING_VLAN_INTERFACE_NAME","\
@@ -562,7 +562,7 @@ static NmcOutputField nmc_fields_setting_bridge[] = {
 	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 5 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 6 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 7 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BRIDGE_ALL    "name"","\
                                          NM_SETTING_BRIDGE_INTERFACE_NAME","\
@@ -580,7 +580,7 @@ static NmcOutputField nmc_fields_setting_bridge_port[] = {
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PRIORITY, 10),               /* 1 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PATH_COST, 12),              /* 2 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, 15),           /* 3 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BRIDGE_PORT_ALL    "name"","\
                                               NM_SETTING_BRIDGE_PORT_PRIORITY","\

@@ -34,17 +34,17 @@
 
 /* Available fields for 'general status' */
 static NmcOutputField nmc_fields_nm_status[] = {
-	{"RUNNING",        N_("RUNNING"),         15, NULL, 0},  /* 0 */
-	{"VERSION",        N_("VERSION"),         10, NULL, 0},  /* 1 */
-	{"STATE",          N_("STATE"),           15, NULL, 0},  /* 2 */
-	{"NETWORKING",     N_("NETWORKING"),      13, NULL, 0},  /* 3 */
-	{"WIFI-HW",        N_("WIFI-HW"),         15, NULL, 0},  /* 4 */
-	{"WIFI",           N_("WIFI"),            10, NULL, 0},  /* 5 */
-	{"WWAN-HW",        N_("WWAN-HW"),         15, NULL, 0},  /* 6 */
-	{"WWAN",           N_("WWAN"),            10, NULL, 0},  /* 7 */
-	{"WIMAX-HW",       N_("WIMAX-HW"),        15, NULL, 0},  /* 8 */
-	{"WIMAX",          N_("WIMAX"),           10, NULL, 0},  /* 9 */
-	{NULL,             NULL,                   0, NULL, 0}
+	{"RUNNING",    N_("RUNNING"),    15},  /* 0 */
+	{"VERSION",    N_("VERSION"),    10},  /* 1 */
+	{"STATE",      N_("STATE"),      15},  /* 2 */
+	{"NETWORKING", N_("NETWORKING"), 13},  /* 3 */
+	{"WIFI-HW",    N_("WIFI-HW"),    15},  /* 4 */
+	{"WIFI",       N_("WIFI"),       10},  /* 5 */
+	{"WWAN-HW",    N_("WWAN-HW"),    15},  /* 6 */
+	{"WWAN",       N_("WWAN"),       10},  /* 7 */
+	{"WIMAX-HW",   N_("WIMAX-HW"),   15},  /* 8 */
+	{"WIMAX",      N_("WIMAX"),      10},  /* 9 */
+	{NULL,         NULL,              0}
 };
 #if WITH_WIMAX
 #define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
@@ -64,18 +64,18 @@ static NmcOutputField nmc_fields_nm_status[] = {
 
 /* Available fields for 'general permissions' */
 static NmcOutputField nmc_fields_nm_permissions[] = {
-	{"PERMISSION",     N_("PERMISSION"),      57, NULL, 0},  /* 0 */
-	{"VALUE",          N_("VALUE"),           10, NULL, 0},  /* 1 */
-	{NULL,             NULL,                  0, NULL, 0}
+	{"PERMISSION", N_("PERMISSION"), 57},  /* 0 */
+	{"VALUE",      N_("VALUE"),      10},  /* 1 */
+	{NULL,         NULL,              0}
 };
 #define NMC_FIELDS_NM_PERMISSIONS_ALL     "PERMISSION,VALUE"
 #define NMC_FIELDS_NM_PERMISSIONS_COMMON  "PERMISSION,VALUE"
 
 /* Available fields for 'general logging' */
 static NmcOutputField nmc_fields_nm_logging[] = {
-	{"LEVEL",          N_("LEVEL"),           10, NULL, 0},  /* 0 */
-	{"DOMAINS",        N_("DOMAINS"),         70, NULL, 0},  /* 1 */
-	{NULL,             NULL,                   0, NULL, 0}
+	{"LEVEL",   N_("LEVEL"),   10},  /* 0 */
+	{"DOMAINS", N_("DOMAINS"), 70},  /* 1 */
+	{NULL,      NULL,           0}
 };
 #define NMC_FIELDS_NM_LOGGING_ALL     "LEVEL,DOMAINS"
 #define NMC_FIELDS_NM_LOGGING_COMMON  "LEVEL,DOMAINS"

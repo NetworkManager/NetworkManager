@@ -59,21 +59,21 @@
 
 /* Available fields for 'connection show configured' */
 static NmcOutputField nmc_fields_con_show[] = {
-	{"NAME",            N_("NAME"),           25, NULL, 0},  /* 0 */
-	{"UUID",            N_("UUID"),           38, NULL, 0},  /* 1 */
-	{"TYPE",            N_("TYPE"),           17, NULL, 0},  /* 2 */
-	{"TIMESTAMP",       N_("TIMESTAMP"),      12, NULL, 0},  /* 3 */
-	{"TIMESTAMP-REAL",  N_("TIMESTAMP-REAL"), 34, NULL, 0},  /* 4 */
-	{"AUTOCONNECT",     N_("AUTOCONNECT"),    13, NULL, 0},  /* 5 */
-	{"READONLY",        N_("READONLY"),       10, NULL, 0},  /* 6 */
-	{"DBUS-PATH",       N_("DBUS-PATH"),      42, NULL, 0},  /* 7 */
-	{NULL,              NULL,                  0, NULL, 0}
+	{"NAME",            N_("NAME"),           25},  /* 0 */
+	{"UUID",            N_("UUID"),           38},  /* 1 */
+	{"TYPE",            N_("TYPE"),           17},  /* 2 */
+	{"TIMESTAMP",       N_("TIMESTAMP"),      12},  /* 3 */
+	{"TIMESTAMP-REAL",  N_("TIMESTAMP-REAL"), 34},  /* 4 */
+	{"AUTOCONNECT",     N_("AUTOCONNECT"),    13},  /* 5 */
+	{"READONLY",        N_("READONLY"),       10},  /* 6 */
+	{"DBUS-PATH",       N_("DBUS-PATH"),      42},  /* 7 */
+	{NULL,              NULL,                  0}
 };
 #define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY,DBUS-PATH"
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
 
 /* Helper macro to define fields */
-#define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, 0 }
+#define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, FALSE, FALSE, 0 }
 
 /* Available settings for 'connection show configured <con>' */
 static NmcOutputField nmc_fields_settings_names[] = {
@@ -99,7 +99,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_ADSL_SETTING_NAME, 0),                  /* 19 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_SETTING_NAME, 0),                /* 20 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME, 0),           /* 21 */
-	{NULL, NULL, 0, NULL, 0}
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
@@ -132,30 +132,30 @@ static NmcOutputField nmc_fields_settings_names[] = {
 
 /* Available fields for 'connection show active' */
 static NmcOutputField nmc_fields_con_show_active[] = {
-	{"GROUP",         N_("GROUP"),         9, NULL, 0},  /* 0 */  /* used only for 'GENERAL' group listing */
-	{"NAME",          N_("NAME"),         25, NULL, 0},  /* 1 */
-	{"UUID",          N_("UUID"),         38, NULL, 0},  /* 2 */
-	{"DEVICES",       N_("DEVICES"),      10, NULL, 0},  /* 3 */
-	{"STATE",         N_("STATE"),        12, NULL, 0},  /* 4 */
-	{"DEFAULT",       N_("DEFAULT"),       8, NULL, 0},  /* 5 */
-	{"DEFAULT6",      N_("DEFAULT6"),      9, NULL, 0},  /* 6 */
-	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10, NULL, 0},  /* 7 */
-	{"VPN",           N_("VPN"),           5, NULL, 0},  /* 8 */
-	{"DBUS-PATH",     N_("DBUS-PATH"),    51, NULL, 0},  /* 9 */
-	{"CON-PATH",      N_("CON-PATH"),     44, NULL, 0},  /* 10 */
-	{"ZONE",          N_("ZONE"),         15, NULL, 0},  /* 11 */
-	{"MASTER-PATH",   N_("MASTER-PATH"),  44, NULL, 0},  /* 12 */
-	{NULL,            NULL,                0, NULL, 0}
+	{"GROUP",         N_("GROUP"),         9},  /* 0 */  /* used only for 'GENERAL' group listing */
+	{"NAME",          N_("NAME"),         25},  /* 1 */
+	{"UUID",          N_("UUID"),         38},  /* 2 */
+	{"DEVICES",       N_("DEVICES"),      10},  /* 3 */
+	{"STATE",         N_("STATE"),        12},  /* 4 */
+	{"DEFAULT",       N_("DEFAULT"),       8},  /* 5 */
+	{"DEFAULT6",      N_("DEFAULT6"),      9},  /* 6 */
+	{"SPEC-OBJECT",   N_("SPEC-OBJECT"),  10},  /* 7 */
+	{"VPN",           N_("VPN"),           5},  /* 8 */
+	{"DBUS-PATH",     N_("DBUS-PATH"),    51},  /* 9 */
+	{"CON-PATH",      N_("CON-PATH"),     44},  /* 10 */
+	{"ZONE",          N_("ZONE"),         15},  /* 11 */
+	{"MASTER-PATH",   N_("MASTER-PATH"),  44},  /* 12 */
+	{NULL,            NULL,                0}
 };
 #define NMC_FIELDS_CON_ACTIVE_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
 #define NMC_FIELDS_CON_ACTIVE_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN,MASTER-PATH"
 
 /* Available fields for 'connection show active <con>' */
 static NmcOutputField nmc_fields_con_active_details_groups[] = {
-	{"GENERAL",  N_("GENERAL"), 9, NULL, 0},  /* 0 */
-	{"IP",       N_("IP"),      5, NULL, 0},  /* 1 */
-	{"VPN",      N_("VPN"),     5, NULL, 0},  /* 2 */
-	{NULL, NULL, 0, NULL, 0}
+	{"GENERAL",  N_("GENERAL"), 9},  /* 0 */
+	{"IP",       N_("IP"),      5},  /* 1 */
+	{"VPN",      N_("VPN"),     5},  /* 2 */
+	{NULL, NULL, 0}
 };
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_ALL  "GENERAL,IP,VPN"
 
@@ -166,14 +166,14 @@ static NmcOutputField nmc_fields_con_active_details_groups[] = {
 
 /* Available fields for VPN group */
 static NmcOutputField nmc_fields_con_active_details_vpn[] = {
-	{"GROUP",     N_("GROUP"),       9, NULL, 0},  /* 0 */
-	{"TYPE",      N_("TYPE"),       15, NULL, 0},  /* 1 */
-	{"USERNAME",  N_("USERNAME"),   15, NULL, 0},  /* 2 */
-	{"GATEWAY",   N_("GATEWAY"),    25, NULL, 0},  /* 3 */
-	{"BANNER",    N_("BANNER"),    120, NULL, 0},  /* 4 */
-	{"VPN-STATE", N_("VPN-STATE"),  40, NULL, 0},  /* 5 */
-	{"CFG",       N_("CFG"),       120, NULL, 0},  /* 6 */
-	{NULL, NULL, 0, NULL, 0}
+	{"GROUP",     N_("GROUP"),       9},  /* 0 */
+	{"TYPE",      N_("TYPE"),       15},  /* 1 */
+	{"USERNAME",  N_("USERNAME"),   15},  /* 2 */
+	{"GATEWAY",   N_("GATEWAY"),    25},  /* 3 */
+	{"BANNER",    N_("BANNER"),    120},  /* 4 */
+	{"VPN-STATE", N_("VPN-STATE"),  40},  /* 5 */
+	{"CFG",       N_("CFG"),       120},  /* 6 */
+	{NULL, NULL, 0}
 };
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
 
