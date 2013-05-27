@@ -36,6 +36,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
+#include "nm-platform.h"
 #include "nm-system.h"
 #include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
@@ -606,14 +607,14 @@ update_ip4_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 static void
 update_ip4_routing (NMPolicy *policy, gboolean force_update)
 {
-	NMDevice *best = NULL, *parent;
+	NMDevice *best = NULL;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
-	NMIP4Config *ip4_config = NULL, *parent_ip4;
+	NMIP4Config *ip4_config = NULL;
 	const char *ip_iface = NULL;
 	int ip_ifindex = -1;
-	guint32 gw_addr = 0, parent_mss;
+	guint32 gw_addr = 0;
 	guint32 i;
 
 	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
@@ -643,20 +644,28 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	}
 
 	if (vpn) {
-		parent = nm_vpn_connection_get_parent_device (vpn);
-		parent_ip4 = nm_device_get_ip4_config (parent);
-		parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
+		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
+		int parent_ifindex = nm_device_get_ip_ifindex (parent);
+		NMIP4Config *parent_ip4 = nm_device_get_ip4_config (parent);
+		guint32 parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
+		in_addr_t int_gw = nm_vpn_connection_get_ip4_internal_gateway (vpn);
+		int mss = nm_ip4_config_get_mss (ip4_config);
 
-		nm_system_replace_default_ip4_route_vpn (ip_ifindex,
-		                                         gw_addr,
-		                                         nm_vpn_connection_get_ip4_internal_gateway (vpn),
-		                                         nm_ip4_config_get_mss (ip4_config),
-		                                         nm_device_get_ip_ifindex (parent),
-		                                         parent_mss);
+		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss)) {
+			nm_platform_ip4_route_add (parent_ifindex, gw_addr, 32, 0, 0, parent_mss);
+			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss)) {
+				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set default route.");
+			}
+		}
 	} else {
-		nm_system_replace_default_ip4_route (ip_ifindex,
-		                                     gw_addr,
-		                                     nm_ip4_config_get_mss (ip4_config));
+		int mss = nm_ip4_config_get_mss (ip4_config);
+
+		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, 0, mss)) {
+			nm_platform_ip4_route_add (ip_ifindex, gw_addr, 32, 0, 0, mss);
+			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, 0, mss)) {
+				nm_log_err (LOGD_IP4, "Failed to set default route.");
+			}
+		}
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
@@ -776,14 +785,13 @@ update_ip6_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 static void
 update_ip6_routing (NMPolicy *policy, gboolean force_update)
 {
-	NMDevice *best = NULL, *parent;
+	NMDevice *best = NULL;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
-	NMIP6Config *ip6_config = NULL, *parent_ip6;
+	NMIP6Config *ip6_config = NULL;
 	const char *ip_iface = NULL;
 	int ip_ifindex = -1;
-	guint32 parent_mss;
 	guint32 i;
 	const struct in6_addr *gw_addr;
 
@@ -822,21 +830,28 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		gw_addr = nm_ip6_config_get_gateway (ip6_config);
 
 	if (vpn) {
-		parent = nm_vpn_connection_get_parent_device (vpn);
-		parent_ip6 = nm_device_get_ip6_config (parent);
-		parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
+		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
+		int parent_ifindex = nm_device_get_ip_ifindex (parent);
+		NMIP6Config *parent_ip6 = nm_device_get_ip6_config (parent);
+		guint32 parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
+		struct in6_addr int_gw = *nm_vpn_connection_get_ip6_internal_gateway (vpn);
+		int mss = nm_ip6_config_get_mss (ip6_config);
 
-		nm_system_replace_default_ip6_route_vpn (ip_ifindex,
-		                                         gw_addr,
-		                                         nm_vpn_connection_get_ip6_internal_gateway (vpn),
-		                                         nm_ip6_config_get_mss (ip6_config),
-		                                         nm_device_get_ip_ifindex (parent),
-		                                         parent_mss);
+		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, int_gw, 0, mss)) {
+			nm_platform_ip6_route_add (parent_ifindex, *gw_addr, 128, in6addr_any, 0, parent_mss);
+			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, int_gw, 0, mss)) {
+				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set default route.");
+			}
+		}
 	} else {
-		if (gw_addr)
-			nm_system_replace_default_ip6_route (ip_ifindex, gw_addr);
-		else
-			nm_log_dbg (LOGD_IP6, "missing default IPv6 gateway");
+		int mss = nm_ip6_config_get_mss (ip6_config);
+
+		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss)) {
+			nm_platform_ip6_route_add (ip_ifindex, *gw_addr, 128, in6addr_any, 0, mss);
+			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss)) {
+				nm_log_err (LOGD_IP6, "Failed to set default route.");
+			}
+		}
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
