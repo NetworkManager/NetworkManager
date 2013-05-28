@@ -697,7 +697,10 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 						                       section_prefix ? "." : "",
 						                       _(field_values[idx].name_l10n),
 						                       j);
-						printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, *p ? *p : not_set_str);
+						width1 = strlen (tmp);
+						width2 = nmc_string_screen_width (tmp, NULL);
+						printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp,
+						                    *p ? *p : not_set_str);
 						g_free (tmp);
 					}
 				} else {
@@ -709,7 +712,10 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 					                       section_prefix ? hdr_name : "",
 					                       section_prefix ? "." : "",
 					                       _(field_values[idx].name_l10n));
-					printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT, tmp, val ? val : not_set_str);
+					width1 = strlen (tmp);
+					width2 = nmc_string_screen_width (tmp, NULL);
+					printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp,
+					                    val ? val : not_set_str);
 					g_free (tmp);
 				}
 			}
