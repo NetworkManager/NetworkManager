@@ -4184,7 +4184,7 @@ connection_from_file (const char *filename,
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
-	char *type, *nmc = NULL, *bootproto;
+	char *type, *devtype, *nmc = NULL, *bootproto;
 	NMSetting *s_ip4, *s_ip6, *s_port;
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
@@ -4220,6 +4220,26 @@ connection_from_file (const char *filename,
 		g_set_error (out_error, IFCFG_PLUGIN_ERROR, 0,
 		             "Couldn't parse file '%s'", filename);
 		return NULL;
+	}
+
+	/*
+	 * Ignore Team connections for now; we don't support team yet.
+	 * https://fedorahosted.org/libteam/
+	 */
+	devtype = svGetValue (parsed, "DEVICETYPE", FALSE);
+	if (devtype) {
+		if (   !strcasecmp (devtype, TYPE_TEAM)
+		    || !strcasecmp (devtype, TYPE_TEAM_PORT)) {
+			char *base_name = g_path_get_basename (filename);
+			g_set_error (&error, IFCFG_PLUGIN_ERROR, 0,
+			            "Ignoring team (DEVICETYPE=\"%s\") connection '%s'; teaming is not supported yet",
+			             devtype,
+			             base_name);
+			g_free (base_name);
+			g_free (devtype);
+			goto done;
+		}
+		g_free (devtype);
 	}
 
 	type = svGetValue (parsed, "TYPE", FALSE);

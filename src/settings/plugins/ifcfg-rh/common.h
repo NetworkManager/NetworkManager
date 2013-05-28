@@ -47,6 +47,8 @@
 #define TYPE_BRIDGE     "Bridge"
 #define TYPE_BOND       "Bond"
 #define TYPE_VLAN       "Vlan"
+#define TYPE_TEAM       "Team"
+#define TYPE_TEAM_PORT  "TeamPort"
 
 #define SECRET_FLAG_AGENT "user"
 #define SECRET_FLAG_NOT_SAVED "ask"
