@@ -62,17 +62,6 @@ enum {
 
 /*****************************************************************************/
 
-#define NM_MODEM_BROADBAND_ERROR (nm_modem_broadband_error_quark ())
-
-static GQuark
-nm_modem_broadband_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-modem-broadband-error");
-	return quark;
-}
-
 static NMDeviceStateReason
 translate_mm_error (GError *error)
 {
@@ -186,8 +175,8 @@ connect_ready (MMModemSimple *simple_iface,
 		ip_method = MM_MODEM_IP_METHOD_DHCP;
 		break;
 	default:
-		error = g_error_new (NM_MODEM_BROADBAND_ERROR,
-		                     NM_MODEM_BROADBAND_ERROR_CONNECTION_INVALID,
+		error = g_error_new (NM_MODEM_ERROR,
+		                     NM_MODEM_ERROR_CONNECTION_INVALID,
 		                     "invalid IP config");
 		nm_log_warn (LOGD_MB, "(%s) failed to connect modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
@@ -397,8 +386,8 @@ check_connection_compatible (NMModem *_self,
 		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
 		                  NM_SETTING_GSM_SETTING_NAME)) {
 			g_set_error (error,
-			             NM_MODEM_BROADBAND_ERROR,
-			             NM_MODEM_BROADBAND_ERROR_CONNECTION_NOT_GSM,
+			             NM_MODEM_ERROR,
+			             NM_MODEM_ERROR_CONNECTION_NOT_GSM,
 			             "The connection was not a 3GPP connection.");
 			return FALSE;
 		}
@@ -406,8 +395,8 @@ check_connection_compatible (NMModem *_self,
 		s_gsm = nm_connection_get_setting_gsm (connection);
 		if (!s_gsm) {
 			g_set_error (error,
-			             NM_MODEM_BROADBAND_ERROR,
-			             NM_MODEM_BROADBAND_ERROR_CONNECTION_INVALID,
+			             NM_MODEM_ERROR,
+			             NM_MODEM_ERROR_CONNECTION_INVALID,
 			             "The connection was not a valid 3GPP connection.");
 			return FALSE;
 		}
@@ -421,8 +410,8 @@ check_connection_compatible (NMModem *_self,
 		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
 		                  NM_SETTING_CDMA_SETTING_NAME)) {
 			g_set_error (error,
-			             NM_MODEM_BROADBAND_ERROR,
-			             NM_MODEM_BROADBAND_ERROR_CONNECTION_NOT_CDMA,
+			             NM_MODEM_ERROR,
+			             NM_MODEM_ERROR_CONNECTION_NOT_CDMA,
 			             "The connection was not a 3GPP2 connection.");
 			return FALSE;
 		}
@@ -430,8 +419,8 @@ check_connection_compatible (NMModem *_self,
 		s_cdma = nm_connection_get_setting_cdma (connection);
 		if (!s_cdma) {
 			g_set_error (error,
-			             NM_MODEM_BROADBAND_ERROR,
-			             NM_MODEM_BROADBAND_ERROR_CONNECTION_INVALID,
+			             NM_MODEM_ERROR,
+			             NM_MODEM_ERROR_CONNECTION_INVALID,
 			             "The connection was not a valid 3GPP2 connection.");
 			return FALSE;
 		}
@@ -440,8 +429,8 @@ check_connection_compatible (NMModem *_self,
 	}
 
 	g_set_error (error,
-	             NM_MODEM_BROADBAND_ERROR,
-	             NM_MODEM_BROADBAND_ERROR_CONNECTION_INCOMPATIBLE,
+	             NM_MODEM_ERROR,
+	             NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
 	             "Device is not a mobile broadband modem");
 	return FALSE;
 }
@@ -521,8 +510,8 @@ complete_connection (NMModem *_self,
 	}
 
 	g_set_error (error,
-	             NM_MODEM_BROADBAND_ERROR,
-	             NM_MODEM_BROADBAND_ERROR_CONNECTION_INCOMPATIBLE,
+	             NM_MODEM_ERROR,
+	             NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
 	             "Device is not a mobile broadband modem");
 	return FALSE;
 }
@@ -679,8 +668,8 @@ static_stage3_done (NMModemBroadband *self)
 	/* Fully fail if invalid IP address retrieved */
 	address_string = mm_bearer_ip_config_get_address (self->priv->ipv4_config);
 	if (!ip_string_to_network_address (address_string, &address_network)) {
-		error = g_error_new (NM_MODEM_BROADBAND_ERROR,
-		                     NM_MODEM_BROADBAND_ERROR_CONNECTION_INVALID,
+		error = g_error_new (NM_MODEM_ERROR,
+		                     NM_MODEM_ERROR_CONNECTION_INVALID,
 		                     "(%s) retrieving IP4 configuration failed: invalid address given '%s'",
 		                     nm_modem_get_uid (NM_MODEM (self)),
 		                     address_string);

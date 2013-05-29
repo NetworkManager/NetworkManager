@@ -40,13 +40,6 @@ typedef struct _NMModemBroadband        NMModemBroadband;
 typedef struct _NMModemBroadbandClass   NMModemBroadbandClass;
 typedef struct _NMModemBroadbandPrivate NMModemBroadbandPrivate;
 
-typedef enum {
-	NM_MODEM_BROADBAND_ERROR_CONNECTION_NOT_GSM,      /*< nick=ConnectionNotGsm >*/
-	NM_MODEM_BROADBAND_ERROR_CONNECTION_NOT_CDMA,     /*< nick=ConnectionNotCdma >*/
-	NM_MODEM_BROADBAND_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_MODEM_BROADBAND_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
-} NMModemBroadbandError;
-
 struct _NMModemBroadband {
 	NMModem parent;
 	NMModemBroadbandPrivate *priv;

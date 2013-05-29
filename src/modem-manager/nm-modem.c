@@ -30,6 +30,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-enum-types.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
@@ -84,6 +85,18 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+
+/*****************************************************************************/
+
+GQuark
+nm_modem_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-modem-error");
+	return quark;
+}
 
 /*****************************************************************************/
 /* Get/Set enabled/connected */
@@ -918,4 +931,8 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_STRUCT_OFFSET (NMModemClass, auth_result),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+
+	dbus_g_error_domain_register (NM_MODEM_ERROR,
+	                              NM_DBUS_INTERFACE_DEVICE_MODEM,
+	                              NM_TYPE_MODEM_ERROR);
 }

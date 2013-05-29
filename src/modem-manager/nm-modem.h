@@ -56,6 +56,17 @@ G_BEGIN_DECLS
 #define MM_MODEM_IP_METHOD_STATIC 1
 #define MM_MODEM_IP_METHOD_DHCP   2
 
+typedef enum {
+	NM_MODEM_ERROR_CONNECTION_NOT_GSM,      /*< nick=ConnectionNotGsm >*/
+	NM_MODEM_ERROR_CONNECTION_NOT_CDMA,     /*< nick=ConnectionNotCdma >*/
+	NM_MODEM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
+	NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
+} NMModemError;
+
+#define NM_MODEM_ERROR (nm_modem_error_quark ())
+GQuark nm_modem_error_quark (void);
+
+
 typedef struct {
 	GObject parent;
 } NMModem;
