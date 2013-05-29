@@ -555,12 +555,6 @@ get_user_pass (NMModem *modem,
 	return TRUE;
 }
 
-static const char *
-get_setting_name (NMModem *modem)
-{
-	return NM_SETTING_GSM_SETTING_NAME;
-}
-
 static void
 deactivate (NMModem *modem, NMDevice *device)
 {
@@ -615,7 +609,6 @@ nm_modem_gsm_class_init (NMModemGsmClass *klass)
 	/* Virtual methods */
 	object_class->dispose = dispose;
 	modem_class->get_user_pass = get_user_pass;
-	modem_class->get_setting_name = get_setting_name;
 	modem_class->check_connection_compatible = check_connection_compatible;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;

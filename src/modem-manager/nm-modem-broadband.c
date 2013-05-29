@@ -560,24 +560,6 @@ get_user_pass (NMModem *modem,
 }
 
 /*****************************************************************************/
-
-static const char *
-get_setting_name (NMModem *_self)
-{
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
-	MMModemCapability modem_caps;
-
-	modem_caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
-	if (MODEM_CAPS_3GPP (modem_caps))
-		return NM_SETTING_GSM_SETTING_NAME;
-
-	if (MODEM_CAPS_3GPP2 (modem_caps))
-		return NM_SETTING_CDMA_SETTING_NAME;
-
-	return "unknown";
-}
-
-/*****************************************************************************/
 /* Query/Update enabled state */
 
 static void
@@ -979,7 +961,6 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->deactivate = deactivate;
 	modem_class->set_mm_enabled = set_mm_enabled;
 	modem_class->get_user_pass = get_user_pass;
-	modem_class->get_setting_name = get_setting_name;
 	modem_class->check_connection_compatible = check_connection_compatible;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;

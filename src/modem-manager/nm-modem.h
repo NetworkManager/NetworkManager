@@ -68,8 +68,6 @@ typedef struct {
 	                                            const char **user,
 	                                            const char **pass);
 
-	const char * (*get_setting_name)           (NMModem *modem);
-
 	gboolean (*check_connection_compatible)    (NMModem *modem,
 	                                            NMConnection *connection,
 	                                            GError **error);
