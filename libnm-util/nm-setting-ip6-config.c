@@ -770,8 +770,7 @@ finalize (GObject *object)
 	g_free (priv->method);
 	g_free (priv->dhcp_hostname);
 
-	g_slist_free (priv->dns);
-
+	g_slist_free_full (priv->dns, g_free);
 	g_slist_free_full (priv->dns_search, g_free);
 	g_slist_free_full (priv->addresses, g_free);
 	g_slist_free_full (priv->routes, g_free);
