@@ -969,25 +969,74 @@ nm_modem_old_get_capabilities (NMModemOld *self,
 /*****************************************************************************/
 
 NMModem *
-nm_modem_old_new (const char *path,
-                  const char *data_device,
-                  guint32 ip_method,
-                  guint32 modem_type,
-                  MMOldModemState state)
+nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMModemOld *self;
+	GHashTableIter iter;
+	const char *prop;
+	GValue *value;
+	const char *data_device = NULL;
+	const char *driver = NULL;
+	const char *master_device = NULL;
+	guint32 modem_type = MM_OLD_MODEM_TYPE_UNKNOWN;
+	guint32 ip_method = MM_MODEM_IP_METHOD_PPP;
+	guint32 ip_timeout = 0;
+	MMOldModemState state = MM_OLD_MODEM_STATE_UNKNOWN;
 
 	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (data_device != NULL, NULL);
-	g_return_val_if_fail (modem_type != MM_OLD_MODEM_TYPE_UNKNOWN, NULL);
+	g_return_val_if_fail (properties != NULL, NULL);
+
+	g_hash_table_iter_init (&iter, properties);
+	while (g_hash_table_iter_next (&iter, (gpointer) &prop, (gpointer) &value)) {
+		if (g_strcmp0 (prop, "Type") == 0)
+			modem_type = g_value_get_uint (value);
+		else if (g_strcmp0 (prop, "MasterDevice") == 0)
+			master_device = g_value_get_string (value);
+		else if (g_strcmp0 (prop, "IpMethod") == 0)
+			ip_method = g_value_get_uint (value);
+		else if (g_strcmp0 (prop, "Device") == 0)
+			data_device = g_value_get_string (value);
+		else if (g_strcmp0 (prop, "Driver") == 0)
+			driver = g_value_get_string (value);
+		else if (g_strcmp0 (prop, "IpTimeout") == 0)
+			ip_timeout = g_value_get_uint (value);
+		else if (g_strcmp0 (prop, "State") == 0)
+			state = g_value_get_uint (value);
+	}
+
+	if (modem_type == MM_OLD_MODEM_TYPE_UNKNOWN) {
+		g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_INITIALIZATION_FAILED,
+		             "Unhandled modem type %d", modem_type);
+		return NULL;
+	}
+
+	if (!master_device || !strlen (master_device)) {
+		g_set_error_literal (error, NM_MODEM_ERROR, NM_MODEM_ERROR_INITIALIZATION_FAILED,
+		                     "Failed to retrieve modem master device.");
+		return NULL;
+	}
+
+	if (!driver || !strlen (driver)) {
+		g_set_error_literal (error, NM_MODEM_ERROR, NM_MODEM_ERROR_INITIALIZATION_FAILED,
+		                     "Failed to retrieve modem driver.");
+		return NULL;
+	}
+
+	if (!data_device || !strlen (data_device)) {
+		g_set_error_literal (error, NM_MODEM_ERROR, NM_MODEM_ERROR_INITIALIZATION_FAILED,
+		                     "Failed to retrieve modem data device.");
+		return NULL;
+	}
 
 	self = (NMModemOld *) g_object_new (NM_TYPE_MODEM_OLD,
 	                                    NM_MODEM_PATH, path,
+	                                    NM_MODEM_DRIVER, driver,
 	                                    NM_MODEM_UID, data_device,
 	                                    NM_MODEM_CONTROL_PORT, NULL,
 	                                    NM_MODEM_DATA_PORT, data_device,
 	                                    NM_MODEM_IP_METHOD, ip_method,
+	                                    NM_MODEM_IP_TIMEOUT, ip_timeout,
 	                                    NM_MODEM_CONNECTED, (state == MM_OLD_MODEM_STATE_CONNECTED),
 	                                    NULL);
 	if (self) {

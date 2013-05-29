@@ -102,121 +102,47 @@ clear_modem_manager_support (NMModemManager *self)
 	}
 }
 
-static gboolean
-get_modem_properties (DBusGConnection *connection,
-					  const char *path,
-					  char **device,
-					  char **data_device,
-					  char **driver,
-					  guint32 *type,
-					  guint32 *ip_method,
-					  guint32 *ip_timeout,
-					  MMOldModemState *state)
-{
-	DBusGProxy *proxy;
-	GError *err = NULL;
-	GHashTable *props = NULL;
-	GHashTableIter iter;
-	const char *prop;
-	GValue *value;
-
-	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   MM_OLD_DBUS_SERVICE,
-	                                   path,
-	                                   "org.freedesktop.DBus.Properties");
-
-	if (!dbus_g_proxy_call_with_timeout (proxy, "GetAll", 15000, &err,
-	                                     G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM,
-	                                     G_TYPE_INVALID,
-	                                     DBUS_TYPE_G_MAP_OF_VARIANT, &props,
-	                                     G_TYPE_INVALID)) {
-		nm_log_warn (LOGD_MB, "could not get modem properties: %s %s",
-		             err ? dbus_g_error_get_name (err) : "(none)",
-		             err ? err->message : "(unknown)");
-		g_clear_error (&err);
-		goto out;
-	}
-
-	if (!props) {
-		nm_log_warn (LOGD_MB, "no modem properties found");
-		goto out;
-	}
-
-	g_hash_table_iter_init (&iter, props);
-	while (g_hash_table_iter_next (&iter, (gpointer) &prop, (gpointer) &value)) {
-		if (g_strcmp0 (prop, "Type") == 0)
-			*type = g_value_get_uint (value);
-		else if (g_strcmp0 (prop, "MasterDevice") == 0)
-			*device = g_value_dup_string (value);
-		else if (g_strcmp0 (prop, "IpMethod") == 0)
-			*ip_method = g_value_get_uint (value);
-		else if (g_strcmp0 (prop, "Device") == 0)
-			*data_device = g_value_dup_string (value);
-		else if (g_strcmp0 (prop, "Driver") == 0)
-			*driver = g_value_dup_string (value);
-		else if (g_strcmp0 (prop, "IpTimeout") == 0)
-			*ip_timeout = g_value_get_uint (value);
-		else if (g_strcmp0 (prop, "State") == 0)
-			*state = g_value_get_uint (value);
-	}
-	g_hash_table_unref (props);
-
- out:
-	g_object_unref (proxy);
-
-	return *data_device && *driver;
-}
-
 static void
 create_modem (NMModemManager *self, const char *path)
 {
+	DBusGProxy *proxy;
+	GError *error = NULL;
 	NMModem *modem = NULL;
-	char *data_device = NULL, *driver = NULL, *master_device = NULL;
-	uint modem_type = MM_OLD_MODEM_TYPE_UNKNOWN;
-	uint ip_method = MM_MODEM_IP_METHOD_PPP;
-	uint ip_timeout = 0;
-	MMOldModemState state = MM_OLD_MODEM_STATE_UNKNOWN;
+	GHashTable *properties;
 
 	if (g_hash_table_lookup (self->priv->modems, path)) {
 		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);
 		return;
 	}
 
-	if (!get_modem_properties (nm_dbus_manager_get_connection (self->priv->dbus_mgr),
-	                           path, &master_device, &data_device, &driver,
-	                           &modem_type, &ip_method, &ip_timeout, &state))
-		return;
-
-	if (modem_type == MM_OLD_MODEM_TYPE_UNKNOWN) {
-		nm_log_warn (LOGD_MB, "modem with path %s has unknown type, ignoring", path);
-		return;
+	proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (self->priv->dbus_mgr),
+	                                   MM_OLD_DBUS_SERVICE,
+	                                   path,
+	                                   DBUS_INTERFACE_PROPERTIES);
+	g_assert (proxy);
+	if (dbus_g_proxy_call_with_timeout (proxy, "GetAll", 15000, &error,
+	                                    G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM,
+	                                    G_TYPE_INVALID,
+	                                    DBUS_TYPE_G_MAP_OF_VARIANT, &properties,
+	                                    G_TYPE_INVALID)) {
+		/* Success, create the modem */
+		modem = nm_modem_old_new (path, properties, &error);
+		if (modem) {
+			g_hash_table_insert (self->priv->modems, g_strdup (path), modem);
+			g_signal_emit (self, signals[MODEM_ADDED], 0, modem, nm_modem_get_driver (modem));
+		} else {
+			nm_log_warn (LOGD_MB, "failed to create modem: %s",
+				         error ? error->message : "(unknown)");
+		}
+		g_hash_table_destroy (properties);
+	} else {
+		nm_log_warn (LOGD_MB, "could not get modem properties: %s %s",
+		             error ? dbus_g_error_get_name (error) : "(none)",
+		             error ? error->message : "(unknown)");
 	}
 
-	if (!master_device || !strlen (master_device)) {
-		nm_log_warn (LOGD_MB, "modem with path %s has unknown device, ignoring", path);
-		return;
-	}
-
-	if (!driver || !strlen (driver)) {
-		nm_log_warn (LOGD_MB, "modem with path %s has unknown driver, ignoring", path);
-		return;
-	}
-
-	if (!data_device || !strlen (data_device)) {
-		nm_log_warn (LOGD_MB, "modem with path %s has unknown data device, ignoring", path);
-		return;
-	}
-
-	modem = nm_modem_old_new (path, data_device, ip_method, modem_type, state);
-	g_free (data_device);
-
-	if (modem) {
-		g_object_set (G_OBJECT (modem), NM_MODEM_IP_TIMEOUT, ip_timeout, NULL);
-		g_hash_table_insert (self->priv->modems, g_strdup (path), modem);
-		g_signal_emit (self, signals[MODEM_ADDED], 0, modem, driver);
-	}
-
-	g_free (driver);
+	g_object_unref (proxy);
+	g_clear_error (&error);
 }
 
 static void

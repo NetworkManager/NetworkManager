@@ -46,11 +46,7 @@ typedef struct {
 
 GType nm_modem_old_get_type (void);
 
-NMModem *nm_modem_old_new (const char *path,
-                           const char *data_device,
-                           guint32 ip_method,
-                           guint32 modem_type,
-                           MMOldModemState state);
+NMModem *nm_modem_old_new (const char *path, GHashTable *properties, GError **error);
 
 void nm_modem_old_get_capabilities (NMModemOld *self,
                                     NMDeviceModemCapabilities *modem_caps,

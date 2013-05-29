@@ -38,6 +38,7 @@ G_BEGIN_DECLS
 
 #define NM_MODEM_UID          "uid"
 #define NM_MODEM_PATH         "path"
+#define NM_MODEM_DRIVER       "driver"
 #define NM_MODEM_CONTROL_PORT "control-port"
 #define NM_MODEM_DATA_PORT    "data-port"
 #define NM_MODEM_IP_METHOD    "ip-method"
@@ -61,6 +62,7 @@ typedef enum {
 	NM_MODEM_ERROR_CONNECTION_NOT_CDMA,     /*< nick=ConnectionNotCdma >*/
 	NM_MODEM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
 	NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
+	NM_MODEM_ERROR_INITIALIZATION_FAILED,   /*< nick=InitializationFailed >*/
 } NMModemError;
 
 #define NM_MODEM_ERROR (nm_modem_error_quark ())
@@ -121,6 +123,7 @@ const char *nm_modem_get_path         (NMModem *modem);
 const char *nm_modem_get_uid          (NMModem *modem);
 const char *nm_modem_get_control_port (NMModem *modem);
 const char *nm_modem_get_data_port    (NMModem *modem);
+const char *nm_modem_get_driver       (NMModem *modem);
 
 gboolean nm_modem_check_connection_compatible (NMModem *self,
                                                NMConnection *connection,

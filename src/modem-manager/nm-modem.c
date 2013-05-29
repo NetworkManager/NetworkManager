@@ -42,6 +42,7 @@ enum {
 	PROP_DATA_PORT,
 	PROP_PATH,
 	PROP_UID,
+	PROP_DRIVER,
 	PROP_IP_METHOD,
 	PROP_IP_TIMEOUT,
 	PROP_ENABLED,
@@ -53,6 +54,7 @@ enum {
 typedef struct {
 	char *uid;
 	char *path;
+	char *driver;
 	char *control_port;
 	char *data_port;
 	char *ppp_iface;
@@ -634,6 +636,14 @@ nm_modem_get_path (NMModem *self)
 }
 
 const char *
+nm_modem_get_driver (NMModem *self)
+{
+	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
+
+	return NM_MODEM_GET_PRIVATE (self)->driver;
+}
+
+const char *
 nm_modem_get_control_port (NMModem *self)
 {
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
@@ -704,6 +714,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
 		break;
+	case PROP_DRIVER:
+		g_value_set_string (value, priv->driver);
+		break;
 	case PROP_CONTROL_PORT:
 		g_value_set_string (value, priv->control_port);
 		break;
@@ -741,6 +754,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
+		break;
+	case PROP_DRIVER:
+		/* Construct only */
+		priv->driver = g_value_dup_string (value);
 		break;
 	case PROP_CONTROL_PORT:
 		priv->control_port = g_value_dup_string (value);
@@ -790,6 +807,7 @@ finalize (GObject *object)
 
 	g_free (priv->uid);
 	g_free (priv->path);
+	g_free (priv->driver);
 	g_free (priv->control_port);
 	g_free (priv->data_port);
 
@@ -828,6 +846,14 @@ nm_modem_class_init (NMModemClass *klass)
 		 g_param_spec_string (NM_MODEM_PATH,
 		                      "DBus path",
 		                      "DBus path",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_DRIVER,
+		 g_param_spec_string (NM_MODEM_DRIVER,
+		                      "Driver",
+		                      "Driver",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
