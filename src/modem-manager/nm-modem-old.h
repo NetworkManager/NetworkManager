@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
 #include "nm-modem.h"
+#include "nm-modem-old-types.h"
 
 G_BEGIN_DECLS
 
@@ -44,6 +45,16 @@ typedef struct {
 } NMModemOldClass;
 
 GType nm_modem_old_get_type (void);
+
+NMModem *nm_modem_old_new (const char *path,
+                           const char *data_device,
+                           guint32 ip_method,
+                           guint32 modem_type,
+                           MMOldModemState state);
+
+void nm_modem_old_get_capabilities (NMModemOld *self,
+                                    NMDeviceModemCapabilities *modem_caps,
+                                    NMDeviceModemCapabilities *current_caps);
 
 /* Protected */
 DBusGProxy *nm_modem_old_get_proxy (NMModemOld *modem, const gchar *interface);

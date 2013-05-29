@@ -26,7 +26,6 @@
 #include "nm-logging.h"
 #include "nm-modem.h"
 #include "nm-modem-gsm.h"
-#include "nm-modem-cdma.h"
 #include "nm-dbus-manager.h"
 #include "nm-modem-old-types.h"
 #include "nm-dbus-glib-types.h"
@@ -211,7 +210,7 @@ create_modem (NMModemManager *self, const char *path)
 	if (modem_type == MM_OLD_MODEM_TYPE_GSM)
 		modem = nm_modem_gsm_new (path, data_device, ip_method, state);
 	else if (modem_type == MM_OLD_MODEM_TYPE_CDMA)
-		modem = nm_modem_cdma_new (path, data_device, ip_method, state);
+		modem = nm_modem_old_new (path, data_device, ip_method, MM_OLD_MODEM_TYPE_CDMA, state);
 	else
 		nm_log_warn (LOGD_MB, "unknown modem type '%d'", modem_type);
 

@@ -122,8 +122,6 @@ nm_sources = \
 	logging/nm-logging.c \
 	logging/nm-logging.h \
 	\
-	modem-manager/nm-modem-cdma.c \
-	modem-manager/nm-modem-cdma.h \
 	modem-manager/nm-modem-old.c \
 	modem-manager/nm-modem-old.h \
 	modem-manager/nm-modem-old-types.h \
