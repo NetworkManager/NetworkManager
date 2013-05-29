@@ -63,7 +63,6 @@
 #include "nm-setting-vpn.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
-#include "nm-udev-manager.h"
 #include "nm-atm-manager.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
@@ -75,7 +74,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-device-factory.h"
-#include "wifi-utils.h"
 #include "nm-enum-types.h"
 #include "nm-sleep-monitor.h"
 #include "nm-platform.h"
@@ -224,7 +222,6 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	guint          dbus_connection_changed_id;
-	NMUdevManager *udev_mgr;
 	NMAtmManager *atm_mgr;
 	NMRfkillManager *rfkill_mgr;
 	NMBluezManager *bluez_mgr;
@@ -2176,36 +2173,11 @@ load_device_factories (NMManager *self)
 	g_slist_free (list);
 }
 
-static gboolean
-is_wireless (GUdevDevice *device)
-{
-	const char *tmp;
-
-	/* Check devtype, newer kernels (2.6.32+) have this */
-	tmp = g_udev_device_get_property (device, "DEVTYPE");
-	if (g_strcmp0 (tmp, "wlan") == 0)
-		return TRUE;
-
-	/* Otherwise hit up WEXT directly */
-	return wifi_utils_is_wifi (g_udev_device_get_name (device),
-	                           g_udev_device_get_sysfs_path (device));
-}
-
-static gboolean
-is_olpc_mesh (GUdevDevice *device)
-{
-	const gchar *prop = g_udev_device_get_property (device, "ID_NM_OLPC_MESH");
-	return (prop != NULL);
-}
-
 static void
-udev_device_added_cb (NMUdevManager *udev_mgr,
-                      GUdevDevice *udev_device,
-                      const char *iface,
-                      const char *sysfs_path,
-                      const char *driver,
-                      int ifindex,
-                      gpointer user_data)
+platform_link_added_cb (NMPlatform *platform,
+                        int ifindex,
+                        NMPlatformLink *link,
+                        gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2213,15 +2185,12 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	GSList *iter;
 	GError *error = NULL;
 
-	g_return_if_fail (udev_device != NULL);
-	g_return_if_fail (iface != NULL);
-	g_return_if_fail (sysfs_path != NULL);
 	g_return_if_fail (ifindex > 0);
 
 	device = find_device_by_ifindex (self, ifindex);
 	if (device) {
 		/* If it's a virtual device we may need to update its UDI */
-		g_object_set (G_OBJECT (device), NM_DEVICE_UDI, sysfs_path, NULL);
+		g_object_set (G_OBJECT (device), NM_DEVICE_UDI, link->udi, NULL);
 		return;
 	}
 
@@ -2230,7 +2199,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 		NMDeviceFactoryCreateFunc create_func = iter->data;
 
 		g_clear_error (&error);
-		device = (NMDevice *) create_func (udev_device, sysfs_path, iface, driver, &error);
+		device = (NMDevice *) create_func (link->udi, link->name, link->driver, &error);
 		if (device && NM_IS_DEVICE (device)) {
 			g_assert_no_error (error);
 			break;  /* success! */
@@ -2238,7 +2207,7 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 
 		if (error) {
 			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
-			             sysfs_path,
+			             link->udi,
 			             error ? error->code : -1,
 			             error ? error->message : "(unknown)");
 			g_clear_error (&error);
@@ -2247,72 +2216,67 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 	}
 
 	if (device == NULL) {
-		NMLinkType type;
 		int parent_ifindex = -1;
 		NMDevice *parent;
 
-		type = nm_platform_link_get_type (ifindex);
-
-		switch (type) {
+		switch (link->type) {
 		case NM_LINK_TYPE_ETHERNET:
-			if (driver == NULL)
-				device = nm_device_generic_new (sysfs_path, iface, driver);
-			else if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
-				device = nm_device_olpc_mesh_new (sysfs_path, iface, driver);
-			else if (is_wireless (udev_device))
-				device = nm_device_wifi_new (sysfs_path, iface, driver);
-			else
-				device = nm_device_ethernet_new (sysfs_path, iface, driver);
+			device = nm_device_ethernet_new (link->udi, link->name, link->driver);
 			break;
-
 		case NM_LINK_TYPE_INFINIBAND:
-			device = nm_device_infiniband_new (sysfs_path, iface, driver);
+			device = nm_device_infiniband_new (link->udi, link->name, link->driver);
+			break;
+		case NM_LINK_TYPE_OLPC_MESH:
+			device = nm_device_olpc_mesh_new (link->udi, link->name, link->driver);
+			break;
+		case NM_LINK_TYPE_WIFI:
+			device = nm_device_wifi_new (link->udi, link->name, link->driver);
 			break;
 		case NM_LINK_TYPE_BOND:
-			device = nm_device_bond_new (sysfs_path, iface);
+			device = nm_device_bond_new (link->udi, link->name);
 			break;
 		case NM_LINK_TYPE_BRIDGE:
 			/* FIXME: always create device when we handle bridges non-destructively */
-			if (bridge_created_by_nm (self, iface))
-				device = nm_device_bridge_new (sysfs_path, iface);
+			if (bridge_created_by_nm (self, link->name))
+				device = nm_device_bridge_new (link->udi, link->name);
 			else
-				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", iface);
+				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", link->name);
 			break;
 		case NM_LINK_TYPE_VLAN:
 			/* Have to find the parent device */
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
 				parent = find_device_by_ifindex (self, parent_ifindex);
 				if (parent)
-					device = nm_device_vlan_new (sysfs_path, iface, parent);
+					device = nm_device_vlan_new (link->udi, link->name, parent);
 				else {
 					/* If udev signaled the VLAN interface before it signaled
 					 * the VLAN's parent at startup we may not know about the
 					 * parent device yet.  But we'll find it on the second pass
 					 * from nm_manager_start().
 					 */
-					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", iface);
+					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", link->name);
 				}
 			} else
-				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", iface);
+				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", link->name);
 			break;
 		case NM_LINK_TYPE_VETH:
-			device = nm_device_veth_new (sysfs_path, iface, driver);
+			device = nm_device_veth_new (link->udi, link->name, link->driver);
 			break;
 		case NM_LINK_TYPE_TUN:
 		case NM_LINK_TYPE_TAP:
-			device = nm_device_tun_new (sysfs_path, iface, driver);
+			device = nm_device_tun_new (link->udi, link->name, link->driver);
 			break;
 		case NM_LINK_TYPE_MACVLAN:
 		case NM_LINK_TYPE_MACVTAP:
-			device = nm_device_macvlan_new (sysfs_path, iface, driver);
+			device = nm_device_macvlan_new (link->udi, link->name, link->driver);
 			break;
 		case NM_LINK_TYPE_GRE:
 		case NM_LINK_TYPE_GRETAP:
-			device = nm_device_gre_new (sysfs_path, iface, driver);
+			device = nm_device_gre_new (link->udi, link->name, link->driver);
 			break;
 
 		default:
-			device = nm_device_generic_new (sysfs_path, iface, driver);
+			device = nm_device_generic_new (link->udi, link->name, link->driver);
 			break;
 		}
 	}
@@ -2322,42 +2286,16 @@ udev_device_added_cb (NMUdevManager *udev_mgr,
 }
 
 static void
-udev_device_removed_cb (NMUdevManager *manager,
-                        GUdevDevice *udev_device,
-                        gpointer user_data)
+platform_link_removed_cb (NMPlatform *platform,
+                          int ifindex,
+                          NMPlatformLink *link,
+                          gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
-	guint32 ifindex;
 
-	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
-	if (!device) {
-		GSList *iter;
-		const char *iface = g_udev_device_get_name (udev_device);
-
-		/* On removal we aren't always be able to read properties like IFINDEX
-		 * anymore, as they may have already been removed from sysfs.  So we
-		 * have to fall back on device name (eg, interface name).
-		 *
-		 * Also, some devices (namely PPPoE (pppX), ADSL (nasX, pppX), and
-		 * mobile broadband (pppX, bnepX)) create a kernel netdevice for IP
-		 * communication (called the "IP interface" in NM) as part of the
-		 * connection process and thus the IP interface lifetime does not
-		 * correspond to the NMDevice lifetime.  For these devices we must
-		 * ignore removal events for the IP interface name otherwise the
-		 * NMDevice would be removed. Hence the usage here of
-		 * nm_device_get_iface() rather than nm_device_get_ip_iface().
-		 */
-		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-			if (g_strcmp0 (nm_device_get_iface (NM_DEVICE (iter->data)), iface) == 0) {
-				device = iter->data;
-				break;
-			}
-		}
-	}
-
 	if (device)
 		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 }
@@ -3786,7 +3724,7 @@ nm_manager_start (NMManager *self)
 	priv->nm_bridges = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 	read_nm_created_bridges (self);
 
-	nm_udev_manager_query_devices (priv->udev_mgr);
+	nm_platform_query_devices ();
 	nm_atm_manager_query_devices (priv->atm_mgr);
 	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
@@ -3796,7 +3734,7 @@ nm_manager_start (NMManager *self)
 	 * the VLAN would fail.  The second query ensures that we'll have a valid
 	 * parent for the VLAN during the second pass.
 	 */
-	nm_udev_manager_query_devices (priv->udev_mgr);
+	nm_platform_query_devices ();
 
 	/*
 	 * Connections added before the manager is started do not emit
@@ -4108,14 +4046,13 @@ nm_manager_new (NMSettings *settings,
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH, singleton);
 
-	priv->udev_mgr = nm_udev_manager_new ();
-	g_signal_connect (priv->udev_mgr,
-	                  "device-added",
-	                  G_CALLBACK (udev_device_added_cb),
+	g_signal_connect (nm_platform_get (),
+	                  "link-added",
+	                  G_CALLBACK (platform_link_added_cb),
 	                  singleton);
-	g_signal_connect (priv->udev_mgr,
-	                  "device-removed",
-	                  G_CALLBACK (udev_device_removed_cb),
+	g_signal_connect (nm_platform_get (),
+	                  "link-removed",
+	                  G_CALLBACK (platform_link_removed_cb),
 	                  singleton);
 
 	priv->atm_mgr = nm_atm_manager_new ();

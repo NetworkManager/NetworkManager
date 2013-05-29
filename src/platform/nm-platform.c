@@ -242,13 +242,33 @@ nm_platform_sysctl_get (const char *path)
 /******************************************************************/
 
 /**
+ * nm_platform_query_devices:
+ *
+ * Emit #NMPlatform:link-added signals for all currently-known links.
+ * Should only be called at startup.
+ */
+void
+nm_platform_query_devices (void)
+{
+	GArray *links_array;
+	NMPlatformLink *links;
+	int i;
+
+	links_array = nm_platform_link_get_all ();
+	links = (NMPlatformLink *) links_array->data;
+	for (i = 0; i < links_array->len; i++)
+		g_signal_emit (platform, signals[LINK_ADDED], 0, links[i].ifindex, &links[i]);
+	g_array_unref (links_array);
+}
+
+/**
  * nm_platform_link_get_all:
  *
  * Retrieve a snapshot of configuration for all links at once. The result is
  * owned by the caller and should be freed with g_array_unref().
  */
 GArray *
-nm_platform_link_get_all ()
+nm_platform_link_get_all (void)
 {
 	reset_error ();
 

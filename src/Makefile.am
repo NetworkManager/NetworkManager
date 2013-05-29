@@ -254,8 +254,6 @@ nm_sources = \
 	nm-system.c \
 	nm-system.h \
 	nm-types.h \
-	nm-udev-manager.c \
-	nm-udev-manager.h \
 	nm-wifi-ap-utils.c \
 	nm-wifi-ap-utils.h \
 	nm-wifi-ap.c \

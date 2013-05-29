@@ -41,6 +41,7 @@
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/route.h>
+#include <gudev/gudev.h>
 
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
@@ -60,6 +61,9 @@ typedef struct {
 	struct nl_cache *route_cache;
 	GIOChannel *event_channel;
 	guint event_id;
+
+	GUdevClient *udev_client;
+	GHashTable *udev_devices;
 } NMLinuxPlatformPrivate;
 
 #define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
@@ -393,7 +397,33 @@ type_to_string (NMLinkType type)
 	} G_STMT_END
 
 static NMLinkType
-link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
+link_type_from_udev (NMPlatform *platform, struct rtnl_link *rtnllink, const char **out_name)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int ifindex = rtnl_link_get_ifindex (rtnllink);
+	GUdevDevice *udev_device;
+	const char *prop;
+
+	g_assert_cmpint (rtnl_link_get_arptype (rtnllink), ==, ARPHRD_ETHER);
+
+	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
+	if (!udev_device)
+		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+
+	prop = g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH");
+	if (prop)
+		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
+
+	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
+	if (g_strcmp0 (prop, "wlan") == 0)
+		return_type (NM_LINK_TYPE_WIFI, "wifi");
+
+	/* Anything else is assumed to be ethernet */
+	return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+}
+
+static NMLinkType
+link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char **out_name)
 {
 	const char *type;
 
@@ -403,23 +433,21 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 	type = rtnl_link_get_type (rtnllink);
 
 	if (!type) {
-		switch (rtnl_link_get_arptype (rtnllink)) {
-		case ARPHRD_LOOPBACK:
+		int arptype = rtnl_link_get_arptype (rtnllink);
+
+		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
-		case ARPHRD_ETHER:
-			return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-		case 256:
+		else if (arptype == 256) {
 			/* Some s390 CTC-type devices report 256 for the encapsulation type
-			 * for some reason, but we need to call them Ethernet too. FIXME: use
+			 * for some reason, but we need to call them Ethernet. FIXME: use
 			 * something other than interface name to detect CTC here.
 			 */
 			if (g_str_has_prefix (rtnl_link_get_name (rtnllink), "ctc"))
 				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-			else
-				break;
-		}
-
-		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+		} else if (arptype == ARPHRD_ETHER)
+			return link_type_from_udev (platform, rtnllink, out_name);
+		else
+			return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 	} else if (!strcmp (type, "ipoib"))
 		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 	else if (!strcmp (type, "dummy"))
@@ -452,25 +480,80 @@ link_extract_type (struct rtnl_link *rtnllink, const char **out_name)
 		return_type (NM_LINK_TYPE_BOND, "bond");
 	else if (!strcmp (type, "team"))
 		return_type (NM_LINK_TYPE_TEAM, "team");
-	else
-		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+
+	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+}
+
+static const char *
+udev_get_driver (NMPlatform *platform, GUdevDevice *device, int ifindex)
+{
+	GUdevDevice *parent = NULL, *grandparent = NULL;
+	const char *driver, *subsys;
+
+	driver = g_udev_device_get_driver (device);
+	if (driver)
+		return driver;
+
+	/* Try the parent */
+	parent = g_udev_device_get_parent (device);
+	if (parent) {
+		driver = g_udev_device_get_driver (parent);
+		if (!driver) {
+			/* Try the grandparent if it's an ibmebus device or if the
+			 * subsys is NULL which usually indicates some sort of
+			 * platform device like a 'gadget' net interface.
+			 */
+			subsys = g_udev_device_get_subsystem (parent);
+			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
+			    || (subsys == NULL)) {
+				grandparent = g_udev_device_get_parent (parent);
+				if (grandparent) {
+					driver = g_udev_device_get_driver (grandparent);
+				}
+			}
+		}
+	}
+
+	/* Intern the string so we don't have to worry about memory
+	 * management in NMPlatformLink.
+	 */
+	if (driver)
+		driver = g_intern_string (driver);
+
+	g_clear_object (&parent);
+	g_clear_object (&grandparent);
+
+	return driver;
 }
 
 static void
-link_init (NMPlatformLink *info, struct rtnl_link *rtnllink)
+link_init (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllink)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GUdevDevice *udev_device;
+
 	memset (info, 0, sizeof (*info));
 
 	g_assert (rtnllink);
 
 	info->ifindex = rtnl_link_get_ifindex (rtnllink);
 	strcpy (info->name, rtnl_link_get_name (rtnllink));
-	info->type = link_extract_type (rtnllink, &info->type_name);
+	info->type = link_extract_type (platform, rtnllink, &info->type_name);
 	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
 	info->master = rtnl_link_get_master (rtnllink);
 	info->mtu = rtnl_link_get_mtu (rtnllink);
+
+	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
+	if (udev_device) {
+		info->driver = udev_get_driver (platform, udev_device, info->ifindex);
+		if (!info->driver)
+			info->driver = rtnl_link_get_type (rtnllink);
+		if (!info->driver)
+			info->driver = "unknown";
+		info->udi = g_udev_device_get_sysfs_path (udev_device);
+	}
 }
 
 /* Hack: Empty bridges and bonds have IFF_LOWER_UP flag and therefore they break
@@ -502,7 +585,7 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 
 	ifindex = rtnl_link_get_ifindex (rtnllink);
 
-	switch (link_extract_type (rtnllink, NULL)) {
+	switch (link_extract_type (platform, rtnllink, NULL)) {
 	case NM_LINK_TYPE_BRIDGE:
 	case NM_LINK_TYPE_BOND:
 		for (slave = nl_cache_get_first (priv->link_cache); slave; slave = nl_cache_get_next (slave)) {
@@ -626,12 +709,19 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 	ObjectType object_type = object_type_from_nl_object (object);
 	const char *sig = signal_by_type_and_status[object_type][status];
 
+	if (object_type == LINK && status == ADDED) {
+		/* We have to wait until udev has registered the device; we'll
+		 * emit NM_PLATFORM_LINK_ADDED from udev_device_added().
+		 */
+		return;
+	}
+
 	switch (object_type) {
 	case LINK:
 		{
 			NMPlatformLink device;
 
-			link_init (&device, (struct rtnl_link *) object);
+			link_init (platform, &device, (struct rtnl_link *) object);
 			g_signal_emit_by_name (platform, sig, device.ifindex, &device);
 		}
 		return;
@@ -948,7 +1038,7 @@ link_get_all (NMPlatform *platform)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
-		link_init (&device, (struct rtnl_link *) object);
+		link_init (platform, &device, (struct rtnl_link *) object);
 		g_array_append_val (links, device);
 	}
 
@@ -1058,7 +1148,7 @@ link_get_type (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 
-	return link_extract_type (rtnllink, NULL);
+	return link_extract_type (platform, rtnllink, NULL);
 }
 
 static const char *
@@ -1067,7 +1157,7 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 	const char *type;
 
-	link_extract_type (rtnllink, &type);
+	link_extract_type (platform, rtnllink, &type);
 	return type;
 }
 
@@ -2062,6 +2152,113 @@ setup_socket (gboolean event, gpointer user_data)
 /******************************************************************/
 
 static void
+udev_device_added (NMPlatform *platform,
+                   GUdevDevice *udev_device)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink = NULL;
+	const char *ifname, *devtype;
+	NMPlatformLink link;
+	int ifindex;
+
+	ifname = g_udev_device_get_name (udev_device);
+	if (!ifname) {
+		debug ("failed to get device's interface");
+		return;
+	}
+
+	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex"))
+		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+	else {
+		warning ("(%s): failed to get device's ifindex", ifname);
+		return;
+	}
+
+	if (!g_udev_device_get_sysfs_path (udev_device)) {
+		debug ("(%s): couldn't determine device path; ignoring...", ifname);
+		return;
+	}
+
+	/* Not all ethernet devices are immediately usable; newer mobile broadband
+	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
+	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
+	 * uevent variable which we can use to ignore the interface as a NMDevice
+	 * subclass.  ModemManager will pick it up though and so we'll handle it
+	 * through the mobile broadband stuff.
+	 */
+	devtype = g_udev_device_get_property (udev_device, "DEVTYPE");
+	if (g_strcmp0 (devtype, "wwan") == 0) {
+		debug ("(%s): ignoring interface with devtype '%s'", ifname, devtype);
+		return;
+	}
+
+	rtnllink = link_get (platform, ifindex);
+	if (!rtnllink) {
+		debug ("%s: not found in link cache, ignoring...", ifname);
+		return;
+	}
+
+	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
+	                     g_object_ref (udev_device));
+
+	link_init (platform, &link, rtnllink);
+	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_ADDED, ifindex, &link);
+}
+
+static void
+udev_device_removed (NMPlatform *platform,
+                     GUdevDevice *udev_device)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int ifindex;
+
+	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex")) {
+		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+		g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
+	} else {
+		GHashTableIter iter;
+		gpointer key, value;
+
+		/* On removal we aren't always be able to read properties like IFINDEX
+		 * anymore, as they may have already been removed from sysfs.
+		 */
+		g_hash_table_iter_init (&iter, priv->udev_devices);
+		while (g_hash_table_iter_next (&iter, &key, &value)) {
+			if ((GUdevDevice *)value == udev_device) {
+				g_hash_table_iter_remove (&iter);
+				break;
+			}
+		}
+	}
+}
+
+static void
+handle_udev_event (GUdevClient *client,
+                   const char *action,
+                   GUdevDevice *udev_device,
+                   gpointer user_data)
+{
+	NMPlatform *platform = NM_PLATFORM (user_data);
+	const char *subsys;
+
+	g_return_if_fail (action != NULL);
+
+	/* A bit paranoid */
+	subsys = g_udev_device_get_subsystem (udev_device);
+	g_return_if_fail (!g_strcmp0 (subsys, "net"));
+
+	debug ("UDEV event: action '%s' subsys '%s' device '%s'",
+	       action, subsys, g_udev_device_get_name (udev_device));
+
+	if (!strcmp (action, "add"))
+		udev_device_added (platform, udev_device);
+	if (!strcmp (action, "remove"))
+		udev_device_removed (platform, udev_device);
+}
+
+/******************************************************************/
+
+static void
 nm_linux_platform_init (NMLinuxPlatform *platform)
 {
 }
@@ -2070,6 +2267,9 @@ static gboolean
 setup (NMPlatform *platform)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	const char *udev_subsys[] = { "net", NULL };
+	GUdevEnumerator *enumerator;
+	GList *devices, *iter;
 	int channel_flags;
 	gboolean status;
 	int nle;
@@ -2113,6 +2313,32 @@ setup (NMPlatform *platform)
 	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
 	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
 
+	/* Set up udev monitoring */
+	priv->udev_client = g_udev_client_new (udev_subsys);
+	g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
+	priv->udev_devices = g_hash_table_new_full (NULL, NULL, NULL, g_object_unref);
+
+	/* And read initial device list */
+	enumerator = g_udev_enumerator_new (priv->udev_client);
+	g_udev_enumerator_add_match_subsystem (enumerator, "net");
+	g_udev_enumerator_add_match_is_initialized (enumerator);
+
+	devices = g_udev_enumerator_execute (enumerator);
+	for (iter = devices; iter; iter = g_list_next (iter)) {
+		GUdevDevice *udev_device = iter->data;
+
+		if (g_udev_device_get_sysfs_attr (udev_device, "ifindex")) {
+			int ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+
+			g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
+			                     g_object_ref (udev_device));
+		}
+
+		g_object_unref (G_UDEV_DEVICE (iter->data));
+	}
+	g_list_free (devices);
+	g_object_unref (enumerator);
+
 	return TRUE;
 }
 
@@ -2129,6 +2355,9 @@ nm_linux_platform_finalize (GObject *object)
 	nl_cache_free (priv->link_cache);
 	nl_cache_free (priv->address_cache);
 	nl_cache_free (priv->route_cache);
+
+	g_object_unref (priv->udev_client);
+	g_hash_table_unref (priv->udev_devices);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }

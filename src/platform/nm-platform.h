@@ -54,6 +54,8 @@ typedef enum {
 	/* Hardware types */
 	NM_LINK_TYPE_ETHERNET,
 	NM_LINK_TYPE_INFINIBAND,
+	NM_LINK_TYPE_OLPC_MESH,
+	NM_LINK_TYPE_WIFI,
 
 	/* Virtual types */
 	NM_LINK_TYPE_DUMMY,
@@ -80,6 +82,8 @@ typedef struct {
 	char name[IFNAMSIZ];
 	NMLinkType type;
 	const char *type_name;
+	const char *udi;
+	const char *driver;
 	int master;
 	gboolean up;
 	gboolean connected;
@@ -296,6 +300,8 @@ void nm_platform_free (void);
 void nm_platform_set_error (NMPlatformError error);
 NMPlatformError nm_platform_get_error (void);
 const char *nm_platform_get_error_msg (void);
+
+void nm_platform_query_devices (void);
 
 gboolean nm_platform_sysctl_set (const char *path, const char *value);
 char *nm_platform_sysctl_get (const char *path);

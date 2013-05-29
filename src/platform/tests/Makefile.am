@@ -5,10 +5,11 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-util \
 	-I${srcdir}/.. \
 	$(GLIB_CFLAGS) \
+	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS)
 
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
-AM_LDFLAGS = $(GLIB_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
+AM_LDFLAGS = $(GLIB_LIBS) $(GUDEV_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
 PLATFORM_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 

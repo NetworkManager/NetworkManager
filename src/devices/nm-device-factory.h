@@ -23,7 +23,6 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <gudev/gudev.h>
 
 #include "NetworkManager.h"
 
@@ -35,7 +34,6 @@
 
 /**
  * nm_device_factory_create_device:
- * @device: GUdev device object representing the device
  * @devpath: sysfs path of the device
  * @ifname: interface name of the device
  * @driver: driver of the device
@@ -51,15 +49,13 @@
  *
  * Returns: the device object (a subclass of #NMDevice) or %NULL
  */
-GObject *nm_device_factory_create_device (GUdevDevice *device,
-                                          const char *devpath,
+GObject *nm_device_factory_create_device (const char *devpath,
                                           const char *ifname,
                                           const char *driver,
                                           GError **error);
 
 /* Should match nm_device_factory() */
-typedef GObject * (*NMDeviceFactoryCreateFunc) (GUdevDevice *device,
-                                                const char *devpath,
+typedef GObject * (*NMDeviceFactoryCreateFunc) (const char *devpath,
                                                 const char *ifname,
                                                 const char *driver,
                                                 GError **error);

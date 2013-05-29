@@ -24,13 +24,12 @@
 #include "nm-device-wimax.h"
 
 G_MODULE_EXPORT GObject *
-nm_device_factory_create_device (GUdevDevice *device,
-                                 const char *devpath,
+nm_device_factory_create_device (const char *devpath,
                                  const char *ifname,
                                  const char *driver,
                                  GError **error)
 {
-	/* FIXME: check 'DEVTYPE' instead; but since we only support Intel
+	/* FIXME: check udev 'DEVTYPE' instead; but since we only support Intel
 	 * WiMAX devices for now this is appropriate.
 	 */
 	if (g_strcmp0 (driver, "i2400m_usb") != 0)

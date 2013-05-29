@@ -40,6 +40,7 @@ typedef struct {
 typedef struct {
 	NMPlatformLink link;
 
+	char *udi;
 	GBytes *address;
 	int vlan_parent;
 	int vlan_id;
@@ -113,6 +114,8 @@ link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 	device->link.ifindex = name ? ifindex : 0;
 	device->link.type = type;
 	device->link.type_name = type_to_type_name (type);
+	device->link.driver = type_to_type_name (type);
+	device->link.udi = device->udi = g_strdup_printf ("fake:%d", ifindex);
 	if (name)
 		strcpy (device->link.name, name);
 	switch (device->link.type) {
@@ -976,6 +979,7 @@ nm_fake_platform_finalize (GObject *object)
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
 		g_bytes_unref (device->address);
+		g_free (device->udi);
 	}
 	g_array_unref (priv->links);
 	g_array_unref (priv->ip4_addresses);
