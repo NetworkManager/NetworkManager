@@ -671,7 +671,7 @@ finalize (GObject *object)
 	if (priv->cloned_mac_address)
 		g_byte_array_free (priv->cloned_mac_address, TRUE);
 
-	nm_utils_slist_free (priv->mac_address_blacklist, g_free);
+	g_slist_free_full (priv->mac_address_blacklist, g_free);
 
 	if (priv->s390_subchannels) {
 		g_ptr_array_foreach (priv->s390_subchannels, (GFunc) g_free, NULL);
@@ -720,7 +720,7 @@ set_property (GObject *object, guint prop_id,
 		priv->cloned_mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		nm_utils_slist_free (priv->mac_address_blacklist, g_free);
+		g_slist_free_full (priv->mac_address_blacklist, g_free);
 		priv->mac_address_blacklist = g_value_dup_boxed (value);
 		break;
 	case PROP_MTU:

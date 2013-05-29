@@ -790,8 +790,8 @@ finalize (GObject *object)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
-	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
-	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);

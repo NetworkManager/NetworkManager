@@ -290,7 +290,7 @@ nm_setting_802_1x_clear_eap_methods (NMSetting8021x *setting)
 	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-	nm_utils_slist_free (priv->eap, g_free);
+	g_slist_free_full (priv->eap, g_free);
 	priv->eap = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_EAP);
 }
@@ -695,7 +695,7 @@ nm_setting_802_1x_clear_altsubject_matches (NMSetting8021x *setting)
 	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-	nm_utils_slist_free (priv->altsubject_matches, g_free);
+	g_slist_free_full (priv->altsubject_matches, g_free);
 	priv->altsubject_matches = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
 }
@@ -1242,7 +1242,7 @@ nm_setting_802_1x_clear_phase2_altsubject_matches (NMSetting8021x *setting)
 	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
-	nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
+	g_slist_free_full (priv->phase2_altsubject_matches, g_free);
 	priv->phase2_altsubject_matches = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 }
@@ -2665,9 +2665,9 @@ finalize (GObject *object)
 		g_byte_array_free (priv->password_raw, TRUE);
 	g_free (priv->pin);
 
-	nm_utils_slist_free (priv->eap, g_free);
-	nm_utils_slist_free (priv->altsubject_matches, g_free);
-	nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
+	g_slist_free_full (priv->eap, g_free);
+	g_slist_free_full (priv->altsubject_matches, g_free);
+	g_slist_free_full (priv->phase2_altsubject_matches, g_free);
 
 	if (priv->ca_cert)
 		g_byte_array_free (priv->ca_cert, TRUE);
@@ -2715,7 +2715,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_EAP:
-		nm_utils_slist_free (priv->eap, g_free);
+		g_slist_free_full (priv->eap, g_free);
 		priv->eap = g_value_dup_boxed (value);
 		break;
 	case PROP_IDENTITY:
@@ -2751,7 +2751,7 @@ set_property (GObject *object, guint prop_id,
 		priv->subject_match = g_value_dup_string (value);
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
-		nm_utils_slist_free (priv->altsubject_matches, g_free);
+		g_slist_free_full (priv->altsubject_matches, g_free);
 		priv->altsubject_matches = g_value_dup_boxed (value);
 		break;
 	case PROP_CLIENT_CERT:
@@ -2807,7 +2807,7 @@ set_property (GObject *object, guint prop_id,
 		priv->phase2_subject_match = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
-		nm_utils_slist_free (priv->phase2_altsubject_matches, g_free);
+		g_slist_free_full (priv->phase2_altsubject_matches, g_free);
 		priv->phase2_altsubject_matches = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:

@@ -1026,7 +1026,7 @@ static void
 pending_secondary_data_free (PendingSecondaryData *data)
 {
 	g_object_unref (data->device);
-	nm_utils_slist_free (data->secondaries, g_free);
+	g_slist_free_full (data->secondaries, g_free);
 	memset (data, 0, sizeof (*data));
 	g_free (data);
 }
@@ -1294,7 +1294,7 @@ activate_secondary_connections (NMPolicy *policy,
 		secondary_data = pending_secondary_data_new (device, secondary_ac_list);
 		policy->pending_secondaries = g_slist_append (policy->pending_secondaries, secondary_data);
 	} else
-		nm_utils_slist_free (secondary_ac_list, g_free);
+		g_slist_free_full (secondary_ac_list, g_free);
 
 	return success;
 }

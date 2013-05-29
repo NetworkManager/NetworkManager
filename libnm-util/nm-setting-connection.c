@@ -845,7 +845,7 @@ finalize (GObject *object)
 	g_free (priv->zone);
 	g_free (priv->master);
 	g_free (priv->slave_type);
-	nm_utils_slist_free (priv->permissions, (GDestroyNotify) permission_free);
+	g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
 }
@@ -890,7 +890,7 @@ set_property (GObject *object, guint prop_id,
 		priv->type = g_value_dup_string (value);
 		break;
 	case PROP_PERMISSIONS:
-		nm_utils_slist_free (priv->permissions, (GDestroyNotify) permission_free);
+		g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
 		priv->permissions = perm_stringlist_to_permlist (g_value_get_boxed (value));
 		break;
 	case PROP_AUTOCONNECT:
@@ -915,7 +915,7 @@ set_property (GObject *object, guint prop_id,
 		priv->slave_type = g_value_dup_string (value);
 		break;
 	case PROP_SECONDARIES:
-		nm_utils_slist_free (priv->secondaries, g_free);
+		g_slist_free_full (priv->secondaries, g_free);
 		priv->secondaries = g_value_dup_boxed (value);
 		break;
 	default:

@@ -930,8 +930,8 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 	g_array_free (priv->wins, TRUE);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);

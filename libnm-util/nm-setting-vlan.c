@@ -440,7 +440,7 @@ nm_setting_vlan_clear_priorities (NMSettingVlan *setting, NMVlanPriorityMap map)
 	g_return_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP);
 
 	list = get_map (setting, map);
-	nm_utils_slist_free (list, g_free);
+	g_slist_free_full (list, g_free);
 	set_map (setting, map, NULL);
 }
 
@@ -586,12 +586,12 @@ set_property (GObject *object, guint prop_id,
 		priv->flags = g_value_get_uint (value);
 		break;
 	case PROP_INGRESS_PRIORITY_MAP:
-		nm_utils_slist_free (priv->ingress_priority_map, g_free);
+		g_slist_free_full (priv->ingress_priority_map, g_free);
 		priv->ingress_priority_map =
 			priority_stringlist_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
 		break;
 	case PROP_EGRESS_PRIORITY_MAP:
-		nm_utils_slist_free (priv->egress_priority_map, g_free);
+		g_slist_free_full (priv->egress_priority_map, g_free);
 		priv->egress_priority_map =
 			priority_stringlist_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
 		break;
@@ -654,8 +654,8 @@ finalize (GObject *object)
 
 	g_free (priv->iface_name);
 	g_free (priv->parent);
-	nm_utils_slist_free (priv->ingress_priority_map, g_free);
-	nm_utils_slist_free (priv->egress_priority_map, g_free);
+	g_slist_free_full (priv->ingress_priority_map, g_free);
+	g_slist_free_full (priv->egress_priority_map, g_free);
 }
 
 static void

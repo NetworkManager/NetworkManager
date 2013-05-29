@@ -337,7 +337,7 @@ nm_setting_ip4_config_clear_dns_searches (NMSettingIP4Config *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
-	nm_utils_slist_free (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
+	g_slist_free_full (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
 	NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS_SEARCH);
 }
@@ -449,7 +449,7 @@ nm_setting_ip4_config_clear_addresses (NMSettingIP4Config *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
-	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 	priv->addresses = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 }
@@ -560,7 +560,7 @@ nm_setting_ip4_config_clear_routes (NMSettingIP4Config *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
-	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 	priv->routes = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ROUTES);
 }
@@ -855,9 +855,9 @@ finalize (GObject *object)
 
 	g_array_free (priv->dns, TRUE);
 
-	nm_utils_slist_free (priv->dns_search, g_free);
-	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
+	g_slist_free_full (priv->dns_search, g_free);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 
 	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
 }
@@ -881,15 +881,15 @@ set_property (GObject *object, guint prop_id,
 			priv->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);			
 		break;
 	case PROP_DNS_SEARCH:
-		nm_utils_slist_free (priv->dns_search, g_free);
+		g_slist_free_full (priv->dns_search, g_free);
 		priv->dns_search = g_value_dup_boxed (value);
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
+		g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 		priv->addresses = nm_utils_ip4_addresses_from_gvalue (value);
 		break;
 	case PROP_ROUTES:
-		nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
+		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 		priv->routes = nm_utils_ip4_routes_from_gvalue (value);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:

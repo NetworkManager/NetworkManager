@@ -1132,7 +1132,7 @@ vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap ma
 	for (iter = strlist; iter; iter = g_slist_next (iter))
 		g_string_append_printf (value, "%s%s", value->len ? "," : "", (const char *) iter->data);
 
-	nm_utils_slist_free (strlist, g_free);
+	g_slist_free_full (strlist, g_free);
 
 	return value;
 }

@@ -488,17 +488,13 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
  * @elem_destroy_fn: user function called for each element in @list
  *
  * Utility function to free a #GSList.
+ *
+ * Deprecated: use g_slist_free_full().
  **/
 void
 nm_utils_slist_free (GSList *list, GDestroyNotify elem_destroy_fn)
 {
-	if (!list)
-		return;
-
-	if (elem_destroy_fn)
-		g_slist_foreach (list, (GFunc) elem_destroy_fn, NULL);
-
-	g_slist_free (list);
+	g_slist_free_full (list, elem_destroy_fn);
 }
 
 gboolean

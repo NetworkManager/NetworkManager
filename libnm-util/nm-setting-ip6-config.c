@@ -252,7 +252,7 @@ nm_setting_ip6_config_clear_dns (NMSettingIP6Config *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	nm_utils_slist_free (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns, g_free);
+	g_slist_free_full (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns, g_free);
 	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
 }
@@ -358,7 +358,7 @@ nm_setting_ip6_config_clear_dns_searches (NMSettingIP6Config *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	nm_utils_slist_free (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
+	g_slist_free_full (NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search, g_free);
 	NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dns_search = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
 }
@@ -470,7 +470,7 @@ nm_setting_ip6_config_clear_addresses (NMSettingIP6Config *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
 	priv->addresses = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 }
@@ -581,7 +581,7 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
 	priv->routes = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 }
@@ -772,9 +772,9 @@ finalize (GObject *object)
 
 	g_slist_free (priv->dns);
 
-	nm_utils_slist_free (priv->dns_search, g_free);
-	nm_utils_slist_free (priv->addresses, g_free);
-	nm_utils_slist_free (priv->routes, g_free);
+	g_slist_free_full (priv->dns_search, g_free);
+	g_slist_free_full (priv->addresses, g_free);
+	g_slist_free_full (priv->routes, g_free);
 
 	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
 }
@@ -791,19 +791,19 @@ set_property (GObject *object, guint prop_id,
 		priv->method = g_value_dup_string (value);
 		break;
 	case PROP_DNS:
-		nm_utils_slist_free (priv->dns, g_free);
+		g_slist_free_full (priv->dns, g_free);
 		priv->dns = nm_utils_ip6_dns_from_gvalue (value);
 		break;
 	case PROP_DNS_SEARCH:
-		nm_utils_slist_free (priv->dns_search, g_free);
+		g_slist_free_full (priv->dns_search, g_free);
 		priv->dns_search = g_value_dup_boxed (value);
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_slist_free (priv->addresses, g_free);
+		g_slist_free_full (priv->addresses, g_free);
 		priv->addresses = nm_utils_ip6_addresses_from_gvalue (value);
 		break;
 	case PROP_ROUTES:
-		nm_utils_slist_free (priv->routes, g_free);
+		g_slist_free_full (priv->routes, g_free);
 		priv->routes = nm_utils_ip6_routes_from_gvalue (value);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:

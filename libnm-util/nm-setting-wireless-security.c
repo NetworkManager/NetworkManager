@@ -271,7 +271,7 @@ nm_setting_wireless_security_clear_protos (NMSettingWirelessSecurity *setting)
 	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
-	nm_utils_slist_free (priv->proto, g_free);
+	g_slist_free_full (priv->proto, g_free);
 	priv->proto = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
 }
@@ -386,7 +386,7 @@ nm_setting_wireless_security_clear_pairwise (NMSettingWirelessSecurity *setting)
 	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
-	nm_utils_slist_free (priv->pairwise, g_free);
+	g_slist_free_full (priv->pairwise, g_free);
 	priv->pairwise = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 }
@@ -502,7 +502,7 @@ nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
 	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
 
 	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
-	nm_utils_slist_free (priv->group, g_free);
+	g_slist_free_full (priv->group, g_free);
 	priv->group = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
 }
@@ -1085,9 +1085,9 @@ finalize (GObject *object)
 	g_free (priv->psk);
 	g_free (priv->leap_password);
 
-	nm_utils_slist_free (priv->proto, g_free);
-	nm_utils_slist_free (priv->pairwise, g_free);
-	nm_utils_slist_free (priv->group, g_free);
+	g_slist_free_full (priv->proto, g_free);
+	g_slist_free_full (priv->pairwise, g_free);
+	g_slist_free_full (priv->group, g_free);
 
 	G_OBJECT_CLASS (nm_setting_wireless_security_parent_class)->finalize (object);
 }
@@ -1115,15 +1115,15 @@ set_property (GObject *object, guint prop_id,
 		priv->auth_alg = str ? g_ascii_strdown (str, -1) : NULL;
 		break;
 	case PROP_PROTO:
-		nm_utils_slist_free (priv->proto, g_free);
+		g_slist_free_full (priv->proto, g_free);
 		priv->proto = g_value_dup_boxed (value);
 		break;
 	case PROP_PAIRWISE:
-		nm_utils_slist_free (priv->pairwise, g_free);
+		g_slist_free_full (priv->pairwise, g_free);
 		priv->pairwise = g_value_dup_boxed (value);
 		break;
 	case PROP_GROUP:
-		nm_utils_slist_free (priv->group, g_free);
+		g_slist_free_full (priv->group, g_free);
 		priv->group = g_value_dup_boxed (value);
 		break;
 	case PROP_LEAP_USERNAME:

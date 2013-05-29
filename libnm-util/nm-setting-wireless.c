@@ -856,8 +856,8 @@ finalize (GObject *object)
 		g_byte_array_free (priv->device_mac_address, TRUE);
 	if (priv->cloned_mac_address)
 		g_byte_array_free (priv->cloned_mac_address, TRUE);
-	nm_utils_slist_free (priv->mac_address_blacklist, g_free);
-	nm_utils_slist_free (priv->seen_bssids, g_free);
+	g_slist_free_full (priv->mac_address_blacklist, g_free);
+	g_slist_free_full (priv->seen_bssids, g_free);
 
 	G_OBJECT_CLASS (nm_setting_wireless_parent_class)->finalize (object);
 }
@@ -907,14 +907,14 @@ set_property (GObject *object, guint prop_id,
 		priv->cloned_mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		nm_utils_slist_free (priv->mac_address_blacklist, g_free);
+		g_slist_free_full (priv->mac_address_blacklist, g_free);
 		priv->mac_address_blacklist = g_value_dup_boxed (value);
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_SEEN_BSSIDS:
-		nm_utils_slist_free (priv->seen_bssids, g_free);
+		g_slist_free_full (priv->seen_bssids, g_free);
 		priv->seen_bssids = g_value_dup_boxed (value);
 		break;
 	case PROP_SEC:
