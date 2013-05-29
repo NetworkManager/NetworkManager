@@ -4452,7 +4452,11 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  singleton);
 
-	priv->bluez_mgr = nm_bluez_manager_get (NM_CONNECTION_PROVIDER (priv->settings));
+	priv->bluez_mgr = nm_bluez_manager_get (
+#if ! WITH_BLUEZ5
+	                                        NM_CONNECTION_PROVIDER (priv->settings)
+#endif
+	                                       );
 
 	g_signal_connect (priv->bluez_mgr,
 	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,

@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include  <config.h>
 #include  "nm-connection-provider.h"
 
 G_BEGIN_DECLS
@@ -60,7 +61,13 @@ typedef struct {
 
 GType nm_bluez_manager_get_type (void);
 
-NMBluezManager *nm_bluez_manager_get (NMConnectionProvider *provider);
+NMBluezManager *nm_bluez_manager_get (
+#if WITH_BLUEZ5
+                                      void
+#else
+                                      NMConnectionProvider *provider
+#endif
+                                      );
 
 void nm_bluez_manager_query_devices (NMBluezManager *manager);
 

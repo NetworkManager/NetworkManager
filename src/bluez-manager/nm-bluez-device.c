@@ -297,6 +297,7 @@ bluez_connect_cb (DBusGProxy *proxy,
 	else if (!device || !strlen (device)) {
 		g_simple_async_result_set_error (result, G_IO_ERROR, G_IO_ERROR_FAILED,
 		                                 "Invalid argument received");
+		g_free (device);
 	} else {
 		g_simple_async_result_set_op_res_gpointer (result,
 		                                           g_strdup (device),
