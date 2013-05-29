@@ -106,7 +106,7 @@ NMModem *
 nm_modem_gsm_new (const char *path,
                   const char *data_device,
                   guint32 ip_method,
-                  NMModemState state)
+                  MMOldModemState state)
 {
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (data_device != NULL, NULL);
@@ -117,7 +117,7 @@ nm_modem_gsm_new (const char *path,
 	                                 NM_MODEM_CONTROL_PORT, NULL,
 	                                 NM_MODEM_DATA_PORT, data_device,
 	                                 NM_MODEM_IP_METHOD, ip_method,
-	                                 NM_MODEM_CONNECTED, (state == NM_MODEM_STATE_CONNECTED),
+	                                 NM_MODEM_CONNECTED, (state == MM_OLD_MODEM_STATE_CONNECTED),
 	                                 NULL);
 }
 

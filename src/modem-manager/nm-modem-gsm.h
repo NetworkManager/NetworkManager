@@ -23,6 +23,7 @@
 #define NM_MODEM_GSM_H
 
 #include "nm-modem-old.h"
+#include "nm-modem-old-types.h"
 
 G_BEGIN_DECLS
 
@@ -52,7 +53,7 @@ GType nm_modem_gsm_get_type (void);
 NMModem *nm_modem_gsm_new (const char *path,
                            const char *data_device,
                            guint32 ip_method,
-                           NMModemState state);
+                           MMOldModemState state);
 
 G_END_DECLS
 

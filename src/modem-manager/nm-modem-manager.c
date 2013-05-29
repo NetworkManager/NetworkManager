@@ -112,7 +112,7 @@ get_modem_properties (DBusGConnection *connection,
 					  guint32 *type,
 					  guint32 *ip_method,
 					  guint32 *ip_timeout,
-					  NMModemState *state)
+					  MMOldModemState *state)
 {
 	DBusGProxy *proxy;
 	GError *err = NULL;
@@ -176,7 +176,7 @@ create_modem (NMModemManager *self, const char *path)
 	uint modem_type = MM_OLD_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 	uint ip_timeout = 0;
-	NMModemState state = NM_MODEM_STATE_UNKNOWN;
+	MMOldModemState state = MM_OLD_MODEM_STATE_UNKNOWN;
 
 	if (g_hash_table_lookup (self->priv->modems, path)) {
 		nm_log_warn (LOGD_MB, "modem with path %s already exists, ignoring", path);

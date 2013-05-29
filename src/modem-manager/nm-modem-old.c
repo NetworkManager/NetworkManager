@@ -42,7 +42,7 @@ typedef struct {
 
 	DBusGProxyCall *call;
 
-	NMModemState state;
+	MMOldModemState state;
 } NMModemOldPrivate;
 
 /*****************************************************************************/
@@ -311,7 +311,7 @@ modem_properties_changed (DBusGProxy *proxy,
 	NMModemOld *self = NM_MODEM_OLD (user_data);
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 	GValue *value;
-	NMModemState new_state;
+	MMOldModemState new_state;
 
 	if (strcmp (interface, MM_OLD_DBUS_INTERFACE_MODEM))
 		return;
@@ -334,11 +334,11 @@ modem_properties_changed (DBusGProxy *proxy,
 	if (value && G_VALUE_HOLDS_UINT (value)) {
 		new_state = g_value_get_uint (value);
 		if (new_state != priv->state) {
-			if (new_state == NM_MODEM_STATE_CONNECTED)
+			if (new_state == MM_OLD_MODEM_STATE_CONNECTED)
 				g_object_set (self,
 				              NM_MODEM_CONNECTED, TRUE,
 				              NULL);
-			else if (priv->state == NM_MODEM_STATE_CONNECTED)
+			else if (priv->state == MM_OLD_MODEM_STATE_CONNECTED)
 				g_object_set (self,
 				              NM_MODEM_CONNECTED, FALSE,
 				              NULL);
