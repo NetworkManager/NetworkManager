@@ -173,7 +173,7 @@ create_modem (NMModemManager *self, const char *path)
 {
 	NMModem *modem = NULL;
 	char *data_device = NULL, *driver = NULL, *master_device = NULL;
-	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
+	uint modem_type = MM_OLD_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 	uint ip_timeout = 0;
 	NMModemState state = NM_MODEM_STATE_UNKNOWN;
@@ -188,7 +188,7 @@ create_modem (NMModemManager *self, const char *path)
 	                           &modem_type, &ip_method, &ip_timeout, &state))
 		return;
 
-	if (modem_type == MM_MODEM_TYPE_UNKNOWN) {
+	if (modem_type == MM_OLD_MODEM_TYPE_UNKNOWN) {
 		nm_log_warn (LOGD_MB, "modem with path %s has unknown type, ignoring", path);
 		return;
 	}
@@ -208,9 +208,9 @@ create_modem (NMModemManager *self, const char *path)
 		return;
 	}
 
-	if (modem_type == MM_MODEM_TYPE_GSM)
+	if (modem_type == MM_OLD_MODEM_TYPE_GSM)
 		modem = nm_modem_gsm_new (path, data_device, ip_method, state);
-	else if (modem_type == MM_MODEM_TYPE_CDMA)
+	else if (modem_type == MM_OLD_MODEM_TYPE_CDMA)
 		modem = nm_modem_cdma_new (path, data_device, ip_method, state);
 	else
 		nm_log_warn (LOGD_MB, "unknown modem type '%d'", modem_type);

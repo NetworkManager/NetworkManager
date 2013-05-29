@@ -30,9 +30,9 @@
 #define MM_OLD_DBUS_INTERFACE_MODEM_GSM_CARD    "org.freedesktop.ModemManager.Modem.Gsm.Card"
 #define MM_OLD_DBUS_INTERFACE_MODEM_GSM_NETWORK "org.freedesktop.ModemManager.Modem.Gsm.Network"
 
-#define MM_MODEM_TYPE_UNKNOWN  0
-#define MM_MODEM_TYPE_GSM      1
-#define MM_MODEM_TYPE_CDMA     2
+#define MM_OLD_MODEM_TYPE_UNKNOWN  0
+#define MM_OLD_MODEM_TYPE_GSM      1
+#define MM_OLD_MODEM_TYPE_CDMA     2
 
 /* Errors */
 
