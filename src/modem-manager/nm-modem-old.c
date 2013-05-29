@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2009 - 2013 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -47,7 +47,100 @@ typedef struct {
 
 	DBusGProxyCall *call;
 	GHashTable *connect_properties;
+
+	guint32 pin_tries;
+	guint enable_delay_id;
 } NMModemOldPrivate;
+
+#define CAPS_3GPP (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_LTE)
+
+/*****************************************************************************/
+
+typedef enum {
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_ANY = 0,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_GPRS,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_EDGE,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_UMTS,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSDPA,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_PREFERRED,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_PREFERRED,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_ONLY,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_ONLY,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSUPA,
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSPA,
+
+    MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_LAST = MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_HSPA
+} MMModemDeprecatedMode;
+
+typedef enum {
+    MM_MODEM_GSM_ALLOWED_MODE_ANY          = 0,
+    MM_MODEM_GSM_ALLOWED_MODE_2G_PREFERRED = 1,
+    MM_MODEM_GSM_ALLOWED_MODE_3G_PREFERRED = 2,
+    MM_MODEM_GSM_ALLOWED_MODE_2G_ONLY      = 3,
+    MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY      = 4,
+    MM_MODEM_GSM_ALLOWED_MODE_4G_PREFERRED = 5,
+    MM_MODEM_GSM_ALLOWED_MODE_4G_ONLY      = 6,
+
+    MM_MODEM_GSM_ALLOWED_MODE_LAST = MM_MODEM_GSM_ALLOWED_MODE_4G_ONLY
+} MMModemGsmAllowedMode;
+
+typedef enum {
+	MM_MODEM_GSM_ALLOWED_AUTH_UNKNOWN  = 0x0000,
+    /* bits 0..4 order match Ericsson device bitmap */
+    MM_MODEM_GSM_ALLOWED_AUTH_NONE     = 0x0001,
+    MM_MODEM_GSM_ALLOWED_AUTH_PAP      = 0x0002,
+    MM_MODEM_GSM_ALLOWED_AUTH_CHAP     = 0x0004,
+    MM_MODEM_GSM_ALLOWED_AUTH_MSCHAP   = 0x0008,
+    MM_MODEM_GSM_ALLOWED_AUTH_MSCHAPV2 = 0x0010,
+    MM_MODEM_GSM_ALLOWED_AUTH_EAP      = 0x0020,
+
+    MM_MODEM_GSM_ALLOWED_AUTH_LAST = MM_MODEM_GSM_ALLOWED_AUTH_EAP
+} MMModemGsmAllowedAuth;
+
+static NMDeviceStateReason
+translate_mm_error (GError *error)
+{
+	NMDeviceStateReason reason;
+
+	if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_NO_CARRIER))
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_NO_DIALTONE))
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_BUSY))
+		reason = NM_DEVICE_STATE_REASON_MODEM_BUSY;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_CONNECT_ERROR_NO_ANSWER))
+		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_NETWORK_NOT_ALLOWED))
+		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_NETWORK_TIMEOUT))
+		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_NO_NETWORK))
+		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_NOT_INSERTED))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PIN))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PUK))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_WRONG))
+		reason = NM_DEVICE_STATE_REASON_GSM_SIM_WRONG;
+	else {
+		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
+		nm_log_dbg (LOGD_MB, "unmapped dbus error detected: '%s'", dbus_g_error_get_name (error));
+		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
+	}
+
+	/* FIXME: We have only GSM error messages here, and we have no idea which
+	   activation state failed. Reasons like:
+	   NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED,
+	   NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED,
+	   NM_DEVICE_STATE_REASON_GSM_APN_FAILED,
+	   NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED,
+	   NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED
+	   are not used.
+	*/
+	return reason;
+}
 
 /*****************************************************************************/
 
@@ -159,11 +252,29 @@ set_mm_enabled (NMModem *self, gboolean enabled)
 /*****************************************************************************/
 
 static void
+ask_for_pin (NMModemOld *self, gboolean always_ask)
+{
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
+	guint32 tries = 0;
+
+	g_return_if_fail (NM_IS_MODEM_OLD (self));
+
+	if (!always_ask)
+		tries = priv->pin_tries++;
+
+	nm_modem_get_secrets (NM_MODEM (self),
+	                      NM_SETTING_GSM_SETTING_NAME,
+	                      (tries || always_ask) ? TRUE : FALSE,
+	                      NM_SETTING_GSM_PIN);
+}
+
+static void
 stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
 	NMModemOld *self = NM_MODEM_OLD (user_data);
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 	GError *error = NULL;
+	gboolean asked = FALSE;
 
 	priv->call = NULL;
 
@@ -175,11 +286,23 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
 	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID))
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, TRUE, NM_DEVICE_STATE_REASON_NONE);
 	else {
-		nm_log_warn (LOGD_MB, "Modem connection failed: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		if (priv->caps & CAPS_3GPP) {
+			if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PIN)) {
+				ask_for_pin (self, FALSE);
+				asked = TRUE;
+			} else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_WRONG)) {
+				ask_for_pin (self, TRUE);
+				asked = TRUE;
+			}
+		}
+
+		if (!asked) {
+			nm_log_warn (LOGD_MB, "Mobile connection failed: (%d) %s",
+					     error ? error->code : -1,
+					     error && error->message ? error->message : "(unknown)");
+			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
+		}
 		g_error_free (error);
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_NONE);
 	}
 }
 
@@ -197,20 +320,108 @@ do_connect (NMModemOld *self)
 	                                                   G_TYPE_INVALID);
 }
 
+static void stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data);
+
+/* do_enable() is used as a GSourceFunc, hence the gboolean return */
+static gboolean
+do_enable (NMModemOld *self)
+{
+	DBusGProxy *proxy;
+
+	g_return_val_if_fail (NM_IS_MODEM_OLD (self), FALSE);
+
+	NM_MODEM_OLD_GET_PRIVATE (self)->enable_delay_id = 0;
+	proxy = nm_modem_old_get_proxy (NM_MODEM_OLD (self), MM_OLD_DBUS_INTERFACE_MODEM);
+	dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                      "Enable", stage1_enable_done,
+	                                      self, NULL, 20000,
+	                                      G_TYPE_BOOLEAN, TRUE,
+	                                      G_TYPE_INVALID);
+	return FALSE;
+}
+
+static void
+stage1_pin_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMModemOld *self = NM_MODEM_OLD (user_data);
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
+	NMDeviceStateReason reason;
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID)) {
+		/* Success; try to enable the modem again.  Wait a few seconds to ensure
+		 * that ModemManager is ready for the enable right after the unlock.
+		 */
+		if (priv->enable_delay_id == 0)
+			priv->enable_delay_id = g_timeout_add_seconds (4, (GSourceFunc) do_enable, self);
+	} else {
+		nm_log_warn (LOGD_MB, "GSM PIN unlock failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+
+		/* try to translate the error reason */
+		reason = translate_mm_error (error);
+		if (reason == NM_DEVICE_STATE_REASON_UNKNOWN)
+			reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
+
+		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, reason);
+		g_error_free (error);
+	}
+}
+
+static void
+handle_enable_pin_required (NMModemOld *self)
+{
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
+	const char *pin = NULL;
+	GValue *value;
+	DBusGProxy *proxy;
+
+	g_assert (priv->caps & CAPS_3GPP);
+
+	/* See if we have a PIN already */
+	value = g_hash_table_lookup (priv->connect_properties, "pin");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		pin = g_value_get_string (value);
+
+	/* If we do, send it */
+	if (pin) {
+		proxy = nm_modem_old_get_proxy (NM_MODEM_OLD (self), MM_OLD_DBUS_INTERFACE_MODEM_GSM_CARD);
+		dbus_g_proxy_begin_call_with_timeout (proxy,
+		                                      "SendPin", stage1_pin_done,
+		                                      self, NULL, 10000,
+		                                      G_TYPE_STRING, pin,
+		                                      G_TYPE_INVALID);
+	} else
+		ask_for_pin (self, FALSE);
+}
+
 static void
 stage1_enable_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMModemOld *self = NM_MODEM_OLD (user_data);
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
+	NMDeviceStateReason reason;
 	GError *error = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
 		do_connect (self);
 	else {
-		nm_log_warn (LOGD_MB, "Modem enable failed: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		if ((priv->caps & CAPS_3GPP) && dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_PIN))
+			handle_enable_pin_required (self);
+		else {
+			nm_log_warn (LOGD_MB, "Modem enable failed: (%d) %s",
+				         error ? error->code : -1,
+				         error && error->message ? error->message : "(unknown)");
+
+			/* try to translate the error reason */
+			reason = translate_mm_error (error);
+			if (reason == NM_DEVICE_STATE_REASON_UNKNOWN)
+				reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
+			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, reason);
+		}
+
 		g_error_free (error);
-		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 	}
 }
 
@@ -218,6 +429,8 @@ static GHashTable *
 create_connect_properties (NMConnection *connection)
 {
 	NMSettingCdma *s_cdma;
+	NMSettingGsm *s_gsm;
+	NMSettingPPP *s_ppp;
 	GHashTable *properties;
 	const char *str;
 
@@ -228,6 +441,93 @@ create_connect_properties (NMConnection *connection)
 		str = nm_setting_cdma_get_number (s_cdma);
 		if (str)
 			value_hash_add_str (properties, "number", str);
+		return properties;
+	}
+
+	s_gsm = nm_connection_get_setting_gsm (connection);
+	if (s_gsm) {
+		str = nm_setting_gsm_get_number (s_gsm);
+		if (str)
+			value_hash_add_str (properties, "number", str);
+
+		str = nm_setting_gsm_get_apn (s_gsm);
+		if (str)
+			value_hash_add_str (properties, "apn", str);
+
+		str = nm_setting_gsm_get_network_id (s_gsm);
+		if (str)
+			value_hash_add_str (properties, "network_id", str);
+
+		str = nm_setting_gsm_get_pin (s_gsm);
+		if (str)
+			value_hash_add_str (properties, "pin", str);
+
+		str = nm_setting_gsm_get_username (s_gsm);
+		if (str)
+			value_hash_add_str (properties, "username", str);
+
+		str = nm_setting_gsm_get_password (s_gsm);
+		if (str)
+			value_hash_add_str (properties, "password", str);
+
+		/* Add both old and new preferred modes */
+		switch (nm_setting_gsm_get_network_type (s_gsm)) {
+		case NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA:
+			value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_ONLY);
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_3G_ONLY);
+			break;
+		case NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE:
+			value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_ONLY);
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_2G_ONLY);
+			break;
+		case NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA:
+			value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_3G_PREFERRED);
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_3G_PREFERRED);
+			break;
+		case NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE:
+			value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_2G_PREFERRED);
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_2G_PREFERRED);
+			break;
+		case NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G:
+			/* deprecated modes not extended for 4G, so no need to set them here */
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_4G_PREFERRED);
+			break;
+		case NM_SETTING_GSM_NETWORK_TYPE_4G:
+			/* deprecated modes not extended for 4G, so no need to set them here */
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_4G_ONLY);
+			break;
+		default:
+			value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_DEPRECATED_MODE_ANY);
+			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_ANY);
+			break;
+		}
+
+		/* Roaming */
+		if (nm_setting_gsm_get_home_only (s_gsm))
+			value_hash_add_bool (properties, "home_only", TRUE);
+
+		/* For IpMethod == STATIC or DHCP */
+		s_ppp = nm_connection_get_setting_ppp (connection);
+		if (s_ppp) {
+			guint32 auth = MM_MODEM_GSM_ALLOWED_AUTH_UNKNOWN;
+
+			if (nm_setting_ppp_get_noauth (s_ppp))
+				auth |= MM_MODEM_GSM_ALLOWED_AUTH_NONE;
+			if (!nm_setting_ppp_get_refuse_pap (s_ppp))
+				auth |= MM_MODEM_GSM_ALLOWED_AUTH_PAP;
+			if (!nm_setting_ppp_get_refuse_chap (s_ppp))
+				auth |= MM_MODEM_GSM_ALLOWED_AUTH_CHAP;
+			if (!nm_setting_ppp_get_refuse_mschap (s_ppp))
+				auth |= MM_MODEM_GSM_ALLOWED_AUTH_MSCHAP;
+			if (!nm_setting_ppp_get_refuse_mschapv2 (s_ppp))
+				auth |= MM_MODEM_GSM_ALLOWED_AUTH_MSCHAPV2;
+			if (!nm_setting_ppp_get_refuse_eap (s_ppp))
+				auth |= MM_MODEM_GSM_ALLOWED_AUTH_EAP;
+
+			if (auth != MM_MODEM_GSM_ALLOWED_AUTH_UNKNOWN)
+				value_hash_add_uint (properties, "allowed_auth", auth);
+		}
+
 		return properties;
 	}
 
@@ -252,7 +552,6 @@ act_stage1_prepare (NMModem *modem,
 	*out_setting_name = nm_connection_need_secrets (connection, out_hints);
 	if (!*out_setting_name) {
 		gboolean enabled = nm_modem_get_mm_enabled (modem);
-		DBusGProxy *proxy;
 
 		if (priv->connect_properties)
 			g_hash_table_destroy (priv->connect_properties);
@@ -260,14 +559,8 @@ act_stage1_prepare (NMModem *modem,
 
 		if (enabled)
 			do_connect (self);
-		else {
-			proxy = nm_modem_old_get_proxy (NM_MODEM_OLD (modem), MM_OLD_DBUS_INTERFACE_MODEM);
-			dbus_g_proxy_begin_call_with_timeout (proxy,
-			                                      "Enable", stage1_enable_done,
-			                                      modem, NULL, 20000,
-			                                      G_TYPE_BOOLEAN, TRUE,
-			                                      G_TYPE_INVALID);
-		}
+		else
+			do_enable (self);
 	} else {
 		/* NMModem will handle requesting secrets... */
 	}
@@ -407,19 +700,21 @@ disconnect (NMModem *self,
 static void
 deactivate (NMModem *self, NMDevice *device)
 {
-	NMModemOldPrivate *priv;
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 
-	g_assert (NM_IS_MODEM_OLD (self));
-	g_assert (NM_IS_DEVICE (device));
-
-	priv = NM_MODEM_OLD_GET_PRIVATE (self);
+	priv->pin_tries = 0;
 
 	if (priv->call) {
 		dbus_g_proxy_cancel_call (priv->proxy, priv->call);
 		priv->call = NULL;
 	}
 
-	/* Chain up parent's */
+	if (priv->enable_delay_id) {
+		g_source_remove (priv->enable_delay_id);
+		priv->enable_delay_id = 0;
+	}
+
+	/* Chain up parent */
 	NM_MODEM_CLASS (nm_modem_old_parent_class)->deactivate (self, device);
 }
 
@@ -479,7 +774,7 @@ check_connection_compatible (NMModem *modem,
 {
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (modem);
 	NMSettingConnection *s_con;
-	gboolean valid_cdma = FALSE;
+	gboolean valid_cdma = FALSE, valid_gsm = FALSE;
 	const char *ctype;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -490,6 +785,9 @@ check_connection_compatible (NMModem *modem,
 	/* Check for valid CDMA first */
 	if (strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME) == 0)
 		valid_cdma = !!nm_connection_get_setting_cdma (connection);
+
+	if (strcmp (ctype, NM_SETTING_GSM_SETTING_NAME) == 0)
+		valid_gsm = !!nm_connection_get_setting_gsm (connection);
 
 	/* Validate CDMA */
 	if (priv->caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO) {
@@ -502,6 +800,16 @@ check_connection_compatible (NMModem *modem,
 				         "The connection was not a CDMA connection.");
 			return FALSE;
 		}
+	}
+
+	/* Validate 3GPP */
+	if (priv->caps & CAPS_3GPP) {
+		if (valid_gsm)
+			return TRUE;
+
+		g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_CONNECTION_NOT_GSM,
+			         "The connection was not a GSM/UMTS/LTE connection.");
+		return FALSE;
 	}
 
 	g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
@@ -526,6 +834,37 @@ complete_ppp_setting (NMConnection *connection)
 		              NULL);
 		nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 	}
+}
+
+static gboolean
+complete_connection_3gpp (NMConnection *connection,
+                          const GSList *existing_connections,
+                          GError **error)
+{
+	NMSettingGsm *s_gsm;
+
+	s_gsm = nm_connection_get_setting_gsm (connection);
+	if (!s_gsm || !nm_setting_gsm_get_apn (s_gsm)) {
+		/* Need an APN at least */
+		g_set_error_literal (error,
+		                     NM_SETTING_GSM_ERROR,
+		                     NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
+		                     NM_SETTING_GSM_APN);
+		return FALSE;
+	}
+
+	if (!nm_setting_gsm_get_number (s_gsm))
+		g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
+
+	complete_ppp_setting (connection);
+
+	nm_utils_complete_generic (connection,
+	                           NM_SETTING_GSM_SETTING_NAME,
+	                           existing_connections,
+	                           _("GSM connection %d"),
+	                           NULL,
+	                           FALSE); /* No IPv6 yet by default */
+	return TRUE;
 }
 
 static gboolean
@@ -563,8 +902,18 @@ complete_connection (NMModem *modem,
 {
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (modem);
 
+	/* If the modem has LTE, complete as 3GPP */
+	if (priv->caps & NM_DEVICE_MODEM_CAPABILITY_LTE)
+		return complete_connection_3gpp (connection, existing_connections, error);
+
+	/* Otherwise, prefer CDMA on the theory that if the modem has CDMA/EVDO
+	 * that's most likely what the user will be using.
+	 */
 	if (priv->caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
 		return complete_connection_cdma (connection, existing_connections, error);
+
+	if (priv->caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS)
+		return complete_connection_3gpp (connection, existing_connections, error);
 
 	g_set_error_literal (error, NM_MODEM_ERROR, NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
 	                     "Modem had no WWAN capabilities.");
@@ -581,6 +930,7 @@ get_user_pass (NMModem *modem,
 {
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (modem);
 	NMSettingCdma *s_cdma;
+	NMSettingGsm *s_gsm;
 
 	if (priv->caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO) {
 		s_cdma = nm_connection_get_setting_cdma (connection);
@@ -591,6 +941,16 @@ get_user_pass (NMModem *modem,
 				*pass = nm_setting_cdma_get_password (s_cdma);
 			return TRUE;
 		}
+	}
+
+	/* Fall back to GSM; will be used for CDMA devices on LTE networks too */
+	s_gsm = nm_connection_get_setting_gsm (connection);
+	if (s_gsm) {
+		if (user)
+			*user = nm_setting_gsm_get_username (s_gsm);
+		if (pass)
+			*pass = nm_setting_gsm_get_password (s_gsm);
+		return TRUE;
 	}
 
 	return FALSE;
@@ -633,6 +993,8 @@ nm_modem_old_new (const char *path,
 	if (self) {
 		if (modem_type == MM_OLD_MODEM_TYPE_CDMA)
 			caps |= NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO;
+		if (modem_type == MM_OLD_MODEM_TYPE_GSM)
+			caps |= NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
 
 		NM_MODEM_OLD_GET_PRIVATE (self)->caps = caps;
 	}
@@ -705,6 +1067,11 @@ dispose (GObject *object)
 	if (priv->connect_properties) {
 		g_hash_table_destroy (priv->connect_properties);
 		priv->connect_properties = NULL;
+	}
+
+	if (priv->enable_delay_id) {
+		g_source_remove (priv->enable_delay_id);
+		priv->enable_delay_id = 0;
 	}
 
 	G_OBJECT_CLASS (nm_modem_old_parent_class)->dispose (object);

@@ -24,7 +24,7 @@
 
 #include "nm-device-modem.h"
 #include "nm-modem.h"
-#include "nm-modem-gsm.h"
+#include "nm-modem-old.h"
 #include "nm-device-private.h"
 #include "nm-rfkill.h"
 #include "nm-logging.h"
@@ -343,12 +343,7 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	if (NM_IS_MODEM_GSM (modem)) {
-		caps = NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
-		current_caps = caps;
-		type_desc = "GSM/UMTS";
-		ip_iface = nm_modem_get_data_port (modem);
-	} else if (NM_IS_MODEM_OLD (modem)) {
+	if (NM_IS_MODEM_OLD (modem)) {
 		nm_modem_old_get_capabilities (NM_MODEM_OLD (modem), &caps, &current_caps);
 		type_desc = "Broadband";
 		ip_iface = nm_modem_get_data_port (modem);
