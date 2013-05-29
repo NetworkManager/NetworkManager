@@ -2199,7 +2199,7 @@ platform_link_added_cb (NMPlatform *platform,
 		NMDeviceFactoryCreateFunc create_func = iter->data;
 
 		g_clear_error (&error);
-		device = (NMDevice *) create_func (link->udi, link->name, link->driver, &error);
+		device = (NMDevice *) create_func (link, &error);
 		if (device && NM_IS_DEVICE (device)) {
 			g_assert_no_error (error);
 			break;  /* success! */
@@ -2221,16 +2221,16 @@ platform_link_added_cb (NMPlatform *platform,
 
 		switch (link->type) {
 		case NM_LINK_TYPE_ETHERNET:
-			device = nm_device_ethernet_new (link->udi, link->name, link->driver);
+			device = nm_device_ethernet_new (link);
 			break;
 		case NM_LINK_TYPE_INFINIBAND:
-			device = nm_device_infiniband_new (link->udi, link->name, link->driver);
+			device = nm_device_infiniband_new (link);
 			break;
 		case NM_LINK_TYPE_OLPC_MESH:
-			device = nm_device_olpc_mesh_new (link->udi, link->name, link->driver);
+			device = nm_device_olpc_mesh_new (link);
 			break;
 		case NM_LINK_TYPE_WIFI:
-			device = nm_device_wifi_new (link->udi, link->name, link->driver);
+			device = nm_device_wifi_new (link);
 			break;
 		case NM_LINK_TYPE_BOND:
 			device = nm_device_bond_new (link->udi, link->name);
@@ -2260,23 +2260,23 @@ platform_link_added_cb (NMPlatform *platform,
 				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", link->name);
 			break;
 		case NM_LINK_TYPE_VETH:
-			device = nm_device_veth_new (link->udi, link->name, link->driver);
+			device = nm_device_veth_new (link);
 			break;
 		case NM_LINK_TYPE_TUN:
 		case NM_LINK_TYPE_TAP:
-			device = nm_device_tun_new (link->udi, link->name, link->driver);
+			device = nm_device_tun_new (link);
 			break;
 		case NM_LINK_TYPE_MACVLAN:
 		case NM_LINK_TYPE_MACVTAP:
-			device = nm_device_macvlan_new (link->udi, link->name, link->driver);
+			device = nm_device_macvlan_new (link);
 			break;
 		case NM_LINK_TYPE_GRE:
 		case NM_LINK_TYPE_GRETAP:
-			device = nm_device_gre_new (link->udi, link->name, link->driver);
+			device = nm_device_gre_new (link);
 			break;
 
 		default:
-			device = nm_device_generic_new (link->udi, link->name, link->driver);
+			device = nm_device_generic_new (link);
 			break;
 		}
 	}

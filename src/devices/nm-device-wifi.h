@@ -89,9 +89,7 @@ struct _NMDeviceWifiClass
 
 GType nm_device_wifi_get_type (void);
 
-NMDevice *nm_device_wifi_new (const char *udi,
-                              const char *iface,
-                              const char *driver);
+NMDevice *nm_device_wifi_new (NMPlatformLink *platform_device);
 
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 

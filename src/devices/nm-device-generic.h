@@ -54,9 +54,7 @@ typedef struct {
 
 GType nm_device_generic_get_type (void);
 
-NMDevice *nm_device_generic_new (const char *udi,
-                                 const char *iface,
-                                 const char *driver);
+NMDevice *nm_device_generic_new (NMPlatformLink *platform_device);
 
 G_END_DECLS
 

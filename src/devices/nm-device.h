@@ -36,6 +36,7 @@
 #include "nm-connection.h"
 #include "nm-rfkill-manager.h"
 #include "nm-connection-provider.h"
+#include "nm-platform.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"

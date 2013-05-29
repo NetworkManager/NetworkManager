@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include "NetworkManager.h"
+#include "nm-platform.h"
 
 /* WARNING: this file is private API between NetworkManager and its internal
  * device plugins.  Its API can change at any time and is not guaranteed to be
@@ -49,15 +50,11 @@
  *
  * Returns: the device object (a subclass of #NMDevice) or %NULL
  */
-GObject *nm_device_factory_create_device (const char *devpath,
-                                          const char *ifname,
-                                          const char *driver,
+GObject *nm_device_factory_create_device (NMPlatformLink *platform_device,
                                           GError **error);
 
 /* Should match nm_device_factory() */
-typedef GObject * (*NMDeviceFactoryCreateFunc) (const char *devpath,
-                                                const char *ifname,
-                                                const char *driver,
+typedef GObject * (*NMDeviceFactoryCreateFunc) (NMPlatformLink *platform_device,
                                                 GError **error);
 
 /**

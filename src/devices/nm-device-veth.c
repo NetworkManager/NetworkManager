@@ -28,6 +28,7 @@
 #include <sys/ioctl.h>
 
 #include "nm-device-veth.h"
+#include "nm-device-private.h"
 #include "nm-logging.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
@@ -96,16 +97,12 @@ get_peer (NMDeviceVeth *self)
 /**************************************************************/
 
 NMDevice *
-nm_device_veth_new (const char *udi,
-                    const char *iface,
-                    const char *driver)
+nm_device_veth_new (NMPlatformLink *platform_device)
 {
-	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (platform_device != NULL, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
-	                                  NM_DEVICE_UDI, udi,
-	                                  NM_DEVICE_IFACE, iface,
-	                                  NM_DEVICE_DRIVER, driver ? driver : "veth",
+	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
 	                                  NM_DEVICE_TYPE_DESC, "Veth",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
 	                                  NULL);

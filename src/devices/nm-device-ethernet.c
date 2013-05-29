@@ -321,18 +321,12 @@ take_down (NMDevice *dev)
 }
 
 NMDevice *
-nm_device_ethernet_new (const char *udi,
-						const char *iface,
-						const char *driver)
+nm_device_ethernet_new (NMPlatformLink *platform_device)
 {
-	g_return_val_if_fail (udi != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
+	g_return_val_if_fail (platform_device != NULL, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
-	                                  NM_DEVICE_UDI, udi,
-	                                  NM_DEVICE_IFACE, iface,
-	                                  NM_DEVICE_DRIVER, driver,
+	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
 	                                  NM_DEVICE_TYPE_DESC, "Ethernet",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
 	                                  NULL);

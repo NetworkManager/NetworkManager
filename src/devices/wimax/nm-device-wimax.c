@@ -1270,20 +1270,14 @@ wmx_new_sdk_cb (struct wmxsdk *sdk, void *user_data)
 /*************************************************************************/
 
 NMDevice *
-nm_device_wimax_new (const char *udi,
-					 const char *iface,
-					 const char *driver)
+nm_device_wimax_new (NMPlatformLink *platform_device)
 {
 	NMDevice *device;
 
-	g_return_val_if_fail (udi != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
+	g_return_val_if_fail (platform_device != NULL, NULL);
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_WIMAX,
-	                                    NM_DEVICE_UDI, udi,
-	                                    NM_DEVICE_IFACE, iface,
-	                                    NM_DEVICE_DRIVER, driver,
+	                                    NM_DEVICE_PLATFORM_DEVICE, platform_device,
 	                                    NM_DEVICE_TYPE_DESC, "WiMAX",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIMAX,
 	                                    NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WIMAX,
@@ -1294,7 +1288,7 @@ nm_device_wimax_new (const char *udi,
 		nm_wimax_util_sdk_ref ();
 
 		/* See if the SDK already knows about this interface */
-		sdk = iwmx_sdk_get_wmxsdk_for_iface (iface);
+		sdk = iwmx_sdk_get_wmxsdk_for_iface (platform_device->name);
 		if (sdk)
 			wmx_new_sdk_cb (sdk, device);
 

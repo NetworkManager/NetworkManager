@@ -58,9 +58,7 @@ typedef struct {
 GType nm_device_ethernet_get_type (void);
 
 
-NMDevice *nm_device_ethernet_new (const char *udi,
-                                  const char *iface,
-                                  const char *driver);
+NMDevice *nm_device_ethernet_new (NMPlatformLink *platform_device);
 
 G_END_DECLS
 

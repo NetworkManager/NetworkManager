@@ -3,6 +3,7 @@ INCLUDES = \
 	-I${top_builddir}/src \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src/devices \
+	-I${top_srcdir}/src/platform \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-util \

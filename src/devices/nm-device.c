@@ -107,6 +107,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
+	PROP_PLATFORM_DEVICE,
 	PROP_UDI,
 	PROP_IFACE,
 	PROP_IP_IFACE,
@@ -4702,34 +4703,51 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	NMPlatformLink *platform_device;
 	const char *hw_addr;
 	int hw_addr_type;
  
 	switch (prop_id) {
-	case PROP_UDI:
-		g_free (priv->udi);
-		priv->udi = g_strdup (g_value_get_string (value));
-		break;
-	case PROP_IFACE:
-		g_free (priv->iface);
-		priv->ifindex = 0;
-		priv->iface = g_value_dup_string (value);
-
-		/* Only look up the ifindex if it appears to be an actual kernel
-		 * interface name.  eg Bluetooth devices won't have one until we know
-		 * the IP interface.
-		 */
-		if (priv->iface && !strchr (priv->iface, ':')) {
-			priv->ifindex = nm_platform_link_get_ifindex (priv->iface);
-			if (priv->ifindex <= 0)
-				nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", priv->iface);
+	case PROP_PLATFORM_DEVICE:
+		platform_device = g_value_get_pointer (value);
+		if (platform_device) {
+			g_free (priv->udi);
+			priv->udi = g_strdup (platform_device->udi);
+			g_free (priv->iface);
+			priv->iface = g_strdup (platform_device->name);
+			priv->ifindex = platform_device->ifindex;
+			g_free (priv->driver);
+			priv->driver = g_strdup (platform_device->driver);
 		}
 		break;
-	case PROP_IP_IFACE:
+	case PROP_UDI:
+		if (g_value_get_string (value)) {
+			g_free (priv->udi);
+			priv->udi = g_value_dup_string (value);
+		}
+		break;
+	case PROP_IFACE:
+		if (g_value_get_string (value)) {
+			g_free (priv->iface);
+			priv->ifindex = 0;
+			priv->iface = g_value_dup_string (value);
+
+			/* Only look up the ifindex if it appears to be an actual kernel
+			 * interface name.  eg Bluetooth devices won't have one until we know
+			 * the IP interface.
+			 */
+			if (priv->iface && !strchr (priv->iface, ':')) {
+				priv->ifindex = nm_platform_link_get_ifindex (priv->iface);
+				if (priv->ifindex <= 0)
+					nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", priv->iface);
+			}
+		}
 		break;
 	case PROP_DRIVER:
-		g_free (priv->driver);
-		priv->driver = g_strdup (g_value_get_string (value));
+		if (g_value_get_string (value)) {
+			g_free (priv->driver);
+			priv->driver = g_value_dup_string (value);
+		}
 		break;
 	case PROP_DRIVER_VERSION:
 		g_free (priv->driver_version);
@@ -4959,6 +4977,13 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	/* Properties */
 	g_object_class_install_property
+		(object_class, PROP_PLATFORM_DEVICE,
+		 g_param_spec_pointer (NM_DEVICE_PLATFORM_DEVICE,
+		                       "Platform Device",
+		                       "NMPlatform device object",
+		                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
 		(object_class, PROP_UDI,
 		 g_param_spec_string (NM_DEVICE_UDI,
 		                      "UDI",
@@ -4980,7 +5005,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                      "IP Interface",
 		                      "IP Interface",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READABLE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_DRIVER,

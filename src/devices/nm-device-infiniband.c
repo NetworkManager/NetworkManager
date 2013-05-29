@@ -93,18 +93,12 @@ nm_device_infiniband_init (NMDeviceInfiniband * self)
 }
 
 NMDevice *
-nm_device_infiniband_new (const char *udi,
-						  const char *iface,
-						  const char *driver)
+nm_device_infiniband_new (NMPlatformLink *platform_device)
 {
-	g_return_val_if_fail (udi != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
+	g_return_val_if_fail (platform_device != NULL, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_INFINIBAND,
-	                                  NM_DEVICE_UDI, udi,
-	                                  NM_DEVICE_IFACE, iface,
-	                                  NM_DEVICE_DRIVER, driver,
+	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
 	                                  NM_DEVICE_TYPE_DESC, "InfiniBand",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_INFINIBAND,
 	                                  NULL);
