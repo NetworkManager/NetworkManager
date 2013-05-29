@@ -21,17 +21,31 @@
 #ifndef NM_BLUEZ_COMMON_H
 #define NM_BLUEZ_COMMON_H
 
+#include <config.h>
+
 #define BLUETOOTH_CONNECT_DUN "dun"
 #define BLUETOOTH_CONNECT_NAP "nap"
 
 #define BLUEZ_SERVICE           "org.bluez"
 
 #define BLUEZ_MANAGER_PATH      "/"
+#define OBJECT_MANAGER_INTERFACE "org.freedesktop.DBus.ObjectManager"
+
+#if WITH_BLUEZ5
+
+#define BLUEZ_ADAPTER_INTERFACE "org.bluez.Adapter1"
+#define BLUEZ_DEVICE_INTERFACE  "org.bluez.Device1"
+#define BLUEZ_NETWORK_INTERFACE "org.bluez.Network1"
+
+#else
+
 #define BLUEZ_MANAGER_INTERFACE "org.bluez.Manager"
 #define BLUEZ_ADAPTER_INTERFACE "org.bluez.Adapter"
 #define BLUEZ_DEVICE_INTERFACE  "org.bluez.Device"
 #define BLUEZ_SERIAL_INTERFACE  "org.bluez.Serial"
 #define BLUEZ_NETWORK_INTERFACE "org.bluez.Network"
+
+#endif /* WITH_BLUEZ */
 
 #endif  /* NM_BLUEZ_COMMON_H */
 

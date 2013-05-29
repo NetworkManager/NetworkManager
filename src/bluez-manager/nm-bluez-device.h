@@ -25,6 +25,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
+#include <config.h>
 #include "nm-connection.h"
 #include "nm-connection-provider.h"
 
@@ -58,7 +59,11 @@ typedef struct {
 
 GType nm_bluez_device_get_type (void);
 
-NMBluezDevice *nm_bluez_device_new (const char *path, NMConnectionProvider *provider);
+NMBluezDevice *nm_bluez_device_new (const char *path
+#if ! WITH_BLUEZ5
+                                    , NMConnectionProvider *provider
+#endif
+                                    );
 
 const char *nm_bluez_device_get_path (NMBluezDevice *self);
 

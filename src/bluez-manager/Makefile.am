@@ -12,13 +12,21 @@ INCLUDES = \
 noinst_LTLIBRARIES = libbluez-manager.la
 
 libbluez_manager_la_SOURCES = \
-	nm-bluez-manager.c \
 	nm-bluez-manager.h \
-	nm-bluez-adapter.c \
-	nm-bluez-adapter.h \
-	nm-bluez-device.c \
 	nm-bluez-device.h \
 	nm-bluez-common.h
+
+if WITH_BLUEZ5
+libbluez_manager_la_SOURCES += \
+	nm-bluez5-device.c \
+	nm-bluez5-manager.c
+else
+libbluez_manager_la_SOURCES += \
+	nm-bluez-adapter.h \
+	nm-bluez-adapter.c \
+	nm-bluez-device.c \
+	nm-bluez-manager.c
+endif
 
 libbluez_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
