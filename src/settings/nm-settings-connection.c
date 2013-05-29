@@ -1205,8 +1205,6 @@ con_update_cb (NMSettingsConnection *self,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, TRUE, info->sender_uid);
 		g_object_unref (for_agent);
-
-		dbus_g_method_return (info->context);
 	}
 
 	update_complete (self, info, error);
