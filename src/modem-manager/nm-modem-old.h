@@ -19,8 +19,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#ifndef NM_MODEM_GENERIC_H
-#define NM_MODEM_GENERIC_H
+#ifndef NM_MODEM_OLD_H
+#define NM_MODEM_OLD_H
 
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
@@ -28,12 +28,12 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_MODEM_GENERIC            (nm_modem_generic_get_type ())
-#define NM_MODEM_GENERIC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_GENERIC, NMModemGeneric))
-#define NM_MODEM_GENERIC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_MODEM_GENERIC, NMModemGenericClass))
-#define NM_IS_MODEM_GENERIC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MODEM_GENERIC))
-#define NM_IS_MODEM_GENERIC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_MODEM_GENERIC))
-#define NM_MODEM_GENERIC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM_GENERIC, NMModemGenericClass))
+#define NM_TYPE_MODEM_OLD            (nm_modem_old_get_type ())
+#define NM_MODEM_OLD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MODEM_OLD, NMModemOld))
+#define NM_MODEM_OLD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_MODEM_OLD, NMModemOldClass))
+#define NM_IS_MODEM_OLD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MODEM_OLD))
+#define NM_IS_MODEM_OLD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_MODEM_OLD))
+#define NM_MODEM_OLD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM_OLD, NMModemOldClass))
 
 typedef enum {
     NM_MODEM_STATE_UNKNOWN = 0,
@@ -52,18 +52,17 @@ typedef enum {
 
 typedef struct {
 	NMModem parent;
-} NMModemGeneric;
+} NMModemOld;
 
 typedef struct {
 	NMModemClass parent;
-} NMModemGenericClass;
+} NMModemOldClass;
 
-GType nm_modem_generic_get_type (void);
+GType nm_modem_old_get_type (void);
 
 /* Protected */
-DBusGProxy *nm_modem_generic_get_proxy (NMModemGeneric *modem,
-                                        const gchar *interface);
+DBusGProxy *nm_modem_old_get_proxy (NMModemOld *modem, const gchar *interface);
 
 G_END_DECLS
 
-#endif /* NM_MODEM_GENERIC_H */
+#endif /* NM_MODEM_OLD_H */

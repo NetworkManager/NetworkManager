@@ -20,21 +20,21 @@
  */
 
 #include <string.h>
-#include "nm-modem-generic.h"
+#include "nm-modem-old.h"
 #include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-properties-changed-signal.h"
-#include "nm-modem-types.h"
+#include "nm-modem-old-types.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
-G_DEFINE_TYPE (NMModemGeneric, nm_modem_generic, NM_TYPE_MODEM)
+G_DEFINE_TYPE (NMModemOld, nm_modem_old, NM_TYPE_MODEM)
 
-#define NM_MODEM_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_GENERIC, NMModemGenericPrivate))
+#define NM_MODEM_OLD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_OLD, NMModemOldPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
@@ -43,19 +43,18 @@ typedef struct {
 	DBusGProxyCall *call;
 
 	NMModemState state;
-} NMModemGenericPrivate;
+} NMModemOldPrivate;
 
 /*****************************************************************************/
 
 DBusGProxy *
-nm_modem_generic_get_proxy (NMModemGeneric *self,
-                            const char *interface)
+nm_modem_old_get_proxy (NMModemOld *self, const char *interface)
 {
 
-	NMModemGenericPrivate *priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 	const char *current_iface;
 
-	g_return_val_if_fail (NM_IS_MODEM_GENERIC (self), NULL);
+	g_return_val_if_fail (NM_IS_MODEM_OLD (self), NULL);
 
 	/* Default to the default interface. */
 	if (interface == NULL)
@@ -110,9 +109,9 @@ get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 }
 
 static void
-query_mm_enabled (NMModemGeneric *self)
+query_mm_enabled (NMModemOld *self)
 {
-	dbus_g_proxy_begin_call (NM_MODEM_GENERIC_GET_PRIVATE (self)->props_proxy,
+	dbus_g_proxy_begin_call (NM_MODEM_OLD_GET_PRIVATE (self)->props_proxy,
 	                         "Get", get_mm_enabled_done,
 	                         self, NULL,
 	                         G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM,
@@ -132,7 +131,7 @@ set_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 	}
 
 	/* Update enabled/disabled state again */
-	query_mm_enabled (NM_MODEM_GENERIC (user_data));
+	query_mm_enabled (NM_MODEM_OLD (user_data));
 }
 
 static void
@@ -142,7 +141,7 @@ set_mm_enabled (NMModem *self, gboolean enabled)
 	 * future we want to tie this into rfkill state instead so that the user can
 	 * toggle rfkill status of the WWAN modem.
 	 */
-	dbus_g_proxy_begin_call (nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self),
+	dbus_g_proxy_begin_call (nm_modem_old_get_proxy (NM_MODEM_OLD (self),
 	                                                     MM_OLD_DBUS_INTERFACE_MODEM),
 	                         "Enable", set_mm_enabled_done,
 	                         self, NULL,
@@ -178,8 +177,8 @@ ip_address_to_string (guint32 numeric)
 static void
 static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
-	NMModemGeneric *self = NM_MODEM_GENERIC (user_data);
-	NMModemGenericPrivate *priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
+	NMModemOld *self = NM_MODEM_OLD (user_data);
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 	GValueArray *ret_array = NULL;
 	GError *error = NULL;
 	NMIP4Config *config = NULL;
@@ -233,15 +232,15 @@ static_stage3_ip4_config_start (NMModem *self,
                                 NMActRequest *req,
                                 NMDeviceStateReason *reason)
 {
-	NMModemGenericPrivate *priv;
+	NMModemOldPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason !=	NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
+	priv = NM_MODEM_OLD_GET_PRIVATE (self);
 
-	priv->call = dbus_g_proxy_begin_call (nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self),
+	priv->call = dbus_g_proxy_begin_call (nm_modem_old_get_proxy (NM_MODEM_OLD (self),
 	                                                                  MM_OLD_DBUS_INTERFACE_MODEM),
 	                                      "GetIP4Config", static_stage3_done,
 	                                      self, NULL,
@@ -271,7 +270,7 @@ static void
 disconnect (NMModem *self,
             gboolean warn)
 {
-	dbus_g_proxy_begin_call (nm_modem_generic_get_proxy (NM_MODEM_GENERIC (self),
+	dbus_g_proxy_begin_call (nm_modem_old_get_proxy (NM_MODEM_OLD (self),
 	                                                     MM_OLD_DBUS_INTERFACE_MODEM),
 	                         "Disconnect",
 	                         disconnect_done,
@@ -285,12 +284,12 @@ disconnect (NMModem *self,
 static void
 deactivate (NMModem *self, NMDevice *device)
 {
-	NMModemGenericPrivate *priv;
+	NMModemOldPrivate *priv;
 
-	g_assert (NM_IS_MODEM_GENERIC (self));
+	g_assert (NM_IS_MODEM_OLD (self));
 	g_assert (NM_IS_DEVICE (device));
 
-	priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
+	priv = NM_MODEM_OLD_GET_PRIVATE (self);
 
 	if (priv->call) {
 		dbus_g_proxy_cancel_call (priv->proxy, priv->call);
@@ -298,7 +297,7 @@ deactivate (NMModem *self, NMDevice *device)
 	}
 
 	/* Chain up parent's */
-	NM_MODEM_CLASS (nm_modem_generic_parent_class)->deactivate (self, device);
+	NM_MODEM_CLASS (nm_modem_old_parent_class)->deactivate (self, device);
 }
 
 /*****************************************************************************/
@@ -309,8 +308,8 @@ modem_properties_changed (DBusGProxy *proxy,
                           GHashTable *props,
                           gpointer user_data)
 {
-	NMModemGeneric *self = NM_MODEM_GENERIC (user_data);
-	NMModemGenericPrivate *priv = NM_MODEM_GENERIC_GET_PRIVATE (self);
+	NMModemOld *self = NM_MODEM_OLD (user_data);
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 	GValue *value;
 	NMModemState new_state;
 
@@ -351,7 +350,7 @@ modem_properties_changed (DBusGProxy *proxy,
 /*****************************************************************************/
 
 static void
-nm_modem_generic_init (NMModemGeneric *self)
+nm_modem_old_init (NMModemOld *self)
 {
 }
 
@@ -361,14 +360,14 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMModemGenericPrivate *priv;
+	NMModemOldPrivate *priv;
 	DBusGConnection *bus;
 
-	object = G_OBJECT_CLASS (nm_modem_generic_parent_class)->constructor (type, n_construct_params, construct_params);
+	object = G_OBJECT_CLASS (nm_modem_old_parent_class)->constructor (type, n_construct_params, construct_params);
 	if (!object)
 		return NULL;
 
-	priv = NM_MODEM_GENERIC_GET_PRIVATE (object);
+	priv = NM_MODEM_OLD_GET_PRIVATE (object);
 
 	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 	priv->proxy = dbus_g_proxy_new_for_name (bus,
@@ -392,7 +391,7 @@ constructor (GType type,
 	                             object,
 	                             NULL);
 
-	query_mm_enabled (NM_MODEM_GENERIC (object));
+	query_mm_enabled (NM_MODEM_OLD (object));
 
 	return object;
 }
@@ -400,7 +399,7 @@ constructor (GType type,
 static void
 dispose (GObject *object)
 {
-	NMModemGenericPrivate *priv = NM_MODEM_GENERIC_GET_PRIVATE (object);
+	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (object);
 
 	if (priv->proxy) {
 		g_object_unref (priv->proxy);
@@ -412,16 +411,16 @@ dispose (GObject *object)
 		priv->props_proxy = NULL;
 	}
 
-	G_OBJECT_CLASS (nm_modem_generic_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_modem_old_parent_class)->dispose (object);
 }
 
 static void
-nm_modem_generic_class_init (NMModemGenericClass *klass)
+nm_modem_old_class_init (NMModemOldClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMModemGenericPrivate));
+	g_type_class_add_private (object_class, sizeof (NMModemOldPrivate));
 
 	/* Virtual methods */
 	object_class->constructor = constructor;

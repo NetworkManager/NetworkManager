@@ -22,7 +22,7 @@
 #ifndef NM_MODEM_CDMA_H
 #define NM_MODEM_CDMA_H
 
-#include <nm-modem-generic.h>
+#include "nm-modem-old.h"
 
 G_BEGIN_DECLS
 
@@ -40,11 +40,11 @@ typedef enum {
 } NMCdmaError;
 
 typedef struct {
-	NMModemGeneric parent;
+	NMModemOld parent;
 } NMModemCdma;
 
 typedef struct {
-	NMModemGenericClass parent;
+	NMModemOldClass parent;
 } NMModemCdmaClass;
 
 GType nm_modem_cdma_get_type (void);

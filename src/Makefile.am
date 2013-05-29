@@ -124,13 +124,13 @@ nm_sources = \
 	\
 	modem-manager/nm-modem-cdma.c \
 	modem-manager/nm-modem-cdma.h \
-	modem-manager/nm-modem-generic.c \
-	modem-manager/nm-modem-generic.h \
+	modem-manager/nm-modem-old.c \
+	modem-manager/nm-modem-old.h \
+	modem-manager/nm-modem-old-types.h \
 	modem-manager/nm-modem-gsm.c \
 	modem-manager/nm-modem-gsm.h \
 	modem-manager/nm-modem-manager.c \
 	modem-manager/nm-modem-manager.h \
-	modem-manager/nm-modem-types.h \
 	modem-manager/nm-modem.c \
 	modem-manager/nm-modem.h \
 	\

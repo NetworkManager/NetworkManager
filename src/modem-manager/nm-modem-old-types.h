@@ -18,8 +18,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#ifndef NM_MODEM_TYPES_H
-#define NM_MODEM_TYPES_H
+#ifndef NM_MODEM_OLD_TYPES_H
+#define NM_MODEM_OLD_TYPES_H
 
 #define MM_OLD_DBUS_SERVICE                     "org.freedesktop.ModemManager"
 #define MM_OLD_DBUS_PATH                        "/org/freedesktop/ModemManager"
@@ -51,4 +51,4 @@
 #define MM_OLD_MODEM_ERROR_SIM_PUK             MM_OLD_MODEM_ERROR ".SimPukRequired"
 #define MM_OLD_MODEM_ERROR_SIM_WRONG           MM_OLD_MODEM_ERROR ".SimWrong"
 
-#endif /* NM_MODEM_TYPES_H */
+#endif /* NM_MODEM_OLD_TYPES_H */

@@ -28,7 +28,7 @@
 #include "nm-modem-gsm.h"
 #include "nm-modem-cdma.h"
 #include "nm-dbus-manager.h"
-#include "nm-modem-types.h"
+#include "nm-modem-old-types.h"
 #include "nm-dbus-glib-types.h"
 
 #if WITH_MODEM_MANAGER_1
