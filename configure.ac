@@ -267,6 +267,17 @@ else
 fi
 AC_SUBST(UDEV_BASE_DIR)
 
+# BlueZ
+AC_ARG_ENABLE(bluez5, AS_HELP_STRING([--enable-bluez5],
+              [build with BlueZ 5 support instead of BlueZ 4]),
+              [enable_bluez5=${enableval}])
+if (test "${enable_bluez5}" = "yes"); then
+	AC_DEFINE(WITH_BLUEZ5, 1, [Define if you have BlueZ 5 support])
+else
+	AC_DEFINE(WITH_BLUEZ5, 0, [Define if you have BlueZ 5 support])
+fi
+AM_CONDITIONAL(WITH_BLUEZ5, test "${enable_bluez5}" = "yes")
+
 # systemd unit support
 AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
 	[Directory for systemd service files]))
@@ -814,6 +825,7 @@ echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
 echo "  libndp: $libndp_location"
 echo "  libteamdctl: $enable_teamdctl"
+echo "  bluez 5: $enable_bluez5"
 echo
 
 echo "Configuration plugins"
