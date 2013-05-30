@@ -14,12 +14,9 @@ PKG_NAME=NetworkManager
 }
 
 # Fetch submodules if needed
-if test ! -f src/libgsystem/README;
-then
-  echo "+ Setting up submodules"
-  git submodule init
-  git submodule update
-fi
+echo "+ Setting up submodules"
+git submodule init
+git submodule update
 
 (cd $srcdir;
     gtkdocize || exit 1
