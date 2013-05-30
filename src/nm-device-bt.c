@@ -72,10 +72,10 @@ typedef struct {
 	guint32 capabilities;
 
 	gboolean connected;
+	guint32 connected_id;
 	gboolean have_iface;
 
 	DBusGProxy *type_proxy;
-	DBusGProxy *dev_proxy;
 
 	char *rfcomm_iface;
 	NMModem *modem;
@@ -817,33 +817,17 @@ bluez_connect_cb (DBusGProxy *proxy,
 }
 
 static void
-bluez_property_changed (DBusGProxy *proxy,
-                        const char *property,
-                        GValue *value,
-                        gpointer user_data)
+bluez_connected_changed (NMBluezDevice *bt_device,
+                         GParamSpec *pspec,
+                         NMDevice *device)
 {
-	NMDevice *device = NM_DEVICE (user_data);
-	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	NMDeviceBt *self = NM_DEVICE_BT (device);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	gboolean connected;
 	NMDeviceState state;
-	const char *prop_str = "(unknown)";
-
-	if (G_VALUE_HOLDS_STRING (value))
-		prop_str = g_value_get_string (value);
-	else if (G_VALUE_HOLDS_BOOLEAN (value))
-		prop_str = g_value_get_boolean (value) ? "true" : "false";
-
-	nm_log_dbg (LOGD_BT, "(%s): bluez property '%s' changed to '%s'",
-	            nm_device_get_iface (device),
-	            property,
-	            prop_str);
-
-	if (strcmp (property, "Connected"))
-		return;
 
 	state = nm_device_get_state (device);
-	connected = g_value_get_boolean (value);
+	connected = nm_bluez_device_get_connected (bt_device);
 	if (connected) {
 		if (state == NM_DEVICE_STATE_CONFIG) {
 			nm_log_dbg (LOGD_BT, "(%s): connected to the device",
@@ -919,24 +903,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		g_assert_not_reached ();
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	priv->dev_proxy = dbus_g_proxy_new_for_name (bus,
-	                                             BLUEZ_SERVICE,
-	                                             nm_device_get_udi (device),
-	                                             BLUEZ_DEVICE_INTERFACE);
-	if (!priv->dev_proxy) {
-		// FIXME: set a reason code
-		return NM_ACT_STAGE_RETURN_FAILURE;
-	}
-
-	/* Watch for BT device property changes */
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
-	                                   G_TYPE_NONE,
-	                                   G_TYPE_STRING, G_TYPE_VALUE,
-	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (priv->dev_proxy, "PropertyChanged",
-	                         G_TYPE_STRING, G_TYPE_VALUE, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->dev_proxy, "PropertyChanged",
-	                             G_CALLBACK (bluez_property_changed), device, NULL);
 
 	priv->type_proxy = dbus_g_proxy_new_for_name (bus,
 	                                              BLUEZ_SERVICE,
@@ -1047,11 +1013,6 @@ deactivate (NMDevice *device)
 			g_object_unref (priv->type_proxy);
 			priv->type_proxy = NULL;
 		}
-	}
-
-	if (priv->dev_proxy) {
-		g_object_unref (priv->dev_proxy);
-		priv->dev_proxy = NULL;
 	}
 
 	if (priv->timeout_id) {
@@ -1246,6 +1207,11 @@ set_property (GObject *object, guint prop_id,
 	case PROP_BT_DEVICE:
 		/* Construct only */
 		priv->bt_device = g_value_dup_object (value);
+
+		/* Watch for BT device property changes */
+		priv->connected_id = g_signal_connect (priv->bt_device, "notify::connected",
+		                                       G_CALLBACK (bluez_connected_changed),
+		                                       object);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1288,6 +1254,11 @@ dispose (GObject *object)
 		priv->timeout_id = 0;
 	}
 
+	if (priv->connected_id) {
+		g_source_remove (priv->connected_id);
+		priv->connected_id = 0;
+	}
+
 	if (priv->dbus_mgr && priv->mm_watch_id) {
 		g_signal_handler_disconnect (priv->dbus_mgr, priv->mm_watch_id);
 		priv->mm_watch_id = 0;
@@ -1295,7 +1266,6 @@ dispose (GObject *object)
 	g_clear_object (&priv->dbus_mgr);
 
 	g_clear_object (&priv->type_proxy);
-	g_clear_object (&priv->dev_proxy);
 	g_clear_object (&priv->modem);
 	g_clear_object (&priv->bt_device);
 
