@@ -40,6 +40,7 @@
 #define NM_BLUEZ_DEVICE_CAPABILITIES "capabilities"
 #define NM_BLUEZ_DEVICE_RSSI         "rssi"
 #define NM_BLUEZ_DEVICE_USABLE       "usable"
+#define NM_BLUEZ_DEVICE_CONNECTED    "connected"
 
 typedef struct {
 	GObject parent;
@@ -73,6 +74,8 @@ guint32 nm_bluez_device_get_class (NMBluezDevice *self);
 guint32 nm_bluez_device_get_capabilities (NMBluezDevice *self);
 
 gint nm_bluez_device_get_rssi (NMBluezDevice *self);
+
+gboolean nm_bluez_device_get_connected (NMBluezDevice *self);
 
 #endif /* NM_BLUEZ_DEVICE_H */
 

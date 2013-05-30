@@ -48,6 +48,7 @@ typedef struct {
 	char *name;
 	guint32 capabilities;
 	gint rssi;
+	gboolean connected;
 
 	NMConnectionProvider *provider;
 	GSList *connections;
@@ -62,6 +63,7 @@ enum {
 	PROP_CAPABILITIES,
 	PROP_RSSI,
 	PROP_USABLE,
+	PROP_CONNECTED,
 
 	LAST_PROP
 };
@@ -129,6 +131,14 @@ nm_bluez_device_get_rssi (NMBluezDevice *self)
 	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (self), 0);
 
 	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->rssi;
+}
+
+gboolean
+nm_bluez_device_get_connected (NMBluezDevice *self)
+{
+	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (self), FALSE);
+
+	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->connected;
 }
 
 static void
@@ -296,6 +306,12 @@ property_changed (DBusGProxy *proxy,
 		if (priv->capabilities != uint_val) {
 			priv->capabilities = uint_val;
 			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CAPABILITIES);
+		}
+	} else if (!strcmp (property, "Connected")) {
+		gboolean connected = g_value_get_boolean (value);
+		if (priv->connected != connected) {
+			priv->connected = connected;
+			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CONNECTED);
 		}
 	}
 
@@ -494,6 +510,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_USABLE:
 		g_value_set_boolean (value, priv->usable);
 		break;
+	case PROP_CONNECTED:
+		g_value_set_boolean (value, priv->connected);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -576,6 +595,14 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 		 g_param_spec_boolean (NM_BLUEZ_DEVICE_USABLE,
 		                       "Usable",
 		                       "Usable",
+		                       FALSE,
+		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CONNECTED,
+		 g_param_spec_boolean (NM_BLUEZ_DEVICE_CONNECTED,
+		                       "Connected",
+		                       "Connected",
 		                       FALSE,
 		                       G_PARAM_READABLE));
 
