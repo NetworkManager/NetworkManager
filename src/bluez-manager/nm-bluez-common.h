@@ -21,6 +21,9 @@
 #ifndef NM_BLUEZ_COMMON_H
 #define NM_BLUEZ_COMMON_H
 
+#define BLUETOOTH_CONNECT_DUN "dun"
+#define BLUETOOTH_CONNECT_NAP "nap"
+
 #define BLUEZ_SERVICE           "org.bluez"
 
 #define BLUEZ_MANAGER_PATH      "/"
