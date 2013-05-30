@@ -19,6 +19,7 @@
  */
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <string.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
@@ -40,6 +41,8 @@ G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 typedef struct {
 	char *path;
 	DBusGProxy *proxy;
+	DBusGProxy *type_proxy;
+
 	gboolean initialized;
 	gboolean usable;
 
@@ -49,6 +52,8 @@ typedef struct {
 	guint32 capabilities;
 	gint rssi;
 	gboolean connected;
+
+	char *rfcomm_iface;
 
 	NMConnectionProvider *provider;
 	GSList *connections;
@@ -242,6 +247,121 @@ cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
 	connections = nm_connection_provider_get_connections (provider);
 	for (iter = connections; iter; iter = g_slist_next (iter))
 		cp_connection_added (provider, NM_CONNECTION (iter->data), self);
+}
+
+/***********************************************************/
+
+void
+nm_bluez_device_call_disconnect (NMBluezDevice *self, gboolean dun)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->type_proxy)
+		return;
+
+	if (dun) {
+		/* Don't ever pass NULL through dbus; rfcomm_iface
+		 * might happen to be NULL for some reason.
+		 */
+		if (priv->rfcomm_iface)
+		dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
+		                            G_TYPE_STRING, priv->rfcomm_iface,
+		                            G_TYPE_INVALID);
+	} else {
+		dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
+		                            G_TYPE_INVALID);
+	}
+
+	g_clear_object (&priv->type_proxy);
+}
+
+static void
+bluez_connect_cb (DBusGProxy *proxy,
+                  DBusGProxyCall *call_id,
+                  gpointer user_data)
+{
+	GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+	NMBluezDevice *self = NM_BLUEZ_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (result)));
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	GError *error = NULL;
+	char *device;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error,
+	                           G_TYPE_STRING, &device,
+	                           G_TYPE_INVALID) == FALSE)
+		g_simple_async_result_take_error (result, error);
+	else if (!device || !strlen (device)) {
+		g_simple_async_result_set_error(result, G_IO_ERROR, G_IO_ERROR_FAILED,
+						"Invalid argument received");
+	} else {
+		g_simple_async_result_set_op_res_gpointer (result,
+		                                           g_strdup (device),
+		                                           g_free);
+		priv->rfcomm_iface = device;
+	}
+
+	g_simple_async_result_complete (result);
+	g_object_unref (result);
+}
+
+void
+nm_bluez_device_connect_async (NMBluezDevice *self,
+                               gboolean dun,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	DBusGConnection *connection;
+
+	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+
+	simple = g_simple_async_result_new (G_OBJECT (self),
+	                                    callback,
+	                                    user_data,
+	                                    nm_bluez_device_connect_async);
+
+	priv->type_proxy = dbus_g_proxy_new_for_name (connection,
+	                                              BLUEZ_SERVICE,
+	                                              priv->path,
+	                                              dun ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
+	if (!priv->type_proxy)
+		g_simple_async_report_error_in_idle (G_OBJECT (self),
+	                                             callback,
+	                                             user_data,
+	                                             G_IO_ERROR,
+	                                             G_IO_ERROR_FAILED,
+	                                             "Unable to create proxy");
+	else
+		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
+		                                      bluez_connect_cb,
+		                                      simple,
+		                                      NULL,
+		                                      20000,
+		                                      G_TYPE_STRING, dun ? BLUETOOTH_CONNECT_DUN : BLUETOOTH_CONNECT_NAP,
+		                                      G_TYPE_INVALID);
+}
+
+const char *
+nm_bluez_device_connect_finish (NMBluezDevice *self,
+                                GAsyncResult *result,
+                                GError **error)
+{
+	GSimpleAsyncResult *simple;
+	const char *device;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result,
+	                                                      G_OBJECT (self),
+	                                                      nm_bluez_device_connect_async),
+	                      NULL);
+
+	simple = (GSimpleAsyncResult *) result;
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+
+	device = (const char *) g_simple_async_result_get_op_res_gpointer (simple);
+	return device;
 }
 
 /***********************************************************/
@@ -469,6 +589,8 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
 
+	g_clear_object (&priv->type_proxy);
+
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
 }
 
@@ -480,6 +602,7 @@ finalize (GObject *object)
 	g_free (priv->path);
 	g_free (priv->address);
 	g_free (priv->name);
+	g_free (priv->rfcomm_iface);
 	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->finalize (object);

@@ -26,6 +26,7 @@
 #include <netinet/ether.h>
 
 #include <glib/gi18n.h>
+#include <gio/gio.h>
 
 #include "nm-glib-compat.h"
 #include "nm-bluez-common.h"
@@ -48,8 +49,6 @@
 
 #define MM_OLD_DBUS_SERVICE  "org.freedesktop.ModemManager"
 #define MM_NEW_DBUS_SERVICE  "org.freedesktop.ModemManager1"
-#define BLUETOOTH_DUN_UUID "dun"
-#define BLUETOOTH_NAP_UUID "nap"
 
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
@@ -70,8 +69,6 @@ typedef struct {
 
 	gboolean connected;
 	gboolean have_iface;
-
-	DBusGProxy *type_proxy;
 
 	char *rfcomm_iface;
 	NMModem *modem;
@@ -711,18 +708,19 @@ check_connect_continue (NMDeviceBt *self)
 }
 
 static void
-bluez_connect_cb (DBusGProxy *proxy,
-                  DBusGProxyCall *call_id,
+bluez_connect_cb (GObject *object,
+                  GAsyncResult *res,
                   void *user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	GError *error = NULL;
-	char *device;
+	const char *device;
 
-	if (dbus_g_proxy_end_call (proxy, call_id, &error,
-	                           G_TYPE_STRING, &device,
-	                           G_TYPE_INVALID) == FALSE) {
+	device = nm_bluez_device_connect_finish (NM_BLUEZ_DEVICE (object),
+	                                         res, &error);
+
+	if (!device) {
 		nm_log_warn (LOGD_BT, "Error connecting with bluez: %s",
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
@@ -733,20 +731,11 @@ bluez_connect_cb (DBusGProxy *proxy,
 		return;
 	}
 
-	if (!device || !strlen (device)) {
-		nm_log_warn (LOGD_BT, "Invalid network device returned by bluez");
-
-		nm_device_state_changed (NM_DEVICE (self),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_BT_FAILED);
-	}
-
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		g_free (priv->rfcomm_iface);
-		priv->rfcomm_iface = device;
+		priv->rfcomm_iface = g_strdup (device);
 	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
 		nm_device_set_ip_iface (NM_DEVICE (self), device);
-		g_free (device);
 	}
 
 	nm_log_dbg (LOGD_BT, "(%s): connect request successful",
@@ -819,7 +808,6 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	DBusGConnection *bus;
 	gboolean dun = FALSE;
 	NMConnection *connection;
 
@@ -843,28 +831,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	else
 		g_assert_not_reached ();
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-
-	priv->type_proxy = dbus_g_proxy_new_for_name (bus,
-	                                              BLUEZ_SERVICE,
-	                                              nm_device_get_udi (device),
-	                                              dun ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
-	if (!priv->type_proxy) {
-		// FIXME: set a reason code
-		return NM_ACT_STAGE_RETURN_FAILURE;
-	}
-
 	nm_log_dbg (LOGD_BT, "(%s): requesting connection to the device",
 	            nm_device_get_iface (device));
 
 	/* Connect to the BT device */
-	dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
-	                                      bluez_connect_cb,
-	                                      device,
-	                                      NULL,
-	                                      20000,
-	                                      G_TYPE_STRING, dun ? BLUETOOTH_DUN_UUID : BLUETOOTH_NAP_UUID,
-	                                      G_TYPE_INVALID);
+	nm_bluez_device_connect_async (priv->bt_device, dun, bluez_connect_cb, device);
 
 	if (priv->timeout_id)
 		g_source_remove (priv->timeout_id);
@@ -915,11 +886,14 @@ static void
 deactivate (NMDevice *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	gboolean dun;
+
+	dun = priv->bt_type == NM_BT_CAPABILITY_DUN;
 
 	priv->have_iface = FALSE;
 	priv->connected = FALSE;
 
-	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
+	if (dun) {
 
 		if (priv->modem) {
 			nm_modem_deactivate (priv->modem, device);
@@ -934,27 +908,9 @@ deactivate (NMDevice *device)
 			g_object_unref (priv->modem);
 			priv->modem = NULL;
 		}
-
-		if (priv->type_proxy) {
-			/* Don't ever pass NULL through dbus; rfcomm_iface
-			 * might happen to be NULL for some reason.
-			 */
-			if (priv->rfcomm_iface) {
-				dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
-				                            G_TYPE_STRING, priv->rfcomm_iface,
-				                            G_TYPE_INVALID);
-			}
-			g_object_unref (priv->type_proxy);
-			priv->type_proxy = NULL;
-		}
-	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
-		if (priv->type_proxy) {
-			dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
-			                            G_TYPE_INVALID);
-			g_object_unref (priv->type_proxy);
-			priv->type_proxy = NULL;
-		}
 	}
+
+	nm_bluez_device_call_disconnect (priv->bt_device, dun);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);
@@ -1209,7 +1165,6 @@ dispose (GObject *object)
 	}
 	priv->dbus_mgr = NULL;
 
-	g_clear_object (&priv->type_proxy);
 	g_clear_object (&priv->modem);
 	g_clear_object (&priv->bt_device);
 
