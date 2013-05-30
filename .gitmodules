@@ -1,3 +1,6 @@
 [submodule "libgsystem"]
 	path = libgsystem
 	url = git://git.gnome.org/libgsystem
+[submodule "libndp"]
+	path = libndp
+	url = git://github.com/jpirko/libndp.git
