@@ -43,7 +43,7 @@ sbin_PROGRAMS = NetworkManager
 NetworkManager_SOURCES = \
 	main.c
 
-NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la
+NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la $(LIBNDP_LIBS)
 
 noinst_LTLIBRARIES = libNetworkManager.la
 
@@ -142,6 +142,13 @@ nm_sources = \
 	platform/nm-linux-platform.h \
 	platform/nm-platform.c \
 	platform/nm-platform.h \
+	\
+	rdisc/nm-fake-rdisc.c \
+	rdisc/nm-fake-rdisc.h \
+	rdisc/nm-lndp-rdisc.c \
+	rdisc/nm-lndp-rdisc.h \
+	rdisc/nm-rdisc.c \
+	rdisc/nm-rdisc.h \
 	\
 	posix-signals/nm-posix-signals.c \
 	posix-signals/nm-posix-signals.h \
@@ -344,6 +351,7 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
+	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
 	$(MM_GLIB_CFLAGS) \
 	$(POLKIT_CFLAGS) \

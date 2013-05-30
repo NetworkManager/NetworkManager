@@ -609,7 +609,7 @@ fi
 AM_CONDITIONAL(BUILD_LIBNDP, test "${build_libndp}" = yes)
 if test "$build_libndp" = yes; then
     LIBNDP_CFLAGS='-I$(top_srcdir)/libndp/include'
-    LIBNDP_LIBS='$(top_builddir)/libndp/libndp/libndp.la'
+    LIBNDP_LIBS='$(top_builddir)/libndp/libndp/.libs/libndp.a'
     AC_SUBST(LIBNDP_CFLAGS)
     AC_SUBST(LIBNDP_LIBS)
     libndp_location=bundled
