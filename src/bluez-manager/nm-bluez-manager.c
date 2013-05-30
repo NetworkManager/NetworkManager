@@ -61,6 +61,7 @@ static void
 emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
 {
 	g_signal_emit (self, signals[BDADDR_ADDED], 0,
+	               device,
 	               nm_bluez_device_get_address (device),
 	               nm_bluez_device_get_name (device),
 	               nm_bluez_device_get_path (device),
@@ -370,7 +371,8 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
 		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
+		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
+		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[BDADDR_REMOVED] =
 		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,

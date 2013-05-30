@@ -29,6 +29,7 @@
 
 #include "nm-glib-compat.h"
 #include "nm-bluez-common.h"
+#include "nm-bluez-device.h"
 #include "nm-dbus-manager.h"
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
@@ -61,6 +62,8 @@ typedef struct {
 	guint mm_watch_id;
 	gboolean mm_running;
 
+	NMBluezDevice *bt_device;
+
 	char *bdaddr;
 	char *name;
 	guint32 capabilities;
@@ -82,6 +85,7 @@ enum {
 	PROP_0,
 	PROP_BT_NAME,
 	PROP_BT_CAPABILITIES,
+	PROP_BT_DEVICE,
 
 	LAST_PROP
 };
@@ -1111,7 +1115,8 @@ mm_name_owner_changed (NMDBusManager *dbus_mgr,
 /*****************************************************************************/
 
 NMDevice *
-nm_device_bt_new (const char *udi,
+nm_device_bt_new (NMBluezDevice *bt_device,
+                  const char *udi,
                   const char *bdaddr,
                   const char *name,
                   guint32 capabilities)
@@ -1120,12 +1125,14 @@ nm_device_bt_new (const char *udi,
 	g_return_val_if_fail (bdaddr != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
 	g_return_val_if_fail (capabilities != NM_BT_CAPABILITY_NONE, NULL);
+	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (bt_device), NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BT,
 	                                  NM_DEVICE_UDI, udi,
 	                                  NM_DEVICE_IFACE, bdaddr,
 	                                  NM_DEVICE_DRIVER, "bluez",
 	                                  NM_DEVICE_HW_ADDRESS, bdaddr,
+	                                  NM_DEVICE_BT_DEVICE, bt_device,
 	                                  NM_DEVICE_BT_NAME, name,
 	                                  NM_DEVICE_BT_CAPABILITIES, capabilities,
 	                                  NM_DEVICE_TYPE_DESC, "Bluetooth",
@@ -1185,6 +1192,10 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->capabilities = g_value_get_uint (value);
 		break;
+	case PROP_BT_DEVICE:
+		/* Construct only */
+		priv->bt_device = g_value_dup_object (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1203,6 +1214,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_BT_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
+		break;
+	case PROP_BT_DEVICE:
+		g_value_set_object (value, priv->bt_device);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1229,6 +1243,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->type_proxy);
 	g_clear_object (&priv->dev_proxy);
 	g_clear_object (&priv->modem);
+	g_clear_object (&priv->bt_device);
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->dispose (object);
 }
@@ -1288,6 +1303,14 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 		                    "Bluetooth device capabilities",
 		                    NM_BT_CAPABILITY_NONE, G_MAXUINT, NM_BT_CAPABILITY_NONE,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_BT_DEVICE,
+		 g_param_spec_object (NM_DEVICE_BT_DEVICE,
+		                      "NMBluezDevice object for the Device",
+		                      "NMBluezDevice object for the Device",
+		                      NM_TYPE_BLUEZ_DEVICE,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[PPP_STATS] =

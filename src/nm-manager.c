@@ -139,6 +139,7 @@ static void impl_manager_check_connectivity (NMManager *manager,
 #include "nm-manager-glue.h"
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
+                                           NMBluezDevice *bt_device,
                                            const char *bdaddr,
                                            const char *name,
                                            const char *object_path,
@@ -2184,6 +2185,7 @@ add_device (NMManager *self, NMDevice *device)
 
 static void
 bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
+                               NMBluezDevice *bt_device,
                                const char *bdaddr,
                                const char *name,
                                const char *object_path,
@@ -2198,12 +2200,13 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	g_return_if_fail (name != NULL);
 	g_return_if_fail (object_path != NULL);
 	g_return_if_fail (capabilities != NM_BT_CAPABILITY_NONE);
+	g_return_if_fail (NM_IS_BLUEZ_DEVICE (bt_device));
 
 	/* Make sure the device is not already in the device list */
 	if (nm_manager_get_device_by_udi (manager, object_path))
 		return;
 
-	device = nm_device_bt_new (object_path, bdaddr, name, capabilities);
+	device = nm_device_bt_new (bt_device, object_path, bdaddr, name, capabilities);
 	if (device) {
 		nm_log_info (LOGD_HW, "BT device %s (%s) added (%s%s%s)",
 		             name,
