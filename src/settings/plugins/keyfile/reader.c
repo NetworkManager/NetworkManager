@@ -375,10 +375,6 @@ read_one_ip_address_or_route (GKeyFile *file,
 			key_name, &metric), NULL);
 
 	/* build the appropriate data structure for NetworkManager settings */
-	if (route)
-		g_debug ("keyfile: %s.%s: route %s/%d gateway %s metric %d", setting_name, key_name, address_str, plen, gateway_str, metric);
-	else
-		g_debug ("keyfile: %s.%s: address %s/%d gateway %s", setting_name, key_name, address_str, plen, gateway_str);
 	result = (ipv6 ? build_ip6_address_or_route : build_ip4_address_or_route) (
 		address_str, plen, gateway_str, metric, route);
 
