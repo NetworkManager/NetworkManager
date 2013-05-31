@@ -146,7 +146,7 @@ static void policy_activating_device_changed (GObject *object, GParamSpec *pspec
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
 
-static void rfkill_change_wifi (const char *desc, gboolean enabled);
+static void rfkill_change (const char *desc, RfKillType rtype, gboolean enabled);
 
 static gboolean find_master (NMManager *self,
                              NMConnection *connection,
@@ -4506,6 +4506,7 @@ authority_changed_cb (gpointer user_data)
 
 #define KERN_RFKILL_OP_CHANGE_ALL 3
 #define KERN_RFKILL_TYPE_WLAN     1
+#define KERN_RFKILL_TYPE_WWAN     5
 struct rfkill_event {
 	__u32 idx;
 	__u8  type;
@@ -4514,18 +4515,19 @@ struct rfkill_event {
 } __attribute__((packed));
 
 static void
-rfkill_change_wifi (const char *desc, gboolean enabled)
+rfkill_change (const char *desc, RfKillType rtype, gboolean enabled)
 {
 	int fd;
 	struct rfkill_event event;
 	ssize_t len;
 
+	g_return_if_fail (rtype == RFKILL_TYPE_WLAN || rtype == RFKILL_TYPE_WWAN);
+
 	errno = 0;
 	fd = open ("/dev/rfkill", O_RDWR);
 	if (fd < 0) {
 		if (errno == EACCES)
-			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device "
-			             "for WiFi radio control", desc);
+			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device", desc);
 		return;
 	}
 
@@ -4538,7 +4540,16 @@ rfkill_change_wifi (const char *desc, gboolean enabled)
 
 	memset (&event, 0, sizeof (event));
 	event.op = KERN_RFKILL_OP_CHANGE_ALL;
-	event.type = KERN_RFKILL_TYPE_WLAN;
+	switch (rtype) {
+	case RFKILL_TYPE_WLAN:
+		event.type = KERN_RFKILL_TYPE_WLAN;
+		break;
+	case RFKILL_TYPE_WWAN:
+		event.type = KERN_RFKILL_TYPE_WWAN;
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 	event.soft = enabled ? 0 : 1;
 
 	len = write (fd, &event, sizeof (event));
@@ -4564,6 +4575,10 @@ manager_radio_user_toggled (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	gboolean old_enabled, new_enabled;
+
+	/* Don't touch devices if asleep/networking disabled */
+	if (manager_sleeping (self))
+		return;
 
 	if (rstate->desc) {
 		nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s by user",
@@ -4598,11 +4613,11 @@ manager_radio_user_toggled (NMManager *self,
 	rstate->user_enabled = enabled;
 	new_enabled = radio_enabled_for_rstate (rstate, FALSE);
 	if (new_enabled != old_enabled) {
-		manager_update_radio_enabled (self, rstate, new_enabled);
+		/* Try to change the kernel rfkill state */
+		if (rstate->rtype == RFKILL_TYPE_WLAN || rstate->rtype == RFKILL_TYPE_WWAN)
+			rfkill_change (rstate->desc, rstate->rtype, new_enabled);
 
-		/* For WiFi only (for now) set the actual kernel rfkill state */
-		if (rstate->rtype == RFKILL_TYPE_WLAN)
-			rfkill_change_wifi (rstate->desc, new_enabled);
+		manager_update_radio_enabled (self, rstate, new_enabled);
 	}
 }
 
@@ -4755,11 +4770,13 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  singleton);
 
-	/* Force kernel WiFi rfkill state to follow NM saved wifi state in case
-	 * the BIOS doesn't save rfkill state, and to be consistent with user
-	 * changes to the WirelessEnabled property which toggles kernel rfkill.
+	/* Force kernel WiFi/WWAN rfkill state to follow NM saved WiFi/WWAN state
+	 * in case the BIOS doesn't save rfkill state, and to be consistent with user
+	 * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
+	 * rfkill.
 	 */
-	rfkill_change_wifi (priv->radio_states[RFKILL_TYPE_WLAN].desc, initial_wifi_enabled);
+	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
+	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
 
 	load_device_factories (singleton);
 
