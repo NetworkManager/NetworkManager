@@ -44,6 +44,7 @@ typedef struct {
 	NMModem *modem;
 	NMDeviceModemCapabilities caps;
 	NMDeviceModemCapabilities current_caps;
+	gboolean rf_enabled;
 } NMDeviceModemPrivate;
 
 enum {
@@ -52,8 +53,6 @@ enum {
 	PROP_CAPABILITIES,
 	PROP_CURRENT_CAPABILITIES,
 };
-
-static void set_enabled (NMDevice *device, gboolean enabled);
 
 /*****************************************************************************/
 
@@ -168,8 +167,24 @@ data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 static void
 modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-	set_enabled (NM_DEVICE (user_data), nm_modem_get_mm_enabled (modem));
-	nm_device_emit_recheck_auto_activate (NM_DEVICE (user_data));
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceState state;
+
+	/* Called when the ModemManager modem enabled state is changed externally
+	 * to NetworkManager (eg something using MM's D-Bus API directly).
+	 */
+
+	if (priv->rf_enabled && nm_modem_get_mm_enabled (modem) == FALSE) {
+		state = nm_device_get_state (device);
+		if (nm_device_is_activating (device) || state == NM_DEVICE_STATE_ACTIVATED) {
+			/* user-initiated action, hence DISCONNECTED not FAILED */
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		}
+	}
+	nm_device_emit_recheck_auto_activate (device);
 }
 
 static void
@@ -321,7 +336,9 @@ act_stage3_ip6_config_start (NMDevice *device,
 static gboolean
 get_enabled (NMDevice *device)
 {
-	return nm_modem_get_mm_enabled (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	return priv->rf_enabled && nm_modem_get_mm_enabled (priv->modem);
 }
 
 static void
@@ -329,21 +346,36 @@ set_enabled (NMDevice *device, gboolean enabled)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
-	NMDeviceState state;
+
+	/* Called only by the Manager in response to rfkill switch changes or
+	 * global user WWAN enable/disable preference changes.
+	 */
+	priv->rf_enabled = enabled;
 
 	if (priv->modem) {
+		/* Sync the ModemManager modem enabled/disabled with rfkill/user preference */
 		nm_modem_set_mm_enabled (priv->modem, enabled);
-
-		if (enabled == FALSE) {
-			state = nm_device_get_state (device);
-			if (nm_device_is_activating (device) || state == NM_DEVICE_STATE_ACTIVATED) {
-				/* user-initiated action, hence DISCONNECTED not FAILED */
-				nm_device_state_changed (device,
-				                         NM_DEVICE_STATE_DISCONNECTED,
-				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-			}
-		}
 	}
+
+	if (enabled == FALSE) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_NONE);
+	}
+}
+
+static gboolean
+is_available (NMDevice *dev)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (dev);
+
+	/* The device is available whenever it's not rfkilled */
+	if (!priv->rf_enabled) {
+		nm_log_dbg (LOGD_MB, "(%s): not available because WWAN airplane mode is on",
+		            nm_device_get_iface (dev));
+	}
+
+	return priv->rf_enabled;
 }
 
 /*****************************************************************************/
@@ -492,6 +524,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->get_enabled = get_enabled;
 	device_class->set_enabled = set_enabled;
 	device_class->owns_iface = owns_iface;
+	device_class->is_available = is_available;
 
 	device_class->state_changed = device_state_changed;
 
