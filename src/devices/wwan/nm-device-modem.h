@@ -38,8 +38,6 @@
 #define NM_DEVICE_MODEM_CAPABILITIES "modem-capabilities"
 #define NM_DEVICE_MODEM_CURRENT_CAPABILITIES "current-capabilities"
 
-#define NM_DEVICE_MODEM_ENABLE_CHANGED "enable-changed"
-
 typedef struct {
 	NMDevice parent;
 } NMDeviceModem;

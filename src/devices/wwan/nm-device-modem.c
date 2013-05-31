@@ -53,13 +53,6 @@ enum {
 	PROP_CURRENT_CAPABILITIES,
 };
 
-enum {
-	ENABLE_CHANGED,
-
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
-
 static void set_enabled (NMDevice *device, gboolean enabled);
 
 /*****************************************************************************/
@@ -175,13 +168,8 @@ data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 static void
 modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
-
-	set_enabled (NM_DEVICE (self), nm_modem_get_mm_enabled (priv->modem));
-
-	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
-	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
+	set_enabled (NM_DEVICE (user_data), nm_modem_get_mm_enabled (modem));
+	nm_device_emit_recheck_auto_activate (NM_DEVICE (user_data));
 }
 
 static void
@@ -529,15 +517,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                   "Current modem Capabilities",
 		                   0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
 		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	/* Signals */
-	signals[ENABLE_CHANGED] =
-		g_signal_new (NM_DEVICE_MODEM_ENABLE_CHANGED,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (mclass),
