@@ -4476,7 +4476,8 @@ hw_bring_up (NMDevice *device, gboolean *no_firmware)
 		return TRUE;
 
 	result = nm_platform_link_set_up (ifindex);
-	*no_firmware = nm_platform_get_error () == NM_PLATFORM_ERROR_NO_FIRMWARE;
+	if (no_firmware)
+		*no_firmware = nm_platform_get_error () == NM_PLATFORM_ERROR_NO_FIRMWARE;
 
 	/* Store carrier immediately. */
 	if (result && device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT))
