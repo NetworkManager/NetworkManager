@@ -303,7 +303,7 @@ int
 main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
-	gboolean become_daemon = FALSE, run_from_build_dir = FALSE;
+	gboolean become_daemon = TRUE, run_from_build_dir = FALSE;
 	gboolean debug = FALSE;
 	gboolean g_fatal_warnings = FALSE;
 	gs_free char *pidfile = NULL;
