@@ -48,10 +48,6 @@ GType nm_modem_old_get_type (void);
 
 NMModem *nm_modem_old_new (const char *path, GHashTable *properties, GError **error);
 
-void nm_modem_old_get_capabilities (NMModemOld *self,
-                                    NMDeviceModemCapabilities *modem_caps,
-                                    NMDeviceModemCapabilities *current_caps);
-
 /* Protected */
 DBusGProxy *nm_modem_old_get_proxy (NMModemOld *modem, const gchar *interface);
 

@@ -100,11 +100,13 @@ translate_mm_error (GError *error)
 
 /*****************************************************************************/
 
-void
-nm_modem_broadband_get_capabilities (NMModemBroadband *self,
-                                     NMDeviceModemCapabilities *modem_caps,
-                                     NMDeviceModemCapabilities *current_caps)
+static void
+get_capabilities (NMModem *_self,
+                  NMDeviceModemCapabilities *modem_caps,
+                  NMDeviceModemCapabilities *current_caps)
 {
+	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+
 	*modem_caps = (NMDeviceModemCapabilities)mm_modem_get_modem_capabilities (self->priv->modem_iface);
 	*current_caps = (NMDeviceModemCapabilities)mm_modem_get_current_capabilities (self->priv->modem_iface);
 }
@@ -945,6 +947,7 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
+	modem_class->get_capabilities = get_capabilities;
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;
 	modem_class->disconnect = disconnect;
 	modem_class->deactivate = deactivate;

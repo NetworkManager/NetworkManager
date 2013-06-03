@@ -666,6 +666,18 @@ nm_modem_get_data_port (NMModem *self)
 
 /*****************************************************************************/
 
+void
+nm_modem_get_capabilities (NMModem *self,
+                           NMDeviceModemCapabilities *modem_caps,
+                           NMDeviceModemCapabilities *current_caps)
+{
+	g_return_if_fail (NM_IS_MODEM (self));
+
+	NM_MODEM_GET_CLASS (self)->get_capabilities (self, modem_caps, current_caps);
+}
+
+/*****************************************************************************/
+
 static void
 nm_modem_init (NMModem *self)
 {

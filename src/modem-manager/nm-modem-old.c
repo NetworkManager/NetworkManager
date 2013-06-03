@@ -958,11 +958,13 @@ get_user_pass (NMModem *modem,
 
 /*****************************************************************************/
 
-void
-nm_modem_old_get_capabilities (NMModemOld *self,
-                               NMDeviceModemCapabilities *modem_caps,
-                               NMDeviceModemCapabilities *current_caps)
+static void
+get_capabilities (NMModem *_self,
+                  NMDeviceModemCapabilities *modem_caps,
+                  NMDeviceModemCapabilities *current_caps)
 {
+	NMModemOld *self = NM_MODEM_OLD (_self);
+
 	*current_caps = *modem_caps = NM_MODEM_OLD_GET_PRIVATE (self)->caps;
 }
 
@@ -1138,6 +1140,7 @@ nm_modem_old_class_init (NMModemOldClass *klass)
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
 
+	modem_class->get_capabilities = get_capabilities;
 	modem_class->get_user_pass = get_user_pass;
 	modem_class->complete_connection = complete_connection;
 	modem_class->check_connection_compatible = check_connection_compatible;

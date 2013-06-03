@@ -53,10 +53,6 @@ GType nm_modem_broadband_get_type (void);
 
 NMModem *nm_modem_broadband_new (GObject *object);
 
-void nm_modem_broadband_get_capabilities (NMModemBroadband *self,
-                                          NMDeviceModemCapabilities *modem_caps,
-                                          NMDeviceModemCapabilities *current_caps);
-
 G_END_DECLS
 
 #endif /* NM_MODEM_BROADBAND_H */

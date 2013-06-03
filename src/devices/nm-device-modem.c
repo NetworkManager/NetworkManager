@@ -337,22 +337,18 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
-	const gchar *type_desc = NULL;
 	const gchar *ip_iface = NULL;
 
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	if (NM_IS_MODEM_OLD (modem)) {
-		nm_modem_old_get_capabilities (NM_MODEM_OLD (modem), &caps, &current_caps);
-		type_desc = "Broadband";
 		ip_iface = nm_modem_get_data_port (modem);
 	}
 #if WITH_MODEM_MANAGER_1
 	else if (NM_IS_MODEM_BROADBAND (modem)) {
-		nm_modem_broadband_get_capabilities (NM_MODEM_BROADBAND (modem), &caps, &current_caps);
-		type_desc = "Broadband";
-		/* data port not yet known in broadband modems */
+		/* In ModemManager1 modems, data port is not yet known */
+		ip_iface = NULL;
 	}
 #endif
 	else {
@@ -360,12 +356,15 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 		return NULL;
 	}
 
+	/* Load capabilities */
+	nm_modem_get_capabilities (modem, &caps, &current_caps);
+
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
 	                                  NM_DEVICE_UDI, nm_modem_get_path (modem),
 	                                  NM_DEVICE_IFACE, nm_modem_get_uid (modem),
 	                                  NM_DEVICE_IP_IFACE, ip_iface,
 	                                  NM_DEVICE_DRIVER, driver,
-	                                  NM_DEVICE_TYPE_DESC, type_desc,
+	                                  NM_DEVICE_TYPE_DESC, "Broadband",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
 	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
 	                                  NM_DEVICE_MODEM_MODEM, modem,

@@ -76,6 +76,10 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
+	void     (*get_capabilities)               (NMModem *self,
+	                                            NMDeviceModemCapabilities *modem_caps,
+	                                            NMDeviceModemCapabilities *current_caps);
+
 	gboolean (*get_user_pass)                  (NMModem *modem,
 	                                            NMConnection *connection,
 	                                            const char **user,
@@ -124,6 +128,10 @@ const char *nm_modem_get_uid          (NMModem *modem);
 const char *nm_modem_get_control_port (NMModem *modem);
 const char *nm_modem_get_data_port    (NMModem *modem);
 const char *nm_modem_get_driver       (NMModem *modem);
+
+void        nm_modem_get_capabilities (NMModem *self,
+                                       NMDeviceModemCapabilities *modem_caps,
+                                       NMDeviceModemCapabilities *current_caps);
 
 gboolean nm_modem_check_connection_compatible (NMModem *self,
                                                NMConnection *connection,
