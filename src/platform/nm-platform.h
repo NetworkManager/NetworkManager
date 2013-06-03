@@ -85,6 +85,7 @@ typedef struct {
 	const char *udi;
 	const char *driver;
 	int master;
+	int parent;
 	gboolean up;
 	gboolean connected;
 	gboolean arp;

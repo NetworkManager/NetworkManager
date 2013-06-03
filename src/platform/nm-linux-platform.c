@@ -543,6 +543,7 @@ link_init (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
 	info->master = rtnl_link_get_master (rtnllink);
+	info->parent = rtnl_link_get_link (rtnllink);
 	info->mtu = rtnl_link_get_mtu (rtnllink);
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));

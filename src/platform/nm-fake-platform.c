@@ -42,7 +42,6 @@ typedef struct {
 
 	char *udi;
 	GBytes *address;
-	int vlan_parent;
 	int vlan_id;
 } NMFakePlatformLink;
 
@@ -529,7 +528,7 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	g_return_val_if_fail (device, FALSE);
 
 	device->vlan_id = vlan_id;
-	device->vlan_parent = parent;
+	device->link.parent = parent;
 
 	return TRUE;
 }
@@ -542,7 +541,7 @@ vlan_get_info (NMPlatform *platform, int ifindex, int *parent, int *vlan_id)
 	g_return_val_if_fail (device, FALSE);
 
 	if (parent)
-		*parent = device->vlan_parent;
+		*parent = device->link.parent;
 	if (vlan_id)
 		*vlan_id = device->vlan_id;
 

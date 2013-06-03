@@ -261,6 +261,37 @@ nm_platform_query_devices (void)
 	g_array_unref (links_array);
 }
 
+static int
+compare_links (gconstpointer a, gconstpointer b)
+{
+	NMPlatformLink *link_a = (NMPlatformLink *) a;
+	NMPlatformLink *link_b = (NMPlatformLink *) b;
+	int sortindex_a, sortindex_b;
+
+	/* We mostly want to sort by ifindex. However, slaves should sort
+	 * before their masters, and children (eg, VLANs) should sort after
+	 * their parents.
+	 */
+	if (link_a->master)
+		sortindex_a = link_a->master * 3 - 1;
+	else if (link_a->parent)
+		sortindex_a = link_a->parent * 3 + 1;
+	else
+		sortindex_a = link_a->ifindex * 3;
+
+	if (link_b->master)
+		sortindex_b = link_b->master * 3 - 1;
+	else if (link_b->parent)
+		sortindex_b = link_b->parent * 3 + 1;
+	else
+		sortindex_b = link_b->ifindex * 3;
+
+	if (sortindex_a == sortindex_b)
+		return link_a->ifindex - link_b->ifindex;
+	else
+		return sortindex_a - sortindex_b;
+}
+
 /**
  * nm_platform_link_get_all:
  *
@@ -270,11 +301,15 @@ nm_platform_query_devices (void)
 GArray *
 nm_platform_link_get_all (void)
 {
+	GArray *links;
+
 	reset_error ();
 
 	g_return_val_if_fail (klass->link_get_all, NULL);
 
-	return klass->link_get_all (platform);
+	links = klass->link_get_all (platform);
+	g_array_sort (links, compare_links);
+	return links;
 }
 
 /**

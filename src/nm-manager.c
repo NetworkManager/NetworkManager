@@ -3728,14 +3728,6 @@ nm_manager_start (NMManager *self)
 	nm_atm_manager_query_devices (priv->atm_mgr);
 	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
-	/* Query devices again to ensure that we catch all virtual interfaces (like
-	 * VLANs) that require a parent.  If during the first pass the VLAN
-	 * interface was detected first, the parent wouldn't exist yet and creating
-	 * the VLAN would fail.  The second query ensures that we'll have a valid
-	 * parent for the VLAN during the second pass.
-	 */
-	nm_platform_query_devices ();
-
 	/*
 	 * Connections added before the manager is started do not emit
 	 * connection-added signals thus devices have to be created manually.

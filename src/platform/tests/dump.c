@@ -36,6 +36,8 @@ dump_interface (NMPlatformLink *link)
 		printf (" noarp");
 	if (link->master)
 		printf (" master %d", link->master);
+	if (link->parent)
+		printf (" parent %d", link->parent);
 	printf (" mtu %d", link->mtu);
 	printf ("\n");
 	if (link->driver)
