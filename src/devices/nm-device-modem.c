@@ -370,7 +370,7 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
 	                                  NM_DEVICE_MODEM_MODEM, modem,
 	                                  NM_DEVICE_MODEM_CAPABILITIES, caps,
-	                                  NM_DEVICE_MODEM_CURRENT_CAPABILITIES, caps,
+	                                  NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
 	                                  NULL);
 }
 
