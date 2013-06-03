@@ -253,45 +253,6 @@ create_gsm_connect_properties (NMConnection *connection)
 	if (str)
 		mm_simple_connect_properties_set_password (properties, str);
 
-	/* TODO: We should check SUPPORTED MODES here */
-	switch (nm_setting_gsm_get_network_type (setting)) {
-	case NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_3G,
-		                                                MM_MODEM_MODE_NONE);
-		break;
-	case NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_2G,
-		                                                MM_MODEM_MODE_NONE);
-		break;
-	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_ANY,
-		                                                MM_MODEM_MODE_3G);
-		break;
-	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_ANY,
-		                                                MM_MODEM_MODE_2G);
-		break;
-	case NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_ANY,
-		                                                MM_MODEM_MODE_4G);
-		break;
-	case NM_SETTING_GSM_NETWORK_TYPE_4G:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_4G,
-		                                                MM_MODEM_MODE_NONE);
-		break;
-	default:
-		mm_simple_connect_properties_set_allowed_modes (properties,
-		                                                MM_MODEM_MODE_ANY,
-		                                                MM_MODEM_MODE_NONE);
-		break;
-	}
-
 	/* Roaming */
 	if (nm_setting_gsm_get_home_only (setting))
 		mm_simple_connect_properties_set_allow_roaming (properties, FALSE);
