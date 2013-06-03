@@ -572,6 +572,38 @@ modem_cleanup (NMDeviceBt *self)
 }
 
 static void
+modem_state_cb (NMModem *modem,
+                NMModemState new_state,
+                NMModemState old_state,
+                gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceState dev_state = nm_device_get_state (device);
+
+	if (new_state <= NM_MODEM_STATE_DISABLING && old_state > NM_MODEM_STATE_DISABLING) {
+		/* Will be called whenever something external to NM disables the
+		 * modem directly through ModemManager.
+		 */
+		if (nm_device_is_activating (device) || dev_state == NM_DEVICE_STATE_ACTIVATED) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			return;
+		}
+	}
+
+	if (new_state < NM_MODEM_STATE_CONNECTING &&
+	    old_state >= NM_MODEM_STATE_CONNECTING &&
+	    dev_state >= NM_DEVICE_STATE_NEED_AUTH &&
+	    dev_state <= NM_DEVICE_STATE_ACTIVATED) {
+		/* Fail the device if the modem disconnects unexpectedly while the
+		 * device is activating/activated. */
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
+		return;
+	}
+}
+
+static void
 modem_removed_cb (NMModem *modem, gpointer user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
@@ -652,6 +684,7 @@ component_added (NMDevice *device, GObject *component)
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
+	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
 	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
 	/* In the old ModemManager the data port is known from the very beginning;

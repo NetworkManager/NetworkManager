@@ -43,6 +43,7 @@ typedef struct {
 
 	MMOldModemState state;
 	NMDeviceModemCapabilities caps;
+	char *unlock_required;
 
 	DBusGProxyCall *call;
 	GHashTable *connect_properties;
@@ -141,6 +142,29 @@ translate_mm_error (GError *error)
 	return reason;
 }
 
+#define MAP_STATE(name) case MM_OLD_MODEM_STATE_##name: return NM_MODEM_STATE_##name;
+
+static NMModemState
+mm_state_to_nm (MMOldModemState mm_state, const char *unlock_required)
+{
+	if (unlock_required && *unlock_required)
+		return NM_MODEM_STATE_LOCKED;
+
+	switch (mm_state) {
+	MAP_STATE(UNKNOWN)
+	MAP_STATE(DISABLED)
+	MAP_STATE(DISABLING)
+	MAP_STATE(ENABLING)
+	MAP_STATE(ENABLED)
+	MAP_STATE(SEARCHING)
+	MAP_STATE(REGISTERED)
+	MAP_STATE(DISCONNECTING)
+	MAP_STATE(CONNECTING)
+	MAP_STATE(CONNECTED)
+	}
+	return NM_MODEM_STATE_UNKNOWN;
+};
+
 /*****************************************************************************/
 
 DBusGProxy *
@@ -170,52 +194,6 @@ nm_modem_old_get_proxy (NMModemOld *self, const char *interface)
 /* Query/Update enabled state */
 
 static void
-update_mm_enabled (NMModem *self,
-                   gboolean new_enabled)
-{
-	if (nm_modem_get_mm_enabled (self) != new_enabled) {
-		g_object_set (self,
-		              NM_MODEM_ENABLED, new_enabled,
-		              NULL);
-	}
-}
-
-static void
-get_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
-{
-	NMModem *self = NM_MODEM (user_data);
-	GError *error = NULL;
-	GValue value = G_VALUE_INIT;
-
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
-	                            G_TYPE_VALUE, &value,
-	                            G_TYPE_INVALID)) {
-		nm_log_warn (LOGD_MB, "failed get modem enabled state: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
-		return;
-	}
-
-	if (G_VALUE_HOLDS_BOOLEAN (&value)) {
-		update_mm_enabled (self, g_value_get_boolean (&value));
-	} else
-		nm_log_warn (LOGD_MB, "failed get modem enabled state: unexpected reply type");
-
-	g_value_unset (&value);
-}
-
-static void
-query_mm_enabled (NMModemOld *self)
-{
-	dbus_g_proxy_begin_call (NM_MODEM_OLD_GET_PRIVATE (self)->props_proxy,
-	                         "Get", get_mm_enabled_done,
-	                         self, NULL,
-	                         G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM,
-	                         G_TYPE_STRING, "Enabled",
-	                         G_TYPE_INVALID);
-}
-
-static void
 set_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	GError *error = NULL;
@@ -224,28 +202,19 @@ set_mm_enabled_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 		nm_log_warn (LOGD_MB, "failed to enable/disable modem: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
+		nm_modem_set_prev_state (NM_MODEM (user_data), "enable/disable failed");
 	}
-
-	/* Update enabled/disabled state again */
-	query_mm_enabled (NM_MODEM_OLD (user_data));
+	/* Wait for the state change signal to indicate enabled state changed */
 }
 
 static void
 set_mm_enabled (NMModem *self, gboolean enabled)
 {
-	/* FIXME: For now this just toggles the ModemManager enabled state.  In the
-	 * future we want to tie this into rfkill state instead so that the user can
-	 * toggle rfkill status of the WWAN modem.
-	 */
-	dbus_g_proxy_begin_call (nm_modem_old_get_proxy (NM_MODEM_OLD (self),
-	                                                     MM_OLD_DBUS_INTERFACE_MODEM),
+	dbus_g_proxy_begin_call (nm_modem_old_get_proxy (NM_MODEM_OLD (self), MM_OLD_DBUS_INTERFACE_MODEM),
 	                         "Enable", set_mm_enabled_done,
-	                         self, NULL,
+	                         g_object_ref (self), g_object_unref,
 	                         G_TYPE_BOOLEAN, enabled,
 	                         G_TYPE_INVALID);
-	/* If we are disabling the modem, stop saying that it's enabled. */
-	if (!enabled)
-		update_mm_enabled (self, enabled);
 }
 
 /*****************************************************************************/
@@ -543,13 +512,12 @@ act_stage1_prepare (NMModem *modem,
 {
 	NMModemOld *self = NM_MODEM_OLD (modem);
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
-	gboolean enabled = nm_modem_get_mm_enabled (modem);
 
 	if (priv->connect_properties)
 		g_hash_table_destroy (priv->connect_properties);
 	priv->connect_properties = create_connect_properties (connection);
 
-	if (enabled)
+	if (nm_modem_get_state (modem) >= NM_MODEM_STATE_ENABLING)
 		do_connect (self);
 	else
 		do_enable (self);
@@ -718,17 +686,10 @@ modem_properties_changed (DBusGProxy *proxy,
 	NMModemOld *self = NM_MODEM_OLD (user_data);
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
 	GValue *value;
-	MMOldModemState new_state;
+	gboolean update_state = FALSE;
 
 	if (strcmp (interface, MM_OLD_DBUS_INTERFACE_MODEM))
 		return;
-
-	value = g_hash_table_lookup (props, "Enabled");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value)) {
-		g_object_set (self,
-		              NM_MODEM_ENABLED, g_value_get_boolean (value),
-		              NULL);
-	}
 
 	value = g_hash_table_lookup (props, "IpMethod");
 	if (value && G_VALUE_HOLDS_UINT (value)) {
@@ -737,20 +698,23 @@ modem_properties_changed (DBusGProxy *proxy,
 		              NULL);
 	}
 
+	value = g_hash_table_lookup (props, "UnlockRequired");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (priv->unlock_required);
+		priv->unlock_required = g_value_dup_string (value);
+		update_state = TRUE;
+	}
+
 	value = g_hash_table_lookup (props, "State");
 	if (value && G_VALUE_HOLDS_UINT (value)) {
-		new_state = g_value_get_uint (value);
-		if (new_state != priv->state) {
-			if (new_state == MM_OLD_MODEM_STATE_CONNECTED)
-				g_object_set (self,
-				              NM_MODEM_CONNECTED, TRUE,
-				              NULL);
-			else if (priv->state == MM_OLD_MODEM_STATE_CONNECTED)
-				g_object_set (self,
-				              NM_MODEM_CONNECTED, FALSE,
-				              NULL);
-			priv->state = new_state;
-		}
+		priv->state = g_value_get_uint (value);
+		update_state = TRUE;
+	}
+
+	if (update_state) {
+		nm_modem_set_state (NM_MODEM (self),
+		                    mm_state_to_nm (priv->state, priv->unlock_required),
+		                    NULL);
 	}
 }
 
@@ -970,6 +934,7 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 	const char *data_device = NULL;
 	const char *driver = NULL;
 	const char *master_device = NULL;
+	const char *unlock_required = NULL;
 	guint32 modem_type = MM_OLD_MODEM_TYPE_UNKNOWN;
 	guint32 ip_method = MM_MODEM_IP_METHOD_PPP;
 	guint32 ip_timeout = 0;
@@ -994,6 +959,8 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 			ip_timeout = g_value_get_uint (value);
 		else if (g_strcmp0 (prop, "State") == 0)
 			state = g_value_get_uint (value);
+		else if (g_strcmp0 (prop, "UnlockRequired") == 0)
+			unlock_required = g_value_get_string (value);
 	}
 
 	if (modem_type == MM_OLD_MODEM_TYPE_UNKNOWN) {
@@ -1028,7 +995,7 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 	                                    NM_MODEM_DATA_PORT, data_device,
 	                                    NM_MODEM_IP_METHOD, ip_method,
 	                                    NM_MODEM_IP_TIMEOUT, ip_timeout,
-	                                    NM_MODEM_CONNECTED, (state == MM_OLD_MODEM_STATE_CONNECTED),
+	                                    NM_MODEM_STATE, mm_state_to_nm (state, unlock_required),
 	                                    NULL);
 	if (self) {
 		if (modem_type == MM_OLD_MODEM_TYPE_CDMA)
@@ -1037,6 +1004,8 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 			caps |= NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS;
 
 		NM_MODEM_OLD_GET_PRIVATE (self)->caps = caps;
+		NM_MODEM_OLD_GET_PRIVATE (self)->state = state;
+		NM_MODEM_OLD_GET_PRIVATE (self)->unlock_required = g_strdup (unlock_required);
 	}
 
 	return (NMModem *) self;
@@ -1084,8 +1053,6 @@ constructor (GType type,
 	                             object,
 	                             NULL);
 
-	query_mm_enabled (NM_MODEM_OLD (object));
-
 	return object;
 }
 
@@ -1113,6 +1080,9 @@ dispose (GObject *object)
 		g_source_remove (priv->enable_delay_id);
 		priv->enable_delay_id = 0;
 	}
+
+	g_free (priv->unlock_required);
+	priv->unlock_required = NULL;
 
 	G_OBJECT_CLASS (nm_modem_old_parent_class)->dispose (object);
 }

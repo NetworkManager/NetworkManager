@@ -165,38 +165,59 @@ data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+modem_state_cb (NMModem *modem,
+                NMModemState new_state,
+                NMModemState old_state,
+                gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-	NMDeviceState state;
+	NMDeviceState dev_state = nm_device_get_state (device);
 
-	/* Called when the ModemManager modem enabled state is changed externally
-	 * to NetworkManager (eg something using MM's D-Bus API directly).
-	 */
-
-	if (priv->rf_enabled && nm_modem_get_mm_enabled (modem) == FALSE) {
-		state = nm_device_get_state (device);
-		if (nm_device_is_activating (device) || state == NM_DEVICE_STATE_ACTIVATED) {
+	if (new_state <= NM_MODEM_STATE_DISABLING &&
+	    old_state > NM_MODEM_STATE_DISABLING &&
+	    priv->rf_enabled) {
+		/* Called when the ModemManager modem enabled state is changed externally
+		 * to NetworkManager (eg something using MM's D-Bus API directly).
+		 */
+		if (nm_device_is_activating (device) || dev_state == NM_DEVICE_STATE_ACTIVATED) {
 			/* user-initiated action, hence DISCONNECTED not FAILED */
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			return;
 		}
 	}
-	nm_device_emit_recheck_auto_activate (device);
-}
 
-static void
-modem_connected_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
-{
-	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
+	if (new_state < NM_MODEM_STATE_CONNECTING &&
+	    old_state >= NM_MODEM_STATE_CONNECTING &&
+	    dev_state >= NM_DEVICE_STATE_NEED_AUTH &&
+	    dev_state <= NM_DEVICE_STATE_ACTIVATED) {
+		/* Fail the device if the modem disconnects unexpectedly while the
+		 * device is activating/activated. */
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
+		return;
+	}
 
-	if (   nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED
-	    && !nm_modem_get_mm_connected (priv->modem)) {
-		/* Fail the device if the modem disconnects unexpectedly */
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
+	if (new_state > NM_MODEM_STATE_LOCKED && old_state == NM_MODEM_STATE_LOCKED) {
+		/* If the modem is now unlocked, enable/disable it according to the
+		 * device's enabled/disabled state.
+		 */
+		nm_modem_set_mm_enabled (priv->modem, priv->rf_enabled);
+	}
+
+	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device)) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_MODEM_FAILED);
+		return;
+	}
+
+	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_MODEM_AVAILABLE);
+		return;
 	}
 }
 
@@ -233,10 +254,19 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	nm_modem_device_state_changed (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
-	                               new_state,
-	                               old_state,
-	                               reason);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	g_assert (priv->modem);
+
+	if (new_state == NM_DEVICE_STATE_UNAVAILABLE &&
+	    old_state < NM_DEVICE_STATE_UNAVAILABLE) {
+		/* Log initial modem state */
+		nm_log_info (LOGD_MB, "(%s): modem state '%s'",
+		             nm_device_get_iface (device),
+		             nm_modem_state_to_string (nm_modem_get_state (priv->modem)));
+	}
+
+	nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
 }
 
 static guint
@@ -256,6 +286,33 @@ check_connection_compatible (NMDevice *device,
 		return FALSE;
 
 	return nm_modem_check_connection_compatible (priv->modem, connection, error);
+}
+
+static gboolean
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
+{
+	NMDeviceModem *self = NM_DEVICE_MODEM (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
+	NMModemState state;
+
+	if (!priv->rf_enabled || !priv->modem)
+		return FALSE;
+
+	state = nm_modem_get_state (priv->modem);
+	if (state <= NM_MODEM_STATE_INITIALIZING)
+		return FALSE;
+
+	if (state == NM_MODEM_STATE_LOCKED) {
+		NMSettingGsm *s_gsm = nm_connection_get_setting_gsm (connection);
+
+		/* Can't use a connection without a PIN if the modem is locked */
+		if (!s_gsm || !nm_setting_gsm_get_pin (s_gsm))
+			return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -337,8 +394,9 @@ static gboolean
 get_enabled (NMDevice *device)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMModemState modem_state = nm_modem_get_state (priv->modem);
 
-	return priv->rf_enabled && nm_modem_get_mm_enabled (priv->modem);
+	return priv->rf_enabled && (modem_state >= NM_MODEM_STATE_LOCKED);
 }
 
 static void
@@ -368,14 +426,24 @@ static gboolean
 is_available (NMDevice *dev)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (dev);
+	NMModemState modem_state;
 
-	/* The device is available whenever it's not rfkilled */
 	if (!priv->rf_enabled) {
 		nm_log_dbg (LOGD_MB, "(%s): not available because WWAN airplane mode is on",
 		            nm_device_get_iface (dev));
+		return FALSE;
 	}
 
-	return priv->rf_enabled;
+	g_assert (priv->modem);
+	modem_state = nm_modem_get_state (priv->modem);
+	if (modem_state <= NM_MODEM_STATE_INITIALIZING) {
+		nm_log_dbg (LOGD_MB, "(%s): not available because modem is not ready (%s)",
+		            nm_device_get_iface (dev),
+		            nm_modem_state_to_string (modem_state));
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -432,8 +500,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
-	g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), self);
-	g_signal_connect (modem, "notify::" NM_MODEM_CONNECTED, G_CALLBACK (modem_connected_cb), self);
+	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
 	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
 	/* In the old ModemManager the data port is known from the very beginning;
@@ -514,6 +581,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 
 	device_class->get_hw_address_length = get_hw_address_length;
 	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->deactivate = deactivate;
 	device_class->act_stage1_prepare = act_stage1_prepare;

@@ -6573,6 +6573,10 @@ reason_to_string (NMDeviceStateReason reason)
 		return "DCB-FCoE-failed";
 	case NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED:
 		return "teamd-control-failed";
+	case NM_DEVICE_STATE_REASON_MODEM_FAILED:
+		return "modem-failed";
+	case NM_DEVICE_STATE_REASON_MODEM_AVAILABLE:
+		return "modem-available";
 	default:
 		break;
 	}
