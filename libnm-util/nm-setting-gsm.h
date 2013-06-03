@@ -64,11 +64,13 @@ GQuark nm_setting_gsm_error_quark (void);
 #define NM_SETTING_GSM_PASSWORD_FLAGS "password-flags"
 #define NM_SETTING_GSM_APN            "apn"
 #define NM_SETTING_GSM_NETWORK_ID     "network-id"
-#define NM_SETTING_GSM_NETWORK_TYPE   "network-type"
-#define NM_SETTING_GSM_ALLOWED_BANDS  "allowed-bands"
 #define NM_SETTING_GSM_PIN            "pin"
 #define NM_SETTING_GSM_PIN_FLAGS      "pin-flags"
 #define NM_SETTING_GSM_HOME_ONLY      "home-only"
+
+/* Deprecated */
+#define NM_SETTING_GSM_ALLOWED_BANDS  "allowed-bands"
+#define NM_SETTING_GSM_NETWORK_TYPE   "network-type"
 
 /**
  * NMSettingGsmNetworkType:
@@ -88,6 +90,8 @@ GQuark nm_setting_gsm_error_quark (void);
  *
  * #NMSettingGsmNetworkType values indicate the allowed access technologies
  * the device may use when connecting to this network.
+ *
+ * Deprecated: 0.9.10: No longer used.
  */
 typedef enum {
 	NM_SETTING_GSM_NETWORK_TYPE_ANY = -1,
@@ -119,6 +123,8 @@ typedef enum {
  *
  * #NMSettingGsmNetworkBand values indicate the allowed frequency bands
  * the device may use when connecting to this network.
+ *
+ * Deprecated: 0.9.10: No longer used.
  */
 typedef enum {
 	NM_SETTING_GSM_BAND_UNKNOWN      = 0x00000000,
@@ -144,7 +150,7 @@ typedef enum {
  * #NM_SETTING_GSM_BANDS_MAX macro indicate the maximal value that can be used
  * as the allowed frequency bands (#NMSettingGsm:allowed-bands property).
  *
- * Since: 0.9.10
+ * Deprecated: 0.9.10: No longer used.
  */
 #define NM_SETTING_GSM_BANDS_MAX (  NM_SETTING_GSM_BAND_UNKNOWN \
                                   | NM_SETTING_GSM_BAND_ANY \
@@ -184,13 +190,15 @@ const char *nm_setting_gsm_get_username      (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_password      (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_apn           (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_network_id    (NMSettingGsm *setting);
-int         nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
-guint32     nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
 const char *nm_setting_gsm_get_pin           (NMSettingGsm *setting);
 gboolean    nm_setting_gsm_get_home_only     (NMSettingGsm *setting);
 
 NMSettingSecretFlags nm_setting_gsm_get_pin_flags      (NMSettingGsm *setting);
 NMSettingSecretFlags nm_setting_gsm_get_password_flags (NMSettingGsm *setting);
+
+/* Deprecated */
+G_DEPRECATED int     nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
+G_DEPRECATED guint32 nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
 
 G_END_DECLS
 
