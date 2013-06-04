@@ -25,185 +25,87 @@
 NMCallStore *
 nm_call_store_new (void)
 {
-	return g_hash_table_new_full (NULL, NULL, NULL,
-								  (GDestroyNotify) g_hash_table_destroy);
+	/* Maps { DBusGProxy :: GHashTable { DBusGProxyCall :: NULL } } */
+	return g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) g_hash_table_destroy);
 }
 
 static void
-object_destroyed_cb (gpointer data, GObject *object)
+proxy_destroyed_cb (gpointer data, GObject *proxy)
 {
-	g_hash_table_remove ((NMCallStore *) data, object);
+	g_hash_table_remove ((NMCallStore *) data, proxy);
 }
 
 void
 nm_call_store_add (NMCallStore *store,
-				   GObject *object,
-				   gpointer *call_id)
+                   DBusGProxy *proxy,
+                   DBusGProxyCall *call)
 {
-	GHashTable *call_ids_hash;
+	GHashTable *calls;
 
 	g_return_if_fail (store != NULL);
-	g_return_if_fail (object != NULL);
-	g_return_if_fail (call_id != NULL);
+	g_return_if_fail (proxy != NULL);
+	g_return_if_fail (call != NULL);
 
-	call_ids_hash = g_hash_table_lookup (store, object);
-	if (!call_ids_hash) {
-		call_ids_hash = g_hash_table_new (NULL, NULL);
-		g_hash_table_insert (store, object, call_ids_hash);
-		g_object_weak_ref (object, object_destroyed_cb, store);
+	calls = g_hash_table_lookup (store, proxy);
+	if (!calls) {
+		calls = g_hash_table_new (NULL, NULL);
+		g_hash_table_insert (store, proxy, calls);
+		g_object_weak_ref (G_OBJECT (proxy), proxy_destroyed_cb, store);
 	}
 
-	g_hash_table_insert (call_ids_hash, call_id, NULL);
+	g_hash_table_add (calls, call);
 }
 
 void
 nm_call_store_remove (NMCallStore *store,
-					  GObject *object,
-					  gpointer call_id)
+                      DBusGProxy *proxy,
+                      DBusGProxyCall *call)
 {
-	GHashTable *call_ids_hash;
+	GHashTable *calls;
 
 	g_return_if_fail (store != NULL);
-	g_return_if_fail (object != NULL);
-	g_return_if_fail (call_id != NULL);
+	g_return_if_fail (proxy != NULL);
+	g_return_if_fail (call != NULL);
 
-	call_ids_hash = g_hash_table_lookup (store, object);
-	if (!call_ids_hash) {
-		nm_log_warn (LOGD_CORE, "Trying to remove a non-existant call id.");
+	calls = g_hash_table_lookup (store, proxy);
+	if (!calls)
 		return;
+
+	g_hash_table_remove (calls, call);
+	if (g_hash_table_size (calls) == 0) {
+		g_hash_table_remove (store, proxy);
+		g_object_weak_unref (G_OBJECT (proxy), proxy_destroyed_cb, store);
 	}
-
-	if (!g_hash_table_remove (call_ids_hash, call_id))
-		nm_log_warn (LOGD_CORE, "Trying to remove a non-existant call id.");
-
-	if (g_hash_table_size (call_ids_hash) == 0) {
-		g_hash_table_remove (store, object);
-		g_object_weak_unref (object, object_destroyed_cb, store);
-	}
-}
-
-typedef struct {
-	GObject *object;
-	gint count;
-	NMCallStoreFunc callback;
-	gpointer user_data;
-} StoreForeachInfo;
-
-static void
-call_callback (gpointer call_id, gpointer user_data)
-{
-	StoreForeachInfo *info = (StoreForeachInfo *) user_data;
-
-	if (info->count >= 0) {
-		if (info->callback (info->object, call_id, info->user_data))
-			info->count++;
-		else
-			info->count = -1;
-	}
-}
-
-static void
-prepend_id (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_prepend (*list, key);
-}
-
-static GSList *
-get_call_ids (GHashTable *hash)
-{
-	GSList *ids = NULL;
-
-	g_hash_table_foreach (hash, prepend_id, &ids);
-
-	return ids;
-}
-
-static void
-call_all_callbacks (gpointer key, gpointer value, gpointer user_data)
-{
-	StoreForeachInfo *info = (StoreForeachInfo *) user_data;
-	GSList *ids;
-
-	info->object = G_OBJECT (key);
-
-	/* Create a copy of the hash keys (call_ids) so that the callback is
-	   free to modify the store */
-	ids = get_call_ids ((GHashTable *) value);
-	g_slist_foreach (ids, call_callback, info);
-	g_slist_free (ids);
-}
-
-static void
-duplicate_hash (gpointer key, gpointer value, gpointer user_data)
-{
-	g_hash_table_insert ((GHashTable *) user_data, key, value);
-}
-
-int
-nm_call_store_foreach (NMCallStore *store,
-					   GObject *object,
-					   NMCallStoreFunc callback,
-					   gpointer user_data)
-{
-	StoreForeachInfo info;
-
-	g_return_val_if_fail (store != NULL, -1);
-	g_return_val_if_fail (callback != NULL, -1);
-
-	info.object = object;
-	info.count = 0;
-	info.callback = callback;
-	info.user_data = user_data;
-
-	if (object) {
-		GHashTable *call_ids_hash;
-		GSList *ids;
-
-		call_ids_hash = g_hash_table_lookup (store, object);
-		if (!call_ids_hash) {
-			nm_log_warn (LOGD_CORE, "Object not in store");
-			return -1;
-		}
-
-		/* Create a copy of the hash keys (call_ids) so that the callback is
-		   free to modify the store */
-		ids = get_call_ids (call_ids_hash);
-		g_slist_foreach (ids, call_callback, &info);
-		g_slist_free (ids);
-	} else {
-		GHashTable *copy;
-
-		/* Create a copy of the main store so that callbacks can modify it */
-		copy = g_hash_table_new (NULL, NULL);
-		g_hash_table_foreach (store, duplicate_hash, copy);
-		g_hash_table_foreach (copy, call_all_callbacks, &info);
-		g_hash_table_destroy (copy);
-	}
-
-	return info.count;
-}
-
-static void
-remove_weakref (gpointer key, gpointer value, gpointer user_data)
-{
-	g_object_weak_unref (G_OBJECT (key), object_destroyed_cb, user_data);
 }
 
 void
 nm_call_store_clear (NMCallStore *store)
 {
-	g_return_if_fail (store);
+	DBusGProxy *proxy;
+	GHashTable *calls;
+	GHashTableIter proxies_iter;
 
-	g_hash_table_foreach (store, remove_weakref, store);
-	g_hash_table_remove_all (store);
+	g_return_if_fail (store != NULL);
+
+	g_hash_table_iter_init (&proxies_iter, store);
+	while (g_hash_table_iter_next (&proxies_iter, (gpointer) &proxy, (gpointer) &calls)) {
+		GHashTableIter calls_iter;
+		DBusGProxyCall *call;
+
+		g_hash_table_iter_init (&calls_iter, calls);
+		while (g_hash_table_iter_next (&calls_iter, (gpointer) &call, NULL)) {
+			dbus_g_proxy_cancel_call (proxy, call);
+			g_hash_table_iter_remove (&calls_iter);
+		}
+		g_object_weak_unref (G_OBJECT (proxy), proxy_destroyed_cb, store);
+		g_hash_table_iter_remove (&proxies_iter);
+	}
+	g_assert_cmpint (g_hash_table_size (store), ==, 0);
 }
 
 void
 nm_call_store_destroy (NMCallStore *store)
 {
 	g_return_if_fail (store);
-
 	g_hash_table_destroy (store);
 }

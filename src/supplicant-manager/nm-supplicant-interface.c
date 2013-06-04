@@ -112,21 +112,6 @@ typedef struct {
 	gboolean              disposed;
 } NMSupplicantInterfacePrivate;
 
-static gboolean
-cancel_all_cb (GObject *object, gpointer call_id, gpointer user_data)
-{
-	dbus_g_proxy_cancel_call (DBUS_G_PROXY (object), (DBusGProxyCall *) call_id);
-
-	return TRUE;
-}
-
-static void
-cancel_all_callbacks (NMCallStore *store)
-{
-	nm_call_store_foreach (store, NULL, cancel_all_cb, NULL);
-	nm_call_store_clear (store);
-}
-
 typedef struct {
 	NMSupplicantInterface *interface;
 	DBusGProxy *proxy;
@@ -156,7 +141,7 @@ nm_supplicant_info_set_call (NMSupplicantInfo *info, DBusGProxyCall *call)
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (call != NULL);
 
-	nm_call_store_add (info->store, G_OBJECT (info->proxy), (gpointer) call);
+	nm_call_store_add (info->store, info->proxy, call);
 	info->call = call;
 }
 
@@ -177,7 +162,7 @@ nm_supplicant_info_destroy (gpointer user_data)
 		info->disposing = TRUE;
 
 		if (info->call) {
-			nm_call_store_remove (info->store, G_OBJECT (info->proxy), info->call);
+			nm_call_store_remove (info->store, info->proxy, info->call);
 			info->call = NULL;
 		}
 
@@ -379,8 +364,8 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 		wpas_iface_get_props (self);
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		/* Cancel all pending calls when going down */
-		cancel_all_callbacks (priv->other_pcalls);
-		cancel_all_callbacks (priv->assoc_pcalls);
+		nm_call_store_clear (priv->other_pcalls);
+		nm_call_store_clear (priv->assoc_pcalls);
 
 		/* Disconnect supplicant manager state listeners since we're done */
 		if (priv->smgr_avail_id) {
@@ -1058,7 +1043,7 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 	/* Clear and cancel all pending calls related to a prior
 	 * connection attempt.
 	 */
-	cancel_all_callbacks (priv->assoc_pcalls);
+	nm_call_store_clear (priv->assoc_pcalls);
 
 	/* Don't do anything if there is no connection to the supplicant yet. */
 	if (!priv->iface_proxy)
@@ -1513,10 +1498,10 @@ dispose (GObject *object)
 	priv->disposed = TRUE;
 
 	/* Cancel pending calls before unrefing the dbus manager */
-	cancel_all_callbacks (priv->other_pcalls);
+	nm_call_store_clear (priv->other_pcalls);
 	nm_call_store_destroy (priv->other_pcalls);
 
-	cancel_all_callbacks (priv->assoc_pcalls);
+	nm_call_store_clear (priv->assoc_pcalls);
 	nm_call_store_destroy (priv->assoc_pcalls);
 
 	if (priv->props_proxy)
