@@ -532,6 +532,8 @@ type_to_string (NMLinkType type)
 		return "veth";
 	case NM_LINK_TYPE_VLAN:
 		return "vlan";
+	case NM_LINK_TYPE_VXLAN:
+		return "vxlan";
 	case NM_LINK_TYPE_BRIDGE:
 		return "bridge";
 	case NM_LINK_TYPE_BOND:
@@ -608,6 +610,7 @@ link_is_software (struct rtnl_link *rtnllink)
 	    !strcmp (type, "tun") ||
 	    !strcmp (type, "veth") ||
 	    !strcmp (type, "vlan") ||
+	    !strcmp (type, "vxlan") ||
 	    !strcmp (type, "bridge") ||
 	    !strcmp (type, "bond") ||
 	    !strcmp (type, "team"))
@@ -718,6 +721,8 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		return_type (NM_LINK_TYPE_VETH, "veth");
 	else if (!strcmp (type, "vlan"))
 		return_type (NM_LINK_TYPE_VLAN, "vlan");
+	else if (!strcmp (type, "vxlan"))
+		return_type (NM_LINK_TYPE_VXLAN, "vxlan");
 	else if (!strcmp (type, "bridge"))
 		return_type (NM_LINK_TYPE_BRIDGE, "bridge");
 	else if (!strcmp (type, "bond"))
@@ -2362,6 +2367,115 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 	return (err == 0);
 }
 
+/* The installed kernel headers might not have VXLAN stuff at all, or
+ * they might have the original properties, but not PORT, GROUP6, or LOCAL6.
+ * So until we depend on kernel >= 3.11, we just ignore the actual enum
+ * in if_link.h and define the values ourselves.
+ */
+#define IFLA_VXLAN_UNSPEC      0
+#define IFLA_VXLAN_ID          1
+#define IFLA_VXLAN_GROUP       2
+#define IFLA_VXLAN_LINK        3
+#define IFLA_VXLAN_LOCAL       4
+#define IFLA_VXLAN_TTL         5
+#define IFLA_VXLAN_TOS         6
+#define IFLA_VXLAN_LEARNING    7
+#define IFLA_VXLAN_AGEING      8
+#define IFLA_VXLAN_LIMIT       9
+#define IFLA_VXLAN_PORT_RANGE 10
+#define IFLA_VXLAN_PROXY      11
+#define IFLA_VXLAN_RSC        12
+#define IFLA_VXLAN_L2MISS     13
+#define IFLA_VXLAN_L3MISS     14
+#define IFLA_VXLAN_PORT       15
+#define IFLA_VXLAN_GROUP6     16
+#define IFLA_VXLAN_LOCAL6     17
+#undef IFLA_VXLAN_MAX
+#define IFLA_VXLAN_MAX IFLA_VXLAN_LOCAL6
+
+static const struct nla_policy vxlan_info_policy[IFLA_VXLAN_MAX + 1] = {
+	[IFLA_VXLAN_ID]         = { .type = NLA_U32 },
+	[IFLA_VXLAN_GROUP]      = { .type = NLA_U32 },
+	[IFLA_VXLAN_GROUP6]     = { .type = NLA_UNSPEC,
+	                            .minlen = sizeof (struct in6_addr) },
+	[IFLA_VXLAN_LINK]       = { .type = NLA_U32 },
+	[IFLA_VXLAN_LOCAL]      = { .type = NLA_U32 },
+	[IFLA_VXLAN_LOCAL6]     = { .type = NLA_UNSPEC,
+	                            .minlen = sizeof (struct in6_addr) },
+	[IFLA_VXLAN_TOS]        = { .type = NLA_U8 },
+	[IFLA_VXLAN_TTL]        = { .type = NLA_U8 },
+	[IFLA_VXLAN_LEARNING]   = { .type = NLA_U8 },
+	[IFLA_VXLAN_AGEING]     = { .type = NLA_U32 },
+	[IFLA_VXLAN_LIMIT]      = { .type = NLA_U32 },
+	[IFLA_VXLAN_PORT_RANGE] = { .type = NLA_UNSPEC,
+	                            .minlen  = sizeof (struct ifla_vxlan_port_range) },
+	[IFLA_VXLAN_PROXY]      = { .type = NLA_U8 },
+	[IFLA_VXLAN_RSC]        = { .type = NLA_U8 },
+	[IFLA_VXLAN_L2MISS]     = { .type = NLA_U8 },
+	[IFLA_VXLAN_L3MISS]     = { .type = NLA_U8 },
+	[IFLA_VXLAN_PORT]       = { .type = NLA_U16 },
+};
+
+static int
+vxlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
+{
+	NMPlatformVxlanProperties *props = parser_data;
+	struct nlattr *tb[IFLA_VXLAN_MAX + 1];
+	struct ifla_vxlan_port_range *range;
+	int err;
+
+	err = nla_parse_nested (tb, IFLA_VXLAN_MAX, info_data,
+	                        (struct nla_policy *) vxlan_info_policy);
+	if (err < 0)
+		return err;
+
+	memset (props, 0, sizeof (*props));
+
+	props->parent_ifindex = tb[IFLA_VXLAN_LINK] ? nla_get_u32 (tb[IFLA_VXLAN_LINK]) : 0;
+	props->id = nla_get_u32 (tb[IFLA_VXLAN_ID]);
+	if (tb[IFLA_VXLAN_GROUP])
+		props->group = nla_get_u32 (tb[IFLA_VXLAN_GROUP]);
+	if (tb[IFLA_VXLAN_LOCAL])
+		props->local = nla_get_u32 (tb[IFLA_VXLAN_LOCAL]);
+	if (tb[IFLA_VXLAN_GROUP6])
+		memcpy (&props->group6, nla_data (tb[IFLA_VXLAN_GROUP6]), sizeof (props->group6));
+	if (tb[IFLA_VXLAN_LOCAL6])
+		memcpy (&props->local6, nla_data (tb[IFLA_VXLAN_LOCAL6]), sizeof (props->local6));
+
+	props->ageing = nla_get_u32 (tb[IFLA_VXLAN_AGEING]);
+	props->limit = nla_get_u32 (tb[IFLA_VXLAN_LIMIT]);
+	props->tos = nla_get_u8 (tb[IFLA_VXLAN_TOS]);
+	props->ttl = nla_get_u8 (tb[IFLA_VXLAN_TTL]);
+
+	props->dst_port = nla_get_u16 (tb[IFLA_VXLAN_PORT]);
+	range = nla_data (tb[IFLA_VXLAN_PORT_RANGE]);
+	props->src_port_min = range->low;
+	props->src_port_max = range->high;
+
+	props->learning = !!nla_get_u8 (tb[IFLA_VXLAN_LEARNING]);
+	props->proxy = !!nla_get_u8 (tb[IFLA_VXLAN_PROXY]);
+	props->rsc = !!nla_get_u8 (tb[IFLA_VXLAN_RSC]);
+	props->l2miss = !!nla_get_u8 (tb[IFLA_VXLAN_L2MISS]);
+	props->l3miss = !!nla_get_u8 (tb[IFLA_VXLAN_L3MISS]);
+
+	return 0;
+}
+
+static gboolean
+vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperties *props)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int err;
+
+	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
+	                                    vxlan_info_data_parser, props);
+	if (err != 0) {
+		warning ("(%s) could not read properties: %s",
+		         link_get_name (platform, ifindex), nl_geterror (err));
+	}
+	return (err == 0);
+}
+
 static const struct nla_policy gre_info_policy[IFLA_GRE_MAX + 1] = {
 	[IFLA_GRE_LINK]     = { .type = NLA_U32 },
 	[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
@@ -3185,6 +3299,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->tun_get_properties = tun_get_properties;
 	platform_class->macvlan_get_properties = macvlan_get_properties;
+	platform_class->vxlan_get_properties = vxlan_get_properties;
 	platform_class->gre_get_properties = gre_get_properties;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;

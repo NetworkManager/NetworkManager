@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Device.Vxlan">
+
+    <property name="Parent" type="o" access="read">
+      <tp:docstring>
+        The object path of the parent device (if the VXLAN is not
+	purely internal to this host).
+      </tp:docstring>
+    </property>
+
+    <property name="Id" type="u" access="read">
+      <tp:docstring>
+        The VXLAN Network Identifier (VNI).
+      </tp:docstring>
+    </property>
+
+    <property name="Group" type="s" access="read">
+      <tp:docstring>
+        The IP (v4 or v6) multicast group used to communicate with other physical
+	hosts on this VXLAN.
+      </tp:docstring>
+    </property>
+
+    <property name="Local" type="s" access="read">
+      <tp:docstring>
+        The local IPv4 or IPv6 address to use when sending VXLAN packets to other
+	physical hosts.
+      </tp:docstring>
+    </property>
+
+    <property name="Tos" type="y" access="read">
+      <tp:docstring>
+        The value to use in the IP ToS field for VXLAN packets sent to
+	other physical hosts.
+      </tp:docstring>
+    </property>
+
+    <property name="Ttl" type="y" access="read">
+      <tp:docstring>
+        The value to use in the IP TTL field for VXLAN packets sent to
+	other physical hosts.
+      </tp:docstring>
+    </property>
+
+    <property name="Learning" type="b" access="read">
+      <tp:docstring>
+        True if the VXLAN dynamically learns remote IP addresses.
+      </tp:docstring>
+    </property>
+
+    <property name="Ageing" type="u" access="read">
+      <tp:docstring>
+        The interval at which the kernel purges stale cached addresses
+	(in kernel jiffies, ie, centiseconds).
+      </tp:docstring>
+    </property>
+
+    <property name="Limit" type="u" access="read">
+      <tp:docstring>
+        The maximum number of entries that can be added to the VXLAN's
+	forwarding table.
+      </tp:docstring>
+    </property>
+
+    <property name="DstPort" type="q" access="read">
+      <tp:docstring>
+        Destination port for outgoing VXLAN packets.
+      </tp:docstring>
+    </property>
+
+    <property name="SrcPortMin" type="q" access="read">
+      <tp:docstring>
+        The lowest source port number to use for outgoing VXLAN packets.
+      </tp:docstring>
+    </property>
+
+    <property name="SrcPortMax" type="q" access="read">
+      <tp:docstring>
+        The highest source port number to use for outgoing VXLAN packets.
+      </tp:docstring>
+    </property>
+
+    <property name="Proxy" type="b" access="read">
+      <tp:docstring>
+        True if the VXLAN is implementing DOVE ARP proxying for remote
+        clients.
+      </tp:docstring>
+    </property>
+
+    <property name="Rsc" type="b" access="read">
+      <tp:docstring>
+        True if the VXLAN is implementing DOVE route short-circuiting
+	of known remote IP addresses.
+      </tp:docstring>
+    </property>
+
+    <property name="L2miss" type="b" access="read">
+      <tp:docstring>
+        True if the VXLAN will emit netlink notifications of L2 switch
+        misses.
+      </tp:docstring>
+    </property>
+
+    <property name="L3miss" type="b" access="read">
+      <tp:docstring>
+        True if the VXLAN will emit netlink notifications of L3 switch
+        misses.
+      </tp:docstring>
+    </property>
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+  </interface>
+</node>

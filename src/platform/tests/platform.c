@@ -404,6 +404,53 @@ do_macvlan_get_properties (char **argv)
 }
 
 static gboolean
+do_vxlan_get_properties (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	NMPlatformVxlanProperties props;
+	char addrstr[INET6_ADDRSTRLEN];
+
+	if (!nm_platform_vxlan_get_properties (ifindex, &props))
+		return FALSE;
+
+	printf ("parent-ifindex: %u\n", props.parent_ifindex);
+	printf ("id: %u\n", props.id);
+	if (props.group)
+		inet_ntop (AF_INET, &props.group, addrstr, sizeof (addrstr));
+	else if (props.group6.s6_addr[0])
+		inet_ntop (AF_INET6, &props.group6, addrstr, sizeof (addrstr));
+	else
+		strcpy (addrstr, "-");
+	printf ("group: %s\n", addrstr);
+	if (props.local)
+		inet_ntop (AF_INET, &props.local, addrstr, sizeof (addrstr));
+	else if (props.local6.s6_addr[0])
+		inet_ntop (AF_INET6, &props.local6, addrstr, sizeof (addrstr));
+	else
+		strcpy (addrstr, "-");
+	printf ("local: %s\n", addrstr);
+	printf ("tos: %u\n", props.tos);
+	printf ("ttl: %u\n", props.ttl);
+	printf ("learning: ");
+	print_boolean (props.learning);
+	printf ("ageing: %u\n", props.ageing);
+	printf ("limit: %u\n", props.limit);
+	printf ("dst-port: %u\n", props.dst_port);
+	printf ("src-port-min: %u\n", props.src_port_min);
+	printf ("src-port-max: %u\n", props.src_port_max);
+	printf ("proxy: ");
+	print_boolean (props.proxy);
+	printf ("rsc: ");
+	print_boolean (props.rsc);
+	printf ("l2miss: ");
+	print_boolean (props.l2miss);
+	printf ("l3miss: ");
+	print_boolean (props.l3miss);
+
+	return TRUE;
+}
+
+static gboolean
 do_gre_get_properties (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
@@ -761,6 +808,8 @@ static const command_t commands[] = {
 	{ "tun-get-properties", "get tun/tap properties", do_tun_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "macvlan-get-properties", "get macvlan properties", do_macvlan_get_properties, 1,
+	  "<ifname/ifindex>" },
+	{ "vxlan-get-properties", "get vxlan properties", do_vxlan_get_properties, 1,
 	  "<ifname/ifindex>" },
 	{ "gre-get-properties", "get gre properties", do_gre_get_properties, 1,
 	  "<ifname/ifindex>" },
