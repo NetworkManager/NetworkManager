@@ -1583,7 +1583,11 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	props->mode = ((flags & TUN_TYPE_MASK) == TUN_TUN_DEV) ? "tun" : "tap";
 	props->no_pi = !!(flags & IFF_NO_PI);
 	props->vnet_hdr = !!(flags & IFF_VNET_HDR);
+#ifdef IFF_MULTI_QUEUE
 	props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
+#else
+	props->multi_queue = FALSE;
+#endif
 	g_free (val);
 
 	return TRUE;
@@ -1591,7 +1595,9 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 
 static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
 	[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
+#ifdef IFLA_MACVLAN_FLAGS
 	[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
+#endif
 };
 
 static int
@@ -1623,7 +1629,11 @@ macvlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
 		return -NLE_PARSE_ERR;
 	}
 
+#ifdef MACVLAN_FLAG_NOPROMISC
 	props->no_promisc = !!(nla_get_u16 (tb[IFLA_MACVLAN_FLAGS]) & MACVLAN_FLAG_NOPROMISC);
+#else
+	props->no_promisc = FALSE;
+#endif
 
 	return 0;
 }
