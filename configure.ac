@@ -715,6 +715,7 @@ examples/C/qt/Makefile
 examples/dispatcher/Makefile
 vapi/Makefile
 ])
+AC_CONFIG_SUBDIRS([libndp])
 AC_OUTPUT
 
 # Print build configuration
