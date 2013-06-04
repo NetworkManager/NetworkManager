@@ -702,7 +702,7 @@ wpas_iface_check_network_reply (NMSupplicantInterface *self)
 	DBusGProxyCall *call;
 
 	priv->ready_count++;
-	info = nm_supplicant_info_new (self, priv->props_proxy, priv->other_pcalls);
+	info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
 	call = dbus_g_proxy_begin_call (priv->iface_proxy, "NetworkReply",
 	                                iface_check_netreply_cb,
 	                                info,
