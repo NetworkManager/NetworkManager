@@ -1354,68 +1354,10 @@ register_nmcli_value_transforms (void)
 
 /*----------------------------------------------------------------------------*/
 
-gboolean
-setting_details (NMSetting *setting, NmCli *nmc)
+static gboolean
+setting_connection_details (NMSetting *setting, NmCli *nmc)
 {
-	GType setting_type;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-
-	setting_type = G_OBJECT_TYPE (setting);
-
-	if (setting_type == NM_TYPE_SETTING_CONNECTION)
-		return setting_connection_details (NM_SETTING_CONNECTION (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_WIRED)
-		return setting_wired_details (NM_SETTING_WIRED (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_802_1X)
-		return setting_802_1X_details (NM_SETTING_802_1X (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_WIRELESS)
-		return setting_wireless_details (NM_SETTING_WIRELESS (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_WIRELESS_SECURITY)
-		return setting_wireless_security_details (NM_SETTING_WIRELESS_SECURITY (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_IP4_CONFIG)
-		return setting_ip4_config_details (NM_SETTING_IP4_CONFIG (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_IP6_CONFIG)
-		return setting_ip6_config_details (NM_SETTING_IP6_CONFIG (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_SERIAL)
-		return setting_serial_details (NM_SETTING_SERIAL (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_PPP)
-		return setting_ppp_details (NM_SETTING_PPP (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_PPPOE)
-		return setting_pppoe_details (NM_SETTING_PPPOE (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_GSM)
-		return setting_gsm_details (NM_SETTING_GSM (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_CDMA)
-		return setting_cdma_details (NM_SETTING_CDMA (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_BLUETOOTH)
-		return setting_bluetooth_details (NM_SETTING_BLUETOOTH (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_OLPC_MESH)
-		return setting_olpc_mesh_details (NM_SETTING_OLPC_MESH (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_VPN)
-		return setting_vpn_details (NM_SETTING_VPN (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_WIMAX)
-		return setting_wimax_details (NM_SETTING_WIMAX (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_INFINIBAND)
-		return setting_infiniband_details (NM_SETTING_INFINIBAND (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_BOND)
-		return setting_bond_details (NM_SETTING_BOND (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_VLAN)
-		return setting_vlan_details (NM_SETTING_VLAN (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_ADSL)
-		return setting_adsl_details (NM_SETTING_ADSL (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_BRIDGE)
-		return setting_bridge_details (NM_SETTING_BRIDGE (setting), nmc);
-	else if (setting_type == NM_TYPE_SETTING_BRIDGE_PORT)
-		return setting_bridge_port_details (NM_SETTING_BRIDGE_PORT (setting), nmc);
-	else
-		/* should not be reached */
-		return FALSE;
-}
-
-gboolean
-setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
-{
-	NMSetting *setting = NM_SETTING (s_con);
+	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1448,10 +1390,10 @@ setting_connection_details (NMSettingConnection *s_con, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
+static gboolean
+setting_wired_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_wired);
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1483,14 +1425,14 @@ setting_wired_details (NMSettingWired *s_wired, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
+static gboolean
+setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_8021X);
+	NMSetting8021x *s_8021x = NM_SETTING_802_1X (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (s_8021X), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (s_8021x), FALSE);
 
 	tmpl = nmc_fields_setting_8021X;
 	tmpl_len = sizeof (nmc_fields_setting_8021X);
@@ -1539,10 +1481,10 @@ setting_802_1X_details (NMSetting8021x *s_8021X, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
+static gboolean
+setting_wireless_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_wireless);
+	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1577,10 +1519,10 @@ setting_wireless_details (NMSettingWireless *s_wireless, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, NmCli *nmc)
+static gboolean
+setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_wireless_sec);
+	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1618,10 +1560,10 @@ setting_wireless_security_details (NMSettingWirelessSecurity *s_wireless_sec, Nm
 	return TRUE;
 }
 
-gboolean
-setting_ip4_config_details (NMSettingIP4Config *s_ip4, NmCli *nmc)
+static gboolean
+setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_ip4);
+	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1654,10 +1596,10 @@ setting_ip4_config_details (NMSettingIP4Config *s_ip4, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
+static gboolean
+setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_ip6);
+	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1689,10 +1631,10 @@ setting_ip6_config_details (NMSettingIP6Config *s_ip6, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_serial_details (NMSettingSerial *s_serial, NmCli *nmc)
+static gboolean
+setting_serial_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_serial);
+	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1718,10 +1660,10 @@ setting_serial_details (NMSettingSerial *s_serial, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc)
+static gboolean
+setting_ppp_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_ppp);
+	NMSettingPPP *s_ppp = NM_SETTING_PPP (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1760,10 +1702,10 @@ setting_ppp_details (NMSettingPPP *s_ppp, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
+static gboolean
+setting_pppoe_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_pppoe);
+	NMSettingPPPOE *s_pppoe = NM_SETTING_PPPOE (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1788,10 +1730,10 @@ setting_pppoe_details (NMSettingPPPOE *s_pppoe, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
+static gboolean
+setting_gsm_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_gsm);
+	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1823,10 +1765,10 @@ setting_gsm_details (NMSettingGsm *s_gsm, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
+static gboolean
+setting_cdma_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_cdma);
+	NMSettingCdma *s_cdma = NM_SETTING_CDMA (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1851,10 +1793,10 @@ setting_cdma_details (NMSettingCdma *s_cdma, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
+static gboolean
+setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_bluetooth);
+	NMSettingBluetooth *s_bluetooth = NM_SETTING_BLUETOOTH (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1877,10 +1819,10 @@ setting_bluetooth_details (NMSettingBluetooth *s_bluetooth, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
+static gboolean
+setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_olpc_mesh);
+	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1904,10 +1846,10 @@ setting_olpc_mesh_details (NMSettingOlpcMesh *s_olpc_mesh, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc)
+static gboolean
+setting_vpn_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_vpn);
+	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1932,10 +1874,10 @@ setting_vpn_details (NMSettingVPN *s_vpn, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc)
+static gboolean
+setting_wimax_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_wimax);
+	NMSettingWimax *s_wimax = NM_SETTING_WIMAX (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1958,10 +1900,10 @@ setting_wimax_details (NMSettingWimax *s_wimax, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc)
+static gboolean
+setting_infiniband_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_infiniband);
+	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -1985,10 +1927,10 @@ setting_infiniband_details (NMSettingInfiniband *s_infiniband, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_bond_details (NMSettingBond *s_bond, NmCli *nmc)
+static gboolean
+setting_bond_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_bond);
+	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -2011,10 +1953,10 @@ setting_bond_details (NMSettingBond *s_bond, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
+static gboolean
+setting_vlan_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_vlan);
+	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -2041,10 +1983,10 @@ setting_vlan_details (NMSettingVlan *s_vlan, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
+static gboolean
+setting_adsl_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_adsl);
+	NMSettingAdsl *s_adsl = NM_SETTING_ADSL (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -2072,10 +2014,10 @@ setting_adsl_details (NMSettingAdsl *s_adsl, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_bridge_details (NMSettingBridge *s_bridge, NmCli *nmc)
+static gboolean
+setting_bridge_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_bridge);
+	NMSettingBridge *s_bridge = NM_SETTING_BRIDGE (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -2103,10 +2045,10 @@ setting_bridge_details (NMSettingBridge *s_bridge, NmCli *nmc)
 	return TRUE;
 }
 
-gboolean
-setting_bridge_port_details (NMSettingBridgePort *s_bridge_port, NmCli *nmc)
+static gboolean
+setting_bridge_port_details (NMSetting *setting, NmCli *nmc)
 {
-	NMSetting *setting = NM_SETTING (s_bridge_port);
+	NMSettingBridgePort *s_bridge_port = NM_SETTING_BRIDGE_PORT (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -2128,5 +2070,54 @@ setting_bridge_port_details (NMSettingBridgePort *s_bridge_port, NmCli *nmc)
 	print_data (nmc);  /* Print all data */
 
 	return TRUE;
+}
+
+
+typedef struct {
+	const char *sname;
+	gboolean (*func) (NMSetting *setting, NmCli *nmc);
+} SettingDetails;
+
+static const SettingDetails detail_printers[] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME,        setting_connection_details },
+	{ NM_SETTING_WIRED_SETTING_NAME,             setting_wired_details },
+	{ NM_SETTING_802_1X_SETTING_NAME,            setting_802_1X_details },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,          setting_wireless_details },
+	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, setting_wireless_security_details },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        setting_ip4_config_details },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        setting_ip6_config_details },
+	{ NM_SETTING_SERIAL_SETTING_NAME,            setting_serial_details },
+	{ NM_SETTING_PPP_SETTING_NAME,               setting_ppp_details },
+	{ NM_SETTING_PPPOE_SETTING_NAME,             setting_pppoe_details },
+	{ NM_SETTING_GSM_SETTING_NAME,               setting_gsm_details },
+	{ NM_SETTING_CDMA_SETTING_NAME,              setting_cdma_details },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,         setting_bluetooth_details },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,         setting_olpc_mesh_details },
+	{ NM_SETTING_VPN_SETTING_NAME,               setting_vpn_details },
+	{ NM_SETTING_WIMAX_SETTING_NAME,             setting_wimax_details },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME,        setting_infiniband_details },
+	{ NM_SETTING_BOND_SETTING_NAME,              setting_bond_details },
+	{ NM_SETTING_VLAN_SETTING_NAME,              setting_vlan_details },
+	{ NM_SETTING_ADSL_SETTING_NAME,              setting_adsl_details },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,            setting_bridge_details },
+	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,       setting_bridge_port_details },
+	{ NULL },
+};
+
+gboolean
+setting_details (NMSetting *setting, NmCli *nmc)
+{
+	const SettingDetails *iter = &detail_printers[0];
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+
+	while (iter->sname) {
+		if (nm_connection_lookup_setting_type (iter->sname) == G_OBJECT_TYPE (setting))
+			return iter->func (setting, nmc);
+		iter++;
+	}
+
+	g_assert_not_reached ();
+	return FALSE;
 }
 
