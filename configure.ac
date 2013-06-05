@@ -464,7 +464,7 @@ AC_SUBST(PPPD_PLUGIN_DIR)
 AC_ARG_WITH(modem-manager-1, AS_HELP_STRING([--with-modem-manager-1], [Enable new ModemManager1 interface support]),,[with_modem_manager_1=auto])
 if (test "${with_modem_manager_1}" != "no"); then
     PKG_CHECK_MODULES(MM_GLIB,
-                      [mm-glib],
+                      [mm-glib >= 0.7.991],
                       [have_libmm_glib=yes],
                       [have_libmm_glib=no])
     AC_SUBST(MM_GLIB_CFLAGS)
@@ -782,4 +782,3 @@ echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
 echo "  code coverage: $enable_code_coverage"
 echo
-

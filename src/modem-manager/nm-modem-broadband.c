@@ -116,8 +116,23 @@ nm_modem_broadband_get_capabilities (NMModemBroadband *self,
                                      NMDeviceModemCapabilities *modem_caps,
                                      NMDeviceModemCapabilities *current_caps)
 {
-	*modem_caps = (NMDeviceModemCapabilities)mm_modem_get_modem_capabilities (self->priv->modem_iface);
-	*current_caps = (NMDeviceModemCapabilities)mm_modem_get_current_capabilities (self->priv->modem_iface);
+	MMModemCapability all_supported = MM_MODEM_CAPABILITY_NONE;
+	MMModemCapability *supported;
+	guint n_supported;
+
+	/* For now, we don't care about the capability combinations, just merge all
+	 * combinations in a single mask */
+	if (mm_modem_get_supported_capabilities (self->priv->modem_iface, &supported, &n_supported)) {
+		guint i;
+
+		for (i = 0; i < n_supported; i++)
+			all_supported |= supported[i];
+
+		g_free (supported);
+	}
+
+	*modem_caps = (NMDeviceModemCapabilities) all_supported;
+	*current_caps = (NMDeviceModemCapabilities) mm_modem_get_current_capabilities (self->priv->modem_iface);
 }
 
 /*****************************************************************************/
