@@ -1396,58 +1396,20 @@ typedef struct {
 	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */
 } NmcPropertyFuncs;
 
-NmcSettingNewFunc
-nmc_setting_new_func (const char *name)
+NMSetting *
+nmc_setting_new_for_name (const char *name)
 {
-	if (!name)
-		return NULL;
+	GType stype;
+	NMSetting *setting = NULL;
 
-	if (!strcmp (name, NM_SETTING_802_1X_SETTING_NAME))
-		return nm_setting_802_1x_new;
-	else if (!strcmp (name, NM_SETTING_ADSL_SETTING_NAME))
-		return nm_setting_adsl_new;
-	else if (!strcmp (name, NM_SETTING_BLUETOOTH_SETTING_NAME))
-		return nm_setting_bluetooth_new;
-	else if (!strcmp (name, NM_SETTING_BOND_SETTING_NAME))
-		return nm_setting_bond_new;
-	else if (!strcmp (name, NM_SETTING_BRIDGE_SETTING_NAME))
-		return nm_setting_bridge_new;
-	else if (!strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
-		return nm_setting_bridge_port_new;
-	else if (!strcmp (name, NM_SETTING_CDMA_SETTING_NAME))
-		return nm_setting_cdma_new;
-	else if (!strcmp (name, NM_SETTING_CONNECTION_SETTING_NAME))
-		return nm_setting_connection_new;
-	else if (!strcmp (name, NM_SETTING_GSM_SETTING_NAME))
-		return nm_setting_gsm_new;
-	else if (!strcmp (name, NM_SETTING_INFINIBAND_SETTING_NAME))
-		return nm_setting_infiniband_new;
-	else if (!strcmp (name, NM_SETTING_IP4_CONFIG_SETTING_NAME))
-		return nm_setting_ip4_config_new;
-	else if (!strcmp (name, NM_SETTING_IP6_CONFIG_SETTING_NAME))
-		return nm_setting_ip6_config_new;
-	else if (!strcmp (name, NM_SETTING_OLPC_MESH_SETTING_NAME))
-		return nm_setting_olpc_mesh_new;
-	else if (!strcmp (name, NM_SETTING_PPP_SETTING_NAME))
-		return nm_setting_ppp_new;
-	else if (!strcmp (name, NM_SETTING_PPPOE_SETTING_NAME))
-		return nm_setting_pppoe_new;
-	else if (!strcmp (name, NM_SETTING_SERIAL_SETTING_NAME))
-		return nm_setting_serial_new;
-	else if (!strcmp (name, NM_SETTING_VLAN_SETTING_NAME))
-		return nm_setting_vlan_new;
-	else if (!strcmp (name, NM_SETTING_VPN_SETTING_NAME))
-		return nm_setting_vpn_new;
-	else if (!strcmp (name, NM_SETTING_WIMAX_SETTING_NAME))
-		return nm_setting_wimax_new;
-	else if (!strcmp (name, NM_SETTING_WIRED_SETTING_NAME))
-		return nm_setting_wired_new;
-	else if (!strcmp (name, NM_SETTING_WIRELESS_SETTING_NAME))
-		return nm_setting_wireless_new;
-	else if (!strcmp (name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
-		return nm_setting_wireless_security_new;
-
-	return NULL;
+	if (name) {
+		stype = nm_connection_lookup_setting_type (name);
+		if (stype != G_TYPE_INVALID) {
+			setting = g_object_new (stype, NULL);
+			g_warn_if_fail (NM_IS_SETTING (setting));
+		}
+	}
+	return setting;
 }
 
 /*

@@ -3424,7 +3424,6 @@ gen_setting_names (char *text, int state)
 static char *
 gen_property_names (char *text, int state)
 {
-	NmcSettingNewFunc new_func;
 	NMSetting *setting = NULL;
 	char **valid_props = NULL;
 	char *ret = NULL;
@@ -3449,21 +3448,17 @@ gen_property_names (char *text, int state)
 
 		valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
 		setting_name = check_valid_name (strv[0], valid_settings_arr, NULL);
-		new_func = nmc_setting_new_func (setting_name);
-		if (!new_func)
-			goto finish;
-		setting = new_func ();
-	}
-	/* Else take the current setting, if any */
-	if (!setting)
+		setting = nmc_setting_new_for_name (setting_name);
+	} else {
+		/* Else take the current setting, if any */
 		setting = nmc_completion_setting ? g_object_ref (nmc_completion_setting) : NULL;
-	if (!setting)
-		goto finish;
+	}
 
-	valid_props = nmc_setting_get_valid_properties (setting);
-	ret = gen_nmcli_cmds (text_p, state, (const char **) valid_props);
+	if (setting) {
+		valid_props = nmc_setting_get_valid_properties (setting);
+		ret = gen_nmcli_cmds (text_p, state, (const char **) valid_props);
+	}
 
-finish:
 	g_free (line);
 	g_strfreev (strv);
 	g_strfreev (valid_props);
@@ -4319,10 +4314,9 @@ create_setting_by_name (const char *name, const NameItem *valid_settings)
 	setting_name = check_valid_name (name, valid_settings, NULL);
 
 	if (setting_name) {
-		NmcSettingNewFunc new_setting_func = nmc_setting_new_func (setting_name);
-		if (!new_setting_func)
+		setting = nmc_setting_new_for_name (setting_name);
+		if (!setting)
 			return NULL; /* This should really not happen */
-		setting = new_setting_func ();
 		nmc_setting_custom_init (setting);
 	}
 	return setting;
@@ -4426,7 +4420,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	char *cmd_arg = NULL;
 	char *cmd_arg_s, *cmd_arg_p, *cmd_arg_v;
 	const char *BASE_PROMPT = "nmcli> ";
-	NmcSettingNewFunc new_func;
 	const NameItem *valid_settings_arr = NULL;
 	char *valid_settings_str = NULL;
 	AddConnectionInfo *info = NULL;
@@ -4574,13 +4567,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				setting = nm_connection_get_setting_by_name (connection, setting_name);
 				if (!setting) {
-					/* setting not created yet, do it now */
-					new_func = nmc_setting_new_func (setting_name);
-					if (!new_func) {
+					setting = nmc_setting_new_for_name (setting_name);
+					if (!setting) {
 						printf (_("Error: unknown setting '%s'\n"), setting_name);
 						break;
 					}
-					setting = new_func ();
 					nmc_setting_custom_init (setting);
 					nm_connection_add_setting (connection, setting);
 				}
@@ -4868,7 +4859,6 @@ get_ethernet_device_name (NmCli *nmc)
 static void
 editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 {
-	NmcSettingNewFunc new_func;
 	NMSetting *setting;
 	NMSettingConnection *s_con;
 	const char *con_type;
@@ -4902,10 +4892,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 	}
 	else {
 		/* Add a "base" setting to the connection by default */
-		new_func = nmc_setting_new_func (con_type);
-		if (!new_func)
-			return;
-		setting = new_func ();
+		setting = nmc_setting_new_for_name (con_type);
 		if (!setting)
 			return;
 		nm_connection_add_setting (connection, setting);
@@ -5249,8 +5236,8 @@ do_connection_modify (NmCli *nmc, int argc, char **argv)
 	}
 	setting = nm_connection_get_setting_by_name (NM_CONNECTION (rc), setting_name);
 	if (!setting) {
-		NmcSettingNewFunc new_setting_func = nmc_setting_new_func (setting_name);
-		if (!new_setting_func) {
+		setting = nmc_setting_new_for_name (setting_name);
+		if (!setting) {
 			/* This should really not happen */
 			g_string_printf (nmc->return_text,
 			                 "Error: don't know how to create '%s' setting.",
@@ -5258,8 +5245,6 @@ do_connection_modify (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto finish;
 		}
-		setting = new_setting_func ();
-		g_assert (setting);
 		nm_connection_add_setting (NM_CONNECTION (rc), setting);
 	}
 

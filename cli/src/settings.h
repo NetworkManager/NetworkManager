@@ -46,17 +46,12 @@
 #include "nmcli.h"
 #include "utils.h"
 
-/* --- Types --- */
-
-typedef NMSetting* (*NmcSettingNewFunc) (void);
-
-
 /* --- Functions --- */
 
 void nmc_properties_init (void);
 void nmc_properties_cleanup (void);
 
-NmcSettingNewFunc nmc_setting_new_func (const char *name);
+NMSetting *nmc_setting_new_for_name (const char *name);
 void nmc_setting_custom_init (NMSetting *setting);
 
 char      **nmc_setting_get_valid_properties (NMSetting *setting);
