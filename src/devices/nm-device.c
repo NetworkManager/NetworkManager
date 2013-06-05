@@ -687,12 +687,20 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 }
 
 static guint
+get_hw_address_length (NMDevice *dev)
+{
+	size_t len;
+
+	if (nm_platform_link_get_address (nm_device_get_ip_ifindex (dev), &len))
+		return len;
+	else
+		return 0;
+}
+
+static guint
 nm_device_get_hw_address_length (NMDevice *dev)
 {
-	if (NM_DEVICE_GET_CLASS (dev)->get_hw_address_length)
-		return NM_DEVICE_GET_CLASS (dev)->get_hw_address_length (dev);
-	else
-		return ETH_ALEN;
+	return NM_DEVICE_GET_CLASS (dev)->get_hw_address_length (dev);
 }
 
 const guint8 *
@@ -4972,6 +4980,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->hw_take_down = hw_take_down;
 	klass->carrier_changed = carrier_changed;
 	klass->can_interrupt_activation = can_interrupt_activation;
+	klass->get_hw_address_length = get_hw_address_length;
 
 	/* Properties */
 	g_object_class_install_property

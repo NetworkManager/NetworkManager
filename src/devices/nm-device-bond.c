@@ -69,25 +69,6 @@ nm_bond_error_quark (void)
 
 /******************************************************************/
 
-static guint
-get_hw_address_length (NMDevice *device)
-{
-	GSList *slaves;
-	guint length;
-
-	/* A bond's hwaddr length depends on what kind of slaves it has;
-	 * if it has no slaves, then it doesn't have a valid hwaddr.
-	 */
-	slaves = nm_device_master_get_slaves (device);
-	if (slaves) {
-		nm_device_get_hw_address (slaves->data, &length);
-		g_slist_free (slaves);
-	} else
-		length = 0;
-
-	return length;
-}
-
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
@@ -356,7 +337,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->get_hw_address_length = get_hw_address_length;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;

@@ -104,12 +104,6 @@ nm_device_infiniband_new (NMPlatformLink *platform_device)
 	                                  NULL);
 }
 
-static guint
-get_hw_address_length (NMDevice *device)
-{
-	return INFINIBAND_ALEN;
-}
-
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
@@ -324,7 +318,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->get_hw_address_length = get_hw_address_length;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
