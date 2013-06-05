@@ -4706,7 +4706,6 @@ set_property (GObject *object, guint prop_id,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 	NMPlatformLink *platform_device;
 	const char *hw_addr;
-	int hw_addr_type;
  
 	switch (prop_id) {
 	case PROP_PLATFORM_DEVICE:
@@ -4791,10 +4790,8 @@ set_property (GObject *object, guint prop_id,
 			g_warn_if_fail (*hw_addr == '\0');
 			break;
 		}
-		hw_addr_type = nm_utils_hwaddr_type (priv->hw_addr_len);
-		g_return_if_fail (hw_addr_type != -1);
 
-		if (!nm_utils_hwaddr_aton (hw_addr, hw_addr_type, priv->hw_addr)) {
+		if (!nm_utils_hwaddr_aton_len (hw_addr, priv->hw_addr, priv->hw_addr_len)) {
 			g_warning ("Could not parse hw-address '%s'", hw_addr);
 			memset (priv->hw_addr, 0, sizeof (priv->hw_addr));
 		}
@@ -4932,7 +4929,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_HW_ADDRESS:
 		if (priv->hw_addr_len)
-			g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len)));
+			g_value_take_string (value, nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len));
 		else
 			g_value_set_string (value, NULL);
 		break;
@@ -5862,7 +5859,7 @@ spec_match_list (NMDevice *device, const GSList *specs)
 		return TRUE;
 
 	if (priv->hw_addr_len) {
-		hwaddr_str = nm_utils_hwaddr_ntoa (priv->hw_addr, nm_utils_hwaddr_type (priv->hw_addr_len));
+		hwaddr_str = nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len);
 		matched = nm_match_spec_hwaddr (specs, hwaddr_str);
 		g_free (hwaddr_str);
 	}
@@ -6228,7 +6225,7 @@ nm_device_update_hw_address (NMDevice *dev)
 		} else {
 			changed = !!memcmp (priv->hw_addr, binaddr, addrlen);
 			if (changed) {
-				char *addrstr = nm_utils_hwaddr_ntoa (binaddr, nm_utils_hwaddr_type (addrlen));
+				char *addrstr = nm_utils_hwaddr_ntoa_len (binaddr, priv->hw_addr_len);
 
 				memcpy (priv->hw_addr, binaddr, addrlen);
 				nm_log_dbg (LOGD_HW | LOGD_DEVICE,

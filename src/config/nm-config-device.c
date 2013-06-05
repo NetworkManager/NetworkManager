@@ -76,5 +76,5 @@ nm_config_device_get_hwaddr (NMConfigDevice *self)
 	guint len = 0;
 
 	bytes = NM_CONFIG_DEVICE_GET_INTERFACE (self)->get_hw_address (self, &len);
-	return nm_utils_hwaddr_ntoa (bytes, nm_utils_hwaddr_type (len));
+	return nm_utils_hwaddr_ntoa_len (bytes, len);
 }
