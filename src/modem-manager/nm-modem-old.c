@@ -470,6 +470,7 @@ create_connect_properties (NMConnection *connection)
 		if (str)
 			value_hash_add_str (properties, "password", str);
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 		/* Add both old and new preferred modes */
 		switch (nm_setting_gsm_get_network_type (s_gsm)) {
 		case NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA:
@@ -501,6 +502,7 @@ create_connect_properties (NMConnection *connection)
 			value_hash_add_uint (properties, "allowed_mode", MM_MODEM_GSM_ALLOWED_MODE_ANY);
 			break;
 		}
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 		/* Roaming */
 		if (nm_setting_gsm_get_home_only (s_gsm))

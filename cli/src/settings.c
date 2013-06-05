@@ -1045,7 +1045,9 @@ static char *
 nmc_property_gsm_get_allowed_bands (NMSetting *setting)
 {
 	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	return allowed_bands_to_string (nm_setting_gsm_get_allowed_bands (s_gsm));
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 DEFINE_GETTER (nmc_property_gsm_get_pin, NM_SETTING_GSM_PIN)
