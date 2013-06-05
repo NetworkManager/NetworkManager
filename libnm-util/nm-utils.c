@@ -1877,6 +1877,9 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
  *
  * Returns the length in octets of a hardware address of type @type.
  *
+ * Note that this only accepts %ARPHRD_ETHER and %ARPHRD_INFINIBAND,
+ * not other types.
+ *
  * Return value: the length
  */
 int
@@ -1894,11 +1897,17 @@ nm_utils_hwaddr_len (int type)
  * nm_utils_hwaddr_type:
  * @len: the length of hardware address in bytes
  *
- * Returns the type (either %ARPHRD_ETHER or %ARPHRD_INFINIBAND) of the raw
- * address given its length.
+ * Returns the type (either %ARPHRD_ETHER or %ARPHRD_INFINIBAND) of
+ * the raw address given its length.
  *
- * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND, or -1 if
- * the address length was not recognized
+ * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND.
+ *
+ * Deprecated: This could not be extended to cover other types, since
+ * there is not a one-to-one mapping between types and lengths. This
+ * was mostly only used to get a type to pass to
+ * nm_utils_hwaddr_ntoa() or nm_utils_hwaddr_aton() when you only had
+ * a length; but you can just use nm_utils_hwaddr_ntoa_len() or
+ * nm_utils_hwaddr_aton_len() now instead.
  */
 int
 nm_utils_hwaddr_type (int len)
@@ -1923,43 +1932,15 @@ nm_utils_hwaddr_type (int len)
  * nm_utils_hwaddr_atoba() if you'd rather have the result in a
  * #GByteArray.
  *
+ * See also nm_utils_hwaddr_aton_len(), which takes an output length
+ * instead of a type.
+ *
  * Return value: @buffer, or %NULL if @asc couldn't be parsed
  */
 guint8 *
 nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
 {
-	const char *in = asc;
-	guint8 *out = (guint8 *)buffer;
-	int left = nm_utils_hwaddr_len (type);
-
-	while (left && *in) {
-		guint8 d1 = in[0], d2 = in[1];
-
-		if (!g_ascii_isxdigit (d1))
-			return NULL;
-
-		/* If there's no leading zero (ie "aa:b:cc") then fake it */
-		if (d2 && g_ascii_isxdigit (d2)) {
-			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
-			in += 2;
-		} else {
-			/* Fake leading zero */
-			*out++ = (HEXVAL ('0') << 4) + HEXVAL (d1);
-			in += 1;
-		}
-
-		left--;
-		if (*in) {
-			if (*in != ':')
-				return NULL;
-			in++;
-		}
-	}
-
-	if (left == 0 && !*in)
-		return buffer;
-	else
-		return NULL;
+	return nm_utils_hwaddr_aton_len (asc, buffer, nm_utils_hwaddr_len (type));
 }
 
 /**
@@ -1996,16 +1977,84 @@ nm_utils_hwaddr_atoba (const char *asc, int type)
  *
  * Converts @addr to textual form.
  *
+ * See also nm_utils_hwaddr_ntoa_len(), which takes a length instead of
+ * a type.
+ *
  * Return value: (transfer full): the textual form of @addr
  */
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
 {
+	return nm_utils_hwaddr_ntoa_len (addr, nm_utils_hwaddr_len (type));
+}
+
+/**
+ * nm_utils_hwaddr_aton_len:
+ * @asc: the ASCII representation of a hardware address
+ * @buffer: buffer to store the result into
+ * @length: the expected length in bytes of the result
+ *
+ * Parses @asc and converts it to binary form in @buffer.
+ *
+ * Return value: @buffer, or %NULL if @asc couldn't be parsed
+ *   or would be shorter or longer than @length.
+ *
+ * Since: 0.9.10
+ */
+guint8 *
+nm_utils_hwaddr_aton_len (const char *asc, gpointer buffer, gsize length)
+{
+	const char *in = asc;
+	guint8 *out = (guint8 *)buffer;
+
+	while (length && *in) {
+		guint8 d1 = in[0], d2 = in[1];
+
+		if (!g_ascii_isxdigit (d1))
+			return NULL;
+
+		/* If there's no leading zero (ie "aa:b:cc") then fake it */
+		if (d2 && g_ascii_isxdigit (d2)) {
+			*out++ = (HEXVAL (d1) << 4) + HEXVAL (d2);
+			in += 2;
+		} else {
+			/* Fake leading zero */
+			*out++ = (HEXVAL ('0') << 4) + HEXVAL (d1);
+			in += 1;
+		}
+
+		length--;
+		if (*in) {
+			if (*in != ':')
+				return NULL;
+			in++;
+		}
+	}
+
+	if (length == 0 && !*in)
+		return buffer;
+	else
+		return NULL;
+}
+
+/**
+ * nm_utils_hwaddr_ntoa_len:
+ * @addr: a binary hardware address
+ * @length: the length of @addr
+ *
+ * Converts @addr to textual form.
+ *
+ * Return value: (transfer full): the textual form of @addr
+ *
+ * Since: 0.9.10
+ */
+char *
+nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
+{
 	const guint8 *in = addr;
 	GString *out = g_string_new (NULL);
-	int left = nm_utils_hwaddr_len (type);
 
-	while (left--) {
+	while (length--) {
 		if (out->len)
 			g_string_append_c (out, ':');
 		g_string_append_printf (out, "%02X", *in++);
