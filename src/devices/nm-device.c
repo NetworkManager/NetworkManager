@@ -5005,7 +5005,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		                      "IP Interface",
 		                      "IP Interface",
 		                      NULL,
-		                      G_PARAM_READABLE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_DRIVER,
