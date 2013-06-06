@@ -1115,8 +1115,7 @@ NMDevice *
 nm_device_bt_new (const char *udi,
                   const char *bdaddr,
                   const char *name,
-                  guint32 capabilities,
-                  gboolean managed)
+                  guint32 capabilities)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (bdaddr != NULL, NULL);
@@ -1130,7 +1129,6 @@ nm_device_bt_new (const char *udi,
 	                                  NM_DEVICE_HW_ADDRESS, bdaddr,
 	                                  NM_DEVICE_BT_NAME, name,
 	                                  NM_DEVICE_BT_CAPABILITIES, capabilities,
-	                                  NM_DEVICE_MANAGED, managed,
 	                                  NM_DEVICE_TYPE_DESC, "Bluetooth",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BT,
 	                                  NULL);

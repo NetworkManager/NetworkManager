@@ -1980,7 +1980,7 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	if (nm_manager_get_device_by_udi (manager, object_path))
 		return;
 
-	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, FALSE);
+	device = nm_device_bt_new (object_path, bdaddr, name, capabilities);
 	if (device) {
 		nm_log_info (LOGD_HW, "BT device %s (%s) added (%s%s%s)",
 		             name,
