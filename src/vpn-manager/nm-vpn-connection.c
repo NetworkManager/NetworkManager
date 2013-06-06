@@ -39,7 +39,6 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-active-connection.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
 #include "nm-netlink-utils.h"
@@ -99,7 +98,6 @@ typedef struct {
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
 
 enum {
-	PROPERTIES_CHANGED,
 	VPN_STATE_CHANGED,
 	INTERNAL_STATE_CHANGED,
 
@@ -1621,7 +1619,8 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (object_class),
-	                                 &dbus_glib_nm_vpn_connection_object_info);
+	dbus_g_manager_register_exported_type (nm_dbus_manager_get (),
+	                                       G_TYPE_FROM_CLASS (object_class),
+	                                       &dbus_glib_nm_vpn_connection_object_info);
 }
 
