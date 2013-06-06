@@ -1039,8 +1039,12 @@ link_get_all (NMPlatform *platform)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
-		link_init (platform, &device, (struct rtnl_link *) object);
-		g_array_append_val (links, device);
+		int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
+
+		if (g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex))) {
+			link_init (platform, &device, (struct rtnl_link *) object);
+			g_array_append_val (links, device);
+		}
 	}
 
 	return links;
@@ -2326,15 +2330,7 @@ setup (NMPlatform *platform)
 
 	devices = g_udev_enumerator_execute (enumerator);
 	for (iter = devices; iter; iter = g_list_next (iter)) {
-		GUdevDevice *udev_device = iter->data;
-
-		if (g_udev_device_get_sysfs_attr (udev_device, "ifindex")) {
-			int ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
-
-			g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
-			                     g_object_ref (udev_device));
-		}
-
+		udev_device_added (platform, G_UDEV_DEVICE (iter->data));
 		g_object_unref (G_UDEV_DEVICE (iter->data));
 	}
 	g_list_free (devices);
