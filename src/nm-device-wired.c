@@ -418,7 +418,24 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	if (nm_device_is_master (device) && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	const char *method = NULL;
+	gboolean is_manual = FALSE;
+
+	connection = nm_device_get_connection (device);
+	if (connection) {
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		if (s_ip4)
+			method = nm_setting_ip4_config_get_method (s_ip4);
+
+		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0)
+			is_manual = TRUE;
+	}
+
+	if (   !is_manual
+	    && nm_device_is_master (device)
+	    && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
 		nm_log_info (LOGD_IP4 | NM_DEVICE_WIRED_LOG_LEVEL (device),
 		             "(%s): IPv4 config waiting until carrier is on",
 		             nm_device_get_ip_iface (device));
@@ -433,7 +450,24 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	if (nm_device_is_master (device) && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
+	NMConnection *connection;
+	NMSettingIP6Config *s_ip6;
+	const char *method = NULL;
+	gboolean is_manual = FALSE;
+
+	connection = nm_device_get_connection (device);
+	if (connection) {
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6)
+			method = nm_setting_ip6_config_get_method (s_ip6);
+
+		if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0)
+			is_manual = TRUE;
+	}
+
+	if (   !is_manual
+	    && nm_device_is_master (device)
+	    && !nm_device_wired_get_carrier (NM_DEVICE_WIRED (device))) {
 		nm_log_info (LOGD_IP6 | NM_DEVICE_WIRED_LOG_LEVEL (device),
 		             "(%s): IPv6 config waiting until carrier is on",
 		             nm_device_get_ip_iface (device));
