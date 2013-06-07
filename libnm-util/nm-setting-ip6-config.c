@@ -764,7 +764,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_METHOD:
 		g_free (priv->method);
-		if (g_strcmp0 (g_value_get_string (value), "disabled"))
+		if (g_strcmp0 (g_value_get_string (value), "disabled") == 0)
 			priv->method = g_strdup (NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 		else
 			priv->method = g_value_dup_string (value);
