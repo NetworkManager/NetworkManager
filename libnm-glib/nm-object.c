@@ -619,6 +619,17 @@ create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
 	g_slice_free (NMObjectTypeAsyncData, async_data);
 }
 
+static const char *
+nm_object_or_connection_get_path (gpointer instance)
+{
+	if (NM_IS_OBJECT (instance))
+		return nm_object_get_path (instance);
+	else if (NM_IS_CONNECTION (instance))
+		return nm_connection_get_path (instance);
+
+	g_assert_not_reached ();
+}
+
 static void
 async_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 {
@@ -628,7 +639,7 @@ async_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
 		g_warning ("Could not create object for %s: %s",
-		           nm_object_get_path (NM_OBJECT (object)), error->message);
+		           nm_object_or_connection_get_path (object), error->message);
 		g_error_free (error);
 		g_object_unref (object);
 		object = NULL;
