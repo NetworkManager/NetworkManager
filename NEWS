@@ -1,4 +1,32 @@
 ==============================================
+NetworkManager-0.9.8.2
+Overview of changes since NetworkManager-0.9.8
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Memory leak fixes
+* Ensure the ifcfg-rh plugin saves the bridging STP setting correctly
+* Also request static routes from DHCP servers
+* Fix crash when dbus-daemon restarts
+* Look harder for the machine ID and don't crash if we don't have one
+* Copy DHCP leasefiles from the previous location if necessary
+* Wait up to 120 seconds for modems to connect
+* Don't crash for PPPoE connections with no wired setting
+* Fix AvailableConnections for some WiFi connections
+* Ensure new available connections generate the PropertiesChanged signal
+* Ensure the keyfile plugin reads all-default VLAN connections correctly
+* Suppress the kernel's automatic creation of bond0
+* Make the SecretAgent API introspectable for bindings
+* Ensure ActiveConnections get torn down when device is unavailable
+* Ensure ifupdown plugin rechecks unmanaged devices on interface changes
+* Don't prematurely think IPv6 has succeeded due to left-over addresses
+* Fix various systemd issues and add service file for the dispatcher
+* Updates for new ModemManager API changes
+* Fix crash on Wi-Fi when IP configuration times out
+
+
+==============================================
 NetworkManager-0.9.8
 Overview of changes since NetworkManager-0.9.6
 ==============================================
