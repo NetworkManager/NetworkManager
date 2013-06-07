@@ -2442,16 +2442,29 @@ act_stage3_ip4_config_start (NMDevice *self,
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	if (   nm_device_is_master (self)
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
+
+	/* If we did not receive IP4 configuration information, default to DHCP.
+	 * Slaves, on the other hand, never have any IP configuration themselves,
+	 * since the master handles all of that.
+	 */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (priv->master) /* eg, device is a slave */
+		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+	else if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+	else
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+
+	if (   g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
+	    && nm_device_is_master (self)
 	    && nm_device_is_unavailable_because_of_carrier (self)) {
 		nm_log_info (LOGD_IP4 | LOGD_DEVICE,
 		             "(%s): IPv4 config waiting until carrier is on",
 		             nm_device_get_ip_iface (self));
 		return NM_ACT_STAGE_RETURN_WAIT;
 	}
-
-	connection = nm_device_get_connection (self);
-	g_assert (connection);
 
 	if (priv->is_master && ip4_requires_slaves (connection)) {
 		/* If the master has no ready slaves, and depends on slaves for
@@ -2468,18 +2481,6 @@ act_stage3_ip4_config_start (NMDevice *self,
 			return NM_ACT_STAGE_RETURN_WAIT;
 		}
 	}
-
-	/* If we did not receive IP4 configuration information, default to DHCP.
-	 * Slaves, on the other hand, never have any IP configuration themselves,
-	 * since the master handles all of that.
-	 */
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (priv->master) /* eg, device is a slave */
-		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	else if (s_ip4)
-		method = nm_setting_ip4_config_get_method (s_ip4);
-	else
-		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -3049,18 +3050,30 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	if (   nm_device_is_master (self)
-	    && nm_device_is_unavailable_because_of_carrier (self)) {
-		nm_log_info (LOGD_IP6 | LOGD_DEVICE,
-		             "(%s): IPv6 config waiting until carrier is on",
-		             nm_device_get_ip_iface (self));
-		return NM_ACT_STAGE_RETURN_WAIT;
-	}
+	ip_iface = nm_device_get_ip_iface (self);
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	ip_iface = nm_device_get_ip_iface (self);
+	/* If we did not receive IP6 configuration information, default to AUTO.
+	 * Slaves, on the other hand, never have any IP configuration themselves,
+	 * since the master handles all of that.
+	 */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	if (priv->master) /* eg, device is a slave */
+		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+	else if (s_ip6)
+		method = nm_setting_ip6_config_get_method (s_ip6);
+	else
+		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+
+	if (   g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
+	    && nm_device_is_master (self)
+	    && nm_device_is_unavailable_because_of_carrier (self)) {
+		nm_log_info (LOGD_IP6 | LOGD_DEVICE,
+		             "(%s): IPv6 config waiting until carrier is on", ip_iface);
+		return NM_ACT_STAGE_RETURN_WAIT;
+	}
 
 	if (priv->is_master && ip6_requires_slaves (connection)) {
 		/* If the master has no ready slaves, and depends on slaves for
@@ -3082,18 +3095,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	update_ip6_privacy_save (self);
 
 	priv->dhcp6_mode = IP6_DHCP_OPT_NONE;
-
-	/* If we did not receive IP6 configuration information, default to AUTO.
-	 * Slaves, on the other hand, never have any IP configuration themselves,
-	 * since the master handles all of that.
-	 */
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (priv->master) /* eg, device is a slave */
-		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-	else if (s_ip6)
-		method = nm_setting_ip6_config_get_method (s_ip6);
-	else
-		method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
 	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
