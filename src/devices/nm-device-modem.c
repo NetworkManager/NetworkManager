@@ -337,40 +337,32 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
-	const gchar *ip_iface = NULL;
+	NMDevice *device;
 
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	if (NM_IS_MODEM_OLD (modem)) {
-		ip_iface = nm_modem_get_data_port (modem);
-	}
-#if WITH_MODEM_MANAGER_1
-	else if (NM_IS_MODEM_BROADBAND (modem)) {
-		/* In ModemManager1 modems, data port is not yet known */
-		ip_iface = NULL;
-	}
-#endif
-	else {
-		nm_log_warn (LOGD_MB, "unhandled modem type %s", G_OBJECT_TYPE_NAME (modem));
-		return NULL;
-	}
-
 	/* Load capabilities */
 	nm_modem_get_capabilities (modem, &caps, &current_caps);
 
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
-	                                  NM_DEVICE_UDI, nm_modem_get_path (modem),
-	                                  NM_DEVICE_IFACE, nm_modem_get_uid (modem),
-	                                  NM_DEVICE_IP_IFACE, ip_iface,
-	                                  NM_DEVICE_DRIVER, driver,
-	                                  NM_DEVICE_TYPE_DESC, "Broadband",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
-	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
-	                                  NM_DEVICE_MODEM_MODEM, modem,
-	                                  NM_DEVICE_MODEM_CAPABILITIES, caps,
-	                                  NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
-	                                  NULL);
+	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
+	                                    NM_DEVICE_UDI, nm_modem_get_path (modem),
+	                                    NM_DEVICE_IFACE, nm_modem_get_uid (modem),
+	                                    NM_DEVICE_DRIVER, driver,
+	                                    NM_DEVICE_TYPE_DESC, "Broadband",
+	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
+	                                    NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
+	                                    NM_DEVICE_MODEM_MODEM, modem,
+	                                    NM_DEVICE_MODEM_CAPABILITIES, caps,
+	                                    NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
+	                                    NULL);
+
+	/* In old MM modems, data port is known right away (may be changed
+	 * afterwards during a PPP session setup) */
+	if (NM_IS_MODEM_OLD (modem))
+		nm_device_set_ip_iface (device, nm_modem_get_data_port (modem));
+
+	return device;
 }
 
 static void
