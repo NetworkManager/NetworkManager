@@ -3240,9 +3240,6 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 		return ret;
 	}
 
-	ap = nm_device_wifi_get_activation_ap (self);
-	g_assert (ap);
-
 	/* If IP configuration times out and it's a static WEP connection, that
 	 * usually means the WEP key is wrong.  WEP's Open System auth mode has
 	 * no provision for figuring out if the WEP key is wrong, so you just have
@@ -3250,7 +3247,8 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	 * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
 	 * connection would have failed before IP configuration.
 	 */
-	if (is_static_wep (ap, connection) && (may_fail == FALSE)) {
+	ap = nm_device_wifi_get_activation_ap (self);
+	if (ap && is_static_wep (ap, connection) && (may_fail == FALSE)) {
 		/* Activation failed, we must have bad encryption key */
 		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): could not get IP configuration for "
