@@ -481,7 +481,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 	else if (!strcmp (type, "team"))
 		return_type (NM_LINK_TYPE_TEAM, "team");
 
-	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+	return_type (NM_LINK_TYPE_UNKNOWN, type);
 }
 
 static const char *
