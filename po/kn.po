@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager.po.master.kn\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2013-05-01 21:55+0000\n"
-"PO-Revision-Date: 2013-03-25 21:54+0530\n"
+"POT-Creation-Date: 2013-05-25 16:23+0000\n"
+"PO-Revision-Date: 2013-05-29 15:55+0530\n"
 "Last-Translator: Shankar Prasad <svenkate@redhat.com>\n"
 "Language-Team: Kannada <kde-i18n-doc@kde.org>\n"
 "Language: kn\n"
@@ -20,329 +20,398 @@ msgstr ""
 "X-Generator: Lokalize 1.5\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
-#: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
-#: ../cli/src/common.c:63 ../cli/src/connections.c:135
+#: ../cli/src/common.c:34 ../cli/src/common.c:46 ../cli/src/common.c:54
+#: ../cli/src/common.c:65 ../cli/src/connections.c:135
 #: ../cli/src/connections.c:169
 msgid "GROUP"
 msgstr "GROUP"
 
 #. 0
-#: ../cli/src/common.c:33 ../cli/src/common.c:53
+#: ../cli/src/common.c:35 ../cli/src/common.c:55
 msgid "ADDRESS"
 msgstr "ADDRESS"
 
 #. 1
-#: ../cli/src/common.c:34 ../cli/src/common.c:54
+#: ../cli/src/common.c:36 ../cli/src/common.c:56
 msgid "ROUTE"
 msgstr "ROUTE"
 
 #. 2
-#: ../cli/src/common.c:35 ../cli/src/common.c:55
+#: ../cli/src/common.c:37 ../cli/src/common.c:57
 msgid "DNS"
 msgstr "DNS"
 
 #. 3
-#: ../cli/src/common.c:36 ../cli/src/common.c:56
+#: ../cli/src/common.c:38 ../cli/src/common.c:58
 msgid "DOMAIN"
 msgstr "DOMAIN"
 
 #. 4
-#: ../cli/src/common.c:37
+#: ../cli/src/common.c:39
 msgid "WINS"
 msgstr "WINS"
 
 #. 0
-#: ../cli/src/common.c:45 ../cli/src/common.c:64
+#: ../cli/src/common.c:47 ../cli/src/common.c:66
 msgid "OPTION"
 msgstr "OPTION"
 
-#: ../cli/src/common.c:366
+#: ../cli/src/common.c:387
+#, c-format
+#| msgid "'%s' is not a valid IPv4 address for '%s' option"
+msgid "invalid IPv4 address '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ IPv4 ವಿಳಾಸ '%s'"
+
+#: ../cli/src/common.c:395
+#, c-format
+msgid "invalid prefix '%s'; <1-32> allowed"
+msgstr "ಅಮಾನ್ಯವಾದ ಪ್ರಿಫಿಕ್ಸ್ '%s'; <1-32> ಅನುಮತಿಸಲಾಗಿದೆ"
+
+#: ../cli/src/common.c:402 ../cli/src/common.c:455
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid gateway '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ ಗೇಟ್‌ವೇ '%s'"
+
+#: ../cli/src/common.c:440
+#, c-format
+#| msgid "'%s' is not a valid IPv4 address for '%s' option"
+msgid "invalid IPv6 address '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ IPv4 ವಿಳಾಸ '%s'"
+
+#: ../cli/src/common.c:448 ../cli/src/common.c:566
+#, c-format
+msgid "invalid prefix '%s'; <0-128> allowed"
+msgstr "ಅಮಾನ್ಯವಾದ ಪ್ರಿಫಿಕ್ಸ್ '%s'; <0-128> ಅನುಮತಿಸಲಾಗಿದೆ"
+
+#: ../cli/src/common.c:495
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid IPv4 route '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ IPv4 ರೌಟ್ '%s'"
+
+#: ../cli/src/common.c:503
+#, c-format
+msgid "invalid prefix '%s'; <0-32> allowed"
+msgstr "ಅಮಾನ್ಯವಾದ ಪ್ರಿಫಿಕ್ಸ್ '%s'; <0-32> ಅನುಮತಿಸಲಾಗಿದೆ"
+
+#: ../cli/src/common.c:510 ../cli/src/common.c:573
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid next hop address '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ ಮುಂದಿನ hop ವಿಳಾಸ '%s'"
+
+#: ../cli/src/common.c:517 ../cli/src/common.c:581
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid metric '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ ಮೆಟ್ರಿಕ್ '%s'"
+
+#: ../cli/src/common.c:558
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid IPv6 route '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ IPv6 ರೌಟ್ '%s'"
+
+#: ../cli/src/common.c:602
 msgid "unmanaged"
 msgstr "ನಿರ್ವಹಿಸದೆ ಇರುವ"
 
-#: ../cli/src/common.c:368
+#: ../cli/src/common.c:604
 msgid "unavailable"
 msgstr "ಲಭ್ಯವಿಲ್ಲ"
 
-#: ../cli/src/common.c:370 ../cli/src/network-manager.c:148
+#: ../cli/src/common.c:606 ../cli/src/network-manager.c:148
 msgid "disconnected"
 msgstr "ಸಂಪರ್ಕಕಡಿದು ಹೋಗಿದೆ"
 
-#: ../cli/src/common.c:372
+#: ../cli/src/common.c:608
 msgid "connecting (prepare)"
 msgstr "ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (ಸಿದ್ಧಗೊಳಿಕೆ)"
 
-#: ../cli/src/common.c:374
+#: ../cli/src/common.c:610
 msgid "connecting (configuring)"
 msgstr "ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (ಸಂರಚಿಸುವಿಕೆ)"
 
-#: ../cli/src/common.c:376
+#: ../cli/src/common.c:612
 msgid "connecting (need authentication)"
 msgstr "ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (ದೃಢೀಕರಣದ ಅಗತ್ಯವಿದೆ)"
 
-#: ../cli/src/common.c:378
+#: ../cli/src/common.c:614
 msgid "connecting (getting IP configuration)"
 msgstr "ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (IP ಸಂರಚನೆಯನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ)"
 
-#: ../cli/src/common.c:380
+#: ../cli/src/common.c:616
 msgid "connecting (checking IP connectivity)"
 msgstr "ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (IP ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ)"
 
-#: ../cli/src/common.c:382
+#: ../cli/src/common.c:618
 msgid "connecting (starting secondary connections)"
 msgstr "ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (ಎರಡನೆಯ ಸಂರಚನೆಯನ್ನು ಆರಂಭಿಸಲಾಗುತ್ತಿದೆ)"
 
-#: ../cli/src/common.c:384 ../cli/src/network-manager.c:144
+#: ../cli/src/common.c:620 ../cli/src/network-manager.c:144
 msgid "connected"
 msgstr "ಸಂಪರ್ಕಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:386 ../cli/src/connections.c:468
+#: ../cli/src/common.c:622 ../cli/src/connections.c:537
 msgid "deactivating"
 msgstr "ನಿಷ್ಕ್ರಿಯಗೊಳ್ಳುತ್ತಿದೆ"
 
-#: ../cli/src/common.c:388
+#: ../cli/src/common.c:624
 msgid "connection failed"
 msgstr "ಸಂಪರ್ಕ ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:390 ../cli/src/connections.c:473
-#: ../cli/src/connections.c:496 ../cli/src/connections.c:1193
-#: ../cli/src/devices.c:664 ../cli/src/devices.c:1918
+#: ../cli/src/common.c:626 ../cli/src/connections.c:542
+#: ../cli/src/connections.c:565 ../cli/src/connections.c:1262
+#: ../cli/src/devices.c:667 ../cli/src/devices.c:1893
 #: ../cli/src/network-manager.c:151 ../cli/src/network-manager.c:214
 #: ../cli/src/network-manager.c:217 ../cli/src/network-manager.c:226
 #: ../cli/src/network-manager.c:283 ../cli/src/network-manager.c:299
 #: ../cli/src/settings.c:664 ../cli/src/settings.c:692
-#: ../cli/src/settings.c:754 ../cli/src/utils.c:627 ../src/main.c:403
-#: ../src/main.c:422
+#: ../cli/src/settings.c:754 ../cli/src/utils.c:766 ../src/main.c:431
+#: ../src/main.c:450
 msgid "unknown"
 msgstr "ಗೊತ್ತಿಲ್ಲದ"
 
-#: ../cli/src/common.c:399
+#: ../cli/src/common.c:635
 msgid "No reason given"
 msgstr "ಯಾವುದೆ ಕಾರಣ ನೀಡಲಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:402
+#: ../cli/src/common.c:638 ../cli/src/connections.c:1841
+#, c-format
 msgid "Unknown error"
 msgstr "ಗೊತ್ತಿರದ ದೋಷ"
 
-#: ../cli/src/common.c:405
+#: ../cli/src/common.c:641
 msgid "Device is now managed"
 msgstr "ಸಾಧನವನ್ನು ಈಗ ನಿಯಂತ್ರಣಕ್ಕೊಳಪಡಿಸಲಾಗಿದೆ"
 
-#: ../cli/src/common.c:408
+#: ../cli/src/common.c:644
 msgid "Device is now unmanaged"
 msgstr "ಸಾಧನವನ್ನು ಈಗ ನಿಯಂತ್ರಣಕ್ಕೊಳಪಡಿಸಲಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:411
+#: ../cli/src/common.c:647
 msgid "The device could not be readied for configuration"
 msgstr "ಸಾಧನವನ್ನು ಸಂರಚನೆಗಾಗಿ ಸಿದ್ಧಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:414
+#: ../cli/src/common.c:650
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
 msgstr ""
 "IP ಸಂರಚನೆಯನ್ನು ಕಾದಿರಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ (ಲಭ್ಯವಿರುವ ಯಾವುದೆ ವಿಳಾಸ, ಕಾಲತೀರಿಕೆ, "
 "ಮುಂತಾದವುಗಳಿಲ್ಲ.)"
 
-#: ../cli/src/common.c:417
+#: ../cli/src/common.c:653
 msgid "The IP configuration is no longer valid"
 msgstr "IP ಸಂರಚನೆಯು ಇನ್ನು ಮುಂದೆ ಮಾನ್ಯವಾಗಿರುವುದಿಲ್ಲ"
 
-#: ../cli/src/common.c:420
+#: ../cli/src/common.c:656
 msgid "Secrets were required, but not provided"
 msgstr "ರಹಸ್ಯಗಳ ಅಗತ್ಯವಿದೆ, ಆದರೆ ಒದಗಿಸಲಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:423
+#: ../cli/src/common.c:659
 msgid "802.1X supplicant disconnected"
 msgstr "802.1X ಸಪ್ಲಿಕ್ಯಾಂಟ್‌ನೊಂದಿಗಿನ ಸಂಪರ್ಕ ಕಡಿದಿದೆ"
 
-#: ../cli/src/common.c:426
+#: ../cli/src/common.c:662
 msgid "802.1X supplicant configuration failed"
 msgstr "802.1X ಸಪ್ಲಿಕ್ಯಾಂಟ್ ಸಂರಚನೆಯು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:429
+#: ../cli/src/common.c:665
 msgid "802.1X supplicant failed"
 msgstr "802.1X ಸಪ್ಲಿಕ್ಯಾಂಟ್ ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:432
+#: ../cli/src/common.c:668
 msgid "802.1X supplicant took too long to authenticate"
 msgstr "802.1X ಸಪ್ಲಿಕ್ಯಾಂಟ್‌ ದೃಢೀಕರಿಸಲು ಬಹಳ ಸಮಯ ತೆಗೆದುಕೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:435
+#: ../cli/src/common.c:671
 msgid "PPP service failed to start"
 msgstr "PPP ಸೇವೆಯನ್ನು ಆರಂಭಿಸುವಲ್ಲಿ ವಿಫಲತೆ"
 
-#: ../cli/src/common.c:438
+#: ../cli/src/common.c:674
 msgid "PPP service disconnected"
 msgstr "PPP ಸೇವೆಯ ಸಂಪರ್ಕ ಕಡಿದಿದೆ"
 
-#: ../cli/src/common.c:441
+#: ../cli/src/common.c:677
 msgid "PPP failed"
 msgstr "PPP ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:444
+#: ../cli/src/common.c:680
 msgid "DHCP client failed to start"
 msgstr "DHCP ಕ್ಲೈಂಟ್ ಆರಂಭಗೊಳ್ಳುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:447
+#: ../cli/src/common.c:683
 msgid "DHCP client error"
 msgstr "DHCP ಕ್ಲೈಂಟ್ ದೋಷ"
 
-#: ../cli/src/common.c:450
+#: ../cli/src/common.c:686
 msgid "DHCP client failed"
 msgstr "DHCP ಕ್ಲೈಂಟ್ ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:453
+#: ../cli/src/common.c:689
 msgid "Shared connection service failed to start"
 msgstr "ಹಂಚಲಾದ ಸಂಪರ್ಕ ಸೇವೆಯು ಆರಂಭಗೊಳ್ಳುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:456
+#: ../cli/src/common.c:692
 msgid "Shared connection service failed"
 msgstr "ಹಂಚಲಾದ ಸಂಪರ್ಕ ಸೇವೆಯು  ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:459
+#: ../cli/src/common.c:695
 msgid "AutoIP service failed to start"
 msgstr "AutoIP ಸೇವೆಯನ್ನು ಆರಂಭಿಸುವಲ್ಲಿ ವಿಫಲತೆ"
 
-#: ../cli/src/common.c:462
+#: ../cli/src/common.c:698
 msgid "AutoIP service error"
 msgstr "AutoIP ಸೇವಾ ದೋಷ"
 
-#: ../cli/src/common.c:465
+#: ../cli/src/common.c:701
 msgid "AutoIP service failed"
 msgstr "AutoIP ಸೇವೆಯು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:468
+#: ../cli/src/common.c:704
 msgid "The line is busy"
 msgstr "ಮಾರ್ಗವು ಕಾರ್ಯನಿರತವಾಗಿದೆ"
 
-#: ../cli/src/common.c:471
+#: ../cli/src/common.c:707
 msgid "No dial tone"
 msgstr "ಡಯಲ್ ಶಬ್ಧವಿಲ್ಲ"
 
-#: ../cli/src/common.c:474
+#: ../cli/src/common.c:710
 msgid "No carrier could be established"
 msgstr "ಯಾವುದೆ ವಾಹಕವನ್ನು ಸಾಧಿಸಲಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:477
+#: ../cli/src/common.c:713
 msgid "The dialing request timed out"
 msgstr "ಡಯಲ್ ಮಾಡುವ ಮನವಿಯ ಕಾಲಾವಧಿ ಮುಗಿದಿದೆ"
 
-#: ../cli/src/common.c:480
+#: ../cli/src/common.c:716
 msgid "The dialing attempt failed"
 msgstr "ಡಯಲ್ ಮಾಡುವ ಪ್ರಯತ್ನವು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:483
+#: ../cli/src/common.c:719
 msgid "Modem initialization failed"
 msgstr "ಮಾಡೆಮ್ ಆರಂಭಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:486
+#: ../cli/src/common.c:722
 msgid "Failed to select the specified APN"
 msgstr "ನಿಶ್ಚಿತ APN ಅನ್ನು ಆರಿಸುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ."
 
-#: ../cli/src/common.c:489
+#: ../cli/src/common.c:725
 msgid "Not searching for networks"
 msgstr "ಜಾಲಬಂಧಗಳಿಗಾಗಿ ಹುಡುಕಲಾಗುತ್ತಿಲ್ಲ"
 
-#: ../cli/src/common.c:492
+#: ../cli/src/common.c:728
 msgid "Network registration denied"
 msgstr "ಜಾಲಬಂಧ ನೋಂದಣಿಯನ್ನು ನಿರಾಕರಿಸಲಾಗಿದೆ"
 
-#: ../cli/src/common.c:495
+#: ../cli/src/common.c:731
 msgid "Network registration timed out"
 msgstr "ಜಾಲಬಂಧ ನೋಂದಣಿಯ ಕಾಲಾವಧಿ ತೀರಿದೆ"
 
-#: ../cli/src/common.c:498
+#: ../cli/src/common.c:734
 msgid "Failed to register with the requested network"
 msgstr "ಮನವಿ ಸಲ್ಲಿಸಲಾದ ಜಾಲಬಂಧದೊಂದಿಗೆ ನೋಂದಾಯಿಸಲು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:501
+#: ../cli/src/common.c:737
 msgid "PIN check failed"
 msgstr "PIN ಪರಿಶೀಲನೆಯು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:504
+#: ../cli/src/common.c:740
 msgid "Necessary firmware for the device may be missing"
 msgstr "ಸಾಧನಕ್ಕಾಗಿ ಯಾವುದೆ ಅಗತ್ಯ ಫರ್ಮ್-ವೇರ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ"
 
-#: ../cli/src/common.c:507
+#: ../cli/src/common.c:743
 msgid "The device was removed"
 msgstr "ಸಾಧನವನ್ನು ತೆಗೆದು ಹಾಕಲಾಗಿದೆ"
 
-#: ../cli/src/common.c:510
+#: ../cli/src/common.c:746
 msgid "NetworkManager went to sleep"
 msgstr "NetworkManager ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಹೋಗಿದೆ"
 
-#: ../cli/src/common.c:513
+#: ../cli/src/common.c:749
 msgid "The device's active connection disappeared"
 msgstr "ಸಾಧನದ ಸಕ್ರಿಯ ಸಂಪರ್ಕವು ಮರೆಯಾಗಿದೆ"
 
-#: ../cli/src/common.c:516
+#: ../cli/src/common.c:752
 msgid "Device disconnected by user or client"
 msgstr "ಸಾಧನದೊಂದಿಗಿನ ಸಂಪರ್ಕವನ್ನು ಬಳಕೆದಾರ ಅಥವ ಕ್ಲೈಂಟ್‌ನಿಂದ ಕಡಿದು ಹಾಕಲಾಗಿದೆ"
 
-#: ../cli/src/common.c:519
+#: ../cli/src/common.c:755
 msgid "Carrier/link changed"
 msgstr "ವಾಹಕ/ಕೊಂಡಿಯನ್ನು ಬದಲಾಯಿಸಲಾಗಿದೆ"
 
-#: ../cli/src/common.c:522
+#: ../cli/src/common.c:758
 msgid "The device's existing connection was assumed"
 msgstr "ಸಾಧನದ ಈಗಿನ ಸಂಪರ್ಕವನ್ನು ಊಹಿಸಲಾಗಿದೆ"
 
-#: ../cli/src/common.c:525
+#: ../cli/src/common.c:761
 msgid "The supplicant is now available"
 msgstr "ಸಪ್ಲಿಕ್ಯಾಂಟ್ ಈಗ ಲಭ್ಯವಿದೆ"
 
-#: ../cli/src/common.c:528
+#: ../cli/src/common.c:764
 msgid "The modem could not be found"
 msgstr "ಮಾಡೆಮ್‌ ಕಂಡು ಬಂದಿಲ್ಲ"
 
-#: ../cli/src/common.c:531
+#: ../cli/src/common.c:767
 msgid "The Bluetooth connection failed or timed out"
 msgstr "ಬ್ಲೂಟೂತ್ ಸಂಪರ್ಕವು ವಿಫಲಗೊಂಡಿದೆ ಅಥವ ಕಾಲಾವಧಿ ಮೀರಿದೆ"
 
-#: ../cli/src/common.c:534
+#: ../cli/src/common.c:770
 msgid "GSM Modem's SIM card not inserted"
 msgstr "GSM ಮಾಡೆಮ್‌ನ SIM ಕಾರ್ಡ್ ಅನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:537
+#: ../cli/src/common.c:773
 msgid "GSM Modem's SIM PIN required"
 msgstr "GSM ಮಾಡೆಮ್‌ನ SIM PIN ಅಗತ್ಯವಿದೆ"
 
-#: ../cli/src/common.c:540
+#: ../cli/src/common.c:776
 msgid "GSM Modem's SIM PUK required"
 msgstr "GSM ಮಾಡೆಮ್‌ನ SIM PUK ಅಗತ್ಯವಿದೆ"
 
-#: ../cli/src/common.c:543
+#: ../cli/src/common.c:779
 msgid "GSM Modem's SIM wrong"
 msgstr "GSM ಮಾಡೆಮ್‌ನ SIM ತಪ್ಪಾಗಿದೆ"
 
-#: ../cli/src/common.c:546
+#: ../cli/src/common.c:782
 msgid "InfiniBand device does not support connected mode"
 msgstr "InfiniBand ಸಾಧನವು ಸಂಪರ್ಕಿತ ಸ್ಥಿತಿಯಲ್ಲಿ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ"
 
-#: ../cli/src/common.c:549
+#: ../cli/src/common.c:785
 msgid "A dependency of the connection failed"
 msgstr "ಸಂಪರ್ಕದ ಅವಲಂಬನೆಯು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:552
+#: ../cli/src/common.c:788
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
 msgstr "ADSL ಬ್ರಿಡ್ಜಿನ ಮುಖಾಂತರದ RFC 2684 ಎತರ್ನೆಟ್‌ನಲ್ಲಿ ಒಂದು ತೊಂದರೆ ಕಂಡುಬಂದಿದೆ"
 
-#: ../cli/src/common.c:555
+#: ../cli/src/common.c:791
 msgid "ModemManager is unavailable"
 msgstr "ModemManager ಲಭ್ಯವಿಲ್ಲ"
 
-#: ../cli/src/common.c:558
+#: ../cli/src/common.c:794
 msgid "The Wi-Fi network could not be found"
 msgstr "Wi-Fi ಜಾಲಬಂಧವು ಕಂಡು ಬಂದಿಲ್ಲ"
 
-#: ../cli/src/common.c:561
+#: ../cli/src/common.c:797
 msgid "A secondary connection of the base connection failed"
 msgstr "ಮೂಲ ಸಂಪರ್ಕದ ಎರಡನೇ ಸಂಪರ್ಕವು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/common.c:564 ../cli/src/devices.c:310 ../cli/src/devices.c:328
-#: ../cli/src/devices.c:450 ../cli/src/devices.c:494
+#: ../cli/src/common.c:800 ../cli/src/devices.c:449 ../cli/src/devices.c:493
 msgid "Unknown"
 msgstr "ಗೊತ್ತಿರದ"
+
+#: ../cli/src/common.c:842
+#, c-format
+#| msgid "invalid '%s' or its value '%s'"
+msgid "invalid priority map '%s'"
+msgstr "ಅಮಾನ್ಯವಾದ ಆದ್ಯತೆ ನಕ್ಷೆ '%s'"
+
+#: ../cli/src/common.c:849 ../cli/src/common.c:855
+#, c-format
+#| msgid "'%s' is not a valid band"
+msgid "priority '%s' is not valid (<0-%ld>)"
+msgstr "'%s' ಆದ್ಯತೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ (<0-%ld>)"
 
 #. 0
 #. used only for 'GENERAL' group listing
@@ -485,7 +554,7 @@ msgid "CFG"
 msgstr "CFG"
 
 #: ../cli/src/connections.c:197
-#, fuzzy, c-format
+#, c-format
 #| msgid ""
 #| "Usage: nmcli connection { COMMAND | help }\n"
 #| "  COMMAND := { list | status | up | down | delete }\n"
@@ -507,115 +576,281 @@ msgid ""
 "\n"
 "  show active     [[ id | uuid | path | apath ] <ID>]\n"
 "\n"
-"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] "
-"[--nowait] [--timeout <timeout>]\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
 "\n"
-"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--"
-"timeout <timeout>]\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>]\n"
 "\n"
 "  down [ id | uuid | path | apath ] <ID>\n"
 "\n"
+"  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
 "  delete [ id | uuid | path ] <ID>\n"
+"\n"
 "\n"
 msgstr ""
 "ಬಳಕೆ: nmcli connection { COMMAND | help }\n"
-"  COMMAND := { list | status | up | down | delete }\n"
+"  COMMAND := { show | up | down | delete }\n"
 "\n"
-"  list [id <id> | uuid <id>]\n"
-"  status [id <id> | uuid <id> | path <path>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
-"nowait] [--timeout <timeout>]\n"
-"  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--timeout "
-"<timeout>]\n"
-"  down id <id> | uuid <id>\n"
-"  delete id <id> | uuid <id>\n"
+"  show configured [[ id | uuid | path ] <ID>]\n"
+"\n"
+"  show active     [[ id | uuid | path | apath ] <ID>]\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
+"\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>]\n"
+"\n"
+"  down [ id | uuid | path | apath ] <ID>\n"
+"\n"
+"  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
+"  delete [ id | uuid | path ] <ID>\n"
+"\n"
 "\n"
 
-#: ../cli/src/connections.c:256
-#, fuzzy, c-format
+#: ../cli/src/connections.c:216
+#, c-format
+msgid ""
+"Usage: nmcli connection add { OPTIONS | help }\n"
+"  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
+"  COMMON_OPTIONS:\n"
+"                  type <type>\n"
+"                  [con-name <connection name>]\n"
+"                  [autoconnect yes|no]\n"
+"                  [ifname <interface name>]\n"
+"\n"
+"  TYPE_SPECIFIC_OPTIONS:\n"
+"    ethernet:     [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    wifi:         [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [ssid <SSID>]\n"
+"\n"
+"    wimax:        [mac <MAC address>]\n"
+"                  [nsp <NSP>]\n"
+"\n"
+"    gsm:          apn <APN>]\n"
+"                  [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    cdma:         [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    infiniband:   [mac <MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [transport-mode <mode>]\n"
+"\n"
+"    bluetooth:    [addr <bluetooth address>]\n"
+"                  [bt-type panu|dun-gsm|dun-cdma]\n"
+"                  [transport-mode datagram | connected]\n"
+"\n"
+"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)\n"
+"                  [id <VLAN id>]\n"
+"                  [flags <VLAN flags>]\n"
+"                  [ingress <ingress priority mapping>]\n"
+"                  [egress <egress priority mapping>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
+"| broadcast (3) |\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
+"(6)]\n"
+"                  [miimon <num>]\n"
+"                  [downdelay <num>]\n"
+"                  [updelay <num>]\n"
+"                  [arp_interval <num>]\n"
+"                  [arp_ip_traget <num>]\n"
+"\n"
+"    bond-slave:   master <master (ifname or connection UUID)\n"
+"\n"
+"    bridge:       [stp yes|no>]\n"
+"                  [priority <num>]\n"
+"                  [forward-delay <2-30>]\n"
+"                  [hello-time <1-10>]\n"
+"                  [max-age <6-40>]\n"
+"                  [ageing-time <0-1000000>]\n"
+"\n"
+"    bridge-slave: master <master (ifname or connection UUID)\n"
+"                  [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+"                  [user <username>]\n"
+"\n"
+"    olpc-mesh:    ssid <SSID>\n"
+"                  [channel <1-13>]\n"
+"                  [dhcp-anycast <MAC address>]\n"
+"\n"
+"  IP_OPTIONS:\n"
+"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
+msgstr ""
+"ಬಳಕೆ: nmcli connection add { OPTIONS | help }\n"
+"  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
+"  COMMON_OPTIONS:\n"
+"                  type <type>\n"
+"                  [con-name <connection name>]\n"
+"                  [autoconnect yes|no]\n"
+"                  [ifname <interface name>]\n"
+"\n"
+"  TYPE_SPECIFIC_OPTIONS:\n"
+"    ethernet:     [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    wifi:         [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [ssid <SSID>]\n"
+"\n"
+"    wimax:        [mac <MAC address>]\n"
+"                  [nsp <NSP>]\n"
+"\n"
+"    gsm:          apn <APN>]\n"
+"                  [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    cdma:         [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    infiniband:   [mac <MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [transport-mode <mode>]\n"
+"\n"
+"    bluetooth:    [addr <bluetooth address>]\n"
+"                  [bt-type panu|dun-gsm|dun-cdma]\n"
+"                  [transport-mode datagram | connected]\n"
+"\n"
+"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)\n"
+"                  [id <VLAN id>]\n"
+"                  [flags <VLAN flags>]\n"
+"                  [ingress <ingress priority mapping>]\n"
+"                  [egress <egress priority mapping>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
+"| broadcast (3) |\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
+"(6)]\n"
+"                  [miimon <num>]\n"
+"                  [downdelay <num>]\n"
+"                  [updelay <num>]\n"
+"                  [arp_interval <num>]\n"
+"                  [arp_ip_traget <num>]\n"
+"\n"
+"    bond-slave:   master <master (ifname or connection UUID)\n"
+"\n"
+"    bridge:       [stp yes|no>]\n"
+"                  [priority <num>]\n"
+"                  [forward-delay <2-30>]\n"
+"                  [hello-time <1-10>]\n"
+"                  [max-age <6-40>]\n"
+"                  [ageing-time <0-1000000>]\n"
+"\n"
+"    bridge-slave: master <master (ifname or connection UUID)\n"
+"                  [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+"                  [user <username>]\n"
+"\n"
+"    olpc-mesh:    ssid <SSID>\n"
+"                  [channel <1-13>]\n"
+"                  [dhcp-anycast <MAC address>]\n"
+"\n"
+"  IP_OPTIONS:\n"
+"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
+
+#: ../cli/src/connections.c:325
+#, c-format
 #| msgid "Error: 'con list': %s"
 msgid "Error: 'list configured': %s"
-msgstr "ದೋಷ: 'con list': %s"
+msgstr "ದೋಷ: 'list configured': %s"
 
-#: ../cli/src/connections.c:258
-#, fuzzy, c-format
+#: ../cli/src/connections.c:327
+#, c-format
 #| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'list configured': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'con list': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'list configured':  %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/connections.c:266
+#: ../cli/src/connections.c:335
 msgid "Connection details"
 msgstr "ಸಂಪರ್ಕದ ವಿವರಗಳು"
 
-#: ../cli/src/connections.c:317
+#: ../cli/src/connections.c:386
 msgid "never"
 msgstr "ಎಂದಿಗೂ ಬೇಡ"
 
 #. "CAPABILITIES"
 #. Print header
 #. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
-#: ../cli/src/connections.c:554 ../cli/src/connections.c:555
-#: ../cli/src/connections.c:557 ../cli/src/devices.c:458
-#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
-#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
-#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
+#: ../cli/src/connections.c:387 ../cli/src/connections.c:388
+#: ../cli/src/connections.c:623 ../cli/src/connections.c:624
+#: ../cli/src/connections.c:626 ../cli/src/devices.c:457
+#: ../cli/src/devices.c:510 ../cli/src/devices.c:632 ../cli/src/devices.c:633
+#: ../cli/src/devices.c:634 ../cli/src/devices.c:666 ../cli/src/devices.c:693
 #: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
+#: ../cli/src/devices.c:697 ../cli/src/devices.c:698 ../cli/src/devices.c:699
 #: ../cli/src/network-manager.c:293
 msgid "yes"
 msgstr "ಹೌದು"
 
-#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
-#: ../cli/src/connections.c:554 ../cli/src/connections.c:555
-#: ../cli/src/connections.c:557 ../cli/src/devices.c:458
-#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
-#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
-#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
+#: ../cli/src/connections.c:387 ../cli/src/connections.c:388
+#: ../cli/src/connections.c:623 ../cli/src/connections.c:624
+#: ../cli/src/connections.c:626 ../cli/src/devices.c:457
+#: ../cli/src/devices.c:510 ../cli/src/devices.c:632 ../cli/src/devices.c:633
+#: ../cli/src/devices.c:634 ../cli/src/devices.c:666 ../cli/src/devices.c:693
 #: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
+#: ../cli/src/devices.c:697 ../cli/src/devices.c:698 ../cli/src/devices.c:699
 #: ../cli/src/network-manager.c:295
 msgid "no"
 msgstr "ಇಲ್ಲ"
 
-#: ../cli/src/connections.c:400
-#, fuzzy
+#: ../cli/src/connections.c:469
 #| msgid "Active connections"
 msgid "List of configured connections"
-msgstr "ಸಕ್ರಿಯ ಸಂಪರ್ಕಗಳು"
+msgstr "ಸಂರಚಿತಗೊಂಡ ಸಂಪರ್ಕಗಳ ಪಟ್ಟಿ"
 
-#: ../cli/src/connections.c:417 ../cli/src/connections.c:953
-#: ../cli/src/connections.c:1438 ../cli/src/connections.c:1459
-#: ../cli/src/connections.c:1468 ../cli/src/connections.c:1478
-#: ../cli/src/connections.c:1490 ../cli/src/connections.c:1627
-#: ../cli/src/connections.c:1727 ../cli/src/devices.c:1197
-#: ../cli/src/devices.c:1305 ../cli/src/devices.c:1313
-#: ../cli/src/devices.c:1684 ../cli/src/devices.c:1691
-#: ../cli/src/devices.c:1705 ../cli/src/devices.c:1712
-#: ../cli/src/devices.c:1729 ../cli/src/devices.c:1740
-#: ../cli/src/devices.c:1938 ../cli/src/devices.c:2026
-#: ../cli/src/devices.c:2033
+#: ../cli/src/connections.c:486 ../cli/src/connections.c:1022
+#: ../cli/src/connections.c:1508 ../cli/src/connections.c:1529
+#: ../cli/src/connections.c:1538 ../cli/src/connections.c:1548
+#: ../cli/src/connections.c:1681 ../cli/src/connections.c:3120
+#: ../cli/src/devices.c:1284 ../cli/src/devices.c:1292
+#: ../cli/src/devices.c:1664 ../cli/src/devices.c:1671
+#: ../cli/src/devices.c:1685 ../cli/src/devices.c:1692
+#: ../cli/src/devices.c:1709 ../cli/src/devices.c:1717
+#: ../cli/src/devices.c:1913 ../cli/src/devices.c:2001
+#: ../cli/src/devices.c:2008
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "ದೋಷ: %s ಆರ್ಗ್ಯುಮೆಂಟ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ"
 
-#: ../cli/src/connections.c:431
+#: ../cli/src/connections.c:500
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "ದೋಷ: %s - ಅಂತಹ ಯಾವುದೆ ಸಂಪರ್ಕಗಳಿಲ್ಲ."
 
-#: ../cli/src/connections.c:444
-#, fuzzy, c-format
+#: ../cli/src/connections.c:513
+#, c-format
 #| msgid "Error: 'con list': %s"
 msgid "Error: 'show configured': %s"
-msgstr "ದೋಷ: 'con list': %s"
+msgstr "ದೋಷ: 'show configured': %s"
 
-#: ../cli/src/connections.c:446
-#, fuzzy, c-format
+#: ../cli/src/connections.c:515
+#, c-format
 #| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'show configured': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'con list': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'show configured': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/connections.c:451 ../cli/src/connections.c:1828
-#: ../cli/src/devices.c:1917 ../cli/src/devices.c:2244
+#: ../cli/src/connections.c:520 ../cli/src/connections.c:3228
+#: ../cli/src/devices.c:1892 ../cli/src/devices.c:2219
 #: ../cli/src/network-manager.c:396 ../cli/src/network-manager.c:426
 #: ../cli/src/network-manager.c:436 ../cli/src/network-manager.c:444
 #: ../cli/src/network-manager.c:454 ../cli/src/network-manager.c:476
@@ -624,278 +859,516 @@ msgstr "ದೋಷ: 'con list': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇ�
 msgid "Error: %s."
 msgstr "ದೋಷ: %s."
 
-#: ../cli/src/connections.c:464
+#: ../cli/src/connections.c:533
 msgid "activating"
 msgstr "ಸಕ್ರಿಯಗೊಳ್ಳುತ್ತಿದೆ"
 
-#: ../cli/src/connections.c:466
+#: ../cli/src/connections.c:535
 msgid "activated"
 msgstr "ಸಕ್ರಿಯಗೊಂಡಿದೆ"
 
-#: ../cli/src/connections.c:470
+#: ../cli/src/connections.c:539
 msgid "deactivated"
 msgstr "ನಿಷ್ಕ್ರಿಯಗೊಂಡಿದೆ"
 
-#: ../cli/src/connections.c:482
+#: ../cli/src/connections.c:551
 msgid "VPN connecting (prepare)"
 msgstr "VPN ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (ಸಿದ್ಧಗೊಳಿಕೆ)"
 
-#: ../cli/src/connections.c:484
+#: ../cli/src/connections.c:553
 msgid "VPN connecting (need authentication)"
 msgstr "VPN ಸಂಪರ್ಕ ಕಲ್ಪಿಸಲಾಗುತ್ತಿದೆ (ದೃಢೀಕರಣದ ಅಗತ್ಯವಿದೆ)"
 
-#: ../cli/src/connections.c:486
+#: ../cli/src/connections.c:555
 msgid "VPN connecting"
 msgstr "VPN ಸಂಪರ್ಕಿತಗೊಳ್ಳುತ್ತಿದೆ"
 
-#: ../cli/src/connections.c:488
+#: ../cli/src/connections.c:557
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN ಸಂಪರ್ಕಗೊಂಡಿದೆ (IP ಸಂರಚನೆಯನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ)"
 
-#: ../cli/src/connections.c:490
+#: ../cli/src/connections.c:559
 msgid "VPN connected"
 msgstr "VPN ಸಂಪರ್ಕಗೊಂಡಿದೆ"
 
-#: ../cli/src/connections.c:492
+#: ../cli/src/connections.c:561
 msgid "VPN connection failed"
 msgstr "VPN ಸಂಪರ್ಕವು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/connections.c:494
+#: ../cli/src/connections.c:563
 msgid "VPN disconnected"
 msgstr "VPN ಸಂಪರ್ಕ ಕಡಿದಿದೆ"
 
-#: ../cli/src/connections.c:550 ../cli/src/connections.c:560
+#: ../cli/src/connections.c:619 ../cli/src/connections.c:629
 msgid "N/A"
 msgstr "ಲಭ್ಯವಿಲ್ಲ"
 
-#: ../cli/src/connections.c:759
-#, fuzzy, c-format
+#: ../cli/src/connections.c:828
+#, c-format
 #| msgid "Error: 'con list': %s"
 msgid "Error: 'list active': %s"
-msgstr "ದೋಷ: 'con list': %s"
+msgstr "ದೋಷ: ''list active': %s"
 
-#: ../cli/src/connections.c:761
-#, fuzzy, c-format
+#: ../cli/src/connections.c:830
+#, c-format
 #| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'list active': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'con list': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'list active':  %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/connections.c:769
+#: ../cli/src/connections.c:838
 msgid "Active connection details"
 msgstr "ಸಕ್ರಿಯ ಸಂಪರ್ಕಗಳ ವಿವರಗಳು"
 
-#: ../cli/src/connections.c:907 ../cli/src/connections.c:1514
-#: ../cli/src/connections.c:1610 ../cli/src/connections.c:1696
-#: ../cli/src/devices.c:1005 ../cli/src/devices.c:1049
-#: ../cli/src/devices.c:1222 ../cli/src/devices.c:1351
-#: ../cli/src/devices.c:1776 ../cli/src/devices.c:2070
+#: ../cli/src/connections.c:976 ../cli/src/connections.c:1568
+#: ../cli/src/connections.c:1664 ../cli/src/connections.c:3089
+#: ../cli/src/devices.c:1006 ../cli/src/devices.c:1049
+#: ../cli/src/devices.c:1198 ../cli/src/devices.c:1330
+#: ../cli/src/devices.c:1751 ../cli/src/devices.c:2045
 #: ../cli/src/network-manager.c:339
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "ದೋಷ: NetworkManager ಚಾಲನೆಯಲ್ಲಿಲ್ಲ."
 
-#: ../cli/src/connections.c:936
-#, fuzzy
+#: ../cli/src/connections.c:1005
 #| msgid "Active connections"
 msgid "List of active connections"
-msgstr "ಸಕ್ರಿಯ ಸಂಪರ್ಕಗಳು"
+msgstr "ಸಕ್ರಿಯ ಸಂಪರ್ಕಗಳ ಪಟ್ಟಿ"
 
-#: ../cli/src/connections.c:967 ../cli/src/connections.c:1637
+#: ../cli/src/connections.c:1036 ../cli/src/connections.c:1691
 #, c-format
 msgid "Error: '%s' is not an active connection."
 msgstr "ದೋಷ: '%s' ಎನ್ನುವುದು ಯಾವುದೆ ಸಕ್ರಿಯ ಸಂಪರ್ಕವಲ್ಲ."
 
-#: ../cli/src/connections.c:980
-#, fuzzy, c-format
+#: ../cli/src/connections.c:1049
+#, c-format
 #| msgid "Error: 'con status': %s"
 msgid "Error: 'show active': %s"
-msgstr "ದೋಷ: 'con status': %s"
+msgstr "ದೋಷ: 'show active': %s"
 
-#: ../cli/src/connections.c:982
-#, fuzzy, c-format
+#: ../cli/src/connections.c:1051
+#, c-format
 #| msgid "Error: 'con status': %s; allowed fields: %s"
 msgid "Error: 'show active': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'con status': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'show active':  %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/connections.c:1075
+#: ../cli/src/connections.c:1144
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "'%s' ಎಂಬ ಸಾಧನದಲ್ಲಿ ಯಾವುದೆ ಸಕ್ರಿಯ ಸಂಪರ್ಕವು ಕಂಡುಬಂದಿಲ್ಲ"
 
-#: ../cli/src/connections.c:1083
+#: ../cli/src/connections.c:1152
 msgid "no active connection or device"
 msgstr "ಯಾವುದೆ ಸಕ್ರಿಯ ಸಂಪರ್ಕ ಅಥವ ಸಾಧನವು ಕಂಡುಬಂದಿಲ್ಲ"
 
-#: ../cli/src/connections.c:1154
+#: ../cli/src/connections.c:1223
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "'%s' ಎಂಬ ಸಾಧನವು '%s' ಸಂಪರ್ಕದೊಂದಿಗೆ ಹೊಂದಿಕೊಳ್ಳುತ್ತಿಲ್ಲ"
 
-#: ../cli/src/connections.c:1157
+#: ../cli/src/connections.c:1226
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "'%s' ಸಂಪರ್ಕಕ್ಕಾಗಿ ಯಾವುದೆ ಸಾಧನವು ಕಂಡು ಬಂದಿಲ್ಲ"
 
-#: ../cli/src/connections.c:1169
+#: ../cli/src/connections.c:1238
 msgid "unknown reason"
 msgstr "ಗೊತ್ತಿರದ ಕಾರಣ"
 
-#: ../cli/src/connections.c:1171
+#: ../cli/src/connections.c:1240
 msgid "none"
 msgstr "ಯಾವುದೂ ಇಲ್ಲ"
 
-#: ../cli/src/connections.c:1173
+#: ../cli/src/connections.c:1242
 msgid "the user was disconnected"
 msgstr "ಬಳಕೆದಾರರೊಂದಿಗೆ ಸಂಪರ್ಕ ಕಡಿದುಹೋಗಿದೆ"
 
-#: ../cli/src/connections.c:1175
+#: ../cli/src/connections.c:1244
 msgid "the base network connection was interrupted"
 msgstr "ಮೂಲ ಜಾಲಬಂಧ ಸಂಪರ್ಕಕ್ಕೆ ತಡೆಯುಂಟಾಗಿದೆ"
 
-#: ../cli/src/connections.c:1177
+#: ../cli/src/connections.c:1246
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN ಸೇವೆಯನ್ನು ಅನಿರೀಕ್ಷಿತವಾಗಿ ನಿಲ್ಲಿಸಲಾಗಿದೆ"
 
-#: ../cli/src/connections.c:1179
+#: ../cli/src/connections.c:1248
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN ಸೇವೆಯು ಅಮಾನ್ಯವಾದ ಸಂರಚನೆಯನ್ನು ಮರಳಿಸಿದೆ"
 
-#: ../cli/src/connections.c:1181
+#: ../cli/src/connections.c:1250
 msgid "the connection attempt timed out"
 msgstr "ಸಂಪರ್ಕದ ಪ್ರಯತ್ನದ ಕಾಲಾವಧಿ ಮೀರಿದೆ"
 
-#: ../cli/src/connections.c:1183
+#: ../cli/src/connections.c:1252
 msgid "the VPN service did not start in time"
 msgstr "VPN ಸೇವೆಯು ಸರಿಯಾದ ಸಮಯದಲ್ಲಿ ಆರಂಭಗೊಳ್ಳಲಿಲ್ಲ"
 
-#: ../cli/src/connections.c:1185
+#: ../cli/src/connections.c:1254
 msgid "the VPN service failed to start"
 msgstr "VPN ಸೇವೆಯು ಆರಂಭಗೊಳ್ಳಲು ವಿಫಲಗೊಂಡಿದೆ"
 
-#: ../cli/src/connections.c:1187
+#: ../cli/src/connections.c:1256
 msgid "no valid VPN secrets"
 msgstr "ಯಾವುದೆ ಮಾನ್ಯವಾದ VPN ರಹಸ್ಯಗಳಿಲ್ಲ (ಸೀಕ್ರೇಟ್‌ಗಳಿಲ್ಲ)"
 
-#: ../cli/src/connections.c:1189
+#: ../cli/src/connections.c:1258
 msgid "invalid VPN secrets"
 msgstr "ಅಮಾನ್ಯವಾದ VPN ರಹಸ್ಯಗಳು"
 
-#: ../cli/src/connections.c:1191
+#: ../cli/src/connections.c:1260
 msgid "the connection was removed"
 msgstr "ಸಂಪರ್ಕವನ್ನು ತೆಗೆದು ಹಾಕಲಾಗಿದೆ"
 
-#: ../cli/src/connections.c:1208 ../cli/src/connections.c:1328
+#: ../cli/src/connections.c:1277 ../cli/src/connections.c:1397
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "ಸಂಪರ್ಕವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ (D-ಬಸ್ ಸಕ್ರಿಯ ಮಾರ್ಗ: %s)\n"
 
-#: ../cli/src/connections.c:1213
+#: ../cli/src/connections.c:1282
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "ದೋಷ: ಸಂಪರ್ಕವನ್ನು ಸಕ್ರಿಯಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ."
 
-#: ../cli/src/connections.c:1238
+#: ../cli/src/connections.c:1307
 #, c-format
 msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
-msgstr "VPN ಸಂಪರ್ಕವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ (D-ಬಸ್ ಸಕ್ರಿಯ ಮಾರ್ಗ: %s)\n"
+msgstr ""
+"VPN ಸಂಪರ್ಕವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ (D-ಬಸ್ ಸಕ್ರಿಯ ಮಾರ್ಗ: %s)\n"
 
-#: ../cli/src/connections.c:1246
+#: ../cli/src/connections.c:1315
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "ದೋಷ: ಸಂಪರ್ಕ ಸಕ್ರಿಯಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ: %s."
 
-#: ../cli/src/connections.c:1264 ../cli/src/devices.c:1110
+#: ../cli/src/connections.c:1333 ../cli/src/devices.c:1109
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "ದೋಷ: ಕಾಲಾವಧಿ %d sec ತೀರಿದೆ."
 
-#: ../cli/src/connections.c:1319
+#: ../cli/src/connections.c:1388
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "ದೋಷ: ಸಂಪರ್ಕ ಸಕ್ರಿಯಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ: %s"
 
-#: ../cli/src/connections.c:1385
+#: ../cli/src/connections.c:1454
 #, c-format
 msgid ""
 "Error: Device '%s' is waiting for slaves before proceeding with activation."
 msgstr ""
+"ದೋಷ: ಸಕ್ರಿಯಗೊಳಿಕೆಯೊಂದಿಗೆ ಮುಂದುವರೆಯುವ ಮೊದಲು '%s' ಸಾಧನವು ಉಪಪ್ರಕ್ರಿಯೆಗಳಿಗಾಗಿ "
+"ಕಾಯುತ್ತಿದೆ."
 
-#: ../cli/src/connections.c:1422 ../cli/src/connections.c:1595
-#: ../cli/src/connections.c:1703
+#: ../cli/src/connections.c:1492 ../cli/src/connections.c:1649
+#: ../cli/src/connections.c:3096
 msgid "Connection (name, UUID, or path): "
-msgstr ""
+msgstr "ಸಂಪರ್ಕ (ಹೆಸರು, UUID, ಅಥವ ಮಾರ್ಗ): "
 
-#: ../cli/src/connections.c:1427 ../cli/src/connections.c:1600
-#: ../cli/src/connections.c:1708
-#, fuzzy, c-format
+#: ../cli/src/connections.c:1497 ../cli/src/connections.c:1654
+#: ../cli/src/connections.c:3101
+#, c-format
 #| msgid "Error: Unknown connection: %s."
 msgid "Error: No connection specified."
-msgstr "ದೋಷ: ಗೊತ್ತಿರದ ಸಂಪರ್ಕ: %s."
+msgstr "ದೋಷ: ಯಾವುದೆ ಸಂಪರ್ಕವನ್ನು ಸೂಚಿಸಲಾಗಿಲ್ಲ."
 
-#: ../cli/src/connections.c:1450
+#: ../cli/src/connections.c:1520
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "ದೋಷ: ಗೊತ್ತಿರದ ಸಂಪರ್ಕ: %s."
 
-#: ../cli/src/connections.c:1498 ../cli/src/devices.c:1205
-#: ../cli/src/devices.c:1748
-#, c-format
-msgid "Error: timeout value '%s' is not valid."
-msgstr "ದೋಷ: '%s' ಎಂಬ ಕಾಲಾವಧಿ ತೀರಿಕೆ ಮೌಲ್ಯವು ಅಮಾನ್ಯವಾಗಿದೆ."
-
-#: ../cli/src/connections.c:1503 ../cli/src/devices.c:976
-#: ../cli/src/devices.c:1319 ../cli/src/devices.c:1753
-#: ../cli/src/devices.c:2039
+#: ../cli/src/connections.c:1557 ../cli/src/devices.c:977
+#: ../cli/src/devices.c:1298 ../cli/src/devices.c:1728
+#: ../cli/src/devices.c:2014
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "ಗೊತ್ತಿರದ ನಿಯತಾಂಕಗಳು: %s\n"
 
-#: ../cli/src/connections.c:1532
+#: ../cli/src/connections.c:1586
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "ದೋಷ: ಯಾವುದೆ ಸೂಕ್ತವಾದ ಸಾಧನವು ಕಂಡು ಬಂದಿಲ್ಲ: %s."
 
-#: ../cli/src/connections.c:1534
+#: ../cli/src/connections.c:1588
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "ದೋಷ: ಯಾವುದೆ ಸೂಕ್ತವಾದ ಸಾಧನವು ಕಂಡು ಬಂದಿಲ್ಲ."
 
-#: ../cli/src/connections.c:1666
+#: ../cli/src/connections.c:1820 ../cli/src/utils.c:437
+#, c-format
+#| msgid "'%s' not allowed for %s=%s"
+msgid "'%s' not among [%s]"
+msgstr "'%s' ಎನ್ನುವುದು [%s] ಎಂಬುದರಲ್ಲಿಲ್ಲ "
+
+#: ../cli/src/connections.c:1860
+#, c-format
+#| msgid "'%s' is not a valid MAC address"
+msgid "Error: '%s': '%s' is not a valid %s MAC address."
+msgstr "ದೋಷ: '%s': '%s' ಎನ್ನುವುದು ಒಂದು ಮಾನ್ಯವಾದ %s MAC ವಿಳಾಸವಲ್ಲ."
+
+#: ../cli/src/connections.c:1861
+msgid "InfiniBand"
+msgstr "InfiniBand"
+
+#: ../cli/src/connections.c:1920
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: '%s': '%s' is not valid; use <%d-%d>."
+msgstr "ದೋಷ: '%s': '%s' ಮಾನ್ಯವಾದುದಲ್ಲ; <%d-%d> ಬಳಸಿ."
+
+#: ../cli/src/connections.c:1976 ../cli/src/connections.c:2023
+#: ../cli/src/connections.c:2073 ../cli/src/connections.c:2329
+#, c-format
+#| msgid "Error: timeout value '%s' is not valid."
+msgid "Error: 'mtu': '%s' is not valid."
+msgstr "ದೋಷ: 'mtu: '%s' ಮಾನ್ಯವಾದುದಲ್ಲ."
+
+#: ../cli/src/connections.c:2064 ../cli/src/connections.c:2738
+#| msgid "SSID"
+msgid "SSID: "
+msgstr "SSID: "
+
+#: ../cli/src/connections.c:2067 ../cli/src/connections.c:2741
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'ssid' is required."
+msgstr "ದೋಷ: 'ssid' ಯ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2123
+#| msgid "WiMAX NSP list"
+msgid "WiMAX NSP name: "
+msgstr "WiMAX NSP ಹೆಸರು:"
+
+#: ../cli/src/connections.c:2126
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'nsp' is required."
+msgstr "ದೋಷ: 'nsp' ಯ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2170
+msgid "APN: "
+msgstr "APN: "
+
+#: ../cli/src/connections.c:2173
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'apn' is required."
+msgstr "ದೋಷ: 'apn' ನ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2217
+msgid "Bluetooth device address: "
+msgstr "ಬ್ಲೂಟೂತ್‌ ಸಾಧನದ ವಿಳಾಸ:"
+
+#: ../cli/src/connections.c:2220
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'addr' is required."
+msgstr "ದೋಷ: 'addr' ನ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2257
+#, c-format
+msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
+msgstr "ದೋಷ: 'bt-type': '%s' ಮಾನ್ಯವಾದುದಲ್ಲ; [%s, %s (%s), %s] ಅನ್ನು ಬಳಸಿ."
+
+#: ../cli/src/connections.c:2292
+#| msgid "no device found for connection '%s'"
+msgid "VLAN parent device or connection UUID: "
+msgstr "VLAN ಮೂಲ ಸಾಧನ ಅಥವ ಸಂಪರ್ಕ UUID: "
+
+#: ../cli/src/connections.c:2295
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'dev' is required."
+msgstr "ದೋಷ: 'dev' ನ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2299
+msgid "VLAN ID <0-4095>: "
+msgstr "VLAN ID <0-4095>: "
+
+#: ../cli/src/connections.c:2302
+#| msgid "Error: Timeout %d sec expired."
+msgid "Error: 'id' is required."
+msgstr "ದೋಷ: 'id' ಯ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2308
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'id': '%s' is not valid; use <0-4095>."
+msgstr "ದೋಷ: 'id': '%s' ಮಾನ್ಯವಾದುದಲ್ಲ; <0-4095> ಬಳಸಿ."
+
+#: ../cli/src/connections.c:2318
+#, c-format
+#| msgid "'%s' is neither an UUID nor an interface name"
+msgid "Error: 'dev': '%s' is neither UUID, interface name, nor MAC."
+msgstr ""
+"ದೋಷ: 'dev': '%s' ಎನ್ನುವುದು UUID ಆಗಲಿ, ಸಂಪರ್ಕಸಾಧನದ ಹೆಸರಾಗಲಿ ಅಥವ MAC ಆಗಲಿ ಅಲ್ಲ."
+
+#: ../cli/src/connections.c:2336
+#, c-format
+#| msgid "Error: 'con' command '%s' is not valid."
+msgid "Error: 'flags': '%s' is not valid; use <0-7>."
+msgstr "ದೋಷ: 'flags': '%s' ಮಾನ್ಯವಾದುದಲ್ಲ; <0-7> ಬಳಸಿ."
+
+#: ../cli/src/connections.c:2345
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'ingress': '%s' is not valid; %s "
+msgstr "ದೋಷ: 'ingress': '%s' ಆಜ್ಞೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ; %s"
+
+#: ../cli/src/connections.c:2355
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'egress': '%s' is not valid; %s "
+msgstr "ದೋಷ: 'egress' '%s' ಆಜ್ಞೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ; %s"
+
+#: ../cli/src/connections.c:2443
+#, c-format
+#| msgid "Error: 'con status': %s"
+msgid "Error: 'mode': %s."
+msgstr "ದೋಷ: 'mode': %s"
+
+#: ../cli/src/connections.c:2476
+msgid "Bond master: "
+msgstr "ಬಾಂಡ್ ಮಾಸ್ಟರ್:"
+
+#: ../cli/src/connections.c:2479 ../cli/src/connections.c:2616
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'master' is required."
+msgstr "ದೋಷ: 'master' ನ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2484 ../cli/src/connections.c:2627
+#, c-format
+msgid ""
+"Warning: 'type' is currently ignored. We only support ethernet slaves for "
+"now.\n"
+msgstr ""
+"ಎಚ್ಚರಿಕೆ: 'type' ಅನ್ನು ಪ್ರಸಕ್ತ ಕಡೆಗಣಿಸಲಾಗಿದೆ. ನಾವು ಈಗ ಕೇವಲ ಇತರ್ನೆಟ್ "
+"ಸ್ಲೇವ್‌ಗಳನ್ನು ಮಾತ್ರ ಬೆಂಬಲಿಸುತ್ತೇವೆ.\n"
+
+#: ../cli/src/connections.c:2538
+#, c-format
+#| msgid "Error: 'nm status': %s"
+msgid "Error: 'stp': %s."
+msgstr "ದೋಷ: 'stp': %s."
+
+#: ../cli/src/connections.c:2613
+msgid "Bridge master: "
+msgstr "ಬ್ರಿಡ್ಜ್‍ ಮಾಸ್ಟರ್: "
+
+#: ../cli/src/connections.c:2621
+#, c-format
+#| msgid "'%s' is neither an UUID nor an interface name"
+msgid "Error: 'master': '%s' is not valid UUID nor interface."
+msgstr "ದೋಷ: 'master': '%s' ಎನ್ನುವುದು UUID ಅಥವ ಸಂಪರ್ಕಸಾಧನವಾಗಿಲ್ಲ."
+
+#: ../cli/src/connections.c:2647
+#, c-format
+#| msgid "Error: 'con status': %s"
+msgid "Error: 'hairpin': %s."
+msgstr "ದೋಷ: 'hairpin': %s."
+
+#: ../cli/src/connections.c:2694
+msgid "VPN type: "
+msgstr "VPN ಬಗೆ: "
+
+#: ../cli/src/connections.c:2697
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'vpn-type' is required."
+msgstr "ದೋಷ: 'vpn-type' ನ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2703
+#, c-format
+#| msgid "Error: 'nm status': %s"
+msgid "Error: 'vpn-type': %s."
+msgstr "ದೋಷ: 'vpn-type': %s."
+
+#: ../cli/src/connections.c:2748
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'channel': '%s' is not valid; use <1-13>."
+msgstr "ದೋಷ: 'channel': '%s' ಮಾನ್ಯವಾದುದಲ್ಲ; <1-13> ಬಳಸಿ."
+
+#: ../cli/src/connections.c:2780
+#, c-format
+#| msgid "Error: '%s' is not an active connection."
+msgid "Error: '%s' is a not valid connection type."
+msgstr "ದೋಷ: '%s' ಎನ್ನುವುದು ಒಂದು ಮಾನ್ಯವಾದ ಸಂಪರ್ಕದ ಬಗೆಯಾಗಿಲ್ಲ."
+
+#: ../cli/src/connections.c:2815 ../cli/src/connections.c:2836
+#| msgid "Error: %s."
+msgid "Error: "
+msgstr "ದೋಷ:"
+
+#: ../cli/src/connections.c:2899
+#, c-format
+#| msgid "Error: Failed to add/activate new connection: (%d) %s"
+msgid "Error: Failed to add '%s' connection: (%d) %s"
+msgstr "ದೋಷ: '%s' ಸಂಪರ್ಕವನ್ನು ಸೇರಿಸಲು ವಿಫಲಗೊಂಡಿದೆ: (%d) %s"
+
+#: ../cli/src/connections.c:2904
+#, c-format
+msgid "Connection '%s' (%s) successfully added.\n"
+msgstr "'%s' (%s) ಸಂಪರ್ಕವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.\n"
+
+#: ../cli/src/connections.c:2948
+#| msgid "Connection list"
+msgid "Connection type: "
+msgstr "ಸಂಪರ್ಕದ ಬಗೆ: "
+
+#: ../cli/src/connections.c:2952
+#, c-format
+#| msgid "Error: '%s' argument is missing."
+msgid "Error: 'type' argument is required."
+msgstr "ದೋಷ: 'type' ಆರ್ಗ್ಯುಮೆಂಟ್‌ನ ಅಗತ್ಯವಿದೆ."
+
+#: ../cli/src/connections.c:2958
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: invalid connection type; %s."
+msgstr "ದೋಷ: ಅಮಾನ್ಯವಾದ ಸಂಪರ್ಕದ ಬಗೆ: %s."
+
+#: ../cli/src/connections.c:2967
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: 'autoconnect': %s."
+msgstr "ದೋಷ: 'autoconnect': %s."
+
+#: ../cli/src/connections.c:2977
+#, c-format
+#| msgid "'%s' is not a valid interface name"
+msgid "Error: 'ifname': '%s' is not a valid interface."
+msgstr "ದೋಷ: 'ifname': '%s' ಎನ್ನುವುದು ಮಾನ್ಯವಾದ ಸಂಪರ್ಕಸಾಧನದ ಹೆಸರಲ್ಲ."
+
+#: ../cli/src/connections.c:3059
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "ದೋಷ: ಸಂಪರ್ಕ ಅಳಿಸುವಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ: %s"
 
-#: ../cli/src/connections.c:1736
-#, fuzzy, c-format
+#: ../cli/src/connections.c:3129
+#, c-format
 #| msgid "Error: Unknown connection: %s."
 msgid "Error: unknown connection: %s\n"
-msgstr "ದೋಷ: ಗೊತ್ತಿರದ ಸಂಪರ್ಕ: %s."
+msgstr "ದೋಷ: ಗೊತ್ತಿರದ ಸಂಪರ್ಕ: %s\n"
 
 #. truncate trailing ", "
-#: ../cli/src/connections.c:1770
-#, fuzzy, c-format
+#: ../cli/src/connections.c:3163
+#, c-format
 #| msgid "Error: Unknown connection: %s."
 msgid "Error: cannot delete unknown connection(s): %s."
-msgstr "ದೋಷ: ಗೊತ್ತಿರದ ಸಂಪರ್ಕ: %s."
+msgstr "ದೋಷ: ಗೊತ್ತಿರದ ಸಂಪರ್ಕವನ್ನು (ಗಳನ್ನು) ಅಳಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ: %s."
 
-#: ../cli/src/connections.c:1799
+#: ../cli/src/connections.c:3192
 #, c-format
 msgid ""
 "Error: 'configured' or 'active' command is expected for 'connection show'."
 msgstr ""
+"ದೋಷ: 'connection show' ಗಾಗಿ 'configured' ಅಥವ 'active' ಆಜ್ಞೆಯನ್ನು "
+"ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ."
 
-#: ../cli/src/connections.c:1819
-#, fuzzy, c-format
+#: ../cli/src/connections.c:3219
+#, c-format
 #| msgid "Error: '%s' is not an active connection."
 msgid "Error: '%s' is not valid 'connection' command."
-msgstr "ದೋಷ: '%s' ಎನ್ನುವುದು ಯಾವುದೆ ಸಕ್ರಿಯ ಸಂಪರ್ಕವಲ್ಲ."
+msgstr "ದೋಷ: '%s' ಎನ್ನುವುದು ಒಂದು 'connection' ಆದೇಶವಾಗಿಲ್ಲ."
 
-#: ../cli/src/connections.c:1884
+#: ../cli/src/connections.c:3284
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "ದೋಷ: ವ್ಯವಸ್ಥೆಯ ಸಿದ್ಧತೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ."
 
-#: ../cli/src/connections.c:1894
+#: ../cli/src/connections.c:3294
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "ದೋಷ: ಸಂಪರ್ಕಗಳನ್ನು ಪಡೆಯಲಾಗಿಲ್ಲ: ಸಿದ್ಧತೆಗಳ ಸೇವೆಯು ಚಾಲನೆಯಲ್ಲಿಲ್ಲ."
@@ -1178,7 +1651,7 @@ msgid "ID"
 msgstr "ID"
 
 #: ../cli/src/devices.c:258
-#, fuzzy, c-format
+#, c-format
 #| msgid ""
 #| "Usage: nmcli device { COMMAND | help }\n"
 #| "\n"
@@ -1206,14 +1679,14 @@ msgid ""
 "\n"
 "  show [<ifname>]\n"
 "\n"
-"  disconnect <ifname> [--nowait] [--timeout <timeout>]\n"
+"  disconnect <ifname>\n"
 "\n"
 "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
 "\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
 "[ifname <ifname>] [bssid <BSSID>] [name <name>]\n"
 "\n"
-"               [--private] [--nowait] [--timeout <timeout>]\n"
+"               [private yes|no]\n"
 "\n"
 "  wifi rescan [[ifname] <ifname>]\n"
 "\n"
@@ -1222,307 +1695,334 @@ msgid ""
 msgstr ""
 "ಬಳಕೆ: nmcli device { COMMAND | help }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+"  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 "\n"
-"  COMMAND := { status | list | disconnect | wifi }\n"
+"  COMMAND := { status | show | disconnect | wifi }\n"
 "\n"
 "  status\n"
-"  list [iface <iface>]\n"
-"  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-"  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+"\n"
+"  show [<ifname>]\n"
+"\n"
+"  disconnect <ifname>\n"
+"\n"
+"  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
-"[iface <iface>] [bssid <BSSID>] [name <name>]\n"
-"               [--private] [--nowait] [--timeout <timeout>]\n"
-"  wimax [list [iface <iface>] [nsp <name>]]\n"
+"[ifname <ifname>] [bssid <BSSID>] [name <name>]\n"
+"\n"
+"               [private yes|no]\n"
+"\n"
+"  wifi rescan [[ifname] <ifname>]\n"
+"\n"
+"  wimax [list [ifname <ifname>] [nsp <name>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:361
+#: ../cli/src/devices.c:360
 msgid "(none)"
 msgstr "(ಯಾವುದೂ ಇಲ್ಲ)"
 
-#: ../cli/src/devices.c:417
+#: ../cli/src/devices.c:416
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:418
+#: ../cli/src/devices.c:417
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:427
+#: ../cli/src/devices.c:426
 msgid "Encrypted: "
 msgstr "ಗೂಢಲಿಪೀಕರಣಗೊಂಡ: "
 
-#: ../cli/src/devices.c:432
+#: ../cli/src/devices.c:431
 msgid "WEP "
 msgstr "WEP "
 
-#: ../cli/src/devices.c:434
+#: ../cli/src/devices.c:433
 msgid "WPA "
 msgstr "WPA "
 
-#: ../cli/src/devices.c:436
+#: ../cli/src/devices.c:435
 msgid "WPA2 "
 msgstr "WPA2 "
 
-#: ../cli/src/devices.c:439
+#: ../cli/src/devices.c:438
 msgid "Enterprise "
 msgstr "ಎಂಟರ್ಪ್ರೈಸ್ "
 
-#: ../cli/src/devices.c:448
+#: ../cli/src/devices.c:447
 msgid "Ad-Hoc"
 msgstr "ತಾತ್ಕಾಲಿಕ"
 
-#: ../cli/src/devices.c:449
+#: ../cli/src/devices.c:448
 msgid "Infrastructure"
 msgstr "ಮೂಲಭೂತ ವ್ಯವಸ್ಥೆ"
 
-#: ../cli/src/devices.c:485
+#: ../cli/src/devices.c:484
 msgid "Home"
 msgstr "ನೆಲೆ"
 
-#: ../cli/src/devices.c:488
+#: ../cli/src/devices.c:487
 msgid "Partner"
 msgstr "ಪಾಲುದಾರ"
 
-#: ../cli/src/devices.c:491
+#: ../cli/src/devices.c:490
 msgid "Roaming"
 msgstr "ರೋಮಿಂಗ್"
 
-#: ../cli/src/devices.c:563
-#, fuzzy, c-format
+#: ../cli/src/devices.c:566
+#, c-format
 #| msgid "Error: 'dev list': %s"
 msgid "Error: 'device show': %s"
-msgstr "ದೋಷ: 'dev list': %s"
+msgstr "ದೋಷ: 'device show': %s"
 
-#: ../cli/src/devices.c:565
-#, fuzzy, c-format
+#: ../cli/src/devices.c:568
+#, c-format
 #| msgid "Error: 'dev list': %s; allowed fields: %s"
 msgid "Error: 'device show': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'dev list'; %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: ' 'device show': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/devices.c:574
+#: ../cli/src/devices.c:577
 msgid "Device details"
 msgstr "ಸಾಧನದ ವಿವರಗಳು"
 
-#: ../cli/src/devices.c:621 ../cli/src/devices.c:624 ../cli/src/devices.c:1136
+#: ../cli/src/devices.c:624 ../cli/src/devices.c:627 ../cli/src/devices.c:1135
 msgid "(unknown)"
 msgstr "(ಗೊತ್ತಿರದ)"
 
-#: ../cli/src/devices.c:633
+#: ../cli/src/devices.c:636
 msgid "not connected"
 msgstr "ಸಂಪರ್ಕಿತಗೊಂಡಿಲ್ಲ"
 
-#: ../cli/src/devices.c:660
+#: ../cli/src/devices.c:663
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #. Print header
 #. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:736
+#: ../cli/src/devices.c:739
 msgid "on"
 msgstr "ಆನ್‌"
 
-#: ../cli/src/devices.c:736
+#: ../cli/src/devices.c:739
 msgid "off"
 msgstr "ಆಫ್"
 
-#: ../cli/src/devices.c:993
-#, fuzzy, c-format
+#: ../cli/src/devices.c:994
+#, c-format
 #| msgid "Error: 'dev status': %s"
 msgid "Error: 'device status': %s"
-msgstr "ದೋಷ: 'dev status': %s"
+msgstr "ದೋಷ: 'device status': %s"
 
-#: ../cli/src/devices.c:995
-#, fuzzy, c-format
+#: ../cli/src/devices.c:996
+#, c-format
 #| msgid "Error: 'dev status': %s; allowed fields: %s"
 msgid "Error: 'device status': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'dev status': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'device status': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/devices.c:1015
+#: ../cli/src/devices.c:1016
 msgid "Status of devices"
 msgstr "ಸಾಧನಗಳ ಸ್ಥಿತಿ"
 
 #: ../cli/src/devices.c:1041
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: invalid 'wwan' parameter: '%s'."
 msgid "Error: invalid extra argument '%s'."
-msgstr "ದೋಷ: ಅಮಾನ್ಯವಾದ 'wwan' ರ ನಿಯತಾಂಕ: '%s'."
+msgstr "ದೋಷ: ಅಮಾನ್ಯವಾದ ಹೆಚ್ಚುವರಿ ನಿಯತಾಂಕ '%s'."
 
-#: ../cli/src/devices.c:1069 ../cli/src/devices.c:1240
-#: ../cli/src/devices.c:1377 ../cli/src/devices.c:2096
+#: ../cli/src/devices.c:1069 ../cli/src/devices.c:1217
+#: ../cli/src/devices.c:1356 ../cli/src/devices.c:2071
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "ದೋಷ: '%s' ಎಂಬ ಸಾಧನವು ಕಂಡು ಬಂದಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1098
+#: ../cli/src/devices.c:1097
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "ಯಶಸ್ಸು: '%s' ಎಂಬ ಸಾಧನದಿಂದ ಯಶಸ್ವಿಯಾಗಿ ಸಂಪರ್ಕವನ್ನು ಕಡಿದುಹಾಕಲಾಗಿದೆ."
 
-#: ../cli/src/devices.c:1133
+#: ../cli/src/devices.c:1132
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "ದೋಷ: '%s' (%s) ಎಂಬ ಸಾಧನದ ಸಂಪರ್ಕವನ್ನು ಕಡಿದು ಹಾಕುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: %s"
 
-#: ../cli/src/devices.c:1146
+#: ../cli/src/devices.c:1145
 #, c-format
 msgid "Device '%s' has been disconnected.\n"
 msgstr "'%s' ಎಂಬ ಸಾಧನದಿಂದ ಸಂಪರ್ಕವನ್ನು ಕಡಿದುಹಾಕಲಾಗಿದೆ.\n"
 
-#: ../cli/src/devices.c:1177 ../cli/src/devices.c:1186
-#, fuzzy, c-format
+#: ../cli/src/devices.c:1172
+msgid "Interface: "
+msgstr "ಸಂಪರ್ಕಸಾಧನ: "
+
+#: ../cli/src/devices.c:1176 ../cli/src/devices.c:1185
+#, c-format
 #| msgid "Error: iface has to be specified."
 msgid "Error: No interface specified."
-msgstr "ದೋಷ: iface ಅನ್ನು ಸೂಚಿಸಬೇಕು."
+msgstr "ದೋಷ: ಯಾವುದೆ ಸಂಪರ್ಕಸಾಧನವನ್ನು ಸೂಚಿಸಲಾಗಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1211
-#, fuzzy, c-format
-#| msgid "Error: unknown parameter: %s"
-msgid "Error: unknown argument '%s'."
-msgstr "ದೋಷ: ಗೊತ್ತಿರದ ನಿಯತಾಂಕಗಳು: %s"
+#: ../cli/src/devices.c:1191
+#, c-format
+#| msgid "Error: invalid 'wwan' parameter: '%s'."
+msgid "Error: extra argument not allowed: '%s'."
+msgstr "ದೋಷ: ಹೆಚ್ಚುವರಿ ಆರ್ಗ್ಯುಮೆಂಟ್‌ಗೆ ಅನುಮತಿ ಇಲ್ಲ: '%s'."
 
-#: ../cli/src/devices.c:1339
-#, fuzzy, c-format
+#: ../cli/src/devices.c:1318
+#, c-format
 #| msgid "Error: 'dev wifi': %s"
 msgid "Error: 'device wifi': %s"
-msgstr "ದೋಷ: 'dev wifi': %s"
+msgstr "ದೋಷ: 'device wifi': %s"
 
-#: ../cli/src/devices.c:1341
-#, fuzzy, c-format
+#: ../cli/src/devices.c:1320
+#, c-format
 #| msgid "Error: 'dev wifi': %s; allowed fields: %s"
 msgid "Error: 'device wifi': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'dev wifi': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'device wifi': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/devices.c:1361
-#, fuzzy
+#: ../cli/src/devices.c:1340
 #| msgid "WiFi scan list"
 msgid "Wi-Fi scan list"
-msgstr "WiFi ಸ್ಕ್ಯಾನ್ ಪಟ್ಟಿ"
+msgstr "Wi-Fi ಸ್ಕ್ಯಾನ್ ಪಟ್ಟಿ"
 
-#: ../cli/src/devices.c:1397 ../cli/src/devices.c:1451
+#: ../cli/src/devices.c:1376 ../cli/src/devices.c:1430
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "ದೋಷ: '%s' ಎಂಬ bssid ಯ ನಿಲುಕಣಾ ಬಿಂದುವು ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1414 ../cli/src/devices.c:1792
-#: ../cli/src/devices.c:1954
+#: ../cli/src/devices.c:1393 ../cli/src/devices.c:1767
+#: ../cli/src/devices.c:1929
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "ದೋಷ: '%s' ಎಂಬುದು ಒಂದು Wi-Fi ಸಾಧನವಾಗಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1482 ../cli/src/devices.c:1528
+#: ../cli/src/devices.c:1462 ../cli/src/devices.c:1508
 #, c-format
 msgid "Connection with UUID '%s' created and activated on device '%s'\n"
 msgstr ""
 "ರಚಿಸಲಾದ UUID '%s' ಯೊಂದಿಗೆ ಸಂಪರ್ಕಿತಗೊಂಡಿದೆ ಮತ್ತು '%s' ಸಾಧನದಲ್ಲಿ "
 "ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ\n"
 
-#: ../cli/src/devices.c:1487
+#: ../cli/src/devices.c:1467
 #, c-format
 msgid "Error: Connection activation failed: (%d) %s."
 msgstr "ದೋಷ: ಸಂಪರ್ಕ ಸಕ್ರಿಯಗೊಳಿಕೆಯು ವಿಫಲಗೊಂಡಿದೆ: (%d) %s."
 
-#: ../cli/src/devices.c:1512
+#: ../cli/src/devices.c:1492
 #, c-format
 msgid "Error: Failed to add/activate new connection: (%d) %s"
 msgstr "ದೋಷ: ಹೊಸ ಸಂಪರ್ಕವನ್ನು ಸೇರಿಸಲು/ಸಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲಗೊಂಡಿದೆ: (%d) %s"
 
-#: ../cli/src/devices.c:1520
+#: ../cli/src/devices.c:1500
 #, c-format
 msgid "Error: Failed to add/activate new connection: Unknown error"
 msgstr "ದೋಷ: ಹೊಸ ಸಂಪರ್ಕವನ್ನು ಸೇರಿಸಲು/ಸಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲಗೊಂಡಿದೆ: ಅಜ್ಞಾತ ದೋಷ"
 
-#: ../cli/src/devices.c:1674
+#: ../cli/src/devices.c:1649
+msgid "SSID or BSSID: "
+msgstr "SSID ಅಥವ BSSID: "
+
+#: ../cli/src/devices.c:1654
 #, c-format
 msgid "Error: SSID or BSSID are missing."
 msgstr "ದೋಷ: SSID ಅಥವ BSSID ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1698
+#: ../cli/src/devices.c:1678
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "ದೋಷ: bssid ಆರ್ಗ್ಯುಮೆಂಟ್ ಮೌಲ್ಯ '%s' ಒಂದು ಮಾನ್ಯವಾದ BSSID ಆಗಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1722
+#: ../cli/src/devices.c:1702
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
 msgstr ""
-"ದೋಷ: wep-key-type ಆರ್ಗ್ಯುಮೆಂಟ್ ಮೌಲ್ಯ '%s' ಅಮಾನ್ಯವಾಗಿದೆ, 'key' ಅಥವ 'phrase' ಅನ್ನು "
+"ದೋಷ: wep-key-type ಆರ್ಗ್ಯುಮೆಂಟ್ ಮೌಲ್ಯ '%s' ಅಮಾನ್ಯವಾಗಿದೆ, 'key' ಅಥವ 'phrase' "
+"ಅನ್ನು "
 "ಬಳಸಿ."
 
-#: ../cli/src/devices.c:1762
+#: ../cli/src/devices.c:1722
+#, c-format
+#| msgid "Error: %s."
+msgid "Error: %s: %s."
+msgstr "ದೋಷ: %s: %s."
+
+#: ../cli/src/devices.c:1737
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr ""
-"ದೋಷ: ಸಂಪರ್ಕಿತಗೊಳ್ಳಬೇಕಿರುವ BSSID ಯು (%s) bssid ಆರ್ಗ್ಯುಮೆಂಟ್‌ಗಿಂತ (%s)ಭಿನ್ನವಾಗಿರುತ್ತದೆ."
+"ದೋಷ: ಸಂಪರ್ಕಿತಗೊಳ್ಳಬೇಕಿರುವ BSSID ಯು (%s) bssid ಆರ್ಗ್ಯುಮೆಂಟ್‌ಗಿಂತ (%"
+"s)ಭಿನ್ನವಾಗಿರುತ್ತದೆ."
 
-#: ../cli/src/devices.c:1768
+#: ../cli/src/devices.c:1743
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "ದೋಷ: '%s' ನಿಯತಾಂಕವು SSID ಅಥವ BSSID ಆಗಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1794 ../cli/src/devices.c:1956
+#: ../cli/src/devices.c:1769 ../cli/src/devices.c:1931
 #, c-format
 msgid "Error: No Wi-Fi device found."
 msgstr "ದೋಷ: ಯಾವುದೆ Wi-Fi ಸಾಧನವು ಕಂಡು ಬಂದಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1812
+#: ../cli/src/devices.c:1787
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "ದೋಷ: SSID '%s' ನೊಂದಿಗೆ ಯಾವುದೆ ಜಾಲಬಂಧ ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1814
+#: ../cli/src/devices.c:1789
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "ದೋಷ: '%s' ಎಂಬ BSSID ಯ ನಿಲುಕಣಾ ಬಿಂದುವು ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
-#: ../cli/src/devices.c:1982
-#, fuzzy, c-format
+#: ../cli/src/devices.c:1828
+msgid "Password: "
+msgstr "ದಾಟುಪದ: "
+
+#: ../cli/src/devices.c:1957
+#, c-format
 #| msgid "Error: 'dev wifi' command '%s' is not valid."
 msgid "Error: 'device wifi' command '%s' is not valid."
-msgstr "ದೋಷ: '%s' ಎಂಬ 'dev wifi' ಆಜ್ಞೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ."
+msgstr "ದೋಷ: 'device wifi' ಆದೇಶ '%s' ಮಾನ್ಯವಾದುದಲ್ಲ."
 
-#: ../cli/src/devices.c:2058
-#, fuzzy, c-format
+#: ../cli/src/devices.c:2033
+#, c-format
 #| msgid "Error: 'dev wimax': %s"
 msgid "Error: 'device wimax': %s"
-msgstr "ದೋಷ: 'dev wimax': %s"
+msgstr "ದೋಷ: 'device wimax': %s"
 
-#: ../cli/src/devices.c:2060
-#, fuzzy, c-format
+#: ../cli/src/devices.c:2035
+#, c-format
 #| msgid "Error: 'dev wimax': %s; allowed fields: %s"
 msgid "Error: 'device wimax': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'dev wimax': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'device wimax': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
-#: ../cli/src/devices.c:2080
+#: ../cli/src/devices.c:2055
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP ಪಟ್ಟಿ"
 
-#: ../cli/src/devices.c:2116
+#: ../cli/src/devices.c:2091
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "ದೋಷ: '%s' ಎಂಬ ಹೆಸರಿನ NSP ಕಂಡು ಬಂದಿಲ್ಲ."
 
-#: ../cli/src/devices.c:2127
+#: ../cli/src/devices.c:2102
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "ದೋಷ: '%s' ಎಂಬುದು ಒಂದು WiMAX ಸಾಧನವಿಲ್ಲ."
 
-#: ../cli/src/devices.c:2158
+#: ../cli/src/devices.c:2133
 #, c-format
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "ದೋಷ: nsp '%s' ಎಂಬುದರೊಂದಿಗಿನ ನಿಲುಕಣಾ ಬಿಂದುವು ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
-#: ../cli/src/devices.c:2185
-#, fuzzy, c-format
+#: ../cli/src/devices.c:2160
+#, c-format
 #| msgid "Error: 'dev wimax' command '%s' is not valid."
 msgid "Error: 'device wimax' command '%s' is not valid."
-msgstr "ದೋಷ: '%s' ಎಂಬ 'wimax' ಆಜ್ಞೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ."
+msgstr "ದೋಷ: 'device wimax' ಆದೇಶ '%s' ಮಾನ್ಯವಾದುದಲ್ಲ."
 
-#: ../cli/src/devices.c:2236
+#: ../cli/src/devices.c:2211
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "ದೋಷ: '%s' ಎಂಬ 'dev' ಆಜ್ಞೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ."
@@ -1539,14 +2039,13 @@ msgstr "VERSION"
 #. 2
 #: ../cli/src/network-manager.c:40
 msgid "NETWORKING"
-msgstr ""
+msgstr "NETWORKING"
 
 #. 3
 #: ../cli/src/network-manager.c:41
-#, fuzzy
 #| msgid "WIFI"
 msgid "WIFI-HW"
-msgstr "WIFI"
+msgstr "WIFI-HW"
 
 #. 4
 #: ../cli/src/network-manager.c:42
@@ -1555,10 +2054,9 @@ msgstr "WIFI"
 
 #. 5
 #: ../cli/src/network-manager.c:43
-#, fuzzy
 #| msgid "WWAN"
 msgid "WWAN-HW"
-msgstr "WWAN"
+msgstr "WWAN-HW"
 
 #. 6
 #: ../cli/src/network-manager.c:44
@@ -1567,10 +2065,9 @@ msgstr "WWAN"
 
 #. 7
 #: ../cli/src/network-manager.c:45
-#, fuzzy
 #| msgid "WIMAX"
 msgid "WIMAX-HW"
-msgstr "WIMAX"
+msgstr "WIMAX-HW"
 
 #. 8
 #: ../cli/src/network-manager.c:46
@@ -1588,14 +2085,13 @@ msgstr "VALUE"
 
 #: ../cli/src/network-manager.c:76
 msgid "LEVEL"
-msgstr ""
+msgstr "LEVEL"
 
 #. 0
 #: ../cli/src/network-manager.c:77
-#, fuzzy
 #| msgid "DOMAIN"
 msgid "DOMAINS"
-msgstr "DOMAIN"
+msgstr "DOMAINS"
 
 #: ../cli/src/network-manager.c:92
 #, c-format
@@ -1611,6 +2107,16 @@ msgid ""
 "  logging [level <log level>] [domains <log domains>]\n"
 "\n"
 msgstr ""
+"ಬಳಕೆ: nmcli general { COMMAND | help }\n"
+"\n"
+"  COMMAND := { status | permissions | logging }\n"
+"\n"
+"  status\n"
+"\n"
+"  permissions\n"
+"\n"
+"  logging [level <log level>] [domains <log domains>]\n"
+"\n"
 
 #: ../cli/src/network-manager.c:104
 #, c-format
@@ -1620,9 +2126,13 @@ msgid ""
 "  COMMAND := { [ on | off ] }\n"
 "\n"
 msgstr ""
+"ಬಳಕೆ: nmcli networking { COMMAND | help }\n"
+"\n"
+"  COMMAND := { [ on | off ] }\n"
+"\n"
 
 #: ../cli/src/network-manager.c:113
-#, fuzzy, c-format
+#, c-format
 #| msgid ""
 #| "Usage: nmcli nm { COMMAND | help }\n"
 #| "\n"
@@ -1688,16 +2198,16 @@ msgid "disconnecting"
 msgstr "ಸಂಪರ್ಕ ತಪ್ಪಿಸಲಾಗುತ್ತಿದೆ"
 
 #: ../cli/src/network-manager.c:186
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: %s."
 msgid "Error: %s"
-msgstr "ದೋಷ: %s."
+msgstr "ದೋಷ: %s"
 
 #: ../cli/src/network-manager.c:188
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: %s (allowed fields: %s)"
-msgstr "ದೋಷ: 'con list': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: %s (ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s)"
 
 #: ../cli/src/network-manager.c:202 ../cli/src/network-manager.c:203
 #: ../cli/src/network-manager.c:204 ../cli/src/network-manager.c:205
@@ -1731,97 +2241,95 @@ msgid "auth"
 msgstr "ದೃಢೀಕರಣ"
 
 #: ../cli/src/network-manager.c:327
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'nm permissions': %s"
 msgid "Error: 'general permissions': %s"
-msgstr "ದೋಷ: 'nm permissions': %s"
+msgstr "ದೋಷ: 'general permissions': %s"
 
 #: ../cli/src/network-manager.c:329
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'nm permissions': %s; allowed fields: %s"
 msgid "Error: 'general permissions': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'nm permissions': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'general permissions':  %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
 #: ../cli/src/network-manager.c:345
 msgid "NetworkManager permissions"
 msgstr "NetworkManager ಅನುಮತಿಗಳು"
 
 #: ../cli/src/network-manager.c:384
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'con list': %s"
 msgid "Error: 'general logging': %s"
-msgstr "ದೋಷ: 'con list': %s"
+msgstr "ದೋಷ: 'general logging': %s"
 
 #: ../cli/src/network-manager.c:386
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'general logging': %s; allowed fields: %s"
-msgstr "ದೋಷ: 'con list': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
+msgstr "ದೋಷ: 'general logging': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
 
 #: ../cli/src/network-manager.c:403
-#, fuzzy
 #| msgid "NetworkManager permissions"
 msgid "NetworkManager logging"
-msgstr "NetworkManager ಅನುಮತಿಗಳು"
+msgstr "NetworkManager ಲಾಗಿಂಗ್"
 
 #: ../cli/src/network-manager.c:487
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'nm' command '%s' is not valid."
 msgid "Error: 'general' command '%s' is not valid."
-msgstr "ದೋಷ: '%s' ಎಂಬ 'nm' ಆಜ್ಞೆಯು ಮಾನ್ಯವಾದುದಲ್ಲ."
+msgstr "ದೋಷ: '%s' ಎಂಬ 'general' ಆದೇಶವು ಮಾನ್ಯವಾದುದಲ್ಲ."
 
 #: ../cli/src/network-manager.c:506
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgid "Error: '--fields' value '%s' is not valid here (allowed fields: %s)"
 msgstr ""
-"ದೋಷ: '--fields' '%s' ಎಂಬ  ಮೌಲ್ಯವು ಇಲ್ಲಿ ಸರಿಯಾದುದಲ್ಲ.; ಅನುಮತಿ ಇರುವ ಕ್ಷೇತ್ರಗಳು: %s"
+"ದೋಷ: '--fields' '%s' ಎಂಬ  ಮೌಲ್ಯವು ಇಲ್ಲಿ ಸರಿಯಾದುದಲ್ಲ (ಅನುಮತಿ ಇರುವ ಕ್ಷೇತ್ರಗಳು:%s)"
 
 #: ../cli/src/network-manager.c:530
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: invalid 'wifi' parameter: '%s'."
 msgid "Error: invalid '%s' argument: '%s' (use on/off)."
-msgstr "ದೋಷ: ಅಮಾನ್ಯವಾದ 'wifi' ನಿಯತಾಂಕ: '%s'."
+msgstr "ದೋಷ: ಅಮಾನ್ಯವಾದ '%s' ನಿಯತಾಂಕ: '%s' (ಆನ್/ಆಫ್ ಅನ್ನು ಬಳಸಿ)."
 
 #: ../cli/src/network-manager.c:547
-#, fuzzy
 #| msgid "Networking enabled"
 msgid "Networking"
-msgstr "ಜಾಲಬಂಧ ಸಕ್ರಿಯಗೊಂಡಿದೆ"
+msgstr "ಜಾಲಬಂಧ"
 
 #: ../cli/src/network-manager.c:557
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'con' command '%s' is not valid."
 msgid "Error: 'networking' command '%s' is not valid."
-msgstr "ದೋಷ: 'con' ಆಜ್ಷೆ '%s' ಎಂಬುದು ಮಾನ್ಯವಾದುದಲ್ಲ."
+msgstr "ದೋಷ: '%s' ಎಂಬ 'networking' ಆದೇಶವು ಮಾನ್ಯವಾದುದಲ್ಲ."
 
 #: ../cli/src/network-manager.c:582 ../cli/src/network-manager.c:595
 msgid "Radio switches"
-msgstr ""
+msgstr "ರೇಡಿಯೋ ಸ್ವಿಚ್‌ಗಳು"
 
 #. no argument, show current WiFi state
 #: ../cli/src/network-manager.c:609
 msgid "Wi-Fi radio switch"
-msgstr ""
+msgstr "Wi-Fi ರೇಡಿಯೊ ಸ್ವಿಚ್"
 
 #. no argument, show current WWAN (mobile broadband) state
 #: ../cli/src/network-manager.c:621
 msgid "WWAN radio switch"
-msgstr ""
+msgstr "WWAN ರೇಡಿಯೊ ಸ್ವಿಚ್"
 
 #. no argument, show current WiMAX state
 #: ../cli/src/network-manager.c:634
 msgid "WiMAX radio switch"
-msgstr ""
+msgstr "WiMAX ರೇಡಿಯೊ ಸ್ವಿಚ್"
 
 #: ../cli/src/network-manager.c:649
-#, fuzzy, c-format
+#, c-format
 #| msgid "Error: 'con' command '%s' is not valid."
 msgid "Error: 'radio' command '%s' is not valid."
-msgstr "ದೋಷ: 'con' ಆಜ್ಷೆ '%s' ಎಂಬುದು ಮಾನ್ಯವಾದುದಲ್ಲ."
+msgstr "ದೋಷ: '%s' ಎಂಬ 'radio' ಆದೇಶವು ಮಾನ್ಯವಾದುದಲ್ಲ."
 
 #: ../cli/src/nmcli.c:76
-#, fuzzy, c-format
+#, c-format
 #| msgid ""
 #| "Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 #| "\n"
@@ -1855,6 +2363,8 @@ msgid ""
 "  -n[ocheck]                                 don't check nmcli and "
 "NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
+"  -w[ait] <seconds>                          set timeout waiting for "
+"finishing operations\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
@@ -1869,81 +2379,87 @@ msgstr ""
 "ಬಳಕೆ: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
 "OPTIONS\n"
-"  -t[erse]                                   terse output\n"
-"  -p[retty]                                  pretty output\n"
-"  -m[ode] tabular|multiline                  output mode\n"
-"  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
-"  -e[scape] yes|no                           escape columns separators in "
-"values\n"
-"  -v[ersion]                                 show program version\n"
-"  -h[elp]                                    print this help\n"
+"  -t[erse]                                   terse ಔಟ್‌ಪುಟ್\n"
+"  -p[retty]                                  ಪ್ರಟಿ ಔಟ್‌ಪುಟ್\n"
+"  -m[ode] tabular|multiline                  ಔಟ್‌ಪುಟ್ ಸ್ಥಿತಿ\n"
+"  -f[ields] <field1,field2,...>|all|common   ಔಟ್‌ಪುಟ್ ಮಾಡಲು ಜಾಗಗಳನ್ನು ಸೂಚಿಸು\n"
+"  -e[scape] yes|no                           ಮೌಲ್ಯಗಳಲ್ಲಿರುವ ಎಸ್ಕೇಪ್ "
+"ಉದ್ದಸಾಲುಗಳ ವಿಭಜಕಗಳು\n"
+"  -v[ersion]                                 ಪ್ರೊಗ್ರಾಮಿನ ಆವೃತ್ತಿಯನ್ನು ತೋರಿಸು\n"
+"  -h[elp]                                    ನೆರವನ್ನು ಮುದ್ರಿಸು\n"
 "\n"
 "OBJECT\n"
-"  nm          NetworkManager status\n"
-"  con         NetworkManager connections\n"
-"  dev         devices managed by NetworkManager\n"
+"  nm          NetworkManager ಸ್ಥಿತಿ\n"
+"  con         NetworkManager ಸಂಪರ್ಕಗಳು\n"
+"  dev         NetworkManager ಇಂದ ನೋಡಿಕೊಳ್ಳಲಾಗುವ ಸಾಧನಗಳು\n"
 "\n"
 
-#: ../cli/src/nmcli.c:129
+#: ../cli/src/nmcli.c:130
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "ದೋಷ: '%s' ಎಂಬ ವಸ್ತುವಿನ ಬಗೆಗೆ ತಿಳಿದಿಲ್ಲ, 'nmcli help' ಅನ್ನು ಪ್ರಯತ್ನಿಸಿ."
 
-#: ../cli/src/nmcli.c:159
+#: ../cli/src/nmcli.c:160
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "ದೋಷ: '--terse' ಎಂಬ ಆಯ್ಕೆಯನ್ನು ಎರಡನೆ ಬಾರಿಗೆ ಸೂಚಿಸಲಾಗಿದೆ."
 
-#: ../cli/src/nmcli.c:164
+#: ../cli/src/nmcli.c:165
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr "ದೋಷ: '--terse' ಎಂಬುದು '--pretty' ಯೊಂದಿಗೆ ಪರಸ್ಪರ ಮೀಸಲಾಗಿದೆ."
 
-#: ../cli/src/nmcli.c:172
+#: ../cli/src/nmcli.c:173
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "ದೋಷ: '--pretty' ಎಂಬ ಆಯ್ಕೆಯನ್ನು ಎರಡನೆ ಬಾರಿಗೆ ಸೂಚಿಸಲಾಗಿದೆ."
 
-#: ../cli/src/nmcli.c:177
+#: ../cli/src/nmcli.c:178
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr "ದೋಷ: '--pretty' ಎಂಬುದು '--terse' ಯೊಂದಿಗೆ ಪರಸ್ಪರ ಮೀಸಲಾಗಿದೆ."
 
-#: ../cli/src/nmcli.c:187 ../cli/src/nmcli.c:203
+#: ../cli/src/nmcli.c:188 ../cli/src/nmcli.c:204 ../cli/src/nmcli.c:233
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "ದೋಷ: '%s' ಆರ್ಗ್ಯುಮೆಂಟ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ"
 
-#: ../cli/src/nmcli.c:196 ../cli/src/nmcli.c:212
+#: ../cli/src/nmcli.c:197 ../cli/src/nmcli.c:213
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "ದೋಷ: '%s' ಎನ್ನುವುದು '%s' ಎಂಬ ಆಯ್ಕೆಗೆ ಸರಿಯಾದ ಆರ್ಗ್ಯುಮೆಂಟ್ ಆಗಿಲ್ಲ."
 
-#: ../cli/src/nmcli.c:219
+#: ../cli/src/nmcli.c:220
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "ದೋಷ: '%s' ಎಂಬ ಆಯ್ಕೆಯ ಕ್ಷೇತ್ರಗಳು ಕಾಣಿಸುತ್ತಿಲ್ಲ."
 
-#: ../cli/src/nmcli.c:229
+#: ../cli/src/nmcli.c:238
+#, c-format
+#| msgid "Error: '%s' is not valid argument for '%s' option."
+msgid "Error: '%s' is not a valid timeout for '%s' option."
+msgstr "ದೋಷ: '%s' ಎನ್ನುವುದು '%s' ಎಂಬ ಆಯ್ಕೆಗೆ ಸರಿಯಾದ ಕಾಲಾವಧಿ ತೀರಿಕೆಯಲ್ಲ."
+
+#: ../cli/src/nmcli.c:245
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "nmcli ಉಪಕರಣ, ಆವೃತ್ತಿ %s\n"
 
-#: ../cli/src/nmcli.c:235
+#: ../cli/src/nmcli.c:251
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "ದೋಷ: '%s' ಎಂಬ ಆಯ್ಕೆಯ ಬಗೆಗೆ ತಿಳಿದಿಲ್ಲ, 'nmcli -help' ಅನ್ನು ಪ್ರಯತ್ನಿಸಿ."
 
-#: ../cli/src/nmcli.c:254
+#: ../cli/src/nmcli.c:270
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "%d ಎಂಬ ಸಂಕೇತವು ಕಂಡುಬಂದಿದೆ,  ಮುಚ್ಚಲಾಗುತ್ತಿದೆ......"
 
-#: ../cli/src/nmcli.c:279
+#: ../cli/src/nmcli.c:295
 msgid "Error: Could not create NMClient object."
 msgstr "ದೋಷ: NMClient ವಸ್ತುವನ್ನು ರಚಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ."
 
-#: ../cli/src/nmcli.c:295
+#: ../cli/src/nmcli.c:311
 msgid "Success"
 msgstr "ಯಶಸ್ವಿಯಾಗಿದೆ"
 
@@ -2069,60 +2585,72 @@ msgstr "ಉಳಿಸದೆ ಇರುವ"
 msgid "not required, "
 msgstr "ಅಗತ್ಯವಿರದ,"
 
-#: ../cli/src/settings.c:1064 ../cli/src/settings.c:1232
-#: ../cli/src/settings.c:1273
+#: ../cli/src/settings.c:1067 ../cli/src/settings.c:1235
+#: ../cli/src/settings.c:1276
 msgid "auto"
 msgstr "ಸ್ವಯಂಚಾಲಿತ"
 
-#: ../cli/src/utils.c:109
-#, fuzzy, c-format
+#: ../cli/src/utils.c:111
+#, c-format
 #| msgid "Error: '%s' argument is missing."
 msgid "Error: value for '%s' argument is required."
-msgstr "ದೋಷ: '%s' ಆರ್ಗ್ಯುಮೆಂಟ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ."
+msgstr "ದೋಷ: '%s' ಆರ್ಗ್ಯುಮೆಂಟ್‌ನ ಮೌಲ್ಯದ ಅಗತ್ಯವಿದೆ."
 
-#: ../cli/src/utils.c:134
+#: ../cli/src/utils.c:136
 #, c-format
 msgid "Error: Argument '%s' was expected, but '%s' provided."
-msgstr ""
+msgstr "ದೋಷ: '%s' ಅನ್ನು ನಿರೀಕ್ಷಿಸಲಾಗಿತ್ತು, ಆದರೆ '%s' ಅನ್ನು ನೀಡಲಾಗಿದೆ."
 
-#: ../cli/src/utils.c:137
-#, fuzzy, c-format
+#: ../cli/src/utils.c:139
+#, c-format
 #| msgid "Error: missing argument for '%s' option."
 msgid "Error: Unexpected argument '%s'"
-msgstr "ದೋಷ: '%s' ಆರ್ಗ್ಯುಮೆಂಟ್ ಕಾಣಿಸುತ್ತಿಲ್ಲ"
+msgstr "ದೋಷ: ಅನಿರೀಕ್ಷಿತ ಆರ್ಗ್ಯುಮೆಂಟ್ '%s'"
 
-#: ../cli/src/utils.c:192
+#: ../cli/src/utils.c:194
 #, c-format
 msgid "Error converting IP4 address '0x%X' to text form"
 msgstr "ಇದರಿಂದ IP4 ವಿಳಾಸ '0x%X' ಅನ್ನು ಪಠ್ಯವಾಗಿ ಪರಿವರ್ತಿಸುವಲ್ಲಿ ದೋಷ"
 
-#: ../cli/src/utils.c:220
+#: ../cli/src/utils.c:222
 #, c-format
 msgid "Error converting IP6 address '%s' to text form"
 msgstr "ಇದರಿಂದ IP6 ವಿಳಾಸ '%s' ಅನ್ನು ಪಠ್ಯವಾಗಿ ಪರಿವರ್ತಿಸುವಲ್ಲಿ ದೋಷ"
 
-#: ../cli/src/utils.c:382
+#: ../cli/src/utils.c:344
+#, c-format
+#| msgid "'%s' is not a valid value for '%s'"
+msgid "'%s' is not valid; use [%s] or [%s]"
+msgstr "'%s' ಮಾನ್ಯವಾದುದಲ್ಲ; [%s] ಅಥವ [%s] ಅನ್ನು ಬಳಸಿ"
+
+#: ../cli/src/utils.c:426
+#, c-format
+msgid "'%s' is ambiguous (%s x %s)"
+msgstr "'%s' ಎಂಬುದು ಅಸ್ಪಷ್ಟವಾಗಿದೆ (%s x %s)"
+
+#: ../cli/src/utils.c:521
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "'%s' ಎಂಬ ಕ್ಷೇತ್ರವು ಒಂಟಿಯಾಗಿಯೆ ಇರಬೇಕು"
 
-#: ../cli/src/utils.c:385
+#: ../cli/src/utils.c:524
 #, c-format
 msgid "invalid field '%s'"
 msgstr "ಅಮಾನ್ಯವಾದ ಕ್ಷೇತ್ರ '%s'"
 
-#: ../cli/src/utils.c:404
+#: ../cli/src/utils.c:543
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ '--fields' ಅನ್ನು ಸೂಚಿಸಬೇಕಾಗುತ್ತದೆ"
 
-#: ../cli/src/utils.c:408
+#: ../cli/src/utils.c:547
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
-"'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ ನಿಶ್ಚಿತವಾದ '--fields' ಆಯ್ಕೆಯ ಮೌಲ್ಯದ ಅಗತ್ಯವಿರುತ್ತದೆಯೆ ಹೊರತು, "
+"'--terse' ಎಂಬ ಆಯ್ಕೆಗೆ ನಿಶ್ಚಿತವಾದ '--fields' ಆಯ್ಕೆಯ ಮೌಲ್ಯದ ಅಗತ್ಯವಿರುತ್ತದೆಯೆ "
+"ಹೊರತು, "
 "'%s' ಎಂಬುದಲ್ಲ"
 
-#: ../cli/src/utils.c:617
+#: ../cli/src/utils.c:756
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
@@ -2131,7 +2659,7 @@ msgstr ""
 "ಎಚ್ಚರಿಕೆ: nmcli (%s) ಮತ್ತು NetworkManager (%s) ಆವೃತ್ತಿಗಳು ತಾಳೆಯಾಗುತ್ತಿಲ್ಲ. "
 "ಎಚ್ಚರಿಕೆಯನ್ನು ಮರೆಮಾಚಲು --nocheck ಬಳಸು.\n"
 
-#: ../cli/src/utils.c:626
+#: ../cli/src/utils.c:765
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
@@ -2254,7 +2782,8 @@ msgstr "ಅಮಾನ್ಯವಾದ IV ಗಾತ್ರ (ಕನಿಷ್ಟ %zd �
 #: ../libnm-util/crypto_gnutls.c:166
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "ಡೀಕ್ರಿಪ್ಸ್ ಮಾಡುವ ಸಿಫರ್ ಸಂದರ್ಭವನ್ನು ಆರಂಭಗೊಳಿಸುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: %s / %s."
+msgstr ""
+"ಡೀಕ್ರಿಪ್ಸ್ ಮಾಡುವ ಸಿಫರ್ ಸಂದರ್ಭವನ್ನು ಆರಂಭಗೊಳಿಸುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:175
 #, c-format
@@ -2274,7 +2803,9 @@ msgstr "ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ�
 #: ../libnm-util/crypto_gnutls.c:203 ../libnm-util/crypto_nss.c:257
 #, c-format
 msgid "Failed to decrypt the private key: unexpected padding length."
-msgstr "ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: ಅನಿರೀಕ್ಷಿತವಾದ ಪ್ಯಾಡಿಂಗ್ ಗಾತ್ರ"
+msgstr ""
+"ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: ಅನಿರೀಕ್ಷಿತವಾದ ಪ್ಯಾಡಿಂಗ್ "
+"ಗಾತ್ರ"
 
 #: ../libnm-util/crypto_gnutls.c:214 ../libnm-util/crypto_nss.c:268
 #, c-format
@@ -2380,13 +2911,15 @@ msgstr "ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ�
 #, c-format
 msgid "Failed to decrypt the private key: decrypted data too large."
 msgstr ""
-"ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡಲಾದ ದತ್ತಾಂಶದ ಗಾತ್ರವು "
+"ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡಲಾದ ದತ್ತಾಂಶದ "
+"ಗಾತ್ರವು "
 "ಬಹಳ ದೊಡ್ಡದಾಗಿದೆ."
 
 #: ../libnm-util/crypto_nss.c:246
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
-msgstr "ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡುವಿಕೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: %d."
+msgstr ""
+"ಖಾಸಗಿ ಕೀಲಿಯನ್ನು ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡುವಿಕೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: %d."
 
 #: ../libnm-util/crypto_nss.c:348
 #, c-format
@@ -2468,8 +3001,8 @@ msgstr "ಮನಸ್ಸಿಗೆ ಬಂದ ದತ್ತಾಂಶವನ್ನು 
 #: ../libnm-util/nm-setting-olpc-mesh.c:128
 #: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:394
 #: ../libnm-util/nm-setting-wimax.c:137
-#: ../libnm-util/nm-setting-wireless-security.c:792
-#: ../libnm-util/nm-setting-wireless.c:610
+#: ../libnm-util/nm-setting-wireless-security.c:791
+#: ../libnm-util/nm-setting-wireless.c:710
 msgid "property is missing"
 msgstr "ಗುಣವು ಕಾಣಿಸುತ್ತಿಲ್ಲ"
 
@@ -2489,9 +3022,9 @@ msgstr "ಗುಣವು ಕಾಣಿಸುತ್ತಿಲ್ಲ"
 #: ../libnm-util/nm-setting-pppoe.c:172 ../libnm-util/nm-setting-pppoe.c:181
 #: ../libnm-util/nm-setting-vpn.c:403 ../libnm-util/nm-setting-vpn.c:413
 #: ../libnm-util/nm-setting-wimax.c:146
-#: ../libnm-util/nm-setting-wireless-security.c:822
-#: ../libnm-util/nm-setting-wireless-security.c:830
-#: ../libnm-util/nm-setting-wireless-security.c:854
+#: ../libnm-util/nm-setting-wireless-security.c:821
+#: ../libnm-util/nm-setting-wireless-security.c:829
+#: ../libnm-util/nm-setting-wireless-security.c:853
 msgid "property is empty"
 msgstr "ಗುಣವು ಖಾಲಿ ಇದೆ"
 
@@ -2509,21 +3042,21 @@ msgstr "'%s' ಎನ್ನುವುದು PKCS#12 ಗಾಗಿನ ಗುಣದೊ
 #: ../libnm-util/nm-setting-ip4-config.c:745
 #: ../libnm-util/nm-setting-ip6-config.c:729
 #: ../libnm-util/nm-setting-olpc-mesh.c:156
-#: ../libnm-util/nm-setting-wimax.c:155 ../libnm-util/nm-setting-wired.c:501
-#: ../libnm-util/nm-setting-wired.c:510
-#: ../libnm-util/nm-setting-wireless-security.c:873
-#: ../libnm-util/nm-setting-wireless-security.c:882
-#: ../libnm-util/nm-setting-wireless-security.c:890
-#: ../libnm-util/nm-setting-wireless-security.c:898
-#: ../libnm-util/nm-setting-wireless-security.c:906
-#: ../libnm-util/nm-setting-wireless-security.c:915
-#: ../libnm-util/nm-setting-wireless-security.c:924
-#: ../libnm-util/nm-setting-wireless-security.c:933
-#: ../libnm-util/nm-setting-wireless-security.c:969
-#: ../libnm-util/nm-setting-wireless-security.c:979
-#: ../libnm-util/nm-setting-wireless.c:670
-#: ../libnm-util/nm-setting-wireless.c:679
-#: ../libnm-util/nm-setting-wireless.c:688
+#: ../libnm-util/nm-setting-wimax.c:155 ../libnm-util/nm-setting-wired.c:601
+#: ../libnm-util/nm-setting-wired.c:610
+#: ../libnm-util/nm-setting-wireless-security.c:872
+#: ../libnm-util/nm-setting-wireless-security.c:881
+#: ../libnm-util/nm-setting-wireless-security.c:889
+#: ../libnm-util/nm-setting-wireless-security.c:897
+#: ../libnm-util/nm-setting-wireless-security.c:905
+#: ../libnm-util/nm-setting-wireless-security.c:914
+#: ../libnm-util/nm-setting-wireless-security.c:923
+#: ../libnm-util/nm-setting-wireless-security.c:932
+#: ../libnm-util/nm-setting-wireless-security.c:968
+#: ../libnm-util/nm-setting-wireless-security.c:978
+#: ../libnm-util/nm-setting-wireless.c:770
+#: ../libnm-util/nm-setting-wireless.c:779
+#: ../libnm-util/nm-setting-wireless.c:788
 msgid "property is invalid"
 msgstr "ಗುಣವು ಅಮಾನ್ಯವಾಗಿದೆ"
 
@@ -2532,7 +3065,7 @@ msgstr "ಗುಣವು ಅಮಾನ್ಯವಾಗಿದೆ"
 #: ../libnm-util/nm-setting-8021x.c:2561 ../libnm-util/nm-setting-adsl.c:239
 #: ../libnm-util/nm-setting-adsl.c:250
 #: ../libnm-util/nm-setting-bluetooth.c:179
-#: ../libnm-util/nm-setting-wireless-security.c:801
+#: ../libnm-util/nm-setting-wireless-security.c:800
 #, c-format
 msgid "'%s' is not a valid value for the property"
 msgstr "'%s' ಎನ್ನುವುದು ಗುಣದ ಒಂದು ಮಾನ್ಯವಾದ ಮೌಲ್ಯವಲ್ಲ"
@@ -2618,7 +3151,8 @@ msgstr "'%s\" ಯು ಒಂದು ಮಾನ್ಯವಾದ UUID ಆಗಿಲ್�
 #: ../libnm-util/nm-setting-connection.c:716
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"
-msgstr "'%s' ಎನ್ನುವುದು ವರ್ಚುವಲ್ ಸಂಪರ್ಕಸಾಧನದ ಹೆಸರಾದ '%s' ಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ"
+msgstr ""
+"'%s' ಎನ್ನುವುದು ವರ್ಚುವಲ್ ಸಂಪರ್ಕಸಾಧನದ ಹೆಸರಾದ '%s' ಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ"
 
 #: ../libnm-util/nm-setting-connection.c:760
 #, c-format
@@ -2690,12 +3224,12 @@ msgid "'%s' not allowed for %s=%s"
 msgstr "'%s' ಯು %s=%s ಗಾಗಿ ಅನುಮತಿ ಇಲ್ಲ"
 
 #: ../libnm-util/nm-setting-olpc-mesh.c:137
-#: ../libnm-util/nm-setting-wireless.c:619
+#: ../libnm-util/nm-setting-wireless.c:719
 msgid "SSID length is out of range <1-32> bytes"
 msgstr "SSID ಉದ್ದವು <1-32> ಬೈಟ್‌ಗಳ ವ್ಯಾಪ್ತಿಯ ಹೊರಗಿದೆ"
 
 #: ../libnm-util/nm-setting-olpc-mesh.c:146
-#: ../libnm-util/nm-setting-wireless.c:659
+#: ../libnm-util/nm-setting-wireless.c:759
 #, c-format
 msgid "'%d' is not a valid channel"
 msgstr "'%d' ಎನ್ನುವುದು ಒಂದು ಮಾನ್ಯವಾದ ಚಾನಲ್ ಅಲ್ಲ"
@@ -2729,73 +3263,73 @@ msgstr "ಗುಣವನ್ನು ಸೂಚಿಸಲಾಗಿಲ್ಲ ಮತ್�
 msgid "flags are invalid"
 msgstr "ಫ್ಲ್ಯಾಗ್‌ಗಳು ಅಮಾನ್ಯವಾಗಿದೆ"
 
-#: ../libnm-util/nm-setting-wired.c:456
+#: ../libnm-util/nm-setting-wired.c:556
 #, c-format
 msgid "'%s' is not a valid ethernet port value"
 msgstr "'%s' ಎನ್ನುವುದು ಮಾನ್ಯವಾದ ಎತರ್ನೆಟ್ ಸಂಪರ್ಕಸ್ಥಾನ ಮೌಲ್ಯವಲ್ಲ"
 
-#: ../libnm-util/nm-setting-wired.c:466
+#: ../libnm-util/nm-setting-wired.c:566
 #, c-format
 msgid "'%s' is not a valid duplex value"
 msgstr "'%s' ಎನ್ನುವುದು ಒಂದು ಮಾನ್ಯವಾದ ಡ್ಯೂಪ್ಲೆಕ್ಸ್ ಮೌಲ್ಯವಲ್ಲ"
 
-#: ../libnm-util/nm-setting-wired.c:476 ../libnm-util/nm-setting-wired.c:534
+#: ../libnm-util/nm-setting-wired.c:576 ../libnm-util/nm-setting-wired.c:634
 msgid "is not a valid MAC address"
 msgstr "ಒಂದು ಮಾನ್ಯವಾದ MAC ವಿಳಾಸವಲ್ಲ"
 
-#: ../libnm-util/nm-setting-wired.c:489
-#: ../libnm-util/nm-setting-wireless.c:700
-#: ../libnm-util/nm-setting-wireless.c:714
+#: ../libnm-util/nm-setting-wired.c:589
+#: ../libnm-util/nm-setting-wireless.c:800
+#: ../libnm-util/nm-setting-wireless.c:814
 #, c-format
 msgid "'%s' is not a valid MAC address"
 msgstr "'%s' ಒಂದು ಮಾನ್ಯವಾದ MAC ವಿಳಾಸವಲ್ಲ"
 
-#: ../libnm-util/nm-setting-wired.c:523
+#: ../libnm-util/nm-setting-wired.c:623
 #, c-format
 msgid "invalid '%s' or its value '%s'"
 msgstr "'%s' ಅಥವ ಅದರ ಮೌಲ್ಯವು '%s' ಅಮಾನ್ಯವಾಗಿದೆ"
 
-#: ../libnm-util/nm-setting-wireless-security.c:813
+#: ../libnm-util/nm-setting-wireless-security.c:812
 #, c-format
 msgid "'%s' security requires '%s=%s'"
 msgstr "'%s' ಸುರಕ್ಷತೆಗಾಗಿ '%s=%s' ಅಗತ್ಯವಿರುತ್ತದೆ"
 
-#: ../libnm-util/nm-setting-wireless-security.c:842
+#: ../libnm-util/nm-setting-wireless-security.c:841
 #, c-format
 msgid "'%s' security requires '%s' setting presence"
 msgstr "'%s' ಸುರಕ್ಷತೆಗಾಗಿ '%s' ಸಿದ್ಧತೆಯು ಇರುವ ಅಗತ್ಯವಿರುತ್ತದೆ"
 
-#: ../libnm-util/nm-setting-wireless-security.c:863
+#: ../libnm-util/nm-setting-wireless-security.c:862
 #, c-format
 msgid "'%d' value is out of range <0-3>"
 msgstr "'%d' ಮೌಲ್ಯವು <0-3> ವ್ಯಾಪ್ತಿಯ ಹೊರಗಿದೆ"
 
-#: ../libnm-util/nm-setting-wireless-security.c:960
+#: ../libnm-util/nm-setting-wireless-security.c:959
 #, c-format
 msgid "'%s' connections require '%s' in this property"
 msgstr "ಈ ಗುಣದಲ್ಲಿ '%s' ಸಂಪರ್ಕಗಳಿಗಾಗಿ '%s' ಅಗತ್ಯವಿದೆ"
 
-#: ../libnm-util/nm-setting-wireless-security.c:990
+#: ../libnm-util/nm-setting-wireless-security.c:989
 #, c-format
 msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "'%s' ಅನ್ನು ಕೇವಲ '%s=%s' ಎನ್ನುವುದರೊಂದಿಗೆ ಮಾತ್ರ ಬಳಸಬಹುದು (WEP)"
 
-#: ../libnm-util/nm-setting-wireless.c:628
+#: ../libnm-util/nm-setting-wireless.c:728
 #, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
 msgstr "'%s' ಎಂಬುದು ಒಂದು ಮಾನ್ಯವಾದ ವೈ-ಫೈ ಸಾಧನವಾಗಿಲ್ಲ."
 
-#: ../libnm-util/nm-setting-wireless.c:638
+#: ../libnm-util/nm-setting-wireless.c:738
 #, c-format
 msgid "'%s' is not a valid band"
 msgstr "'%s\" ಎನ್ನುವುದು ಒಂದು ಮಾನ್ಯವಾದ ಬ್ಯಾಂಡ್ ಅಲ್ಲ"
 
-#: ../libnm-util/nm-setting-wireless.c:648
+#: ../libnm-util/nm-setting-wireless.c:748
 #, c-format
 msgid "requires setting '%s' property"
 msgstr "'%s' ಗುಣವನ್ನು ಹೊಂದಿಸುವ ಅಗತ್ಯವಿರುತ್ತದೆ"
 
-#: ../libnm-util/nm-setting-wireless.c:726
+#: ../libnm-util/nm-setting-wireless.c:826
 #, c-format
 msgid "'%s' setting is required for the connection when the property is set"
 msgstr "ಗುಣವನ್ನು ಹೊಂದಿಸಿದಾಗ ಸಂಪರ್ಕಕ್ಕಾಗಿ '%s' ಸಿದ್ಧತೆಯ ಅಗತ್ಯವಿರುತ್ತದೆ"
@@ -2807,20 +3341,23 @@ msgstr "ವ್ಯವಸ್ಥೆಯ ಜಾಲಬಂಧವನ್ನು ಸಕ್�
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:2
 msgid "System policy prevents enabling or disabling system networking"
 msgstr ""
-"ವ್ಯವಸ್ಥೆಯ ಜಾಲಬಂಧವನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ಪಾಲಿಸಿಯು ತಡೆಯುತ್ತಿದೆ"
+"ವ್ಯವಸ್ಥೆಯ ಜಾಲಬಂಧವನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ಪಾಲಿಸಿಯು "
+"ತಡೆಯುತ್ತಿದೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:3
 msgid ""
 "Put NetworkManager to sleep or wake it up (should only be used by system "
 "power management)"
 msgstr ""
-"NetworkManager ಅನ್ನು ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಅಥವ ಎಚ್ಚರಸ್ಥಿತಿಗೆ ಕಳುಹಿಸಿ (ಇದನ್ನು ಕೇವಲ ವ್ಯವಸ್ಥೆಯ "
+"NetworkManager ಅನ್ನು ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಅಥವ ಎಚ್ಚರಸ್ಥಿತಿಗೆ ಕಳುಹಿಸಿ (ಇದನ್ನು ಕೇವಲ "
+"ವ್ಯವಸ್ಥೆಯ "
 "ವಿದ್ಯುಚ್ಛಕ್ತಿ ನಿರ್ವಹಣೆಯಿಂದ ಮಾತ್ರ ಬಳಸಬೇಕು)"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:4
 msgid "System policy prevents putting NetworkManager to sleep or waking it up"
 msgstr ""
-"NetworkManager ಅನ್ನು ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಅಥವ ಎಚ್ಚರಸ್ಥಿತಿಗೆ ಕಳುಹಿಸುವುದನ್ನು ವ್ಯವಸ್ಥೆಯ "
+"NetworkManager ಅನ್ನು ನಿದ್ರಾಸ್ಥಿತಿಗೆ ಅಥವ ಎಚ್ಚರಸ್ಥಿತಿಗೆ ಕಳುಹಿಸುವುದನ್ನು "
+"ವ್ಯವಸ್ಥೆಯ "
 "ನಿಯಮವು ತಡೆಯುತ್ತಿದೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:5
@@ -2829,7 +3366,8 @@ msgstr "WiFi ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:6
 msgid "System policy prevents enabling or disabling WiFi devices"
-msgstr "WiFi ಸಾಧನವನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
+msgstr ""
+"WiFi ಸಾಧನವನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತಿವೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:7
 msgid "Enable or disable mobile broadband devices"
@@ -2838,18 +3376,21 @@ msgstr "ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧ�
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:8
 msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr ""
-"ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು "
+"ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ "
+"ನಿಯಮಗಳು "
 "ತಡೆಯುತ್ತಿವೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable WiMAX mobile broadband devices"
-msgstr "WiMAX  ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ"
+msgstr ""
+"WiMAX  ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:10
 msgid ""
 "System policy prevents enabling or disabling WiMAX mobile broadband devices"
 msgstr ""
-"WiMAX  ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು "
+"WiMAX  ಮೊಬೈಲ್ ಬ್ರಾಡ್‌ಬ್ಯಾಂಡ್ ಸಾಧನಗಳನ್ನು ಸಕ್ರಿಯ ಅಥವ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸದಂತೆ "
+"ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು "
 "ತಡೆಯುತ್ತಿವೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:11
@@ -2867,7 +3408,8 @@ msgstr "ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧ�
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:14
 msgid "System policy prevents sharing connections via a protected WiFi network"
 msgstr ""
-"ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+"ಒಂದು ಸಂರಕ್ಷಿತವಾದ WiFi ಜಾಲಬಂಧದ ಮೂಲಕ ಸಂಪರ್ಕ ಸಾಧಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು "
+"ತಡೆಯುತ್ತವೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:15
 msgid "Connection sharing via an open WiFi network"
@@ -2884,7 +3426,8 @@ msgstr "ವೈಯಕ್ತಿಕ ಜಾಲಬಂಧ ಸಂಪರ್ಕಗಳನ�
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:18
 msgid "System policy prevents modification of personal network settings"
-msgstr "ವೈಯಕ್ತಿಕ ಜಾಲಬಂಧದ ಸಿದ್ಧತೆಗಳನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+msgstr ""
+"ವೈಯಕ್ತಿಕ ಜಾಲಬಂಧದ ಸಿದ್ಧತೆಗಳನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Modify network connections for all users"
@@ -2893,7 +3436,8 @@ msgstr "ಎಲ್ಲಾ ಬಳಕೆದಾರರಿಗಾಗಿ ಜಾಲಬಂ�
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:20
 msgid "System policy prevents modification of network settings for all users"
 msgstr ""
-"ಎಲ್ಲಾ ಬಳಕೆದಾರರಿಗಾಗಿ ಜಾಲಬಂಧದ ಸಿದ್ಧತೆಗಳನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+"ಎಲ್ಲಾ ಬಳಕೆದಾರರಿಗಾಗಿ ಜಾಲಬಂಧದ ಸಿದ್ಧತೆಗಳನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು "
+"ತಡೆಯುತ್ತವೆ"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:21
 msgid "Modify persistent system hostname"
@@ -2901,7 +3445,8 @@ msgstr "ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸ
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:22
 msgid "System policy prevents modification of the persistent system hostname"
-msgstr "ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸರನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
+msgstr ""
+"ಸ್ಥಿರ ವ್ಯವಸ್ಥೆಯ ಆತಿಥೇಯ ಹೆಸರನ್ನು ಮಾರ್ಪಡಿಸದಂತೆ ವ್ಯವಸ್ಥೆಯ ನಿಯಮಗಳು ತಡೆಯುತ್ತವೆ"
 
 #: ../src/main.c:131
 #, c-format
@@ -2933,40 +3478,45 @@ msgstr "%s ಅನ್ನು ಮುಚ್ಚುವಲ್ಲಿ ವಿಫಲಗೊ�
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "NetworkManager ಈಗಾಗಲೆ ಚಾಲನೆಯಲ್ಲಿದೆ (pid %ld)\n"
 
-#: ../src/main.c:324
+#: ../src/main.c:326
 msgid "Print NetworkManager version and exit"
 msgstr "NetworkManager ಆವೃತ್ತಿಯನ್ನು ಮುದ್ರಿಸಿ ನಿರ್ಗಮಿಸು"
 
-#: ../src/main.c:325
+#: ../src/main.c:327
 msgid "Don't become a daemon"
 msgstr "ಒಂದು ಡೆಮನ್ ಆಗಬೇಡ"
 
-#: ../src/main.c:326
+#: ../src/main.c:328
+#| msgid "Don't become a daemon"
+msgid "Don't become a daemon, and log to stderr"
+msgstr "ಒಂದು ಡೆಮನ್ ಆಗಬೇಡ, ಮತ್ತು stderr ಗೆ ಲಾಗ್ ಮಾಡು"
+
+#: ../src/main.c:329
 msgid "Make all warnings fatal"
 msgstr "ಎಲ್ಲಾ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಮಾರಕವಾಗಿಸು"
 
-#: ../src/main.c:327
+#: ../src/main.c:330
 msgid "Specify the location of a PID file"
 msgstr "ಒಂದು PID ಕಡತವನ್ನು ಸೂಚಿಸಿ"
 
-#: ../src/main.c:327
+#: ../src/main.c:330
 msgid "filename"
 msgstr "ಕಡತದಹೆಸರು"
 
-#: ../src/main.c:328
+#: ../src/main.c:331
 msgid "State file location"
 msgstr "ಸ್ಥಿತಿ ಕಡತವು ಇರುವ ಸ್ಥಳ"
 
-#: ../src/main.c:328
+#: ../src/main.c:331
 msgid "/path/to/state.file"
 msgstr "/path/to/state.file"
 
-#: ../src/main.c:333
+#: ../src/main.c:337
 #, c-format
 msgid "GModules are not supported on your platform!\n"
 msgstr "GModules ನಿಮ್ಮ ಪ್ಲಾಟ್‌ಫಾರ್ಮಿನಲ್ಲಿ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ!\n"
 
-#: ../src/main.c:353
+#: ../src/main.c:357
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -2974,36 +3524,38 @@ msgid ""
 "should associate with."
 msgstr ""
 "NetworkManager ಎಲ್ಲಾ ಜಾಲಬಂಧ ಸಂಪರ್ಕಗಳನ್ನು ನೋಡಿಕೊಳ್ಳುತ್ತದೆ ಮತ್ತು ಬಳಸಬೇಕಿರುವ \n"
-"ಉತ್ತಮ ಸಂಪರ್ಕವನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ.  ಅಷ್ಟೇ ಅಲ್ಲದೆ ಇದು ಗಣಕದಲ್ಲಿನ\n"
-"ಯಾವ ವೈರ್ಲೆಸ್ ಕಾರ್ಡುಗಳನ್ನು ವೈರ್ಲೆಸ್‌ ನಿಲುಕು ಬಿಂದುಗಳಿಗೆ ಸೂಚಿಸಬೇಕು ಎಂದು ಬಳಕೆದಾರರು\n"
+"ಉತ್ತಮ ಸಂಪರ್ಕವನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ.  ಅಷ್ಟೇ ಅಲ್ಲದೆ ಇದು "
+"ಗಣಕದಲ್ಲಿನ\n"
+"ಯಾವ ವೈರ್ಲೆಸ್ ಕಾರ್ಡುಗಳನ್ನು ವೈರ್ಲೆಸ್‌ ನಿಲುಕು ಬಿಂದುಗಳಿಗೆ ಸೂಚಿಸಬೇಕು ಎಂದು "
+"ಬಳಕೆದಾರರು\n"
 "ನಿರ್ಧರಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ."
 
-#: ../src/main.c:359
+#: ../src/main.c:363
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "ಅಮಾನ್ಯವಾದ ಆಯ್ಕೆ.  ಮಾನ್ಯವಾದ ಆಯ್ಕೆಗಳಿಗಾಗಿ ದಯವಿಟ್ಟು --help ಅನ್ನು ನೋಡಿ.\n"
 
-#: ../src/main.c:369
+#: ../src/main.c:373
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "NetworkManager ಅನ್ನು ಚಲಾಯಿಸಲು ನೀವು ನಿರ್ವಾಹಕರಾಗಿರಬೇಕು!\n"
 
-#: ../src/main.c:401
+#: ../src/main.c:429
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "ಸಂರಚನೆಯನ್ನು ಓದುವಲ್ಲಿ ವಿಫಲಗೊಂಡಿದೆ: (%d) %s\n"
 
-#: ../src/main.c:412
+#: ../src/main.c:440
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr "%s.  ಮಾನ್ಯವಾದ ಆಯ್ಕೆಗಳಿಗಾಗಿ ದಯವಿಟ್ಟು --help ಅನ್ನು ನೋಡಿ.\n"
 
-#: ../src/main.c:419
+#: ../src/main.c:447
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "ಸ್ಥಿತಿ ಕಡತ %s ಅನ್ನು ಪಾರ್ಸ್ ಮಾಡುವಲ್ಲಿ ವಿಫಲತೆ: (%d) %s\n"
 
-#: ../src/main.c:436
+#: ../src/main.c:460
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "ಡೀಮನ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s [ದೋಷ %u]\n"
@@ -3021,19 +3573,19 @@ msgstr ""
 "# %s ಇಂದ ಒಗ್ಗೂಡಿಸಲಾಗಿದೆ\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:313
+#: ../src/dhcp-manager/nm-dhcp-manager.c:315
 msgid "no usable DHCP client could be found."
 msgstr "ಬಳಸಬಹುದಾದ ಯಾವುದೆ DHCP ಕ್ಲೈಂಟ್ ಕಂಡುಬಂದಿಲ್ಲ."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:322
+#: ../src/dhcp-manager/nm-dhcp-manager.c:324
 msgid "'dhclient' could be found."
 msgstr "'dhclient' ಕಂಡು ಬಂದಿದೆ."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:332
+#: ../src/dhcp-manager/nm-dhcp-manager.c:334
 msgid "'dhcpcd' could be found."
 msgstr "'dhcpcd' ಕಂಡು ಬಂದಿದೆ."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:340
+#: ../src/dhcp-manager/nm-dhcp-manager.c:342
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "ಬೆಂಬಲವಿರದ DHCP ಕ್ಲೈಂಟ್ '%s'"
@@ -3067,16 +3619,14 @@ msgid "/path/to/config.file"
 msgstr "/path/to/config.file"
 
 #: ../src/config/nm-config.c:256
-#, fuzzy
 #| msgid "Config file location"
 msgid "Config directory location"
-msgstr "Config ಕಡತವು ಇರುವ ಸ್ಥಳ"
+msgstr "ಸಂರಚನಾ ಕಡತಕೋಶವು ಇರುವ ಸ್ಥಳ"
 
 #: ../src/config/nm-config.c:256
-#, fuzzy
 #| msgid "/path/to/config.file"
 msgid "/path/to/config/dir"
-msgstr "/path/to/config.file"
+msgstr "/path/to/config/dira"
 
 #: ../src/config/nm-config.c:258
 msgid "List of plugins separated by ','"
@@ -3087,15 +3637,16 @@ msgid "plugin1,plugin2"
 msgstr "plugin1,plugin2"
 
 #: ../src/config/nm-config.c:259
-#, fuzzy, c-format
+#, c-format
 #| msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
 msgid "Log level: one of [%s]"
-msgstr "ದಿನಚರಿಯ ಹಂತ: [ERR, WARN, INFO, DEBUG] ದಲ್ಲಿ ಒಂದು"
+msgstr "ಲಾಗ್ ಹಂತ: [%s] ದಲ್ಲಿ ಒಂದು"
 
 #: ../src/config/nm-config.c:261
 #, c-format
 msgid "Log domains separated by ',': any combination of [%s]"
 msgstr ""
+"ಲಾಗ್ ಡೊಮೇನ್‌ಗಳನ್ನು ',' ಇಂದ ಪ್ರತ್ಯೇಕಿಸಲಾಗಿರುತ್ತದೆ: [%s] ನ ಯಾವುದೆ ಸಂಯೋಜನೆ"
 
 #. These three are hidden for now, and should eventually just go away.
 #: ../src/config/nm-config.c:265
@@ -3115,117 +3666,109 @@ msgid "Bingo!"
 msgstr "ಬಿಂಗೂ!"
 
 #: ../src/modem-manager/nm-modem-cdma.c:255
-#: ../src/modem-manager/nm-modem-broadband.c:516 ../src/nm-device-bt.c:331
+#: ../src/modem-manager/nm-modem-broadband.c:516
+#: ../src/devices/nm-device-bt.c:326
 #, c-format
 msgid "CDMA connection %d"
 msgstr "CDMA ಸಂಪರ್ಕ %d"
 
 #: ../src/modem-manager/nm-modem-gsm.c:531
-#: ../src/modem-manager/nm-modem-broadband.c:494 ../src/nm-device-bt.c:327
+#: ../src/modem-manager/nm-modem-broadband.c:494
+#: ../src/devices/nm-device-bt.c:322
 #, c-format
 msgid "GSM connection %d"
 msgstr "GSM ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-bond.c:166
+#: ../src/devices/nm-device-bond.c:152
 #, c-format
 msgid "Bond connection %d"
 msgstr "ಬಾಂಡ್ ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-adsl.c:197
+#: ../src/devices/nm-device-adsl.c:152
 #, c-format
 msgid "ADSL connection %d"
 msgstr "ADSL ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-bridge.c:164
+#: ../src/devices/nm-device-bridge.c:131
 #, c-format
 msgid "Bridge connection %d"
 msgstr "ಬ್ರಿಜ್ ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-bt.c:302
+#: ../src/devices/nm-device-bt.c:297
 #, c-format
 msgid "PAN connection %d"
 msgstr "PAN ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-bt.c:335
+#: ../src/devices/nm-device-bt.c:330
 #, c-format
 msgid "DUN connection %d"
 msgstr "DUN ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-ethernet.c:1294
+#: ../src/devices/nm-device-ethernet.c:1243
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-ethernet.c:1294 ../src/settings/nm-settings-utils.c:50
+#: ../src/devices/nm-device-ethernet.c:1243
+#: ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "ತಂತಿಯುಕ್ತ ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-infiniband.c:270
+#: ../src/devices/nm-device-infiniband.c:243
 #, c-format
 msgid "InfiniBand connection %d"
 msgstr "InfiniBand ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-device-olpc-mesh.c:304
+#: ../src/devices/nm-device-olpc-mesh.c:285
 #, c-format
 msgid "Mesh %d"
 msgstr "ಜಾಲರಿ %d"
 
-#: ../src/nm-device-vlan.c:315
+#: ../src/devices/nm-device-vlan.c:214
 #, c-format
 msgid "VLAN connection %d"
 msgstr "VLAN ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-manager.c:751
+#: ../src/nm-manager.c:767
 #, c-format
 msgid "VPN connection %d"
 msgstr "VPN ಸಂಪರ್ಕ %d"
 
-#: ../src/nm-netlink-monitor.c:162 ../src/nm-netlink-monitor.c:286
-#: ../src/nm-netlink-monitor.c:671
+#: ../src/nm-netlink-monitor.c:219
+msgid "error occurred while waiting for data on socket"
+msgstr "ಸಾಕೆಟ್‌ನಲ್ಲಿ ದತ್ತಾಂಶಕ್ಕಾಗಿ ಕಾಯುವಾಗ ದೋಷವು ಎದುರಾಗಿದೆ"
+
+#: ../src/nm-netlink-monitor.c:240
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "ನೆಟ್‌ಲಿಂಕ್ ಸಂದೇಶವನ್ನು ಸಂಸ್ಕರಿಸುವಲ್ಲಿ ದೋಷ ಉಂಟಾಗಿದೆ: %s"
 
-#: ../src/nm-netlink-monitor.c:265
-msgid "error occurred while waiting for data on socket"
-msgstr "ಸಾಕೆಟ್‌ನಲ್ಲಿ ದತ್ತಾಂಶಕ್ಕಾಗಿ ಕಾಯುವಾಗ ದೋಷವು ಎದುರಾಗಿದೆ"
-
-#: ../src/nm-netlink-monitor.c:310
+#: ../src/nm-netlink-monitor.c:264
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
-"ಕೊಂಡಿಯ ಸ್ಥಿತಿಯನ್ನು ಮೇಲ್ವಿಚಾರಣೆ ನಡೆಸಲು ನೆಟ್‌ಲಿಂಕ್‌ನೊಂದಿಗೆ ಸಂಪರ್ಕ ಜೋಡಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ: "
+"ಕೊಂಡಿಯ ಸ್ಥಿತಿಯನ್ನು ಮೇಲ್ವಿಚಾರಣೆ ನಡೆಸಲು ನೆಟ್‌ಲಿಂಕ್‌ನೊಂದಿಗೆ ಸಂಪರ್ಕ ಜೋಡಿಸಲು "
+"ಸಾಧ್ಯವಾಗಿಲ್ಲ: "
 "%s"
 
-#: ../src/nm-netlink-monitor.c:321
+#: ../src/nm-netlink-monitor.c:275
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
-msgstr "ನೆಟ್‌ಲಿಂಕ್ ಹ್ಯಾಂಡಲ್ ಕ್ರೆಡೆನ್ಶಿಯಲ್ ಪಾಸಿಂಗ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s"
+msgstr ""
+"ನೆಟ್‌ಲಿಂಕ್ ಹ್ಯಾಂಡಲ್ ಕ್ರೆಡೆನ್ಶಿಯಲ್ ಪಾಸಿಂಗ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s"
 
-#: ../src/nm-netlink-monitor.c:364 ../src/nm-netlink-monitor.c:424
+#: ../src/nm-netlink-monitor.c:318 ../src/nm-netlink-monitor.c:373
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
 "ಕೊಂಡಿಯ ಸ್ಥಿತಿಯನ್ನು ಮೇಲ್ವಿಚಾರಣೆ ನಡೆಸಲು ನೆಟ್‌ಲಿಂಕ್  ಹ್ಯಾಂಡಲ್ ಅನ್ನು ನಿಯೋಜಿಸಲು "
 "ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s"
 
-#: ../src/nm-netlink-monitor.c:449
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr ""
-"ಕೊಂಡಿಯ ಸ್ಥಿತಿಯನ್ನು ಮೇಲ್ವಿಚಾರಣೆ ನಡೆಸಲು ನೆಟ್‌ಲಿಂಕ್ ಕೊಂಡಿ ಕ್ಯಾಶೆಯನ್ನು ನಿಯೋಜಿಸಲು "
-"ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s"
-
-#: ../src/nm-netlink-monitor.c:541
+#: ../src/nm-netlink-monitor.c:461
 #, c-format
 msgid "unable to join netlink group: %s"
 msgstr "ನೆಟ್‌ಲಿಂಕ್ ಗುಂಪನ್ನು ಸೇರಲು ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s"
-
-#: ../src/nm-netlink-monitor.c:647 ../src/nm-netlink-monitor.c:660
-#, c-format
-msgid "error updating link cache: %s"
-msgstr "ಕೊಂಡಿ ಕ್ಯಾಶೆಯನ್ನು ಅಪ್‌ಡೇಟ್ ಮಾಡುವಾಗ ದೋಷ ಉಂಟಾಗಿದೆ: %s"
 
 #: ../src/settings/plugins/ifcfg-rh/reader.c:110
 msgid "System"
@@ -3264,8 +3807,18 @@ msgstr "NetworkManager ನಲ್ಲಿನ ಒಂದು ಯಶಸ್ವಿ ಸಂ
 msgid "Invalid option.  Please use --help to see a list of valid options."
 msgstr "ಅಮಾನ್ಯವಾದ ಆಯ್ಕೆ.  ಮಾನ್ಯವಾದ ಆಯ್ಕೆಗಳಿಗಾಗಿ ದಯವಿಟ್ಟು --help ಅನ್ನು ನೋಡಿ."
 
-#~ msgid "Connection list"
-#~ msgstr "ಸಂಪರ್ಕದ ಪಟ್ಟಿ"
+#, fuzzy
+#~| msgid "Error: unknown parameter: %s"
+#~ msgid "Error: unknown argument '%s'."
+#~ msgstr "ದೋಷ: ಗೊತ್ತಿರದ ನಿಯತಾಂಕಗಳು: %s"
+
+#~ msgid "unable to allocate netlink link cache for monitoring link status: %s"
+#~ msgstr ""
+#~ "ಕೊಂಡಿಯ ಸ್ಥಿತಿಯನ್ನು ಮೇಲ್ವಿಚಾರಣೆ ನಡೆಸಲು ನೆಟ್‌ಲಿಂಕ್ ಕೊಂಡಿ ಕ್ಯಾಶೆಯನ್ನು ನಿಯೋಜಿಸಲು "
+#~ "ಸಾಧ್ಯವಾಗಿಲ್ಲ: %s"
+
+#~ msgid "error updating link cache: %s"
+#~ msgstr "ಕೊಂಡಿ ಕ್ಯಾಶೆಯನ್ನು ಅಪ್‌ಡೇಟ್ ಮಾಡುವಾಗ ದೋಷ ಉಂಟಾಗಿದೆ: %s"
 
 #~ msgid "Error: no valid parameter specified."
 #~ msgstr "ದೋಷ: ಮಾನ್ಯವಾದ ಯಾವುದೆ ನಿಯತಾಂಖವನ್ನು ಸೂಚಿಸಲಾಗಿಲ್ಲ."
@@ -3296,9 +3849,6 @@ msgstr "ಅಮಾನ್ಯವಾದ ಆಯ್ಕೆ.  ಮಾನ್ಯವಾದ �
 
 #~ msgid "WIMAX-HARDWARE"
 #~ msgstr "WIMAX-HARDWARE"
-
-#~ msgid "Error: 'nm status': %s"
-#~ msgstr "ದೋಷ: 'nm status': %s"
 
 #~ msgid "Error: 'nm status': %s; allowed fields: %s"
 #~ msgstr "ದೋಷ: 'nm status': %s; ಅನುಮತಿಸಲಾದ ಕ್ಷೇತ್ರಗಳು: %s"
