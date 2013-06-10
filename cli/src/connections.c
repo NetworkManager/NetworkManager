@@ -217,9 +217,9 @@ usage_connection_add (void)
 	         "  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
 	         "  COMMON_OPTIONS:\n"
 	         "                  type <type>\n"
+	         "                  ifname <interface name> | \"*\"\n"
 	         "                  [con-name <connection name>]\n"
-	         "                  [autoconnect yes|no]\n"
-	         "                  [ifname <interface name>]\n\n"
+	         "                  [autoconnect yes|no]\n\n"
 	         "  TYPE_SPECIFIC_OPTIONS:\n"
 	         "    ethernet:     [mac <MAC address>]\n"
 	         "                  [cloned-mac <cloned MAC address>]\n"
@@ -2925,6 +2925,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	const char *autoconnect = NULL;
 	gboolean auto_bool = TRUE;
 	const char *ifname = NULL;
+	char *ifname_ask = NULL;
+	gboolean ifname_mandatory = TRUE;
 	AddConnectionInfo *info = NULL;
 	const char *setting_name;
 	GError *error = NULL;
@@ -2972,13 +2974,31 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 	}
+
+	/* ifname is mandatory for all connection types except virtual ones (bond, bridge, vlan) */
+	if (   strcmp (type, NM_SETTING_BOND_SETTING_NAME) == 0
+	    || strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME) == 0
+	    || strcmp (type, NM_SETTING_VLAN_SETTING_NAME) == 0)
+		ifname_mandatory = FALSE;
+
+	if (!ifname && ifname_mandatory && nmc->ask)
+		ifname = ifname_ask = nmc_get_user_input (_("Interface name: "));
+	if (!ifname && ifname_mandatory) {
+		g_string_printf (nmc->return_text, _("Error: 'ifname' argument is required."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
 	if (ifname) {
-		if (!nm_utils_iface_valid_name (ifname)) {
+		if (!nm_utils_iface_valid_name (ifname) && strcmp (ifname, "*") != 0) {
 			g_string_printf (nmc->return_text,
-			                 _("Error: 'ifname': '%s' is not a valid interface."),
+			                 _("Error: 'ifname': '%s' is not a valid interface nor '*'."),
 			                 ifname);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
+		/* Special value of '*' means no specific interface name */
+		if (strcmp (ifname, "*") == 0)
+			ifname = NULL;
 	}
 
 	/* Create a new connection object */
@@ -3041,6 +3061,7 @@ error:
 	if (connection)
 		g_object_unref (connection);
 	g_free (type_ask);
+	g_free (ifname_ask);
 
 	nmc->should_wait = FALSE;
 	return nmc->return_value;
