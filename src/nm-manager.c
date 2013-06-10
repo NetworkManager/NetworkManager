@@ -1050,6 +1050,27 @@ find_vlan_parent (NMManager *self,
 	return NULL;
 }
 
+static NMDevice *
+find_infiniband_parent (NMManager *self,
+                        NMConnection *connection)
+{
+	NMSettingInfiniband *s_infiniband;
+	const char *parent_iface;
+	NMDevice *parent = NULL;
+
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+	g_return_val_if_fail (s_infiniband != NULL, NULL);
+
+	parent_iface = nm_setting_infiniband_get_parent (s_infiniband);
+	if (parent_iface) {
+		parent = find_device_by_ip_iface (self, parent_iface);
+		if (parent)
+			return parent;
+	}
+
+	return get_device_from_hwaddr (self, connection);
+}
+
 /**
  * get_virtual_iface_name:
  * @self: the #NMManager
@@ -1068,7 +1089,6 @@ get_virtual_iface_name (NMManager *self,
                         NMConnection *connection,
                         NMDevice **out_parent)
 {
-	char *vname = NULL;
 	NMDevice *parent = NULL;
 
 	if (out_parent)
@@ -1083,6 +1103,7 @@ get_virtual_iface_name (NMManager *self,
 	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan;
 		const char *ifname;
+		char *vname;
 
 		s_vlan = nm_connection_get_setting_vlan (connection);
 		g_return_val_if_fail (s_vlan != NULL, NULL);
@@ -1111,10 +1132,35 @@ get_virtual_iface_name (NMManager *self,
 			}
 			if (out_parent)
 				*out_parent = parent;
+			return vname;
 		}
 	}
 
-	return vname;
+	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		const char *ifname;
+		char *name;
+
+		parent = find_infiniband_parent (self, connection);
+		if (parent) {
+			ifname = nm_connection_get_virtual_iface_name (connection);
+			if (ifname)
+				name = g_strdup (ifname);
+			else {
+				NMSettingInfiniband *s_infiniband;
+				int p_key;
+
+				ifname = nm_device_get_iface (parent);
+				s_infiniband = nm_connection_get_setting_infiniband (connection);
+				p_key = nm_setting_infiniband_get_p_key (s_infiniband);
+				name = g_strdup_printf ("%s.%04x", ifname, p_key);
+			}
+			if (out_parent)
+				*out_parent = parent;
+			return name;
+		}
+	}
+
+	return NULL;
 }
 
 static gboolean
@@ -1124,6 +1170,15 @@ connection_needs_virtual_device (NMConnection *connection)
 	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
 		return TRUE;
+
+	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		NMSettingInfiniband *s_infiniband;
+
+		s_infiniband = nm_connection_get_setting_infiniband (connection);
+		g_return_val_if_fail (s_infiniband != NULL, FALSE);
+		if (nm_setting_infiniband_get_p_key (s_infiniband) != -1)
+			return TRUE;
+	}
 
 	return FALSE;
 }
@@ -1315,6 +1370,22 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		}
 		udi = get_virtual_iface_placeholder_udi ();
 		device = nm_device_vlan_new (udi, iface, parent);
+		g_free (udi);
+	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
+		int p_key, parent_ifindex;
+
+		parent_ifindex = nm_device_get_ifindex (parent);
+		p_key = nm_setting_infiniband_get_p_key (s_infiniband);
+
+		if (!nm_platform_infiniband_partition_add (parent_ifindex, p_key)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): failed to add InfiniBand P_Key interface for '%s'",
+			             iface, nm_connection_get_id (connection));
+			goto out;
+		}
+
+		udi = get_virtual_iface_placeholder_udi ();
+		device = nm_device_infiniband_new_partition (udi, iface, nm_device_get_driver (parent));
 		g_free (udi);
 	}
 
