@@ -957,8 +957,9 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *mac;
 	char *tmp;
-	const char *transport_mode;
+	const char *transport_mode, *parent;
 	guint32 mtu;
+	int p_key;
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	if (!s_infiniband) {
@@ -987,6 +988,18 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 	svSetValue (ifcfg, "CONNECTED_MODE",
 	            strcmp (transport_mode, "connected") == 0 ? "yes" : "no",
 	            FALSE);
+
+	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
+	if (p_key != -1) {
+		svSetValue (ifcfg, "VLAN", "yes", FALSE);
+		tmp = g_strdup_printf ("%u", p_key);
+		svSetValue (ifcfg, "VLAN_ID", tmp, FALSE);
+		g_free (tmp);
+
+		parent = nm_setting_infiniband_get_parent (s_infiniband);
+		if (parent)
+			svSetValue (ifcfg, "PHYSDEV", parent, FALSE);
+	}
 
 	svSetValue (ifcfg, "TYPE", TYPE_INFINIBAND, FALSE);
 

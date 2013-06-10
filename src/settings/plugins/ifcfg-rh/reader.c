@@ -3490,6 +3490,72 @@ wired_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+static gboolean
+parse_infiniband_p_key (shvarFile *ifcfg,
+                        int *out_p_key,
+                        char **out_parent,
+                        GError **error)
+{
+	char *device = NULL, *physdev = NULL, *vlan_id = NULL, *end;
+	char *ifname = NULL;
+	guint32 id;
+	gboolean ret = FALSE;
+
+	device = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (!device) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand connection specified VLAN but not DEVICE");
+		goto done;
+	}
+
+	physdev = svGetValue (ifcfg, "PHYSDEV", FALSE);
+	if (!physdev) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand connection specified VLAN but not PHYSDEV");
+		goto done;
+	}
+
+	vlan_id = svGetValue (ifcfg, "VLAN_ID", FALSE);
+	if (!vlan_id) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand connection specified VLAN but not VLAN_ID");
+		goto done;
+	}
+
+	if (g_str_has_prefix (vlan_id, "0x"))
+		id = strtoul (vlan_id, &end, 16);
+	else if (!g_str_has_prefix (vlan_id, "0"))
+		id = strtoul (vlan_id, &end, 10);
+	else
+		end = vlan_id;
+	if (end == vlan_id || *end || id > 0xFFFF) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    invalid InfiniBand VLAN_ID '%s'", vlan_id);
+		goto done;
+	}
+	id = (id | 0x8000);
+
+	ifname = g_strdup_printf ("%s.%04x", physdev, id);
+	if (strcmp (device, ifname) != 0) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand DEVICE (%s) does not match PHYSDEV+VLAN_ID (%s)",
+		             device, ifname);
+		goto done;
+	}
+
+	*out_p_key = id;
+	*out_parent = g_strdup (physdev);
+	ret = TRUE;
+
+ done:
+	g_free (device);
+	g_free (physdev);
+	g_free (vlan_id);
+	g_free (ifname);
+
+	if (!ret) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to create InfiniBand setting.");
+	}
+	return ret;
+}
+
+
 static NMSetting *
 make_infiniband_setting (shvarFile *ifcfg,
                          const char *file,
@@ -3537,6 +3603,21 @@ make_infiniband_setting (shvarFile *ifcfg,
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected", NULL);
 	else
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
+
+	if (svTrueValue (ifcfg, "VLAN", FALSE)) {
+		int p_key;
+		char *parent;
+
+		if (!parse_infiniband_p_key (ifcfg, &p_key, &parent, error)) {
+			g_object_unref (s_infiniband);
+			return NULL;
+		}
+
+		g_object_set (s_infiniband,
+		              NM_SETTING_INFINIBAND_P_KEY, p_key,
+		              NM_SETTING_INFINIBAND_PARENT, parent,
+		              NULL);
+	}
 
 	return (NMSetting *) s_infiniband;
 }
