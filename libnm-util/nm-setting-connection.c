@@ -676,14 +676,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_ID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_ID);
 		return FALSE;
 	} else if (!strlen (priv->id)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_ID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_ID);
 		return FALSE;
 	}
 
@@ -692,7 +692,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_UUID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
 		return FALSE;
 	} else if (!nm_utils_is_uuid (priv->uuid)) {
 		g_set_error (error,
@@ -700,7 +700,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid UUID"),
 		             priv->uuid);
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_UUID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
 		return FALSE;
 	}
 
@@ -719,7 +719,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 					             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 					             _("'%s' doesn't match the virtual interface name '%s'"),
 					             priv->interface_name, virtual_iface);
-					g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_INTERFACE_NAME);
+					g_prefix_error (error, "%s.%s: ",
+					                NM_SETTING_CONNECTION_SETTING_NAME,
+					                NM_SETTING_CONNECTION_INTERFACE_NAME);
 					return FALSE;
 				}
 			} else
@@ -735,7 +737,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid interface name"),
 			             priv->interface_name);
-			g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_INTERFACE_NAME);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
 			return FALSE;
 		}
 	}
@@ -745,14 +747,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_TYPE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	} else if (!strlen (priv->type)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_TYPE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	}
 
@@ -763,7 +765,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
 		             _("requires presence of '%s' setting in the connection"),
 		             priv->type);
-		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_TYPE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	}
 
@@ -786,7 +788,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				                     NM_SETTING_CONNECTION_ERROR,
 				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
 				                     _("IPv4 configuration is not allowed for bonding slave"));
-				g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SLAVE_TYPE);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
 		}
@@ -803,7 +805,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				                     NM_SETTING_CONNECTION_ERROR,
 				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
 				                     _("IPv6 configuration is not allowed for bonding slave"));
-				g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SLAVE_TYPE);
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
 		}

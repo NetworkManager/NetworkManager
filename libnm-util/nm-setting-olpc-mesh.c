@@ -126,7 +126,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_OLPC_MESH_ERROR,
 		                     NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_OLPC_MESH_SSID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_SSID);
 		return FALSE;
 	}
 
@@ -135,7 +135,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_OLPC_MESH_ERROR,
 		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
 		                     _("SSID length is out of range <1-32> bytes"));
-		g_prefix_error (error, "%s: ", NM_SETTING_OLPC_MESH_SSID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_SSID);
 		return FALSE;
 	}
 
@@ -145,7 +145,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
 		             _("'%d' is not a valid channel"),
 		             priv->channel);
-		g_prefix_error (error, "%s: ", NM_SETTING_OLPC_MESH_CHANNEL);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_CHANNEL);
 		return FALSE;
 	}
 
@@ -154,7 +154,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_OLPC_MESH_ERROR,
 		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS);
 		return FALSE;
 	}
 

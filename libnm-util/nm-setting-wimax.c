@@ -135,7 +135,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIMAX_ERROR,
 		                     NM_SETTING_WIMAX_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIMAX_NETWORK_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_NETWORK_NAME);
 		return FALSE;
 	}
 
@@ -144,7 +144,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIMAX_ERROR,
 		                     NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIMAX_NETWORK_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_NETWORK_NAME);
 		return FALSE;
 	}
 
@@ -153,7 +153,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIMAX_ERROR,
 		                     NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIMAX_MAC_ADDRESS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_MAC_ADDRESS);
 		return FALSE;
 	}
 

@@ -147,7 +147,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_INFINIBAND_ERROR,
 		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_MAC_ADDRESS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -162,7 +162,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_INFINIBAND_ERROR,
 		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_TRANSPORT_MODE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_TRANSPORT_MODE);
 		return FALSE;
 	}
 

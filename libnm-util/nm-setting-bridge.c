@@ -250,7 +250,7 @@ check_range (guint32 val,
 		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
 		             _("value '%d' is out of range <%d-%d>"),
 		             val, min, max);
-		g_prefix_error (error, "%s: ", prop);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, prop);
 		return FALSE;
 	}
 	return TRUE;
@@ -266,7 +266,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_BRIDGE_ERROR,
 		                     NM_SETTING_BRIDGE_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_INTERFACE_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_INTERFACE_NAME);
 		return FALSE;
 	}
 
@@ -276,7 +276,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid interface name"),
 		             priv->interface_name);
-		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_INTERFACE_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_INTERFACE_NAME);
 		return FALSE;
 	}
 

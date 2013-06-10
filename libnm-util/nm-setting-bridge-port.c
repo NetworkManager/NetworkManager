@@ -154,7 +154,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY,
 		             _("'%d' is not a valid value for the property (should be <= %d)"),
 		             priv->priority, BR_MAX_PORT_PRIORITY);
-		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_PORT_PRIORITY);
+		g_prefix_error (error, "%s.%s: ",
+		                NM_SETTING_BRIDGE_PORT_SETTING_NAME,
+		                NM_SETTING_BRIDGE_PORT_PRIORITY);
 		return FALSE;
 	}
 
@@ -164,7 +166,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY,
 		             _("'%d' is not a valid value for the property (should be <= %d)"),
 		             priv->path_cost, BR_MAX_PATH_COST);
-		g_prefix_error (error, "%s: ", NM_SETTING_BRIDGE_PORT_PATH_COST);
+		g_prefix_error (error, "%s.%s: ",
+		                NM_SETTING_BRIDGE_PORT_SETTING_NAME,
+		                NM_SETTING_BRIDGE_PORT_PATH_COST);
 		return FALSE;
 	}
 

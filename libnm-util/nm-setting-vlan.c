@@ -477,7 +477,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid interface name"),
 		             priv->iface_name);
-		g_prefix_error (error, "%s: ", NM_SETTING_VLAN_INTERFACE_NAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_INTERFACE_NAME);
 		return FALSE;
 	}
 
@@ -499,7 +499,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 					             NM_SETTING_VLAN_ERROR_INVALID_PARENT,
 					             _("'%s' value doesn't match '%s=%s'"),
 					             priv->parent, NM_SETTING_CONNECTION_MASTER, master);
-					g_prefix_error (error, "%s: ", NM_SETTING_VLAN_PARENT);
+					g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
 					return FALSE;
 				}
 			}
@@ -510,7 +510,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
 			             _("'%s' is neither an UUID nor an interface name"),
 			             priv->parent);
-			g_prefix_error (error, "%s: ", NM_SETTING_VLAN_PARENT);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
 			return FALSE;
 		} 
 	} else {
@@ -523,7 +523,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,
 			             _("property is not specified and neither is '%s:%s'"),
 			             NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
-			g_prefix_error (error, "%s: ", NM_SETTING_VLAN_PARENT);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
 			return FALSE;
 		}
 	}
@@ -535,7 +535,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_VLAN_ERROR,
 		                     NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
 		                     _("flags are invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_VLAN_FLAGS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_FLAGS);
 		return FALSE;
 	}
 

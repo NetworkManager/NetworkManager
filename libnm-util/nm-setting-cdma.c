@@ -161,14 +161,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_CDMA_ERROR,
 		                     NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CDMA_NUMBER);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
 		return FALSE;
 	} else if (!strlen (priv->number)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_CDMA_ERROR,
 		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
 		                     _("property is empty'"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CDMA_NUMBER);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
 		return FALSE;
 	}
 
@@ -177,7 +177,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_CDMA_ERROR,
 		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CDMA_USERNAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_USERNAME);
 		return FALSE;
 	}
 
@@ -186,7 +186,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_CDMA_ERROR,
 		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_CDMA_PASSWORD);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_PASSWORD);
 		return FALSE;
 	}
 

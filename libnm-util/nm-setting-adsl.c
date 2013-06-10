@@ -210,14 +210,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_ADSL_ERROR,
 		                     NM_SETTING_ADSL_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_USERNAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_USERNAME);
 		return FALSE;
 	} else if (!strlen (priv->username)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_ADSL_ERROR,
 		                     NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_USERNAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_USERNAME);
 		return FALSE;
 	}
 
@@ -226,7 +226,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_ADSL_ERROR,
 		                     NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_PASSWORD);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PASSWORD);
 		return FALSE;
 	}
 
@@ -238,7 +238,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
 		             priv->protocol);
-		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_PROTOCOL);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PROTOCOL);
 		return FALSE;
 	}
 
@@ -249,7 +249,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
 		             priv->encapsulation);
-		g_prefix_error (error, "%s: ", NM_SETTING_ADSL_ENCAPSULATION);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_ENCAPSULATION);
 		return FALSE;
 	}
 

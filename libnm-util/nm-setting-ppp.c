@@ -389,7 +389,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
 			             _("'%d' is out of valid range <128-16384>"),
 			             priv->mru);
-			g_prefix_error (error, "%s: ", NM_SETTING_PPP_MRU);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_PPP_SETTING_NAME, NM_SETTING_PPP_MRU);
 			return FALSE;
 		}
 	}
@@ -402,7 +402,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
 			             _("setting this property requires non-zero '%s' property"),
 			             NM_SETTING_PPP_LCP_ECHO_INTERVAL);
-			g_prefix_error (error, "%s: ", NM_SETTING_PPP_LCP_ECHO_FAILURE);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_PPP_SETTING_NAME, NM_SETTING_PPP_LCP_ECHO_FAILURE);
 			return FALSE;
 		}
 	}

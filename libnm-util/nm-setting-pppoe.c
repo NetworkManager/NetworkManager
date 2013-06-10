@@ -163,14 +163,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_PPPOE_ERROR,
 		                     NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_PPPOE_USERNAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
 	} else if (!strlen (priv->username)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_PPPOE_ERROR,
 		                     NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_PPPOE_USERNAME);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
 	}
 
@@ -179,7 +179,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_PPPOE_ERROR,
 		                     NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
-		g_prefix_error (error, "%s: ", NM_SETTING_PPPOE_SERVICE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_SERVICE);
 		return FALSE;
 	}
 

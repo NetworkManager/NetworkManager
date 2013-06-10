@@ -709,7 +709,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SSID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID);
 		return FALSE;
 	}
 
@@ -718,7 +718,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		                     _("SSID length is out of range <1-32> bytes"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SSID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID);
 		return FALSE;
 	}
 
@@ -728,7 +728,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid Wi-Fi mode"),
 		             priv->mode);
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_MODE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MODE);
 		return FALSE;
 	}
 
@@ -738,7 +738,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid band"),
 		             priv->band);
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_BAND);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_BAND);
 		return FALSE;
 	}
 
@@ -748,7 +748,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND,
 		             _("requires setting '%s' property"),
 		             NM_SETTING_WIRELESS_BAND);
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_CHANNEL);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_CHANNEL);
 		return FALSE;
 	}
 
@@ -759,7 +759,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 			             _("'%d' is not a valid channel"),
 			             priv->channel);
-			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_CHANNEL);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_CHANNEL);
 			return FALSE;
 		}
 	}
@@ -769,7 +769,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_BSSID);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_BSSID);
 		return FALSE;
 	}
 
@@ -778,7 +778,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_MAC_ADDRESS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -787,7 +787,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -800,7 +800,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid MAC address"),
 			             (const char *) iter->data);
-			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 			return FALSE;
 		}
 	}
@@ -814,7 +814,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid MAC address"),
 			             (const char *) iter->data);
-			g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SEEN_BSSIDS);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SEEN_BSSIDS);
 			return FALSE;
 		}
 	}
@@ -826,7 +826,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING,
 		             _("'%s' setting is required for the connection when the property is set"),
 		             priv->security);
-		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SEC);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SEC);
 		return FALSE;
 	}
 
