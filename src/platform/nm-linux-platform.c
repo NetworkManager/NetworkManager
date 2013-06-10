@@ -1620,6 +1620,25 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 }
 
 static gboolean
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
+{
+	const char *parent_name;
+	char *path, *id;
+	gboolean success;
+
+	parent_name = nm_platform_link_get_name (parent);
+	g_return_val_if_fail (parent_name != NULL, FALSE);
+
+	path = g_strdup_printf ("/sys/class/net/%s/create_child", parent_name);
+	id = g_strdup_printf ("0x%04x", p_key);
+	success = nm_platform_sysctl_set (path, id);
+	g_free (id);
+	g_free (path);
+
+	return success;
+}
+
+static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
 	const char *ifname;
@@ -2413,6 +2432,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->vlan_get_info = vlan_get_info;
 	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
+
+	platform_class->infiniband_partition_add = infiniband_partition_add;
 
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->tun_get_properties = tun_get_properties;

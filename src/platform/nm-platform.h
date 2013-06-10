@@ -41,6 +41,8 @@ typedef enum {
 	NM_PLATFORM_ERROR_NOT_FOUND,
 	/* object already exists */
 	NM_PLATFORM_ERROR_EXISTS,
+	/* object is wrong type */
+	NM_PLATFORM_ERROR_WRONG_TYPE,
 	/* object is not a slave */
 	NM_PLATFORM_ERROR_NOT_SLAVE,
 	/* firmware is not found */
@@ -235,6 +237,8 @@ typedef struct {
 	gboolean (*vlan_set_ingress_map) (NMPlatform *, int ifindex, int from, int to);
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
+	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key);
+
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
 	gboolean (*macvlan_get_properties) (NMPlatform *, int ifindex, NMPlatformMacvlanProperties *props);
@@ -348,6 +352,8 @@ gboolean nm_platform_vlan_add (const char *name, int parent, int vlanid, guint32
 gboolean nm_platform_vlan_get_info (int ifindex, int *parent, int *vlanid);
 gboolean nm_platform_vlan_set_ingress_map (int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (int ifindex, int from, int to);
+
+gboolean nm_platform_infiniband_partition_add (int parent, int p_key);
 
 gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);

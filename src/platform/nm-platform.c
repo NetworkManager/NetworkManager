@@ -175,6 +175,8 @@ nm_platform_get_error_msg (void)
 		return "object not found";
 	case NM_PLATFORM_ERROR_EXISTS:
 		return "object already exists";
+	case NM_PLATFORM_ERROR_WRONG_TYPE:
+		return "object is wrong type";
 	case NM_PLATFORM_ERROR_NOT_SLAVE:
 		return "link not a slave";
 	case NM_PLATFORM_ERROR_NO_FIRMWARE:
@@ -954,6 +956,36 @@ nm_platform_vlan_set_egress_map (int ifindex, int from, int to)
 
 	debug ("link: setting vlan egress map for %d from %d to %d", ifindex, from, to);
 	return klass->vlan_set_egress_map (platform, ifindex, from, to);
+}
+
+gboolean
+nm_platform_infiniband_partition_add (int parent, int p_key)
+{
+	const char *parent_name;
+	char *name;
+
+	reset_error ();
+
+	g_return_val_if_fail (parent >= 0, FALSE);
+	g_return_val_if_fail (p_key >= 0, FALSE);
+	g_return_val_if_fail (klass->infiniband_partition_add, FALSE);
+
+	if (nm_platform_link_get_type (parent) != NM_LINK_TYPE_INFINIBAND) {
+		platform->error = NM_PLATFORM_ERROR_WRONG_TYPE;
+		return FALSE;
+	}
+
+	parent_name = nm_platform_link_get_name (parent);
+	name = g_strdup_printf ("%s.%04x", parent_name, p_key);
+	if (nm_platform_link_exists (name)) {
+		debug ("infiniband: already exists");
+		platform->error = NM_PLATFORM_ERROR_EXISTS;
+		g_free (name);
+		return FALSE;
+	}
+	g_free (name);
+
+	return klass->infiniband_partition_add (platform, parent, p_key);
 }
 
 gboolean

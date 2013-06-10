@@ -561,6 +561,23 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 }
 
 static gboolean
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
+{
+	NMFakePlatformLink *parent_device;
+	char *name;
+	gboolean success;
+
+	parent_device = link_get (platform, parent);
+	g_return_val_if_fail (parent_device != NULL, FALSE);
+
+	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
+	success = link_add (platform, name, NM_LINK_TYPE_INFINIBAND);
+	g_free (name);
+
+	return success;
+}
+
+static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
 	return FALSE;
@@ -1041,6 +1058,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->vlan_get_info = vlan_get_info;
 	platform_class->vlan_set_ingress_map = vlan_set_ingress_map;
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
+
+	platform_class->infiniband_partition_add = infiniband_partition_add;
 
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->tun_get_properties = tun_get_properties;
