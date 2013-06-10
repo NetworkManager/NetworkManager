@@ -1619,8 +1619,8 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
-	dbus_g_manager_register_exported_type (nm_dbus_manager_get (),
-	                                       G_TYPE_FROM_CLASS (object_class),
-	                                       &dbus_glib_nm_vpn_connection_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (object_class),
+	                                        &dbus_glib_nm_vpn_connection_object_info);
 }
 
