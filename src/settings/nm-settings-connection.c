@@ -83,7 +83,6 @@ enum {
 enum {
 	UPDATED,
 	REMOVED,
-	UNREGISTER,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -1517,7 +1516,7 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 	/* And unregistered last to ensure the removed signal goes out before
 	 * we take the connection off the bus.
 	 */
-	g_signal_emit_by_name (self, "unregister");
+	nm_dbus_manager_unregister_object (nm_dbus_manager_get (), G_OBJECT (self));
 }
 
 gboolean
@@ -1982,16 +1981,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 
 	signals[REMOVED] = 
 		g_signal_new (NM_SETTINGS_CONNECTION_REMOVED,
-		              G_TYPE_FROM_CLASS (class),
-		              G_SIGNAL_RUN_FIRST,
-		              0,
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	/* Not exported */
-	signals[UNREGISTER] = 
-		g_signal_new ("unregister",
 		              G_TYPE_FROM_CLASS (class),
 		              G_SIGNAL_RUN_FIRST,
 		              0,

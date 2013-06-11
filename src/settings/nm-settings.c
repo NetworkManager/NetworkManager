@@ -663,7 +663,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 #define REMOVED_ID_TAG "removed-id-tag"
 #define UPDATED_ID_TAG "updated-id-tag"
 #define VISIBLE_ID_TAG "visible-id-tag"
-#define UNREG_ID_TAG "unreg-id-tag"
 
 static void
 connection_removed (NMSettingsConnection *obj, gpointer user_data)
@@ -699,21 +698,6 @@ connection_removed (NMSettingsConnection *obj, gpointer user_data)
 	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 
 	g_object_unref (connection);
-}
-
-static void
-connection_unregister (NMSettingsConnection *obj, gpointer user_data)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (user_data);
-	GObject *connection = G_OBJECT (obj);
-	guint id;
-
-	/* Make sure it's unregistered from the bus now that's removed */
-	nm_dbus_manager_unregister_object (priv->dbus_mgr, connection);
-
-	id = GPOINTER_TO_UINT (g_object_get_data (connection, UNREG_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (connection, id);
 }
 
 static void
@@ -838,11 +822,6 @@ claim_connection (NMSettings *self,
 	                       G_CALLBACK (connection_removed),
 	                       self);
 	g_object_set_data (G_OBJECT (connection), REMOVED_ID_TAG, GUINT_TO_POINTER (id));
-
-	id = g_signal_connect (connection, "unregister",
-	                       G_CALLBACK (connection_unregister),
-	                       self);
-	g_object_set_data (G_OBJECT (connection), UNREG_ID_TAG, GUINT_TO_POINTER (id));
 
 	id = g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED,
 	                       G_CALLBACK (connection_updated),
