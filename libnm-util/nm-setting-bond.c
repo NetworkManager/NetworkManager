@@ -425,7 +425,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_BOND_ERROR,
 		             NM_SETTING_BOND_ERROR_MISSING_OPTION,
-		             _("setting '%s' is required"),
+		             _("mandatory option '%s' is missing"),
 		             NM_SETTING_BOND_OPTION_MODE);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
@@ -471,7 +471,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             _("'%s' option requires setting '%s' option"),
+			             _("'%s' option requires '%s' option to be set"),
 			             NM_SETTING_BOND_OPTION_UPDELAY, NM_SETTING_BOND_OPTION_MIIMON);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
@@ -480,7 +480,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             _("'%s' option requires setting '%s' option"),
+			             _("'%s' option requires '%s' option to be set"),
 			             NM_SETTING_BOND_OPTION_DOWNDELAY, NM_SETTING_BOND_OPTION_MIIMON);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
@@ -500,7 +500,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_MISSING_OPTION,
-			             _("'%s' option requires setting '%s' option"),
+			             _("'%s' option requires '%s' option to be set"),
 			             NM_SETTING_BOND_OPTION_ARP_INTERVAL, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
@@ -536,7 +536,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
-			             _("'%s' option requires setting '%s' option"),
+			             _("'%s' option requires '%s' option to be set"),
 			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
