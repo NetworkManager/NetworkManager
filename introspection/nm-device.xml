@@ -53,7 +53,7 @@
     </property>
     <property name="Ip4Address" type="i" access="read">
       <tp:docstring>
-        The IPv4 address bound to the device. FIXME: what about devices with >1 IP address?
+        DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object instead.
       </tp:docstring>
     </property>
     <property name="State" type="u" access="read" tp:type="NM_DEVICE_STATE">
