@@ -1475,7 +1475,11 @@ nm_device_get_product (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->product) {
-		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
+		priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_MODEL_FROM_DATABASE");
+		if (!priv->product) {
+			/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
+			priv->product = _get_udev_property (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
+		}
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
 	}
 	return priv->product;
