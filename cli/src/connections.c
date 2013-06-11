@@ -237,10 +237,11 @@ usage_connection_add (void)
 	         "                  [password <password>]\n\n"
 	         "    infiniband:   [mac <MAC address>]\n"
 	         "                  [mtu <MTU>]\n"
-	         "                  [transport-mode <mode>]\n\n"
+	         "                  [transport-mode datagram | connected]\n\n"
+	         "                  [parent <ifname>]\n\n"
+	         "                  [p-key <IPoIB P_Key>]\n\n"
 	         "    bluetooth:    [addr <bluetooth address>]\n"
 	         "                  [bt-type panu|dun-gsm|dun-cdma]\n"
-	         "                  [transport-mode datagram | connected]\n\n"
 	         "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)\n"
 	         "                  [id <VLAN id>]\n"
 	         "                  [flags <VLAN flags>]\n"
@@ -2010,9 +2011,14 @@ cleanup_wired:
 		const char *mac = NULL;
 		GByteArray *array = NULL;
 		const char *mode = "datagram";  /* 'datagram' mode is default */
+		const char *parent = NULL;
+		const char *p_key = NULL;
+		long p_key_int;
 		nmc_arg_t exp_args[] = { {"mtu",            TRUE, &mtu,  FALSE},
 		                         {"mac",            TRUE, &mac,  FALSE},
 		                         {"transport-mode", TRUE, &mode, FALSE},
+		                         {"parent",         TRUE, &mode, FALSE},
+		                         {"p-key",          TRUE, &mode, FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
@@ -2027,6 +2033,27 @@ cleanup_wired:
 		}
 		if (!check_and_convert_mac (mac, &array, ARPHRD_INFINIBAND, "mac", error))
 			return FALSE;
+		if (p_key) {
+			gboolean p_key_valid = FALSE;
+			if (!strncmp (p_key, "0x", 2))
+				p_key_valid = nmc_string_to_int_base (p_key + 2, 16, TRUE, 0, G_MAXUINT16, &p_key_int);
+			else
+				p_key_valid = nmc_string_to_int (p_key, TRUE, 0, G_MAXUINT16, &p_key_int);
+			if (!p_key_valid) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'p-key': '%s' is not valid."), p_key);
+				return FALSE;
+			}
+			if (parent && !nm_utils_iface_valid_name (parent)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'parent': '%s' is not a valid interface name."), parent);
+				return FALSE;
+			}
+		} else if (parent) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: 'parent': not valid without p-key."));
+			return FALSE;
+		}
 
 		/* Add 'infiniband' setting */
 		s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
@@ -2039,6 +2066,10 @@ cleanup_wired:
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);
 		}
+		if (p_key)
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_P_KEY, p_key_int, NULL);
+		if (parent)
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_PARENT, parent, NULL);
 
 	} else if (!strcmp (con_type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		/* Build up the settings required for 'wifi' */

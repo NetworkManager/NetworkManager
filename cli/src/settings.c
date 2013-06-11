@@ -512,13 +512,17 @@ static NmcOutputField nmc_fields_setting_infiniband[] = {
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MAC_ADDRESS, 61),             /* 1 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MTU, 6),                      /* 2 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_TRANSPORT_MODE, 12),          /* 3 */
+	SETTING_FIELD (NM_SETTING_INFINIBAND_P_KEY, 6),                    /* 4 */
+	SETTING_FIELD (NM_SETTING_INFINIBAND_PARENT, 16),                  /* 5 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_INFINIBAND_ALL     "name"","\
                                               NM_SETTING_INFINIBAND_MAC_ADDRESS","\
-                                              NM_SETTING_INFINIBAND_MTU","\
-                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE
-#define NMC_FIELDS_SETTING_INFINIBAND_COMMON  NMC_FIELDS_SETTING_INFINIBAND_ALL
+                                              NM_SETTING_INFINIBAND_MTU"," \
+                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE"," \
+                                              NM_SETTING_INFINIBAND_P_KEY"," \
+                                              NM_SETTING_INFINIBAND_PARENT
+#define NMC_FIELDS_SETTING_INFINIBAND_COMMON  NMC_FIELDS_SETTING_INFINIBAND_ALL \
 
 /* Available fields for NM_SETTING_BOND_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_bond[] = {
@@ -1070,6 +1074,21 @@ nmc_property_ib_get_mtu (NMSetting *setting)
 	else
 		return g_strdup_printf ("%d", nm_setting_infiniband_get_mtu (s_infiniband));
 }
+
+static char *
+nmc_property_ib_get_p_key (NMSetting *setting)
+{
+	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
+	int p_key;
+
+	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
+	if (p_key == -1)
+		return g_strdup (_("default"));
+	else
+		return g_strdup_printf ("0x%04x", p_key);
+}
+
+DEFINE_GETTER (nmc_property_ib_get_parent, NM_SETTING_INFINIBAND_PARENT)
 
 /* --- NM_SETTING_IP4_CONFIG_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP4_CONFIG_METHOD)
@@ -1920,6 +1939,8 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc)
 	set_val_str (arr, 1, nmc_property_ib_get_mac_address (setting));
 	set_val_str (arr, 2, nmc_property_ib_get_mtu (setting));
 	set_val_str (arr, 3, nmc_property_ib_get_transport_mode (setting));
+	set_val_str (arr, 4, nmc_property_ib_get_p_key (setting));
+	set_val_str (arr, 5, nmc_property_ib_get_parent (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
