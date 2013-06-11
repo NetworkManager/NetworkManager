@@ -144,6 +144,8 @@ guint8     *nm_utils_hwaddr_aton  (const char *asc, int type, gpointer buffer);
 char       *nm_utils_hwaddr_ntoa_len  (gconstpointer addr, gsize length);
 guint8     *nm_utils_hwaddr_aton_len  (const char *asc, gpointer buffer, gsize length);
 
+gboolean    nm_utils_hwaddr_valid (const char *asc);
+
 char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
 int   nm_utils_hex2byte   (const char *hex);
 char *nm_utils_hexstr2bin (const char *hex, size_t len);

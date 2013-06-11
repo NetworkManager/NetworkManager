@@ -2064,6 +2064,31 @@ nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
 }
 
 /**
+ * nm_utils_hwaddr_valid:
+ * @asc: the ASCII representation of a hardware address
+ *
+ * Parses @asc to see if it is a valid hardware address of some type.
+ *
+ * Return value: %TRUE if @asc appears to be a valid hardware address
+ *   of some type, %FALSE if not.
+ *
+ * Since: 0.9.10
+ */
+gboolean
+nm_utils_hwaddr_valid (const char *asc)
+{
+	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+	int in_len = strlen (asc), out_len;
+
+	if ((in_len + 1) % 3 != 0)
+		return FALSE;
+	out_len = (in_len + 1) / 3;
+	if (out_len > NM_UTILS_HWADDR_LEN_MAX)
+		return FALSE;
+	return nm_utils_hwaddr_aton_len (asc, buf, out_len) != NULL;
+}
+
+/**
  * nm_utils_bin2hexstr:
  * @bytes: an array of bytes
  * @len: the length of the @bytes array
