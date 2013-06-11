@@ -437,6 +437,8 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 
 		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
+		else if (arptype == ARPHRD_INFINIBAND)
+			return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 		else if (arptype == 256) {
 			/* Some s390 CTC-type devices report 256 for the encapsulation type
 			 * for some reason, but we need to call them Ethernet. FIXME: use
@@ -448,9 +450,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 			return link_type_from_udev (platform, rtnllink, out_name);
 		else
 			return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
-	} else if (!strcmp (type, "ipoib"))
-		return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
-	else if (!strcmp (type, "dummy"))
+	} else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "gre"))
 		return_type (NM_LINK_TYPE_GRE, "gre");
