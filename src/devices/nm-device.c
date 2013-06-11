@@ -168,6 +168,13 @@ typedef struct {
 } SlaveInfo;
 
 typedef struct {
+	guint log_domain;
+	guint timeout;
+	guint watch;
+	GPid pid;
+} PingInfo;
+
+typedef struct {
 	gboolean disposed;
 	gboolean initialized;
 	gboolean in_state_changed;
@@ -227,6 +234,8 @@ typedef struct {
 	gulong          dhcp4_state_sigid;
 	gulong          dhcp4_timeout_sigid;
 	NMDHCP4Config * dhcp4_config;
+
+	PingInfo        gw_ping;
 
 	/* dnsmasq stuff for shared connections */
 	NMDnsMasqManager *dnsmasq_manager;
@@ -308,6 +317,8 @@ static void _clear_available_connections (NMDevice *device, gboolean do_signal);
 static void dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static const char *reason_to_string (NMDeviceStateReason reason);
+
+static void ip_check_gw_ping_cleanup (NMDevice *self);
 
 static void cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 static void cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
@@ -3713,10 +3724,10 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		}
 	}
 
-	/* Enter the SECONDARIES state if this is the first method to complete */
+	/* Enter the IP_CHECK state if this is the first method to complete */
 	priv->ip4_state = IP_DONE;
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-		nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 
 out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv4 Commit) complete.",
@@ -3806,10 +3817,10 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, config);
 
 	if (ip6_config_merge_and_apply (self, config, &reason)) {
-		/* Enter the SECONDARIES state if this is the first method to complete */
+		/* Enter the IP_CHECK state if this is the first method to complete */
 		priv->ip6_state = IP_DONE;
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 	} else {
 		nm_log_info (LOGD_DEVICE | LOGD_IP6,
 			         "Activation (%s) Stage 5 of 5 (IPv6 Commit) failed",
@@ -4050,6 +4061,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 		                                      nm_device_get_ip_iface (self),
 		                                      nm_setting_connection_get_zone (s_con));
 	}
+
+	ip_check_gw_ping_cleanup (self);
 
 	/* Break the activation chain */
 	activation_source_clear (self, TRUE, AF_INET);
@@ -4426,6 +4439,189 @@ nm_device_get_ip6_config (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->ip6_config;
 }
 
+/****************************************************************/
+
+static void
+ip_check_gw_ping_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->gw_ping.watch) {
+		g_source_remove (priv->gw_ping.watch);
+		priv->gw_ping.watch = 0;
+	}
+	if (priv->gw_ping.timeout) {
+		g_source_remove (priv->gw_ping.timeout);
+		priv->gw_ping.timeout = 0;
+	}
+
+	if (priv->gw_ping.pid) {
+		guint count = 20;
+		int status;
+
+		kill (priv->gw_ping.pid, SIGKILL);
+		do {
+			if (waitpid (priv->gw_ping.pid, &status, WNOHANG) != 0)
+				break;
+			g_usleep (G_USEC_PER_SEC / 20);
+		} while (count--);
+
+		priv->gw_ping.pid = 0;
+	}
+}
+
+static void
+ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *iface;
+	guint log_domain = priv->gw_ping.log_domain;
+
+	if (!priv->gw_ping.watch)
+		return;
+	priv->gw_ping.watch = 0;
+	priv->gw_ping.pid = 0;
+
+	iface = nm_device_get_iface (self);
+
+	if (WIFEXITED (status)) {
+		if (WEXITSTATUS (status) == 0)
+			nm_log_dbg (log_domain, "(%s): gateway ping succeeded", iface);
+		else {
+			nm_log_warn (log_domain, "(%s): gateway ping failed with error code %d",
+				         iface, WEXITSTATUS (status));
+		}
+	} else
+		nm_log_warn (log_domain, "(%s): ping stopped unexpectedly with status %d", iface, status);
+
+	/* We've got connectivity, proceed to secondaries */
+	ip_check_gw_ping_cleanup (self);
+	nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+}
+
+static gboolean
+ip_check_ping_timeout_cb (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->gw_ping.timeout = 0;
+
+	nm_log_warn (priv->gw_ping.log_domain, "(%s): gateway ping timed out",
+	             nm_device_get_iface (self));
+
+	ip_check_gw_ping_cleanup (self);
+	nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+	return FALSE;
+}
+
+static gboolean
+spawn_ping (NMDevice *self,
+            guint log_domain,
+            const char *binary,
+            const char *address,
+            guint timeout)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *args[] = { binary, "-I", nm_device_get_ip_iface (self), "-c", "1", "-w", NULL, address, NULL };
+	GError *error = NULL;
+	char *str_timeout, *cmd;
+	gboolean success;
+
+	g_return_val_if_fail (priv->gw_ping.watch == 0, FALSE);
+	g_return_val_if_fail (priv->gw_ping.timeout == 0, FALSE);
+
+	args[6] = str_timeout = g_strdup_printf ("%u", timeout);
+
+	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		cmd = g_strjoinv (" ", (gchar **) args);
+		nm_log_dbg (log_domain, "(%s): running '%s'",
+		            nm_device_get_iface (self),
+		            cmd);
+		g_free (cmd);
+	}
+
+	success = g_spawn_async ("/",
+	                         (gchar **) args,
+	                         NULL,
+	                         G_SPAWN_DO_NOT_REAP_CHILD,
+	                         nm_unblock_posix_signals,
+	                         NULL,
+	                         &priv->gw_ping.pid,
+	                         &error);
+	if (success) {
+		priv->gw_ping.log_domain = log_domain;
+		priv->gw_ping.watch = g_child_watch_add (priv->gw_ping.pid, ip_check_ping_watch_cb, self);
+		priv->gw_ping.timeout = g_timeout_add_seconds (timeout + 1, ip_check_ping_timeout_cb, self);
+	} else {
+		nm_log_warn (log_domain, "could not spawn %s: %s", binary, error->message);
+		g_clear_error (&error);
+	}
+
+	g_free (str_timeout);
+	return success;
+}
+
+static void
+nm_device_start_ip_check (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	guint timeout = 0;
+	const char *ping_binary = NULL;
+	char buf[INET6_ADDRSTRLEN] = { 0 };
+	guint log_domain = LOGD_IP4;
+
+	/* Shouldn't be any active ping here, since IP_CHECK happens after the
+	 * first IP method completes.  Any subsequently completing IP method doesn't
+	 * get checked.
+	 */
+	g_assert (!priv->gw_ping.watch);
+	g_assert (!priv->gw_ping.timeout);
+	g_assert (!priv->gw_ping.pid);
+	g_assert (priv->ip4_state == IP_DONE || priv->ip6_state == IP_DONE);
+
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	timeout = nm_setting_connection_get_gateway_ping_timeout (s_con);
+
+	if (timeout) {
+		if (priv->ip4_config && priv->ip4_state == IP_DONE) {
+			guint gw = 0;
+
+			ping_binary = "/usr/bin/ping";
+			log_domain = LOGD_IP4;
+
+			gw = nm_ip4_config_get_gateway (priv->ip4_config);
+			if (gw && !inet_ntop (AF_INET, &gw, buf, sizeof (buf)))
+				buf[0] = '\0';
+		} else if (priv->ip6_config && priv->ip6_state == IP_DONE) {
+			const struct in6_addr *gw = NULL;
+
+			ping_binary = "/usr/bin/ping6";
+			log_domain = LOGD_IP6;
+
+			gw = nm_ip6_config_get_gateway (priv->ip6_config);
+			if (gw && !inet_ntop (AF_INET6, gw, buf, sizeof (buf)))
+				buf[0] = '\0';
+		}
+	}
+
+	if (buf[0])
+		spawn_ping (self, log_domain, ping_binary, buf, timeout);
+
+	/* If no ping was started, just advance to SECONDARIES */
+	if (!priv->gw_ping.pid)
+		nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+}
+
+/****************************************************************/
+
 gboolean
 nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
@@ -4548,6 +4744,8 @@ dispose (GObject *object)
 				deconfigure = FALSE;
 		}
 	}
+
+	ip_check_gw_ping_cleanup (self);
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
@@ -5526,7 +5724,11 @@ nm_device_state_changed (NMDevice *device,
 		 */
 		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		break;
+	case NM_DEVICE_STATE_IP_CHECK:
+		nm_device_start_ip_check (device);
+		break;
 	case NM_DEVICE_STATE_SECONDARIES:
+		ip_check_gw_ping_cleanup (device);
 		nm_log_dbg (LOGD_DEVICE, "(%s): device entered SECONDARIES state",
 		            nm_device_get_iface (device));
 		break;

@@ -62,6 +62,8 @@ void          nm_ip4_config_replace_address     (NMIP4Config *config, guint32 i,
 NMIP4Address *nm_ip4_config_get_address         (NMIP4Config *config, guint32 i);
 guint32       nm_ip4_config_get_num_addresses   (NMIP4Config *config);
 
+guint32       nm_ip4_config_get_gateway         (NMIP4Config *config);
+
 guint32       nm_ip4_config_get_ptp_address     (NMIP4Config *config);
 void          nm_ip4_config_set_ptp_address     (NMIP4Config *config, guint32 ptp_addr);
 

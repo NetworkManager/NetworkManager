@@ -233,6 +233,24 @@ guint32 nm_ip4_config_get_num_addresses (NMIP4Config *config)
 	return g_slist_length (NM_IP4_CONFIG_GET_PRIVATE (config)->addresses);
 }
 
+/* Return the first gateway we find */
+guint32
+nm_ip4_config_get_gateway (NMIP4Config *config)
+{
+	GSList *iter;
+	guint32 gw;
+
+	for (iter = NM_IP4_CONFIG_GET_PRIVATE (config)->addresses; iter; iter = iter->next) {
+		NMIP4Address *addr = iter->data;
+
+		gw = nm_ip4_address_get_gateway (addr);
+		if (gw)
+			return gw;
+	}
+
+	return 0;
+}
+
 guint32 nm_ip4_config_get_ptp_address (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
