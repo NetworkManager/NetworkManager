@@ -559,18 +559,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	ids = g_strsplit (str, ";", -1);
 	for (i = 0; ids[i] != NULL; i++) {
 		/* Verify unmanaged specification and add it to the list */
-		if (!strncmp (ids[i], "mac:", 4) && ether_aton (ids[i] + 4)) {
-			char *p = ids[i];
-
-			/* To accept uppercase MACs in configuration file, we have to
-			 * convert values to lowercase here. Unmanaged MACs in specs are
-			 * always in lowercase.
-			 */
-			while (*p) {
-				*p = g_ascii_tolower (*p);
-				p++;
-			}
-
+		if (!strncmp (ids[i], "mac:", 4) && nm_utils_hwaddr_valid (ids[i] + 4)) {
 			specs = g_slist_append (specs, ids[i]);
 		} else if (!strncmp (ids[i], "interface-name:", 15) && nm_utils_iface_valid_name (ids[i] + 15)) {
 			specs = g_slist_append (specs, ids[i]);

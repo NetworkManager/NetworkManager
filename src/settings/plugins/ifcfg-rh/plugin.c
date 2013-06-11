@@ -147,8 +147,17 @@ _internal_new_connection (SCPluginIfcfg *self,
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    read connection '%s'", cid);
 
 	if (nm_ifcfg_connection_get_unmanaged_spec (connection)) {
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
-		              "device due to NM_CONTROLLED/BRIDGE/VLAN.", cid);
+		const char *spec;
+		const char *device_id;
+
+		spec = nm_ifcfg_connection_get_unmanaged_spec (connection);
+		device_id = strchr (spec, ':');
+		if (device_id)
+			device_id++;
+		else
+			device_id = spec;
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' / device '%s' "
+		              "due to NM_CONTROLLED/BRIDGE/VLAN.", cid, device_id);
 	} else {
 		/* Wait for the connection to become unmanaged once it knows the
 		 * hardware IDs of its device, if/when the device gets plugged in.

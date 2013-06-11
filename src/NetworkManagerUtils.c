@@ -369,7 +369,7 @@ nm_match_spec_string (const GSList *specs, const char *match)
 	const GSList *iter;
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((const char *) iter->data, match))
+		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
 			return TRUE;
 	}
 
@@ -379,18 +379,12 @@ nm_match_spec_string (const GSList *specs, const char *match)
 gboolean
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
-	char *hwaddr_match, *p;
+	char *hwaddr_match;
 	gboolean matched;
 
 	g_return_val_if_fail (hwaddr != NULL, FALSE);
 
-	p = hwaddr_match = g_strdup_printf ("mac:%s", hwaddr);
-
-	while (*p) {
-		*p = g_ascii_tolower (*p);
-		p++;
-	}
-
+	hwaddr_match = g_strdup_printf ("mac:%s", hwaddr);
 	matched = nm_match_spec_string (specs, hwaddr_match);
 	g_free (hwaddr_match);
 	return matched;
