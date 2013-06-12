@@ -290,36 +290,6 @@ nm_device_ethernet_init (NMDeviceEthernet * self)
 {
 }
 
-static gboolean
-is_up (NMDevice *device)
-{
-	if (!NM_DEVICE_ETHERNET_GET_PRIVATE (device)->supplicant.mgr)
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
-bring_up (NMDevice *dev)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
-
-	priv->supplicant.mgr = nm_supplicant_manager_get ();
-
-	return priv->supplicant.mgr ? TRUE : FALSE;
-}
-
-static void
-take_down (NMDevice *dev)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
-
-	if (priv->supplicant.mgr) {
-		g_object_unref (priv->supplicant.mgr);
-		priv->supplicant.mgr = NULL;
-	}
-}
-
 NMDevice *
 nm_device_ethernet_new (NMPlatformLink *platform_device)
 {
@@ -994,6 +964,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 static NMActStageReturn
 nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSetting8021x *security;
 	const char *setting_name;
@@ -1008,6 +979,9 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return ret;
 	}
+
+	if (!priv->supplicant.mgr)
+		priv->supplicant.mgr = nm_supplicant_manager_get ();
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
@@ -1365,6 +1339,7 @@ dispose (GObject *object)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
+	g_clear_object (&priv->supplicant.mgr);
 	g_free (priv->subchan1);
 	g_free (priv->subchan2);
 	g_free (priv->subchan3);
@@ -1419,9 +1394,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->is_up = is_up;
-	parent_class->bring_up = bring_up;
-	parent_class->take_down = take_down;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->check_connection_compatible = check_connection_compatible;

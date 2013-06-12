@@ -109,13 +109,6 @@ typedef struct {
 	/* Carrier state (IFF_LOWER_UP) */
 	void            (*carrier_changed) (NMDevice *, gboolean carrier);
 
-	/* Additional stuff required to operate the device, like a 
-	 * connection to the supplicant, Bluez, etc
-	 */
-	gboolean        (*is_up)         (NMDevice *self);
-	gboolean        (*bring_up)      (NMDevice *self);
-	void            (*take_down)     (NMDevice *self);
-
 	void        (* update_hw_address) (NMDevice *self);
 	void        (* update_permanent_hw_address) (NMDevice *self);
 	void        (* update_initial_hw_address) (NMDevice *self);

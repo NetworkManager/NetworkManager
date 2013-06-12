@@ -332,15 +332,6 @@ set_enabled (NMDevice *device, gboolean enabled)
 
 /* NMDevice methods */
 
-static void
-take_down (NMDevice *device)
-{
-	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
-
-	set_current_nsp (self, NULL);
-	remove_all_nsps (self);
-}
-
 static gboolean
 hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
@@ -1403,7 +1394,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	device_class->take_down = take_down;
 	device_class->hw_bring_up = hw_bring_up;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;

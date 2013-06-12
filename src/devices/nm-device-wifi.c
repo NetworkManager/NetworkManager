@@ -803,25 +803,6 @@ hw_bring_up (NMDevice *device, gboolean *no_firmware)
 }
 
 static gboolean
-is_up (NMDevice *device)
-{
-	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->periodic_source_id)
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
-bring_up (NMDevice *dev)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update, self);
-	return TRUE;
-}
-
-static gboolean
 _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 {
 	NMDevice *dev = NM_DEVICE (self);
@@ -895,22 +876,6 @@ remove_all_aps (NMDeviceWifi *self)
 }
 
 static void
-take_down (NMDevice *dev)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (priv->periodic_source_id) {
-		g_source_remove (priv->periodic_source_id);
-		priv->periodic_source_id = 0;
-	}
-
-	cleanup_association_attempt (self, TRUE);
-	set_active_ap (self, NULL);
-	remove_all_aps (self);
-}
-
-static void
 deactivate (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
@@ -925,6 +890,11 @@ deactivate (NMDevice *dev)
 		connection = nm_act_request_get_connection (req);
 		/* Clear wireless secrets tries when deactivating */
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
+	}
+
+	if (priv->periodic_source_id) {
+		g_source_remove (priv->periodic_source_id);
+		priv->periodic_source_id = 0;
 	}
 
 	cleanup_association_attempt (self, TRUE);
@@ -3083,6 +3053,9 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 		goto out;
 	}
 
+	if (!priv->periodic_source_id)
+		priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update, self);
+
 	/* We'll get stage3 started when the supplicant connects */
 	ret = NM_ACT_STAGE_RETURN_POSTPONE;
 
@@ -3372,6 +3345,15 @@ device_state_changed (NMDevice *device,
 		 */
 		if (priv->supplicant.iface)
 			supplicant_interface_release (self);
+
+		if (priv->periodic_source_id) {
+			g_source_remove (priv->periodic_source_id);
+			priv->periodic_source_id = 0;
+		}
+
+		cleanup_association_attempt (self, TRUE);
+		set_active_ap (self, NULL);
+		remove_all_aps (self);
 	}
 
 	/* Start or stop the rfkill poll worker for ipw cards */
@@ -3633,9 +3615,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->dispose = dispose;
 
 	parent_class->hw_bring_up = hw_bring_up;
-	parent_class->is_up = is_up;
-	parent_class->bring_up = bring_up;
-	parent_class->take_down = take_down;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->can_auto_connect = can_auto_connect;

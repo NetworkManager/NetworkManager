@@ -81,15 +81,10 @@ enum {
 #define NM_OLPC_MESH_ERROR (nm_olpc_mesh_error_quark ())
 
 
-struct _NMDeviceOlpcMeshPrivate
-{
+struct _NMDeviceOlpcMeshPrivate {
 	gboolean          dispose_has_run;
 
-	GByteArray *      ssid;
-
 	WifiData *        wifi_data;
-
-	gboolean          up;
 
 	NMDevice *        companion;
 	gboolean          stage1_waiting;
@@ -165,43 +160,6 @@ constructor (GType type,
 	/* shorter timeout for mesh connectivity */
 	nm_device_set_dhcp_timeout (NM_DEVICE (self), 20);
 	return object;
-}
-
-static gboolean
-is_up (NMDevice *device)
-{
-	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-
-	return priv->up;
-}
-
-static gboolean
-bring_up (NMDevice *dev)
-{
-	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-
-	priv->up = TRUE;
-	return TRUE;
-}
-
-static void
-device_cleanup (NMDeviceOlpcMesh *self)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-
-	if (priv->ssid) {
-		g_byte_array_free (priv->ssid, TRUE);
-		priv->ssid = NULL;
-	}
-	priv->up = FALSE;
-}
-
-static void
-take_down (NMDevice *dev)
-{
-	device_cleanup (NM_DEVICE_OLPC_MESH (dev));
 }
 
 static gboolean
@@ -411,7 +369,6 @@ dispose (GObject *object)
 	if (priv->wifi_data)
 		wifi_utils_deinit (priv->wifi_data);
 
-	device_cleanup (self);
 	companion_cleanup (self);
 
 	manager = nm_manager_get ();
@@ -471,9 +428,6 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	parent_class->is_up = is_up;
-	parent_class->bring_up = bring_up;
-	parent_class->take_down = take_down;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->complete_connection = complete_connection;
