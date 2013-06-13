@@ -794,12 +794,12 @@ periodic_update (gpointer user_data)
 }
 
 static gboolean
-hw_bring_up (NMDevice *device, gboolean *no_firmware)
+bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	if (!NM_DEVICE_WIFI_GET_PRIVATE (device)->enabled)
 		return FALSE;
 
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->hw_bring_up (device, no_firmware);
+	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->bring_up (device, no_firmware);
 }
 
 static gboolean
@@ -826,7 +826,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 	}
 
 	/* Can't change MAC address while device is up */
-	nm_device_hw_take_down (dev, FALSE);
+	nm_device_take_down (dev, FALSE);
 
 	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (dev), addr, ETH_ALEN);
 	if (success) {
@@ -838,7 +838,7 @@ _set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
 		nm_log_warn (LOGD_DEVICE | LOGD_ETHER, "(%s): failed to %s MAC address to %s",
 		             iface, detail, mac_str);
 	}
-	hw_bring_up (dev, NULL);
+	bring_up (dev, NULL);
 	g_free (mac_str);
 
 	return success;
@@ -920,9 +920,9 @@ deactivate (NMDevice *dev)
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
 	if (wifi_utils_get_mode (priv->wifi_data) != NM_802_11_MODE_INFRA) {
-		nm_device_hw_take_down (NM_DEVICE (self), TRUE);
+		nm_device_take_down (NM_DEVICE (self), TRUE);
 		wifi_utils_set_mode (priv->wifi_data, NM_802_11_MODE_INFRA);
-		nm_device_hw_bring_up (NM_DEVICE (self), TRUE, NULL);
+		nm_device_bring_up (NM_DEVICE (self), TRUE, NULL);
 	}
 
 	if (priv->mode != NM_802_11_MODE_INFRA) {
@@ -3455,7 +3455,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 		if (state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_log_warn (LOGD_CORE, "not in expected unavailable state!");
 
-		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
+		if (!nm_device_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
 			nm_log_dbg (LOGD_WIFI, "(%s): enable blocked by failure to bring device up",
 			            nm_device_get_iface (NM_DEVICE (device)));
 
@@ -3479,7 +3479,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_NONE);
-		nm_device_hw_take_down (NM_DEVICE (self), TRUE);
+		nm_device_take_down (NM_DEVICE (self), TRUE);
 	}
 }
 
@@ -3614,7 +3614,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	parent_class->hw_bring_up = hw_bring_up;
+	parent_class->bring_up = bring_up;
 	parent_class->update_permanent_hw_address = update_permanent_hw_address;
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->can_auto_connect = can_auto_connect;

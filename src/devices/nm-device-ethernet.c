@@ -325,7 +325,7 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 
 	/* Can't change MAC address while device is up */
-	nm_device_hw_take_down (dev, FALSE);
+	nm_device_take_down (dev, FALSE);
 
 	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (dev), addr, ETH_ALEN);
 	if (success) {
@@ -344,7 +344,7 @@ _set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
 		nm_log_warn (LOGD_DEVICE | LOGD_ETHER, "(%s): failed to %s MAC address to %s",
 		             iface, detail, mac_str);
 	}
-	nm_device_hw_bring_up (dev, FALSE, NULL);
+	nm_device_bring_up (dev, FALSE, NULL);
 	g_free (mac_str);
 
 	return success;

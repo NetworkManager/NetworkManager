@@ -564,18 +564,18 @@ constructed (GObject *object)
 }
 
 static gboolean
-nm_device_hw_is_up (NMDevice *self)
+nm_device_is_up (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (NM_DEVICE_GET_CLASS (self)->hw_is_up)
-		return NM_DEVICE_GET_CLASS (self)->hw_is_up (self);
+	if (NM_DEVICE_GET_CLASS (self)->is_up)
+		return NM_DEVICE_GET_CLASS (self)->is_up (self);
 
 	return TRUE;
 }
 
 static gboolean
-hw_is_up (NMDevice *device)
+is_up (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
@@ -1797,7 +1797,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-	if (!nm_device_hw_bring_up (self, FALSE, &no_firmware)) {
+	if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
 		if (no_firmware)
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
 		else
@@ -4427,29 +4427,29 @@ nm_device_get_ip6_config (NMDevice *self)
 }
 
 gboolean
-nm_device_hw_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
+nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
 	gboolean success;
 	guint32 tries = 0;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (nm_device_hw_is_up (self))
+	if (nm_device_is_up (self))
 		goto out;
 
 	nm_log_info (LOGD_HW, "(%s): bringing up device.", nm_device_get_iface (self));
 
-	if (NM_DEVICE_GET_CLASS (self)->hw_bring_up) {
-		success = NM_DEVICE_GET_CLASS (self)->hw_bring_up (self, no_firmware);
+	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
+		success = NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware);
 		if (!success)
 			return FALSE;
 	}
 
 	/* Wait for the device to come up if requested */
-	while (block && !nm_device_hw_is_up (self) && (tries++ < 50))
+	while (block && !nm_device_is_up (self) && (tries++ < 50))
 		g_usleep (200);
 
-	if (!nm_device_hw_is_up (self)) {
+	if (!nm_device_is_up (self)) {
 		nm_log_warn (LOGD_HW, "(%s): device not up after timeout!", nm_device_get_iface (self));
 		return FALSE;
 	}
@@ -4463,7 +4463,7 @@ out:
 }
 
 static gboolean
-hw_bring_up (NMDevice *device, gboolean *no_firmware)
+bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 	gboolean result;
@@ -4483,27 +4483,27 @@ hw_bring_up (NMDevice *device, gboolean *no_firmware)
 }
 
 void
-nm_device_hw_take_down (NMDevice *self, gboolean block)
+nm_device_take_down (NMDevice *self, gboolean block)
 {
 	guint32 tries = 0;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	if (!nm_device_hw_is_up (self))
+	if (!nm_device_is_up (self))
 		return;
 
 	nm_log_info (LOGD_HW, "(%s): taking down device.", nm_device_get_iface (self));
 
-	if (NM_DEVICE_GET_CLASS (self)->hw_take_down)
-		NM_DEVICE_GET_CLASS (self)->hw_take_down (self);
+	if (NM_DEVICE_GET_CLASS (self)->take_down)
+		NM_DEVICE_GET_CLASS (self)->take_down (self);
 
 	/* Wait for the device to come up if requested */
-	while (block && nm_device_hw_is_up (self) && (tries++ < 50))
+	while (block && nm_device_is_up (self) && (tries++ < 50))
 		g_usleep (200);
 }
 
 static void
-hw_take_down (NMDevice *device)
+take_down (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
@@ -4516,7 +4516,7 @@ dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean take_down = TRUE;
+	gboolean deconfigure = TRUE;
 	NMPlatform *platform;
 
 	if (priv->disposed || !priv->initialized)
@@ -4545,7 +4545,7 @@ dispose (GObject *object)
 			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
 			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)
 			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
-				take_down = FALSE;
+				deconfigure = FALSE;
 		}
 	}
 
@@ -4554,22 +4554,22 @@ dispose (GObject *object)
 	nm_device_queued_ip_config_change_clear (self);
 
 	/* Clean up and stop DHCP */
-	dhcp4_cleanup (self, take_down, FALSE);
-	dhcp6_cleanup (self, take_down, FALSE);
+	dhcp4_cleanup (self, deconfigure, FALSE);
+	dhcp6_cleanup (self, deconfigure, FALSE);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
 
 	g_warn_if_fail (priv->slaves == NULL);
 
 	/* Take the device itself down and clear its IPv4 configuration */
-	if (nm_device_get_managed (self) && take_down) {
+	if (nm_device_get_managed (self) && deconfigure) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		if (nm_device_get_act_request (self))
 			nm_device_deactivate (self, NM_DEVICE_STATE_REASON_REMOVED);
 		nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
 
-		nm_device_hw_take_down (self, FALSE);
+		nm_device_take_down (self, FALSE);
 	}
 
 	/* reset the saved RA value */
@@ -4923,9 +4923,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
-	klass->hw_is_up = hw_is_up;
-	klass->hw_bring_up = hw_bring_up;
-	klass->hw_take_down = hw_take_down;
+	klass->is_up = is_up;
+	klass->bring_up = bring_up;
+	klass->take_down = take_down;
 	klass->carrier_changed = carrier_changed;
 	klass->can_interrupt_activation = can_interrupt_activation;
 	klass->get_hw_address_length = get_hw_address_length;
@@ -5437,12 +5437,12 @@ nm_device_state_changed (NMDevice *device,
 			/* Clean up if the device is now unmanaged but was activated */
 			if (nm_device_get_act_request (device))
 				nm_device_deactivate (device, reason);
-			nm_device_hw_take_down (device, TRUE);
+			nm_device_take_down (device, TRUE);
 		}
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
-			if (!nm_device_hw_bring_up (device, TRUE, &no_firmware) && no_firmware)
+			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware)
 				nm_log_warn (LOGD_HW, "(%s): firmware may be missing.", nm_device_get_iface (device));
 			nm_device_set_firmware_missing (device, no_firmware ? TRUE : FALSE);
 		}

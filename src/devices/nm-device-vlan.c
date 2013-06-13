@@ -83,13 +83,13 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-hw_bring_up (NMDevice *dev, gboolean *no_firmware)
+bring_up (NMDevice *dev, gboolean *no_firmware)
 {
 	gboolean success = FALSE;
 	guint i = 20;
 
 	while (i-- > 0 && !success) {
-		success = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->hw_bring_up (dev, no_firmware);
+		success = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->bring_up (dev, no_firmware);
 		g_usleep (50);
 	}
 
@@ -431,7 +431,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->dispose = dispose;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->hw_bring_up = hw_bring_up;
+	parent_class->bring_up = bring_up;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;

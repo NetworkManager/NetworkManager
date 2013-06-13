@@ -78,8 +78,8 @@ get_generic_capabilities (NMDevice *dev)
 static gboolean
 is_available (NMDevice *dev)
 {
-	if (NM_DEVICE_GET_CLASS (dev)->hw_is_up)
-		return NM_DEVICE_GET_CLASS (dev)->hw_is_up (dev);
+	if (NM_DEVICE_GET_CLASS (dev)->is_up)
+		return NM_DEVICE_GET_CLASS (dev)->is_up (dev);
 	return FALSE;
 }
 
@@ -198,12 +198,12 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		g_assert (s_bond);
 
 		/* Interface must be down to set bond options */
-		nm_device_hw_take_down (dev, TRUE);
+		nm_device_take_down (dev, TRUE);
 
 		if (!nm_system_apply_bonding_config (nm_device_get_ip_iface (dev), s_bond))
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 
-		nm_device_hw_bring_up (dev, TRUE, &no_firmware);
+		nm_device_bring_up (dev, TRUE, &no_firmware);
 	}
 	return ret;
 }
@@ -215,12 +215,12 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 
-	nm_device_hw_take_down (slave, TRUE);
+	nm_device_take_down (slave, TRUE);
 
 	success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
 	                                    nm_device_get_ip_ifindex (slave));
 
-	nm_device_hw_bring_up (slave, TRUE, &no_firmware);
+	nm_device_bring_up (slave, TRUE, &no_firmware);
 
 	if (success) {
 		nm_log_info (LOGD_BOND, "(%s): enslaved bond slave %s", iface, slave_iface);
@@ -248,7 +248,7 @@ release_slave (NMDevice *device, NMDevice *slave)
 	 * IFF_UP), so we must bring it back up here to ensure carrier changes and
 	 * other state is noticed by the now-released slave.
 	 */
-	if (!nm_device_hw_bring_up (slave, TRUE, &no_firmware)) {
+	if (!nm_device_bring_up (slave, TRUE, &no_firmware)) {
 		nm_log_warn (LOGD_BOND, "(%s): released bond slave could not be brought up.",
 		             nm_device_get_iface (slave));
 	}

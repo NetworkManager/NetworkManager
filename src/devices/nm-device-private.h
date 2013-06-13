@@ -48,9 +48,9 @@ gboolean nm_device_activate_stage3_ip4_start (NMDevice *self);
 
 gboolean nm_device_activate_stage3_ip6_start (NMDevice *self);
 
-gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmware);
+gboolean nm_device_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmware);
 
-void nm_device_hw_take_down (NMDevice *self, gboolean block);
+void nm_device_take_down (NMDevice *self, gboolean block);
 
 gboolean nm_device_update_hw_address (NMDevice *self);
 

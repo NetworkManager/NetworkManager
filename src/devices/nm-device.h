@@ -102,9 +102,9 @@ typedef struct {
 	                       NMDeviceStateReason reason);
 
 	/* Hardware state (IFF_UP) */
-	gboolean        (*hw_is_up)      (NMDevice *self);
-	gboolean        (*hw_bring_up)   (NMDevice *self, gboolean *no_firmware);
-	void            (*hw_take_down)  (NMDevice *self);
+	gboolean        (*is_up)      (NMDevice *self);
+	gboolean        (*bring_up)   (NMDevice *self, gboolean *no_firmware);
+	void            (*take_down)  (NMDevice *self);
 
 	/* Carrier state (IFF_LOWER_UP) */
 	void            (*carrier_changed) (NMDevice *, gboolean carrier);
