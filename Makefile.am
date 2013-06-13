@@ -6,7 +6,6 @@ SUBDIRS = \
 	libnm-util \
 	libnm-glib \
 	introspection \
-	libndp \
 	src \
 	callouts \
 	cli \
@@ -19,6 +18,8 @@ SUBDIRS = \
 	docs \
 	examples \
 	vapi
+
+DIST_SUBDIRS = $(SUBDIRS) libndp
 
 @GNOME_CODE_COVERAGE_RULES@
 
@@ -52,7 +53,6 @@ ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
 
-.PHONY: cscope
 cscope:
 	cscope -b -q -R -Iinclude -ssrc -slibnm-glib -slibnm-util -scli/src;
 
@@ -61,3 +61,12 @@ libgsystem_cflags := $(GLIB_CFLAGS) -I$(srcdir)/libgsystem
 libgsystem_libs = $(GLIB_LIBS)
 include libgsystem/Makefile-libgsystem.am
 noinst_LTLIBRARIES = libgsystem.la
+
+noinst_DATA = libndp
+libndp:
+	(cd libndp && $(MAKE))
+
+clean-local:
+	(cd libndp && $(MAKE) clean)
+
+.PHONY: cscope libndp
