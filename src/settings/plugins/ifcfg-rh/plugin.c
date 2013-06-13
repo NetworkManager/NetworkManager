@@ -426,19 +426,12 @@ get_connections (NMSystemConfigInterface *config)
 static GSList *
 get_unmanaged_specs (NMSystemConfigInterface *config)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
 	GSList *list = NULL, *list_iter;
 	GHashTableIter iter;
 	NMIfcfgConnection *connection;
 	const char *spec;
 	gboolean found;
-
-	if (!priv->initialized) {
-		setup_ifcfg_monitoring (plugin);
-		read_connections (plugin);
-		priv->initialized = TRUE;
-	}
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {

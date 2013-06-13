@@ -160,6 +160,14 @@ enum {
 };
 
 static void
+plugin_connection_added (NMSystemConfigInterface *config,
+                         NMSettingsConnection *connection,
+                         gpointer user_data)
+{
+	claim_connection (NM_SETTINGS (user_data), connection, TRUE);
+}
+
+static void
 load_connections (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
@@ -183,11 +191,15 @@ load_connections (NMSettings *self)
 			claim_connection (self, NM_SETTINGS_CONNECTION (elt->data), TRUE);
 
 		g_slist_free (plugin_connections);
+
+		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
+		                  G_CALLBACK (plugin_connection_added), self);
+		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
+		                  G_CALLBACK (unmanaged_specs_changed), self);
 	}
 
 	priv->connections_loaded = TRUE;
 
-	/* FIXME: Bad hack */
 	unmanaged_specs_changed (NULL, self);
 
 	g_signal_emit (self, signals[CONNECTIONS_LOADED], 0);
@@ -449,14 +461,6 @@ nm_settings_get_hostname (NMSettings *self)
 	return NULL;
 }
 
-static void
-plugin_connection_added (NMSystemConfigInterface *config,
-                         NMSettingsConnection *connection,
-                         gpointer user_data)
-{
-	claim_connection (NM_SETTINGS (user_data), connection, TRUE);
-}
-
 static gboolean
 find_unmanaged_device (NMSettings *self, const char *needle)
 {
@@ -520,8 +524,6 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
 
-	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
-	                  G_CALLBACK (plugin_connection_added), self);
 	g_signal_connect (plugin, "notify::hostname", G_CALLBACK (hostname_changed), self);
 
 	nm_system_config_interface_init (plugin, NULL);
@@ -530,9 +532,6 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	              NM_SYSTEM_CONFIG_INTERFACE_NAME, &pname,
 	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
-
-	g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
-	                  G_CALLBACK (unmanaged_specs_changed), self);
 
 	nm_log_info (LOGD_SETTINGS, "Loaded plugin %s: %s", pname, pinfo);
 	g_free (pname);
