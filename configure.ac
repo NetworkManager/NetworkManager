@@ -596,6 +596,30 @@ else
 fi
 AM_CONDITIONAL(WITH_CONCHECK, test "${enable_concheck}" = "yes")
 
+dnl libndp
+AC_ARG_WITH(system-libndp, AS_HELP_STRING([--with-system-libndp=yes|no|auto], [use system libndp rather than bundled one (default: auto)]),
+            [with_system_libndp=${withval}], [with_system_libndp=auto])
+if test "$with_system_libndp" = yes; then
+    PKG_CHECK_MODULES(LIBNDP, [libndp])
+elif test "$with_system_libndp" = auto; then
+    PKG_CHECK_MODULES(LIBNDP, [libndp], [build_libndp=no],[build_libndp=yes])
+else
+    build_libndp=yes
+fi
+AM_CONDITIONAL(BUILD_LIBNDP, test "${build_libndp}" = yes)
+if test "$build_libndp" = yes; then
+    LIBNDP_CFLAGS='-I$(top_srcdir)/libndp/include'
+    LIBNDP_LIBS='$(top_builddir)/libndp/libndp/libndp.la'
+    AC_SUBST(LIBNDP_CFLAGS)
+    AC_SUBST(LIBNDP_LIBS)
+    libndp_location=bundled
+else
+    # temporary bug workaround
+    LIBNDP_CFLAGS=`echo $LIBNDP_CFLAGS | sed -e 's:/ndp.h::'`
+    libndp_location=system
+fi
+
+
 NM_COMPILER_WARNINGS
 
 dnl -------------------------
@@ -751,6 +775,7 @@ echo "  wimax: $enable_wimax"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
+echo "  libndp: $libndp_location"
 echo
 
 echo "Configuration plugins"
