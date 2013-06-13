@@ -332,17 +332,6 @@ set_enabled (NMDevice *device, gboolean enabled)
 
 /* NMDevice methods */
 
-static gboolean
-hw_bring_up (NMDevice *dev, gboolean *no_firmware)
-{
-	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (dev);
-
-	if (!priv->enabled || !priv->wimaxd_enabled)
-		return FALSE;
-
-	return NM_DEVICE_GET_CLASS (dev)->hw_bring_up (dev, no_firmware);
-}
-
 static const GByteArray *
 get_connection_hw_address (NMDevice *device,
                            NMConnection *connection)
@@ -1394,7 +1383,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
-	device_class->hw_bring_up = hw_bring_up;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
