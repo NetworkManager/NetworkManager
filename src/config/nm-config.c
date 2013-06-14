@@ -39,6 +39,7 @@
 typedef struct {
 	char *nm_conf_path;
 	char *config_dir;
+	char *config_description;
 	char *no_auto_default_file;
 	GKeyFile *keyfile;
 
@@ -72,6 +73,14 @@ nm_config_get_path (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->nm_conf_path;
+}
+
+const char *
+nm_config_get_description (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return NM_CONFIG_GET_PRIVATE (config)->config_description;
 }
 
 const char **
@@ -292,6 +301,8 @@ read_config (NMConfig *config, const char *path, GError **error)
 		return FALSE;
 	}
 
+	nm_log_dbg (LOGD_SETTINGS, "Reading config file '%s'", path);
+
 	kf = g_key_file_new ();
 	g_key_file_set_list_separator (kf, ',');
 	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, error)) {
@@ -422,6 +433,7 @@ nm_config_new (GError **error)
 	const char *name;
 	char *value;
 	int i;
+	GString *config_description;
 
 	g_assert (!singleton);
 	singleton = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
@@ -441,13 +453,20 @@ nm_config_new (GError **error)
 		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
 
 	confs = g_ptr_array_new_with_free_func (g_free);
+	config_description = g_string_new (priv->nm_conf_path);
 	dir = g_file_new_for_path (priv->config_dir);
 	direnum = g_file_enumerate_children (dir, G_FILE_ATTRIBUTE_STANDARD_NAME, 0, NULL, NULL);
 	if (direnum) {
 		while ((info = g_file_enumerator_next_file (direnum, NULL, NULL))) {
 			name = g_file_info_get_name (info);
-			if (g_str_has_suffix (name, ".conf"))
+			if (g_str_has_suffix (name, ".conf")) {
 				g_ptr_array_add (confs, g_build_filename (priv->config_dir, name, NULL));
+				if (confs->len == 1)
+					g_string_append (config_description, " and conf.d: ");
+				else
+					g_string_append (config_description, ", ");
+				g_string_append (config_description, name);
+			}
 			g_object_unref (info);
 		}
 		g_object_unref (direnum);
@@ -455,6 +474,7 @@ nm_config_new (GError **error)
 	g_object_unref (dir);
 
 	g_ptr_array_sort (confs, sort_asciibetically);
+	priv->config_description = g_string_free (config_description, FALSE);
 	for (i = 0; i < confs->len; i++) {
 		if (!read_config (singleton, confs->pdata[i], error)) {
 			g_object_unref (singleton);
@@ -534,6 +554,7 @@ finalize (GObject *gobject)
 
 	g_free (priv->nm_conf_path);
 	g_free (priv->config_dir);
+	g_free (priv->config_description);
 	g_free (priv->no_auto_default_file);
 	g_clear_pointer (&priv->keyfile, g_key_file_unref);
 	g_strfreev (priv->plugins);

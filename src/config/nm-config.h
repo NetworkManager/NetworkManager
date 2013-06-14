@@ -49,6 +49,7 @@ GType nm_config_get_type (void);
 NMConfig *nm_config_get (void);
 
 const char *nm_config_get_path (NMConfig *config);
+const char *nm_config_get_description (NMConfig *config);
 const char **nm_config_get_plugins (NMConfig *config);
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
 const char *nm_config_get_dhcp_client (NMConfig *config);
