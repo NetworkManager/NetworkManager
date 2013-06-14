@@ -3,6 +3,9 @@
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
+
+olddir=`pwd`
+
 REQUIRED_AUTOMAKE_VERSION=1.9
 PKG_NAME=NetworkManager
 
@@ -13,17 +16,18 @@ PKG_NAME=NetworkManager
     exit 1
 }
 
+cd $srcdir
+
 # Fetch submodules if needed
 echo "+ Setting up submodules"
 git submodule init
 git submodule update
 
-(cd $srcdir;
-    gtkdocize || exit 1
-    autopoint --force
-    AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
-)
+gtkdocize || exit 1
+autopoint --force
+AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
 
+cd $olddir
 if test -z "$NOCONFIGURE"; then
 	$srcdir/configure --enable-maintainer-mode "$@"
 fi
