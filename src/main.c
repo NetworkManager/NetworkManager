@@ -355,6 +355,12 @@ main (int argc, char *argv[])
 		{NULL}
 	};
 
+	/* Make GIO ignore the remote VFS service; otherwise it tries to use the
+	 * session bus to contact the remote service, and NM shouldn't ever be
+	 * talking on the session bus.  See rh #588745
+	 */
+	setenv ("GIO_USE_VFS", "local", 1);
+
 	if (!g_module_supported ()) {
 		fprintf (stderr, _("GModules are not supported on your platform!\n"));
 		exit (1);
@@ -395,11 +401,6 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	/* Make GIO ignore the remote VFS service; otherwise it tries to use the
-	 * session bus to contact the remote service, and NM shouldn't ever be
-	 * talking on the session bus.  See rh #588745
-	 */
-	setenv ("GIO_USE_VFS", "local", 1);
 
 	/* Setup runtime directory */
 	if (g_mkdir_with_parents (NMRUNDIR, 0755) != 0) {
