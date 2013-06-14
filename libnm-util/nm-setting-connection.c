@@ -682,6 +682,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	gboolean is_slave;
 	GSList *iter;
 
 	if (!priv->id) {
@@ -782,11 +783,12 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	/*
-	 * Bonding: Slaves are not allowed to have any IP configuration.
-	 */
-	if (priv->slave_type && all_settings &&
-	    !strcmp(priv->slave_type, NM_SETTING_BOND_SETTING_NAME)) {
+	is_slave = (   !g_strcmp0 (priv->slave_type, NM_SETTING_BOND_SETTING_NAME)
+	            || !g_strcmp0 (priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+	            || !g_strcmp0 (priv->slave_type, NM_SETTING_TEAM_SETTING_NAME));
+
+	/* Bond/bridge/team slaves are not allowed to have any IP configuration. */
+	if (is_slave) {
 		NMSettingIP4Config *s_ip4;
 		NMSettingIP6Config *s_ip6;
 
@@ -797,7 +799,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error_literal (error,
 				                     NM_SETTING_CONNECTION_ERROR,
 				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
-				                     _("IPv4 configuration is not allowed for bonding slave"));
+				                     _("IPv4 configuration is not allowed for slave"));
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
@@ -810,7 +812,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_set_error_literal (error,
 				                     NM_SETTING_CONNECTION_ERROR,
 				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
-				                     _("IPv6 configuration is not allowed for bonding slave"));
+				                     _("IPv6 configuration is not allowed for slave"));
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
