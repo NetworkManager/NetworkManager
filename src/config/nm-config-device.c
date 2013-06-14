@@ -50,7 +50,9 @@ nm_config_device_spec_match_list (NMConfigDevice *self, const char **config_spec
 	 * we allow untagged interface names as well.
 	 */
 	for (i = 0; config_specs[i]; i++) {
-		if (nm_utils_iface_valid_name (config_specs[i]))
+		if (g_strcmp0 (config_specs[i], "*") == 0)
+			specs = g_slist_prepend (specs, g_strdup (config_specs[i]));
+		else if (nm_utils_iface_valid_name (config_specs[i]))
 			specs = g_slist_prepend (specs, g_strdup_printf ("interface-name:%s", config_specs[i]));
 		else if (   nm_utils_hwaddr_aton (config_specs[i], ARPHRD_ETHER, buf)
 		         || nm_utils_hwaddr_aton (config_specs[i], ARPHRD_INFINIBAND, buf)) {
