@@ -346,17 +346,22 @@ main (int argc, char *argv[])
 	 */
 	umask (022);
 
-	if (!g_module_supported ()) {
-		fprintf (stderr, _("GModules are not supported on your platform!\n"));
-		exit (1);
-	}
-
 	/* Set locale to be able to use environment variables */
 	setlocale (LC_ALL, "");
 
 	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
+
+	if (!g_module_supported ()) {
+		fprintf (stderr, _("GModules are not supported on your platform!\n"));
+		exit (1);
+	}
+
+	if (getuid () != 0) {
+		fprintf (stderr, _("You must be root to run NetworkManager!\n"));
+		exit (1);
+	}
 
 	/* Parse options */
 	opt_ctx = g_option_context_new (NULL);
@@ -380,11 +385,6 @@ main (int argc, char *argv[])
 	if (show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
 		exit (0);
-	}
-
-	if (getuid () != 0) {
-		fprintf (stderr, _("You must be root to run NetworkManager!\n"));
-		exit (1);
 	}
 
 	/* When running from the build directory, determine our build directory
