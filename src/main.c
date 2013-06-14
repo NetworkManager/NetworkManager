@@ -339,6 +339,13 @@ main (int argc, char *argv[])
 	 */
 	setenv ("GIO_USE_VFS", "local", 1);
 
+	/*
+	 * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
+	 * Otherwise, if root (or an su'ing user) has a wacky umask, we could
+	 * write out an unreadable resolv.conf.
+	 */
+	umask (022);
+
 	if (!g_module_supported ()) {
 		fprintf (stderr, _("GModules are not supported on your platform!\n"));
 		exit (1);
@@ -477,13 +484,6 @@ main (int argc, char *argv[])
 		fatal_mask |= G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL;
 		g_log_set_always_fatal (fatal_mask);
 	}
-
-	/*
-	 * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
-	 * Otherwise, if root (or an su'ing user) has a wacky umask, we could
-	 * write out an unreadable resolv.conf.
-	 */
-	umask (022);
 
 	g_type_init ();
 	dbus_threads_init_default ();
