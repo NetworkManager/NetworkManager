@@ -36,6 +36,12 @@
 
 #include "nm-logging.h"
 
+static void
+nm_log_handler (const gchar *log_domain,
+                GLogLevelFlags level,
+                const gchar *message,
+                gpointer ignored);
+
 #define LOGD_ALL \
 	(LOGD_PLATFORM | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
 	 LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_WIFI_SCAN | LOGD_IP4 | \
@@ -49,6 +55,7 @@
 
 static guint32 log_level = LOGL_INFO | LOGL_WARN | LOGL_ERR;
 static guint32 log_domains = LOGD_DEFAULT;
+static gboolean syslog_opened;
 
 typedef struct {
 	guint32 num;
@@ -290,7 +297,9 @@ _nm_log (const char *loc,
 {
 	va_list args;
 	char *msg;
+	char *fullmsg = NULL;
 	GTimeVal tv;
+	int syslog_level = LOG_INFO;
 
 	if (!(log_level & level) || !(log_domains & domain))
 		return;
@@ -301,16 +310,34 @@ _nm_log (const char *loc,
 
 	if ((log_level & LOGL_DEBUG) && (level == LOGL_DEBUG)) {
 		g_get_current_time (&tv);
-		syslog (LOG_INFO, "<debug> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
-	} else if ((log_level & LOGL_INFO) && (level == LOGL_INFO))
-		syslog (LOG_INFO, "<info> %s", msg);
-	else if ((log_level & LOGL_WARN) && (level == LOGL_WARN))
-		syslog (LOG_WARNING, "<warn> %s", msg);
-	else if ((log_level & LOGL_ERR) && (level == LOGL_ERR)) {
+		syslog_level = LOG_INFO;
+		fullmsg = g_strdup_printf ("<debug> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+	} else if ((log_level & LOGL_INFO) && (level == LOGL_INFO)) {
+		syslog_level = LOG_INFO;
+		fullmsg = g_strconcat ("<info> ", msg, NULL);
+	} else if ((log_level & LOGL_WARN) && (level == LOGL_WARN)) {
+		syslog_level = LOG_WARNING;
+		fullmsg = g_strconcat ("<warn> ", msg, NULL);
+	} else if ((log_level & LOGL_ERR) && (level == LOGL_ERR)) {
+		syslog_level = LOG_ERR;
 		g_get_current_time (&tv);
-		syslog (LOG_ERR, "<error> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<error> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+	} else
+		g_assert_not_reached ();
+
+	if (syslog_opened)
+		syslog (syslog_level, "%s", fullmsg);
+	else {
+		FILE *log_target;
+		if (level == LOGL_WARN || level == LOGL_ERR)
+			log_target = stderr;
+		else
+			log_target = stdout;
+		fprintf (log_target, "%s\n", fullmsg);
 	}
+
 	g_free (msg);
+	g_free (fullmsg);
 }
 
 /************************************************************************/
@@ -349,21 +376,28 @@ nm_log_handler (const gchar *log_domain,
 }
 
 void
-nm_logging_start (gboolean debug)
+nm_logging_syslog_openlog (gboolean debug)
 {
+	static gsize log_handler_initialized = 0;
+
 	if (debug)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 	else
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
+	syslog_opened = TRUE;
 
-	g_log_set_handler (G_LOG_DOMAIN, 
-	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-	                   nm_log_handler,
-	                   NULL);
+	if (g_once_init_enter (&log_handler_initialized)) {
+		g_log_set_handler (G_LOG_DOMAIN,
+		                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+		                   nm_log_handler,
+		                   NULL);
+		g_once_init_leave (&log_handler_initialized, 1);
+	}
 }
 
 void
-nm_logging_shutdown (void)
+nm_logging_syslog_closelog (void)
 {
-	closelog ();
+	if (syslog_opened)
+		closelog ();
 }

@@ -303,6 +303,8 @@ int
 main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
+	char *opt_log_level = NULL;
+	char *opt_log_domains = NULL;
 	gboolean become_daemon = TRUE, run_from_build_dir = FALSE;
 	gboolean debug = FALSE;
 	gboolean g_fatal_warnings = FALSE;
@@ -311,6 +313,7 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMPolicy *policy = NULL;
+	int i;
 	gs_unref_object NMVPNManager *vpn_manager = NULL;
 	gs_unref_object NMDnsManager *dns_mgr = NULL;
 	gs_unref_object NMDBusManager *dbus_mgr = NULL;
@@ -326,6 +329,10 @@ main (int argc, char *argv[])
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
 		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
 		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &debug, N_("Don't become a daemon, and log to stderr"), NULL },
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &opt_log_level, N_("Log level: one of [%s]"), "INFO" },
+		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &opt_log_domains,
+		  N_("Log domains separated by ',': any combination of [%s]"),
+		  "PLATFORM,RFKILL,WIFI" },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
 		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
@@ -363,6 +370,16 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	for (i = 0; options[i].long_name; i++) {
+		if (!strcmp (options[i].long_name, "log-level")) {
+			options[i].description = g_strdup_printf (options[i].description,
+			                                          nm_logging_all_levels_to_string ());
+		} else if (!strcmp (options[i].long_name, "log-domains")) {
+			options[i].description = g_strdup_printf (options[i].description,
+			                                          nm_logging_all_domains_to_string ());
+		}
+	}
+
 	/* Parse options */
 	opt_ctx = g_option_context_new (NULL);
 	g_option_context_set_translation_domain (opt_ctx, GETTEXT_PACKAGE);
@@ -387,17 +404,26 @@ main (int argc, char *argv[])
 		exit (0);
 	}
 
+	if (!nm_logging_setup (opt_log_level,
+	                       opt_log_domains,
+	                       &error)) {
+		fprintf (stderr,
+		         _("%s.  Please use --help to see a list of valid options.\n"),
+		         error->message);
+		exit (1);
+	}
+
 	/* When running from the build directory, determine our build directory
 	 * base and set helper paths in the build tree */
 	if (run_from_build_dir) {
 		char *path, *slash;
-		int i;
+		int g;
 
 		/* exe is <basedir>/src/.libs/lt-NetworkManager, so chop off
 		 * the last three components */
 		path = realpath ("/proc/self/exe", NULL);
 		g_assert (path != NULL);
-		for (i = 0; i < 3; ++i) {
+		for (g = 0; g < 3; ++g) {
 			slash = strrchr (path, '/');
 			g_assert (slash != NULL);
 			*slash = '\0';
@@ -439,14 +465,17 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	/* Logging setup */
-	if (!nm_logging_setup (nm_config_get_log_level (config),
-	                       nm_config_get_log_domains (config),
-	                       &error)) {
-		fprintf (stderr,
-		         _("%s.  Please use --help to see a list of valid options.\n"),
-		         error->message);
-		exit (1);
+	/* Initialize logging from config file *only* if not explicitly
+	 * specified by commandline.
+	 */
+	if (opt_log_level == NULL && opt_log_domains == NULL) {
+		if (!nm_logging_setup (nm_config_get_log_level (config),
+		                       nm_config_get_log_domains (config),
+		                       &error)) {
+			fprintf (stderr, _("%s.  Please use --help to see a list of valid options.\n"),
+			         error->message);
+			exit (1);
+		}
 	}
 
 	/* Parse the state file */
@@ -485,6 +514,8 @@ main (int argc, char *argv[])
 		g_log_set_always_fatal (fatal_mask);
 	}
 
+	nm_logging_syslog_openlog (debug);
+
 	g_type_init ();
 	dbus_threads_init_default ();
 
@@ -492,8 +523,6 @@ main (int argc, char *argv[])
 	 * introspection 'access' permissions are respected.
 	 */
 	dbus_glib_global_set_disable_legacy_property_access ();
-
-	nm_logging_start (debug);
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
@@ -605,7 +634,7 @@ done:
 
 	g_clear_object (&manager);
 
-	nm_logging_shutdown ();
+	nm_logging_syslog_closelog ();
 
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);

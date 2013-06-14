@@ -254,8 +254,6 @@ static char *cli_config_path;
 static char *cli_config_dir;
 static char *cli_no_auto_default_file;
 static char *cli_plugins;
-static char *cli_log_level;
-static char *cli_log_domains;
 static char *cli_connectivity_uri;
 static int cli_connectivity_interval = -1;
 static char *cli_connectivity_response;
@@ -265,10 +263,6 @@ static GOptionEntry config_options[] = {
 	{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli_config_dir, N_("Config directory location"), N_("/path/to/config/dir") },
 	{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli_no_auto_default_file, "no-auto-default.state location", NULL },
 	{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli_plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
-	{ "log-level", 0, 0, G_OPTION_ARG_STRING, &cli_log_level, N_("Log level: one of [%s]"), "INFO" },
-	{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &cli_log_domains,
-	  N_("Log domains separated by ',': any combination of [%s]"),
-	  "PLATFORM,RFKILL,WIFI" },
 
 	/* These three are hidden for now, and should eventually just go away. */
 	{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli_connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
@@ -276,26 +270,9 @@ static GOptionEntry config_options[] = {
 	{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli_connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
 	{NULL}
 };
-static gboolean config_options_inited;
-
 GOptionEntry *
 nm_config_get_options (void)
 {
-	if (!config_options_inited) {
-		int i;
-
-		for (i = 0; config_options[i].long_name; i++) {
-			if (!strcmp (config_options[i].long_name, "log-level")) {
-				config_options[i].description = g_strdup_printf (config_options[i].description,
-				                                                 nm_logging_all_levels_to_string ());
-			} else if (!strcmp (config_options[i].long_name, "log-domains")) {
-				config_options[i].description = g_strdup_printf (config_options[i].description,
-				                                                 nm_logging_all_domains_to_string ());
-			}
-		}
-		config_options_inited = TRUE;
-	}
-
 	return config_options;
 }
 
@@ -519,12 +496,7 @@ nm_config_new (GError **error)
 	priv->dhcp_client = g_key_file_get_value (priv->keyfile, "main", "dhcp", NULL);
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
 
-	if (cli_log_level && cli_log_level[0])
-		g_key_file_set_value (priv->keyfile, "logging", "level", cli_log_level);
 	priv->log_level = g_key_file_get_value (priv->keyfile, "logging", "level", NULL);
-
-	if (cli_log_domains && cli_log_domains[0])
-		g_key_file_set_value (priv->keyfile, "logging", "domains", cli_log_domains);
 	priv->log_domains = g_key_file_get_value (priv->keyfile, "logging", "domains", NULL);
 
 	if (cli_connectivity_uri && cli_connectivity_uri[0])
@@ -580,8 +552,6 @@ finalize (GObject *gobject)
 	g_clear_pointer (&cli_config_dir, g_free);
 	g_clear_pointer (&cli_no_auto_default_file, g_free);
 	g_clear_pointer (&cli_plugins, g_free);
-	g_clear_pointer (&cli_log_level, g_free);
-	g_clear_pointer (&cli_log_domains, g_free);
 	g_clear_pointer (&cli_connectivity_uri, g_free);
 	g_clear_pointer (&cli_connectivity_response, g_free);
 
