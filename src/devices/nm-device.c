@@ -2536,7 +2536,6 @@ dhcp6_add_option_cb (gpointer key, gpointer value, gpointer user_data)
 
 static gboolean
 ip6_config_merge_and_apply (NMDevice *self,
-                            NMIP6Config *src_config,
                             NMDeviceStateReason *out_reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -2551,14 +2550,10 @@ ip6_config_merge_and_apply (NMDevice *self,
 	composite = nm_ip6_config_new ();
 	g_assert (composite);
 
-	/* Merge in the given config first, if any */
-	if (src_config)
-		nm_ip6_config_merge (composite, src_config);
-
 	/* Merge RA and DHCPv6 configs into the composite config */
-	if (priv->ac_ip6_config && (src_config != priv->ac_ip6_config))
+	if (priv->ac_ip6_config)
 		nm_ip6_config_merge (composite, priv->ac_ip6_config);
-	if (priv->dhcp6_ip6_config && (src_config != priv->dhcp6_ip6_config))
+	if (priv->dhcp6_ip6_config)
 		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config);
 
 	/* Merge user overrides into the composite config */
@@ -2589,7 +2584,7 @@ dhcp6_lease_change (NMDevice *device)
 	g_assert (connection);
 
 	/* Apply the updated config */
-	if (ip6_config_merge_and_apply (device, NULL, &reason) == FALSE) {
+	if (ip6_config_merge_and_apply (device, &reason) == FALSE) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
 		             nm_device_get_ip_iface (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
@@ -2636,9 +2631,14 @@ dhcp6_state_changed (NMDHCPClient *client,
 		if (priv->dhcp6_ip6_config)
 			g_object_unref (priv->dhcp6_ip6_config);
 		priv->dhcp6_ip6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
-		if (priv->ip6_state == IP_CONF)
-			nm_device_activate_schedule_ip6_config_result (device, priv->dhcp6_ip6_config);
-		else if (priv->ip6_state == IP_DONE)
+		if (priv->ip6_state == IP_CONF) {
+			if (priv->dhcp6_ip6_config == NULL) {
+				/* FIXME: Initial DHCP failed; should we fail IPv6 entirely then? */
+				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DHCP_FAILED);
+				break;
+			}
+			nm_device_activate_schedule_ip6_config_result (device);
+		} else if (priv->ip6_state == IP_DONE)
 			dhcp6_lease_change (device);
 
 		if (priv->dhcp6_ip6_config) {
@@ -2676,7 +2676,6 @@ dhcp6_timeout (NMDHCPClient *client, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	NMIP6Config *config;
 
 	g_return_if_fail (nm_device_get_act_request (device) != NULL);
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
@@ -2691,11 +2690,8 @@ dhcp6_timeout (NMDHCPClient *client, gpointer user_data)
 			g_object_unref (priv->dhcp6_ip6_config);
 		priv->dhcp6_ip6_config = NULL;
 
-		if (priv->ip6_state == IP_CONF) {
-			config = nm_ip6_config_new ();
-			nm_device_activate_schedule_ip6_config_result (device, config);
-			g_object_unref (config);
-		}
+		if (priv->ip6_state == IP_CONF)
+			nm_device_activate_schedule_ip6_config_result (device);
 	}
 }
 
@@ -2803,7 +2799,12 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 	/* If addrconf is all that's required, we're done */
 	if (priv->dhcp6_mode == IP6_DHCP_OPT_NONE) {
 		priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
-		nm_device_activate_schedule_ip6_config_result (self, priv->ac_ip6_config);
+		if (priv->ac_ip6_config)
+			nm_device_activate_schedule_ip6_config_result (self);
+		else {
+			/* FIXME: Initial RA/autoconf failed; should we fail IPv6 entirely then? */
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		}
 		return;
 	}
 
@@ -2824,7 +2825,12 @@ ip6_addrconf_complete (NMIP6Manager *ip6_manager,
 		/* Shouldn't get this, but handle it anyway */
 		g_warn_if_reached ();
 		priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
-		nm_device_activate_schedule_ip6_config_result (self, priv->ac_ip6_config);
+		if (priv->ac_ip6_config)
+			nm_device_activate_schedule_ip6_config_result (self);
+		else {
+			/* FIXME: Initial RA/autoconf failed; should we fail IPv6 entirely then? */
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		}
 		break;
 	case NM_ACT_STAGE_RETURN_POSTPONE:
 		/* Cache acquired autoconf config and wait for DHCPv6 to complete */
@@ -2865,7 +2871,7 @@ ip6_config_changed (NMIP6Manager *ip6_manager,
 		g_object_unref (priv->ac_ip6_config);
 	priv->ac_ip6_config = nm_ip6_manager_get_ip6_config (ip6_manager, ifindex);
 
-	if (ip6_config_merge_and_apply (self, NULL, &reason) == FALSE) {
+	if (ip6_config_merge_and_apply (self, &reason) == FALSE) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to Router Advertisement.",
 		             nm_device_get_ip_iface (self));
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
@@ -3192,8 +3198,12 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 		g_assert (ip6_config);
-		nm_device_activate_schedule_ip6_config_result (self, ip6_config);
-		g_object_unref (ip6_config);
+		/* Here we get a static IPv6 config, like for Shared where it's
+		 * autogenerated or from modems where it comes from ModemManager.
+		 */
+		g_warn_if_fail (priv->ac_ip6_config == NULL);
+		priv->ac_ip6_config = ip6_config;
+		nm_device_activate_schedule_ip6_config_result (self);
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		return FALSE;
@@ -3741,7 +3751,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
-	NMIP6Config *config = NULL;
 	const char *iface;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
@@ -3759,9 +3768,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	config = g_object_get_data (G_OBJECT (req), PENDING_IP6_CONFIG);
-	g_assert (config);
-
 	/* Make sure the interface is up again just because */
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (ifindex && !nm_platform_link_is_up (ifindex))
@@ -3769,9 +3775,9 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 
 	/* Allow setting MTU etc */
 	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
-		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, config);
+		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self);
 
-	if (ip6_config_merge_and_apply (self, config, &reason)) {
+	if (ip6_config_merge_and_apply (self, &reason)) {
 		/* Enter the IP_CHECK state if this is the first method to complete */
 		priv->ip6_state = IP_DONE;
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
@@ -3786,36 +3792,17 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) complete.",
 	             iface);
 
-	/* Balance IP config creation; nm_device_set_ip6_config() takes a reference */
-	g_object_set_data (G_OBJECT (req), PENDING_IP6_CONFIG, NULL);
-
 	return FALSE;
 }
 
 void
-nm_device_activate_schedule_ip6_config_result (NMDevice *self, NMIP6Config *config)
+nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
-
-	if (config == NULL) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-		return;
-	}
-
-	/* Save the pending config */
-	g_object_set_data_full (G_OBJECT (priv->act_request),
-	                        PENDING_IP6_CONFIG,
-	                        g_object_ref (config),
-	                        g_object_unref);
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 
-	nm_log_info (LOGD_DEVICE | LOGD_IP4,
+	nm_log_info (LOGD_DEVICE | LOGD_IP6,
 		         "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
 		         nm_device_get_iface (self));
 }
