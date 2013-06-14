@@ -167,7 +167,7 @@ get_capabilities_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 	if (value && G_VALUE_HOLDS (value, G_TYPE_STRV)) {
 		priv->ap_support = AP_SUPPORT_NO;
 		for (iter = g_value_get_boxed (value); iter && *iter; iter++) {
-			if (strcasecmp (*iter, "ap"))
+			if (strcasecmp (*iter, "ap") == 0)
 				priv->ap_support = AP_SUPPORT_YES;
 		}
 	}
@@ -186,7 +186,7 @@ get_capabilities_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 	value = g_hash_table_lookup (props, "EapMethods");
 	if (value && G_VALUE_HOLDS (value, G_TYPE_STRV)) {
 		for (iter = g_value_get_boxed (value); iter && *iter; iter++) {
-			if (strcasecmp (*iter, "fast"))
+			if (strcasecmp (*iter, "fast") == 0)
 				priv->fast_supported = TRUE;
 		}
 	}
