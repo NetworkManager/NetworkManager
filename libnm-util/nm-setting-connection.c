@@ -92,6 +92,7 @@ typedef struct {
 	gboolean read_only;
 	char *zone;
 	GSList *secondaries; /* secondary connections to activate with the base connection */
+	guint gateway_ping_timeout;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -108,6 +109,7 @@ enum {
 	PROP_MASTER,
 	PROP_SLAVE_TYPE,
 	PROP_SECONDARIES,
+	PROP_GATEWAY_PING_TIMEOUT,
 
 	LAST_PROP
 };
@@ -656,6 +658,24 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
 	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
 }
 
+/**
+ * nm_setting_connection_get_gateway_ping_timeout:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the value contained in the #NMSettingConnection:gateway-ping-timeout
+ * property.
+ *
+ * Since: 0.9.10
+ **/
+guint32
+nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->gateway_ping_timeout;
+}
+
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -920,6 +940,9 @@ set_property (GObject *object, guint prop_id,
 		g_slist_free_full (priv->secondaries, g_free);
 		priv->secondaries = g_value_dup_boxed (value);
 		break;
+	case PROP_GATEWAY_PING_TIMEOUT:
+		priv->gateway_ping_timeout = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -979,6 +1002,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SECONDARIES:
 		g_value_set_boxed (value, priv->secondaries);
+		break;
+	case PROP_GATEWAY_PING_TIMEOUT:
+		g_value_set_uint (value, priv->gateway_ping_timeout);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1267,4 +1293,22 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                             "when the base connection itself is activated.",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
 		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	/**
+	 * NMSettingConnection:gateway-ping-timeout:
+	 *
+	 * If greater than zero, delay success of IP addressing until either the
+	 * timeout is reached, or an IP gateway replies to a ping.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_GATEWAY_PING_TIMEOUT,
+		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
+		                    "Gateway Ping Timeout",
+		                    "If greater than zero, delay success of IP "
+		                    "addressing until either the timeout is reached, or "
+		                    "an IP gateway replies to a ping.",
+		                    0, 30, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

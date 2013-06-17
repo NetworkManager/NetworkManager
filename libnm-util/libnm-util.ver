@@ -241,6 +241,7 @@ global:
 	nm_setting_connection_error_quark;
 	nm_setting_connection_get_autoconnect;
 	nm_setting_connection_get_connection_type;
+	nm_setting_connection_get_gateway_ping_timeout;
 	nm_setting_connection_get_id;
 	nm_setting_connection_get_interface_name;
 	nm_setting_connection_get_master;
