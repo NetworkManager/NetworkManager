@@ -115,12 +115,8 @@ guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 static guint
 get_hw_address_length (NMDevice *device)
 {
-	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-
-	if (priv->have_iface)
-		return ETH_ALEN;
-	else
-		return 0;
+	/* HW address is the Bluetooth HW address of the remote device */
+	return ETH_ALEN;
 }
 
 static guint32
