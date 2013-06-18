@@ -246,7 +246,7 @@ _nmcli()
                         ;;
                 esac
 
-                _nmcli_list "show up down add delete help"
+                _nmcli_list "show up down add delete reload help"
                 ;;
 
             device)
