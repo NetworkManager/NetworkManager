@@ -580,6 +580,10 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 			if (strcmp (*iter, NM_SETTING_VPN_SERVICE_TYPE))
 				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), *iter, value);
 		}
+		if (NM_IS_SETTING_BOND (setting)) {
+			if (strcmp (*iter, NM_SETTING_BOND_INTERFACE_NAME))
+				nm_setting_bond_add_option (NM_SETTING_BOND (setting), *iter, value);
+		}
 		g_free (value);
 	}
 	g_strfreev (keys);
@@ -986,6 +990,10 @@ read_one_setting_value (NMSetting *setting,
 
 	/* VPN properties don't have the exact key name */
 	if (NM_IS_SETTING_VPN (setting))
+		check_for_key = FALSE;
+
+	/* Bonding 'options' don't have the exact key name. The options are right under [bond] group. */
+	if (NM_IS_SETTING_BOND (setting))
 		check_for_key = FALSE;
 
 	/* Check for the exact key in the GKeyFile if required.  Most setting
