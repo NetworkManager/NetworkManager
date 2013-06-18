@@ -121,11 +121,19 @@ typedef struct {
 	void (*ip6_config)     (NMVPNPlugin *plugin,
 	                        GHashTable  *config);
 
+	/* more methods */
+	gboolean (*new_secrets)  (NMVPNPlugin *plugin,
+	                          NMConnection *connection,
+	                          GError **error);
+
+	gboolean (*connect_interactive) (NMVPNPlugin *plugin,
+	                                 NMConnection *connection,
+	                                 GHashTable *details,
+	                                 GError **error);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
 } NMVPNPluginClass;
 
 GType  nm_vpn_plugin_get_type       (void);
@@ -136,6 +144,10 @@ DBusGConnection   *nm_vpn_plugin_get_connection (NMVPNPlugin *plugin);
 NMVPNServiceState  nm_vpn_plugin_get_state      (NMVPNPlugin *plugin);
 void               nm_vpn_plugin_set_state      (NMVPNPlugin *plugin,
                                                  NMVPNServiceState state);
+
+void               nm_vpn_plugin_secrets_required (NMVPNPlugin *plugin,
+                                                   const char *message,
+                                                   const char **hints);
 
 void               nm_vpn_plugin_set_login_banner (NMVPNPlugin *plugin,
                                                    const char *banner);

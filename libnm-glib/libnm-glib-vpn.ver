@@ -7,6 +7,7 @@ global:
 	nm_vpn_plugin_get_connection;
 	nm_vpn_plugin_get_state;
 	nm_vpn_plugin_get_type;
+	nm_vpn_plugin_secrets_required;
 	nm_vpn_plugin_set_ip4_config;
 	nm_vpn_plugin_set_login_banner;
 	nm_vpn_plugin_set_state;
