@@ -1311,9 +1311,8 @@ manager_request_ip6_info (gpointer user_data)
 	NMIP6Manager *manager = user_data;
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (manager);
 
-	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
-	
 	priv->request_ip6_info_id = 0;
+	nm_netlink_monitor_request_ip6_info (priv->monitor, NULL);
 	return FALSE;
 }
 
@@ -1650,6 +1649,9 @@ static void
 finalize (GObject *object)
 {
 	NMIP6ManagerPrivate *priv = NM_IP6_MANAGER_GET_PRIVATE (object);
+
+	if (priv->request_ip6_info_id)
+		g_source_remove (priv->request_ip6_info_id);
 
 	g_signal_handler_disconnect (priv->monitor, priv->netlink_id);
 
