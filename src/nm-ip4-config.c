@@ -129,6 +129,12 @@ nm_ip4_config_new_for_interface (int ifindex)
 	routes_array = nm_platform_ip4_route_get_all (ifindex);
 	routes = (NMPlatformIP4Route *)routes_array->data;
 	for (i = 0; i < routes_array->len; i++) {
+		/* Default route ignored; it's handled internally by NM and not
+		 * tracked in the device's IP config.
+		 */
+		if (routes[i].plen == 0)
+			continue;
+
 		route = nm_ip4_route_new ();
 		nm_ip4_route_set_dest (route, routes[i].network);
 		nm_ip4_route_set_prefix (route, routes[i].plen);
