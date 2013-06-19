@@ -687,6 +687,7 @@ src/settings/plugins/keyfile/tests/Makefile
 src/settings/plugins/keyfile/tests/keyfiles/Makefile
 src/settings/plugins/example/Makefile
 src/settings/tests/Makefile
+src/platform/Makefile
 src/platform/tests/Makefile
 src/devices/wimax/Makefile
 libnm-util/libnm-util.pc
