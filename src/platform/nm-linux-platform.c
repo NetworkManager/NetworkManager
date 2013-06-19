@@ -645,9 +645,15 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	memset (route, 0, sizeof (*route));
 	route->ifindex = rtnl_route_nh_get_ifindex (nexthop);
 	route->plen = nl_addr_get_prefixlen (dst);
-	memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
-	if (gw)
+	/* Workaround on previous workaround for libnl default route prefixlen bug. */
+	if (nl_addr_get_len (dst)) {
+		g_assert (nl_addr_get_len (dst) == sizeof (route->network));
+		memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
+	}
+	if (gw) {
+		g_assert (nl_addr_get_len (gw) == sizeof (route->network));
 		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
+	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
 }
@@ -666,9 +672,15 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	memset (route, 0, sizeof (*route));
 	route->ifindex = rtnl_route_nh_get_ifindex (nexthop);
 	route->plen = nl_addr_get_prefixlen (dst);
-	memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
-	if (gw)
+	/* Workaround on previous workaround for libnl default route prefixlen bug. */
+	if (nl_addr_get_len (dst)) {
+		g_assert (nl_addr_get_len (dst) == sizeof (route->network));
+		memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
+	}
+	if (gw) {
+		g_assert (nl_addr_get_len (gw) == sizeof (route->network));
 		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
+	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
 }
@@ -2037,7 +2049,8 @@ build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gcon
 	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
 	struct rtnl_nexthop *nexthop = rtnl_route_nh_alloc ();
 	int addrlen = (family == AF_INET) ? sizeof (in_addr_t) : sizeof (struct in6_addr);
-	auto_nl_addr struct nl_addr *dst = nl_addr_build (family, network, addrlen);
+	/* Workaround a libnl bug by using zero destination address length for default routes */
+	auto_nl_addr struct nl_addr *dst = nl_addr_build (family, network, plen ? addrlen : 0);
 	auto_nl_addr struct nl_addr *gw = gateway ? nl_addr_build (family, gateway, addrlen) : NULL;
 
 	g_assert (rtnlroute && dst && nexthop);
