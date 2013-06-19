@@ -80,7 +80,7 @@ typedef void (*NMSecretAgentCallback) (NMSecretAgent *agent,
 gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
                                             NMConnection *connection,
                                             const char *setting_name,
-                                            const char *hint,
+                                            const char **hints,
                                             NMSettingsGetSecretsFlags flags,
                                             NMSecretAgentCallback callback,
                                             gpointer callback_data);

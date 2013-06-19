@@ -116,6 +116,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 	guint32 call_id;
 	NMConnection *connection;
 	gboolean user_requested;
+	const char *hints[2] = { hint, NULL };
 
 	g_return_val_if_fail (self, 0);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), 0);
@@ -137,7 +138,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 	                                              nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (self)),
 	                                              setting_name,
 	                                              flags,
-	                                              hint,
+	                                              hints,
 	                                              get_secrets_cb,
 	                                              info,
 	                                              NULL);

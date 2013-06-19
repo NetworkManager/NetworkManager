@@ -646,7 +646,7 @@ typedef struct {
 	NMSettingsGetSecretsFlags flags;
 	NMConnection *connection;
 	char *setting_name;
-	char *hint;
+	char **hints;
 
 	GHashTable *existing_secrets;
 
@@ -670,7 +670,7 @@ connection_request_free (gpointer data)
 
 	g_object_unref (req->connection);
 	g_free (req->setting_name);
-	g_free (req->hint);
+	g_strfreev (req->hints);
 	if (req->existing_secrets)
 		g_hash_table_unref (req->existing_secrets);
 	if (req->chain)
@@ -707,7 +707,7 @@ connection_request_new_get (NMConnection *connection,
                             const char *setting_name,
                             const char *verb,
                             NMSettingsGetSecretsFlags flags,
-                            const char *hint,
+                            const char **hints,
                             NMAgentSecretsResultFunc callback,
                             gpointer callback_data,
                             gpointer other_data2,
@@ -736,7 +736,7 @@ connection_request_new_get (NMConnection *connection,
 	if (existing_secrets)
 		req->existing_secrets = g_hash_table_ref (existing_secrets);
 	req->setting_name = g_strdup (setting_name);
-	req->hint = g_strdup (hint);
+	req->hints = g_strdupv ((char **) hints);
 	req->flags = flags;
 	req->callback = callback;
 	req->callback_data = callback_data;
@@ -891,7 +891,7 @@ get_agent_request_secrets (ConnectionRequest *req, gboolean include_system_secre
 	parent->current_call_id = nm_secret_agent_get_secrets (parent->current,
 	                                                       tmp,
 	                                                       req->setting_name,
-	                                                       req->hint,
+	                                                       (const char **) req->hints,
 	                                                       req->flags,
 	                                                       get_done_cb,
 	                                                       req);
@@ -1140,7 +1140,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
                               GHashTable *existing_secrets,
                               const char *setting_name,
                               NMSettingsGetSecretsFlags flags,
-                              const char *hint,
+                              const char **hints,
                               NMAgentSecretsResultFunc callback,
                               gpointer callback_data,
                               gpointer other_data2,
@@ -1173,7 +1173,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	                                  setting_name,
 	                                  "getting",
 	                                  flags,
-	                                  hint,
+	                                  hints,
 	                                  callback,
 	                                  callback_data,
 	                                  other_data2,

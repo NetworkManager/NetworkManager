@@ -108,7 +108,7 @@ guint32 nm_settings_connection_get_secrets (NMSettingsConnection *connection,
                                             gulong uid,
                                             const char *setting_name,
                                             NMSettingsGetSecretsFlags flags,
-                                            const char *hint,
+                                            const char **hints,
                                             NMSettingsConnectionSecretsFunc callback,
                                             gpointer callback_data,
                                             GError **error);

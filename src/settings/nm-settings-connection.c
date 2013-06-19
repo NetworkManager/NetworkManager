@@ -848,7 +848,8 @@ agent_secrets_done_cb (NMAgentManager *manager,
  * to this UID
  * @setting_name: the setting to return secrets for
  * @flags: flags to modify the secrets request
- * @hint: the name of a key in @setting_name for which a secret may be required
+ * @hints: key names in @setting_name for which secrets may be required, or some
+ *   other information about the request
  * @callback: the function to call with returned secrets
  * @callback_data: user data to pass to @callback
  *
@@ -863,7 +864,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     gulong uid,
                                     const char *setting_name,
                                     NMSettingsGetSecretsFlags flags,
-                                    const char *hint,
+                                    const char **hints,
                                     NMSettingsConnectionSecretsFunc callback,
                                     gpointer callback_data,
                                     GError **error)
@@ -871,6 +872,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GHashTable *existing_secrets;
 	guint32 call_id = 0;
+	char *joined_hints = NULL;
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.
@@ -898,7 +900,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	                                        existing_secrets,
 	                                        setting_name,
 	                                        flags,
-	                                        hint,
+	                                        hints,
 	                                        agent_secrets_done_cb,
 	                                        self,
 	                                        callback,
@@ -906,12 +908,17 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_hash_table_unref (existing_secrets);
 
-	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hint '%s'",
-	            nm_connection_get_uuid (NM_CONNECTION (self)),
-	            setting_name,
-	            call_id,
-	            flags,
-	            hint);
+	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		if (hints)
+			joined_hints = g_strjoinv (",", (char **) hints);
+		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hints '%s'",
+		            nm_connection_get_uuid (NM_CONNECTION (self)),
+		            setting_name,
+		            call_id,
+		            flags,
+		            joined_hints ? joined_hints : "(none)");
+		g_free (joined_hints);
+	}
 
 	return call_id;
 }

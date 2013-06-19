@@ -251,14 +251,13 @@ gconstpointer
 nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMConnection *connection,
                              const char *setting_name,
-                             const char *hint,
+                             const char **hints,
                              NMSettingsGetSecretsFlags flags,
                              NMSecretAgentCallback callback,
                              gpointer callback_data)
 {
 	NMSecretAgentPrivate *priv;
 	GHashTable *hash;
-	const char *hints[2] = { hint, NULL };
 	Request *r;
 
 	g_return_val_if_fail (self != NULL, NULL);
