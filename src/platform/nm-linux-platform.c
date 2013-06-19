@@ -231,7 +231,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 }
 
 /* libnl 3.2 doesn't seem to provide such a generic way to add libnl-route objects. */
-static gboolean
+static int
 add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 {
 	switch (object_type_from_nl_object (object)) {
