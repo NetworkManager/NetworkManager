@@ -145,7 +145,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 	g_assert (cid);
 
 	g_hash_table_insert (priv->connections,
-	                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (connection)),
+	                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
 	                     connection);
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    read connection '%s'", cid);
 
@@ -733,7 +733,7 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 	GFile *file;
 	GFileMonitor *monitor;
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
 	/* We watch SC_NETWORK_FILE via NMInotifyHelper (which doesn't track file creation but
 	 * *does* track modifications made via other hard links), since we expect it to always
