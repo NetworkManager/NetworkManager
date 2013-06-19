@@ -153,14 +153,14 @@ virtual_add (NMLinkType link_type, const char *name, SignalData *link_added, Sig
 	case NM_LINK_TYPE_VLAN:
 		/* Don't call link_callback for the bridge interface */
 		if (nm_platform_bridge_add (PARENT_NAME))
-			accept_signal (link_added);
+			wait_signal (link_added);
+
 		g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (PARENT_NAME)));
 		accept_signal (link_changed);
 
 		return nm_platform_vlan_add (name,
 			nm_platform_link_get_ifindex (PARENT_NAME),
 			VLAN_ID, 0);
-
 	default:
 		g_error ("Link type %d unhandled.", link_type);
 	}
@@ -176,7 +176,7 @@ test_slave (int master, int type, SignalData *link_added, SignalData *master_cha
 	g_assert (virtual_add (type, SLAVE_NAME, link_added, link_changed));
 	ifindex = nm_platform_link_get_ifindex (SLAVE_NAME);
 	g_assert (ifindex > 0);
-	accept_signal (link_added);
+	wait_signal (link_added);
 
 	/* Set the slave up to see whether master's IFF_LOWER_UP is set correctly.
 	 *
@@ -288,7 +288,7 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 		g_assert_cmpint (vlan_id, ==, VLAN_ID);
 		no_error ();
 	}
-	accept_signal (link_added);
+	wait_signal (link_added);
 
 	/* Add again */
 	g_assert (!virtual_add (link_type, DEVICE_NAME, link_added, link_changed));
@@ -408,7 +408,7 @@ test_internal (void)
 	/* Add device */
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
 	no_error ();
-	accept_signal (link_added);
+	wait_signal (link_added);
 
 	/* Try to add again */
 	g_assert (!nm_platform_dummy_add (DEVICE_NAME));
@@ -473,7 +473,7 @@ test_internal (void)
 	/* Add back */
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
 	no_error ();
-	accept_signal (link_added);
+	wait_signal (link_added);
 
 	/* Delete device by name */
 	g_assert (nm_platform_link_delete_by_name (DEVICE_NAME));
