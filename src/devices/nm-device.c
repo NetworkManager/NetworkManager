@@ -5587,7 +5587,12 @@ nm_device_queue_state (NMDevice *self,
 
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
-		g_warn_if_fail (priv->queued_state.id == 0);
+		if (priv->queued_state.state == state)
+			return;
+		nm_log_warn (LOGD_DEVICE, "(%s): overwriting previously queued state change to %s (%s)",
+					 nm_device_get_iface (self),
+					 state_to_string (priv->queued_state.state),
+					 reason_to_string (priv->queued_state.reason));
 		nm_device_queued_state_clear (self);
 	}
 
@@ -5595,8 +5600,8 @@ nm_device_queue_state (NMDevice *self,
 	priv->queued_state.reason = reason;
 	priv->queued_state.id = g_idle_add (queued_set_state, self);
 
-	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s (id %d)",
-	            nm_device_get_iface (self), state_to_string (state),
+	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s due to %s (id %d)",
+	            nm_device_get_iface (self), state_to_string (state), reason_to_string (reason),
 	            priv->queued_state.id);
 }
 
