@@ -35,6 +35,8 @@ typedef struct {
 	GArray *ip6_addresses;
 	GArray *ip4_routes;
 	GArray *ip6_routes;
+
+	GSList *link_added_ids;
 } NMFakePlatformPrivate;
 
 typedef struct {
@@ -160,18 +162,49 @@ link_get_all (NMPlatform *platform)
 	return links;
 }
 
+typedef struct {
+	NMPlatform *platform;
+	int ifindex;
+	guint id;
+} LinkAddedInfo;
+
+static gboolean
+link_added_emit (gpointer user_data)
+{
+	LinkAddedInfo *info = user_data;
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (info->platform);
+	NMFakePlatformLink *device;
+
+	priv->link_added_ids = g_slist_remove (priv->link_added_ids, GUINT_TO_POINTER (info->id));
+
+	device = link_get (info->platform, info->ifindex);
+	g_assert (device);
+	g_signal_emit_by_name (info->platform, NM_PLATFORM_LINK_ADDED, info->ifindex, &(device->link));
+	return FALSE;
+}
+
 static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink device;
+	LinkAddedInfo *info;
 
 	link_init (&device, priv->links->len, type, name);
 
 	g_array_append_val (priv->links, device);
 
-	if (device.link.ifindex)
-		g_signal_emit_by_name (platform, NM_PLATFORM_LINK_ADDED, device.link.ifindex, &device.link);
+	if (device.link.ifindex) {
+		/* Platform requires LINK_ADDED signal emission from an idle handler */
+		info = g_new0 (LinkAddedInfo, 1);
+		info->platform = platform;
+		info->ifindex = device.link.ifindex;
+		info->id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+		                            link_added_emit,
+		                            info,
+		                            g_free);
+		priv->link_added_ids = g_slist_prepend (priv->link_added_ids, GUINT_TO_POINTER (info->id));
+	}
 
 	return TRUE;
 }
@@ -989,6 +1022,11 @@ nm_fake_platform_finalize (GObject *object)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (object);
 	int i;
+	GSList *iter;
+
+	for (iter = priv->link_added_ids; iter; iter = iter->next)
+		g_source_remove (GPOINTER_TO_UINT (iter->data));
+	g_slist_free (priv->link_added_ids);
 
 	g_hash_table_unref (priv->options);
 	for (i = 0; i < priv->links->len; i++) {

@@ -1,7 +1,7 @@
 #include "test-common.h"
 
 SignalData *
-add_signal_full (const char *name, GCallback callback, int ifindex)
+add_signal_full (const char *name, GCallback callback, int ifindex, const char *ifname)
 {
 	SignalData *data = g_new0 (SignalData, 1);
 
@@ -9,6 +9,7 @@ add_signal_full (const char *name, GCallback callback, int ifindex)
 	data->received = FALSE;
 	data->handler_id = g_signal_connect (nm_platform_get (), name, callback, data);
 	data->ifindex = ifindex;
+	data->ifname = ifname;
 
 	g_assert (data->handler_id >= 0);
 

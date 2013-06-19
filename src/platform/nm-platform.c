@@ -320,7 +320,8 @@ nm_platform_link_get_all (void)
  * @type: Interface type
  *
  * Add a software interface. Sets platform->error to NM_PLATFORM_ERROR_EXISTS
- * if interface is already already exists.
+ * if interface is already already exists.  Any link-added signal will be
+ * emitted from an idle handler and not within this function.
  */
 static gboolean
 nm_platform_link_add (const char *name, NMLinkType type)

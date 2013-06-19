@@ -18,10 +18,12 @@ typedef struct {
 	gboolean received;
 	GMainLoop *loop;
 	int ifindex;
+	const char *ifname;
 } SignalData;
 
-SignalData *add_signal_full (const char *name, GCallback callback, int ifindex);
-#define add_signal(name, callback) add_signal_full (name, (GCallback) callback, 0)
+SignalData *add_signal_full (const char *name, GCallback callback, int ifindex, const char *ifname);
+#define add_signal(name, callback) add_signal_full (name, (GCallback) callback, 0, NULL)
+#define add_signal_ifname(name, callback, ifname) add_signal_full (name, (GCallback) callback, 0, ifname)
 void accept_signal (SignalData *data);
 void wait_signal (SignalData *data);
 void free_signal (SignalData *data);
