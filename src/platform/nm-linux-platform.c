@@ -1120,8 +1120,10 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 	 * This is basically the same check as in the original code and could
 	 * potentially be improved.
 	 */
-	if (nle == -NLE_OBJ_NOTFOUND)
-		return NM_PLATFORM_ERROR_NO_FIRMWARE;
+	if (nle == -NLE_OBJ_NOTFOUND) {
+		platform->error = NM_PLATFORM_ERROR_NO_FIRMWARE;
+		return FALSE;
+	}
 
 	return refresh_object (platform, (struct nl_object *) rtnllink, nle);
 }
