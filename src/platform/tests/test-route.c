@@ -45,7 +45,7 @@ test_ip4_route ()
 	SignalData *route_removed = add_signal (NM_PLATFORM_IP4_ROUTE_REMOVED, ip4_route_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	GArray *routes;
-	NMPlatformIP4Route rts[3];
+	NMPlatformIP4Route rts[4];
 	in_addr_t network;
 	int plen = 24;
 	in_addr_t gateway;
@@ -69,6 +69,16 @@ test_ip4_route ()
 	g_assert (!nm_platform_ip4_route_add (ifindex, network, plen, gateway, metric, mss));
 	error (NM_PLATFORM_ERROR_EXISTS);
 
+	/* Add default route */
+	g_assert (!nm_platform_ip4_route_exists (ifindex, 0, 0, metric)); no_error ();
+	g_assert (nm_platform_ip4_route_add (ifindex, 0, 0, gateway, metric, mss)); no_error ();
+	g_assert (nm_platform_ip4_route_exists (ifindex, 0, 0, metric)); no_error ();
+	accept_signal (route_added);
+
+	/* Add default route again */
+	g_assert (!nm_platform_ip4_route_add (ifindex, 0, 0, gateway, metric, mss));
+	error (NM_PLATFORM_ERROR_EXISTS);
+
 	/* Test route listing */
 	routes = nm_platform_ip4_route_get_all (ifindex);
 	memset (rts, 0, sizeof (rts));
@@ -84,7 +94,13 @@ test_ip4_route ()
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
 	rts[1].mss = mss;
-	g_assert_cmpint (routes->len, ==, 2);
+	rts[2].network = 0;
+	rts[2].plen = 0;
+	rts[2].ifindex = ifindex;
+	rts[2].gateway = gateway;
+	rts[2].metric = metric;
+	rts[2].mss = mss;
+	g_assert_cmpint (routes->len, ==, 3);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	g_array_unref (routes);
 
@@ -108,7 +124,7 @@ test_ip6_route ()
 	SignalData *route_removed = add_signal (NM_PLATFORM_IP6_ROUTE_REMOVED, ip6_route_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	GArray *routes;
-	NMPlatformIP6Route rts[3];
+	NMPlatformIP6Route rts[4];
 	struct in6_addr network;
 	int plen = 64;
 	struct in6_addr gateway;
@@ -132,6 +148,16 @@ test_ip6_route ()
 	g_assert (!nm_platform_ip6_route_add (ifindex, network, plen, gateway, metric, mss));
 	error (NM_PLATFORM_ERROR_EXISTS);
 
+	/* Add default route */
+	g_assert (!nm_platform_ip6_route_exists (ifindex, in6addr_any, 0, metric)); no_error ();
+	g_assert (nm_platform_ip6_route_add (ifindex, in6addr_any, 0, gateway, metric, mss)); no_error ();
+	g_assert (nm_platform_ip6_route_exists (ifindex, in6addr_any, 0, metric)); no_error ();
+	accept_signal (route_added);
+
+	/* Add default route again */
+	g_assert (!nm_platform_ip6_route_add (ifindex, in6addr_any, 0, gateway, metric, mss));
+	error (NM_PLATFORM_ERROR_EXISTS);
+
 	/* Test route listing */
 	routes = nm_platform_ip6_route_get_all (ifindex);
 	memset (rts, 0, sizeof (rts));
@@ -147,7 +173,13 @@ test_ip6_route ()
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
 	rts[1].mss = mss;
-	g_assert_cmpint (routes->len, ==, 2);
+	rts[2].network = in6addr_any;
+	rts[2].plen = 0;
+	rts[2].ifindex = ifindex;
+	rts[2].gateway = gateway;
+	rts[2].metric = metric;
+	rts[2].mss = mss;
+	g_assert_cmpint (routes->len, ==, 3);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	g_array_unref (routes);
 
