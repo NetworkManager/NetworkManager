@@ -1,8 +1,12 @@
 #!/bin/sh
 # Run this to generate all the initial makefiles, etc.
 
+set -e
+
 srcdir=`dirname $0`
-test -z "$srcdir" && srcdir=.
+if test -z "$srcdir"; then
+    srcdir=.
+fi
 
 olddir=`pwd`
 
@@ -25,11 +29,11 @@ if test -d $srcdir/.git; then
     git submodule update
 fi
 
-gtkdocize || exit 1
+gtkdocize
 autopoint --force
 AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
 
 cd $olddir
 if test -z "$NOCONFIGURE"; then
-	$srcdir/configure --enable-maintainer-mode "$@"
+	exec $srcdir/configure --enable-maintainer-mode "$@"
 fi
