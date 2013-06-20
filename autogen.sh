@@ -19,9 +19,11 @@ PKG_NAME=NetworkManager
 cd $srcdir
 
 # Fetch submodules if needed
-echo "+ Setting up submodules"
-git submodule init
-git submodule update
+if test -d $srcdir/.git; then
+    echo "+ Setting up submodules"
+    git submodule init
+    git submodule update
+fi
 
 gtkdocize || exit 1
 autopoint --force
