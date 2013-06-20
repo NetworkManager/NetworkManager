@@ -104,6 +104,10 @@ void nm_settings_add_connection (NMSettings *self,
  */
 GSList *nm_settings_get_connections (NMSettings *settings);
 
+NMSettingsConnection *nm_settings_add_connection_internal (NMSettings *settings,
+                                                                  NMConnection *connection,
+                                                                  gboolean save_to_disk,
+                                                                  GError **error);
 NMSettingsConnection *nm_settings_get_connection_by_path (NMSettings *settings,
                                                           const char *path);
 

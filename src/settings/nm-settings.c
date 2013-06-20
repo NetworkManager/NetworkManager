@@ -876,11 +876,11 @@ remove_default_wired_connection (NMSettings *self,
 	}
 }
 
-static NMSettingsConnection *
-add_new_connection (NMSettings *self,
-                    NMConnection *connection,
-                    gboolean save_to_disk,
-                    GError **error)
+NMSettingsConnection *
+nm_settings_add_connection_internal (NMSettings *self,
+                                     NMConnection *connection,
+                                     gboolean save_to_disk,
+                                     GError **error)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
@@ -1007,7 +1007,7 @@ pk_add_cb (NMAuthChain *chain,
 		connection = nm_auth_chain_get_data (chain, "connection");
 		g_assert (connection);
 		save_to_disk = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "save-to-disk"));
-		added = add_new_connection (self, connection, save_to_disk, &error);
+		added = nm_settings_add_connection_internal (self, connection, save_to_disk, &error);
 	}
 
 	callback = nm_auth_chain_get_data (chain, "callback");
@@ -1456,7 +1456,7 @@ default_wired_try_update (NMDefaultWiredConnection *wired,
 	g_assert (id);
 
 	remove_default_wired_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
-	added = add_new_connection (self, NM_CONNECTION (wired), TRUE, &error);
+	added = nm_settings_add_connection_internal (self, NM_CONNECTION (wired), TRUE, &error);
 	if (added) {
 		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (wired), delete_cb, NULL);
 
