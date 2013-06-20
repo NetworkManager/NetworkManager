@@ -47,6 +47,10 @@ dump_interface (NMPlatformLink *link)
 	if (vlan_parent)
 		printf ("    vlan parent %d id %d\n", vlan_parent, vlan_id);
 
+	if (nm_platform_link_is_software (link->ifindex))
+		printf ("    class software\n");
+	if (nm_platform_link_supports_slaves (link->ifindex))
+		printf ("    class supports-slaves\n");
 	if (nm_platform_link_supports_carrier_detect (link->ifindex))
 		printf ("    feature carrier-detect\n");
 	if (nm_platform_link_supports_vlans (link->ifindex))

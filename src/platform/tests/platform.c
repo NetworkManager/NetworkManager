@@ -175,6 +175,8 @@ do_link_get_ifindex (char **argv)
 
 LINK_CMD_GET_FULL (get_name, string, value)
 LINK_CMD_GET_FULL (get_type, decimal, value > 0)
+LINK_CMD_GET (is_software, boolean)
+LINK_CMD_GET (supports_slaves, boolean)
 
 LINK_CMD (set_up)
 LINK_CMD (set_down)
@@ -686,6 +688,8 @@ static const command_t commands[] = {
 	{ "link-get-ifindex>", "get interface index", do_link_get_ifindex, 1, "<ifname>" },
 	{ "link-get-name", "get interface name", do_link_get_name, 1, "<ifindex>" },
 	{ "link-get-type", "get interface type", do_link_get_type, 1, "<ifname/ifindex>" },
+	{ "link-is-software", "check if interface is a software one", do_link_is_software, 1, "<ifname/ifindex>" },
+	{ "link-supports-slaves", "check if interface supports slaves", do_link_supports_slaves, 1, "<ifname/ifindex>" },
 	{ "link-set-up", "set interface up", do_link_set_up, 1, "<ifname/ifindex>" },
 	{ "link-set-down", "set interface down", do_link_set_down, 1, "<ifname/ifindex>" },
 	{ "link-set-arp", "activate interface arp", do_link_set_arp, 1, "<ifname/ifindex>" },

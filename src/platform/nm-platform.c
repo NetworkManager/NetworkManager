@@ -503,6 +503,31 @@ nm_platform_link_get_type_name (int ifindex)
 	return klass->link_get_type_name (platform, ifindex);
 }
 
+/**
+ * nm_platform_link_is_software:
+ * @ifindex: Interface index.
+ *
+ * Returns: %TRUE if ifindex belongs to a software interface, not backed by
+ * a physical device.
+ */
+gboolean
+nm_platform_link_is_software (int ifindex)
+{
+	return (nm_platform_link_get_type (ifindex) & 0x10000);
+}
+
+/**
+ * nm_platform_link_supports_slaves:
+ * @ifindex: Interface index.
+ *
+ * Returns: %TRUE if ifindex belongs to an interface capable of enslaving
+ * other interfaces.
+ */
+gboolean
+nm_platform_link_supports_slaves (int ifindex)
+{
+	return (nm_platform_link_get_type (ifindex) & 0x20000);
+}
 
 /**
  * nm_platform_link_is_up:

@@ -50,7 +50,17 @@ typedef enum {
 } NMPlatformError;
 
 typedef enum {
+	/* Please don't interpret type numbers outside nm-platform and use functions
+	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
+	 *
+	 * type & 0x10000 -> Software device type
+	 * type & 0x20000 -> Type supports slaves
+	 */
+
+	/* No type, used as error value */
 	NM_LINK_TYPE_NONE,
+
+	/* Unknown type  */
 	NM_LINK_TYPE_UNKNOWN,
 
 	/* Hardware types */
@@ -59,8 +69,8 @@ typedef enum {
 	NM_LINK_TYPE_OLPC_MESH,
 	NM_LINK_TYPE_WIFI,
 
-	/* Virtual types */
-	NM_LINK_TYPE_DUMMY,
+	/* Software types */
+	NM_LINK_TYPE_DUMMY = 0x10000,
 	NM_LINK_TYPE_GRE,
 	NM_LINK_TYPE_GRETAP,
 	NM_LINK_TYPE_IFB,
@@ -72,11 +82,10 @@ typedef enum {
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
 
-	/* Virtual types with slaves */
-	NM_LINK_TYPE_BRIDGE,
+	/* Software types with slaves */
+	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
 	NM_LINK_TYPE_BOND,
 	NM_LINK_TYPE_TEAM,
-
 } NMLinkType;
 
 typedef struct {
@@ -323,6 +332,8 @@ int nm_platform_link_get_ifindex (const char *name);
 const char *nm_platform_link_get_name (int ifindex);
 NMLinkType nm_platform_link_get_type (int ifindex);
 const char *nm_platform_link_get_type_name (int ifindex);
+gboolean nm_platform_link_is_software (int ifindex);
+gboolean nm_platform_link_supports_slaves (int ifindex);
 
 gboolean nm_platform_link_set_up (int ifindex);
 gboolean nm_platform_link_set_down (int ifindex);
