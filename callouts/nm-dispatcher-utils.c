@@ -60,25 +60,27 @@ add_domains (GSList *items,
              const char four_or_six)
 {
 	GValue *val;
-	GPtrArray *domains = NULL;
+	char **domains = NULL;
 	GString *tmp;
 	guint i;
 
 	/* Search domains */
 	val = g_hash_table_lookup (hash, "domains");
-	if (!val || !G_VALUE_HOLDS (val, DBUS_TYPE_G_ARRAY_OF_STRING))
+	if (!val)
 		return items;
 
-	domains = (GPtrArray *) g_value_get_boxed (val);
-	if (!domains || (domains->len == 0))
+	g_return_val_if_fail (G_VALUE_HOLDS (val, G_TYPE_STRV), items);
+
+	domains = (char **) g_value_get_boxed (val);
+	if (!domains || !domains[0])
 		return items;
 
 	tmp = g_string_new (NULL);
 	g_string_append_printf (tmp, "%sIP%c_DOMAINS=", prefix, four_or_six);
-	for (i = 0; i < domains->len; i++) {
+	for (i = 0; domains[i]; i++) {
 		if (i > 0)
 			g_string_append_c (tmp, ' ');
-		g_string_append (tmp, (char *) g_ptr_array_index (domains, i));
+		g_string_append (tmp, domains[i]);
 	}
 	items = g_slist_prepend (items, tmp->str);
 	g_string_free (tmp, FALSE);
