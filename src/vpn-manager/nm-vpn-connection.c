@@ -43,6 +43,7 @@
 #include "nm-glib-compat.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
+#include "nm-agent-manager.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -55,6 +56,8 @@ typedef enum {
 	SECRETS_REQ_EXISTING = 1,
 	/* New secrets required; ask an agent */
 	SECRETS_REQ_NEW = 2,
+	/* Plugin requests secrets interactively */
+	SECRETS_REQ_INTERACTIVE = 3,
 	/* Placeholder for bounds checking */
 	SECRETS_REQ_LAST
 } SecretsReq;
@@ -76,7 +79,8 @@ typedef struct {
 	NMVPNConnectionState vpn_state;
 	NMVPNConnectionStateReason failure_reason;
 	DBusGProxy *proxy;
-	guint ipconfig_timeout;
+	GHashTable *connect_hash;
+	guint connect_timeout;
 	gboolean has_ip4;
 	NMIP4Config *ip4_config;
 	guint32 ip4_internal_gw;
@@ -114,7 +118,14 @@ enum {
 	LAST_PROP
 };
 
-static void get_secrets (NMVPNConnection *self, SecretsReq secrets_idx);
+static void get_secrets (NMVPNConnection *self,
+                         SecretsReq secrets_idx,
+                         const char **hints);
+
+static void plugin_interactive_secrets_required (DBusGProxy *proxy,
+                                                 const char *message,
+                                                 const char **secrets,
+                                                 gpointer user_data);
 
 static NMActiveConnectionState
 ac_state_from_vpn_state (NMVPNConnectionState vpn_state)
@@ -226,7 +237,6 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
 		priv->secrets_id = 0;
 	}
-	priv->secrets_idx = SECRETS_REQ_SYSTEM;
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
@@ -240,12 +250,10 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 
 	switch (vpn_state) {
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-		/* Kick off the secrets requests; first we get existing system secrets
-		 * and ask the plugin if these are sufficient, next we get all existing
-		 * secrets from system and from user agents and ask the plugin again,
-		 * and last we ask the user for new secrets if required.
+		/* Do nothing; not part of 'default' because we don't want to touch
+		 * priv->secrets_req as NEED_AUTH is re-entered during interactive
+		 * secrets.
 		 */
-		get_secrets (connection, SECRETS_REQ_SYSTEM);
 		break;
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
 		/* Secrets no longer needed now that we're connected */
@@ -278,8 +286,9 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		/* Tear down and clean up the connection */
 		call_plugin_disconnect (connection);
 		vpn_cleanup (connection);
-		break;
+		/* Fall through */
 	default:
+		priv->secrets_idx = SECRETS_REQ_SYSTEM;
 		break;
 	}
 
@@ -748,7 +757,7 @@ nm_vpn_connection_config_maybe_complete (NMVPNConnection *connection,
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	if (priv->ipconfig_timeout == 0) {
+	if (priv->connect_timeout == 0) {
 		/* config_complete() was already called with an error;
 		 * ignore further calls.
 		 */
@@ -763,8 +772,8 @@ nm_vpn_connection_config_maybe_complete (NMVPNConnection *connection,
 		}
 	}
 
-	g_source_remove (priv->ipconfig_timeout);
-	priv->ipconfig_timeout = 0;
+	g_source_remove (priv->connect_timeout);
+	priv->connect_timeout = 0;
 
 	if (success) {
 		print_vpn_config (connection);
@@ -857,6 +866,12 @@ nm_vpn_connection_config_get (DBusGProxy *proxy,
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) reply received.",
 	             nm_connection_get_id (priv->connection));
 
+	if (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_CONNECT) {
+		nm_vpn_connection_set_vpn_state (connection,
+		                                 NM_VPN_CONNECTION_STATE_IP_CONFIG_GET,
+		                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
+	}
+
 	if (!process_generic_config (connection, config_hash))
 		return;
 
@@ -881,6 +896,12 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	NMIP4Config *config;
 	GValue *val;
 	int i;
+
+	if (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_CONNECT) {
+		nm_vpn_connection_set_vpn_state (connection,
+		                                 NM_VPN_CONNECTION_STATE_IP_CONFIG_GET,
+		                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
+	}
 
 	if (priv->has_ip4) {
 		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received.",
@@ -1028,6 +1049,12 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP6 Config Get) reply received.",
 	             nm_connection_get_id (priv->connection));
 
+	if (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_CONNECT) {
+		nm_vpn_connection_set_vpn_state (connection,
+		                                 NM_VPN_CONNECTION_STATE_IP_CONFIG_GET,
+		                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
+	}
+
 	if (g_hash_table_size (config_hash) == 0) {
 		priv->has_ip6 = FALSE;
 		nm_vpn_connection_config_maybe_complete (connection, TRUE);
@@ -1148,18 +1175,19 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 }
 
 static gboolean
-nm_vpn_connection_ip_config_timeout (gpointer user_data)
+connect_timeout_cb (gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVPNConnectionState state;
 
-	priv->ipconfig_timeout = 0;
+	priv->connect_timeout = 0;
 
-	/* If the activation request's state is still IP_CONFIG_GET and we're
-	 * in this timeout, cancel activation because it's taken too long.
-	 */
-	if (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_IP_CONFIG_GET) {
-		nm_log_warn (LOGD_VPN, "VPN connection '%s' (IP Config Get) timeout exceeded.",
+	/* Cancel activation if it's taken too long */
+	state = nm_vpn_connection_get_vpn_state (connection);
+	if (state == NM_VPN_CONNECTION_STATE_CONNECT ||
+	    state == NM_VPN_CONNECTION_STATE_IP_CONFIG_GET) {
+		nm_log_warn (LOGD_VPN, "VPN connection '%s' connect timeout exceeded.",
 		             nm_connection_get_id (priv->connection));
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
@@ -1170,31 +1198,62 @@ nm_vpn_connection_ip_config_timeout (gpointer user_data)
 }
 
 static void
-nm_vpn_connection_connect_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
+connect_success (NMVPNConnection *connection)
 {
-	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	/* 40 second timeout waiting for IP config signal from VPN service */
+	priv->connect_timeout = g_timeout_add_seconds (40, connect_timeout_cb, connection);
+
+	g_hash_table_destroy (priv->connect_hash);
+	priv->connect_hash = NULL;
+}
+
+static void
+connect_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	GError *err = NULL;
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (Connect) reply received.",
 	             nm_connection_get_id (priv->connection));
 
 	dbus_g_proxy_end_call (proxy, call, &err, G_TYPE_INVALID);
-	if (err) {
-		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.", 
-		             nm_connection_get_id (priv->connection), err->message);
-		g_error_free (err);
-		nm_vpn_connection_set_vpn_state (connection,
-		                                 NM_VPN_CONNECTION_STATE_FAILED,
-		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
-	} else {
-		nm_vpn_connection_set_vpn_state (connection,
-		                                 NM_VPN_CONNECTION_STATE_IP_CONFIG_GET,
-		                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
-		
-		/* 40 second timeout waiting for IP config signal from VPN service */
-		priv->ipconfig_timeout = g_timeout_add_seconds (40, nm_vpn_connection_ip_config_timeout, connection);
+	if (!err) {
+		connect_success (self);
+		return;
 	}
+
+	nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.", 
+	             nm_connection_get_id (priv->connection), err->message);
+	g_error_free (err);
+	nm_vpn_connection_set_vpn_state (self,
+	                                 NM_VPN_CONNECTION_STATE_FAILED,
+	                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
+}
+
+static void
+connect_interactive_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	GError *err = NULL;
+
+	nm_log_info (LOGD_VPN, "VPN connection '%s' (ConnectInteractive) reply received.",
+	             nm_connection_get_id (priv->connection));
+
+	dbus_g_proxy_end_call (proxy, call, &err, G_TYPE_INVALID);
+	if (!err) {
+		connect_success (self);
+		return;
+	}
+
+	/* Fall back to Connect() */
+	dbus_g_proxy_begin_call (priv->proxy, "Connect",
+	                         connect_cb, self, NULL,
+	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, priv->connect_hash,
+	                         G_TYPE_INVALID);
 }
 
 /* Add a username to a hashed connection */
@@ -1229,7 +1288,8 @@ static void
 really_activate (NMVPNConnection *connection, const char *username)
 {
 	NMVPNConnectionPrivate *priv;
-	GHashTable *hash;
+	NMAgentManager *agent_mgr;
+	GHashTable *details;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 	g_return_if_fail (nm_vpn_connection_get_vpn_state (connection) == NM_VPN_CONNECTION_STATE_NEED_AUTH);
@@ -1237,38 +1297,56 @@ really_activate (NMVPNConnection *connection, const char *username)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
-								G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
+	                                   G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
 
-	/* Config signal */
-	dbus_g_proxy_add_signal (priv->proxy, "Config",
-						DBUS_TYPE_G_MAP_OF_VARIANT,
-						G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "Config", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Config",
-						    G_CALLBACK (nm_vpn_connection_config_get),
-						    connection, NULL);
+	                             G_CALLBACK (nm_vpn_connection_config_get),
+	                             connection, NULL);
 
 	/* Ip4Config signal */
-	dbus_g_proxy_add_signal (priv->proxy, "Ip4Config",
-						DBUS_TYPE_G_MAP_OF_VARIANT,
-						G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "Ip4Config", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Ip4Config",
-						    G_CALLBACK (nm_vpn_connection_ip4_config_get),
-						    connection, NULL);
+	                             G_CALLBACK (nm_vpn_connection_ip4_config_get),
+	                             connection, NULL);
 
 	/* Ip6Config signal */
-	dbus_g_proxy_add_signal (priv->proxy, "Ip6Config",
-						DBUS_TYPE_G_MAP_OF_VARIANT,
-						G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "Ip6Config", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Ip6Config",
-						    G_CALLBACK (nm_vpn_connection_ip6_config_get),
-						    connection, NULL);
+	                             G_CALLBACK (nm_vpn_connection_ip6_config_get),
+	                             connection, NULL);
 
-	hash = _hash_with_username (priv->connection, username);
-	dbus_g_proxy_begin_call (priv->proxy, "Connect",
-	                         nm_vpn_connection_connect_cb, connection, NULL,
-	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
-	                         G_TYPE_INVALID);
-	g_hash_table_destroy (hash);
+	if (priv->connect_hash)
+		g_hash_table_destroy (priv->connect_hash);
+	priv->connect_hash = _hash_with_username (priv->connection, username);
+	details = g_hash_table_new (g_str_hash, g_str_equal);
+
+	/* If at least one agent doesn't support VPN hints, then we can't use
+	 * ConnectInteractive(), because that agent won't be able to pass hints
+	 * from the VPN plugin's interactive secrets requests to the VPN authentication
+	 * dialog and we won't get the secrets we need.  In this case fall back to
+	 * the old Connect() call.
+	 */
+	agent_mgr = nm_agent_manager_get ();
+	if (nm_agent_manager_all_agents_have_capability (agent_mgr,
+	                                                 nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (connection)),
+	                                                 nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (connection)),
+	                                                 NM_SECRET_AGENT_CAPABILITY_VPN_HINTS)) {
+		nm_log_dbg (LOGD_VPN, "Allowing interactive secrets as all agents have that capability");
+		dbus_g_proxy_begin_call (priv->proxy, "ConnectInteractive",
+		                         connect_interactive_cb, connection, NULL,
+		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, priv->connect_hash,
+		                         DBUS_TYPE_G_MAP_OF_VARIANT, details,
+		                         G_TYPE_INVALID);
+	} else {
+		nm_log_dbg (LOGD_VPN, "Calling old Connect function as not all agents support interactive secrets");
+		dbus_g_proxy_begin_call (priv->proxy, "Connect",
+		                         connect_cb, connection, NULL,
+		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, priv->connect_hash,
+		                         G_TYPE_INVALID);
+	}
+	g_object_unref (agent_mgr);
+	g_hash_table_destroy (details);
 
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_CONNECT,
@@ -1294,8 +1372,8 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 
 	dbus_g_proxy_add_signal (priv->proxy, "Failure", G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Failure",
-								 G_CALLBACK (plugin_failed),
-								 connection, NULL);
+	                             G_CALLBACK (plugin_failed),
+	                             connection, NULL);
 
 	/* StateChanged signal */
 	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
@@ -1303,9 +1381,23 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 	                             G_CALLBACK (plugin_state_changed),
 	                             connection, NULL);
 
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
+	                                   G_TYPE_NONE, G_TYPE_STRING, G_TYPE_STRV, G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "SecretsRequired", G_TYPE_STRING, G_TYPE_STRV, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy, "SecretsRequired",
+	                             G_CALLBACK (plugin_interactive_secrets_required),
+	                             connection, NULL);
+
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_NEED_AUTH,
 	                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
+
+	/* Kick off the secrets requests; first we get existing system secrets
+	 * and ask the plugin if these are sufficient, next we get all existing
+	 * secrets from system and from user agents and ask the plugin again,
+	 * and last we ask the user for new secrets if required.
+	 */
+	get_secrets (connection, SECRETS_REQ_SYSTEM, NULL);
 }
 
 NMConnection *
@@ -1448,7 +1540,7 @@ plugin_need_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_dat
 			            nm_connection_get_uuid (priv->connection),
 			            nm_connection_get_id (priv->connection));
 
-			get_secrets (self, priv->secrets_idx + 1);
+			get_secrets (self, priv->secrets_idx + 1, NULL);
 		}
 		return;
 	}
@@ -1459,6 +1551,24 @@ plugin_need_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_dat
 
 	/* No secrets required; we can start the VPN */
 	really_activate (self, priv->username);
+}
+
+static void
+plugin_new_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID)) {
+		nm_log_err (LOGD_VPN, "(%s/%s) sending new secrets to the plugin failed: %s %s",
+		            nm_connection_get_uuid (priv->connection),
+		            nm_connection_get_id (priv->connection),
+		            g_quark_to_string (error->domain),
+		            error->message);
+		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		g_error_free (error);
+	}
 }
 
 static void
@@ -1483,28 +1593,44 @@ get_secrets_cb (NMSettingsConnection *connection,
 		            priv->secrets_idx + 1, error->code, error->message);
 		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 	} else {
-		nm_log_dbg (LOGD_VPN, "(%s/%s) asking service if additional secrets are required",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection));
-
 		/* Cache the username for later */
 		if (agent_username) {
 			g_free (priv->username);
 			priv->username = g_strdup (agent_username);
 		}
 
-		/* Ask the VPN service if more secrets are required */
 		hash = _hash_with_username (priv->connection, priv->username);
-		dbus_g_proxy_begin_call (priv->proxy, "NeedSecrets",
-		                         plugin_need_secrets_cb, self, NULL,
-		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
-		                         G_TYPE_INVALID);
+
+		if (priv->secrets_idx == SECRETS_REQ_INTERACTIVE) {
+			nm_log_dbg (LOGD_VPN, "(%s/%s) sending secrets to the plugin",
+			            nm_connection_get_uuid (priv->connection),
+			            nm_connection_get_id (priv->connection));
+
+			/* Send the secrets back to the plugin */
+			dbus_g_proxy_begin_call (priv->proxy, "NewSecrets",
+			                         plugin_new_secrets_cb, self, NULL,
+			                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+			                         G_TYPE_INVALID);
+		} else {
+			nm_log_dbg (LOGD_VPN, "(%s/%s) asking service if additional secrets are required",
+			            nm_connection_get_uuid (priv->connection),
+			            nm_connection_get_id (priv->connection));
+
+			/* Ask the VPN service if more secrets are required */
+			dbus_g_proxy_begin_call (priv->proxy, "NeedSecrets",
+			                         plugin_need_secrets_cb, self, NULL,
+			                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
+			                         G_TYPE_INVALID);
+		}
+
 		g_hash_table_destroy (hash);
 	}
 }
 
 static void
-get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
+get_secrets (NMVPNConnection *self,
+             SecretsReq secrets_idx,
+             const char **hints)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
@@ -1530,6 +1656,7 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 		flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
 		break;
 	case SECRETS_REQ_NEW:
+	case SECRETS_REQ_INTERACTIVE:
 		flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 		break;
 	default:
@@ -1544,7 +1671,7 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 	                                                       nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (self)),
 	                                                       NM_SETTING_VPN_SETTING_NAME,
 	                                                       flags,
-	                                                       NULL,
+	                                                       hints,
 	                                                       get_secrets_cb,
 	                                                       self,
 	                                                       &error);
@@ -1558,12 +1685,49 @@ get_secrets (NMVPNConnection *self, SecretsReq secrets_idx)
 	}
 }
 
+static void
+plugin_interactive_secrets_required (DBusGProxy *proxy,
+                                     const char *message,
+                                     const char **secrets,
+                                     gpointer user_data)
+{
+	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	guint32 secrets_len = secrets ? g_strv_length ((char **) secrets) : 0;
+	char **hints;
+	guint32 i;
+
+	nm_log_info (LOGD_VPN, "VPN plugin requested secrets; state %s (%d)",
+	             vpn_state_to_string (priv->vpn_state), priv->vpn_state);
+
+	g_return_if_fail (priv->vpn_state == NM_VPN_CONNECTION_STATE_CONNECT ||
+	                  priv->vpn_state == NM_VPN_CONNECTION_STATE_NEED_AUTH);
+
+	priv->secrets_idx = SECRETS_REQ_INTERACTIVE;
+	nm_vpn_connection_set_vpn_state (connection,
+	                                 NM_VPN_CONNECTION_STATE_NEED_AUTH,
+	                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
+
+	/* Copy hints and add message to the end */
+	hints = g_malloc0 (sizeof (char *) * (secrets_len + 2));
+	for (i = 0; i < secrets_len; i++)
+		hints[i] = g_strdup (secrets[i]);
+	if (message)
+		hints[i] = g_strdup_printf ("x-vpn-message:%s", message);
+
+	get_secrets (connection, SECRETS_REQ_INTERACTIVE, (const char **) hints);
+	g_strfreev (hints);
+}
+
 /******************************************************************************/
 
 static void
 nm_vpn_connection_init (NMVPNConnection *self)
 {
-	NM_VPN_CONNECTION_GET_PRIVATE (self)->vpn_state = NM_VPN_CONNECTION_STATE_PREPARE;
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	priv->vpn_state = NM_VPN_CONNECTION_STATE_PREPARE;
+	priv->secrets_idx = SECRETS_REQ_SYSTEM;
 }
 
 static void
@@ -1609,6 +1773,9 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->ip4_gw_route, g_free);
 	g_clear_pointer (&priv->ip6_gw_route, g_free);
 
+	if (priv->connect_hash)
+		g_hash_table_destroy (priv->connect_hash);
+
 	if (priv->ip6_internal_gw)
 		g_free (priv->ip6_internal_gw);
 	if (priv->ip6_external_gw)
@@ -1629,8 +1796,8 @@ dispose (GObject *object)
 	if (priv->ip6_config)
 		g_object_unref (priv->ip6_config);
 
-	if (priv->ipconfig_timeout)
-		g_source_remove (priv->ipconfig_timeout);
+	if (priv->connect_timeout)
+		g_source_remove (priv->connect_timeout);
 
 	if (priv->proxy)
 		g_object_unref (priv->proxy);

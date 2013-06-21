@@ -1422,6 +1422,30 @@ nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
 
 /*************************************************************/
 
+gboolean
+nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
+                                             gboolean filter_by_uid,
+                                             gulong owner_uid,
+                                             NMSecretAgentCapabilities capability)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (manager);
+	GHashTableIter iter;
+	NMSecretAgent *agent;
+
+	g_hash_table_iter_init (&iter, priv->agents);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
+		if (filter_by_uid && nm_secret_agent_get_owner_uid (agent) != owner_uid)
+			continue;
+
+		if (!(nm_secret_agent_get_capabilities (agent) & capability))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*************************************************************/
+
 static void
 name_owner_changed_cb (NMDBusManager *dbus_mgr,
                        const char *name,
