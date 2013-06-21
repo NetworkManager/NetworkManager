@@ -212,14 +212,42 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type)
 static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 	NMPlatformLink deleted_device;
+	int i;
 
 	if (!device || !device->link.ifindex)
 		return FALSE;
 
 	memcpy (&deleted_device, &device->link, sizeof (deleted_device));
 	memset (&device->link, 0, sizeof (device->link));
+
+	/* Remove addresses and routes which belong to the deleted interface */
+	for (i = 0; i < priv->ip4_addresses->len; i++) {
+		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
+
+		if (address->ifindex == ifindex)
+			memset (address, 0, sizeof (*address));
+	}
+	for (i = 0; i < priv->ip6_addresses->len; i++) {
+		NMPlatformIP6Address *address = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
+
+		if (address->ifindex == ifindex)
+			memset (address, 0, sizeof (*address));
+	}
+	for (i = 0; i < priv->ip4_routes->len; i++) {
+		NMPlatformIP4Route *route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
+
+		if (route->ifindex == ifindex)
+			memset (route, 0, sizeof (*route));
+	}
+	for (i = 0; i < priv->ip6_routes->len; i++) {
+		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
+
+		if (route->ifindex == ifindex)
+			memset (route, 0, sizeof (*route));
+	}
 
 	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_REMOVED, ifindex, &deleted_device);
 

@@ -855,6 +855,37 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 	return refresh_object (platform, object, add_kernel_object (priv->nlh, object));
 }
 
+static void
+remove_if_ifindex (struct nl_object *object, gpointer user_data)
+{
+	int ifindex = *(int *) user_data;
+
+	switch (object_type_from_nl_object (object)) {
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		if (ifindex != rtnl_addr_get_ifindex ((struct rtnl_addr *) object))
+			break;
+		nl_cache_remove (object);
+		break;
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		{
+			struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
+			struct rtnl_nexthop *nexthop;
+
+			if (rtnl_route_get_nnexthops (rtnlroute) != 1)
+				break;
+			nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+			if (ifindex != rtnl_route_nh_get_ifindex (nexthop))
+				break;
+			nl_cache_remove (object);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /* Decreases the reference count if @obj for convenience */
 static gboolean
 delete_object (NMPlatform *platform, struct nl_object *obj)
@@ -870,6 +901,13 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 		return FALSE;
 
 	nl_cache_remove (cached_object);
+	if (object_type_from_nl_object (object) == LINK) {
+		int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
+
+		nl_cache_foreach (priv->address_cache, remove_if_ifindex, &ifindex);
+		nl_cache_foreach (priv->route_cache, remove_if_ifindex, &ifindex);
+	}
+
 	announce_object (platform, cached_object, REMOVED);
 
 	return TRUE;
