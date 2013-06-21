@@ -52,8 +52,8 @@ test_ip4_route ()
 	int metric = 20;
 	int mss = 1000;
 
-	inet_pton (AF_INET, "192.0.2.0", &network);
-	inet_pton (AF_INET, "198.51.100.0", &gateway);
+	inet_pton (AF_INET, "192.0.3.0", &network);
+	inet_pton (AF_INET, "198.51.100.1", &gateway);
 
 	/* Add route to gateway */
 	g_assert (nm_platform_ip4_route_add (ifindex, gateway, 32, INADDR_ANY, metric, mss)); no_error ();
