@@ -331,7 +331,7 @@ _dispatcher_call (DispatcherAction action,
 		                   device_dhcp4_props,
 		                   device_dhcp6_props);
 		if (vpn_iface)
-			fill_vpn_props (vpn_ip4_config, NULL, vpn_ip4_props, vpn_ip6_props);
+			fill_vpn_props (vpn_ip4_config, vpn_ip6_config, vpn_ip4_props, vpn_ip6_props);
 	}
 
 	info = g_malloc0 (sizeof (*info));
