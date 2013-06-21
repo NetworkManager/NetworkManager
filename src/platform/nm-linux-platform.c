@@ -775,23 +775,6 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 	}
 }
 
-static gboolean
-process_nl_error (NMPlatform *platform, int nle)
-{
-	/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
-	 * never know when something sends an identical object just before
-	 * NetworkManager, e.g. from a dispatcher script.
-	 */
-	switch (nle) {
-	case -NLE_SUCCESS:
-	case -NLE_EXIST:
-		return FALSE;
-	default:
-		error ("Netlink error: %s", nl_geterror (nle));
-		return TRUE;
-	}
-}
-
 static struct nl_object * build_rtnl_link (int ifindex, const char *name, NMLinkType type);
 
 static gboolean
@@ -802,8 +785,18 @@ refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
 	auto_nl_object struct nl_object *kernel_object = NULL;
 	struct nl_cache *cache;
 
-	if (process_nl_error (platform, nle))
+	/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
+	 * never know when something sends an identical object just before
+	 * NetworkManager.
+	 */
+	switch (nle) {
+	case -NLE_SUCCESS:
+	case -NLE_EXIST:
+		break;
+	default:
+		error ("Netlink error: %s", nl_geterror (nle));
 		return FALSE;
+	}
 
 	cache = choose_cache (platform, object);
 	cached_object = nl_cache_search (choose_cache (platform, object), object);
@@ -893,12 +886,24 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *object = obj;
 	auto_nl_object struct nl_object *cached_object;
+	int nle;
 
 	cached_object = nl_cache_search (choose_cache (platform, object), object);
 	g_assert (cached_object);
 
-	if (process_nl_error (platform, delete_kernel_object (priv->nlh, cached_object)))
+	nle = delete_kernel_object (priv->nlh, cached_object);
+
+	/* NLE_OBJ_NOTFOUND is considered equivalent to success to avoid race conditions. You
+	 * never know when something deletes the same object just before NetworkManager.
+	 */
+	switch (nle) {
+	case -NLE_SUCCESS:
+	case -NLE_OBJ_NOTFOUND:
+		break;
+	default:
+		error ("Netlink error: %s", nl_geterror (nle));
 		return FALSE;
+	}
 
 	nl_cache_remove (cached_object);
 	if (object_type_from_nl_object (object) == LINK) {
