@@ -561,24 +561,9 @@ test_external (void)
 	free_signal (link_removed);
 }
 
-int
-main (int argc, char **argv)
+void
+setup_tests (void)
 {
-	int result;
-
-	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
-	g_type_init ();
-	g_test_init (&argc, &argv, NULL);
-	/* Enable debug messages if called with --debug */
-	for (; *argv; argv++) {
-		if (!g_strcmp0 (*argv, "--debug")) {
-			nm_logging_setup ("debug", NULL, NULL);
-		}
-	}
-
-	SETUP ();
-
-	/* Clean up */
 	nm_platform_link_delete_by_name (DEVICE_NAME);
 	nm_platform_link_delete_by_name (SLAVE_NAME);
 	nm_platform_link_delete_by_name (PARENT_NAME);
@@ -596,9 +581,4 @@ main (int argc, char **argv)
 
 	if (strcmp (g_type_name (G_TYPE_FROM_INSTANCE (nm_platform_get ())), "NMFakePlatform"))
 		g_test_add_func ("/link/external", test_external);
-
-	result = g_test_run ();
-
-	nm_platform_free ();
-	return result;
 }

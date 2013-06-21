@@ -218,22 +218,9 @@ test_ip6_address_external (void)
 	free_signal (address_removed);
 }
 
-int
-main (int argc, char **argv)
+void
+setup_tests (void)
 {
-	int result;
-
-	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
-	g_type_init ();
-	g_test_init (&argc, &argv, NULL);
-	/* Enable debug messages if called with --debug */
-	for (; *argv; argv++)
-		if (!g_strcmp0 (*argv, "--debug"))
-			nm_logging_setup ("debug", NULL, NULL);
-
-	SETUP ();
-
-	/* Clean up */
 	nm_platform_link_delete_by_name (DEVICE_NAME);
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
 	nm_platform_dummy_add (DEVICE_NAME);
@@ -245,10 +232,4 @@ main (int argc, char **argv)
 		g_test_add_func ("/address/external/ip4", test_ip4_address_external);
 		g_test_add_func ("/address/external/ip6", test_ip6_address_external);
 	}
-
-	result = g_test_run ();
-
-	nm_platform_link_delete_by_name (DEVICE_NAME);
-	nm_platform_free ();
-	return result;
 }

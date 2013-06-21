@@ -29,3 +29,6 @@ void wait_signal (SignalData *data);
 void free_signal (SignalData *data);
 
 void run_command (const char *format, ...);
+
+void setup_tests (void);
+

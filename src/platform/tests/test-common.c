@@ -59,3 +59,27 @@ run_command (const char *format, ...)
 	g_free (command);
 }
 
+int
+main (int argc, char **argv)
+{
+	int result;
+
+	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
+	g_type_init ();
+	g_test_init (&argc, &argv, NULL);
+	/* Enable debug messages if called with --debug */
+	for (; *argv; argv++) {
+		if (!g_strcmp0 (*argv, "--debug")) {
+			nm_logging_setup ("debug", NULL, NULL);
+		}
+	}
+
+	SETUP ();
+
+	setup_tests ();
+
+	result = g_test_run ();
+
+	nm_platform_free ();
+	return result;
+}
