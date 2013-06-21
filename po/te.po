@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: te\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2013-05-01 21:55+0000\n"
-"PO-Revision-Date: 2013-05-09 17:10+0530\n"
+"POT-Creation-Date: 2013-06-02 16:43+0000\n"
+"PO-Revision-Date: 2013-06-11 13:07+0530\n"
 "Last-Translator: Krishnababu Krothapalli <kkrothap@redhat.com>\n"
 "Language-Team: Telugu <Fedora-trans-te@redhat.com>\n"
 "Language: te\n"
@@ -27,337 +27,406 @@ msgstr ""
 "\n"
 "\n"
 
-#: ../cli/src/common.c:32 ../cli/src/common.c:44 ../cli/src/common.c:52
-#: ../cli/src/common.c:63 ../cli/src/connections.c:135
+#: ../cli/src/common.c:34 ../cli/src/common.c:46 ../cli/src/common.c:54
+#: ../cli/src/common.c:65 ../cli/src/connections.c:135
 #: ../cli/src/connections.c:169
 msgid "GROUP"
 msgstr "GROUP"
 
 #. 0
-#: ../cli/src/common.c:33 ../cli/src/common.c:53
+#: ../cli/src/common.c:35 ../cli/src/common.c:55
 msgid "ADDRESS"
 msgstr "ADDRESS"
 
 #. 1
-#: ../cli/src/common.c:34 ../cli/src/common.c:54
+#: ../cli/src/common.c:36 ../cli/src/common.c:56
 msgid "ROUTE"
 msgstr "ROUTE"
 
 #. 2
-#: ../cli/src/common.c:35 ../cli/src/common.c:55
+#: ../cli/src/common.c:37 ../cli/src/common.c:57
 msgid "DNS"
 msgstr "DNS"
 
 #. 3
-#: ../cli/src/common.c:36 ../cli/src/common.c:56
+#: ../cli/src/common.c:38 ../cli/src/common.c:58
 msgid "DOMAIN"
 msgstr "DOMAIN"
 
 #. 4
-#: ../cli/src/common.c:37
+#: ../cli/src/common.c:39
 msgid "WINS"
 msgstr "WINS"
 
 #. 0
-#: ../cli/src/common.c:45 ../cli/src/common.c:64
+#: ../cli/src/common.c:47 ../cli/src/common.c:66
 msgid "OPTION"
 msgstr "OPTION"
 
-#: ../cli/src/common.c:366
+#: ../cli/src/common.c:388
+#, c-format
+#| msgid "'%s' is not a valid IPv4 address for '%s' option"
+msgid "invalid IPv4 address '%s'"
+msgstr "చెల్లని IPv4 చిరునామా '%s'"
+
+#: ../cli/src/common.c:396
+#, c-format
+msgid "invalid prefix '%s'; <1-32> allowed"
+msgstr "చెల్లని ప్రిఫిక్స్ '%s'; <1-32> అనుమతించిన"
+
+#: ../cli/src/common.c:403 ../cli/src/common.c:456
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid gateway '%s'"
+msgstr "చెల్లని గేట్‌వే '%s'"
+
+#: ../cli/src/common.c:441
+#, c-format
+#| msgid "'%s' is not a valid IPv4 address for '%s' option"
+msgid "invalid IPv6 address '%s'"
+msgstr "చెల్లని IPv6 చిరునామా '%s'"
+
+#: ../cli/src/common.c:449 ../cli/src/common.c:567
+#, c-format
+msgid "invalid prefix '%s'; <0-128> allowed"
+msgstr "చెల్లని ప్రిఫిక్స్ '%s'; <0-128> అనుమతించిన"
+
+#: ../cli/src/common.c:496
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid IPv4 route '%s'"
+msgstr "చెల్లని IPv4 రౌట్ '%s'"
+
+#: ../cli/src/common.c:504
+#, c-format
+msgid "invalid prefix '%s'; <0-32> allowed"
+msgstr "చెల్లని ప్రిఫిక్స్ '%s'; <0-32> అనుమతించిన"
+
+#: ../cli/src/common.c:511 ../cli/src/common.c:574
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid next hop address '%s'"
+msgstr "తరువాతి చెల్లని హాప్ చిరునామా '%s'"
+
+#: ../cli/src/common.c:518 ../cli/src/common.c:582
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid metric '%s'"
+msgstr "చెల్లని మాట్రిక్ '%s'"
+
+#: ../cli/src/common.c:559
+#, c-format
+#| msgid "invalid field '%s'"
+msgid "invalid IPv6 route '%s'"
+msgstr "చెల్లని IPv6 రౌట్ '%s'"
+
+#: ../cli/src/common.c:603
 msgid "unmanaged"
 msgstr "నిర్వహించని"
 
-#: ../cli/src/common.c:368
+#: ../cli/src/common.c:605
 msgid "unavailable"
 msgstr "అందుబాటులోలేని"
 
-#: ../cli/src/common.c:370 ../cli/src/network-manager.c:148
+#: ../cli/src/common.c:607 ../cli/src/network-manager.c:148
 msgid "disconnected"
 msgstr "అననుసంధానమైన"
 
-#: ../cli/src/common.c:372
+#: ../cli/src/common.c:609
 msgid "connecting (prepare)"
 msgstr "అనుసంధానమౌచున్నది (సిద్దపడుతోంది)"
 
-#: ../cli/src/common.c:374
+#: ../cli/src/common.c:611
 msgid "connecting (configuring)"
 msgstr "అనుసంధానమౌచున్నది (ఆకృతీకరించబడుతోంది)"
 
-#: ../cli/src/common.c:376
+#: ../cli/src/common.c:613
 msgid "connecting (need authentication)"
 msgstr "అనుసంధానమౌచున్నది (ధృవీకరణము అవసరము)"
 
-#: ../cli/src/common.c:378
+#: ../cli/src/common.c:615
 msgid "connecting (getting IP configuration)"
 msgstr "అనుసంధానమౌచున్నది (IP ఆకృతీకరణను పొందుచున్నది)"
 
-#: ../cli/src/common.c:380
+#: ../cli/src/common.c:617
 msgid "connecting (checking IP connectivity)"
 msgstr "అనుసంధానమౌచున్నది (IP అనుసంధానతను పరిశీలిస్తోంది)"
 
-#: ../cli/src/common.c:382
+#: ../cli/src/common.c:619
 msgid "connecting (starting secondary connections)"
 msgstr "అనుసంధానమౌచున్నది (ద్వితీయ అనుసంధానాలను ప్రారంభిస్తోంది)"
 
-#: ../cli/src/common.c:384 ../cli/src/network-manager.c:144
+#: ../cli/src/common.c:621 ../cli/src/network-manager.c:144
 msgid "connected"
 msgstr "అనుసంధానమైంది"
 
-#: ../cli/src/common.c:386 ../cli/src/connections.c:468
+#: ../cli/src/common.c:623 ../cli/src/connections.c:546
 msgid "deactivating"
 msgstr "క్రియాహీనంచేస్తోంది"
 
-#: ../cli/src/common.c:388
+#: ../cli/src/common.c:625
 msgid "connection failed"
 msgstr "అనుసంధానము విఫలమైంది"
 
-#: ../cli/src/common.c:390 ../cli/src/connections.c:473
-#: ../cli/src/connections.c:496 ../cli/src/connections.c:1193
-#: ../cli/src/devices.c:664 ../cli/src/devices.c:1918
+#: ../cli/src/common.c:627 ../cli/src/connections.c:551
+#: ../cli/src/connections.c:574 ../cli/src/connections.c:1263
+#: ../cli/src/devices.c:702 ../cli/src/devices.c:1977
 #: ../cli/src/network-manager.c:151 ../cli/src/network-manager.c:214
-#: ../cli/src/network-manager.c:217 ../cli/src/network-manager.c:226
-#: ../cli/src/network-manager.c:283 ../cli/src/network-manager.c:299
+#: ../cli/src/network-manager.c:217 ../cli/src/network-manager.c:227
+#: ../cli/src/network-manager.c:284 ../cli/src/network-manager.c:300
 #: ../cli/src/settings.c:664 ../cli/src/settings.c:692
-#: ../cli/src/settings.c:754 ../cli/src/utils.c:627 ../src/main.c:403
-#: ../src/main.c:422
+#: ../cli/src/settings.c:754 ../cli/src/utils.c:888 ../src/main.c:431
+#: ../src/main.c:450
 msgid "unknown"
 msgstr "తెలియని"
 
-#: ../cli/src/common.c:399
+#: ../cli/src/common.c:636
 msgid "No reason given"
 msgstr "ఏ కారణం ఇవ్వలేదు"
 
-#: ../cli/src/common.c:402
+#: ../cli/src/common.c:639 ../cli/src/connections.c:1842
+#, c-format
 msgid "Unknown error"
 msgstr "తెలియని దోషం"
 
-#: ../cli/src/common.c:405
+#: ../cli/src/common.c:642
 msgid "Device is now managed"
 msgstr "పరికరం యిప్పుడు నిర్వహించబడుతోంది"
 
-#: ../cli/src/common.c:408
+#: ../cli/src/common.c:645
 msgid "Device is now unmanaged"
 msgstr "పరికరం యిప్పుడు నిర్వహించబడుటలేదు"
 
-#: ../cli/src/common.c:411
+#: ../cli/src/common.c:648
 msgid "The device could not be readied for configuration"
 msgstr "ఆకృతీకరణ కొరకు పరికరం సిద్దంకాలేదు"
 
-#: ../cli/src/common.c:414
+#: ../cli/src/common.c:651
 msgid ""
 "IP configuration could not be reserved (no available address, timeout, etc.)"
 msgstr ""
 "ఐపి ఆకృతీకరణనను రిజర్వుచేసి కలిగివుండలేదు (చిరునామా, సమయముగింపు, మొద. "
 "అందుబాటులోలేవు)"
 
-#: ../cli/src/common.c:417
+#: ../cli/src/common.c:654
 msgid "The IP configuration is no longer valid"
 msgstr "ఐపి ఆకృతీకరణ యిక చెల్లునది కాదు"
 
-#: ../cli/src/common.c:420
+#: ../cli/src/common.c:657
 msgid "Secrets were required, but not provided"
 msgstr "రహస్యాలు అవసరమైనవి, అయితే అందించబడలేదు"
 
-#: ../cli/src/common.c:423
+#: ../cli/src/common.c:660
 msgid "802.1X supplicant disconnected"
 msgstr "802.1X సప్లికెంట్ అనుసంధానంపోయింది"
 
-#: ../cli/src/common.c:426
+#: ../cli/src/common.c:663
 msgid "802.1X supplicant configuration failed"
 msgstr "802.1X సప్లికెంట్ ఆకృతీకరణ విఫలమైంది"
 
-#: ../cli/src/common.c:429
+#: ../cli/src/common.c:666
 msgid "802.1X supplicant failed"
 msgstr "802.1X సప్లికెంట్ విఫలమైంది"
 
-#: ../cli/src/common.c:432
+#: ../cli/src/common.c:669
 msgid "802.1X supplicant took too long to authenticate"
 msgstr "ధృవీకరణకు 802.1X సప్లికెంట్ చాలా సమయం తీసుకొంది"
 
-#: ../cli/src/common.c:435
+#: ../cli/src/common.c:672
 msgid "PPP service failed to start"
 msgstr "ప్రారంభమవుటకు PPP సేవ విఫలమైంది"
 
-#: ../cli/src/common.c:438
+#: ../cli/src/common.c:675
 msgid "PPP service disconnected"
 msgstr "PPP సేవ తెంచబడింది"
 
-#: ../cli/src/common.c:441
+#: ../cli/src/common.c:678
 msgid "PPP failed"
 msgstr "PPP విఫలమైంది"
 
-#: ../cli/src/common.c:444
+#: ../cli/src/common.c:681
 msgid "DHCP client failed to start"
 msgstr "ప్రారంభమగుటకు DHCP క్లైంట్ విఫలమైంది"
 
-#: ../cli/src/common.c:447
+#: ../cli/src/common.c:684
 msgid "DHCP client error"
 msgstr "DHCP క్లైంట్ దోషం"
 
-#: ../cli/src/common.c:450
+#: ../cli/src/common.c:687
 msgid "DHCP client failed"
 msgstr "DHCP క్లైంట్ విఫలమైంది"
 
-#: ../cli/src/common.c:453
+#: ../cli/src/common.c:690
 msgid "Shared connection service failed to start"
 msgstr "ప్రారంభమగుటకు భాగస్వామ్య అనుసంధానం విఫలమైంది"
 
-#: ../cli/src/common.c:456
+#: ../cli/src/common.c:693
 msgid "Shared connection service failed"
 msgstr "భాగస్వామ్య అనుసంధానం సేవ విఫలమైంది"
 
-#: ../cli/src/common.c:459
+#: ../cli/src/common.c:696
 msgid "AutoIP service failed to start"
 msgstr "ప్రారంభమగుటకు AutoIP సేవ విఫలమైంది"
 
-#: ../cli/src/common.c:462
+#: ../cli/src/common.c:699
 msgid "AutoIP service error"
 msgstr "AutoIP సేవ దోషం"
 
-#: ../cli/src/common.c:465
+#: ../cli/src/common.c:702
 msgid "AutoIP service failed"
 msgstr "AutoIP సేవ విఫలమైంది"
 
-#: ../cli/src/common.c:468
+#: ../cli/src/common.c:705
 msgid "The line is busy"
 msgstr "లైన్ రద్దీగా వుంది"
 
-#: ../cli/src/common.c:471
+#: ../cli/src/common.c:708
 msgid "No dial tone"
 msgstr "డైల్ టోన్ లేదు"
 
-#: ../cli/src/common.c:474
+#: ../cli/src/common.c:711
 msgid "No carrier could be established"
 msgstr "ఏ వాహకం ఏర్పరచలేక పోయింది"
 
-#: ../cli/src/common.c:477
+#: ../cli/src/common.c:714
 msgid "The dialing request timed out"
 msgstr "డయిలింగ్ అభ్యర్ధన కాలం మించినది"
 
-#: ../cli/src/common.c:480
+#: ../cli/src/common.c:717
 msgid "The dialing attempt failed"
 msgstr "డయిలింగ్ యత్నం విఫలమైంది"
 
-#: ../cli/src/common.c:483
+#: ../cli/src/common.c:720
 msgid "Modem initialization failed"
 msgstr "మోడెమ్ సిద్దీకరణ విఫలమైంది"
 
-#: ../cli/src/common.c:486
+#: ../cli/src/common.c:723
 msgid "Failed to select the specified APN"
 msgstr "తెలిపిన APNను యెంపికచేయుటకు విఫలమైంది"
 
-#: ../cli/src/common.c:489
+#: ../cli/src/common.c:726
 msgid "Not searching for networks"
 msgstr "నెట్వర్కుల కొరకు అన్వేషించుటలేదు"
 
-#: ../cli/src/common.c:492
+#: ../cli/src/common.c:729
 msgid "Network registration denied"
 msgstr "నెట్వర్కు నమోదీకరణ తిరస్కరించబడింది"
 
-#: ../cli/src/common.c:495
+#: ../cli/src/common.c:732
 msgid "Network registration timed out"
 msgstr "నెట్వర్కు నమోదీకరణ సమయం మించినది"
 
-#: ../cli/src/common.c:498
+#: ../cli/src/common.c:735
 msgid "Failed to register with the requested network"
 msgstr "అభ్యర్ధించిన నెట్వర్కుతో నమోదగుటకు విఫలమైంది"
 
-#: ../cli/src/common.c:501
+#: ../cli/src/common.c:738
 msgid "PIN check failed"
 msgstr "పిన్ పరిశీలన విఫలమైంది"
 
-#: ../cli/src/common.c:504
+#: ../cli/src/common.c:741
 msgid "Necessary firmware for the device may be missing"
 msgstr "పరికరము కొరకు తప్పనిసరిగా కావలసిన ఫర్మువేర్ దొరకట్లేదు"
 
-#: ../cli/src/common.c:507
+#: ../cli/src/common.c:744
 msgid "The device was removed"
 msgstr "పరికరం తీసివేయబడింది"
 
-#: ../cli/src/common.c:510
+#: ../cli/src/common.c:747
 msgid "NetworkManager went to sleep"
 msgstr "నెట్వర్కునిర్వాహిక స్లీప్‌లోకి వెళ్ళింది"
 
-#: ../cli/src/common.c:513
+#: ../cli/src/common.c:750
 msgid "The device's active connection disappeared"
 msgstr "పరికరం యొక్క క్రియాశీల అనుసంధానం మాయమైంది"
 
-#: ../cli/src/common.c:516
+#: ../cli/src/common.c:753
 msgid "Device disconnected by user or client"
 msgstr "వాడుకరి లేదా క్లైంట్ చేత పరికరం అనుసంధానం తీసివేయబడింది"
 
-#: ../cli/src/common.c:519
+#: ../cli/src/common.c:756
 msgid "Carrier/link changed"
 msgstr "వాహకం/లంకె మార్చబడింది"
 
-#: ../cli/src/common.c:522
+#: ../cli/src/common.c:759
 msgid "The device's existing connection was assumed"
 msgstr "పరికరపు వున్న అనుసంధానం పరిగణించడమైంది"
 
-#: ../cli/src/common.c:525
+#: ../cli/src/common.c:762
 msgid "The supplicant is now available"
 msgstr "సప్లికెంట్ యిప్పుడు అందుబాటులో వుంది"
 
-#: ../cli/src/common.c:528
+#: ../cli/src/common.c:765
 msgid "The modem could not be found"
 msgstr "మోడెమ్ కనుగొనబడలేదు"
 
-#: ../cli/src/common.c:531
+#: ../cli/src/common.c:768
 msgid "The Bluetooth connection failed or timed out"
 msgstr "బ్లూటూత్ అనుసంధానం విఫలమైంది లేదా సమయం మించెను"
 
-#: ../cli/src/common.c:534
+#: ../cli/src/common.c:771
 msgid "GSM Modem's SIM card not inserted"
 msgstr "GSM మోడెమ్ యొక్క సిమ్ కార్డ్ చొప్పించలేదు"
 
-#: ../cli/src/common.c:537
+#: ../cli/src/common.c:774
 msgid "GSM Modem's SIM PIN required"
 msgstr "GSM మోడెమ్ యొక్క సిమ్ పిన్ అవసరం"
 
-#: ../cli/src/common.c:540
+#: ../cli/src/common.c:777
 msgid "GSM Modem's SIM PUK required"
 msgstr "GSM మోడెమ్ యొక్క సిమ్ PUK అవసరం"
 
-#: ../cli/src/common.c:543
+#: ../cli/src/common.c:780
 msgid "GSM Modem's SIM wrong"
 msgstr "GSM మోడెమ్ యొక్క సిమ్ సరికానిది"
 
-#: ../cli/src/common.c:546
+#: ../cli/src/common.c:783
 msgid "InfiniBand device does not support connected mode"
 msgstr "అనుసంధానించిన రీతిని యిన్ఫీబాండ్ పరికరం తోడ్పాటునీయటులేదు"
 
-#: ../cli/src/common.c:549
+#: ../cli/src/common.c:786
 msgid "A dependency of the connection failed"
 msgstr "అనుసంధానం యొక్క ఆధారం విఫలమైంది"
 
-#: ../cli/src/common.c:552
+#: ../cli/src/common.c:789
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
 msgstr "ADSL బ్రిడ్జ్ నందు RFC 2684 ఈథర్నెట్‌తో వొక సమస్య"
 
-#: ../cli/src/common.c:555
+#: ../cli/src/common.c:792
 msgid "ModemManager is unavailable"
 msgstr "ModemManager అందుబాటులో లేదు"
 
-#: ../cli/src/common.c:558
+#: ../cli/src/common.c:795
 msgid "The Wi-Fi network could not be found"
 msgstr "Wi-Fi నెట్వర్కు కనుగొనలేక పోయింది"
 
-#: ../cli/src/common.c:561
+#: ../cli/src/common.c:798
 msgid "A secondary connection of the base connection failed"
 msgstr "ప్రాధమిక అనుసంధానం యొక్క ద్వితీయ అనుసంధానం విఫలమైంది"
 
-#: ../cli/src/common.c:564 ../cli/src/devices.c:310 ../cli/src/devices.c:328
-#: ../cli/src/devices.c:450 ../cli/src/devices.c:494
+#: ../cli/src/common.c:801 ../cli/src/devices.c:519
 msgid "Unknown"
 msgstr "తెలియని"
+
+#: ../cli/src/common.c:843
+#, c-format
+#| msgid "invalid '%s' or its value '%s'"
+msgid "invalid priority map '%s'"
+msgstr "చెల్లని ప్రాముఖ్యతా మాప్ '%s'"
+
+#: ../cli/src/common.c:850 ../cli/src/common.c:856
+#, c-format
+#| msgid "'%s' is not a valid band"
+msgid "priority '%s' is not valid (<0-%ld>)"
+msgstr "ప్రాముఖ్యత '%s' చెల్లనిది (<0-%ld>)"
 
 #. 0
 #. used only for 'GENERAL' group listing
 #: ../cli/src/connections.c:62 ../cli/src/connections.c:136
 #: ../cli/src/devices.c:109 ../cli/src/devices.c:134 ../cli/src/devices.c:144
 #: ../cli/src/devices.c:154 ../cli/src/devices.c:164 ../cli/src/devices.c:180
-#: ../cli/src/devices.c:194 ../cli/src/devices.c:216 ../cli/src/devices.c:232
-#: ../cli/src/devices.c:241
+#: ../cli/src/devices.c:194 ../cli/src/devices.c:221 ../cli/src/devices.c:237
+#: ../cli/src/devices.c:246
 msgid "NAME"
 msgstr "NAME"
 
@@ -372,7 +441,7 @@ msgstr "UUID"
 #. 1
 #. 2
 #: ../cli/src/connections.c:64 ../cli/src/connections.c:170
-#: ../cli/src/devices.c:72 ../cli/src/devices.c:111 ../cli/src/devices.c:219
+#: ../cli/src/devices.c:72 ../cli/src/devices.c:111 ../cli/src/devices.c:224
 msgid "TYPE"
 msgstr "TYPE"
 
@@ -400,10 +469,10 @@ msgstr "READONLY"
 #. 6
 #. 8
 #. 2
-#. 11
+#. 15
 #. 5
 #: ../cli/src/connections.c:69 ../cli/src/connections.c:144
-#: ../cli/src/devices.c:74 ../cli/src/devices.c:206 ../cli/src/devices.c:222
+#: ../cli/src/devices.c:74 ../cli/src/devices.c:210 ../cli/src/devices.c:227
 msgid "DBUS-PATH"
 msgstr "DBUS-PATH"
 
@@ -495,16 +564,21 @@ msgstr "CFG"
 #, c-format
 #| msgid ""
 #| "Usage: nmcli connection { COMMAND | help }\n"
-#| "  COMMAND := { list | status | up | down | delete }\n"
+#| "  COMMAND := { show | up | down | delete }\n"
 #| "\n"
-#| "  list [id <id> | uuid <id>]\n"
-#| "  status [id <id> | uuid <id> | path <path>]\n"
-#| "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [nsp <name>] [--"
-#| "nowait] [--timeout <timeout>]\n"
-#| "  up id <id> | uuid <id> [iface <iface>] [ap <BSSID>] [--nowait] [--"
-#| "timeout <timeout>]\n"
-#| "  down id <id> | uuid <id>\n"
-#| "  delete id <id> | uuid <id>\n"
+#| "  show configured [[ id | uuid | path ] <ID>]\n"
+#| "\n"
+#| "  show active     [[ id | uuid | path | apath ] <ID>]\n"
+#| "\n"
+#| "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp "
+#| "<name>] [--nowait] [--timeout <timeout>]\n"
+#| "\n"
+#| "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] "
+#| "[--timeout <timeout>]\n"
+#| "\n"
+#| "  down [ id | uuid | path | apath ] <ID>\n"
+#| "\n"
+#| "  delete [ id | uuid | path ] <ID>\n"
 #| "\n"
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
@@ -514,15 +588,16 @@ msgid ""
 "\n"
 "  show active     [[ id | uuid | path | apath ] <ID>]\n"
 "\n"
-"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] "
-"[--nowait] [--timeout <timeout>]\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
 "\n"
-"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--"
-"timeout <timeout>]\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>]\n"
 "\n"
 "  down [ id | uuid | path | apath ] <ID>\n"
 "\n"
+"  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
 "  delete [ id | uuid | path ] <ID>\n"
+"\n"
 "\n"
 msgstr ""
 "Usage: nmcli connection { COMMAND | help }\n"
@@ -532,390 +607,773 @@ msgstr ""
 "\n"
 "  show active     [[ id | uuid | path | apath ] <ID>]\n"
 "\n"
-"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] "
-"[--nowait] [--timeout <timeout>]\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
 "\n"
-"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [--nowait] [--"
-"timeout <timeout>]\n"
+"  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>]\n"
 "\n"
 "  down [ id | uuid | path | apath ] <ID>\n"
 "\n"
+"  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
 "  delete [ id | uuid | path ] <ID>\n"
 "\n"
+"\n"
 
-#: ../cli/src/connections.c:256
+#: ../cli/src/connections.c:216
 #, c-format
-#| msgid "Error: 'con list': %s"
+msgid ""
+"Usage: nmcli connection add { OPTIONS | help }\n"
+"  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
+"  COMMON_OPTIONS:\n"
+"                  type <type>\n"
+"                  [con-name <connection name>]\n"
+"                  [autoconnect yes|no]\n"
+"                  [ifname <interface name>]\n"
+"\n"
+"  TYPE_SPECIFIC_OPTIONS:\n"
+"    ethernet:     [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    wifi:         [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [ssid <SSID>]\n"
+"\n"
+"    wimax:        [mac <MAC address>]\n"
+"                  [nsp <NSP>]\n"
+"\n"
+"    gsm:          apn <APN>]\n"
+"                  [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    cdma:         [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    infiniband:   [mac <MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [transport-mode <mode>]\n"
+"\n"
+"    bluetooth:    [addr <bluetooth address>]\n"
+"                  [bt-type panu|dun-gsm|dun-cdma]\n"
+"                  [transport-mode datagram | connected]\n"
+"\n"
+"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)\n"
+"                  [id <VLAN id>]\n"
+"                  [flags <VLAN flags>]\n"
+"                  [ingress <ingress priority mapping>]\n"
+"                  [egress <egress priority mapping>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
+"| broadcast (3) |\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
+"(6)]\n"
+"                  [miimon <num>]\n"
+"                  [downdelay <num>]\n"
+"                  [updelay <num>]\n"
+"                  [arp_interval <num>]\n"
+"                  [arp_ip_traget <num>]\n"
+"\n"
+"    bond-slave:   master <master (ifname or connection UUID)\n"
+"\n"
+"    bridge:       [stp yes|no>]\n"
+"                  [priority <num>]\n"
+"                  [forward-delay <2-30>]\n"
+"                  [hello-time <1-10>]\n"
+"                  [max-age <6-40>]\n"
+"                  [ageing-time <0-1000000>]\n"
+"\n"
+"    bridge-slave: master <master (ifname or connection UUID)\n"
+"                  [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+"                  [user <username>]\n"
+"\n"
+"    olpc-mesh:    ssid <SSID>\n"
+"                  [channel <1-13>]\n"
+"                  [dhcp-anycast <MAC address>]\n"
+"\n"
+"  IP_OPTIONS:\n"
+"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
+msgstr ""
+"వాడుక: nmcli connection add { OPTIONS | help }\n"
+"  ఐచ్చికాలు := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
+"\n"
+"  COMMON_OPTIONS:\n"
+"                  type <type>\n"
+"                  [con-name <connection name>]\n"
+"                  [autoconnect yes|no]\n"
+"                  [ifname <interface name>]\n"
+"\n"
+"  TYPE_SPECIFIC_OPTIONS:\n"
+"    ethernet:     [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    wifi:         [mac <MAC address>]\n"
+"                  [cloned-mac <cloned MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [ssid <SSID>]\n"
+"\n"
+"    wimax:        [mac <MAC address>]\n"
+"                  [nsp <NSP>]\n"
+"\n"
+"    gsm:          apn <APN>]\n"
+"                  [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    cdma:         [user <username>]\n"
+"                  [password <password>]\n"
+"\n"
+"    infiniband:   [mac <MAC address>]\n"
+"                  [mtu <MTU>]\n"
+"                  [transport-mode <mode>]\n"
+"\n"
+"    bluetooth:    [addr <bluetooth address>]\n"
+"                  [bt-type panu|dun-gsm|dun-cdma]\n"
+"                  [transport-mode datagram | connected]\n"
+"\n"
+"    vlan:         dev <parent device (connection  UUID, ifname, or MAC)\n"
+"                  [id <VLAN id>]\n"
+"                  [flags <VLAN flags>]\n"
+"                  [ingress <ingress priority mapping>]\n"
+"                  [egress <egress priority mapping>]\n"
+"                  [mtu <MTU>]\n"
+"\n"
+"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
+"| broadcast (3) |\n"
+"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
+"(6)]\n"
+"                  [miimon <num>]\n"
+"                  [downdelay <num>]\n"
+"                  [updelay <num>]\n"
+"                  [arp_interval <num>]\n"
+"                  [arp_ip_traget <num>]\n"
+"\n"
+"    bond-slave:   master <master (ifname or connection UUID)\n"
+"\n"
+"    bridge:       [stp yes|no>]\n"
+"                  [priority <num>]\n"
+"                  [forward-delay <2-30>]\n"
+"                  [hello-time <1-10>]\n"
+"                  [max-age <6-40>]\n"
+"                  [ageing-time <0-1000000>]\n"
+"\n"
+"    bridge-slave: master <master (ifname or connection UUID)\n"
+"                  [priority <0-63>]\n"
+"                  [path-cost <1-65535>]\n"
+"                  [hairpin yes|no]\n"
+"\n"
+"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+"                  [user <username>]\n"
+"\n"
+"    olpc-mesh:    ssid <SSID>\n"
+"                  [channel <1-13>]\n"
+"                  [dhcp-anycast <MAC address>]\n"
+"\n"
+"  IP_OPTIONS:\n"
+"                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+"                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
+
+#: ../cli/src/connections.c:322
+#, c-format
 msgid "Error: 'list configured': %s"
 msgstr "దోషం: 'ఆకృతీకరించిన జాబితా': %s"
 
-#: ../cli/src/connections.c:258
+#: ../cli/src/connections.c:324
 #, c-format
-#| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'list configured': %s; allowed fields: %s"
 msgstr "దోషం: 'ఆకృతీకరించిన జాబితా': %s; అనుమతించు క్షేత్రాలు: %s"
 
-#: ../cli/src/connections.c:266
+#. Main header
+#: ../cli/src/connections.c:332
 msgid "Connection details"
 msgstr "అనుసంధానము వివరములు"
 
-#: ../cli/src/connections.c:317
+#: ../cli/src/connections.c:396
 msgid "never"
 msgstr "ఎప్పటికికాదు"
 
 #. "CAPABILITIES"
-#. Print header
-#. "WIFI-PROPERTIES"
-#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
-#: ../cli/src/connections.c:554 ../cli/src/connections.c:555
-#: ../cli/src/connections.c:557 ../cli/src/devices.c:458
-#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
-#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
-#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
-#: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
-#: ../cli/src/network-manager.c:293
+#: ../cli/src/connections.c:397 ../cli/src/connections.c:398
+#: ../cli/src/connections.c:647 ../cli/src/connections.c:648
+#: ../cli/src/connections.c:650 ../cli/src/devices.c:489
+#: ../cli/src/devices.c:539 ../cli/src/devices.c:673 ../cli/src/devices.c:674
+#: ../cli/src/devices.c:675 ../cli/src/devices.c:706 ../cli/src/devices.c:734
+#: ../cli/src/devices.c:735 ../cli/src/devices.c:736 ../cli/src/devices.c:737
+#: ../cli/src/devices.c:738 ../cli/src/devices.c:739 ../cli/src/devices.c:740
+#: ../cli/src/network-manager.c:294
 msgid "yes"
 msgstr "అవును"
 
-#: ../cli/src/connections.c:318 ../cli/src/connections.c:319
-#: ../cli/src/connections.c:554 ../cli/src/connections.c:555
-#: ../cli/src/connections.c:557 ../cli/src/devices.c:458
-#: ../cli/src/devices.c:511 ../cli/src/devices.c:629 ../cli/src/devices.c:630
-#: ../cli/src/devices.c:631 ../cli/src/devices.c:663 ../cli/src/devices.c:690
-#: ../cli/src/devices.c:691 ../cli/src/devices.c:692 ../cli/src/devices.c:693
-#: ../cli/src/devices.c:694 ../cli/src/devices.c:695 ../cli/src/devices.c:696
-#: ../cli/src/network-manager.c:295
+#: ../cli/src/connections.c:397 ../cli/src/connections.c:398
+#: ../cli/src/connections.c:647 ../cli/src/connections.c:648
+#: ../cli/src/connections.c:650 ../cli/src/devices.c:489
+#: ../cli/src/devices.c:539 ../cli/src/devices.c:673 ../cli/src/devices.c:674
+#: ../cli/src/devices.c:675 ../cli/src/devices.c:706 ../cli/src/devices.c:734
+#: ../cli/src/devices.c:735 ../cli/src/devices.c:736 ../cli/src/devices.c:737
+#: ../cli/src/devices.c:738 ../cli/src/devices.c:739 ../cli/src/devices.c:740
+#: ../cli/src/network-manager.c:296
 msgid "no"
 msgstr "కాదు"
 
-#: ../cli/src/connections.c:400
-#| msgid "Active connections"
+#. Add headers
+#: ../cli/src/connections.c:475
 msgid "List of configured connections"
 msgstr "ఆకృతీకరించిన అనుసంధానాల జాబితా"
 
-#: ../cli/src/connections.c:417 ../cli/src/connections.c:953
-#: ../cli/src/connections.c:1438 ../cli/src/connections.c:1459
-#: ../cli/src/connections.c:1468 ../cli/src/connections.c:1478
-#: ../cli/src/connections.c:1490 ../cli/src/connections.c:1627
-#: ../cli/src/connections.c:1727 ../cli/src/devices.c:1197
-#: ../cli/src/devices.c:1305 ../cli/src/devices.c:1313
-#: ../cli/src/devices.c:1684 ../cli/src/devices.c:1691
-#: ../cli/src/devices.c:1705 ../cli/src/devices.c:1712
-#: ../cli/src/devices.c:1729 ../cli/src/devices.c:1740
-#: ../cli/src/devices.c:1938 ../cli/src/devices.c:2026
-#: ../cli/src/devices.c:2033
+#: ../cli/src/connections.c:494 ../cli/src/connections.c:1023
+#: ../cli/src/connections.c:1509 ../cli/src/connections.c:1530
+#: ../cli/src/connections.c:1539 ../cli/src/connections.c:1549
+#: ../cli/src/connections.c:1682 ../cli/src/connections.c:3121
+#: ../cli/src/devices.c:1350 ../cli/src/devices.c:1358
+#: ../cli/src/devices.c:1748 ../cli/src/devices.c:1755
+#: ../cli/src/devices.c:1769 ../cli/src/devices.c:1776
+#: ../cli/src/devices.c:1793 ../cli/src/devices.c:1801
+#: ../cli/src/devices.c:1997 ../cli/src/devices.c:2093
+#: ../cli/src/devices.c:2100
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "దోషము: %s ఆర్గుమెంట్ తప్పిపోయినది."
 
-#: ../cli/src/connections.c:431
+#: ../cli/src/connections.c:508
 #, c-format
 msgid "Error: %s - no such connection."
 msgstr "దోషము: %s - అటువంటి అనుసంధానము లేదు."
 
-#: ../cli/src/connections.c:444
+#: ../cli/src/connections.c:521
 #, c-format
-#| msgid "Error: 'con list': %s"
 msgid "Error: 'show configured': %s"
 msgstr "దోషం: 'ఆకృతీకరించినవి చూపు': %s"
 
-#: ../cli/src/connections.c:446
+#: ../cli/src/connections.c:523
 #, c-format
-#| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'show configured': %s; allowed fields: %s"
 msgstr "దోషం: 'ఆకృతీకరించినవి చూపు': %s; అనుమతించు క్షేత్రాలు: %s"
 
-#: ../cli/src/connections.c:451 ../cli/src/connections.c:1828
-#: ../cli/src/devices.c:1917 ../cli/src/devices.c:2244
-#: ../cli/src/network-manager.c:396 ../cli/src/network-manager.c:426
-#: ../cli/src/network-manager.c:436 ../cli/src/network-manager.c:444
-#: ../cli/src/network-manager.c:454 ../cli/src/network-manager.c:476
-#: ../cli/src/network-manager.c:577 ../cli/src/network-manager.c:590
+#: ../cli/src/connections.c:529 ../cli/src/connections.c:3229
+#: ../cli/src/devices.c:1976 ../cli/src/devices.c:2325
+#: ../cli/src/network-manager.c:399 ../cli/src/network-manager.c:429
+#: ../cli/src/network-manager.c:439 ../cli/src/network-manager.c:447
+#: ../cli/src/network-manager.c:457 ../cli/src/network-manager.c:479
+#: ../cli/src/network-manager.c:580 ../cli/src/network-manager.c:593
 #, c-format
 msgid "Error: %s."
 msgstr "దోషము: %s."
 
-#: ../cli/src/connections.c:464
+#: ../cli/src/connections.c:542
 msgid "activating"
 msgstr "క్రియాశీలపరచుచున్నది"
 
-#: ../cli/src/connections.c:466
+#: ../cli/src/connections.c:544
 msgid "activated"
 msgstr "క్రియాశీలపరచబడింది"
 
-#: ../cli/src/connections.c:470
+#: ../cli/src/connections.c:548
 msgid "deactivated"
 msgstr "క్రియాహీనపరచబడింది"
 
-#: ../cli/src/connections.c:482
+#: ../cli/src/connections.c:560
 msgid "VPN connecting (prepare)"
 msgstr "VPN అనుసంధానమౌచున్నది (సిద్దపరచు)"
 
-#: ../cli/src/connections.c:484
+#: ../cli/src/connections.c:562
 msgid "VPN connecting (need authentication)"
 msgstr "VPN అనుసంధానమౌచున్నది (ధృవీకరణము అవసరము)"
 
-#: ../cli/src/connections.c:486
+#: ../cli/src/connections.c:564
 msgid "VPN connecting"
 msgstr "VPN అనుసంధానమౌచున్నది"
 
-#: ../cli/src/connections.c:488
+#: ../cli/src/connections.c:566
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN అనుసంధానమౌచున్నది (IP ఆకృతీకరణను పొందుచున్నది)"
 
-#: ../cli/src/connections.c:490
+#: ../cli/src/connections.c:568
 msgid "VPN connected"
 msgstr "VPN అనుసంధానమైంది"
 
-#: ../cli/src/connections.c:492
+#: ../cli/src/connections.c:570
 msgid "VPN connection failed"
 msgstr "VPN అనుసంధానము విఫలమైంది"
 
-#: ../cli/src/connections.c:494
+#: ../cli/src/connections.c:572
 msgid "VPN disconnected"
 msgstr "VPN అననుసంధానమైంది"
 
-#: ../cli/src/connections.c:550 ../cli/src/connections.c:560
+#: ../cli/src/connections.c:643 ../cli/src/connections.c:653
+#: ../cli/src/devices.c:479
 msgid "N/A"
 msgstr "N/A"
 
-#: ../cli/src/connections.c:759
+#: ../cli/src/connections.c:826
 #, c-format
-#| msgid "Error: 'con list': %s"
 msgid "Error: 'list active': %s"
 msgstr "Error: 'క్రియాశీల జాబితా': %s"
 
-#: ../cli/src/connections.c:761
+#: ../cli/src/connections.c:828
 #, c-format
-#| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'list active': %s; allowed fields: %s"
 msgstr "దోషం: 'క్రియాశీల జాబితా': %s; అనుమతించు క్షేత్రాలు: %s"
 
-#: ../cli/src/connections.c:769
+#. Main header
+#: ../cli/src/connections.c:836
 msgid "Active connection details"
 msgstr "క్రియాశీల అనుసంధానము వివరాలు"
 
-#: ../cli/src/connections.c:907 ../cli/src/connections.c:1514
-#: ../cli/src/connections.c:1610 ../cli/src/connections.c:1696
-#: ../cli/src/devices.c:1005 ../cli/src/devices.c:1049
-#: ../cli/src/devices.c:1222 ../cli/src/devices.c:1351
-#: ../cli/src/devices.c:1776 ../cli/src/devices.c:2070
-#: ../cli/src/network-manager.c:339
+#: ../cli/src/connections.c:975 ../cli/src/connections.c:1569
+#: ../cli/src/connections.c:1665 ../cli/src/connections.c:3090
+#: ../cli/src/devices.c:1058 ../cli/src/devices.c:1105
+#: ../cli/src/devices.c:1255 ../cli/src/devices.c:1396
+#: ../cli/src/devices.c:1835 ../cli/src/devices.c:2138
+#: ../cli/src/network-manager.c:340
 #, c-format
 msgid "Error: NetworkManager is not running."
 msgstr "దోషం: నెట్వర్కునిర్వాహిక నడుచుటలేదు."
 
-#: ../cli/src/connections.c:936
-#| msgid "Active connections"
+#. Add headers
+#: ../cli/src/connections.c:1001
 msgid "List of active connections"
 msgstr "క్రియాశీల అనుసంధానముల జాబితా"
 
-#: ../cli/src/connections.c:967 ../cli/src/connections.c:1637
+#: ../cli/src/connections.c:1037 ../cli/src/connections.c:1692
 #, c-format
 msgid "Error: '%s' is not an active connection."
 msgstr "దోషము: '%s' క్రియాశీల అనుసంధానం కాదు."
 
-#: ../cli/src/connections.c:980
+#: ../cli/src/connections.c:1050
 #, c-format
-#| msgid "Error: 'con status': %s"
 msgid "Error: 'show active': %s"
 msgstr "దోషం: 'క్రియాశీలమైనవి చూపు': %s"
 
-#: ../cli/src/connections.c:982
+#: ../cli/src/connections.c:1052
 #, c-format
-#| msgid "Error: 'con status': %s; allowed fields: %s"
 msgid "Error: 'show active': %s; allowed fields: %s"
 msgstr "దోషం: 'క్రియాశీలమైనవి చూపు': %s; అనుమతించు క్షేత్రాలు: %s"
 
-#: ../cli/src/connections.c:1075
+#: ../cli/src/connections.c:1145
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "పరికరము '%s' పైన యెటువంటి క్రియాశీల అనుసంధానము లేదు"
 
-#: ../cli/src/connections.c:1083
+#: ../cli/src/connections.c:1153
 msgid "no active connection or device"
 msgstr "ఎటువంటి క్రియాశీల అనుసంధానము లేదా పరికరము లేదు"
 
-#: ../cli/src/connections.c:1154
+#: ../cli/src/connections.c:1224
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "పరికరము '%s' అనుసంధానము '%s'తో సారూప్యమైనది కాదు"
 
-#: ../cli/src/connections.c:1157
+#: ../cli/src/connections.c:1227
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "అనుసంధానము '%s' కొరకు యే పరికరము కనుగొనబడలేదు"
 
-#: ../cli/src/connections.c:1169
+#: ../cli/src/connections.c:1239
 msgid "unknown reason"
 msgstr "తెలియని కారణము"
 
-#: ../cli/src/connections.c:1171
+#: ../cli/src/connections.c:1241
 msgid "none"
 msgstr "ఏదీకాదు"
 
-#: ../cli/src/connections.c:1173
+#: ../cli/src/connections.c:1243
 msgid "the user was disconnected"
 msgstr "వినియోగదారి అననుసంధానింప బడినారు"
 
-#: ../cli/src/connections.c:1175
+#: ../cli/src/connections.c:1245
 msgid "the base network connection was interrupted"
 msgstr "ఆధార నెట్వర్కు అనుసంధానము ఆటంకపరచబడింది"
 
-#: ../cli/src/connections.c:1177
+#: ../cli/src/connections.c:1247
 msgid "the VPN service stopped unexpectedly"
 msgstr "VPN సేవ అనుకోకుండా ఆపివేయబడింది"
 
-#: ../cli/src/connections.c:1179
+#: ../cli/src/connections.c:1249
 msgid "the VPN service returned invalid configuration"
 msgstr "VPN సేవ చెల్లని ఆకృతీకరణను తిప్పియిచ్చినది"
 
-#: ../cli/src/connections.c:1181
+#: ../cli/src/connections.c:1251
 msgid "the connection attempt timed out"
 msgstr "అనుసంధానపు ప్రయత్నం సమయం మించిపోయినది"
 
-#: ../cli/src/connections.c:1183
+#: ../cli/src/connections.c:1253
 msgid "the VPN service did not start in time"
 msgstr "VPN సేవ సమయం లోపల ప్రారంభించబడలేదు"
 
-#: ../cli/src/connections.c:1185
+#: ../cli/src/connections.c:1255
 msgid "the VPN service failed to start"
 msgstr "VPN సేవ ప్రారంభమగుటకు విఫలమైంది"
 
-#: ../cli/src/connections.c:1187
+#: ../cli/src/connections.c:1257
 msgid "no valid VPN secrets"
 msgstr "ఏ విలువైన VPN రహస్యాలు లేవు"
 
-#: ../cli/src/connections.c:1189
+#: ../cli/src/connections.c:1259
 msgid "invalid VPN secrets"
 msgstr "చెల్లని VPN రహస్యాలు"
 
-#: ../cli/src/connections.c:1191
+#: ../cli/src/connections.c:1261
 msgid "the connection was removed"
 msgstr "అనుసంధానము తీసివేయబడింది"
 
-#: ../cli/src/connections.c:1208 ../cli/src/connections.c:1328
+#: ../cli/src/connections.c:1278 ../cli/src/connections.c:1398
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "అనుసంధానం సఫలవంతంగా క్రియాశీలపరచబడెను (డి-బస్ క్రియాశీల పాత్: %s)\n"
 
-#: ../cli/src/connections.c:1213
+#: ../cli/src/connections.c:1283
 #, c-format
 msgid "Error: Connection activation failed."
 msgstr "దోషము: అనుసంధానము క్రియాశీలపరచుట విఫలమైంది."
 
-#: ../cli/src/connections.c:1238
+#: ../cli/src/connections.c:1308
 #, c-format
 msgid "VPN connection successfully activated (D-Bus active path: %s)\n"
 msgstr ""
 "VPN అనుసంధానం సఫలవంతంగా క్రియాశీలపరచబడెను (డి-బస్ క్రియాశీల పాత్: %s)\n"
 
-#: ../cli/src/connections.c:1246
+#: ../cli/src/connections.c:1316
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "దోషము: అనుసంధానము క్రియాశీలపరచుట విఫలమైంది: %s."
 
-#: ../cli/src/connections.c:1264 ../cli/src/devices.c:1110
+#: ../cli/src/connections.c:1334 ../cli/src/devices.c:1166
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "దోషము: కాలపరిమితి %d సె మించినది."
 
-#: ../cli/src/connections.c:1319
+#: ../cli/src/connections.c:1389
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "దోషము: అనుసంధానము క్రియాశీలపరచుట విఫలమైంది: %s"
 
-#: ../cli/src/connections.c:1385
+#: ../cli/src/connections.c:1455
 #, c-format
 msgid ""
 "Error: Device '%s' is waiting for slaves before proceeding with activation."
 msgstr "దోషం: క్రియాశీలపరచుటకు ముందుగా పరికరం '%s' స్లేవ్స్ కొరకు వేచివుంది."
 
-#: ../cli/src/connections.c:1422 ../cli/src/connections.c:1595
-#: ../cli/src/connections.c:1703
+#: ../cli/src/connections.c:1493 ../cli/src/connections.c:1650
+#: ../cli/src/connections.c:3097
 msgid "Connection (name, UUID, or path): "
 msgstr "అనుసంధానం (పేరు, UUID, లేదా పాత్):"
 
-#: ../cli/src/connections.c:1427 ../cli/src/connections.c:1600
-#: ../cli/src/connections.c:1708
+#: ../cli/src/connections.c:1498 ../cli/src/connections.c:1655
+#: ../cli/src/connections.c:3102
 #, c-format
-#| msgid "Error: Unknown connection: %s."
 msgid "Error: No connection specified."
 msgstr "దోషము: ఏ అనుసంధానం తెలుపలేదు."
 
-#: ../cli/src/connections.c:1450
+#: ../cli/src/connections.c:1521
 #, c-format
 msgid "Error: Unknown connection: %s."
 msgstr "దోషము: తెలియని దోషము: %s."
 
-#: ../cli/src/connections.c:1498 ../cli/src/devices.c:1205
-#: ../cli/src/devices.c:1748
-#, c-format
-msgid "Error: timeout value '%s' is not valid."
-msgstr "దోషము: కాలముగింపు విలువ '%s' చెల్లనిది."
-
-#: ../cli/src/connections.c:1503 ../cli/src/devices.c:976
-#: ../cli/src/devices.c:1319 ../cli/src/devices.c:1753
-#: ../cli/src/devices.c:2039
+#: ../cli/src/connections.c:1558 ../cli/src/devices.c:1028
+#: ../cli/src/devices.c:1364 ../cli/src/devices.c:1812
+#: ../cli/src/devices.c:2106
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "తెలియని పారామితి: %s\n"
 
-#: ../cli/src/connections.c:1532
+#: ../cli/src/connections.c:1587
 #, c-format
 msgid "Error: No suitable device found: %s."
 msgstr "దోషము: ఎటువంటి సూటయ్యే పరికరము కనబడలేదు: %s."
 
-#: ../cli/src/connections.c:1534
+#: ../cli/src/connections.c:1589
 #, c-format
 msgid "Error: No suitable device found."
 msgstr "దోషము: ఏ సూటగు పరికరము కనబడలేదు."
 
-#: ../cli/src/connections.c:1666
+#: ../cli/src/connections.c:1821 ../cli/src/utils.c:432
+#, c-format
+#| msgid "'%s' not allowed for %s=%s"
+msgid "'%s' not among [%s]"
+msgstr "'%s' [%s] నందు లేదు"
+
+#: ../cli/src/connections.c:1861
+#, c-format
+#| msgid "'%s' is not a valid MAC address"
+msgid "Error: '%s': '%s' is not a valid %s MAC address."
+msgstr "దోషం: '%s': '%s' చెల్లునటువంటి %s MAC చిరునామా కాదు."
+
+#: ../cli/src/connections.c:1862
+msgid "InfiniBand"
+msgstr "ఇన్ఫిబాండ్"
+
+#: ../cli/src/connections.c:1921
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: '%s': '%s' is not valid; use <%d-%d>."
+msgstr "దోషం: '%s': '%s' చెల్లునది కాదు; <%d-%d> వుపయోగించు."
+
+#: ../cli/src/connections.c:1977 ../cli/src/connections.c:2024
+#: ../cli/src/connections.c:2074 ../cli/src/connections.c:2330
+#, c-format
+#| msgid "Error: timeout value '%s' is not valid."
+msgid "Error: 'mtu': '%s' is not valid."
+msgstr "దోషం: 'mtu': '%s' చెల్లునది కాదు."
+
+#: ../cli/src/connections.c:2065 ../cli/src/connections.c:2739
+#| msgid "SSID"
+msgid "SSID: "
+msgstr "SSID: "
+
+#: ../cli/src/connections.c:2068 ../cli/src/connections.c:2742
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'ssid' is required."
+msgstr "దోషం: 'ssid' అవసరమైంది."
+
+#: ../cli/src/connections.c:2124
+#| msgid "WiMAX NSP list"
+msgid "WiMAX NSP name: "
+msgstr "WiMAX NSP పేరు: "
+
+#: ../cli/src/connections.c:2127
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'nsp' is required."
+msgstr "దోషం: 'nsp' అనసరమైంది."
+
+#: ../cli/src/connections.c:2171
+msgid "APN: "
+msgstr "APN: "
+
+#: ../cli/src/connections.c:2174
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'apn' is required."
+msgstr "దోషము: 'apn' అవసరమైంది."
+
+#: ../cli/src/connections.c:2218
+msgid "Bluetooth device address: "
+msgstr "బ్లూటూత్ పరికర చిరునామా:"
+
+#: ../cli/src/connections.c:2221
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'addr' is required."
+msgstr "దోషం: 'addr' అవసరమైంది."
+
+#: ../cli/src/connections.c:2258
+#, c-format
+msgid "Error: 'bt-type': '%s' not valid; use [%s, %s (%s), %s]."
+msgstr "దోషం: 'bt-type': '%s' చెల్లనిది; వాడుక [%s, %s (%s), %s]."
+
+#: ../cli/src/connections.c:2293
+#| msgid "no device found for connection '%s'"
+msgid "VLAN parent device or connection UUID: "
+msgstr "VLAN పేరెంట్ పరికరం లేదా అనుసంధానం UUID: "
+
+#: ../cli/src/connections.c:2296
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'dev' is required."
+msgstr "దోషం: 'dev' అవసరమైంది."
+
+#: ../cli/src/connections.c:2300
+msgid "VLAN ID <0-4095>: "
+msgstr "VLAN ID <0-4095>: "
+
+#: ../cli/src/connections.c:2303
+#| msgid "Error: Timeout %d sec expired."
+msgid "Error: 'id' is required."
+msgstr "దోషం: 'id' అవసరమైంది."
+
+#: ../cli/src/connections.c:2309
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'id': '%s' is not valid; use <0-4095>."
+msgstr "దోషం: 'id': '%s' చెల్లునది కాదు; <0-4095> వుపయోగించు."
+
+#: ../cli/src/connections.c:2319
+#, c-format
+#| msgid "'%s' is neither an UUID nor an interface name"
+msgid "Error: 'dev': '%s' is neither UUID, interface name, nor MAC."
+msgstr "దోషం: 'dev': '%s' అనునది UUID, ఇంటర్ఫేస్ పేరు,  MAC యేదీ కాదు."
+
+#: ../cli/src/connections.c:2337
+#, c-format
+#| msgid "Error: 'radio' command '%s' is not valid."
+msgid "Error: 'flags': '%s' is not valid; use <0-7>."
+msgstr "దోషం: 'flags': '%s' చెల్లునది కాదు; <0-7> వుపయోగించు."
+
+#: ../cli/src/connections.c:2346
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'ingress': '%s' is not valid; %s "
+msgstr "దోషం: 'ingress': '%s' చెల్లునది కాదు; %s "
+
+#: ../cli/src/connections.c:2356
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'egress': '%s' is not valid; %s "
+msgstr "దోషం: 'egress': '%s' చెల్లునది కాదు; %s "
+
+#: ../cli/src/connections.c:2444
+#, c-format
+#| msgid "Error: 'show active': %s"
+msgid "Error: 'mode': %s."
+msgstr "దోషం: 'mode': %s."
+
+#: ../cli/src/connections.c:2477
+msgid "Bond master: "
+msgstr "బాండ్ మాస్టర్:"
+
+#: ../cli/src/connections.c:2480 ../cli/src/connections.c:2617
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'master' is required."
+msgstr "దోషం: 'master' అవసరమైంది."
+
+#: ../cli/src/connections.c:2485 ../cli/src/connections.c:2628
+#, c-format
+msgid ""
+"Warning: 'type' is currently ignored. We only support ethernet slaves for "
+"now.\n"
+msgstr ""
+"హెచ్చరిక: 'type' ప్రస్తుతం విస్మరించబడింది. ఇప్పటికి మేము ఈథర్నెట్ స్లేవ్స్ "
+"మాత్రమే తోడ్పాటునిస్తాము.\n"
+
+#: ../cli/src/connections.c:2539
+#, c-format
+#| msgid "Error: 'nm status': %s"
+msgid "Error: 'stp': %s."
+msgstr "దోషం: 'stp': %s."
+
+#: ../cli/src/connections.c:2614
+msgid "Bridge master: "
+msgstr "బ్రిడ్జ్ మాస్టర్:"
+
+#: ../cli/src/connections.c:2622
+#, c-format
+#| msgid "'%s' is neither an UUID nor an interface name"
+msgid "Error: 'master': '%s' is not valid UUID nor interface."
+msgstr "దోషం: 'master': '%s' చెల్లునటువంటి UUID లేదా యింటర్ఫేస్ కాదు."
+
+#: ../cli/src/connections.c:2648
+#, c-format
+#| msgid "Error: 'show active': %s"
+msgid "Error: 'hairpin': %s."
+msgstr "దోషం: 'hairpin': %s."
+
+#: ../cli/src/connections.c:2695
+msgid "VPN type: "
+msgstr "VPN రకం: "
+
+#: ../cli/src/connections.c:2698
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'vpn-type' is required."
+msgstr "దోషం: 'vpn-type' అవసరమైంది."
+
+#: ../cli/src/connections.c:2704
+#, c-format
+#| msgid "Error: 'nm status': %s"
+msgid "Error: 'vpn-type': %s."
+msgstr "దోషం: 'vpn-type': %s."
+
+#: ../cli/src/connections.c:2749
+#, c-format
+#| msgid "Error: 'dev' command '%s' is not valid."
+msgid "Error: 'channel': '%s' is not valid; use <1-13>."
+msgstr "దోషం: 'channel': '%s' చెల్లునది కాదు; <1-13> వుపయోగించు."
+
+#: ../cli/src/connections.c:2781
+#, c-format
+#| msgid "Error: '%s' is not valid 'connection' command."
+msgid "Error: '%s' is a not valid connection type."
+msgstr "దోషం: '%s' చెల్లునటువంటి అనుసంధాన రకం కాదు."
+
+#: ../cli/src/connections.c:2816 ../cli/src/connections.c:2837
+#| msgid "Error: %s"
+msgid "Error: "
+msgstr "దోషము:"
+
+#: ../cli/src/connections.c:2900
+#, c-format
+#| msgid "Error: Failed to add/activate new connection: (%d) %s"
+msgid "Error: Failed to add '%s' connection: (%d) %s"
+msgstr "దోషం: '%s' అనుసంధానం జతచేయుటకు విఫలమైంది: (%d) %s"
+
+#: ../cli/src/connections.c:2905
+#, c-format
+msgid "Connection '%s' (%s) successfully added.\n"
+msgstr "అనుసంధానం '%s' (%s) విజయవంతంగా జతచేయబడెను.\n"
+
+#: ../cli/src/connections.c:2949
+#| msgid "Connection list"
+msgid "Connection type: "
+msgstr "అనుసంధానము రకం:"
+
+#: ../cli/src/connections.c:2953
+#, c-format
+#| msgid "Error: value for '%s' argument is required."
+msgid "Error: 'type' argument is required."
+msgstr "దోషము: 'type' ఆర్గుమెంట్ అవసరమైంది."
+
+#: ../cli/src/connections.c:2959
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: invalid connection type; %s."
+msgstr "దోషము: చెల్లని అనుసంధానం రకం; %s."
+
+#: ../cli/src/connections.c:2968
+#, c-format
+#| msgid "Error: Unknown connection: %s."
+msgid "Error: 'autoconnect': %s."
+msgstr "దోషం: 'autoconnect': %s."
+
+#: ../cli/src/connections.c:2978
+#, c-format
+#| msgid "'%s' is not a valid interface name"
+msgid "Error: 'ifname': '%s' is not a valid interface."
+msgstr "దోషం: 'ifname': '%s' చెల్లునటువంటి యిటర్ఫేస్ కాదు."
+
+#: ../cli/src/connections.c:3060
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "దోషము: అనుసంధానము తొలగింపు విఫలమైంది: %s"
 
-#: ../cli/src/connections.c:1736
+#: ../cli/src/connections.c:3130
 #, c-format
-#| msgid "Error: Unknown connection: %s."
 msgid "Error: unknown connection: %s\n"
 msgstr "దోషము: తెలియని అనుసంధానం: %s\n"
 
 #. truncate trailing ", "
-#: ../cli/src/connections.c:1770
+#: ../cli/src/connections.c:3164
 #, c-format
-#| msgid "Error: Unknown connection: %s."
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "దోషము: తెలియని అనుసంధానము(ల) ను తొలగించలేదు: %s."
 
-#: ../cli/src/connections.c:1799
+#: ../cli/src/connections.c:3193
 #, c-format
 msgid ""
 "Error: 'configured' or 'active' command is expected for 'connection show'."
 msgstr "దోషం: 'configured' లేదా 'active' ఆదేశం 'connection show' కు కావాలి."
 
-#: ../cli/src/connections.c:1819
+#: ../cli/src/connections.c:3220
 #, c-format
-#| msgid "Error: '%s' is not an active connection."
 msgid "Error: '%s' is not valid 'connection' command."
 msgstr "దోషము: '%s' చెల్లునటువంటి 'అనుసంధాన' ఆదేశం కాదు."
 
-#: ../cli/src/connections.c:1884
+#: ../cli/src/connections.c:3285
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "దోషము: సిస్టమ్ అమరికలను పొందలేక పోయింది."
 
-#: ../cli/src/connections.c:1894
+#: ../cli/src/connections.c:3295
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "దోషము: అనుసంధానములను పొందలేదు: అమరికల సేవ నడుచుటలేదు."
 
 #. 0
-#. 9
+#. 12
 #. 3
-#: ../cli/src/devices.c:71 ../cli/src/devices.c:110 ../cli/src/devices.c:204
-#: ../cli/src/devices.c:220
+#: ../cli/src/devices.c:71 ../cli/src/devices.c:110 ../cli/src/devices.c:207
+#: ../cli/src/devices.c:225
 msgid "DEVICE"
 msgstr "DEVICE"
 
@@ -947,7 +1405,7 @@ msgstr "WIMAX-PROPERTIES"
 
 #. 5
 #. 0
-#: ../cli/src/devices.c:89 ../cli/src/devices.c:217
+#: ../cli/src/devices.c:89 ../cli/src/devices.c:222
 msgid "NSP"
 msgstr "NSP"
 
@@ -1072,7 +1530,7 @@ msgid "CARRIER"
 msgstr "CARRIER"
 
 #. 0
-#: ../cli/src/devices.c:165
+#: ../cli/src/devices.c:165 ../cli/src/devices.c:448
 msgid "WEP"
 msgstr "WEP"
 
@@ -1082,7 +1540,7 @@ msgid "WPA"
 msgstr "WPA"
 
 #. 2
-#: ../cli/src/devices.c:167
+#: ../cli/src/devices.c:167 ../cli/src/devices.c:456
 msgid "WPA2"
 msgstr "WPA2"
 
@@ -1133,78 +1591,107 @@ msgstr "SSID"
 
 #. 1
 #: ../cli/src/devices.c:196
-msgid "BSSID"
-msgstr "BSSID"
+#| msgid "SSID"
+msgid "SSID-HEX"
+msgstr "SSID-HEX"
 
 #. 2
 #: ../cli/src/devices.c:197
-msgid "MODE"
-msgstr "MODE"
+msgid "BSSID"
+msgstr "BSSID"
 
 #. 3
 #: ../cli/src/devices.c:198
-msgid "FREQ"
-msgstr "FREQ"
+msgid "MODE"
+msgstr "MODE"
 
 #. 4
 #: ../cli/src/devices.c:199
-msgid "RATE"
-msgstr "RATE"
+msgid "CHAN"
+msgstr "CHAN"
 
 #. 5
-#. 1
-#: ../cli/src/devices.c:200 ../cli/src/devices.c:218
-msgid "SIGNAL"
-msgstr "SIGNAL"
+#: ../cli/src/devices.c:200
+msgid "FREQ"
+msgstr "FREQ"
 
 #. 6
 #: ../cli/src/devices.c:201
-msgid "SECURITY"
-msgstr "SECURITY"
+msgid "RATE"
+msgstr "RATE"
 
 #. 7
-#: ../cli/src/devices.c:202
-msgid "WPA-FLAGS"
-msgstr "WPA-FLAGS"
+#. 1
+#: ../cli/src/devices.c:202 ../cli/src/devices.c:223
+msgid "SIGNAL"
+msgstr "SIGNAL"
 
 #. 8
 #: ../cli/src/devices.c:203
+msgid "BARS"
+msgstr "BARS"
+
+#. 9
+#: ../cli/src/devices.c:204
+msgid "SECURITY"
+msgstr "SECURITY"
+
+#. 10
+#: ../cli/src/devices.c:205
+msgid "WPA-FLAGS"
+msgstr "WPA-FLAGS"
+
+#. 11
+#: ../cli/src/devices.c:206
 msgid "RSN-FLAGS"
 msgstr "RSN-FLAGS"
 
-#. 10
+#. 13
 #. 4
-#: ../cli/src/devices.c:205 ../cli/src/devices.c:221
+#: ../cli/src/devices.c:208 ../cli/src/devices.c:226
 msgid "ACTIVE"
 msgstr "ACTIVE"
 
+#. 14
+#: ../cli/src/devices.c:209
+msgid "*"
+msgstr "*"
+
 #. 0
-#: ../cli/src/devices.c:233
+#: ../cli/src/devices.c:238
 msgid "SLAVES"
 msgstr "స్లేవ్స్"
 
 #. 0
-#: ../cli/src/devices.c:242
+#: ../cli/src/devices.c:247
 msgid "ID"
 msgstr "ID"
 
-#: ../cli/src/devices.c:258
+#: ../cli/src/devices.c:263
 #, c-format
 #| msgid ""
 #| "Usage: nmcli device { COMMAND | help }\n"
 #| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi | wimax }\n"
+#| "  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 #| "\n"
-#| "  COMMAND := { status | list | disconnect | wifi }\n"
+#| "  COMMAND := { status | show | disconnect | wifi }\n"
 #| "\n"
 #| "  status\n"
-#| "  list [iface <iface>]\n"
-#| "  disconnect iface <iface> [--nowait] [--timeout <timeout>]\n"
-#| "  wifi [list [iface <iface>] [bssid <BSSID>]]\n"
+#| "\n"
+#| "  show [<ifname>]\n"
+#| "\n"
+#| "  disconnect <ifname> [--nowait] [--timeout <timeout>]\n"
+#| "\n"
+#| "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
+#| "\n"
 #| "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
-#| "[iface <iface>] [bssid <BSSID>] [name <name>]\n"
+#| "[ifname <ifname>] [bssid <BSSID>] [name <name>]\n"
+#| "\n"
 #| "               [--private] [--nowait] [--timeout <timeout>]\n"
-#| "  wimax [list [iface <iface>] [nsp <name>]]\n"
+#| "\n"
+#| "  wifi rescan [[ifname] <ifname>]\n"
+#| "\n"
+#| "  wimax [list [ifname <ifname>] [nsp <name>]]\n"
 #| "\n"
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
@@ -1217,21 +1704,21 @@ msgid ""
 "\n"
 "  show [<ifname>]\n"
 "\n"
-"  disconnect <ifname> [--nowait] [--timeout <timeout>]\n"
+"  disconnect <ifname>\n"
 "\n"
 "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
 "\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
 "[ifname <ifname>] [bssid <BSSID>] [name <name>]\n"
 "\n"
-"               [--private] [--nowait] [--timeout <timeout>]\n"
+"               [private yes|no]\n"
 "\n"
 "  wifi rescan [[ifname] <ifname>]\n"
 "\n"
 "  wimax [list [ifname <ifname>] [nsp <name>]]\n"
 "\n"
 msgstr ""
-"Usage: nmcli device { COMMAND | help }\n"
+"వాడుక: nmcli device { COMMAND | help }\n"
 "\n"
 "  COMMAND := { status | show | disconnect | wifi | wimax }\n"
 "\n"
@@ -1241,229 +1728,215 @@ msgstr ""
 "\n"
 "  show [<ifname>]\n"
 "\n"
-"  disconnect <ifname> [--nowait] [--timeout <timeout>]\n"
+"  disconnect <ifname>\n"
 "\n"
 "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
 "\n"
 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] "
 "[ifname <ifname>] [bssid <BSSID>] [name <name>]\n"
 "\n"
-"               [--private] [--nowait] [--timeout <timeout>]\n"
+"               [private yes|no]\n"
 "\n"
 "  wifi rescan [[ifname] <ifname>]\n"
 "\n"
 "  wimax [list [ifname <ifname>] [nsp <name>]]\n"
 "\n"
 
-#: ../cli/src/devices.c:361
+#: ../cli/src/devices.c:365
 msgid "(none)"
 msgstr "(ఏదీకాదు)"
 
-#: ../cli/src/devices.c:417
+#: ../cli/src/devices.c:432
 #, c-format
 msgid "%u MHz"
 msgstr "%u MHz"
 
-#: ../cli/src/devices.c:418
+#: ../cli/src/devices.c:433
 #, c-format
 msgid "%u MB/s"
 msgstr "%u MB/s"
 
-#: ../cli/src/devices.c:427
-msgid "Encrypted: "
-msgstr "ఎన్క్రిప్టెడ్: "
+#: ../cli/src/devices.c:452
+msgid "WPA1"
+msgstr "WPA1"
 
-#: ../cli/src/devices.c:432
-msgid "WEP "
-msgstr "WEP "
+#: ../cli/src/devices.c:461
+msgid "802.1X"
+msgstr "802.1X"
 
-#: ../cli/src/devices.c:434
-msgid "WPA "
-msgstr "WPA "
-
-#: ../cli/src/devices.c:436
-msgid "WPA2 "
-msgstr "WPA2 "
-
-#: ../cli/src/devices.c:439
-msgid "Enterprise "
-msgstr "ఎంటర్‌ప్రైజ్ "
-
-#: ../cli/src/devices.c:448
+#: ../cli/src/devices.c:477
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: ../cli/src/devices.c:449
-msgid "Infrastructure"
-msgstr "అవస్థాపన(ఇన్ఫ్రాస్ట్రక్చర్)"
+#: ../cli/src/devices.c:478
+msgid "Infra"
+msgstr "Infra"
 
-#: ../cli/src/devices.c:485
+#: ../cli/src/devices.c:510
 msgid "Home"
 msgstr "నివాసం"
 
-#: ../cli/src/devices.c:488
+#: ../cli/src/devices.c:513
 msgid "Partner"
 msgstr "భాగస్వామి"
 
-#: ../cli/src/devices.c:491
+#: ../cli/src/devices.c:516
 msgid "Roaming"
 msgstr "రోమింగ్"
 
-#: ../cli/src/devices.c:563
-#, c-format
-#| msgid "Error: 'dev list': %s"
-msgid "Error: 'device show': %s"
-msgstr "దోషం: 'పరికరం చూపు': %s"
-
-#: ../cli/src/devices.c:565
-#, c-format
-#| msgid "Error: 'dev list': %s; allowed fields: %s"
-msgid "Error: 'device show': %s; allowed fields: %s"
-msgstr "దోషం: 'పరికరం చూపు': %s; అనుమతించు క్షేత్రాలు: %s"
-
-#: ../cli/src/devices.c:574
+#: ../cli/src/devices.c:588
 msgid "Device details"
 msgstr "పరికరము వివరములు"
 
-#: ../cli/src/devices.c:621 ../cli/src/devices.c:624 ../cli/src/devices.c:1136
+#: ../cli/src/devices.c:600
+#, c-format
+msgid "Error: 'device show': %s"
+msgstr "దోషం: 'పరికరం చూపు': %s"
+
+#: ../cli/src/devices.c:602
+#, c-format
+msgid "Error: 'device show': %s; allowed fields: %s"
+msgstr "దోషం: 'పరికరం చూపు': %s; అనుమతించు క్షేత్రాలు: %s"
+
+#: ../cli/src/devices.c:665 ../cli/src/devices.c:668 ../cli/src/devices.c:1192
 msgid "(unknown)"
 msgstr "(తెలియని)"
 
-#: ../cli/src/devices.c:633
+#: ../cli/src/devices.c:677
 msgid "not connected"
 msgstr "అనుసంధానం కాలేదు"
 
-#: ../cli/src/devices.c:660
+#: ../cli/src/devices.c:702
 #, c-format
 msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
-#. Print header
-#. "WIRED-PROPERTIES"
-#: ../cli/src/devices.c:736
+#: ../cli/src/devices.c:785
 msgid "on"
 msgstr "ఆన్"
 
-#: ../cli/src/devices.c:736
+#: ../cli/src/devices.c:785
 msgid "off"
 msgstr "ఆఫ్"
 
-#: ../cli/src/devices.c:993
+#: ../cli/src/devices.c:1046
 #, c-format
-#| msgid "Error: 'dev status': %s"
 msgid "Error: 'device status': %s"
 msgstr "దోషం: 'పరికరం చూపు': %s"
 
-#: ../cli/src/devices.c:995
+#: ../cli/src/devices.c:1048
 #, c-format
-#| msgid "Error: 'dev status': %s; allowed fields: %s"
 msgid "Error: 'device status': %s; allowed fields: %s"
 msgstr "దోషం: 'పరికరం స్థితి': %s; అనుమతించు క్షేత్రాలు: %s"
 
-#: ../cli/src/devices.c:1015
+#. Add headers
+#: ../cli/src/devices.c:1067
 msgid "Status of devices"
 msgstr "పరికరముల యొక్క స్థితి"
 
-#: ../cli/src/devices.c:1041
+#: ../cli/src/devices.c:1097
 #, c-format
-#| msgid "Error: invalid 'wwan' parameter: '%s'."
 msgid "Error: invalid extra argument '%s'."
 msgstr "దోషము: చెల్లని అదనపు ఆర్గుమెంట్ '%s'."
 
-#: ../cli/src/devices.c:1069 ../cli/src/devices.c:1240
-#: ../cli/src/devices.c:1377 ../cli/src/devices.c:2096
+#: ../cli/src/devices.c:1125 ../cli/src/devices.c:1274
+#: ../cli/src/devices.c:1417 ../cli/src/devices.c:2160
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "దోషము: పరికరము '%s' కనబడలేదు."
 
-#: ../cli/src/devices.c:1098
+#: ../cli/src/devices.c:1154
 #, c-format
 msgid "Success: Device '%s' successfully disconnected."
 msgstr "సఫలమైంది: పరికరము '%s' సఫలవంతంగా అననుసంధానించబడింది."
 
-#: ../cli/src/devices.c:1133
+#: ../cli/src/devices.c:1189
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s"
 msgstr "దోషము: పరికరము '%s' (%s) అననుసంధానము విఫలమైంది: %s"
 
-#: ../cli/src/devices.c:1146
+#: ../cli/src/devices.c:1202
 #, c-format
 msgid "Device '%s' has been disconnected.\n"
 msgstr "పరికరము '%s' అనుసంధానం తెంచబడింది.\n"
 
-#: ../cli/src/devices.c:1177 ../cli/src/devices.c:1186
+#: ../cli/src/devices.c:1229
+msgid "Interface: "
+msgstr "ఇంటర్ఫేస్:"
+
+#: ../cli/src/devices.c:1233 ../cli/src/devices.c:1242
 #, c-format
-#| msgid "Error: iface has to be specified."
 msgid "Error: No interface specified."
 msgstr "దోషము: ఏ యింటర్ఫేస్ తెలుపలేదు."
 
-#: ../cli/src/devices.c:1211
+#: ../cli/src/devices.c:1248
 #, c-format
-#| msgid "Error: unknown parameter: %s"
-msgid "Error: unknown argument '%s'."
-msgstr "దోషం: తెలియని ఆర్గుమెంట్ '%s'."
+#| msgid "Error: invalid extra argument '%s'."
+msgid "Error: extra argument not allowed: '%s'."
+msgstr "దోషం: అదనపు ఆర్గుమెంట్ అనుమతించబడదు: '%s'."
 
-#: ../cli/src/devices.c:1339
-#, c-format
-#| msgid "Error: 'dev wifi': %s"
-msgid "Error: 'device wifi': %s"
-msgstr "దోషం: 'పరికర వైఫై': %s"
-
-#: ../cli/src/devices.c:1341
-#, c-format
-#| msgid "Error: 'dev wifi': %s; allowed fields: %s"
-msgid "Error: 'device wifi': %s; allowed fields: %s"
-msgstr "దోషం: 'పరికర వైఫై': %s; అనుమతించిన క్షేత్రాలు: %s"
-
-#: ../cli/src/devices.c:1361
-#| msgid "WiFi scan list"
+#: ../cli/src/devices.c:1345
 msgid "Wi-Fi scan list"
 msgstr "వై-ఫై స్కాన్ జాబితా"
 
-#: ../cli/src/devices.c:1397 ../cli/src/devices.c:1451
+#: ../cli/src/devices.c:1384
+#, c-format
+msgid "Error: 'device wifi': %s"
+msgstr "దోషం: 'పరికర వైఫై': %s"
+
+#: ../cli/src/devices.c:1386
+#, c-format
+msgid "Error: 'device wifi': %s; allowed fields: %s"
+msgstr "దోషం: 'పరికర వైఫై': %s; అనుమతించిన క్షేత్రాలు: %s"
+
+#: ../cli/src/devices.c:1440 ../cli/src/devices.c:1509
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "దోషము: bssid '%s' తో యాక్సెస్ పాయింట్ కనబడలేదు."
 
-#: ../cli/src/devices.c:1414 ../cli/src/devices.c:1792
-#: ../cli/src/devices.c:1954
+#: ../cli/src/devices.c:1464 ../cli/src/devices.c:1851
+#: ../cli/src/devices.c:2013
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "దోషము: పరికరము '%s' అనునది Wi-Fi పరికరము కాదు."
 
-#: ../cli/src/devices.c:1482 ../cli/src/devices.c:1528
+#: ../cli/src/devices.c:1546 ../cli/src/devices.c:1592
 #, c-format
 msgid "Connection with UUID '%s' created and activated on device '%s'\n"
 msgstr ""
 "UUID '%s' తో అనుసంధానం సృష్టించబడింది మరియు పరికరం '%s' పై క్రియాశీలపరచబడెను\n"
 
-#: ../cli/src/devices.c:1487
+#: ../cli/src/devices.c:1551
 #, c-format
 msgid "Error: Connection activation failed: (%d) %s."
 msgstr "దోషము: అనుసంధానము క్రియాశీలపరచుట విఫలమైంది: (%d) %s."
 
-#: ../cli/src/devices.c:1512
+#: ../cli/src/devices.c:1576
 #, c-format
 msgid "Error: Failed to add/activate new connection: (%d) %s"
 msgstr "దోషం: కొత్త అనుసంధానం జతచేయుటకు/క్రియాశీలపరచుటకు విఫలమైంది: (%d) %s"
 
-#: ../cli/src/devices.c:1520
+#: ../cli/src/devices.c:1584
 #, c-format
 msgid "Error: Failed to add/activate new connection: Unknown error"
 msgstr ""
 "దోషం: కొత్త అనుసంధానం జతచేయుటకు/క్రియాశీలపరచుటకు విఫలమైంది: తెలియని దోషం"
 
-#: ../cli/src/devices.c:1674
+#: ../cli/src/devices.c:1733
+msgid "SSID or BSSID: "
+msgstr "SSID లేదా BSSID: "
+
+#: ../cli/src/devices.c:1738
 #, c-format
 msgid "Error: SSID or BSSID are missing."
 msgstr "దోషము: SSID లేదా BSSID దొరకట్లేదు."
 
-#: ../cli/src/devices.c:1698
+#: ../cli/src/devices.c:1762
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "దోషము: bssid ఆర్గుమెంట్ విలువ '%s' చెల్లునటువంటి BSSID కాదు."
 
-#: ../cli/src/devices.c:1722
+#: ../cli/src/devices.c:1786
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
@@ -1471,77 +1944,83 @@ msgstr ""
 "దోషం: wep-key-type ఆర్గుమెంట్ విలువ '%s' చెల్లనిది, 'key' లేదా 'phrase' "
 "వుపయోగించు."
 
-#: ../cli/src/devices.c:1762
+#: ../cli/src/devices.c:1806
+#, c-format
+#| msgid "Error: %s."
+msgid "Error: %s: %s."
+msgstr "దోషం: %s: %s."
+
+#: ../cli/src/devices.c:1821
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr ""
 "దోషం: (%s) కు అనుసంధానమగుటకు BSSID అనునది bssid ఆర్గుమెంట్ (%s)తో "
 "విభేదిస్తోంది."
 
-#: ../cli/src/devices.c:1768
+#: ../cli/src/devices.c:1827
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "దోషం: పారామితి '%s' అనునది SSID లేదా BSSID కాదు."
 
-#: ../cli/src/devices.c:1794 ../cli/src/devices.c:1956
+#: ../cli/src/devices.c:1853 ../cli/src/devices.c:2015
 #, c-format
 msgid "Error: No Wi-Fi device found."
 msgstr "దోషము: ఏ Wi-Fi పరికరము కనబడలేదు."
 
-#: ../cli/src/devices.c:1812
+#: ../cli/src/devices.c:1871
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "దోషము: SSID '%s'తో ఏ నెట్వర్కు కనబడలేదు."
 
-#: ../cli/src/devices.c:1814
+#: ../cli/src/devices.c:1873
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "దోషము: BSSID '%s'తో యే యాక్సెస్ పాయింట్ కనబడలేదు."
 
-#: ../cli/src/devices.c:1982
+#: ../cli/src/devices.c:1912
+msgid "Password: "
+msgstr "సంకేతపదం:"
+
+#: ../cli/src/devices.c:2041
 #, c-format
-#| msgid "Error: 'dev wifi' command '%s' is not valid."
 msgid "Error: 'device wifi' command '%s' is not valid."
 msgstr "దోషము: 'పరికర వైఫే' ఆదేశము '%s' చెల్లనిది."
 
-#: ../cli/src/devices.c:2058
-#, c-format
-#| msgid "Error: 'dev wimax': %s"
-msgid "Error: 'device wimax': %s"
-msgstr "దోషము: 'పరికర wimax': %s"
-
-#: ../cli/src/devices.c:2060
-#, c-format
-#| msgid "Error: 'dev wimax': %s; allowed fields: %s"
-msgid "Error: 'device wimax': %s; allowed fields: %s"
-msgstr "దోషము: 'పరికర wimax': %s; అనుమతించిన క్షేత్రములు: %s"
-
-#: ../cli/src/devices.c:2080
+#: ../cli/src/devices.c:2088
 msgid "WiMAX NSP list"
 msgstr "WiMAX NSP జాబితా"
 
-#: ../cli/src/devices.c:2116
+#: ../cli/src/devices.c:2126
+#, c-format
+msgid "Error: 'device wimax': %s"
+msgstr "దోషము: 'పరికర wimax': %s"
+
+#: ../cli/src/devices.c:2128
+#, c-format
+msgid "Error: 'device wimax': %s; allowed fields: %s"
+msgstr "దోషము: 'పరికర wimax': %s; అనుమతించిన క్షేత్రములు: %s"
+
+#: ../cli/src/devices.c:2183
 #, c-format
 msgid "Error: NSP with name '%s' not found."
 msgstr "దోషము: పేరు '%s'తో NSP కనబడలేదు."
 
-#: ../cli/src/devices.c:2127
+#: ../cli/src/devices.c:2196
 #, c-format
 msgid "Error: Device '%s' is not a WiMAX device."
 msgstr "దోషము: పరికరం '%s' WiMAX పరికరం కాదు."
 
-#: ../cli/src/devices.c:2158
+#: ../cli/src/devices.c:2234
 #, c-format
 msgid "Error: Access point with nsp '%s' not found."
 msgstr "దోషం: nsp '%s'తో యాక్సెస్ పాయింట్ కనబడలేదు."
 
-#: ../cli/src/devices.c:2185
+#: ../cli/src/devices.c:2266
 #, c-format
-#| msgid "Error: 'dev wimax' command '%s' is not valid."
 msgid "Error: 'device wimax' command '%s' is not valid."
 msgstr "దోషం: 'పరికర wimax' ఆదేశం '%s' చెల్లునదికాదు."
 
-#: ../cli/src/devices.c:2236
+#: ../cli/src/devices.c:2317
 #, c-format
 msgid "Error: 'dev' command '%s' is not valid."
 msgstr "దోషము: 'dev' ఆదేశము '%s' చెల్లనిది."
@@ -1562,7 +2041,6 @@ msgstr "నెట్వర్కింగ్"
 
 #. 3
 #: ../cli/src/network-manager.c:41
-#| msgid "WIFI"
 msgid "WIFI-HW"
 msgstr "WIFI-HW"
 
@@ -1573,7 +2051,6 @@ msgstr "WIFI"
 
 #. 5
 #: ../cli/src/network-manager.c:43
-#| msgid "WWAN"
 msgid "WWAN-HW"
 msgstr "WWAN-HW"
 
@@ -1584,7 +2061,6 @@ msgstr "WWAN"
 
 #. 7
 #: ../cli/src/network-manager.c:45
-#| msgid "WIMAX"
 msgid "WIMAX-HW"
 msgstr "WIMAX-HW"
 
@@ -1608,7 +2084,6 @@ msgstr "స్థాయి"
 
 #. 0
 #: ../cli/src/network-manager.c:77
-#| msgid "DOMAIN"
 msgid "DOMAINS"
 msgstr "డొమైన్లు"
 
@@ -1652,22 +2127,6 @@ msgstr ""
 
 #: ../cli/src/network-manager.c:113
 #, c-format
-#| msgid ""
-#| "Usage: nmcli nm { COMMAND | help }\n"
-#| "\n"
-#| "  COMMAND := { status | permissions | enable | sleep | wifi | wwan | "
-#| "wimax }\n"
-#| "\n"
-#| "  COMMAND := { status | permissions | enable | sleep | wifi | wwan }\n"
-#| "\n"
-#| "  status\n"
-#| "  permissions\n"
-#| "  enable [true|false]\n"
-#| "  sleep [true|false]\n"
-#| "  wifi [on|off]\n"
-#| "  wwan [on|off]\n"
-#| "  wimax [on|off]\n"
-#| "\n"
 msgid ""
 "Usage: nmcli radio { COMMAND | help }\n"
 "\n"
@@ -1713,13 +2172,11 @@ msgstr "సంధానం తెంచుతోంది"
 
 #: ../cli/src/network-manager.c:186
 #, c-format
-#| msgid "Error: %s."
 msgid "Error: %s"
 msgstr "దోషము: %s"
 
 #: ../cli/src/network-manager.c:188
 #, c-format
-#| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: %s (allowed fields: %s)"
 msgstr "దోషము: %s (అనుమతించబడు క్షేత్రములు: %s)"
 
@@ -1737,32 +2194,29 @@ msgstr "చేతనమైంది"
 msgid "disabled"
 msgstr "అచేతనమైంది"
 
-#: ../cli/src/network-manager.c:222
+#: ../cli/src/network-manager.c:221
 msgid "NetworkManager status"
 msgstr "నెట్వర్కునిర్వాహిక స్థితి"
 
-#. Print header
-#: ../cli/src/network-manager.c:225
+#: ../cli/src/network-manager.c:226
 msgid "running"
 msgstr "నడుచుచున్నది"
 
-#: ../cli/src/network-manager.c:225
+#: ../cli/src/network-manager.c:226
 msgid "not running"
 msgstr "నడుచుటలేదు"
 
-#: ../cli/src/network-manager.c:297
+#: ../cli/src/network-manager.c:298
 msgid "auth"
 msgstr "auth"
 
-#: ../cli/src/network-manager.c:327
+#: ../cli/src/network-manager.c:328
 #, c-format
-#| msgid "Error: 'nm permissions': %s"
 msgid "Error: 'general permissions': %s"
 msgstr "దోషం: 'సాధారణ అనుమతులు': %s"
 
-#: ../cli/src/network-manager.c:329
+#: ../cli/src/network-manager.c:330
 #, c-format
-#| msgid "Error: 'nm permissions': %s; allowed fields: %s"
 msgid "Error: 'general permissions': %s; allowed fields: %s"
 msgstr "దోషం: 'సాధారణ అనుమతులు': %s; అనుమతించిన క్షేత్రములు: %s"
 
@@ -1770,76 +2224,67 @@ msgstr "దోషం: 'సాధారణ అనుమతులు': %s; అన�
 msgid "NetworkManager permissions"
 msgstr "నెట్వర్కునిర్వాహిక అనుమతులు"
 
-#: ../cli/src/network-manager.c:384
+#: ../cli/src/network-manager.c:387
 #, c-format
-#| msgid "Error: 'con list': %s"
 msgid "Error: 'general logging': %s"
 msgstr "దోషము: 'సాధారణ లాగింగ్': %s"
 
-#: ../cli/src/network-manager.c:386
+#: ../cli/src/network-manager.c:389
 #, c-format
-#| msgid "Error: 'con list': %s; allowed fields: %s"
 msgid "Error: 'general logging': %s; allowed fields: %s"
 msgstr "దోషము: 'సాధారణ లాగింగ్': %s; అనుమతించబడు క్షేత్రములు: %s"
 
-#: ../cli/src/network-manager.c:403
-#| msgid "NetworkManager permissions"
+#: ../cli/src/network-manager.c:405
 msgid "NetworkManager logging"
 msgstr "నెట్వర్కునిర్వాహిక లాగింగ్"
 
-#: ../cli/src/network-manager.c:487
+#: ../cli/src/network-manager.c:490
 #, c-format
-#| msgid "Error: 'nm' command '%s' is not valid."
 msgid "Error: 'general' command '%s' is not valid."
 msgstr "దోషము: 'సాధారణ' ఆదేశము '%s' చెల్లనిది."
 
-#: ../cli/src/network-manager.c:506
+#: ../cli/src/network-manager.c:509
 #, c-format
-#| msgid "Error: '--fields' value '%s' is not valid here; allowed fields: %s"
 msgid "Error: '--fields' value '%s' is not valid here (allowed fields: %s)"
 msgstr ""
 "దోషము: '--fields' విలువ '%s' యిక్కడ చెల్లునది కాదు (అనుమతించబడు క్షేత్రములు: %"
 "s)"
 
-#: ../cli/src/network-manager.c:530
+#: ../cli/src/network-manager.c:533
 #, c-format
-#| msgid "Error: invalid 'wifi' parameter: '%s'."
 msgid "Error: invalid '%s' argument: '%s' (use on/off)."
 msgstr "దోషము: చెల్లని '%s' ఆర్గుమెంట్: '%s' (ఆన్/ఆఫ్ వుపయోగించు)."
 
-#: ../cli/src/network-manager.c:547
-#| msgid "Networking enabled"
+#: ../cli/src/network-manager.c:550
 msgid "Networking"
 msgstr "నెట్వర్కింగ్"
 
-#: ../cli/src/network-manager.c:557
+#: ../cli/src/network-manager.c:560
 #, c-format
-#| msgid "Error: 'con' command '%s' is not valid."
 msgid "Error: 'networking' command '%s' is not valid."
 msgstr "దోషము: 'నెట్వర్కింగ్' ఆదేశము '%s' చెల్లునది కాదు."
 
-#: ../cli/src/network-manager.c:582 ../cli/src/network-manager.c:595
+#: ../cli/src/network-manager.c:585 ../cli/src/network-manager.c:598
 msgid "Radio switches"
 msgstr "రేడియో స్విచెస్"
 
 #. no argument, show current WiFi state
-#: ../cli/src/network-manager.c:609
+#: ../cli/src/network-manager.c:612
 msgid "Wi-Fi radio switch"
 msgstr "వై-ఫై రేడియో స్విచ్"
 
 #. no argument, show current WWAN (mobile broadband) state
-#: ../cli/src/network-manager.c:621
+#: ../cli/src/network-manager.c:624
 msgid "WWAN radio switch"
 msgstr "WWAN రేడియో స్విచ్"
 
 #. no argument, show current WiMAX state
-#: ../cli/src/network-manager.c:634
+#: ../cli/src/network-manager.c:637
 msgid "WiMAX radio switch"
 msgstr "WiMAX రేడియో స్విచ్"
 
-#: ../cli/src/network-manager.c:649
+#: ../cli/src/network-manager.c:652
 #, c-format
-#| msgid "Error: 'con' command '%s' is not valid."
 msgid "Error: 'radio' command '%s' is not valid."
 msgstr "దోషము: 'రేడియో' ఆదేశము '%s' చెల్లునది కాదు."
 
@@ -1857,11 +2302,14 @@ msgstr "దోషము: 'రేడియో' ఆదేశము '%s' చెల�
 #| "values\n"
 #| "  -n[ocheck]                                 don't check nmcli and "
 #| "NetworkManager versions\n"
+#| "  -a[sk]                                     ask for missing parameters\n"
 #| "  -v[ersion]                                 show program version\n"
 #| "  -h[elp]                                    print this help\n"
 #| "\n"
 #| "OBJECT\n"
-#| "  nm              NetworkManager's status\n"
+#| "  g[eneral]       NetworkManager's general status and operations\n"
+#| "  n[etworking]    overall networking control\n"
+#| "  r[adio]         NetworkManager radio switches\n"
 #| "  c[onnection]    NetworkManager's connections\n"
 #| "  d[evice]        devices managed by NetworkManager\n"
 #| "\n"
@@ -1878,6 +2326,8 @@ msgid ""
 "  -n[ocheck]                                 don't check nmcli and "
 "NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
+"  -w[ait] <seconds>                          set timeout waiting for "
+"finishing operations\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
@@ -1889,7 +2339,7 @@ msgid ""
 "  d[evice]        devices managed by NetworkManager\n"
 "\n"
 msgstr ""
-"Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+"వాడుక: %s [OPTIONS] OBJECT { COMMAND | help }\n"
 "\n"
 "OPTIONS\n"
 "  -t[erse]                                   terse output\n"
@@ -1901,6 +2351,8 @@ msgstr ""
 "  -n[ocheck]                                 don't check nmcli and "
 "NetworkManager versions\n"
 "  -a[sk]                                     ask for missing parameters\n"
+"  -w[ait] <seconds>                          set timeout waiting for "
+"finishing operations\n"
 "  -v[ersion]                                 show program version\n"
 "  -h[elp]                                    print this help\n"
 "\n"
@@ -1912,68 +2364,74 @@ msgstr ""
 "  d[evice]        devices managed by NetworkManager\n"
 "\n"
 
-#: ../cli/src/nmcli.c:129
+#: ../cli/src/nmcli.c:130
 #, c-format
 msgid "Error: Object '%s' is unknown, try 'nmcli help'."
 msgstr "దోషము: ఆబ్జక్టు '%s' తెలియనిది, 'nmcli help' ప్రయత్నించు."
 
-#: ../cli/src/nmcli.c:159
+#: ../cli/src/nmcli.c:160
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "దోషము: ఐచ్చికము '--terse' రెండవ సమయాన్ని తెలిపినది."
 
-#: ../cli/src/nmcli.c:164
+#: ../cli/src/nmcli.c:165
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr ""
 "దోషము: ఐచ్చికము '--terse' అనునది '--pretty'తో పరస్పరం విభేదించుచున్నది."
 
-#: ../cli/src/nmcli.c:172
+#: ../cli/src/nmcli.c:173
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "దోషము: ఐచ్చికము '--pretty' రెండవసారి తెలుపబడింది."
 
-#: ../cli/src/nmcli.c:177
+#: ../cli/src/nmcli.c:178
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr ""
 "దోషము: ఐచ్చికము '--pretty' అనునది '--terse'తో పరస్పరం విభేదించుచున్నది."
 
-#: ../cli/src/nmcli.c:187 ../cli/src/nmcli.c:203
+#: ../cli/src/nmcli.c:188 ../cli/src/nmcli.c:204 ../cli/src/nmcli.c:233
 #, c-format
 msgid "Error: missing argument for '%s' option."
 msgstr "దోషము: '%s' ఐచ్చికము కొరకు తప్పిపోయిన ఆర్గుమెంట్."
 
-#: ../cli/src/nmcli.c:196 ../cli/src/nmcli.c:212
+#: ../cli/src/nmcli.c:197 ../cli/src/nmcli.c:213
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "దోషము: '%s' అనునది '%s' ఐచ్చికము కొరకు చెల్లునటువంటి ఆర్గుమెంట్ కాదు."
 
-#: ../cli/src/nmcli.c:219
+#: ../cli/src/nmcli.c:220
 #, c-format
 msgid "Error: fields for '%s' options are missing."
 msgstr "దోషము: '%s' ఐచ్చికముల కొరకు క్షేత్రములు అనునవి తప్పిపోవుచున్నవి."
 
-#: ../cli/src/nmcli.c:229
+#: ../cli/src/nmcli.c:238
+#, c-format
+#| msgid "Error: '%s' is not valid argument for '%s' option."
+msgid "Error: '%s' is not a valid timeout for '%s' option."
+msgstr "దోషం: '%s' అనునది '%s' ఐచ్చికం కొరకు చెల్లునటువంటి సమయముగింపు కాదు."
+
+#: ../cli/src/nmcli.c:245
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "nmcli సాధనము, వర్షన్ %s\n"
 
-#: ../cli/src/nmcli.c:235
+#: ../cli/src/nmcli.c:251
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "దోషము: ఐచ్చికము '%s' తెలియనిది, 'nmcli -help' ప్రయత్నించుము."
 
-#: ../cli/src/nmcli.c:254
+#: ../cli/src/nmcli.c:270
 #, c-format
 msgid "Caught signal %d, shutting down..."
 msgstr "సిగ్నల్ %d వచ్చింది, మూసివేయుచున్నది..."
 
-#: ../cli/src/nmcli.c:279
+#: ../cli/src/nmcli.c:295
 msgid "Error: Could not create NMClient object."
 msgstr "దోషము: NMClient ఆబ్జక్టు సృష్టించలేక పోయింది."
 
-#: ../cli/src/nmcli.c:295
+#: ../cli/src/nmcli.c:311
 msgid "Success"
 msgstr "సఫలంమైంది"
 
@@ -2099,60 +2557,69 @@ msgstr "దాయ లేదు,"
 msgid "not required, "
 msgstr "అవసరం లేని,"
 
-#: ../cli/src/settings.c:1064 ../cli/src/settings.c:1232
-#: ../cli/src/settings.c:1273
+#: ../cli/src/settings.c:1067 ../cli/src/settings.c:1235
+#: ../cli/src/settings.c:1276
 msgid "auto"
 msgstr "స్వయంచాలక"
 
-#: ../cli/src/utils.c:109
+#: ../cli/src/utils.c:111
 #, c-format
-#| msgid "Error: '%s' argument is missing."
 msgid "Error: value for '%s' argument is required."
 msgstr "దోషము: '%s' ఆర్గుమెంట్  కొరకు విలువ అవసరమైంది."
 
-#: ../cli/src/utils.c:134
+#: ../cli/src/utils.c:136
 #, c-format
 msgid "Error: Argument '%s' was expected, but '%s' provided."
 msgstr "దోషం: ఆర్గుమెంట్ '%s' కావలసివుండగా, '%s' యివ్వబడింది."
 
-#: ../cli/src/utils.c:137
+#: ../cli/src/utils.c:139
 #, c-format
-#| msgid "Error: missing argument for '%s' option."
 msgid "Error: Unexpected argument '%s'"
 msgstr "దోషము: అనుకోని ఆర్గుమెంట్ '%s'"
 
-#: ../cli/src/utils.c:192
+#: ../cli/src/utils.c:189
 #, c-format
 msgid "Error converting IP4 address '0x%X' to text form"
 msgstr "IP4 చిరునామా '0x%X'ను పాఠ రూపంలోనికి మార్చుటలో దోషం"
 
-#: ../cli/src/utils.c:220
+#: ../cli/src/utils.c:217
 #, c-format
 msgid "Error converting IP6 address '%s' to text form"
 msgstr "IP6 చిరునామా '%s' ను పాఠం రూపంలోనికి మార్చుటలో దోషం"
 
-#: ../cli/src/utils.c:382
+#: ../cli/src/utils.c:339
+#, c-format
+#| msgid "'%s' is not a valid value for '%s'"
+msgid "'%s' is not valid; use [%s] or [%s]"
+msgstr "'%s' చెల్లునది కాదు; [%s] లేదా [%s] వుపయోగించు"
+
+#: ../cli/src/utils.c:421
+#, c-format
+msgid "'%s' is ambiguous (%s x %s)"
+msgstr "'%s' సందిగ్ధంగా వుంది (%s x %s)"
+
+#: ../cli/src/utils.c:538
 #, c-format
 msgid "field '%s' has to be alone"
 msgstr "క్షేత్రము '%s' వొంటరిగా వుండాలి"
 
-#: ../cli/src/utils.c:385
+#: ../cli/src/utils.c:541
 #, c-format
 msgid "invalid field '%s'"
 msgstr "క్షేత్రము '%s' చెల్లనిది"
 
-#: ../cli/src/utils.c:404
+#: ../cli/src/utils.c:560
 msgid "Option '--terse' requires specifying '--fields'"
 msgstr "ఐచ్చికము '--terse' కు '--fields' తెలుపుట అవసరము"
 
-#: ../cli/src/utils.c:408
+#: ../cli/src/utils.c:564
 #, c-format
 msgid "Option '--terse' requires specific '--fields' option values , not '%s'"
 msgstr ""
 "ఐచ్చికము '--terse' కు ప్రత్యేకించి '--fields' ఐచ్చికము విలువలు అవసరము , '%s' "
 "కాదు"
 
-#: ../cli/src/utils.c:617
+#: ../cli/src/utils.c:878
 #, c-format
 msgid ""
 "Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --"
@@ -2162,7 +2629,7 @@ msgstr ""
 "హెచ్చరికను అరికట్టుటకు --"
 "nocheck వుపయోగించు.\n"
 
-#: ../cli/src/utils.c:626
+#: ../cli/src/utils.c:887
 #, c-format
 msgid ""
 "Error: nmcli (%s) and NetworkManager (%s) versions don't match. Force "
@@ -2477,92 +2944,92 @@ msgstr "PKCS#12 ఫైలు నిర్దారించలేక పోయ�
 msgid "Could not generate random data."
 msgstr "యాదృశ్చిక డాటాను జనియింపచేయలేక పోయింది."
 
-#: ../libnm-util/nm-setting-8021x.c:2119 ../libnm-util/nm-setting-8021x.c:2136
-#: ../libnm-util/nm-setting-8021x.c:2177 ../libnm-util/nm-setting-8021x.c:2194
-#: ../libnm-util/nm-setting-8021x.c:2246 ../libnm-util/nm-setting-8021x.c:2258
-#: ../libnm-util/nm-setting-8021x.c:2276 ../libnm-util/nm-setting-8021x.c:2288
-#: ../libnm-util/nm-setting-8021x.c:2312 ../libnm-util/nm-setting-8021x.c:2487
+#: ../libnm-util/nm-setting-8021x.c:2170 ../libnm-util/nm-setting-8021x.c:2187
+#: ../libnm-util/nm-setting-8021x.c:2228 ../libnm-util/nm-setting-8021x.c:2245
+#: ../libnm-util/nm-setting-8021x.c:2297 ../libnm-util/nm-setting-8021x.c:2309
+#: ../libnm-util/nm-setting-8021x.c:2327 ../libnm-util/nm-setting-8021x.c:2339
+#: ../libnm-util/nm-setting-8021x.c:2363 ../libnm-util/nm-setting-8021x.c:2538
 #: ../libnm-util/nm-setting-adsl.c:212
 #: ../libnm-util/nm-setting-bluetooth.c:153
 #: ../libnm-util/nm-setting-bluetooth.c:171
-#: ../libnm-util/nm-setting-bond.c:368 ../libnm-util/nm-setting-bridge.c:268
+#: ../libnm-util/nm-setting-bond.c:375 ../libnm-util/nm-setting-bridge.c:268
 #: ../libnm-util/nm-setting-cdma.c:163
-#: ../libnm-util/nm-setting-connection.c:674
-#: ../libnm-util/nm-setting-connection.c:690
-#: ../libnm-util/nm-setting-connection.c:743
-#: ../libnm-util/nm-setting-ip4-config.c:693
-#: ../libnm-util/nm-setting-ip4-config.c:703
-#: ../libnm-util/nm-setting-ip6-config.c:675
-#: ../libnm-util/nm-setting-ip6-config.c:685
-#: ../libnm-util/nm-setting-ip6-config.c:738
+#: ../libnm-util/nm-setting-connection.c:678
+#: ../libnm-util/nm-setting-connection.c:694
+#: ../libnm-util/nm-setting-connection.c:747
+#: ../libnm-util/nm-setting-ip4-config.c:705
+#: ../libnm-util/nm-setting-ip4-config.c:715
+#: ../libnm-util/nm-setting-ip6-config.c:687
+#: ../libnm-util/nm-setting-ip6-config.c:697
+#: ../libnm-util/nm-setting-ip6-config.c:750
 #: ../libnm-util/nm-setting-olpc-mesh.c:128
-#: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:394
+#: ../libnm-util/nm-setting-pppoe.c:165 ../libnm-util/nm-setting-vpn.c:406
 #: ../libnm-util/nm-setting-wimax.c:137
-#: ../libnm-util/nm-setting-wireless-security.c:792
-#: ../libnm-util/nm-setting-wireless.c:610
+#: ../libnm-util/nm-setting-wireless-security.c:804
+#: ../libnm-util/nm-setting-wireless.c:711
 msgid "property is missing"
 msgstr "లక్షణం దొరకలేదు"
 
-#: ../libnm-util/nm-setting-8021x.c:2126 ../libnm-util/nm-setting-8021x.c:2143
-#: ../libnm-util/nm-setting-8021x.c:2184 ../libnm-util/nm-setting-8021x.c:2201
-#: ../libnm-util/nm-setting-8021x.c:2252 ../libnm-util/nm-setting-8021x.c:2264
-#: ../libnm-util/nm-setting-8021x.c:2282 ../libnm-util/nm-setting-8021x.c:2294
-#: ../libnm-util/nm-setting-8021x.c:2318 ../libnm-util/nm-setting-adsl.c:219
+#: ../libnm-util/nm-setting-8021x.c:2177 ../libnm-util/nm-setting-8021x.c:2194
+#: ../libnm-util/nm-setting-8021x.c:2235 ../libnm-util/nm-setting-8021x.c:2252
+#: ../libnm-util/nm-setting-8021x.c:2303 ../libnm-util/nm-setting-8021x.c:2315
+#: ../libnm-util/nm-setting-8021x.c:2333 ../libnm-util/nm-setting-8021x.c:2345
+#: ../libnm-util/nm-setting-8021x.c:2369 ../libnm-util/nm-setting-adsl.c:219
 #: ../libnm-util/nm-setting-adsl.c:228 ../libnm-util/nm-setting-cdma.c:179
 #: ../libnm-util/nm-setting-cdma.c:188
-#: ../libnm-util/nm-setting-connection.c:681
-#: ../libnm-util/nm-setting-connection.c:750
+#: ../libnm-util/nm-setting-connection.c:685
+#: ../libnm-util/nm-setting-connection.c:754
 #: ../libnm-util/nm-setting-gsm.c:280 ../libnm-util/nm-setting-gsm.c:337
 #: ../libnm-util/nm-setting-gsm.c:346
-#: ../libnm-util/nm-setting-ip4-config.c:754
-#: ../libnm-util/nm-setting-ip4-config.c:763
+#: ../libnm-util/nm-setting-ip4-config.c:766
+#: ../libnm-util/nm-setting-ip4-config.c:775
 #: ../libnm-util/nm-setting-pppoe.c:172 ../libnm-util/nm-setting-pppoe.c:181
-#: ../libnm-util/nm-setting-vpn.c:403 ../libnm-util/nm-setting-vpn.c:413
+#: ../libnm-util/nm-setting-vpn.c:415 ../libnm-util/nm-setting-vpn.c:425
 #: ../libnm-util/nm-setting-wimax.c:146
-#: ../libnm-util/nm-setting-wireless-security.c:822
-#: ../libnm-util/nm-setting-wireless-security.c:830
-#: ../libnm-util/nm-setting-wireless-security.c:854
+#: ../libnm-util/nm-setting-wireless-security.c:834
+#: ../libnm-util/nm-setting-wireless-security.c:842
+#: ../libnm-util/nm-setting-wireless-security.c:866
 msgid "property is empty"
 msgstr "లక్షణం ఖాళీ"
 
-#: ../libnm-util/nm-setting-8021x.c:2154 ../libnm-util/nm-setting-8021x.c:2166
-#: ../libnm-util/nm-setting-8021x.c:2212 ../libnm-util/nm-setting-8021x.c:2224
+#: ../libnm-util/nm-setting-8021x.c:2205 ../libnm-util/nm-setting-8021x.c:2217
+#: ../libnm-util/nm-setting-8021x.c:2263 ../libnm-util/nm-setting-8021x.c:2275
 #, c-format
 msgid "has to match '%s' property for PKCS#12"
 msgstr "PKCS#12 కొరకు '%s' లక్షణంకు సరిపోలాలి"
 
-#: ../libnm-util/nm-setting-8021x.c:2462 ../libnm-util/nm-setting-8021x.c:2496
+#: ../libnm-util/nm-setting-8021x.c:2513 ../libnm-util/nm-setting-8021x.c:2547
 #: ../libnm-util/nm-setting-bluetooth.c:162
-#: ../libnm-util/nm-setting-bond.c:377
+#: ../libnm-util/nm-setting-bond.c:384
 #: ../libnm-util/nm-setting-infiniband.c:149
 #: ../libnm-util/nm-setting-infiniband.c:164
-#: ../libnm-util/nm-setting-ip4-config.c:745
-#: ../libnm-util/nm-setting-ip6-config.c:729
+#: ../libnm-util/nm-setting-ip4-config.c:757
+#: ../libnm-util/nm-setting-ip6-config.c:741
 #: ../libnm-util/nm-setting-olpc-mesh.c:156
-#: ../libnm-util/nm-setting-wimax.c:155 ../libnm-util/nm-setting-wired.c:501
-#: ../libnm-util/nm-setting-wired.c:510
-#: ../libnm-util/nm-setting-wireless-security.c:873
-#: ../libnm-util/nm-setting-wireless-security.c:882
-#: ../libnm-util/nm-setting-wireless-security.c:890
-#: ../libnm-util/nm-setting-wireless-security.c:898
-#: ../libnm-util/nm-setting-wireless-security.c:906
-#: ../libnm-util/nm-setting-wireless-security.c:915
-#: ../libnm-util/nm-setting-wireless-security.c:924
-#: ../libnm-util/nm-setting-wireless-security.c:933
-#: ../libnm-util/nm-setting-wireless-security.c:969
-#: ../libnm-util/nm-setting-wireless-security.c:979
-#: ../libnm-util/nm-setting-wireless.c:670
-#: ../libnm-util/nm-setting-wireless.c:679
-#: ../libnm-util/nm-setting-wireless.c:688
+#: ../libnm-util/nm-setting-wimax.c:155 ../libnm-util/nm-setting-wired.c:607
+#: ../libnm-util/nm-setting-wired.c:616
+#: ../libnm-util/nm-setting-wireless-security.c:885
+#: ../libnm-util/nm-setting-wireless-security.c:894
+#: ../libnm-util/nm-setting-wireless-security.c:902
+#: ../libnm-util/nm-setting-wireless-security.c:910
+#: ../libnm-util/nm-setting-wireless-security.c:918
+#: ../libnm-util/nm-setting-wireless-security.c:927
+#: ../libnm-util/nm-setting-wireless-security.c:936
+#: ../libnm-util/nm-setting-wireless-security.c:945
+#: ../libnm-util/nm-setting-wireless-security.c:981
+#: ../libnm-util/nm-setting-wireless-security.c:991
+#: ../libnm-util/nm-setting-wireless.c:771
+#: ../libnm-util/nm-setting-wireless.c:780
+#: ../libnm-util/nm-setting-wireless.c:789
 msgid "property is invalid"
 msgstr "లక్షణం చెల్లనిది"
 
-#: ../libnm-util/nm-setting-8021x.c:2521 ../libnm-util/nm-setting-8021x.c:2531
-#: ../libnm-util/nm-setting-8021x.c:2541 ../libnm-util/nm-setting-8021x.c:2551
-#: ../libnm-util/nm-setting-8021x.c:2561 ../libnm-util/nm-setting-adsl.c:239
+#: ../libnm-util/nm-setting-8021x.c:2572 ../libnm-util/nm-setting-8021x.c:2582
+#: ../libnm-util/nm-setting-8021x.c:2592 ../libnm-util/nm-setting-8021x.c:2602
+#: ../libnm-util/nm-setting-8021x.c:2612 ../libnm-util/nm-setting-adsl.c:239
 #: ../libnm-util/nm-setting-adsl.c:250
 #: ../libnm-util/nm-setting-bluetooth.c:179
-#: ../libnm-util/nm-setting-wireless-security.c:801
+#: ../libnm-util/nm-setting-wireless-security.c:813
 #, c-format
 msgid "'%s' is not a valid value for the property"
 msgstr "లక్షణం కొరకు '%s' చెల్లునటువంటి విలువ కాదు"
@@ -2572,48 +3039,48 @@ msgstr "లక్షణం కొరకు '%s' చెల్లునటువ�
 msgid "requires '%s' or '%s' setting"
 msgstr "'%s' లేదా '%s' అమరిక కావాలి"
 
-#: ../libnm-util/nm-setting-bond.c:391
+#: ../libnm-util/nm-setting-bond.c:398
 #, c-format
 msgid "invalid option '%s' or its value '%s'"
 msgstr "చెల్లని ఐచ్చికం '%s' లేదా దాని విలువ '%s'"
 
-#: ../libnm-util/nm-setting-bond.c:410
+#: ../libnm-util/nm-setting-bond.c:417
 #, c-format
 msgid "only one of '%s' and '%s' can be set"
 msgstr "'%s' మరియు '%s' లో వొకటే అమర్చగలదు"
 
-#: ../libnm-util/nm-setting-bond.c:421
+#: ../libnm-util/nm-setting-bond.c:428
 #, c-format
 msgid "setting '%s' is required"
 msgstr "అమరిక '%s' కావాలి"
 
-#: ../libnm-util/nm-setting-bond.c:430
+#: ../libnm-util/nm-setting-bond.c:437
 #, c-format
 msgid "'%s' is not a valid value for '%s'"
 msgstr "'%s' అనునది '%s' కొరకు చెల్లునటువంటి విలువ కాదు"
 
-#: ../libnm-util/nm-setting-bond.c:443
+#: ../libnm-util/nm-setting-bond.c:450
 #, c-format
 msgid "'%s=%s' is incompatible with '%s > 0'"
 msgstr "'%s=%s' అనునది '%s > 0' తో సారూప్యతకానిది"
 
-#: ../libnm-util/nm-setting-bond.c:454
+#: ../libnm-util/nm-setting-bond.c:461
 #, c-format
 msgid "'%s=%s' is not a valid configuration for '%s'"
 msgstr "'%s=%s' అనునది '%s' కొరకు చెల్లునటువంటి ఆకృతీకరణ కాదు"
 
-#: ../libnm-util/nm-setting-bond.c:467 ../libnm-util/nm-setting-bond.c:476
-#: ../libnm-util/nm-setting-bond.c:496 ../libnm-util/nm-setting-bond.c:532
+#: ../libnm-util/nm-setting-bond.c:474 ../libnm-util/nm-setting-bond.c:483
+#: ../libnm-util/nm-setting-bond.c:503 ../libnm-util/nm-setting-bond.c:539
 #, c-format
 msgid "'%s' option requires setting '%s' option"
 msgstr "'%s' ఐచ్చికంకు అమరిక '%s' ఐచ్చికం కావాలి"
 
-#: ../libnm-util/nm-setting-bond.c:508
+#: ../libnm-util/nm-setting-bond.c:515
 #, c-format
 msgid "'%s' option is empty"
 msgstr "'%s' ఐచ్చికం ఖాళీ"
 
-#: ../libnm-util/nm-setting-bond.c:520
+#: ../libnm-util/nm-setting-bond.c:527
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "'%s' అనునది '%s' ఐచ్చికం కొరకు చెల్లునటువంటి IPv4 చిరునామా కాదు"
@@ -2630,8 +3097,8 @@ msgid "value '%d' is out of range <%d-%d>"
 msgstr "విలువ '%d' విస్తృతి <%d-%d> బయట వుంది"
 
 #: ../libnm-util/nm-setting-bridge.c:277
-#: ../libnm-util/nm-setting-connection.c:732
-#: ../libnm-util/nm-setting-vlan.c:468
+#: ../libnm-util/nm-setting-connection.c:736
+#: ../libnm-util/nm-setting-vlan.c:478
 #, c-format
 msgid "'%s' is not a valid interface name"
 msgstr "'%s' చెల్లునటువంటి యింటర్ఫేస్ పేరు కాదు"
@@ -2640,26 +3107,26 @@ msgstr "'%s' చెల్లునటువంటి యింటర్ఫేస
 msgid "property is empty'"
 msgstr "లక్షణం ఖాళీ'"
 
-#: ../libnm-util/nm-setting-connection.c:697
+#: ../libnm-util/nm-setting-connection.c:701
 #, c-format
 msgid "'%s' is not a valid UUID"
 msgstr "'%s' చెల్లునటువంటి UUID కాదు"
 
-#: ../libnm-util/nm-setting-connection.c:716
+#: ../libnm-util/nm-setting-connection.c:720
 #, c-format
 msgid "'%s' doesn't match the virtual interface name '%s'"
 msgstr "'%s' అనునది వర్చ్యువల్ యింటర్ఫేస్ పేరు '%s' తో సరిపోలడంలేదు"
 
-#: ../libnm-util/nm-setting-connection.c:760
+#: ../libnm-util/nm-setting-connection.c:764
 #, c-format
 msgid "requires presence of '%s' setting in the connection"
 msgstr "అనుసంధానం నందు '%s' అమరిక వుండాలి"
 
-#: ../libnm-util/nm-setting-connection.c:784
+#: ../libnm-util/nm-setting-connection.c:788
 msgid "IPv4 configuration is not allowed for bonding slave"
 msgstr "IPv4 ఆకృతీకరణ అనునది బాండింగ్ స్లేవ్ కొరకు అనుమతించబడదు"
 
-#: ../libnm-util/nm-setting-connection.c:801
+#: ../libnm-util/nm-setting-connection.c:805
 msgid "IPv6 configuration is not allowed for bonding slave"
 msgstr "IPv6 ఆకృతీకరణ అనునది బాండింగ్ స్లేవ్ కొరకు అనుమతించబడదు"
 
@@ -2683,48 +3150,48 @@ msgstr "'%s' పొడవు చెల్లనిది (5 లేదా 6 అ�
 msgid "'%s' is not a number"
 msgstr "'%s' సంఖ్య కాదు"
 
-#: ../libnm-util/nm-setting-ip4-config.c:714
-#: ../libnm-util/nm-setting-ip4-config.c:724
-#: ../libnm-util/nm-setting-ip4-config.c:734
-#: ../libnm-util/nm-setting-ip6-config.c:697
-#: ../libnm-util/nm-setting-ip6-config.c:707
-#: ../libnm-util/nm-setting-ip6-config.c:717
+#: ../libnm-util/nm-setting-ip4-config.c:726
+#: ../libnm-util/nm-setting-ip4-config.c:736
+#: ../libnm-util/nm-setting-ip4-config.c:746
+#: ../libnm-util/nm-setting-ip6-config.c:709
+#: ../libnm-util/nm-setting-ip6-config.c:719
+#: ../libnm-util/nm-setting-ip6-config.c:729
 #, c-format
 msgid "this property is not allowed for '%s=%s'"
 msgstr "'%s=%s' కొరకు యీ లక్షణం అనుమతించబడదు"
 
-#: ../libnm-util/nm-setting-ip4-config.c:777
+#: ../libnm-util/nm-setting-ip4-config.c:789
 #, c-format
 msgid "%d. IPv4 address is invalid"
 msgstr "%d. IPv4 చిరునామా చెల్లనిది"
 
-#: ../libnm-util/nm-setting-ip4-config.c:787
+#: ../libnm-util/nm-setting-ip4-config.c:799
 #, c-format
 msgid "%d. IPv4 address has invalid prefix"
 msgstr "%d. IPv4 చిరునామా చెల్లని ప్రిఫిక్స్ కలిగివుంది"
 
-#: ../libnm-util/nm-setting-ip4-config.c:803
+#: ../libnm-util/nm-setting-ip4-config.c:815
 #, c-format
 msgid "%d. route is invalid"
 msgstr "%d. రౌట్ చెల్లనిది"
 
-#: ../libnm-util/nm-setting-ip4-config.c:813
+#: ../libnm-util/nm-setting-ip4-config.c:825
 #, c-format
 msgid "%d. route has invalid prefix"
 msgstr "%d. చెల్లని ప్రిఫిక్స్ కలిగివుంది"
 
-#: ../libnm-util/nm-setting-ip6-config.c:696
+#: ../libnm-util/nm-setting-ip6-config.c:708
 #, c-format
 msgid "'%s' not allowed for %s=%s"
 msgstr "'%s' అనునది %s=%s కొరకు అనుమతించబడదు"
 
 #: ../libnm-util/nm-setting-olpc-mesh.c:137
-#: ../libnm-util/nm-setting-wireless.c:619
+#: ../libnm-util/nm-setting-wireless.c:720
 msgid "SSID length is out of range <1-32> bytes"
 msgstr "SSID పొడవు విస్తృతి <1-32> బైట్స్ బయట వుంది"
 
 #: ../libnm-util/nm-setting-olpc-mesh.c:146
-#: ../libnm-util/nm-setting-wireless.c:659
+#: ../libnm-util/nm-setting-wireless.c:760
 #, c-format
 msgid "'%d' is not a valid channel"
 msgstr "'%d' చెల్లునటువంటి చానల్ కాదు"
@@ -2739,92 +3206,92 @@ msgstr "'%d' అనునది చెల్లునటువంటి వి�
 msgid "setting this property requires non-zero '%s' property"
 msgstr "ఈ లక్షణం అమర్చుటకు సున్నా-కాని '%s' లక్షణం అవసరం"
 
-#: ../libnm-util/nm-setting-vlan.c:490
+#: ../libnm-util/nm-setting-vlan.c:500
 #, c-format
 msgid "'%s' value doesn't match '%s=%s'"
 msgstr "'%s' విలువ '%s=%s' తో సరిపోలడం లేదు"
 
-#: ../libnm-util/nm-setting-vlan.c:501
+#: ../libnm-util/nm-setting-vlan.c:511
 #, c-format
 msgid "'%s' is neither an UUID nor an interface name"
 msgstr "'%s' అనునది UUID కాదు యింటర్ఫేస్ పేరు కాదు"
 
-#: ../libnm-util/nm-setting-vlan.c:514
+#: ../libnm-util/nm-setting-vlan.c:524
 #, c-format
 msgid "property is not specified and neither is '%s:%s'"
 msgstr "లక్షణం తెలుపలేదు మరియు  '%s కాదు:%s'"
 
-#: ../libnm-util/nm-setting-vlan.c:527
+#: ../libnm-util/nm-setting-vlan.c:537
 msgid "flags are invalid"
 msgstr "ఫ్లాగ్స్ చెల్లునవి కావు"
 
-#: ../libnm-util/nm-setting-wired.c:456
+#: ../libnm-util/nm-setting-wired.c:562
 #, c-format
 msgid "'%s' is not a valid ethernet port value"
 msgstr "'%s' చెల్లునటువంటి ఈథర్నెట్ పోర్టు విలువ కాదు"
 
-#: ../libnm-util/nm-setting-wired.c:466
+#: ../libnm-util/nm-setting-wired.c:572
 #, c-format
 msgid "'%s' is not a valid duplex value"
 msgstr "'%s' చెల్లునటువంటి డుప్లెక్స్ విలువ కాదు"
 
-#: ../libnm-util/nm-setting-wired.c:476 ../libnm-util/nm-setting-wired.c:534
+#: ../libnm-util/nm-setting-wired.c:582 ../libnm-util/nm-setting-wired.c:640
 msgid "is not a valid MAC address"
 msgstr "చెల్లునటువంటి MAC చిరునామా కాదు"
 
-#: ../libnm-util/nm-setting-wired.c:489
-#: ../libnm-util/nm-setting-wireless.c:700
-#: ../libnm-util/nm-setting-wireless.c:714
+#: ../libnm-util/nm-setting-wired.c:595
+#: ../libnm-util/nm-setting-wireless.c:801
+#: ../libnm-util/nm-setting-wireless.c:815
 #, c-format
 msgid "'%s' is not a valid MAC address"
 msgstr "'%s' చెల్లునటువంచి MAC చిరునామా కాదు"
 
-#: ../libnm-util/nm-setting-wired.c:523
+#: ../libnm-util/nm-setting-wired.c:629
 #, c-format
 msgid "invalid '%s' or its value '%s'"
 msgstr "చెల్లని '%s' లేదా దాని విలువ '%s'"
 
-#: ../libnm-util/nm-setting-wireless-security.c:813
+#: ../libnm-util/nm-setting-wireless-security.c:825
 #, c-format
 msgid "'%s' security requires '%s=%s'"
 msgstr "'%s' రక్షణ అవసరం '%s=%s'"
 
-#: ../libnm-util/nm-setting-wireless-security.c:842
+#: ../libnm-util/nm-setting-wireless-security.c:854
 #, c-format
 msgid "'%s' security requires '%s' setting presence"
 msgstr "'%s' రక్షణకు '%s' అమరిక అభీష్టం అవసరం"
 
-#: ../libnm-util/nm-setting-wireless-security.c:863
+#: ../libnm-util/nm-setting-wireless-security.c:875
 #, c-format
 msgid "'%d' value is out of range <0-3>"
 msgstr "'%d' విస్తృతి <0-3> బయట వుంది"
 
-#: ../libnm-util/nm-setting-wireless-security.c:960
+#: ../libnm-util/nm-setting-wireless-security.c:972
 #, c-format
 msgid "'%s' connections require '%s' in this property"
 msgstr "'%s' అనుసంధానంకు '%s' కావాలి యీ లక్షణం నందు"
 
-#: ../libnm-util/nm-setting-wireless-security.c:990
+#: ../libnm-util/nm-setting-wireless-security.c:1002
 #, c-format
 msgid "'%s' can only be used with '%s=%s' (WEP)"
 msgstr "'%s' అనునది '%s=%s' (WEP) తో మాత్రమే వుపయోగించగలం"
 
-#: ../libnm-util/nm-setting-wireless.c:628
+#: ../libnm-util/nm-setting-wireless.c:729
 #, c-format
 msgid "'%s' is not a valid Wi-Fi mode"
 msgstr "'%s' చెల్లునటువంటి వై-ఫై రీతి కాదు"
 
-#: ../libnm-util/nm-setting-wireless.c:638
+#: ../libnm-util/nm-setting-wireless.c:739
 #, c-format
 msgid "'%s' is not a valid band"
 msgstr "'%s' చెల్లునటువంటి బాండ్ కాదు"
 
-#: ../libnm-util/nm-setting-wireless.c:648
+#: ../libnm-util/nm-setting-wireless.c:749
 #, c-format
 msgid "requires setting '%s' property"
 msgstr "అమరిక '%s' లక్షణం కావాలి"
 
-#: ../libnm-util/nm-setting-wireless.c:726
+#: ../libnm-util/nm-setting-wireless.c:827
 #, c-format
 msgid "'%s' setting is required for the connection when the property is set"
 msgstr "లక్షణం అమర్చినప్పుడు అనుసంధానం కొరకు '%s' అమరిక కావాలి"
@@ -2968,40 +3435,45 @@ msgstr "%s మూయుటకు విఫలమైంది: %s\n"
 msgid "NetworkManager is already running (pid %ld)\n"
 msgstr "నెట్వర్కుమేనేజర్ యిప్పటికే నడుస్తోంది (pid %ld)\n"
 
-#: ../src/main.c:324
+#: ../src/main.c:326
 msgid "Print NetworkManager version and exit"
 msgstr "నెట్వర్కునిర్వాహిక వర్షన్ ముద్రించి నిష్క్రమించుము"
 
-#: ../src/main.c:325
+#: ../src/main.c:327
 msgid "Don't become a daemon"
 msgstr "డీమన్ కావద్దు"
 
-#: ../src/main.c:326
+#: ../src/main.c:328
+#| msgid "Don't become a daemon"
+msgid "Don't become a daemon, and log to stderr"
+msgstr "డీమన్ కావద్దు, stderr కు లాగవ్వు"
+
+#: ../src/main.c:329
 msgid "Make all warnings fatal"
 msgstr "అన్ని హెచ్చరికలను హానికారకంగా గుర్తుంచు"
 
-#: ../src/main.c:327
+#: ../src/main.c:330
 msgid "Specify the location of a PID file"
 msgstr "PID ఫైలు యొక్క స్థానము తెలుపుము"
 
-#: ../src/main.c:327
+#: ../src/main.c:330
 msgid "filename"
 msgstr "ఫైల్‌పేరు"
 
-#: ../src/main.c:328
+#: ../src/main.c:331
 msgid "State file location"
 msgstr "ఫైలు స్థానము తెలియజెప్పు"
 
-#: ../src/main.c:328
+#: ../src/main.c:331
 msgid "/path/to/state.file"
 msgstr "/path/to/state.file"
 
-#: ../src/main.c:333
+#: ../src/main.c:337
 #, c-format
 msgid "GModules are not supported on your platform!\n"
 msgstr "మీ ప్లాట్‌ఫాం పై GModules తోడ్పాటునీయవు!\n"
 
-#: ../src/main.c:353
+#: ../src/main.c:357
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -3014,34 +3486,34 @@ msgstr ""
 "తెలుపుటకు\n"
 "వాడుకరులను అనుమతించును."
 
-#: ../src/main.c:359
+#: ../src/main.c:363
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "చెల్లని ఐచ్చికము.  చెల్లునటువంటి ఐచ్చికముల జాబితా కొరకు --help వుపయోగించండి.\n"
 
-#: ../src/main.c:369
+#: ../src/main.c:373
 #, c-format
 msgid "You must be root to run NetworkManager!\n"
 msgstr "నెట్వర్కునిర్వాహికను నడుపుటకు మీరు తప్పక రూట్ గా వుండాలి!\n"
 
-#: ../src/main.c:401
+#: ../src/main.c:429
 #, c-format
 msgid "Failed to read configuration: (%d) %s\n"
 msgstr "ఆకృతీకరణను చదువుటకు విఫలమైంది: (%d) %s\n"
 
-#: ../src/main.c:412
+#: ../src/main.c:440
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "%s.  చెల్లునటువంటి ఐచ్చికముల జాబితా చూచుటకు దయచేసి --help వుపయోగించుము.\n"
 
-#: ../src/main.c:419
+#: ../src/main.c:447
 #, c-format
 msgid "State file %s parsing failed: (%d) %s\n"
 msgstr "స్టేట్ ఫైల్ %s పార్సింగ్ విఫలమైంది: (%d) %s\n"
 
-#: ../src/main.c:436
+#: ../src/main.c:460
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "డెమొనైజ్ చేయలేదు: %s [error %u]\n"
@@ -3059,19 +3531,19 @@ msgstr ""
 "# %sనుండి కలుపబడింది\n"
 "\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:313
+#: ../src/dhcp-manager/nm-dhcp-manager.c:315
 msgid "no usable DHCP client could be found."
 msgstr "ఎటువంటి వుపయోగకర DHCP క్లైంట్ కనుగొనబడలేదు."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:322
+#: ../src/dhcp-manager/nm-dhcp-manager.c:324
 msgid "'dhclient' could be found."
 msgstr "'dhclient' కనుగొనబడ గలదు."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:332
+#: ../src/dhcp-manager/nm-dhcp-manager.c:334
 msgid "'dhcpcd' could be found."
 msgstr "'dhcpcd' కనుగొనబడ గలదు."
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:340
+#: ../src/dhcp-manager/nm-dhcp-manager.c:342
 #, c-format
 msgid "unsupported DHCP client '%s'"
 msgstr "మద్దతీయని DHCP క్లైంట్ '%s'"
@@ -3104,12 +3576,10 @@ msgid "/path/to/config.file"
 msgstr "/path/to/config.file"
 
 #: ../src/config/nm-config.c:256
-#| msgid "Config file location"
 msgid "Config directory location"
 msgstr "ఆకృతీకరణ సంచయం స్థానము"
 
 #: ../src/config/nm-config.c:256
-#| msgid "/path/to/config.file"
 msgid "/path/to/config/dir"
 msgstr "/path/to/config/dir"
 
@@ -3123,7 +3593,6 @@ msgstr "చొప్పింత1,చొప్పింత2"
 
 #: ../src/config/nm-config.c:259
 #, c-format
-#| msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
 msgid "Log level: one of [%s]"
 msgstr "లాగ్ స్థాయి: వీటిలో వొకటి [%s]"
 
@@ -3150,114 +3619,105 @@ msgid "Bingo!"
 msgstr "బింగో!"
 
 #: ../src/modem-manager/nm-modem-cdma.c:255
-#: ../src/modem-manager/nm-modem-broadband.c:516 ../src/nm-device-bt.c:331
+#: ../src/modem-manager/nm-modem-broadband.c:516
+#: ../src/devices/nm-device-bt.c:326
 #, c-format
 msgid "CDMA connection %d"
 msgstr "CDMA అనుసంధానం %d"
 
 #: ../src/modem-manager/nm-modem-gsm.c:531
-#: ../src/modem-manager/nm-modem-broadband.c:494 ../src/nm-device-bt.c:327
+#: ../src/modem-manager/nm-modem-broadband.c:494
+#: ../src/devices/nm-device-bt.c:322
 #, c-format
 msgid "GSM connection %d"
 msgstr "GSM అనుసంధానం %d"
 
-#: ../src/nm-device-bond.c:166
+#: ../src/devices/nm-device-bond.c:152
 #, c-format
 msgid "Bond connection %d"
 msgstr "బాండ్ అనుసంధానం %d"
 
-#: ../src/nm-device-adsl.c:197
+#: ../src/devices/nm-device-adsl.c:152
 #, c-format
 msgid "ADSL connection %d"
 msgstr "ADSL అనుసంధానం %d"
 
-#: ../src/nm-device-bridge.c:164
+#: ../src/devices/nm-device-bridge.c:131
 #, c-format
 msgid "Bridge connection %d"
 msgstr "బ్రిడ్జ్ అనుసంధానం %d"
 
-#: ../src/nm-device-bt.c:302
+#: ../src/devices/nm-device-bt.c:297
 #, c-format
 msgid "PAN connection %d"
 msgstr "PAN అనుసంధానం %d"
 
-#: ../src/nm-device-bt.c:335
+#: ../src/devices/nm-device-bt.c:330
 #, c-format
 msgid "DUN connection %d"
 msgstr "DUN అనుసంధానం %d"
 
-#: ../src/nm-device-ethernet.c:1294
+#: ../src/devices/nm-device-ethernet.c:1243
 #, c-format
 msgid "PPPoE connection %d"
 msgstr "PPPoE అనుసంధానం %d"
 
-#: ../src/nm-device-ethernet.c:1294 ../src/settings/nm-settings-utils.c:50
+#: ../src/devices/nm-device-ethernet.c:1243
+#: ../src/settings/nm-settings-utils.c:50
 #, c-format
 msgid "Wired connection %d"
 msgstr "వైరుతో అనుసంధానం %d"
 
-#: ../src/nm-device-infiniband.c:270
+#: ../src/devices/nm-device-infiniband.c:243
 #, c-format
 msgid "InfiniBand connection %d"
 msgstr "ఇన్ఫిబాండ్ అనుసంధానం %d"
 
-#: ../src/nm-device-olpc-mesh.c:304
+#: ../src/devices/nm-device-olpc-mesh.c:285
 #, c-format
 msgid "Mesh %d"
 msgstr "మెష్ %d"
 
-#: ../src/nm-device-vlan.c:315
+#: ../src/devices/nm-device-vlan.c:214
 #, c-format
 msgid "VLAN connection %d"
 msgstr "VLAN అనుసంధానం %d"
 
-#: ../src/nm-manager.c:751
+#: ../src/nm-manager.c:768
 #, c-format
 msgid "VPN connection %d"
 msgstr "VPN అనుసంధానం %d"
 
-#: ../src/nm-netlink-monitor.c:162 ../src/nm-netlink-monitor.c:286
-#: ../src/nm-netlink-monitor.c:671
+#: ../src/nm-netlink-monitor.c:219
+msgid "error occurred while waiting for data on socket"
+msgstr "సాకెట్ నందు డాటా కొరకు వేచివుండునప్పుడు దోషము సంభవించినది"
+
+#: ../src/nm-netlink-monitor.c:240
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "నెట్‌లింక్ సందేశమును ప్రోసెసింగ్ చేయుటలో దోషము: %s"
 
-#: ../src/nm-netlink-monitor.c:265
-msgid "error occurred while waiting for data on socket"
-msgstr "సాకెట్ నందు డాటా కొరకు వేచివుండునప్పుడు దోషము సంభవించినది"
-
-#: ../src/nm-netlink-monitor.c:310
+#: ../src/nm-netlink-monitor.c:264
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
 "లింకు స్థితిని పర్యవేక్షించుటకు నెట్‌లింకుకు అనుసంధానము కాలేకపోయింది: %s"
 
-#: ../src/nm-netlink-monitor.c:321
+#: ../src/nm-netlink-monitor.c:275
 #, c-format
 msgid "unable to enable netlink handle credential passing: %s"
 msgstr "నెట్‌లింక్ హాండిల్ క్రెడెన్షియల్ పాసింగ్ చేతము చేయలేదు: %s"
 
-#: ../src/nm-netlink-monitor.c:364 ../src/nm-netlink-monitor.c:424
+#: ../src/nm-netlink-monitor.c:319 ../src/nm-netlink-monitor.c:381
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
 "లింకు స్థితిని పర్యవేక్షించుటకు నెట్‌లింకు హాండిల్‌ను కేటాయించలేక పోయింది: %s"
 
-#: ../src/nm-netlink-monitor.c:449
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr ""
-"లింకు స్థితిని పర్యవేక్షించుటకు నెట్‌లింకు క్యాచీని కేటాయించలేక పోయింది: %s"
-
-#: ../src/nm-netlink-monitor.c:541
+#: ../src/nm-netlink-monitor.c:469
 #, c-format
 msgid "unable to join netlink group: %s"
 msgstr "నెట్‌లింకు సమూహాన్ని చేర్చుకొనలేక పోయింది: %s"
-
-#: ../src/nm-netlink-monitor.c:647 ../src/nm-netlink-monitor.c:660
-#, c-format
-msgid "error updating link cache: %s"
-msgstr "లింకు క్యాచీని నవీకరించుటలో దోషము: %s"
 
 #: ../src/settings/plugins/ifcfg-rh/reader.c:110
 msgid "System"
@@ -3298,8 +3758,33 @@ msgid "Invalid option.  Please use --help to see a list of valid options."
 msgstr ""
 "చెల్లని ఐచ్చికము.  చెల్లునటువంటి ఐచ్చికముల జాబితా కొరకు --help వుపయోగించండి."
 
-#~ msgid "Connection list"
-#~ msgstr "అనుసంధానము జాబితా"
+#~ msgid "Encrypted: "
+#~ msgstr "ఎన్క్రిప్టెడ్: "
+
+#~ msgid "WEP "
+#~ msgstr "WEP "
+
+#~ msgid "WPA "
+#~ msgstr "WPA "
+
+#~ msgid "WPA2 "
+#~ msgstr "WPA2 "
+
+#~ msgid "Enterprise "
+#~ msgstr "ఎంటర్‌ప్రైజ్ "
+
+#~ msgid "Infrastructure"
+#~ msgstr "అవస్థాపన(ఇన్ఫ్రాస్ట్రక్చర్)"
+
+#~| msgid "Error: unknown parameter: %s"
+#~ msgid "Error: unknown argument '%s'."
+#~ msgstr "దోషం: తెలియని ఆర్గుమెంట్ '%s'."
+
+#~ msgid "unable to allocate netlink link cache for monitoring link status: %s"
+#~ msgstr "లింకు స్థితిని పర్యవేక్షించుటకు నెట్‌లింకు క్యాచీని కేటాయించలేక పోయింది: %s"
+
+#~ msgid "error updating link cache: %s"
+#~ msgstr "లింకు క్యాచీని నవీకరించుటలో దోషము: %s"
 
 #~ msgid "Error: no valid parameter specified."
 #~ msgstr "దోషము: ఏ చెల్లునటువంటి పారామితి తెలుపబడలేదు."
@@ -3330,9 +3815,6 @@ msgstr ""
 
 #~ msgid "WIMAX-HARDWARE"
 #~ msgstr "WIMAX-HARDWARE"
-
-#~ msgid "Error: 'nm status': %s"
-#~ msgstr "దోషము: 'nm status': %s"
 
 #~ msgid "Error: 'nm status': %s; allowed fields: %s"
 #~ msgstr "దోషము: 'nm status': %s; allowed fields: %s"
