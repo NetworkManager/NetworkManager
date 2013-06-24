@@ -3280,15 +3280,23 @@ error:
 
 typedef char *CPFunction ();
 typedef char **CPPFunction ();
+/* History entry struct copied from libreadline's history.h */
+typedef struct _hist_entry {
+	char *line;
+	char *timestamp;
+	char *data;
+} HIST_ENTRY;
 
 typedef char *  (*ReadLineFunc)     (const char *);
 typedef void    (*AddHistoryFunc)   (const char *);
+typedef HIST_ENTRY** (*HistoryListFunc)  (void);
 typedef int     (*RlInsertTextFunc) (char *);
 typedef char ** (*RlCompletionMatchesFunc) (char *, CPFunction *);
 
 typedef struct {
 	ReadLineFunc readline_func;
 	AddHistoryFunc add_history_func;
+	HistoryListFunc history_list_func;
 	RlInsertTextFunc rl_insert_text_func;
 	void **rl_startup_hook_x;
 	RlCompletionMatchesFunc completion_matches_func;
@@ -3618,6 +3626,8 @@ load_cmd_line_edit_lib (void)
 		goto error;
 	if (!g_module_symbol (module, "add_history", (gpointer) (&edit_lib_symbols.add_history_func)))
 		goto error;
+	if (!g_module_symbol (module, "history_list", (gpointer) (&edit_lib_symbols.history_list_func)))
+		goto error;
 	if (!g_module_symbol (module, "rl_insert_text", (gpointer) (&edit_lib_symbols.rl_insert_text_func)))
 		goto error;
 	if (!g_module_symbol (module, "rl_startup_hook", (gpointer) (&edit_lib_symbols.rl_startup_hook_x)))
@@ -3675,6 +3685,94 @@ readline_x (const char *prompt)
 		edit_lib_symbols.add_history_func (str);
 
 	return str;
+}
+
+
+#define NMCLI_EDITOR_HISTORY ".nmcli-history"
+
+static void
+load_history_cmds (const char *uuid)
+{
+	GKeyFile *kf;
+	char *filename;
+	char **keys;
+	char *line;
+	size_t i;
+	GError *err = NULL;
+
+	/* Nothing to do if readline library is not used */
+	if (!edit_lib_symbols.add_history_func)
+		return;
+
+	filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
+	kf = g_key_file_new ();
+	if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
+		if (err->code == G_KEY_FILE_ERROR_PARSE)
+			printf ("Warning: %s parse error: %s\n", filename, err->message);
+		g_key_file_free (kf);
+		g_free (filename);
+		return;
+	}
+	keys = g_key_file_get_keys (kf, uuid, NULL, NULL);
+	for (i = 0; keys && keys[i]; i++) {
+		line = g_key_file_get_string (kf, uuid, keys[i], NULL);
+		if (line && *line)
+			edit_lib_symbols.add_history_func (line);
+		g_free (line);
+	}
+	g_strfreev (keys);
+	g_key_file_free (kf);
+	g_free (filename);
+}
+
+static void
+save_history_cmds (const char *uuid)
+{
+	HIST_ENTRY **hist = NULL;
+	GKeyFile *kf;
+	char *filename;
+	size_t i;
+	char *key;
+	char *data;
+	gsize len = 0;
+	GError *err = NULL;
+
+	if (edit_lib_symbols.history_list_func)
+		hist = edit_lib_symbols.history_list_func();
+
+	if (hist) {
+		filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
+		kf = g_key_file_new ();
+		if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
+			if (   err->code != G_FILE_ERROR_NOENT
+			    && err->code != G_KEY_FILE_ERROR_NOT_FOUND) {
+				printf ("Warning: %s parse error: %s\n", filename, err->message);
+				g_key_file_free (kf);
+				g_free (filename);
+				g_clear_error (&err);
+				return;
+			}
+			g_clear_error (&err);
+		}
+
+		/* Remove previous history group and save new history entries */
+		g_key_file_remove_group (kf, uuid, NULL);
+		for (i = 0; hist[i]; i++)
+		{
+			key = g_strdup_printf ("%zd", i);
+			g_key_file_set_string (kf, uuid, key, hist[i]->line);
+			g_free (key);
+		}
+
+		/* Write history to file */
+		data = g_key_file_to_data (kf, &len, NULL);
+		if (data) {
+			g_file_set_contents (filename, data, len, NULL);
+			g_free (data);
+		}
+		g_key_file_free (kf);
+		g_free (filename);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4837,6 +4935,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_strfreev (menu_ctx.valid_props);
 	g_free (menu_ctx.valid_props_str);
 
+	/* Save history file */
+	save_history_cmds (nm_connection_get_uuid (connection));
+
 	return TRUE;
 }
 
@@ -4990,6 +5091,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		          "  - NetBSD Editline (libedit)     http://www.thrysoee.dk/editline/\n"));
 		edit_lib_symbols.readline_func = NULL;
 		edit_lib_symbols.add_history_func = NULL;
+		edit_lib_symbols.history_list_func = NULL;
 		edit_lib_symbols.rl_insert_text_func = NULL;
 		edit_lib_symbols.rl_startup_hook_x = NULL;
 	}
@@ -5040,6 +5142,9 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		if (con_name)
 			printf (_("Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"),
 			        nm_connection_get_id (connection));
+
+		/* Load previously saved history commands for the connection */
+		load_history_cmds (nm_connection_get_uuid (connection));
 	} else {
 		/* New connection */
 		connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
