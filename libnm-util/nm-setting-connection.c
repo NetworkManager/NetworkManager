@@ -248,6 +248,8 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
  * Returns the #NMSettingConnection:interface-name property of the connection.
  *
  * Returns: the connection's interface name
+ *
+ * Since: 0.9.10
  **/
 const char *
 nm_setting_connection_get_interface_name (NMSettingConnection *setting)
@@ -1091,6 +1093,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * the interfaces a connection can be used with, and if interface
 	 * names change or are reordered the connection may be applied to
 	 * the wrong interface.
+	 *
+	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
