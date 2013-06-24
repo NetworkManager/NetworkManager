@@ -101,14 +101,14 @@ value_hash_add_uint (GHashTable *hash,
 
 static void
 value_hash_add_strv (GHashTable *hash,
-					 const char *key,
-					 GPtrArray *array)
+                     const char *key,
+                     char **strv)
 {
 	GValue *value;
 
 	value = g_slice_new0 (GValue);
-	g_value_init (value, DBUS_TYPE_G_ARRAY_OF_STRING);
-	g_value_take_boxed (value, array);
+	g_value_init (value, G_TYPE_STRV);
+	g_value_take_boxed (value, strv);
 	value_hash_add (hash, key, value);
 }
 
@@ -255,13 +255,15 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 {
 	char *tmp;
 	char **split, **iter;
-	GPtrArray *domains;
 	GSList *list;
 	GValue *val;
 
 	*out_props = value_hash_create ();
 
 	/* search domains */
+	/* Use char** for domains. (DBUS_TYPE_G_ARRAY_OF_STRING of NMIP4Config
+	 * becomes G_TYPE_STRV when sending the value over D-Bus)
+	 */
 	tmp = g_key_file_get_string (kf, section, "domains", error);
 	if (tmp == NULL)
 		return FALSE;
@@ -269,14 +271,10 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 	g_free (tmp);
 
 	if (g_strv_length (split) > 0) {
-		domains = g_ptr_array_sized_new (g_strv_length (split));
-		for (iter = split; iter && *iter; iter++) {
-			if (strlen (g_strstrip (*iter)))
-				g_ptr_array_add (domains, g_strdup (*iter));
-		}
-		value_hash_add_strv (*out_props, "domains", domains);
+		for (iter = split; iter && *iter; iter++)
+			g_strstrip (*iter);
+		value_hash_add_strv (*out_props, "domains", split);
 	}
-	g_strfreev (split);
 
 	/* nameservers */
 	if (!add_uint_array (kf, *out_props, "ip4", "nameservers", error))
