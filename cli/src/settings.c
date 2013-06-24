@@ -34,19 +34,20 @@
 
 /* Available fields for NM_SETTING_CONNECTION_SETTING_NAME */
 static NmcOutputField nmc_fields_setting_connection[] = {
-	SETTING_FIELD ("name",  15),                              /* 0 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ID, 25),             /* 1 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_UUID, 38),           /* 2 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME, 20), /* 3 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE, 17),           /* 4 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT, 13),    /* 5 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),      /* 6 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),      /* 7 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),    /* 8 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),           /* 9 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),         /* 10 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),     /* 11 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),    /* 12 */
+	SETTING_FIELD ("name",  15),                                     /* 0 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ID, 25),                    /* 1 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_UUID, 38),                  /* 2 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME, 20),        /* 3 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE, 17),                  /* 4 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT, 13),           /* 5 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),             /* 6 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),             /* 7 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),           /* 8 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),                  /* 9 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),                /* 10 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),            /* 11 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),           /* 12 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, 30),  /* 13 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -61,7 +62,8 @@ static NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_ZONE","\
                                               NM_SETTING_CONNECTION_MASTER","\
                                               NM_SETTING_CONNECTION_SLAVE_TYPE","\
-                                              NM_SETTING_CONNECTION_SECONDARIES
+                                              NM_SETTING_CONNECTION_SECONDARIES","\
+                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
@@ -1035,6 +1037,7 @@ DEFINE_GETTER (nmc_property_connection_get_zone, NM_SETTING_CONNECTION_ZONE)
 DEFINE_GETTER (nmc_property_connection_get_master, NM_SETTING_CONNECTION_MASTER)
 DEFINE_GETTER (nmc_property_connection_get_slave_type, NM_SETTING_CONNECTION_SLAVE_TYPE)
 DEFINE_GETTER (nmc_property_connection_get_secondaries, NM_SETTING_CONNECTION_SECONDARIES)
+DEFINE_GETTER (nmc_property_connection_get_gateway_ping_timeout, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT)
 
 /* --- NM_SETTING_GSM_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_gsm_get_number, NM_SETTING_GSM_NUMBER)
@@ -1402,6 +1405,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 	set_val_str (arr, 10, nmc_property_connection_get_master (setting));
 	set_val_str (arr, 11, nmc_property_connection_get_slave_type (setting));
 	set_val_str (arr, 12, nmc_property_connection_get_secondaries (setting));
+	set_val_str (arr, 13, nmc_property_connection_get_gateway_ping_timeout (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
