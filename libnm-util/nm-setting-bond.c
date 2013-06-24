@@ -261,8 +261,11 @@ gboolean nm_setting_bond_add_option (NMSettingBond *setting,
 	if (!strcmp (name, NM_SETTING_BOND_OPTION_MIIMON)) {
 		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-	} else if (!strcmp (name, NM_SETTING_BOND_OPTION_ARP_INTERVAL))
+	} else if (!strcmp (name, NM_SETTING_BOND_OPTION_ARP_INTERVAL)) {
 		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_MIIMON);
+		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_DOWNDELAY);
+		g_hash_table_remove (priv->options, NM_SETTING_BOND_OPTION_UPDELAY);
+	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
 
