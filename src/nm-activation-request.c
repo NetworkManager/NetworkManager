@@ -356,8 +356,6 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
  * @user_uid: if @user_requested is %TRUE, the Unix UID of the user that requested
  * @dbus_sender: if @user_requested is %TRUE, the D-BUS sender that requested
  *    the activation
- * @assumed: pass %TRUE if the activation should "assume" (ie, taking over) an
- *    existing connection made before this instance of NM started
  * @device: the device/interface to configure according to @connection
  * @master: if the activation depends on another device (ie, bond or bridge
  *    or team master to which this device will be enslaved) pass the #NMDevice
@@ -373,7 +371,6 @@ nm_act_request_new (NMConnection *connection,
                     gboolean user_requested,
                     gulong user_uid,
                     const char *dbus_sender,
-                    gboolean assumed,
                     NMDevice *device,
                     NMDevice *master)
 {
@@ -388,7 +385,6 @@ nm_act_request_new (NMConnection *connection,
 	                       NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
 	                       NM_ACTIVE_CONNECTION_INT_USER_REQUESTED, user_requested,
 	                       NM_ACTIVE_CONNECTION_INT_USER_UID, user_uid,
-	                       NM_ACTIVE_CONNECTION_INT_ASSUMED, assumed,
 	                       NM_ACTIVE_CONNECTION_INT_MASTER, master,
 	                       NULL);
 	if (object) {

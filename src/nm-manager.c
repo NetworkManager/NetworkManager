@@ -2575,7 +2575,6 @@ internal_activate_device (NMManager *manager,
 	                          user_requested,
 	                          sender_uid,
 	                          dbus_sender,
-	                          assumed,
 	                          device,
 	                          master_device);
 	g_assert (req);

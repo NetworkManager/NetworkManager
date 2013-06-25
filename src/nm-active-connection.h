@@ -48,7 +48,6 @@
 #define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
 #define NM_ACTIVE_CONNECTION_INT_USER_REQUESTED "int-user-requested"
 #define NM_ACTIVE_CONNECTION_INT_USER_UID       "int-user-uid"
-#define NM_ACTIVE_CONNECTION_INT_ASSUMED        "int-assumed"
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
 
 
@@ -95,8 +94,6 @@ NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
 gboolean      nm_active_connection_get_user_requested (NMActiveConnection *self);
 
 gulong        nm_active_connection_get_user_uid (NMActiveConnection *self);
-
-gboolean      nm_active_connection_get_assumed (NMActiveConnection *self);
 
 NMDevice *    nm_active_connection_get_master (NMActiveConnection *self);
 

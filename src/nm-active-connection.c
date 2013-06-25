@@ -50,7 +50,6 @@ typedef struct {
 
 	gboolean user_requested;
 	gulong user_uid;
-	gboolean assumed;
 	NMDevice *master;
 } NMActiveConnectionPrivate;
 
@@ -70,7 +69,6 @@ enum {
 	PROP_INT_DEVICE,
 	PROP_INT_USER_REQUESTED,
 	PROP_INT_USER_UID,
-	PROP_INT_ASSUMED,
 	PROP_INT_MASTER,
 
 	LAST_PROP
@@ -227,14 +225,6 @@ nm_active_connection_get_user_uid (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->user_uid;
 }
 
-gboolean
-nm_active_connection_get_assumed (NMActiveConnection *self)
-{
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
-
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->assumed;
-}
-
 NMDevice *
 nm_active_connection_get_device (NMActiveConnection *self)
 {
@@ -280,9 +270,6 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_INT_USER_UID:
 		priv->user_uid = g_value_get_ulong (value);
-		break;
-	case PROP_INT_ASSUMED:
-		priv->assumed = g_value_get_boolean (value);
 		break;
 	case PROP_INT_MASTER:
 		g_warn_if_fail (priv->master == NULL);
@@ -477,13 +464,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                    "User UID (if user requested)",
 		                    0, G_MAXULONG, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_class_install_property (object_class, PROP_INT_ASSUMED,
-		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_ASSUMED,
-		                      "Assumed",
-		                      "Assumed",
-		                      FALSE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_MASTER,
 		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_MASTER,

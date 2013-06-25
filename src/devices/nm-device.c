@@ -3457,8 +3457,6 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	state = nm_device_get_state (self);
-	if (nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request)) == FALSE)
-		g_warn_if_fail (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_NEED_AUTH);
 
 	/* Add the interface to the specified firewall zone */
 	connection = nm_device_get_connection (self);
@@ -4261,12 +4259,12 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	if (nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (req))) {
+	if (priv->state_reason == NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 		/* If it's an assumed connection, let the device subclass short-circuit
 		 * the normal connection process and just copy its IP configs from the
 		 * interface.
 		 */
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 		nm_device_activate_schedule_stage3_ip_config_start (self);
 	} else {
 		NMDevice *master;

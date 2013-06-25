@@ -51,7 +51,6 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            gboolean user_requested,
                                            gulong user_uid,
                                            const char *dbus_sender,
-                                           gboolean assumed,
                                            NMDevice *device,
                                            NMDevice *master);
 
