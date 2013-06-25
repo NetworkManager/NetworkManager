@@ -298,11 +298,11 @@ typedef struct {
 
 static gboolean nm_device_set_ip4_config (NMDevice *dev,
                                           NMIP4Config *config,
-                                          gboolean assumed,
+                                          gboolean commit,
                                           NMDeviceStateReason *reason);
 static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           NMIP6Config *config,
-                                          gboolean assumed,
+                                          gboolean commit,
                                           NMDeviceStateReason *reason);
 
 static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
@@ -1929,7 +1929,7 @@ autoip_changed (NMDevice *self,
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	nm_utils_merge_ip4_config (config, s_ip4);
-	if (!nm_device_set_ip4_config (self, config, FALSE, &reason)) {
+	if (!nm_device_set_ip4_config (self, config, TRUE, &reason)) {
 		nm_log_err (LOGD_AUTOIP4, "(%s): failed to update IP4 config in response to autoip event.",
 			        nm_device_get_iface (self));
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
@@ -2180,7 +2180,7 @@ dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
 	/* Merge with user overrides */
 	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
 
-	if (!nm_device_set_ip4_config (device, config, FALSE, &reason)) {
+	if (!nm_device_set_ip4_config (device, config, TRUE, &reason)) {
 		nm_log_warn (LOGD_DHCP4, "(%s): failed to update IPv4 config in response to DHCP event.",
 		             nm_device_get_ip_iface (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
@@ -2604,7 +2604,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	/* Merge user overrides into the composite config */
 	nm_utils_merge_ip6_config (composite, nm_connection_get_setting_ip6_config (connection));
 
-	success = nm_device_set_ip6_config (self, composite, FALSE, out_reason);
+	success = nm_device_set_ip6_config (self, composite, TRUE, out_reason);
 	g_object_unref (composite);
 	return success;
 }
@@ -3702,7 +3702,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
 
 	assumed = nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request));
-	if (!nm_device_set_ip4_config (self, config, assumed, &reason)) {
+	if (!nm_device_set_ip4_config (self, config, !assumed, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
 			         "Activation (%s) Stage 5 of 5 (IPv4 Commit) failed",
 					 iface);
@@ -4109,8 +4109,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	}
 
 	/* Clean up nameservers and addresses */
-	nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
-	nm_device_set_ip6_config (self, NULL, FALSE, &ignored);
+	nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
+	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
 
 	/* Clear legacy IPv4 address property */
 	priv->ip4_address = 0;
@@ -4315,7 +4315,7 @@ nm_device_get_ip4_config (NMDevice *self)
 static gboolean
 nm_device_set_ip4_config (NMDevice *self,
                           NMIP4Config *new_config,
-                          gboolean assumed,
+                          gboolean commit,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -4346,13 +4346,10 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (new_config) {
 		priv->ip4_config = g_object_ref (new_config);
 
-		/* Don't touch the device's actual IP config if the connection is
-		 * assumed when NM starts.
-		 */
-		if (!assumed)
+		if (commit)
 			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
 
-		if (success || assumed) {
+		if (success || !commit) {
 			/* Export over D-Bus */
 			if (!nm_ip4_config_get_dbus_path (new_config))
 				nm_ip4_config_export (new_config);
@@ -4375,7 +4372,7 @@ nm_device_set_ip4_config (NMDevice *self,
 static gboolean
 nm_device_set_ip6_config (NMDevice *self,
                           NMIP6Config *new_config,
-                          gboolean assumed,
+                          gboolean commit,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -4406,10 +4403,10 @@ nm_device_set_ip6_config (NMDevice *self,
 	if (new_config) {
 		priv->ip6_config = g_object_ref (new_config);
 
-		if (!assumed)
+		if (commit)
 			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
 
-		if (success || assumed) {
+		if (success || !commit) {
 			/* Export over D-Bus */
 			if (!nm_ip6_config_get_dbus_path (new_config))
 				nm_ip6_config_export (new_config);
@@ -4770,7 +4767,7 @@ dispose (GObject *object)
 
 		if (nm_device_get_act_request (self))
 			nm_device_deactivate (self, NM_DEVICE_STATE_REASON_REMOVED);
-		nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
+		nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
 
 		nm_device_take_down (self, FALSE);
 	}
@@ -5864,8 +5861,8 @@ update_ip_config (NMDevice *self)
 	ip4_config = nm_ip4_config_new_for_interface (ifindex);
 	ip6_config = nm_ip6_config_new_for_interface (ifindex);
 
-	nm_device_set_ip4_config (self, ip4_config, TRUE, &ignored);
-	nm_device_set_ip6_config (self, ip6_config, TRUE, &ignored);
+	nm_device_set_ip4_config (self, ip4_config, FALSE, &ignored);
+	nm_device_set_ip6_config (self, ip6_config, FALSE, &ignored);
 
 	if (ip4_config)
 		g_object_unref (ip4_config);
