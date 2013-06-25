@@ -4080,8 +4080,6 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	dnsmasq_cleanup (self);
 	aipd_cleanup (self);
 
-	nm_device_set_ip_iface (self, NULL);
-
 	/* Turn off router advertisements until they are needed */
 	if (priv->ip6_accept_ra_path)
 		nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0");
@@ -4111,11 +4109,20 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 		nm_system_iface_flush_routes (ifindex, family);
 		nm_system_iface_flush_addresses (ifindex, family);
 	}
-	_update_ip4_address (self);
 
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
 	nm_device_set_ip6_config (self, NULL, FALSE, &ignored);
+
+	/* Clear legacy IPv4 address property */
+	priv->ip4_address = 0;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
+
+	/* Only clear ip_iface after flushing all routes and addreses, since
+	 * those are identified by ip_iface, not by iface (which might be a tty
+	 * or ATM device).
+	 */
+	nm_device_set_ip_iface (self, NULL);
 }
 
 static void
