@@ -3671,7 +3671,6 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	gboolean assumed;
 	int ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
@@ -3701,8 +3700,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	/* Merge with user overrides */
 	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
 
-	assumed = nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request));
-	if (!nm_device_set_ip4_config (self, config, !assumed, &reason)) {
+	if (!nm_device_set_ip4_config (self, config, TRUE, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
 			         "Activation (%s) Stage 5 of 5 (IPv4 Commit) failed",
 					 iface);
