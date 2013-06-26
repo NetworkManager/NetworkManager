@@ -1542,21 +1542,27 @@ nm_platform_route_flush (int ifindex)
 /******************************************************************/
 
 static void
-log_link_added (NMPlatform *p, int ifindex, NMPlatformLink *info, gpointer user_data)
+log_link (NMPlatformLink *device, const char *change_type)
 {
-	debug ("signal: link address: '%s' (%d)", info->name, ifindex);
+	debug ("signal: link %s: %s (%d)", change_type, device->name, device->ifindex);
 }
 
 static void
-log_link_changed (NMPlatform *p, int ifindex, NMPlatformLink *info, gpointer user_data)
+log_link_added (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
 {
-	debug ("signal: link changed: '%s' (%d)", info->name, ifindex);
+	log_link (device, "added");
 }
 
 static void
-log_link_removed (NMPlatform *p, int ifindex, NMPlatformLink *info, gpointer user_data)
+log_link_changed (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
 {
-	debug ("signal: link removed: '%s' (%d)", info->name, ifindex);
+	log_link (device, "changed");
+}
+
+static void
+log_link_removed (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
+{
+	log_link (device, "removed");
 }
 
 static void
