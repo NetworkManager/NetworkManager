@@ -52,6 +52,7 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	DBusGProxy *proxy;
+	guint proxy_destroy_id;
 
 	GHashTable *requests;
 } NMSecretAgentPrivate;
@@ -272,6 +273,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	g_return_val_if_fail (setting_name != NULL, NULL);
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	g_return_val_if_fail (priv->proxy != NULL, NULL);
 
 	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 
@@ -319,6 +321,7 @@ nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
 
 	g_return_if_fail (self != NULL);
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	g_return_if_fail (priv->proxy != NULL);
 
 	r = g_hash_table_lookup (priv->requests, call);
 	g_return_if_fail (r != NULL);
@@ -422,6 +425,18 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	                              callback_data);
 }
 
+static void
+proxy_cleanup (NMSecretAgent *self)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	if (priv->proxy) {
+		g_signal_handler_disconnect (priv->proxy, priv->proxy_destroy_id);
+		priv->proxy_destroy_id = 0;
+		g_clear_object (&priv->proxy);
+	}
+}
+
 /*************************************************************/
 
 NMSecretAgent *
@@ -464,6 +479,8 @@ nm_secret_agent_new (NMDBusManager *dbus_mgr,
 	                                             NM_DBUS_PATH_SECRET_AGENT,
 	                                             NM_DBUS_INTERFACE_SECRET_AGENT);
 		g_assert (priv->proxy);
+		priv->proxy_destroy_id = g_signal_connect_swapped (priv->proxy, "destroy",
+		                                                   G_CALLBACK (proxy_cleanup), self);
 	}
 
 	g_free (username);
@@ -496,7 +513,8 @@ dispose (GObject *object)
 		g_slist_free (priv->permissions);
 
 		g_hash_table_destroy (priv->requests);
-		g_object_unref (priv->proxy);
+
+		proxy_cleanup (NM_SECRET_AGENT (object));
 		g_object_unref (priv->dbus_mgr);
 	}
 
