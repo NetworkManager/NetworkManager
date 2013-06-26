@@ -1319,6 +1319,9 @@ nm_platform_ip4_route_add (int ifindex,
 	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
+	if (!metric)
+		metric = 1024;
+
 	if (nm_platform_ip4_route_exists (ifindex, network, plen, metric)) {
 		debug ("route already exists");
 		platform->error = NM_PLATFORM_ERROR_EXISTS;
@@ -1337,6 +1340,9 @@ nm_platform_ip6_route_add (int ifindex,
 	g_return_val_if_fail (metric >= 0, FALSE);
 	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
+
+	if (!metric)
+		metric = 1024;
 
 	if (nm_platform_ip6_route_exists (ifindex, network, plen, metric)) {
 		debug ("route already exists");
