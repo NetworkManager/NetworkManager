@@ -1378,7 +1378,36 @@ progress_vpn_cb (gpointer user_data)
 typedef struct {
 	NmCli *nmc;
 	NMDevice *device;
+	const char *con_type;
 } ActivateConnectionInfo;
+
+static gboolean
+bond_bridge_slaves_check (gpointer user_data)
+{
+	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	NMDevice *device = info->device;
+	const char *con_type = info->con_type;
+	const GPtrArray *slaves = NULL;
+
+	if (strcmp (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
+		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
+	else if (strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
+		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
+	else
+		g_warning ("%s: should not be reached.", __func__);
+
+	if (!slaves) {
+		g_string_printf (nmc->return_text,
+		                 _("Error: Device '%s' is waiting for slaves before proceeding with activation."),
+		                 nm_device_get_iface (device));
+		nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
+		quit ();
+	}
+
+	g_free (info);
+	return FALSE;
+}
 
 static void
 activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
@@ -1387,6 +1416,7 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
 	NMActiveConnectionState state;
+	const GPtrArray *ac_devs;
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"), error->message);
@@ -1394,6 +1424,11 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 		quit ();
 	} else {
 		state = nm_active_connection_get_state (active);
+		if (!device) {
+			/* device could be NULL for virtual devices. Fill it here. */
+			ac_devs = nm_active_connection_get_devices (active);
+			info->device = device = ac_devs && ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+		}
 
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* User doesn't want to wait or already activated */
@@ -1426,43 +1461,17 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 
 			/* Start timer not to loop forever when signals are not emitted */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
+
+			/* Check for bond or bridge slaves */
+			if (   !strcmp (info->con_type, NM_SETTING_BOND_SETTING_NAME)
+			    || !strcmp (info->con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		
+				g_timeout_add_seconds (BB_SLAVES_TIMEOUT, bond_bridge_slaves_check, info);
+				return; /* info will be freed in bond_bridge_slaves_check () */
+			}
 		}
 	}
 	g_free (info);
-}
-
-typedef struct {
-	NmCli *nmc;
-	NMDevice *device;
-	const char *con_type;
-} UpSlavesInfo;
-
-static gboolean
-bond_bridge_slaves_check (gpointer user_data)
-{
-	UpSlavesInfo *info = (UpSlavesInfo *) user_data;
-	NmCli *nmc = info->nmc;
-	NMDevice *device = info->device;
-	const char *con_type = info->con_type;
-	const GPtrArray *slaves = NULL;
-
-	if (strcmp (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
-		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
-	else if (strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
-	else
-		g_warning ("%s: should not be reached.", __func__);
-
-	if (!slaves) {
-		g_string_printf (nmc->return_text,
-		                 _("Error: Device '%s' is waiting for slaves before proceeding with activation."),
-		                 nm_device_get_iface (device));
-		nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
-		quit ();
-	}
-
-	g_free (info);
-	return FALSE;
 }
 
 static NMCResultCode
@@ -1605,6 +1614,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
 	info->device = device;
+	info->con_type = con_type;
 
 	nm_client_activate_connection (nmc->client,
 	                               connection,
@@ -1616,19 +1626,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
 		progress_id = g_timeout_add (120, progress_cb, "preparing");
-
-	/* Check for bond or bridge slaves */
-	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		UpSlavesInfo *slaves_info;
-		
-		slaves_info = g_malloc0 (sizeof (UpSlavesInfo));
-		slaves_info->nmc = nmc;
-		slaves_info->device = device;
-		slaves_info->con_type = con_type;
-
-		g_timeout_add_seconds (BB_SLAVES_TIMEOUT, bond_bridge_slaves_check, slaves_info);
-	}
 
 	g_free (line);
 	return nmc->return_value;
