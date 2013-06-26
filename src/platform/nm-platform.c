@@ -826,7 +826,7 @@ nm_platform_link_get_master (int slave)
  * nm_platform_bridge_add:
  * @name: New interface name
  *
- * Create a virtual bridge.
+ * Create a software bridge.
  */
 gboolean
 nm_platform_bridge_add (const char *name)
@@ -839,7 +839,7 @@ nm_platform_bridge_add (const char *name)
  * nm_platform_bond_add:
  * @name: New interface name
  *
- * Create a virtual bonding device.
+ * Create a software bonding device.
  */
 gboolean
 nm_platform_bond_add (const char *name)
@@ -852,7 +852,7 @@ nm_platform_bond_add (const char *name)
  * nm_platform_team_add:
  * @name: New interface name
  *
- * Create a virtual teaming device.
+ * Create a software teaming device.
  */
 gboolean
 nm_platform_team_add (const char *name)

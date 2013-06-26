@@ -130,7 +130,7 @@ test_loopback (void)
 }
 
 static int
-virtual_add (NMLinkType link_type, const char *name)
+software_add (NMLinkType link_type, const char *name)
 {
 	switch (link_type) {
 	case NM_LINK_TYPE_DUMMY:
@@ -185,7 +185,7 @@ test_slave (int master, int type, SignalData *master_changed, SignalData *link_r
 	char *value;
 
 	link_added = add_signal_ifname ("link-added", link_callback, SLAVE_NAME);
-	g_assert (virtual_add (type, SLAVE_NAME));
+	g_assert (software_add (type, SLAVE_NAME));
 	ifindex = nm_platform_link_get_ifindex (SLAVE_NAME);
 	g_assert (ifindex > 0);
 	wait_signal (link_added);
@@ -277,7 +277,7 @@ test_slave (int master, int type, SignalData *master_changed, SignalData *link_r
 }
 
 static void
-test_virtual (NMLinkType link_type, const char *link_typename)
+test_software (NMLinkType link_type, const char *link_typename)
 {
 	int ifindex;
 	char *value;
@@ -289,7 +289,7 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 
 	/* Add */
 	link_added = add_signal_ifname ("link-added", link_callback, DEVICE_NAME);
-	g_assert (virtual_add (link_type, DEVICE_NAME));
+	g_assert (software_add (link_type, DEVICE_NAME));
 	no_error ();
 	g_assert (nm_platform_link_exists (DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
@@ -305,7 +305,7 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 	wait_signal (link_added);
 
 	/* Add again */
-	g_assert (!virtual_add (link_type, DEVICE_NAME));
+	g_assert (!software_add (link_type, DEVICE_NAME));
 	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Set ARP/NOARP */
@@ -384,25 +384,25 @@ test_virtual (NMLinkType link_type, const char *link_typename)
 static void
 test_bridge (void)
 {
-	test_virtual (NM_LINK_TYPE_BRIDGE, "bridge");
+	test_software (NM_LINK_TYPE_BRIDGE, "bridge");
 }
 
 static void
 test_bond (void)
 {
-	test_virtual (NM_LINK_TYPE_BOND, "bond");
+	test_software (NM_LINK_TYPE_BOND, "bond");
 }
 
 static void
 test_team (void)
 {
-	test_virtual (NM_LINK_TYPE_TEAM, "team");
+	test_software (NM_LINK_TYPE_TEAM, "team");
 }
 
 static void
 test_vlan ()
 {
-	test_virtual (NM_LINK_TYPE_VLAN, "vlan");
+	test_software (NM_LINK_TYPE_VLAN, "vlan");
 }
 
 static void
@@ -574,10 +574,10 @@ setup_tests (void)
 	g_test_add_func ("/link/bogus", test_bogus);
 	g_test_add_func ("/link/loopback", test_loopback);
 	g_test_add_func ("/link/internal", test_internal);
-	g_test_add_func ("/link/virtual/bridge", test_bridge);
-	g_test_add_func ("/link/virtual/bond", test_bond);
-	g_test_add_func ("/link/virtual/team", test_team);
-	g_test_add_func ("/link/virtual/vlan", test_vlan);
+	g_test_add_func ("/link/software/bridge", test_bridge);
+	g_test_add_func ("/link/software/bond", test_bond);
+	g_test_add_func ("/link/software/team", test_team);
+	g_test_add_func ("/link/software/vlan", test_vlan);
 
 	if (strcmp (g_type_name (G_TYPE_FROM_INSTANCE (nm_platform_get ())), "NMFakePlatform"))
 		g_test_add_func ("/link/external", test_external);
