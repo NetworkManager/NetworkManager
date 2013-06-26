@@ -1636,7 +1636,7 @@ log_ip4_route (NMPlatformIP4Route *route, const char *change_type)
 	inet_ntop (AF_INET, &route->network, network, sizeof (network));
 	inet_ntop (AF_INET, &route->gateway, gateway, sizeof (gateway));
 
-	debug ("signal: route %s: %s/%d via %s dev %s", change_type, network, plen, gateway, name);
+	debug ("signal: route %s: %s/%d via %s dev %s metric %d", change_type, network, plen, gateway, name, route->metric);
 }
 
 static void
@@ -1668,7 +1668,7 @@ log_ip6_route (NMPlatformIP6Route *route, const char *change_type)
 	inet_ntop (AF_INET6, &route->network, network, sizeof (network));
 	inet_ntop (AF_INET6, &route->gateway, gateway, sizeof (gateway));
 
-	debug ("signal: route %s: %s/%d via %s dev %s", change_type, network, plen, gateway, name);
+	debug ("signal: route %s: %s/%d via %s dev %s metric %d", change_type, network, plen, gateway, name, route->metric);
 }
 
 static void
