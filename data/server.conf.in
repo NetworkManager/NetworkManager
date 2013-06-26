@@ -1,6 +1,7 @@
-# This is a sample configuration file that could be edited and
-# dropped into @sysconfdir@/NetworkManager/conf.d to disable certain
-# bits of automatic behavior that might not be wanted on servers.
+# This configuration file, when placed into into
+# @sysconfdir@/NetworkManager/conf.d will change NetworkManager's
+# behavior to what's expected on "traditional UNIX server" type
+# deployments.
 #
 # See "man NetworkManager.conf" for more information about these
 # individual keys.
