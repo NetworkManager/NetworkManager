@@ -145,11 +145,30 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 
       <varlistentry>
 	<term><varname>ignore-carrier</varname></term>
-	<listitem><para>Set devices for which NetworkManager should
-	ignore device carrier state when deciding whether to
-	activate or deactivate connections.  May have the special
-	value <literal>*</literal> to apply to all
-	devices.</para></listitem>
+	<listitem>
+	  <para>
+	    Comma-separated list of devices for which
+	    NetworkManager will ignore the carrier (cable plugged in)
+	    state.  Normally, for device types that support
+	    carrier-detect, such as Ethernet and InfiniBand,
+	    NetworkManager will only allow a connection to be activated on
+	    the device if carrier is present (ie, a cable is plugged in).
+	    List a device here to allow attempting to activate a
+	    connection anyways.  May have the special value
+	    <literal>*</literal> to apply to all devices.
+	  </para>
+	  <para>
+	    Note that the "carrier" property of NMDevices and device D-Bus
+	    interfaces will still reflect the actual device state; it's just
+	    that NetworkManager will not make use of that information.
+	  </para>
+	  <para>
+	    You should probably not set this to apply to devices where you are
+	    doing automatic IP config, since they will eventually fail if there
+	    is no actual network connectivity, and NetworkManager won't retry
+	    them right away when carrier comes back up (since it's ignoring it).
+	  </para>
+	</listitem>
       </varlistentry>
 
       <varlistentry>

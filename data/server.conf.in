@@ -1,41 +1,15 @@
 # This is a sample configuration file that could be edited and
 # dropped into @sysconfdir@/NetworkManager/conf.d to disable certain
 # bits of automatic behavior that might not be wanted on servers.
+#
+# See "man NetworkManager.conf" for more information about these
+# individual keys.
 
 [main]
+# Do not do automatic (DHCP/SLAAC) configuration on ethernet devices
+# with no other matching connections.
+no-auto-default=*
 
-# Normally, if there is an ethernet device that is not matched by any
-# existing configured connection, NetworkManager will create a
-# "default" connection for that device, using automatic (DHCP/SLAAC)
-# IP configuration. You can use no-auto-default to disable this
-# behavior for individual devices or for all devices on the system
-#
-# Note that if you delete an existing "default" connection, NM will
-# remember this by adding the device's hardware address to
-# @localstatedir@/run/NetworkManager/no-auto-default.state; the devices
-# indicated in this file will be appended to the value of the
-# no-auto-default key.
-
-#no-auto-default=eth0,eth1
-#no-auto-default=11:22:33:44:55:66
-#no-auto-default=*
-
-
-# Normally, for device types that support carrier-detect, such as
-# Ethernet and InfiniBand, NetworkManager will only allow a connection
-# to be activated on the device if carrier is present (ie, a cable is
-# plugged in). You can set ignore-carrier to disable this behavior,
-# for individual devices or for all devices on the system.
-#
-# Note that the "carrier" property of NMDevices and device D-Bus
-# interfaces will still reflect the actual device state; it's just
-# that NetworkManager will not make use of that information.
-#
-# You should probably not set this to apply to devices where you are
-# doing automatic IP config, since they will eventually fail if there
-# is no actual network connectivity, and NetworkManager won't retry
-# them right away when carrier comes back up (since it's ignoring it).
-
-#ignore-carrier=eth0,ib0
-#ignore-carrier=aa:bb:cc:dd:ee:ff
-#ignore-carrier=*
+# Ignore the carrier (cable plugged in) state when attempting to
+# activate connections.
+ignore-carrier=*
