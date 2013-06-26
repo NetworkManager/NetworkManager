@@ -121,7 +121,7 @@ remove_agent (NMAgentManager *self, const char *owner)
 	if (!agent)
 		return FALSE;
 
-	nm_log_dbg (LOGD_AGENTS, "(%s) agent unregistered",
+	nm_log_dbg (LOGD_AGENTS, "(%s) agent unregistered or disappeared",
 	            nm_secret_agent_get_description (agent));
 
 	/* Remove this agent to any in-progress secrets requests */
@@ -467,15 +467,6 @@ request_new (gsize struct_size,
 }
 
 static void
-request_cancel (Request *req)
-{
-	if (req->cancel_callback)
-		req->cancel_callback (req);
-	req->current = NULL;
-	req->current_call_id = NULL;
-}
-
-static void
 request_free (Request *req)
 {
 	if (req->free_func)
@@ -484,7 +475,8 @@ request_free (Request *req)
 	if (req->idle_id)
 		g_source_remove (req->idle_id);
 
-	request_cancel (req);
+	if (req->cancel_callback)
+		req->cancel_callback (req);
 
 	g_free (req->detail);
 	g_free (req->verb);
@@ -610,6 +602,9 @@ request_next_agent (Request *req)
 
 		req->next_callback (req);
 	} else {
+		req->current_call_id = NULL;
+		req->current = NULL;
+
 		/* No more secret agents are available to fulfill this secrets request */
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_NO_SECRETS,
@@ -628,10 +623,6 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 	req->pending = g_slist_remove (req->pending, agent);
 
 	if (agent == req->current) {
-		/* If this agent is being asked right now, cancel the request and send it
-		 * to the next agent.
-		 */
-		request_cancel (req);
 		nm_log_dbg (LOGD_AGENTS, "(%s) current agent removed from secrets request %p/%s",
 		            nm_secret_agent_get_description (agent), req, req->detail);
 		request_next_agent (req);
