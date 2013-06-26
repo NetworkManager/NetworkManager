@@ -7,3 +7,5 @@
 /test-address-linux
 /test-route-fake
 /test-route-linux
+/test-cleanup-fake
+/test-cleanup-linux
