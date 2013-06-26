@@ -8,6 +8,11 @@ AM_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS)
 
+PLATFORM_SOURCES = \
+	../nm-platform.c \
+	../nm-fake-platform.c \
+	../nm-linux-platform.c
+TEST_SOURCES = $(PLATFORM_SOURCES) test-common.c test-common.h
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_LDFLAGS = $(GLIB_LIBS) $(GUDEV_LIBS) $(LIBNL_LIBS) $(CODE_COVERAGE_LDFLAGS)
 PLATFORM_LDADD = \
@@ -42,88 +47,56 @@ platform_SOURCES = platform.c
 platform_CPPFLAGS = $(AM_CPPFLAGS)
 platform_LDADD = $(PLATFORM_LDADD)
 
-test_link_fake_SOURCES = \
-	test-link.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-fake-platform.c
+test_link_fake_SOURCES = test-link.c $(TEST_SOURCES)
 test_link_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_link_fake_LDADD = $(PLATFORM_LDADD)
 
-test_link_linux_SOURCES = \
-	test-link.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-linux-platform.c
+test_link_linux_SOURCES = test-link.c $(TEST_SOURCES)
 test_link_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 test_link_linux_LDADD = $(PLATFORM_LDADD)
 
-test_address_fake_SOURCES = \
-	test-address.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-fake-platform.c
+test_address_fake_SOURCES = test-address.c $(TEST_SOURCES)
 test_address_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_address_fake_LDADD = $(PLATFORM_LDADD)
 
-test_address_linux_SOURCES = \
-	test-address.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-linux-platform.c
+test_address_linux_SOURCES = test-address.c $(TEST_SOURCES)
 test_address_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 test_address_linux_LDADD = $(PLATFORM_LDADD)
 
-test_route_fake_SOURCES = \
-	test-route.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-fake-platform.c
+test_route_fake_SOURCES = test-route.c $(TEST_SOURCES)
 test_route_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_route_fake_LDADD = $(PLATFORM_LDADD)
 
-test_route_linux_SOURCES = \
-	test-route.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-linux-platform.c
+test_route_linux_SOURCES = test-route.c $(TEST_SOURCES)
 test_route_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 test_route_linux_LDADD = $(PLATFORM_LDADD)
 
-test_cleanup_fake_SOURCES = \
-	test-cleanup.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-fake-platform.c
+test_cleanup_fake_SOURCES = test-cleanup.c $(TEST_SOURCES)
 test_cleanup_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 test_cleanup_fake_LDADD = $(PLATFORM_LDADD)
 
-test_cleanup_linux_SOURCES = \
-	test-cleanup.c \
-	test-common.c \
-	${srcdir}/../nm-platform.c \
-	${srcdir}/../nm-linux-platform.c
+test_cleanup_linux_SOURCES = test-cleanup.c $(TEST_SOURCES)
 test_cleanup_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DSETUP=nm_linux_platform_setup \
