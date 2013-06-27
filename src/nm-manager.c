@@ -57,6 +57,7 @@
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-gre.h"
+#include "nm-setting-private.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
@@ -1940,6 +1941,107 @@ device_auth_request_cb (NMDevice *device,
 	}
 }
 
+/* This should really be moved to gsystem. */
+#define free_slist __attribute__ ((cleanup(local_slist_free)))
+static void
+local_slist_free (void *loc)
+{
+	GSList **location = loc;
+
+	if (location)
+		g_slist_free (*location);
+}
+
+/**
+ * get_connection:
+ * @manager: #NMManager instance
+ * @device: #NMDevice instance
+ * @existing: is set to %TRUE when an existing connection was returned
+ *
+ * Returns one of the following:
+ *
+ * 1) An existing connection to be assumed.
+ *
+ * 2) A generated connection to be assumed.
+ *
+ * 3) %NULL when none of the above is available.
+ *
+ * Supports both nm-device's match_l2_config() and update_connection().
+ */
+static NMConnection *
+get_connection (NMManager *manager, NMDevice *device, gboolean *existing)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	free_slist GSList *connections = nm_settings_get_connections (priv->settings);
+	NMConnection *connection = NULL;
+	GSList *iter;
+
+	if (existing)
+		*existing = FALSE;
+
+	/* We still support the older API to match a NMDevice object to an
+	 * existing connection using nm_device_find_assumable_connection().
+	 *
+	 * When the older API is still available for a particular device
+	 * type, we use it. To opt for the newer interface, the NMDevice
+	 * subclass must omit the match_l2_config virtual function
+	 * implementation.
+	 */
+	if (NM_DEVICE_GET_CLASS (device)->match_l2_config) {
+		NMConnection *candidate = nm_device_find_assumable_connection (device, connections);
+
+		if (candidate) {
+			nm_log_info (LOGD_DEVICE, "(%s): Found matching connection '%s' (legacy API)",
+			            nm_device_get_iface (device),
+			            nm_connection_get_id (candidate));
+			if (existing)
+				*existing = TRUE;
+			return candidate;
+		}
+	}
+
+	/* The core of the API is nm_device_generate_connection() function and
+	 * update_connection() virtual method and the convenient connection_type
+	 * class attribute. Subclasses supporting the new API must have
+	 * update_connection() implemented, otherwise nm_device_generate_connection()
+	 * returns NULL.
+	 */
+	connection = nm_device_generate_connection (device);
+	if (!connection) {
+		nm_log_info (LOGD_DEVICE, "(%s): No existing connection detected.",
+		             nm_device_get_iface (device));
+		return NULL;
+	}
+
+	/* Now we need to compare the generated connection to each configured
+	 * connection. The comparison function is the heart of the connection
+	 * assumption implementation and it must compare the connections very
+	 * carefully to sort out various corner cases. Also, the comparison is
+	 * not entirely symmetric.
+	 *
+	 * When no configured connection matches the generated connection, we keep
+	 * the generated connection instead.
+	 */
+	for (iter = connections; iter; iter = iter->next) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+
+		if (nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_CANDIDATE)) {
+			nm_log_info (LOGD_DEVICE, "(%s): Found matching connection: '%s'",
+						 nm_device_get_iface (device),
+						 nm_connection_get_id (candidate));
+			g_object_unref (connection);
+			if (existing)
+				*existing = TRUE;
+			return candidate;
+		}
+	}
+
+	nm_log_info (LOGD_DEVICE, "(%s): Using generated connection: '%s'",
+				 nm_device_get_iface (device),
+				 nm_connection_get_id (connection));
+	return connection;
+}
+
 static void
 add_device (NMManager *self, NMDevice *device)
 {
@@ -1948,7 +2050,7 @@ add_device (NMManager *self, NMDevice *device)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
-	NMConnection *connection = NULL;
+	NMConnection *connection;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	NMDeviceType devtype;
@@ -2034,21 +2136,7 @@ add_device (NMManager *self, NMDevice *device)
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
-	/* Check if we should assume the device's active connection by matching its
-	 * config with an existing system connection.
-	 */
-	if (nm_device_can_assume_connections (device)) {
-		GSList *connections = NULL;
-
-		connections = nm_settings_get_connections (priv->settings);
-		connection = nm_device_find_assumable_connection (device, connections);
-		g_slist_free (connections);
-
-		if (connection)
-			nm_log_dbg (LOGD_DEVICE, "(%s): found existing device connection '%s'",
-			            nm_device_get_iface (device),
-			            nm_connection_get_id (connection));
-	}
+	connection = get_connection (self, device, NULL);
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
@@ -2073,7 +2161,7 @@ add_device (NMManager *self, NMDevice *device)
 		NMActiveConnection *ac;
 		GError *error = NULL;
 
-		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume existing connection",
+		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume connection",
 		            nm_device_get_iface (device));
 
 		ac = internal_activate_device (self, device, connection, NULL, FALSE, 0, NULL, TRUE, NULL, &error);

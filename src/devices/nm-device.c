@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <linux/if.h>
 
+#include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
@@ -1618,6 +1619,77 @@ can_auto_connect (NMDevice *device,
 	return nm_device_can_activate (device, connection);
 }
 
+static gboolean
+device_has_config (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	/* Check for IP configuration. */
+	if (priv->ip4_config && nm_ip4_config_get_num_addresses (priv->ip4_config))
+		return TRUE;
+	if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
+		return TRUE;
+
+	/* The existence of a software device is good enough. */
+	if (nm_device_is_software (device))
+		return TRUE;
+
+	return FALSE;
+}
+
+NMConnection *
+nm_device_generate_connection (NMDevice *device)
+{
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	const char *ifname = nm_device_get_iface (device);
+	NMConnection *connection;
+	NMSetting *s_con;
+	NMSetting *s_ip4;
+	NMSetting *s_ip6;
+	gs_free char *uuid = NULL;
+	gs_free char *name = NULL;
+
+	/* If update_connection() is not implemented, just fail. */
+	if (!klass->update_connection)
+		return NULL;
+
+	/* Return NULL if device is unconfigured. */
+	if (!device_has_config (device))
+		return NULL;
+
+	nm_log_info (LOGD_DEVICE, "(%s): Generating connection from current device status.", ifname);
+
+	connection = nm_connection_new ();
+	s_con = nm_setting_connection_new ();
+	s_ip4 = nm_setting_ip4_config_new ();
+	s_ip6 = nm_setting_ip6_config_new ();
+	uuid = nm_utils_uuid_generate ();
+	name = g_strdup_printf ("%s", ifname);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_ID, name,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
+	              NULL);
+	if (klass->connection_type)
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type, NULL);
+	nm_ip4_config_update_setting (priv->ip4_config, (NMSettingIP4Config *) s_ip4);
+	nm_ip6_config_update_setting (priv->ip6_config, (NMSettingIP6Config *) s_ip6);
+
+	nm_connection_add_setting (connection, s_con);
+	nm_connection_add_setting (connection, s_ip4);
+	nm_connection_add_setting (connection, s_ip6);
+
+	klass->update_connection (device, connection);
+
+	/* Check the connection in case of update_connection() bug. */
+	g_return_val_if_fail (nm_connection_verify (connection, NULL), NULL);
+
+	return connection;
+}
+
 /**
  * nm_device_get_best_auto_connection:
  * @dev: an #NMDevice
@@ -1738,12 +1810,29 @@ nm_device_check_connection_compatible (NMDevice *device,
 	return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
 }
 
+/**
+ * nm_device_can_assume_connections:
+ * @device: #NMDevice instance
+ *
+ * This is a convenience function to determine whether connection assumption
+ * via old match_l2_config() or new update_connection() virtual functions
+ * is available for this device.
+ *
+ * Use this function when you need to determine whether full cleanup should
+ * be performed for this device or whether the device should be kept running
+ * between NetworkManager runs.
+ *
+ * Returns: %TRUE for assumable connections and %FALS for full-cleanup connections.
+ *
+ * FIXME: Consider turning this method into (a) a device capability or (b) a class
+ * method.
+ */
 gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 
-	return !!NM_DEVICE_GET_CLASS (device)->match_l2_config;
+	return klass->match_l2_config || klass->update_connection;
 }
 
 static void
