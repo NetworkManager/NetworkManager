@@ -151,7 +151,8 @@ typedef enum {
 	IP_NONE = 0,
 	IP_WAIT,
 	IP_CONF,
-	IP_DONE
+	IP_DONE,
+	IP_FAIL
 } IpState;
 
 typedef struct {
@@ -3202,7 +3203,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 		return FALSE;
 	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
 		/* Early finish */
-		priv->ip4_state = IP_DONE;
+		priv->ip4_state = IP_FAIL;
 	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
 		/* Wait for something to try IP config again */
 		priv->ip4_state = IP_WAIT;
@@ -3239,7 +3240,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		return FALSE;
 	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
 		/* Early finish */
-		priv->ip6_state = IP_DONE;
+		priv->ip6_state = IP_FAIL;
 	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
 		/* Wait for something to try IP config again */
 		priv->ip6_state = IP_WAIT;
@@ -3411,14 +3412,13 @@ nm_device_activate_ip4_config_timeout (gpointer user_data)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
-	priv->ip4_state = IP_DONE;
+	priv->ip4_state = IP_FAIL;
 
 	/* If IPv4 failed and IPv6 failed, the activation fails */
-	if ((priv->ip6_state == IP_DONE) && (priv->ip6_config == NULL)) {
+	if (priv->ip6_state == IP_FAIL)
 		nm_device_state_changed (self,
-				                 NM_DEVICE_STATE_FAILED,
-				                 NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-	}
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 
 out:
 	nm_log_info (LOGD_DEVICE | LOGD_IP4,
@@ -3499,11 +3499,10 @@ nm_device_activate_ip6_config_timeout (gpointer user_data)
 	priv->ip6_state = IP_DONE;
 
 	/* If IPv6 failed and IPv4 failed, the activation fails */
-	if ((priv->ip4_state == IP_DONE) && (priv->ip4_config == NULL)) {
+	if (priv->ip4_state == IP_FAIL)
 		nm_device_state_changed (self,
-				                 NM_DEVICE_STATE_FAILED,
-				                 NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-	}
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 
 out:
 	nm_log_info (LOGD_DEVICE | LOGD_IP6,
@@ -4041,7 +4040,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (priv->ip6_manager || priv->ip6_config)
+	if (priv->ip6_manager || priv->ip6_state == IP_DONE)
 		tried_ipv6 = TRUE;
 
 	/* Clean up when device was deactivated during call to firewall */
@@ -4591,7 +4590,7 @@ nm_device_start_ip_check (NMDevice *self)
 	timeout = nm_setting_connection_get_gateway_ping_timeout (s_con);
 
 	if (timeout) {
-		if (priv->ip4_config && priv->ip4_state == IP_DONE) {
+		if (priv->ip4_state == IP_DONE) {
 			guint gw = 0;
 
 			ping_binary = "/usr/bin/ping";
@@ -4961,7 +4960,7 @@ has_ip_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!priv->ip4_config && !priv->ip6_config)
+	if (priv->ip4_state != IP_DONE && priv->ip6_state != IP_DONE)
 		return FALSE;
 
 	return (   (   priv->state >= NM_DEVICE_STATE_IP_CONFIG
