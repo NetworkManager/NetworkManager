@@ -1022,6 +1022,7 @@ _internal_write_connection (NMConnection *connection,
 	char *filename = NULL, *path;
 	const char *id;
 	WriteInfo info;
+	GError *local_err = NULL;
 
 	if (out_path)
 		g_return_val_if_fail (*out_path == NULL, FALSE);
@@ -1086,7 +1087,16 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL && strcmp (path, existing_path) != 0)
 		unlink (existing_path);
 
-	g_file_set_contents (path, data, len, error);
+	g_file_set_contents (path, data, len, &local_err);
+	if (local_err) {
+		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		             "%s.%d: error writing to file '%s': %s", __FILE__, __LINE__,
+		             path, local_err->message);
+		g_error_free (local_err);
+		g_free (path);
+		goto out;
+	}
+
 	if (chown (path, owner_uid, owner_grp) < 0) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
