@@ -4482,16 +4482,12 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 
 static void
 dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
-                            DBusGConnection *connection,
+                            DBusConnection *dbus_connection,
                             gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	DBusConnection *dbus_connection;
 
-	if (connection) {
-		dbus_connection = dbus_g_connection_get_connection (connection);
-		g_assert (dbus_connection);
-
+	if (dbus_connection) {
 		/* Register property filter on new connection; there's no reason this
 		 * should fail except out-of-memory or program error; if it does fail
 		 * then there's no Manager property access control, which is bad.
