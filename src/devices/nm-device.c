@@ -4963,9 +4963,11 @@ has_ip_config (NMDevice *self)
 	if (priv->ip4_state != IP_DONE && priv->ip6_state != IP_DONE)
 		return FALSE;
 
-	return (   (   priv->state >= NM_DEVICE_STATE_IP_CONFIG
-	            && priv->state <= NM_DEVICE_STATE_DEACTIVATING)
-	        || (priv->state == NM_DEVICE_STATE_UNMANAGED));
+	if (priv->state == NM_DEVICE_STATE_UNMANAGED)
+		return TRUE;
+
+	return (priv->state >= NM_DEVICE_STATE_IP_CONFIG
+	        && priv->state <= NM_DEVICE_STATE_DEACTIVATING);
 }
 
 static void
