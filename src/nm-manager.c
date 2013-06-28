@@ -76,7 +76,6 @@
 #include "nm-device-factory.h"
 #include "nm-enum-types.h"
 #include "nm-sleep-monitor.h"
-#include "nm-platform.h"
 
 #if WITH_CONCHECK
 #include "nm-connectivity.h"
