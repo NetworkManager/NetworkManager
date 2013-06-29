@@ -23,8 +23,10 @@
 
 #include <glib-object.h>
 
-/* NMIP6Address and NMIP6Route types */
+#include "nm-platform.h"
+/* NMIP6Route type */
 #include "nm-setting-ip6-config.h"
+#include "nm-platform.h"
 
 #define NM_TYPE_IP6_CONFIG (nm_ip6_config_get_type ())
 #define NM_IP6_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP6_CONFIG, NMIP6Config))
@@ -72,10 +74,9 @@ const struct in6_addr *nm_ip6_config_get_gateway (NMIP6Config *config);
 
 /* Addresses */
 void nm_ip6_config_reset_addresses (NMIP6Config *config);
-void nm_ip6_config_take_address (NMIP6Config *config, NMIP6Address *address);
-void nm_ip6_config_add_address (NMIP6Config *config, NMIP6Address *address);
+void nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *address);
 guint nm_ip6_config_get_num_addresses (NMIP6Config *config);
-NMIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
+NMPlatformIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);

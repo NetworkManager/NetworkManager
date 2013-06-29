@@ -23,7 +23,8 @@
 
 #include <glib-object.h>
 
-/* NMIP4Address and NMIP4Route types */
+#include "nm-platform.h"
+/* NMIP4Route type */
 #include "nm-setting-ip4-config.h"
 
 #define NM_TYPE_IP4_CONFIG (nm_ip4_config_get_type ())
@@ -72,10 +73,9 @@ guint32 nm_ip4_config_get_gateway (NMIP4Config *config);
 
 /* Addresses */
 void nm_ip4_config_reset_addresses (NMIP4Config *config);
-void nm_ip4_config_take_address (NMIP4Config *config, NMIP4Address *address);
-void nm_ip4_config_add_address (NMIP4Config *config, NMIP4Address *address);
+void nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *address);
 guint nm_ip4_config_get_num_addresses (NMIP4Config *config);
-NMIP4Address *nm_ip4_config_get_address (NMIP4Config *config, guint i);
+const NMPlatformIP4Address *nm_ip4_config_get_address (NMIP4Config *config, guint i);
 
 /* Routes */
 void nm_ip4_config_reset_routes (NMIP4Config *config);

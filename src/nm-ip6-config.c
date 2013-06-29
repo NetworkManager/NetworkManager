@@ -23,6 +23,8 @@
 
 #include "nm-ip6-config.h"
 
+#include "nm-glib-compat.h"
+#include "gsystem-local-alloc.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
@@ -38,7 +40,7 @@ typedef struct {
 
 	gboolean never_default;
 	struct in6_addr gateway;
-	GSList *addresses;
+	GArray *addresses;
 	GSList *routes;
 	GArray *nameservers;
 	GPtrArray *domains;
@@ -108,30 +110,20 @@ same_prefix (const struct in6_addr *address1, const struct in6_addr *address2, i
 NMIP6Config *
 nm_ip6_config_capture (int ifindex)
 {
-	NMIP6Config *config;
-	GArray *addrs_array, *routes_array;
-	NMPlatformIP6Address *addrs;
+	NMIP6Config *config = nm_ip6_config_new ();
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	GArray *routes_array;
 	NMPlatformIP6Route *routes;
-	NMIP6Address *addr;
 	NMIP6Route *route;
 	int i;
 
-	addrs_array = nm_platform_ip6_address_get_all (ifindex);
-	if (addrs_array->len == 0) {
-		g_array_unref (addrs_array);
+	g_array_unref (priv->addresses);
+	priv->addresses = nm_platform_ip6_address_get_all (ifindex);
+
+	if (!priv->addresses->len) {
+		g_object_unref (config);
 		return NULL;
 	}
-
-	config = nm_ip6_config_new ();
-
-	addrs = (NMPlatformIP6Address *)addrs_array->data;
-	for (i = 0; i < addrs_array->len; i++) {
-		addr = nm_ip6_address_new ();
-		nm_ip6_address_set_address (addr, &addrs[i].address);
-		nm_ip6_address_set_prefix (addr, addrs[i].plen);
-		nm_ip6_config_take_address (config, addr);
-	}
-	g_array_unref (addrs_array);
 
 	routes_array = nm_platform_ip6_route_get_all (ifindex);
 	routes = (NMPlatformIP6Route *)routes_array->data;
@@ -157,29 +149,14 @@ nm_ip6_config_capture (int ifindex)
 gboolean
 nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority)
 {
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Addresses */
-	{
-		int count = nm_ip6_config_get_num_addresses (config);
-		NMIP6Address *config_address;
-		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Address), count);
-		NMPlatformIP6Address address;
-
-		for (i = 0; i < count; i++) {
-			config_address = nm_ip6_config_get_address (config, i);
-			memset (&address, 0, sizeof (address));
-			address.address = *nm_ip6_address_get_address (config_address);
-			address.plen = nm_ip6_address_get_prefix (config_address);
-			g_array_append_val (addresses, address);
-		}
-
-		nm_platform_ip6_address_sync (ifindex, addresses);
-		g_array_unref (addresses);
-	}
+	nm_platform_ip6_address_sync (ifindex, priv->addresses);
 
 	/* Routes */
 	{
@@ -253,8 +230,16 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 	}
 
 	/* Addresses */
-	for (i = 0; i < naddresses; i++)
-		nm_ip6_config_add_address (config, nm_setting_ip6_config_get_address (setting, i));
+	for (i = 0; i < naddresses; i++) {
+		NMIP6Address *s_addr = nm_setting_ip6_config_get_address (setting, i);
+		NMPlatformIP6Address address;
+
+		memset (&address, 0, sizeof (address));
+		address.address = *nm_ip6_address_get_address (s_addr);
+		address.plen = nm_ip6_address_get_prefix (s_addr);
+
+		nm_ip6_config_add_address (config, &address);
+	}
 
 	/* Routes */
 	if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
@@ -319,16 +304,13 @@ nm_ip6_config_merge (NMIP6Config *dst, NMIP6Config *src)
 gboolean
 nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *network, int plen)
 {
-	int num;
+	int num = nm_ip6_config_get_num_addresses (config);
 	int i;
 
-	num = nm_ip6_config_get_num_addresses (config);
 	for (i = 0; i < num; i++) {
-		NMIP6Address *item = nm_ip6_config_get_address (config, i);
-		const struct in6_addr *item_address = nm_ip6_address_get_address (item);
-		guint32 item_plen = nm_ip6_address_get_prefix (item);
+		NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
 
-		if (item_plen <= plen && same_prefix (item_address, network, item_plen))
+		if (item->plen <= plen && same_prefix (&item->address, network, item->plen))
 			return TRUE;
 	}
 
@@ -379,43 +361,31 @@ nm_ip6_config_reset_addresses (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
-	priv->addresses = NULL;
+	g_array_set_size (priv->nameservers, 0);
 }
 
 static gboolean
-addresses_are_duplicate (NMIP6Address *a, NMIP6Address *b)
+addresses_are_duplicate (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
 {
-	if (nm_ip6_address_get_address (a) != nm_ip6_address_get_address (b))
-		return FALSE;
-
-	return TRUE;
+	return IN6_ARE_ADDR_EQUAL (&a->address, &b->address);
 }
 
 void
-nm_ip6_config_add_address (NMIP6Config *config, NMIP6Address *new)
+nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	GSList *iter;
+	int i;
 
-	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
-		NMIP6Address *item = (NMIP6Address *) iter->data;
+	for (i = 0; i < priv->addresses->len; i++ ) {
+		NMPlatformIP6Address *item = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 
 		if (addresses_are_duplicate (item, new)) {
-			nm_ip6_address_unref (item);
-			iter->data = nm_ip6_address_dup (new);
+			memcpy (item, new, sizeof (*item));
 			return;
 		}
 	}
 
-	priv->addresses = g_slist_append (priv->addresses, nm_ip6_address_dup (new));
-}
-
-void
-nm_ip6_config_take_address (NMIP6Config *config, NMIP6Address *address)
-{
-	nm_ip6_config_add_address (config, address);
-	nm_ip6_address_unref (address);
+	g_array_append_val (priv->addresses, *new);
 }
 
 guint
@@ -423,15 +393,15 @@ nm_ip6_config_get_num_addresses (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	return g_slist_length (priv->addresses);
+	return priv->addresses->len;
 }
 
-NMIP6Address *
+NMPlatformIP6Address *
 nm_ip6_config_get_address (NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	return (NMIP6Address *) g_slist_nth_data (priv->addresses, i);
+	return &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 }
 
 /******************************************************************/
@@ -684,10 +654,10 @@ nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 		hash_in6addr (sum, nm_ip6_config_get_gateway (config));
 
 		for (i = 0; i < nm_ip6_config_get_num_addresses (config); i++) {
-			NMIP6Address *a = nm_ip6_config_get_address (config, i);
+			NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
 
-			hash_in6addr (sum, nm_ip6_address_get_address (a));
-			hash_u32 (sum, nm_ip6_address_get_prefix (a));
+			hash_in6addr (sum, &address->address);
+			hash_u32 (sum, address->plen);
 		}
 
 		for (i = 0; i < nm_ip6_config_get_num_routes (config); i++) {
@@ -752,6 +722,7 @@ nm_ip6_config_init (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
+	priv->addresses = g_array_new (FALSE, TRUE, sizeof (NMPlatformIP6Address));
 	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (struct in6_addr));
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 	priv->searches = g_ptr_array_new_with_free_func (g_free);
@@ -762,7 +733,7 @@ finalize (GObject *object)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
+	g_array_unref (priv->addresses);
 	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
 	g_array_unref (priv->nameservers);
 	g_ptr_array_unref (priv->domains);
@@ -796,11 +767,51 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
+	NMIP6Config *config = NM_IP6_CONFIG (object);
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_ADDRESSES:
-		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);
+		{
+			GPtrArray *addresses = g_ptr_array_new ();
+			const struct in6_addr *gateway = nm_ip6_config_get_gateway (config);
+			int naddr = nm_ip6_config_get_num_addresses (config);
+			int i;
+
+			for (i = 0; i < naddr; i++) {
+				NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+
+				GValueArray *array = g_value_array_new (3);
+				GValue element = G_VALUE_INIT;
+				GByteArray *ba;
+
+				/* IP address */
+				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+				ba = g_byte_array_new ();
+				g_byte_array_append (ba, (guint8 *) &address->address, 16);
+				g_value_take_boxed (&element, ba);
+				g_value_array_append (array, &element);
+				g_value_unset (&element);
+
+				/* Prefix */
+				g_value_init (&element, G_TYPE_UINT);
+				g_value_set_uint (&element, address->plen);
+				g_value_array_append (array, &element);
+				g_value_unset (&element);
+
+				/* Gateway */
+				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+				ba = g_byte_array_new ();
+				g_byte_array_append (ba, (guint8 *) gateway, 16);
+				g_value_take_boxed (&element, ba);
+				g_value_array_append (array, &element);
+				g_value_unset (&element);
+
+				g_ptr_array_add (addresses, array);
+			}
+
+			g_value_take_boxed (value, addresses);
+		}
 		break;
 	case PROP_NAMESERVERS:
 		nameservers_to_gvalue (priv->nameservers, value);

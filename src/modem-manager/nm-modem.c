@@ -333,10 +333,10 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 	 */
 	if (   priv->ip_method == MM_MODEM_IP_METHOD_STATIC
 	    || priv->ip_method == MM_MODEM_IP_METHOD_DHCP) {
-		NMIP4Address *addr = nm_ip4_config_get_address (config, 0);
+		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, 0);
 
-		g_assert (addr);
-		if (nm_ip4_address_get_prefix (addr) == 32)
+		g_assert (address);
+		if (address->plen == 32)
 			nm_platform_link_set_noarp (nm_device_get_ip_ifindex (device));
 	}
 }

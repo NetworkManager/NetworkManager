@@ -1899,16 +1899,16 @@ static NMIP4Config *
 aipd_get_ip4_config (NMDevice *self, struct in_addr lla)
 {
 	NMIP4Config *config = NULL;
-	NMIP4Address *addr;
+	NMPlatformIP4Address address;
 	NMIP4Route *route;
 
 	config = nm_ip4_config_new ();
 	g_assert (config);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, (guint32) lla.s_addr);
-	nm_ip4_address_set_prefix (addr, 16);
-	nm_ip4_config_take_address (config, addr);
+	memset (&address, 0, sizeof (address));
+	address.address = lla.s_addr;
+	address.plen = 16;
+	nm_ip4_config_add_address (config, &address);
 
 	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
 	route = nm_ip4_route_new ();
@@ -2382,7 +2382,7 @@ static NMIP4Config *
 shared4_new_config (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMIP4Config *config = NULL;
-	NMIP4Address *addr;
+	NMPlatformIP4Address address;
 	guint32 tmp_addr;
 
 	g_return_val_if_fail (self != NULL, NULL);
@@ -2397,10 +2397,10 @@ shared4_new_config (NMDevice *self, NMDeviceStateReason *reason)
 	}
 
 	config = nm_ip4_config_new ();
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, tmp_addr);
-	nm_ip4_address_set_prefix (addr, 24);
-	nm_ip4_config_take_address (config, addr);
+	memset (&address, 0, sizeof (address));
+	address.address = tmp_addr;
+	address.plen = 24;
+	nm_ip4_config_add_address (config, &address);
 
 	/* Remove the address lock when the object gets disposed */
 	g_object_set_data_full (G_OBJECT (config), "shared-ip",
@@ -3575,7 +3575,7 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	char str_addr[INET_ADDRSTRLEN + 1];
 	char str_mask[INET_ADDRSTRLEN + 1];
 	guint32 netmask, network;
-	NMIP4Address *ip4_addr;
+	const NMPlatformIP4Address *ip4_addr;
 	const char *ip_iface;
 
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -3583,14 +3583,14 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	ip_iface = nm_device_get_ip_iface (self);
 
 	ip4_addr = nm_ip4_config_get_address (config, 0);
-	if (!ip4_addr || !nm_ip4_address_get_address (ip4_addr))
+	if (!ip4_addr || !ip4_addr->address)
 		return FALSE;
 
-	netmask = nm_utils_ip4_prefix_to_netmask (nm_ip4_address_get_prefix (ip4_addr));
+	netmask = nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
 	if (!inet_ntop (AF_INET, &netmask, str_mask, sizeof (str_mask)))
 		return FALSE;
 
-	network = nm_ip4_address_get_address (ip4_addr) & netmask;
+	network = ip4_addr->address & netmask;
 	if (!inet_ntop (AF_INET, &network, str_addr, sizeof (str_addr)))
 		return FALSE;
 
@@ -5998,11 +5998,11 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 		/* Find at least one lease's address on the device */
 		for (iter = leases; iter; iter = g_slist_next (iter)) {
 			NMIP4Config *ip4_config = iter->data;
-			NMIP4Address *addr = nm_ip4_config_get_address (ip4_config, 0);
+			const NMPlatformIP4Address *address = nm_ip4_config_get_address (ip4_config, 0);
 
-			if (addr && nm_platform_ip4_address_exists (nm_device_get_ip_ifindex (self),
-			                                     nm_ip4_address_get_address (addr),
-			                                     nm_ip4_address_get_prefix (addr))) {
+			if (address && nm_platform_ip4_address_exists (nm_device_get_ip_ifindex (self),
+			                                               address->address,
+			                                               address->plen)) {
 				found = TRUE; /* Yay, device has same address as a lease */
 				break;
 			}

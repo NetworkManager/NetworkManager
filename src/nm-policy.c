@@ -403,8 +403,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	 */
 	if (best4) {
 		NMIP4Config *ip4_config;
-		NMIP4Address *addr4;
-		guint32 addrbytes;
+		const NMPlatformIP4Address *addr4;
 
 		ip4_config = nm_device_get_ip4_config (best4);
 		if (   !ip4_config
@@ -418,13 +417,11 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
 		g_assert (addr4); /* checked for > 1 address above */
 
-		addrbytes = nm_ip4_address_get_address (addr4);
-		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *)&addrbytes,
+		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
 		                                                     G_SOCKET_FAMILY_IPV4);
 	} else {
 		NMIP6Config *ip6_config;
-		NMIP6Address *addr6;
-		const struct in6_addr *addrbytes;
+		NMPlatformIP6Address *addr6;
 
 		ip6_config = nm_device_get_ip6_config (best6);
 		if (   !ip6_config
@@ -438,8 +435,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
 		g_assert (addr6); /* checked for > 1 address above */
 
-		addrbytes = nm_ip6_address_get_address (addr6);
-		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *)&addrbytes,
+		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
 		                                                     G_SOCKET_FAMILY_IPV6);
 	}
 

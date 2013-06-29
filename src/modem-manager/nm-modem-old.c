@@ -608,24 +608,23 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 	                           G_TYPE_VALUE_ARRAY, &ret_array,
 	                           G_TYPE_INVALID)) {
-		NMIP4Address *addr;
+		NMPlatformIP4Address address;
 		int i;
 
 		config = nm_ip4_config_new ();
-
-		addr = nm_ip4_address_new ();
+		memset (&address, 0, sizeof (address));
 
 		nm_log_info (LOGD_MB, "(%s): IPv4 static configuration:",
 		             nm_modem_get_uid (NM_MODEM (self)));
 
 		/* IP address */
-		nm_ip4_address_set_address (addr, g_value_get_uint (g_value_array_get_nth (ret_array, 0)));
-		nm_ip4_address_set_prefix (addr, 32);
-		nm_ip4_config_take_address (config, addr);
+		address.address = g_value_get_uint (g_value_array_get_nth (ret_array, 0));
+		address.plen = 32;
+		nm_ip4_config_add_address (config, &address);
 
 		nm_log_info (LOGD_MB, "  address %s/%d",
-		             ip_address_to_string (nm_ip4_address_get_address (addr)),
-		             nm_ip4_address_get_prefix (addr));
+		             ip_address_to_string (address.address),
+		             address.plen);
 
 		/* DNS servers */
 		for (i = 1; i < ret_array->n_values; i++) {

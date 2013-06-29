@@ -1472,8 +1472,7 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 	NMIP6Config *config;
 	struct rtnl_addr *rtnladdr;
 	struct nl_addr *nladdr;
-	struct in6_addr *addr;
-	NMIP6Address *ip6addr;
+	NMPlatformIP6Address address;
 	struct rtnl_route *rtnlroute;
 	struct rtnl_nexthop *nexthop;
 	struct nl_addr *nldest, *nlgateway;
@@ -1567,11 +1566,10 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		if (!nladdr || nl_addr_get_family (nladdr) != AF_INET6)
 			continue;
 
-		addr = nl_addr_get_binary_addr (nladdr);
-		ip6addr = nm_ip6_address_new ();
-		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
-		nm_ip6_address_set_address (ip6addr, addr);
-		nm_ip6_config_take_address (config, ip6addr);
+		memset (&address, 0, sizeof (address));
+		address.address = *(struct in6_addr *) nl_addr_get_binary_addr (nladdr);
+		address.plen = rtnl_addr_get_prefixlen (rtnladdr);
+		nm_ip6_config_add_address (config, &address);
 	}
 
 	/* Add DNS servers */

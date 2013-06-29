@@ -101,7 +101,7 @@ test_generic_options (const char *client)
 {
 	GHashTable *options;
 	NMIP4Config *ip4_config;
-	NMIP4Address *addr;
+	const NMPlatformIP4Address *address;
 	NMIP4Route *route;
 	struct in_addr tmp;
 	const char *expected_addr = "192.168.1.106";
@@ -123,14 +123,14 @@ test_generic_options (const char *client)
 	/* IP4 address */
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        "dhcp-generic", "unexpected number of IP addresses");
-	addr = nm_ip4_config_get_address (ip4_config, 0);
+	address = nm_ip4_config_get_address (ip4_config, 0);
 
 	ASSERT (inet_pton (AF_INET, expected_addr, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected IP address");
-	ASSERT (nm_ip4_address_get_address (addr) == tmp.s_addr,
+	ASSERT (address->address == tmp.s_addr,
 	        "dhcp-generic", "unexpected IP address");
 
-	ASSERT (nm_ip4_address_get_prefix (addr) == 24,
+	ASSERT (address->plen == 24,
 	        "dhcp-generic", "unexpected IP address prefix length");
 
 	/* Gateway */
@@ -219,7 +219,7 @@ test_wins_options (const char *client)
 {
 	GHashTable *options;
 	NMIP4Config *ip4_config;
-	NMIP4Address *addr;
+	const NMPlatformIP4Address *address;
 	struct in_addr tmp;
 	const char *expected_wins1 = "63.12.199.5";
 	const char *expected_wins2 = "150.4.88.120";
@@ -234,7 +234,7 @@ test_wins_options (const char *client)
 	/* IP4 address */
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        "dhcp-wins", "unexpected number of IP addresses");
-	addr = nm_ip4_config_get_address (ip4_config, 0);
+	address = nm_ip4_config_get_address (ip4_config, 0);
 
 	ASSERT (nm_ip4_config_get_num_wins (ip4_config) == 2,
 	        "dhcp-wins", "unexpected number of WINS servers");
@@ -284,12 +284,10 @@ ip4_test_gateway (const char *test,
                   NMIP4Config *ip4_config,
                   const char *expected_gw)
 {
-	NMIP4Address *addr;
 	struct in_addr tmp;
 
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        test, "unexpected number of IP addresses");
-	addr = nm_ip4_config_get_address (ip4_config, 0);
 	ASSERT (inet_pton (AF_INET, expected_gw, &tmp) > 0,
 	        test, "couldn't convert expected IP gateway");
 	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp.s_addr,
@@ -718,7 +716,7 @@ test_ip4_missing_prefix (const char *client, const char *ip, guint32 expected_pr
 {
 	GHashTable *options;
 	NMIP4Config *ip4_config;
-	NMIP4Address *addr;
+	const NMPlatformIP4Address *address;
 
 	options = fill_table (generic_options, NULL);
 	g_hash_table_insert (options, "new_ip_address", string_to_byte_array_gvalue (ip));
@@ -731,13 +729,13 @@ test_ip4_missing_prefix (const char *client, const char *ip, guint32 expected_pr
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        "dhcp-ip4-missing-prefix", "unexpected number of IP4 addresses (not 1)");
 
-	addr = nm_ip4_config_get_address (ip4_config, 0);
-	ASSERT (addr != NULL,
+	address = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (address,
 	        "dhcp-ip4-missing-prefix", "missing IP4 address #1");
 
-	ASSERT (nm_ip4_address_get_prefix (addr) == expected_prefix,
+	ASSERT (address->plen == expected_prefix,
 	        "dhcp-ip4-missing-prefix", "unexpected IP4 address prefix %d (expected %d)",
-	        nm_ip4_address_get_prefix (addr), expected_prefix);
+	        address->plen, expected_prefix);
 
 	g_hash_table_destroy (options);
 }
@@ -747,7 +745,7 @@ test_ip4_prefix_classless (const char *client)
 {
 	GHashTable *options;
 	NMIP4Config *ip4_config;
-	NMIP4Address *addr;
+	const NMPlatformIP4Address *address;
 
 	/* Ensure that the missing-subnet-mask handler doesn't mangle classless
 	 * subnet masks at all.  The handler should trigger only if the server
@@ -765,13 +763,13 @@ test_ip4_prefix_classless (const char *client)
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        "dhcp-ip4-prefix-classless", "unexpected number of IP4 addresses (not 1)");
 
-	addr = nm_ip4_config_get_address (ip4_config, 0);
-	ASSERT (addr != NULL,
+	address = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (address,
 	        "dhcp-ip4-prefix-classless", "missing IP4 address #1");
 
-	ASSERT (nm_ip4_address_get_prefix (addr) == 22,
+	ASSERT (address->plen == 22,
 	        "dhcp-ip4-prefix-classless", "unexpected IP4 address prefix %d (expected 22)",
-	        nm_ip4_address_get_prefix (addr));
+	        address->plen);
 
 	g_hash_table_destroy (options);
 }

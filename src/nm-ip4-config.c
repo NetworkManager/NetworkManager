@@ -23,6 +23,7 @@
 
 #include "nm-ip4-config.h"
 
+#include "gsystem-local-alloc.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
@@ -39,7 +40,7 @@ typedef struct {
 
 	gboolean never_default;
 	guint32 gateway;
-	GSList *addresses;
+	GArray *addresses;
 	GSList *routes;
 	GArray *nameservers;
 	GPtrArray *domains;
@@ -106,30 +107,21 @@ same_prefix (guint32 address1, guint32 address2, int plen)
 NMIP4Config *
 nm_ip4_config_capture (int ifindex)
 {
-	NMIP4Config *config;
-	GArray *addrs_array, *routes_array;
-	NMPlatformIP4Address *addrs;
+	NMIP4Config *config = nm_ip4_config_new ();
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	GArray *routes_array;
 	NMPlatformIP4Route *routes;
-	NMIP4Address *addr;
 	NMIP4Route *route;
 	int i;
 
-	addrs_array = nm_platform_ip4_address_get_all (ifindex);
-	if (addrs_array->len == 0) {
-		g_array_unref (addrs_array);
+	g_array_unref (priv->addresses);
+	priv->addresses = nm_platform_ip4_address_get_all (ifindex);
+
+	/* Require at least one IP address. */
+	if (!priv->addresses->len) {
+		g_object_unref (config);
 		return NULL;
 	}
-
-	config = nm_ip4_config_new ();
-
-	addrs = (NMPlatformIP4Address *)addrs_array->data;
-	for (i = 0; i < addrs_array->len; i++) {
-		addr = nm_ip4_address_new ();
-		nm_ip4_address_set_address (addr, addrs[i].address);
-		nm_ip4_address_set_prefix (addr, addrs[i].plen);
-		nm_ip4_config_take_address (config, addr);
-	}
-	g_array_unref (addrs_array);
 
 	routes_array = nm_platform_ip4_route_get_all (ifindex);
 	routes = (NMPlatformIP4Route *)routes_array->data;
@@ -155,6 +147,7 @@ nm_ip4_config_capture (int ifindex)
 gboolean
 nm_ip4_config_commit (NMIP4Config *config, int ifindex, int priority)
 {
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	int mtu = nm_ip4_config_get_mtu (config);
 	int i;
 
@@ -162,23 +155,7 @@ nm_ip4_config_commit (NMIP4Config *config, int ifindex, int priority)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Addresses */
-	{
-		int count = nm_ip4_config_get_num_addresses (config);
-		NMIP4Address *config_address;
-		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Address), count);
-		NMPlatformIP4Address address;
-
-		for (i = 0; i < count; i++) {
-			config_address = nm_ip4_config_get_address (config, i);
-			memset (&address, 0, sizeof (address));
-			address.address = nm_ip4_address_get_address (config_address);
-			address.plen = nm_ip4_address_get_prefix (config_address);
-			g_array_append_val (addresses, address);
-		}
-
-		nm_platform_ip4_address_sync (ifindex, addresses);
-		g_array_unref (addresses);
-	}
+	nm_platform_ip4_address_sync (ifindex, priv->addresses);
 
 	/* Routes */
 	{
@@ -250,8 +227,16 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 	}
 
 	/* Addresses */
-	for (i = 0; i < naddresses; i++)
-		nm_ip4_config_add_address (config, nm_setting_ip4_config_get_address (setting, i));
+	for (i = 0; i < naddresses; i++) {
+		NMIP4Address *s_addr = nm_setting_ip4_config_get_address (setting, i);
+		NMPlatformIP4Address address;
+
+		memset (&address, 0, sizeof (address));
+		address.address = nm_ip4_address_get_address (s_addr);
+		address.plen = nm_ip4_address_get_prefix (s_addr);
+
+		nm_ip4_config_add_address (config, &address);
+	}
 
 	/* Routes */
 	if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
@@ -280,11 +265,9 @@ nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 network, int p
 	int i;
 
 	for (i = 0; i < naddresses; i++) {
-		NMIP4Address *item = nm_ip4_config_get_address (config, i);
-		guint32 item_address = nm_ip4_address_get_address (item);
-		int item_plen = nm_ip4_address_get_prefix (item);
+		const NMPlatformIP4Address *item = nm_ip4_config_get_address (config, i);
 
-		if (item_plen <= plen && same_prefix (item_address, network, item_plen))
+		if (item->plen <= plen && same_prefix (item->address, network, item->plen))
 			return TRUE;
 	}
 
@@ -332,43 +315,31 @@ nm_ip4_config_reset_addresses (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-	priv->addresses = NULL;
+	g_array_set_size (priv->addresses, 0);
 }
 
 static gboolean
-addresses_are_duplicate (NMIP4Address *a, NMIP4Address *b)
+addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
-	if (nm_ip4_address_get_address (a) != nm_ip4_address_get_address (b))
-		return FALSE;
-
-	return TRUE;
+	return a->address == b->address;
 }
 
 void
-nm_ip4_config_add_address (NMIP4Config *config, NMIP4Address *new)
+nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	GSList *iter;
+	int i;
 
-	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
-		NMIP4Address *item = (NMIP4Address *) iter->data;
+	for (i = 0; i < priv->addresses->len; i++ ) {
+		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
 
 		if (addresses_are_duplicate (item, new)) {
-			nm_ip4_address_unref (item);
-			iter->data = nm_ip4_address_dup (new);
+			memcpy (item, new, sizeof (*item));
 			return;
 		}
 	}
 
-	priv->addresses = g_slist_append (priv->addresses, nm_ip4_address_dup (new));
-}
-
-void
-nm_ip4_config_take_address (NMIP4Config *config, NMIP4Address *address)
-{
-	nm_ip4_config_add_address (config, address);
-	nm_ip4_address_unref (address);
+	g_array_append_val (priv->addresses, *new);
 }
 
 guint
@@ -376,15 +347,15 @@ nm_ip4_config_get_num_addresses (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	return g_slist_length (priv->addresses);
+	return priv->addresses->len;
 }
 
-NMIP4Address *
+const NMPlatformIP4Address *
 nm_ip4_config_get_address (NMIP4Config *config, guint i)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	return (NMIP4Address *) g_slist_nth_data (priv->addresses, i);
+	return &g_array_index (priv->addresses, NMPlatformIP4Address, i);
 }
 
 /******************************************************************/
@@ -740,10 +711,9 @@ nm_ip4_config_hash (NMIP4Config *config, GChecksum *sum, gboolean dns_only)
 		hash_u32 (sum, nm_ip4_config_get_gateway (config));
 
 		for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
-			NMIP4Address *a = nm_ip4_config_get_address (config, i);
-
-			hash_u32 (sum, nm_ip4_address_get_address (a));
-			hash_u32 (sum, nm_ip4_address_get_prefix (a));
+			const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
+			hash_u32 (sum, address->address);
+			hash_u32 (sum, address->plen);
 		}
 
 		for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
@@ -818,6 +788,7 @@ nm_ip4_config_init (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
+	priv->addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
 	priv->nameservers = g_array_new (FALSE, FALSE, sizeof (guint32));
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 	priv->searches = g_ptr_array_new_with_free_func (g_free);
@@ -830,7 +801,7 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
+	g_array_unref (priv->addresses);
 	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 	g_array_unref (priv->nameservers);
 	g_ptr_array_unref (priv->domains);
@@ -846,11 +817,30 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
+	NMIP4Config *config = NM_IP4_CONFIG (object);
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+	in_addr_t gateway = nm_ip4_config_get_gateway (config);
 
 	switch (prop_id) {
 	case PROP_ADDRESSES:
-		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
+		{
+			GPtrArray *addresses = g_ptr_array_new ();
+			int naddr = nm_ip4_config_get_num_addresses (config);
+			int i;
+
+			for (i = 0; i < naddr; i++) {
+				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
+				GArray *array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+
+				g_array_append_val (array, address->address);
+				g_array_append_val (array, address->plen);
+				g_array_append_val (array, gateway);
+
+				g_ptr_array_add (addresses, array);
+			}
+
+			g_value_take_boxed (value, addresses);
+		}
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip4_routes_to_gvalue (priv->routes, value);

@@ -602,8 +602,8 @@ static void
 print_vpn_config (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMIP4Address *addr;
-	NMIP6Address *addr6;
+	const NMPlatformIP4Address *address4;
+	const NMPlatformIP6Address *address6;
 	char *dns_domain = NULL;
 	guint32 num, i;
 
@@ -620,12 +620,12 @@ print_vpn_config (NMVPNConnection *connection)
 	if (priv->ip4_config) {
 		nm_log_info (LOGD_VPN, "IPv4 configuration:");
 
-		addr = nm_ip4_config_get_address (priv->ip4_config, 0);
+		address4 = nm_ip4_config_get_address (priv->ip4_config, 0);
 
 		if (priv->ip4_internal_gw)
 			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", ip_address_to_string (priv->ip4_internal_gw));
-		nm_log_info (LOGD_VPN, "  Internal Address: %s", ip_address_to_string (nm_ip4_address_get_address (addr)));
-		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", nm_ip4_address_get_prefix (addr));
+		nm_log_info (LOGD_VPN, "  Internal Address: %s", ip_address_to_string (address4->address));
+		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", address4->plen);
 		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s",
 					 ip_address_to_string (nm_ip4_config_get_ptp_address (priv->ip4_config)));
 		nm_log_info (LOGD_VPN, "  Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
@@ -660,12 +660,12 @@ print_vpn_config (NMVPNConnection *connection)
 	if (priv->ip6_config) {
 		nm_log_info (LOGD_VPN, "IPv6 configuration:");
 
-		addr6 = nm_ip6_config_get_address (priv->ip6_config, 0);
+		address6 = nm_ip6_config_get_address (priv->ip6_config, 0);
 
 		if (priv->ip6_internal_gw)
 			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", ip6_address_to_string (priv->ip6_internal_gw));
-		nm_log_info (LOGD_VPN, "  Internal Address: %s", ip6_address_to_string (nm_ip6_address_get_address (addr6)));
-		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", nm_ip6_address_get_prefix (addr6));
+		nm_log_info (LOGD_VPN, "  Internal Address: %s", ip6_address_to_string (&address6->address));
+		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", address6->plen);
 		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s",
 					 ip6_address_to_string (nm_ip6_config_get_ptp_address (priv->ip6_config)));
 		nm_log_info (LOGD_VPN, "  Maximum Segment Size (MSS): %d", nm_ip6_config_get_mss (priv->ip6_config));
@@ -877,8 +877,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMSettingIP4Config *s_ip4;
-	NMIP4Address *addr;
+	NMPlatformIP4Address address;
 	NMIP4Config *config;
 	GValue *val;
 	int i;
@@ -908,10 +907,10 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	config = nm_ip4_config_new ();
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_prefix (addr, 24); /* default to class C */
+	memset (&address, 0, sizeof (address));
+	address.plen = 24;
 	if (priv->ip4_external_gw)
-		nm_ip4_address_set_gateway (addr, priv->ip4_external_gw);
+		nm_ip4_config_set_gateway (config, priv->ip4_external_gw);
 
 	/* Internal address of the VPN subnet's gateway */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY);
@@ -920,7 +919,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
-		nm_ip4_address_set_address (addr, g_value_get_uint (val));
+		address.address = g_value_get_uint (val);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_PTP);
 	if (val)
@@ -928,13 +927,12 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX);
 	if (val)
-		nm_ip4_address_set_prefix (addr, g_value_get_uint (val));
+		address.plen = g_value_get_uint (val);
 
-	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr)) {
-		nm_ip4_config_take_address (config, addr);
+	if (address.address && address.plen) {
+		nm_ip4_config_add_address (config, &address);
 	} else {
 		nm_log_err (LOGD_VPN, "invalid IP4 config received!");
-		nm_ip4_address_unref (addr);
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (connection, FALSE);
 		return;
@@ -1009,8 +1007,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		nm_ip4_config_set_never_default (config, g_value_get_boolean (val));
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
-	s_ip4 = nm_connection_get_setting_ip4_config (priv->connection);
-	nm_ip4_config_merge_setting (config, s_ip4);
+	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (priv->connection));
 
 	priv->ip4_config = config;
 	nm_vpn_connection_config_maybe_complete (connection, TRUE);
@@ -1023,8 +1020,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMSettingIP6Config *s_ip6;
-	NMIP6Address *addr;
+	NMPlatformIP6Address address;
 	NMIP6Config *config;
 	GValue *val;
 	int i;
@@ -1040,10 +1036,10 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 
 	config = nm_ip6_config_new ();
 
-	addr = nm_ip6_address_new ();
-	nm_ip6_address_set_prefix (addr, 128); /* default to class C */
+	memset (&address, 0, sizeof (address));
+	address.plen = 128;
 	if (priv->ip6_external_gw)
-		nm_ip6_address_set_gateway (addr, priv->ip6_external_gw);
+		nm_ip6_config_set_gateway (config, priv->ip6_external_gw);
 
 	/* Internal address of the VPN subnet's gateway */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY);
@@ -1059,7 +1055,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 		GByteArray *ba = g_value_get_boxed (val);
 
 		if (ba->len == sizeof (struct in6_addr))
-			nm_ip6_address_set_address (addr, (struct in6_addr *)ba->data);
+			address.address = *(struct in6_addr *) ba->data;
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_PTP);
@@ -1072,13 +1068,12 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_PREFIX);
 	if (val)
-		nm_ip6_address_set_prefix (addr, g_value_get_uint (val));
+		address.plen = g_value_get_uint (val);
 
-	if (nm_ip6_address_get_address (addr) && nm_ip6_address_get_prefix (addr)) {
-		nm_ip6_config_take_address (config, addr);
-	} else {
+	if (IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen)
+		nm_ip6_config_add_address (config, &address);
+	else {
 		nm_log_err (LOGD_VPN, "invalid IP6 config received!");
-		nm_ip6_address_unref (addr);
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (connection, FALSE);
 	}
@@ -1146,8 +1141,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 		nm_ip6_config_set_never_default (config, g_value_get_boolean (val));
 
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
-	s_ip6 = nm_connection_get_setting_ip6_config (priv->connection);
-	nm_ip6_config_merge_setting (config, s_ip6);
+	nm_ip6_config_merge_setting (config, nm_connection_get_setting_ip6_config (priv->connection));
 
 	priv->ip6_config = config;
 	nm_vpn_connection_config_maybe_complete (connection, TRUE);

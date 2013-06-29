@@ -249,7 +249,7 @@ create_dm_cmd_line (const char *iface,
 	const char *dm_binary;
 	NMCmdLine *cmd;
 	GString *s;
-	NMIP4Address *tmp;
+	const NMPlatformIP4Address *tmp;
 	struct in_addr addr;
 	char buf[INET_ADDRSTRLEN + 15];
 	char localaddr[INET_ADDRSTRLEN + 1];
@@ -294,7 +294,7 @@ create_dm_cmd_line (const char *iface,
 	nm_cmd_line_add_string (cmd, "--strict-order");
 
 	s = g_string_new ("--listen-address=");
-	addr.s_addr = nm_ip4_address_get_address (tmp);
+	addr.s_addr = tmp->address;
 	if (!inet_ntop (AF_INET, &addr, &localaddr[0], INET_ADDRSTRLEN)) {
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
 		                                 ntohl (addr.s_addr));
@@ -310,7 +310,7 @@ create_dm_cmd_line (const char *iface,
 	s = g_string_new ("--dhcp-range=");
 
 	/* Add start of address range */
-	addr.s_addr = nm_ip4_address_get_address (tmp) + htonl (9);
+	addr.s_addr = tmp->address + htonl (9);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
 		                                 ntohl (addr.s_addr));
@@ -324,7 +324,7 @@ create_dm_cmd_line (const char *iface,
 	g_string_append_c (s, ',');
 
 	/* Add end of address range */
-	addr.s_addr = nm_ip4_address_get_address (tmp) + htonl (99);
+	addr.s_addr = tmp->address + htonl (99);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
 		                                 ntohl (addr.s_addr));

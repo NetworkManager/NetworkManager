@@ -1136,9 +1136,9 @@ ip4_options_to_config (NMDHCPClient *self)
 	NMDHCPClientPrivate *priv;
 	NMIP4Config *ip4_config = NULL;
 	struct in_addr tmp_addr;
-	NMIP4Address *addr = NULL;
+	NMPlatformIP4Address address;
 	char *str = NULL;
-	guint32 gwaddr = 0, prefix = 0;
+	guint32 gwaddr = 0, plen = 0;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
@@ -1146,25 +1146,25 @@ ip4_options_to_config (NMDHCPClient *self)
 	g_return_val_if_fail (priv->options != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new ();
-	addr = nm_ip4_address_new ();
+	memset (&address, 0, sizeof (address));
 
 	str = g_hash_table_lookup (priv->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		nm_ip4_address_set_address (addr, tmp_addr.s_addr);
+		address.address = tmp_addr.s_addr;
 		nm_log_info (LOGD_DHCP4, "  address %s", str);
 	} else
 		goto error;
 
 	str = g_hash_table_lookup (priv->options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
-		nm_log_info (LOGD_DHCP4, "  prefix %d (%s)", prefix, str);
+		plen = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
+		nm_log_info (LOGD_DHCP4, "  plen %d (%s)", plen, str);
 	} else {
 		/* Get default netmask for the IP according to appropriate class. */
-		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
-		nm_log_info (LOGD_DHCP4, "  prefix %d (default)", prefix);
+		plen = nm_utils_ip4_get_default_prefix (address.address);
+		nm_log_info (LOGD_DHCP4, "  plen %d (default)", plen);
 	}
-	nm_ip4_address_set_prefix (addr, prefix);
+	address.plen = plen;
 
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
@@ -1200,8 +1200,7 @@ ip4_options_to_config (NMDHCPClient *self)
 		}
 	}
 
-	nm_ip4_config_take_address (ip4_config, addr);
-	addr = NULL;
+	nm_ip4_config_add_address (ip4_config, &address);
 
 	str = g_hash_table_lookup (priv->options, "new_host_name");
 	if (str)
@@ -1290,8 +1289,6 @@ ip4_options_to_config (NMDHCPClient *self)
 	return ip4_config;
 
 error:
-	if (addr)
-		nm_ip4_address_unref (addr);
 	g_object_unref (ip4_config);
 	return NULL;
 }
@@ -1333,7 +1330,7 @@ ip6_options_to_config (NMDHCPClient *self)
 	NMDHCPClientPrivate *priv;
 	NMIP6Config *ip6_config = NULL;
 	struct in6_addr tmp_addr;
-	NMIP6Address *addr = NULL;
+	NMPlatformIP6Address address;
 	char *str = NULL;
 	GHashTableIter iter;
 	gpointer key, value;
@@ -1359,14 +1356,12 @@ ip6_options_to_config (NMDHCPClient *self)
 			goto error;
 		}
 
-		addr = nm_ip6_address_new ();
-		g_assert (addr);
-		nm_ip6_address_set_address (addr, &tmp_addr);
-		/* DHCPv6 IA_NA assignments are single address only */
-		nm_ip6_address_set_prefix (addr, 128);
-		nm_log_info (LOGD_DHCP6, "  address %s/128", str);
+		memset (&address, 0, sizeof (address));
+		address.address = tmp_addr;
+		address.plen = 128;
+		nm_log_info (LOGD_DHCP6, "  address %s", str);
 
-		nm_ip6_config_take_address (ip6_config, addr);
+		nm_ip6_config_add_address (ip6_config, &address);
 	} else if (priv->info_only == FALSE) {
 		/* No address in Managed mode is a hard error */
 		goto error;

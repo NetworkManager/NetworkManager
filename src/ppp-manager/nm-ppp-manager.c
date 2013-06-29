@@ -508,7 +508,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	NMConnection *connection;
 	NMSettingPPP *s_ppp;
 	NMIP4Config *config;
-	NMIP4Address *addr;
+	NMPlatformIP4Address address;
 	GValue *val;
 	int i;
 
@@ -517,28 +517,27 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	remove_timeout_handler (manager);
 
 	config = nm_ip4_config_new ();
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_prefix (addr, 32);
+	memset (&address, 0, sizeof (address));
+	address.plen = 32;
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
 	if (val) {
-		nm_ip4_address_set_gateway (addr, g_value_get_uint (val));
+		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
 		nm_ip4_config_set_ptp_address (config, g_value_get_uint (val));
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
 	if (val)
-		nm_ip4_address_set_address (addr, g_value_get_uint (val));
+		address.address = g_value_get_uint (val);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_PREFIX);
 	if (val)
-		nm_ip4_address_set_prefix (addr, g_value_get_uint (val));
+		address.plen = g_value_get_uint (val);
 
-	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr)) {
-		nm_ip4_config_take_address (config, addr);
+	if (address.address && address.plen) {
+		nm_ip4_config_add_address (config, &address);
 	} else {
 		nm_log_err (LOGD_PPP, "invalid IPv4 address received!");
-		nm_ip4_address_unref (addr);
 		goto out;
 	}
 

@@ -236,10 +236,10 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 
 	for (iter = parsed; iter; iter = g_slist_next (iter)) {
 		NMIP4Config *ip4;
-		NMIP4Address *addr;
+		NMPlatformIP4Address address;
 		const char *data;
 		struct in_addr tmp;
-		guint32 prefix;
+		guint32 plen;
 		struct tm expire;
 
 		hash = iter->data;
@@ -295,14 +295,14 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 			continue;
 
 		ip4 = nm_ip4_config_new ();
-		addr = nm_ip4_address_new ();
+		memset (&address, 0, sizeof (address));
 
 		/* IP4 address */
 		if (!inet_pton (AF_INET, data, &tmp)) {
 			nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 address '%s'", data);
 			goto error;
 		}
-		nm_ip4_address_set_address (addr, tmp.s_addr);
+		address.address = tmp.s_addr;
 
 		/* Netmask */
 		data = g_hash_table_lookup (hash, "option subnet-mask");
@@ -311,12 +311,12 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 subnet mask '%s'", data);
 				goto error;
 			}
-			prefix = nm_utils_ip4_netmask_to_prefix (tmp.s_addr);
+			plen = nm_utils_ip4_netmask_to_prefix (tmp.s_addr);
 		} else {
 			/* Get default netmask for the IP according to appropriate class. */
-			prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
+			plen = nm_utils_ip4_get_default_prefix (address.address);
 		}
-		nm_ip4_address_set_prefix (addr, prefix);
+		address.plen = plen;
 
 		/* Gateway */
 		data = g_hash_table_lookup (hash, "option routers");
@@ -328,12 +328,11 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 			nm_ip4_config_set_gateway (ip4, tmp.s_addr);
 		}
 
-		nm_ip4_config_take_address (ip4, addr);
+		nm_ip4_config_add_address (ip4, &address);
 		leases = g_slist_append (leases, ip4);
 		continue;
 
 	error:
-		nm_ip4_address_unref (addr);
 		g_object_unref (ip4);
 	}
 

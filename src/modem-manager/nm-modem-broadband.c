@@ -631,10 +631,9 @@ static_stage3_done (NMModemBroadband *self)
 	NMIP4Config *config = NULL;
 	const gchar *address_string;
 	guint32 address_network;
-	NMIP4Address *addr;
+	NMPlatformIP4Address address;
 	const gchar **dns;
 	guint i;
-	guint prefix;
 
 	g_assert (self->priv->ipv4_config);
 
@@ -653,12 +652,11 @@ static_stage3_done (NMModemBroadband *self)
 	}
 
 	config = nm_ip4_config_new ();
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, address_network);
-	prefix = mm_bearer_ip_config_get_prefix (self->priv->ipv4_config);
-	if (prefix > 0)
-		nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_config_take_address (config, addr);
+
+	memset (&address, 0, sizeof (address));
+	address.address = address_network;
+	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv4_config);
+	nm_ip4_config_add_address (config, &address);
 
 	nm_log_info (LOGD_MB, "  address %s/%d",
 	             mm_bearer_ip_config_get_address (self->priv->ipv4_config),
