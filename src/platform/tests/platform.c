@@ -511,14 +511,48 @@ typedef struct in6_addr ip6_t;
 #define parse_ip4_address(s, a, p) parse_ip_address (AF_INET, s, a, p)
 #define parse_ip6_address(s, a, p) parse_ip_address (AF_INET6, s, a, p)
 
+static gboolean
+do_ip4_address_add (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	ip4_t address;
+	int plen;
+
+	if (ifindex && parse_ip4_address (*argv++, &address, &plen)) {
+		guint32 lifetime = strtol (*argv++, NULL, 10);
+		guint32 preferred = strtol (*argv++, NULL, 10);
+
+		gboolean value = nm_platform_ip4_address_add (ifindex, address, plen, lifetime, preferred);
+		return value;
+	} else
+		return FALSE;
+}
+
+static gboolean
+do_ip6_address_add (char **argv)
+{
+	int ifindex = parse_ifindex (*argv++);
+	ip6_t address;
+	int plen;
+
+	if (ifindex && parse_ip6_address (*argv++, &address, &plen)) {
+		guint32 lifetime = strtol (*argv++, NULL, 10);
+		guint32 preferred = strtol (*argv++, NULL, 10);
+
+		gboolean value = nm_platform_ip6_address_add (ifindex, address, plen, lifetime, preferred);
+		return value;
+	} else
+		return FALSE;
+}
+
 #define ADDR_CMD_FULL(v, cmdname, print) \
 	static gboolean \
 	do_##v##_address_##cmdname (char **argv) \
 	{ \
-		int ifindex = parse_ifindex (argv[0]); \
+		int ifindex = parse_ifindex (*argv++); \
 		v##_t address; \
 		int plen; \
-		if (ifindex && parse_##v##_address (argv[1], &address, &plen)) { \
+		if (ifindex && parse_##v##_address (*argv++, &address, &plen)) { \
 			gboolean value = nm_platform_##v##_address_##cmdname (ifindex, address, plen); \
 			if (print) { \
 				print_boolean (value); \
@@ -531,7 +565,6 @@ typedef struct in6_addr ip6_t;
 #define ADDR_CMD(cmdname) ADDR_CMD_FULL (ip4, cmdname, FALSE) ADDR_CMD_FULL (ip6, cmdname, FALSE)
 #define ADDR_CMD_PRINT(cmdname) ADDR_CMD_FULL (ip4, cmdname, TRUE) ADDR_CMD_FULL (ip6, cmdname, TRUE)
 
-ADDR_CMD (add)
 ADDR_CMD (delete)
 ADDR_CMD_PRINT (exists)
 
@@ -590,7 +623,7 @@ do_ip4_route_add (char **argv)
 	in_addr_t network, gateway;
 	int plen, metric, mss;
 
-   	parse_ip4_address (*argv++, &network, &plen);
+	parse_ip4_address (*argv++, &network, &plen);
 	parse_ip4_address (*argv++, &gateway, NULL);
 	metric = strtol (*argv++, NULL, 10);
 	mss = strtol (*argv++, NULL, 10);
@@ -605,7 +638,7 @@ do_ip6_route_add (char **argv)
 	struct in6_addr network, gateway;
 	int plen, metric, mss;
 
-   	parse_ip6_address (*argv++, &network, &plen);
+	parse_ip6_address (*argv++, &network, &plen);
 	parse_ip6_address (*argv++, &gateway, NULL);
 	metric = strtol (*argv++, NULL, 10);
 	mss = strtol (*argv++, NULL, 10);
@@ -619,7 +652,7 @@ do_ip4_route_delete (char **argv)
 	in_addr_t network;
 	int plen, metric;
 
-   	parse_ip4_address (*argv++, &network, &plen);
+	parse_ip4_address (*argv++, &network, &plen);
 	metric = strtol (*argv++, NULL, 10);
 
 	return nm_platform_ip4_route_delete (ifindex, network, plen, metric);
@@ -632,7 +665,7 @@ do_ip6_route_delete (char **argv)
 	struct in6_addr network;
 	int plen, metric;
 
-   	parse_ip6_address (*argv++, &network, &plen);
+	parse_ip6_address (*argv++, &network, &plen);
 	metric = strtol (*argv++, NULL, 10);
 
 	return nm_platform_ip6_route_delete (ifindex, network, plen, metric);
@@ -645,7 +678,7 @@ do_ip4_route_exists (char **argv)
 	in_addr_t network;
 	int plen, metric;
 
-   	parse_ip4_address (*argv++, &network, &plen);
+	parse_ip4_address (*argv++, &network, &plen);
 	metric = strtol (*argv++, NULL, 10);
 
 	print_boolean (nm_platform_ip4_route_exists (ifindex, network, plen, metric));
@@ -659,7 +692,7 @@ do_ip6_route_exists (char **argv)
 	struct in6_addr network;
 	int plen, metric;
 
-   	parse_ip6_address (*argv++, &network, &plen);
+	parse_ip6_address (*argv++, &network, &plen);
 	metric = strtol (*argv++, NULL, 10);
 
 	print_boolean (nm_platform_ip6_route_exists (ifindex, network, plen, metric));
@@ -731,8 +764,8 @@ static const command_t commands[] = {
 	  "<ifname/ifindex>" },
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },
-	{ "ip4-address-add", "add IPv4 address", do_ip4_address_add, 2, "<ifname/ifindex> <address>/<plen>" },
-	{ "ip6-address-add", "add IPv6 address", do_ip6_address_add, 2, "<ifname/ifindex> <address>/<plen>" },
+	{ "ip4-address-add", "add IPv4 address", do_ip4_address_add, 4, "<ifname/ifindex> <address>/<plen> <lifetime> <>" },
+	{ "ip6-address-add", "add IPv6 address", do_ip6_address_add, 4, "<ifname/ifindex> <address>/<plen> <lifetime> <>" },
 	{ "ip4-address-delete", "delete IPv4 address", do_ip4_address_delete, 2,
 		"<ifname/ifindex> <address>/<plen>" },
 	{ "ip6-address-delete", "delete IPv6 address", do_ip6_address_delete, 2,

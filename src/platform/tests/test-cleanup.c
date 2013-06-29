@@ -19,6 +19,8 @@ test_cleanup_internal ()
 	struct in6_addr network6;
 	int plen6 = 64;
 	struct in6_addr gateway6;
+	int lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+	int preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 	int metric = 20;
 	int mss = 1000;
 
@@ -38,8 +40,8 @@ test_cleanup_internal ()
 	g_assert (ifindex > 0);
 
 	/* Add routes and addresses */
-	g_assert (nm_platform_ip4_address_add (ifindex, addr4, plen4));
-	g_assert (nm_platform_ip6_address_add (ifindex, addr6, plen6));
+	g_assert (nm_platform_ip4_address_add (ifindex, addr4, plen4, lifetime, preferred));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr6, plen6, lifetime, preferred));
 	g_assert (nm_platform_ip4_route_add (ifindex, gateway4, 32, INADDR_ANY, metric, mss));
 	g_assert (nm_platform_ip4_route_add (ifindex, network4, plen4, gateway4, metric, mss));
 	g_assert (nm_platform_ip4_route_add (ifindex, 0, 0, gateway4, metric, mss));

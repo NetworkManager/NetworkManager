@@ -719,8 +719,18 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	return addresses;
 }
 
+static guint32
+get_time (void)
+{
+	struct timespec tp;
+
+	clock_gettime (CLOCK_MONOTONIC, &tp);
+
+	return tp.tv_sec;
+}
+
 static gboolean
-ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, guint32 lifetime, guint32 preferred)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Address address;
@@ -729,6 +739,9 @@ ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.plen = plen;
+	address.timestamp = get_time ();
+	address.lifetime = lifetime;
+	address.preferred = preferred;
 
 	g_array_append_val (priv->ip4_addresses, address);
 
@@ -738,7 +751,7 @@ ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 }
 
 static gboolean
-ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen, guint32 lifetime, guint32 preferred)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP6Address address;
@@ -747,6 +760,9 @@ ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int pl
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.plen = plen;
+	address.timestamp = get_time ();
+	address.lifetime = lifetime;
+	address.preferred = preferred;
 
 	g_array_append_val (priv->ip6_addresses, address);
 

@@ -103,16 +103,24 @@ typedef struct {
 	guint mtu;
 } NMPlatformLink;
 
+#define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
+
 typedef struct {
 	int ifindex;
 	in_addr_t address;
 	int plen;
+	guint32 timestamp;
+	guint32 lifetime;
+	guint32 preferred;
 } NMPlatformIP4Address;
 
 typedef struct {
 	int ifindex;
 	struct in6_addr address;
 	int plen;
+	guint32 timestamp;
+	guint32 lifetime;
+	guint32 preferred;
 } NMPlatformIP6Address;
 
 typedef struct {
@@ -255,8 +263,10 @@ typedef struct {
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
-	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen);
-	gboolean (*ip6_address_add) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
+	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen,
+			guint32 lifetime, guint32 preferred_lft);
+	gboolean (*ip6_address_add) (NMPlatform *, int ifindex, struct in6_addr address, int plen,
+			guint32 lifetime, guint32 preferred_lft);
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
@@ -372,8 +382,10 @@ gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *p
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);
-gboolean nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen);
-gboolean nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen,
+		guint32 lifetime, guint32 preferred_lft);
+gboolean nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen,
+		guint32 lifetime, guint32 preferred_lft);
 gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);

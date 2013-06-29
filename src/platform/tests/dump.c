@@ -73,13 +73,13 @@ dump_interface (NMPlatformLink *link)
 	for (i = 0; i < ip4_addresses->len; i++) {
 		ip4_address = &g_array_index (ip4_addresses, NMPlatformIP4Address, i);
 		inet_ntop (AF_INET, &ip4_address->address, addrstr, sizeof (addrstr));
-		printf ("    ip4-address %s/%d\n", addrstr, ip4_address->plen);
+		printf ("    ip4-address %s/%d lifetime %u preferred %u\n", addrstr, ip4_address->plen, ip4_address->lifetime, ip4_address->preferred);
 	}
 
 	for (i = 0; i < ip6_addresses->len; i++) {
 		ip6_address = &g_array_index (ip6_addresses, NMPlatformIP6Address, i);
 		inet_ntop (AF_INET6, &ip6_address->address, addrstr, sizeof (addrstr));
-		printf ("    ip6-address %s/%d\n", addrstr, ip6_address->plen);
+		printf ("    ip6-address %s/%d lifetime %u preferred %u\n", addrstr, ip6_address->plen, ip6_address->lifetime, ip6_address->preferred);
 	}
 
 	g_array_unref (ip4_addresses);

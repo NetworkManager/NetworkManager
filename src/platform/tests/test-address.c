@@ -49,34 +49,35 @@ test_ip4_address (void)
 	SignalData *address_removed = add_signal (NM_PLATFORM_IP4_ADDRESS_REMOVED, ip4_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	GArray *addresses;
-	NMPlatformIP4Address addrs[2];
+	NMPlatformIP4Address *address;
 	in_addr_t addr;
+	guint32 lifetime = 2000;
+	guint32 preferred = 1000;
 
 	inet_pton (AF_INET, IP4_ADDRESS, &addr);
 
 	/* Add address */
 	g_assert (!nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	no_error ();
-	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN));
+	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
 	no_error ();
 	g_assert (nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	no_error ();
 	accept_signal (address_added);
 
 	/* Add address again */
-	g_assert (!nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN));
+	g_assert (!nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
 	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Test address listing */
 	addresses = nm_platform_ip4_address_get_all (ifindex);
 	g_assert (addresses);
 	no_error ();
-	memset (addrs, 0, sizeof (addrs));
-	addrs[0].ifindex = ifindex;
-	addrs[0].address = addr;
-	addrs[0].plen = IP4_PLEN;
 	g_assert_cmpint (addresses->len, ==, 1);
-	g_assert (!memcmp (addresses->data, addrs, sizeof (addrs)));
+	address = &g_array_index (addresses, NMPlatformIP4Address, 0);
+	g_assert_cmpint (address->ifindex, ==, ifindex);
+	g_assert_cmphex (address->address, ==, addr);
+	g_assert_cmpint (address->plen, ==, IP4_PLEN);
 	g_array_unref (addresses);
 
 	/* Remove address */
@@ -100,34 +101,35 @@ test_ip6_address (void)
 	SignalData *address_removed = add_signal (NM_PLATFORM_IP6_ADDRESS_REMOVED, ip6_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	GArray *addresses;
-	NMPlatformIP6Address addrs[2];
+	NMPlatformIP6Address *address;
 	struct in6_addr addr;
+	guint32 lifetime = 2000;
+	guint32 preferred = 1000;
 
 	inet_pton (AF_INET6, IP6_ADDRESS, &addr);
 
 	/* Add address */
 	g_assert (!nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	no_error ();
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
 	no_error ();
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	no_error ();
 	accept_signal (address_added);
 
 	/* Add address again */
-	g_assert (!nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN));
+	g_assert (!nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
 	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Test address listing */
 	addresses = nm_platform_ip6_address_get_all (ifindex);
 	g_assert (addresses);
 	no_error ();
-	memset (addrs, 0, sizeof (addrs));
-	addrs[0].ifindex = ifindex;
-	addrs[0].address = addr;
-	addrs[0].plen = IP6_PLEN;
 	g_assert_cmpint (addresses->len, ==, 1);
-	g_assert (!memcmp (addresses->data, addrs, sizeof (addrs)));
+	address = &g_array_index (addresses, NMPlatformIP6Address, 0);
+	g_assert_cmpint (address->ifindex, ==, ifindex);
+	g_assert (!memcmp (&address->address, &addr, sizeof (addr)));
+	g_assert_cmpint (address->plen, ==, IP6_PLEN);
 	g_array_unref (addresses);
 
 	/* Remove address */
@@ -151,6 +153,8 @@ test_ip4_address_external (void)
 	SignalData *address_removed = add_signal (NM_PLATFORM_IP4_ADDRESS_REMOVED, ip4_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	in_addr_t addr;
+	guint32 lifetime = 2000;
+	guint32 preferred = 1000;
 
 	inet_pton (AF_INET, IP4_ADDRESS, &addr);
 	g_assert (ifindex > 0);
@@ -161,7 +165,8 @@ test_ip4_address_external (void)
 	g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (DEVICE_NAME)));
 
 	/* Add/delete notification */
-	run_command ("ip address add %s/%d dev %s", IP4_ADDRESS, IP4_PLEN, DEVICE_NAME);
+	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
+			IP4_ADDRESS, IP4_PLEN, DEVICE_NAME, lifetime, preferred);
 	wait_signal (address_added);
 	g_assert (nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	run_command ("ip address delete %s/%d dev %s", IP4_ADDRESS, IP4_PLEN, DEVICE_NAME);
@@ -169,8 +174,9 @@ test_ip4_address_external (void)
 	g_assert (!nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 
 	/* Add/delete conflict */
-	run_command ("ip address add %s/%d dev %s", IP4_ADDRESS, IP4_PLEN, DEVICE_NAME);
-	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN));
+	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
+			IP4_ADDRESS, IP4_PLEN, DEVICE_NAME, lifetime, preferred);
+	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
 	no_error ();
 	g_assert (nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	accept_signal (address_added);
@@ -191,11 +197,14 @@ test_ip6_address_external (void)
 	SignalData *address_removed = add_signal (NM_PLATFORM_IP6_ADDRESS_REMOVED, ip6_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	struct in6_addr addr;
+	guint32 lifetime = 2000;
+	guint32 preferred = 1000;
 
 	inet_pton (AF_INET6, IP6_ADDRESS, &addr);
 
 	/* Add/delete notification */
-	run_command ("ip address add %s/%d dev %s", IP6_ADDRESS, IP6_PLEN, DEVICE_NAME);
+	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
+			IP6_ADDRESS, IP6_PLEN, DEVICE_NAME, lifetime, preferred);
 	wait_signal (address_added);
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	run_command ("ip address delete %s/%d dev %s", IP6_ADDRESS, IP6_PLEN, DEVICE_NAME);
@@ -203,8 +212,9 @@ test_ip6_address_external (void)
 	g_assert (!nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 
 	/* Add/delete conflict */
-	run_command ("ip address add %s/%d dev %s", IP6_ADDRESS, IP6_PLEN, DEVICE_NAME);
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN));
+	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d", 
+			IP6_ADDRESS, IP6_PLEN, DEVICE_NAME, lifetime, preferred);
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
 	no_error ();
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	accept_signal (address_added);
