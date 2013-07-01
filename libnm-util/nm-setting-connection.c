@@ -1216,8 +1216,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	/**
 	 * NMSettingConnection:read-only:
 	 *
-	 * %TRUE if the connection can be modified using the providing settings
-	 * service's D-Bus interface with the right privileges, or %FALSE
+	 * %FALSE if the connection can be modified using the provided settings
+	 * service's D-Bus interface with the right privileges, or %TRUE
 	 * if the connection is read-only and cannot be modified.
 	 **/
 	g_object_class_install_property
