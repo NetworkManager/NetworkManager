@@ -4344,7 +4344,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		priv->ip4_config = g_object_ref (new_config);
 
 		if (commit)
-			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
+			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self));
 
 		if (success || !commit) {
 			/* Export over D-Bus */
@@ -4401,7 +4401,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		priv->ip6_config = g_object_ref (new_config);
 
 		if (commit)
-			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self), diff);
+			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self));
 
 		if (success || !commit) {
 			/* Export over D-Bus */

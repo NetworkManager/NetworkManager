@@ -609,14 +609,12 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 	nm_platform_link_set_up (priv->ip_ifindex);
 
 	if (priv->ip4_config) {
-		if (!nm_system_apply_ip4_config (priv->ip_ifindex, priv->ip4_config,
-		                                 0, NM_IP4_COMPARE_FLAG_ALL))
+		if (!nm_system_apply_ip4_config (priv->ip_ifindex, priv->ip4_config, 0))
 			return FALSE;
 	}
 
 	if (priv->ip6_config) {
-		if (!nm_system_apply_ip6_config (priv->ip_ifindex, priv->ip6_config,
-		                                 0, NM_IP6_COMPARE_FLAG_ALL))
+		if (!nm_system_apply_ip6_config (priv->ip_ifindex, priv->ip6_config, 0))
 			/* FIXME: remove ip4 config */
 			return FALSE;
 	}

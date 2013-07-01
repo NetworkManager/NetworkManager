@@ -144,17 +144,16 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
  *
  */
 gboolean
-nm_system_apply_ip4_config (int ifindex,
-                            NMIP4Config *config,
-                            int priority,
-                            NMIP4ConfigCompareFlags flags)
+nm_system_apply_ip4_config (int ifindex, NMIP4Config *config, int priority)
 {
+	int mtu = nm_ip4_config_get_mtu (config);
 	int i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	if (flags & NM_IP4_COMPARE_FLAG_ADDRESSES) {
+	/* Addresses */
+	{
 		int count = nm_ip4_config_get_num_addresses (config);
 		NMIP4Address *config_address;
 		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Address), count);
@@ -172,7 +171,8 @@ nm_system_apply_ip4_config (int ifindex,
 		g_array_unref (addresses);
 	}
 
-	if (flags & NM_IP4_COMPARE_FLAG_ROUTES) {
+	/* Routes */
+	{
 		int count = nm_ip4_config_get_num_routes (config);
 		NMIP4Route *config_route;
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
@@ -205,10 +205,9 @@ nm_system_apply_ip4_config (int ifindex,
 		g_array_unref (routes);
 	}
 
-	if (flags & NM_IP4_COMPARE_FLAG_MTU) {
-		if (nm_ip4_config_get_mtu (config))
-			nm_platform_link_set_mtu (ifindex, nm_ip4_config_get_mtu (config));
-	}
+	/* MTU */
+	if (mtu && mtu != nm_platform_link_get_mtu (ifindex))
+		nm_platform_link_set_mtu (ifindex, mtu);
 
 	return TRUE;
 }
@@ -323,15 +322,15 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 gboolean
 nm_system_apply_ip6_config (int ifindex,
                             NMIP6Config *config,
-                            int priority,
-                            NMIP6ConfigCompareFlags flags)
+                            int priority)
 {
 	int i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	if (flags & NM_IP6_COMPARE_FLAG_ADDRESSES) {
+	/* Addresses */
+	{
 		int count = nm_ip6_config_get_num_addresses (config);
 		NMIP6Address *config_address;
 		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Address), count);
@@ -349,7 +348,8 @@ nm_system_apply_ip6_config (int ifindex,
 		g_array_unref (addresses);
 	}
 
-	if (flags & NM_IP6_COMPARE_FLAG_ROUTES) {
+	/* Routes */
+	{
 		int count = nm_ip6_config_get_num_routes (config);
 		NMIP6Route *config_route;
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), count);

@@ -34,13 +34,11 @@ NMPlatformIP6Route *nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device
 
 gboolean		nm_system_apply_ip4_config              (int ifindex,
                                                          NMIP4Config *config,
-                                                         int priority,
-                                                         NMIP4ConfigCompareFlags flags);
+                                                         int priority);
 
 gboolean		nm_system_apply_ip6_config              (int ifindex,
                                                          NMIP6Config *config,
-                                                         int priority,
-                                                         NMIP6ConfigCompareFlags flags);
+                                                         int priority);
 
 gboolean        nm_system_apply_bonding_config          (const char *iface,
                                                          NMSettingBond *s_bond);
