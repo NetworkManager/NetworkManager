@@ -1208,7 +1208,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "connection was last successfully activated.  NetworkManager "
 		                      "updates the connection timestamp periodically when the "
 		                      "connection is active to ensure that an active connection "
-		                      "has the latest timestamp.",
+		                      "has the latest timestamp. The property is only meant for "
+		                      "reading (changes to this property will not be preserved).",
 		                      0, G_MAXUINT64, 0,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
