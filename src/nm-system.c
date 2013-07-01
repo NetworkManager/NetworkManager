@@ -361,6 +361,7 @@ nm_system_apply_ip6_config (int ifindex,
 			route.network = *nm_ip6_route_get_dest (config_route);
 			route.plen = nm_ip6_route_get_prefix (config_route);
 			route.gateway = *nm_ip6_route_get_next_hop (config_route);
+			route.metric = priority;
 
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
