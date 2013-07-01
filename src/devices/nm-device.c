@@ -3989,7 +3989,6 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
-	gboolean tried_ipv6 = FALSE;
 	int ifindex;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
@@ -3999,8 +3998,6 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (priv->ip6_manager || priv->ip6_state == IP_DONE)
-		tried_ipv6 = TRUE;
 
 	/* Clean up when device was deactivated during call to firewall */
 	if (priv->fw_call) {
