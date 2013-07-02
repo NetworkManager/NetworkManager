@@ -4279,7 +4279,6 @@ nm_device_set_ip4_config (NMDevice *self,
 	const char *ip_iface;
 	NMIP4Config *old_config = NULL;
 	gboolean success = TRUE;
-	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -4291,12 +4290,8 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	old_config = priv->ip4_config;
 
-	if (new_config && old_config) {
-		diff = nm_ip4_config_diff (new_config, old_config);
-		if (diff == NM_IP4_COMPARE_FLAG_NONE)
-			return TRUE;  /* no actual change */
-	} else if (!new_config && !old_config)
-		return TRUE;
+	if (!nm_ip4_config_diff (new_config, old_config))
+		return success;
 
 	priv->ip4_config = NULL;
 
@@ -4336,7 +4331,6 @@ nm_device_set_ip6_config (NMDevice *self,
 	const char *ip_iface;
 	NMIP6Config *old_config = NULL;
 	gboolean success = TRUE;
-	NMIP6ConfigCompareFlags diff = NM_IP6_COMPARE_FLAG_ALL;
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -4348,12 +4342,8 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	old_config = priv->ip6_config;
 
-	if (new_config && old_config) {
-		diff = nm_ip6_config_diff (new_config, old_config);
-		if (diff == NM_IP6_COMPARE_FLAG_NONE)
-			return TRUE;  /* no actual change */
-	} else if (!new_config && !old_config)
-		return TRUE;
+	if (!nm_ip6_config_diff (new_config, old_config));
+		return success;
 
 	priv->ip6_config = NULL;
 
