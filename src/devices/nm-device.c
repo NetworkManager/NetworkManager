@@ -4273,6 +4273,10 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	old_config = priv->ip4_config;
 
+	/* Always commit to nm-platform to update lifetimes */
+	if (commit && new_config)
+		success = nm_ip4_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
+
 	if (nm_ip4_config_equal (new_config, old_config))
 		return success;
 
@@ -4280,9 +4284,6 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	if (new_config) {
 		priv->ip4_config = g_object_ref (new_config);
-
-		if (commit)
-			success = nm_ip4_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
 
 		if (success || !commit) {
 			/* Export over D-Bus */
@@ -4325,6 +4326,10 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	old_config = priv->ip6_config;
 
+	/* Always commit to nm-platform to update lifetimes */
+	if (commit && new_config)
+		success = nm_ip6_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
+
 	if (nm_ip6_config_equal (new_config, old_config))
 		return success;
 
@@ -4332,9 +4337,6 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	if (new_config) {
 		priv->ip6_config = g_object_ref (new_config);
-
-		if (commit)
-			success = nm_ip6_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
 
 		if (success || !commit) {
 			/* Export over D-Bus */
