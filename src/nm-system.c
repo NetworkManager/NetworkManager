@@ -117,7 +117,7 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
-	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix))
+	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, 32))
 		route->gateway = 0;
 
 	if (!nm_platform_ip4_route_add (route->ifindex,
@@ -294,7 +294,7 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
-	if (ip6_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix))
+	if (ip6_dest_in_same_subnet (parent_config, vpn_gw, 128))
 		route->gateway = in6addr_any;
 
 	if (!nm_platform_ip6_route_add (route->ifindex,
