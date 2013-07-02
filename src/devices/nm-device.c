@@ -4616,7 +4616,7 @@ nm_device_start_ip_check (NMDevice *self)
 
 	/* If no ping was started, just advance to SECONDARIES */
 	if (!priv->gw_ping.pid)
-		nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
 }
 
 /****************************************************************/
