@@ -382,10 +382,6 @@ nm_system_apply_ip6_config (int ifindex,
 		g_array_unref (routes);
 	}
 
-// FIXME
-//	if (priority > 0)
-//		nm_system_device_set_priority (iface, config, priority);
-
 	return TRUE;
 }
 
