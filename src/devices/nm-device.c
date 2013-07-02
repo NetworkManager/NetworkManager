@@ -2201,7 +2201,7 @@ dhcp4_fail (NMDevice *device, gboolean timeout)
 
 	if (timeout || (priv->ip4_state == IP_CONF))
 		nm_device_activate_schedule_ip4_config_timeout (device);
-	else if (priv->ip4_state == IP_DONE)
+	else if (priv->ip4_state == IP_FAIL)
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 }
 
@@ -2649,7 +2649,7 @@ dhcp6_fail (NMDevice *device, gboolean timeout)
 
 	if (timeout || (priv->ip6_state == IP_CONF))
 		nm_device_activate_schedule_ip6_config_timeout (device);
-	else if (priv->ip6_state == IP_DONE)
+	else if (priv->ip6_state == IP_FAIL)
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 }
 
@@ -3496,7 +3496,7 @@ nm_device_activate_ip6_config_timeout (gpointer user_data)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
-	priv->ip6_state = IP_DONE;
+	priv->ip6_state = IP_FAIL;
 
 	/* If IPv6 failed and IPv4 failed, the activation fails */
 	if (priv->ip4_state == IP_FAIL)
