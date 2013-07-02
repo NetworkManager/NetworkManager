@@ -1282,7 +1282,8 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 			        nm_object_get_path (NM_OBJECT (active)));
 		}
 		quit ();
-	} else if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+	} else if (   state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
+	           || state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
