@@ -51,10 +51,17 @@ GType nm_ip4_config_get_type (void);
 
 
 NMIP4Config * nm_ip4_config_new                 (void);
-NMIP4Config * nm_ip4_config_new_for_interface   (int ifindex);
 
 void          nm_ip4_config_export              (NMIP4Config *config);
 const char *  nm_ip4_config_get_dbus_path       (NMIP4Config *config);
+
+/* Integration with nm-platform and nm-setting */
+NMIP4Config *nm_ip4_config_capture (int ifindex);
+gboolean nm_ip4_config_commit (NMIP4Config *config, int ifindex, int priority);
+void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting);
+
+/* Utility functions */
+gboolean      nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 dest, guint32  plen);
 
 void          nm_ip4_config_take_address        (NMIP4Config *config, NMIP4Address *address);
 void          nm_ip4_config_add_address         (NMIP4Config *config, NMIP4Address *address);

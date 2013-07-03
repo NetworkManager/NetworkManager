@@ -50,10 +50,17 @@ GType nm_ip6_config_get_type (void);
 
 
 NMIP6Config * nm_ip6_config_new                 (void);
-NMIP6Config * nm_ip6_config_new_for_interface   (int ifindex);
 
 void          nm_ip6_config_export              (NMIP6Config *config);
 const char *  nm_ip6_config_get_dbus_path       (NMIP6Config *config);
+
+/* Integration with nm-platform and nm-setting */
+NMIP6Config *nm_ip6_config_capture (int ifindex);
+gboolean nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority);
+void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting);
+
+/* Utility functions */
+gboolean      nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, guint32 plen);
 
 void          nm_ip6_config_take_address        (NMIP6Config *config, NMIP6Address *address);
 void          nm_ip6_config_add_address         (NMIP6Config *config, NMIP6Address *address);
@@ -69,8 +76,8 @@ const struct in6_addr *nm_ip6_config_get_nameserver      (NMIP6Config *config, g
 guint32       nm_ip6_config_get_num_nameservers (NMIP6Config *config);
 void          nm_ip6_config_reset_nameservers   (NMIP6Config *config);
 
-void                   nm_ip6_config_set_gateway  (NMIP6Config *config, const struct in6_addr *gateway);
-const struct in6_addr *nm_ip6_config_get_gateway  (NMIP6Config *config);
+void          nm_ip6_config_set_gateway         (NMIP6Config *config, const struct in6_addr *gateway);
+const struct in6_addr *nm_ip6_config_get_gateway (NMIP6Config *config);
 
 void          nm_ip6_config_take_route          (NMIP6Config *config, NMIP6Route *route);
 void          nm_ip6_config_add_route           (NMIP6Config *config, NMIP6Route *route);

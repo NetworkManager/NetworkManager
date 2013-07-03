@@ -1929,7 +1929,7 @@ autoip_changed (NMDevice *self,
 {
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	nm_utils_merge_ip4_config (config, s_ip4);
+	nm_ip4_config_merge_setting (config, s_ip4);
 	if (!nm_device_set_ip4_config (self, config, TRUE, &reason)) {
 		nm_log_err (LOGD_AUTOIP4, "(%s): failed to update IP4 config in response to autoip event.",
 			        nm_device_get_iface (self));
@@ -2179,7 +2179,7 @@ dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
 	g_assert (connection);
 
 	/* Merge with user overrides */
-	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
+	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (connection));
 
 	if (!nm_device_set_ip4_config (device, config, TRUE, &reason)) {
 		nm_log_warn (LOGD_DHCP4, "(%s): failed to update IPv4 config in response to DHCP event.",
@@ -2603,7 +2603,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 		merge_ip6_configs (composite, priv->dhcp6_ip6_config);
 
 	/* Merge user overrides into the composite config */
-	nm_utils_merge_ip6_config (composite, nm_connection_get_setting_ip6_config (connection));
+	nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));
 
 	success = nm_device_set_ip6_config (self, composite, TRUE, out_reason);
 	g_object_unref (composite);
@@ -3697,7 +3697,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, config);
 
 	/* Merge with user overrides */
-	nm_utils_merge_ip4_config (config, nm_connection_get_setting_ip4_config (connection));
+	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (connection));
 
 	if (!nm_device_set_ip4_config (self, config, TRUE, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
@@ -4344,7 +4344,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		priv->ip4_config = g_object_ref (new_config);
 
 		if (commit)
-			success = nm_system_apply_ip4_config (ip_ifindex, new_config, nm_device_get_priority (self));
+			success = nm_ip4_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
 
 		if (success || !commit) {
 			/* Export over D-Bus */
@@ -4401,7 +4401,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		priv->ip6_config = g_object_ref (new_config);
 
 		if (commit)
-			success = nm_system_apply_ip6_config (ip_ifindex, new_config, nm_device_get_priority (self));
+			success = nm_ip6_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
 
 		if (success || !commit) {
 			/* Export over D-Bus */
@@ -5857,8 +5857,8 @@ update_ip_config (NMDevice *self)
 	if (!ifindex)
 		return;
 
-	ip4_config = nm_ip4_config_new_for_interface (ifindex);
-	ip6_config = nm_ip6_config_new_for_interface (ifindex);
+	ip4_config = nm_ip4_config_capture (ifindex);
+	ip6_config = nm_ip6_config_capture (ifindex);
 
 	nm_device_set_ip4_config (self, ip4_config, FALSE, &ignored);
 	nm_device_set_ip6_config (self, ip6_config, FALSE, &ignored);

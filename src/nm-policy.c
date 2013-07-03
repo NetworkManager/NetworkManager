@@ -1623,9 +1623,9 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 		if (parent) {
 			parent_ip4 = nm_device_get_ip4_config (parent);
 			if (parent_ip4) {
-				if (!nm_system_apply_ip4_config (nm_device_get_ip_ifindex (parent),
-				                                 parent_ip4,
-				                                 nm_device_get_priority (parent))) {
+				if (!nm_ip4_config_commit (parent_ip4,
+				                           nm_device_get_ip_ifindex (parent),
+				                           nm_device_get_priority (parent))) {
 					nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device IPv4 addresses and routes.");
 				}
 			}
@@ -1643,9 +1643,9 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 		if (parent) {
 			parent_ip6 = nm_device_get_ip6_config (parent);
 			if (parent_ip6) {
-				if (!nm_system_apply_ip6_config (nm_device_get_ip_ifindex (parent),
-				                                 parent_ip6,
-				                                 nm_device_get_priority (parent))) {
+				if (!nm_ip6_config_commit (parent_ip6,
+				                           nm_device_get_ip_ifindex (parent),
+				                           nm_device_get_priority (parent))) {
 					nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device IPv6 addresses and routes.");
 				}
 			}

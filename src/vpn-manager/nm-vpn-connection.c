@@ -609,12 +609,12 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 	nm_platform_link_set_up (priv->ip_ifindex);
 
 	if (priv->ip4_config) {
-		if (!nm_system_apply_ip4_config (priv->ip_ifindex, priv->ip4_config, 0))
+		if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex, 0))
 			return FALSE;
 	}
 
 	if (priv->ip6_config) {
-		if (!nm_system_apply_ip6_config (priv->ip_ifindex, priv->ip6_config, 0))
+		if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex, 0))
 			/* FIXME: remove ip4 config */
 			return FALSE;
 	}
@@ -906,7 +906,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	s_ip4 = nm_connection_get_setting_ip4_config (priv->connection);
-	nm_utils_merge_ip4_config (config, s_ip4);
+	nm_ip4_config_merge_setting (config, s_ip4);
 
 	priv->ip4_config = config;
 	nm_vpn_connection_config_maybe_complete (connection, TRUE);
@@ -1043,7 +1043,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
 	s_ip6 = nm_connection_get_setting_ip6_config (priv->connection);
-	nm_utils_merge_ip6_config (config, s_ip6);
+	nm_ip6_config_merge_setting (config, s_ip6);
 
 	priv->ip6_config = config;
 	nm_vpn_connection_config_maybe_complete (connection, TRUE);

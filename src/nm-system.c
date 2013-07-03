@@ -50,30 +50,6 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 
-static gboolean
-ip4_dest_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 dest_prefix)
-{
-	int num;
-	int i;
-
-	num = nm_ip4_config_get_num_addresses (config);
-	for (i = 0; i < num; i++) {
-		NMIP4Address *addr = nm_ip4_config_get_address (config, i);
-		guint32 prefix = nm_ip4_address_get_prefix (addr);
-		guint32 address = nm_ip4_address_get_address (addr);
-
-		if (prefix <= dest_prefix) {
-			guint32 masked_addr = ntohl(address) >> (32 - prefix);
-			guint32 masked_dest = ntohl(dest) >> (32 - prefix);
-
-			if (masked_addr == masked_dest)
-				return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 NMPlatformIP4Route *
 nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
@@ -117,7 +93,7 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
-	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, 32))
+	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
 		route->gateway = 0;
 
 	if (!nm_platform_ip4_route_add (route->ifindex,
@@ -135,115 +111,6 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 	}
 
 	return route;
-}
-
-/*
- * nm_system_apply_ip4_config
- *
- * Set IPv4 configuration of the device from an NMIP4Config object.
- *
- */
-gboolean
-nm_system_apply_ip4_config (int ifindex, NMIP4Config *config, int priority)
-{
-	int mtu = nm_ip4_config_get_mtu (config);
-	int i;
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (config != NULL, FALSE);
-
-	/* Addresses */
-	{
-		int count = nm_ip4_config_get_num_addresses (config);
-		NMIP4Address *config_address;
-		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Address), count);
-		NMPlatformIP4Address address;
-
-		for (i = 0; i < count; i++) {
-			config_address = nm_ip4_config_get_address (config, i);
-			memset (&address, 0, sizeof (address));
-			address.address = nm_ip4_address_get_address (config_address);
-			address.plen = nm_ip4_address_get_prefix (config_address);
-			g_array_append_val (addresses, address);
-		}
-
-		nm_platform_ip4_address_sync (ifindex, addresses);
-		g_array_unref (addresses);
-	}
-
-	/* Routes */
-	{
-		int count = nm_ip4_config_get_num_routes (config);
-		NMIP4Route *config_route;
-		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
-		NMPlatformIP4Route route;
-
-		for (i = 0; i < count; i++) {
-			config_route = nm_ip4_config_get_route (config, i);
-			memset (&route, 0, sizeof (route));
-			route.network = nm_ip4_route_get_dest (config_route);
-			route.plen = nm_ip4_route_get_prefix (config_route);
-			route.gateway = nm_ip4_route_get_next_hop (config_route);
-			route.metric = priority;
-
-			/* Don't add the route if it's more specific than one of the subnets
-			 * the device already has an IP address on.
-			 */
-			if (ip4_dest_in_same_subnet (config, route.network, route.plen))
-				continue;
-
-			/* Don't add the default route when and the connection
-			 * is never supposed to be the default connection.
-			 */
-			if (nm_ip4_config_get_never_default (config) && route.network == 0)
-				continue;
-
-			g_array_append_val (routes, route);
-		}
-
-		nm_platform_ip4_route_sync (ifindex, routes);
-		g_array_unref (routes);
-	}
-
-	/* MTU */
-	if (mtu && mtu != nm_platform_link_get_mtu (ifindex))
-		nm_platform_link_set_mtu (ifindex, mtu);
-
-	return TRUE;
-}
-
-static gboolean
-ip6_dest_in_same_subnet (NMIP6Config *config, const struct in6_addr *dest, guint32 dest_prefix)
-{
-	int num;
-	int i;
-
-	num = nm_ip6_config_get_num_addresses (config);
-	for (i = 0; i < num; i++) {
-		NMIP6Address *addr = nm_ip6_config_get_address (config, i);
-		guint32 prefix = nm_ip6_address_get_prefix (addr);
-		const struct in6_addr *address = nm_ip6_address_get_address (addr);
-
-		if (prefix <= dest_prefix) {
-			const guint8 *maskbytes = (const guint8 *)address;
-			const guint8 *addrbytes = (const guint8 *)dest;
-			int nbytes, nbits;
-
-			/* Copied from g_inet_address_mask_matches() */
-			nbytes = prefix / 8;
-			if (nbytes != 0 && memcmp (maskbytes, addrbytes, nbytes) != 0)
-				continue;
-
-			nbits = prefix % 8;
-			if (nbits == 0)
-				return TRUE;
-
-			if (maskbytes[nbytes] == (addrbytes[nbytes] & (0xFF << (8 - nbits))))
-				return TRUE;
-		}
-	}
-
-	return FALSE;
 }
 
 NMPlatformIP6Route *
@@ -293,7 +160,7 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
-	if (ip6_dest_in_same_subnet (parent_config, vpn_gw, 128))
+	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
 		route->gateway = in6addr_any;
 
 	if (!nm_platform_ip6_route_add (route->ifindex,
@@ -311,78 +178,6 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	}
 
 	return route;
-}
-
-/*
- * nm_system_apply_ip6_config
- *
- * Set IPv6 configuration of the device from an NMIP6Config object.
- *
- */
-gboolean
-nm_system_apply_ip6_config (int ifindex,
-                            NMIP6Config *config,
-                            int priority)
-{
-	int i;
-
-	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (config != NULL, FALSE);
-
-	/* Addresses */
-	{
-		int count = nm_ip6_config_get_num_addresses (config);
-		NMIP6Address *config_address;
-		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Address), count);
-		NMPlatformIP6Address address;
-
-		for (i = 0; i < count; i++) {
-			config_address = nm_ip6_config_get_address (config, i);
-			memset (&address, 0, sizeof (address));
-			address.address = *nm_ip6_address_get_address (config_address);
-			address.plen = nm_ip6_address_get_prefix (config_address);
-			g_array_append_val (addresses, address);
-		}
-
-		nm_platform_ip6_address_sync (ifindex, addresses);
-		g_array_unref (addresses);
-	}
-
-	/* Routes */
-	{
-		int count = nm_ip6_config_get_num_routes (config);
-		NMIP6Route *config_route;
-		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), count);
-		NMPlatformIP6Route route;
-
-		for (i = 0; i < count; i++) {
-			config_route = nm_ip6_config_get_route (config, i);
-			memset (&route, 0, sizeof (route));
-			route.network = *nm_ip6_route_get_dest (config_route);
-			route.plen = nm_ip6_route_get_prefix (config_route);
-			route.gateway = *nm_ip6_route_get_next_hop (config_route);
-			route.metric = priority;
-
-			/* Don't add the route if it's more specific than one of the subnets
-			 * the device already has an IP address on.
-			 */
-			if (ip6_dest_in_same_subnet (config, &route.network, route.plen))
-				continue;
-
-			/* Don't add the default route when and the connection
-			 * is never supposed to be the default connection.
-			 */
-			if (nm_ip6_config_get_never_default (config) && IN6_IS_ADDR_UNSPECIFIED (&route.network))
-				continue;
-
-			g_array_append_val (routes, route);
-		}
-
-		nm_platform_ip6_route_sync (ifindex, routes);
-		g_array_unref (routes);
-	}
-
-	return TRUE;
 }
 
 static const struct {

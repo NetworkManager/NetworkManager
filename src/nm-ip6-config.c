@@ -74,8 +74,45 @@ nm_ip6_config_new (void)
 	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG, NULL);
 }
 
+void
+nm_ip6_config_export (NMIP6Config *config)
+{
+	NMIP6ConfigPrivate *priv;
+	static guint32 counter = 0;
+
+	g_return_if_fail (NM_IS_IP6_CONFIG (config));
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	g_return_if_fail (priv->path == NULL);
+
+	priv->path = g_strdup_printf (NM_DBUS_PATH "/IP6Config/%d", counter++);
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, config);
+}
+
+const char *
+nm_ip6_config_get_dbus_path (NMIP6Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
+
+	return NM_IP6_CONFIG_GET_PRIVATE (config)->path;
+}
+
+void
+nm_ip6_config_take_address (NMIP6Config *config, NMIP6Address *address)
+{
+	NMIP6ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP6_CONFIG (config));
+	g_return_if_fail (address != NULL);
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	priv->addresses = g_slist_append (priv->addresses, address);
+}
+
+/******************************************************************/
+
 NMIP6Config *
-nm_ip6_config_new_for_interface (int ifindex)
+nm_ip6_config_capture (int ifindex)
 {
 	NMIP6Config *ip6;
 	GArray *addrs_array, *routes_array;
@@ -123,40 +160,223 @@ nm_ip6_config_new_for_interface (int ifindex)
 	return ip6;
 }
 
+gboolean
+nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority)
+{
+	int i;
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	/* Addresses */
+	{
+		int count = nm_ip6_config_get_num_addresses (config);
+		NMIP6Address *config_address;
+		GArray *addresses = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Address), count);
+		NMPlatformIP6Address address;
+
+		for (i = 0; i < count; i++) {
+			config_address = nm_ip6_config_get_address (config, i);
+			memset (&address, 0, sizeof (address));
+			address.address = *nm_ip6_address_get_address (config_address);
+			address.plen = nm_ip6_address_get_prefix (config_address);
+			g_array_append_val (addresses, address);
+		}
+
+		nm_platform_ip6_address_sync (ifindex, addresses);
+		g_array_unref (addresses);
+	}
+
+	/* Routes */
+	{
+		int count = nm_ip6_config_get_num_routes (config);
+		NMIP6Route *config_route;
+		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), count);
+		NMPlatformIP6Route route;
+
+		for (i = 0; i < count; i++) {
+			config_route = nm_ip6_config_get_route (config, i);
+			memset (&route, 0, sizeof (route));
+			route.network = *nm_ip6_route_get_dest (config_route);
+			route.plen = nm_ip6_route_get_prefix (config_route);
+			route.gateway = *nm_ip6_route_get_next_hop (config_route);
+			route.metric = priority;
+
+			/* Don't add the route if it's more specific than one of the subnets
+			 * the device already has an IP address on.
+			 */
+			if (nm_ip6_config_destination_is_direct (config, &route.network, route.plen))
+				continue;
+
+			/* Don't add the default route when and the connection
+			 * is never supposed to be the default connection.
+			 */
+			if (nm_ip6_config_get_never_default (config) && IN6_IS_ADDR_UNSPECIFIED (&route.network))
+				continue;
+
+			g_array_append_val (routes, route);
+		}
+
+		nm_platform_ip6_route_sync (ifindex, routes);
+		g_array_unref (routes);
+	}
+
+	return TRUE;
+}
+
+static inline gboolean
+ip6_addresses_equal (const struct in6_addr *a, const struct in6_addr *b)
+{
+	return memcmp (a, b, sizeof (struct in6_addr)) == 0;
+}
+
 void
-nm_ip6_config_export (NMIP6Config *config)
+nm_ip6_config_merge_setting (NMIP6Config *ip6_config, NMSettingIP6Config *setting)
 {
-	NMIP6ConfigPrivate *priv;
-	static guint32 counter = 0;
+	int i, j;
 
-	g_return_if_fail (NM_IS_IP6_CONFIG (config));
+	if (!setting)
+		return; /* Defaults are just fine */
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	g_return_if_fail (priv->path == NULL);
+	if (nm_setting_ip6_config_get_ignore_auto_dns (setting)) {
+		nm_ip6_config_reset_nameservers (ip6_config);
+		nm_ip6_config_reset_domains (ip6_config);
+		nm_ip6_config_reset_searches (ip6_config);
+	}
 
-	priv->path = g_strdup_printf (NM_DBUS_PATH "/IP6Config/%d", counter++);
-	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, config);
+	if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
+		nm_ip6_config_reset_routes (ip6_config);
+
+	for (i = 0; i < nm_setting_ip6_config_get_num_dns (setting); i++) {
+		const struct in6_addr *ns;
+		gboolean found = FALSE;
+
+		/* Avoid dupes */
+		ns = nm_setting_ip6_config_get_dns (setting, i);
+		for (j = 0; j < nm_ip6_config_get_num_nameservers (ip6_config); j++) {
+			if (ip6_addresses_equal (nm_ip6_config_get_nameserver (ip6_config, j), ns)) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			nm_ip6_config_add_nameserver (ip6_config, ns);
+	}
+
+	/* DNS search domains */
+	for (i = 0; i < nm_setting_ip6_config_get_num_dns_searches (setting); i++) {
+		const char *search = nm_setting_ip6_config_get_dns_search (setting, i);
+		gboolean found = FALSE;
+
+		/* Avoid dupes */
+		for (j = 0; j < nm_ip6_config_get_num_searches (ip6_config); j++) {
+			if (!strcmp (search, nm_ip6_config_get_search (ip6_config, j))) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			nm_ip6_config_add_search (ip6_config, search);
+	}
+
+	/* IPv6 addresses */
+	for (i = 0; i < nm_setting_ip6_config_get_num_addresses (setting); i++) {
+		NMIP6Address *setting_addr = nm_setting_ip6_config_get_address (setting, i);
+		guint32 num;
+
+		num = nm_ip6_config_get_num_addresses (ip6_config);
+		for (j = 0; j < num; j++) {
+			NMIP6Address *cfg_addr = nm_ip6_config_get_address (ip6_config, j);
+
+			/* Dupe, override with user-specified address */
+			if (ip6_addresses_equal (nm_ip6_address_get_address (cfg_addr), nm_ip6_address_get_address (setting_addr))) {
+				nm_ip6_config_replace_address (ip6_config, j, setting_addr);
+				break;
+			}
+		}
+
+		if (j == num)
+			nm_ip6_config_add_address (ip6_config, setting_addr);
+	}
+
+	/* IPv6 routes */
+	for (i = 0; i < nm_setting_ip6_config_get_num_routes (setting); i++) {
+		NMIP6Route *setting_route = nm_setting_ip6_config_get_route (setting, i);
+		guint32 num;
+
+		num = nm_ip6_config_get_num_routes (ip6_config);
+		for (j = 0; j < num; j++) {
+			NMIP6Route *cfg_route = nm_ip6_config_get_route (ip6_config, j);
+
+			/* Dupe, override with user-specified route */
+			if (   ip6_addresses_equal (nm_ip6_route_get_dest (cfg_route), nm_ip6_route_get_dest (setting_route))
+			    && (nm_ip6_route_get_prefix (cfg_route) == nm_ip6_route_get_prefix (setting_route))
+				&& ip6_addresses_equal (nm_ip6_route_get_next_hop (cfg_route), nm_ip6_route_get_next_hop (setting_route))) {
+				nm_ip6_config_replace_route (ip6_config, j, setting_route);
+				break;
+			}
+		}
+
+		if (j == num)
+			nm_ip6_config_add_route (ip6_config, setting_route);
+	}
+
+	if (nm_setting_ip6_config_get_never_default (setting))
+		nm_ip6_config_set_never_default (ip6_config, TRUE);
 }
 
-const char *
-nm_ip6_config_get_dbus_path (NMIP6Config *config)
+gboolean
+nm_match_spec_string (const GSList *specs, const char *match)
 {
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
+	const GSList *iter;
 
-	return NM_IP6_CONFIG_GET_PRIVATE (config)->path;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
-void
-nm_ip6_config_take_address (NMIP6Config *config, NMIP6Address *address)
+/******************************************************************/
+
+gboolean
+nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, guint32 dest_prefix)
 {
-	NMIP6ConfigPrivate *priv;
+	int num;
+	int i;
 
-	g_return_if_fail (NM_IS_IP6_CONFIG (config));
-	g_return_if_fail (address != NULL);
+	num = nm_ip6_config_get_num_addresses (config);
+	for (i = 0; i < num; i++) {
+		NMIP6Address *addr = nm_ip6_config_get_address (config, i);
+		guint32 prefix = nm_ip6_address_get_prefix (addr);
+		const struct in6_addr *address = nm_ip6_address_get_address (addr);
 
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	priv->addresses = g_slist_append (priv->addresses, address);
+		if (prefix <= dest_prefix) {
+			const guint8 *maskbytes = (const guint8 *)address;
+			const guint8 *addrbytes = (const guint8 *)dest;
+			int nbytes, nbits;
+
+			/* Copied from g_inet_address_mask_matches() */
+			nbytes = prefix / 8;
+			if (nbytes != 0 && memcmp (maskbytes, addrbytes, nbytes) != 0)
+				continue;
+
+			nbits = prefix % 8;
+			if (nbits == 0)
+				return TRUE;
+
+			if (maskbytes[nbytes] == (addrbytes[nbytes] & (0xFF << (8 - nbits))))
+				return TRUE;
+		}
+	}
+
+	return FALSE;
 }
+
+/******************************************************************/
 
 void
 nm_ip6_config_add_address (NMIP6Config *config,

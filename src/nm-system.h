@@ -24,21 +24,12 @@
 
 #include "nm-platform.h"
 #include "nm-device.h"
-#include "nm-ip4-config.h"
 #include "nm-setting-bond.h"
 
 NMPlatformIP4Route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device,
                                                         guint32 vpn_gw);
 NMPlatformIP6Route *nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
                                                         const struct in6_addr *vpn_gw);
-
-gboolean		nm_system_apply_ip4_config              (int ifindex,
-                                                         NMIP4Config *config,
-                                                         int priority);
-
-gboolean		nm_system_apply_ip6_config              (int ifindex,
-                                                         NMIP6Config *config,
-                                                         int priority);
 
 gboolean        nm_system_apply_bonding_config          (const char *iface,
                                                          NMSettingBond *s_bond);

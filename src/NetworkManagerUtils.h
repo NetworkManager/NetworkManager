@@ -36,9 +36,6 @@ gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr);
 
 int nm_spawn_process (const char *args);
 
-void nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting);
-void nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *setting);
-
 gboolean nm_match_spec_string (const GSList *specs, const char *string);
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
