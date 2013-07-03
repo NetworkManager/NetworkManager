@@ -1433,6 +1433,7 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* User doesn't want to wait or already activated */
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED && nmc->print_output == NMC_PRINT_PRETTY) {
+				nmc_terminal_erase_line ();
 				printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
 				        nm_object_get_path (NM_OBJECT (active)));
 			}
@@ -1625,7 +1626,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
-		progress_id = g_timeout_add (120, progress_cb, "preparing");
+		progress_id = g_timeout_add (120, progress_cb, _("preparing"));
 
 	g_free (line);
 	return nmc->return_value;
