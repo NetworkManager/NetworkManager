@@ -774,7 +774,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (list) {
 			NMSettingIP6Config *s_ip6 = g_slist_nth_data (list, 0);
 			if (   s_ip6
-			    && !strcmp (nm_setting_ip6_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+			    && !g_strcmp0 (nm_setting_ip6_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 				g_set_error (error,
 				             NM_SETTING_IP4_CONFIG_ERROR,
 				             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
