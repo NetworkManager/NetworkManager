@@ -379,6 +379,7 @@ libNetworkManager_la_SOURCES = \
 	$(glue_sources)
 
 libNetworkManager_la_LIBADD = \
+	$(top_builddir)/libgsystem.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(BLUEZ_LIBS) \
 	$(DBUS_LIBS) \
