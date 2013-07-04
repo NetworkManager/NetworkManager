@@ -800,6 +800,16 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 	return TRUE;
 }
 
+static guint32
+get_time (void)
+{
+	struct timespec tp;
+
+	clock_gettime (CLOCK_MONOTONIC, &tp);
+
+	return tp.tv_sec;
+}
+
 /********************************************/
 
 static gboolean
@@ -1142,6 +1152,8 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
+	address.timestamp = get_time ();
+
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->options != NULL, NULL);
 
@@ -1198,6 +1210,12 @@ ip4_options_to_config (NMDHCPClient *self)
 			}
 			g_strfreev (routers);
 		}
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_dhcp_lease_time");
+	if (str) {
+		address.lifetime = address.preferred = strtoul (str, NULL, 10);
+		nm_log_info (LOGD_DHCP4, "  lease time %d", address.lifetime);
 	}
 
 	nm_ip4_config_add_address (ip4_config, &address);
@@ -1337,6 +1355,9 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
+	address.plen = 128;
+	address.timestamp = get_time ();
+
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->options != NULL, NULL);
 
@@ -1358,14 +1379,20 @@ ip6_options_to_config (NMDHCPClient *self)
 
 		memset (&address, 0, sizeof (address));
 		address.address = tmp_addr;
-		address.plen = 128;
 		nm_log_info (LOGD_DHCP6, "  address %s", str);
 
-		nm_ip6_config_add_address (ip6_config, &address);
 	} else if (priv->info_only == FALSE) {
 		/* No address in Managed mode is a hard error */
 		goto error;
 	}
+
+	str = g_hash_table_lookup (priv->options, "new_dhcp_lease_time");
+	if (str) {
+		address.lifetime = address.preferred = strtoul (str, NULL, 10);
+		nm_log_info (LOGD_DHCP6, "  lease time %d", address.lifetime);
+	}
+
+	nm_ip6_config_add_address (ip6_config, &address);
 
 	str = g_hash_table_lookup (priv->options, "new_host_name");
 	if (str)
