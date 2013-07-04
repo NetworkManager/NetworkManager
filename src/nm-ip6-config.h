@@ -60,6 +60,7 @@ gboolean nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority);
 void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting);
 
 /* Utility functions */
+void          nm_ip6_config_merge               (NMIP6Config *dst, NMIP6Config *src);
 gboolean      nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, guint32 plen);
 
 void          nm_ip6_config_take_address        (NMIP6Config *config, NMIP6Address *address);

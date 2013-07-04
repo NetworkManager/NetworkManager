@@ -2535,46 +2535,6 @@ dhcp6_add_option_cb (gpointer key, gpointer value, gpointer user_data)
 	                            (const char *) value);
 }
 
-static void
-merge_ip6_configs (NMIP6Config *dst, NMIP6Config *src)
-{
-	guint32 i;
-
-	g_return_if_fail (src != NULL);
-	g_return_if_fail (dst != NULL);
-
-	/* addresses */
-	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++)
-		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
-
-	/* ptp address; only replace if src doesn't have one */
-	if (!nm_ip6_config_get_ptp_address (dst))
-		nm_ip6_config_set_ptp_address (dst, nm_ip6_config_get_ptp_address (src));
-
-	/* nameservers */
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
-		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
-
-	/* default gateway */
-	if (!nm_ip6_config_get_gateway (dst))
-		nm_ip6_config_set_gateway (dst, nm_ip6_config_get_gateway (src));
-
-	/* routes */
-	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
-		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
-
-	/* domains */
-	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
-		nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
-
-	/* dns searches */
-	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
-		nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
-
-	if (!nm_ip6_config_get_mss (dst))
-		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
-}
-
 static gboolean
 ip6_config_merge_and_apply (NMDevice *self,
                             NMIP6Config *src_config,
@@ -2594,13 +2554,13 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* Merge in the given config first, if any */
 	if (src_config)
-		merge_ip6_configs (composite, src_config);
+		nm_ip6_config_merge (composite, src_config);
 
 	/* Merge RA and DHCPv6 configs into the composite config */
 	if (priv->ac_ip6_config && (src_config != priv->ac_ip6_config))
-		merge_ip6_configs (composite, priv->ac_ip6_config);
+		nm_ip6_config_merge (composite, priv->ac_ip6_config);
 	if (priv->dhcp6_ip6_config && (src_config != priv->dhcp6_ip6_config))
-		merge_ip6_configs (composite, priv->dhcp6_ip6_config);
+		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config);
 
 	/* Merge user overrides into the composite config */
 	nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));

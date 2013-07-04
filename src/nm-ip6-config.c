@@ -342,6 +342,46 @@ nm_match_spec_string (const GSList *specs, const char *match)
 
 /******************************************************************/
 
+void
+nm_ip6_config_merge (NMIP6Config *dst, NMIP6Config *src)
+{
+	guint32 i;
+
+	g_return_if_fail (src != NULL);
+	g_return_if_fail (dst != NULL);
+
+	/* addresses */
+	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++)
+		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
+
+	/* ptp address; only replace if src doesn't have one */
+	if (!nm_ip6_config_get_ptp_address (dst))
+		nm_ip6_config_set_ptp_address (dst, nm_ip6_config_get_ptp_address (src));
+
+	/* nameservers */
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
+		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
+
+	/* default gateway */
+	if (!nm_ip6_config_get_gateway (dst))
+		nm_ip6_config_set_gateway (dst, nm_ip6_config_get_gateway (src));
+
+	/* routes */
+	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
+		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
+
+	/* domains */
+	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
+		nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
+
+	/* dns searches */
+	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
+		nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
+
+	if (!nm_ip6_config_get_mss (dst))
+		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
+}
+
 gboolean
 nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, guint32 dest_prefix)
 {
