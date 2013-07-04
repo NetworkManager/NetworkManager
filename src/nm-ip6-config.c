@@ -655,147 +655,6 @@ nm_ip6_config_get_ptp_address (NMIP6Config *config)
 
 /******************************************************************/
 
-static gboolean
-addr_slist_compare (GSList *a, GSList *b)
-{
-	GSList *iter_a, *iter_b;
-	gboolean found = FALSE;
-
-	for (iter_a = a; iter_a; iter_a = g_slist_next (iter_a)) {
-		NMIP6Address *addr_a = (NMIP6Address *) iter_a->data;
-
-		for (iter_b = b, found = FALSE; iter_b; iter_b = g_slist_next (iter_b)) {
-			NMIP6Address *addr_b = (NMIP6Address *) iter_b->data;
-
-			if (nm_ip6_address_compare (addr_a, addr_b)) {
-				found = TRUE;
-				break;
-			}
-		}
-
-		if (!found)
-			return FALSE;
-	}
-	return TRUE;
-}
-
-static gboolean
-route_slist_compare (GSList *a, GSList *b)
-{
-	GSList *iter_a, *iter_b;
-	gboolean found = FALSE;
-
-	for (iter_a = a; iter_a; iter_a = g_slist_next (iter_a)) {
-		NMIP6Route *route_a = (NMIP6Route *) iter_a->data;
-
-		for (iter_b = b, found = FALSE; iter_b; iter_b = g_slist_next (iter_b)) {
-			NMIP6Route *route_b = (NMIP6Route *) iter_b->data;
-
-			if (nm_ip6_route_compare (route_a, route_b)) {
-				found = TRUE;
-				break;
-			}
-		}
-
-		if (!found)
-			return FALSE;
-	}
-	return TRUE;
-}
-
-static gboolean
-string_array_compare (GPtrArray *a, GPtrArray *b)
-{
-	int i, j;
-	gboolean found = FALSE;
-
-	for (i = 0; i < a->len; i++) {
-		for (j = 0, found = FALSE; j < b->len; j++) {
-			const char *item_a = g_ptr_array_index (a, i);
-			const char *item_b = g_ptr_array_index (b, j);
-
-			if ((!item_a && !item_b) || (item_a && item_b && !strcmp (item_a, item_b))) {
-				found = TRUE;
-				break;
-			}
-		}
-
-		if (!found)
-			return FALSE;
-	}
-	return TRUE;
-}
-
-static gboolean
-addr_array_compare (GArray *a, GArray *b)
-{
-	struct in6_addr *addrs_a, *addrs_b;
-	int i, j;
-	gboolean found = FALSE;
-
-	addrs_a = (struct in6_addr *)a->data;
-	addrs_b = (struct in6_addr *)b->data;
-	for (i = 0; i < a->len; i++) {
-		for (j = 0, found = FALSE; j < b->len; j++) {
-			if (IN6_ARE_ADDR_EQUAL (&addrs_a[i], &addrs_b[j])) {
-				found = TRUE;
-				break;
-			}
-		}
-
-		if (!found)
-			return FALSE;
-	}
-	return TRUE;
-}
-
-NMIP6ConfigCompareFlags
-nm_ip6_config_diff (NMIP6Config *a, NMIP6Config *b)
-{
-	NMIP6ConfigPrivate *a_priv;
-	NMIP6ConfigPrivate *b_priv;
-	NMIP6ConfigCompareFlags flags = NM_IP6_COMPARE_FLAG_NONE;
-
-	if (!a && !b)
-		return NM_IP6_COMPARE_FLAG_NONE;
-	if (!a || !b)
-		return NM_IP6_COMPARE_FLAG_ALL;
-
-	a_priv = NM_IP6_CONFIG_GET_PRIVATE (a);
-	b_priv = NM_IP6_CONFIG_GET_PRIVATE (b);
-
-	if (   !addr_slist_compare (a_priv->addresses, b_priv->addresses)
-	    || !addr_slist_compare (b_priv->addresses, a_priv->addresses))
-		flags |= NM_IP6_COMPARE_FLAG_ADDRESSES;
-
-	if (memcmp (&a_priv->ptp_address, &b_priv->ptp_address, sizeof (struct in6_addr)) != 0)
-		flags |= NM_IP6_COMPARE_FLAG_PTP_ADDRESS;
-
-	if (   (a_priv->nameservers->len != b_priv->nameservers->len)
-	    || !addr_array_compare (a_priv->nameservers, b_priv->nameservers)
-	    || !addr_array_compare (b_priv->nameservers, a_priv->nameservers))
-		flags |= NM_IP6_COMPARE_FLAG_NAMESERVERS;
-
-	if (   !route_slist_compare (a_priv->routes, b_priv->routes)
-	    || !route_slist_compare (b_priv->routes, a_priv->routes))
-		flags |= NM_IP6_COMPARE_FLAG_ROUTES;
-
-	if (   (a_priv->domains->len != b_priv->domains->len)
-	    || !string_array_compare (a_priv->domains, b_priv->domains)
-	    || !string_array_compare (b_priv->domains, a_priv->domains))
-		flags |= NM_IP6_COMPARE_FLAG_DOMAINS;
-
-	if (   (a_priv->searches->len != b_priv->searches->len)
-	    || !string_array_compare (a_priv->searches, b_priv->searches)
-	    || !string_array_compare (b_priv->searches, a_priv->searches))
-		flags |= NM_IP6_COMPARE_FLAG_SEARCHES;
-
-	if (a_priv->mss != b_priv->mss)
-		flags |= NM_IP6_COMPARE_FLAG_MSS;
-
-	return flags;
-}
-
 static inline void
 hash_u32 (GChecksum *sum, guint32 n)
 {
@@ -805,7 +664,10 @@ hash_u32 (GChecksum *sum, guint32 n)
 static inline void
 hash_in6addr (GChecksum *sum, const struct in6_addr *a)
 {
-	g_checksum_update (sum, (const guint8 *) a, sizeof (*a));
+	if (a)
+		g_checksum_update (sum, (const guint8 *) a, sizeof (*a));
+	else
+		g_checksum_update (sum, (const guint8 *) &in6addr_any, sizeof (in6addr_any));
 }
 
 void
@@ -815,8 +677,8 @@ nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 	const struct in6_addr *in6a;
 	const char *s;
 
-	g_return_if_fail (config != NULL);
-	g_return_if_fail (sum != NULL);
+	g_return_if_fail (config);
+	g_return_if_fail (sum);
 
 	if (dns_only == FALSE) {
 		hash_in6addr (sum, nm_ip6_config_get_gateway (config));
@@ -854,6 +716,33 @@ nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 		s = nm_ip6_config_get_search (config, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
+}
+
+gboolean
+nm_ip6_config_equal (NMIP6Config *a, NMIP6Config *b)
+{
+	GChecksum *a_checksum = g_checksum_new (G_CHECKSUM_SHA1);
+	GChecksum *b_checksum = g_checksum_new (G_CHECKSUM_SHA1);
+	gsize a_len = g_checksum_type_get_length (G_CHECKSUM_SHA1);
+	gsize b_len = g_checksum_type_get_length (G_CHECKSUM_SHA1);
+	guchar a_data[a_len], b_data[b_len];
+	gboolean equal;
+
+	if (a)
+		nm_ip6_config_hash (a, a_checksum, FALSE);
+	if (b)
+		nm_ip6_config_hash (b, b_checksum, FALSE);
+
+	g_checksum_get_digest (a_checksum, a_data, &a_len);
+	g_checksum_get_digest (b_checksum, b_data, &b_len);
+
+	g_assert (a_len == b_len);
+	equal = !memcmp (a_data, b_data, a_len);
+
+	g_checksum_free (a_checksum);
+	g_checksum_free (b_checksum);
+
+	return equal;
 }
 
 /******************************************************************/

@@ -110,21 +110,7 @@ guint32 nm_ip6_config_get_mss (NMIP6Config *config);
 void nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_addr);
 const struct in6_addr *nm_ip6_config_get_ptp_address (NMIP6Config *config);
 
-typedef enum {
-	NM_IP6_COMPARE_FLAG_NONE        = 0x00000000,  /* match nothing, kinda pointless */
-	NM_IP6_COMPARE_FLAG_ADDRESSES   = 0x00000001,
-	NM_IP6_COMPARE_FLAG_PTP_ADDRESS = 0x00000002,
-	NM_IP6_COMPARE_FLAG_NAMESERVERS = 0x00000004,
-	NM_IP6_COMPARE_FLAG_ROUTES      = 0x00000008,
-	NM_IP6_COMPARE_FLAG_DOMAINS     = 0x00000010,
-	NM_IP6_COMPARE_FLAG_SEARCHES    = 0x00000020,
-	NM_IP6_COMPARE_FLAG_MSS         = 0x00000080,
-	NM_IP6_COMPARE_FLAG_ALL         = 0xFFFFFFFF   /* match everything */
-} NMIP6ConfigCompareFlags;
-
-/* Returns a bitfield representing how the two IP6 configs differ */
-NMIP6ConfigCompareFlags nm_ip6_config_diff (NMIP6Config *a, NMIP6Config *b);
-
 void nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only);
+gboolean nm_ip6_config_equal (NMIP6Config *a, NMIP6Config *b);
 
 #endif /* NM_IP6_CONFIG_H */

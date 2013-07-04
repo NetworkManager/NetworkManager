@@ -128,24 +128,7 @@ guint32 nm_ip4_config_get_wins (NMIP4Config *config, guint i);
 void nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu);
 guint32 nm_ip4_config_get_mtu (NMIP4Config *config);
 
-/* Comparison and hashing */
-typedef enum {
-	NM_IP4_COMPARE_FLAG_NONE        = 0x00000000,  /* match nothing, kinda pointless */
-	NM_IP4_COMPARE_FLAG_ADDRESSES   = 0x00000001,
-	NM_IP4_COMPARE_FLAG_PTP_ADDRESS = 0x00000002,
-	NM_IP4_COMPARE_FLAG_NAMESERVERS = 0x00000004,
-	NM_IP4_COMPARE_FLAG_ROUTES      = 0x00000008,
-	NM_IP4_COMPARE_FLAG_DOMAINS     = 0x00000010,
-	NM_IP4_COMPARE_FLAG_SEARCHES    = 0x00000020,
-	NM_IP4_COMPARE_FLAG_MTU         = 0x00000040,
-	NM_IP4_COMPARE_FLAG_MSS         = 0x00000080,
-	NM_IP4_COMPARE_FLAG_WINS_SERVERS= 0x00000100,
-	NM_IP4_COMPARE_FLAG_NIS_SERVERS = 0x00000200,
-	NM_IP4_COMPARE_FLAG_NIS_DOMAIN  = 0x00000400,
-	NM_IP4_COMPARE_FLAG_ALL         = 0xFFFFFFFF   /* match everything */
-} NMIP4ConfigCompareFlags;
-
-NMIP4ConfigCompareFlags nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b);
 void nm_ip4_config_hash (NMIP4Config *config, GChecksum *sum, gboolean dns_only);
+gboolean nm_ip4_config_equal (NMIP4Config *a, NMIP4Config *b);
 
 #endif /* NM_IP4_CONFIG_H */

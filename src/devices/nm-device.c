@@ -4273,7 +4273,7 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	old_config = priv->ip4_config;
 
-	if (!nm_ip4_config_diff (new_config, old_config))
+	if (nm_ip4_config_equal (new_config, old_config))
 		return success;
 
 	priv->ip4_config = NULL;
@@ -4325,7 +4325,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	old_config = priv->ip6_config;
 
-	if (!nm_ip6_config_diff (new_config, old_config))
+	if (nm_ip6_config_equal (new_config, old_config))
 		return success;
 
 	priv->ip6_config = NULL;
