@@ -136,7 +136,7 @@ test_generic_options (const char *client)
 	/* Gateway */
 	ASSERT (inet_pton (AF_INET, expected_gw, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected IP gateway");
-	ASSERT (nm_ip4_address_get_gateway (addr) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp.s_addr,
 	        "dhcp-generic", "unexpected IP gateway");
 
 	ASSERT (nm_ip4_config_get_ptp_address (ip4_config) == 0,
@@ -292,7 +292,7 @@ ip4_test_gateway (const char *test,
 	addr = nm_ip4_config_get_address (ip4_config, 0);
 	ASSERT (inet_pton (AF_INET, expected_gw, &tmp) > 0,
 	        test, "couldn't convert expected IP gateway");
-	ASSERT (nm_ip4_address_get_gateway (addr) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp.s_addr,
 	        test, "unexpected IP gateway");
 }
 
