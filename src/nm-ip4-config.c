@@ -234,6 +234,8 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		memset (&address, 0, sizeof (address));
 		address.address = nm_ip4_address_get_address (s_addr);
 		address.plen = nm_ip4_address_get_prefix (s_addr);
+		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
 		nm_ip4_config_add_address (config, &address);
 	}
@@ -277,6 +279,12 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 	for (i = 0; i < naddresses; i++) {
 		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
 		gs_unref_object NMIP4Address *s_addr = nm_ip4_address_new ();
+
+		/* Detect dynamic address */
+		if (address->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
+			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+			continue;
+		}
 
 		/* Static address found. */
 		if (!method)
