@@ -54,8 +54,7 @@ NMPlatformIP4Route *
 nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
 	NMIP4Config *parent_config;
-	guint32 parent_gw = 0, parent_prefix = 0, i;
-	NMIP4Address *tmp;
+	guint32 parent_gw;
 	NMPlatformIP4Route *route = g_new0 (NMPlatformIP4Route, 1);
 
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
@@ -67,15 +66,7 @@ nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 
 	parent_config = nm_device_get_ip4_config (parent_device);
 	g_return_val_if_fail (parent_config != NULL, NULL);
-
-	for (i = 0; i < nm_ip4_config_get_num_addresses (parent_config); i++) {
-		tmp = nm_ip4_config_get_address (parent_config, i);
-		if (nm_ip4_address_get_gateway (tmp)) {
-			parent_gw = nm_ip4_address_get_gateway (tmp);
-			parent_prefix = nm_ip4_address_get_prefix (tmp);
-			break;
-		}
-	}
+	parent_gw = nm_ip4_config_get_gateway (parent_config);
 
 	if (!parent_gw) {
 		g_free (route);
@@ -118,10 +109,7 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
                                      const struct in6_addr *vpn_gw)
 {
 	NMIP6Config *parent_config;
-	const struct in6_addr *parent_gw = NULL;
-	guint32 parent_prefix = 0;
-	int i;
-	NMIP6Address *tmp;
+	const struct in6_addr *parent_gw;
 	NMPlatformIP6Route *route = g_new0 (NMPlatformIP6Route, 1);
 
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
@@ -134,15 +122,7 @@ nm_system_add_ip6_vpn_gateway_route (NMDevice *parent_device,
 
 	parent_config = nm_device_get_ip6_config (parent_device);
 	g_return_val_if_fail (parent_config != NULL, NULL);
-
-	for (i = 0; i < nm_ip6_config_get_num_addresses (parent_config); i++) {
-		tmp = nm_ip6_config_get_address (parent_config, i);
-		if (nm_ip6_address_get_gateway (tmp)) {
-			parent_gw = nm_ip6_address_get_gateway (tmp);
-			parent_prefix = nm_ip6_address_get_prefix (tmp);
-			break;
-		}
-	}
+	parent_gw = nm_ip6_config_get_gateway (parent_config);
 
 	if (!parent_gw) {
 		g_free (route);
