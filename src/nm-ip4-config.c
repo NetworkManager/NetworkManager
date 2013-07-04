@@ -913,10 +913,10 @@ nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b)
 	NMIP4ConfigPrivate *b_priv;
 	NMIP4ConfigCompareFlags flags = NM_IP4_COMPARE_FLAG_NONE;
 
-	if ((a && !b) || (b && !a))
-		return NM_IP4_COMPARE_FLAG_ALL;
 	if (!a && !b)
 		return NM_IP4_COMPARE_FLAG_NONE;
+	if (!a || !b)
+		return NM_IP4_COMPARE_FLAG_ALL;
 
 	a_priv = NM_IP4_CONFIG_GET_PRIVATE (a);
 	b_priv = NM_IP4_CONFIG_GET_PRIVATE (b);

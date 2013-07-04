@@ -852,10 +852,10 @@ nm_ip6_config_diff (NMIP6Config *a, NMIP6Config *b)
 	NMIP6ConfigPrivate *b_priv;
 	NMIP6ConfigCompareFlags flags = NM_IP6_COMPARE_FLAG_NONE;
 
-	if ((a && !b) || (b && !a))
-		return NM_IP6_COMPARE_FLAG_ALL;
 	if (!a && !b)
 		return NM_IP6_COMPARE_FLAG_NONE;
+	if (!a || !b)
+		return NM_IP6_COMPARE_FLAG_ALL;
 
 	a_priv = NM_IP6_CONFIG_GET_PRIVATE (a);
 	b_priv = NM_IP6_CONFIG_GET_PRIVATE (b);
