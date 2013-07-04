@@ -327,19 +327,6 @@ nm_ip6_config_merge_setting (NMIP6Config *ip6_config, NMSettingIP6Config *settin
 		nm_ip6_config_set_never_default (ip6_config, TRUE);
 }
 
-gboolean
-nm_match_spec_string (const GSList *specs, const char *match)
-{
-	const GSList *iter;
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 /******************************************************************/
 
 void

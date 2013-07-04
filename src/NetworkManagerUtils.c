@@ -154,6 +154,19 @@ nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 }
 
 gboolean
+nm_match_spec_string (const GSList *specs, const char *match)
+{
+	const GSList *iter;
+
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+gboolean
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
 	char *hwaddr_match;
