@@ -34,7 +34,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
-#include "nm-system.h"
 
 #include "nm-device-bond-glue.h"
 
@@ -180,6 +179,131 @@ match_l2_config (NMDevice *self, NMConnection *connection)
 
 /******************************************************************/
 
+static const struct {
+	const char *option;
+	const char *default_value;
+} bonding_defaults[] = {
+	{ "mode", "balance-rr" },
+	{ "arp_interval", "0" },
+	{ "miimon", "0" },
+
+	{ "ad_select", "stable" },
+	{ "arp_validate", "none" },
+	{ "downdelay", "0" },
+	{ "fail_over_mac", "none" },
+	{ "lacp_rate", "slow" },
+	{ "min_links", "0" },
+	{ "num_grat_arp", "1" },
+	{ "num_unsol_na", "1" },
+	{ "primary", "" },
+	{ "primary_reselect", "always" },
+	{ "resend_igmp", "1" },
+	{ "updelay", "0" },
+	{ "use_carrier", "1" },
+	{ "xmit_hash_policy", "layer2" },
+	{ NULL, NULL }
+};
+
+static void
+remove_bonding_entries (const char *iface, const char *path)
+{
+	char cmd[20];
+	char *value, **entries;
+	gboolean ret;
+	int i;
+
+	if (!g_file_get_contents (path, &value, NULL, NULL))
+		return;
+
+	entries = g_strsplit (value, " ", -1);
+	for (i = 0; entries[i]; i++) {
+		snprintf (cmd, sizeof (cmd), "-%s", g_strstrip (entries[i]));
+		ret = nm_utils_do_sysctl (path, cmd);
+		if (!ret) {
+			nm_log_warn (LOGD_HW, "(%s): failed to remove entry '%s' from '%s'",
+			             iface, entries[i], path);
+		}
+	}
+	g_strfreev (entries);
+}
+
+static gboolean
+option_valid_for_nm_setting (const char *option, const char **valid_opts)
+{
+	while (*valid_opts) {
+		if (strcmp (option, *valid_opts) == 0)
+			return TRUE;
+		valid_opts++;
+	}
+	return FALSE;
+}
+
+static gboolean
+apply_bonding_config (const char *iface, NMSettingBond *s_bond)
+{
+	const char **valid_opts;
+	const char *option, *value;
+	char path[FILENAME_MAX];
+	char *current, *space;
+	gboolean ret;
+	int i;
+
+	g_return_val_if_fail (iface != NULL, FALSE);
+
+	/* Remove old slaves and arp_ip_targets */
+	snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/arp_ip_target", iface);
+	remove_bonding_entries (iface, path);
+	snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/slaves", iface);
+	remove_bonding_entries (iface, path);
+
+	/* Apply config/defaults */
+	valid_opts = nm_setting_bond_get_valid_options (s_bond);
+	for (i = 0; bonding_defaults[i].option; i++) {
+		option = bonding_defaults[i].option;
+		if (option_valid_for_nm_setting (option, valid_opts))
+			value = nm_setting_bond_get_option_by_name (s_bond, option);
+		else
+			value = NULL;
+		if (!value)
+			value = bonding_defaults[i].default_value;
+
+		snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/%s", iface, option);
+		if (g_file_get_contents (path, &current, NULL, NULL)) {
+			g_strstrip (current);
+			space = strchr (current, ' ');
+			if (space)
+				*space = '\0';
+			if (strcmp (current, value) != 0) {
+				ret = nm_utils_do_sysctl (path, value);
+				if (!ret) {
+					nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
+					             "'%s' to '%s'", iface, option, value);
+				}
+			}
+		}
+	}
+
+	/* Handle arp_ip_target */
+	value = nm_setting_bond_get_option_by_name (s_bond, "arp_ip_target");
+	if (value) {
+		char **addresses, cmd[20];
+
+		snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/arp_ip_target", iface);
+		addresses = g_strsplit (value, ",", -1);
+		for (i = 0; addresses[i]; i++) {
+			snprintf (cmd, sizeof (cmd), "+%s", g_strstrip (addresses[i]));
+			ret = nm_utils_do_sysctl (path, cmd);
+			if (!ret) {
+				nm_log_warn (LOGD_HW, "(%s): failed to add arp_ip_target '%s'",
+				             iface, addresses[i]);
+			}
+		}
+		g_strfreev (addresses);
+	}
+
+	return TRUE;
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
@@ -200,7 +324,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		/* Interface must be down to set bond options */
 		nm_device_take_down (dev, TRUE);
 
-		if (!nm_system_apply_bonding_config (nm_device_get_ip_iface (dev), s_bond))
+		if (!apply_bonding_config (nm_device_get_ip_iface (dev), s_bond))
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 		nm_device_bring_up (dev, TRUE, &no_firmware);

@@ -249,8 +249,6 @@ nm_sources = \
 	nm-session-utils.c \
 	nm-session-utils.h \
 	nm-sleep-monitor.h \
-	nm-system.c \
-	nm-system.h \
 	nm-types.h \
 	nm-wifi-ap-utils.c \
 	nm-wifi-ap-utils.h \
