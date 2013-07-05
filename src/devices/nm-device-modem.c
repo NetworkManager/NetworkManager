@@ -28,7 +28,6 @@
 #include "nm-device-private.h"
 #include "nm-rfkill-manager.h"
 #include "nm-logging.h"
-#include "nm-system.h"
 #include "nm-dbus-manager.h"
 
 #if WITH_MODEM_MANAGER_1

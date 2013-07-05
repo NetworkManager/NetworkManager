@@ -44,7 +44,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
-#include "nm-system.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"

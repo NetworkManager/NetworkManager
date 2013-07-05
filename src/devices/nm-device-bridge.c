@@ -34,7 +34,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
-#include "nm-system.h"
 
 #include "nm-device-bridge-glue.h"
 

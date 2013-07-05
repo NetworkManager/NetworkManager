@@ -54,7 +54,6 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-platform.h"
-#include "nm-system.h"
 #include "nm-manager-auth.h"
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"

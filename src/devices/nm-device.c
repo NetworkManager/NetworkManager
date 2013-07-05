@@ -43,7 +43,6 @@
 #include "nm-device-ethernet.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
-#include "nm-system.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"

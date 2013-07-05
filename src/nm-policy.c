@@ -37,7 +37,6 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "nm-platform.h"
-#include "nm-system.h"
 #include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-manager-auth.h"

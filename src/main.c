@@ -55,7 +55,6 @@
 #include "nm-policy-hosts.h"
 #include "nm-config.h"
 #include "nm-posix-signals.h"
-#include "nm-system.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION

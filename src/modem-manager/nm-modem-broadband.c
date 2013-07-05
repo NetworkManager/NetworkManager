@@ -22,7 +22,6 @@
 #include <string.h>
 #include <libmm-glib.h>
 #include "nm-modem-broadband.h"
-#include "nm-system.h"
 #include "nm-setting-connection.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"

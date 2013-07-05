@@ -50,7 +50,6 @@
 #include "nm-activation-request.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
-#include "nm-system.h"
 #include "nm-manager.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"

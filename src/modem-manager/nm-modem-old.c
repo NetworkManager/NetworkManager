@@ -23,7 +23,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-modem-old.h"
-#include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-properties-changed-signal.h"

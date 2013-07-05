@@ -33,7 +33,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
-#include "nm-system.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
 

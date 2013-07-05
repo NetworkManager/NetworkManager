@@ -56,7 +56,6 @@
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-gre.h"
-#include "nm-system.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"

@@ -35,7 +35,6 @@
 #include "nm-wimax-util.h"
 #include "nm-logging.h"
 #include "nm-device-private.h"
-#include "nm-system.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-manager.h"
 #include "nm-connection.h"
