@@ -122,9 +122,6 @@ nm_sources = \
 	firewall-manager/nm-firewall-manager.c \
 	firewall-manager/nm-firewall-manager.h \
 	\
-	ip6-manager/nm-ip6-manager.c \
-	ip6-manager/nm-ip6-manager.h \
-	\
 	logging/nm-logging.c \
 	logging/nm-logging.h \
 	\
