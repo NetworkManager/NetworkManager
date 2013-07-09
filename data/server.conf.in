@@ -39,15 +39,3 @@
 #ignore-carrier=eth0,ib0
 #ignore-carrier=aa:bb:cc:dd:ee:ff
 #ignore-carrier=*
-
-
-# Normally, NetworkManager adjusts /etc/resolv.conf to point to the
-# name servers associated with currently-active connections (either
-# manually-configured servers, or ones received via DHCP, etc).
-# Setting "dns=none" will turn off this behavior, and NetworkManager
-# will leave /etc/resolv.conf untouched. See NetworkManager.conf.5 for
-# more information about other values you can set this to.
-
-#dns=none
-
-
