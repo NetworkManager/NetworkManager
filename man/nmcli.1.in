@@ -231,7 +231,22 @@ Show or set all previously mentioned radio switches at the same time.
 
 .TP
 .B connection \- start, stop, and manage network connections
-.br
+.sp
+NetworkManager stores all network configuration as \fIconnections\fP, which are
+collections of data (Layer2 details, IP addressing, etc) that describe
+how to create or connect to a network.  A connection is \fIactive\fP when
+a device uses that connection's configuration to create or connect to a network.
+There may be multiple connections that apply to a device, but only one of them
+can be active on that device at any given time. The additional connections can
+be used to allow quick switching between different networks and configurations.
+.sp
+Consider a machine which is usually connected to a DHCP-enabled network, but
+sometimes connected to a testing network which uses static IP addressing.  Instead
+of manually reconfiguring eth0 each time the network is changed, the settings can
+be saved as two connections which both apply to eth0, one for DHCP (called
+"default") and one with the static addressing details (called "testing").  When
+connected to the DHCP-enabled network the user would run "nmcli con up default"
+, and when connected to the static network the user would run "nmcli con up testing".
 .TP
 .SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | reload }
 .sp
@@ -239,10 +254,10 @@ Show or set all previously mentioned radio switches at the same time.
 .TP
 .B show active     [[ id | uuid | path | apath ] <ID>]
 .br
-Shows active connections.  Without a parameter, all active connections
-are listed.  In order to show the connection details, \fI<ID>\fP must be
-provided. \fIid\fP, \fIuuid\fP, \fIpath\fP and \fIapath\fP keywords can be used
-if \fI<ID>\fP is ambiguous.
+Shows connections which are currently used by a device to connect to a network.
+Without a parameter, all active connections are listed.  In order to show the
+connection details, \fI<ID>\fP must be provided. \fIid\fP, \fIuuid\fP,
+\fIpath\fP and \fIapath\fP keywords can be used if \fI<ID>\fP is ambiguous.
 .RS
 .PP
 Optional <ID>-specifying keywords are:
@@ -260,7 +275,8 @@ in the format of /org/freedesktop/NetworkManager/ActiveConnection/<num> or just 
 .TP
 .B show configured [[ id | uuid | path ] <ID>]
 .br
-Shows configured connections.  Without a parameter, all connections
+Shows in-memory and on-disk connections, some of which may also be \fIactive\fP
+if a device is using that connection.  Without a parameter, all connections
 are listed.  In order to show connection details, \fI<ID>\fP must be
 provided. \fIid\fP, \fIuuid\fP and \fIpath\fP keywords can be used if
 \fI<ID>\fP is ambiguous. See \fBshow active\fP above for the description of
