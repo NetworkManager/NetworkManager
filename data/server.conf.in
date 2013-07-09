@@ -4,15 +4,6 @@
 
 [main]
 
-# Normally, NetworkManager reloads connection files on disk any time
-# they are changed. Setting "monitor-connection-files=false" will
-# disable this behavior, and NetworkManager will then only read
-# connection files at startup, and when explicitly requested via
-# D-Bus.
-
-#monitor-connection-files=false
-
-
 # Normally, if there is an ethernet device that is not matched by any
 # existing configured connection, NetworkManager will create a
 # "default" connection for that device, using automatic (DHCP/SLAAC)

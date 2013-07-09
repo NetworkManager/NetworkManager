@@ -101,10 +101,11 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	<listitem><para>Whether the configured settings plugin(s)
 	should set up file monitors and immediately pick up changes
 	made to connection files while NetworkManager is running. This
-	is enabled by default; if this key is set to
-	'<literal>false</literal>', then NetworkManager will only read
+	is disabled by default; NetworkManager will only read
 	the connection files at startup, and when explicitly requested
-	via the ReloadConnections D-Bus call.</para></listitem>
+	via the ReloadConnections D-Bus call. If this key is set to
+	'<literal>true</literal>', then NetworkManager wil reload
+	connection files any time they changed.</para></listitem>
       </varlistentry>
       <varlistentry>
 	<term><varname>dhcp</varname></term>

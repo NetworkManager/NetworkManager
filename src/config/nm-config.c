@@ -511,7 +511,7 @@ nm_config_new (GError **error)
 		}
 		g_free (value);
 	} else
-		priv->monitor_connection_files = TRUE;
+		priv->monitor_connection_files = FALSE;
 
 	priv->dhcp_client = g_key_file_get_value (priv->keyfile, "main", "dhcp", NULL);
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
