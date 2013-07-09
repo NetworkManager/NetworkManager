@@ -150,8 +150,7 @@ Show \fInmcli\fP version.
 Print help information.
 .SS \fIOBJECT\fP
 .TP
-.B general
-General NetworkManager status and operations
+.B general \- general NetworkManager status and operations
 .br
 Use this object to show NetworkManager status and permissions. You can also get
 and change NetworkManager logging level and domains.
@@ -180,11 +179,11 @@ level and domain values.
 .RE
 
 .TP
-.B networking
-Get or set general networking state of NetworkManager
+.B networking \- get or set general networking state of NetworkManager
 .br
 Use this object to show NetworkManager networking status, or enable/disable
-networking. Disabling networking changes all devices to 'unmanaged' state.
+networking. Disabling networking deconfigures all devices and changes them to
+the 'unmanaged' state.
 .TP
 .SS \fICOMMAND\fP := { [ on | off ] }
 .sp
@@ -198,8 +197,7 @@ been disabled.
 .RE
 
 .TP
-.B radio
-Get or set radio switches state
+.B radio \- get or set radio switch states
 .br
 Use this object to show radio switches status, or enable/disable
 the switches.
@@ -222,9 +220,8 @@ are supplied, mobile broadband status is printed; \fIon\fP enables mobile broadb
 .B wimax [ on | off ]
 .br
 Show or set status of WiMAX in NetworkManager. If no arguments are supplied,
-WiMAX status is printed; \fIon\fP enables WiMAX; \fIoff\fP disables WiMAX.
-.br
-Note: WiMAX support is a compile\(hytime decision, so it may be unavailable on some
+WiMAX status is printed; \fIon\fP enables WiMAX; \fIoff\fP disables WiMAX.  Note:
+WiMAX support is a compile\(hytime decision, so it may be unavailable on some
 installations.
 .TP
 .B all [ on | off ]
@@ -233,10 +230,8 @@ Show or set all previously mentioned radio switches at the same time.
 .RE
 
 .TP
-.B connection
-NetworkManager connections
+.B connection \- start, stop, and manage network connections
 .br
-Get information about \fINetworkManager\fP connections and manage them.
 .TP
 .SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | reload }
 .sp
@@ -560,10 +555,8 @@ in NetworkManager.conf).
 .RE
 
 .TP
-.B device
-NetworkManager devices
+.B device - show and manage network interfaces
 .br
-Get information about devices and manage them.
 .TP
 .SS \fICOMMAND\fP := { status | show | disconnect | wifi | wimax }
 .sp
