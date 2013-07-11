@@ -139,7 +139,7 @@ int main (int argc, char *argv[])
 	gboolean success;
 
 	GOptionEntry options[] = {
-		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (default is 30)"), NULL},
+		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (without the option, default value is 30)"), "<timeout>"},
 		{"exit", 'x', 0, G_OPTION_ARG_NONE, &exit_no_nm, N_("Exit immediately if NetworkManager is not running or connecting"), NULL},
 		{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, N_("Don't print anything"), NULL},
 		{NULL}
