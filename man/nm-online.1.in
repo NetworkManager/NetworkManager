@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 Red Hat, Inc.
 .\"
-.TH NM-ONLINE "1" "6 August 2010"
+.TH NM-ONLINE "1" "11 July 2013"
 
 .SH NAME
 nm-online \- ask NetworkManager whether the network is connected
@@ -38,9 +38,9 @@ exit, the returned status code should be checked (see the return codes bellow).
 
 .SH OPTIONS
 .TP
-.B \-t, \-\-timeout
-Time to wait for a connection, in seconds.  If not specified, the default is 30
-seconds.
+.B \-t, \-\-timeout <timeout_value>
+Time to wait for a connection, in seconds.  If the option is not provided,
+the default timeout is 30 seconds.
 .TP
 .B \-x, \-\-exit
 Exit immediately if NetworkManager is not running or connecting.
