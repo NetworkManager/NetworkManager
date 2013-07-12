@@ -284,7 +284,7 @@ nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 network, int p
 		guint32 item_address = nm_ip4_address_get_address (item);
 		int item_plen = nm_ip4_address_get_prefix (item);
 
-		if (item_plen <= plen && same_prefix (item_address, network, item_plen));
+		if (item_plen <= plen && same_prefix (item_address, network, item_plen))
 			return TRUE;
 	}
 
