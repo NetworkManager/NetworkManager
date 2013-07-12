@@ -2008,7 +2008,7 @@ add_device (NMManager *self, NMDevice *device)
 	system_create_virtual_devices (self);
 
 	/* If the device has a connection it can assume, do that now */
-	if (existing && nm_device_can_activate (device)) {
+	if (existing && nm_device_can_activate (device, existing)) {
 		NMActiveConnection *ac;
 		GError *error = NULL;
 
@@ -2950,7 +2950,7 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 	}
 
-	if (!nm_device_can_activate (device)) {
+	if (!nm_device_can_activate (device, connection)) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
 			                 "Device not managed by NetworkManager or unavailable");
 		return NULL;

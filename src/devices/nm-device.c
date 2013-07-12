@@ -983,13 +983,62 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean failed)
 	return success;
 }
 
+static gboolean
+connection_is_static (NMConnection *connection)
+{
+	NMSettingIP4Config *ip4;
+	NMSettingIP6Config *ip6;
+	const char *method;
+
+	ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (ip4) {
+		method = nm_setting_ip4_config_get_method (ip4);
+		if (   g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
+		    && g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0)
+		return FALSE;
+	}
+
+	ip6 = nm_connection_get_setting_ip6_config (connection);
+	if (ip6) {
+		method = nm_setting_ip6_config_get_method (ip6);
+		if (   g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
+		    && g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+has_static_connection (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const GSList *connections, *iter;
+
+	connections = nm_connection_provider_get_connections (priv->con_provider);
+	for (iter = connections; iter; iter = iter->next) {
+		NMConnection *connection = iter->data;
+
+		if (   nm_device_check_connection_compatible (self, connection, NULL)
+		    && connection_is_static (connection))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 static void
 carrier_changed (NMDevice *device, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	if (priv->ignore_carrier || !nm_device_get_managed (device))
+	if (!nm_device_get_managed (device))
 		return;
+
+	if (priv->ignore_carrier) {
+		/* Ignore all carrier-off, and ignore carrier-on on connected devices */
+		if (!carrier || priv->state > NM_DEVICE_STATE_DISCONNECTED)
+			return;
+	}
 
 	if (nm_device_is_master (device)) {
 		/* Bridge/bond carrier does not affect its own activation, but
@@ -1368,9 +1417,32 @@ is_available (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	return priv->carrier || priv->ignore_carrier;
+	if (!priv->carrier) {
+		if (priv->ignore_carrier && has_static_connection (device))
+			return TRUE;
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
+/**
+ * nm_device_is_available:
+ * @self: the #NMDevice
+ *
+ * Checks if @self would currently be capable of activating a
+ * connection. In particular, it checks that the device is ready (eg,
+ * is not missing firmware), that it has carrier (if necessary), and
+ * that any necessary external software (eg, ModemManager,
+ * wpa_supplicant) is available.
+ *
+ * @self can only be in a state higher than
+ * %NM_DEVICE_STATE_UNAVAILABLE when nm_device_is_available() returns
+ * %TRUE. (But note that it can still be %NM_DEVICE_STATE_UNMANAGED
+ * when it is available.)
+ *
+ * Returns: %TRUE or %FALSE
+ */
 gboolean
 nm_device_is_available (NMDevice *self)
 {
@@ -1382,17 +1454,54 @@ nm_device_is_available (NMDevice *self)
 	return NM_DEVICE_GET_CLASS (self)->is_available (self);
 }
 
+/**
+ * nm_device_can_activate:
+ * @self: the #NMDevice
+ * @connection: (allow-none) an #NMConnection, or %NULL
+ *
+ * Checks if @self can currently activate @connection. In particular,
+ * this requires that @self is available (per
+ * nm_device_is_available()); that it is either managed or able to
+ * become managed; and that it is able to activate @connection in its
+ * current state (eg, if @connection requires carrier, then @self has
+ * carrier).
+ *
+ * If @connection is %NULL, this just checks that @self could
+ * theoretically activate *some* connection.
+ *
+ * Returns: %TRUE or %FALSE
+ */
 gboolean
-nm_device_can_activate (NMDevice *self)
+nm_device_can_activate (NMDevice *self, NMConnection *connection)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (!priv->manager_managed)
 		return FALSE;
-	if (!priv->default_unmanaged && priv->state < NM_DEVICE_STATE_DISCONNECTED)
+
+	if (   connection
+	    && !nm_device_check_connection_compatible (self, connection, NULL))
 		return FALSE;
 
-	return nm_device_is_available (self);
+	if (priv->default_unmanaged) {
+		if (!nm_device_is_available (self))
+			return FALSE;
+	} else if (priv->state < NM_DEVICE_STATE_DISCONNECTED) {
+		if (priv->state != NM_DEVICE_STATE_UNAVAILABLE || priv->carrier || !priv->ignore_carrier)
+			return FALSE;
+
+		/* @self is UNAVAILABLE because it doesn't have carrier, but
+		 * ignore-carrier is set, so we might be able to ignore that.
+		 */
+		if (connection && connection_is_static (connection))
+			return TRUE;
+		else if (!connection && has_static_connection (self))
+			return TRUE;
+		else
+			return FALSE;
+	}
+
+	return TRUE;
 }
 
 gboolean
@@ -1471,7 +1580,7 @@ can_auto_connect (NMDevice *device,
 	if (!nm_setting_connection_get_autoconnect (s_con))
 		return FALSE;
 
-	return nm_device_check_connection_compatible (device, connection, NULL);
+	return nm_device_can_activate (device, connection);
 }
 
 /**
@@ -4105,7 +4214,7 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	             nm_connection_get_id (connection));
 
 	if (priv->state < NM_DEVICE_STATE_DISCONNECTED) {
-		g_return_if_fail (nm_device_can_activate (self));
+		g_return_if_fail (nm_device_can_activate (self, connection));
 
 		if (priv->state == NM_DEVICE_STATE_UNMANAGED) {
 			nm_device_state_changed (self,

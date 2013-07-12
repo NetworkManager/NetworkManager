@@ -12,5 +12,5 @@
 no-auto-default=*
 
 # Ignore the carrier (cable plugged in) state when attempting to
-# activate connections.
+# activate static-IP connections.
 ignore-carrier=*
