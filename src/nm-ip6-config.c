@@ -230,6 +230,9 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;
 
+	if (!setting)
+		return;
+
 	naddresses = nm_setting_ip6_config_get_num_addresses (setting);
 	nroutes = nm_setting_ip6_config_get_num_routes (setting);
 	nnameservers = nm_setting_ip6_config_get_num_dns (setting);
