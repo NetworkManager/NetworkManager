@@ -1572,9 +1572,6 @@ nm_ip6_manager_get_ip6_config (NMIP6Manager *manager, int ifindex)
 		nm_ip6_address_set_prefix (ip6addr, rtnl_addr_get_prefixlen (rtnladdr));
 		nm_ip6_address_set_address (ip6addr, addr);
 		nm_ip6_config_take_address (config, ip6addr);
-		gateway = nm_ip6_config_get_gateway (config);
-		if (gateway)
-			nm_ip6_address_set_gateway (ip6addr, gateway);
 	}
 
 	/* Add DNS servers */

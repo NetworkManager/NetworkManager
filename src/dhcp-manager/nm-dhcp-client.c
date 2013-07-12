@@ -1177,7 +1177,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 		inet_ntop (AF_INET, &gwaddr, buf, sizeof (buf));
 		nm_log_info (LOGD_DHCP4, "  gateway %s", buf);
-		nm_ip4_address_set_gateway (addr, gwaddr);
+		nm_ip4_config_set_gateway (ip4_config, gwaddr);
 	} else {
 		/* If the gateway wasn't provided as a classless static route with a
 		 * subnet length of 0, try to find it using the old-style 'routers' option.
@@ -1190,7 +1190,7 @@ ip4_options_to_config (NMDHCPClient *self)
 			for (s = routers; *s; s++) {
 				/* FIXME: how to handle multiple routers? */
 				if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-					nm_ip4_address_set_gateway (addr, tmp_addr.s_addr);
+					nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
 					nm_log_info (LOGD_DHCP4, "  gateway %s", *s);
 					break;
 				} else

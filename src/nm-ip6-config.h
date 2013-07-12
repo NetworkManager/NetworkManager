@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager -- Network link manager
+/* NetworkManager
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,23 +15,23 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008–2013 Red Hat, Inc.
  */
 
 #ifndef NM_IP6_CONFIG_H
 #define NM_IP6_CONFIG_H
 
-#include <glib.h>
 #include <glib-object.h>
 
+/* NMIP6Address and NMIP6Route types */
 #include "nm-setting-ip6-config.h"
 
-#define NM_TYPE_IP6_CONFIG            (nm_ip6_config_get_type ())
-#define NM_IP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP6_CONFIG, NMIP6Config))
-#define NM_IP6_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
-#define NM_IS_IP6_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_IP6_CONFIG))
+#define NM_TYPE_IP6_CONFIG (nm_ip6_config_get_type ())
+#define NM_IP6_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP6_CONFIG, NMIP6Config))
+#define NM_IP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
+#define NM_IS_IP6_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_IP6_CONFIG))
 #define NM_IS_IP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP6_CONFIG))
-#define NM_IP6_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
+#define NM_IP6_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
 
 typedef struct {
 	GObject parent;
@@ -49,10 +49,11 @@ typedef struct {
 GType nm_ip6_config_get_type (void);
 
 
-NMIP6Config * nm_ip6_config_new                 (void);
+NMIP6Config * nm_ip6_config_new (void);
 
-void          nm_ip6_config_export              (NMIP6Config *config);
-const char *  nm_ip6_config_get_dbus_path       (NMIP6Config *config);
+/* D-Bus integration */
+void nm_ip6_config_export (NMIP6Config *config);
+const char * nm_ip6_config_get_dbus_path (NMIP6Config *config);
 
 /* Integration with nm-platform and nm-setting */
 NMIP6Config *nm_ip6_config_capture (int ifindex);
@@ -60,48 +61,54 @@ gboolean nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority);
 void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting);
 
 /* Utility functions */
-void          nm_ip6_config_merge               (NMIP6Config *dst, NMIP6Config *src);
-gboolean      nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, guint32 plen);
+void nm_ip6_config_merge (NMIP6Config *dst, NMIP6Config *src);
+int nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, int plen);
 
-void          nm_ip6_config_take_address        (NMIP6Config *config, NMIP6Address *address);
-void          nm_ip6_config_add_address         (NMIP6Config *config, NMIP6Address *address);
-void          nm_ip6_config_replace_address     (NMIP6Config *config, guint32 i, NMIP6Address *new_address);
-NMIP6Address *nm_ip6_config_get_address         (NMIP6Config *config, guint32 i);
-guint32       nm_ip6_config_get_num_addresses   (NMIP6Config *config);
-
-const struct in6_addr *nm_ip6_config_get_ptp_address (NMIP6Config *config);
-void          nm_ip6_config_set_ptp_address     (NMIP6Config *config, const struct in6_addr *ptp_addr);
-
-void          nm_ip6_config_add_nameserver      (NMIP6Config *config, const struct in6_addr *nameserver);
-const struct in6_addr *nm_ip6_config_get_nameserver      (NMIP6Config *config, guint i);
-guint32       nm_ip6_config_get_num_nameservers (NMIP6Config *config);
-void          nm_ip6_config_reset_nameservers   (NMIP6Config *config);
-
-void          nm_ip6_config_set_gateway         (NMIP6Config *config, const struct in6_addr *gateway);
+/* Gateways */
+void nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default);
+gboolean nm_ip6_config_get_never_default (NMIP6Config *config);
+void nm_ip6_config_set_gateway (NMIP6Config *config, const struct in6_addr *);
 const struct in6_addr *nm_ip6_config_get_gateway (NMIP6Config *config);
 
-void          nm_ip6_config_take_route          (NMIP6Config *config, NMIP6Route *route);
-void          nm_ip6_config_add_route           (NMIP6Config *config, NMIP6Route *route);
-void          nm_ip6_config_replace_route       (NMIP6Config *config, guint32 i, NMIP6Route *new_route);
-NMIP6Route *  nm_ip6_config_get_route           (NMIP6Config *config, guint32 i);
-guint32       nm_ip6_config_get_num_routes      (NMIP6Config *config);
-void          nm_ip6_config_reset_routes        (NMIP6Config *config);
+/* Addresses */
+void nm_ip6_config_reset_addresses (NMIP6Config *config);
+void nm_ip6_config_take_address (NMIP6Config *config, NMIP6Address *address);
+void nm_ip6_config_add_address (NMIP6Config *config, NMIP6Address *address);
+guint nm_ip6_config_get_num_addresses (NMIP6Config *config);
+NMIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
 
-void          nm_ip6_config_add_domain          (NMIP6Config *config, const char *domain);
-const char *  nm_ip6_config_get_domain          (NMIP6Config *config, guint i);
-guint32       nm_ip6_config_get_num_domains     (NMIP6Config *config);
-void          nm_ip6_config_reset_domains       (NMIP6Config *config);
+/* Routes */
+void nm_ip6_config_reset_routes (NMIP6Config *config);
+void nm_ip6_config_add_route (NMIP6Config *config, NMIP6Route *route);
+void nm_ip6_config_take_route (NMIP6Config *config, NMIP6Route *route);
+guint32 nm_ip6_config_get_num_routes (NMIP6Config *config);
+NMIP6Route *  nm_ip6_config_get_route (NMIP6Config *config, guint32 i);
 
-void          nm_ip6_config_add_search          (NMIP6Config *config, const char *search);
-const char *  nm_ip6_config_get_search          (NMIP6Config *config, guint i);
-guint32       nm_ip6_config_get_num_searches    (NMIP6Config *config);
-void          nm_ip6_config_reset_searches      (NMIP6Config *config);
+/* Nameservers */
+void nm_ip6_config_reset_nameservers (NMIP6Config *config);
+void nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *nameserver);
+guint32 nm_ip6_config_get_num_nameservers (NMIP6Config *config);
+const struct in6_addr *nm_ip6_config_get_nameserver (NMIP6Config *config, guint i);
 
-guint32       nm_ip6_config_get_mss             (NMIP6Config *config);
-void          nm_ip6_config_set_mss             (NMIP6Config *config, guint32 mss);
+/* Domains */
+void nm_ip6_config_reset_domains (NMIP6Config *config);
+void nm_ip6_config_add_domain (NMIP6Config *config, const char *domain);
+guint32 nm_ip6_config_get_num_domains (NMIP6Config *config);
+const char * nm_ip6_config_get_domain (NMIP6Config *config, guint i);
 
-gboolean      nm_ip6_config_get_never_default   (NMIP6Config *config);
-void          nm_ip6_config_set_never_default   (NMIP6Config *config, gboolean never_default);
+/* Search lists */
+void nm_ip6_config_reset_searches (NMIP6Config *config);
+void nm_ip6_config_add_search (NMIP6Config *config, const char *search);
+guint32 nm_ip6_config_get_num_searches (NMIP6Config *config);
+const char * nm_ip6_config_get_search (NMIP6Config *config, guint i);
+
+/* MSS */
+void nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss);
+guint32 nm_ip6_config_get_mss (NMIP6Config *config);
+
+/* PTP */
+void nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_addr);
+const struct in6_addr *nm_ip6_config_get_ptp_address (NMIP6Config *config);
 
 typedef enum {
 	NM_IP6_COMPARE_FLAG_NONE        = 0x00000000,  /* match nothing, kinda pointless */

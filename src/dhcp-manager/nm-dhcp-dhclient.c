@@ -325,7 +325,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 gateway '%s'", data);
 				goto error;
 			}
-			nm_ip4_address_set_gateway (addr, tmp.s_addr);
+			nm_ip4_config_set_gateway (ip4, tmp.s_addr);
 		}
 
 		nm_ip4_config_take_address (ip4, addr);
