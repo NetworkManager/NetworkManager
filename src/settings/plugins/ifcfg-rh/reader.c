@@ -228,6 +228,21 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
+	value = svGetValue (ifcfg, "GATEWAY_PING_TIMEOUT", FALSE);
+	if (value) {
+		long int tmp;
+		guint32 timeout;
+
+		errno = 0;
+		tmp = strtol (value, NULL, 10);
+		if (errno == 0 && tmp >= 0 && tmp < G_MAXINT32) {
+			timeout = (guint32) tmp;
+			g_object_set (s_con, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, timeout, NULL);
+		} else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid GATEWAY_PING_TIMEOUT time");
+		g_free (value);
+	}
+
 	return NM_SETTING (s_con);
 }
 

@@ -1430,6 +1430,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	guint32 n, i;
 	GString *str;
 	const char *master;
+	char *tmp;
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
@@ -1490,6 +1491,13 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		}
 		svSetValue (ifcfg, "SECONDARY_UUIDS", str->str, FALSE);
 		g_string_free (str, TRUE);
+	}
+
+	svSetValue (ifcfg, "GATEWAY_PING_TIMEOUT", NULL, FALSE);
+	if (nm_setting_connection_get_gateway_ping_timeout (s_con)) {
+		tmp = g_strdup_printf ("%" G_GUINT32_FORMAT, nm_setting_connection_get_gateway_ping_timeout (s_con));
+		svSetValue (ifcfg, "GATEWAY_PING_TIMEOUT", tmp, FALSE);
+		g_free (tmp);
 	}
 }
 
