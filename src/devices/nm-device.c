@@ -4325,7 +4325,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	old_config = priv->ip6_config;
 
-	if (!nm_ip6_config_diff (new_config, old_config));
+	if (!nm_ip6_config_diff (new_config, old_config))
 		return success;
 
 	priv->ip6_config = NULL;
