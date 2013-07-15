@@ -376,6 +376,8 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
 
+	g_return_if_fail (new != NULL);
+
 	for (i = 0; i < priv->addresses->len; i++ ) {
 		NMPlatformIP6Address *item = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 
@@ -432,6 +434,8 @@ nm_ip6_config_add_route (NMIP6Config *config, NMIP6Route *new)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	GSList *iter;
 
+	g_return_if_fail (new != NULL);
+
 	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
 		NMIP6Route *item = (NMIP6Route *) iter->data;
 
@@ -448,6 +452,8 @@ nm_ip6_config_add_route (NMIP6Config *config, NMIP6Route *new)
 void
 nm_ip6_config_take_route (NMIP6Config *config, NMIP6Route *route)
 {
+	g_return_if_fail (route != NULL);
+
 	nm_ip6_config_add_route (config, route);
 	nm_ip6_route_unref (route);
 }
@@ -483,6 +489,8 @@ nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
+
+	g_return_if_fail (new != NULL);
 
 	for (i = 0; i < priv->nameservers->len; i++)
 		if (IN6_ARE_ADDR_EQUAL (new, &g_array_index (priv->nameservers, struct in6_addr, i)))
@@ -523,6 +531,9 @@ nm_ip6_config_add_domain (NMIP6Config *config, const char *domain)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
 
+	g_return_if_fail (domain != NULL);
+	g_return_if_fail (domain[0] != '\0');
+
 	for (i = 0; i < priv->domains->len; i++)
 		if (!g_strcmp0 (g_ptr_array_index (priv->domains, i), domain))
 			return;
@@ -562,7 +573,8 @@ nm_ip6_config_add_search (NMIP6Config *config, const char *new)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
 
-	g_return_if_fail (new && strlen (new));
+	g_return_if_fail (new != NULL);
+	g_return_if_fail (new[0] != '\0');
 
 	for (i = 0; i < priv->searches->len; i++)
 		if (!g_strcmp0 (g_ptr_array_index (priv->searches, i), new))
