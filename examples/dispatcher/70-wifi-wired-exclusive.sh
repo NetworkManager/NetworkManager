@@ -10,9 +10,11 @@ enable_disable_wifi ()
 {
 	result=$(nmcli dev | grep "802-3-ethernet" | grep -w "connected")
 	if [ -n "$result" ]; then
-		nmcli nm wifi off
+		nmcli radio wifi off
+		#with older nmcli, use nmcli nm wifi off
 	else
-		nmcli nm wifi on
+		nmcli radio wifi on
+		#with older nmcli, use nmcli nm wifi on
 	fi
 }
 
