@@ -631,8 +631,11 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
-	policy->default_device4 = best;
 
+	if (best == policy->default_device4)
+		return;
+
+	policy->default_device4 = best;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
@@ -807,8 +810,11 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
-	policy->default_device6 = best;
 
+	if (best == policy->default_device6)
+		return;
+
+	policy->default_device6 = best;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
@@ -1400,7 +1406,6 @@ device_ip4_config_changed (NMDevice *device,
 {
 	NMPolicy *policy = user_data;
 	const char *ip_iface = nm_device_get_ip_iface (device);
-	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 
 	nm_dns_manager_begin_updates (policy->dns_manager, __func__);
 
@@ -1416,11 +1421,7 @@ device_ip4_config_changed (NMDevice *device,
 		if (new_config)
 			nm_dns_manager_add_ip4_config (policy->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		update_ip4_dns (policy, policy->dns_manager);
-
-		/* Only change routing if something actually changed */
-		diff = nm_ip4_config_diff (new_config, old_config);
-		if (diff & (NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_PTP_ADDRESS | NM_IP4_COMPARE_FLAG_ROUTES))
-			update_ip4_routing (policy, TRUE);
+		update_ip4_routing (policy, TRUE);
 	}
 
 	nm_dns_manager_end_updates (policy->dns_manager, __func__);
@@ -1434,7 +1435,6 @@ device_ip6_config_changed (NMDevice *device,
 {
 	NMPolicy *policy = user_data;
 	const char *ip_iface = nm_device_get_ip_iface (device);
-	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
 
 	nm_dns_manager_begin_updates (policy->dns_manager, __func__);
 
@@ -1450,11 +1450,7 @@ device_ip6_config_changed (NMDevice *device,
 		if (new_config)
 			nm_dns_manager_add_ip6_config (policy->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		update_ip6_dns (policy, policy->dns_manager);
-
-		/* Only change routing if something actually changed */
-		diff = nm_ip6_config_diff (new_config, old_config);
-		if (diff & (NM_IP6_COMPARE_FLAG_ADDRESSES | NM_IP6_COMPARE_FLAG_PTP_ADDRESS | NM_IP6_COMPARE_FLAG_ROUTES))
-			update_ip6_routing (policy, TRUE);
+		update_ip6_routing (policy, TRUE);
 	}
 
 	nm_dns_manager_end_updates (policy->dns_manager, __func__);
