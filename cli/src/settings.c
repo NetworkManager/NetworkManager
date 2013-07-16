@@ -1412,6 +1412,154 @@ nmc_setting_new_for_name (const char *name)
 	return setting;
 }
 
+static gboolean
+get_answer (const char *prop, const char *value)
+{
+	char *tmp_str;
+	char *question;
+	gboolean answer = FALSE;
+
+	if (value)
+		question = g_strdup_printf (_("Do you also want to set '%s' to '%s'? [yes]: "), prop, value);
+	else
+		question = g_strdup_printf (_("Do you also want to clear '%s'? [yes]: "), prop);
+	tmp_str = nmc_get_user_input (question);
+	if (!tmp_str || matches (tmp_str, "yes") == 0)
+		answer = TRUE;
+	g_free (tmp_str);
+	g_free (question);
+	return answer;
+}
+
+static void ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data);
+static void ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data);
+
+static void
+ipv4_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	static gboolean answered = FALSE;
+	static gboolean answer = FALSE;
+
+	g_signal_handlers_block_by_func (object, G_CALLBACK (ipv4_method_changed_cb), NULL);
+
+	/* If we have some IP addresses set method to 'manual'.
+	 * Else if the method was 'manual', change it back to 'auto'.
+	 */
+	if (nm_setting_ip4_config_get_num_addresses (NM_SETTING_IP4_CONFIG (object))) {
+		if (g_strcmp0 (nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+			if (!answered) {
+				answered = TRUE;
+				answer = get_answer ("ipv4.method", "manual");
+			}
+			if (answer)
+				g_object_set (object, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+		}
+	} else {
+		answered = FALSE;
+		if (!g_strcmp0 (nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+			g_object_set (object, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	}
+
+	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv4_method_changed_cb), NULL);
+}
+
+static void
+ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	static GValue value = G_VALUE_INIT;
+	static gboolean answered = FALSE;
+	static gboolean answer = FALSE;
+
+	g_signal_handlers_block_by_func (object, G_CALLBACK (ipv4_addresses_changed_cb), NULL);
+
+	/* If method != manual, remove addresses (save them for restoring them later when method becomes 'manual' */
+	if (g_strcmp0 (nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		if (nm_setting_ip4_config_get_num_addresses (NM_SETTING_IP4_CONFIG (object))) {
+			if (!answered) {
+				answered = TRUE;
+				answer = get_answer ("ipv4.addresses", NULL);
+			}
+			if (answer) {
+				if (G_IS_VALUE (&value))
+					g_value_unset (&value);
+				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP4_CONFIG_ADDRESSES, &value);
+				g_object_set (object, NM_SETTING_IP4_CONFIG_ADDRESSES, NULL, NULL);
+			}
+		}
+	} else {
+		answered = FALSE;
+		if (G_IS_VALUE (&value)) {
+			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP4_CONFIG_ADDRESSES, &value);
+			g_value_unset (&value);
+		}
+	}
+
+	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv4_addresses_changed_cb), NULL);
+}
+
+static void
+ipv6_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	static gboolean answered = FALSE;
+	static gboolean answer = FALSE;
+
+	g_signal_handlers_block_by_func (object, G_CALLBACK (ipv6_method_changed_cb), NULL);
+
+	/* If we have some IP addresses set method to 'manual'.
+	 * Else if the method was 'manual', change it back to 'auto'.
+	 */
+	if (nm_setting_ip6_config_get_num_addresses (NM_SETTING_IP6_CONFIG (object))) {
+		if (g_strcmp0 (nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+			if (!answered) {
+				answered = TRUE;
+				answer = get_answer ("ipv6.method", "manual");
+			}
+			if (answer)
+				g_object_set (object, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL, NULL);
+		}
+	} else {
+		answered = FALSE;
+		if (!g_strcmp0 (nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
+			g_object_set (object, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	}
+
+	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv6_method_changed_cb), NULL);
+}
+
+static void
+ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	static GValue value = G_VALUE_INIT;
+	static gboolean answered = FALSE;
+	static gboolean answer = FALSE;
+
+	g_signal_handlers_block_by_func (object, G_CALLBACK (ipv6_addresses_changed_cb), NULL);
+
+	/* If method != manual, remove addresses (save them for restoring them later when method becomes 'manual' */
+	if (g_strcmp0 (nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		if (nm_setting_ip6_config_get_num_addresses (NM_SETTING_IP6_CONFIG (object))) {
+			if (!answered) {
+				answered = TRUE;
+				answer = get_answer ("ipv6.addresses", NULL);
+			}
+			if (answer) {
+				if (G_IS_VALUE (&value))
+					g_value_unset (&value);
+				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP6_CONFIG_ADDRESSES, &value);
+				g_object_set (object, NM_SETTING_IP6_CONFIG_ADDRESSES, NULL, NULL);
+			}
+		}
+	} else {
+		answered = FALSE;
+		if (G_IS_VALUE (&value)) {
+			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP6_CONFIG_ADDRESSES, &value);
+			g_value_unset (&value);
+		}
+	}
+
+	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv6_addresses_changed_cb), NULL);
+}
+
 /*
  * Customize some properties of the setting so that the setting has sensible
  * values.
@@ -1421,14 +1569,25 @@ nmc_setting_custom_init (NMSetting *setting)
 {
 	g_return_if_fail (NM_IS_SETTING (setting));
 
-	if (NM_IS_SETTING_IP4_CONFIG (setting))
+	if (NM_IS_SETTING_IP4_CONFIG (setting)) {
 		g_object_set (NM_SETTING_IP4_CONFIG (setting),
 		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 		              NULL);
-	else if (NM_IS_SETTING_IP6_CONFIG (setting))
+
+		g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_ADDRESSES,
+		                  G_CALLBACK (ipv4_addresses_changed_cb), NULL);
+		g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_METHOD,
+		                  G_CALLBACK (ipv4_method_changed_cb), NULL);
+	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
 		g_object_set (NM_SETTING_IP6_CONFIG (setting),
 		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
+
+		g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_ADDRESSES,
+		                  G_CALLBACK (ipv6_addresses_changed_cb), NULL);
+		g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_METHOD,
+		                  G_CALLBACK (ipv6_method_changed_cb), NULL);
+	}
 }
 
 /* === SetFunc, RemoveFunc, DescribeFunc, ValuesFunc functions === */
