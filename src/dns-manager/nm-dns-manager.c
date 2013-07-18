@@ -174,7 +174,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 				add_string_item (rc->nameservers, buf);
 		} else {
 			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
-				if (IN6_IS_ADDR_LINKLOCAL (addr) && strchr (buf, '%') == NULL) {
+				if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 					tmp = g_strdup_printf ("%s%%%s", buf, iface);
 					add_string_item (rc->nameservers, tmp);
 					g_free (tmp);
