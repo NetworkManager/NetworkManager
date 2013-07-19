@@ -691,7 +691,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 }
 
 static guint
-get_hw_address_length (NMDevice *dev)
+get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
 {
 	size_t len;
 
@@ -702,9 +702,9 @@ get_hw_address_length (NMDevice *dev)
 }
 
 static guint
-nm_device_get_hw_address_length (NMDevice *dev)
+nm_device_get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
 {
-	return NM_DEVICE_GET_CLASS (dev)->get_hw_address_length (dev);
+	return NM_DEVICE_GET_CLASS (dev)->get_hw_address_length (dev, out_permanent);
 }
 
 const guint8 *
@@ -4949,7 +4949,7 @@ set_property (GObject *object, guint prop_id,
 		priv->is_master = g_value_get_boolean (value);
 		break;
 	case PROP_HW_ADDRESS:
-		priv->hw_addr_len = nm_device_get_hw_address_length (NM_DEVICE (object));
+		priv->hw_addr_len = nm_device_get_hw_address_length (NM_DEVICE (object), NULL);
 
 		hw_addr = g_value_get_string (value);
 		if (!hw_addr)
@@ -6385,9 +6385,13 @@ gboolean
 nm_device_update_hw_address (NMDevice *dev)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
-	gboolean changed = FALSE;
+	gboolean changed = FALSE, permanent = FALSE;
 
-	priv->hw_addr_len = nm_device_get_hw_address_length (dev);
+	priv->hw_addr_len = nm_device_get_hw_address_length (dev, &permanent);
+
+	/* If the address can't be changed, don't bother trying */
+	if (permanent)
+		return FALSE;
 
 	if (priv->hw_addr_len) {
 		int ifindex = nm_device_get_ip_ifindex (dev);

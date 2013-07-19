@@ -112,7 +112,7 @@ typedef struct {
 	void        (* update_hw_address) (NMDevice *self);
 	void        (* update_permanent_hw_address) (NMDevice *self);
 	void        (* update_initial_hw_address) (NMDevice *self);
-	guint       (* get_hw_address_length) (NMDevice *self);
+	guint       (* get_hw_address_length) (NMDevice *self, gboolean *out_permanent);
 
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 

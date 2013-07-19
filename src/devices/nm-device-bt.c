@@ -113,9 +113,11 @@ guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 }
 
 static guint
-get_hw_address_length (NMDevice *device)
+get_hw_address_length (NMDevice *device, gboolean *out_permanent)
 {
 	/* HW address is the Bluetooth HW address of the remote device */
+	if (out_permanent)
+		*out_permanent = TRUE;   /* the bdaddr of the remote device will never change */
 	return ETH_ALEN;
 }
 

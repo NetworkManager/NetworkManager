@@ -213,7 +213,7 @@ device_state_changed (NMDevice *device,
 }
 
 static guint
-get_hw_address_length (NMDevice *device)
+get_hw_address_length (NMDevice *device, gboolean *out_permanent)
 {
 	return 0;
 }

@@ -520,7 +520,7 @@ deactivate (NMDevice *device)
 /**************************************************************/
 
 static guint
-get_hw_address_length (NMDevice *device)
+get_hw_address_length (NMDevice *device, gboolean *out_permanent)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device);
 
