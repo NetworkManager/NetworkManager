@@ -381,7 +381,7 @@ merge_dhclient_config (const char *iface,
 }
 
 static char *
-get_dhclient_config (const char * iface, const char *uuid, gboolean ipv6)
+find_existing_config (const char *iface, const char *uuid, gboolean ipv6)
 {
 	char *path;
 
@@ -391,17 +391,20 @@ get_dhclient_config (const char * iface, const char *uuid, gboolean ipv6)
 	 */
 	if (uuid) {
 		path = g_strdup_printf (NMCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", uuid);
+		nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 		if (g_file_test (path, G_FILE_TEST_EXISTS))
 			return path;
 		g_free (path);
 	}
 
 	path = g_strdup_printf (NMCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
+	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (NMCONFDIR "/dhclient%s.conf", ipv6 ? "6" : "");
+	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
@@ -415,21 +418,25 @@ get_dhclient_config (const char * iface, const char *uuid, gboolean ipv6)
 	 * (including Fedora) don't even provide a default configuration file.
 	 */
 	path = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
+	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (SYSCONFDIR "/dhclient%s-%s.conf", ipv6 ? "6" : "", iface);
+	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (SYSCONFDIR "/dhcp/dhclient%s.conf", ipv6 ? "6" : "");
+	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
 
 	path = g_strdup_printf (SYSCONFDIR "/dhclient%s.conf", ipv6 ? "6" : "");
+	nm_log_dbg (ipv6 ? LOGD_DHCP6 : LOGD_DHCP4, "(%s) looking for existing config %s", iface, path);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return path;
 	g_free (path);
@@ -460,8 +467,21 @@ create_dhclient_config (const char *iface,
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	new = g_strdup_printf (NMSTATEDIR "/dhclient%s-%s.conf", is_ip6 ? "6" : "", iface);
+	nm_log_dbg (is_ip6 ? LOGD_DHCP6 : LOGD_DHCP4,
+	            "(%s): creating composite dhclient config %s",
+	            iface, new);
 
-	orig = get_dhclient_config (iface, uuid, is_ip6);
+	orig = find_existing_config (iface, uuid, is_ip6);
+	if (orig) {
+		nm_log_dbg (is_ip6 ? LOGD_DHCP6 : LOGD_DHCP4,
+		            "(%s): merging existing dhclient config %s",
+		            iface, orig);
+	} else {
+		nm_log_dbg (is_ip6 ? LOGD_DHCP6 : LOGD_DHCP4,
+		            "(%s): no existing dhclient configuration to merge",
+		            iface);
+	}
+
 	error = NULL;
 	success = merge_dhclient_config (iface, new, is_ip6, s_ip4, s_ip6, dhcp_anycast_addr, hostname, orig, &error);
 	if (!success) {
