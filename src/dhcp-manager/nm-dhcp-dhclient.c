@@ -447,6 +447,7 @@ get_dhclient_config (const char * iface, const char *uuid, gboolean ipv6)
 static char *
 create_dhclient_config (const char *iface,
                         gboolean is_ip6,
+                        const char *uuid,
                         NMSettingIP4Config *s_ip4,
                         NMSettingIP6Config *s_ip6,
                         guint8 *dhcp_anycast_addr,
@@ -460,8 +461,7 @@ create_dhclient_config (const char *iface,
 
 	new = g_strdup_printf (NMSTATEDIR "/dhclient%s-%s.conf", is_ip6 ? "6" : "", iface);
 
-	/* TODO: also support UUID */
-	orig = get_dhclient_config (iface, NULL, is_ip6);
+	orig = get_dhclient_config (iface, uuid, is_ip6);
 	error = NULL;
 	success = merge_dhclient_config (iface, new, is_ip6, s_ip4, s_ip6, dhcp_anycast_addr, hostname, orig, &error);
 	if (!success) {
@@ -643,11 +643,12 @@ ip4_start (NMDHCPClient *client,
            const char *hostname)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
-	const char *iface;
+	const char *iface, *uuid;
 
 	iface = nm_dhcp_client_get_iface (client);
+	uuid = nm_dhcp_client_get_uuid (client);
 
-	priv->conf_file = create_dhclient_config (iface, FALSE, s_ip4, NULL, dhcp_anycast_addr, hostname);
+	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, s_ip4, NULL, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
 		return -1;
@@ -665,11 +666,12 @@ ip6_start (NMDHCPClient *client,
            const GByteArray *duid)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
-	const char *iface;
+	const char *iface, *uuid;
 
 	iface = nm_dhcp_client_get_iface (client);
+	uuid = nm_dhcp_client_get_uuid (client);
 
-	priv->conf_file = create_dhclient_config (iface, TRUE, NULL, s_ip6, dhcp_anycast_addr, hostname);
+	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, s_ip6, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP6, "(%s): error creating dhclient6 configuration file.", iface);
 		return -1;
