@@ -63,6 +63,7 @@ static gboolean auto_register_cb (gpointer user_data);
 
 typedef struct {
 	gboolean registered;
+	NMSecretAgentCapabilities capabilities;
 
 	DBusGConnection *bus;
 	gboolean private_bus;
@@ -86,6 +87,7 @@ enum {
 	PROP_IDENTIFIER,
 	PROP_AUTO_REGISTER,
 	PROP_REGISTERED,
+	PROP_CAPABILITIES,
 
 	LAST_PROP
 };
@@ -531,6 +533,22 @@ impl_secret_agent_delete_secrets (NMSecretAgent *self,
 /**************************************************************/
 
 static void
+reg_result (NMSecretAgent *self, GError *error)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	if (error) {
+		/* If registration failed we shouldn't expose ourselves on the bus */
+		_internal_unregister (self);
+	} else {
+		priv->registered = TRUE;
+		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_REGISTERED);
+	}
+
+	g_signal_emit (self, signals[REGISTRATION_RESULT], 0, error);
+}
+
+static void
 reg_request_cb (DBusGProxy *proxy,
                 DBusGProxyCall *call,
                 gpointer user_data)
@@ -541,16 +559,37 @@ reg_request_cb (DBusGProxy *proxy,
 
 	priv->reg_call = NULL;
 
-	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID)) {
-		priv->registered = TRUE;
-		g_object_notify (G_OBJECT (self), NM_SECRET_AGENT_REGISTERED);
-	} else {
-		/* If registration failed we shouldn't expose ourselves on the bus */
-		_internal_unregister (self);
+	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	reg_result (self, error);
+	g_clear_error (&error);
+}
+
+static void
+reg_with_caps_cb (DBusGProxy *proxy,
+                  DBusGProxyCall *call,
+                  gpointer user_data)
+{
+	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	priv->reg_call = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call, NULL, G_TYPE_INVALID)) {
+		reg_result (self, NULL);
+		return;
 	}
 
-	g_signal_emit (self, signals[REGISTRATION_RESULT], 0, error);
-	g_clear_error (&error);
+	/* Might be an old NetworkManager that doesn't support capabilities;
+	 * fall back to old Register() method instead.
+	 */
+	priv->reg_call = dbus_g_proxy_begin_call_with_timeout (priv->manager_proxy,
+	                                                       "Register",
+	                                                       reg_request_cb,
+	                                                       self,
+	                                                       NULL,
+	                                                       5000,
+	                                                       G_TYPE_STRING, priv->identifier,
+	                                                       G_TYPE_INVALID);
 }
 
 /**
@@ -599,14 +638,14 @@ nm_secret_agent_register (NMSecretAgent *self)
 	                                     G_OBJECT (self));
 
 	priv->reg_call = dbus_g_proxy_begin_call_with_timeout (priv->manager_proxy,
-	                                                       "Register",
-	                                                       reg_request_cb,
+	                                                       "RegisterWithCapabilities",
+	                                                       reg_with_caps_cb,
 	                                                       self,
 	                                                       NULL,
 	                                                       5000,
 	                                                       G_TYPE_STRING, priv->identifier,
+	                                                       G_TYPE_UINT, priv->capabilities,
 	                                                       G_TYPE_INVALID);
-
 	return TRUE;
 }
 
@@ -868,6 +907,9 @@ get_property (GObject *object,
 	case PROP_REGISTERED:
 		g_value_set_boolean (value, priv->registered);
 		break;
+	case PROP_CAPABILITIES:
+		g_value_set_flags (value, priv->capabilities);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -894,6 +936,9 @@ set_property (GObject *object,
 		break;
 	case PROP_AUTO_REGISTER:
 		priv->auto_register = g_value_get_boolean (value);
+		break;
+	case PROP_CAPABILITIES:
+		priv->capabilities = g_value_get_flags (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -996,6 +1041,20 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 		                       "Registered",
 		                       FALSE,
 		                       G_PARAM_READABLE));
+
+	/**
+	 * NMSecretAgent:capabilities:
+	 *
+	 * A bitfield of %NMSecretAgentCapabilities.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_flags (NM_SECRET_AGENT_CAPABILITIES,
+		                     "Capabilities",
+		                     "Capabilities",
+		                     NM_TYPE_SECRET_AGENT_CAPABILITIES,
+		                     NM_SECRET_AGENT_CAPABILITY_NONE,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSecretAgent::registration-result:

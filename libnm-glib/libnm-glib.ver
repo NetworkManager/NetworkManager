@@ -233,6 +233,7 @@ global:
 	nm_remote_settings_new_finish;
 	nm_remote_settings_reload_connections;
 	nm_remote_settings_save_hostname;
+	nm_secret_agent_capabilities_get_type;
 	nm_secret_agent_delete_secrets;
 	nm_secret_agent_error_get_type;
 	nm_secret_agent_error_quark;
