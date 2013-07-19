@@ -554,12 +554,14 @@ nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                   const char *uuid,
                                   gboolean ipv6)
 {
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	return NM_DHCP_MANAGER_GET_PRIVATE (self)->get_lease_config_func (iface, uuid, ipv6);
+	if (priv->get_lease_config_func)
+		return priv->get_lease_config_func (iface, uuid, ipv6);
+	return NULL;
 }
 
 NMIP4Config *
