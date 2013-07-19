@@ -80,6 +80,11 @@ static void impl_agent_manager_register (NMAgentManager *self,
                                          const char *identifier,
                                          DBusGMethodInvocation *context);
 
+static void impl_agent_manager_register_with_capabilities (NMAgentManager *self,
+                                                           const char *identifier,
+                                                           NMSecretAgentCapabilities capabilities,
+                                                           DBusGMethodInvocation *context);
+
 static void impl_agent_manager_unregister (NMAgentManager *self,
                                            DBusGMethodInvocation *context);
 
@@ -259,9 +264,10 @@ find_agent_by_identifier_and_uid (NMAgentManager *self,
 }
 
 static void
-impl_agent_manager_register (NMAgentManager *self,
-                             const char *identifier,
-                             DBusGMethodInvocation *context)
+impl_agent_manager_register_with_capabilities (NMAgentManager *self,
+                                               const char *identifier,
+                                               NMSecretAgentCapabilities capabilities,
+                                               DBusGMethodInvocation *context)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	char *sender = NULL;
@@ -305,7 +311,7 @@ impl_agent_manager_register (NMAgentManager *self,
 	}
 
 	/* Success, add the new agent */
-	agent = nm_secret_agent_new (context, sender, identifier, sender_uid);
+	agent = nm_secret_agent_new (context, sender, identifier, sender_uid, capabilities);
 	if (!agent) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,
@@ -336,6 +342,14 @@ done:
 	g_clear_error (&error);
 	g_clear_error (&local);
 	g_free (sender);
+}
+
+static void
+impl_agent_manager_register (NMAgentManager *self,
+                             const char *identifier,
+                             DBusGMethodInvocation *context)
+{
+	impl_agent_manager_register_with_capabilities (self, identifier, 0, context);
 }
 
 static void

@@ -30,6 +30,14 @@
 #include "nm-dbus-manager.h"
 #include "nm-settings-flags.h"
 
+/* NOTE: ensure these capabilities match those in introspection/nm-secret-agent.xml and
+ * libnm-glib/nm-secret-agent.h.
+ */
+typedef enum {
+	NM_SECRET_AGENT_CAPABILITY_NONE = 0x0,
+	NM_SECRET_AGENT_CAPABILITY_VPN_HINTS = 0x1,
+} NMSecretAgentCapabilities;
+
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))
@@ -50,7 +58,8 @@ GType nm_secret_agent_get_type (void);
 NMSecretAgent *nm_secret_agent_new (DBusGMethodInvocation *context,
                                     const char *owner,
                                     const char *identifier,
-                                    uid_t owner_uid);
+                                    uid_t owner_uid,
+                                    NMSecretAgentCapabilities capabilities);
 
 const char *nm_secret_agent_get_description (NMSecretAgent *agent);
 
@@ -61,6 +70,8 @@ const char *nm_secret_agent_get_identifier (NMSecretAgent *agent);
 uid_t       nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
 
 const char *nm_secret_agent_get_owner_username (NMSecretAgent *agent);
+
+NMSecretAgentCapabilities nm_secret_agent_get_capabilities (NMSecretAgent *agent);
 
 guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
 

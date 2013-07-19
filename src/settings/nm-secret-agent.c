@@ -47,6 +47,7 @@ typedef struct {
 	char *identifier;
 	uid_t owner_uid;
 	char *owner_username;
+	NMSecretAgentCapabilities capabilities;
 	guint32 hash;
 
 	GSList *permissions;
@@ -143,6 +144,14 @@ nm_secret_agent_get_owner_username(NMSecretAgent *agent)
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_username;
+}
+
+NMSecretAgentCapabilities
+nm_secret_agent_get_capabilities (NMSecretAgent *agent)
+{
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NM_SECRET_AGENT_CAPABILITY_NONE);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->capabilities;
 }
 
 guint32
@@ -421,7 +430,8 @@ NMSecretAgent *
 nm_secret_agent_new (DBusGMethodInvocation *context,
                      const char *owner,
                      const char *identifier,
-                     uid_t owner_uid)
+                     uid_t owner_uid,
+                     NMSecretAgentCapabilities capabilities)
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
@@ -443,6 +453,7 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	priv->identifier = g_strdup (identifier);
 	priv->owner_uid = owner_uid;
 	priv->owner_username = g_strdup (username);
+	priv->capabilities = capabilities;
 
 	hash_str = g_strdup_printf ("%08u%s", owner_uid, identifier);
 	priv->hash = g_str_hash (hash_str);
