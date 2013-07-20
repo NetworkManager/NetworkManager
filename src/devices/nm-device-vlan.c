@@ -28,6 +28,7 @@
 #include <netinet/ether.h>
 
 #include "nm-device-vlan.h"
+#include "nm-manager.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
@@ -35,6 +36,7 @@
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
+#include "nm-utils.h"
 
 #include "nm-device-vlan-glue.h"
 
@@ -54,7 +56,7 @@ typedef struct {
 	NMDevice *parent;
 	guint parent_state_id;
 
-	guint vlan_id;
+	int vlan_id;
 } NMDeviceVlanPrivate;
 
 enum {
@@ -274,35 +276,76 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
-match_l2_config (NMDevice *device, NMConnection *connection)
+static void parent_state_changed (NMDevice *parent, NMDeviceState new_state,
+                                  NMDeviceState old_state,
+                                  NMDeviceStateReason reason,
+                                  gpointer user_data);
+
+static void
+nm_device_vlan_set_parent (NMDeviceVlan *device, NMDevice *parent)
 {
-	NMSettingVlan *s_vlan;
-	gboolean fail_if_no_hwaddr = FALSE;
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 
-	s_vlan = nm_connection_get_setting_vlan (connection);
-	g_assert (s_vlan);
+	if (priv->parent_state_id) {
+		g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
+		priv->parent_state_id = 0;
+	}
+	g_clear_object (&priv->parent);
 
-	if (   !nm_setting_vlan_get_parent (s_vlan)
-	    && !nm_setting_vlan_get_interface_name (s_vlan)) {
-		/* If there's no parent and no interface name given, then the only way
-		 * we have to identify the VLAN interface the connection matches is
-		 * a hardware-specific setting's hardware address property, so we want
-		 * to fail the match below if we there is none.
-		 */
-		fail_if_no_hwaddr = TRUE;
+	if (parent) {
+		priv->parent = g_object_ref (parent);
+		priv->parent_state_id = g_signal_connect (priv->parent,
+		                                          "state-changed",
+		                                          G_CALLBACK (parent_state_changed),
+		                                          device);
+	}
+	g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_PARENT);
+}
+
+static void
+update_connection (NMDevice *device, NMConnection *connection)
+{
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
+	NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
+	int ifindex = nm_device_get_ifindex (device);
+	int parent_ifindex = -1, vlan_id = -1;
+	NMDevice *parent;
+	const char *setting_parent, *new_parent;
+
+	if (!s_vlan) {
+		s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_vlan);
+		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, nm_device_get_iface (device), NULL);
 	}
 
-	/* MAC address check; we ask the parent to check our own MAC address,
-	 * because only the parent knows what kind of NMSetting the MAC
-	 * address will be in.  The VLAN device shouldn't have to know what kind
-	 * of interface the parent is.
-	 */
-	if (!match_hwaddr (device, connection, fail_if_no_hwaddr))
-		return FALSE;
+	nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id);
+	if (priv->vlan_id != vlan_id) {
+		priv->vlan_id = vlan_id;
+		g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_ID);
+	}
 
-	/* FIXME: any more L2 checks? */
-	return TRUE;
+	if (vlan_id != nm_setting_vlan_get_id (s_vlan))
+		g_object_set (s_vlan, NM_SETTING_VLAN_ID, priv->vlan_id, NULL);
+
+	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+	g_assert (parent);
+	if (priv->parent != parent)
+		nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
+
+	/* Update parent in the connection; default to parent's interface name */
+	new_parent = nm_device_get_iface (parent);
+	setting_parent = nm_setting_vlan_get_parent (s_vlan);
+	if (setting_parent && nm_utils_is_uuid (setting_parent)) {
+		NMConnectionProvider *cp = nm_device_get_connection_provider (device);
+		NMConnection *parent_connection;
+
+		/* Don't change a parent specified by UUID if it's still valid */
+		parent_connection = nm_connection_provider_get_connection_by_uuid (cp, setting_parent);
+		if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection, NULL))
+			new_parent = NULL;
+	}
+	if (new_parent)
+		g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, new_parent, NULL);
 }
 
 static NMActStageReturn
@@ -558,11 +601,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PARENT:
-		priv->parent = g_value_dup_object (value);
-		priv->parent_state_id = g_signal_connect (priv->parent,
-		                                          "state-changed",
-		                                          G_CALLBACK (parent_state_changed),
-		                                          object);
+		nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), g_value_get_object (value));
 		break;
 	case PROP_VLAN_ID:
 		priv->vlan_id = g_value_get_uint (value);
@@ -585,8 +624,7 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
-	g_object_unref (priv->parent);
+	nm_device_vlan_set_parent (self, NULL);
 
 	G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
 }
@@ -596,6 +634,8 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+
+	parent_class->connection_type = NM_SETTING_VLAN_SETTING_NAME;
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceVlanPrivate));
 
@@ -614,7 +654,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
-	parent_class->match_l2_config = match_l2_config;
+	parent_class->update_connection = update_connection;
 
 	/* properties */
 	g_object_class_install_property
