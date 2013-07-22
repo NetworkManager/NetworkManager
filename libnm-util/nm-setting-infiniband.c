@@ -401,7 +401,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:p-key:
 	 *
-	 * The Infiniband P_Key to use for this device. A value of -1
+	 * The InfiniBand P_Key to use for this device. A value of -1
 	 * means to use the default P_Key (aka "the P_Key at index 0").
 	 * Otherwise it is a 16-bit unsigned integer, whose high bit
 	 * is set if it is a "full membership" P_Key.
@@ -410,7 +410,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_P_KEY,
 		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY,
 		                   "P_Key",
-		                   "The Infiniband P_Key. Either -1 for the "
+		                   "The InfiniBand P_Key. Either -1 for the "
 		                   "default, or a 16-bit unsigned integer.",
 		                   -1, 0xFFFF, -1,
 		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
