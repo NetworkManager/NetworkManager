@@ -802,7 +802,7 @@ get_property (GObject *object, guint prop_id,
 				/* Gateway */
 				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 				ba = g_byte_array_new ();
-				g_byte_array_append (ba, (guint8 *) gateway, 16);
+				g_byte_array_append (ba, (guint8 *) (gateway ? gateway : &in6addr_any), sizeof (*gateway));
 				g_value_take_boxed (&element, ba);
 				g_value_array_append (array, &element);
 				g_value_unset (&element);
