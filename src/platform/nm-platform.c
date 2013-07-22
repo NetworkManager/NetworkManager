@@ -1486,6 +1486,10 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 		route = &g_array_index (routes, NMPlatformIP4Route, i);
 		route->ifindex = 0;
 
+		/* Ignore default route */
+		if (!route->plen)
+			continue;
+
 		if (!known_routes || !array_contains_ip4_route (known_routes, route))
 			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
 	}
@@ -1533,6 +1537,10 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP6Route, i);
 		route->ifindex = 0;
+
+		/* Ignore default route */
+		if (!route->plen)
+			continue;
 
 		if (!known_routes || !array_contains_ip6_route (known_routes, route))
 			nm_platform_ip6_route_delete (ifindex, route->network, route->plen, route->metric);
