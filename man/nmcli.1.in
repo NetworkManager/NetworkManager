@@ -392,8 +392,12 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 \(en MAC address of the device this connection is locked to (InfiniBand MAC is 20 bytes)
 .IP "\fI[mtu <MTU>]\fP" 42
 \(en MTU
-.IP "\fI[transport-mode <mode>]\fP" 42
+.IP "\fI[transport-mode datagram | connected]\fP" 42
 \(en InfiniBand transport mode
+.IP "\fI[parent <interface name>]\fP" 42
+\(en the interface name of the parent device (if any)
+.IP "\fI[p-key <IPoIB P_Key>]\fP" 42
+\(en the InfiniBand P_Key (16-bit unsigned integer)
 .RE
 .RS
 .TP
@@ -431,9 +435,9 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 \(en downdelay
 .IP "\fI[updelay <num>]\fP" 42
 \(en updelay
-.IP "\fI[arp_interval <num>]\fP" 42
+.IP "\fI[arp-interval <num>]\fP" 42
 \(en ARP interval
-.IP "\fI[arp_ip_traget <num>]\fP" 42
+.IP "\fI[arp-ip-target <num>]\fP" 42
 \(en ARP IP target
 .RE
 .RS
@@ -484,6 +488,10 @@ to be sent back out through the slave the frame was received on
 .B olpc-mesh:
 .IP "\fI[ssid <SSID>]\fP" 42
 \(en SSID
+.IP "\fI[channel <1-13>]\fP" 42
+\(en channel to use for the network
+.IP "\fI[dhcp-anycast <MAC address>]\fP" 42
+\(en anycast DHCP MAC address used when requesting an IP address via DHCP
 .RE
 .RS
 .TP
