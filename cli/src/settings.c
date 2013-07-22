@@ -1079,7 +1079,7 @@ nmc_property_ib_get_mtu (NMSetting *setting)
 	if (mtu == 0)
 		return g_strdup (_("auto"));
 	else
-		return g_strdup_printf ("%d", nm_setting_infiniband_get_mtu (s_infiniband));
+		return g_strdup_printf ("%d", mtu);
 }
 
 static char *
@@ -1262,7 +1262,7 @@ nmc_property_wired_get_mtu (NMSetting *setting)
 	if (mtu == 0)
 		return g_strdup (_("auto"));
 	else
-		return g_strdup_printf ("%d", nm_setting_wired_get_mtu (s_wired));
+		return g_strdup_printf ("%d", mtu);
 }
 
 /* --- NM_SETTING_WIRELESS_SETTING_NAME property get functions --- */
@@ -1303,7 +1303,7 @@ nmc_property_wireless_get_mtu (NMSetting *setting)
 	if (mtu == 0)
 		return g_strdup (_("auto"));
 	else
-		return g_strdup_printf ("%d", nm_setting_wireless_get_mtu (s_wireless));
+		return g_strdup_printf ("%d", mtu);
 }
 
 /* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property get functions --- */
