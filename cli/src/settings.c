@@ -2353,6 +2353,27 @@ nmc_property_ib_set_transport_mode (NMSetting *setting, const char *prop, const 
 
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_ib_allowed_transport_mode, ib_valid_transport_modes)
 
+/* 'p-key' */
+static gboolean
+nmc_property_ib_set_p_key (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	gboolean p_key_valid = FALSE;
+	long p_key_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!strncasecmp (val, "0x", 2))
+		p_key_valid = nmc_string_to_int_base (val + 2, 16, TRUE, 0, G_MAXUINT16, &p_key_int);
+	else
+		p_key_valid = nmc_string_to_int (val, TRUE, -1, G_MAXUINT16, &p_key_int);
+	if (!p_key_valid) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid IBoIP P_Key"), val);
+		return FALSE;
+	}
+	g_object_set (setting, prop, (gint) p_key_int, NULL);
+	return TRUE;
+}
+
 /* --- NM_SETTING_IP4_CONFIG_SETTING_NAME property setter functions --- */
 /* 'method' */
 static const char *ipv4_valid_methods[] = {
@@ -3752,6 +3773,18 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    nmc_property_ib_allowed_transport_mode);
+	nmc_add_prop_funcs (GLUE (INFINIBAND, P_KEY),
+	                    nmc_property_ib_get_p_key,
+	                    nmc_property_ib_set_p_key,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (INFINIBAND, PARENT),
+	                    nmc_property_ib_get_parent,
+	                    nmc_property_set_ifname,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_IP4_CONFIG_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, METHOD),
