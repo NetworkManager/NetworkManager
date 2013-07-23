@@ -3932,7 +3932,7 @@ editor_main_help (const char *command)
 			printf (_("help/? [<command>]  :: help for the nmcli commands\n\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_NMCLI:
-			printf (_("nmcli <conf-option> <value>  :: nmcli configuration\n\n"
+			printf (_("nmcli [<conf-option> <value>]  :: nmcli configuration\n\n"
 			          "Configures nmcli. The following options are available:\n"
 			          "status-line yes | no        [default: no]\n"
 			          "save-confirmation yes | no  [default: yes]\n"
@@ -4945,6 +4945,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s> ",
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
 				}
+			} else if (!cmd_arg_p) {
+				printf (_("Current nmcli configuration:\n"));
+				printf ("status-line: %s\n"
+				        "save-confirmation: %s\n"
+				        "prompt-color: %d\n",
+				        nmc->editor_status_line ? "yes" : "no",
+				        nmc->editor_save_confirmation ? "yes" : "no",
+				        nmc->editor_prompt_color);
 			} else
 				printf (_("Invalid configuration option '%s'; allowed [%s]\n"),
 				        cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, prompt-color");
