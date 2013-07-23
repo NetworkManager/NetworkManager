@@ -317,6 +317,7 @@ quit (void)
 {
 	if (progress_id) {
 		g_source_remove (progress_id);
+		progress_id = 0;
 		nmc_terminal_erase_line ();
 	}
 
@@ -1494,19 +1495,59 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 	g_free (info);
 }
 
-static NMCResultCode
-do_connection_up (NmCli *nmc, int argc, char **argv)
+static gboolean
+nmc_activate_connection (NmCli *nmc,
+                         NMConnection *connection,
+                         const char *ifname,
+                         const char *ap,
+                         const char *nsp,
+                         NMClientActivateFn callback,
+                         GError **error)
 {
 	ActivateConnectionInfo *info;
 	NMDevice *device = NULL;
 	const char *spec_object = NULL;
 	gboolean device_found;
+	gboolean is_virtual = FALSE;
+	GError *local = NULL;
+
+	g_return_val_if_fail (nmc != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (nm_connection_get_virtual_iface_name (connection))
+		is_virtual = TRUE;
+
+	device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &local);
+	/* Virtual connection may not have their interfaces created yet */
+	if (!device_found && !is_virtual) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
+		             "%s", local && local->message ? local->message : _("unknown error"));
+		g_clear_error (&local);
+		return FALSE;
+	}
+
+	info = g_malloc0 (sizeof (ActivateConnectionInfo));
+	info->nmc = nmc;
+	info->device = device;
+
+	nm_client_activate_connection (nmc->client,
+	                               connection,
+	                               device,
+	                               spec_object,
+	                               callback,
+	                               info);
+	return TRUE;
+}
+
+static NMCResultCode
+do_connection_up (NmCli *nmc, int argc, char **argv)
+{
 	NMConnection *connection = NULL;
 	const char *ifname = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
 	GError *error = NULL;
-	gboolean is_virtual = FALSE;
 	const char *selector = NULL;
 	const char *name;
 	char *line = NULL;
@@ -1601,21 +1642,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	if (nm_connection_get_virtual_iface_name (connection))
-		is_virtual = TRUE;
-
-	device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &error);
-	/* Virtual connection may not have their interfaces created yet */
-	if (!device_found && !is_virtual) {
-		if (error)
-			g_string_printf (nmc->return_text, _("Error: No suitable device found: %s."), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: No suitable device found."));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		g_clear_error (&error);
-		goto error;
-	}
-
 	/* Use nowait_flag instead of should_wait because exiting has to be postponed till
 	 * active_connection_state_cb() is called. That gives NM time to check our permissions
 	 * and we can follow activation progress.
@@ -1623,16 +1649,13 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 
-	info = g_malloc0 (sizeof (ActivateConnectionInfo));
-	info->nmc = nmc;
-	info->device = device;
-
-	nm_client_activate_connection (nmc->client,
-	                               connection,
-	                               device,
-	                               spec_object,
-	                               activate_connection_cb,
-	                               info);
+	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, activate_connection_cb, &error)) {
+		g_string_printf (nmc->return_text, _("Error: %s."),
+		                 error ? error->message : _("unknown error"));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		g_clear_error (&error);
+		goto error;
+	}
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -4509,7 +4532,7 @@ static char *
 gen_nmcli_cmds_menu (char *text, int state)
 {
 	const char *words[] = { "goto", "set", "remove", "describe", "print", "verify",
-	                        "save", "back", "help", "quit", "nmcli",
+	                        "save", "activate", "back", "help", "quit", "nmcli",
 	                        NULL };
 	return gen_func_basic (text, state, words);
 }
@@ -5084,6 +5107,7 @@ typedef enum {
 	NMC_EDITOR_MAIN_CMD_PRINT,
 	NMC_EDITOR_MAIN_CMD_VERIFY,
 	NMC_EDITOR_MAIN_CMD_SAVE,
+	NMC_EDITOR_MAIN_CMD_ACTIVATE,
 	NMC_EDITOR_MAIN_CMD_BACK,
 	NMC_EDITOR_MAIN_CMD_HELP,
 	NMC_EDITOR_MAIN_CMD_NMCLI,
@@ -5117,6 +5141,8 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_VERIFY;
 	else if (matches (vec[0], "save") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_SAVE;
+	else if (matches (vec[0], "activate") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_ACTIVATE;
 	else if (matches (vec[0], "back") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_BACK;
 	else if (matches (vec[0], "help") == 0 || strcmp (vec[0], "?") == 0)
@@ -5149,6 +5175,7 @@ editor_main_usage (void)
 	          "print    [all]                       :: print the connection\n"
 	          "verify   [all]                       :: verify the connection\n"
 	          "save                                 :: save the connection\n"
+	          "activate [<ifname>] [/<ap>|<nsp>]    :: activate the connection\n"
 	          "back                                 :: go one level up (back)\n"
 	          "help/?   [<command>]                 :: print this help\n"
 	          "nmcli    <conf-option> <value>       :: nmcli configuration\n"
@@ -5205,6 +5232,13 @@ editor_main_help (const char *command)
 		case NMC_EDITOR_MAIN_CMD_SAVE:
 			printf (_("save  :: save the connection\n\n"
 			          "Sends the connection to NetworkManager that will save it.\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_ACTIVATE:
+			printf (_("activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n\n"
+			          "Activates the connection.\n\n"
+			          "Available options:\n"
+			          "<ifname>    - device the connection will be activated on\n"
+			          "/<ap>|<nsp> - AP (Wi-Fi) or NSP (WiMAX) (prepend with / when <ifname> is not specified)\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_BACK:
 			printf (_("back  :: go to upper menu level\n\n"));
@@ -5376,21 +5410,30 @@ editor_sub_usage (const char *command)
 
 /*----------------------------------------------------------------------------*/
 
+typedef struct {
+	NMDevice *device;
+	NMActiveConnection *ac;
+	guint monitor_id;
+} MonitorACInfo;
+
 static gboolean nmc_editor_cb_called;
 static GError *nmc_editor_error;
+static MonitorACInfo *nmc_editor_monitor_ac;
 static GMutex nmc_editor_mutex;
 static GCond nmc_editor_cond;
 
 /*
- * Store 'error' to shared 'nmc_editor_error' and signal the condition
- * so that the 'editor-thread' thread could process that.
+ * Store 'error' to shared 'nmc_editor_error' and monitoring info to
+ * 'nmc_editor_monitor_ac' and signal the condition so that
+ * the 'editor-thread' thread could process that.
  */
 static void
-set_and_signal_error (GError *error)
+set_info_and_signal_editor_thread (GError *error, MonitorACInfo *monitor_ac_info)
 {
 	g_mutex_lock (&nmc_editor_mutex);
 	nmc_editor_cb_called = TRUE;
 	nmc_editor_error = error ? g_error_copy (error) : NULL;
+	nmc_editor_monitor_ac = monitor_ac_info;
 	g_cond_signal (&nmc_editor_cond);
 	g_mutex_unlock (&nmc_editor_mutex);
 }
@@ -5401,7 +5444,7 @@ add_connection_editor_cb (NMRemoteSettings *settings,
                           GError *error,
                           gpointer user_data)
 {
-	set_and_signal_error (error);
+	set_info_and_signal_editor_thread (error, NULL);
 }
 
 static void
@@ -5409,7 +5452,66 @@ update_connection_editor_cb (NMRemoteConnection *connection,
                              GError *error,
                              gpointer user_data)
 {
-	set_and_signal_error (error);
+	set_info_and_signal_editor_thread (error, NULL);
+}
+
+static gboolean
+progress_activation_editor_cb (gpointer user_data)
+{
+	MonitorACInfo *info = (MonitorACInfo *) user_data;
+	NMDevice *device = info->device;
+	NMActiveConnection *ac = info->ac;
+	NMActiveConnectionState ac_state;
+	NMDeviceState dev_state;
+
+	if (!device || !ac)
+		return FALSE;
+
+	ac_state = nm_active_connection_get_state (ac);
+	dev_state = nm_device_get_state (device);
+
+	nmc_terminal_show_progress (nmc_device_state_to_string (dev_state));
+
+	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+	    || dev_state == NM_DEVICE_STATE_ACTIVATED) {
+		nmc_terminal_erase_line ();
+		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
+		        nm_object_get_path (NM_OBJECT (ac)));
+		return FALSE; /* we are done */
+	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
+	           || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+		nmc_terminal_erase_line ();
+		printf (_("Error: Connection activation failed.\n"));
+		return FALSE; /* we are done */
+	}
+
+	return TRUE;
+}
+
+static void
+activate_connection_editor_cb (NMClient *client,
+                               NMActiveConnection *active,
+                               GError *error,
+                               gpointer user_data)
+{
+	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
+	NMDevice *device = info->device;
+	const GPtrArray *ac_devs;
+	MonitorACInfo *monitor_ac_info = NULL;
+
+	if (!error) {
+		if (!device) {
+			ac_devs = nm_active_connection_get_devices (active);
+			device = ac_devs && ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+		}
+		if (device) {
+			monitor_ac_info = g_malloc0 (sizeof (AddConnectionInfo));
+			monitor_ac_info->device = device;
+			monitor_ac_info->ac = active;
+			monitor_ac_info->monitor_id = g_timeout_add (120, progress_activation_editor_cb, monitor_ac_info);
+		}
+	}
+	set_info_and_signal_editor_thread (error, monitor_ac_info);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5775,6 +5877,20 @@ ask_check_property (const char *arg,
 	}
 	g_free (prop_name_user);
 	return prop_name;
+}
+
+/* Copy timestamp from src do dst */
+static void
+update_connection_timestamp (NMConnection *src, NMConnection *dst)
+{
+	NMSettingConnection *s_con_src, *s_con_dst;
+
+	s_con_src = nm_connection_get_setting_connection (src);
+	s_con_dst = nm_connection_get_setting_connection (dst);
+	if (s_con_src && s_con_dst) {
+		guint64 timestamp = nm_setting_connection_get_timestamp (s_con_src);
+		g_object_set (s_con_dst, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
+	}
 }
 
 static gboolean
@@ -6302,6 +6418,73 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				        err1 ? err1->message : _("(unknown error)"));
 
 			g_clear_error (&err1);
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_ACTIVATE:
+			{
+			GError *tmp_err = NULL;
+			const char *ifname = cmd_arg_p;
+			const char *ap_nsp = cmd_arg_v;
+
+			/* When only AP/NSP is specified it is prepended with '/' */
+			if (!cmd_arg_v) {
+				if (ifname && ifname[0] == '/') {
+					ap_nsp = ifname + 1;
+					ifname = NULL;
+				}
+			} else
+				ap_nsp = ap_nsp && ap_nsp[0] == '/' ? ap_nsp + 1 : ap_nsp;
+
+			if (dirty) {
+				printf (_("Error: connection is not saved. Type 'save' first.\n"));
+				break;
+			}
+			if (!nm_connection_verify (NM_CONNECTION (rem_con), &tmp_err)) {
+				printf (_("Error: connection is not valid: %s\n"), tmp_err->message);
+				g_clear_error (&tmp_err);
+				break;
+			}
+			nmc->get_client (nmc);
+
+			nmc->nowait_flag = FALSE;
+			nmc->should_wait = TRUE;
+			nmc->print_output = NMC_PRINT_PRETTY;
+			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp,
+			                              activate_connection_editor_cb, &tmp_err)) {
+				printf (_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
+				g_clear_error (&tmp_err);
+				break;
+			}
+
+			g_mutex_lock (&nmc_editor_mutex);
+			while (!nmc_editor_cb_called)
+				g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
+
+			if (nmc_editor_error) {
+				printf (_("Error: Failed to activate '%s' (%s) connection: (%d) %s\n"),
+				        nm_connection_get_id (connection),
+				        nm_connection_get_uuid (connection),
+				        nmc_editor_error->code, nmc_editor_error->message);
+				g_error_free (nmc_editor_error);
+			} else {
+				printf (_("Monitoring connection activation (press any key to continue)\n"));
+				nmc_get_user_input ("");
+			}
+
+			if (nmc_editor_monitor_ac) {
+				if (nmc_editor_monitor_ac->monitor_id)
+					g_source_remove (nmc_editor_monitor_ac->monitor_id);
+				g_free (nmc_editor_monitor_ac);
+			}
+			nmc_editor_cb_called = FALSE;
+			nmc_editor_error = NULL;
+			nmc_editor_monitor_ac = NULL;
+			g_mutex_unlock (&nmc_editor_mutex);
+
+			/* Update timestamp in local connection */
+			update_connection_timestamp (NM_CONNECTION (rem_con), connection);
+
+			}
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_BACK:
@@ -7046,7 +7229,7 @@ connection_editor_thread_func (gpointer data)
 	/* run editor for editing/adding connections */
 	td->nmc->return_value = do_connection_edit (td->nmc, td->argc, td->argv);
 
-	/* quit glib main loop now that we are with this thread */
+	/* quit glib main loop now that we are done with this thread */
 	quit ();
 
 	return NULL;
