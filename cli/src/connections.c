@@ -3367,7 +3367,7 @@ gen_nmcli_cmds_submenu (char *text, int state)
 static char *
 gen_cmd_nmcli (char *text, int state)
 {
-	const char *commands[] = { "status-line", "prompt-color", NULL };
+	const char *commands[] = { "status-line", "save-confirmation", "prompt-color", NULL };
 	return gen_nmcli_cmds (text, state, commands);
 }
 
@@ -3934,8 +3934,9 @@ editor_main_help (const char *command)
 		case NMC_EDITOR_MAIN_CMD_NMCLI:
 			printf (_("nmcli <conf-option> <value>  :: nmcli configuration\n\n"
 			          "Configures nmcli. The following options are available:\n"
-			          "status-line yes | no\n"
-			          "prompt-color <0-8>\n"
+			          "status-line yes | no        [default: no]\n"
+			          "save-confirmation yes | no  [default: yes]\n"
+			          "prompt-color <0-8>          [default: 0]\n"
 			          "  0 = normal\n"
 			          "  1 = \33[30mblack\33[0m\n"
 			          "  2 = \33[31mred\33[0m\n"
@@ -3947,6 +3948,7 @@ editor_main_help (const char *command)
 			          "  8 = \33[37mwhite\33[0m\n"
 			          "\n"
 			          "Examples: nmcli> nmcli status-line yes\n"
+			          "          nmcli> nmcli save-confirmation no\n"
 			          "          nmcli> nmcli prompt-color 3\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_QUIT:
@@ -4469,6 +4471,38 @@ ask_check_property (const char *arg,
 	return prop_name;
 }
 
+static gboolean
+confirm_connection_saving (NMConnection *local, NMConnection *remote)
+{
+	NMSettingConnection *s_con_loc, *s_con_rem;
+	gboolean ac_local, ac_remote;
+	gboolean confirmed = TRUE;
+
+	s_con_loc = nm_connection_get_setting_connection (local);
+	g_assert (s_con_loc);
+	ac_local = nm_setting_connection_get_autoconnect (s_con_loc);
+
+	if (remote) {
+		s_con_rem = nm_connection_get_setting_connection (remote);
+		g_assert (s_con_rem);
+		ac_remote = nm_setting_connection_get_autoconnect (s_con_rem);
+	} else
+		ac_remote = FALSE;
+
+	if (ac_local && !ac_remote) {
+		char *answer;
+		answer = nmc_get_user_input (_("Saving the connection with 'autoconnect=yes'. "
+		                               "That might result in an immediate activation of the connection.\n"
+		                               "Do you still want to save? [yes] "));
+		if (!answer || matches (answer, "yes") == 0)
+			confirmed = TRUE;
+		else
+			confirmed = FALSE;
+		g_free (answer);
+	}
+	return confirmed;
+}
+
 typedef	struct {
 	guint level;
 	char *main_prompt;
@@ -4815,6 +4849,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_SAVE:
 			/* Save the connection */
 			if (nm_connection_verify (connection, &err1)) {
+				/* Ask for save confirmation if the connection changes to autoconnect=yes */
+				if (nmc->editor_save_confirmation)
+					if (!confirm_connection_saving (connection, NM_CONNECTION (rem_con)))
+						break;
+
 				if (!rem_con) {
 					/* Tell the settings service to add the new connection */
 					info = g_malloc0 (sizeof (AddConnectionInfo));
@@ -4856,7 +4895,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_mutex_unlock (&nmc_editor_mutex);
 			} else
 				printf (_("Error: connection verification failed: %s\n"),
-				        err1 ? err1->message : _("(unknown)"));
+				        err1 ? err1->message : _("(unknown error)"));
 
 			g_clear_error (&err1);
 			break;
@@ -4883,6 +4922,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_status_line = bb;
+			} else if (cmd_arg_p && matches (cmd_arg_p, "save-confirmation") == 0) {
+				GError *tmp_err = NULL;
+				gboolean bb;
+				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
+					printf (_("Error: save-confirmation: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+				} else
+					nmc->editor_save_confirmation = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color") == 0) {
 				unsigned long color;
 				if (!nmc_string_to_uint (cmd_arg_v ? g_strstrip (cmd_arg_v) : "X",
@@ -4900,7 +4947,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				}
 			} else
 				printf (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				        cmd_arg_v ? cmd_arg_v : "", "status-line, prompt-color");
+				        cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, prompt-color");
 
 			break;
 

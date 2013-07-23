@@ -328,6 +328,7 @@ nmc_init (NmCli *nmc)
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
 	nmc->editor_status_line = FALSE;
+	nmc->editor_save_confirmation = TRUE;
 	nmc->editor_prompt_color = NMC_TERM_COLOR_NORMAL;
 }
 

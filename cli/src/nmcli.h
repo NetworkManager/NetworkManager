@@ -125,6 +125,7 @@ typedef struct _NmCli {
 	gboolean nocheck_ver;                             /* Don't check nmcli and NM versions: option '--nocheck' */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
+	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 	NmcTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
 } NmCli;
 
