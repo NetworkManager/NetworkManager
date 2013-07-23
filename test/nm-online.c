@@ -57,9 +57,10 @@ typedef struct
 
 static GMainLoop *loop;
 
-static DBusHandlerResult dbus_filter (DBusConnection *connection G_GNUC_UNUSED,
-				      DBusMessage *message,
-				      void *user_data G_GNUC_UNUSED)
+static DBusHandlerResult
+dbus_filter (DBusConnection *connection G_GNUC_UNUSED,
+             DBusMessage *message,
+             void *user_data G_GNUC_UNUSED)
 {
 	NMState state;
 
@@ -77,32 +78,34 @@ static DBusHandlerResult dbus_filter (DBusConnection *connection G_GNUC_UNUSED,
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-static NMState check_online (DBusConnection *connection)
+static NMState
+check_online (DBusConnection *connection)
 {
 	DBusMessage *message, *reply;
 	DBusError error;
 	dbus_uint32_t state;
 	
 	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH,
-						NM_DBUS_INTERFACE, "state");
+	                                        NM_DBUS_INTERFACE, "state");
 	if (!message)
 		exit (2);
 
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message,
-							   -1, &error);
+	                                                   -1, &error);
 	dbus_message_unref (message);
 	if (!reply) 
 		return NM_STATE_UNKNOWN;
 
 	if (!dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &state,
-				    DBUS_TYPE_INVALID))
+	                            DBUS_TYPE_INVALID))
 		exit (2);
 
 	return state;
 }
 
-static gboolean handle_timeout (gpointer data)
+static gboolean
+handle_timeout (gpointer data)
 {
 	int i = PROGRESS_STEPS;
 	Timeout *timeout = (Timeout *) data;
@@ -126,7 +129,8 @@ static gboolean handle_timeout (gpointer data)
 	return TRUE;
 }
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
 	DBusConnection *connection;
 	DBusError error;
@@ -194,10 +198,10 @@ int main (int argc, char *argv[])
 		return 2;
 
 	dbus_bus_add_match (connection,
-			    "type='signal',"
-			    "interface='" NM_DBUS_INTERFACE "',"
-			    "sender='" NM_DBUS_SERVICE "',"
-			    "path='" NM_DBUS_PATH "'", &error);
+	                    "type='signal',"
+	                    "interface='" NM_DBUS_INTERFACE "',"
+	                    "sender='" NM_DBUS_SERVICE "',"
+	                    "path='" NM_DBUS_PATH "'", &error);
 	if (dbus_error_is_set (&error)) {
 		dbus_error_free (&error);
 		return 2;
