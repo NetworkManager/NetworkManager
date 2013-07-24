@@ -34,7 +34,8 @@ EXTRA_DIST = \
 	valgrind.suppressions
 
 DISTCHECK_CONFIGURE_FLAGS = \
-	--with-tests=yes \
+	--enable-tests=yes \
+	--with-valgrind=no \
 	--enable-gtk-doc \
 	--enable-more-warnings=yes \
 	--with-udev-dir=$$dc_install_base/lib/udev \
