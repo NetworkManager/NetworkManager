@@ -19,6 +19,7 @@ SUBDIRS +=				\
 	platform			\
 	settings/tests			\
 	supplicant-manager/tests	\
+	rdisc/tests			\
 	tests
 endif
 
