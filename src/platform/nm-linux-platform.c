@@ -961,6 +961,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	switch (event) {
 	case RTM_DELLINK:
 	case RTM_DELADDR:
+	case RTM_DELROUTE:
 		/* Ignore inconsistent deletion
 		 *
 		 * Quick external deletion and addition can be occasionally
@@ -978,6 +979,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		return NL_OK;
 	case RTM_NEWLINK:
 	case RTM_NEWADDR:
+	case RTM_NEWROUTE:
 		/* Ignore inconsistent addition or change (kernel will send a good one)
 		 *
 		 * Quick sequence of RTM_NEWLINK notifications can be occasionally
@@ -2373,6 +2375,7 @@ setup (NMPlatform *platform)
 	nle = nl_socket_add_memberships (priv->nlh_event,
 			RTNLGRP_LINK,
 			RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
+			RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
 			NULL);
 	g_assert (!nle);
 	debug ("Netlink socket for events established: %d", nl_socket_get_local_port (priv->nlh_event));
