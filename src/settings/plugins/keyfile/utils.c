@@ -99,6 +99,7 @@ nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 	    || check_suffix (base, PEM_TAG)                                 /* 802.1x certificates and keys */
 	    || check_suffix (base, DER_TAG)                                 /* 802.1x certificates and keys */
 	    || check_mkstemp_suffix (base)                                  /* temporary files created by mkstemp() */
+	    || check_prefix (base, ".#")                                    /* Emacs locking file (link) */
 	    || base[strlen (base) - 1] == '~')
 		ignore = TRUE;
 
