@@ -717,8 +717,40 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 }
 
 static void
+remove_if_ifindex (struct nl_object *object, gpointer user_data)
+{
+	int ifindex = *(int *) user_data;
+
+	switch (object_type_from_nl_object (object)) {
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		if (ifindex != rtnl_addr_get_ifindex ((struct rtnl_addr *) object))
+			break;
+		nl_cache_remove (object);
+		break;
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		{
+			struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
+			struct rtnl_nexthop *nexthop;
+
+			if (rtnl_route_get_nnexthops (rtnlroute) != 1)
+				break;
+			nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+			if (ifindex != rtnl_route_nh_get_ifindex (nexthop))
+				break;
+			nl_cache_remove (object);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void
 announce_object (NMPlatform *platform, const struct nl_object *object, ObjectStatus status)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	ObjectType object_type = object_type_from_nl_object (object);
 	const char *sig = signal_by_type_and_status[object_type][status];
 
@@ -735,6 +767,25 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformLink device;
 
 			link_init (platform, &device, (struct rtnl_link *) object);
+
+			/* In some cases, the link action is followed by address and/or
+			 * route action. Kernel silently removes routes when interface
+			 * goes !IFF_UP and we also need to handle addresses and routes
+			 * for removed network interfaces.
+			 */
+			switch (status) {
+			case CHANGED:
+				if (!device.connected)
+					nl_cache_foreach (priv->route_cache, remove_if_ifindex, &device.ifindex);
+				break;
+			case REMOVED:
+				nl_cache_foreach (priv->address_cache, remove_if_ifindex, &device.ifindex);
+				nl_cache_foreach (priv->route_cache, remove_if_ifindex, &device.ifindex);
+				break;
+			default:
+				break;
+			}
+	
 			g_signal_emit_by_name (platform, sig, device.ifindex, &device);
 		}
 		return;
@@ -848,37 +899,6 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 	return refresh_object (platform, object, add_kernel_object (priv->nlh, object));
 }
 
-static void
-remove_if_ifindex (struct nl_object *object, gpointer user_data)
-{
-	int ifindex = *(int *) user_data;
-
-	switch (object_type_from_nl_object (object)) {
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
-		if (ifindex != rtnl_addr_get_ifindex ((struct rtnl_addr *) object))
-			break;
-		nl_cache_remove (object);
-		break;
-	case IP4_ROUTE:
-	case IP6_ROUTE:
-		{
-			struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
-			struct rtnl_nexthop *nexthop;
-
-			if (rtnl_route_get_nnexthops (rtnlroute) != 1)
-				break;
-			nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
-			if (ifindex != rtnl_route_nh_get_ifindex (nexthop))
-				break;
-			nl_cache_remove (object);
-		}
-		break;
-	default:
-		break;
-	}
-}
-
 /* Decreases the reference count if @obj for convenience */
 static gboolean
 delete_object (NMPlatform *platform, struct nl_object *obj)
@@ -906,12 +926,6 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 	}
 
 	nl_cache_remove (cached_object);
-	if (object_type_from_nl_object (object) == LINK) {
-		int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
-
-		nl_cache_foreach (priv->address_cache, remove_if_ifindex, &ifindex);
-		nl_cache_foreach (priv->route_cache, remove_if_ifindex, &ifindex);
-	}
 
 	announce_object (platform, cached_object, REMOVED);
 
