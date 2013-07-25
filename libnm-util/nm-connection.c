@@ -49,6 +49,7 @@
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-team.h"
+#include "nm-setting-team-port.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-vlan.h"
@@ -1256,6 +1257,22 @@ nm_connection_get_setting_team (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingTeam *) nm_connection_get_setting (connection, NM_TYPE_SETTING_TEAM);
+}
+
+/**
+ * nm_connection_get_setting_team_port:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingTeamPort the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingTeamPort if the connection contains one, otherwise %NULL
+ **/
+NMSettingTeamPort *
+nm_connection_get_setting_team_port (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingTeamPort *) nm_connection_get_setting (connection, NM_TYPE_SETTING_TEAM_PORT);
 }
 
 /**

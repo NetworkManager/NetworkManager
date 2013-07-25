@@ -34,6 +34,7 @@
 #include <nm-setting-bluetooth.h>
 #include <nm-setting-bond.h>
 #include <nm-setting-team.h>
+#include <nm-setting-team-port.h>
 #include <nm-setting-bridge.h>
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-cdma.h>
@@ -202,6 +203,7 @@ NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnec
 NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
 NMSettingBond *            nm_connection_get_setting_bond              (NMConnection *connection);
 NMSettingTeam *            nm_connection_get_setting_team              (NMConnection *connection);
+NMSettingTeamPort *        nm_connection_get_setting_team_port         (NMConnection *connection);
 NMSettingBridge *          nm_connection_get_setting_bridge            (NMConnection *connection);
 NMSettingBridgePort *      nm_connection_get_setting_bridge_port       (NMConnection *connection);
 NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);

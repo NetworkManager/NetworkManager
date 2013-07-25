@@ -19,6 +19,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-bluetooth.h		\
 	nm-setting-bond.h		\
 	nm-setting-team.h		\
+	nm-setting-team-port.h		\
 	nm-setting-bridge.h		\
 	nm-setting-bridge-port.h	\
 	nm-setting-connection.h		\
@@ -57,6 +58,7 @@ libnm_util_la_csources = \
 	nm-setting-bluetooth.c		\
 	nm-setting-bond.c		\
 	nm-setting-team.c		\
+	nm-setting-team-port.c		\
 	nm-setting-bridge.c		\
 	nm-setting-bridge-port.c	\
 	nm-setting-connection.c		\

@@ -33,6 +33,7 @@ global:
 	nm_connection_get_setting_pppoe;
 	nm_connection_get_setting_serial;
 	nm_connection_get_setting_team;
+	nm_connection_get_setting_team_port;
 	nm_connection_get_setting_vlan;
 	nm_connection_get_setting_vpn;
 	nm_connection_get_setting_wimax;
@@ -421,6 +422,11 @@ global:
 	nm_setting_team_get_interface_name;
 	nm_setting_team_get_type;
 	nm_setting_team_new;
+	nm_setting_team_port_error_get_type;
+	nm_setting_team_port_error_quark;
+	nm_setting_team_port_get_config;
+	nm_setting_team_port_get_type;
+	nm_setting_team_port_new;
 	nm_setting_to_hash;
 	nm_setting_to_string;
 	nm_setting_update_secrets;
