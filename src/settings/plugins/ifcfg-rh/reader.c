@@ -44,6 +44,8 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-bond.h>
+#include <nm-setting-team.h>
+#include <nm-setting-team-port.h>
 #include <nm-setting-bridge.h>
 #include <nm-setting-bridge-port.h>
 #include <nm-utils.h>
@@ -1740,6 +1742,28 @@ check_if_bond_slave (shvarFile *ifcfg,
 		              NULL);
 		g_free (value);
 	}
+}
+
+static void
+check_if_team_slave (shvarFile *ifcfg,
+                     NMSettingConnection *s_con)
+{
+	char *value;
+
+	value = svGetValue (ifcfg, "DEVICETYPE", FALSE);
+	if (!value)
+		return;
+	if (strcasecmp (value, TYPE_TEAM_PORT)) {
+		g_free (value);
+		return;
+	}
+	g_free (value);
+	value = svGetValue (ifcfg, "TEAM_MASTER", FALSE);
+	if (!value)
+		return;
+	g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
+	g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME, NULL);
+	g_free (value);
 }
 
 static gboolean
@@ -3494,6 +3518,7 @@ wired_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
+	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
 
 	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
@@ -3670,6 +3695,7 @@ infiniband_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
+	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
 
 	infiniband_setting = make_infiniband_setting (ifcfg, file, nm_controlled, unmanaged, error);
@@ -3781,6 +3807,92 @@ bond_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	nm_connection_add_setting (connection, bond_setting);
+
+	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	if (!wired_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, wired_setting);
+
+	if (s_8021x)
+		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	return connection;
+}
+
+static NMSetting *
+make_team_setting (shvarFile *ifcfg,
+                   const char *file,
+                   gboolean nm_controlled,
+                   char **unmanaged,
+                   GError **error)
+{
+	NMSettingTeam *s_team;
+	char *value;
+
+	s_team = NM_SETTING_TEAM (nm_setting_team_new ());
+
+	value = svGetValue (ifcfg, "DEVICE", FALSE);
+	if (!value || !strlen (value)) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
+		goto error;
+	}
+
+	g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, value, NULL);
+	g_free (value);
+
+	value = svGetValue (ifcfg, "TEAM_CONFIG", FALSE);
+	if (value) {
+		g_object_set (s_team, NM_SETTING_TEAM_CONFIG, value, NULL);
+		g_free (value);
+	}
+
+	return (NMSetting *) s_team;
+
+error:
+	g_object_unref (s_team);
+	return NULL;
+}
+
+static NMConnection *
+team_connection_from_ifcfg (const char *file,
+                            shvarFile *ifcfg,
+                            gboolean nm_controlled,
+                            char **unmanaged,
+                            GError **error)
+{
+	NMConnection *connection = NULL;
+	NMSetting *con_setting = NULL;
+	NMSetting *team_setting = NULL;
+	NMSetting *wired_setting = NULL;
+	NMSetting8021x *s_8021x = NULL;
+
+	g_return_val_if_fail (file != NULL, NULL);
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+
+	connection = nm_connection_new ();
+
+	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_TEAM_SETTING_NAME, NULL, _("Team"));
+	if (!con_setting) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Failed to create connection setting.");
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, con_setting);
+
+	team_setting = make_team_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	if (!team_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, team_setting);
 
 	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
 	if (!wired_setting) {
@@ -4023,6 +4135,22 @@ make_bridge_port_setting (shvarFile *ifcfg)
 		value = svGetValue (ifcfg, "BRIDGING_OPTS", FALSE);
 		if (value)
 			handle_bridging_opts (s_port, FALSE, value, handle_bridge_port_option);
+		g_free (value);
+	}
+
+	return s_port;
+}
+
+static NMSetting *
+make_team_port_setting (shvarFile *ifcfg)
+{
+	NMSetting *s_port = NULL;
+	char *value;
+
+	value = svGetValue (ifcfg, "TEAM_PORT_CONFIG", FALSE);
+	if (value) {
+		s_port = nm_setting_team_port_new ();
+		g_object_set (s_port, NM_SETTING_TEAM_PORT_CONFIG, value, NULL);
 		g_free (value);
 	}
 
@@ -4365,27 +4493,18 @@ connection_from_file (const char *filename,
 		return NULL;
 	}
 
-	/*
-	 * Ignore Team connections for now; we don't support team yet.
-	 * https://fedorahosted.org/libteam/
-	 */
+	type = NULL;
+
 	devtype = svGetValue (parsed, "DEVICETYPE", FALSE);
 	if (devtype) {
-		if (   !strcasecmp (devtype, TYPE_TEAM)
-		    || !strcasecmp (devtype, TYPE_TEAM_PORT)) {
-			char *base_name = g_path_get_basename (filename);
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			            "Ignoring team (DEVICETYPE=\"%s\") connection '%s'; teaming is not supported yet",
-			             devtype,
-			             base_name);
-			g_free (base_name);
-			g_free (devtype);
-			goto done;
-		}
+		if (!strcasecmp (devtype, TYPE_TEAM))
+			type = g_strdup (TYPE_TEAM);
 		g_free (devtype);
 	}
 
-	type = svGetValue (parsed, "TYPE", FALSE);
+	if (!type)
+		type = svGetValue (parsed, "TYPE", FALSE);
+
 	if (!type) {
 		char *device;
 
@@ -4460,6 +4579,8 @@ connection_from_file (const char *filename,
 		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_BOND))
 		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+	else if (!strcasecmp (type, TYPE_TEAM))
+		connection = team_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_VLAN))
 		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
 	else if (!strcasecmp (type, TYPE_BRIDGE))
@@ -4507,6 +4628,11 @@ connection_from_file (const char *filename,
 
 	/* Bridge port? */
 	s_port = make_bridge_port_setting (parsed);
+	if (s_port)
+		nm_connection_add_setting (connection, s_port);
+
+	/* Team port? */
+	s_port = make_team_port_setting (parsed);
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
 
