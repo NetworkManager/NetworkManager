@@ -323,45 +323,37 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 	}
 }
 
-NMVPNConnection *
+gboolean
 nm_vpn_service_activate (NMVPNService *service,
-                         NMConnection *connection,
-                         NMDevice *device,
-                         const char *specific_object,
-                         gboolean user_requested,
-                         gulong user_uid,
+                         NMVPNConnection *vpn,
                          GError **error)
 {
-	NMVPNConnection *vpn;
 	NMVPNServicePrivate *priv;
 
-	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-	g_return_val_if_fail (error != NULL, NULL);
-	g_return_val_if_fail (*error == NULL, NULL);
+	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), FALSE);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
 
 	priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 
 	clear_quit_timeout (service);
 
-	vpn = nm_vpn_connection_new (connection, device, specific_object, user_requested, user_uid);
 	g_signal_connect (vpn, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
 	                  G_CALLBACK (connection_vpn_state_changed),
 	                  service);
 
 	priv->connections = g_slist_prepend (priv->connections, g_object_ref (vpn));
 
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service)) {
-		// FIXME: fill in error when errors happen
+	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service))
 		nm_vpn_connection_activate (vpn);
-	} else if (priv->start_timeout == 0) {
+	else if (priv->start_timeout == 0) {
 		nm_log_info (LOGD_VPN, "Starting VPN service '%s'...", priv->name);
 		if (!nm_vpn_service_daemon_exec (service, error))
-			vpn = NULL;
+			return FALSE;
 	}
 
-	return vpn;
+	return TRUE;
 }
 
 const GSList *

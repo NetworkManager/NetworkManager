@@ -2841,6 +2841,7 @@ static NMActiveConnection *
 activate_vpn_connection (NMManager *self,
                          NMConnection *connection,
                          const char *specific_object,
+                         gboolean user_requested,
                          gulong sender_uid,
                          GError **error)
 {
@@ -2848,6 +2849,8 @@ activate_vpn_connection (NMManager *self,
 	NMActiveConnection *parent = NULL;
 	NMDevice *device = NULL;
 	GSList *iter;
+	NMVPNConnection *vpn;
+	gboolean success = FALSE;
 
 	if (specific_object) {
 		/* Find the specifc connection the client requested we use */
@@ -2881,13 +2884,17 @@ activate_vpn_connection (NMManager *self,
 		return NULL;
 	}
 
-	return nm_vpn_manager_activate_connection (priv->vpn_manager,
-	                                           connection,
-	                                           device,
-	                                           nm_active_connection_get_path (parent),
-	                                           TRUE,
-	                                           sender_uid,
-	                                           error);
+	vpn = nm_vpn_connection_new (connection,
+	                             device,
+	                             nm_active_connection_get_path (parent),
+	                             user_requested,
+	                             sender_uid);
+	g_assert (vpn);
+	success = nm_vpn_manager_activate_connection (priv->vpn_manager, vpn, error);
+	if (!success)
+		g_object_unref (vpn);
+
+	return success ? NM_ACTIVE_CONNECTION (vpn) : NULL;
 }
 
 NMActiveConnection *
@@ -2928,7 +2935,12 @@ nm_manager_activate_connection (NMManager *manager,
 
 	/* VPN ? */
 	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
-		ac = activate_vpn_connection (manager, connection, specific_object, sender_uid, error);
+		ac = activate_vpn_connection (manager,
+		                              connection,
+		                              specific_object,
+		                              !!dbus_sender,
+		                              sender_uid,
+		                              error);
 		goto activated;
 	}
 
