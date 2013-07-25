@@ -37,6 +37,8 @@
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-pppoe.h>
 #include <nm-setting-vlan.h>
+#include <nm-setting-team.h>
+#include <nm-setting-team-port.h>
 #include <nm-utils.h>
 
 #include "common.h"
@@ -1294,6 +1296,34 @@ write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 	return TRUE;
 }
 
+static gboolean
+write_team_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingTeam *s_team;
+	const char *iface;
+	const char *config;
+
+	s_team = nm_connection_get_setting_team (connection);
+	if (!s_team) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Missing '%s' setting", NM_SETTING_TEAM_SETTING_NAME);
+		return FALSE;
+	}
+
+	iface = nm_setting_team_get_interface_name (s_team);
+	if (!iface) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing interface name");
+		return FALSE;
+	}
+
+	svSetValue (ifcfg, "DEVICE", iface, FALSE);
+	config = nm_setting_team_get_config (s_team);
+	svSetValue (ifcfg, "TEAM_CONFIG", config, FALSE);
+	svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM, FALSE);
+
+	return TRUE;
+}
+
 static guint32
 get_setting_default (NMSetting *setting, const char *prop)
 {
@@ -1424,6 +1454,23 @@ write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **
 	return TRUE;
 }
 
+static gboolean
+write_team_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingTeamPort *s_port;
+	const char *config;
+
+	s_port = nm_connection_get_setting_team_port (connection);
+	if (!s_port)
+		return TRUE;
+
+	config = nm_setting_team_port_get_config (s_port);
+	svSetValue (ifcfg, "TEAM_PORT_CONFIG", config, FALSE);
+	svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
+
+	return TRUE;
+}
+
 static void
 write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
@@ -1469,6 +1516,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 			svSetValue (ifcfg, "MASTER", master, FALSE);
 		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
 			svSetValue (ifcfg, "BRIDGE", master, FALSE);
+		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
+			svSetValue (ifcfg, "TEAM_MASTER", master, FALSE);
 	}
 
 	/* secondary connection UUIDs */
@@ -2207,6 +2256,9 @@ write_connection (NMConnection *connection,
 	} else if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME)) {
 		if (!write_bonding_setting (connection, ifcfg, error))
 			goto out;
+	} else if (!strcmp (type, NM_SETTING_TEAM_SETTING_NAME)) {
+		if (!write_team_setting (connection, ifcfg, error))
+			goto out;
 	} else if (!strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		if (!write_bridge_setting (connection, ifcfg, error))
 			goto out;
@@ -2222,6 +2274,9 @@ write_connection (NMConnection *connection,
 	}
 
 	if (!write_bridge_port_setting (connection, ifcfg, error))
+		goto out;
+
+	if (!write_team_port_setting (connection, ifcfg, error))
 		goto out;
 
 	if (!utils_ignore_ip_config (connection)) {
@@ -2266,6 +2321,7 @@ writer_can_write_connection (NMConnection *connection, GError **error)
 	    || nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
 		return TRUE;
 
