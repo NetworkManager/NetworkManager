@@ -280,7 +280,8 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
 	                                      context,
 	                                      &sender,
-	                                      &sender_uid)) {
+	                                      &sender_uid,
+	                                      NULL)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
 		                             "Unable to determine request sender and UID.");
@@ -363,6 +364,7 @@ impl_agent_manager_unregister (NMAgentManager *self,
 	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
 	                                      context,
 	                                      &sender,
+	                                      NULL,
 	                                      NULL)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,

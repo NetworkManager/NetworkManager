@@ -157,7 +157,8 @@ nm_auth_chain_new (DBusGMethodInvocation *context,
 	if (nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
 	                                     context,
 	                                     &sender,
-	                                     &sender_uid)) {
+	                                     &sender_uid,
+	                                     NULL)) {
 		chain = _auth_chain_new (context, NULL, sender, sender_uid, done_func, user_data);
 	}
 

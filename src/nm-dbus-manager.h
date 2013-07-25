@@ -87,7 +87,8 @@ DBusGConnection * nm_dbus_manager_get_connection (NMDBusManager *self);
 gboolean nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                           DBusGMethodInvocation *context,
                                           char **out_sender,
-                                          gulong *out_uid);
+                                          gulong *out_uid,
+                                          gulong *out_pid);
 
 gboolean nm_dbus_manager_get_unix_user (NMDBusManager *self,
                                         const char *sender,
@@ -97,7 +98,8 @@ gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                                        DBusConnection *connection,
                                                        DBusMessage *message,
                                                        char **out_sender,
-                                                       gulong *out_uid);
+                                                       gulong *out_uid,
+                                                       gulong *out_pid);
 
 void nm_dbus_manager_register_exported_type (NMDBusManager         *self,
                                              GType                  object_type,

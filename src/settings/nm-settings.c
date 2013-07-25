@@ -1135,7 +1135,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	}
 
 	/* Get the caller's UID */
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");
@@ -1251,7 +1251,7 @@ impl_settings_reload_connections (NMSettings *self,
 	gulong caller_uid;
 	GError *error = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");

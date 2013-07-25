@@ -1009,7 +1009,7 @@ check_user_in_acl (NMConnection *connection,
 	g_return_val_if_fail (session_monitor != NULL, FALSE);
 
 	/* Get the caller's UID */
-	if (!nm_dbus_manager_get_caller_info (nm_dbus_manager_get (), context, NULL, &sender_uid)) {
+	if (!nm_dbus_manager_get_caller_info (nm_dbus_manager_get (), context, NULL, &sender_uid, NULL)) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,

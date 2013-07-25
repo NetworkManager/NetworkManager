@@ -3157,7 +3157,7 @@ validate_activation_request (NMManager *self,
 	g_assert (connection);
 
 	/* Get caller's UID */
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, out_sender_uid)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, out_sender_uid, NULL)) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request UID.");
@@ -4410,7 +4410,8 @@ prop_filter (DBusConnection *connection,
 	                                                   connection,
 	                                                   message,
 	                                                   NULL,
-	                                                   &caller_uid)) {
+	                                                   &caller_uid,
+	                                                   NULL)) {
 		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
 		                                "Could not determine request UID.");
 		goto out;
