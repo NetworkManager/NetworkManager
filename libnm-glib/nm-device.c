@@ -35,6 +35,7 @@
 #include "nm-device-wimax.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
+#include "nm-device-team.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-generic.h"
@@ -298,6 +299,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_INFINIBAND;
 	case NM_DEVICE_TYPE_BOND:
 		return NM_TYPE_DEVICE_BOND;
+	case NM_DEVICE_TYPE_TEAM:
+		return NM_TYPE_DEVICE_TEAM;
 	case NM_DEVICE_TYPE_BRIDGE:
 		return NM_TYPE_DEVICE_BRIDGE;
 	case NM_DEVICE_TYPE_VLAN:

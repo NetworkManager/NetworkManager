@@ -149,6 +149,13 @@ global:
 	nm_device_olpc_mesh_get_type;
 	nm_device_olpc_mesh_new;
 	nm_device_set_autoconnect;
+	nm_device_team_error_get_type;
+	nm_device_team_error_quark;
+	nm_device_team_get_carrier;
+	nm_device_team_get_hw_address;
+	nm_device_team_get_slaves;
+	nm_device_team_get_type;
+	nm_device_team_new;
 	nm_device_vlan_error_get_type;
 	nm_device_vlan_error_quark;
 	nm_device_vlan_get_carrier;
