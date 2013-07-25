@@ -48,6 +48,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
+#include "nm-device-team.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-adsl.h"
@@ -1102,6 +1103,9 @@ get_virtual_iface_name (NMManager *self,
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
 		return g_strdup (nm_connection_get_virtual_iface_name (connection));
 
+	if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
+		return g_strdup (nm_connection_get_virtual_iface_name (connection));
+
 	if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
 		return g_strdup (nm_connection_get_virtual_iface_name (connection));
 
@@ -1172,6 +1176,7 @@ static gboolean
 connection_needs_virtual_device (NMConnection *connection)
 {
 	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
 		return TRUE;
@@ -1328,6 +1333,14 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		}
 
 		device = nm_device_bond_new (iface);
+	} else if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)) {
+		if (!nm_platform_team_add (iface)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): failed to add team master interface for '%s'",
+			             iface, nm_connection_get_id (connection));
+			goto out;
+		}
+
+		device = nm_device_team_new (iface);
 	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		gboolean result;
 
@@ -2305,6 +2318,9 @@ platform_link_added_cb (NMPlatform *platform,
 		case NM_LINK_TYPE_BOND:
 			device = nm_device_bond_new (link->name);
 			break;
+		case NM_LINK_TYPE_TEAM:
+			device = nm_device_team_new (link->name);
+			break;
 		case NM_LINK_TYPE_BRIDGE:
 			/* FIXME: always create device when we handle bridges non-destructively */
 			if (bridge_created_by_nm (self, link->name))
@@ -2700,7 +2716,9 @@ ensure_master_active_connection (NMManager *self,
 			for (iter = connections; iter; iter = g_slist_next (iter)) {
 				NMConnection *candidate = NM_CONNECTION (iter->data);
 
-				/* Ensure eg bond slave and the candidate master is a bond master */
+				/* Ensure eg bond/team slave and the candidate master is a
+				 * bond/team master
+				 */
 				if (!is_compatible_with_slave (candidate, connection))
 					continue;
 
@@ -2915,10 +2933,11 @@ nm_manager_activate_connection (NMManager *manager,
 			}
 		}
 	} else {
-		/* Virtual connections (VLAN, bond, etc) may not specify a device
-		 * path because the device may not be created yet, or it be given
-		 * by the connection's properties instead.  Find the device the
-		 * connection refers to, or create it if needed.
+		/* Virtual connections (VLAN, bond, team, etc) may not specify
+		 * a device path because the device may not be created yet,
+		 * or it be given by the connection's properties instead.
+		 * Find the device the connection refers to, or create it
+		 * if needed.
 		 */
 		if (!connection_needs_virtual_device (connection)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -2996,7 +3015,9 @@ nm_manager_activate_connection (NMManager *manager,
 			            nm_device_get_ip_iface (master_device));
 		}
 
-		/* Ensure eg bond slave and the candidate master is a bond master */
+		/* Ensure eg bond/team slave and the candidate master is
+		 * a bond/team master
+		 */
 		if (master_connection && !is_compatible_with_slave (master_connection, connection)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 					             "The master connection was not compatible");

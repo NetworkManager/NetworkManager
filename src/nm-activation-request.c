@@ -360,8 +360,8 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
  *    existing connection made before this instance of NM started
  * @device: the device/interface to configure according to @connection
  * @master: if the activation depends on another device (ie, bond or bridge
- *    master to which this device will be enslaved) pass the #NMDevice that this
- *    activation request be enslaved to
+ *    or team master to which this device will be enslaved) pass the #NMDevice
+ *    that this activation request be enslaved to
  *
  * Begins activation of @device using the given @connection and other details.
  *

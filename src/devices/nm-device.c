@@ -280,7 +280,7 @@ typedef struct {
 	/* allow autoconnect feature */
 	gboolean        autoconnect;
 
-	/* master interface for bridge/bond slave */
+	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
 	gboolean        enslaved;
 
@@ -806,16 +806,18 @@ nm_device_get_priority (NMDevice *dev)
 		return 4;
 	case NM_DEVICE_TYPE_BOND:
 		return 5;
-	case NM_DEVICE_TYPE_VLAN:
+	case NM_DEVICE_TYPE_TEAM:
 		return 6;
-	case NM_DEVICE_TYPE_MODEM:
+	case NM_DEVICE_TYPE_VLAN:
 		return 7;
-	case NM_DEVICE_TYPE_BT:
+	case NM_DEVICE_TYPE_MODEM:
 		return 8;
-	case NM_DEVICE_TYPE_WIFI:
+	case NM_DEVICE_TYPE_BT:
 		return 9;
-	case NM_DEVICE_TYPE_OLPC_MESH:
+	case NM_DEVICE_TYPE_WIFI:
 		return 10;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return 11;
 	default:
 		return 20;
 	}
@@ -901,8 +903,8 @@ free_slave_info (SlaveInfo *info)
  * @slave: the slave device to enslave
  * @connection: the slave device's connection
  *
- * If @dev is capable of enslaving other devices (ie it's a bridge, bond, etc)
- * then this function enslaves @slave.
+ * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
+ * etc) then this function enslaves @slave.
  *
  * Returns: %TRUE on success, %FALSE on failure or if this device cannot enslave
  *  other devices.
@@ -955,8 +957,8 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  * @slave: the slave device to release
  * @failed: %TRUE if the release was unexpected, ie the master failed
  *
- * If @dev is capable of enslaving other devices (ie it's a bridge, bond, etc)
- * then this function releases the previously enslaved @slave.
+ * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
+ * etc) then this function releases the previously enslaved @slave.
  *
  * Returns: %TRUE on success, %FALSE on failure, if this device cannot enslave
  *  other devices, or if @slave was never enslaved.
@@ -1050,9 +1052,9 @@ carrier_changed (NMDevice *device, gboolean carrier)
 	}
 
 	if (nm_device_is_master (device)) {
-		/* Bridge/bond carrier does not affect its own activation, but
-		 * when carrier comes on, if there are slaves waiting, it will
-		 * restart them.
+		/* Bridge/bond/team carrier does not affect its own activation,
+		 * but when carrier comes on, if there are slaves waiting,
+		 * it will restart them.
 		 */
 		if (!carrier)
 			return;
@@ -1064,8 +1066,9 @@ carrier_changed (NMDevice *device, gboolean carrier)
 
 		return;
 	} else if (nm_device_get_enslaved (device) && !carrier) {
-		/* Slaves don't deactivate when they lose carrier; for bonds
-		 * in particular that would be actively counterproductive.
+		/* Slaves don't deactivate when they lose carrier; for
+		 * bonds/teams in particular that would be actively
+		 * counterproductive.
 		 */
 		return;
 	}
@@ -1231,7 +1234,7 @@ slave_state_changed (NMDevice *slave,
 
 	if (release) {
 		nm_device_release_one_slave (self, slave, FALSE);
-		/* Bridge/bond interfaces are left up until manually deactivated */
+		/* Bridge/bond/team interfaces are left up until manually deactivated */
 		if (priv->slaves == NULL && priv->state == NM_DEVICE_STATE_ACTIVATED) {
 			nm_log_dbg (LOGD_DEVICE, "(%s): last slave removed; remaining activated",
 			            nm_device_get_iface (self));
@@ -1244,8 +1247,8 @@ slave_state_changed (NMDevice *slave,
  * @dev: the master device
  * @slave: the slave device to enslave
  *
- * If @dev is capable of enslaving other devices (ie it's a bridge, bond, etc)
- * then this function adds @slave to the slave list for later enslavement.
+ * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
+ * etc) then this function adds @slave to the slave list for later enslavement.
  *
  * Returns: %TRUE on success, %FALSE on failure
  */
@@ -1316,7 +1319,7 @@ nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex)
  * nm_device_is_master:
  * @dev: the device
  *
- * Returns: whether @dev can enslave other devices (eg, bridge or bond)
+ * Returns: whether @dev can enslave other devices (eg, bridge or bond or team)
  */
 gboolean
 nm_device_is_master (NMDevice *dev)
@@ -1405,7 +1408,7 @@ nm_device_slave_notify_enslaved (NMDevice *dev,
  * @device: the #NMDevice
  *
  * Returns: %TRUE if the device is enslaved to a master device (eg bridge or
- * bond), %FALSE if not
+ * bond or team), %FALSE if not
  */
 gboolean
 nm_device_get_enslaved (NMDevice *device)

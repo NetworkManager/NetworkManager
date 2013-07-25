@@ -51,6 +51,7 @@
 #define NM_DBUS_INTERFACE_DHCP6_CONFIG      NM_DBUS_INTERFACE ".DHCP6Config"
 #define NM_DBUS_INTERFACE_DEVICE_INFINIBAND NM_DBUS_INTERFACE_DEVICE ".Infiniband"
 #define NM_DBUS_INTERFACE_DEVICE_BOND       NM_DBUS_INTERFACE_DEVICE ".Bond"
+#define NM_DBUS_INTERFACE_DEVICE_TEAM       NM_DBUS_INTERFACE_DEVICE ".Team"
 #define NM_DBUS_INTERFACE_DEVICE_VLAN       NM_DBUS_INTERFACE_DEVICE ".Vlan"
 #define NM_DBUS_INTERFACE_DEVICE_BRIDGE     NM_DBUS_INTERFACE_DEVICE ".Bridge"
 #define NM_DBUS_INTERFACE_DEVICE_GENERIC    NM_DBUS_INTERFACE_DEVICE ".Generic"
@@ -118,6 +119,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_VLAN: an 802.1Q VLAN interface
  * @NM_DEVICE_TYPE_ADSL: ADSL modem
  * @NM_DEVICE_TYPE_BRIDGE: a bridge master interface
+ * @NM_DEVICE_TYPE_TEAM: a team master interface
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
@@ -138,6 +140,7 @@ typedef enum {
 	NM_DEVICE_TYPE_ADSL       = 12,
 	NM_DEVICE_TYPE_BRIDGE     = 13,
 	NM_DEVICE_TYPE_GENERIC    = 14,
+	NM_DEVICE_TYPE_TEAM       = 15,
 } NMDeviceType;
 
 /**

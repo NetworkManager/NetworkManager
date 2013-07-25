@@ -51,6 +51,7 @@ src/devices/nm-device-bt.c
 src/devices/nm-device-ethernet.c
 src/devices/nm-device-infiniband.c
 src/devices/nm-device-olpc-mesh.c
+src/devices/nm-device-team.c
 src/devices/nm-device-vlan.c
 src/nm-manager.c
 src/nm-netlink-monitor.c
