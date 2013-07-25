@@ -48,6 +48,7 @@
 #include "nm-setting-vpn.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-team.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-vlan.h"
@@ -1239,6 +1240,22 @@ nm_connection_get_setting_bond (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	return (NMSettingBond *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BOND);
+}
+
+/**
+ * nm_connection_get_setting_team:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingTeam the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingTeam if the connection contains one, otherwise %NULL
+ **/
+NMSettingTeam *
+nm_connection_get_setting_team (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingTeam *) nm_connection_get_setting (connection, NM_TYPE_SETTING_TEAM);
 }
 
 /**

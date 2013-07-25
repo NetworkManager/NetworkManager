@@ -26,6 +26,7 @@ libnm-util/nm-setting-ip6-config.c
 libnm-util/nm-setting-olpc-mesh.c
 libnm-util/nm-setting-ppp.c
 libnm-util/nm-setting-pppoe.c
+libnm-util/nm-setting-team.c
 libnm-util/nm-setting-vlan.c
 libnm-util/nm-setting-vpn.c
 libnm-util/nm-setting-wimax.c
