@@ -2191,11 +2191,11 @@ cleanup_wired:
 		const char *parent = NULL;
 		const char *p_key = NULL;
 		long p_key_int;
-		nmc_arg_t exp_args[] = { {"mtu",            TRUE, &mtu,  FALSE},
-		                         {"mac",            TRUE, &mac,  FALSE},
-		                         {"transport-mode", TRUE, &mode, FALSE},
-		                         {"parent",         TRUE, &mode, FALSE},
-		                         {"p-key",          TRUE, &mode, FALSE},
+		nmc_arg_t exp_args[] = { {"mtu",            TRUE, &mtu,    FALSE},
+		                         {"mac",            TRUE, &mac,    FALSE},
+		                         {"transport-mode", TRUE, &mode,   FALSE},
+		                         {"parent",         TRUE, &parent, FALSE},
+		                         {"p-key",          TRUE, &p_key,  FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
