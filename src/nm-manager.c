@@ -1893,7 +1893,7 @@ add_device (NMManager *self, NMDevice *device)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
-	NMConnection *existing = NULL;
+	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	NMDeviceType devtype;
@@ -1980,13 +1980,13 @@ add_device (NMManager *self, NMDevice *device)
 		GSList *connections = NULL;
 
 		connections = nm_settings_get_connections (priv->settings);
-		existing = nm_device_find_assumable_connection (device, connections);
+		connection = nm_device_find_assumable_connection (device, connections);
 		g_slist_free (connections);
 
-		if (existing)
+		if (connection)
 			nm_log_dbg (LOGD_DEVICE, "(%s): found existing device connection '%s'",
 			            nm_device_get_iface (device),
-			            nm_connection_get_id (existing));
+			            nm_connection_get_id (connection));
 	}
 
 	/* Start the device if it's supposed to be managed */
@@ -1995,7 +1995,7 @@ add_device (NMManager *self, NMDevice *device)
 	    && !nm_device_spec_match_list (device, unmanaged_specs)) {
 		nm_device_set_manager_managed (device,
 		                               TRUE,
-		                               existing ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
+		                               connection ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
 		                                          NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
@@ -2008,19 +2008,19 @@ add_device (NMManager *self, NMDevice *device)
 	system_create_virtual_devices (self);
 
 	/* If the device has a connection it can assume, do that now */
-	if (existing && nm_device_can_activate (device, existing)) {
+	if (connection && nm_device_can_activate (device, connection)) {
 		NMActiveConnection *ac;
 		GError *error = NULL;
 
 		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume existing connection",
 		            nm_device_get_iface (device));
 
-		ac = internal_activate_device (self, device, existing, NULL, FALSE, 0, NULL, TRUE, NULL, &error);
+		ac = internal_activate_device (self, device, connection, NULL, FALSE, 0, NULL, TRUE, NULL, &error);
 		if (ac)
 			active_connection_add (self, ac);
 		else {
 			nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
-			             nm_connection_get_path (existing),
+			             nm_connection_get_path (connection),
 			             error ? error->code : -1,
 			             error && error->message ? error->message : "(unknown)");
 			g_error_free (error);
