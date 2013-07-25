@@ -61,6 +61,7 @@ const char * nm_ip4_config_get_dbus_path (NMIP4Config *config);
 NMIP4Config *nm_ip4_config_capture (int ifindex);
 gboolean nm_ip4_config_commit (NMIP4Config *config, int ifindex, int priority);
 void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting);
+void nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting);
 
 /* Utility functions */
 gboolean nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 dest, int plen);

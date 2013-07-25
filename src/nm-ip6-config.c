@@ -259,6 +259,75 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 		nm_ip6_config_add_search (config, nm_setting_ip6_config_get_dns_search (setting, i));
 }
 
+void
+nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
+{
+	const struct in6_addr *gateway;
+	guint naddresses, nroutes, nnameservers, nsearches;
+	const char *method = NULL;
+	int i;
+
+	if (!config)
+		return;
+
+	gateway = nm_ip6_config_get_gateway (config);
+	naddresses = nm_ip6_config_get_num_addresses (config);
+	nroutes = nm_ip6_config_get_num_routes (config);
+	nnameservers = nm_ip6_config_get_num_nameservers (config);
+	nsearches = nm_ip6_config_get_num_searches (config);
+
+	/* Addresses */
+	for (i = 0; i < naddresses; i++) {
+		NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+		gs_unref_object NMIP6Address *s_addr = nm_ip6_address_new ();
+
+		/* Ignore link-local address. */
+		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+			continue;
+
+		/* Static address found. */
+		if (!method)
+			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+
+		nm_ip6_address_set_address (s_addr, &address->address);
+		nm_ip6_address_set_prefix (s_addr, address->plen);
+		if (gateway)
+			nm_ip6_address_set_gateway (s_addr, gateway);
+
+		nm_setting_ip6_config_add_address (setting, s_addr);
+	}
+	if (!method)
+		method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
+	g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
+
+	/* Routes */
+	for (i = 0; i < nroutes; i++) {
+		NMIP6Route *route = nm_ip6_config_get_route (config, i);
+
+		/* Ignore link-local route. */
+		if (IN6_IS_ADDR_LINKLOCAL (nm_ip6_route_get_dest (route)))
+			continue;
+
+		/* Ignore default route. */
+		if (!nm_ip6_route_get_prefix (route))
+			continue;
+
+		nm_setting_ip6_config_add_route (setting, route);
+	}
+
+	/* DNS */
+	for (i = 0; i < nnameservers; i++) {
+		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (config, i);
+
+		nm_setting_ip6_config_add_dns (setting, nameserver);
+	}
+	for (i = 0; i < nsearches; i++) {
+		const char *search = nm_ip6_config_get_search (config, i);
+
+		nm_setting_ip6_config_add_dns_search (setting, search);
+	}
+}
+
 /******************************************************************/
 
 void

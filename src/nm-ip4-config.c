@@ -256,6 +256,70 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		nm_ip4_config_add_search (config, nm_setting_ip4_config_get_dns_search (setting, i));
 }
 
+void
+nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
+{
+	guint32 gateway;
+	guint naddresses, nroutes, nnameservers, nsearches;
+	const char *method = NULL;
+	int i;
+
+	if (!config)
+		return;
+
+	gateway = nm_ip4_config_get_gateway (config);
+	naddresses = nm_ip4_config_get_num_addresses (config);
+	nroutes = nm_ip4_config_get_num_routes (config);
+	nnameservers = nm_ip4_config_get_num_nameservers (config);
+	nsearches = nm_ip4_config_get_num_searches (config);
+
+	/* Addresses */
+	for (i = 0; i < naddresses; i++) {
+		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
+		gs_unref_object NMIP4Address *s_addr = nm_ip4_address_new ();
+
+		/* Static address found. */
+		if (!method)
+			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+
+		nm_ip4_address_set_address (s_addr, address->address);
+		nm_ip4_address_set_prefix (s_addr, address->plen);
+		/* For backwards compatibility, attach the gateway to an address if it's
+		 * in the same subnet.
+		 */
+		if (same_prefix (address->address, gateway, address->plen))
+			nm_ip4_address_set_gateway (s_addr, gateway);
+
+		nm_setting_ip4_config_add_address (setting, s_addr);
+	}
+	if (!method)
+		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+	g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
+
+	/* Routes */
+	for (i = 0; i < nroutes; i++) {
+		NMIP4Route *route = nm_ip4_config_get_route (config, i);
+
+		/* Ignore default route. */
+		if (!nm_ip4_route_get_prefix (route))
+			continue;
+
+		nm_setting_ip4_config_add_route (setting, route);
+	}
+
+	/* DNS */
+	for (i = 0; i < nnameservers; i++) {
+		guint32 nameserver = nm_ip4_config_get_nameserver (config, i);
+
+		nm_setting_ip4_config_add_dns (setting, nameserver);
+	}
+	for (i = 0; i < nsearches; i++) {
+		const char *search = nm_ip4_config_get_search (config, i);
+
+		nm_setting_ip4_config_add_dns_search (setting, search);
+	}
+}
+
 /******************************************************************/
 
 gboolean
