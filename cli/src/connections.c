@@ -43,6 +43,7 @@
 #include <nm-device-olpc-mesh.h>
 #include <nm-device-infiniband.h>
 #include <nm-device-bond.h>
+#include <nm-device-team.h>
 #include <nm-device-bridge.h>
 #include <nm-device-vlan.h>
 #include <nm-remote-settings.h>
@@ -54,7 +55,7 @@
 #include "settings.h"
 #include "connections.h"
 
-/* Activation timeout waiting for bond/bridge slaves (in seconds) */
+/* Activation timeout waiting for bond/team/bridge slaves (in seconds) */
 #define BB_SLAVES_TIMEOUT 10
 
 /* define some prompts for connection editor */
@@ -104,6 +105,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_ADSL_SETTING_NAME, 0),                  /* 19 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_SETTING_NAME, 0),                /* 20 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME, 0),           /* 21 */
+	SETTING_FIELD (NM_SETTING_TEAM_SETTING_NAME, 0),                  /* 22 */
+	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME, 0),             /* 23 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -126,7 +129,9 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_BOND_SETTING_NAME","\
                                          NM_SETTING_VLAN_SETTING_NAME","\
                                          NM_SETTING_BRIDGE_SETTING_NAME","\
-                                         NM_SETTING_BRIDGE_PORT_SETTING_NAME
+                                         NM_SETTING_BRIDGE_PORT_SETTING_NAME","\
+                                         NM_SETTING_TEAM_SETTING_NAME","\
+                                         NM_SETTING_TEAM_PORT_SETTING_NAME
 #if WITH_WIMAX
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
                                          NM_SETTING_WIMAX_SETTING_NAME
@@ -268,6 +273,9 @@ usage_connection_add (void)
 	         "                  [arp-interval <num>]\n"
 	         "                  [arp-ip-target <num>]\n\n"
 	         "    bond-slave:   master <master (ifname or connection UUID)\n\n"
+	         "    team:         [config <json config>]\n\n"
+	         "    team-slave:   master <master (ifname or connection UUID)\n"
+	         "                  [config <json config>]\n\n"
 	         "    bridge:       [stp yes|no>]\n"
 	         "                  [priority <num>]\n"
 	         "                  [forward-delay <2-30>]\n"
@@ -1396,7 +1404,7 @@ typedef struct {
 } ActivateConnectionInfo;
 
 static gboolean
-bond_bridge_slaves_check (gpointer user_data)
+master_iface_slaves_check (gpointer user_data)
 {
 	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
 	NmCli *nmc = info->nmc;
@@ -1406,6 +1414,8 @@ bond_bridge_slaves_check (gpointer user_data)
 
 	if (strcmp (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
 		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
+	else if (strcmp (con_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
+		slaves = nm_device_team_get_slaves (NM_DEVICE_TEAM (device));
 	else if (strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
 		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
 	else
@@ -1477,12 +1487,13 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 			/* Start timer not to loop forever when signals are not emitted */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 
-			/* Check for bond or bridge slaves */
+			/* Check for bond or team or bridge slaves */
 			if (   !strcmp (info->con_type, NM_SETTING_BOND_SETTING_NAME)
+			    || !strcmp (info->con_type, NM_SETTING_TEAM_SETTING_NAME)
 			    || !strcmp (info->con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		
-				g_timeout_add_seconds (BB_SLAVES_TIMEOUT, bond_bridge_slaves_check, info);
-				return; /* info will be freed in bond_bridge_slaves_check () */
+				g_timeout_add_seconds (BB_SLAVES_TIMEOUT, master_iface_slaves_check, info);
+				return; /* info will be freed in master_iface_slaves_check () */
 			}
 		}
 	}
@@ -1603,6 +1614,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
 	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)
 	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
 		is_virtual = TRUE;
@@ -1851,6 +1863,15 @@ static const NameItem nmc_bond_settings [] = {
 	{ NULL, NULL, NULL }
 };
 
+static const NameItem nmc_team_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
 static const NameItem nmc_bridge_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,       NULL },
@@ -1861,6 +1882,13 @@ static const NameItem nmc_bridge_settings [] = {
 };
 
 static const NameItem nmc_bond_slave_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
+	{ NULL, NULL, NULL }
+};
+
+static const NameItem nmc_team_slave_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
 	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
@@ -1890,8 +1918,10 @@ static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", nmc_olpc_mesh_settings    },
 	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,        nmc_vlan_settings         },
 	{ NM_SETTING_BOND_SETTING_NAME,       NULL,        nmc_bond_settings         },
+	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,        nmc_team_settings         },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,        nmc_bridge_settings       },
 	{ "bond-slave",                       NULL,        nmc_bond_slave_settings   },
+	{ "team-slave",                       NULL,        nmc_team_slave_settings   },
 	{ "bridge-slave",                     NULL,        nmc_bridge_slave_settings },
 	{ NULL, NULL, NULL }
 };
@@ -2045,19 +2075,17 @@ check_and_convert_mac (const char *mac,
 }
 
 static char *
-unique_bond_bridge_ifname (GSList *list, const char *type,  const char *try_name)
+unique_master_iface_ifname (GSList *list,
+                            const char *type,
+                            const char *ifname_property,
+                            const char *try_name)
 {
 	NMConnection *connection;
 	NMSetting *setting;
 	char *new_name;
 	unsigned int num = 1;
 	GSList *iterator = list;
-	const char *ifname_property;
 	char *ifname_val = NULL;
-
-	ifname_property = strcmp (type, NM_SETTING_BOND_SETTING_NAME) == 0 ?
-	                    NM_SETTING_BOND_INTERFACE_NAME :
-	                    NM_SETTING_BRIDGE_INTERFACE_NAME;
 
 	new_name = g_strdup (try_name);
 	while (iterator) {
@@ -2122,6 +2150,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingBluetooth *s_bt;
 	NMSettingVlan *s_vlan;
 	NMSettingBond *s_bond;
+	NMSettingTeam *s_team;
 	NMSettingBridge *s_bridge;
 	NMSettingBridgePort *s_bridge_port;
 	NMSettingVPN *s_vpn;
@@ -2633,9 +2662,10 @@ cleanup_vlan:
 		/* Use connection's ifname as 'bond' ifname if exists, else generate one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
 		if (!ifname)
-			bond_ifname = unique_bond_bridge_ifname (all_connections,
-			                                         NM_SETTING_BOND_SETTING_NAME,
-			                                         "nm-bond");
+			bond_ifname = unique_master_iface_ifname (all_connections,
+			                                          NM_SETTING_BOND_SETTING_NAME,
+			                                          NM_SETTING_BOND_INTERFACE_NAME,
+			                                          "nm-bond");
 		else
 			bond_ifname = g_strdup (ifname);
 
@@ -2706,6 +2736,67 @@ cleanup_vlan:
 
 		g_free (master_ask);
 
+	} else if (!strcmp (con_type, NM_SETTING_TEAM_SETTING_NAME)) {
+		/* Build up the settings required for 'team' */
+		char *team_ifname = NULL;
+		const char *ifname = NULL;
+
+		/* Use connection's ifname as 'team' ifname if exists, else generate one */
+		ifname = nm_setting_connection_get_interface_name (s_con);
+		if (!ifname)
+			team_ifname = unique_master_iface_ifname (all_connections,
+			                                          NM_SETTING_TEAM_SETTING_NAME,
+			                                          NM_SETTING_TEAM_INTERFACE_NAME,
+			                                          "nm-team");
+		else
+			team_ifname = g_strdup (ifname);
+
+		/* Add 'team' setting */
+		s_team = (NMSettingTeam *) nm_setting_team_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_team));
+
+		/* Set team options */
+		g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, team_ifname, NULL);
+
+		g_free (team_ifname);
+
+	} else if (!strcmp (con_type, "team-slave")) {
+		/* Build up the settings required for 'team-slave' */
+		const char *master = NULL;
+		char *master_ask = NULL;
+		const char *type = NULL;
+		nmc_arg_t exp_args[] = { {"master", TRUE, &master, !ask},
+		                         {"type",   TRUE, &type,   FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
+			return FALSE;
+
+		if (!master && ask)
+			master = master_ask = nmc_get_user_input (_("Team master: "));
+		if (!master) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'master' is required."));
+			return FALSE;
+		}
+
+		if (type)
+			printf (_("Warning: 'type' is currently ignored. "
+			          "We only support ethernet slaves for now.\n"));
+
+		/* Change properties in 'connection' setting */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+		              NM_SETTING_CONNECTION_MASTER, master,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+		              NULL);
+
+		/* Add ethernet setting */
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+		g_free (master_ask);
+
 	} else if (!strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		/* Build up the settings required for 'bridge' */
 		gboolean success = FALSE;
@@ -2734,9 +2825,10 @@ cleanup_vlan:
 		/* Use connection's ifname as 'bridge' ifname if exists, else generate one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
 		if (!ifname)
-			bridge_ifname = unique_bond_bridge_ifname (all_connections,
-			                                           NM_SETTING_BRIDGE_SETTING_NAME,
-			                                           "nm-bridge");
+			bridge_ifname = unique_master_iface_ifname (all_connections,
+			                                            NM_SETTING_BRIDGE_SETTING_NAME,
+			                                            NM_SETTING_BRIDGE_INTERFACE_NAME,
+			                                            "nm-bridge");
 		else
 			bridge_ifname = g_strdup (ifname);
 
@@ -2993,6 +3085,7 @@ cleanup_bridge_slave:
 
 	/* Read and add IP configuration */
 	if (   strcmp (con_type, "bond-slave") != 0
+	    && strcmp (con_type, "team-slave") != 0
 	    && strcmp (con_type, "bridge-slave") != 0) {
 
 		NMSettingIP4Config *s_ip4 = NULL;
@@ -3183,8 +3276,9 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
-	/* ifname is mandatory for all connection types except virtual ones (bond, bridge, vlan) */
+	/* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
 	if (   strcmp (type, NM_SETTING_BOND_SETTING_NAME) == 0
+	    || strcmp (type, NM_SETTING_TEAM_SETTING_NAME) == 0
 	    || strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME) == 0
 	    || strcmp (type, NM_SETTING_VLAN_SETTING_NAME) == 0)
 		ifname_mandatory = FALSE;
