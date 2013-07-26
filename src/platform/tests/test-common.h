@@ -9,6 +9,8 @@
 #include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
 
+#define DEVICE_NAME "nm-test-device"
+
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
 #define error(err) g_assert (nm_platform_get_error () == err)

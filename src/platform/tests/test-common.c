@@ -129,6 +129,8 @@ main (int argc, char **argv)
 
 	result = g_test_run ();
 
+	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
+
 	nm_platform_free ();
 	return result;
 }

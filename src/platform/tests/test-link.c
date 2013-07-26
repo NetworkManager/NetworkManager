@@ -4,7 +4,6 @@
 #define LO_NAME "lo"
 #define LO_TYPEDESC "loopback"
 
-#define DEVICE_NAME "nm-test-device"
 #define DUMMY_TYPEDESC "dummy"
 #define BOGUS_NAME "nm-bogus-device"
 #define BOGUS_IFINDEX INT_MAX
