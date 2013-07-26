@@ -158,19 +158,21 @@ software_add (NMLinkType link_type, const char *name)
 		SignalData *parent_changed;
 
 		/* Don't call link_callback for the bridge interface */
-		parent_added = add_signal_ifname ("link-added", link_callback, PARENT_NAME);
+		parent_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, PARENT_NAME);
 		if (nm_platform_bridge_add (PARENT_NAME))
 			wait_signal (parent_added);
 		free_signal (parent_added);
 
-		parent_changed = add_signal_ifname ("link-changed", link_callback, PARENT_NAME);
-		g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (PARENT_NAME)));
-		accept_signal (parent_changed);
-		free_signal (parent_changed);
+		{
+			int parent_ifindex = nm_platform_link_get_ifindex (PARENT_NAME);
 
-		return nm_platform_vlan_add (name,
-			nm_platform_link_get_ifindex (PARENT_NAME),
-			VLAN_ID, 0);
+			parent_changed = add_signal_ifindex (NM_PLATFORM_LINK_CHANGED, link_callback, parent_ifindex);
+			g_assert (nm_platform_link_set_up (parent_ifindex));
+			accept_signal (parent_changed);
+			free_signal (parent_changed);
+
+			return nm_platform_vlan_add (name, parent_ifindex, VLAN_ID, 0);
+		}
 	}
 	default:
 		g_error ("Link type %d unhandled.", link_type);
@@ -178,19 +180,19 @@ software_add (NMLinkType link_type, const char *name)
 }
 
 static void
-test_slave (int master, int type, SignalData *master_changed, SignalData *link_removed)
+test_slave (int master, int type, SignalData *master_changed)
 {
 	int ifindex;
-	SignalData *link_changed = add_signal_ifname ("link-changed", link_callback, SLAVE_NAME);
-	SignalData *link_added;
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, SLAVE_NAME);
+	SignalData *link_changed, *link_removed;
 	char *value;
 
-	link_added = add_signal_ifname ("link-added", link_callback, SLAVE_NAME);
 	g_assert (software_add (type, SLAVE_NAME));
 	ifindex = nm_platform_link_get_ifindex (SLAVE_NAME);
 	g_assert (ifindex > 0);
+	link_changed = add_signal_ifindex (NM_PLATFORM_LINK_CHANGED, link_callback, ifindex);
+	link_removed = add_signal_ifindex (NM_PLATFORM_LINK_REMOVED, link_callback, ifindex);
 	wait_signal (link_added);
-	free_signal (link_added);
 
 	/* Set the slave up to see whether master's IFF_LOWER_UP is set correctly.
 	 *
@@ -274,7 +276,9 @@ test_slave (int master, int type, SignalData *master_changed, SignalData *link_r
 	no_error ();
 	accept_signal (link_removed);
 
+	free_signal (link_added);
 	free_signal (link_changed);
+	free_signal (link_removed);
 }
 
 static void
@@ -284,12 +288,10 @@ test_software (NMLinkType link_type, const char *link_typename)
 	char *value;
 	int vlan_parent, vlan_id;
 
-	SignalData *link_added;
-	SignalData *link_changed;
-	SignalData *link_removed = add_signal ("link-removed", link_callback);
+	SignalData *link_added, *link_changed, *link_removed;
 
 	/* Add */
-	link_added = add_signal_ifname ("link-added", link_callback, DEVICE_NAME);
+	link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
 	g_assert (software_add (link_type, DEVICE_NAME));
 	no_error ();
 	g_assert (nm_platform_link_exists (DEVICE_NAME));
@@ -297,6 +299,8 @@ test_software (NMLinkType link_type, const char *link_typename)
 	g_assert (ifindex >= 0);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, link_type);
 	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, link_typename);
+	link_changed = add_signal_ifindex (NM_PLATFORM_LINK_CHANGED, link_callback, ifindex);
+	link_removed = add_signal_ifindex (NM_PLATFORM_LINK_REMOVED, link_callback, ifindex);
 	if (link_type == NM_LINK_TYPE_VLAN) {
 		g_assert (nm_platform_vlan_get_info (ifindex, &vlan_parent, &vlan_id));
 		g_assert_cmpint (vlan_parent, ==, nm_platform_link_get_ifindex (PARENT_NAME));
@@ -310,8 +314,6 @@ test_software (NMLinkType link_type, const char *link_typename)
 	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Set ARP/NOARP */
-	link_changed = add_signal ("link-changed", link_callback);
-	link_changed->ifindex = ifindex;
 	g_assert (nm_platform_link_uses_arp (ifindex));
 	g_assert (nm_platform_link_set_noarp (ifindex));
 	g_assert (!nm_platform_link_uses_arp (ifindex));
@@ -349,7 +351,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	case NM_LINK_TYPE_BOND:
 	case NM_LINK_TYPE_TEAM:
 		link_changed->ifindex = ifindex;
-		test_slave (ifindex, NM_LINK_TYPE_DUMMY, link_changed, link_removed);
+		test_slave (ifindex, NM_LINK_TYPE_DUMMY, link_changed);
 		link_changed->ifindex = 0;
 		break;
 	default:
@@ -372,8 +374,11 @@ test_software (NMLinkType link_type, const char *link_typename)
 
 	/* VLAN: Delete parent */
 	if (link_type == NM_LINK_TYPE_VLAN) {
+		SignalData *link_removed_parent = add_signal_ifindex (NM_PLATFORM_LINK_REMOVED, link_callback, vlan_parent);
+
 		g_assert (nm_platform_link_delete (vlan_parent));
-		accept_signal (link_removed);
+		accept_signal (link_removed_parent);
+		free_signal (link_removed_parent);
 	}
 
 	/* No pending signal */
@@ -409,9 +414,8 @@ test_vlan ()
 static void
 test_internal (void)
 {
-	SignalData *link_added;
-	SignalData *link_changed = add_signal (NM_PLATFORM_LINK_CHANGED, link_callback);
-	SignalData *link_removed = add_signal (NM_PLATFORM_LINK_REMOVED, link_callback);
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
+	SignalData *link_changed, *link_removed;
 	const char mac[6] = { 0x00, 0xff, 0x11, 0xee, 0x22, 0xdd };
 	const char *address;
 	size_t addrlen;
@@ -423,7 +427,6 @@ test_internal (void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	/* Add device */
-	link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
 	no_error ();
 	wait_signal (link_added);
@@ -438,6 +441,8 @@ test_internal (void)
 	g_assert_cmpstr (nm_platform_link_get_name (ifindex), ==, DEVICE_NAME);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_DUMMY);
 	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, DUMMY_TYPEDESC);
+	link_changed = add_signal_ifindex (NM_PLATFORM_LINK_CHANGED, link_callback, ifindex);
+	link_removed = add_signal_ifindex (NM_PLATFORM_LINK_REMOVED, link_callback, ifindex);
 
 	/* Up/connected */
 	g_assert (!nm_platform_link_is_up (ifindex)); no_error ();
@@ -496,12 +501,10 @@ test_internal (void)
 static void
 test_external (void)
 {
-	SignalData *link_added;
-	SignalData *link_changed = add_signal (NM_PLATFORM_LINK_CHANGED, link_callback);
-	SignalData *link_removed = add_signal (NM_PLATFORM_LINK_REMOVED, link_callback);
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
+	SignalData *link_changed, *link_removed;
 	int ifindex;
 
-	link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
 	run_command ("ip link add %s type %s", DEVICE_NAME, "dummy");
 	wait_signal (link_added);
 	g_assert (nm_platform_link_exists (DEVICE_NAME));
@@ -510,6 +513,8 @@ test_external (void)
 	g_assert_cmpstr (nm_platform_link_get_name (ifindex), ==, DEVICE_NAME);
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_DUMMY);
 	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, DUMMY_TYPEDESC);
+	link_changed = add_signal_ifindex (NM_PLATFORM_LINK_CHANGED, link_callback, ifindex);
+	link_removed = add_signal_ifindex (NM_PLATFORM_LINK_REMOVED, link_callback, ifindex);
 
 	/* Up/connected/arp */
 	g_assert (!nm_platform_link_is_up (ifindex));

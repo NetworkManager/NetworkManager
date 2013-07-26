@@ -31,8 +31,7 @@ wait_signal (SignalData *data)
 {
 	data->loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (data->loop);
-	g_main_loop_unref (data->loop);
-	data->loop = NULL;
+	g_clear_pointer (&data->loop, g_main_loop_unref);
 
 	accept_signal (data);
 }
