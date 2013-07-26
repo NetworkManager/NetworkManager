@@ -19,6 +19,7 @@ add_signal_full (const char *name, GCallback callback, int ifindex, const char *
 void
 accept_signal (SignalData *data)
 {
+	debug ("Accepting signal '%s' ifindex %d ifname %s.", data->name, data->ifindex, data->ifname);
 	if (!data->received)
 		g_error ("Attemted to accept a non-received signal '%s'.", data->name);
 
@@ -55,7 +56,9 @@ run_command (const char *format, ...)
 	va_start (ap, format);
 
 	command = g_strdup_vprintf (format, ap);
+	debug ("Running command: %s", command);
 	g_assert (!system (command));
+	debug ("Command finished.");
 	g_free (command);
 }
 

@@ -30,12 +30,15 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, Sign
 	if (data->ifname && g_strcmp0 (data->ifname, nm_platform_link_get_name (ifindex)) != 0)
 		return;
 
-	if (data->loop)
+	if (data->loop) {
+		debug ("Quitting main loop.");
 		g_main_loop_quit (data->loop);
+	}
 
 	if (data->received)
 		g_error ("Received signal '%s' a second time.", data->name);
 
+	debug ("Recieved signal '%s' ifindex %d ifname '%s'.", data->name, ifindex, received->name);
 	data->received = TRUE;
 
 	/* Check the data */
