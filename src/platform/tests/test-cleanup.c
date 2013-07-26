@@ -5,6 +5,7 @@
 static void
 test_cleanup_internal ()
 {
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
 	int ifindex;
 	GArray *addresses4;
 	GArray *addresses6;
@@ -28,11 +29,13 @@ test_cleanup_internal ()
 	inet_pton (AF_INET6, "2001:db8:c:d:0:0:0:0", &network6);
 	inet_pton (AF_INET6, "2001:db8:e:f:1:2:3:4", &gateway6);
 
-	/* Create device */
+	/* Create and set up device */
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
+	wait_signal (link_added);
+	free_signal (link_added);
+	g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (DEVICE_NAME)));
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex > 0);
-	g_assert (nm_platform_link_set_up (ifindex));
 
 	/* Add routes and addresses */
 	g_assert (nm_platform_ip4_address_add (ifindex, addr4, plen4));

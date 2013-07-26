@@ -754,19 +754,28 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 	ObjectType object_type = object_type_from_nl_object (object);
 	const char *sig = signal_by_type_and_status[object_type][status];
 
-	if (object_type == LINK && status == ADDED) {
-		/* We have to wait until udev has registered the device; we'll
-		 * emit NM_PLATFORM_LINK_ADDED from udev_device_added().
-		 */
-		return;
-	}
-
 	switch (object_type) {
 	case LINK:
 		{
 			NMPlatformLink device;
 
 			link_init (platform, &device, (struct rtnl_link *) object);
+
+			/* Skip devices not yet discovered by udev. They will be announced
+			 * by udev_device_added(). This doesn't apply to removed devices, as
+			 * those come either from udev_device_removed(), event_notification()
+			 * or link_delete() which block the announcment themselves when
+			 * appropriate.
+			 */
+			switch (status) {
+			case ADDED:
+			case CHANGED:
+				if (!device.driver)
+					return;
+				break;
+			default:
+				break;
+			}
 
 			/* In some cases, the link action is followed by address and/or
 			 * route action. Kernel silently removes routes when interface
@@ -785,7 +794,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			default:
 				break;
 			}
-	
+
 			g_signal_emit_by_name (platform, sig, device.ifindex, &device);
 		}
 		return;
@@ -922,7 +931,6 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 	}
 
 	nl_cache_remove (cached_object);
-
 	announce_object (platform, cached_object, REMOVED);
 
 	return TRUE;
@@ -984,6 +992,16 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			return NL_OK;
 
 		nl_cache_remove (cached_object);
+		/* Don't announced removed interfaces that are not recognized by
+		 * udev. They were either not yet discovered or they have been
+		 * already removed and announced.
+		 */
+		if (event == RTM_DELLINK) {
+			int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
+
+			if (!g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex)))
+				return NL_OK;
+		}
 		announce_object (platform, cached_object, REMOVED);
 
 		return NL_OK;
@@ -1164,8 +1182,10 @@ link_get (NMPlatform *platform, int ifindex)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 
-	if (!rtnllink)
+	if (!rtnllink || !g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex))) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return NULL;
+	}
 
 	return rtnllink;
 }
@@ -1198,6 +1218,13 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	if (!g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex))) {
+		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		return FALSE;
+	}
+
 	return delete_object (platform, build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_NONE));
 }
 
@@ -2252,7 +2279,6 @@ udev_device_added (NMPlatform *platform,
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	const char *ifname, *devtype;
-	NMPlatformLink link;
 	int ifindex;
 
 	ifname = g_udev_device_get_name (udev_device);
@@ -2286,17 +2312,17 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	rtnllink = link_get (platform, ifindex);
+	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
+	                     g_object_ref (udev_device));
+
+	/* Don't announce devices that have not yet been discovered via Netlink. */
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 	if (!rtnllink) {
 		debug ("%s: not found in link cache, ignoring...", ifname);
 		return;
 	}
 
-	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
-	                     g_object_ref (udev_device));
-
-	link_init (platform, &link, rtnllink);
-	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_ADDED, ifindex, &link);
+	announce_object (platform, (struct nl_object *) rtnllink, ADDED);
 }
 
 static void
@@ -2304,7 +2330,7 @@ udev_device_removed (NMPlatform *platform,
                      GUdevDevice *udev_device)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int ifindex;
+	int ifindex = 0;
 
 	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex")) {
 		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
@@ -2323,6 +2349,14 @@ udev_device_removed (NMPlatform *platform,
 				break;
 			}
 		}
+	}
+
+    /* Announce device removal if it's still in the Netlink cache. */
+	if (ifindex) {
+		struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
+
+		if (device)
+			announce_object (platform, (struct nl_object *) device, REMOVED);
 	}
 }
 

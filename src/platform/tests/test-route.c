@@ -199,9 +199,14 @@ test_ip6_route ()
 void
 setup_tests (void)
 {
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
+
 	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
+	wait_signal (link_added);
+	free_signal (link_added);
+
 	g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (DEVICE_NAME)));
 
 	g_test_add_func ("/route/ip4", test_ip4_route);

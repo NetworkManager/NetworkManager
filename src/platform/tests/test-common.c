@@ -47,6 +47,53 @@ free_signal (SignalData *data)
 }
 
 void
+link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, SignalData *data)
+{
+	
+	GArray *links;
+	NMPlatformLink *cached;
+	int i;
+
+	g_assert (received);
+	g_assert_cmpint (received->ifindex, ==, ifindex);
+
+	if (data->ifindex && data->ifindex != received->ifindex)
+		return;
+	if (data->ifname && g_strcmp0 (data->ifname, nm_platform_link_get_name (ifindex)) != 0)
+		return;
+
+	if (data->loop) {
+		debug ("Quitting main loop.");
+		g_main_loop_quit (data->loop);
+	}
+
+	if (data->received)
+		g_error ("Received signal '%s' a second time.", data->name);
+
+	debug ("Recieved signal '%s' ifindex %d ifname '%s'.", data->name, ifindex, received->name);
+	data->received = TRUE;
+
+	/* Check the data */
+	g_assert (received->ifindex > 0);
+	links = nm_platform_link_get_all ();
+	for (i = 0; i < links->len; i++) {
+		cached = &g_array_index (links, NMPlatformLink, i);
+		if (cached->ifindex == received->ifindex) {
+			g_assert (!memcmp (cached, received, sizeof (*cached)));
+			if (!g_strcmp0 (data->name, NM_PLATFORM_LINK_REMOVED)) {
+				g_error ("Deleted link still found in the local cache.");
+			}
+			g_array_unref (links);
+			return;
+		}
+	}
+	g_array_unref (links);
+
+	if (g_strcmp0 (data->name, NM_PLATFORM_LINK_REMOVED))
+		g_error ("Added/changed link not found in the local cache.");
+}
+
+void
 run_command (const char *format, ...)
 {
 	char *command;

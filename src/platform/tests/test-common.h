@@ -31,6 +31,8 @@ void accept_signal (SignalData *data);
 void wait_signal (SignalData *data);
 void free_signal (SignalData *data);
 
+void link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, SignalData *data);
+
 void run_command (const char *format, ...);
 
 void setup_tests (void);
