@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-util \
 	$(DBUS_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	$(IWMX_SDK_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(GUDEV_CFLAGS)
