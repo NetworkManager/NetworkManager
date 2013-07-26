@@ -36,6 +36,8 @@ INSTALL
 ABOUT-NLS
 *.pc
 cscope.*out
+valgrind-*.log
+
 man/*.[185]
 man/nm-settings.xml
 po/*.gmo
