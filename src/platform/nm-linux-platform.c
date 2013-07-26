@@ -1186,13 +1186,14 @@ static struct rtnl_link *
 link_get (NMPlatform *platform, int ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	auto_nl_object struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 
 	if (!rtnllink || !g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex))) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 		return NULL;
 	}
 
+	nl_object_get ((struct nl_object *) rtnllink);
 	return rtnllink;
 }
 
@@ -2363,7 +2364,7 @@ udev_device_removed (NMPlatform *platform,
 
     /* Announce device removal if it's still in the Netlink cache. */
 	if (ifindex) {
-		struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
+		auto_nl_object struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
 
 		if (device)
 			announce_object (platform, (struct nl_object *) device, REMOVED);
