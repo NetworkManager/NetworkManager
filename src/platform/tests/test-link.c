@@ -70,8 +70,6 @@ test_bogus(void)
 	no_error ();
 	g_assert (!nm_platform_link_delete (BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
-	g_assert (!nm_platform_link_delete_by_name (BOGUS_NAME));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_ifindex (BOGUS_NAME));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_name (BOGUS_IFINDEX));
@@ -359,7 +357,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	}
 
 	/* Delete */
-	g_assert (nm_platform_link_delete_by_name (DEVICE_NAME));
+	g_assert (nm_platform_link_delete (ifindex));
 	no_error ();
 	g_assert (!nm_platform_link_exists (DEVICE_NAME)); no_error ();
 	g_assert_cmpint (nm_platform_link_get_type (ifindex), ==, NM_LINK_TYPE_NONE);
@@ -369,12 +367,12 @@ test_software (NMLinkType link_type, const char *link_typename)
 	accept_signal (link_removed);
 
 	/* Delete again */
-	g_assert (!nm_platform_link_delete_by_name (DEVICE_NAME));
+	g_assert (!nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME)));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	/* VLAN: Delete parent */
 	if (link_type == NM_LINK_TYPE_VLAN) {
-		g_assert (nm_platform_link_delete_by_name (PARENT_NAME));
+		g_assert (nm_platform_link_delete (vlan_parent));
 		accept_signal (link_removed);
 	}
 
@@ -490,21 +488,6 @@ test_internal (void)
 	g_assert (!nm_platform_link_delete (ifindex));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
-	/* Add back */
-	g_assert_cmpstr (link_added->ifname, ==, DEVICE_NAME);
-	g_assert (nm_platform_dummy_add (DEVICE_NAME));
-	no_error ();
-	wait_signal (link_added);
-
-	/* Delete device by name */
-	g_assert (nm_platform_link_delete_by_name (DEVICE_NAME));
-	no_error ();
-	accept_signal (link_removed);
-
-	/* Try to delete again */
-	g_assert (!nm_platform_link_delete_by_name (DEVICE_NAME));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
-
 	free_signal (link_added);
 	free_signal (link_changed);
 	free_signal (link_removed);
@@ -567,9 +550,9 @@ test_external (void)
 void
 setup_tests (void)
 {
-	nm_platform_link_delete_by_name (DEVICE_NAME);
-	nm_platform_link_delete_by_name (SLAVE_NAME);
-	nm_platform_link_delete_by_name (PARENT_NAME);
+	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
+	nm_platform_link_delete (nm_platform_link_get_ifindex (SLAVE_NAME));
+	nm_platform_link_delete (nm_platform_link_get_ifindex (PARENT_NAME));
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (SLAVE_NAME));
 	g_assert (!nm_platform_link_exists (PARENT_NAME));

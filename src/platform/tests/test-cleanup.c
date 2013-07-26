@@ -81,7 +81,7 @@ test_cleanup_internal ()
 void
 setup_tests (void)
 {
-	nm_platform_link_delete_by_name (DEVICE_NAME);
+	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
 
 	g_test_add_func ("/internal", test_cleanup_internal);

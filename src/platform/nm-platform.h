@@ -327,7 +327,6 @@ gboolean nm_platform_bond_add (const char *name);
 gboolean nm_platform_team_add (const char *name);
 gboolean nm_platform_link_exists (const char *name);
 gboolean nm_platform_link_delete (int ifindex);
-gboolean nm_platform_link_delete_by_name (const char *ifindex);
 int nm_platform_link_get_ifindex (const char *name);
 const char *nm_platform_link_get_name (int ifindex);
 NMLinkType nm_platform_link_get_type (int ifindex);

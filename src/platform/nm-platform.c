@@ -384,7 +384,6 @@ nm_platform_link_delete (int ifindex)
 
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (klass->link_delete, FALSE);
 
 	name = nm_platform_link_get_name (ifindex);
@@ -394,23 +393,6 @@ nm_platform_link_delete (int ifindex)
 
 	debug ("link: deleting '%s' (%d)", name, ifindex);
 	return klass->link_delete (platform, ifindex);
-}
-
-/**
- * nm_platform_link_delete_by_name:
- * @name: Interface name
- *
- * Delete a software interface.
- */
-gboolean
-nm_platform_link_delete_by_name (const char *name)
-{
-	int ifindex = nm_platform_link_get_ifindex (name);
-
-	if (!ifindex)
-		return FALSE;
-
-	return nm_platform_link_delete (ifindex);
 }
 
 /**
@@ -454,7 +436,6 @@ nm_platform_link_get_name (int ifindex)
 
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->link_get_name, NULL);
 
 	name = klass->link_get_name (platform, ifindex);

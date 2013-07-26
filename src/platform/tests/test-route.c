@@ -199,7 +199,7 @@ test_ip6_route ()
 void
 setup_tests (void)
 {
-	nm_platform_link_delete_by_name (DEVICE_NAME);
+	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
 	g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (DEVICE_NAME)));
