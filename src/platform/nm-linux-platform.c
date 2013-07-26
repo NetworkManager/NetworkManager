@@ -857,14 +857,10 @@ refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
 
 	hack_empty_master_iff_lower_up (platform, kernel_object);
 
-	if (cached_object) {
+	if (cached_object)
 		nl_cache_remove (cached_object);
-		nle = nl_cache_add (cache, kernel_object);
-		g_return_val_if_fail (!nle, 0);
-	} else {
-		nle = nl_cache_add (cache, kernel_object);
-		g_return_val_if_fail (!nle, FALSE);
-	}
+	nle = nl_cache_add (cache, kernel_object);
+	g_return_val_if_fail (!nle, FALSE);
 
 	announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED);
 
