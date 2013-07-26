@@ -111,10 +111,12 @@ test_cleanup_linux_LDADD = $(PLATFORM_LDADD)
 # correctly.
 
 @VALGRIND_RULES@
-TESTS = ./test-link-fake ./test-address-fake ./test-route-fake ./test-cleanup-fake
-ROOTTESTS = ./test-link-linux ./test-address-linux ./test-route-linux ./test-cleanup-linux
+USERTESTS = test-link-fake test-address-fake test-route-fake test-cleanup-fake
+ROOTTESTS = test-link-linux test-address-linux test-route-linux test-cleanup-linux
 
 # If explicitly enabled, we can run the root tests
 if RUN_ROOT_TESTS
-TESTS += $(ROOTTESTS)
+TESTS = $(USERTESTS) $(ROOTTESTS)
+else
+TESTS = $(USERTESTS)
 endif

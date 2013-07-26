@@ -141,11 +141,13 @@ typedef enum {
 static ObjectType
 object_type_from_nl_object (const struct nl_object *object)
 {
+	const char *type_str = nl_object_get_type (object);
+
 	g_assert (object);
 
-	if (!strcmp (nl_object_get_type (object), "route/link"))
+	if (!strcmp (type_str, "route/link"))
 		return LINK;
-	else if (!strcmp (nl_object_get_type (object), "route/addr")) {
+	else if (!strcmp (type_str, "route/addr")) {
 		switch (rtnl_addr_get_family ((struct rtnl_addr *) object)) {
 		case AF_INET:
 			return IP4_ADDRESS;
@@ -154,7 +156,7 @@ object_type_from_nl_object (const struct nl_object *object)
 		default:
 			g_assert_not_reached ();
 		}
-	} else if (!strcmp (nl_object_get_type (object), "route/route")) {
+	} else if (!strcmp (type_str, "route/route")) {
 		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
 		case AF_INET:
 			return IP4_ROUTE;
