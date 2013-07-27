@@ -4119,11 +4119,11 @@ nm_manager_new (NMSettings *settings,
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH, singleton);
 
 	g_signal_connect (nm_platform_get (),
-	                  "link-added",
+	                  NM_PLATFORM_LINK_ADDED,
 	                  G_CALLBACK (platform_link_added_cb),
 	                  singleton);
 	g_signal_connect (nm_platform_get (),
-	                  "link-removed",
+	                  NM_PLATFORM_LINK_REMOVED,
 	                  G_CALLBACK (platform_link_removed_cb),
 	                  singleton);
 

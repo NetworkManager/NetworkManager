@@ -298,7 +298,7 @@ link_changed (NMPlatform *platform, NMFakePlatformLink *device)
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
 
-	g_signal_emit_by_name (platform, "link-changed", device->link.ifindex, &device->link, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_CHANGED, device->link.ifindex, &device->link, NM_PLATFORM_REASON_INTERNAL);
 
 	if (device->link.master) {
 		NMFakePlatformLink *master = link_get (platform, device->link.master);

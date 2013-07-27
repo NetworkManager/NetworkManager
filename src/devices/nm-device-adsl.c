@@ -370,7 +370,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 		}
 
 		/* Watch for the 'nas' interface going away */
-		priv->lost_link_id = g_signal_connect (nm_platform_get (), "link-removed",
+		priv->lost_link_id = g_signal_connect (nm_platform_get (), NM_PLATFORM_LINK_REMOVED,
 		                                       G_CALLBACK (lost_link),
 		                                       self);
 
