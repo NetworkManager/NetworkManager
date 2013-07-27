@@ -260,16 +260,16 @@ nm_logging_all_domains_to_string (void)
 	if (G_UNLIKELY (!str)) {
 		const LogDesc *diter;
 
-		str = g_string_new ("DEFAULT");
+		str = g_string_new (LOGD_DEFAULT_STRING);
 		for (diter = &domain_descs[0]; diter->name; diter++) {
 			g_string_append_c (str, ',');
 			g_string_append (str, diter->name);
 			if (diter->num == LOGD_DHCP6)
-				g_string_append (str, ",DHCP");
+				g_string_append (str, "," LOGD_DHCP_STRING);
 			else if (diter->num == LOGD_IP6)
-				g_string_append (str, ",IP");
+				g_string_append (str, "," LOGD_IP_STRING);
 		}
-		g_string_append (str, ",ALL");
+		g_string_append (str, "," LOGD_ALL_STRING);
 	}
 
 	return str->str;
