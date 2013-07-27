@@ -42,7 +42,7 @@ write_connection (NMConnection *connection,
 	/* There are two approaches to converting the data.  The first more manual
 	 * approach consists of grabbing each setting value from the NMConnection
 	 * and converting it into the appropriate value for the plugin's data
-	 * format.  This is usually taken by distro plugins becuase their format
+	 * format.  This is usually taken by distro plugins because their format
 	 * is significantly different than NetworkManager's internal format.
 	 * The second uses nm_connection_for_each_setting_value() to iterate
 	 * through each value of each setting in the NMConnection, convert it to

@@ -448,7 +448,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 	s_adsl = nm_connection_get_setting_adsl (connection);
 	g_assert (s_adsl);
 
-	/* PPPoE uses the NAS inteface, not the ATM interface */
+	/* PPPoE uses the NAS interface, not the ATM interface */
 	if (g_strcmp0 (nm_setting_adsl_get_protocol (s_adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE) == 0) {
 		g_assert (priv->nas_ifname);
 		ppp_iface = priv->nas_ifname;

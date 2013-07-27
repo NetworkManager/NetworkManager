@@ -1273,7 +1273,7 @@ parse_wpa_psk (const char *psk, GError **error)
 		return NULL;
 	}
 
-	/* Passphrase must be between 10 and 66 characters in length becuase WPA
+	/* Passphrase must be between 10 and 66 characters in length because WPA
 	 * hex keys are exactly 64 characters (no quoting), and WPA passphrases
 	 * are between 8 and 63 characters (inclusive), plus optional quoting if
 	 * the passphrase contains spaces.

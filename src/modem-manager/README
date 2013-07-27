@@ -12,7 +12,7 @@ Common source
 
  * nm-modem-manager.[h|c]:
       Defines the `NMModemManager' object, which takes care of listening to
-      signals from the DBus inteface notifying about added or removed modems.
+      signals from the DBus interface notifying about added or removed modems.
       It also takes care of creating proper `NMModem' objects from the
       information retrieved from the DBus interface.
 
