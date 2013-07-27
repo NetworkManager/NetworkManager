@@ -1151,15 +1151,21 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 static void
 link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDevice *device)
 {
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
+
 	if (ifindex != nm_device_get_ifindex (device))
 		return;
 
+	if (klass->link_changed)
+		klass->link_changed (device, info);
+}
+
+static void
+link_changed (NMDevice *device, NMPlatformLink *info)
+{
 	if (   device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT)
 	    && !device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (device, info->connected);
-
-	if (NM_DEVICE_GET_CLASS (device)->link_changed)
-		NM_DEVICE_GET_CLASS (device)->link_changed (device);
 }
 
 static void
@@ -5123,6 +5129,8 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
 	object_class->constructed = constructed;
+
+	klass->link_changed = link_changed;
 
 	klass->is_available = is_available;
 	klass->act_stage1_prepare = act_stage1_prepare;

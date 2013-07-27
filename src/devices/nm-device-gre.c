@@ -59,11 +59,13 @@ enum {
 /**************************************************************/
 
 static void
-link_changed (NMDevice *device)
+link_changed (NMDevice *device, NMPlatformLink *info)
 {
 	NMDeviceGrePrivate *priv = NM_DEVICE_GRE_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
 	NMPlatformGreProperties props;
+
+	NM_DEVICE_CLASS (nm_device_gre_parent_class)->link_changed (device, info);
 
 	if (!nm_platform_gre_get_properties (nm_device_get_ifindex (device), &props)) {
 		nm_log_warn (LOGD_HW, "(%s): could not read gre properties",
@@ -128,7 +130,7 @@ nm_device_gre_init (NMDeviceGre *self)
 static void
 constructed (GObject *object)
 {
-	link_changed (NM_DEVICE (object));
+	link_changed (NM_DEVICE (object), NULL);
 
 	G_OBJECT_CLASS (nm_device_gre_parent_class)->constructed (object);
 }

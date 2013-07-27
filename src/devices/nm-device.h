@@ -101,6 +101,8 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
+	void            (* link_changed) (NMDevice *self, NMPlatformLink *info);
+
 	/* Hardware state (IFF_UP) */
 	gboolean        (*is_up)      (NMDevice *self);
 	gboolean        (*bring_up)   (NMDevice *self, gboolean *no_firmware);
@@ -186,8 +188,6 @@ typedef struct {
 
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
-
-	void            (* link_changed) (NMDevice *self);
 } NMDeviceClass;
 
 

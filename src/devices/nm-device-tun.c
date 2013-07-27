@@ -53,11 +53,13 @@ enum {
 };
 
 static void
-link_changed (NMDevice *device)
+link_changed (NMDevice *device, NMPlatformLink *info)
 {
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
 	NMPlatformTunProperties props;
+
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, info);
 
 	if (!nm_platform_tun_get_properties (nm_device_get_ifindex (device), &props)) {
 		nm_log_warn (LOGD_HW, "(%s): could not read tun properties",
