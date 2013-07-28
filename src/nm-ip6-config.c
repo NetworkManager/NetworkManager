@@ -237,8 +237,8 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 		memset (&address, 0, sizeof (address));
 		address.address = *nm_ip6_address_get_address (s_addr);
 		address.plen = nm_ip6_address_get_prefix (s_addr);
-		address.lifetime = G_MAXUINT32;
-		address.preferred = G_MAXUINT32;
+		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
 		nm_ip6_config_add_address (config, &address);
 	}
@@ -288,7 +288,7 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 			continue;
 
 		/* Detect dynamic address */
-		if (address->lifetime != G_MAXUINT32) {
+		if (address->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 			continue;
 		}
