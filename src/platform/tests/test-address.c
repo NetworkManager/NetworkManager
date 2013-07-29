@@ -45,9 +45,10 @@ ip6_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Address *r
 static void
 test_ip4_address (void)
 {
-	SignalData *address_added = add_signal (NM_PLATFORM_IP4_ADDRESS_ADDED, ip4_address_callback);
-	SignalData *address_removed = add_signal (NM_PLATFORM_IP4_ADDRESS_REMOVED, ip4_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
+	SignalData *address_added = add_signal_ifindex (NM_PLATFORM_IP4_ADDRESS_ADDED, ip4_address_callback, ifindex);
+	SignalData *address_changed = add_signal_ifindex (NM_PLATFORM_IP4_ADDRESS_CHANGED, ip4_address_callback, ifindex);
+	SignalData *address_removed = add_signal_ifindex (NM_PLATFORM_IP4_ADDRESS_REMOVED, ip4_address_callback, ifindex);
 	GArray *addresses;
 	NMPlatformIP4Address *address;
 	in_addr_t addr;
@@ -65,9 +66,10 @@ test_ip4_address (void)
 	no_error ();
 	accept_signal (address_added);
 
-	/* Add address again */
-	g_assert (!nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
-	error (NM_PLATFORM_ERROR_EXISTS);
+	/* Add address again (aka update) */
+	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
+	no_error ();
+	accept_signal (address_changed);
 
 	/* Test address listing */
 	addresses = nm_platform_ip4_address_get_all (ifindex);
@@ -91,15 +93,17 @@ test_ip4_address (void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (address_added);
+	free_signal (address_changed);
 	free_signal (address_removed);
 }
 
 static void
 test_ip6_address (void)
 {
-	SignalData *address_added = add_signal (NM_PLATFORM_IP6_ADDRESS_ADDED, ip6_address_callback);
-	SignalData *address_removed = add_signal (NM_PLATFORM_IP6_ADDRESS_REMOVED, ip6_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
+	SignalData *address_added = add_signal_ifindex (NM_PLATFORM_IP6_ADDRESS_ADDED, ip6_address_callback, ifindex);
+	SignalData *address_changed = add_signal_ifindex (NM_PLATFORM_IP6_ADDRESS_CHANGED, ip6_address_callback, ifindex);
+	SignalData *address_removed = add_signal_ifindex (NM_PLATFORM_IP6_ADDRESS_REMOVED, ip6_address_callback, ifindex);
 	GArray *addresses;
 	NMPlatformIP6Address *address;
 	struct in6_addr addr;
@@ -117,9 +121,10 @@ test_ip6_address (void)
 	no_error ();
 	accept_signal (address_added);
 
-	/* Add address again */
-	g_assert (!nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
-	error (NM_PLATFORM_ERROR_EXISTS);
+	/* Add address again (aka update) */
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
+	no_error ();
+	accept_signal (address_changed);
 
 	/* Test address listing */
 	addresses = nm_platform_ip6_address_get_all (ifindex);
@@ -143,6 +148,7 @@ test_ip6_address (void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (address_added);
+	free_signal (address_changed);
 	free_signal (address_removed);
 }
 

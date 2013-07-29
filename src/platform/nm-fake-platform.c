@@ -734,6 +734,7 @@ ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, gu
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Address address;
+	int i;
 
 	memset (&address, 0, sizeof (address));
 	address.ifindex = ifindex;
@@ -743,8 +744,22 @@ ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, gu
 	address.lifetime = lifetime;
 	address.preferred = preferred;
 
-	g_array_append_val (priv->ip4_addresses, address);
+	for (i = 0; i < priv->ip4_addresses->len; i++) {
+		NMPlatformIP4Address *item = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
 
+		if (item->ifindex != address.ifindex)
+			continue;
+		if (item->address != address.address)
+			continue;
+		if (item->plen != address.plen)
+			continue;
+
+		memcpy (item, &address, sizeof (address));
+		g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_CHANGED, ifindex, &address);
+		return TRUE;
+	}
+
+	g_array_append_val (priv->ip4_addresses, address);
 	g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_ADDED, ifindex, &address);
 
 	return TRUE;
@@ -755,6 +770,7 @@ ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int pl
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP6Address address;
+	int i;
 
 	memset (&address, 0, sizeof (address));
 	address.ifindex = ifindex;
@@ -764,8 +780,22 @@ ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int pl
 	address.lifetime = lifetime;
 	address.preferred = preferred;
 
-	g_array_append_val (priv->ip6_addresses, address);
+	for (i = 0; i < priv->ip6_addresses->len; i++) {
+		NMPlatformIP6Address *item = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);
 
+		if (item->ifindex != address.ifindex)
+			continue;
+		if (!IN6_ARE_ADDR_EQUAL (&item->address, &address.address))
+			continue;
+		if (item->plen != address.plen)
+			continue;
+
+		memcpy (item, &address, sizeof (address));
+		g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_CHANGED, ifindex, &address);
+		return TRUE;
+	}
+
+	g_array_append_val (priv->ip6_addresses, address);
 	g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_ADDED, ifindex, &address);
 
 	return TRUE;

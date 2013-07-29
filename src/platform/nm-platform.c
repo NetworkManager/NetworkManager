@@ -1074,13 +1074,7 @@ nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen, guint32 l
 	g_return_val_if_fail (preferred >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_add, FALSE);
 
-	if (nm_platform_ip4_address_exists (ifindex, address, plen)) {
-		debug ("address already exists");
-		platform->error = NM_PLATFORM_ERROR_EXISTS;
-		return FALSE;
-	}
-
-	debug ("address: adding IPv4 address");
+	debug ("address: adding or updating IPv4 address");
 	return klass->ip4_address_add (platform, ifindex, address, plen, lifetime, preferred);
 }
 
@@ -1095,13 +1089,7 @@ nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen, gui
 	g_return_val_if_fail (preferred >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
-	if (nm_platform_ip6_address_exists (ifindex, address, plen)) {
-		debug ("address already exists");
-		platform->error = NM_PLATFORM_ERROR_EXISTS;
-		return FALSE;
-	}
-
-	debug ("address: adding IPv6 address");
+	debug ("address: adding or updating IPv6 address");
 	return klass->ip6_address_add (platform, ifindex, address, plen, lifetime, preferred);
 }
 
@@ -1233,7 +1221,6 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
-	const NMPlatformIP4Address *known_address;
 	guint32 now = get_time ();
 	int i;
 
@@ -1252,23 +1239,20 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 
 	/* Add missing addresses */
 	for (i = 0; i < known_addresses->len; i++) {
-		known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
+		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
+		guint32 lifetime, preferred;
 
-		if (!nm_platform_ip4_address_exists (ifindex, known_address->address, known_address->plen)) {
-			guint32 lifetime, preferred;
+		if (known_address->lifetime) {
+			guint32 shift = addsubstract_guint32 (now, 0, known_address->timestamp);
 
-			if (known_address->lifetime) {
-				guint32 shift = addsubstract_guint32 (now, 0, known_address->timestamp);
+			/* Pad the lifetime by 5 seconds to avoid potential races. */
+			lifetime = addsubstract_guint32 (known_address->lifetime, 5, shift);
+			preferred = addsubstract_guint32 (known_address->lifetime, 5, shift);
+		} else
+			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
-				/* Pad the lifetime by 5 seconds to avoid potential races. */
-				lifetime = addsubstract_guint32 (known_address->lifetime, 5, shift);
-				preferred = addsubstract_guint32 (known_address->lifetime, 5, shift);
-			} else
-				lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-
-			if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->plen, lifetime, preferred))
-				return FALSE;
-		}
+		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->plen, lifetime, preferred))
+			return FALSE;
 	}
 
 	return TRUE;
@@ -1290,7 +1274,6 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 {
 	GArray *addresses;
 	NMPlatformIP6Address *address;
-	const NMPlatformIP6Address *known_address;
 	guint32 now = get_time ();
 	int i;
 
@@ -1313,23 +1296,20 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 
 	/* Add missing addresses */
 	for (i = 0; i < known_addresses->len; i++) {
-		known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
+		const NMPlatformIP6Address *known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
+		guint32 lifetime, preferred;
 
-		if (!nm_platform_ip6_address_exists (ifindex, known_address->address, known_address->plen)) {
-			guint32 lifetime, preferred;
+		if (known_address->lifetime) {
+			guint32 shift = addsubstract_guint32 (now, 0, known_address->timestamp);
 
-			if (known_address->lifetime) {
-				guint32 shift = addsubstract_guint32 (now, 0, known_address->timestamp);
+			/* Pad the lifetime by 5 seconds to avoid potential races. */
+			lifetime = addsubstract_guint32 (known_address->lifetime, 5, shift);
+			preferred = addsubstract_guint32 (known_address->lifetime, 5, shift);
+		} else
+			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
-				/* Pad the lifetime by 5 seconds to avoid potential races. */
-				lifetime = addsubstract_guint32 (known_address->lifetime, 5, shift);
-				preferred = addsubstract_guint32 (known_address->lifetime, 5, shift);
-			} else
-				lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-
-			if (!nm_platform_ip6_address_add (ifindex, known_address->address, known_address->plen, lifetime, preferred))
-				return FALSE;
-		}
+		if (!nm_platform_ip6_address_add (ifindex, known_address->address, known_address->plen, lifetime, preferred))
+			return FALSE;
 	}
 
 	return TRUE;

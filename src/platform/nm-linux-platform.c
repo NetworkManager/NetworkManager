@@ -241,7 +241,7 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 		return rtnl_link_add (sock, (struct rtnl_link *) object, NLM_F_CREATE);
 	case IP4_ADDRESS:
 	case IP6_ADDRESS:
-		return rtnl_addr_add (sock, (struct rtnl_addr *) object, NLM_F_CREATE);
+		return rtnl_addr_add (sock, (struct rtnl_addr *) object, NLM_F_CREATE | NLM_F_REPLACE);
 	case IP4_ROUTE:
 	case IP6_ROUTE:
 		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE);
