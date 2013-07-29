@@ -1171,7 +1171,11 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 	int i;
 
 	for (i = 0; i < addresses->len; i++) {
-		if (!memcmp (&g_array_index (addresses, NMPlatformIP4Address, i), address, sizeof (*address)))
+		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
+
+		if (candidate->ifindex == address->ifindex &&
+		    candidate->address == address->address &&
+		    candidate->plen    == address->plen)
 			return TRUE;
 	}
 
@@ -1184,7 +1188,11 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	int i;
 
 	for (i = 0; i < addresses->len; i++) {
-		if (!memcmp (&g_array_index (addresses, NMPlatformIP6Address, i), address, sizeof (*address)))
+		NMPlatformIP6Address *candidate = &g_array_index (addresses, NMPlatformIP6Address, i);
+
+		if (candidate->ifindex == address->ifindex &&
+		    IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) &&
+		    candidate->plen    == address->plen)
 			return TRUE;
 	}
 
