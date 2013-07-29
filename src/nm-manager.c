@@ -192,8 +192,7 @@ struct PendingActivation {
 	PendingActivationFunc callback;
 	gpointer user_data;
 
-	char *dbus_sender;
-	gulong sender_uid;
+	NMAuthSubject *subject;
 	NMAuthChain *chain;
 	const char *wifi_shared_permission;
 
@@ -851,19 +850,17 @@ nm_manager_get_state (NMManager *manager)
 
 static PendingActivation *
 pending_activation_new (NMManager *manager,
-                        char *dbus_sender,
-                        gulong sender_uid,
+                        NMAuthSubject *subject,
                         NMDevice *device,
                         NMConnection *connection,
                         const char *specific_object_path,
                         PendingActivationFunc callback,
-                        gpointer user_data,
-                        GError **error)
+                        gpointer user_data)
 {
 	PendingActivation *pending;
 
 	g_return_val_if_fail (manager != NULL, NULL);
-	g_return_val_if_fail (dbus_sender != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (callback != NULL, NULL);
@@ -880,8 +877,7 @@ pending_activation_new (NMManager *manager,
 
 	pending->callback = callback;
 	pending->user_data = user_data;
-	pending->dbus_sender = dbus_sender;
-	pending->sender_uid = sender_uid;
+	pending->subject = g_object_ref (subject);
 
 	return pending;
 }
@@ -919,37 +915,38 @@ pending_auth_done (NMAuthChain *chain,
 	g_clear_error (&tmp_error);
 }
 
-static void
-pending_activation_check_authorized (PendingActivation *pending)
+static gboolean
+pending_activation_check_authorized (PendingActivation *pending, GError **error)
 {
-	GError *error;
 	const char *wifi_permission = NULL;
 
-	g_return_if_fail (pending != NULL);
+	g_return_val_if_fail (pending != NULL, FALSE);
 
 	/* First check if the user is allowed to use networking at all, giving
 	 * the user a chance to authenticate to gain the permission.
 	 */
-	pending->chain = nm_auth_chain_new_dbus_sender (pending->dbus_sender,
-	                                                pending->sender_uid,
-	                                                pending_auth_done,
-	                                                pending);
-	if (pending->chain) {
-		nm_auth_chain_add_call (pending->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
-
-		/* Shared wifi connections require special permissions too */
-		wifi_permission = nm_utils_get_shared_wifi_permission (pending->connection);
-		if (wifi_permission) {
-			pending->wifi_shared_permission = wifi_permission;
-			nm_auth_chain_add_call (pending->chain, wifi_permission, TRUE);
-		}
-	} else {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Failed to authorize");
-		pending->callback (pending, pending->user_data, error);
-		g_error_free (error);
+	pending->chain = nm_auth_chain_new_subject (pending->subject,
+	                                            NULL,
+	                                            pending_auth_done,
+	                                            pending);
+	if (!pending->chain) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "Failed to authorize");
+		return FALSE;
 	}
+
+	nm_auth_chain_add_call (pending->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+
+	/* Shared wifi connections require special permissions too */
+	wifi_permission = nm_utils_get_shared_wifi_permission (pending->connection);
+	if (wifi_permission) {
+		pending->wifi_shared_permission = wifi_permission;
+		nm_auth_chain_add_call (pending->chain, wifi_permission, TRUE);
+	}
+
+	return TRUE;
 }
 
 static void
@@ -958,9 +955,9 @@ pending_activation_destroy (PendingActivation *pending)
 	g_return_if_fail (pending != NULL);
 
 	g_free (pending->specific_object_path);
-	g_free (pending->dbus_sender);
 	g_clear_object (&pending->device);
 	g_clear_object (&pending->connection);
+	g_clear_object (&pending->subject);
 
 	if (pending->chain)
 		nm_auth_chain_unref (pending->chain);
@@ -3129,7 +3126,7 @@ pending_activate (PendingActivation *pending,
 	                                        NM_CONNECTION (new_connection) : pending->connection,
 	                                     pending->specific_object_path,
 	                                     pending->device,
-	                                     pending->dbus_sender,
+	                                     nm_auth_subject_get_dbus_sender (pending->subject),
 	                                     &local);
 	if (!ac) {
 		nm_log_warn (LOGD_CORE, "connection %s failed to activate: (%d) %s",
@@ -3141,28 +3138,29 @@ pending_activate (PendingActivation *pending,
 	return ac;
 }
 
-static gboolean
+static NMAuthSubject *
 validate_activation_request (NMManager *self,
                              DBusGMethodInvocation *context,
                              NMConnection *connection,
                              const char *device_path,
                              NMDevice **out_device,
                              gboolean *out_vpn,
-                             gulong *out_sender_uid,
                              GError **error)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
+	NMAuthSubject *subject = NULL;
 
 	g_assert (connection);
 
-	/* Get caller's UID */
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, out_sender_uid, NULL)) {
+	/* Validate the caller */
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
 		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request UID.");
-		return FALSE;
+		return NULL;
 	}
 
 	/* Check whether it's a VPN or not */
@@ -3188,14 +3186,15 @@ validate_activation_request (NMManager *self,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 		                     "Device not found");
-		return FALSE;
+		g_object_unref (subject);
+		return NULL;
 	}
 
 	if (out_device)
 		*out_device = device;
 	if (out_vpn)
 		*out_vpn = vpn;
-	return TRUE;
+	return subject;
 }
 
 /***********************************************************************/
@@ -3232,10 +3231,10 @@ impl_manager_activate_connection (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	PendingActivation *pending;
+	NMAuthSubject *subject = NULL;
 	NMConnection *connection;
 	NMDevice *device = NULL;
 	GError *error = NULL;
-	gulong sender_uid = G_MAXULONG;
 
 	connection = (NMConnection *) nm_settings_get_connection_by_path (priv->settings, connection_path);
 	if (!connection) {
@@ -3245,35 +3244,39 @@ impl_manager_activate_connection (NMManager *self,
 		goto error;
 	}
 
-	if (!validate_activation_request (self,
-	                                  context,
-	                                  connection,
-	                                  device_path,
-	                                  &device,
-	                                  NULL,
-	                                  &sender_uid,
-	                                  &error))
+	subject = validate_activation_request (self,
+	                                       context,
+	                                       connection,
+	                                       device_path,
+	                                       &device,
+	                                       NULL,
+	                                       &error);
+	if (!subject)
 		goto error;
 
 	/* Need to check the caller's permissions and stuff before we can
 	 * activate the connection.
 	 */
 	pending = pending_activation_new (self,
-	                                  dbus_g_method_get_sender (context),
-	                                  sender_uid,
+	                                  subject,
 	                                  device,
 	                                  connection,
 	                                  specific_object_path,
 	                                  activation_auth_done,
-	                                  context,
-	                                  &error);
-	if (pending) {
-		/* Success */
-		pending_activation_check_authorized (pending);
-		return;
+	                                  context);
+	g_assert (pending);
+
+	if (!pending_activation_check_authorized (pending, &error)) {
+		pending_activation_destroy (pending);
+		goto error;
 	}
 
+	/* success */
+	g_object_unref (subject);
+	return;
+
 error:
+	g_clear_object (&subject);
 	g_assert (error);
 	dbus_g_method_return_error (context, error);
 	g_error_free (error);
@@ -3344,10 +3347,10 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	NMConnection *connection = NULL;
 	GSList *all_connections = NULL;
 	PendingActivation *pending;
+	NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
-	gulong sender_uid = G_MAXULONG;
 
 	if (!settings || !g_hash_table_size (settings)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -3359,14 +3362,14 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	connection = nm_connection_new ();
 	nm_connection_replace_settings (connection, settings, NULL);
 
-	if (!validate_activation_request (self,
-	                                  context,
-	                                  connection,
-	                                  device_path,
-	                                  &device,
-	                                  &vpn,
-	                                  &sender_uid,
-	                                  &error))
+	subject = validate_activation_request (self,
+	                                       context,
+	                                       connection,
+	                                       device_path,
+	                                       &device,
+	                                       &vpn,
+	                                       &error);
+	if (!subject)
 		goto error;
 
 	all_connections = nm_settings_get_connections (priv->settings);
@@ -3401,24 +3404,27 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 * activate the connection.
 	 */
 	pending = pending_activation_new (self,
-	                                  dbus_g_method_get_sender (context),
-	                                  sender_uid,
+	                                  subject,
 	                                  device,
 	                                  connection,
 	                                  specific_object_path,
 	                                  add_and_activate_auth_done,
-	                                  context,
-	                                  &error);
-	if (pending) {
-		/* Success! */
-		g_object_unref (connection);
-		pending_activation_check_authorized (pending);
-		return;
+	                                  context);
+	g_assert (pending);
+
+	if (!pending_activation_check_authorized (pending, &error)) {
+		pending_activation_destroy (pending);
+		goto error;
 	}
+
+	g_object_unref (connection);
+	g_object_unref (subject);
+	return;  /* Success */
 
 error:
 	g_clear_object (&connection);
 	g_slist_free (all_connections);
+	g_object_unref (&subject);
 
 	g_assert (error);
 	dbus_g_method_return_error (context, error);
