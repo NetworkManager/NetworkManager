@@ -1769,6 +1769,8 @@ device_auth_done_cb (NMAuthChain *chain,
 	const char *permission;
 	NMDeviceAuthRequestFunc callback;
 
+	g_assert (context);
+
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
 	permission = nm_auth_chain_get_data (chain, "requested-permission");
@@ -1818,25 +1820,24 @@ device_auth_request_cb (NMDevice *device,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthChain *chain;
-	const char *error_desc = NULL;
 
 	/* Validate the request */
-	chain = nm_auth_chain_new (context, device_auth_done_cb, self, &error_desc);
-	if (chain) {
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-		nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
-		nm_auth_chain_set_data (chain, "requested-permission", g_strdup (permission), g_free);
-		nm_auth_chain_set_data (chain, "callback", callback, NULL);
-		nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
-		nm_auth_chain_add_call (chain, permission, allow_interaction);
-	} else {
+	chain = nm_auth_chain_new_context (context, device_auth_done_cb, self);
+	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to authenticate request.");
 		callback (device, context, error, user_data);
-		g_error_free (error);
+		g_clear_error (&error);
+		return;
 	}
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_set_data (chain, "device", g_object_ref (device), g_object_unref);
+	nm_auth_chain_set_data (chain, "requested-permission", g_strdup (permission), g_free);
+	nm_auth_chain_set_data (chain, "callback", callback, NULL);
+	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
+	nm_auth_chain_add_call (chain, permission, allow_interaction);
 }
 
 /* This should really be moved to gsystem. */
@@ -3479,6 +3480,8 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 	GError *error = NULL;
 	NMAuthCallResult result;
 
+	g_assert (context);
+
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
@@ -3521,7 +3524,6 @@ impl_manager_deactivate_connection (NMManager *self,
 	GError *error = NULL;
 	GSList *iter;
 	NMAuthChain *chain;
-	const char *error_desc = NULL;
 
 	/* Find the connection by its object path */
 	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
@@ -3537,25 +3539,26 @@ impl_manager_deactivate_connection (NMManager *self,
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 		                             "The connection was not active.");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
+		goto done;
 	}
 
 	/* Validate the user request */
-	chain = nm_auth_chain_new (context, deactivate_net_auth_done_cb, self, &error_desc);
-	if (chain) {
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-		nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
-	} else {
+	chain = nm_auth_chain_new_context (context, deactivate_net_auth_done_cb, self);
+	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+		                             "Unable to authenticate request.");
+		goto done;
 	}
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_set_data (chain, "path", g_strdup (active_path), g_free);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+
+done:
+	if (error)
+		dbus_g_method_return_error (context, error);
+	g_clear_error (&error);
 }
 
 /*
@@ -3815,6 +3818,8 @@ enable_net_done_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	gboolean enable;
 
+	g_assert (context);
+
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
@@ -3851,7 +3856,6 @@ impl_manager_enable (NMManager *self,
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
 	GError *error = NULL;
-	const char *error_desc;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
 
@@ -3861,24 +3865,25 @@ impl_manager_enable (NMManager *self,
 		error = g_error_new (NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED,
 		                     "Already %s", enable ? "enabled" : "disabled");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
+		goto done;
 	}
 
-	chain = nm_auth_chain_new (context, enable_net_done_cb, self, &error_desc);
-	if (chain) {
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-		nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
-	} else {
+	chain = nm_auth_chain_new_context (context, enable_net_done_cb, self);
+	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+		                             "Unable to authenticate request.");
+		goto done;
 	}
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_set_data (chain, "enable", GUINT_TO_POINTER (enable), NULL);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, TRUE);
+
+done:
+	if (error)
+		dbus_g_method_return_error (context, error);
+	g_clear_error (&error);
 }
 
 /* Permissions */
@@ -3910,6 +3915,8 @@ get_permissions_done_cb (NMAuthChain *chain,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *ret_error;
 	GHashTable *results;
+
+	g_assert (context);
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	if (error) {
@@ -3948,31 +3955,30 @@ impl_manager_get_permissions (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	const char *error_desc = NULL;
-	GError *error;
+	GError *error = NULL;
 
-	chain = nm_auth_chain_new (context, get_permissions_done_cb, self, &error_desc);
-	if (chain) {
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN, FALSE);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
-	} else {
+	chain = nm_auth_chain_new_context (context, get_permissions_done_cb, self);
+	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to authenticate request.");
 		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+		g_clear_error (&error);
+		return;
 	}
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN, FALSE);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
 }
 
 static gboolean
@@ -4073,22 +4079,21 @@ impl_manager_check_connectivity (NMManager *manager,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMAuthChain *chain;
-	const char *error_desc = NULL;
-	GError *error;
+	GError *error = NULL;
 
-	/* Validate the user request */
-	chain = nm_auth_chain_new (context, check_connectivity_auth_done_cb, manager, &error_desc);
-	if (chain) {
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
-	} else {
+	/* Validate the request */
+	chain = nm_auth_chain_new_context (context, check_connectivity_auth_done_cb, manager);
+	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
+		                             "Unable to authenticate request.");
 		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+		g_clear_error (&error);
+		return;
 	}
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 }
 
 void
@@ -4344,9 +4349,9 @@ prop_filter (DBusConnection *connection,
 	const char *propiface = NULL;
 	const char *propname = NULL;
 	const char *glib_propname = NULL, *permission = NULL;
-	gulong caller_uid = G_MAXULONG;
 	DBusMessage *reply = NULL;
 	gboolean set_enabled = FALSE;
+	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
 	GObject *obj;
 
@@ -4406,20 +4411,21 @@ prop_filter (DBusConnection *connection,
 		goto out;
 	}
 
-	if (!nm_dbus_manager_get_caller_info_from_message (priv->dbus_mgr,
-	                                                   connection,
-	                                                   message,
-	                                                   NULL,
-	                                                   &caller_uid,
-	                                                   NULL)) {
+	subject = nm_auth_subject_new_from_message (connection, message);\
+	if (!subject) {
 		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
 		                                "Could not determine request UID.");
 		goto out;
 	}
 
 	/* Validate the user request */
-	chain = nm_auth_chain_new_raw_message (message, caller_uid, prop_set_auth_done_cb, self);
-	g_assert (chain);
+	chain = nm_auth_chain_new_subject (subject, NULL, prop_set_auth_done_cb, self);
+	if (!chain) {
+		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
+		                                "Could not authenticate request.");
+		goto out;
+	}
+
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 	nm_auth_chain_set_data (chain, "prop", g_strdup (glib_propname), g_free);
 	nm_auth_chain_set_data (chain, "permission", g_strdup (permission), g_free);
@@ -4434,6 +4440,8 @@ out:
 		dbus_connection_send (connection, reply, NULL);
 		dbus_message_unref (reply);
 	}
+	g_clear_object (&subject);
+
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
