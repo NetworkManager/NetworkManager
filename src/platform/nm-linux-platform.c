@@ -2078,6 +2078,8 @@ ip_route_mark_all (NMPlatform *platform, int family, int ifindex)
 			continue;
 		if (rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN)
 			continue;
+		if (rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL)
+			continue;
 		if (rtnl_route_get_family (rtnlroute) != family)
 			continue;
 		if (rtnl_route_get_nnexthops (rtnlroute) != 1)
