@@ -206,6 +206,8 @@ agent_register_permissions_done (NMAuthChain *chain,
 	GHashTableIter iter;
 	Request *req;
 
+	g_assert (context);
+
 	priv->chains = g_slist_remove (priv->chains, chain);
 
 	if (error) {
@@ -270,23 +272,20 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
                                                DBusGMethodInvocation *context)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-	char *sender = NULL;
+	NMAuthSubject *subject;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL, *local = NULL;
 	NMSecretAgent *agent;
 	NMAuthChain *chain;
-	const char *error_desc = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
-	                                      context,
-	                                      &sender,
-	                                      &sender_uid,
-	                                      NULL)) {
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
 		                             "Unable to determine request sender and UID.");
 		goto done;
 	}
+	sender_uid = nm_auth_subject_get_uid (subject);
 
 	if (   0 != sender_uid
 	    && !nm_session_monitor_uid_has_session (priv->session_monitor,
@@ -312,7 +311,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	}
 
 	/* Success, add the new agent */
-	agent = nm_secret_agent_new (context, sender, identifier, sender_uid, capabilities);
+	agent = nm_secret_agent_new (context, subject, identifier, capabilities);
 	if (!agent) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,
@@ -324,7 +323,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	            nm_secret_agent_get_description (agent));
 
 	/* Kick off permissions requests for this agent */
-	chain = nm_auth_chain_new (context, agent_register_permissions_done, self, &error_desc);
+	chain = nm_auth_chain_new_subject (subject, context, agent_register_permissions_done, self);
 	if (chain) {
 		nm_auth_chain_set_data (chain, "agent", agent, g_object_unref);
 		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, FALSE);
@@ -334,7 +333,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	} else {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
-		                             error_desc);
+		                             "Unable to start agent authentication.");
 	}
 
 done:
@@ -342,7 +341,7 @@ done:
 		dbus_g_method_return_error (context, error);
 	g_clear_error (&error);
 	g_clear_error (&local);
-	g_free (sender);
+	g_clear_object (&subject);
 }
 
 static void
@@ -1018,10 +1017,10 @@ get_next_cb (Request *parent)
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s/%s) request has system secrets; checking agent %s for MODIFY",
 		            req, parent->detail, req->setting_name, agent_dbus_owner);
 
-		req->chain = nm_auth_chain_new_dbus_sender (agent_dbus_owner,
-		                                            nm_secret_agent_get_owner_uid (parent->current),
-		                                            get_agent_modify_auth_cb,
-		                                            req);
+		req->chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (parent->current),
+		                                        NULL,
+		                                        get_agent_modify_auth_cb,
+		                                        req);
 		g_assert (req->chain);
 
 		/* If the caller is the only user in the connection's permissions, then
@@ -1504,10 +1503,10 @@ authority_changed_cb (gpointer user_data)
 		NMAuthChain *chain;
 
 		/* Kick off permissions requests for this agent */
-		chain = nm_auth_chain_new_dbus_sender (nm_secret_agent_get_dbus_owner (agent),
-		                                       nm_secret_agent_get_owner_uid (agent),
-		                                       agent_permissions_changed_done,
-		                                       self);
+		chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (agent),
+		                                   NULL,
+		                                   agent_permissions_changed_done,
+		                                   self);
 		g_assert (chain);
 		priv->chains = g_slist_append (priv->chains, chain);
 

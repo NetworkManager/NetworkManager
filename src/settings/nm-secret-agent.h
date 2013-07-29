@@ -29,6 +29,7 @@
 #include <nm-connection.h>
 #include "nm-dbus-manager.h"
 #include "nm-settings-flags.h"
+#include "nm-auth-subject.h"
 
 /* NOTE: ensure these capabilities match those in introspection/nm-secret-agent.xml and
  * libnm-glib/nm-secret-agent.h.
@@ -56,9 +57,8 @@ typedef struct {
 GType nm_secret_agent_get_type (void);
 
 NMSecretAgent *nm_secret_agent_new (DBusGMethodInvocation *context,
-                                    const char *owner,
+                                    NMAuthSubject *subject,
                                     const char *identifier,
-                                    uid_t owner_uid,
                                     NMSecretAgentCapabilities capabilities);
 
 const char *nm_secret_agent_get_description (NMSecretAgent *agent);
@@ -67,13 +67,15 @@ const char *nm_secret_agent_get_dbus_owner (NMSecretAgent *agent);
 
 const char *nm_secret_agent_get_identifier (NMSecretAgent *agent);
 
-uid_t       nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
+gulong      nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
 
 const char *nm_secret_agent_get_owner_username (NMSecretAgent *agent);
 
 NMSecretAgentCapabilities nm_secret_agent_get_capabilities (NMSecretAgent *agent);
 
 guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
+
+NMAuthSubject *nm_secret_agent_get_subject (NMSecretAgent *agent);
 
 void        nm_secret_agent_add_permission (NMSecretAgent *agent,
                                             const char *permission,
