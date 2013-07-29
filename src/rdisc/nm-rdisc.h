@@ -60,7 +60,7 @@ typedef struct {
 	struct in6_addr address;
 	guint32 timestamp;
 	guint32 lifetime;
-	guint32 preferred_lft;
+	guint32 preferred;
 } NMRDiscAddress;
 
 typedef struct {

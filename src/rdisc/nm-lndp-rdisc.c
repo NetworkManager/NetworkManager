@@ -481,7 +481,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 				address.address = route.network;
 				address.timestamp = now;
 				address.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset);
-				address.preferred_lft = ndp_msg_opt_prefix_preferred_time (msg, offset);
+				address.preferred = ndp_msg_opt_prefix_preferred_time (msg, offset);
 
 				fill_address_from_mac (&address.address, lladdr);
 
