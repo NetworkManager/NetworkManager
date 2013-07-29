@@ -13,13 +13,13 @@ SUBDIRS += devices/wimax
 endif
 
 if ENABLE_TESTS
-SUBDIRS +=				\
-	config/tests			\
-	dhcp-manager/tests		\
-	platform			\
-	settings/tests			\
-	supplicant-manager/tests	\
-	rdisc/tests			\
+SUBDIRS += \
+	config/tests \
+	dhcp-manager/tests \
+	platform \
+	rdisc \
+	settings/tests \
+	supplicant-manager/tests \
 	tests
 endif
 
