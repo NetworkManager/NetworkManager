@@ -994,47 +994,35 @@ pk_auth_cb (NMAuthChain *chain,
 	nm_auth_chain_unref (chain);
 }
 
-static gboolean
-check_user_in_acl (NMConnection *connection,
-                   DBusGMethodInvocation *context,
-                   NMSessionMonitor *session_monitor,
-                   gulong *out_sender_uid,
-                   GError **error)
+/**
+ * _new_auth_subject:
+ * @context: the D-Bus method invocation context
+ * @error: on failure, a #GError
+ *
+ * Creates an NMAuthSubject for the caller.
+ *
+ * Returns: the #NMAuthSubject on success, or %NULL on failure and sets @error
+ */
+static NMAuthSubject *
+_new_auth_subject (DBusGMethodInvocation *context, GError **error)
 {
-	gulong sender_uid = G_MAXULONG;
-	char *error_desc = NULL;
+	NMAuthSubject *subject;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (context != NULL, FALSE);
-	g_return_val_if_fail (session_monitor != NULL, FALSE);
-
-	/* Get the caller's UID */
-	if (!nm_dbus_manager_get_caller_info (nm_dbus_manager_get (), context, NULL, &sender_uid, NULL)) {
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                     "Unable to determine UID of request.");
-		return FALSE;
 	}
 
-	/* Make sure the UID can view this connection */
-	if (!nm_auth_uid_in_acl (connection, session_monitor, sender_uid, &error_desc)) {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                     error_desc);
-		g_free (error_desc);
-		return FALSE;
-	}
-
-	if (out_sender_uid)
-		*out_sender_uid = sender_uid;
-	return TRUE;
+	return subject;
 }
 
 static void
 auth_start (NMSettingsConnection *self,
             DBusGMethodInvocation *context,
+            NMAuthSubject *subject,
             const char *check_permission,
             AuthCallback callback,
             gpointer callback_data)
@@ -1043,41 +1031,49 @@ auth_start (NMSettingsConnection *self,
 	NMAuthChain *chain;
 	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
-	const char *error_desc = NULL;
+	char *error_desc = NULL;
 
-	if (!check_user_in_acl (NM_CONNECTION (self),
-	                        context,
-	                        priv->session_monitor,
-	                        &sender_uid,
-	                        &error)) {
+	g_return_if_fail (context != NULL);
+	g_return_if_fail (NM_IS_AUTH_SUBJECT (subject));
+
+	/* Ensure the caller can view this connection */
+	if (!nm_auth_uid_in_acl (NM_CONNECTION (self),
+	                         priv->session_monitor,
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		g_free (error_desc);
+
 		callback (self, context, G_MAXULONG, error, callback_data);
 		g_clear_error (&error);
 		return;
 	}
 
-	if (check_permission) {
-		chain = nm_auth_chain_new (context, pk_auth_cb, self, &error_desc);
-		if (chain) {
-			priv->pending_auths = g_slist_append (priv->pending_auths, chain);
-
-			nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
-			nm_auth_chain_set_data (chain, "callback", callback, NULL);
-			nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
-			nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
-
-			nm_auth_chain_add_call (chain, check_permission, TRUE);
-		} else {
-			g_set_error_literal (&error,
-			                     NM_SETTINGS_ERROR,
-			                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-			                     error_desc);
-			callback (self, context, G_MAXULONG, error, callback_data);
-			g_clear_error (&error);
-		}
-	} else {
+	if (!check_permission) {
 		/* Don't need polkit auth, automatic success */
-		callback (self, context, sender_uid, NULL, callback_data);
+		callback (self, context, nm_auth_subject_get_uid (subject), NULL, callback_data);
+		return;
 	}
+
+	chain = nm_auth_chain_new_subject (subject, context, pk_auth_cb, self);
+	if (!chain) {
+		g_set_error_literal (&error,
+		                     NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                     "Unable to authenticate the request.");
+		callback (self, context, G_MAXULONG, error, callback_data);
+		g_clear_error (&error);
+		return;
+	}
+
+	priv->pending_auths = g_slist_append (priv->pending_auths, chain);
+	nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
+	nm_auth_chain_set_data (chain, "callback", callback, NULL);
+	nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
+	nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
+	nm_auth_chain_add_call (chain, check_permission, TRUE);
 }
 
 /**** DBus method handlers ************************************/
@@ -1184,7 +1180,17 @@ static void
 impl_settings_connection_get_settings (NMSettingsConnection *self,
                                        DBusGMethodInvocation *context)
 {
-	auth_start (self, context, NULL, get_settings_auth_cb, NULL);
+	NMAuthSubject *subject;
+	GError *error = NULL;
+
+	subject = _new_auth_subject (context, &error);
+	if (subject) {
+		auth_start (self, context, subject, NULL, get_settings_auth_cb, NULL);
+		g_object_unref (subject);
+	} else {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 typedef struct {
@@ -1307,10 +1313,12 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
                                         gboolean save_to_disk)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMAuthSubject *subject = NULL;
 	NMConnection *tmp = NULL;
 	GError *error = NULL;
 	UpdateInfo *info;
 	const char *permission;
+	char *error_desc = NULL;
 
 	g_assert (new_settings != NULL || save_to_disk == TRUE);
 
@@ -1318,36 +1326,35 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	 * the problem (ex a system settings plugin that can't write connections out)
 	 * instead of over D-Bus.
 	 */
-	if (!check_writable (NM_CONNECTION (self), &error)) {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
+	if (!check_writable (NM_CONNECTION (self), &error))
+		goto error;
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
 		tmp = nm_connection_new_from_hash (new_settings, &error);
 		if (!tmp) {
 			g_assert (error);
-			dbus_g_method_return_error (context, error);
-			g_error_free (error);
-			return;
+			goto error;
 		}
 	}
+
+	subject = _new_auth_subject (context, &error);
+	if (!subject)
+		goto error;
 
 	/* And that the new connection settings will be visible to the user
 	 * that's sending the update request.  You can't make a connection
 	 * invisible to yourself.
 	 */
-	if (!check_user_in_acl (tmp ? tmp : NM_CONNECTION (self),
-	                        context,
-	                        priv->session_monitor,
-	                        NULL,
-	                        &error)) {
-		dbus_g_method_return_error (context, error);
-		g_clear_error (&error);
-		g_object_unref (tmp);
-		return;
+	if (!nm_auth_uid_in_acl (tmp ? tmp : NM_CONNECTION (self),
+	                         priv->session_monitor,
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		g_free (error_desc);
+		goto error;
 	}
 
 	info = g_malloc0 (sizeof (*info));
@@ -1359,7 +1366,16 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 
 	permission = get_update_modify_permission (NM_CONNECTION (self),
 	                                           tmp ? tmp : NM_CONNECTION (self));
-	auth_start (self, context, permission, update_auth_cb, info);
+	auth_start (self, context, subject, permission, update_auth_cb, info);
+	g_object_unref (subject);
+	return;
+
+error:
+	g_clear_object (&tmp);
+	g_clear_object (&subject);
+
+	dbus_g_method_return_error (context, error);
+	g_clear_error (&error);
 }
 
 static void
@@ -1440,6 +1456,7 @@ static void
 impl_settings_connection_delete (NMSettingsConnection *self,
                                  DBusGMethodInvocation *context)
 {
+	NMAuthSubject *subject;
 	GError *error = NULL;
 	
 	if (!check_writable (NM_CONNECTION (self), &error)) {
@@ -1448,7 +1465,14 @@ impl_settings_connection_delete (NMSettingsConnection *self,
 		return;
 	}
 
-	auth_start (self, context, get_modify_permission_basic (self), delete_auth_cb, NULL);
+	subject = _new_auth_subject (context, &error);
+	if (subject) {
+		auth_start (self, context, subject, get_modify_permission_basic (self), delete_auth_cb, NULL);
+		g_object_unref (subject);
+	} else {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 /**************************************************************/
@@ -1524,11 +1548,22 @@ impl_settings_connection_get_secrets (NMSettingsConnection *self,
                                       const gchar *setting_name,
                                       DBusGMethodInvocation *context)
 {
-	auth_start (self,
-	            context,
-	            get_modify_permission_basic (self),
-	            dbus_secrets_auth_cb,
-	            g_strdup (setting_name));
+	NMAuthSubject *subject;
+	GError *error = NULL;
+
+	subject = _new_auth_subject (context, &error);
+	if (subject) {
+		auth_start (self,
+		            context,
+		            subject,
+		            get_modify_permission_basic (self),
+		            dbus_secrets_auth_cb,
+		            g_strdup (setting_name));
+		g_object_unref (subject);
+	} else {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
 }
 
 /**************************************************************/
