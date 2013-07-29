@@ -2917,6 +2917,9 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 			memset (&address, 0, sizeof (address));
 			address.address = discovered_address->address;
 			address.plen = 128;
+			address.timestamp = discovered_address->timestamp;
+			address.lifetime = discovered_address->lifetime;
+			address.preferred = discovered_address->preferred;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
 		}
