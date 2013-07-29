@@ -36,25 +36,19 @@ G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 #define DEFAULT_RESPONSE "NetworkManager is online" /* NOT LOCALIZED */
 
 typedef struct {
-	/* used for http requests */
-	SoupSession *soup_session;
-	/* indicates if a connectivity check is currently running */
-	gboolean running;
-	/* the uri to check */
 	char *uri;
-	/* seconds when a check will be repeated */
-	guint interval;
-	/* the expected response for the connectivity check */
 	char *response;
-	/* indicates if the last connection check was successful */
-	gboolean connected;
-	/* the source id for the periodic check */
+	guint interval;
+
+	SoupSession *soup_session;
+	gboolean running;
 	guint check_id;
+
+	gboolean connected;
 } NMConnectivityPrivate;
 
 enum {
 	PROP_0,
-	PROP_RUNNING,
 	PROP_URI,
 	PROP_INTERVAL,
 	PROP_RESPONSE,
@@ -92,37 +86,30 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 {
 	NMConnectivity *self = NM_CONNECTIVITY (user_data);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	SoupURI *soup_uri;
 	gboolean connected_new = FALSE;
 	const char *nm_header;
-	char *uri_string;
-
-	soup_uri = soup_message_get_uri (msg);
-	uri_string = soup_uri_to_string (soup_uri, FALSE);
 
 	/* Check headers; if we find the NM-specific one we're done */
 	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
 	if (g_strcmp0 (nm_header, "online") == 0) {
-		nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with Status header successful.", uri_string);
+		nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with Status header successful.", priv->uri);
 		connected_new = TRUE;
 	} else {
 		/* check response */
 		if (msg->response_body->data &&	(g_str_has_prefix (msg->response_body->data, priv->response))) {
 			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' successful.",
-				        uri_string, priv->response);
+			            priv->uri, priv->response);
 			connected_new = TRUE;
 		} else {
 			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' failed (status %d).",
-						uri_string, priv->response, msg->status_code);
+			            priv->uri, priv->response, msg->status_code);
 		}
 	}
-	g_free (uri_string);
 
 	/* update connectivity and emit signal */
 	update_connected (self, connected_new);
 
 	priv->running = FALSE;
-	g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_RUNNING);
 }
 
 static gboolean
@@ -130,32 +117,23 @@ run_check (gpointer user_data)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (user_data);
 	NMConnectivityPrivate *priv;
-	SoupURI *soup_uri;
 	SoupMessage *msg;
 
 	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), FALSE);
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	/* check given url async */
-	soup_uri = soup_uri_new (priv->uri);
-	if (soup_uri && SOUP_URI_VALID_FOR_HTTP (soup_uri)) {
-		msg = soup_message_new_from_uri ("GET", soup_uri);
-		soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
-		soup_session_queue_message (priv->soup_session,
-		                            msg,
-		                            nm_connectivity_check_cb,
-		                            self);
+	msg = soup_message_new ("GET", priv->uri);
+	g_return_val_if_fail (msg != NULL, FALSE);
 
-		priv->running = TRUE;
-		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_RUNNING);
-		nm_log_dbg (LOGD_CORE, "Connectivity check with uri '%s' started.", priv->uri);
-	} else
-		nm_log_err (LOGD_CORE, "Invalid uri '%s' for connectivity check.", priv->uri);
+	soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
+	soup_session_queue_message (priv->soup_session,
+	                            msg,
+	                            nm_connectivity_check_cb,
+	                            self);
 
-	if (soup_uri)
-		soup_uri_free (soup_uri);
-
-	return TRUE;  /* keep firing */
+	priv->running = TRUE;
+	nm_log_dbg (LOGD_CORE, "Connectivity check with uri '%s' started.", priv->uri);
+	return TRUE;
 }
 
 void
@@ -171,7 +149,6 @@ nm_connectivity_start_check (NMConnectivity *self)
 	if (priv->check_id == 0)
 		priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
 
-	/* Start an immediate check */
 	if (priv->running == FALSE)
 		run_check (self);
 }
@@ -211,17 +188,15 @@ nm_connectivity_new (void)
 }
 
 static char *
-sanitize_string_val (const GValue *val)
+get_non_empty_string_value (const GValue *val)
 {
-	char *s;
+	const char *s;
 
-	/* Return NULL if string is NULL or zero-length */
-	s = g_value_dup_string (val);
-	if (!s || !s[0]) {
-		g_free (s);
+	s = g_value_get_string (val);
+	if (s && s[0])
+		return g_strdup (s);
+	else
 		return NULL;
-	}
-	return s;
 }
 
 static void
@@ -232,22 +207,26 @@ set_property (GObject *object, guint property_id,
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	switch (property_id) {
-	case PROP_RUNNING:
-		priv->running = g_value_get_boolean (value);
-		break;
 	case PROP_URI:
 		g_free (priv->uri);
-		priv->uri = sanitize_string_val (value);
+		priv->uri = get_non_empty_string_value (value);
+
+		if (priv->uri) {
+			SoupURI *uri = soup_uri_new (priv->uri);
+
+			if (!uri || !SOUP_URI_VALID_FOR_HTTP (uri)) {
+				nm_log_err (LOGD_CORE, "Invalid uri '%s' for connectivity check.", priv->uri);
+				g_free (priv->uri);
+				priv->uri = NULL;
+			}
+		}
 		break;
 	case PROP_INTERVAL:
 		priv->interval = g_value_get_uint (value);
 		break;
 	case PROP_RESPONSE:
 		g_free (priv->response);
-		priv->response = sanitize_string_val (value);
-		break;
-	case PROP_CONNECTED:
-		priv->connected = g_value_get_boolean (value);
+		priv->response = get_non_empty_string_value (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -263,9 +242,6 @@ get_property (GObject *object, guint property_id,
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	switch (property_id) {
-	case PROP_RUNNING:
-		g_value_set_boolean (value, priv->running);
-		break;
 	case PROP_URI:
 		g_value_set_string (value, priv->uri);
 		break;
@@ -302,8 +278,7 @@ dispose (GObject *object)
 
 	if (priv->soup_session) {
 		soup_session_abort (priv->soup_session);
-		g_object_unref (priv->soup_session);
-		priv->soup_session = NULL;
+		g_clear_object (&priv->soup_session);
 	}
 
 	g_free (priv->uri);
@@ -328,14 +303,6 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 	object_class->dispose = dispose;
 
 	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_RUNNING,
-		 g_param_spec_boolean (NM_CONNECTIVITY_RUNNING,
-		                       "Running",
-		                       "Connectivity check is running",
-		                       FALSE,
-		                       G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_URI,
 		 g_param_spec_string (NM_CONNECTIVITY_URI,
