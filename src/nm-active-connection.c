@@ -265,6 +265,32 @@ nm_active_connection_get_master (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->master;
 }
 
+/**
+ * nm_active_connection_set_master:
+ * @self: the #NMActiveConnection
+ * @master: if the activation depends on another device (ie, bond or bridge
+ *    master to which this device will be enslaved) pass the #NMDevice that this
+ *    activation request be enslaved to
+ *
+ * Sets the master device of the active connection.
+ */
+void
+nm_active_connection_set_master (NMActiveConnection *self, NMDevice *master)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	/* Master is write-once, and must be set before exporting the object */
+	g_return_if_fail (priv->master == NULL);
+	g_return_if_fail (priv->path == NULL);
+	g_return_if_fail (master != priv->device);
+
+	priv->master = g_object_ref (master);
+}
+
 /****************************************************************/
 
 static void
@@ -404,10 +430,7 @@ set_property (GObject *object, guint prop_id,
 		priv->subject = g_value_dup_object (value);
 		break;
 	case PROP_INT_MASTER:
-		g_warn_if_fail (priv->master == NULL);
-		priv->master = g_value_dup_object (value);
-		if (priv->master)
-			g_warn_if_fail (priv->master != priv->device);
+		nm_active_connection_set_master (NM_ACTIVE_CONNECTION (object), g_value_get_object (value));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		tmp = g_value_get_boxed (value);
@@ -608,7 +631,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                     "Internal master device",
 		                     "Internal device",
 		                     NM_TYPE_DEVICE,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                     G_PARAM_READWRITE));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (ac_class),

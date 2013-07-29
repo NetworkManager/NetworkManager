@@ -344,9 +344,6 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
  *    etc) that will be used to activate @connection and @device
  * @subject: the #NMAuthSubject representing the requestor of the activation
  * @device: the device/interface to configure according to @connection
- * @master: if the activation depends on another device (ie, bond or bridge
- *    or team master to which this device will be enslaved) pass the #NMDevice
- *    that this activation request be enslaved to
  *
  * Begins activation of @device using the given @connection and other details.
  *
@@ -356,8 +353,7 @@ NMActRequest *
 nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
                     NMAuthSubject *subject,
-                    NMDevice *device,
-                    NMDevice *master)
+                    NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -368,7 +364,6 @@ nm_act_request_new (NMConnection *connection,
 	                                      NM_ACTIVE_CONNECTION_INT_DEVICE, device,
 	                                      NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
 	                                      NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
-	                                      NM_ACTIVE_CONNECTION_INT_MASTER, master,
 	                                      NULL);
 }
 

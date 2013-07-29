@@ -49,8 +49,7 @@ GType nm_act_request_get_type (void);
 NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
                                            NMAuthSubject *subject,
-                                           NMDevice *device,
-                                           NMDevice *master);
+                                           NMDevice *device);
 
 NMConnection *nm_act_request_get_connection (NMActRequest *req);
 

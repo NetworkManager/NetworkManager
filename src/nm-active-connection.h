@@ -109,4 +109,6 @@ gulong        nm_active_connection_get_user_uid (NMActiveConnection *self);
 
 NMDevice *    nm_active_connection_get_master (NMActiveConnection *self);
 
+void          nm_active_connection_set_master (NMActiveConnection *self, NMDevice *master);
+
 #endif /* NM_ACTIVE_CONNECTION_H */

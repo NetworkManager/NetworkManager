@@ -2559,9 +2559,9 @@ internal_activate_device (NMManager *manager,
 	req = nm_act_request_new (connection,
 	                          specific_object,
 	                          subject,
-	                          device,
-	                          master_device);
+	                          device);
 	g_assert (req);
+	nm_active_connection_set_master (NM_ACTIVE_CONNECTION (req), master_device);
 	nm_device_activate (device, req);
 
 	return NM_ACTIVE_CONNECTION (req);
