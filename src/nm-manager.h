@@ -27,6 +27,7 @@
 #include <dbus/dbus-glib.h>
 #include "nm-device.h"
 #include "nm-settings.h"
+#include "nm-auth-subject.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -117,7 +118,7 @@ NMActiveConnection *nm_manager_activate_connection (NMManager *manager,
                                                     NMConnection *connection,
                                                     const char *specific_object,
                                                     NMDevice *device,
-                                                    const char *dbus_sender, /* NULL if automatic */
+                                                    NMAuthSubject *subject,
                                                     GError **error);
 
 gboolean nm_manager_deactivate_connection (NMManager *manager,

@@ -24,6 +24,7 @@
 #include <glib-object.h>
 #include "nm-types.h"
 #include "nm-connection.h"
+#include "nm-auth-subject.h"
 
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
 #define NM_ACTIVE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
@@ -46,8 +47,7 @@
 /* Internal non-exported construct-time properties */
 #define NM_ACTIVE_CONNECTION_INT_CONNECTION     "int-connection"
 #define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
-#define NM_ACTIVE_CONNECTION_INT_USER_REQUESTED "int-user-requested"
-#define NM_ACTIVE_CONNECTION_INT_USER_UID       "int-user-uid"
+#define NM_ACTIVE_CONNECTION_INT_SUBJECT        "int-subject"
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
 
 
@@ -90,6 +90,8 @@ void          nm_active_connection_set_state (NMActiveConnection *self,
                                               NMActiveConnectionState state);
 
 NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
+
+NMAuthSubject *nm_active_connection_get_subject (NMActiveConnection *self);
 
 gboolean      nm_active_connection_get_user_requested (NMActiveConnection *self);
 

@@ -48,8 +48,7 @@ typedef struct {
 	NMActiveConnectionState state;
 	gboolean vpn;
 
-	gboolean user_requested;
-	gulong user_uid;
+	NMAuthSubject *subject;
 	NMDevice *master;
 } NMActiveConnectionPrivate;
 
@@ -67,8 +66,7 @@ enum {
 
 	PROP_INT_CONNECTION,
 	PROP_INT_DEVICE,
-	PROP_INT_USER_REQUESTED,
-	PROP_INT_USER_UID,
+	PROP_INT_SUBJECT,
 	PROP_INT_MASTER,
 
 	LAST_PROP
@@ -216,20 +214,31 @@ nm_active_connection_export (NMActiveConnection *self)
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
 
+NMAuthSubject *
+nm_active_connection_get_subject (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->subject;
+}
+
 gboolean
 nm_active_connection_get_user_requested (NMActiveConnection *self)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->user_requested;
+	return !nm_auth_subject_get_internal (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->subject);
 }
 
 gulong
 nm_active_connection_get_user_uid (NMActiveConnection *self)
 {
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), G_MAXULONG);
+	NMActiveConnectionPrivate *priv;
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->user_uid;
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), G_MAXULONG);
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	return nm_auth_subject_get_uid (priv->subject);
 }
 
 NMDevice *
@@ -256,6 +265,13 @@ nm_active_connection_init (NMActiveConnection *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
+	g_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (object)->subject);
+}
+
+static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
@@ -273,11 +289,8 @@ set_property (GObject *object, guint prop_id,
 		if (priv->device)
 			g_warn_if_fail (priv->device != priv->master);
 		break;
-	case PROP_INT_USER_REQUESTED:
-		priv->user_requested = g_value_get_boolean (value);
-		break;
-	case PROP_INT_USER_UID:
-		priv->user_uid = g_value_get_ulong (value);
+	case PROP_INT_SUBJECT:
+		priv->subject = g_value_dup_object (value);
 		break;
 	case PROP_INT_MASTER:
 		g_warn_if_fail (priv->master == NULL);
@@ -346,6 +359,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MASTER:
 		g_value_set_boxed (value, priv->master ? nm_device_get_path (priv->master) : "/");
 		break;
+	case PROP_INT_SUBJECT:
+		g_value_set_object (value, priv->subject);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -365,6 +381,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->connection);
 	g_clear_object (&priv->device);
 	g_clear_object (&priv->master);
+	g_clear_object (&priv->subject);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
@@ -379,6 +396,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	/* virtual methods */
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
 	/* D-Bus exported properties */
@@ -462,19 +480,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                     NM_TYPE_DEVICE,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
-	g_object_class_install_property (object_class, PROP_INT_USER_REQUESTED,
-		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_USER_REQUESTED,
-		                      "User requested",
-		                      "User requested",
-		                      FALSE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_class_install_property (object_class, PROP_INT_USER_UID,
-		g_param_spec_ulong (NM_ACTIVE_CONNECTION_INT_USER_UID,
-		                    "User UID",
-		                    "User UID (if user requested)",
-		                    0, G_MAXULONG, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property (object_class, PROP_INT_SUBJECT,
+		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_SUBJECT,
+		                     "Subject",
+		                     "Subject",
+		                     NM_TYPE_AUTH_SUBJECT,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property (object_class, PROP_INT_MASTER,
 		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_MASTER,

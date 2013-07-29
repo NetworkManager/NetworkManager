@@ -48,17 +48,11 @@ GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
-                                           gboolean user_requested,
-                                           gulong user_uid,
-                                           const char *dbus_sender,
+                                           NMAuthSubject *subject,
                                            NMDevice *device,
                                            NMDevice *master);
 
 NMConnection *nm_act_request_get_connection (NMActRequest *req);
-
-gulong        nm_act_request_get_user_uid (NMActRequest *req);
-
-const char   *nm_act_request_get_dbus_sender (NMActRequest *req);
 
 gboolean      nm_act_request_get_shared (NMActRequest *req);
 

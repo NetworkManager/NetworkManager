@@ -52,7 +52,6 @@ typedef struct {
 
 typedef struct {
 	guint device_state_id;
-	char *dbus_sender;
 	GSList *secrets_calls;
 	gboolean shared;
 	GSList *share_rules;
@@ -66,14 +65,6 @@ nm_act_request_get_connection (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
 	return nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (req));
-}
-
-const char *
-nm_act_request_get_dbus_sender (NMActRequest *req)
-{
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
-
-	return NM_ACT_REQUEST_GET_PRIVATE (req)->dbus_sender;
 }
 
 /*******************************************************************/
@@ -351,11 +342,7 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
  * @connection: the connection to activate @device with
  * @specific_object: the object path of the specific object (ie, WiFi access point,
  *    etc) that will be used to activate @connection and @device
- * @user_requested: pass %TRUE if the activation was requested via D-Bus,
- *    otherwise %FALSE if requested internally by NM (ie, autoconnect)
- * @user_uid: if @user_requested is %TRUE, the Unix UID of the user that requested
- * @dbus_sender: if @user_requested is %TRUE, the D-BUS sender that requested
- *    the activation
+ * @subject: the #NMAuthSubject representing the requestor of the activation
  * @device: the device/interface to configure according to @connection
  * @master: if the activation depends on another device (ie, bond or bridge
  *    or team master to which this device will be enslaved) pass the #NMDevice
@@ -368,29 +355,21 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 NMActRequest *
 nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
-                    gboolean user_requested,
-                    gulong user_uid,
-                    const char *dbus_sender,
+                    NMAuthSubject *subject,
                     NMDevice *device,
                     NMDevice *master)
 {
-	GObject *object;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
-	object = g_object_new (NM_TYPE_ACT_REQUEST,
-	                       NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
-	                       NM_ACTIVE_CONNECTION_INT_DEVICE, device,
-	                       NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
-	                       NM_ACTIVE_CONNECTION_INT_USER_REQUESTED, user_requested,
-	                       NM_ACTIVE_CONNECTION_INT_USER_UID, user_uid,
-	                       NM_ACTIVE_CONNECTION_INT_MASTER, master,
-	                       NULL);
-	if (object)
-		NM_ACT_REQUEST_GET_PRIVATE (object)->dbus_sender = g_strdup (dbus_sender);
-
-	return (NMActRequest *) object;
+	return (NMActRequest *) g_object_new (NM_TYPE_ACT_REQUEST,
+	                                      NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
+	                                      NM_ACTIVE_CONNECTION_INT_DEVICE, device,
+	                                      NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
+	                                      NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
+	                                      NM_ACTIVE_CONNECTION_INT_MASTER, master,
+	                                      NULL);
 }
 
 static void
@@ -444,9 +423,6 @@ dispose (GObject *object)
 	}
 	g_slist_free (priv->secrets_calls);
 	priv->secrets_calls = NULL;
-
-	g_free (priv->dbus_sender);
-	priv->dbus_sender = NULL;
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }

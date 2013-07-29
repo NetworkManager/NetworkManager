@@ -26,6 +26,7 @@
 #include <glib-object.h>
 #include "NetworkManagerVPN.h"
 #include "nm-device.h"
+#include "nm-auth-subject.h"
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))
@@ -67,8 +68,7 @@ GType nm_vpn_connection_get_type (void);
 NMVPNConnection * nm_vpn_connection_new (NMConnection *connection,
                                          NMDevice *parent_device,
                                          const char *specific_object,
-                                         gboolean user_requested,
-                                         gulong user_uid);
+                                         NMAuthSubject *subject);
 
 void                 nm_vpn_connection_activate        (NMVPNConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVPNConnection *connection);

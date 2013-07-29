@@ -400,8 +400,7 @@ NMVPNConnection *
 nm_vpn_connection_new (NMConnection *connection,
                        NMDevice *parent_device,
                        const char *specific_object,
-                       gboolean user_requested,
-                       gulong user_uid)
+                       NMAuthSubject *subject)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
@@ -410,8 +409,7 @@ nm_vpn_connection_new (NMConnection *connection,
 	                                         NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
 	                                         NM_ACTIVE_CONNECTION_INT_DEVICE, parent_device,
 	                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
-	                                         NM_ACTIVE_CONNECTION_INT_USER_REQUESTED, user_requested,
-	                                         NM_ACTIVE_CONNECTION_INT_USER_UID, user_uid,
+	                                         NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
 	                                         NM_ACTIVE_CONNECTION_VPN, TRUE,
 	                                         NULL);
 }

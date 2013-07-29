@@ -160,9 +160,7 @@ static NMActiveConnection *internal_activate_device (NMManager *manager,
                                                      NMDevice *device,
                                                      NMConnection *connection,
                                                      const char *specific_object,
-                                                     gboolean user_requested,
-                                                     gulong sender_uid,
-                                                     const char *dbus_sender,
+                                                     NMAuthSubject *subject,
                                                      gboolean assumed,
                                                      NMActiveConnection *master,
                                                      GError **error);
@@ -2049,12 +2047,14 @@ add_device (NMManager *self, NMDevice *device)
 	/* If the device has a connection it can assume, do that now */
 	if (connection && nm_device_can_activate (device, connection)) {
 		NMActiveConnection *ac;
+		NMAuthSubject *subject;
 		GError *error = NULL;
 
 		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume connection",
 		            nm_device_get_iface (device));
 
-		ac = internal_activate_device (self, device, connection, NULL, FALSE, 0, NULL, TRUE, NULL, &error);
+		subject = nm_auth_subject_new_internal ();
+		ac = internal_activate_device (self, device, connection, NULL, subject, TRUE, NULL, &error);
 		if (ac)
 			active_connection_add (self, ac);
 		else {
@@ -2064,6 +2064,7 @@ add_device (NMManager *self, NMDevice *device)
 			             error && error->message ? error->message : "(unknown)");
 			g_error_free (error);
 		}
+		g_object_unref (subject);
 	}
 }
 
@@ -2526,9 +2527,7 @@ internal_activate_device (NMManager *manager,
                           NMDevice *device,
                           NMConnection *connection,
                           const char *specific_object,
-                          gboolean user_requested,
-                          gulong sender_uid,
-                          const char *dbus_sender,
+                          NMAuthSubject *subject,
                           gboolean assumed,
                           NMActiveConnection *master,
                           GError **error)
@@ -2539,6 +2538,7 @@ internal_activate_device (NMManager *manager,
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
 	/* Ensure the requested connection is compatible with the device */
 	if (!nm_device_check_connection_compatible (device, connection, error))
@@ -2558,9 +2558,7 @@ internal_activate_device (NMManager *manager,
 
 	req = nm_act_request_new (connection,
 	                          specific_object,
-	                          user_requested,
-	                          sender_uid,
-	                          dbus_sender,
+	                          subject,
 	                          device,
 	                          master_device);
 	g_assert (req);
@@ -2681,9 +2679,7 @@ is_compatible_with_slave (NMConnection *master, NMConnection *slave)
  * ensure_master_active_connection:
  *
  * @self: the #NMManager
- * @dbus_sender: if the request was initiated by a user via D-Bus, the
- *   dbus sender name of the client that requested the activation; for auto
- *   activated connections use %NULL
+ * @subject: the #NMAuthSubject representing the requestor of this activation
  * @connection: the connection that should depend on @master_connection
  * @device: the #NMDevice, if any, which will activate @connection
  * @master_connection: the master connection
@@ -2698,7 +2694,7 @@ is_compatible_with_slave (NMConnection *master, NMConnection *slave)
  */
 static NMActiveConnection *
 ensure_master_active_connection (NMManager *self,
-                                 const char *dbus_sender,
+                                 NMAuthSubject *subject,
                                  NMConnection *connection,
                                  NMDevice *device,
                                  NMConnection *master_connection,
@@ -2754,7 +2750,7 @@ ensure_master_active_connection (NMManager *self,
 					                                            candidate,
 					                                            NULL,
 					                                            master_device,
-					                                            dbus_sender,
+					                                            subject,
 					                                            error);
 					if (!master_ac)
 						g_prefix_error (error, "%s", "Master device activation failed: ");
@@ -2802,7 +2798,7 @@ ensure_master_active_connection (NMManager *self,
 			                                            master_connection,
 			                                            NULL,
 			                                            candidate,
-			                                            dbus_sender,
+			                                            subject,
 			                                            error);
 			if (!master_ac)
 				g_prefix_error (error, "%s", "Master device activation failed: ");
@@ -2817,7 +2813,7 @@ ensure_master_active_connection (NMManager *self,
 			                                            master_connection,
 			                                            NULL,
 			                                            NULL,
-			                                            dbus_sender,
+			                                            subject,
 			                                            error);
 			if (!master_ac)
 				g_prefix_error (error, "%s", "Master device activation failed: ");
@@ -2839,8 +2835,7 @@ static NMActiveConnection *
 activate_vpn_connection (NMManager *self,
                          NMConnection *connection,
                          const char *specific_object,
-                         gboolean user_requested,
-                         gulong sender_uid,
+                         NMAuthSubject *subject,
                          GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2885,8 +2880,7 @@ activate_vpn_connection (NMManager *self,
 	vpn = nm_vpn_connection_new (connection,
 	                             device,
 	                             nm_active_connection_get_path (parent),
-	                             user_requested,
-	                             sender_uid);
+	                             subject);
 	g_assert (vpn);
 	success = nm_vpn_manager_activate_connection (priv->vpn_manager, vpn, error);
 	if (!success)
@@ -2900,47 +2894,36 @@ nm_manager_activate_connection (NMManager *manager,
                                 NMConnection *connection,
                                 const char *specific_object,
                                 NMDevice *device,
-                                const char *dbus_sender,
+                                NMAuthSubject *subject,
                                 GError **error)
 {
 	NMManagerPrivate *priv;
-	gulong sender_uid = G_MAXULONG;
 	char *iface;
 	NMDevice *master_device = NULL;
 	NMConnection *master_connection = NULL;
 	NMActiveConnection *master_ac = NULL, *ac = NULL;
 	gboolean matched;
+	gboolean user_requested;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	/* Get the UID of the user that originated the request, if any */
-	if (dbus_sender) {
-		if (!nm_dbus_manager_get_unix_user (priv->dbus_mgr, dbus_sender, &sender_uid)) {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_PERMISSION_DENIED,
-			                     "Failed to get unix user for dbus sender");
-			return NULL;
-		}
-	} else {
-		/* No sender means an internal/automatic activation request */
-		sender_uid = 0;
-	}
 
 	/* VPN ? */
 	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
 		ac = activate_vpn_connection (manager,
 		                              connection,
 		                              specific_object,
-		                              !!dbus_sender,
-		                              sender_uid,
+		                              subject,
 		                              error);
 		goto activated;
 	}
+
+	user_requested = !nm_auth_subject_get_internal (subject);
 
 	/* Device-based connection */
 	if (device) {
@@ -2990,7 +2973,7 @@ nm_manager_activate_connection (NMManager *manager,
 			 *   at this time (the device was manually disconnected/deleted before)
 			 */
 			if (!nm_manager_can_device_auto_connect (manager, iface)) {
-				if (dbus_sender) {
+				if (user_requested) {
 					/* Manual activation - allow device auto-activation again */
 					nm_manager_prevent_device_auto_connect (manager, iface, FALSE);
 				} else {
@@ -3034,7 +3017,7 @@ nm_manager_activate_connection (NMManager *manager,
 	/* If this is an autoconnect request, but the device isn't allowing autoconnect
 	 * right now, we reject it.
 	 */
-	if (!dbus_sender && !nm_device_autoconnect_allowed (device)) {
+	if (!user_requested && !nm_device_autoconnect_allowed (device)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,
 		             "%s does not allow automatic connections at this time",
 		             nm_device_get_iface (device));
@@ -3073,7 +3056,7 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 
 		master_ac = ensure_master_active_connection (manager,
-		                                             dbus_sender,
+		                                             subject,
 		                                             connection,
 		                                             device,
 		                                             master_connection,
@@ -3094,9 +3077,7 @@ nm_manager_activate_connection (NMManager *manager,
 	                               device,
 	                               connection,
 	                               specific_object,
-	                               dbus_sender ? TRUE : FALSE,
-	                               dbus_sender ? sender_uid : 0,
-	                               dbus_sender,
+	                               subject,
 	                               FALSE,
 	                               master_ac,
 	                               error);
@@ -3126,7 +3107,7 @@ pending_activate (PendingActivation *pending,
 	                                        NM_CONNECTION (new_connection) : pending->connection,
 	                                     pending->specific_object_path,
 	                                     pending->device,
-	                                     nm_auth_subject_get_dbus_sender (pending->subject),
+	                                     pending->subject,
 	                                     &local);
 	if (!ac) {
 		nm_log_warn (LOGD_CORE, "connection %s failed to activate: (%d) %s",

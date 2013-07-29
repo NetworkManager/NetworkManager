@@ -1034,14 +1034,16 @@ auto_activate_device (gpointer user_data)
 	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
 	if (best_connection) {
 		GError *error = NULL;
+		NMAuthSubject *subject;
 
 		nm_log_info (LOGD_DEVICE, "Auto-activating connection '%s'.",
 		             nm_connection_get_id (best_connection));
+		subject = nm_auth_subject_new_internal ();
 		if (!nm_manager_activate_connection (priv->manager,
 		                                     best_connection,
 		                                     specific_object,
 		                                     data->device,
-		                                     NULL,
+		                                     subject,
 		                                     &error)) {
 			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
 			             nm_connection_get_id (best_connection),
@@ -1049,6 +1051,7 @@ auto_activate_device (gpointer user_data)
 			             error ? error->message : "(none)");
 			g_error_free (error);
 		}
+		g_object_unref (subject);
 	}
 
 	g_slist_free (connections);
@@ -1358,7 +1361,7 @@ activate_secondary_connections (NMPolicy *policy,
 			                                     NM_CONNECTION (settings_con),
 			                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
 			                                     device,
-			                                     nm_act_request_get_dbus_sender (req),
+			                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 			                                     &error);
 			if (ac) {
 				secondary_ac_list = g_slist_append (secondary_ac_list,
