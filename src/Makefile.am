@@ -198,11 +198,9 @@ NetworkManager_SOURCES = \
 		nm-connection-provider.h \
 		nm-connection-provider.c \
 		nm-dispatcher.c \
-		nm-dispatcher.h
-
-if WITH_CONCHECK
-NetworkManager_SOURCES += nm-connectivity.c nm-connectivity.h
-endif
+		nm-dispatcher.h \
+		nm-connectivity.c \
+		nm-connectivity.h
 
 if SESSION_TRACKING_SYSTEMD
 NetworkManager_SOURCES += nm-session-monitor-systemd.c
@@ -302,6 +300,7 @@ NetworkManager_CPPFLAGS = \
 	$(LIBNL_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
+	$(LIBSOUP_CFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
@@ -314,10 +313,6 @@ NetworkManager_CPPFLAGS = \
 	-DNMRUNDIR=\"$(nmrundir)\" \
 	-DNMSTATEDIR=\"$(nmstatedir)\" \
 	-DARP_DEBUG
-
-if WITH_CONCHECK
-NetworkManager_CPPFLAGS += $(LIBSOUP_CFLAGS)
-endif
 
 if SESSION_TRACKING_CK
 NetworkManager_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
@@ -346,12 +341,9 @@ NetworkManager_LDADD = \
 	$(LIBNL_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
+	$(LIBSOUP_LIBS) \
 	$(LIBM) \
 	$(LIBDL)
-
-if WITH_CONCHECK
-NetworkManager_LDADD += $(LIBSOUP_LIBS)
-endif
 
 NetworkManager_LDFLAGS = -rdynamic
 

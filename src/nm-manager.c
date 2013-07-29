@@ -71,10 +71,7 @@
 #include "wifi-utils.h"
 #include "nm-enum-types.h"
 #include "nm-sleep-monitor.h"
-
-#if WITH_CONCHECK
 #include "nm-connectivity.h"
-#endif
 
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
@@ -210,9 +207,7 @@ typedef struct {
 
 	GSList *devices;
 	NMState state;
-#if WITH_CONCHECK
 	NMConnectivity *connectivity;
-#endif
 
 	NMDBusManager *dbus_mgr;
 	guint          dbus_connection_changed_id;
@@ -530,11 +525,9 @@ nm_manager_update_state (NMManager *manager)
 
 			if (state == NM_DEVICE_STATE_ACTIVATED) {
 				new_state = NM_STATE_CONNECTED_GLOBAL;
-#if WITH_CONCHECK
 				/* Connectivity check might have a better idea */
 				if (nm_connectivity_get_connected (priv->connectivity) == FALSE)
 					new_state = NM_STATE_CONNECTED_SITE;
-#endif
 				break;
 			}
 
@@ -563,9 +556,7 @@ manager_device_state_changed (NMDevice *device,
                               gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-#if WITH_CONCHECK
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-#endif
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -581,7 +572,6 @@ manager_device_state_changed (NMDevice *device,
 
 	nm_manager_update_state (self);
 
-#if WITH_CONCHECK
 	if (priv->state >= NM_STATE_CONNECTED_LOCAL) {
 		if (old_state == NM_DEVICE_STATE_ACTIVATED || new_state == NM_DEVICE_STATE_ACTIVATED) {
 			/* Still connected, but a device activated or deactivated; make sure
@@ -596,7 +586,6 @@ manager_device_state_changed (NMDevice *device,
 		nm_log_dbg (LOGD_CORE, "stopping connectivity checks");
 		nm_connectivity_stop_check (priv->connectivity);
 	}
-#endif
 }
 
 /* Removes a device from a device list; returns the start of the new device list */
@@ -3821,7 +3810,6 @@ handle_firmware_changed (gpointer user_data)
 	return FALSE;
 }
 
-#if WITH_CONCHECK
 static void
 connectivity_changed (NMConnectivity *connectivity,
                       GParamSpec *pspec,
@@ -3836,7 +3824,6 @@ connectivity_changed (NMConnectivity *connectivity,
 
 	nm_manager_update_state (self);
 }
-#endif  /* WITH_CONCHECK */
 
 static void
 firmware_dir_changed (GFileMonitor *monitor,
@@ -4097,12 +4084,9 @@ nm_manager_new (NMSettings *settings,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
-#if WITH_CONCHECK
 	priv->connectivity = nm_connectivity_new (connectivity_uri, connectivity_interval, connectivity_response);
-
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_CONNECTED,
 	                  G_CALLBACK (connectivity_changed), singleton);
-#endif
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	g_assert (bus);
@@ -4224,12 +4208,7 @@ dispose (GObject *object)
 	}
 	g_slist_free (priv->active_connections);
 
-#if WITH_CONCHECK
-	if (priv->connectivity) {
-		g_object_unref (priv->connectivity);
-		priv->connectivity = NULL;
-	}
-#endif
+	g_clear_object (&priv->connectivity);
 
 	g_free (priv->hostname);
 
