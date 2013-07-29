@@ -1174,9 +1174,7 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (candidate->ifindex == address->ifindex &&
-		    candidate->address == address->address &&
-		    candidate->plen    == address->plen)
+		if (candidate->address == address->address && candidate->plen == address->plen)
 			return TRUE;
 	}
 
@@ -1192,9 +1190,7 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP6Address *candidate = &g_array_index (addresses, NMPlatformIP6Address, i);
 
-		if (candidate->ifindex == address->ifindex &&
-		    IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) &&
-		    candidate->plen    == address->plen)
+		if (IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) && candidate->plen == address->plen)
 			return TRUE;
 	}
 
@@ -1245,7 +1241,6 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 	addresses = nm_platform_ip4_address_get_all (ifindex);
 	for (i = 0; i < addresses->len; i++) {
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
-		address->ifindex = 0;
 
 		if (!array_contains_ip4_address (known_addresses, address))
 			nm_platform_ip4_address_delete (ifindex, address->address, address->plen);
@@ -1303,7 +1298,6 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 	addresses = nm_platform_ip6_address_get_all (ifindex);
 	for (i = 0; i < addresses->len; i++) {
 		address = &g_array_index (addresses, NMPlatformIP6Address, i);
-		address->ifindex = 0;
 
 		/* Leave link local address management to the kernel */
 		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
