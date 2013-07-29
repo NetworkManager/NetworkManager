@@ -1168,9 +1168,10 @@ nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen)
 static gboolean
 array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address)
 {
-	int i;
+	guint len = addresses ? addresses->len : 0;
+	guint i;
 
-	for (i = 0; i < addresses->len; i++) {
+	for (i = 0; i < len; i++) {
 		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
 		if (candidate->ifindex == address->ifindex &&
@@ -1185,9 +1186,10 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 static gboolean
 array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address)
 {
-	int i;
+	guint len = addresses ? addresses->len : 0;
+	guint i;
 
-	for (i = 0; i < addresses->len; i++) {
+	for (i = 0; i < len; i++) {
 		NMPlatformIP6Address *candidate = &g_array_index (addresses, NMPlatformIP6Address, i);
 
 		if (candidate->ifindex == address->ifindex &&
@@ -1245,7 +1247,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
 		address->ifindex = 0;
 
-		if (!known_addresses || !array_contains_ip4_address (known_addresses, address))
+		if (!array_contains_ip4_address (known_addresses, address))
 			nm_platform_ip4_address_delete (ifindex, address->address, address->plen);
 	}
 	g_array_free (addresses, TRUE);
@@ -1307,7 +1309,7 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
 			continue;
 
-		if (!known_addresses || !array_contains_ip6_address (known_addresses, address))
+		if (!array_contains_ip6_address (known_addresses, address))
 			nm_platform_ip6_address_delete (ifindex, address->address, address->plen);
 	}
 	g_array_free (addresses, TRUE);
@@ -1477,12 +1479,12 @@ nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, in
 static gboolean
 array_contains_ip4_route (const GArray *routes, const NMPlatformIP4Route *route)
 {
-	int i;
+	guint len = routes ? routes->len : 0;
+	guint i;
 
-	for (i = 0; i < routes->len; i++) {
+	for (i = 0; i < len; i++)
 		if (!memcmp (&g_array_index (routes, NMPlatformIP4Route, i), route, sizeof (*route)))
 			return TRUE;
-	}
 
 	return FALSE;
 }
@@ -1490,12 +1492,12 @@ array_contains_ip4_route (const GArray *routes, const NMPlatformIP4Route *route)
 static gboolean
 array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
 {
-	int i;
+	guint len = routes ? routes->len : 0;
+	guint i;
 
-	for (i = 0; i < routes->len; i++) {
+	for (i = 0; i < len; i++)
 		if (!memcmp (&g_array_index (routes, NMPlatformIP6Route, i), route, sizeof (*route)))
 			return TRUE;
-	}
 
 	return FALSE;
 }
@@ -1529,7 +1531,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 		if (!route->plen)
 			continue;
 
-		if (!known_routes || !array_contains_ip4_route (known_routes, route))
+		if (!array_contains_ip4_route (known_routes, route))
 			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
 	}
 	g_array_free (routes, TRUE);
@@ -1581,7 +1583,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 		if (!route->plen)
 			continue;
 
-		if (!known_routes || !array_contains_ip6_route (known_routes, route))
+		if (!array_contains_ip6_route (known_routes, route))
 			nm_platform_ip6_route_delete (ifindex, route->network, route->plen, route->metric);
 	}
 	g_array_free (routes, TRUE);
