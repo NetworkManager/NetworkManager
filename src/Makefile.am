@@ -222,6 +222,8 @@ nm_sources = \
 	nm-atm-manager.h \
 	nm-connection-provider.c \
 	nm-connection-provider.h \
+	nm-connectivity.c \
+	nm-connectivity.h \
 	nm-dbus-manager.c \
 	nm-dbus-manager.h \
 	nm-dhcp4-config.c \
@@ -263,10 +265,6 @@ nm_sources = \
 	nm-wifi-ap.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
-
-if WITH_CONCHECK
-nm_sources += nm-connectivity.c nm-connectivity.h
-endif
 
 if WITH_MODEM_MANAGER_1
 nm_sources += \

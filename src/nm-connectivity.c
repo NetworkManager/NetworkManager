@@ -22,7 +22,9 @@
 #include <config.h>
 
 #include <string.h>
+#if WITH_CONCHECK
 #include <libsoup/soup.h>
+#endif
 
 #include "nm-connectivity.h"
 #include "nm-logging.h"
@@ -40,9 +42,11 @@ typedef struct {
 	char *response;
 	guint interval;
 
+#if WITH_CONCHECK
 	SoupSession *soup_session;
 	gboolean running;
 	guint check_id;
+#endif
 
 	gboolean connected;
 } NMConnectivityPrivate;
@@ -71,16 +75,21 @@ update_connected (NMConnectivity *self, gboolean connected)
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	gboolean old_connected = priv->connected;
 
+#if WITH_CONCHECK
 	if (priv->uri == NULL || priv->interval == 0) {
 		/* Default to connected if no checks are to be run */
 		priv->connected = TRUE;
 	} else
 		priv->connected = connected;
+#else
+	priv->connected = TRUE;
+#endif
 
 	if (priv->connected != old_connected)
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_CONNECTED);
 }
 
+#if WITH_CONCHECK
 static void
 nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_data)
 {
@@ -135,10 +144,12 @@ run_check (gpointer user_data)
 	nm_log_dbg (LOGD_CORE, "Connectivity check with uri '%s' started.", priv->uri);
 	return TRUE;
 }
+#endif
 
 void
 nm_connectivity_start_check (NMConnectivity *self)
 {
+#if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	if (!priv->uri || !priv->interval) {
@@ -151,11 +162,13 @@ nm_connectivity_start_check (NMConnectivity *self)
 
 	if (priv->running == FALSE)
 		run_check (self);
+#endif
 }
 
 void
 nm_connectivity_stop_check (NMConnectivity *self)
 {
+#if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	if (priv->check_id) {
@@ -164,6 +177,7 @@ nm_connectivity_stop_check (NMConnectivity *self)
 	}
 
 	update_connected (self, FALSE);
+#endif
 }
 
 NMConnectivity *
@@ -211,6 +225,7 @@ set_property (GObject *object, guint property_id,
 		g_free (priv->uri);
 		priv->uri = get_non_empty_string_value (value);
 
+#if WITH_CONCHECK
 		if (priv->uri) {
 			SoupURI *uri = soup_uri_new (priv->uri);
 
@@ -220,6 +235,7 @@ set_property (GObject *object, guint property_id,
 				priv->uri = NULL;
 			}
 		}
+#endif
 		break;
 	case PROP_INTERVAL:
 		priv->interval = g_value_get_uint (value);
@@ -266,7 +282,9 @@ nm_connectivity_init (NMConnectivity *self)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
+#if WITH_CONCHECK
 	priv->soup_session = soup_session_async_new_with_options (SOUP_SESSION_TIMEOUT, 15, NULL);
+#endif
 }
 
 
@@ -276,18 +294,20 @@ dispose (GObject *object)
 	NMConnectivity *self = NM_CONNECTIVITY (object);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
+	g_free (priv->uri);
+	g_free (priv->response);
+
+#if WITH_CONCHECK
 	if (priv->soup_session) {
 		soup_session_abort (priv->soup_session);
 		g_clear_object (&priv->soup_session);
 	}
 
-	g_free (priv->uri);
-	g_free (priv->response);
-
 	if (priv->check_id > 0) {
 		g_source_remove (priv->check_id);
 		priv->check_id = 0;
 	}
+#endif
 }
 
 
