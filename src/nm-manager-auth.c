@@ -31,6 +31,7 @@
 #include "nm-manager-auth.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
+#include "nm-auth-subject.h"
 
 struct NMAuthChain {
 	guint32 refcount;
@@ -43,6 +44,7 @@ struct NMAuthChain {
 	DBusGMethodInvocation *context;
 	char *owner;
 	gulong user_uid;
+	NMAuthSubject *subject;
 	GError *error;
 
 	guint idle_id;
@@ -109,6 +111,7 @@ _auth_chain_new (DBusGMethodInvocation *context,
                  DBusMessage *message,
                  const char *dbus_sender,
                  gulong user_uid,
+                 NMAuthSubject *subject,
                  NMAuthChainResultFunc done_func,
                  gpointer user_data)
 {
@@ -125,18 +128,24 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	self->done_func = done_func;
 	self->user_data = user_data;
 	self->context = context;
-	self->user_uid = user_uid;
+
+	if (subject) {
+		self->user_uid = nm_auth_subject_get_uid (subject);
+		self->subject = g_object_ref (subject);
+		return self;
+	}
 
 	if (message)
 		self->owner = g_strdup (dbus_message_get_sender (message));
 	else if (dbus_sender)
 		self->owner = g_strdup (dbus_sender);
 
+	self->user_uid = user_uid;
 	if (user_uid > 0 && !self->owner) {
 		/* Need an owner */
 		g_warn_if_fail (self->owner);
 		nm_auth_chain_unref (self);
-		self = NULL;
+		return NULL;
 	}
 
 	return self;
@@ -159,7 +168,7 @@ nm_auth_chain_new (DBusGMethodInvocation *context,
 	                                     &sender,
 	                                     &sender_uid,
 	                                     NULL)) {
-		chain = _auth_chain_new (context, NULL, sender, sender_uid, done_func, user_data);
+		chain = _auth_chain_new (context, NULL, sender, sender_uid, NULL, done_func, user_data);
 	}
 
 	if (!chain && out_error_desc)
@@ -175,7 +184,7 @@ nm_auth_chain_new_raw_message (DBusMessage *message,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, message, NULL, user_uid, done_func, user_data);
+	return _auth_chain_new (NULL, message, NULL, user_uid, NULL, done_func, user_data);
 }
 
 NMAuthChain *
@@ -184,7 +193,49 @@ nm_auth_chain_new_dbus_sender (const char *dbus_sender,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, NULL, dbus_sender, user_uid, done_func, user_data);
+	return _auth_chain_new (NULL, NULL, dbus_sender, user_uid, NULL, done_func, user_data);
+}
+
+/* Creates the NMAuthSubject automatically */
+NMAuthChain *
+nm_auth_chain_new_context (DBusGMethodInvocation *context,
+                           NMAuthChainResultFunc done_func,
+                           gpointer user_data)
+{
+	NMAuthSubject *subject;
+	NMAuthChain *chain;
+
+	g_return_val_if_fail (context != NULL, NULL);
+
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject)
+		return NULL;
+
+	chain = nm_auth_chain_new_subject (subject,
+	                                   context,
+	                                   done_func,
+	                                   user_data);
+	g_object_unref (subject);
+	return chain;
+}
+
+/* Requires an NMAuthSubject */
+NMAuthChain *
+nm_auth_chain_new_subject (NMAuthSubject *subject,
+                           DBusGMethodInvocation *context,
+                           NMAuthChainResultFunc done_func,
+                           gpointer user_data)
+{
+	NMAuthChain *chain;
+
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
+	chain = _auth_chain_new (context, NULL, NULL, G_MAXULONG, subject, done_func, user_data);
+
+	/* Chains creation from a valid NMAuthSubject cannot fail since the
+	 * subject already has all the necessary auth info.
+	 */
+	g_assert (chain);
+	return chain;
 }
 
 gpointer
@@ -423,7 +474,7 @@ _add_call_polkit (NMAuthChain *self,
 	AuthCall *call;
 
 	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (self->owner != NULL, FALSE);
+	g_return_val_if_fail (self->owner || self->subject, FALSE);
 	g_return_val_if_fail (permission != NULL, FALSE);
 
 	call = auth_call_new (self, permission);
@@ -434,10 +485,16 @@ _add_call_polkit (NMAuthChain *self,
 		return FALSE;
 	}
 
-	subject = polkit_system_bus_name_new (self->owner);
-	if (!subject) {
-		auth_call_schedule_complete_with_error (call, "Failed to create polkit subject");
-		return FALSE;
+	if (self->subject) {
+		subject = g_object_ref (nm_auth_subject_get_polkit_subject (self->subject));
+		g_assert (subject);
+	} else {
+		g_assert (self->owner);
+		subject = polkit_system_bus_name_new (self->owner);
+		if (!subject) {
+			auth_call_schedule_complete_with_error (call, "Failed to create polkit subject");
+			return FALSE;
+		}
 	}
 
 	if (allow_interaction)
@@ -497,6 +554,7 @@ nm_auth_chain_unref (NMAuthChain *self)
 		g_object_unref (self->authority);
 #endif
 	g_free (self->owner);
+	g_object_unref (self->subject);
 
 	for (iter = self->calls; iter; iter = g_slist_next (iter))
 		auth_call_cancel ((AuthCall *) iter->data);

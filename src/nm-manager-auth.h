@@ -27,6 +27,7 @@
 #include <nm-connection.h>
 #include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
+#include "nm-auth-subject.h"
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"
@@ -69,6 +70,15 @@ NMAuthChain *nm_auth_chain_new_dbus_sender (const char *dbus_sender,
                                             gulong user_uid,
                                             NMAuthChainResultFunc done_func,
                                             gpointer user_data);
+
+NMAuthChain *nm_auth_chain_new_context (DBusGMethodInvocation *context,
+                                        NMAuthChainResultFunc done_func,
+                                        gpointer user_data);
+
+NMAuthChain *nm_auth_chain_new_subject (NMAuthSubject *subject,
+                                        DBusGMethodInvocation *context,
+                                        NMAuthChainResultFunc done_func,
+                                        gpointer user_data);
 
 gpointer nm_auth_chain_get_data (NMAuthChain *chain, const char *tag);
 
