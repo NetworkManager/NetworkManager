@@ -35,7 +35,6 @@
 #define NM_CONNECTIVITY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTIVITY, NMConnectivityClass))
 
 /* Properties */
-#define NM_CONNECTIVITY_RUNNING   "running"
 #define NM_CONNECTIVITY_URI       "uri"
 #define NM_CONNECTIVITY_INTERVAL  "interval"
 #define NM_CONNECTIVITY_RESPONSE  "response"
