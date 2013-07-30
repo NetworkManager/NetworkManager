@@ -1152,13 +1152,12 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
-	address.timestamp = get_time ();
-
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->options != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new ();
 	memset (&address, 0, sizeof (address));
+	address.timestamp = get_time ();
 
 	str = g_hash_table_lookup (priv->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
