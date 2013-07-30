@@ -60,6 +60,7 @@ typedef enum {
 #define NM_MANAGER_WIMAX_ENABLED "wimax-enabled"
 #define NM_MANAGER_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
+#define NM_MANAGER_CONNECTIVITY "connectivity"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"

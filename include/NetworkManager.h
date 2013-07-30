@@ -102,6 +102,27 @@ typedef enum {
 #define NM_STATE_CONNECTED NM_STATE_CONNECTED_GLOBAL
 
 /**
+ * NMConnectivityState:
+ * @NM_CONNECTIVITY_UNKNOWN: Network connectivity is unknown.
+ * @NM_CONNECTIVITY_NONE: The host is not connected to any network.
+ * @NM_CONNECTIVITY_PORTAL: The host is behind a captive portal and
+ *   cannot reach the full Internet.
+ * @NM_CONNECTIVITY_LIMITED: The host is connected to a network, but
+ *   does not appear to be able to reach the full Internet.
+ * @NM_CONNECTIVITY_FULL: The host is connected to a network, and
+ *   appears to be able to reach the full Internet.
+ *
+ * Since: 0.9.10
+ */
+typedef enum {
+	NM_CONNECTIVITY_UNKNOWN,
+	NM_CONNECTIVITY_NONE,
+	NM_CONNECTIVITY_PORTAL,
+	NM_CONNECTIVITY_LIMITED,
+	NM_CONNECTIVITY_FULL
+} NMConnectivityState;
+
+/**
  * NMDeviceType:
  * @NM_DEVICE_TYPE_UNKNOWN: unknown device
  * @NM_DEVICE_TYPE_GENERIC: generic support for unrecognized device types

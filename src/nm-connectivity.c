@@ -48,7 +48,7 @@ typedef struct {
 	guint check_id;
 #endif
 
-	gboolean connected;
+	NMConnectivityState state;
 } NMConnectivityPrivate;
 
 enum {
@@ -56,28 +56,28 @@ enum {
 	PROP_URI,
 	PROP_INTERVAL,
 	PROP_RESPONSE,
-	PROP_CONNECTED,
+	PROP_STATE,
 	LAST_PROP
 };
 
 
-gboolean
-nm_connectivity_get_connected (NMConnectivity *connectivity)
+NMConnectivityState
+nm_connectivity_get_state (NMConnectivity *connectivity)
 {
-	g_return_val_if_fail (NM_IS_CONNECTIVITY (connectivity), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTIVITY (connectivity), NM_CONNECTIVITY_UNKNOWN);
 
-	return NM_CONNECTIVITY_GET_PRIVATE (connectivity)->connected;
+	return NM_CONNECTIVITY_GET_PRIVATE (connectivity)->state;
 }
 
 static void
-update_connected (NMConnectivity *self, gboolean connected)
+update_state (NMConnectivity *self, NMConnectivityState state)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	gboolean old_connected = priv->connected;
 
-	priv->connected = connected;
-	if (priv->connected != old_connected)
-		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_CONNECTED);
+	if (priv->state != state) {
+		priv->state = state;
+		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
+	}
 }
 
 #if WITH_CONCHECK
@@ -87,37 +87,47 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	GSimpleAsyncResult *simple = user_data;
 	NMConnectivity *self;
 	NMConnectivityPrivate *priv;
-	gboolean connected_new = FALSE;
+	NMConnectivityState new_state;
 	const char *nm_header;
 
 	self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	g_object_unref (self);
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
+	if (SOUP_STATUS_IS_TRANSPORT_ERROR (msg->status_code)) {
+		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' failed with '%s'.",
+		             priv->uri, msg->reason_phrase);
+		new_state = NM_CONNECTIVITY_LIMITED;
+		goto done;
+	}
+
 	/* Check headers; if we find the NM-specific one we're done */
 	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
 	if (g_strcmp0 (nm_header, "online") == 0) {
 		nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' with Status header successful.", priv->uri);
-		connected_new = TRUE;
+		new_state = NM_CONNECTIVITY_FULL;
 	} else if (msg->status_code == SOUP_STATUS_OK) {
 		/* check response */
 		if (msg->response_body->data &&	(g_str_has_prefix (msg->response_body->data, priv->response))) {
 			nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' successful.",
 			            priv->uri);
-			connected_new = TRUE;
+			new_state = NM_CONNECTIVITY_FULL;
 		} else {
-			nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' did not match expected response '%s'.",
+			nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' did not match expected response '%s'; assuming captive portal.",
 			             priv->uri, priv->response);
+			new_state = NM_CONNECTIVITY_PORTAL;
 		}
 	} else {
-		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' returned status '%d %s'.",
+		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' returned status '%d %s'; assuming captive portal.",
 		             priv->uri, msg->status_code, msg->reason_phrase);
+		new_state = NM_CONNECTIVITY_PORTAL;
 	}
 
-	g_simple_async_result_set_op_res_gboolean (simple, connected_new);
+ done:
+	g_simple_async_result_set_op_res_gssize (simple, new_state);
 	g_simple_async_result_complete (simple);
 
-	update_connected (self, connected_new);
+	update_state (self, new_state);
 }
 
 static void
@@ -174,7 +184,7 @@ nm_connectivity_set_online (NMConnectivity *self,
 	/* Either @online is %TRUE but we aren't checking connectivity, or
 	 * @online is %FALSE. Either way we can update our status immediately.
 	 */
-	update_connected (self, online);
+	update_state (self, online ? NM_CONNECTIVITY_FULL : NM_CONNECTIVITY_NONE);
 }
 
 void
@@ -207,23 +217,23 @@ nm_connectivity_check_async (NMConnectivity      *self,
 	}
 #endif
 
-	g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	g_simple_async_result_set_op_res_gssize (simple, priv->state);
 	g_simple_async_result_complete_in_idle (simple);
 }
 
-gboolean
+NMConnectivityState
 nm_connectivity_check_finish (NMConnectivity  *self,
                               GAsyncResult    *result,
                               GError         **error)
 {
 	GSimpleAsyncResult *simple;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self), nm_connectivity_check_async), FALSE);
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self), nm_connectivity_check_async), NM_CONNECTIVITY_UNKNOWN);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	return g_simple_async_result_get_op_res_gboolean (simple);
+		return NM_CONNECTIVITY_UNKNOWN;
+	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
 
@@ -243,7 +253,7 @@ nm_connectivity_new (void)
 	                     NM_CONNECTIVITY_RESPONSE, check_response ? check_response : DEFAULT_RESPONSE,
 	                     NULL);
 	g_return_val_if_fail (self != NULL, NULL);
-	update_connected (self, FALSE);
+	update_state (self, NM_CONNECTIVITY_NONE);
 
 	return self;
 }
@@ -314,8 +324,8 @@ get_property (GObject *object, guint property_id,
 	case PROP_RESPONSE:
 		g_value_set_string (value, priv->response);
 		break;
-	case PROP_CONNECTED:
-		g_value_set_boolean (value, priv->connected);
+	case PROP_STATE:
+		g_value_set_uint (value, priv->state);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -395,11 +405,11 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	g_object_class_install_property
-		(object_class, PROP_CONNECTED,
-		 g_param_spec_boolean (NM_CONNECTIVITY_CONNECTED,
-		                       "Connected",
-		                       "Is connected",
-		                       FALSE,
-		                       G_PARAM_READABLE));
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_CONNECTIVITY_STATE,
+		                    "State",
+		                    "Connectivity state",
+		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
+		                    G_PARAM_READABLE));
 }
 

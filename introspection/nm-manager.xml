@@ -244,6 +244,19 @@
       </arg>
     </method>
 
+    <method name="CheckConnectivity">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_check_connectivity"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <tp:docstring>
+	Re-check the network connectivity state.
+      </tp:docstring>
+      <arg name="connectivity" type="u" tp:type="NM_CONNECTIVITY" direction="out">
+        <tp:docstring>
+          The current connectivity state.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <method name="state">
       <tp:docstring>
         The overall networking state as determined by the NetworkManager daemon,
@@ -333,6 +346,12 @@
       </arg>
     </signal>
 
+    <property name="Connectivity" type="u" access="read" tp:type="NM_CONNECTIVITY">
+      <tp:docstring>
+        The network connectivity state.
+      </tp:docstring>
+    </property>
+
     <signal name="PropertiesChanged">
       <tp:docstring>
         NetworkManager's properties changed.
@@ -409,6 +428,40 @@
       <tp:enumvalue suffix="CONNECTED_GLOBAL" value="70">
         <tp:docstring>
           A network device is connected, with global network connectivity.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+
+    <tp:enum name="NM_CONNECTIVITY" type="u">
+      <tp:docstring>
+        Describes the network-connectivity state.
+      </tp:docstring>
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          Network connectivity is unknown.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NONE" value="1">
+        <tp:docstring>
+          The host is not connected to any network.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="PORTAL" value="2">
+        <tp:docstring>
+          The host is behind a captive portal and cannot reach the
+          full Internet.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="LIMITED" value="3">
+        <tp:docstring>
+          The host is connected to a network, but does not appear to
+	  be able to reach the full Internet.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="FULL" value="4">
+        <tp:docstring>
+	  The host is connected to a network, and appears to be able
+	  to reach the full Internet
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
