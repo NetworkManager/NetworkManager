@@ -1,4 +1,5 @@
 #include "test-common.h"
+#include "nm-glib-compat.h"
 
 SignalData *
 add_signal_full (const char *name, GCallback callback, int ifindex, const char *ifname)
