@@ -332,30 +332,38 @@ fi
 PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes],[have_systemd_200=no])
 AM_CONDITIONAL(HAVE_SYSTEMD_200, test "${have_systemd_200}" = "yes")
 
-# session tracking support
-AC_MSG_CHECKING([Session tracking support])
+# Session tracking support
+AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
+	[Support systemd session tracking]))
+AC_ARG_WITH(consolekit, AS_HELP_STRING([--with-consolekit=yes|no],
+	[Support consolekit session tracking]))
 AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|consolekit|no],
-	[Select session tracking support (default: consolekit)]))
-# default to consolekit
-AS_IF([test -z "$with_session_tracking"], with_session_tracking=consolekit)
-AS_IF([test "$with_session_tracking" = "ck"], with_session_tracking=consolekit)
-AS_IF([test "$with_session_tracking" = "none"], with_session_tracking=no)
-# check value
-AS_IF([! (echo "$with_session_tracking" | grep -q -E "^(systemd|consolekit|no)$")],
-	AC_MSG_ERROR([--with-session-tracking must be systemd/consolekit/no, not $with_session_tracking]))
-# add conditionals and subtitutions
-AM_CONDITIONAL(SESSION_TRACKING_CK, test "$with_session_tracking" = "consolekit")
-AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "$with_session_tracking" = "systemd")
-if test "$with_session_tracking" = "systemd"; then
-	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd],,
-	                  [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])])
+	[Compatibility option to choose one session tracking module]))
+# defaults
+AS_IF([test -z "$with_systemd_logind"], [with_systemd_logind="yes"])
+AS_IF([test -z "$with_consolekit"], [with_consolekit="yes"])
+# backwards compatibility
+AS_IF([test "$with_session_tracking" = "ck"], [with_consolekit="yes" with_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "consolekit"], [with_consolekit="yes" with_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "systemd"], [with_consolekit="no" with_systemd_logind="yes"])
+AS_IF([test "$with_session_tracking" = "no"], [with_consolekit="no" with_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "none"], [with_consolekit="no" with_systemd_logind="no"])
+unset with_session_tracking
+# output
+session_tracking=
+if test "$with_systemd_logind" = "yes"; then
+	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
 	AC_SUBST(SYSTEMD_LOGIN_LIBS)
+	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
+	session_tracking="$session_tracking, systemd-logind"
 fi
-if test "$with_session_tracking" = "consolekit"; then
-	AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
+if test "$with_consolekit" = "yes"; then
+	AC_DEFINE([SESSION_TRACKING_CONSOLEKIT], 1, [Define to 1 if ConsoleKit is available])
+	AC_DEFINE([CKDB_PATH], "/var/run/ConsoleKit/database", [Path to ConsoleKit database])
+	session_tracking="$session_tracking, consolekit"
 fi
-AC_MSG_RESULT($with_session_tracking)
+session_tracking=${session_tracking:2}
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
@@ -1029,7 +1037,7 @@ echo "  nmrundir: $nmrundir"
 echo
 
 echo "Platform:"
-echo "  session tracking: $with_session_tracking"
+echo "  session tracking: $session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
 if test "${enable_polkit}" = "yes"; then
 	if test "${enable_modify_system}" = "yes"; then
