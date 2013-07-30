@@ -20,11 +20,13 @@
 
 /* for environ */
 #define _GNU_SOURCE
+#include <config.h>
 
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include <dbus/dbus.h>
 
@@ -277,6 +279,22 @@ error:
 	return NULL;
 }
 
+static void
+fatal_error (void)
+{
+	const char *pid_str = getenv ("pid");
+	int pid = 0;
+
+	if (pid_str)
+		pid = strtol (pid_str, NULL, 10);
+	if (pid) {
+		fprintf (stderr, "Fatal error occured, killing dhclient instance with pid %d.\n", pid);
+		kill (pid, SIGTERM);
+	}
+
+	exit (1);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -287,26 +305,26 @@ main (int argc, char *argv[])
 	/* Get a connection to the system bus */
 	connection = dbus_init ();
 	if (connection == NULL)
-		exit (1);
+		fatal_error ();
 
 	message = dbus_message_new_signal ("/", NM_DHCP_CLIENT_DBUS_IFACE, "Event");
 	if (message == NULL) {
 		fprintf (stderr, "Error: Not enough memory to send DHCP Event signal.\n");
-		exit (1);
+		fatal_error ();
 	}
 
 	/* Dump environment variables into the message */
 	result = build_message (message);
 	if (result == FALSE) {
 		fprintf (stderr, "Error: Not enough memory to send DHCP Event signal.\n");
-		exit (1);
+		fatal_error ();
 	}
 
 	/* queue the message */
 	result = dbus_connection_send (connection, message, NULL);
 	if (!result) {
 		fprintf (stderr, "Error: Could not send send DHCP Event signal.\n");
-		exit (1);
+		fatal_error ();
 	}
 	dbus_message_unref (message);
 
