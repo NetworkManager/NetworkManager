@@ -31,10 +31,14 @@ global:
 	nm_active_connection_new;
 	nm_client_activate_connection;
 	nm_client_add_and_activate_connection;
+	nm_client_check_connectivity;
+	nm_client_check_connectivity_async;
+	nm_client_check_connectivity_finish;
 	nm_client_deactivate_connection;
 	nm_client_error_get_type;
 	nm_client_error_quark;
 	nm_client_get_active_connections;
+	nm_client_get_connectivity;
 	nm_client_get_device_by_iface;
 	nm_client_get_device_by_path;
 	nm_client_get_devices;

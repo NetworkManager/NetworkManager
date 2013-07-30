@@ -60,6 +60,7 @@ typedef struct {
 	gboolean startup;
 	GPtrArray *devices;
 	GPtrArray *active_connections;
+	NMConnectivityState connectivity;
 
 	DBusGProxyCall *perm_call;
 	GHashTable *permissions;
@@ -94,6 +95,7 @@ enum {
 	PROP_WIMAX_ENABLED,
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
+	PROP_CONNECTIVITY,
 
 	LAST_PROP
 };
@@ -186,6 +188,7 @@ register_properties (NMClient *client)
 		{ NM_CLIENT_WIMAX_ENABLED,             &priv->wimax_enabled },
 		{ NM_CLIENT_WIMAX_HARDWARE_ENABLED,    &priv->wimax_hw_enabled },
 		{ NM_CLIENT_ACTIVE_CONNECTIONS,        &priv->active_connections, NULL, NM_TYPE_ACTIVE_CONNECTION },
+		{ NM_CLIENT_CONNECTIVITY,              &priv->connectivity },
 		{ NULL },
 	};
 
@@ -1347,6 +1350,197 @@ client_device_removed (NMObject *client, NMObject *device)
 	g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
 }
 
+/**
+ * nm_client_get_connectivity:
+ * @client: an #NMClient
+ *
+ * Gets the current network connectivity state. Contrast
+ * nm_client_check_connectivity() and
+ * nm_client_check_connectivity_async(), which re-check the
+ * connectivity state first before returning any information.
+ *
+ * Returns: the current connectivity state
+ * Since: 0.9.10
+ */
+NMConnectivityState
+nm_client_get_connectivity (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	_nm_object_ensure_inited (NM_OBJECT (client));
+
+	return priv->connectivity;
+}
+
+/**
+ * nm_client_check_connectivity:
+ * @client: an #NMClient
+ * @cancellable: a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Updates the network connectivity state and returns the (new)
+ * current state. Contrast nm_client_get_connectivity(), which returns
+ * the most recent known state without re-checking.
+ *
+ * This is a blocking call; use nm_client_check_connectivity_async()
+ * if you do not want to block.
+ *
+ * Returns: the (new) current connectivity state
+ * Since: 0.9.10
+ */
+NMConnectivityState
+nm_client_check_connectivity (NMClient *client,
+                              GCancellable *cancellable,
+                              GError **error)
+{
+	NMClientPrivate *priv;
+	NMConnectivityState connectivity;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!dbus_g_proxy_call (priv->client_proxy, "CheckConnectivity", error,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_UINT, &connectivity,
+	                        G_TYPE_INVALID))
+		connectivity = NM_CONNECTIVITY_UNKNOWN;
+
+	return connectivity;
+}
+
+typedef struct {
+	NMClient *client;
+	DBusGProxyCall *call;
+	GCancellable *cancellable;
+	guint cancelled_id;
+	NMConnectivityState connectivity;
+} CheckConnectivityData;
+
+static void
+check_connectivity_data_free (CheckConnectivityData *ccd)
+{
+	if (ccd->cancellable) {
+		if (ccd->cancelled_id)
+			g_signal_handler_disconnect (ccd->cancellable, ccd->cancelled_id);
+		g_object_unref (ccd->cancellable);
+	}
+
+	g_slice_free (CheckConnectivityData, ccd);
+}
+
+static void
+check_connectivity_cb (DBusGProxy *proxy,
+                       DBusGProxyCall *call,
+                       gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	CheckConnectivityData *ccd = g_simple_async_result_get_op_res_gpointer (simple);
+	GError *error = NULL;
+
+	if (!dbus_g_proxy_end_call (proxy, call, &error,
+	                            G_TYPE_UINT, &ccd->connectivity,
+	                            G_TYPE_INVALID))
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+static void
+check_connectivity_cancelled_cb (GCancellable *cancellable,
+                                 gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	CheckConnectivityData *ccd = g_simple_async_result_get_op_res_gpointer (simple);
+
+	g_signal_handler_disconnect (cancellable, ccd->cancelled_id);
+	ccd->cancelled_id = 0;
+
+	dbus_g_proxy_cancel_call (NM_CLIENT_GET_PRIVATE (ccd->client)->client_proxy, ccd->call);
+	g_simple_async_result_complete_in_idle (simple);
+}
+
+/**
+ * nm_client_check_connectivity_async:
+ * @client: an #NMClient
+ * @cancellable: a #GCancellable
+ * @callback: callback to call with the result
+ * @user_data: data for @callback.
+ *
+ * Asynchronously updates the network connectivity state and invokes
+ * @callback when complete. Contrast nm_client_get_connectivity(),
+ * which (immediately) returns the most recent known state without
+ * re-checking, and nm_client_check_connectivity(), which blocks.
+ *
+ * Since: 0.9.10
+ */
+void
+nm_client_check_connectivity_async (NMClient *client,
+                                    GCancellable *cancellable,
+                                    GAsyncReadyCallback callback,
+                                    gpointer user_data)
+{
+	NMClientPrivate *priv;
+	GSimpleAsyncResult *simple;
+	CheckConnectivityData *ccd;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	ccd = g_slice_new (CheckConnectivityData);
+	ccd->client = client;
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_check_connectivity_async);
+	g_simple_async_result_set_op_res_gpointer (simple, ccd, (GDestroyNotify) check_connectivity_data_free);
+
+	if (cancellable) {
+		ccd->cancellable = g_object_ref (cancellable);
+		ccd->cancelled_id = g_signal_connect (cancellable, "cancelled",
+		                                      G_CALLBACK (check_connectivity_cancelled_cb),
+		                                      simple);
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	}
+
+	ccd->call = dbus_g_proxy_begin_call (priv->client_proxy, "CheckConnectivity",
+	                                     check_connectivity_cb, simple, NULL,
+	                                     G_TYPE_INVALID);
+}
+
+/**
+ * nm_client_check_connectivity_finish:
+ * @client: an #NMClient
+ * @result: the #GAsyncResult
+ * @error: return location for a #GError
+ *
+ * Retrieves the result of an nm_client_check_connectivity_async()
+ * call.
+ *
+ * Returns: the (new) current connectivity state
+ * Since: 0.9.10
+ */
+NMConnectivityState
+nm_client_check_connectivity_finish (NMClient *client,
+                                     GAsyncResult *result,
+                                     GError **error)
+{
+	GSimpleAsyncResult *simple;
+	CheckConnectivityData *ccd;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	ccd = g_simple_async_result_get_op_res_gpointer (simple);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NM_CONNECTIVITY_UNKNOWN;
+
+	return ccd->connectivity;
+}
+
 /****************************************************************/
 
 /**
@@ -1863,6 +2057,9 @@ get_property (GObject *object,
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_set_boxed (value, nm_client_get_active_connections (self));
 		break;
+	case PROP_CONNECTIVITY:
+		g_value_set_uint (value, priv->connectivity);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2043,6 +2240,21 @@ nm_client_class_init (NMClientClass *client_class)
 						   "Active connections",
 						   NM_TYPE_OBJECT_ARRAY,
 						   G_PARAM_READABLE));
+
+	/**
+	 * NMClient:connectivity:
+	 *
+	 * The network connectivity state.
+	 *
+	 * Since: 0.9.10
+	 */
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIVITY,
+		 g_param_spec_uint (NM_CLIENT_CONNECTIVITY,
+		                    "Connectivity",
+		                    "Connectivity state",
+		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
+		                    G_PARAM_READABLE));
 
 	/* signals */
 
