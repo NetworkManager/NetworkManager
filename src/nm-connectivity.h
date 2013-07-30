@@ -38,7 +38,7 @@
 #define NM_CONNECTIVITY_URI       "uri"
 #define NM_CONNECTIVITY_INTERVAL  "interval"
 #define NM_CONNECTIVITY_RESPONSE  "response"
-#define NM_CONNECTIVITY_CONNECTED "connected"
+#define NM_CONNECTIVITY_STATE     "state"
 
 typedef struct {
 	GObject parent;
@@ -50,20 +50,20 @@ typedef struct {
 
 GType nm_connectivity_get_type (void);
 
-NMConnectivity *nm_connectivity_new           (const gchar          *check_uri,
-                                               guint                 check_interval,
-                                               const gchar          *check_response);
+NMConnectivity      *nm_connectivity_new          (const gchar          *check_uri,
+                                                   guint                 check_interval,
+                                                   const gchar          *check_response);
 
-void            nm_connectivity_set_online    (NMConnectivity       *self,
-                                               gboolean              online);
+void                 nm_connectivity_set_online   (NMConnectivity       *self,
+                                                   gboolean              online);
 
-gboolean        nm_connectivity_get_connected (NMConnectivity       *self);
+NMConnectivityState  nm_connectivity_get_state    (NMConnectivity       *self);
 
-void            nm_connectivity_check_async   (NMConnectivity       *self,
-                                               GAsyncReadyCallback   callback,
-                                               gpointer              user_data);
-gboolean        nm_connectivity_check_finish  (NMConnectivity       *self,
-                                               GAsyncResult         *result,
-                                               GError              **error);
+void                 nm_connectivity_check_async  (NMConnectivity       *self,
+                                                   GAsyncReadyCallback   callback,
+                                                   gpointer              user_data);
+NMConnectivityState  nm_connectivity_check_finish (NMConnectivity       *self,
+                                                   GAsyncResult         *result,
+                                                   GError              **error);
 
 #endif /* NM_CONNECTIVITY_H */

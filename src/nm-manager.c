@@ -126,6 +126,9 @@ static void impl_manager_get_logging (NMManager *manager,
                                       char **level,
                                       char **domains);
 
+static void impl_manager_check_connectivity (NMManager *manager,
+                                             DBusGMethodInvocation *context);
+
 #include "nm-manager-glue.h"
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
@@ -280,6 +283,7 @@ enum {
 	PROP_WIMAX_ENABLED,
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
+	PROP_CONNECTIVITY,
 
 	/* Not exported */
 	PROP_HOSTNAME,
@@ -555,11 +559,15 @@ checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMManager *manager = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMConnectivityState connectivity;
 
 	if (priv->state == NM_STATE_CONNECTING || priv->state == NM_STATE_CONNECTED_SITE) {
-		if (nm_connectivity_check_finish (priv->connectivity, result, NULL))
+		connectivity = nm_connectivity_check_finish (priv->connectivity, result, NULL);
+
+		if (connectivity == NM_CONNECTIVITY_FULL)
 			set_state (manager, NM_STATE_CONNECTED_GLOBAL);
-		else
+		else if (   connectivity == NM_CONNECTIVITY_PORTAL
+		         || connectivity == NM_CONNECTIVITY_LIMITED)
 			set_state (manager, NM_STATE_CONNECTED_SITE);
 	}
 
@@ -587,7 +595,7 @@ nm_manager_update_state (NMManager *manager)
 
 			if (state == NM_DEVICE_STATE_ACTIVATED) {
 				nm_connectivity_set_online (priv->connectivity, TRUE);
-				if (!nm_connectivity_get_connected (priv->connectivity)) {
+				if (nm_connectivity_get_state (priv->connectivity) != NM_CONNECTIVITY_FULL) {
 					new_state = NM_STATE_CONNECTING;
 					want_connectivity_check = TRUE;
 				} else {
@@ -3766,6 +3774,103 @@ impl_manager_get_logging (NMManager *manager,
 	*domains = g_strdup (nm_logging_domains_to_string ());
 }
 
+static void
+connectivity_check_done (GObject *object,
+                         GAsyncResult *result,
+                         gpointer user_data)
+{
+	DBusGMethodInvocation *context = user_data;
+	NMConnectivityState state;
+	GError *error = NULL;
+
+	state = nm_connectivity_check_finish (NM_CONNECTIVITY (object), result, &error);
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	} else
+		dbus_g_method_return (context, state);
+}
+
+
+static void
+check_connectivity_auth_done_cb (NMAuthChain *chain,
+                                 GError *auth_error,
+                                 DBusGMethodInvocation *context,
+                                 gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+	NMAuthCallResult result;
+
+	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+
+	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+
+	if (auth_error) {
+		nm_log_dbg (LOGD_CORE, "CheckConnectivity request failed: %s", auth_error->message);
+		error = g_error_new (NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     "Connectivity check request failed: %s",
+		                     auth_error->message);
+	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Not authorized to recheck connectivity");
+	} else {
+		/* it's allowed */
+		nm_connectivity_check_async (priv->connectivity,
+		                             connectivity_check_done,
+		                             context);
+	}
+
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
+	nm_auth_chain_unref (chain);
+}
+
+static void
+impl_manager_check_connectivity (NMManager *manager,
+                                 DBusGMethodInvocation *context)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMAuthChain *chain;
+	gulong sender_uid = G_MAXULONG;
+	char *error_desc = NULL;
+	GError *error;
+
+	/* Need to check the caller's permissions and stuff first */
+	if (!nm_auth_get_caller_uid (context, 
+	                             priv->dbus_mgr,
+	                             &sender_uid,
+	                             &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		g_free (error_desc);
+		return;
+	}
+
+	/* Yay for root */
+	if (0 == sender_uid) {
+		nm_connectivity_check_async (priv->connectivity,
+		                             connectivity_check_done,
+		                             context);
+		return;
+	}
+
+	/* Validate the user request */
+	chain = nm_auth_chain_new (context, NULL, check_connectivity_auth_done_cb, manager);
+	g_assert (chain);
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+}
+
 void
 nm_manager_start (NMManager *self)
 {
@@ -3868,11 +3973,12 @@ connectivity_changed (NMConnectivity *connectivity,
                       gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	gboolean connected;
+	NMConnectivityState state;
+	static const char *connectivity_states[] = { "UNKNOWN", "NONE", "PORTAL", "LIMITED", "FULL" };
 
-	connected = nm_connectivity_get_connected (connectivity);
+	state = nm_connectivity_get_state (connectivity);
 	nm_log_dbg (LOGD_CORE, "connectivity checking indicates %s",
-	            connected ? "CONNECTED" : "NOT CONNECTED");
+	            connectivity_states[state]);
 
 	nm_manager_update_state (self);
 }
@@ -4137,7 +4243,7 @@ nm_manager_new (NMSettings *settings,
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
 	priv->connectivity = nm_connectivity_new (connectivity_uri, connectivity_interval, connectivity_response);
-	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_CONNECTED,
+	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), singleton);
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
@@ -4499,6 +4605,9 @@ get_property (GObject *object, guint prop_id,
 		}
 		g_value_take_boxed (value, active);
 		break;
+	case PROP_CONNECTIVITY:
+		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
+		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
 		break;
@@ -4753,6 +4862,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                     "Active connections",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 		                     G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIVITY,
+		 g_param_spec_uint (NM_MANAGER_CONNECTIVITY,
+		                    "Connectivity",
+		                    "Connectivity state",
+		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
+		                    G_PARAM_READABLE));
 
 	/* Hostname is not exported over D-Bus */
 	g_object_class_install_property
