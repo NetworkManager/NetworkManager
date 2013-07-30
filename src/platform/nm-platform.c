@@ -1617,12 +1617,12 @@ static void
 log_ip4_address (NMPlatformIP4Address *address, const char *change_type)
 {
 	char addr[INET_ADDRSTRLEN];
-	int plen = address->plen;
 	const char *name = nm_platform_link_get_name (address->ifindex);
 
 	inet_ntop (AF_INET, &address->address, addr, sizeof (addr));
 
-	debug ("signal: address %s: %s/%d dev %s", change_type, addr, plen, name);
+	debug ("(%s) signal: address %s: %s/%d lft %d pref %d", name, change_type, addr,
+			address->plen, address->lifetime, address->preferred);
 }
 
 static void
@@ -1647,12 +1647,12 @@ static void
 log_ip6_address (NMPlatformIP6Address *address, const char *change_type)
 {
 	char addr[INET6_ADDRSTRLEN];
-	int plen = address->plen;
 	const char *name = nm_platform_link_get_name (address->ifindex);
 
 	inet_ntop (AF_INET6, &address->address, addr, sizeof (addr));
 
-	debug ("signal: address %s: %s/%d dev %s", change_type, addr, plen, name);
+	debug ("(%s) signal: address %s: %s/%d lft %d pref %d", name, change_type, addr,
+			address->plen, address->lifetime, address->preferred);
 }
 
 static void
