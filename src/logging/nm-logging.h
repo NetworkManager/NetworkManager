@@ -60,6 +60,7 @@ enum {
 	LOGD_BRIDGE     = (1LL << 30),
 	LOGD_DBUS_PROPS = (1LL << 31),
 	LOGD_TEAM       = (1LL << 32),
+	LOGD_CONCHECK   = (1LL << 33),
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)

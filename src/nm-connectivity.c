@@ -101,18 +101,21 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	/* Check headers; if we find the NM-specific one we're done */
 	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
 	if (g_strcmp0 (nm_header, "online") == 0) {
-		nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with Status header successful.", priv->uri);
+		nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' with Status header successful.", priv->uri);
 		connected_new = TRUE;
-	} else {
+	} else if (msg->status_code == SOUP_STATUS_OK) {
 		/* check response */
 		if (msg->response_body->data &&	(g_str_has_prefix (msg->response_body->data, priv->response))) {
-			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' successful.",
-			            priv->uri, priv->response);
+			nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' successful.",
+			            priv->uri);
 			connected_new = TRUE;
 		} else {
-			nm_log_dbg (LOGD_CORE, "Connectivity check for uri '%s' with expected response '%s' failed (status %d).",
-			            priv->uri, priv->response, msg->status_code);
+			nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' did not match expected response '%s'.",
+			             priv->uri, priv->response);
 		}
+	} else {
+		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' returned status '%d %s'.",
+		             priv->uri, msg->status_code, msg->reason_phrase);
 	}
 
 	/* update connectivity and emit signal */
@@ -141,7 +144,7 @@ run_check (gpointer user_data)
 	                            self);
 
 	priv->running = TRUE;
-	nm_log_dbg (LOGD_CORE, "Connectivity check with uri '%s' started.", priv->uri);
+	nm_log_dbg (LOGD_CONCHECK, "Connectivity check with uri '%s' started.", priv->uri);
 	return TRUE;
 }
 #endif
@@ -230,7 +233,7 @@ set_property (GObject *object, guint property_id,
 			SoupURI *uri = soup_uri_new (priv->uri);
 
 			if (!uri || !SOUP_URI_VALID_FOR_HTTP (uri)) {
-				nm_log_err (LOGD_CORE, "Invalid uri '%s' for connectivity check.", priv->uri);
+				nm_log_err (LOGD_CONCHECK, "Invalid uri '%s' for connectivity check.", priv->uri);
 				g_free (priv->uri);
 				priv->uri = NULL;
 			}
