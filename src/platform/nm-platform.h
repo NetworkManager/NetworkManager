@@ -282,8 +282,6 @@ typedef struct {
 	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
 	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
 	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
-
-	void (*route_cache_update) (NMPlatform *);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -410,7 +408,6 @@ gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int
 gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_route_flush (int ifindex);
-void nm_platform_route_cache_update (void);
 
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))

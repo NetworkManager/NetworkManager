@@ -829,7 +829,6 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 	update_ip4_routing (policy, force_update);
 	update_ip6_routing (policy, force_update);
-	nm_platform_route_cache_update ();
 
 	/* Update the system hostname */
 	update_system_hostname (policy, policy->default_device4, policy->default_device6);

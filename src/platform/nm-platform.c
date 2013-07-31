@@ -1571,15 +1571,6 @@ nm_platform_route_flush (int ifindex)
 			&& nm_platform_ip6_route_sync (ifindex, NULL);
 }
 
-void
-nm_platform_route_cache_update (void)
-{
-	g_return_if_fail (platform);
-
-	if (NM_PLATFORM_GET_CLASS (platform)->route_cache_update)
-		NM_PLATFORM_GET_CLASS (platform)->route_cache_update (platform);
-}
-
 /******************************************************************/
 
 static void

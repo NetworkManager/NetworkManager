@@ -244,7 +244,7 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 		return rtnl_addr_add (sock, (struct rtnl_addr *) object, NLM_F_CREATE | NLM_F_REPLACE);
 	case IP4_ROUTE:
 	case IP6_ROUTE:
-		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE | NLM_F_REPLACE);
+		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE);
 	default:
 		g_assert_not_reached ();
 	}
@@ -2221,16 +2221,6 @@ ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, in
 	return ip_route_exists (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
-static void
-route_cache_update (NMPlatform *platform)
-{
-	NMLinuxPlatformPrivate *priv;
-
-	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	nl_cache_refill (priv->nlh, priv->route_cache);
-}
-
 /******************************************************************/
 
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
@@ -2587,5 +2577,4 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip6_route_delete = ip6_route_delete;
 	platform_class->ip4_route_exists = ip4_route_exists;
 	platform_class->ip6_route_exists = ip6_route_exists;
-	platform_class->route_cache_update = route_cache_update;
 }
