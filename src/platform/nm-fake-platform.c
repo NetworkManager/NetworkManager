@@ -941,6 +941,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Route route;
+	guint i;
 
 	memset (&route, 0, sizeof (route));
 	route.ifindex = ifindex;
@@ -950,8 +951,22 @@ ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 	route.metric = metric;
 	route.mss = mss;
 
-	g_array_append_val (priv->ip4_routes, route);
+	for (i = 0; i < priv->ip4_routes->len; i++) {
+		NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
 
+		if (item->ifindex != route.ifindex)
+			continue;
+		if (item->network != route.network)
+			continue;
+		if (item->plen != route.plen)
+			continue;
+
+		memcpy (item, &route, sizeof (route));
+		g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_CHANGED, ifindex, &route);
+		return TRUE;
+	}
+
+	g_array_append_val (priv->ip4_routes, route);
 	g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_ADDED, ifindex, &route);
 
 	return TRUE;
@@ -963,6 +978,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP6Route route;
+	guint i;
 
 	memset (&route, 0, sizeof (route));
 	route.ifindex = ifindex;
@@ -972,8 +988,22 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	route.metric = metric;
 	route.mss = mss;
 
-	g_array_append_val (priv->ip6_routes, route);
+	for (i = 0; i < priv->ip6_routes->len; i++) {
+		NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
 
+		if (item->ifindex != route.ifindex)
+			continue;
+		if (!IN6_ARE_ADDR_EQUAL (&item->network, &route.network))
+			continue;
+		if (item->plen != route.plen)
+			continue;
+
+		memcpy (item, &route, sizeof (route));
+		g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_CHANGED, ifindex, &route);
+		return TRUE;
+	}
+
+	g_array_append_val (priv->ip6_routes, route);
 	g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_ADDED, ifindex, &route);
 
 	return TRUE;

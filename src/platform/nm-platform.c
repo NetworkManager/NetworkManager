@@ -1362,12 +1362,6 @@ nm_platform_ip4_route_add (int ifindex,
 	if (!metric)
 		metric = 1024;
 
-	if (nm_platform_ip4_route_exists (ifindex, network, plen, metric)) {
-		debug ("route already exists");
-		platform->error = NM_PLATFORM_ERROR_EXISTS;
-		return FALSE;
-	}
-
 	return klass->ip4_route_add (platform, ifindex, network, plen, gateway, metric, mss);
 }
 
@@ -1383,12 +1377,6 @@ nm_platform_ip6_route_add (int ifindex,
 
 	if (!metric)
 		metric = 1024;
-
-	if (nm_platform_ip6_route_exists (ifindex, network, plen, metric)) {
-		debug ("route already exists");
-		platform->error = NM_PLATFORM_ERROR_EXISTS;
-		return FALSE;
-	}
 
 	return klass->ip6_route_add (platform, ifindex, network, plen, gateway, metric, mss);
 }
@@ -1517,12 +1505,10 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	for (i = 0; i < known_routes->len; i++) {
 		known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
 
-		if (!nm_platform_ip4_route_exists (ifindex,
-				known_route->network, known_route->plen, known_route->metric))
-			if (!nm_platform_ip4_route_add (ifindex,
-					known_route->network, known_route->plen, known_route->gateway,
-					known_route->metric, known_route->mss))
-				return FALSE;
+		if (!nm_platform_ip4_route_add (ifindex,
+				known_route->network, known_route->plen, known_route->gateway,
+				known_route->metric, known_route->mss))
+			return FALSE;
 	}
 
 	return TRUE;
@@ -1569,12 +1555,10 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	for (i = 0; i < known_routes->len; i++) {
 		known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
 
-		if (!nm_platform_ip6_route_exists (ifindex,
-				known_route->network, known_route->plen, known_route->metric))
-			if (!nm_platform_ip6_route_add (ifindex,
-						known_route->network, known_route->plen, known_route->gateway,
-						known_route->metric, known_route->mss))
-				return FALSE;
+		if (!nm_platform_ip6_route_add (ifindex,
+				known_route->network, known_route->plen, known_route->gateway,
+				known_route->metric, known_route->mss))
+			return FALSE;
 	}
 
 	return TRUE;

@@ -41,9 +41,10 @@ ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *recei
 static void
 test_ip4_route ()
 {
-	SignalData *route_added = add_signal (NM_PLATFORM_IP4_ROUTE_ADDED, ip4_route_callback);
-	SignalData *route_removed = add_signal (NM_PLATFORM_IP4_ROUTE_REMOVED, ip4_route_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
+	SignalData *route_added = add_signal (NM_PLATFORM_IP4_ROUTE_ADDED, ip4_route_callback);
+	SignalData *route_changed = add_signal (NM_PLATFORM_IP4_ROUTE_CHANGED, ip4_route_callback);
+	SignalData *route_removed = add_signal (NM_PLATFORM_IP4_ROUTE_REMOVED, ip4_route_callback);
 	GArray *routes;
 	NMPlatformIP4Route rts[4];
 	in_addr_t network;
@@ -66,8 +67,9 @@ test_ip4_route ()
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (!nm_platform_ip4_route_add (ifindex, network, plen, gateway, metric, mss));
-	error (NM_PLATFORM_ERROR_EXISTS);
+	g_assert (nm_platform_ip4_route_add (ifindex, network, plen, gateway, metric, mss));
+	no_error ();
+	accept_signal (route_changed);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip4_route_exists (ifindex, 0, 0, metric)); no_error ();
@@ -76,8 +78,9 @@ test_ip4_route ()
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (!nm_platform_ip4_route_add (ifindex, 0, 0, gateway, metric, mss));
-	error (NM_PLATFORM_ERROR_EXISTS);
+	g_assert (nm_platform_ip4_route_add (ifindex, 0, 0, gateway, metric, mss));
+	no_error ();
+	accept_signal (route_changed);
 
 	/* Test route listing */
 	routes = nm_platform_ip4_route_get_all (ifindex);
@@ -114,15 +117,17 @@ test_ip4_route ()
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (route_added);
+	free_signal (route_changed);
 	free_signal (route_removed);
 }
 
 static void
 test_ip6_route ()
 {
-	SignalData *route_added = add_signal (NM_PLATFORM_IP6_ROUTE_ADDED, ip6_route_callback);
-	SignalData *route_removed = add_signal (NM_PLATFORM_IP6_ROUTE_REMOVED, ip6_route_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
+	SignalData *route_added = add_signal (NM_PLATFORM_IP6_ROUTE_ADDED, ip6_route_callback);
+	SignalData *route_changed = add_signal (NM_PLATFORM_IP6_ROUTE_CHANGED, ip6_route_callback);
+	SignalData *route_removed = add_signal (NM_PLATFORM_IP6_ROUTE_REMOVED, ip6_route_callback);
 	GArray *routes;
 	NMPlatformIP6Route rts[4];
 	struct in6_addr network;
@@ -145,8 +150,9 @@ test_ip6_route ()
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (!nm_platform_ip6_route_add (ifindex, network, plen, gateway, metric, mss));
-	error (NM_PLATFORM_ERROR_EXISTS);
+	g_assert (nm_platform_ip6_route_add (ifindex, network, plen, gateway, metric, mss));
+	no_error ();
+	accept_signal (route_changed);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip6_route_exists (ifindex, in6addr_any, 0, metric)); no_error ();
@@ -155,8 +161,9 @@ test_ip6_route ()
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (!nm_platform_ip6_route_add (ifindex, in6addr_any, 0, gateway, metric, mss));
-	error (NM_PLATFORM_ERROR_EXISTS);
+	g_assert (nm_platform_ip6_route_add (ifindex, in6addr_any, 0, gateway, metric, mss));
+	no_error ();
+	accept_signal (route_changed);
 
 	/* Test route listing */
 	routes = nm_platform_ip6_route_get_all (ifindex);
@@ -193,6 +200,7 @@ test_ip6_route ()
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (route_added);
+	free_signal (route_changed);
 	free_signal (route_removed);
 }
 
