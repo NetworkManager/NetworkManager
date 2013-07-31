@@ -175,19 +175,19 @@ ssid_to_hex (const char *str, gsize len)
 char *
 nmc_ip4_address_as_string (guint32 ip, GError **error)
 {
-	struct in_addr tmp_addr;
+	guint32 tmp_addr;
 	char buf[INET_ADDRSTRLEN];
 
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
 	memset (&buf, '\0', sizeof (buf));
-	tmp_addr.s_addr = ip;
+	tmp_addr = ip;
 
 	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
 		return g_strdup (buf);
 	} else {
 		g_set_error (error, NMCLI_ERROR, 0, _("Error converting IP4 address '0x%X' to text form"),
-		             ntohl (tmp_addr.s_addr));
+		             ntohl (tmp_addr));
 		return NULL;
 	}
 }

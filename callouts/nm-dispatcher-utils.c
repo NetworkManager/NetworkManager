@@ -112,17 +112,17 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		NMIP4Address *addr = (NMIP4Address *) iter->data;
 		char str_addr[INET_ADDRSTRLEN + 1];
 		char str_gw[INET_ADDRSTRLEN + 1];
-		struct in_addr tmp_addr;
+		guint32 tmp_addr;
 		guint32 ip_prefix = nm_ip4_address_get_prefix (addr);
 		char *addrtmp;
 
 		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr.s_addr = nm_ip4_address_get_address (addr);
+		tmp_addr = nm_ip4_address_get_address (addr);
 		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
 			continue;
 
 		memset (str_gw, 0, sizeof (str_gw));
-		tmp_addr.s_addr = nm_ip4_address_get_gateway (addr);
+		tmp_addr = nm_ip4_address_get_gateway (addr);
 		inet_ntop (AF_INET, &tmp_addr, str_gw, sizeof (str_gw));
 
 		addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
@@ -146,10 +146,10 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		tmp = g_string_new (NULL);
 		g_string_append_printf (tmp, "%sIP4_NAMESERVERS=", prefix);
 		for (i = 0; i < dns->len; i++) {
-			struct in_addr addr;
+			guint32 addr;
 			char buf[INET_ADDRSTRLEN + 1];
 
-			addr.s_addr = g_array_index (dns, guint32, i);
+			addr = g_array_index (dns, guint32, i);
 			memset (buf, 0, sizeof (buf));
 			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
 				if (!first)
@@ -176,10 +176,10 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		tmp = g_string_new (NULL);
 		g_string_append_printf (tmp, "%sIP4_WINS_SERVERS=", prefix);
 		for (i = 0; i < wins->len; i++) {
-			struct in_addr addr;
+			guint32 addr;
 			char buf[INET_ADDRSTRLEN + 1];
 
-			addr.s_addr = g_array_index (wins, guint32, i);
+			addr = g_array_index (wins, guint32, i);
 			memset (buf, 0, sizeof (buf));
 			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
 				if (!first)
@@ -201,18 +201,18 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		NMIP4Route *route = (NMIP4Route *) iter->data;
 		char str_addr[INET_ADDRSTRLEN + 1];
 		char str_nh[INET_ADDRSTRLEN + 1];
-		struct in_addr tmp_addr;
+		guint32 tmp_addr;
 		guint32 ip_prefix = nm_ip4_route_get_prefix (route);
 		guint32 metric = nm_ip4_route_get_metric (route);
 		char *routetmp;
 
 		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr.s_addr = nm_ip4_route_get_dest (route);
+		tmp_addr = nm_ip4_route_get_dest (route);
 		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
 			continue;
 
 		memset (str_nh, 0, sizeof (str_nh));
-		tmp_addr.s_addr = nm_ip4_route_get_next_hop (route);
+		tmp_addr = nm_ip4_route_get_next_hop (route);
 		inet_ntop (AF_INET, &tmp_addr, str_nh, sizeof (str_nh));
 
 		routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_nh, metric);

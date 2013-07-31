@@ -334,10 +334,10 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 	GByteArray *ifcfg_mac = NULL;
 	char **lines = NULL, **iter;
 	const char *method = NULL;
-	struct in_addr ipaddr;
-	struct in_addr gateway;
-	struct in_addr dns1;
-	struct in_addr dns2;
+	guint32 ipaddr;
+	guint32 gateway;
+	guint32 dns1;
+	guint32 dns2;
 	guint32 prefix = 0;
 
 	g_return_val_if_fail (s_ip4 != NULL, FALSE);
@@ -397,23 +397,23 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 				if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 					NMIP4Address *addr;
 
-				    if (!ipaddr.s_addr || !prefix) {
+				    if (!ipaddr || !prefix) {
 						g_warning ("%s: malformed iscsiadm record: BOOTPROTO=static "
 						           "but missing IP address or prefix.", __func__);
 						goto done;
 					}
 
 					addr = nm_ip4_address_new ();
-					nm_ip4_address_set_address (addr, ipaddr.s_addr);
+					nm_ip4_address_set_address (addr, ipaddr);
 					nm_ip4_address_set_prefix (addr, prefix);
-					nm_ip4_address_set_gateway (addr, gateway.s_addr);
+					nm_ip4_address_set_gateway (addr, gateway);
 					nm_setting_ip4_config_add_address (s_ip4, addr);
 					nm_ip4_address_unref (addr);
 
-					if (dns1.s_addr)
-						nm_setting_ip4_config_add_dns (s_ip4, dns1.s_addr);
-					if (dns2.s_addr)
-						nm_setting_ip4_config_add_dns (s_ip4, dns2.s_addr);
+					if (dns1)
+						nm_setting_ip4_config_add_dns (s_ip4, dns1);
+					if (dns2)
+						nm_setting_ip4_config_add_dns (s_ip4, dns2);
 
 					// FIXME: DNS search domains?
 				}
@@ -478,7 +478,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 		}
 
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_SUBNET_TAG, &skip))) {
-			struct in_addr mask;
+			guint32 mask;
 
 			if (inet_pton (AF_INET, p, &mask) < 1) {
 				g_warning ("%s: malformed iscsiadm record: invalid subnet mask '%s'.",
@@ -487,7 +487,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 				continue;
 			}
 
-			prefix = nm_utils_ip4_netmask_to_prefix (mask.s_addr);
+			prefix = nm_utils_ip4_netmask_to_prefix (mask);
 		}
 
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_GATEWAY_TAG, &skip))) {
@@ -537,7 +537,7 @@ read_ip4_address (shvarFile *ifcfg,
                   GError **error)
 {
 	char *value = NULL;
-	struct in_addr ip4_addr;
+	guint32 ip4_addr;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
@@ -553,7 +553,7 @@ read_ip4_address (shvarFile *ifcfg,
 		return TRUE;
 
 	if (inet_pton (AF_INET, value, &ip4_addr) > 0) {
-		*out_addr = ip4_addr.s_addr;
+		*out_addr = ip4_addr;
 		success = TRUE;
 	} else {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
@@ -819,7 +819,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
 	NMIP4Route *route;
-	struct in_addr ip4_addr;
+	guint32 ip4_addr;
 	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
 	long int prefix_int, metric_int;
 	gboolean success = FALSE;
@@ -881,7 +881,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			g_free (dest);
 			goto error;
 		}
-		nm_ip4_route_set_dest (route, ip4_addr.s_addr);
+		nm_ip4_route_set_dest (route, ip4_addr);
 		g_free (dest);
 
 		/* Prefix - is optional; 32 if missing */
@@ -917,7 +917,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			g_free (next_hop);
 			goto error;
 		}
-		nm_ip4_route_set_next_hop (route, ip4_addr.s_addr);
+		nm_ip4_route_set_next_hop (route, ip4_addr);
 		g_free (next_hop);
 
 		/* Metric */
@@ -1677,7 +1677,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	for (i = 1; i <= 10; i++) {
 		char *tag;
 		struct in6_addr ip6_dns;
-		struct in_addr ip4_addr;
+		guint32 ip4_addr;
 
 		tag = g_strdup_printf ("DNS%u", i);
 		value = svGetValue (ifcfg, tag, FALSE);

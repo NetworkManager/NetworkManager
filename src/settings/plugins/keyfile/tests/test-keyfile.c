@@ -53,16 +53,15 @@ static void
 check_ip4_address (NMSettingIP4Config *config, int idx, const char *address_str, int plen, const char *gateway_str)
 {
 	NMIP4Address *ip4 = nm_setting_ip4_config_get_address (config, idx);
-	struct in_addr address;
-	struct in_addr gateway;
+	guint32 address, gateway;
 
 	g_assert (inet_pton (AF_INET, address_str, &address) == 1);
 	g_assert (inet_pton (AF_INET, gateway_str, &gateway) == 1);
 
 	g_assert (ip4);
-	g_assert (nm_ip4_address_get_address (ip4) == address.s_addr);
+	g_assert (nm_ip4_address_get_address (ip4) == address);
 	g_assert (nm_ip4_address_get_prefix (ip4) == plen);
-	g_assert (nm_ip4_address_get_gateway (ip4) == gateway.s_addr);
+	g_assert (nm_ip4_address_get_gateway (ip4) == gateway);
 }
 
 static void
@@ -86,16 +85,15 @@ check_ip4_route (NMSettingIP4Config *config, int idx, const char *destination_st
 		const char *nexthop_str, int metric)
 {
 	NMIP4Route *route = nm_setting_ip4_config_get_route (config, idx);
-	struct in_addr destination;
-	struct in_addr nexthop;
+	guint32 destination, nexthop;
 
 	g_assert (inet_pton (AF_INET, destination_str, &destination) == 1);
 	g_assert (inet_pton (AF_INET, nexthop_str, &nexthop) == 1);
 
 	g_assert (route);
-	g_assert (nm_ip4_route_get_dest (route) == destination.s_addr);
+	g_assert (nm_ip4_route_get_dest (route) == destination);
 	g_assert (nm_ip4_route_get_prefix (route) == plen);
-	g_assert (nm_ip4_route_get_next_hop (route) == nexthop.s_addr);
+	g_assert (nm_ip4_route_get_next_hop (route) == nexthop);
 	g_assert (nm_ip4_route_get_metric (route) == metric);
 }
 
@@ -135,7 +133,7 @@ test_read_valid_wired_connection (void)
 	guint64 timestamp;
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
-	struct in_addr addr;
+	guint32 addr;
 	struct in6_addr addr6;
 	const char *expected6_dns1 = "1111:dddd::aaaa";
 	const char *expected6_dns2 = "1::cafe";
@@ -259,7 +257,7 @@ test_read_valid_wired_connection (void)
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -270,7 +268,7 @@ test_read_valid_wired_connection (void)
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -377,17 +375,17 @@ add_one_ip4_address (NMSettingIP4Config *s_ip4,
                      const char *gw,
                      guint32 prefix)
 {
-	struct in_addr tmp;
+	guint32 tmp;
 	NMIP4Address *ip4_addr;
 
 	ip4_addr = nm_ip4_address_new ();
 	nm_ip4_address_set_prefix (ip4_addr, prefix);
 
 	inet_pton (AF_INET, addr, &tmp);
-	nm_ip4_address_set_address (ip4_addr, tmp.s_addr);
+	nm_ip4_address_set_address (ip4_addr, tmp);
 
 	inet_pton (AF_INET, gw, &tmp);
-	nm_ip4_address_set_gateway (ip4_addr, tmp.s_addr);
+	nm_ip4_address_set_gateway (ip4_addr, tmp);
 
 	nm_setting_ip4_config_add_address (s_ip4, ip4_addr);
 	nm_ip4_address_unref (ip4_addr);
@@ -400,7 +398,7 @@ add_one_ip4_route (NMSettingIP4Config *s_ip4,
                    guint32 prefix,
                    guint32 metric)
 {
-	struct in_addr addr;
+	guint32 addr;
 	NMIP4Route *route;
 
 	route = nm_ip4_route_new ();
@@ -408,10 +406,10 @@ add_one_ip4_route (NMSettingIP4Config *s_ip4,
 	nm_ip4_route_set_metric (route, metric);
 
 	inet_pton (AF_INET, dest, &addr);
-	nm_ip4_route_set_dest (route, addr.s_addr);
+	nm_ip4_route_set_dest (route, addr);
 
 	inet_pton (AF_INET, nh, &addr);
-	nm_ip4_route_set_next_hop (route, addr.s_addr);
+	nm_ip4_route_set_next_hop (route, addr);
 
 	nm_setting_ip4_config_add_route (s_ip4, route);
 	nm_ip4_route_unref (route);
@@ -483,7 +481,7 @@ test_write_wired_connection (void)
 	GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	struct in_addr addr;
+	guint32 addr;
 	struct in6_addr addr6;
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
@@ -554,9 +552,9 @@ test_write_wired_connection (void)
 
 	/* DNS servers */
 	inet_pton (AF_INET, dns1, &addr);
-	nm_setting_ip4_config_add_dns (s_ip4, addr.s_addr);
+	nm_setting_ip4_config_add_dns (s_ip4, addr);
 	inet_pton (AF_INET, dns2, &addr);
-	nm_setting_ip4_config_add_dns (s_ip4, addr.s_addr);
+	nm_setting_ip4_config_add_dns (s_ip4, addr);
 
 	/* IP6 setting */
 

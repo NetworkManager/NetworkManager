@@ -103,7 +103,7 @@ test_generic_options (const char *client)
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
 	NMPlatformIP4Route *route;
-	struct in_addr tmp;
+	guint32 tmp;
 	const char *expected_addr = "192.168.1.106";
 	const char *expected_gw = "192.168.1.1";
 	const char *expected_dns1 = "216.254.95.2";
@@ -127,7 +127,7 @@ test_generic_options (const char *client)
 
 	ASSERT (inet_pton (AF_INET, expected_addr, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected IP address");
-	ASSERT (address->address == tmp.s_addr,
+	ASSERT (address->address == tmp,
 	        "dhcp-generic", "unexpected IP address");
 
 	ASSERT (address->plen == 24,
@@ -136,7 +136,7 @@ test_generic_options (const char *client)
 	/* Gateway */
 	ASSERT (inet_pton (AF_INET, expected_gw, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected IP gateway");
-	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp,
 	        "dhcp-generic", "unexpected IP gateway");
 
 	ASSERT (nm_ip4_config_get_ptp_address (ip4_config) == 0,
@@ -161,11 +161,11 @@ test_generic_options (const char *client)
 	        "dhcp-generic", "unexpected number of domain name servers");
 	ASSERT (inet_pton (AF_INET, expected_dns1, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected DNS server address #1");
-	ASSERT (nm_ip4_config_get_nameserver (ip4_config, 0) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_nameserver (ip4_config, 0) == tmp,
 	        "dhcp-generic", "unexpected domain name server #1");
 	ASSERT (inet_pton (AF_INET, expected_dns2, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected DNS server address #2");
-	ASSERT (nm_ip4_config_get_nameserver (ip4_config, 1) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_nameserver (ip4_config, 1) == tmp,
 	        "dhcp-generic", "unexpected domain name server #2");
 
 	/* Routes */
@@ -176,12 +176,12 @@ test_generic_options (const char *client)
 	route = nm_ip4_config_get_route (ip4_config, 0);
 	ASSERT (inet_pton (AF_INET, expected_route1_dest, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected route destination #1");
-	ASSERT (route->network == tmp.s_addr,
+	ASSERT (route->network == tmp,
 	        "dhcp-generic", "unexpected route #1 destination");
 
 	ASSERT (inet_pton (AF_INET, expected_route1_gw, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected route next hop #1");
-	ASSERT (route->gateway == tmp.s_addr,
+	ASSERT (route->gateway == tmp,
 	        "dhcp-generic", "unexpected route #1 next hop");
 
 	ASSERT (route->plen == 32,
@@ -193,12 +193,12 @@ test_generic_options (const char *client)
 	route = nm_ip4_config_get_route (ip4_config, 1);
 	ASSERT (inet_pton (AF_INET, expected_route2_dest, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected route destination #2");
-	ASSERT (route->network == tmp.s_addr,
+	ASSERT (route->network == tmp,
 	        "dhcp-generic", "unexpected route #2 destination");
 
 	ASSERT (inet_pton (AF_INET, expected_route2_gw, &tmp) > 0,
 	        "dhcp-generic", "couldn't convert expected route next hop #2");
-	ASSERT (route->gateway == tmp.s_addr,
+	ASSERT (route->gateway == tmp,
 	        "dhcp-generic", "unexpected route #2 next hop");
 
 	ASSERT (route->plen == 32,
@@ -220,7 +220,7 @@ test_wins_options (const char *client)
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
-	struct in_addr tmp;
+	guint32 tmp;
 	const char *expected_wins1 = "63.12.199.5";
 	const char *expected_wins2 = "150.4.88.120";
 
@@ -240,11 +240,11 @@ test_wins_options (const char *client)
 	        "dhcp-wins", "unexpected number of WINS servers");
 	ASSERT (inet_pton (AF_INET, expected_wins1, &tmp) > 0,
 	        "dhcp-wins", "couldn't convert expected WINS server address #1");
-	ASSERT (nm_ip4_config_get_wins (ip4_config, 0) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_wins (ip4_config, 0) == tmp,
 	        "dhcp-wins", "unexpected WINS server #1");
 	ASSERT (inet_pton (AF_INET, expected_wins2, &tmp) > 0,
 	        "dhcp-wins", "couldn't convert expected WINS server address #1");
-	ASSERT (nm_ip4_config_get_wins (ip4_config, 1) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_wins (ip4_config, 1) == tmp,
 	        "dhcp-wins", "unexpected WINS server #1");
 
 	g_hash_table_destroy (options);
@@ -259,18 +259,18 @@ ip4_test_route (const char *test,
                 guint expected_prefix)
 {
 	NMPlatformIP4Route *route;
-	struct in_addr tmp;
+	guint32 tmp;
 
 	route = nm_ip4_config_get_route (ip4_config, route_num);
 	ASSERT (inet_pton (AF_INET, expected_dest, &tmp) > 0,
 	        test, "couldn't convert expected route destination #1");
-	ASSERT (route->network == tmp.s_addr,
+	ASSERT (route->network == tmp,
 	        test, "unexpected route %d destination", route_num + 1);
 
 	ASSERT (inet_pton (AF_INET, expected_gw, &tmp) > 0,
 	        test, "couldn't convert expected route next hop %d",
 	        route_num + 1);
-	ASSERT (route->gateway == tmp.s_addr,
+	ASSERT (route->gateway == tmp,
 	        test, "unexpected route %d next hop", route_num + 1);
 
 	ASSERT (route->plen == expected_prefix,
@@ -284,13 +284,13 @@ ip4_test_gateway (const char *test,
                   NMIP4Config *ip4_config,
                   const char *expected_gw)
 {
-	struct in_addr tmp;
+	guint32 tmp;
 
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        test, "unexpected number of IP addresses");
 	ASSERT (inet_pton (AF_INET, expected_gw, &tmp) > 0,
 	        test, "couldn't convert expected IP gateway");
-	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp.s_addr,
+	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp,
 	        test, "unexpected IP gateway");
 }
 

@@ -476,7 +476,7 @@ test17_read_static_ipv4 (const char *path)
 	const char *expected_search2 = "foo.example.com";
 	guint32 expected_prefix = 8;
 	NMIP4Address *ip4_addr;
-	struct in_addr addr;
+	guint32 addr;
 #define TEST17_NAME "wired-static-verify-ip4"
 	if_block *block = NULL;
 
@@ -561,9 +561,9 @@ test17_read_static_ipv4 (const char *path)
 			TEST17_NAME, "failed to verify %s: unexpected IP4 address prefix",
 			file);
 
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 			TEST17_NAME, "failed to verify %s: unexpected IP4 address: %s",
-			file, addr.s_addr);
+			file, addr);
 
 	/* DNS Addresses */
 	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
@@ -578,7 +578,7 @@ test17_read_static_ipv4 (const char *path)
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
 			NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #1",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -590,7 +590,7 @@ test17_read_static_ipv4 (const char *path)
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
 			NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #2",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -848,7 +848,7 @@ test19_read_static_ipv4_plen (const char *path)
 	const char *expected_address = "10.0.0.3";
 	guint32 expected_prefix = 8;
 	NMIP4Address *ip4_addr;
-	struct in_addr addr;
+	guint32 addr;
 #define TEST19_NAME "wired-static-verify-ip4-plen"
 	if_block *block = NULL;
 
@@ -896,9 +896,9 @@ test19_read_static_ipv4_plen (const char *path)
 			TEST19_NAME, "failed to verify %s: unexpected IP4 address prefix",
 			file);
 
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 			TEST19_NAME, "failed to verify %s: unexpected IP4 address: %s",
-			file, addr.s_addr);
+			file, addr);
 
 	g_object_unref (connection);
 }

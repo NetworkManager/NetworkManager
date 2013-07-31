@@ -70,16 +70,16 @@ static gchar *
 ip4_address_as_string (guint32 ip)
 {
 	char buf[INET_ADDRSTRLEN+1];
-	struct in_addr tmp_addr;
+	guint32 tmp_addr;
 
 	memset (&buf, '\0', sizeof (buf));
-	tmp_addr.s_addr = ip;
+	tmp_addr = ip;
 
 	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
 		return g_strdup (buf);
 	} else {
 		g_warning ("%s: error converting IP4 address 0x%X",
-		           __func__, ntohl (tmp_addr.s_addr));
+		           __func__, ntohl (tmp_addr));
 		return NULL;
 	}
 }

@@ -347,7 +347,7 @@ test_read_wired_static (const char *file,
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
-	struct in_addr addr;
+	guint32 addr;
 	struct in6_addr addr6;
 	const char *expected_address1 = "192.168.1.5";
 	const char *expected_address1_gw = "192.168.1.1";
@@ -395,9 +395,9 @@ test_read_wired_static (const char *file,
 	/* DNS Addresses */
 	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
 	g_assert_cmpint (inet_pton (AF_INET, expected_dns1, &addr), >, 0);
-	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, addr.s_addr);
+	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, addr);
 	g_assert_cmpint (inet_pton (AF_INET, expected_dns2, &addr), >, 0);
-	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, addr.s_addr);
+	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, addr);
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
@@ -405,9 +405,9 @@ test_read_wired_static (const char *file,
 	g_assert (ip4_addr);
 	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
 	g_assert_cmpint (inet_pton (AF_INET, expected_address1, &addr), >, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (ip4_addr), ==, addr.s_addr);
+	g_assert_cmpint (nm_ip4_address_get_address (ip4_addr), ==, addr);
 	g_assert_cmpint (inet_pton (AF_INET, expected_address1_gw, &addr), >, 0);
-	g_assert_cmpint (nm_ip4_address_get_gateway (ip4_addr), ==, addr.s_addr);
+	g_assert_cmpint (nm_ip4_address_get_gateway (ip4_addr), ==, addr);
 
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -506,7 +506,7 @@ test_read_wired_dhcp (void)
 	const char *expected_id = "System test-wired-dhcp";
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
-	struct in_addr addr;
+	guint32 addr;
 	const char *expected_dhcp_hostname = "foobar";
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP,
@@ -635,7 +635,7 @@ test_read_wired_dhcp (void)
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -646,7 +646,7 @@ test_read_wired_dhcp (void)
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -677,7 +677,7 @@ test_read_wired_global_gateway (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-global-gateway";
-	struct in_addr addr;
+	guint32 addr;
 	const char *expected_address1 = "192.168.1.5";
 	const char *expected_address1_gw = "192.168.1.2";
 	NMIP4Address *ip4_addr;
@@ -765,7 +765,7 @@ test_read_wired_global_gateway (void)
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 	        "wired-global-gateway-verify-ip4", "failed to verify %s: unexpected IP4 address #1",
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -776,7 +776,7 @@ test_read_wired_global_gateway (void)
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
-	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr,
 	        "wired-global-gateway-verify-ip4", "failed to verify %s: unexpected IP4 address #1 gateway",
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1177,7 +1177,7 @@ test_read_wired_static_routes (void)
 	GError *error = NULL;
 	const char *tmp;
 	NMIP4Route *ip4_route;
-	struct in_addr addr;
+	guint32 addr;
 	const char *expected_id = "System test-wired-static-routes";
 	const char *expected_dst1 = "11.22.33.0";
 	const char *expected_dst2 = "44.55.66.77";
@@ -1269,7 +1269,7 @@ test_read_wired_static_routes (void)
 	ASSERT (inet_pton (AF_INET, expected_dst1, &addr) > 0,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert destination IP address #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1282,7 +1282,7 @@ test_read_wired_static_routes (void)
 	ASSERT (inet_pton (AF_INET, expected_gw1, &addr) > 0,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1296,7 +1296,7 @@ test_read_wired_static_routes (void)
 	ASSERT (inet_pton (AF_INET, expected_dst2, &addr) > 0,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert destination IP address #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1309,7 +1309,7 @@ test_read_wired_static_routes (void)
 	ASSERT (inet_pton (AF_INET, expected_gw2, &addr) > 0,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
 	        "wired-static-routes-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1342,7 +1342,7 @@ test_read_wired_static_routes_legacy (void)
 	GError *error = NULL;
 	const char *tmp;
 	NMIP4Route *ip4_route;
-	struct in_addr addr;
+	guint32 addr;
 	const char *expected_id = "System test-wired-static-routes-legacy";
 	const char *expected_dst1 = "21.31.41.0";
 	const char *expected_dst2 = "32.42.52.62";
@@ -1437,7 +1437,7 @@ test_read_wired_static_routes_legacy (void)
 	ASSERT (inet_pton (AF_INET, expected_dst1, &addr) > 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1450,7 +1450,7 @@ test_read_wired_static_routes_legacy (void)
 	ASSERT (inet_pton (AF_INET, expected_gw1, &addr) > 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1469,7 +1469,7 @@ test_read_wired_static_routes_legacy (void)
 	ASSERT (inet_pton (AF_INET, expected_dst2, &addr) > 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1482,7 +1482,7 @@ test_read_wired_static_routes_legacy (void)
 	ASSERT (inet_pton (AF_INET, expected_gw2, &addr) > 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1501,7 +1501,7 @@ test_read_wired_static_routes_legacy (void)
 	ASSERT (inet_pton (AF_INET, expected_dst3, &addr) > 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #3",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #3",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1514,7 +1514,7 @@ test_read_wired_static_routes_legacy (void)
 	ASSERT (inet_pton (AF_INET, expected_gw3, &addr) > 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #3",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr.s_addr,
+	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #3",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -1552,7 +1552,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	guint32 expected_prefix2 = 16;
 	guint32 expected_prefix3 = 8;
 	NMIP4Address *ip4_addr;
-	struct in_addr addr;
+	guint32 addr;
 
 	connection = connection_from_file (file,
 	                                   NULL,
@@ -1638,7 +1638,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	ASSERT (inet_pton (AF_INET, expected_address1, &addr) > 0,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: couldn't convert IP address #1",
 		file);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #1",
 		file);
 
@@ -1655,7 +1655,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	ASSERT (inet_pton (AF_INET, expected_address2, &addr) > 0,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: couldn't convert IP address #2",
 		file);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #2",
 		file);
 
@@ -1672,7 +1672,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	ASSERT (inet_pton (AF_INET, expected_address3, &addr) > 0,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: couldn't convert IP address #3",
 		file);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #3",
 		file);
 
@@ -3340,7 +3340,7 @@ test_read_wifi_wep_adhoc (void)
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "adhoc";
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
-	struct in_addr addr;
+	guint32 addr;
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
 
@@ -3562,7 +3562,7 @@ test_read_wifi_wep_adhoc (void)
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -3573,7 +3573,7 @@ test_read_wifi_wep_adhoc (void)
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -10048,7 +10048,7 @@ test_read_ibft_static (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_dns1 = "10.16.255.2";
 	const char *expected_dns2 = "10.16.255.3";
-	struct in_addr addr;
+	guint32 addr;
 	const char *expected_address1 = "192.168.32.72";
 	const char *expected_address1_gw = "192.168.35.254";
 	NMIP4Address *ip4_addr;
@@ -10176,7 +10176,7 @@ test_read_ibft_static (void)
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
 	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -10187,7 +10187,7 @@ test_read_ibft_static (void)
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
 	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -10218,7 +10218,7 @@ test_read_ibft_static (void)
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
 	        "ibft-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1",
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -10229,7 +10229,7 @@ test_read_ibft_static (void)
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
-	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
+	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr,
 	        "ibft-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 gateway",
 	        TEST_IFCFG_IBFT_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,

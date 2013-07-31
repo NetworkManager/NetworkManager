@@ -111,10 +111,10 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 
 	num = nm_ip4_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++) {
-		struct in_addr addr;
+		guint32 addr;
 		char buf[INET_ADDRSTRLEN];
 
-		addr.s_addr = nm_ip4_config_get_nameserver (src, i);
+		addr = nm_ip4_config_get_nameserver (src, i);
 		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
 			add_string_item (rc->nameservers, buf);
 	}
@@ -136,10 +136,10 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 	/* NIS stuff */
 	num = nm_ip4_config_get_num_nis_servers (src);
 	for (i = 0; i < num; i++) {
-		struct in_addr addr;
+		guint32 addr;
 		char buf[INET_ADDRSTRLEN];
 
-		addr.s_addr = nm_ip4_config_get_nis_server (src, i);
+		addr = nm_ip4_config_get_nis_server (src, i);
 		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
 			add_string_item (rc->nis_servers, buf);
 	}

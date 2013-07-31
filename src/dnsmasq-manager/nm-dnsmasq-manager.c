@@ -250,7 +250,7 @@ create_dm_cmd_line (const char *iface,
 	NMCmdLine *cmd;
 	GString *s;
 	const NMPlatformIP4Address *tmp;
-	struct in_addr addr;
+	guint32 addr;
 	char buf[INET_ADDRSTRLEN + 15];
 	char localaddr[INET_ADDRSTRLEN + 1];
 
@@ -294,10 +294,10 @@ create_dm_cmd_line (const char *iface,
 	nm_cmd_line_add_string (cmd, "--strict-order");
 
 	s = g_string_new ("--listen-address=");
-	addr.s_addr = tmp->address;
+	addr = tmp->address;
 	if (!inet_ntop (AF_INET, &addr, &localaddr[0], INET_ADDRSTRLEN)) {
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
-		                                 ntohl (addr.s_addr));
+		                                 ntohl (addr));
 		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
 		nm_log_warn (LOGD_SHARING, "%s", err_msg);
 		g_free (err_msg);
@@ -310,10 +310,10 @@ create_dm_cmd_line (const char *iface,
 	s = g_string_new ("--dhcp-range=");
 
 	/* Add start of address range */
-	addr.s_addr = tmp->address + htonl (9);
+	addr = tmp->address + htonl (9);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
-		                                 ntohl (addr.s_addr));
+		                                 ntohl (addr));
 		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
 		nm_log_warn (LOGD_SHARING, "%s", err_msg);
 		g_free (err_msg);
@@ -324,10 +324,10 @@ create_dm_cmd_line (const char *iface,
 	g_string_append_c (s, ',');
 
 	/* Add end of address range */
-	addr.s_addr = tmp->address + htonl (99);
+	addr = tmp->address + htonl (99);
 	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
 		char *err_msg = g_strdup_printf ("error converting IP4 address 0x%X",
-		                                 ntohl (addr.s_addr));
+		                                 ntohl (addr));
 		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND, err_msg);
 		nm_log_warn (LOGD_SHARING, "%s", err_msg);
 		g_free (err_msg);

@@ -2561,7 +2561,7 @@ static gboolean
 nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	struct in_addr ip4_addr;
+	guint32 ip4_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -2572,7 +2572,7 @@ nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), ip4_addr.s_addr);
+		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), ip4_addr);
 	}
 	g_strfreev (strv);
 	return TRUE;

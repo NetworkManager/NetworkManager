@@ -238,10 +238,10 @@ add_uint_array (GKeyFile *kf,
 		items = g_array_sized_new (FALSE, TRUE, sizeof (guint32), g_strv_length (split));
 		for (iter = split; iter && *iter; iter++) {
 			if (strlen (g_strstrip (*iter))) {
-				struct in_addr addr;
+				guint32 addr;
 
 				g_assert_cmpint (inet_pton (AF_INET, *iter, &addr), ==, 1);
-				g_array_append_val (items, addr.s_addr);
+				g_array_append_val (items, addr);
 			}
 		}
 		value_hash_add_uint_array (props, key, items);
@@ -294,7 +294,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 		list = NULL;
 		for (iter = split; iter && *iter; iter++) {
 			NMIP4Address *addr;
-			struct in_addr a;
+			guint32 a;
 			char *p;
 
 			if (strlen (g_strstrip (*iter)) == 0)
@@ -307,7 +307,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 			*p++ = '\0';
 
 			g_assert_cmpint (inet_pton (AF_INET, *iter, &a), ==, 1);
-			nm_ip4_address_set_address (addr, a.s_addr);
+			nm_ip4_address_set_address (addr, a);
 			nm_ip4_address_set_prefix (addr, (guint) atoi (p));
 
 			p = strchr (p, ' ');
@@ -315,7 +315,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 			p++;
 
 			g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
-			nm_ip4_address_set_gateway (addr, a.s_addr);
+			nm_ip4_address_set_gateway (addr, a);
 
 			list = g_slist_append (list, addr);
 		}
@@ -338,7 +338,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 			list = NULL;
 			for (iter = split; iter && *iter; iter++) {
 				NMIP4Route *route;
-				struct in_addr a;
+				guint32 a;
 				char *p;
 
 				if (strlen (g_strstrip (*iter)) == 0)
@@ -351,7 +351,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 				*p++ = '\0';
 
 				g_assert_cmpint (inet_pton (AF_INET, *iter, &a), ==, 1);
-				nm_ip4_route_set_dest (route, a.s_addr);
+				nm_ip4_route_set_dest (route, a);
 				nm_ip4_route_set_prefix (route, (guint) atoi (p));
 
 				p = strchr (p, ' ');
@@ -359,7 +359,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 				p++;
 
 				g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
-				nm_ip4_route_set_next_hop (route, a.s_addr);
+				nm_ip4_route_set_next_hop (route, a);
 
 				p = strchr (p, ' ');
 				g_assert (p);

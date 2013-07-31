@@ -614,13 +614,13 @@ static gboolean
 ip_string_to_network_address (const gchar *str,
                               guint32 *out)
 {
-	struct in_addr addr;
+	guint32 addr;
 
 	/* IP address */
 	if (inet_pton (AF_INET, str, &addr) <= 0)
 		return FALSE;
 
-	*out = (guint32)addr.s_addr;
+	*out = (guint32)addr;
 	return TRUE;
 }
 

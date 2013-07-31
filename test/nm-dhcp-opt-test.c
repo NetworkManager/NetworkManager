@@ -202,7 +202,7 @@ void print_array (DBusConnection *connection, int opt)
 		fprintf (stderr, "%d ('%s'): (%d %s of type %s)  ", opt, name, num_items, num_items > 1 ? "elements" : "element", dbus_type_to_string (opt_type));
 		for (i = 0; i < num_items; i++)
 		{
-			struct in_addr	in;
+			guint32	in;
 			gboolean	last = (i == num_items - 1) ? TRUE : FALSE;
 
 			switch (opt_type)
@@ -214,10 +214,10 @@ void print_array (DBusConnection *connection, int opt)
 					fprintf (stderr, "%d%s", bool[i], last ? "" : ", ");
 					break;
 				case DBUS_TYPE_UINT32:
-					in.s_addr = uint32[i];
+					in = uint32[i];
 					if (!inet_ntop (AF_INET, &in, buf, INET_ADDRSTRLEN))
 						nm_warning ("%s: error converting IP4 address 0x%X",
-						            __func__, ntohl (in.s_addr));
+						            __func__, ntohl (in));
 					else
 						fprintf (stderr, "%u (%s)%s", uint32[i], buf, last ? "" : ", ");
 					break;

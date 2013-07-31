@@ -118,12 +118,12 @@ ip4_dns_writer (GKeyFile *file,
 
 	for (i = 0; i < array->len; i++) {
 		char buf[INET_ADDRSTRLEN + 1];
-		struct in_addr addr;
+		guint32 addr;
 
-		addr.s_addr = g_array_index (array, guint32, i);
+		addr = g_array_index (array, guint32, i);
 		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
 			g_warning ("%s: error converting IP4 address 0x%X",
-			           __func__, ntohl (addr.s_addr));
+			           __func__, ntohl (addr));
 		} else
 			list[num++] = g_strdup (buf);
 	}
@@ -155,13 +155,13 @@ write_ip4_values (GKeyFile *file,
 		for (k = 0; k < tuple_len; k++) {
 			if (k == addr1_pos || k == addr2_pos) {
 				char buf[INET_ADDRSTRLEN + 1];
-				struct in_addr addr;
+				guint32 addr;
 
 				/* IP addresses */
-				addr.s_addr = g_array_index (tuple, guint32, k);
+				addr = g_array_index (tuple, guint32, k);
 				if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
 					g_warning ("%s: error converting IP4 address 0x%X",
-					           __func__, ntohl (addr.s_addr));
+					           __func__, ntohl (addr));
 					success = FALSE;
 					break;
 				} else {

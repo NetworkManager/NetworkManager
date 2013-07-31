@@ -159,18 +159,18 @@ static void
 check_ip_block (ip_block * iblock, gchar * ip, gchar * netmask, gchar * gateway)
 {
 	char *str;
-	struct in_addr tmp_ip4_addr;
+	guint32 tmp_ip4_addr;
 
 	str = malloc (INET_ADDRSTRLEN);
-	tmp_ip4_addr.s_addr = iblock->ip;
+	tmp_ip4_addr = iblock->ip;
 	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
 	ASSERT (strcmp (ip, str) == 0, "check ip",
 		"ip expected:%s, find:%s", ip, str);
-	tmp_ip4_addr.s_addr = iblock->netmask;
+	tmp_ip4_addr = iblock->netmask;
 	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
 	ASSERT (strcmp (netmask, str) == 0, "check netmask",
 		"netmask expected:%s, find:%s", netmask, str);
-	tmp_ip4_addr.s_addr = iblock->gateway;
+	tmp_ip4_addr = iblock->gateway;
 	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
 	ASSERT (strcmp (gateway, str) == 0, "check gateway",
 		"gateway expected:%s, find:%s", gateway, str);

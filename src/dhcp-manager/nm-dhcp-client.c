@@ -833,8 +833,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 		char *slash;
 		NMPlatformIP4Route route;
 		int rt_cidr = 32;
-		struct in_addr rt_addr;
-		struct in_addr rt_route;
+		guint32 rt_addr, rt_route;
 
 		slash = strchr(*r, '/');
 		if (slash) {
@@ -856,15 +855,15 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 		}
 
 		have_routes = TRUE;
-		if (rt_cidr == 0 && rt_addr.s_addr == 0) {
+		if (rt_cidr == 0 && rt_addr == 0) {
 			/* FIXME: how to handle multiple routers? */
-			*gwaddr = rt_route.s_addr;
+			*gwaddr = rt_route;
 		} else {
 			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
 			memset (&route, 0, sizeof (route));
-			route.network = rt_addr.s_addr;
+			route.network = rt_addr;
 			route.plen = rt_cidr;
-			route.gateway = rt_route.s_addr;
+			route.gateway = rt_route;
 			nm_ip4_config_add_route (ip4_config, &route);
 		}
 	}
@@ -881,7 +880,7 @@ process_dhclient_rfc3442_route (const char **octets, NMPlatformIP4Route *route, 
 	int addr_len = 0, i = 0;
 	long int tmp;
 	char *next_hop;
-	struct in_addr tmp_addr;
+	guint32 tmp_addr;
 
 	*success = FALSE;
 
@@ -915,8 +914,8 @@ process_dhclient_rfc3442_route (const char **octets, NMPlatformIP4Route *route, 
 			g_free (str_addr);
 			goto error;
 		}
-		tmp_addr.s_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
-		route->network = tmp_addr.s_addr;
+		tmp_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
+		route->network = tmp_addr;
 	}
 
 	/* Handle next hop */
@@ -925,7 +924,7 @@ process_dhclient_rfc3442_route (const char **octets, NMPlatformIP4Route *route, 
 		g_free (next_hop);
 		goto error;
 	}
-	route->gateway = tmp_addr.s_addr;
+	route->gateway = tmp_addr;
 	g_free (next_hop);
 
 	*success = TRUE;
@@ -1063,8 +1062,7 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 
 	for (s = searches; *s; s += 2) {
 		NMPlatformIP4Route route;
-		struct in_addr rt_addr;
-		struct in_addr rt_route;
+		guint32 rt_addr, rt_route;
 
 		if (inet_pton (AF_INET, *s, &rt_addr) <= 0) {
 			nm_log_warn (LOGD_DHCP, "DHCP provided invalid static route address: '%s'", *s);
@@ -1078,9 +1076,9 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 		// FIXME: ensure the IP addresse and route are sane
 
 		memset (&route, 0, sizeof (route));
-		route.network = rt_addr.s_addr;
+		route.network = rt_addr;
 		route.plen = 32;
-		route.gateway = rt_route.s_addr;
+		route.gateway = rt_route;
 
 		nm_ip4_config_add_route (ip4_config, &route);
 		nm_log_info (LOGD_DHCP, "  static route %s gw %s", *s, *(s + 1));
@@ -1141,7 +1139,7 @@ ip4_options_to_config (NMDHCPClient *self)
 {
 	NMDHCPClientPrivate *priv;
 	NMIP4Config *ip4_config = NULL;
-	struct in_addr tmp_addr;
+	guint32 tmp_addr;
 	NMPlatformIP4Address address;
 	char *str = NULL;
 	guint32 gwaddr = 0, plen = 0;
@@ -1157,14 +1155,14 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	str = g_hash_table_lookup (priv->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		address.address = tmp_addr.s_addr;
+		address.address = tmp_addr;
 		nm_log_info (LOGD_DHCP4, "  address %s", str);
 	} else
 		goto error;
 
 	str = g_hash_table_lookup (priv->options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		plen = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
+		plen = nm_utils_ip4_netmask_to_prefix (tmp_addr);
 		nm_log_info (LOGD_DHCP4, "  plen %d (%s)", plen, str);
 	} else {
 		/* Get default netmask for the IP according to appropriate class. */
@@ -1197,7 +1195,7 @@ ip4_options_to_config (NMDHCPClient *self)
 			for (s = routers; *s; s++) {
 				/* FIXME: how to handle multiple routers? */
 				if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-					nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
+					nm_ip4_config_set_gateway (ip4_config, tmp_addr);
 					nm_log_info (LOGD_DHCP4, "  gateway %s", *s);
 					break;
 				} else
@@ -1226,7 +1224,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 		for (s = searches; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_nameserver (ip4_config, tmp_addr.s_addr);
+				nm_ip4_config_add_nameserver (ip4_config, tmp_addr);
 				nm_log_info (LOGD_DHCP4, "  nameserver '%s'", *s);
 			} else
 				nm_log_warn (LOGD_DHCP4, "ignoring invalid nameserver '%s'", *s);
@@ -1257,7 +1255,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 		for (s = searches; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_wins (ip4_config, tmp_addr.s_addr);
+				nm_ip4_config_add_wins (ip4_config, tmp_addr);
 				nm_log_info (LOGD_DHCP4, "  wins '%s'", *s);
 			} else
 				nm_log_warn (LOGD_DHCP4, "ignoring invalid WINS server '%s'", *s);
@@ -1291,7 +1289,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 		for (s = searches; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_nis_server (ip4_config, tmp_addr.s_addr);
+				nm_ip4_config_add_nis_server (ip4_config, tmp_addr);
 				nm_log_info (LOGD_DHCP4, "  nis '%s'", *s);
 			} else
 				nm_log_warn (LOGD_DHCP4, "ignoring invalid NIS server '%s'", *s);

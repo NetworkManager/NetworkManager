@@ -517,16 +517,16 @@ static char addr_to_string_buf[INET6_ADDRSTRLEN + 1];
 static const char *
 ip_address_to_string (guint32 numeric)
 {
-	struct in_addr temp_addr;
+	guint32 temp_addr;
 
 	memset (&addr_to_string_buf, '\0', sizeof (addr_to_string_buf));
-	temp_addr.s_addr = numeric;
+	temp_addr = numeric;
 
 	if (inet_ntop (AF_INET, &temp_addr, addr_to_string_buf, INET_ADDRSTRLEN)) {
 		return addr_to_string_buf;
 	} else {
 		nm_log_warn (LOGD_VPN, "error converting IP4 address 0x%X",
-		             ntohl (temp_addr.s_addr));
+		             ntohl (temp_addr));
 		return NULL;
 	}
 }

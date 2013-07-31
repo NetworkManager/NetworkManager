@@ -353,7 +353,7 @@ static ip_block *
 create_ip4_block (gchar * ip)
 {
 	ip_block *iblock = g_slice_new0 (ip_block);
-	struct in_addr tmp_ip4_addr;
+	guint32 tmp_ip4_addr;
 	int i;
 	guint length;
 	gchar **ip_mask;
@@ -366,7 +366,7 @@ create_ip4_block (gchar * ip)
 		length = g_strv_length (ip_mask);
 		if (!inet_pton (AF_INET, ip_mask[0], &tmp_ip4_addr))
 			goto error;
-		iblock->ip = tmp_ip4_addr.s_addr;
+		iblock->ip = tmp_ip4_addr;
 		prefix = ip_mask[1];
 		i = 0;
 		while (i < length && g_ascii_isdigit (prefix[i]))
@@ -380,7 +380,7 @@ create_ip4_block (gchar * ip)
 		length = g_strv_length (ip_mask);
 		if (!inet_pton (AF_INET, ip_mask[0], &tmp_ip4_addr))
 			goto error;
-		iblock->ip = tmp_ip4_addr.s_addr;
+		iblock->ip = tmp_ip4_addr;
 		i = 0;
 		while (i < length && !strstr (ip_mask[++i], "netmask")) ;
 		while (i < length && ip_mask[++i][0] == '\0') ;
@@ -388,7 +388,7 @@ create_ip4_block (gchar * ip)
 			goto error;
 		if (!inet_pton (AF_INET, ip_mask[i], &tmp_ip4_addr))
 			goto error;
-		iblock->netmask = tmp_ip4_addr.s_addr;
+		iblock->netmask = tmp_ip4_addr;
 	} else {
 		g_slice_free (ip_block, iblock);
 		if (!is_ip6_address (ip) && !strstr (ip, "dhcp"))
@@ -449,7 +449,7 @@ static guint32
 get_ip4_gateway (gchar * gateway)
 {
 	gchar *tmp, *split;
-	struct in_addr tmp_ip4_addr;
+	guint32 tmp_ip4_addr;
 
 	if (!gateway)
 		return 0;
@@ -470,7 +470,7 @@ get_ip4_gateway (gchar * gateway)
 	if (!inet_pton (AF_INET, tmp, &tmp_ip4_addr))
 		goto error;
 	g_free (tmp);
-	return tmp_ip4_addr.s_addr;
+	return tmp_ip4_addr;
 error:
 	if (!is_ip6_address (tmp))
 		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv4 gateway: %s",
@@ -688,7 +688,7 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 	const char *dns_servers;
 	gchar **server_list, *stripped;
 	guint length, i;
-	struct in_addr tmp_ip4_addr;
+	guint32 tmp_ip4_addr;
 	guint32 new_dns;
 
 	dns_servers = ifnet_get_data (conn_name, "dns_servers");
@@ -714,7 +714,7 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 					     server_list[i]);
 			continue;
 		}
-		new_dns = tmp_ip4_addr.s_addr;
+		new_dns = tmp_ip4_addr;
 		if (new_dns && !nm_setting_ip4_config_add_dns (s_ip4, new_dns))
 			PLUGIN_WARN (IFNET_PLUGIN_NAME,
 				     "warning: duplicate DNS server %s",

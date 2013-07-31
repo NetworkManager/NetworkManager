@@ -437,7 +437,7 @@ eni_plugin_error_quark() {
 static void
 ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 {
-	struct in_addr addr;
+	guint32 addr;
 	char **list, **iter;
 
 	if (dns == NULL)
@@ -454,7 +454,7 @@ ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 			continue;
 		}
 
-		if (!nm_setting_ip4_config_add_dns (s_ip4, addr.s_addr)) {
+		if (!nm_setting_ip4_config_add_dns (s_ip4, addr)) {
 			PLUGIN_WARN ("SCPlugin-Ifupdown",
 					   "    warning: duplicate DNS domain '%s'", *iter);
 		}
@@ -475,7 +475,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 	if (!is_static) {
 		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	} else {
-		struct in_addr tmp_addr, tmp_mask, tmp_gw;
+		guint32 tmp_addr, tmp_mask, tmp_gw;
 		NMIP4Address *addr;
 		const char *address_v;
 		const char *netmask_v;
@@ -510,7 +510,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 						   "Invalid IPv4 netmask '%s'", netmask_v);
 				goto error;
 			} else {
-				netmask_int = nm_utils_ip4_netmask_to_prefix (tmp_mask.s_addr);
+				netmask_int = nm_utils_ip4_netmask_to_prefix (tmp_mask);
 			}
 		}
 
@@ -526,9 +526,9 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 
 		/* Add the new address to the setting */
 		addr = nm_ip4_address_new ();
-		nm_ip4_address_set_address (addr, tmp_addr.s_addr);
+		nm_ip4_address_set_address (addr, tmp_addr);
 		nm_ip4_address_set_prefix (addr, netmask_int);
-		nm_ip4_address_set_gateway (addr, tmp_gw.s_addr);
+		nm_ip4_address_set_gateway (addr, tmp_gw);
 
 		if (nm_setting_ip4_config_add_address (s_ip4, addr)) {
 			PLUGIN_PRINT("SCPlugin-Ifupdown", "addresses count: %d",

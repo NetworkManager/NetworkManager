@@ -370,7 +370,7 @@ NMIP4Address *
 nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError **error)
 {
 	NMIP4Address *addr = NULL;
-	struct in_addr ip4_addr, gw_addr;
+	guint32 ip4_addr, gw_addr;
 	char *tmp;
 	char *plen;
 	long int prefix;
@@ -405,9 +405,9 @@ nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError 
 	}
 
 	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip4_addr.s_addr);
+	nm_ip4_address_set_address (addr, ip4_addr);
 	nm_ip4_address_set_prefix (addr, (guint32) prefix);
-	nm_ip4_address_set_gateway (addr, gw_addr.s_addr);
+	nm_ip4_address_set_gateway (addr, gw_addr);
 
 finish:
 	g_free (tmp);
@@ -477,7 +477,7 @@ NMIP4Route *
 nmc_parse_and_build_ip4_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error)
 {
 	NMIP4Route *route = NULL;
-	struct in_addr ip4_addr, next_hop_addr;
+	guint32 ip4_addr, next_hop_addr;
 	char *tmp;
 	char *plen;
 	long int prefix, metric;
@@ -521,9 +521,9 @@ nmc_parse_and_build_ip4_route (const char *ip_str, const char *next_hop_str, con
 	}
 
 	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, ip4_addr.s_addr);
+	nm_ip4_route_set_dest (route, ip4_addr);
 	nm_ip4_route_set_prefix (route, (guint32) prefix);
-	nm_ip4_route_set_next_hop (route, next_hop_addr.s_addr);
+	nm_ip4_route_set_next_hop (route, next_hop_addr);
 	nm_ip4_route_set_metric (route, (guint32) metric);
 
 finish:

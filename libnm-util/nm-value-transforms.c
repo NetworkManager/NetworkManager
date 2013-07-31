@@ -145,16 +145,16 @@ _nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_va
 	printable = g_string_new (NULL);
 	while (array && (i < array->len)) {
 		char buf[INET_ADDRSTRLEN + 1];
-		struct in_addr addr;
+		guint32 addr;
 
 		if (i > 0)
 			g_string_append (printable, ", ");
 
 		memset (buf, 0, sizeof (buf));
-		addr.s_addr = g_array_index (array, guint32, i++);
+		addr = g_array_index (array, guint32, i++);
 		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 			g_warning ("%s: error converting IP4 address 0x%X",
-			           __func__, ntohl (addr.s_addr));
+			           __func__, ntohl (addr));
 		g_string_append (printable, buf);
 	}
 
@@ -176,7 +176,7 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 	while (ptr_array && (i < ptr_array->len)) {
 		GArray *array;
 		char buf[INET_ADDRSTRLEN + 1];
-		struct in_addr addr;
+		guint32 addr;
 		gboolean is_addr; /* array contains address x route */
 
 		if (i > 0)
@@ -191,10 +191,10 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 		is_addr = (array->len < 4);
 
 		memset (buf, 0, sizeof (buf));
-		addr.s_addr = g_array_index (array, guint32, 0);
+		addr = g_array_index (array, guint32, 0);
 		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 			g_warning ("%s: error converting IP4 address 0x%X",
-			           __func__, ntohl (addr.s_addr));
+			           __func__, ntohl (addr));
 		if (is_addr)
 			g_string_append_printf (printable, "ip = %s", buf);
 		else
@@ -205,10 +205,10 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 
 		if (array->len > 2) {
 			memset (buf, 0, sizeof (buf));
-			addr.s_addr = g_array_index (array, guint32, 2);
+			addr = g_array_index (array, guint32, 2);
 			if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
 				g_warning ("%s: error converting IP4 address 0x%X",
-				           __func__, ntohl (addr.s_addr));
+				           __func__, ntohl (addr));
 			if (is_addr)
 				g_string_append_printf (printable, ", gw = %s", buf);
 			else

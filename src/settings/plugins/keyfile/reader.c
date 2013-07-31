@@ -114,7 +114,7 @@ static gpointer
 build_ip4_address_or_route (const char *address_str, guint32 plen, const char *gateway_str, guint32 metric, gboolean route)
 {
 	GArray *result;
-	struct in_addr addr;
+	guint32 addr;
 	guint32 address = 0;
 	guint32 gateway = 0;
 	int err;
@@ -127,7 +127,7 @@ build_ip4_address_or_route (const char *address_str, guint32 plen, const char *g
 		g_warning ("%s: ignoring invalid IPv4 address '%s'", __func__, address_str);
 		return NULL;
 	}
-	address = addr.s_addr;
+	address = addr;
 	/* Gateway */
 	if (gateway_str) {
 		err = inet_pton (AF_INET, gateway_str, &addr);
@@ -135,7 +135,7 @@ build_ip4_address_or_route (const char *address_str, guint32 plen, const char *g
 			g_warning ("%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
 			return NULL;
 		}
-		gateway = addr.s_addr;
+		gateway = addr;
 	}
 	else
 		gateway = 0;
@@ -445,7 +445,7 @@ ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 
 	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
 	for (iter = list; *iter; iter++) {
-		struct in_addr addr;
+		guint32 addr;
 
 		ret = inet_pton (AF_INET, *iter, &addr);
 		if (ret <= 0) {
@@ -453,7 +453,7 @@ ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 			continue;
 		}
 
-		g_array_append_val (array, addr.s_addr);
+		g_array_append_val (array, addr);
 	}
 	g_strfreev (list);
 

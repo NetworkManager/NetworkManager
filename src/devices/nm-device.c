@@ -2018,7 +2018,7 @@ aipd_cleanup (NMDevice *self)
 }
 
 static NMIP4Config *
-aipd_get_ip4_config (NMDevice *self, struct in_addr lla)
+aipd_get_ip4_config (NMDevice *self, guint32 lla)
 {
 	NMIP4Config *config = NULL;
 	NMPlatformIP4Address address;
@@ -2028,7 +2028,7 @@ aipd_get_ip4_config (NMDevice *self, struct in_addr lla)
 	g_assert (config);
 
 	memset (&address, 0, sizeof (address));
-	address.address = lla.s_addr;
+	address.address = lla;
 	address.plen = 16;
 	nm_ip4_config_add_address (config, &address);
 
@@ -2074,7 +2074,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 	iface = nm_device_get_iface (self);
 
 	if (strcmp (event, "BIND") == 0) {
-		struct in_addr lla;
+		guint32 lla;
 		NMIP4Config *config;
 
 		if (inet_pton (AF_INET, address, &lla) <= 0) {
@@ -2084,7 +2084,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 			return;
 		}
 
-		if ((lla.s_addr & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
+		if ((lla & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
 			nm_log_err (LOGD_AUTOIP4, "(%s): invalid address %s received from avahi-autoipd (not link-local).",
 			            iface, address);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
