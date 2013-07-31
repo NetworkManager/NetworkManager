@@ -75,16 +75,7 @@ update_connected (NMConnectivity *self, gboolean connected)
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	gboolean old_connected = priv->connected;
 
-#if WITH_CONCHECK
-	if (priv->uri == NULL || priv->interval == 0) {
-		/* Default to connected if no checks are to be run */
-		priv->connected = TRUE;
-	} else
-		priv->connected = connected;
-#else
-	priv->connected = TRUE;
-#endif
-
+	priv->connected = connected;
 	if (priv->connected != old_connected)
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_CONNECTED);
 }
@@ -93,10 +84,15 @@ update_connected (NMConnectivity *self, gboolean connected)
 static void
 nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_data)
 {
-	NMConnectivity *self = NM_CONNECTIVITY (user_data);
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	GSimpleAsyncResult *simple = user_data;
+	NMConnectivity *self;
+	NMConnectivityPrivate *priv;
 	gboolean connected_new = FALSE;
 	const char *nm_header;
+
+	self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+	g_object_unref (self);
+	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	/* Check headers; if we find the NM-specific one we're done */
 	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
@@ -118,70 +114,118 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 		             priv->uri, msg->status_code, msg->reason_phrase);
 	}
 
-	/* update connectivity and emit signal */
-	update_connected (self, connected_new);
+	g_simple_async_result_set_op_res_gboolean (simple, connected_new);
+	g_simple_async_result_complete (simple);
 
+	update_connected (self, connected_new);
+}
+
+static void
+run_check_complete (GObject      *object,
+                    GAsyncResult *result,
+                    gpointer      user_data)
+{
+	NMConnectivity *self = NM_CONNECTIVITY (object);
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	nm_connectivity_check_finish (self, result, &error);
 	priv->running = FALSE;
+	if (error) {
+		nm_log_err (LOGD_CONCHECK, "Connectivity check failed: %s", error->message);
+		g_error_free (error);
+	}
 }
 
 static gboolean
 run_check (gpointer user_data)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (user_data);
-	NMConnectivityPrivate *priv;
-	SoupMessage *msg;
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), FALSE);
-	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-
-	msg = soup_message_new ("GET", priv->uri);
-	g_return_val_if_fail (msg != NULL, FALSE);
-
-	soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
-	soup_session_queue_message (priv->soup_session,
-	                            msg,
-	                            nm_connectivity_check_cb,
-	                            self);
-
+	nm_connectivity_check_async (self, run_check_complete, NULL);
 	priv->running = TRUE;
 	nm_log_dbg (LOGD_CONCHECK, "Connectivity check with uri '%s' started.", priv->uri);
+
 	return TRUE;
 }
 #endif
 
 void
-nm_connectivity_start_check (NMConnectivity *self)
+nm_connectivity_set_online (NMConnectivity *self,
+                            gboolean        online)
 {
 #if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	if (!priv->uri || !priv->interval) {
-		nm_connectivity_stop_check (self);
+	if (online && priv->uri && priv->interval) {
+		if (!priv->check_id)
+			priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
+		if (!priv->running)
+			run_check (self);
+
 		return;
-	}
-
-	if (priv->check_id == 0)
-		priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
-
-	if (priv->running == FALSE)
-		run_check (self);
-#endif
-}
-
-void
-nm_connectivity_stop_check (NMConnectivity *self)
-{
-#if WITH_CONCHECK
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-
-	if (priv->check_id) {
+	} else if (priv->check_id) {
 		g_source_remove (priv->check_id);
 		priv->check_id = 0;
 	}
-
-	update_connected (self, FALSE);
 #endif
+
+	/* Either @online is %TRUE but we aren't checking connectivity, or
+	 * @online is %FALSE. Either way we can update our status immediately.
+	 */
+	update_connected (self, online);
 }
+
+void
+nm_connectivity_check_async (NMConnectivity      *self,
+                             GAsyncReadyCallback  callback,
+                             gpointer             user_data)
+{
+	NMConnectivityPrivate *priv;
+#if WITH_CONCHECK
+	SoupMessage *msg;
+#endif
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), FALSE);
+	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
+	                                    nm_connectivity_check_async);
+
+#if WITH_CONCHECK
+	if (priv->uri && priv->interval) {
+		msg = soup_message_new ("GET", priv->uri);
+		soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
+		soup_session_queue_message (priv->soup_session,
+		                            msg,
+		                            nm_connectivity_check_cb,
+		                            simple);
+
+		return;
+	}
+#endif
+
+	g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	g_simple_async_result_complete_in_idle (simple);
+}
+
+gboolean
+nm_connectivity_check_finish (NMConnectivity  *self,
+                              GAsyncResult    *result,
+                              GError         **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self), nm_connectivity_check_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
 
 NMConnectivity *
 nm_connectivity_new (void)

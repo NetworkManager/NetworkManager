@@ -1,4 +1,3 @@
-
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
@@ -24,6 +23,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <gio/gio.h>
 
 #include "NetworkManager.h"
 
@@ -40,7 +40,6 @@
 #define NM_CONNECTIVITY_RESPONSE  "response"
 #define NM_CONNECTIVITY_CONNECTED "connected"
 
-
 typedef struct {
 	GObject parent;
 } NMConnectivity;
@@ -51,13 +50,18 @@ typedef struct {
 
 GType nm_connectivity_get_type (void);
 
-
 NMConnectivity *nm_connectivity_new           (void);
 
-void            nm_connectivity_start_check   (NMConnectivity *connectivity);
+void            nm_connectivity_set_online    (NMConnectivity       *self,
+                                               gboolean              online);
 
-void            nm_connectivity_stop_check    (NMConnectivity *connectivity);
+gboolean        nm_connectivity_get_connected (NMConnectivity       *self);
 
-gboolean        nm_connectivity_get_connected (NMConnectivity *connectivity);
+void            nm_connectivity_check_async   (NMConnectivity       *self,
+                                               GAsyncReadyCallback   callback,
+                                               gpointer              user_data);
+gboolean        nm_connectivity_check_finish  (NMConnectivity       *self,
+                                               GAsyncResult         *result,
+                                               GError              **error);
 
 #endif /* NM_CONNECTIVITY_H */

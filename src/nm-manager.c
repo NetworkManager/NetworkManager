@@ -528,11 +528,73 @@ modem_added (NMModemManager *modem_manager,
 }
 
 static void
+set_state (NMManager *manager, NMState state)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	const char *state_str;
+
+	if (priv->state == state)
+		return;
+
+	priv->state = state;
+
+	switch (state) {
+	case NM_STATE_ASLEEP:
+		state_str = "ASLEEP";
+		break;
+	case NM_STATE_DISCONNECTED:
+		state_str = "DISCONNECTED";
+		break;
+	case NM_STATE_DISCONNECTING:
+		state_str = "DISCONNECTING";
+		break;
+	case NM_STATE_CONNECTING:
+		state_str = "CONNECTING";
+		break;
+	case NM_STATE_CONNECTED_LOCAL:
+		state_str = "CONNECTED_LOCAL";
+		break;
+	case NM_STATE_CONNECTED_SITE:
+		state_str = "CONNECTED_SITE";
+		break;
+	case NM_STATE_CONNECTED_GLOBAL:
+		state_str = "CONNECTED_GLOBAL";
+		break;
+	case NM_STATE_UNKNOWN:
+	default:
+		state_str = "UNKNOWN";
+		break;
+	}
+
+	nm_log_info (LOGD_CORE, "NetworkManager state is now %s", state_str);
+
+	g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
+}
+
+static void
+checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMManager *manager = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->state == NM_STATE_CONNECTING || priv->state == NM_STATE_CONNECTED_SITE) {
+		if (nm_connectivity_check_finish (priv->connectivity, result, NULL))
+			set_state (manager, NM_STATE_CONNECTED_GLOBAL);
+		else
+			set_state (manager, NM_STATE_CONNECTED_SITE);
+	}
+
+	g_object_unref (manager);
+}
+
+static void
 nm_manager_update_state (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
 	GSList *iter;
+	gboolean want_connectivity_check = FALSE;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
@@ -546,11 +608,14 @@ nm_manager_update_state (NMManager *manager)
 			NMDeviceState state = nm_device_get_state (dev);
 
 			if (state == NM_DEVICE_STATE_ACTIVATED) {
-				new_state = NM_STATE_CONNECTED_GLOBAL;
-				/* Connectivity check might have a better idea */
-				if (nm_connectivity_get_connected (priv->connectivity) == FALSE)
-					new_state = NM_STATE_CONNECTED_SITE;
-				break;
+				nm_connectivity_set_online (priv->connectivity, TRUE);
+				if (!nm_connectivity_get_connected (priv->connectivity)) {
+					new_state = NM_STATE_CONNECTING;
+					want_connectivity_check = TRUE;
+				} else {
+					new_state = NM_STATE_CONNECTED_GLOBAL;
+					break;
+				}
 			}
 
 			if (nm_device_is_activating (dev))
@@ -562,12 +627,15 @@ nm_manager_update_state (NMManager *manager)
 		}
 	}
 
-	if (priv->state != new_state) {
-		priv->state = new_state;
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
-
-		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
+	if (new_state == NM_STATE_CONNECTING && want_connectivity_check) {
+		nm_connectivity_check_async (priv->connectivity,
+		                             checked_connectivity,
+		                             g_object_ref (manager));
+		return;
 	}
+
+	nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
+	set_state (manager, new_state);
 }
 
 static void
@@ -578,7 +646,6 @@ manager_device_state_changed (NMDevice *device,
                               gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -593,21 +660,6 @@ manager_device_state_changed (NMDevice *device,
 	}
 
 	nm_manager_update_state (self);
-
-	if (priv->state >= NM_STATE_CONNECTED_LOCAL) {
-		if (old_state == NM_DEVICE_STATE_ACTIVATED || new_state == NM_DEVICE_STATE_ACTIVATED) {
-			/* Still connected, but a device activated or deactivated; make sure
-			 * we still have connectivity on the other activated devices.
-			 */
-			nm_log_dbg (LOGD_CORE, "(%s): triggered connectivity check due to state change",
-			            nm_device_get_iface (device));
-			nm_connectivity_start_check (priv->connectivity);
-		}
-	} else {
-		/* Cannot be connected if no devices are activated */
-		nm_log_dbg (LOGD_CORE, "stopping connectivity checks");
-		nm_connectivity_stop_check (priv->connectivity);
-	}
 }
 
 static void device_has_pending_action_changed (NMDevice *device,
