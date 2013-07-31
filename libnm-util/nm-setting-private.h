@@ -38,6 +38,14 @@ GType _nm_setting_lookup_setting_type (const char *name);
 GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
+/* NM_SETTING_COMPARE_FLAG_CANDIDATE: check a whether a device-generated connection
+ * can be meaningfully replaced by a configured connection. With this flag
+ * the matching function is asymetric and only takes into account properties
+ * mandated by the candidate configured connection. It is for internal use by
+ * NetworkManager.
+ */
+#define NM_SETTING_COMPARE_FLAG_CANDIDATE 0x80000000
+
 /* Ensure the setting's GType is registered at library load time */
 #define NM_SETTING_REGISTER_TYPE(x) \
 static void __attribute__((constructor)) register_setting (void) \
