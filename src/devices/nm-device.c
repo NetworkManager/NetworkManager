@@ -4140,6 +4140,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
 	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
+	nm_platform_route_cache_update ();
 
 	/* Clear legacy IPv4 address property */
 	priv->ip4_address = 0;
