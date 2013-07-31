@@ -32,22 +32,21 @@ addr_init (NMPlatformIP4Address *a, const char *addr, guint plen)
 	a->plen = plen;
 }
 
-static NMIP4Route *
-route_new (const char *network, guint plen, const char *gw)
+static void
+route_new (NMPlatformIP4Route *route, const char *network, guint plen, const char *gw)
 {
-	NMIP4Route *route;
 	guint n;
 
-	route = nm_ip4_route_new ();
+	g_assert (route);
+	memset (route, 0, sizeof (*route));
 	g_assert (inet_pton (AF_INET, network, (void *) &n) == 1);
-	nm_ip4_route_set_dest (route, n);
-	nm_ip4_route_set_prefix (route, plen);
+	route->network = n;
+	route->plen = plen;
 	if (gw) {
 		n = 0;
 		g_assert (inet_pton (AF_INET, gw, (void *) &n) == 1);
-		nm_ip4_route_set_next_hop (route, n);
+		route->gateway = n;
 	}
-	return route;
 }
 
 static guint32
@@ -64,7 +63,7 @@ build_test_config (void)
 {
 	NMIP4Config *config;
 	NMPlatformIP4Address addr;
-	NMIP4Route *route;
+	NMPlatformIP4Route route;
 
 	/* Build up the config to subtract */
 	config = nm_ip4_config_new ();
@@ -72,11 +71,11 @@ build_test_config (void)
 	addr_init (&addr, "192.168.1.10", 24);
 	nm_ip4_config_add_address (config, &addr);
 	
-	route = route_new ("10.0.0.0", 8, "192.168.1.1");
-	nm_ip4_config_take_route (config, route);
+	route_new (&route, "10.0.0.0", 8, "192.168.1.1");
+	nm_ip4_config_add_route (config, &route);
 
-	route = route_new ("172.16.0.0", 16, "192.168.1.1");
-	nm_ip4_config_take_route (config, route);
+	route_new (&route, "172.16.0.0", 16, "192.168.1.1");
+	nm_ip4_config_add_route (config, &route);
 
 	nm_ip4_config_set_gateway (config, addr_to_num ("192.168.1.1"));
 
@@ -104,7 +103,7 @@ test_subtract (void)
 	NMIP4Config *src, *dst;
 	NMPlatformIP4Address addr;
 	const NMPlatformIP4Address *test_addr;
-	NMIP4Route *route;
+	NMPlatformIP4Route route, *test_route;
 	const char *expected_addr = "192.168.1.12";
 	guint32 expected_addr_plen = 24;
 	const char *expected_route_dest = "8.7.6.5";
@@ -124,8 +123,8 @@ test_subtract (void)
 	addr_init (&addr, expected_addr, expected_addr_plen);
 	nm_ip4_config_add_address (dst, &addr);
 	
-	route = route_new (expected_route_dest, expected_route_plen, expected_route_next_hop);
-	nm_ip4_config_take_route (dst, route);
+	route_new (&route, expected_route_dest, expected_route_plen, expected_route_next_hop);
+	nm_ip4_config_add_route (dst, &route);
 
 	nm_ip4_config_add_nameserver (dst, expected_ns1);
 	nm_ip4_config_add_nameserver (dst, expected_ns2);
@@ -148,11 +147,11 @@ test_subtract (void)
 	g_assert_cmpuint (nm_ip4_config_get_gateway (dst), ==, 0);
 
 	g_assert_cmpuint (nm_ip4_config_get_num_routes (dst), ==, 1);
-	route = nm_ip4_config_get_route (dst, 0);
-	g_assert (route != NULL);
-	g_assert_cmpuint (nm_ip4_route_get_dest (route), ==, addr_to_num (expected_route_dest));
-	g_assert_cmpuint (nm_ip4_route_get_prefix (route), ==, expected_route_plen);
-	g_assert_cmpuint (nm_ip4_route_get_next_hop (route), ==, addr_to_num (expected_route_next_hop));
+	test_route = nm_ip4_config_get_route (dst, 0);
+	g_assert (test_route != NULL);
+	g_assert_cmpuint (test_route->network, ==, addr_to_num (expected_route_dest));
+	g_assert_cmpuint (test_route->plen, ==, expected_route_plen);
+	g_assert_cmpuint (test_route->gateway, ==, addr_to_num (expected_route_next_hop));
 
 	g_assert_cmpuint (nm_ip4_config_get_num_nameservers (dst), ==, 2);
 	g_assert_cmpuint (nm_ip4_config_get_nameserver (dst, 0), ==, expected_ns1);

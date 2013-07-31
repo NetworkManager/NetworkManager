@@ -24,9 +24,7 @@
 #include <glib-object.h>
 
 #include "nm-platform.h"
-/* NMIP6Route type */
 #include "nm-setting-ip6-config.h"
-#include "nm-platform.h"
 
 #define NM_TYPE_IP6_CONFIG (nm_ip6_config_get_type ())
 #define NM_IP6_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP6_CONFIG, NMIP6Config))
@@ -81,10 +79,9 @@ NMPlatformIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);
-void nm_ip6_config_add_route (NMIP6Config *config, NMIP6Route *route);
-void nm_ip6_config_take_route (NMIP6Config *config, NMIP6Route *route);
+void nm_ip6_config_add_route (NMIP6Config *config, NMPlatformIP6Route *route);
 guint32 nm_ip6_config_get_num_routes (NMIP6Config *config);
-NMIP6Route *  nm_ip6_config_get_route (NMIP6Config *config, guint32 i);
+NMPlatformIP6Route *  nm_ip6_config_get_route (NMIP6Config *config, guint32 i);
 
 /* Nameservers */
 void nm_ip6_config_reset_nameservers (NMIP6Config *config);

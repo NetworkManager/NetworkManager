@@ -85,9 +85,9 @@ nm_dns_utils_get_ip4_rdns_domains (NMIP4Config *ip4)
 	}
 
 	for (i = 0; i < nm_ip4_config_get_num_routes (ip4); i++) {
-		NMIP4Route *route = nm_ip4_config_get_route (ip4, i);
+		NMPlatformIP4Route *route = nm_ip4_config_get_route (ip4, i);
 
-		add_ip4_to_rdns_array (nm_ip4_route_get_dest (route), domains);
+		add_ip4_to_rdns_array (route->network, domains);
 	}
 
 	/* Terminating NULL so we can use g_strfreev() to free it */

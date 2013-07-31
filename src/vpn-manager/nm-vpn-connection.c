@@ -300,7 +300,7 @@ add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
 	NMIP4Config *parent_config;
 	guint32 parent_gw;
-	NMIP4Route *route;
+	NMPlatformIP4Route route;
 	NMIP4Config *vpn4_config;
 
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
@@ -318,29 +318,30 @@ add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 
 	vpn4_config = nm_ip4_config_new ();
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, vpn_gw);
-	nm_ip4_route_set_prefix (route, 32);
-	nm_ip4_route_set_next_hop (route, parent_gw);
+	memset (&route, 0, sizeof (route));
+	route.network = vpn_gw;
+	route.plen = 32;
+	route.gateway = parent_gw;
 
 	/* If the VPN gateway is in the same subnet as one of the parent device's
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
 	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
-		nm_ip4_route_set_next_hop (route, 0);
+		route.gateway = 0;
 
-	nm_ip4_config_take_route (vpn4_config, route);
+	nm_ip4_config_add_route (vpn4_config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
 	 * parent device, since if the VPN claims the default route and the VPN
 	 * routes include a subnet that matches the parent device's subnet,
 	 * the parent device's gateway would get routed through the VPN and fail.
 	 */
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, parent_gw);
-	nm_ip4_route_set_prefix (route, 32);
-	nm_ip4_config_take_route (vpn4_config, route);
+	memset (&route, 0, sizeof (route));
+	route.network = parent_gw;
+	route.plen = 32;
+
+	nm_ip4_config_add_route (vpn4_config, &route);
 
 	nm_device_set_vpn4_config (parent_device, vpn4_config);
 	g_object_unref (vpn4_config);
@@ -352,7 +353,7 @@ add_ip6_vpn_gateway_route (NMDevice *parent_device,
 {
 	NMIP6Config *parent_config;
 	const struct in6_addr *parent_gw;
-	NMIP6Route *route;
+	NMPlatformIP6Route route;
 	NMIP6Config *vpn6_config;
 
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
@@ -366,29 +367,30 @@ add_ip6_vpn_gateway_route (NMDevice *parent_device,
 
 	vpn6_config = nm_ip6_config_new ();
 
-	route = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route, vpn_gw);
-	nm_ip6_route_set_prefix (route, 128);
-	nm_ip6_route_set_next_hop (route, parent_gw);
+	memset (&route, 0, sizeof (route));
+	route.network = *vpn_gw;
+	route.plen = 128;
+	route.gateway = *parent_gw;
 
 	/* If the VPN gateway is in the same subnet as one of the parent device's
 	 * IP addresses, don't add the host route to it, but a route through the
 	 * parent device.
 	 */
 	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
-		nm_ip6_route_set_next_hop (route, &in6addr_any);
+		route.gateway = in6addr_any;
 
-	nm_ip6_config_take_route (vpn6_config, route);
+	nm_ip6_config_add_route (vpn6_config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
 	 * parent device, since if the VPN claims the default route and the VPN
 	 * routes include a subnet that matches the parent device's subnet,
 	 * the parent device's gateway would get routed through the VPN and fail.
 	 */
-	route = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route, parent_gw);
-	nm_ip6_route_set_prefix (route, 128);
-	nm_ip6_config_take_route (vpn6_config, route);
+	memset (&route, 0, sizeof (route));
+	route.network = *parent_gw;
+	route.plen = 128;
+
+	nm_ip6_config_add_route (vpn6_config, &route);
 
 	nm_device_set_vpn6_config (parent_device, vpn6_config);
 	g_object_unref (vpn6_config);
@@ -575,13 +577,12 @@ print_vpn_config (NMVPNConnection *connection)
 
 		num = nm_ip4_config_get_num_routes (priv->ip4_config);
 		for (i = 0; i < num; i++) {
-			NMIP4Route *route;
+			NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
 
-			route = nm_ip4_config_get_route (priv->ip4_config, i);
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
-						 ip_address_to_string (nm_ip4_route_get_dest (route)),
-						 nm_ip4_route_get_prefix (route),
-						 ip_address_to_string (nm_ip4_route_get_next_hop (route)));
+			             ip_address_to_string (route->network),
+			             route->plen,
+			             ip_address_to_string (route->gateway));
 		}
 
 		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
@@ -615,13 +616,12 @@ print_vpn_config (NMVPNConnection *connection)
 
 		num = nm_ip6_config_get_num_routes (priv->ip6_config);
 		for (i = 0; i < num; i++) {
-			NMIP6Route *route;
+			NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
 
-			route = nm_ip6_config_get_route (priv->ip6_config, i);
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
-						 ip6_address_to_string (nm_ip6_route_get_dest (route)),
-						 nm_ip6_route_get_prefix (route),
-						 ip6_address_to_string (nm_ip6_route_get_next_hop (route)));
+			             ip6_address_to_string (&route->network),
+			             route->plen,
+			             ip6_address_to_string (&route->gateway));
 		}
 
 		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
@@ -931,25 +931,27 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 		routes = nm_utils_ip4_routes_from_gvalue (val);
 		for (iter = routes; iter; iter = iter->next) {
-			NMIP4Route *route = iter->data;
+			NMIP4Route *item = iter->data;
+			NMPlatformIP4Route route;
+
+			memset (&route, 0, sizeof (route));
+			route.network = nm_ip4_route_get_dest (item);
+			route.plen = nm_ip4_route_get_prefix (item);
+			route.gateway = nm_ip4_route_get_next_hop (item);
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself
 			 * below.  Since NM knows more about the routing situation than
 			 * the VPN server, we want to use the NM created route instead of
 			 * whatever the server provides.
 			 */
-			if (   priv->ip4_external_gw
-			    && nm_ip4_route_get_dest (route) == priv->ip4_external_gw
-			    && nm_ip4_route_get_prefix (route) == 32) {
-				nm_ip4_route_unref (route);
+			if (priv->ip4_external_gw && route.network == priv->ip4_external_gw && route.plen == 32)
 				continue;
-			}
 
 			/* Otherwise accept the VPN-provided route */
-			nm_ip4_config_take_route (config, route);
+			nm_ip4_config_add_route (config, &route);
 		}
 
-		g_slist_free (routes);
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip4_route_unref);
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_NEVER_DEFAULT);
@@ -1070,26 +1072,27 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 
 		routes = nm_utils_ip6_routes_from_gvalue (val);
 		for (iter = routes; iter; iter = iter->next) {
-			NMIP6Route *route = iter->data;
+			NMIP6Route *item = iter->data;
+			NMPlatformIP6Route route;
+
+			memset (&route, 0, sizeof (route));
+			route.network = *nm_ip6_route_get_dest (item);
+			route.plen = nm_ip6_route_get_prefix (item);
+			route.gateway = *nm_ip6_route_get_next_hop (item);
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself
 			 * below.  Since NM knows more about the routing situation than
 			 * the VPN server, we want to use the NM created route instead of
 			 * whatever the server provides.
 			 */
-			if (   priv->ip6_external_gw
-			    && nm_ip6_route_get_prefix (route) == 128
-				&& memcmp (nm_ip6_route_get_dest (route), priv->ip6_external_gw,
-				           sizeof (struct in6_addr)) == 0) {
-				nm_ip6_route_unref (route);
+			if (IN6_ARE_ADDR_EQUAL (&route.network, priv->ip6_external_gw) && route.plen == 128)
 				continue;
-			}
 
 			/* Otherwise accept the VPN-provided route */
-			nm_ip6_config_take_route (config, route);
+			nm_ip6_config_add_route (config, &route);
 		}
 
-		g_slist_free (routes);
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip6_route_unref);
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_NEVER_DEFAULT);

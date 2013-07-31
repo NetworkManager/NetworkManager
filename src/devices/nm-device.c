@@ -2022,7 +2022,7 @@ aipd_get_ip4_config (NMDevice *self, struct in_addr lla)
 {
 	NMIP4Config *config = NULL;
 	NMPlatformIP4Address address;
-	NMIP4Route *route;
+	NMPlatformIP4Route route;
 
 	config = nm_ip4_config_new ();
 	g_assert (config);
@@ -2033,14 +2033,12 @@ aipd_get_ip4_config (NMDevice *self, struct in_addr lla)
 	nm_ip4_config_add_address (config, &address);
 
 	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, (guint32) htonl (0xE0000000L));
-	nm_ip4_route_set_prefix (route, 4);
-	nm_ip4_route_set_next_hop (route, (guint32) 0);
-	nm_ip4_route_set_metric (route, 0);
-	nm_ip4_config_take_route (config, route);
+	memset (&route, 0, sizeof (route));
+	route.network = htonl (0xE0000000L);
+	route.plen = 4;
+	nm_ip4_config_add_route (config, &route);
 
-	return config;	
+	return config;
 }
 
 #define IPV4LL_NETWORK (htonl (0xA9FE0000L))
@@ -2969,13 +2967,14 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 
 		for (i = 0; i < rdisc->routes->len; i++) {
 			NMRDiscRoute *discovered_route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
-			NMIP6Route *route = nm_ip6_route_new ();
+			NMPlatformIP6Route route;
 
-			nm_ip6_route_set_dest (route, &discovered_route->network);
-			nm_ip6_route_set_prefix (route, discovered_route->plen);
-			nm_ip6_route_set_next_hop (route, &discovered_route->gateway);
+			memset (&route, 0, sizeof (route));
+			route.network = discovered_route->network;
+			route.plen = discovered_route->plen;
+			route.gateway = discovered_route->gateway;
 
-			nm_ip6_config_take_route (priv->ac_ip6_config, route);
+			nm_ip6_config_add_route (priv->ac_ip6_config, &route);
 		}
 	}
 

@@ -831,7 +831,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 
 	for (r = routes; *r; r += 2) {
 		char *slash;
-		NMIP4Route *route;
+		NMPlatformIP4Route route;
 		int rt_cidr = 32;
 		struct in_addr rt_addr;
 		struct in_addr rt_route;
@@ -860,13 +860,12 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 			/* FIXME: how to handle multiple routers? */
 			*gwaddr = rt_route.s_addr;
 		} else {
-			route = nm_ip4_route_new ();
-			nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
-			nm_ip4_route_set_prefix (route, rt_cidr);
-			nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
-
-			nm_ip4_config_take_route (ip4_config, route);
 			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
+			memset (&route, 0, sizeof (route));
+			route.network = rt_addr.s_addr;
+			route.plen = rt_cidr;
+			route.gateway = rt_route.s_addr;
+			nm_ip4_config_add_route (ip4_config, &route);
 		}
 	}
 
@@ -876,14 +875,15 @@ out:
 }
 
 static const char **
-process_dhclient_rfc3442_route (const char **octets, NMIP4Route **out_route)
+process_dhclient_rfc3442_route (const char **octets, NMPlatformIP4Route *route, gboolean *success)
 {
 	const char **o = octets;
 	int addr_len = 0, i = 0;
 	long int tmp;
-	NMIP4Route *route;
 	char *next_hop;
 	struct in_addr tmp_addr;
+
+	*success = FALSE;
 
 	if (!*o)
 		return o; /* no prefix */
@@ -892,8 +892,8 @@ process_dhclient_rfc3442_route (const char **octets, NMIP4Route **out_route)
 	if (tmp < 0 || tmp > 32)  /* 32 == max IP4 prefix length */
 		return o;
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_prefix (route, (guint32) tmp);
+	memset (route, 0, sizeof (*route));
+	route->plen = tmp;
 	o++;
 
 	if (tmp > 0)
@@ -916,7 +916,7 @@ process_dhclient_rfc3442_route (const char **octets, NMIP4Route **out_route)
 			goto error;
 		}
 		tmp_addr.s_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
-		nm_ip4_route_set_dest (route, tmp_addr.s_addr);
+		route->network = tmp_addr.s_addr;
 	}
 
 	/* Handle next hop */
@@ -925,14 +925,13 @@ process_dhclient_rfc3442_route (const char **octets, NMIP4Route **out_route)
 		g_free (next_hop);
 		goto error;
 	}
-	nm_ip4_route_set_next_hop (route, tmp_addr.s_addr);
+	route->gateway = tmp_addr.s_addr;
 	g_free (next_hop);
 
-	*out_route = route;
+	*success = TRUE;
 	return o + 4; /* advance to past the next hop */
 
 error:
-	nm_ip4_route_unref (route);
 	return o;
 }
 
@@ -943,7 +942,8 @@ ip4_process_dhclient_rfc3442_routes (const char *str,
 {
 	char **octets, **o;
 	gboolean have_routes = FALSE;
-	NMIP4Route *route = NULL;
+	NMPlatformIP4Route route;
+	gboolean success;
 
 	o = octets = g_strsplit_set (str, " .", 0);
 	if (g_strv_length (octets) < 5) {
@@ -952,32 +952,28 @@ ip4_process_dhclient_rfc3442_routes (const char *str,
 	}
 
 	while (*o) {
-		route = NULL;
-		o = (char **) process_dhclient_rfc3442_route ((const char **) o, &route);
-		if (!route) {
+		memset (&route, 0, sizeof (route));
+		o = (char **) process_dhclient_rfc3442_route ((const char **) o, &route, &success);
+		if (!success) {
 			nm_log_warn (LOGD_DHCP4, "ignoring invalid classless static routes");
 			break;
 		}
 
 		have_routes = TRUE;
-		if (nm_ip4_route_get_prefix (route) == 0) {
+		if (!route.plen) {
 			/* gateway passed as classless static route */
-			*gwaddr = nm_ip4_route_get_next_hop (route);
-			nm_ip4_route_unref (route);
+			*gwaddr = route.gateway;
 		} else {
 			char addr[INET_ADDRSTRLEN + 1];
 			char nh[INET_ADDRSTRLEN + 1];
-			struct in_addr tmp;
 
 			/* normal route */
-			nm_ip4_config_take_route (ip4_config, route);
+			nm_ip4_config_add_route (ip4_config, &route);
 
-			tmp.s_addr = nm_ip4_route_get_dest (route);
-			inet_ntop (AF_INET, &tmp, addr, sizeof (addr));
-			tmp.s_addr = nm_ip4_route_get_next_hop (route);
-			inet_ntop (AF_INET, &tmp, nh, sizeof (nh));
+			inet_ntop (AF_INET, &route.network, addr, sizeof (addr));
+			inet_ntop (AF_INET, &route.gateway, nh, sizeof (nh));
 			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s",
-			             addr, nm_ip4_route_get_prefix (route), nh);
+			             addr, route.plen, nh);
 		}
 	}
 
@@ -1066,7 +1062,7 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 	}
 
 	for (s = searches; *s; s += 2) {
-		NMIP4Route *route;
+		NMPlatformIP4Route route;
 		struct in_addr rt_addr;
 		struct in_addr rt_route;
 
@@ -1081,12 +1077,12 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 
 		// FIXME: ensure the IP addresse and route are sane
 
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
-		nm_ip4_route_set_prefix (route, 32); /* 255.255.255.255 */
-		nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
+		memset (&route, 0, sizeof (route));
+		route.network = rt_addr.s_addr;
+		route.plen = 32;
+		route.gateway = rt_route.s_addr;
 
-		nm_ip4_config_take_route (ip4_config, route);
+		nm_ip4_config_add_route (ip4_config, &route);
 		nm_log_info (LOGD_DHCP, "  static route %s gw %s", *s, *(s + 1));
 	}
 
