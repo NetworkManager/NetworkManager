@@ -511,6 +511,87 @@ nm_ip4_config_subtract (NMIP4Config *dst, NMIP4Config *src)
 	}
 }
 
+void
+nm_ip4_config_dump (NMIP4Config *config, const char *detail)
+{
+	guint32 i, tmp;
+	char buf[INET_ADDRSTRLEN];
+	char buf2[INET_ADDRSTRLEN];
+
+	g_return_if_fail (config != NULL);
+
+	g_message ("--------- NMIP4Config %p (%s)", config, detail);
+
+	/* addresses */
+	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
+		const NMPlatformIP4Address *addr = nm_ip4_config_get_address (config, i);
+
+		if (inet_ntop (AF_INET, (void *) &addr->address, buf, sizeof (buf))) {
+			g_message ("      a: %s/%u timestamp:%u lifetime:%u preferred:%u",
+			           buf, addr->plen, addr->timestamp, addr->lifetime, addr->preferred);
+		}
+	}
+
+	/* ptp address */
+	tmp = nm_ip4_config_get_ptp_address (config);
+	if (inet_ntop (AF_INET, (void *) &tmp, buf, sizeof (buf)))
+		g_message ("    ptp: %s", buf);
+
+	/* default gateway */
+	tmp = nm_ip4_config_get_gateway (config);
+	if (inet_ntop (AF_INET, (void *) &tmp, buf, sizeof (buf)))
+		g_message ("     gw: %s", buf);
+
+	/* nameservers */
+	for (i = 0; i < nm_ip4_config_get_num_nameservers (config); i++) {
+		tmp = nm_ip4_config_get_nameserver (config, i);
+		if (inet_ntop (AF_INET, (void *) &tmp, buf, sizeof (buf)))
+			g_message ("     ns: %s", buf);
+	}
+
+	/* routes */
+	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
+		NMIP4Route *route = nm_ip4_config_get_route (config, i);
+		guint dest = nm_ip4_route_get_dest (route);
+		guint nh = nm_ip4_route_get_next_hop (route);
+
+		if (inet_ntop (AF_INET, (void *) &dest, buf, sizeof (buf)) &&
+		    inet_ntop (AF_INET, (void *) &nh, buf2, sizeof (buf2))) {
+			g_message ("     rt: %s/%u via %s metric:%u",
+			           buf, nm_ip4_route_get_prefix (route), buf2,
+			           nm_ip4_route_get_metric (route));
+		}
+	}
+
+	/* domains */
+	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++)
+		g_message (" domain: %s", nm_ip4_config_get_domain (config, i));
+
+	/* dns searches */
+	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++)
+		g_message (" search: %s", nm_ip4_config_get_search (config, i));
+
+	g_message ("    mss: %u", nm_ip4_config_get_mss (config));
+
+	/* NIS */
+	for (i = 0; i < nm_ip4_config_get_num_nis_servers (config); i++) {
+		guint32 nis = nm_ip4_config_get_nis_server (config, i);
+
+		if (inet_ntop (AF_INET, (void *) &nis, buf, sizeof (buf)))
+			g_message ("    nis: %s", buf);
+	}
+
+	g_message (" nisdmn: %s", nm_ip4_config_get_nis_domain (config));
+
+	/* WINS */
+	for (i = 0; i < nm_ip4_config_get_num_wins (config); i++) {
+		guint32 wins = nm_ip4_config_get_wins (config, i);
+
+		if (inet_ntop (AF_INET, (void *) &wins, buf, sizeof (buf)))
+			g_message ("   wins: %s", buf);
+	}
+}
+
 gboolean
 nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 network, int plen)
 {

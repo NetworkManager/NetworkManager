@@ -67,6 +67,7 @@ void nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *sett
 void nm_ip4_config_merge (NMIP4Config *dst, NMIP4Config *src);
 void nm_ip4_config_subtract (NMIP4Config *dst, NMIP4Config *src);
 gboolean nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 dest, int plen);
+void nm_ip4_config_dump (NMIP4Config *config, const char *detail);
 
 /* Gateways */
 void nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default);
