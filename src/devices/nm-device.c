@@ -5943,9 +5943,6 @@ update_ip_config (NMDevice *self)
 	NMIP6Config *ip6_config = NULL;
 	int ifindex;
 
-	if (priv->state != NM_DEVICE_STATE_UNMANAGED)
-		return;
-
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
 		return;
