@@ -228,6 +228,7 @@ typedef struct {
 	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
 	IpState         ip4_state;
 	NMIP4Config *   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
+	NMIP4Config *   ext_ip4_config; /* Stuff added outside NM */
 
 	/* DHCPv4 tracking */
 	NMDHCPClient *  dhcp4_client;
@@ -303,6 +304,7 @@ static gboolean nm_device_set_ip4_config (NMDevice *dev,
                                           NMDeviceStateReason *reason);
 static gboolean ip4_config_merge_and_apply (NMDevice *self,
                                             NMIP4Config *config,
+                                            gboolean commit,
                                             NMDeviceStateReason *out_reason);
 
 static gboolean nm_device_set_ip6_config (NMDevice *dev,
@@ -2102,7 +2104,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 			aipd_timeout_remove (self);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
-			if (!ip4_config_merge_and_apply (self, config, &reason)) {
+			if (!ip4_config_merge_and_apply (self, config, TRUE, &reason)) {
 				nm_log_err (LOGD_AUTOIP4, "(%s): failed to update IP4 config for autoip change.",
 							nm_device_get_iface (self));
 				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
@@ -2274,6 +2276,7 @@ dhcp4_add_option_cb (gpointer key, gpointer value, gpointer user_data)
 static gboolean
 ip4_config_merge_and_apply (NMDevice *self,
                             NMIP4Config *config,
+                            gboolean commit,
                             NMDeviceStateReason *out_reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -2281,30 +2284,32 @@ ip4_config_merge_and_apply (NMDevice *self,
 	gboolean success;
 	NMIP4Config *composite;
 
-	connection = nm_device_get_connection (self);
-	g_assert (connection);
-
 	/* Merge all the configs into the composite config */
 	if (config) {
 		g_clear_object (&priv->dev_ip4_config);
 		priv->dev_ip4_config = g_object_ref (config);
 	}
 
-	g_assert (priv->dev_ip4_config);
-
 	composite = nm_ip4_config_new ();
-	nm_ip4_config_merge (composite, priv->dev_ip4_config);
+	if (priv->dev_ip4_config)
+		nm_ip4_config_merge (composite, priv->dev_ip4_config);
 	if (priv->vpn4_config)
 		nm_ip4_config_merge (composite, priv->vpn4_config);
+	if (priv->ext_ip4_config)
+		nm_ip4_config_merge (composite, priv->ext_ip4_config);
 
 	/* Merge user overrides into the composite config */
-	nm_ip4_config_merge_setting (composite, nm_connection_get_setting_ip4_config (connection));
+	connection = nm_device_get_connection (self);
+	if (connection)
+		nm_ip4_config_merge_setting (composite, nm_connection_get_setting_ip4_config (connection));
 
 	/* Allow setting MTU etc */
-	if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
-		NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
+	if (commit) {
+		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
+			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
+	}
 
-	success = nm_device_set_ip4_config (self, composite, TRUE, out_reason);
+	success = nm_device_set_ip4_config (self, composite, commit, out_reason);
 	g_object_unref (composite);
 	return success;
 }
@@ -2316,7 +2321,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 
 	g_return_if_fail (config != NULL);
 
-	if (!ip4_config_merge_and_apply (self, config, &reason)) {
+	if (!ip4_config_merge_and_apply (self, config, TRUE, &reason)) {
 		nm_log_warn (LOGD_DHCP4, "(%s): failed to update IPv4 config for DHCP change.",
 		             nm_device_get_ip_iface (self));
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
@@ -3780,7 +3785,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		nm_platform_link_set_up (ifindex);
 
 	/* NULL to use the existing priv->dev_ip4_config */
-	if (!ip4_config_merge_and_apply (self, NULL, &reason)) {
+	if (!ip4_config_merge_and_apply (self, NULL, TRUE, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
 			         "Activation (%s) Stage 5 of 5 (IPv4 Commit) failed",
 					 iface);
@@ -4152,6 +4157,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
 	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
+	g_clear_object (&priv->ext_ip4_config);
 	g_clear_object (&priv->vpn4_config);
 	g_clear_object (&priv->vpn6_config);
 
@@ -4423,7 +4429,7 @@ nm_device_set_vpn4_config (NMDevice *device, NMIP4Config *config)
 		priv->vpn4_config = g_object_ref (config);
 
 	/* NULL to use existing configs */
-	if (!ip4_config_merge_and_apply (device, NULL, NULL)) {
+	if (!ip4_config_merge_and_apply (device, NULL, TRUE, NULL)) {
 		nm_log_warn (LOGD_IP4, "(%s): failed to set VPN routes for device",
 			         nm_device_get_ip_iface (device));
 	}
@@ -4846,6 +4852,7 @@ dispose (GObject *object)
 		nm_device_take_down (self, FALSE);
 	}
 	g_clear_object (&priv->dev_ip4_config);
+	g_clear_object (&priv->ext_ip4_config);
 	g_clear_object (&priv->vpn4_config);
 	g_clear_object (&priv->ip4_config);
 
@@ -5933,8 +5940,7 @@ update_ip_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
-	NMIP4Config *ip4_config;
-	NMIP6Config *ip6_config;
+	NMIP6Config *ip6_config = NULL;
 	int ifindex;
 
 	if (priv->state != NM_DEVICE_STATE_UNMANAGED)
@@ -5944,16 +5950,18 @@ update_ip_config (NMDevice *self)
 	if (!ifindex)
 		return;
 
-	ip4_config = nm_ip4_config_capture (ifindex);
+	g_clear_object (&priv->ext_ip4_config);
+	priv->ext_ip4_config = nm_ip4_config_capture (ifindex);
+	if (priv->dev_ip4_config)
+		nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config);
+	if (priv->vpn4_config)
+		nm_ip4_config_subtract (priv->ext_ip4_config, priv->vpn4_config);
+
+	ip4_config_merge_and_apply (self, NULL, FALSE, NULL);
+
 	ip6_config = nm_ip6_config_capture (ifindex);
-
-	nm_device_set_ip4_config (self, ip4_config, FALSE, &ignored);
 	nm_device_set_ip6_config (self, ip6_config, FALSE, &ignored);
-
-	if (ip4_config)
-		g_object_unref (ip4_config);
-	if (ip6_config)
-		g_object_unref (ip6_config);
+	g_clear_object (&ip6_config);
 }
 
 static gboolean
