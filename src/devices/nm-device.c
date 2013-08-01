@@ -234,6 +234,7 @@ typedef struct {
 	gulong          dhcp4_state_sigid;
 	gulong          dhcp4_timeout_sigid;
 	NMDHCP4Config * dhcp4_config;
+	NMIP4Config *   vpn4_config;  /* routes added by a VPN which uses this device */
 
 	PingInfo        gw_ping;
 
@@ -253,6 +254,7 @@ typedef struct {
 	/* IP6 configuration info */
 	NMIP6Config *  ip6_config;
 	IpState        ip6_state;
+	NMIP6Config *  vpn6_config;  /* routes added by a VPN which uses this device */
 
 	NMRDisc *      rdisc;
 	gulong         rdisc_config_changed_sigid;
@@ -2292,6 +2294,8 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 	composite = nm_ip4_config_new ();
 	nm_ip4_config_merge (composite, priv->dev_ip4_config);
+	if (priv->vpn4_config)
+		nm_ip4_config_merge (composite, priv->vpn4_config);
 
 	/* Merge user overrides into the composite config */
 	nm_ip4_config_merge_setting (composite, nm_connection_get_setting_ip4_config (connection));
@@ -2691,11 +2695,13 @@ ip6_config_merge_and_apply (NMDevice *self,
 	composite = nm_ip6_config_new ();
 	g_assert (composite);
 
-	/* Merge RA and DHCPv6 configs into the composite config */
+	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config)
 		nm_ip6_config_merge (composite, priv->ac_ip6_config);
 	if (priv->dhcp6_ip6_config)
 		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config);
+	if (priv->vpn6_config)
+		nm_ip6_config_merge (composite, priv->vpn6_config);
 
 	/* Merge user overrides into the composite config */
 	nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));
@@ -4146,6 +4152,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* Clean up nameservers and addresses */
 	nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
 	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
+	g_clear_object (&priv->vpn4_config);
+	g_clear_object (&priv->vpn6_config);
 
 	/* Clear legacy IPv4 address property */
 	priv->ip4_address = 0;
@@ -4402,6 +4410,25 @@ nm_device_set_ip4_config (NMDevice *self,
 	return success;
 }
 
+void
+nm_device_set_vpn4_config (NMDevice *device, NMIP4Config *config)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->vpn4_config == config)
+		return;
+
+	g_clear_object (&priv->vpn4_config);
+	if (config)
+		priv->vpn4_config = g_object_ref (config);
+
+	/* NULL to use existing configs */
+	if (!ip4_config_merge_and_apply (device, NULL, NULL)) {
+		nm_log_warn (LOGD_IP4, "(%s): failed to set VPN routes for device",
+			         nm_device_get_ip_iface (device));
+	}
+}
+
 static gboolean
 nm_device_set_ip6_config (NMDevice *self,
                           NMIP6Config *new_config,
@@ -4451,6 +4478,25 @@ nm_device_set_ip6_config (NMDevice *self,
 		g_object_unref (old_config);
 
 	return success;
+}
+
+void
+nm_device_set_vpn6_config (NMDevice *device, NMIP6Config *config)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->vpn6_config == config)
+		return;
+
+	g_clear_object (&priv->vpn6_config);
+	if (config)
+		priv->vpn6_config = g_object_ref (config);
+
+	/* NULL to use existing configs */
+	if (!ip6_config_merge_and_apply (device, NULL)) {
+		nm_log_warn (LOGD_IP6, "(%s): failed to set VPN routes for device",
+			         nm_device_get_ip_iface (device));
+	}
 }
 
 NMDHCP6Config *
@@ -4800,7 +4846,13 @@ dispose (GObject *object)
 		nm_device_take_down (self, FALSE);
 	}
 	g_clear_object (&priv->dev_ip4_config);
+	g_clear_object (&priv->vpn4_config);
 	g_clear_object (&priv->ip4_config);
+
+	g_clear_object (&priv->ip6_config);
+	g_clear_object (&priv->ac_ip6_config);
+	g_clear_object (&priv->dhcp6_ip6_config);
+	g_clear_object (&priv->vpn6_config);
 
 	/* reset the saved RA value */
 	if (priv->ip6_accept_ra_path) {

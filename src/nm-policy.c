@@ -1592,8 +1592,8 @@ static void
 vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 {
 	NMDnsManager *mgr;
-	NMIP4Config *ip4_config, *parent_ip4 = NULL;
-	NMIP6Config *ip6_config, *parent_ip6 = NULL;
+	NMIP4Config *ip4_config;
+	NMIP6Config *ip6_config;
 	const char *ip_iface;
 	NMDevice *parent;
 
@@ -1607,40 +1607,12 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	if (ip4_config) {
 		/* Remove the VPN connection's IP4 config from DNS */
 		nm_dns_manager_remove_ip4_config (mgr, ip4_config);
-
-		/* Re-apply routes and addresses of the VPN connection's parent interface,
-		 * which the VPN might have overridden.
-		 */
-		if (parent) {
-			parent_ip4 = nm_device_get_ip4_config (parent);
-			if (parent_ip4) {
-				if (!nm_ip4_config_commit (parent_ip4,
-				                           nm_device_get_ip_ifindex (parent),
-				                           nm_device_get_priority (parent))) {
-					nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device IPv4 addresses and routes.");
-				}
-			}
-		}
 	}
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config) {
 		/* Remove the VPN connection's IP6 config from DNS */
 		nm_dns_manager_remove_ip6_config (mgr, ip6_config);
-
-		/* Re-apply routes and addresses of the VPN connection's parent interface,
-		 * which the VPN might have overridden.
-		 */
-		if (parent) {
-			parent_ip6 = nm_device_get_ip6_config (parent);
-			if (parent_ip6) {
-				if (!nm_ip6_config_commit (parent_ip6,
-				                           nm_device_get_ip_ifindex (parent),
-				                           nm_device_get_priority (parent))) {
-					nm_log_err (LOGD_VPN, "failed to re-apply VPN parent device IPv6 addresses and routes.");
-				}
-			}
-		}
 	}
 
 	update_routing_and_dns (policy, TRUE);

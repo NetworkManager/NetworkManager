@@ -220,7 +220,10 @@ NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
 NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
+void            nm_device_set_vpn4_config   (NMDevice *dev, NMIP4Config *config);
+
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
+void            nm_device_set_vpn6_config   (NMDevice *dev, NMIP6Config *config);
 
 /* Master */
 gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave);
