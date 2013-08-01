@@ -846,12 +846,71 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 static struct nl_object * build_rtnl_link (int ifindex, const char *name, NMLinkType type);
 
 static gboolean
-refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
+refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *cached_object = NULL;
 	auto_nl_object struct nl_object *kernel_object = NULL;
 	struct nl_cache *cache;
+	int nle;
+
+	cache = choose_cache (platform, object);
+	cached_object = nl_cache_search (choose_cache (platform, object), object);
+	kernel_object = get_kernel_object (priv->nlh, object);
+
+	if (removed) {
+		if (kernel_object)
+			return TRUE;
+
+		/* Only announce object if it was still in the cache. */
+		if (cached_object) {
+			nl_cache_remove (cached_object);
+
+			announce_object (platform, cached_object, REMOVED);
+		}
+	} else {
+		g_return_val_if_fail (kernel_object, FALSE);
+
+		hack_empty_master_iff_lower_up (platform, kernel_object);
+
+		if (cached_object)
+			nl_cache_remove (cached_object);
+		nle = nl_cache_add (cache, kernel_object);
+		g_return_val_if_fail (!nle, FALSE);
+
+		announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED);
+
+		/* Refresh the master device (even on enslave/release) */
+		if (object_type_from_nl_object (kernel_object) == LINK) {
+			int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
+			int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
+			struct nl_object *master_object;
+
+			if (kernel_master) {
+				master_object = build_rtnl_link (kernel_master, NULL, NM_LINK_TYPE_NONE);
+				refresh_object (platform, master_object, FALSE);
+				nl_object_put (master_object);
+			}
+			if (cached_master && cached_master != kernel_master) {
+				master_object = build_rtnl_link (cached_master, NULL, NM_LINK_TYPE_NONE);
+				refresh_object (platform, master_object, FALSE);
+				nl_object_put (master_object);
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+/* Decreases the reference count if @obj for convenience */
+static gboolean
+add_object (NMPlatform *platform, struct nl_object *obj)
+{
+	auto_nl_object struct nl_object *object = obj;
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int nle;
+
+	nle = add_kernel_object (priv->nlh, object);
 
 	/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
 	 * never know when something sends an identical object just before
@@ -866,50 +925,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, int nle)
 		return FALSE;
 	}
 
-	cache = choose_cache (platform, object);
-	cached_object = nl_cache_search (choose_cache (platform, object), object);
-	kernel_object = get_kernel_object (priv->nlh, object);
-
-	g_return_val_if_fail (kernel_object, FALSE);
-
-	hack_empty_master_iff_lower_up (platform, kernel_object);
-
-	if (cached_object)
-		nl_cache_remove (cached_object);
-	nle = nl_cache_add (cache, kernel_object);
-	g_return_val_if_fail (!nle, FALSE);
-
-	announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED);
-
-	/* Refresh the master device (even on enslave/release) */
-	if (object_type_from_nl_object (kernel_object) == LINK) {
-		int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
-		int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
-		struct nl_object *master_object;
-
-		if (kernel_master) {
-			master_object = build_rtnl_link (kernel_master, NULL, NM_LINK_TYPE_NONE);
-			refresh_object (platform, master_object, 0);
-			nl_object_put (master_object);
-		}
-		if (cached_master && cached_master != kernel_master) {
-			master_object = build_rtnl_link (cached_master, NULL, NM_LINK_TYPE_NONE);
-			refresh_object (platform, master_object, 0);
-			nl_object_put (master_object);
-		}
-	}
-
-	return TRUE;
-}
-
-/* Decreases the reference count if @obj for convenience */
-static gboolean
-add_object (NMPlatform *platform, struct nl_object *obj)
-{
-	auto_nl_object struct nl_object *object = obj;
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	return refresh_object (platform, object, add_kernel_object (priv->nlh, object));
+	return refresh_object (platform, object, FALSE);
 }
 
 /* Decreases the reference count if @obj for convenience */
@@ -921,8 +937,12 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 	auto_nl_object struct nl_object *cached_object;
 	int nle;
 
+	/* FIXME: For some reason the result of build_rtnl_route() is not suitable
+	 * for delete_kernel_object() and we need to search the cache first. If
+	 * that problem is fixed, we can use 'object' directly.
+	 */
 	cached_object = nl_cache_search (choose_cache (platform, object), object);
-	g_assert (cached_object);
+	g_return_val_if_fail (cached_object, FALSE);
 
 	nle = delete_kernel_object (priv->nlh, cached_object);
 
@@ -938,8 +958,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 		return FALSE;
 	}
 
-	nl_cache_remove (cached_object);
-	announce_object (platform, cached_object, REMOVED);
+	refresh_object (platform, object, TRUE);
 
 	return TRUE;
 }
@@ -1211,17 +1230,29 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 
 	nle = rtnl_link_change (priv->nlh, rtnllink, change, 0);
 
-	/* When netlink returns this error, it usually means it failed to find
+	/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
+	 * never know when something sends an identical object just before
+	 * NetworkManager.
+	 *
+	 * When netlink returns NLE_OBJ_NOTFOUND, it usually means it failed to find
 	 * firmware for the device, especially on nm_platform_link_set_up ().
 	 * This is basically the same check as in the original code and could
 	 * potentially be improved.
 	 */
-	if (nle == -NLE_OBJ_NOTFOUND) {
+	switch (nle) {
+	case -NLE_SUCCESS:
+	case -NLE_EXIST:
+		break;
+	case -NLE_OBJ_NOTFOUND:
+		error ("Firmware not found; Netlink error: %s)", nl_geterror (nle));
 		platform->error = NM_PLATFORM_ERROR_NO_FIRMWARE;
+		return FALSE;
+	default:
+		error ("Netlink error: %s", nl_geterror (nle));
 		return FALSE;
 	}
 
-	return refresh_object (platform, (struct nl_object *) rtnllink, nle);
+	return refresh_object (platform, (struct nl_object *) rtnllink, FALSE);
 }
 
 static gboolean
@@ -1611,27 +1642,22 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 }
 
 static gboolean
-link_refresh (NMPlatform *platform, int ifindex, int nle)
-{
-	auto_nl_object struct nl_object *object = build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_NONE);
-
-	return refresh_object (platform, object, nle);
-}
-
-static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *change;
 
-	return link_refresh (platform, slave, rtnl_link_enslave_ifindex (priv->nlh, master, slave));
+	change = rtnl_link_alloc ();
+	g_assert (change);
+
+	rtnl_link_set_master (change, master);
+
+	return link_change (platform, slave, change);
 }
 
 static gboolean
 link_release (NMPlatform *platform, int master, int slave)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	return link_refresh (platform, slave, rtnl_link_release_ifindex (priv->nlh, slave));
+	return link_enslave (platform, 0, slave);
 }
 
 static int
