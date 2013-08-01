@@ -72,9 +72,6 @@ static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *con
 
 #include "nm-device-glue.h"
 
-#define PENDING_IP4_CONFIG "pending-ip4-config"
-#define PENDING_IP6_CONFIG "pending-ip6-config"
-
 #define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
 
 /* default to installed helper, but can be modified for testing */
@@ -228,8 +225,11 @@ typedef struct {
 	GByteArray *    dhcp_anycast_address;
 
 	/* IP4 configuration info */
-	NMIP4Config *   ip4_config;			/* Config from DHCP, PPP, or system config files */
+	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
 	IpState         ip4_state;
+	NMIP4Config *   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
+
+	/* DHCPv4 tracking */
 	NMDHCPClient *  dhcp4_client;
 	gulong          dhcp4_state_sigid;
 	gulong          dhcp4_timeout_sigid;
@@ -299,6 +299,10 @@ static gboolean nm_device_set_ip4_config (NMDevice *dev,
                                           NMIP4Config *config,
                                           gboolean commit,
                                           NMDeviceStateReason *reason);
+static gboolean ip4_config_merge_and_apply (NMDevice *self,
+                                            NMIP4Config *config,
+                                            NMDeviceStateReason *out_reason);
+
 static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           NMIP6Config *config,
                                           gboolean commit,
@@ -2035,21 +2039,6 @@ aipd_get_ip4_config (NMDevice *self, struct in_addr lla)
 	return config;	
 }
 
-static void
-autoip_changed (NMDevice *self,
-                NMIP4Config *config,
-                NMSettingIP4Config *s_ip4)
-{
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-
-	nm_ip4_config_merge_setting (config, s_ip4);
-	if (!nm_device_set_ip4_config (self, config, TRUE, &reason)) {
-		nm_log_err (LOGD_AUTOIP4, "(%s): failed to update IP4 config in response to autoip event.",
-			        nm_device_get_iface (self));
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-	}
-}
-
 #define IPV4LL_NETWORK (htonl (0xA9FE0000L))
 #define IPV4LL_NETMASK (htonl (0xFFFF0000L))
 
@@ -2062,6 +2051,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 	NMConnection *connection = NULL;
 	NMSettingIP4Config *s_ip4 = NULL;
 	const char *iface, *method = NULL;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_return_if_fail (event != NULL);
 
@@ -2110,7 +2100,11 @@ nm_device_handle_autoip4_event (NMDevice *self,
 			aipd_timeout_remove (self);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
-			autoip_changed (self, config, s_ip4);
+			if (!ip4_config_merge_and_apply (self, config, &reason)) {
+				nm_log_err (LOGD_AUTOIP4, "(%s): failed to update IP4 config for autoip change.",
+							nm_device_get_iface (self));
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+			}
 		} else
 			g_assert_not_reached ();
 
@@ -2275,34 +2269,61 @@ dhcp4_add_option_cb (gpointer key, gpointer value, gpointer user_data)
 	                            (const char *) value);
 }
 
-static void
-dhcp4_lease_change (NMDevice *device, NMIP4Config *config)
+static gboolean
+ip4_config_merge_and_apply (NMDevice *self,
+                            NMIP4Config *config,
+                            NMDeviceStateReason *out_reason)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	gboolean success;
+	NMIP4Config *composite;
 
-	if (config == NULL) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to get DHCPv4 config for rebind",
-		             nm_device_get_ip_iface (device));
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-		return;
-	}
-
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	/* Merge with user overrides */
-	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (connection));
-
-	if (!nm_device_set_ip4_config (device, config, TRUE, &reason)) {
-		nm_log_warn (LOGD_DHCP4, "(%s): failed to update IPv4 config in response to DHCP event.",
-		             nm_device_get_ip_iface (device));
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
-		return;
+	/* Merge all the configs into the composite config */
+	if (config) {
+		g_clear_object (&priv->dev_ip4_config);
+		priv->dev_ip4_config = g_object_ref (config);
 	}
 
-	/* Notify dispatcher scripts of new DHCP4 config */
-	nm_dispatcher_call (DISPATCHER_ACTION_DHCP4_CHANGE, connection, device, NULL, NULL);
+	g_assert (priv->dev_ip4_config);
+
+	composite = nm_ip4_config_new ();
+	nm_ip4_config_merge (composite, priv->dev_ip4_config);
+
+	/* Merge user overrides into the composite config */
+	nm_ip4_config_merge_setting (composite, nm_connection_get_setting_ip4_config (connection));
+
+	/* Allow setting MTU etc */
+	if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
+		NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
+
+	success = nm_device_set_ip4_config (self, composite, TRUE, out_reason);
+	g_object_unref (composite);
+	return success;
+}
+
+static void
+dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
+{
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+
+	g_return_if_fail (config != NULL);
+
+	if (!ip4_config_merge_and_apply (self, config, &reason)) {
+		nm_log_warn (LOGD_DHCP4, "(%s): failed to update IPv4 config for DHCP change.",
+		             nm_device_get_ip_iface (self));
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+	} else {
+		/* Notify dispatcher scripts of new DHCP4 config */
+		nm_dispatcher_call (DISPATCHER_ACTION_DHCP4_CHANGE,
+		                    nm_device_get_connection (self),
+		                    self,
+		                    NULL,
+		                    NULL);
+	}
 }
 
 static void
@@ -2341,21 +2362,27 @@ dhcp4_state_changed (NMDHCPClient *client,
 	case DHC_REBOOT:     /* have valid lease, but now obtained a different one */
 	case DHC_REBIND4:    /* new, different lease */
 		config = nm_dhcp_client_get_ip4_config (priv->dhcp4_client, FALSE);
+		if (!config) {
+			nm_log_warn (LOGD_DHCP4, "(%s): failed to get IPv4 config in response to DHCP event.",
+					     nm_device_get_ip_iface (device));
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+			break;
+		}
+
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_result (device, config);
 		else if (priv->ip4_state == IP_DONE)
 			dhcp4_lease_change (device, config);
+		g_object_unref (config);
 
-		if (config) {
-			/* Update the DHCP4 config object with new DHCP options */
-			nm_dhcp4_config_reset (priv->dhcp4_config);
-			nm_dhcp_client_foreach_option (priv->dhcp4_client,
-			                               dhcp4_add_option_cb,
-			                               priv->dhcp4_config);
-			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
-
-			g_object_unref (config);
-		}
+		/* Update the DHCP4 config object with new DHCP options */
+		nm_dhcp4_config_reset (priv->dhcp4_config);
+		nm_dhcp_client_foreach_option (priv->dhcp4_client,
+			                           dhcp4_add_option_cb,
+			                           priv->dhcp4_config);
+		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
 		dhcp4_fail (device, TRUE);
@@ -3723,7 +3750,6 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
-	NMIP4Config *config = NULL;
 	const char *iface, *method = NULL;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
@@ -3742,22 +3768,13 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	config = g_object_get_data (G_OBJECT (req), PENDING_IP4_CONFIG);
-	g_assert (config);
-
 	/* Make sure the interface is up again just because */
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (ifindex && !nm_platform_link_is_up (ifindex))
 		nm_platform_link_set_up (ifindex);
 
-	/* Allow setting MTU etc */
-	if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
-		NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, config);
-
-	/* Merge with user overrides */
-	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (connection));
-
-	if (!nm_device_set_ip4_config (self, config, TRUE, &reason)) {
+	/* NULL to use the existing priv->dev_ip4_config */
+	if (!ip4_config_merge_and_apply (self, NULL, &reason)) {
 		nm_log_info (LOGD_DEVICE | LOGD_IP4,
 			         "Activation (%s) Stage 5 of 5 (IPv4 Commit) failed",
 					 iface);
@@ -3771,7 +3788,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		method = nm_setting_ip4_config_get_method (s_ip4);
 
 	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
-		if (!start_sharing (self, config)) {
+		if (!start_sharing (self, priv->ip4_config)) {
 			nm_log_warn (LOGD_SHARING, "Activation (%s) Stage 5 of 5 (IPv4 Commit) start sharing failed.", iface);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 			goto out;
@@ -3787,9 +3804,6 @@ out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv4 Commit) complete.",
 	             iface);
 
-	/* Balance IP config creation; nm_device_set_ip4_config() takes a reference */
-	g_object_set_data (G_OBJECT (req), PENDING_IP4_CONFIG, NULL);
-
 	return FALSE;
 }
 
@@ -3799,19 +3813,11 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	NMDevicePrivate *priv;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
-
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
 
-	if (config == NULL) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-		return;
-	}
-
-	g_object_set_data_full (G_OBJECT (priv->act_request),
-	                        PENDING_IP4_CONFIG,
-	                        g_object_ref (config),
-	                        g_object_unref);
+	g_clear_object (&priv->dev_ip4_config);
+	priv->dev_ip4_config = g_object_ref (config);
 
 	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
 
@@ -4354,7 +4360,6 @@ nm_device_set_ip4_config (NMDevice *self,
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
@@ -4383,6 +4388,9 @@ nm_device_set_ip4_config (NMDevice *self,
 
 		if (!success && reason)
 			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+	} else {
+		/* Device config is invalid if combined config is invalid */
+		g_clear_object (&priv->dev_ip4_config);
 	}
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
@@ -4407,7 +4415,6 @@ nm_device_set_ip6_config (NMDevice *self,
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
@@ -4792,6 +4799,8 @@ dispose (GObject *object)
 
 		nm_device_take_down (self, FALSE);
 	}
+	g_clear_object (&priv->dev_ip4_config);
+	g_clear_object (&priv->ip4_config);
 
 	/* reset the saved RA value */
 	if (priv->ip6_accept_ra_path) {

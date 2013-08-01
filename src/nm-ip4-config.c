@@ -330,6 +330,57 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 
 /******************************************************************/
 
+void
+nm_ip4_config_merge (NMIP4Config *dst, NMIP4Config *src)
+{
+	guint32 i;
+
+	g_return_if_fail (src != NULL);
+	g_return_if_fail (dst != NULL);
+
+	/* addresses */
+	for (i = 0; i < nm_ip4_config_get_num_addresses (src); i++)
+		nm_ip4_config_add_address (dst, nm_ip4_config_get_address (src, i));
+
+	/* ptp address; only replace if src doesn't have one */
+	if (!nm_ip4_config_get_ptp_address (dst))
+		nm_ip4_config_set_ptp_address (dst, nm_ip4_config_get_ptp_address (src));
+
+	/* nameservers */
+	for (i = 0; i < nm_ip4_config_get_num_nameservers (src); i++)
+		nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
+
+	/* default gateway */
+	if (!nm_ip4_config_get_gateway (dst))
+		nm_ip4_config_set_gateway (dst, nm_ip4_config_get_gateway (src));
+
+	/* routes */
+	for (i = 0; i < nm_ip4_config_get_num_routes (src); i++)
+		nm_ip4_config_add_route (dst, nm_ip4_config_get_route (src, i));
+
+	/* domains */
+	for (i = 0; i < nm_ip4_config_get_num_domains (src); i++)
+		nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
+
+	/* dns searches */
+	for (i = 0; i < nm_ip4_config_get_num_searches (src); i++)
+		nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+
+	if (!nm_ip4_config_get_mss (dst))
+		nm_ip4_config_set_mss (dst, nm_ip4_config_get_mss (src));
+
+	/* NIS */
+	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++)
+		nm_ip4_config_add_nis_server (dst, nm_ip4_config_get_nis_server (src, i));
+
+	if (nm_ip4_config_get_nis_domain (src))
+		nm_ip4_config_set_nis_domain (dst, nm_ip4_config_get_nis_domain (src));
+
+	/* WINS */
+	for (i = 0; i < nm_ip4_config_get_num_wins (src); i++)
+		nm_ip4_config_add_wins (dst, nm_ip4_config_get_wins (src, i));
+}
+
 gboolean
 nm_ip4_config_destination_is_direct (NMIP4Config *config, guint32 network, int plen)
 {
