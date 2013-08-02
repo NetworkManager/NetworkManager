@@ -991,9 +991,9 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 	if (p_key != -1) {
-		svSetValue (ifcfg, "VLAN", "yes", FALSE);
+		svSetValue (ifcfg, "PKEY", "yes", FALSE);
 		tmp = g_strdup_printf ("%u", p_key);
-		svSetValue (ifcfg, "VLAN_ID", tmp, FALSE);
+		svSetValue (ifcfg, "PKEY_ID", tmp, FALSE);
 		g_free (tmp);
 
 		parent = nm_setting_infiniband_get_parent (s_infiniband);
