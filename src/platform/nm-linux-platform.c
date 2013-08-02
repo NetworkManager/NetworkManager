@@ -81,6 +81,18 @@ nm_linux_platform_setup (void)
 /* libnl library workarounds and additions */
 
 /* Automatic deallocation of local variables */
+#define auto_nl_cache __attribute__((cleanup(put_nl_cache)))
+static void
+put_nl_cache (void *ptr)
+{
+	struct nl_cache **cache = ptr;
+
+	if (cache && *cache) {
+		nl_cache_free (*cache);
+		*cache = NULL;
+	}
+}
+
 #define auto_nl_object __attribute__((cleanup(put_nl_object)))
 static void
 put_nl_object (void *ptr)
@@ -724,18 +736,13 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 	}
 }
 
-static void
-remove_if_ifindex (struct nl_object *object, gpointer user_data)
+static gboolean
+object_has_ifindex (struct nl_object *object, int ifindex)
 {
-	int ifindex = *(int *) user_data;
-
 	switch (object_type_from_nl_object (object)) {
 	case IP4_ADDRESS:
 	case IP6_ADDRESS:
-		if (ifindex != rtnl_addr_get_ifindex ((struct rtnl_addr *) object))
-			break;
-		nl_cache_remove (object);
-		break;
+		return ifindex == rtnl_addr_get_ifindex ((struct rtnl_addr *) object);
 	case IP4_ROUTE:
 	case IP6_ROUTE:
 		{
@@ -743,15 +750,29 @@ remove_if_ifindex (struct nl_object *object, gpointer user_data)
 			struct rtnl_nexthop *nexthop;
 
 			if (rtnl_route_get_nnexthops (rtnlroute) != 1)
-				break;
+				return FALSE;
 			nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
-			if (ifindex != rtnl_route_nh_get_ifindex (nexthop))
-				break;
-			nl_cache_remove (object);
+
+			return ifindex == rtnl_route_nh_get_ifindex (nexthop);
 		}
-		break;
 	default:
-		break;
+		g_assert_not_reached ();
+	}
+}
+
+static gboolean refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed);
+
+static void
+check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
+{
+	auto_nl_cache struct nl_cache *cloned_cache = nl_cache_clone (cache);
+	struct nl_object *object;
+
+	for (object = nl_cache_get_first (cloned_cache); object; object = nl_cache_get_next (object)) {
+		debug ("cache %p object %p", cloned_cache, object);
+		g_assert (nl_object_get_cache (object) == cloned_cache);
+		if (object_has_ifindex (object, ifindex))
+			refresh_object (platform, object, TRUE);
 	}
 }
 
@@ -785,19 +806,20 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 				break;
 			}
 
-			/* In some cases, the link action is followed by address and/or
-			 * route action. Kernel silently removes routes when interface
-			 * goes !IFF_UP and we also need to handle addresses and routes
-			 * for removed network interfaces.
+			/* Link deletion or setting down is sometimes accompanied by address
+			 * and/or route deletion.
+			 *
+			 * More precisely, kernel removes routes when interface goes !IFF_UP and
+			 * removes both addresses and routes when interface is removed.
 			 */
 			switch (status) {
 			case CHANGED:
 				if (!device.connected)
-					nl_cache_foreach (priv->route_cache, remove_if_ifindex, &device.ifindex);
+					check_cache_items (platform, priv->route_cache, device.ifindex);
 				break;
 			case REMOVED:
-				nl_cache_foreach (priv->address_cache, remove_if_ifindex, &device.ifindex);
-				nl_cache_foreach (priv->route_cache, remove_if_ifindex, &device.ifindex);
+				check_cache_items (platform, priv->address_cache, device.ifindex);
+				check_cache_items (platform, priv->route_cache, device.ifindex);
 				break;
 			default:
 				break;
@@ -811,6 +833,18 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP4Address address;
 
 			init_ip4_address (&address, (struct rtnl_addr *) object);
+
+			/* Address deletion is sometimes accompanied by route deletion. We need to
+			 * check all routes belonging to the same interface.
+			 */
+			switch (status) {
+			case REMOVED:
+				check_cache_items (platform, priv->route_cache, address.ifindex);
+				break;
+			default:
+				break;
+			}
+
 			g_signal_emit_by_name (platform, sig, address.ifindex, &address);
 		}
 		return;
