@@ -2246,6 +2246,7 @@ static void
 platform_link_added_cb (NMPlatform *platform,
                         int ifindex,
                         NMPlatformLink *link,
+                        NMPlatformReason reason,
                         gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -2358,6 +2359,7 @@ static void
 platform_link_removed_cb (NMPlatform *platform,
                           int ifindex,
                           NMPlatformLink *link,
+                          NMPlatformReason reason,
                           gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);

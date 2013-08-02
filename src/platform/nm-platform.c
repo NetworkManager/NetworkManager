@@ -27,6 +27,7 @@
 
 #include "nm-platform.h"
 #include "nm-logging.h"
+#include "nm-enum-types.h"
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
@@ -1734,7 +1735,7 @@ nm_platform_init (NMPlatform *object)
 		G_SIGNAL_RUN_FIRST, \
 		G_CALLBACK (method), \
 		NULL, NULL, NULL, \
-		G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_POINTER); \
+		G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_POINTER, NM_TYPE_PLATFORM_REASON);
 
 static void
 nm_platform_class_init (NMPlatformClass *platform_class)

@@ -760,7 +760,7 @@ object_has_ifindex (struct nl_object *object, int ifindex)
 	}
 }
 
-static gboolean refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed);
+static gboolean refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed, NMPlatformReason reason);
 
 static void
 check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
@@ -772,12 +772,12 @@ check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
 		debug ("cache %p object %p", cloned_cache, object);
 		g_assert (nl_object_get_cache (object) == cloned_cache);
 		if (object_has_ifindex (object, ifindex))
-			refresh_object (platform, object, TRUE);
+			refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
 	}
 }
 
 static void
-announce_object (NMPlatform *platform, const struct nl_object *object, ObjectStatus status)
+announce_object (NMPlatform *platform, const struct nl_object *object, ObjectStatus status, NMPlatformReason reason)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	ObjectType object_type = object_type_from_nl_object (object);
@@ -825,7 +825,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 				break;
 			}
 
-			g_signal_emit_by_name (platform, sig, device.ifindex, &device);
+			g_signal_emit_by_name (platform, sig, device.ifindex, &device, reason);
 		}
 		return;
 	case IP4_ADDRESS:
@@ -845,7 +845,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 				break;
 			}
 
-			g_signal_emit_by_name (platform, sig, address.ifindex, &address);
+			g_signal_emit_by_name (platform, sig, address.ifindex, &address, reason);
 		}
 		return;
 	case IP6_ADDRESS:
@@ -853,7 +853,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP6Address address;
 
 			init_ip6_address (&address, (struct rtnl_addr *) object);
-			g_signal_emit_by_name (platform, sig, address.ifindex, &address);
+			g_signal_emit_by_name (platform, sig, address.ifindex, &address, reason);
 		}
 		return;
 	case IP4_ROUTE:
@@ -861,7 +861,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP4Route route;
 
 			init_ip4_route (&route, (struct rtnl_route *) object);
-			g_signal_emit_by_name (platform, sig, route.ifindex, &route);
+			g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
 		}
 		return;
 	case IP6_ROUTE:
@@ -869,7 +869,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformIP6Route route;
 
 			init_ip6_route (&route, (struct rtnl_route *) object);
-			g_signal_emit_by_name (platform, sig, route.ifindex, &route);
+			g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
 		}
 		return;
 	default:
@@ -880,7 +880,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 static struct nl_object * build_rtnl_link (int ifindex, const char *name, NMLinkType type);
 
 static gboolean
-refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed)
+refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed, NMPlatformReason reason)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *cached_object = NULL;
@@ -900,7 +900,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 		if (cached_object) {
 			nl_cache_remove (cached_object);
 
-			announce_object (platform, cached_object, REMOVED);
+			announce_object (platform, cached_object, REMOVED, reason);
 		}
 	} else {
 		g_return_val_if_fail (kernel_object, FALSE);
@@ -912,7 +912,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 		nle = nl_cache_add (cache, kernel_object);
 		g_return_val_if_fail (!nle, FALSE);
 
-		announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED);
+		announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED, reason);
 
 		/* Refresh the master device (even on enslave/release) */
 		if (object_type_from_nl_object (kernel_object) == LINK) {
@@ -922,12 +922,12 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 
 			if (kernel_master) {
 				master_object = build_rtnl_link (kernel_master, NULL, NM_LINK_TYPE_NONE);
-				refresh_object (platform, master_object, FALSE);
+				refresh_object (platform, master_object, FALSE, NM_PLATFORM_REASON_INTERNAL);
 				nl_object_put (master_object);
 			}
 			if (cached_master && cached_master != kernel_master) {
 				master_object = build_rtnl_link (cached_master, NULL, NM_LINK_TYPE_NONE);
-				refresh_object (platform, master_object, FALSE);
+				refresh_object (platform, master_object, FALSE, NM_PLATFORM_REASON_INTERNAL);
 				nl_object_put (master_object);
 			}
 		}
@@ -959,7 +959,7 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 		return FALSE;
 	}
 
-	return refresh_object (platform, object, FALSE);
+	return refresh_object (platform, object, FALSE, NM_PLATFORM_REASON_INTERNAL);
 }
 
 /* Decreases the reference count if @obj for convenience */
@@ -992,7 +992,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 		return FALSE;
 	}
 
-	refresh_object (platform, object, TRUE);
+	refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -1063,7 +1063,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			if (!g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex)))
 				return NL_OK;
 		}
-		announce_object (platform, cached_object, REMOVED);
+		announce_object (platform, cached_object, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 
 		return NL_OK;
 	case RTM_NEWLINK:
@@ -1084,7 +1084,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 				error ("netlink cache error: %s", nl_geterror (nle));
 				return NL_OK;
 			}
-			announce_object (platform, kernel_object, ADDED);
+			announce_object (platform, kernel_object, ADDED, NM_PLATFORM_REASON_EXTERNAL);
 			return NL_OK;
 		}
 		/* Ignore non-change
@@ -1101,7 +1101,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			error ("netlink cache error: %s", nl_geterror (nle));
 			return NL_OK;
 		}
-		announce_object (platform, kernel_object, CHANGED);
+		announce_object (platform, kernel_object, CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 
 		return NL_OK;
 	default:
@@ -1286,7 +1286,7 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 		return FALSE;
 	}
 
-	return refresh_object (platform, (struct nl_object *) rtnllink, FALSE);
+	return refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
 }
 
 static gboolean
@@ -2397,7 +2397,7 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	announce_object (platform, (struct nl_object *) rtnllink, ADDED);
+	announce_object (platform, (struct nl_object *) rtnllink, ADDED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -2431,7 +2431,7 @@ udev_device_removed (NMPlatform *platform,
 		auto_nl_object struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
 
 		if (device)
-			announce_object (platform, (struct nl_object *) device, REMOVED);
+			announce_object (platform, (struct nl_object *) device, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 	}
 }
 

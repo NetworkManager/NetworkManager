@@ -39,7 +39,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
-#include "nm-platform.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
 
@@ -321,7 +320,7 @@ error:
 }
 
 static void
-lost_link (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDeviceAdsl *device_adsl)
+lost_link (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformReason reason, NMDeviceAdsl *device_adsl)
 {
 	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device_adsl);
 	NMDevice *device = NM_DEVICE (device_adsl);

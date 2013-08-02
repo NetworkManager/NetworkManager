@@ -50,6 +50,16 @@ typedef enum {
 } NMPlatformError;
 
 typedef enum {
+	NM_PLATFORM_REASON_NONE,
+	/* Event was requested by NetworkManager. */
+	NM_PLATFORM_REASON_INTERNAL,
+	/* Event came from the kernel. */
+	NM_PLATFORM_REASON_EXTERNAL,
+	/* Event is a result of cache checking and cleanups. */
+	NM_PLATFORM_REASON_CACHE_CHECK
+} NMPlatformReason;
+
+typedef enum {
 	/* Please don't interpret type numbers outside nm-platform and use functions
 	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
 	 *

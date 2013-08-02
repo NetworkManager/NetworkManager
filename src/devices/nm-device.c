@@ -325,12 +325,12 @@ static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *conne
 
 static const char *state_to_string (NMDeviceState state);
 
-static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDevice *device);
+static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformReason reason, NMDevice *device);
 static void check_carrier (NMDevice *device);
 
 static void nm_device_queued_ip_config_change_clear (NMDevice *self);
 static void update_ip_config (NMDevice *self);
-static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, gpointer user_data);
+static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
 
 static const char const *platform_ip_signals[] = {
 	NM_PLATFORM_IP4_ADDRESS_ADDED,
@@ -1149,7 +1149,7 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 }
 
 static void
-link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMDevice *device)
+link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformReason reason, NMDevice *device)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 
@@ -5911,7 +5911,7 @@ queued_ip_config_change (gpointer user_data)
 }
 
 static void
-device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, gpointer user_data)
+device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data)
 {
 	NMDevice *self = user_data;
 

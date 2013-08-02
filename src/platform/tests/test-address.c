@@ -7,7 +7,7 @@
 #define IP6_PLEN 64
 
 static void
-ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *received, SignalData *data)
+ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *received, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
@@ -25,7 +25,7 @@ ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *r
 }
 
 static void
-ip6_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Address *received, SignalData *data)
+ip6_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Address *received, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);

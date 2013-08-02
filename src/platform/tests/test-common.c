@@ -48,7 +48,7 @@ free_signal (SignalData *data)
 }
 
 void
-link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, SignalData *data)
+link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformReason reason, SignalData *data)
 {
 	
 	GArray *links;
