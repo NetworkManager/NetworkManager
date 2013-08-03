@@ -578,7 +578,7 @@ do_ip4_route_get_all (char **argv)
 	int i;
 
 	if (ifindex) {
-		routes = nm_platform_ip4_route_get_all (ifindex);
+		routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
 		for (i = 0; i < routes->len; i++) {
 			route = &g_array_index (routes, NMPlatformIP4Route, i);
 			inet_ntop (AF_INET, &route->network, networkstr, sizeof (networkstr));
@@ -602,7 +602,7 @@ do_ip6_route_get_all (char **argv)
 	int i;
 
 	if (ifindex) {
-		routes = nm_platform_ip6_route_get_all (ifindex);
+		routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
 		for (i = 0; i < routes->len; i++) {
 			route = &g_array_index (routes, NMPlatformIP6Route, i);
 			inet_ntop (AF_INET6, &route->network, networkstr, sizeof (networkstr));

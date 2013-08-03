@@ -1326,25 +1326,25 @@ nm_platform_address_flush (int ifindex)
 /******************************************************************/
 
 GArray *
-nm_platform_ip4_route_get_all (int ifindex)
+nm_platform_ip4_route_get_all (int ifindex, gboolean include_default)
 {
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
-	return klass->ip4_route_get_all (platform, ifindex);
+	return klass->ip4_route_get_all (platform, ifindex, include_default);
 }
 
 GArray *
-nm_platform_ip6_route_get_all (int ifindex)
+nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
 {
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
-	return klass->ip6_route_get_all (platform, ifindex);
+	return klass->ip6_route_get_all (platform, ifindex, include_default);
 }
 
 gboolean
@@ -1485,14 +1485,10 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	int i;
 
 	/* Delete unknown routes */
-	routes = nm_platform_ip4_route_get_all (ifindex);
+	routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP4Route, i);
 		route->ifindex = 0;
-
-		/* Ignore default route */
-		if (!route->plen)
-			continue;
 
 		if (!array_contains_ip4_route (known_routes, route))
 			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
@@ -1535,14 +1531,10 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	int i;
 
 	/* Delete unknown routes */
-	routes = nm_platform_ip6_route_get_all (ifindex);
+	routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP6Route, i);
 		route->ifindex = 0;
-
-		/* Ignore default route */
-		if (!route->plen)
-			continue;
 
 		if (!array_contains_ip6_route (known_routes, route))
 			nm_platform_ip6_route_delete (ifindex, route->network, route->plen, route->metric);

@@ -83,7 +83,7 @@ test_ip4_route ()
 	accept_signal (route_changed);
 
 	/* Test route listing */
-	routes = nm_platform_ip4_route_get_all (ifindex);
+	routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
 	memset (rts, 0, sizeof (rts));
 	rts[0].network = gateway;
 	rts[0].plen = 32;
@@ -166,7 +166,7 @@ test_ip6_route ()
 	accept_signal (route_changed);
 
 	/* Test route listing */
-	routes = nm_platform_ip6_route_get_all (ifindex);
+	routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
 	memset (rts, 0, sizeof (rts));
 	rts[0].network = gateway;
 	rts[0].plen = 128;

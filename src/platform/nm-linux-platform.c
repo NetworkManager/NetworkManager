@@ -2155,7 +2155,7 @@ ip_route_mark_all (NMPlatform *platform, int family, int ifindex)
 }
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex)
+ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
@@ -2169,7 +2169,8 @@ ip4_route_get_all (NMPlatform *platform, int ifindex)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
 			init_ip4_route (&route, (struct rtnl_route *) object);
-			g_array_append_val (routes, route);
+			if (route.plen != 0 || include_default)
+				g_array_append_val (routes, route);
 			nl_object_unmark (object);
 		}
 	}
@@ -2178,7 +2179,7 @@ ip4_route_get_all (NMPlatform *platform, int ifindex)
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex)
+ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
@@ -2192,7 +2193,8 @@ ip6_route_get_all (NMPlatform *platform, int ifindex)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
 			init_ip6_route (&route, (struct rtnl_route *) object);
-			g_array_append_val (routes, route);
+			if (route.plen != 0 || include_default)
+				g_array_append_val (routes, route);
 			nl_object_unmark (object);
 		}
 	}

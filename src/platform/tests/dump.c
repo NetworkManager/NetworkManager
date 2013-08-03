@@ -85,8 +85,8 @@ dump_interface (NMPlatformLink *link)
 	g_array_unref (ip4_addresses);
 	g_array_unref (ip6_addresses);
 
-	ip4_routes = nm_platform_ip4_route_get_all (link->ifindex);
-	ip6_routes = nm_platform_ip6_route_get_all (link->ifindex);
+	ip4_routes = nm_platform_ip4_route_get_all (link->ifindex, TRUE);
+	ip6_routes = nm_platform_ip6_route_get_all (link->ifindex, TRUE);
 
 	g_assert (ip4_routes);
 	g_assert (ip6_routes);

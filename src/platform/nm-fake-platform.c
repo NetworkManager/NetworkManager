@@ -882,7 +882,7 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 /******************************************************************/
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex)
+ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
@@ -901,15 +901,17 @@ ip4_route_get_all (NMPlatform *platform, int ifindex)
 	/* Fill routes */
 	for (i = 0; i < priv->ip4_routes->len; i++) {
 		route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-		if (route && route->ifindex == ifindex)
-			g_array_append_val (routes, *route);
+		if (route && route->ifindex == ifindex) {
+			if (route->plen != 0 || include_default)
+				g_array_append_val (routes, *route);
+		}
 	}
 
 	return routes;
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex)
+ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
@@ -928,8 +930,10 @@ ip6_route_get_all (NMPlatform *platform, int ifindex)
 	/* Fill routes */
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-		if (route && route->ifindex == ifindex)
-			g_array_append_val (routes, *route);
+		if (route && route->ifindex == ifindex) {
+			if (route->plen != 0 || include_default)
+				g_array_append_val (routes, *route);
+		}
 	}
 
 	return routes;
