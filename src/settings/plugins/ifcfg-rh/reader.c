@@ -4123,13 +4123,25 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	s_vlan = NM_SETTING_VLAN (nm_setting_vlan_new ());
 
+	/* Parent interface from PHYSDEV takes precedence if it exists */
+	parent = svGetValue (ifcfg, "PHYSDEV", FALSE);
+
 	if (iface_name) {
 		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, iface_name, NULL);
 
 		p = strchr (iface_name, '.');
 		if (p) {
-			/* eth0.43; PHYSDEV is assumed from it */
-			parent = g_strndup (iface_name, p - iface_name);
+			/* eth0.43; PHYSDEV is assumed from it if unknown */
+			if (!parent) {
+				parent = g_strndup (iface_name, p - iface_name);
+				if (g_str_has_prefix (parent, "vlan")) {
+					/* Like initscripts, if no PHYSDEV and we get an obviously
+					 * invalid parent interface from DEVICE, fail.
+					 */
+					g_free (parent);
+					parent = NULL;
+				}
+			}
 			p++;
 		} else {
 			/* format like vlan43; PHYSDEV or MASTER must be set */
@@ -4158,8 +4170,6 @@ make_vlan_setting (shvarFile *ifcfg,
 	}
 	g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
 
-	if (!parent)
-		parent = svGetValue (ifcfg, "PHYSDEV", FALSE);
 	if (parent == NULL) {
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
 		                     "Failed to determine VLAN parent from DEVICE or PHYSDEV");

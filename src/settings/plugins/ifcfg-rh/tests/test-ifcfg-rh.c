@@ -11505,6 +11505,30 @@ test_read_vlan_only_device (void)
 }
 
 static void
+test_read_vlan_physdev (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "vlan0.3");
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 3);
+
+	g_object_unref (connection);
+}
+
+static void
 test_write_vlan (void)
 {
 	NMConnection *connection;
@@ -12515,6 +12539,7 @@ int main (int argc, char **argv)
 	test_read_vlan_interface ();
 	test_read_vlan_only_vlan_id ();
 	test_read_vlan_only_device ();
+	g_test_add_func (TPATH "vlan/physdev", test_read_vlan_physdev);
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();
