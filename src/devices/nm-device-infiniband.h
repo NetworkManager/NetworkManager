@@ -53,8 +53,7 @@ typedef struct {
 GType nm_device_infiniband_get_type (void);
 
 NMDevice *nm_device_infiniband_new (NMPlatformLink *platform_device);
-NMDevice *nm_device_infiniband_new_partition (const char *udi,
-                                              const char *iface,
+NMDevice *nm_device_infiniband_new_partition (const char *iface,
                                               const char *driver);
 
 G_END_DECLS

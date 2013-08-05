@@ -383,13 +383,11 @@ release_slave (NMDevice *device, NMDevice *slave)
 /******************************************************************/
 
 NMDevice *
-nm_device_bond_new (const char *udi, const char *iface)
+nm_device_bond_new (const char *iface)
 {
-	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
-	                                  NM_DEVICE_UDI, udi,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_DRIVER, "bonding",
 	                                  NM_DEVICE_TYPE_DESC, "Bond",

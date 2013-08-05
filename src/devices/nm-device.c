@@ -496,6 +496,7 @@ constructor (GType type,
 	NMDevicePrivate *priv;
 	NMPlatform *platform;
 	int i;
+	static guint32 id = 0;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
 	                         n_construct_params,
@@ -506,14 +507,14 @@ constructor (GType type,
 	dev = NM_DEVICE (object);
 	priv = NM_DEVICE_GET_PRIVATE (dev);
 
-	if (!priv->udi) {
-		nm_log_err (LOGD_DEVICE, "No device udi provided, ignoring");
-		goto error;
-	}
-
 	if (!priv->iface) {
 		nm_log_err (LOGD_DEVICE, "No device interface provided, ignoring");
 		goto error;
+	}
+
+	if (!priv->udi) {
+		/* Use a placeholder UDI until we get a real one */
+		priv->udi = g_strdup_printf ("/virtual/device/placeholder/%d", id++);
 	}
 
 	if (NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities)
@@ -1160,9 +1161,17 @@ static void
 link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformReason reason, NMDevice *device)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	if (ifindex != nm_device_get_ifindex (device))
 		return;
+
+	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
+		/* Update UDI to what udev gives us */
+		g_free (priv->udi);
+		priv->udi = g_strdup (info->udi);
+		g_object_notify (G_OBJECT (device), NM_DEVICE_UDI);
+	}
 
 	if (klass->link_changed)
 		klass->link_changed (device, info);

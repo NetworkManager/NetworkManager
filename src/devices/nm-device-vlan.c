@@ -303,16 +303,14 @@ parent_state_changed (NMDevice *parent,
 /******************************************************************/
 
 NMDevice *
-nm_device_vlan_new (const char *udi, const char *iface, NMDevice *parent)
+nm_device_vlan_new (const char *iface, NMDevice *parent)
 {
 	NMDevice *device;
 
-	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (parent != NULL, NULL);
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
-	                                    NM_DEVICE_UDI, udi,
 	                                    NM_DEVICE_IFACE, iface,
 	                                    NM_DEVICE_DRIVER, "8021q",
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",

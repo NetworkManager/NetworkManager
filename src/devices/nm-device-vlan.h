@@ -54,9 +54,7 @@ typedef struct {
 
 GType nm_device_vlan_get_type (void);
 
-NMDevice *nm_device_vlan_new (const char *udi,
-                              const char *iface,
-                              NMDevice *parent);
+NMDevice *nm_device_vlan_new (const char *iface, NMDevice *parent);
 
 G_END_DECLS
 

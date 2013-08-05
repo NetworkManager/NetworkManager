@@ -171,6 +171,13 @@ static GSList * remove_one_device (NMManager *manager,
 
 static void rfkill_change_wifi (const char *desc, gboolean enabled);
 
+static void
+platform_link_added_cb (NMPlatform *platform,
+                        int ifindex,
+                        NMPlatformLink *link,
+                        NMPlatformReason reason,
+                        gpointer user_data);
+
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -1181,14 +1188,6 @@ connection_needs_virtual_device (NMConnection *connection)
 	return FALSE;
 }
 
-static char *
-get_virtual_iface_placeholder_udi (void)
-{
-	static guint32 id = 0;
-
-	return g_strdup_printf ("/virtual/device/placeholder/%d", id++);
-}
-
 /***************************/
 
 /* FIXME: remove when we handle bridges non-destructively */
@@ -1290,7 +1289,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
-	char *iface = NULL, *udi;
+	char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
 
 	iface = get_virtual_iface_name (self, connection, &parent);
@@ -1313,16 +1312,20 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		g_clear_error (&error);
 	}
 
+	/* Block notification of link added since we're creating the device
+	 * explicitly here, otherwise adding the platform/kernel device would
+	 * create it before this function can do the rest of the setup.
+	 */
+	g_signal_handlers_block_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
+
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
 		if (!nm_platform_bond_add (iface)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bonding master interface for '%s'",
 			             iface, nm_connection_get_id (connection));
-			goto out;
+			goto unblock;
 		}
 
-		udi = get_virtual_iface_placeholder_udi ();
-		device = nm_device_bond_new (udi, iface);
-		g_free (udi);
+		device = nm_device_bond_new (iface);
 	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		gboolean result;
 
@@ -1330,19 +1333,17 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		if (!result && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bridging interface for '%s'",
 			             iface, nm_connection_get_id (connection));
-			goto out;
+			goto unblock;
 		}
 
 		/* FIXME: remove when we handle bridges non-destructively */
 		if (!result && !bridge_created_by_nm (self, iface)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): cannot use existing bridge for '%s'",
 			             iface, nm_connection_get_id (connection));
-			goto out;
+			goto unblock;
 		}
 
-		udi = get_virtual_iface_placeholder_udi ();
-		device = nm_device_bridge_new (udi, iface);
-		g_free (udi);
+		device = nm_device_bridge_new (iface);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
 		int ifindex = nm_device_get_ip_ifindex (parent);
@@ -1354,7 +1355,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 				nm_setting_vlan_get_flags (s_vlan))) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
 			             iface, nm_connection_get_id (connection));
-			goto out;
+			goto unblock;
 		}
 		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
 		for (i = 0; i < num; i++) {
@@ -1366,9 +1367,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
 				nm_platform_vlan_set_egress_map (ifindex, from, to);
 		}
-		udi = get_virtual_iface_placeholder_udi ();
-		device = nm_device_vlan_new (udi, iface, parent);
-		g_free (udi);
+		device = nm_device_vlan_new (iface, parent);
 	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
 		int p_key, parent_ifindex;
@@ -1379,16 +1378,17 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		if (!nm_platform_infiniband_partition_add (parent_ifindex, p_key)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add InfiniBand P_Key interface for '%s'",
 			             iface, nm_connection_get_id (connection));
-			goto out;
+			goto unblock;
 		}
 
-		udi = get_virtual_iface_placeholder_udi ();
-		device = nm_device_infiniband_new_partition (udi, iface, nm_device_get_driver (parent));
-		g_free (udi);
+		device = nm_device_infiniband_new_partition (iface, nm_device_get_driver (parent));
 	}
 
 	if (device)
 		add_device (self, device);
+
+unblock:
+	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
 
 out:
 	g_free (iface);
@@ -2257,12 +2257,8 @@ platform_link_added_cb (NMPlatform *platform,
 
 	g_return_if_fail (ifindex > 0);
 
-	device = find_device_by_ifindex (self, ifindex);
-	if (device) {
-		/* If it's a virtual device we may need to update its UDI */
-		g_object_set (G_OBJECT (device), NM_DEVICE_UDI, link->udi, NULL);
+	if (find_device_by_ifindex (self, ifindex))
 		return;
-	}
 
 	/* Try registered device factories */
 	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
@@ -2303,12 +2299,12 @@ platform_link_added_cb (NMPlatform *platform,
 			device = nm_device_wifi_new (link);
 			break;
 		case NM_LINK_TYPE_BOND:
-			device = nm_device_bond_new (link->udi, link->name);
+			device = nm_device_bond_new (link->name);
 			break;
 		case NM_LINK_TYPE_BRIDGE:
 			/* FIXME: always create device when we handle bridges non-destructively */
 			if (bridge_created_by_nm (self, link->name))
-				device = nm_device_bridge_new (link->udi, link->name);
+				device = nm_device_bridge_new (link->name);
 			else
 				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", link->name);
 			break;
@@ -2317,7 +2313,7 @@ platform_link_added_cb (NMPlatform *platform,
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
 				parent = find_device_by_ifindex (self, parent_ifindex);
 				if (parent)
-					device = nm_device_vlan_new (link->udi, link->name, parent);
+					device = nm_device_vlan_new (link->name, parent);
 				else {
 					/* If udev signaled the VLAN interface before it signaled
 					 * the VLAN's parent at startup we may not know about the
