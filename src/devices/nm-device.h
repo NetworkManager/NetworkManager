@@ -314,6 +314,10 @@ void nm_device_set_manager_managed (NMDevice *device,
 void nm_device_set_default_unmanaged (NMDevice *device,
                                       gboolean default_unmanaged);
 
+gboolean nm_device_get_is_nm_owned (NMDevice *device);
+gboolean nm_device_set_is_nm_owned (NMDevice *device,
+                                    gboolean is_nm_owned);
+
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
 void nm_device_handle_autoip4_event (NMDevice *self,

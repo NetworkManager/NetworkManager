@@ -205,6 +205,7 @@ typedef struct {
 
 	gboolean      manager_managed; /* whether managed by NMManager or not */
 	gboolean      default_unmanaged; /* whether unmanaged by default */
+	gboolean      is_nm_owned; /* whether the device is a device owned and created by NM */
 
 	guint32         ip4_address;
 
@@ -4174,6 +4175,33 @@ _update_ip4_address (NMDevice *self)
 	}
 	close (fd);
 }
+
+
+gboolean
+nm_device_get_is_nm_owned (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	return NM_DEVICE_GET_PRIVATE (device)->is_nm_owned;
+}
+
+gboolean
+nm_device_set_is_nm_owned (NMDevice *device,
+                           gboolean is_nm_owned)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (is_nm_owned == priv->is_nm_owned)
+		return TRUE;
+	if (!is_nm_owned)
+		return FALSE;
+	priv->is_nm_owned = TRUE;
+	return TRUE;
+}
+
 
 /*
  * nm_device_deactivate

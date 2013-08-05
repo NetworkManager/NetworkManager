@@ -1502,8 +1502,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_infiniband_new_partition (iface, nm_device_get_driver (parent));
 	}
 
-	if (device)
+	if (device) {
+		nm_device_set_is_nm_owned (device, TRUE);
 		add_device (self, device);
+	}
 
 unblock:
 	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
