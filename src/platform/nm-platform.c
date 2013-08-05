@@ -259,8 +259,10 @@ nm_platform_query_devices (void)
 
 	links_array = nm_platform_link_get_all ();
 	links = (NMPlatformLink *) links_array->data;
-	for (i = 0; i < links_array->len; i++)
-		g_signal_emit (platform, signals[LINK_ADDED], 0, links[i].ifindex, &links[i]);
+	for (i = 0; i < links_array->len; i++) {
+		g_signal_emit (platform, signals[LINK_ADDED], 0,
+		               links[i].ifindex, &links[i], NM_PLATFORM_REASON_INTERNAL);
+	}
 	g_array_unref (links_array);
 }
 
