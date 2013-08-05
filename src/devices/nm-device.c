@@ -360,8 +360,6 @@ static void
 nm_device_init (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMPlatform *platform;
-	int i;
 
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
@@ -371,16 +369,6 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
-
-	/* Watch for external IP config changes */
-	platform = nm_platform_get ();
-	for (i = 0; i < n_platform_ip_signals; i++) {
-		g_signal_connect (platform, platform_ip_signals[i],
-		                  G_CALLBACK (device_ip_changed), self);
-	}
-
-	g_signal_connect (platform, NM_PLATFORM_LINK_CHANGED,
-	                  G_CALLBACK (link_changed_cb), self);
 }
 
 static void
@@ -506,6 +494,8 @@ constructor (GType type,
 	GObject *object;
 	NMDevice *dev;
 	NMDevicePrivate *priv;
+	NMPlatform *platform;
+	int i;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
 	                         n_construct_params,
@@ -538,6 +528,16 @@ constructor (GType type,
 	update_accept_ra_save (dev);
 	update_ip6_privacy_save (dev);
 	update_ip_config (dev);
+
+	/* Watch for external IP config changes */
+	platform = nm_platform_get ();
+	for (i = 0; i < n_platform_ip_signals; i++) {
+		g_signal_connect (platform, platform_ip_signals[i],
+		                  G_CALLBACK (device_ip_changed), dev);
+	}
+
+	g_signal_connect (platform, NM_PLATFORM_LINK_CHANGED,
+	                  G_CALLBACK (link_changed_cb), dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -4904,6 +4904,7 @@ dispose (GObject *object)
 	}
 
 	g_hash_table_unref (priv->available_connections);
+	priv->available_connections = NULL;
 
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
@@ -4940,6 +4941,8 @@ finalize (GObject *object)
 	g_free (priv->type_desc);
 	if (priv->dhcp_anycast_address)
 		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
+	if (priv->available_connections)
+		g_hash_table_unref (priv->available_connections);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
