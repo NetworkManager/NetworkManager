@@ -46,7 +46,7 @@ def change_secrets_in_one_setting(proxy, config, setting_name):
                 config[setting_name][key] = new_secret
     except Exception, e:
         #code = str(e).split(':')[0]
-	#print "Exception:", str(e)
+        #print "Exception:", str(e)
         pass
 
 def change_secrets(con_path, config):
@@ -80,7 +80,7 @@ def find_connection(name):
             pass
 
         # Find connection by the id
-	s_con = config['connection']
+        s_con = config['connection']
         if name == s_con['id']:
             con_path = path
             return config

@@ -94,11 +94,11 @@ def print_connections():
         merge_secrets(settings_connection, config, 'ppp')
 
         # Get the details of the 'connection' setting
-	s_con = config['connection']
-	print "    name: %s" % s_con['id']
-	print "    uuid: %s" % s_con['uuid']
-	print "    type: %s" % s_con['type']
-	print "    ------------------------------------------"
+        s_con = config['connection']
+        print "    name: %s" % s_con['id']
+        print "    uuid: %s" % s_con['uuid']
+        print "    type: %s" % s_con['type']
+        print "    ------------------------------------------"
         connection_to_string(config)
 
     print ""
