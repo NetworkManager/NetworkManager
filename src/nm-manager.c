@@ -1319,7 +1319,9 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	g_signal_handlers_block_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-		if (!nm_platform_bond_add (iface)) {
+
+		if (   !nm_platform_bond_add (iface)
+		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bonding master interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto unblock;
@@ -1350,9 +1352,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		int num, i;
 		guint32 from, to;
 
-		if (!nm_platform_vlan_add (iface, ifindex,
-				nm_setting_vlan_get_id (s_vlan),
-				nm_setting_vlan_get_flags (s_vlan))) {
+		if (   !nm_platform_vlan_add (iface, ifindex,
+		           nm_setting_vlan_get_id (s_vlan),
+		           nm_setting_vlan_get_flags (s_vlan))
+		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto unblock;
@@ -1375,7 +1378,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		parent_ifindex = nm_device_get_ifindex (parent);
 		p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 
-		if (!nm_platform_infiniband_partition_add (parent_ifindex, p_key)) {
+		if (   !nm_platform_infiniband_partition_add (parent_ifindex, p_key)
+		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add InfiniBand P_Key interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto unblock;
