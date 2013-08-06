@@ -255,8 +255,8 @@ read_mac_address (shvarFile *ifcfg, const char *key, int type,
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (array != NULL, FALSE);
 	g_return_val_if_fail (*array == NULL, FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
 
 	value = svGetValue (ifcfg, key, FALSE);
 	if (!value || !strlen (value)) {
