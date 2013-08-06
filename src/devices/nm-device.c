@@ -4861,14 +4861,16 @@ dispose (GObject *object)
 	g_clear_object (&priv->vpn6_config);
 
 	/* reset the saved RA value */
-	if (priv->ip6_accept_ra_path) {
+	if (   priv->ip6_accept_ra_path
+	    && g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
 		nm_utils_do_sysctl (priv->ip6_accept_ra_path,
 		                    priv->ip6_accept_ra_save ? "1" : "0");
 	}
 	g_free (priv->ip6_accept_ra_path);
 
 	/* reset the saved use_tempaddr value */
-	if (priv->ip6_privacy_tempaddr_path) {
+	if (   priv->ip6_privacy_tempaddr_path
+	    && g_file_test (priv->ip6_privacy_tempaddr_path, G_FILE_TEST_EXISTS)) {
 		char tmp[16];
 
 		snprintf (tmp, sizeof (tmp), "%d", priv->ip6_privacy_tempaddr_save);
