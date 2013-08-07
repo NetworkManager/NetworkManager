@@ -731,7 +731,7 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	struct nl_addr *dst, *gw;
 	struct rtnl_nexthop *nexthop;
 
-	g_assert (rtnl_route_get_nnexthops (rtnlroute) == 1);
+	g_assert (rtnl_route_get_nnexthops (rtnlroute) >= 1);
 	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
 	dst = rtnl_route_get_dst (rtnlroute);
 	gw = rtnl_route_nh_get_gateway (nexthop);
