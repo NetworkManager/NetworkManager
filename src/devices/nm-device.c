@@ -206,6 +206,7 @@ typedef struct {
 	gboolean      manager_managed; /* whether managed by NMManager or not */
 	gboolean      default_unmanaged; /* whether unmanaged by default */
 	gboolean      is_nm_owned; /* whether the device is a device owned and created by NM */
+	guint         delete_on_deactivate_id; /* event id for scheduled link_delete action (g_idle_add) */
 
 	guint32         ip4_address;
 
@@ -4177,6 +4178,52 @@ _update_ip4_address (NMDevice *self)
 }
 
 
+/*
+ * delete_on_deactivate_link_delete
+ *
+ * Function will be queued with g_idle_add to call
+ * nm_platform_link_delete for the underlying resources
+ * of the device.
+ */
+static gboolean
+delete_on_deactivate_link_delete (gpointer user_data)
+{
+	int ifindex = GPOINTER_TO_INT (user_data);
+
+	nm_log_dbg (LOGD_DEVICE, "device deactivated: cleanup and delete virtual link #%d", ifindex);
+	nm_platform_link_delete (ifindex);
+	return FALSE;
+}
+
+static void
+delete_on_deactivate_unschedule (NMDevicePrivate *priv)
+{
+	if (priv->delete_on_deactivate_id) {
+		g_source_remove (priv->delete_on_deactivate_id);
+		priv->delete_on_deactivate_id = 0;
+	}
+}
+
+static void
+delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
+{
+	NMDevicePrivate *priv;
+
+	if (ifindex <= 0)
+		return;
+	if (!nm_device_get_is_nm_owned (self))
+		return;
+	if (!nm_device_is_software (self))
+		return;
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED)
+		return;
+	nm_log_dbg (LOGD_DEVICE, "Schedule cleanup and delete virtual link #%d for [%s]",
+	                         ifindex, nm_device_get_iface (self));
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	delete_on_deactivate_unschedule (priv); /* always cancel and reschedule */
+	priv->delete_on_deactivate_id = g_idle_add (delete_on_deactivate_link_delete, GINT_TO_POINTER (ifindex));
+}
+
 gboolean
 nm_device_get_is_nm_owned (NMDevice *device)
 {
@@ -4304,6 +4351,11 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	 * or ATM device).
 	 */
 	nm_device_set_ip_iface (self, NULL);
+
+	/* Check if the device was deactivated, and if so, delete_link.
+	 * Don't call delete_link synchronously because we are currently
+	 * handling a state change -- which is not reentrant. */
+	delete_on_deactivate_check_and_schedule (self, ifindex);
 }
 
 static void
@@ -4994,6 +5046,9 @@ dispose (GObject *object)
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->dhcp6_ip6_config);
 	g_clear_object (&priv->vpn6_config);
+
+	/* On dispose, do a final check whether we should delete_link */
+	delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
 
 	/* Reset the saved RA value if the device is managed. */
 	if (priv->state > NM_DEVICE_STATE_UNMANAGED) {
@@ -5992,6 +6047,9 @@ nm_device_state_changed (NMDevice *device,
 	default:
 		break;
 	}
+
+	if (state > NM_DEVICE_STATE_DISCONNECTED)
+		delete_on_deactivate_unschedule (priv);
 
 	if (old_state == NM_DEVICE_STATE_ACTIVATED)
 		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL);
