@@ -4941,8 +4941,6 @@ finalize (GObject *object)
 	g_free (priv->type_desc);
 	if (priv->dhcp_anycast_address)
 		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
-	if (priv->available_connections)
-		g_hash_table_unref (priv->available_connections);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
