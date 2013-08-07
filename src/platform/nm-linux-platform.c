@@ -411,14 +411,11 @@ type_to_string (NMLinkType type)
 	} G_STMT_END
 
 static NMLinkType
-link_type_from_udev (NMPlatform *platform, struct rtnl_link *rtnllink, const char **out_name)
+link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char **out_name)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int ifindex = rtnl_link_get_ifindex (rtnllink);
 	GUdevDevice *udev_device;
 	const char *prop;
-
-	g_assert_cmpint (rtnl_link_get_arptype (rtnllink), ==, ARPHRD_ETHER);
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
 	if (!udev_device)
@@ -431,9 +428,13 @@ link_type_from_udev (NMPlatform *platform, struct rtnl_link *rtnllink, const cha
 	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
 	if (g_strcmp0 (prop, "wlan") == 0)
 		return_type (NM_LINK_TYPE_WIFI, "wifi");
+	else if (g_strcmp0 (prop, "wwan") == 0)
+		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
 
-	/* Anything else is assumed to be ethernet */
-	return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+	if (arptype == ARPHRD_ETHER)
+		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+
+	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
 
 static gboolean
@@ -505,10 +506,11 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 			 */
 			if (g_str_has_prefix (rtnl_link_get_name (rtnllink), "ctc"))
 				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-		} else if (arptype == ARPHRD_ETHER)
-			return link_type_from_udev (platform, rtnllink, out_name);
-		else
-			return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+		} else
+			return link_type_from_udev (platform,
+			                            rtnl_link_get_ifindex (rtnllink),
+			                            arptype,
+			                            out_name);
 	} else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "gre"))
@@ -2406,7 +2408,7 @@ udev_device_added (NMPlatform *platform,
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
-	const char *ifname, *devtype;
+	const char *ifname;
 	int ifindex;
 
 	ifname = g_udev_device_get_name (udev_device);
@@ -2424,19 +2426,6 @@ udev_device_added (NMPlatform *platform,
 
 	if (!g_udev_device_get_sysfs_path (udev_device)) {
 		debug ("(%s): couldn't determine device path; ignoring...", ifname);
-		return;
-	}
-
-	/* Not all ethernet devices are immediately usable; newer mobile broadband
-	 * devices (Ericsson, Option, Sierra) require setup on the tty before the
-	 * ethernet device is usable.  2.6.33 and later kernels set the 'DEVTYPE'
-	 * uevent variable which we can use to ignore the interface as a NMDevice
-	 * subclass.  ModemManager will pick it up though and so we'll handle it
-	 * through the mobile broadband stuff.
-	 */
-	devtype = g_udev_device_get_property (udev_device, "DEVTYPE");
-	if (g_strcmp0 (devtype, "wwan") == 0) {
-		debug ("(%s): ignoring interface with devtype '%s'", ifname, devtype);
 		return;
 	}
 

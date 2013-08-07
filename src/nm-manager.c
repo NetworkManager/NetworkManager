@@ -2345,6 +2345,12 @@ platform_link_added_cb (NMPlatform *platform,
 			device = nm_device_gre_new (link);
 			break;
 
+		case NM_LINK_TYPE_WWAN_ETHERNET:
+			/* WWAN pseudo-ethernet interfaces are handled automatically by
+			 * their NMDeviceModem and don't get a separate NMDevice object.
+			 */
+			break;
+
 		default:
 			device = nm_device_generic_new (link);
 			break;

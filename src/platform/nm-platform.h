@@ -78,6 +78,7 @@ typedef enum {
 	NM_LINK_TYPE_INFINIBAND,
 	NM_LINK_TYPE_OLPC_MESH,
 	NM_LINK_TYPE_WIFI,
+	NM_LINK_TYPE_WWAN_ETHERNET,   /* WWAN pseudo-ethernet */
 
 	/* Software types */
 	NM_LINK_TYPE_DUMMY = 0x10000,
