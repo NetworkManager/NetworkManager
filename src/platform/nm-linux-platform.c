@@ -1016,7 +1016,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *object = obj;
-	auto_nl_object struct nl_object *cached_object;
+	auto_nl_object struct nl_object *cached_object = NULL;
 	int nle;
 
 	/* FIXME: For some reason the result of build_rtnl_route() is not suitable
@@ -1421,9 +1421,8 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 static gboolean
 link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboolean value)
 {
-	auto_nl_object struct rtnl_link *change;
+	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
 
-	change = rtnl_link_alloc ();
 	g_return_val_if_fail (change != NULL, FALSE);
 
 	if (value)
@@ -1654,9 +1653,8 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
-	auto_nl_object struct rtnl_link *change;
+	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
 
-	change = rtnl_link_alloc ();
 	g_return_val_if_fail (change != NULL, FALSE);
 	rtnl_link_set_mtu (change, mtu);
 
@@ -1731,10 +1729,9 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
-	auto_nl_object struct rtnl_link *change;
+	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
 
-	change = rtnl_link_alloc ();
-	g_assert (change);
+	g_return_val_if_fail (change != NULL, FALSE);
 
 	rtnl_link_set_master (change, master);
 
@@ -1974,7 +1971,7 @@ static gboolean
 macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProperties *props)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink;
+	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	int err;
 
 	rtnllink = link_get (platform, ifindex);
