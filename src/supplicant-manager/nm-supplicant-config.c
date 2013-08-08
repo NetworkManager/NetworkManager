@@ -690,7 +690,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			/* If using WPA Enterprise, enable optimized background scanning
 			 * to ensure roaming within an ESS works well.
 			 */
-			if (!nm_supplicant_config_add_option (self, "bgscan", "simple:30:-45:300", -1, FALSE))
+			if (!nm_supplicant_config_add_option (self, "bgscan", "simple:30:-65:300", -1, FALSE))
 				nm_log_warn (LOGD_SUPPLICANT, "Error enabling background scanning for ESS roaming");
 
 			/* When using WPA-Enterprise, we want to use Proactive Key Caching (also
