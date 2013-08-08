@@ -115,6 +115,13 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 	connection_new_or_changed (plugin, path, connection, NULL);
 }
 
+static void
+connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
+{
+	g_hash_table_remove (SC_PLUGIN_IFCFG_GET_PRIVATE (user_data)->connections,
+	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
+}
+
 static NMIfcfgConnection *
 _internal_new_connection (SCPluginIfcfg *self,
                           const char *path,
@@ -148,6 +155,9 @@ _internal_new_connection (SCPluginIfcfg *self,
 	                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
 	                     connection);
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    read connection '%s'", cid);
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
+	                  G_CALLBACK (connection_removed_cb),
+	                  self);
 
 	if (nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 		const char *spec;

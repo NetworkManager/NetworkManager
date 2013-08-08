@@ -69,6 +69,13 @@ typedef struct {
 	gboolean disposed;
 } SCPluginKeyfilePrivate;
 
+static void
+connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
+{
+	g_hash_table_remove (SC_PLUGIN_KEYFILE_GET_PRIVATE (user_data)->connections,
+	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
+}
+
 static NMSettingsConnection *
 _internal_new_connection (SCPluginKeyfile *self,
                           const char *full_path,
@@ -83,6 +90,9 @@ _internal_new_connection (SCPluginKeyfile *self,
 		g_hash_table_insert (priv->connections,
 		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (connection)),
 		                     connection);
+		g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
+		                  G_CALLBACK (connection_removed_cb),
+		                  self);
 	}
 
 	return (NMSettingsConnection *) connection;
@@ -198,6 +208,10 @@ new_connection (SCPluginKeyfile *self,
 		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (tmp)),
 		                     tmp);
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, tmp);
+
+		g_signal_connect (tmp, NM_SETTINGS_CONNECTION_REMOVED,
+		                  G_CALLBACK (connection_removed_cb),
+		                  self);
 	}
 }
 

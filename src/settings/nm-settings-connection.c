@@ -624,7 +624,10 @@ do_delete (NMSettingsConnection *connection,
 	/* Remove connection from seen-bssids database file */
 	remove_entry_from_db (connection, "seen-bssids");
 
+	nm_settings_connection_signal_remove (connection);
+
 	callback (connection, NULL, user_data);
+
 	g_object_unref (connection);
 }
 

@@ -223,6 +223,24 @@ cancel_monitors (NMIfnetConnection * connection, gpointer user_data)
 }
 
 static void
+connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
+{
+	g_hash_table_remove (SC_PLUGIN_IFNET_GET_PRIVATE (user_data)->connections,
+	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
+}
+
+static void
+track_new_connection (SCPluginIfnet *self, NMIfnetConnection *connection)
+{
+	g_hash_table_insert (SC_PLUGIN_IFNET_GET_PRIVATE (self)->connections,
+	                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (connection)),
+	                     g_object_ref (connection));
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
+	                  G_CALLBACK (connection_removed_cb),
+	                  self);
+}
+
+static void
 reload_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (config);
@@ -286,11 +304,7 @@ reload_connections (NMSystemConfigInterface *config)
 					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
 
 					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
-					g_hash_table_remove (priv->connections,
-					                     nm_connection_get_uuid (NM_CONNECTION (old)));
-					g_hash_table_insert (priv->connections,
-					                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
-					                     g_object_ref (new));
+					track_new_connection (self, new);
 					if (is_managed_plugin () && is_managed (conn_name))
 						g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 				}
@@ -308,9 +322,7 @@ reload_connections (NMSystemConfigInterface *config)
 			}
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else if (new) {
-			g_hash_table_insert (priv->connections,
-			                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
-			                     g_object_ref (new));
+			track_new_connection (self, new);
 			if (is_managed_plugin () && is_managed (conn_name))
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
 		}
@@ -361,9 +373,9 @@ add_connection (NMSystemConfigInterface *config,
 	} else {
 		new = nm_ifnet_connection_new (source, NULL);
 		if (new) {
-			g_hash_table_insert (priv->connections,
-			                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (new)),
-			                     new);
+			track_new_connection (SC_PLUGIN_IFNET (config), new);
+			/* track_new_connection refs 'new' */
+			g_object_unref (new);
 		}
 	}
 
