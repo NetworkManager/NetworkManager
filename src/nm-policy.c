@@ -1811,9 +1811,11 @@ _deactivate_if_active (NMManager *manager, NMConnection *connection)
 	active = nm_manager_get_active_connections (manager);
 	for (iter = active; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *ac = iter->data;
+		NMActiveConnectionState state = nm_active_connection_get_state (ac);
 		GError *error = NULL;
 
-		if (nm_active_connection_get_connection (ac) == connection) {
+		if (nm_active_connection_get_connection (ac) == connection &&
+		    (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
 			if (!nm_manager_deactivate_connection (manager,
 			                                       nm_active_connection_get_path (ac),
 			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
