@@ -1296,7 +1296,7 @@ nm_device_master_get_slaves (NMDevice *dev)
  * @ifindex: the slave's interface index
  *
  * Returns: the slave with the given @ifindex of which @device is the master,
- *   or %NULL if no device with @ifinidex is a slave of @device.
+ *   or %NULL if no device with @ifindex is a slave of @device.
  */
 NMDevice *
 nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex)
