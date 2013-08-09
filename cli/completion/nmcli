@@ -171,7 +171,7 @@ _nmcli()
         [[ $command == help ]] && return 0
 
         case $object in
-            general)
+            g|ge|gen|gene|gener|genera|general)
                 case $command in
                     status | permissions)
                         return 0
@@ -185,7 +185,7 @@ _nmcli()
                 _nmcli_list "status permissions logging help"
                 ;;
 
-            networking)
+            n|ne|net|netw|netwo|networ|network|networki|networkin|networking)
                 case $command in
                     on | off)
                     return 0
@@ -194,7 +194,7 @@ _nmcli()
                 _nmcli_list "on off help"
                 ;;
 
-            radio)
+            r|ra|rad|radi|radio)
                 case $command in
                     all | wifi | mobile | wimax)
                         _nmcli_list "on off"
@@ -205,7 +205,7 @@ _nmcli()
                 _nmcli_list "all wifi mobile wimax help"
                 ;;
 
-            connection)
+            c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
                 case $command in
                     show)
                         local subcommand=${words[3]}
@@ -257,7 +257,7 @@ _nmcli()
                 _nmcli_list "show up down add modify edit delete reload help"
                 ;;
 
-            device)
+            d|de|dev|devi|devic|device)
                 case $command in
                     show)
                         _nmcli_list_nl "$(_nmcli_NM_devices)"
