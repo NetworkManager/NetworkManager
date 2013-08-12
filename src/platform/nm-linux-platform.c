@@ -698,18 +698,22 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 	memcpy (&address->address, nl_addr_get_binary_addr (nladdr), sizeof (address->address));
 }
 
-static void
+static gboolean
 init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 {
 	struct nl_addr *dst, *gw;
 	struct rtnl_nexthop *nexthop;
 
-	g_assert (rtnl_route_get_nnexthops (rtnlroute) == 1);
+	memset (route, 0, sizeof (*route));
+
+	/* Multi-hop routes not supported. */
+	if (rtnl_route_get_nnexthops (rtnlroute) != 1)
+		return FALSE;
+
 	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
 	dst = rtnl_route_get_dst (rtnlroute);
 	gw = rtnl_route_nh_get_gateway (nexthop);
 
-	memset (route, 0, sizeof (*route));
 	route->ifindex = rtnl_route_nh_get_ifindex (nexthop);
 	route->plen = nl_addr_get_prefixlen (dst);
 	/* Workaround on previous workaround for libnl default route prefixlen bug. */
@@ -723,20 +727,26 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
+
+	return TRUE;
 }
 
-static void
+static gboolean
 init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 {
 	struct nl_addr *dst, *gw;
 	struct rtnl_nexthop *nexthop;
 
-	g_assert (rtnl_route_get_nnexthops (rtnlroute) >= 1);
+	memset (route, 0, sizeof (*route));
+
+	/* Multi-hop routes not supported. */
+	if (rtnl_route_get_nnexthops (rtnlroute) != 1)
+		return FALSE;
+
 	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
 	dst = rtnl_route_get_dst (rtnlroute);
 	gw = rtnl_route_nh_get_gateway (nexthop);
 
-	memset (route, 0, sizeof (*route));
 	route->ifindex = rtnl_route_nh_get_ifindex (nexthop);
 	route->plen = nl_addr_get_prefixlen (dst);
 	/* Workaround on previous workaround for libnl default route prefixlen bug. */
@@ -750,6 +760,8 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
+
+	return TRUE;
 }
 
 /******************************************************************/
@@ -908,16 +920,16 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 		{
 			NMPlatformIP4Route route;
 
-			init_ip4_route (&route, (struct rtnl_route *) object);
-			g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
+			if (init_ip4_route (&route, (struct rtnl_route *) object))
+				g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
 		}
 		return;
 	case IP6_ROUTE:
 		{
 			NMPlatformIP6Route route;
 
-			init_ip6_route (&route, (struct rtnl_route *) object);
-			g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
+			if (init_ip6_route (&route, (struct rtnl_route *) object))
+				g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
 		}
 		return;
 	default:
@@ -2218,9 +2230,10 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
-			init_ip4_route (&route, (struct rtnl_route *) object);
-			if (route.plen != 0 || include_default)
-				g_array_append_val (routes, route);
+			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
+				if (route.plen != 0 || include_default)
+					g_array_append_val (routes, route);
+			}
 			nl_object_unmark (object);
 		}
 	}
@@ -2242,9 +2255,10 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
-			init_ip6_route (&route, (struct rtnl_route *) object);
-			if (route.plen != 0 || include_default)
-				g_array_append_val (routes, route);
+			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
+				if (route.plen != 0 || include_default)
+					g_array_append_val (routes, route);
+			}
 			nl_object_unmark (object);
 		}
 	}
