@@ -1151,7 +1151,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;
-	gboolean bad_owner, bad_permissions;
+	gboolean bad_permissions;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
@@ -1168,13 +1168,12 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 		return NULL;
 	}
 
-	bad_owner = getuid () != statbuf.st_uid;
 	bad_permissions = statbuf.st_mode & 0077;
 
-	if (bad_owner || bad_permissions) {
+	if (bad_permissions) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
-		             "File permissions (%o) or owner (%d) were insecure",
-		             statbuf.st_mode, statbuf.st_uid);
+		             "File permissions (%o) were insecure",
+		             statbuf.st_mode);
 		return NULL;
 	}
 
