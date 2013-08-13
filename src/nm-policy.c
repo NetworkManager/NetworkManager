@@ -860,6 +860,8 @@ typedef struct {
 static void
 activate_data_free (ActivateData *data)
 {
+	nm_device_remove_pending_action (data->device, "autoactivate");
+
 	if (data->id)
 		g_source_remove (data->id);
 	g_object_unref (data->device);
@@ -958,6 +960,9 @@ activate_data_new (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 		data->id = g_timeout_add_seconds (delay_seconds, auto_activate_device, data);
 	else
 		data->id = g_idle_add (auto_activate_device, data);
+
+	nm_device_add_pending_action (device, "autoactivate");
+
 	return data;
 }
 

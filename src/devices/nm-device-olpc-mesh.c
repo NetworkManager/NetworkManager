@@ -606,11 +606,11 @@ check_companion_cb (gpointer user_data)
 		nm_device_state_changed (NM_DEVICE (user_data),
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_NONE);
-		return FALSE;
+		goto done;
 	}
 
 	if (priv->device_added_id != 0)
-		return FALSE;
+		goto done;
 
 	manager = nm_manager_get ();
 
@@ -629,6 +629,8 @@ check_companion_cb (gpointer user_data)
 
 	g_object_unref (manager);
 
+ done:
+	nm_device_remove_pending_action (NM_DEVICE (self), "waiting for companion");
 	return FALSE;
 }
 
@@ -646,6 +648,7 @@ state_changed (NMDevice *device, NMDeviceState new_state,
 		 * transition to DISCONNECTED otherwise wait for our companion.
 		 */
 		g_idle_add (check_companion_cb, self);
+		nm_device_add_pending_action (device, "waiting for companion");
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		break;

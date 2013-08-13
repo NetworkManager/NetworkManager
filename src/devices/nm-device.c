@@ -130,6 +130,7 @@ enum {
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_IS_MASTER,
 	PROP_HW_ADDRESS,
+	PROP_HAS_PENDING_ACTION,
 	LAST_PROP
 };
 
@@ -180,6 +181,7 @@ typedef struct {
 	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
 	guint queued_ip_config_id;
+	guint pending_actions;
 
 	char *        udi;
 	char *        path;
@@ -5180,6 +5182,9 @@ get_property (GObject *object, guint prop_id,
 		else
 			g_value_set_string (value, NULL);
 		break;
+	case PROP_HAS_PENDING_ACTION:
+		g_value_set_boolean (value, nm_device_has_pending_action (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -5440,6 +5445,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+	g_object_class_install_property
+		(object_class, PROP_HAS_PENDING_ACTION,
+		 g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION,
+		                       "Has pending action",
+		                       "Has pending action",
+		                       FALSE,
+		                       G_PARAM_READABLE));
+
 	/* Signals */
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
@@ -5666,6 +5679,13 @@ reason_to_string (NMDeviceStateReason reason)
 	return "unknown";
 }
 
+static inline gboolean
+state_implies_pending_action (NMDeviceState state)
+{
+	return (   state >= NM_DEVICE_STATE_PREPARE
+	        && state < NM_DEVICE_STATE_ACTIVATED);
+}
+
 void
 nm_device_state_changed (NMDevice *device,
                          NMDeviceState state,
@@ -5696,6 +5716,10 @@ nm_device_state_changed (NMDevice *device,
 	old_state = priv->state;
 	priv->state = state;
 	priv->state_reason = reason;
+
+	if (    state_implies_pending_action (state)
+	    && !state_implies_pending_action (old_state))
+		nm_device_add_pending_action (device, "activation");
 
 	nm_log_info (LOGD_DEVICE, "(%s): device state change: %s -> %s (reason '%s') [%d %d %d]",
 	             nm_device_get_iface (device),
@@ -5838,6 +5862,10 @@ nm_device_state_changed (NMDevice *device,
 	if (req)
 		g_object_unref (req);
 
+	if (    state_implies_pending_action (old_state)
+	    && !state_implies_pending_action (state))
+		nm_device_remove_pending_action (device, "activation");
+
 	priv->in_state_changed = FALSE;
 }
 
@@ -5864,6 +5892,7 @@ queued_set_state (gpointer user_data)
 		nm_device_queued_state_clear (self);
 
 		nm_device_state_changed (self, new_state, new_reason);
+		nm_device_remove_pending_action (self, "queued state change");
 	} else {
 		g_warn_if_fail (priv->queued_state.state == NM_DEVICE_STATE_UNKNOWN);
 		g_warn_if_fail (priv->queued_state.reason == NM_DEVICE_STATE_REASON_NONE);
@@ -5896,6 +5925,7 @@ nm_device_queue_state (NMDevice *self,
 	priv->queued_state.state = state;
 	priv->queued_state.reason = reason;
 	priv->queued_state.id = g_idle_add (queued_set_state, self);
+	nm_device_add_pending_action (self, "queued state change");
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s due to %s (id %d)",
 	            nm_device_get_iface (self), state_to_string (state), reason_to_string (reason),
@@ -5923,6 +5953,7 @@ nm_device_queued_state_clear (NMDevice *self)
 		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued state transition (id %d)",
 		            nm_device_get_iface (self), priv->queued_state.id);
 		g_source_remove (priv->queued_state.id);
+		nm_device_remove_pending_action (self, "queued state change");
 	}
 	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
 }
@@ -6514,4 +6545,38 @@ nm_device_update_hw_address (NMDevice *dev)
 	}
 
 	return changed;
+}
+
+void
+nm_device_add_pending_action (NMDevice *device, const char *action)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	priv->pending_actions++;
+	nm_log_dbg (LOGD_DEVICE, "(%s): add_pending_action (%d): %s",
+	            nm_device_get_iface (device), priv->pending_actions, action);
+
+	if (priv->pending_actions == 1)
+		g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
+}
+
+void
+nm_device_remove_pending_action (NMDevice *device, const char *action)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	priv->pending_actions--;
+	nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): %s",
+	            nm_device_get_iface (device), priv->pending_actions, action);
+
+	if (priv->pending_actions == 0)
+		g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
+}
+
+gboolean
+nm_device_has_pending_action (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	return priv->pending_actions > 0;
 }

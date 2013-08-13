@@ -258,6 +258,7 @@ typedef struct {
 
 	GHashTable *nm_bridges;
 
+	gboolean startup;
 	gboolean disposed;
 } NMManagerPrivate;
 
@@ -285,6 +286,7 @@ enum {
 	PROP_0,
 	PROP_VERSION,
 	PROP_STATE,
+	PROP_STARTUP,
 	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
@@ -582,9 +584,7 @@ manager_device_state_changed (NMDevice *device,
                               gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-#if WITH_CONCHECK
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-#endif
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -618,6 +618,50 @@ manager_device_state_changed (NMDevice *device,
 #endif
 }
 
+static void device_has_pending_action_changed (NMDevice *device,
+                                               GParamSpec *pspec,
+                                               NMManager *self);
+
+static void
+check_if_startup_complete (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	if (!priv->startup)
+		return;
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *dev = iter->data;
+
+		if (nm_device_has_pending_action (dev)) {
+			nm_log_dbg (LOGD_CORE, "check_if_startup_complete returns FALSE because of %s",
+			            nm_device_get_iface (dev));
+			return;
+		}
+	}
+
+	nm_log_info (LOGD_CORE, "startup complete");
+
+	priv->startup = FALSE;
+	g_object_notify (G_OBJECT (self), "startup");
+
+	/* We don't have to watch notify::has-pending-action any more. */
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *dev = iter->data;
+
+		g_signal_handlers_disconnect_by_func (dev, G_CALLBACK (device_has_pending_action_changed), self);
+	}
+}
+
+static void
+device_has_pending_action_changed (NMDevice *device,
+                                   GParamSpec *pspec,
+                                   NMManager *self)
+{
+	check_if_startup_complete (self);
+}
+
 static void
 remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 {
@@ -645,6 +689,9 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 	g_object_unref (device);
 
 	priv->devices = g_slist_remove (priv->devices, device);
+
+	if (priv->startup)
+		check_if_startup_complete (manager);
 }
 
 static void
@@ -1932,6 +1979,12 @@ add_device (NMManager *self, NMDevice *device)
 	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
 	                  G_CALLBACK (device_auth_request_cb),
 	                  self);
+
+	if (priv->startup) {
+		g_signal_connect (device, "notify::" NM_DEVICE_HAS_PENDING_ACTION,
+		                  G_CALLBACK (device_has_pending_action_changed),
+		                  self);
+	}
 
 	if (devtype == NM_DEVICE_TYPE_WIFI) {
 		/* Attach to the access-point-added signal so that the manager can fill
@@ -3824,6 +3877,8 @@ nm_manager_start (NMManager *self)
 	/* FIXME: remove when we handle bridges non-destructively */
 	g_hash_table_unref (priv->nm_bridges);
 	priv->nm_bridges = NULL;
+
+	check_if_startup_complete (self);
 }
 
 static gboolean
@@ -4431,6 +4486,9 @@ get_property (GObject *object, guint prop_id,
 		nm_manager_update_state (self);
 		g_value_set_uint (value, priv->state);
 		break;
+	case PROP_STARTUP:
+		g_value_set_boolean (value, priv->startup);
+		break;
 	case PROP_NETWORKING_ENABLED:
 		g_value_set_boolean (value, priv->net_enabled);
 		break;
@@ -4548,6 +4606,7 @@ nm_manager_init (NMManager *manager)
 
 	priv->sleeping = FALSE;
 	priv->state = NM_STATE_DISCONNECTED;
+	priv->startup = TRUE;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	priv->dbus_connection_changed_id = g_signal_connect (priv->dbus_mgr,
@@ -4650,6 +4709,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                    "Current state",
 		                    0, NM_STATE_DISCONNECTED, 0,
 		                    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_STARTUP,
+		 g_param_spec_boolean (NM_MANAGER_STARTUP,
+		                       "Startup",
+		                       "Is NetworkManager still starting up",
+		                       TRUE,
+		                       G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_NETWORKING_ENABLED,

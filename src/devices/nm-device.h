@@ -65,6 +65,7 @@
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
 #define NM_DEVICE_IS_MASTER        "is-master"    /* Internal only */
 #define NM_DEVICE_HW_ADDRESS       "hw-address"   /* Internal only */
+#define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
 #define NM_DEVICE_AUTH_REQUEST "auth-request"
@@ -314,6 +315,10 @@ void nm_device_activate (NMDevice *device, NMActRequest *req);
 void nm_device_set_connection_provider (NMDevice *device, NMConnectionProvider *provider);
 
 gboolean nm_device_supports_vlans (NMDevice *device);
+
+void     nm_device_add_pending_action    (NMDevice *device, const char *action);
+void     nm_device_remove_pending_action (NMDevice *device, const char *action);
+gboolean nm_device_has_pending_action    (NMDevice *device);
 
 G_END_DECLS
 

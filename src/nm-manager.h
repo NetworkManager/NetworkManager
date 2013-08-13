@@ -51,6 +51,7 @@ typedef enum {
 
 #define NM_MANAGER_VERSION "version"
 #define NM_MANAGER_STATE "state"
+#define NM_MANAGER_STARTUP "startup"
 #define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"

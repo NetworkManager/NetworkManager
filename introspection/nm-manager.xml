@@ -302,6 +302,14 @@
       </tp:docstring>
     </property>
 
+    <property name="Startup" type="b" access="read">
+      <tp:docstring>
+        Indicates whether NM is still starting up; this becomes FALSE
+        when NM has finished attempting to activate every connection
+        that it might be able to activate at startup.
+      </tp:docstring>
+    </property>
+
     <property name="Version" type="s" access="read">
       <tp:docstring>
         NetworkManager version.

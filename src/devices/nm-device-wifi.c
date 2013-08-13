@@ -139,6 +139,7 @@ struct _NMDeviceWifiPrivate {
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             scanlist_cull_id;
+	gboolean          requested_scan;
 
 	Supplicant        supplicant;
 	WifiData *        wifi_data;
@@ -348,6 +349,9 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 		            nm_device_get_iface (NM_DEVICE (self)));
 		return FALSE;
 	}
+
+	if (nm_supplicant_interface_get_state (priv->supplicant.iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
+		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant");
 
 	g_signal_connect (priv->supplicant.iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
@@ -1652,6 +1656,11 @@ request_wireless_scan (gpointer user_data)
 	gboolean backoff = FALSE;
 	GPtrArray *ssids = NULL;
 
+	if (priv->requested_scan) {
+		/* There's already a scan in progress */
+		return FALSE;
+	}
+
 	if (check_scanning_allowed (self)) {
 		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scanning requested",
 		            nm_device_get_iface (NM_DEVICE (self)));
@@ -1679,6 +1688,8 @@ request_wireless_scan (gpointer user_data)
 		if (nm_supplicant_interface_request_scan (priv->supplicant.iface, ssids)) {
 			/* success */
 			backoff = TRUE;
+			priv->requested_scan = TRUE;
+			nm_device_add_pending_action (NM_DEVICE (self), "scan");
 		}
 
 		if (ssids) {
@@ -1764,6 +1775,8 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
                                gboolean success,
                                NMDeviceWifi *self)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
 	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan %s",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            success ? "successful" : "failed");
@@ -1774,6 +1787,11 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 	 * happens when there are new BSSes.
 	 */
 	schedule_scanlist_cull (self);
+
+	if (priv->requested_scan) {
+		priv->requested_scan = FALSE;
+		nm_device_remove_pending_action (NM_DEVICE (self), "scan");
+	}
 }
 
 
@@ -2321,6 +2339,9 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		/* Request a scan to get latest results */
 		cancel_pending_scan (self);
 		request_wireless_scan (self);
+
+		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
+			nm_device_remove_pending_action (device, "waiting for supplicant");
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
 		remove_supplicant_interface_error_handler (self);
