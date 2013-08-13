@@ -18,6 +18,7 @@ noinst_PROGRAMS = libnm-glib-test
 
 nm_online_SOURCES = nm-online.c
 nm_online_LDADD = \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
