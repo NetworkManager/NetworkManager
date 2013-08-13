@@ -57,6 +57,7 @@ typedef struct {
 	gboolean manager_running;
 	char *version;
 	NMState state;
+	gboolean startup;
 	GPtrArray *devices;
 	GPtrArray *active_connections;
 
@@ -83,6 +84,7 @@ enum {
 	PROP_0,
 	PROP_VERSION,
 	PROP_STATE,
+	PROP_STARTUP,
 	PROP_MANAGER_RUNNING,
 	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
@@ -175,6 +177,7 @@ register_properties (NMClient *client)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_CLIENT_VERSION,                   &priv->version },
 		{ NM_CLIENT_STATE,                     &priv->state },
+		{ NM_CLIENT_STARTUP,                   &priv->startup },
 		{ NM_CLIENT_NETWORKING_ENABLED,        &priv->networking_enabled },
 		{ NM_CLIENT_WIRELESS_ENABLED,          &priv->wireless_enabled },
 		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, &priv->wireless_hw_enabled },
@@ -1015,6 +1018,27 @@ nm_client_get_state (NMClient *client)
 }
 
 /**
+ * nm_client_get_startup:
+ * @client: a #NMClient
+ *
+ * Tests whether the daemon is still in the process of activating
+ * connections at startup.
+ *
+ * Returns: whether the daemon is still starting up
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_client_get_startup (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+
+	_nm_object_ensure_inited (NM_OBJECT (client));
+
+	return NM_CLIENT_GET_PRIVATE (client)->startup;
+}
+
+/**
  * nm_client_networking_get_enabled:
  * @client: a #NMClient
  *
@@ -1284,6 +1308,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	priv->manager_running = new_running;
 	if (!priv->manager_running) {
 		priv->state = NM_STATE_UNKNOWN;
+		priv->startup = FALSE;
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
@@ -1808,6 +1833,9 @@ get_property (GObject *object,
 	case PROP_STATE:
 		g_value_set_uint (value, nm_client_get_state (self));
 		break;
+	case PROP_STARTUP:
+		g_value_set_boolean (value, nm_client_get_startup (self));
+		break;
 	case PROP_MANAGER_RUNNING:
 		g_value_set_boolean (value, priv->manager_running);
 		break;
@@ -1882,6 +1910,21 @@ nm_client_class_init (NMClientClass *client_class)
 						    "NetworkManager state",
 						    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
 						    G_PARAM_READABLE));
+
+	/**
+	 * NMClient:startup:
+	 *
+	 * Whether the daemon is still starting up.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_STARTUP,
+		 g_param_spec_boolean (NM_CLIENT_STARTUP,
+		                       "Startup",
+		                       "Whether the daemon is still starting up",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/**
 	 * NMClient::manager-running:

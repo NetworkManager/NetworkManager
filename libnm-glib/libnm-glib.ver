@@ -41,6 +41,7 @@ global:
 	nm_client_get_logging;
 	nm_client_get_manager_running;
 	nm_client_get_permission_result;
+	nm_client_get_startup;
 	nm_client_get_state;
 	nm_client_get_type;
 	nm_client_get_version;
