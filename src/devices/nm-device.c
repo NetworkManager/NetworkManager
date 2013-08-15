@@ -209,8 +209,6 @@ typedef struct {
 	gpointer        act_source_func;
 	guint           act_source6_id;
 	gpointer        act_source6_func;
-	gulong          secrets_updated_id;
-	gulong          secrets_failed_id;
 
 	/* Link stuff */
 	guint           link_connected_id;
@@ -3949,18 +3947,6 @@ clear_act_request (NMDevice *self)
 
 	if (!priv->act_request)
 		return;
-
-	if (priv->secrets_updated_id) {
-		g_signal_handler_disconnect (priv->act_request,
-		                             priv->secrets_updated_id);
-		priv->secrets_updated_id = 0;
-	}
-
-	if (priv->secrets_failed_id) {
-		g_signal_handler_disconnect (priv->act_request,
-		                             priv->secrets_failed_id);
-		priv->secrets_failed_id = 0;
-	}
 
 	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
 
