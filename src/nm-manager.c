@@ -149,6 +149,7 @@ static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
                                              gpointer user_data);
 
 static void add_device (NMManager *self, NMDevice *device);
+static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
 
 static void hostname_provider_init (NMHostnameProvider *provider_class);
 
@@ -164,11 +165,6 @@ static NMActiveConnection *internal_activate_device (NMManager *manager,
                                                      GError **error);
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
-
-static GSList * remove_one_device (NMManager *manager,
-                                   GSList *list,
-                                   NMDevice *device,
-                                   gboolean quitting);
 
 static void rfkill_change_wifi (const char *desc, gboolean enabled);
 
@@ -507,12 +503,8 @@ modem_added (NMModemManager *modem_manager,
 	g_return_if_fail (modem_iface);
 
 	replace_device = find_device_by_ip_iface (NM_MANAGER (user_data), modem_iface);
-	if (replace_device) {
-		priv->devices = remove_one_device (NM_MANAGER (user_data),
-		                                   priv->devices,
-		                                   replace_device,
-		                                   FALSE);
-	}
+	if (replace_device)
+		remove_device (NM_MANAGER (user_data), replace_device, FALSE);
 
 	/* Give Bluetooth DUN devices first chance to claim the modem */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -626,12 +618,8 @@ manager_device_state_changed (NMDevice *device,
 #endif
 }
 
-/* Removes a device from a device list; returns the start of the new device list */
-static GSList *
-remove_one_device (NMManager *manager,
-                   GSList *list,
-                   NMDevice *device,
-                   gboolean quitting)
+static void
+remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
@@ -650,13 +638,13 @@ remove_one_device (NMManager *manager,
 			nm_device_set_manager_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 	}
 
-	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
+	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
 
 	nm_settings_device_removed (priv->settings, device);
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_unref (device);
 
-	return g_slist_remove (list, device);
+	priv->devices = g_slist_remove (priv->devices, device);
 }
 
 static void
@@ -680,7 +668,7 @@ modem_removed (NMModemManager *modem_manager,
 	/* Otherwise remove the standalone modem */
 	found = nm_manager_get_device_by_udi (self, nm_modem_get_path (modem));
 	if (found)
-		priv->devices = remove_one_device (self, priv->devices, found, FALSE);
+		remove_device (self, found, FALSE);
 }
 
 static void
@@ -2086,7 +2074,6 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
                                  gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 
 	g_return_if_fail (bdaddr != NULL);
@@ -2095,7 +2082,7 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 	device = nm_manager_get_device_by_udi (self, object_path);
 	if (device) {
 		nm_log_info (LOGD_HW, "BT device %s removed", bdaddr);
-		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+		remove_device (self, device, FALSE);
 	}
 }
 
@@ -2385,12 +2372,11 @@ platform_link_removed_cb (NMPlatform *platform,
                           gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 
 	device = find_device_by_ifindex (self, ifindex);
 	if (device)
-		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+		remove_device (self, device, FALSE);
 }
 
 static void
@@ -2433,7 +2419,7 @@ atm_device_removed_cb (NMAtmManager *manager,
 	}
 
 	if (device)
-		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+		remove_device (self, device, FALSE);
 }
 
 static void
@@ -4216,12 +4202,8 @@ dispose (GObject *object)
 	write_nm_created_bridges (manager);
 
 	/* Remove all devices */
-	while (g_slist_length (priv->devices)) {
-		priv->devices = remove_one_device (manager,
-		                                   priv->devices,
-		                                   NM_DEVICE (priv->devices->data),
-		                                   TRUE);
-	}
+	while (priv->devices)
+		remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
 
 	if (priv->ac_cleanup_id) {
 		g_source_remove (priv->ac_cleanup_id);
