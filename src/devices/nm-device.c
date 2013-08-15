@@ -260,6 +260,7 @@ typedef struct {
 	NMIP6Config *  ip6_config;
 	IpState        ip6_state;
 	NMIP6Config *  vpn6_config;  /* routes added by a VPN which uses this device */
+	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 
 	NMRDisc *      rdisc;
 	gulong         rdisc_config_changed_sigid;
@@ -2807,15 +2808,13 @@ dhcp6_add_option_cb (gpointer key, gpointer value, gpointer user_data)
 
 static gboolean
 ip6_config_merge_and_apply (NMDevice *self,
+                            gboolean commit,
                             NMDeviceStateReason *out_reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	gboolean success;
 	NMIP6Config *composite;
-
-	connection = nm_device_get_connection (self);
-	g_assert (connection);
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new ();
@@ -2828,11 +2827,15 @@ ip6_config_merge_and_apply (NMDevice *self,
 		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config);
 	if (priv->vpn6_config)
 		nm_ip6_config_merge (composite, priv->vpn6_config);
+	if (priv->ext_ip6_config)
+		nm_ip6_config_merge (composite, priv->ext_ip6_config);
 
 	/* Merge user overrides into the composite config */
-	nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));
+	connection = nm_device_get_connection (self);
+	if (connection)
+		nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));
 
-	success = nm_device_set_ip6_config (self, composite, TRUE, out_reason);
+	success = nm_device_set_ip6_config (self, composite, commit, out_reason);
 	g_object_unref (composite);
 	return success;
 }
@@ -2857,7 +2860,7 @@ dhcp6_lease_change (NMDevice *device)
 	g_assert (connection);
 
 	/* Apply the updated config */
-	if (ip6_config_merge_and_apply (device, &reason) == FALSE) {
+	if (ip6_config_merge_and_apply (device, TRUE, &reason) == FALSE) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to update IPv6 config in response to DHCP event.",
 		             nm_device_get_ip_iface (device));
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
@@ -4003,7 +4006,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
 		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self);
 
-	if (ip6_config_merge_and_apply (self, &reason)) {
+	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
 		/* Enter the IP_CHECK state if this is the first method to complete */
 		priv->ip6_state = IP_DONE;
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
@@ -4340,6 +4343,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	g_clear_object (&priv->ext_ip4_config);
 	g_clear_object (&priv->vpn4_config);
 	g_clear_object (&priv->vpn6_config);
+	g_clear_object (&priv->ext_ip6_config);
 
 	/* Clear legacy IPv4 address property */
 	priv->ip4_address = 0;
@@ -4684,7 +4688,7 @@ nm_device_set_vpn6_config (NMDevice *device, NMIP6Config *config)
 		priv->vpn6_config = g_object_ref (config);
 
 	/* NULL to use existing configs */
-	if (!ip6_config_merge_and_apply (device, NULL)) {
+	if (!ip6_config_merge_and_apply (device, TRUE, NULL)) {
 		nm_log_warn (LOGD_IP6, "(%s): failed to set VPN routes for device",
 			         nm_device_get_ip_iface (device));
 	}
@@ -5045,6 +5049,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->dhcp6_ip6_config);
 	g_clear_object (&priv->vpn6_config);
+	g_clear_object (&priv->ext_ip6_config);
 
 	/* On dispose, do a final check whether we should delete_link */
 	delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
@@ -6165,26 +6170,37 @@ static void
 update_ip_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
-	NMIP6Config *ip6_config = NULL;
 	int ifindex;
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
 		return;
 
+	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
 	priv->ext_ip4_config = nm_ip4_config_capture (ifindex);
-	if (priv->dev_ip4_config)
-		nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config);
-	if (priv->vpn4_config)
-		nm_ip4_config_subtract (priv->ext_ip4_config, priv->vpn4_config);
+	if (priv->ext_ip4_config) {
+		if (priv->dev_ip4_config)
+			nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config);
+		if (priv->vpn4_config)
+			nm_ip4_config_subtract (priv->ext_ip4_config, priv->vpn4_config);
 
-	ip4_config_merge_and_apply (self, NULL, FALSE, NULL);
+		ip4_config_merge_and_apply (self, NULL, FALSE, NULL);
+	}
 
-	ip6_config = nm_ip6_config_capture (ifindex);
-	nm_device_set_ip6_config (self, ip6_config, FALSE, &ignored);
-	g_clear_object (&ip6_config);
+	/* IPv6 */
+	g_clear_object (&priv->ext_ip6_config);
+	priv->ext_ip6_config = nm_ip6_config_capture (ifindex);
+	if (priv->ext_ip6_config) {
+		if (priv->ac_ip6_config)
+			nm_ip6_config_subtract (priv->ext_ip6_config, priv->ac_ip6_config);
+		if (priv->dhcp6_ip6_config)
+			nm_ip6_config_subtract (priv->ext_ip6_config, priv->dhcp6_ip6_config);
+		if (priv->vpn6_config)
+			nm_ip6_config_subtract (priv->ext_ip6_config, priv->vpn6_config);
+
+		ip6_config_merge_and_apply (self, FALSE, NULL);
+	}
 }
 
 static gboolean
