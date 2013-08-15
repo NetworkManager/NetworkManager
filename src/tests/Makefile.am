@@ -14,7 +14,8 @@ noinst_PROGRAMS = \
 	test-dhcp-options \
 	test-policy-hosts \
 	test-wifi-ap-utils \
-	test-ip4-config
+	test-ip4-config \
+	test-ip6-config
 
 ####### DHCP options test #######
 
@@ -53,14 +54,24 @@ test_ip4_config_SOURCES = \
 test_ip4_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### ip6 config test #######
+
+test_ip6_config_SOURCES = \
+	test-ip6-config.c
+
+test_ip6_config_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
 ####### secret agent interface test #######
 
 EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils test-ip4-config
+check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils test-ip4-config test-ip6-config
 	$(abs_builddir)/test-dhcp-options
 	$(abs_builddir)/test-policy-hosts
 	$(abs_builddir)/test-wifi-ap-utils
 	$(abs_builddir)/test-ip4-config
+	$(abs_builddir)/test-ip6-config
+

@@ -63,6 +63,7 @@ void nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *sett
 
 /* Utility functions */
 void nm_ip6_config_merge (NMIP6Config *dst, NMIP6Config *src);
+void nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src);
 int nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *dest, int plen);
 
 /* Gateways */
@@ -74,30 +75,35 @@ const struct in6_addr *nm_ip6_config_get_gateway (NMIP6Config *config);
 /* Addresses */
 void nm_ip6_config_reset_addresses (NMIP6Config *config);
 void nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *address);
+void nm_ip6_config_del_address (NMIP6Config *config, guint i);
 guint nm_ip6_config_get_num_addresses (NMIP6Config *config);
 NMPlatformIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);
 void nm_ip6_config_add_route (NMIP6Config *config, NMPlatformIP6Route *route);
+void nm_ip6_config_del_route (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_routes (NMIP6Config *config);
 NMPlatformIP6Route *  nm_ip6_config_get_route (NMIP6Config *config, guint32 i);
 
 /* Nameservers */
 void nm_ip6_config_reset_nameservers (NMIP6Config *config);
 void nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *nameserver);
+void nm_ip6_config_del_nameserver (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_nameservers (NMIP6Config *config);
 const struct in6_addr *nm_ip6_config_get_nameserver (NMIP6Config *config, guint i);
 
 /* Domains */
 void nm_ip6_config_reset_domains (NMIP6Config *config);
 void nm_ip6_config_add_domain (NMIP6Config *config, const char *domain);
+void nm_ip6_config_del_domain (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_domains (NMIP6Config *config);
 const char * nm_ip6_config_get_domain (NMIP6Config *config, guint i);
 
 /* Search lists */
 void nm_ip6_config_reset_searches (NMIP6Config *config);
 void nm_ip6_config_add_search (NMIP6Config *config, const char *search);
+void nm_ip6_config_del_search (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_searches (NMIP6Config *config);
 const char * nm_ip6_config_get_search (NMIP6Config *config, guint i);
 

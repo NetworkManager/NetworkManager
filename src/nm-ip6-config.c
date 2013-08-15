@@ -167,12 +167,6 @@ nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority)
 	return success;
 }
 
-static inline gboolean
-ip6_addresses_equal (const struct in6_addr *a, const struct in6_addr *b)
-{
-	return memcmp (a, b, sizeof (struct in6_addr)) == 0;
-}
-
 void
 nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 {
@@ -386,6 +380,115 @@ nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr 
 	return FALSE;
 }
 
+static gboolean
+routes_are_duplicate (NMPlatformIP6Route *a, NMPlatformIP6Route *b)
+{
+	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen;
+}
+
+/**
+ * nm_ip6_config_subtract()
+ * @dst: config from which to remove everything in @src
+ * @src: config to remove from @dst
+ *
+ * Removes everything in @src from @dst.
+ *
+ */
+void
+nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
+{
+	guint32 i, j;
+	const struct in6_addr *dst_tmp, *src_tmp;
+
+	g_return_if_fail (src != NULL);
+	g_return_if_fail (dst != NULL);
+
+	/* addresses */
+	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++) {
+		const NMPlatformIP6Address *src_addr = nm_ip6_config_get_address (src, i);
+
+		for (j = 0; j < nm_ip6_config_get_num_addresses (dst); j++) {
+			const NMPlatformIP6Address *dst_addr = nm_ip6_config_get_address (dst, j);
+
+			if (IN6_ARE_ADDR_EQUAL (&src_addr->address, &dst_addr->address)) {
+				nm_ip6_config_del_address (dst, j);
+				break;
+			}
+		}
+	}
+
+	/* ptp address */
+	src_tmp = nm_ip6_config_get_ptp_address (src);
+	dst_tmp = nm_ip6_config_get_ptp_address (dst);
+	if (src_tmp && dst_tmp && IN6_ARE_ADDR_EQUAL (src_tmp, dst_tmp))
+		nm_ip6_config_set_ptp_address (dst, NULL);
+
+	/* nameservers */
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++) {
+		const struct in6_addr *src_ns = nm_ip6_config_get_nameserver (src, i);
+
+		for (j = 0; j < nm_ip6_config_get_num_nameservers (dst); j++) {
+			const struct in6_addr *dst_ns = nm_ip6_config_get_nameserver (dst, j);
+
+			if (IN6_ARE_ADDR_EQUAL (src_ns, dst_ns)) {
+				nm_ip6_config_del_nameserver (dst, j);
+				break;
+			}
+		}
+	}
+
+	/* default gateway */
+	src_tmp = nm_ip6_config_get_gateway (src);
+	dst_tmp = nm_ip6_config_get_gateway (dst);
+	if (src_tmp && dst_tmp && IN6_ARE_ADDR_EQUAL (src_tmp, dst_tmp))
+		nm_ip6_config_set_gateway (dst, NULL);
+
+	/* routes */
+	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++) {
+		NMPlatformIP6Route *src_route = nm_ip6_config_get_route (src, i);
+
+		for (j = 0; j < nm_ip6_config_get_num_routes (dst); j++) {
+			NMPlatformIP6Route *dst_route = nm_ip6_config_get_route (dst, j);
+
+			if (routes_are_duplicate (src_route, dst_route)) {
+				nm_ip6_config_del_route (dst, j);
+				break;
+			}
+		}
+	}
+
+	/* domains */
+	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++) {
+		const char *src_domain = nm_ip6_config_get_domain (src, i);
+
+		for (j = 0; j < nm_ip6_config_get_num_domains (dst); j++) {
+			const char *dst_domain = nm_ip6_config_get_domain (dst, j);
+
+			if (g_strcmp0 (src_domain, dst_domain) == 0) {
+				nm_ip6_config_del_domain (dst, j);
+				break;
+			}
+		}
+	}
+
+	/* dns searches */
+	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++) {
+		const char *src_search = nm_ip6_config_get_search (src, i);
+
+		for (j = 0; j < nm_ip6_config_get_num_searches (dst); j++) {
+			const char *dst_search = nm_ip6_config_get_search (dst, j);
+
+			if (g_strcmp0 (src_search, dst_search) == 0) {
+				nm_ip6_config_del_search (dst, j);
+				break;
+			}
+		}
+	}
+
+	if (nm_ip6_config_get_mss (src) == nm_ip6_config_get_mss (dst))
+		nm_ip6_config_set_mss (dst, 0);
+}
+
 /******************************************************************/
 
 void
@@ -433,12 +536,6 @@ nm_ip6_config_reset_addresses (NMIP6Config *config)
 	g_array_set_size (priv->nameservers, 0);
 }
 
-static gboolean
-addresses_are_duplicate (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
-{
-	return IN6_ARE_ADDR_EQUAL (&a->address, &b->address);
-}
-
 void
 nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 {
@@ -450,13 +547,24 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 	for (i = 0; i < priv->addresses->len; i++ ) {
 		NMPlatformIP6Address *item = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 
-		if (addresses_are_duplicate (item, new)) {
+		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
+			/* Copy over old item to get new lifetime, timestamp, preferred */
 			memcpy (item, new, sizeof (*item));
 			return;
 		}
 	}
 
 	g_array_append_val (priv->addresses, *new);
+}
+
+void
+nm_ip6_config_del_address (NMIP6Config *config, guint i)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->addresses->len);
+
+	g_array_remove_index (priv->addresses, i);
 }
 
 guint
@@ -485,12 +593,6 @@ nm_ip6_config_reset_routes (NMIP6Config *config)
 	g_array_set_size (priv->routes, 0);
 }
 
-static gboolean
-routes_are_duplicate (NMPlatformIP6Route *a, NMPlatformIP6Route *b)
-{
-	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen;
-}
-
 void
 nm_ip6_config_add_route (NMIP6Config *config, NMPlatformIP6Route *new)
 {
@@ -509,6 +611,16 @@ nm_ip6_config_add_route (NMIP6Config *config, NMPlatformIP6Route *new)
 	}
 
 	g_array_append_val (priv->routes, *new);
+}
+
+void
+nm_ip6_config_del_route (NMIP6Config *config, guint i)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->routes->len);
+
+	g_array_remove_index (priv->routes, i);
 }
 
 guint
@@ -550,6 +662,16 @@ nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *new)
 			return;
 
 	g_array_append_val (priv->nameservers, *new);
+}
+
+void
+nm_ip6_config_del_nameserver (NMIP6Config *config, guint i)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->nameservers->len);
+
+	g_array_remove_index (priv->nameservers, i);
 }
 
 guint32
@@ -594,6 +716,16 @@ nm_ip6_config_add_domain (NMIP6Config *config, const char *domain)
 	g_ptr_array_add (priv->domains, g_strdup (domain));
 }
 
+void
+nm_ip6_config_del_domain (NMIP6Config *config, guint i)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->domains->len);
+
+	g_ptr_array_remove_index (priv->domains, i);
+}
+
 guint32
 nm_ip6_config_get_num_domains (NMIP6Config *config)
 {
@@ -634,6 +766,16 @@ nm_ip6_config_add_search (NMIP6Config *config, const char *new)
 			return;
 
 	g_ptr_array_add (priv->searches, g_strdup (new));
+}
+
+void
+nm_ip6_config_del_search (NMIP6Config *config, guint i)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->searches->len);
+
+	g_ptr_array_remove_index (priv->searches, i);
 }
 
 guint32
@@ -677,7 +819,11 @@ nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_a
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	priv->ptp_address = *ptp_address;
+	if (ptp_address)
+		priv->ptp_address = *ptp_address;
+	else
+		memset (&priv->ptp_address, 0, sizeof (priv->ptp_address));
+
 }
 
 const struct in6_addr *
@@ -685,7 +831,7 @@ nm_ip6_config_get_ptp_address (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	return &priv->ptp_address;
+	return IN6_IS_ADDR_UNSPECIFIED (&priv->ptp_address) ? NULL : &priv->ptp_address;
 }
 
 /******************************************************************/
