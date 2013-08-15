@@ -63,27 +63,23 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 
 .SH DESCRIPTION
 .B nmcli
-is a command\(hyline tool for controlling NetworkManager and reporting on its status.
-It is not meant as a full replacement for \fInm\(hyapplet\fP or other similar clients
-but as a complementary utility to those programs.
-The main usage for \fInmcli\fP is on servers, headless machines or for power users
-who prefer the command line.
+is a command\(hyline tool for controlling NetworkManager and reporting network
+status. It can be utilized as a replacement for \fInm\(hyapplet\fP or other
+graphical clients. \fInmcli\fP is used to create, display, edit, delete, activate,
+and deactivate network connections, as well as control and display network device
+status.
 .P
-Typical applications include:
+Typical uses include:
 .IP \(em 4
-Initscripts: ifup/ifdown can utilize NetworkManager via \fInmcli\fP instead of
-having to manage connections itself and possibly interfere with NetworkManager.
+Scripts: utilize NetworkManager via \fInmcli\fP instead of managing network
+connections manually.  \fInmcli\fP supports a terse output format which is better
+suited for script processing. Note that Networkmanager can also execute scripts,
+called "dispatcher scripts", in response to network events. See
+\fBNetworkManager\fP for details about these dispatcher scripts.
 .IP \(em 4
-Servers, headless machines: No GUI is available; then \fInmcli\fP can be used
-to activate/deactivate connections.  However, if a connection requires a secret
-in order to activate and if that secret is not stored at the system level,
-\fInmcli\fP will not be able to activate it; it is currently unable to supply
-the secrets to NetworkManager.
-.IP \(em 4
-User sessions: \fInmcli\fP can be used to activate/deactivate connections from
-the command line, but a client with a secret agent (like \fInm\(hyapplet\fP) is needed
-for supplying secrets not stored at the system level. Keyring dialogs and
-password prompts may appear if this happens.
+Servers, headless machines, and terminals:  \fInmcli\fP can be used to control
+NetworkManager without a GUI, including creating, editing, starting and stopping
+network connections and viewing network status.
 .SS \fIOPTIONS\fP
 .TP
 .B \-t, \-\-terse
