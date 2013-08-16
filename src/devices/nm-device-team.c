@@ -497,12 +497,40 @@ deactivate (NMDevice *dev)
 static gboolean
 enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 {
+#if WITH_TEAMDCTL
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
+#endif
 	gboolean success, no_firmware = FALSE;
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
+	NMSettingTeamPort *s_team_port;
 
 	nm_device_take_down (slave, TRUE);
 
+	s_team_port = nm_connection_get_setting_team_port (connection);
+	if (s_team_port) {
+		const char *config = nm_setting_team_port_get_config (s_team_port);
+
+		if (config) {
+#if WITH_TEAMDCTL
+			if (!priv->tdc) {
+				nm_log_warn (LOGD_TEAM, "(%s): enslaved team port %s config not changed, not connected to teamd",
+				             iface, slave_iface);
+			} else {
+				int err;
+
+				err = teamdctl_port_config_update_raw (priv->tdc, slave_iface, config);
+				if (err) {
+					nm_log_err (LOGD_TEAM, "(%s): failed to update config for port %s", iface, slave_iface);
+					return FALSE;
+				}
+			}
+#else
+			nm_log_warn (LOGD_TEAM, "(%s): enslaved team port %s config not changed due to lack of Teamd control support",
+			             iface, slave_iface);
+#endif
+		}
+	}
 	success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
 	                                    nm_device_get_ip_ifindex (slave));
 
