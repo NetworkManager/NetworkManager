@@ -1466,7 +1466,6 @@ write_team_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **er
 
 	config = nm_setting_team_port_get_config (s_port);
 	svSetValue (ifcfg, "TEAM_PORT_CONFIG", config, FALSE);
-	svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
 
 	return TRUE;
 }
@@ -1516,8 +1515,10 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 			svSetValue (ifcfg, "MASTER", master, FALSE);
 		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
 			svSetValue (ifcfg, "BRIDGE", master, FALSE);
-		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
+		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
 			svSetValue (ifcfg, "TEAM_MASTER", master, FALSE);
+			svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
+		}
 	}
 
 	/* secondary connection UUIDs */
