@@ -1371,7 +1371,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		device = nm_device_bond_new (iface);
 	} else if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)) {
-		if (!nm_platform_team_add (iface)) {
+		if (!nm_platform_team_add (iface)
+		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add team master interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto out;
