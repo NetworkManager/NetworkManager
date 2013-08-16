@@ -381,6 +381,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 	GPtrArray *argv;
 	GError *error = NULL;
 	gboolean ret;
+	int status;
 
 	teamd_binary = teamd_paths;
 	while (*teamd_binary != NULL) {
@@ -395,6 +396,22 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 		return FALSE;
 	}
 
+	/* Kill teamd for same named device first if it is there */
+	argv = g_ptr_array_new ();
+	g_ptr_array_add (argv, (gpointer) *teamd_binary);
+	g_ptr_array_add (argv, (gpointer) "-k");
+	g_ptr_array_add (argv, (gpointer) "-t");
+	g_ptr_array_add (argv, (gpointer) iface);
+	g_ptr_array_add (argv, NULL);
+
+	tmp_str = g_strjoinv (" ", (gchar **) argv->pdata);
+	nm_log_dbg (LOGD_TEAM, "running: %s", tmp_str);
+	g_free (tmp_str);
+
+	ret = g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, &status, &error);
+	g_ptr_array_free (argv, TRUE);
+
+	/* Start teamd now */
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) *teamd_binary);
 	g_ptr_array_add (argv, (gpointer) "-o");
