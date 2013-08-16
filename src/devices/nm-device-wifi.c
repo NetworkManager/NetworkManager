@@ -106,13 +106,10 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-#define SUP_SIG_ID_LEN 6
-
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
 
-	guint sig_ids[SUP_SIG_ID_LEN];
 	guint iface_error_id;
 
 	/* Timeouts and idles */
@@ -338,7 +335,6 @@ static gboolean
 supplicant_interface_acquire (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint id, i = 0;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	/* interface already acquired? */
@@ -353,43 +349,30 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 		return FALSE;
 	}
 
-	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       NM_SUPPLICANT_INTERFACE_STATE,
-	                       G_CALLBACK (supplicant_iface_state_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       NM_SUPPLICANT_INTERFACE_NEW_BSS,
-	                       G_CALLBACK (supplicant_iface_new_bss_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
-	                       G_CALLBACK (supplicant_iface_bss_updated_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
-	                       G_CALLBACK (supplicant_iface_bss_removed_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       NM_SUPPLICANT_INTERFACE_SCAN_DONE,
-	                       G_CALLBACK (supplicant_iface_scan_done_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
-
-	id = g_signal_connect (priv->supplicant.iface,
-	                       "notify::scanning",
-	                       G_CALLBACK (supplicant_iface_notify_scanning_cb),
-	                       self);
-	priv->supplicant.sig_ids[i++] = id;
+	g_signal_connect (priv->supplicant.iface,
+	                  NM_SUPPLICANT_INTERFACE_STATE,
+	                  G_CALLBACK (supplicant_iface_state_cb),
+	                  self);
+	g_signal_connect (priv->supplicant.iface,
+	                  NM_SUPPLICANT_INTERFACE_NEW_BSS,
+	                  G_CALLBACK (supplicant_iface_new_bss_cb),
+	                  self);
+	g_signal_connect (priv->supplicant.iface,
+	                  NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
+	                  G_CALLBACK (supplicant_iface_bss_updated_cb),
+	                  self);
+	g_signal_connect (priv->supplicant.iface,
+	                  NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
+	                  G_CALLBACK (supplicant_iface_bss_removed_cb),
+	                  self);
+	g_signal_connect (priv->supplicant.iface,
+	                  NM_SUPPLICANT_INTERFACE_SCAN_DONE,
+	                  G_CALLBACK (supplicant_iface_scan_done_cb),
+	                  self);
+	g_signal_connect (priv->supplicant.iface,
+	                  "notify::scanning",
+	                  G_CALLBACK (supplicant_iface_notify_scanning_cb),
+	                  self);
 
 	return TRUE;
 }
@@ -417,7 +400,6 @@ static void
 supplicant_interface_release (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv;
-	guint i;
 
 	g_return_if_fail (self != NULL);
 
@@ -434,11 +416,8 @@ supplicant_interface_release (NMDeviceWifi *self)
 	remove_supplicant_interface_error_handler (self);
 
 	/* Clear supplicant interface signal handlers */
-	for (i = 0; i < SUP_SIG_ID_LEN; i++) {
-		if (priv->supplicant.sig_ids[i] > 0)
-			g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.sig_ids[i]);
-	}
-	memset (priv->supplicant.sig_ids, 0, sizeof (priv->supplicant.sig_ids));
+	g_signal_handlers_disconnect_matched (priv->supplicant.iface, G_SIGNAL_MATCH_DATA,
+	                                      0, 0, NULL, NULL, self);
 
 	if (priv->scanlist_cull_id) {
 		g_source_remove (priv->scanlist_cull_id);
