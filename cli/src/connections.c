@@ -2742,6 +2742,12 @@ cleanup_vlan:
 		/* Build up the settings required for 'team' */
 		char *team_ifname = NULL;
 		const char *ifname = NULL;
+		const char *config = NULL;
+		nmc_arg_t exp_args[] = { {"config", TRUE, &config, FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
 
 		/* Use connection's ifname as 'team' ifname if exists, else generate one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
@@ -2759,6 +2765,8 @@ cleanup_vlan:
 
 		/* Set team options */
 		g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, team_ifname, NULL);
+		if (config)
+			g_object_set (s_team, NM_SETTING_TEAM_CONFIG, config, NULL);
 
 		g_free (team_ifname);
 
