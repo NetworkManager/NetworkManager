@@ -54,11 +54,11 @@ nm_log_handler (const gchar *log_domain,
 #define LOGD_DEFAULT (LOGD_ALL & ~(LOGD_WIFI_SCAN | LOGD_DBUS_PROPS))
 
 static guint32 log_level = LOGL_INFO | LOGL_WARN | LOGL_ERR;
-static guint32 log_domains = LOGD_DEFAULT;
+static guint64 log_domains = LOGD_DEFAULT;
 static gboolean syslog_opened;
 
 typedef struct {
-	guint32 num;
+	guint64 num;
 	const char *name;
 } LogDesc;
 
@@ -131,7 +131,7 @@ gboolean
 nm_logging_setup (const char *level, const char *domains, GError **error)
 {
 	char **tmp, **iter;
-	guint32 new_domains = 0;
+	guint64 new_domains = 0;
 
 	/* levels */
 	if (level && strlen (level)) {
@@ -284,7 +284,7 @@ nm_logging_level_enabled (guint32 level)
 }
 
 gboolean
-nm_logging_domain_enabled (guint32 domain)
+nm_logging_domain_enabled (guint64 domain)
 {
 	return !!(log_domains & domain);
 }
@@ -292,7 +292,7 @@ nm_logging_domain_enabled (guint32 domain)
 void
 _nm_log (const char *loc,
          const char *func,
-         guint32 domain,
+         guint64 domain,
          guint32 level,
          const char *fmt,
          ...)

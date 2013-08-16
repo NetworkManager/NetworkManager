@@ -27,39 +27,39 @@
 
 /* Log domains */
 enum {
-	LOGD_NONE       = 0x00000000,
-	LOGD_PLATFORM   = 0x00000001, /* Platform services */
-	LOGD_RFKILL     = 0x00000002,
-	LOGD_ETHER      = 0x00000004,
-	LOGD_WIFI       = 0x00000008,
-	LOGD_BT         = 0x00000010,
-	LOGD_MB         = 0x00000020, /* mobile broadband */
-	LOGD_DHCP4      = 0x00000040,
-	LOGD_DHCP6      = 0x00000080,
-	LOGD_PPP        = 0x00000100,
-	LOGD_WIFI_SCAN  = 0x00000200,
-	LOGD_IP4        = 0x00000400,
-	LOGD_IP6        = 0x00000800,
-	LOGD_AUTOIP4    = 0x00001000,
-	LOGD_DNS        = 0x00002000,
-	LOGD_VPN        = 0x00004000,
-	LOGD_SHARING    = 0x00008000, /* Connection sharing/dnsmasq */
-	LOGD_SUPPLICANT = 0x00010000, /* WiFi and 802.1x */
-	LOGD_AGENTS     = 0x00020000, /* Secret agents */
-	LOGD_SETTINGS   = 0x00040000, /* Settings */
-	LOGD_SUSPEND    = 0x00080000, /* Suspend/Resume */
-	LOGD_CORE       = 0x00100000, /* Core daemon and policy stuff */
-	LOGD_DEVICE     = 0x00200000, /* Device state and activation */
-	LOGD_OLPC_MESH  = 0x00400000,
-	LOGD_WIMAX      = 0x00800000,
-	LOGD_INFINIBAND = 0x01000000,
-	LOGD_FIREWALL   = 0x02000000,
-	LOGD_ADSL       = 0x04000000,
-	LOGD_BOND       = 0x08000000,
-	LOGD_VLAN       = 0x10000000,
-	LOGD_BRIDGE     = 0x20000000,
-	LOGD_DBUS_PROPS = 0x40000000,
-	LOGD_TEAM       = 0x80000000,
+	LOGD_NONE       = 0LL,
+	LOGD_PLATFORM   = (1LL << 1), /* Platform services */
+	LOGD_RFKILL     = (1LL << 2),
+	LOGD_ETHER      = (1LL << 3),
+	LOGD_WIFI       = (1LL << 4),
+	LOGD_BT         = (1LL << 5),
+	LOGD_MB         = (1LL << 6), /* mobile broadband */
+	LOGD_DHCP4      = (1LL << 7),
+	LOGD_DHCP6      = (1LL << 8),
+	LOGD_PPP        = (1LL << 9),
+	LOGD_WIFI_SCAN  = (1LL << 10),
+	LOGD_IP4        = (1LL << 11),
+	LOGD_IP6        = (1LL << 12),
+	LOGD_AUTOIP4    = (1LL << 13),
+	LOGD_DNS        = (1LL << 14),
+	LOGD_VPN        = (1LL << 15),
+	LOGD_SHARING    = (1LL << 16), /* Connection sharing/dnsmasq */
+	LOGD_SUPPLICANT = (1LL << 17), /* WiFi and 802.1x */
+	LOGD_AGENTS     = (1LL << 18), /* Secret agents */
+	LOGD_SETTINGS   = (1LL << 19), /* Settings */
+	LOGD_SUSPEND    = (1LL << 20), /* Suspend/Resume */
+	LOGD_CORE       = (1LL << 21), /* Core daemon and policy stuff */
+	LOGD_DEVICE     = (1LL << 22), /* Device state and activation */
+	LOGD_OLPC_MESH  = (1LL << 23),
+	LOGD_WIMAX      = (1LL << 24),
+	LOGD_INFINIBAND = (1LL << 25),
+	LOGD_FIREWALL   = (1LL << 26),
+	LOGD_ADSL       = (1LL << 27),
+	LOGD_BOND       = (1LL << 28),
+	LOGD_VLAN       = (1LL << 29),
+	LOGD_BRIDGE     = (1LL << 30),
+	LOGD_DBUS_PROPS = (1LL << 31),
+	LOGD_TEAM       = (1LL << 32),
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
@@ -68,10 +68,10 @@ enum {
 
 /* Log levels */
 enum {
-	LOGL_ERR   = 0x00000001,
-	LOGL_WARN  = 0x00000002,
-	LOGL_INFO  = 0x00000004,
-	LOGL_DEBUG = 0x00000008
+	LOGL_ERR   = 1,
+	LOGL_WARN  = 2,
+	LOGL_INFO  = 3,
+	LOGL_DEBUG = 4
 };
 
 typedef enum {
@@ -100,7 +100,7 @@ GQuark nm_logging_error_quark    (void);
 
 void _nm_log (const char *loc,
               const char *func,
-              guint32 domain,
+              guint64 domain,
               guint32 level,
               const char *fmt,
               ...) __attribute__((__format__ (__printf__, 5, 6)));
@@ -108,7 +108,7 @@ void _nm_log (const char *loc,
 const char *nm_logging_level_to_string (void);
 char *nm_logging_domains_to_string (void);
 gboolean nm_logging_level_enabled (guint32 level);
-gboolean nm_logging_domain_enabled (guint32 domain);
+gboolean nm_logging_domain_enabled (guint64 domain);
 
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
