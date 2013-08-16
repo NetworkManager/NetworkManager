@@ -1892,6 +1892,7 @@ static const NameItem nmc_bond_slave_settings [] = {
 static const NameItem nmc_team_slave_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
+	{ NM_SETTING_TEAM_PORT_SETTING_NAME,  NULL,       NULL },
 	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
 	{ NULL, NULL, NULL }
 };
