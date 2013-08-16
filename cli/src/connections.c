@@ -2152,6 +2152,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingVlan *s_vlan;
 	NMSettingBond *s_bond;
 	NMSettingTeam *s_team;
+	NMSettingTeamPort *s_team_port;
 	NMSettingBridge *s_bridge;
 	NMSettingBridgePort *s_bridge_port;
 	NMSettingVPN *s_vpn;
@@ -2766,8 +2767,10 @@ cleanup_vlan:
 		const char *master = NULL;
 		char *master_ask = NULL;
 		const char *type = NULL;
+		const char *config = NULL;
 		nmc_arg_t exp_args[] = { {"master", TRUE, &master, !ask},
 		                         {"type",   TRUE, &type,   FALSE},
+		                         {"config",  TRUE, &config,  FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
@@ -2784,6 +2787,13 @@ cleanup_vlan:
 		if (type)
 			printf (_("Warning: 'type' is currently ignored. "
 			          "We only support ethernet slaves for now.\n"));
+
+		/* Add 'team-port' setting */
+		s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_team_port));
+
+		if (config)
+			g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, config, NULL);
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
