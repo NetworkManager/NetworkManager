@@ -381,6 +381,10 @@ if SESSION_TRACKING_CK
 AM_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
 endif
 
+if WITH_TEAMDCTL
+AM_CPPFLAGS += ${LIBTEAMDCTL_CFLAGS}
+endif
+
 libNetworkManager_la_SOURCES = \
 	$(nm_sources) \
 	$(glue_sources)
@@ -401,6 +405,10 @@ libNetworkManager_la_LIBADD = \
 
 if WITH_CONCHECK
 libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
+endif
+
+if WITH_TEAMDCTL
+libNetworkManager_la_LIBADD += $(LIBTEAMDCTL_LIBS)
 endif
 
 NetworkManager_LDFLAGS = -rdynamic

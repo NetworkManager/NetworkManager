@@ -27,8 +27,10 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <gio/gio.h>
-
 #include <netinet/ether.h>
+#if WITH_TEAMDCTL
+#include <teamdctl.h>
+#endif
 
 #include "nm-device-team.h"
 #include "nm-logging.h"
@@ -51,6 +53,9 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 #define NM_TEAM_ERROR (nm_team_error_quark ())
 
 typedef struct {
+#if WITH_TEAMDCTL
+	struct teamdctl *tdc;
+#endif
 	GPid teamd_pid;
 	guint teamd_process_watch;
 	guint teamd_timeout;
@@ -251,6 +256,13 @@ teamd_cleanup (NMDevice *dev)
 		priv->teamd_pid = 0;
 	}
 
+#if WITH_TEAMDCTL
+	if (priv->tdc) {
+		teamdctl_disconnect (priv->tdc);
+		teamdctl_free (priv->tdc);
+	}
+#endif
+
 	teamd_timeout_remove (dev);
 
 	priv->teamd_on_dbus = FALSE;
@@ -285,6 +297,20 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
 	priv->teamd_on_dbus = FALSE;
 	teamd_timeout_remove (dev);
+#if WITH_TEAMDCTL
+	if (!priv->tdc) {
+		int err;
+
+		priv->tdc = teamdctl_alloc ();
+		g_assert (priv->tdc);
+		err = teamdctl_connect (priv->tdc, nm_device_get_iface (dev), NULL, NULL);
+		if (err) {
+			nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd", nm_device_get_iface (dev));
+			teamdctl_free (priv->tdc);
+			priv->tdc = NULL;
+		}
+	}
+#endif
 	nm_device_activate_schedule_stage2_device_config (dev);
 }
 
