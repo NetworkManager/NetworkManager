@@ -366,6 +366,25 @@ else
 fi
 AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
 
+# Teamd control checks
+PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl], [have_teamdctl=yes],[have_teamdctl=no])
+AC_ARG_ENABLE(teamdctl, AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
+                     [enable_teamdctl=${enableval}], [enable_teamdctl=${have_teamdctl}])
+if (test "${enable_teamdctl}" = "yes"); then
+	if test x"$have_teamdctl" = x"no"; then
+		AC_MSG_ERROR(Teamd control is required)
+	fi
+
+	AC_SUBST(LIBTEAMDCTL_CFLAGS)
+	AC_SUBST(LIBTEAMDCTL_LIBS)
+	# temporary bug workaround
+	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
+	AC_DEFINE(WITH_TEAMDCTL, 1, [Define if you have Teamd control support])
+else
+	AC_DEFINE(WITH_TEAMDCTL, 0, [Define if you have Teamd control support])
+fi
+AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
+
 PKG_CHECK_MODULES(POLKIT, [polkit-gobject-1 >= 0.97], [have_polkit=yes],[have_polkit=no])
 AC_ARG_ENABLE(polkit, AS_HELP_STRING([--enable-polkit], [enable PolicyKit support]),
                      [enable_polkit=${enableval}], [enable_polkit=${have_polkit}])
@@ -792,6 +811,7 @@ echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
 echo "  libndp: $libndp_location"
+echo "  libteamdctl: $enable_teamdctl"
 echo
 
 echo "Configuration plugins"
