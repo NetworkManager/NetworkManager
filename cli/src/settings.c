@@ -596,6 +596,29 @@ static NmcOutputField nmc_fields_setting_bridge_port[] = {
                                               NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE
 #define NMC_FIELDS_SETTING_BRIDGE_PORT_COMMON NMC_FIELDS_SETTING_BRIDGE_PORT_ALL
 
+/* Available fields for NM_SETTING_TEAM_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_team[] = {
+	SETTING_FIELD ("name",  8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_TEAM_INTERFACE_NAME, 15),                /* 1 */
+	SETTING_FIELD (NM_SETTING_TEAM_CONFIG, 30),                        /* 2 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_TEAM_ALL     "name"","\
+                                        NM_SETTING_TEAM_INTERFACE_NAME","\
+                                        NM_SETTING_TEAM_CONFIG
+#define NMC_FIELDS_SETTING_TEAM_COMMON  NMC_FIELDS_SETTING_TEAM_ALL
+
+/* Available fields for NM_SETTING_TEAM_PORT_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_team_port[] = {
+	SETTING_FIELD ("name",  8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_TEAM_PORT_CONFIG, 30),                   /* 1 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_TEAM_PORT_ALL     "name"","\
+                                             NM_SETTING_TEAM_PORT_CONFIG
+#define NMC_FIELDS_SETTING_TEAM_PORT_COMMON  NMC_FIELDS_SETTING_TEAM_PORT_ALL
+
+
 /*----------------------------------------------------------------------------*/
 
 static char *
@@ -998,6 +1021,13 @@ DEFINE_GETTER (nmc_property_bridge_get_ageing_time, NM_SETTING_BRIDGE_AGEING_TIM
 DEFINE_GETTER (nmc_property_bridge_port_get_priority, NM_SETTING_BRIDGE_PORT_PRIORITY)
 DEFINE_GETTER (nmc_property_bridge_port_get_path_cost, NM_SETTING_BRIDGE_PORT_PATH_COST)
 DEFINE_GETTER (nmc_property_bridge_port_get_hairpin_mode, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE)
+
+/* --- NM_SETTING_TEAM_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_team_get_interface_name, NM_SETTING_TEAM_INTERFACE_NAME)
+DEFINE_GETTER (nmc_property_team_get_config, NM_SETTING_TEAM_CONFIG)
+
+/* --- NM_SETTING_TEAM_PORT_SETTING_NAME property get functions --- */
+DEFINE_GETTER (nmc_property_team_port_get_config, NM_SETTING_TEAM_PORT_CONFIG)
 
 /* --- NM_SETTING_CDMA_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_cdma_get_number, NM_SETTING_CDMA_NUMBER)
@@ -5584,6 +5614,56 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc)
 	return TRUE;
 }
 
+static gboolean
+setting_team_details (NMSetting *setting, NmCli *nmc)
+{
+	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM (s_team), FALSE);
+
+	tmpl = nmc_fields_setting_team;
+	tmpl_len = sizeof (nmc_fields_setting_team);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_ALL, tmpl, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (arr, 1, nmc_property_team_get_interface_name (setting));
+	set_val_str (arr, 2, nmc_property_team_get_config (setting));
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	return TRUE;
+}
+
+static gboolean
+setting_team_port_details (NMSetting *setting, NmCli *nmc)
+{
+	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (s_team_port), FALSE);
+
+	tmpl = nmc_fields_setting_team_port;
+	tmpl_len = sizeof (nmc_fields_setting_team_port);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_PORT_ALL, tmpl, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (arr, 1, nmc_property_team_port_get_config (setting));
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	return TRUE;
+}
 
 typedef struct {
 	const char *sname;
@@ -5613,6 +5693,8 @@ static const SettingDetails detail_printers[] = {
 	{ NM_SETTING_ADSL_SETTING_NAME,              setting_adsl_details },
 	{ NM_SETTING_BRIDGE_SETTING_NAME,            setting_bridge_details },
 	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,       setting_bridge_port_details },
+	{ NM_SETTING_TEAM_SETTING_NAME,              setting_team_details },
+	{ NM_SETTING_TEAM_PORT_SETTING_NAME,         setting_team_port_details },
 	{ NULL },
 };
 
