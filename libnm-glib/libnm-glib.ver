@@ -107,6 +107,7 @@ global:
 	nm_device_generic_error_quark;
 	nm_device_generic_get_hw_address;
 	nm_device_generic_get_type;
+	nm_device_generic_new;
 	nm_device_get_active_connection;
 	nm_device_get_autoconnect;
 	nm_device_get_available_connections;
