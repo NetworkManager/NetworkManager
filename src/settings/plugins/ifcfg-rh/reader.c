@@ -859,7 +859,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 	GMatchInfo *match_info;
 	NMIP4Route *route;
 	guint32 ip4_addr;
-	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+	char *dest = NULL, *prefix = NULL, *metric = NULL;
 	long int prefix_int, metric_int;
 	gboolean success = FALSE;
 
@@ -942,22 +942,23 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 
 		/* Next hop */
 		g_regex_match (regex_via, *iter, 0, &match_info);
-		if (!g_match_info_matches (match_info)) {
-			g_match_info_free (match_info);
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Missing IP4 route gateway address in record: '%s'", *iter);
-			goto error;
-		}
-		next_hop = g_match_info_fetch (match_info, 1);
-		g_match_info_free (match_info);
-		if (inet_pton (AF_INET, next_hop, &ip4_addr) != 1) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Invalid IP4 route gateway address '%s'", next_hop);
+		if (g_match_info_matches (match_info)) {
+			char *next_hop = g_match_info_fetch (match_info, 1);
+			if (inet_pton (AF_INET, next_hop, &ip4_addr) != 1) {
+				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				             "Invalid IP4 route gateway address '%s'",
+				             next_hop);
+				g_match_info_free (match_info);
+				g_free (next_hop);
+				goto error;
+			}
 			g_free (next_hop);
-			goto error;
+		} else {
+			/* we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
+			ip4_addr = 0;
 		}
 		nm_ip4_route_set_next_hop (route, ip4_addr);
-		g_free (next_hop);
+		g_match_info_free (match_info);
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
