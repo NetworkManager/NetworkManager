@@ -1028,7 +1028,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	if (val)
 		address.plen = g_value_get_uint (val);
 
-	if (IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen)
+	if (!IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen)
 		nm_ip6_config_add_address (config, &address);
 	else {
 		nm_log_err (LOGD_VPN, "invalid IP6 config received!");
