@@ -318,7 +318,7 @@ Be aware that this command deactivates the specified active connection. The devi
 on which the connection was active, is still ready to connect and will perform
 auto-activation by looking for a suitable connection that has the autoconnect
 flag set. This includes the just deactivated connection, so if the connection is set
-to autoconnect, if will be automatically started on the disconnected device again.
+to autoconnect, it will be automatically started on the disconnected device again.
 .br
 In most cases you may want to use \fIdevice disconnect\fP command instead.
 .sp
