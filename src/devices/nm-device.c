@@ -4956,22 +4956,25 @@ dispose (GObject *object)
 	g_clear_object (&priv->dhcp6_ip6_config);
 	g_clear_object (&priv->vpn6_config);
 
-	/* reset the saved RA value */
-	if (   priv->ip6_accept_ra_path
-	    && g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
-		nm_utils_do_sysctl (priv->ip6_accept_ra_path,
-		                    priv->ip6_accept_ra_save ? "1" : "0");
+	/* Reset the saved RA value if the device is managed. */
+	if (priv->state > NM_DEVICE_STATE_UNMANAGED) {
+		/* reset the saved RA value */
+		if (   priv->ip6_accept_ra_path
+			&& g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
+			nm_utils_do_sysctl (priv->ip6_accept_ra_path,
+								priv->ip6_accept_ra_save ? "1" : "0");
+		}
+
+		/* reset the saved use_tempaddr value */
+		if (   priv->ip6_privacy_tempaddr_path
+			&& g_file_test (priv->ip6_privacy_tempaddr_path, G_FILE_TEST_EXISTS)) {
+			char tmp[16];
+
+			snprintf (tmp, sizeof (tmp), "%d", priv->ip6_privacy_tempaddr_save);
+			nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, tmp);
+		}
 	}
 	g_free (priv->ip6_accept_ra_path);
-
-	/* reset the saved use_tempaddr value */
-	if (   priv->ip6_privacy_tempaddr_path
-	    && g_file_test (priv->ip6_privacy_tempaddr_path, G_FILE_TEST_EXISTS)) {
-		char tmp[16];
-
-		snprintf (tmp, sizeof (tmp), "%d", priv->ip6_privacy_tempaddr_save);
-		nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, tmp);
-	}
 	g_free (priv->ip6_privacy_tempaddr_path);
 
 	if (priv->carrier_defer_id) {
