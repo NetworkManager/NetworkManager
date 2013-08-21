@@ -264,7 +264,7 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
-		gs_unref_object NMIP4Address *s_addr = nm_ip4_address_new ();
+		NMIP4Address *s_addr;
 
 		/* Detect dynamic address */
 		if (address->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
@@ -276,6 +276,8 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		if (!method)
 			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
+		s_addr = nm_ip4_address_new ();
+
 		nm_ip4_address_set_address (s_addr, address->address);
 		nm_ip4_address_set_prefix (s_addr, address->plen);
 		/* For backwards compatibility, attach the gateway to an address if it's
@@ -285,6 +287,7 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 			nm_ip4_address_set_gateway (s_addr, gateway);
 
 		nm_setting_ip4_config_add_address (setting, s_addr);
+		nm_ip4_address_unref (s_addr);
 	}
 	if (!method)
 		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;

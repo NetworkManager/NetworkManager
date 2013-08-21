@@ -268,7 +268,7 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
-		gs_unref_object NMIP6Address *s_addr = nm_ip6_address_new ();
+		NMIP6Address *s_addr;
 
 		/* Ignore link-local address. */
 		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
@@ -284,12 +284,15 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 		if (!method)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
+		s_addr = nm_ip6_address_new ();
+	
 		nm_ip6_address_set_address (s_addr, &address->address);
 		nm_ip6_address_set_prefix (s_addr, address->plen);
 		if (gateway)
 			nm_ip6_address_set_gateway (s_addr, gateway);
 
 		nm_setting_ip6_config_add_address (setting, s_addr);
+		nm_ip6_address_unref (s_addr);
 	}
 	if (!method)
 		method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
