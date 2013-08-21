@@ -18,6 +18,11 @@ _nmcli_con_id()
     echo "$(nmcli -t -f NAME con show c 2>/dev/null)"
 }
 
+_nmcli_con_id_active()
+{
+    echo "$(nmcli -t -f NAME con show a 2>/dev/null)"
+}
+
 _nmcli_con_uuid()
 {
     echo "$(nmcli -t -f UUID con show c 2>/dev/null)"
@@ -301,11 +306,11 @@ _nmcli()
                         if [[ ${#words[@]} -gt 3 ]]; then
                             case $subcommand in
                                 c|co|con|conf|confi|config|configu|configur|configure|configured)
-                                    _nmcli_list "id uuid path"
+                                    _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
                                     return 0
                                     ;;
                                 a|ac|act|acti|activ|active)
-                                    _nmcli_list "id uuid path apath"
+                                    _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
                                     return 0
                                     ;;
                             esac
@@ -318,12 +323,12 @@ _nmcli()
                         if [[ "$cur" == -* ]]; then
                             _nmcli_list "--nowait --timeout"
                         else
-                            _nmcli_list "id uuid path iface ap nsp"
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\niface\nap\nnsp\n%s" "$(_nmcli_con_id)")"
                         fi
                         return 0
                         ;;
                     d|do|dow|down)
-                        _nmcli_list "id uuid path apath"
+                        _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
                         return 0
                         ;;
                     a|ad|add)
@@ -331,15 +336,15 @@ _nmcli()
                         return 0
                         ;;
                     e|ed|edi|edit)
-                        _nmcli_list "id uuid path type con-name"
+                        _nmcli_list_nl "$(printf "id\nuuid\npath\ntype\n%s" "$(_nmcli_con_id)")"
                         return 0
                         ;;
                     m|mo|mod|modi|modif|modify)
-                        _nmcli_list_nl "$(_nmcli_con_id)"
+                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
                         return 0
                         ;;
                     de|del|dele|delet|delete)
-                        _nmcli_list "id uuid path"
+                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
                         return 0
                         ;;
                 esac
