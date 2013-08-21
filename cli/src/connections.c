@@ -5347,6 +5347,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		printf (_("Adding a new '%s' connection"), connection_type);
 	printf ("\n\n");
 	printf (_("Type 'help' or '?' for available commands."));
+	printf ("\n");
+	printf (_("Type 'describe [<setting>.<prop>]' for detailed property description."));
 	printf ("\n\n");
 
 	/* Set global variable for use in TAB completion */
