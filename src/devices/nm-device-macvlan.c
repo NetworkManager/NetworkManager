@@ -54,13 +54,11 @@ enum {
 /**************************************************************/
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+update_properties (NMDevice *device)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
 	NMPlatformMacvlanProperties props;
-
-	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->link_changed (device, info);
 
 	if (!nm_platform_macvlan_get_properties (nm_device_get_ifindex (device), &props)) {
 		nm_log_warn (LOGD_HW, "(%s): could not read macvlan properties",
@@ -88,6 +86,13 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	g_object_thaw_notify (object);
 }
 
+static void
+link_changed (NMDevice *device, NMPlatformLink *info)
+{
+	NM_DEVICE_CLASS (nm_device_macvlan_parent_class)->link_changed (device, info);
+	update_properties (device);
+}
+
 /**************************************************************/
 
 NMDevice *
@@ -110,7 +115,7 @@ nm_device_macvlan_init (NMDeviceMacvlan *self)
 static void
 constructed (GObject *object)
 {
-	link_changed (NM_DEVICE (object), NULL);
+	update_properties (NM_DEVICE (object));
 
 	G_OBJECT_CLASS (nm_device_macvlan_parent_class)->constructed (object);
 }
