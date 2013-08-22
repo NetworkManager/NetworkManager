@@ -44,7 +44,7 @@
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
 
-struct NMPolicy {
+typedef struct {
 	NMManager *manager;
 	guint update_state_id;
 	GSList *pending_activation_checks;
@@ -73,7 +73,11 @@ struct NMPolicy {
 	char *orig_hostname; /* hostname at NM start time */
 	char *cur_hostname;  /* hostname we want to assign */
 	gboolean hostname_changed;  /* TRUE if NM ever set the hostname */
-};
+} NMPolicyPrivate;
+
+#define NM_POLICY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_POLICY, NMPolicyPrivate))
+
+G_DEFINE_TYPE (NMPolicy, nm_policy, G_TYPE_OBJECT)
 
 #define RETRIES_TAG "autoconnect-retries"
 #define RETRIES_DEFAULT	4
@@ -244,6 +248,8 @@ _set_hostname (NMPolicy *policy,
                const char *new_hostname,
                const char *msg)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+
 	/* The incoming hostname *can* be NULL, which will get translated to
 	 * 'localhost.localdomain' or such in the hostname policy code, but we
 	 * keep cur_hostname = NULL in the case because we need to know that
@@ -254,29 +260,29 @@ _set_hostname (NMPolicy *policy,
 	 * restart the reverse lookup thread later.
 	 */
 	if (new_hostname)
-		g_clear_object (&policy->lookup_addr);
+		g_clear_object (&priv->lookup_addr);
 
 	/* Don't change the hostname or update DNS this is the first time we're
 	 * trying to change the hostname, and it's not actually changing.
 	 */
-	if (   policy->orig_hostname
-	    && (policy->hostname_changed == FALSE)
-	    && g_strcmp0 (policy->orig_hostname, new_hostname) == 0)
+	if (   priv->orig_hostname
+	    && (priv->hostname_changed == FALSE)
+	    && g_strcmp0 (priv->orig_hostname, new_hostname) == 0)
 		return;
 
 	/* Don't change the hostname or update DNS if the hostname isn't actually
 	 * going to change.
 	 */
-	if (g_strcmp0 (policy->cur_hostname, new_hostname) == 0)
+	if (g_strcmp0 (priv->cur_hostname, new_hostname) == 0)
 		return;
 
-	g_free (policy->cur_hostname);
-	policy->cur_hostname = g_strdup (new_hostname);
-	policy->hostname_changed = TRUE;
+	g_free (priv->cur_hostname);
+	priv->cur_hostname = g_strdup (new_hostname);
+	priv->hostname_changed = TRUE;
 
-	nm_dns_manager_set_hostname (policy->dns_manager, policy->cur_hostname);
+	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
 
-	if (set_system_hostname (policy->cur_hostname, msg))
+	if (set_system_hostname (priv->cur_hostname, msg))
 		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL);
 }
 
@@ -286,6 +292,7 @@ lookup_callback (GObject *source,
                  gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const char *hostname;
 	GError *error = NULL;
 
@@ -303,20 +310,21 @@ lookup_callback (GObject *source,
 		g_error_free (error);
 	}
 
-	g_clear_object (&policy->lookup_cancellable);
+	g_clear_object (&priv->lookup_cancellable);
 }
 
 static void
 update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	char *configured_hostname = NULL;
 	const char *dhcp_hostname, *p;
 
 	g_return_if_fail (policy != NULL);
 
-	if (policy->lookup_cancellable) {
-		g_cancellable_cancel (policy->lookup_cancellable);
-		g_clear_object (&policy->lookup_cancellable);
+	if (priv->lookup_cancellable) {
+		g_cancellable_cancel (priv->lookup_cancellable);
+		g_clear_object (&priv->lookup_cancellable);
 	}
 
 	/* Hostname precedence order:
@@ -329,7 +337,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	 */
 
 	/* Try a persistent hostname first */
-	g_object_get (G_OBJECT (policy->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
+	g_object_get (G_OBJECT (priv->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
 	if (configured_hostname) {
 		_set_hostname (policy, configured_hostname, "from system configuration");
 		g_free (configured_hostname);
@@ -338,15 +346,15 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
-		best4 = get_best_ip4_device (policy->manager);
+		best4 = get_best_ip4_device (priv->manager);
 	if (!best6)
-		best6 = get_best_ip6_device (policy->manager);
+		best6 = get_best_ip6_device (priv->manager);
 
 	if (!best4 && !best6) {
 		/* No best device; fall back to original hostname or if there wasn't
 		 * one, 'localhost.localdomain'
 		 */
-		_set_hostname (policy, policy->orig_hostname, "no default device");
+		_set_hostname (policy, priv->orig_hostname, "no default device");
 		return;
 	}
 
@@ -393,8 +401,8 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	/* If no automatically-configured hostname, try using the hostname from
 	 * when NM started up.
 	 */
-	if (policy->orig_hostname) {
-		_set_hostname (policy, policy->orig_hostname, "from system startup");
+	if (priv->orig_hostname) {
+		_set_hostname (policy, priv->orig_hostname, "from system startup");
 		return;
 	}
 
@@ -417,7 +425,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
 		g_assert (addr4); /* checked for > 1 address above */
 
-		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
+		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
 		                                                     G_SOCKET_FAMILY_IPV4);
 	} else {
 		NMIP6Config *ip6_config;
@@ -435,14 +443,14 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
 		g_assert (addr6); /* checked for > 1 address above */
 
-		policy->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
+		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
 		                                                     G_SOCKET_FAMILY_IPV6);
 	}
 
-	policy->lookup_cancellable = g_cancellable_new ();
-	g_resolver_lookup_by_address_async (policy->resolver,
-	                                    policy->lookup_addr,
-	                                    policy->lookup_cancellable,
+	priv->lookup_cancellable = g_cancellable_new ();
+	g_resolver_lookup_by_address_async (priv->resolver,
+	                                    priv->lookup_addr,
+	                                    priv->lookup_cancellable,
 	                                    lookup_callback, policy);
 }
 
@@ -451,13 +459,14 @@ update_default_ac (NMPolicy *policy,
                    NMActiveConnection *best,
                    void (*set_active_func)(NMActiveConnection*, gboolean))
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
 
 	/* Clear the 'default[6]' flag on all active connections that aren't the new
 	 * default active connection.  We'll set the new default after; this ensures
 	 * we don't ever have two marked 'default[6]' simultaneously.
 	 */
-	connections = nm_manager_get_active_connections (policy->manager);
+	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		if (NM_ACTIVE_CONNECTION (iter->data) != best)
 			set_active_func (NM_ACTIVE_CONNECTION (iter->data), FALSE);
@@ -477,13 +486,14 @@ get_best_ip4_config (NMPolicy *policy,
                      NMDevice **out_device,
                      NMVPNConnection **out_vpn)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
 	NMDevice *device;
 	NMActRequest *req = NULL;
 	NMIP4Config *ip4_config = NULL;
 
 	/* If a VPN connection is active, it is preferred */
-	connections = nm_manager_get_active_connections (policy->manager);
+	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
 		NMVPNConnection *candidate;
@@ -533,7 +543,7 @@ get_best_ip4_config (NMPolicy *policy,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip4_config) {
-		device = get_best_ip4_device (policy->manager);
+		device = get_best_ip4_device (priv->manager);
 		if (device) {
 			ip4_config = nm_device_get_ip4_config (device);
 			g_assert (ip4_config);
@@ -577,6 +587,7 @@ update_ip4_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 static void
 update_ip4_routing (NMPolicy *policy, gboolean force_update)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMDevice *best = NULL;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
@@ -591,12 +602,12 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	 */
 	ip4_config = get_best_ip4_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
 	if (!ip4_config) {
-		policy->default_device4 = NULL;
+		priv->default_device4 = NULL;
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
 
-	if (!force_update && best && (best == policy->default_device4))
+	if (!force_update && best && (best == priv->default_device4))
 		return;
 
 	gw_addr = nm_ip4_config_get_gateway (ip4_config);
@@ -628,10 +639,10 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
 
-	if (best == policy->default_device4)
+	if (best == priv->default_device4)
 		return;
 
-	policy->default_device4 = best;
+	priv->default_device4 = best;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
@@ -646,13 +657,14 @@ get_best_ip6_config (NMPolicy *policy,
                      NMDevice **out_device,
                      NMVPNConnection **out_vpn)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
 	NMDevice *device;
 	NMActRequest *req = NULL;
 	NMIP6Config *ip6_config = NULL;
 
 	/* If a VPN connection is active, it is preferred */
-	connections = nm_manager_get_active_connections (policy->manager);
+	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
 		NMVPNConnection *candidate;
@@ -702,7 +714,7 @@ get_best_ip6_config (NMPolicy *policy,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip6_config) {
-		device = get_best_ip6_device (policy->manager);
+		device = get_best_ip6_device (priv->manager);
 		if (device) {
 			req = nm_device_get_act_request (device);
 			g_assert (req);
@@ -746,6 +758,7 @@ update_ip6_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 static void
 update_ip6_routing (NMPolicy *policy, gboolean force_update)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMDevice *best = NULL;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
@@ -760,12 +773,12 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	 */
 	ip6_config = get_best_ip6_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
 	if (!ip6_config) {
-		policy->default_device6 = NULL;
+		priv->default_device6 = NULL;
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
 
-	if (!force_update && best && (best == policy->default_device6))
+	if (!force_update && best && (best == priv->default_device6))
 		return;
 
 	/* If no better gateway is found, use ::; not all configurations will
@@ -807,10 +820,10 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
 
-	if (best == policy->default_device6)
+	if (best == priv->default_device6)
 		return;
 
-	policy->default_device6 = best;
+	priv->default_device6 = best;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
@@ -819,6 +832,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 static void
 update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMDnsManager *mgr;
 
 	mgr = nm_dns_manager_get ();
@@ -831,7 +845,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	update_ip6_routing (policy, force_update);
 
 	/* Update the system hostname */
-	update_system_hostname (policy, policy->default_device4, policy->default_device6);
+	update_system_hostname (policy, priv->default_device4, priv->default_device6);
 
 	nm_dns_manager_end_updates (mgr, __func__);
 	g_object_unref (mgr);
@@ -874,15 +888,17 @@ auto_activate_device (gpointer user_data)
 {
 	ActivateData *data = (ActivateData *) user_data;
 	NMPolicy *policy;
+	NMPolicyPrivate *priv;
 	NMConnection *best_connection;
 	char *specific_object = NULL;
 	GSList *connections, *iter;
 
 	g_assert (data);
 	policy = data->policy;
+	priv = NM_POLICY_GET_PRIVATE (policy);
 
 	data->id = 0;
-	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
+	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
@@ -891,7 +907,7 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	iter = connections = nm_settings_get_connections (policy->settings);
+	iter = connections = nm_settings_get_connections (priv->settings);
 
 	/* Remove connections that shouldn't be auto-activated */
 	while (iter) {
@@ -927,7 +943,7 @@ auto_activate_device (gpointer user_data)
 
 		nm_log_info (LOGD_DEVICE, "Auto-activating connection '%s'.",
 		             nm_connection_get_id (best_connection));
-		if (!nm_manager_activate_connection (policy->manager,
+		if (!nm_manager_activate_connection (priv->manager,
 		                                     best_connection,
 		                                     specific_object,
 		                                     nm_device_get_path (data->device),
@@ -1010,6 +1026,7 @@ process_secondaries (NMPolicy *policy,
                      NMActiveConnection *active,
                      gboolean connected)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMDevice *device = NULL;
 	const char *ac_path;
 	GSList *iter, *iter2;
@@ -1024,7 +1041,7 @@ process_secondaries (NMPolicy *policy,
 	if (NM_IS_VPN_CONNECTION (active))
 		device = nm_vpn_connection_get_parent_device (NM_VPN_CONNECTION (active));
 
-	for (iter = policy->pending_secondaries; iter; iter = g_slist_next (iter)) {
+	for (iter = priv->pending_secondaries; iter; iter = g_slist_next (iter)) {
 		PendingSecondaryData *secondary_data = (PendingSecondaryData *) iter->data;
 		NMDevice *item_device = secondary_data->device;
 
@@ -1039,14 +1056,14 @@ process_secondaries (NMPolicy *policy,
 						g_free (list_ac_path);
 						if (!secondary_data->secondaries) {
 							/* None secondary UUID remained -> remove the secondary data item */
-							policy->pending_secondaries = g_slist_remove (policy->pending_secondaries, secondary_data);
+							priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
 							pending_secondary_data_free (secondary_data);
 							nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
 							return;
 						}
 					} else {
 						/* Secondary connection failed -> do not watch other connections */
-						policy->pending_secondaries = g_slist_remove (policy->pending_secondaries, secondary_data);
+						priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
 						pending_secondary_data_free (secondary_data);
 						nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
 						                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
@@ -1106,6 +1123,7 @@ static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicy *policy = user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	gboolean sleeping = FALSE, enabled = FALSE;
 
 	g_object_get (G_OBJECT (manager), NM_MANAGER_SLEEPING, &sleeping, NULL);
@@ -1113,15 +1131,16 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Reset retries on all connections so they'll checked on wakeup */
 	if (sleeping || !enabled)
-		reset_retries_all (policy->settings, NULL);
+		reset_retries_all (priv->settings, NULL);
 }
 
 static void
 schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	ActivateData *data;
 
-	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
+	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
 		return;
 
 	if (!nm_device_can_activate (device, NULL))
@@ -1134,9 +1153,9 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 		return;
 
 	/* Schedule an auto-activation if there isn't one already for this device */
-	if (find_pending_activation (policy->pending_activation_checks, device) == NULL) {
+	if (find_pending_activation (priv->pending_activation_checks, device) == NULL) {
 		data = activate_data_new (policy, device, delay_seconds);
-		policy->pending_activation_checks = g_slist_append (policy->pending_activation_checks, data);
+		priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
 	}
 }
 
@@ -1144,14 +1163,15 @@ static gboolean
 reset_connections_retries (gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	GSList *connections, *iter;
 	time_t con_stamp, min_stamp, now;
 	gboolean changed = FALSE;
 
-	policy->reset_retries_id = 0;
+	priv->reset_retries_id = 0;
 
 	min_stamp = now = time (NULL);
-	connections = nm_settings_get_connections (policy->settings);
+	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		con_stamp = GPOINTER_TO_SIZE (g_object_get_data (G_OBJECT (iter->data), RESET_RETRIES_TIMESTAMP_TAG));
 		if (con_stamp == 0)
@@ -1169,7 +1189,7 @@ reset_connections_retries (gpointer user_data)
 
 	/* Schedule the handler again if there are some stamps left */
 	if (min_stamp != now)
-		policy->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER - (now - min_stamp), reset_connections_retries, policy);
+		priv->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER - (now - min_stamp), reset_connections_retries, policy);
 
 	/* If anything changed, try to activate the newly re-enabled connections */
 	if (changed)
@@ -1184,13 +1204,14 @@ static void
 activate_slave_connections (NMPolicy *policy, NMConnection *connection,
                             NMDevice *device)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const char *master_device;
 	GSList *connections, *iter;
 
 	master_device = nm_device_get_iface (device);
 	g_assert (master_device);
 
-	connections = nm_settings_get_connections (policy->settings);
+	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *slave;
 		NMSettingConnection *s_slave_con;
@@ -1215,6 +1236,7 @@ activate_secondary_connections (NMPolicy *policy,
                                 NMConnection *connection,
                                 NMDevice *device)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMSettingConnection *s_con;
 	NMSettingsConnection *settings_con;
 	NMActiveConnection *ac;
@@ -1230,7 +1252,7 @@ activate_secondary_connections (NMPolicy *policy,
 	for (i = 0; i < nm_setting_connection_get_num_secondaries (s_con); i++) {
 		const char *sec_uuid = nm_setting_connection_get_secondary (s_con, i);
 
-		settings_con = nm_settings_get_connection_by_uuid (policy->settings, sec_uuid);
+		settings_con = nm_settings_get_connection_by_uuid (priv->settings, sec_uuid);
 		if (settings_con) {
 			NMActRequest *req = nm_device_get_act_request (device);
 			g_assert (req);
@@ -1238,7 +1260,7 @@ activate_secondary_connections (NMPolicy *policy,
 			nm_log_dbg (LOGD_DEVICE, "Activating secondary connection '%s (%s)' for base connection '%s (%s)'",
 			            nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid,
 			            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
-			ac = nm_manager_activate_connection (policy->manager,
+			ac = nm_manager_activate_connection (priv->manager,
 			                                     NM_CONNECTION (settings_con),
 			                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
 			                                     nm_device_get_path (device),
@@ -1266,7 +1288,7 @@ activate_secondary_connections (NMPolicy *policy,
 
 	if (success && secondary_ac_list != NULL) {
 		secondary_data = pending_secondary_data_new (device, secondary_ac_list);
-		policy->pending_secondaries = g_slist_append (policy->pending_secondaries, secondary_data);
+		priv->pending_secondaries = g_slist_append (priv->pending_secondaries, secondary_data);
 	} else
 		g_slist_free_full (secondary_ac_list, g_free);
 
@@ -1281,6 +1303,7 @@ device_state_changed (NMDevice *device,
                       gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMConnection *connection = nm_device_get_connection (device);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4Config *ip4_config;
@@ -1323,8 +1346,8 @@ device_state_changed (NMDevice *device,
 				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.", nm_connection_get_id (connection));
 				/* Schedule a handler to reset retries count */
 				g_object_set_data (G_OBJECT (connection), RESET_RETRIES_TIMESTAMP_TAG, GSIZE_TO_POINTER ((gsize) time (NULL)));
-				if (!policy->reset_retries_id)
-					policy->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER, reset_connections_retries, policy);
+				if (!priv->reset_retries_id)
+					priv->reset_retries_id = g_timeout_add_seconds (RESET_RETRIES_TIMER, reset_connections_retries, policy);
 			}
 			nm_connection_clear_secrets (connection);
 		}
@@ -1343,18 +1366,18 @@ device_state_changed (NMDevice *device,
 
 		/* Add device's new IPv4 and IPv6 configs to DNS */
 
-		nm_dns_manager_begin_updates (policy->dns_manager, __func__);
+		nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
 		ip4_config = nm_device_get_ip4_config (device);
 		if (ip4_config)
-			nm_dns_manager_add_ip4_config (policy->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		ip6_config = nm_device_get_ip6_config (device);
 		if (ip6_config)
-			nm_dns_manager_add_ip6_config (policy->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 
 		update_routing_and_dns (policy, FALSE);
 
-		nm_dns_manager_end_updates (policy->dns_manager, __func__);
+		nm_dns_manager_end_updates (priv->dns_manager, __func__);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
@@ -1365,7 +1388,7 @@ device_state_changed (NMDevice *device,
 		/* Reset RETRIES_TAG when carrier on. If cable was unplugged
 		 * and plugged again, we should try to reconnect */
 		if (reason == NM_DEVICE_STATE_REASON_CARRIER && old_state == NM_DEVICE_STATE_UNAVAILABLE)
-			reset_retries_all (policy->settings, device);
+			reset_retries_all (priv->settings, device);
 
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
 			update_routing_and_dns (policy, FALSE);
@@ -1406,13 +1429,14 @@ device_ip4_config_changed (NMDevice *device,
                            gpointer user_data)
 {
 	NMPolicy *policy = user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 
-	nm_dns_manager_begin_updates (policy->dns_manager, __func__);
+	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
 	/* Old configs get removed immediately */
 	if (old_config)
-		nm_dns_manager_remove_ip4_config (policy->dns_manager, old_config);
+		nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
 
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
@@ -1420,12 +1444,12 @@ device_ip4_config_changed (NMDevice *device,
 	 */
 	if (!nm_device_is_activating (device)) {
 		if (new_config)
-			nm_dns_manager_add_ip4_config (policy->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-		update_ip4_dns (policy, policy->dns_manager);
+			nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		update_ip4_dns (policy, priv->dns_manager);
 		update_ip4_routing (policy, TRUE);
 	}
 
-	nm_dns_manager_end_updates (policy->dns_manager, __func__);
+	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
 
 static void
@@ -1435,13 +1459,14 @@ device_ip6_config_changed (NMDevice *device,
                            gpointer user_data)
 {
 	NMPolicy *policy = user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 
-	nm_dns_manager_begin_updates (policy->dns_manager, __func__);
+	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
 	/* Old configs get removed immediately */
 	if (old_config)
-		nm_dns_manager_remove_ip6_config (policy->dns_manager, old_config);
+		nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
 
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
@@ -1449,12 +1474,12 @@ device_ip6_config_changed (NMDevice *device,
 	 */
 	if (!nm_device_is_activating (device)) {
 		if (new_config)
-			nm_dns_manager_add_ip6_config (policy->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-		update_ip6_dns (policy, policy->dns_manager);
+			nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		update_ip6_dns (policy, priv->dns_manager);
 		update_ip6_routing (policy, TRUE);
 	}
 
-	nm_dns_manager_end_updates (policy->dns_manager, __func__);
+	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
 
 static void
@@ -1492,13 +1517,14 @@ typedef struct {
 static void
 _connect_device_signal (NMPolicy *policy, NMDevice *device, const char *name, gpointer callback)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	DeviceSignalId *data;
 
 	data = g_slice_new0 (DeviceSignalId);
 	g_assert (data);
 	data->id = g_signal_connect (device, name, callback, policy);
 	data->device = device;
-	policy->dev_ids = g_slist_prepend (policy->dev_ids, data);
+	priv->dev_ids = g_slist_prepend (priv->dev_ids, data);
 }
 
 static void
@@ -1532,18 +1558,19 @@ static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	ActivateData *tmp;
 	GSList *iter;
 
 	/* Clear any idle callbacks for this device */
-	tmp = find_pending_activation (policy->pending_activation_checks, device);
+	tmp = find_pending_activation (priv->pending_activation_checks, device);
 	if (tmp) {
-		policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, tmp);
+		priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, tmp);
 		activate_data_free (tmp);
 	}
 
 	/* Clear any signal handlers for this device */
-	iter = policy->dev_ids;
+	iter = priv->dev_ids;
 	while (iter) {
 		DeviceSignalId *data = iter->data;
 		GSList *next = g_slist_next (iter);
@@ -1551,7 +1578,7 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 		if (data->device == device) {
 			g_signal_handler_disconnect (data->device, data->id);
 			g_slice_free (DeviceSignalId, data);
-			policy->dev_ids = g_slist_delete_link (policy->dev_ids, iter);
+			priv->dev_ids = g_slist_delete_link (priv->dev_ids, iter);
 		}
 		iter = next;
 	}
@@ -1673,9 +1700,10 @@ active_connection_removed (NMManager *manager,
 static void
 schedule_activate_all (NMPolicy *policy)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	GSList *iter, *devices;
 
-	devices = nm_manager_get_devices (policy->manager);
+	devices = nm_manager_get_devices (priv->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter))
 		schedule_activate_check (policy, NM_DEVICE (iter->data), 0);
 }
@@ -1717,17 +1745,18 @@ add_or_change_zone_cb (GError *error, gpointer user_data)
 static void
 firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 	GSList *iter, *devices;
 
-	devices = nm_manager_get_devices (policy->manager);
+	devices = nm_manager_get_devices (priv->manager);
 	/* find dev with passed connection and change zone its interface belongs to */
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		if (   (nm_device_get_connection (dev) == connection)
 		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)) {
-			nm_firewall_manager_add_or_change_zone (policy->fw_manager,
+			nm_firewall_manager_add_or_change_zone (priv->fw_manager,
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),
 			                                        FALSE, /* change zone */
@@ -1742,11 +1771,12 @@ firewall_started (NMFirewallManager *manager,
                   gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	GSList *iter, *devices;
 
-	devices = nm_manager_get_devices (policy->manager);
+	devices = nm_manager_get_devices (priv->manager);
 	/* add interface of each device to correct zone */
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
@@ -1754,7 +1784,7 @@ firewall_started (NMFirewallManager *manager,
 		connection = nm_device_get_connection (dev);
 		s_con = nm_connection_get_setting_connection (connection);
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-			nm_firewall_manager_add_or_change_zone (policy->fw_manager,
+			nm_firewall_manager_add_or_change_zone (priv->fw_manager,
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),
 			                                        TRUE, /* add zone */
@@ -1768,6 +1798,7 @@ static void
 dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 
 	/* Restart a thread for reverse-DNS lookup after we are signalled that
 	 * DNS changed. Because the result from a previous run may not be right
@@ -1775,20 +1806,20 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 	 */
 
 	/* Stop a lookup thread if any. */
-	if (policy->lookup_cancellable) {
-		g_cancellable_cancel (policy->lookup_cancellable);
-		g_clear_object (&policy->lookup_cancellable);
+	if (priv->lookup_cancellable) {
+		g_cancellable_cancel (priv->lookup_cancellable);
+		g_clear_object (&priv->lookup_cancellable);
 	}
 
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
-	if (policy->lookup_addr) {
+	if (priv->lookup_addr) {
 		nm_log_dbg (LOGD_DNS, "restarting reverse-lookup thread for address %s'",
-		            g_inet_address_to_string (policy->lookup_addr));
+		            g_inet_address_to_string (priv->lookup_addr));
 
-		policy->lookup_cancellable = g_cancellable_new ();
-		g_resolver_lookup_by_address_async (policy->resolver,
-		                                    policy->lookup_addr,
-		                                    policy->lookup_cancellable,
+		priv->lookup_cancellable = g_cancellable_new ();
+		g_resolver_lookup_by_address_async (priv->resolver,
+		                                    priv->lookup_addr,
+		                                    priv->lookup_cancellable,
 		                                    lookup_callback, policy);
 	}
 }
@@ -1841,8 +1872,9 @@ connection_removed (NMSettings *settings,
                     gpointer user_data)
 {
 	NMPolicy *policy = user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 
-	_deactivate_if_active (policy->manager, connection);
+	_deactivate_if_active (priv->manager, connection);
 }
 
 static void
@@ -1851,11 +1883,12 @@ connection_visibility_changed (NMSettings *settings,
                                gpointer user_data)
 {
 	NMPolicy *policy = user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 
 	if (nm_settings_connection_is_visible (connection))
 		schedule_activate_all (policy);
 	else
-		_deactivate_if_active (policy->manager, NM_CONNECTION (connection));
+		_deactivate_if_active (priv->manager, NM_CONNECTION (connection));
 }
 
 static void
@@ -1874,25 +1907,28 @@ secret_agent_registered (NMSettings *settings,
 static void
 _connect_manager_signal (NMPolicy *policy, const char *name, gpointer callback)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	guint id;
 
-	id = g_signal_connect (policy->manager, name, callback, policy);
-	policy->manager_ids = g_slist_prepend (policy->manager_ids, GUINT_TO_POINTER (id));
+	id = g_signal_connect (priv->manager, name, callback, policy);
+	priv->manager_ids = g_slist_prepend (priv->manager_ids, GUINT_TO_POINTER (id));
 }
 
 static void
 _connect_settings_signal (NMPolicy *policy, const char *name, gpointer callback)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	guint id;
 
-	id = g_signal_connect (policy->settings, name, callback, policy);
-	policy->settings_ids = g_slist_prepend (policy->settings_ids, GUINT_TO_POINTER (id));
+	id = g_signal_connect (priv->settings, name, callback, policy);
+	priv->settings_ids = g_slist_prepend (priv->settings_ids, GUINT_TO_POINTER (id));
 }
 
 NMPolicy *
 nm_policy_new (NMManager *manager, NMSettings *settings)
 {
 	NMPolicy *policy;
+	NMPolicyPrivate *priv;
 	static gboolean initialized = FALSE;
 	gulong id;
 	char hostname[HOST_NAME_MAX + 2];
@@ -1900,10 +1936,11 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (initialized == FALSE, NULL);
 
-	policy = g_malloc0 (sizeof (NMPolicy));
-	policy->manager = g_object_ref (manager);
-	policy->settings = g_object_ref (settings);
-	policy->update_state_id = 0;
+	policy = g_object_new (NM_TYPE_POLICY, NULL);
+	priv = NM_POLICY_GET_PRIVATE (policy);
+	priv->manager = g_object_ref (manager);
+	priv->settings = g_object_ref (settings);
+	priv->update_state_id = 0;
 
 	/* Grab hostname on startup and use that if nothing provides one */
 	memset (hostname, 0, sizeof (hostname));
@@ -1913,19 +1950,19 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 		    && strcmp (hostname, "localhost")
 		    && strcmp (hostname, "localhost.localdomain")
 		    && strcmp (hostname, "(none)"))
-			policy->orig_hostname = g_strdup (hostname);
+			priv->orig_hostname = g_strdup (hostname);
 	}
 
-	policy->fw_manager = nm_firewall_manager_get();
-	id = g_signal_connect (policy->fw_manager, "started",
+	priv->fw_manager = nm_firewall_manager_get();
+	id = g_signal_connect (priv->fw_manager, "started",
 	                       G_CALLBACK (firewall_started), policy);
-	policy->fw_started_id = id;
+	priv->fw_started_id = id;
 
-	policy->dns_manager = nm_dns_manager_get ();
-	policy->config_changed_id = g_signal_connect (policy->dns_manager, "config-changed",
+	priv->dns_manager = nm_dns_manager_get ();
+	priv->config_changed_id = g_signal_connect (priv->dns_manager, "config-changed",
 	                                              G_CALLBACK (dns_config_changed), policy);
 
-	policy->resolver = g_resolver_get_default ();
+	priv->resolver = g_resolver_get_default ();
 
 	_connect_manager_signal (policy, "state-changed", global_state_changed);
 	_connect_manager_signal (policy, "notify::" NM_MANAGER_HOSTNAME, hostname_changed);
@@ -1945,67 +1982,90 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_AGENT_REGISTERED, secret_agent_registered);
 
 	/* Initialize connections' auto-retries */
-	reset_retries_all (policy->settings, NULL);
+	reset_retries_all (priv->settings, NULL);
 
 	initialized = TRUE;
 	return policy;
 }
 
-void
-nm_policy_destroy (NMPolicy *policy)
+static void
+nm_policy_init (NMPolicy *policy)
 {
+}
+
+static void
+dispose (GObject *object)
+{
+	NMPolicy *policy = NM_POLICY (object);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
 
-	g_return_if_fail (policy != NULL);
-
 	/* Tell any existing hostname lookup thread to die. */
-	if (policy->lookup_cancellable) {
-		g_cancellable_cancel (policy->lookup_cancellable);
-		g_clear_object (&policy->lookup_cancellable);
+	if (priv->lookup_cancellable) {
+		g_cancellable_cancel (priv->lookup_cancellable);
+		g_clear_object (&priv->lookup_cancellable);
 	}
-	g_clear_object (&policy->lookup_addr);
-	g_clear_object (&policy->resolver);
+	g_clear_object (&priv->lookup_addr);
+	g_clear_object (&priv->resolver);
 
-	g_slist_foreach (policy->pending_activation_checks, (GFunc) activate_data_free, NULL);
-	g_slist_free (policy->pending_activation_checks);
+	g_slist_free_full (priv->pending_activation_checks, (GDestroyNotify) activate_data_free);
+	priv->pending_activation_checks = NULL;
 
-	g_slist_foreach (policy->pending_secondaries, (GFunc) pending_secondary_data_free, NULL);
-	g_slist_free (policy->pending_secondaries);
+	g_slist_free_full (priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
+	priv->pending_secondaries = NULL;
 
-	g_signal_handler_disconnect (policy->fw_manager, policy->fw_started_id);
-	g_object_unref (policy->fw_manager);
+	if (priv->fw_manager) {
+		g_signal_handler_disconnect (priv->fw_manager, priv->fw_started_id);
+		g_object_unref (priv->fw_manager);
+		priv->fw_manager = NULL;
+	}
 
-	g_signal_handler_disconnect (policy->dns_manager, policy->config_changed_id);
-	g_object_unref (policy->dns_manager);
+	if (priv->dns_manager) {
+		g_signal_handler_disconnect (priv->dns_manager, priv->config_changed_id);
+		g_object_unref (priv->dns_manager);
+		priv->dns_manager = NULL;
+	}
 
-	for (iter = policy->manager_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (policy->manager, GPOINTER_TO_UINT (iter->data));
-	g_slist_free (policy->manager_ids);
+	for (iter = priv->manager_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (priv->manager, GPOINTER_TO_UINT (iter->data));
+	g_clear_pointer (&priv->manager_ids, g_slist_free);
 
-	for (iter = policy->settings_ids; iter; iter = g_slist_next (iter))
-		g_signal_handler_disconnect (policy->settings, GPOINTER_TO_UINT (iter->data));
-	g_slist_free (policy->settings_ids);
+	for (iter = priv->settings_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (priv->settings, GPOINTER_TO_UINT (iter->data));
+	g_clear_pointer (&priv->settings_ids, g_slist_free);
 
-	for (iter = policy->dev_ids; iter; iter = g_slist_next (iter)) {
+	for (iter = priv->dev_ids; iter; iter = g_slist_next (iter)) {
 		DeviceSignalId *data = iter->data;
 
 		g_signal_handler_disconnect (data->device, data->id);
 		g_slice_free (DeviceSignalId, data);
 	}
-	g_slist_free (policy->dev_ids);
+	g_clear_pointer (&priv->dev_ids, g_slist_free);
 
-	connections = nm_manager_get_active_connections (policy->manager);
+	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter))
-		active_connection_removed (policy->manager, NM_ACTIVE_CONNECTION (iter->data), policy);
+		active_connection_removed (priv->manager, NM_ACTIVE_CONNECTION (iter->data), policy);
 
-	if (policy->reset_retries_id)
-		g_source_remove (policy->reset_retries_id);
+	if (priv->reset_retries_id) {
+		g_source_remove (priv->reset_retries_id);
+		priv->reset_retries_id = 0;
+	}
 
-	g_free (policy->orig_hostname);
-	g_free (policy->cur_hostname);
+	g_clear_pointer (&priv->orig_hostname, g_free);
+	g_clear_pointer (&priv->cur_hostname, g_free);
 
-	g_object_unref (policy->settings);
-	g_object_unref (policy->manager);
-	g_free (policy);
+	g_clear_object (&priv->settings);
+	g_clear_object (&priv->manager);
+
+	G_OBJECT_CLASS (nm_policy_parent_class)->dispose (object);
 }
 
+static void
+nm_policy_class_init (NMPolicyClass *policy_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (policy_class);
+
+	g_type_class_add_private (policy_class, sizeof (NMPolicyPrivate));
+
+	object_class->dispose = dispose;
+}

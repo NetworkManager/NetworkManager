@@ -78,6 +78,7 @@
 #include "nm-enum-types.h"
 #include "nm-sleep-monitor.h"
 #include "nm-connectivity.h"
+#include "nm-policy.h"
 
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
@@ -220,6 +221,8 @@ typedef struct {
 	GSList *devices;
 	NMState state;
 	NMConnectivity *connectivity;
+
+	NMPolicy *policy;
 
 	NMDBusManager *dbus_mgr;
 	guint          dbus_connection_changed_id;
@@ -4356,6 +4359,8 @@ nm_manager_new (NMSettings *settings,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
+	priv->policy = nm_policy_new (singleton, settings);
+
 	priv->connectivity = nm_connectivity_new ();
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), singleton);
@@ -4490,6 +4495,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->connectivity);
 
 	g_free (priv->hostname);
+
+	g_object_unref (priv->policy);
 
 	g_object_unref (priv->settings);
 	g_object_unref (priv->vpn_manager);
