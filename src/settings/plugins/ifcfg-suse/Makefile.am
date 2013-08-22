@@ -1,11 +1,4 @@
-
-pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-suse.la
-
-libnm_settings_plugin_ifcfg_suse_la_SOURCES = \
-	plugin.c \
-	plugin.h
-
-libnm_settings_plugin_ifcfg_suse_la_CPPFLAGS = \
+AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-I${top_srcdir}/src/settings \
@@ -14,6 +7,12 @@ libnm_settings_plugin_ifcfg_suse_la_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
+
+pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-suse.la
+
+libnm_settings_plugin_ifcfg_suse_la_SOURCES = \
+	plugin.c \
+	plugin.h
 
 libnm_settings_plugin_ifcfg_suse_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_suse_la_LIBADD = \

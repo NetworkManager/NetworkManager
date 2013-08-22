@@ -1,10 +1,13 @@
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
+	-I$(top_builddir)/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DNMCONFDIR=\"$(nmconfdir)\"
 
 # 'noinst' here because this is an example plugin we don't want to install
 noinst_LTLIBRARIES = libnm-settings-plugin-example.la
@@ -23,11 +26,6 @@ libnm_settings_plugin_example_la_SOURCES = \
 	common.h \
 	reader.c \
 	writer.c
-
-libnm_settings_plugin_example_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DNMCONFDIR=\"$(nmconfdir)\"
 
 libnm_settings_plugin_example_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

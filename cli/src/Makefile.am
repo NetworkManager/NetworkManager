@@ -1,13 +1,16 @@
 bin_PROGRAMS = \
 	nmcli
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/libnm-glib
+	-I${top_srcdir}/libnm-glib \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
 
 nmcli_SOURCES = \
 	common.c \
@@ -24,11 +27,6 @@ nmcli_SOURCES = \
 	nmcli.h \
 	utils.c \
 	utils.h
-
-nmcli_CPPFLAGS = \
-	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
 
 nmcli_LDADD = \
 	$(DBUS_LIBS) \

@@ -16,7 +16,11 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/posix-signals \
-	-I$(srcdir)/../
+	-I$(srcdir)/../ \
+	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\" \
+	-DSYSCONFDIR=\"nonexistent\" \
+	-DSBINDIR=\"nonexistent\"
 
 AM_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -36,13 +40,6 @@ test_ifcfg_rh_SOURCES = \
 	../shvar.c \
 	../utils.c \
 	../writer.c
-
-test_ifcfg_rh_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\" \
-	-DSYSCONFDIR=\"nonexistent\" \
-	-DSBINDIR=\"nonexistent\"
 
 test_ifcfg_rh_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la

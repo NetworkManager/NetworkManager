@@ -1,4 +1,4 @@
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src \
 	-I${top_srcdir}/src/logging \
@@ -7,7 +7,11 @@ INCLUDES = \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/libnm-util
+	-I${top_srcdir}/libnm-util \
+	$(DBUS_CFLAGS) \
+	$(IWMX_SDK_CFLAGS) \
+	$(LIBNL_CFLAGS) \
+	$(GUDEV_CFLAGS)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-wimax.la
 
@@ -22,12 +26,6 @@ libnm_device_plugin_wimax_la_SOURCES = \
 	nm-wimax-util.h \
 	iwmxsdk.c \
 	iwmxsdk.h
-
-libnm_device_plugin_wimax_la_CPPFLAGS = \
-	$(DBUS_CFLAGS) \
-	$(IWMX_SDK_CFLAGS) \
-	$(LIBNL_CFLAGS) \
-	$(GUDEV_CFLAGS)
 
 libnm_device_plugin_wimax_la_LDFLAGS = -module -avoid-version
 libnm_device_plugin_wimax_la_LIBADD = \

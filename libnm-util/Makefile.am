@@ -2,14 +2,23 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS = . tests
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/include -I${top_builddir}/include
-
-lib_LTLIBRARIES=libnm-util.la
-
-libnm_util_la_CPPFLAGS = \
+AM_CPPFLAGS = \
+	-I${top_srcdir} \
+	-I${top_srcdir}/include \
+	-I${top_builddir}/include \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(UUID_CFLAGS)
+
+if WITH_GNUTLS
+AM_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
+endif
+
+if WITH_NSS
+AM_CPPFLAGS += $(NSS_CFLAGS)
+endif
+
+lib_LTLIBRARIES=libnm-util.la
 
 libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
@@ -101,13 +110,11 @@ libnm_util_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 
 if WITH_GNUTLS
 libnm_util_la_SOURCES += crypto_gnutls.c
-libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
 libnm_util_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
 libnm_util_la_SOURCES += crypto_nss.c
-libnm_util_la_CPPFLAGS += $(NSS_CFLAGS)
 libnm_util_la_LIBADD += $(NSS_LIBS)
 endif
 
@@ -122,21 +129,16 @@ noinst_LTLIBRARIES = libtest-crypto.la
 
 libtest_crypto_la_SOURCES = crypto.c
 
-libtest_crypto_la_CPPFLAGS = \
-	$(GLIB_CFLAGS)
-
 libtest_crypto_la_LIBADD = \
 	$(GLIB_LIBS)
 
 if WITH_GNUTLS
 libtest_crypto_la_SOURCES += crypto_gnutls.c
-libtest_crypto_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
 libtest_crypto_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
 libtest_crypto_la_SOURCES += crypto_nss.c
-libtest_crypto_la_CPPFLAGS += $(NSS_CFLAGS)
 libtest_crypto_la_LIBADD += $(NSS_LIBS)
 endif
 
@@ -160,7 +162,7 @@ NetworkManager-1.0.gir: libnm-util.la
 NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
 NetworkManager_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1
 NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
-NetworkManager_1_0_gir_CFLAGS = $(INCLUDES) -I$(top_srcdir)/libnm-util
+NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/libnm-util
 NetworkManager_1_0_gir_LIBS = libnm-util.la
 NetworkManager_1_0_gir_FILES = $(introspection_sources)
 NetworkManager_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm

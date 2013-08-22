@@ -1,11 +1,13 @@
 if ENABLE_TESTS
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/libnm-glib
+	-I$(top_srcdir)/libnm-glib \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
 
 noinst_PROGRAMS = test-remote-settings-client
 
@@ -13,10 +15,6 @@ noinst_PROGRAMS = test-remote-settings-client
 
 test_remote_settings_client_SOURCES = \
 	test-remote-settings-client.c
-
-test_remote_settings_client_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
 
 test_remote_settings_client_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

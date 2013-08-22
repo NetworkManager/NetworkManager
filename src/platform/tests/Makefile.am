@@ -38,15 +38,12 @@ noinst_PROGRAMS = \
 EXTRA_DIST = test-common.h
 
 monitor_SOURCES = monitor.c $(PLATFORM_SOURCES)
-monitor_CPPFLAGS = $(AM_CPPFLAGS)
 monitor_LDADD = $(PLATFORM_LDADD)
 
 dump_SOURCES = dump.c $(PLATFORM_SOURCES)
-dump_CPPFLAGS = $(AM_CPPFLAGS)
 dump_LDADD = $(PLATFORM_LDADD)
 
 platform_SOURCES = platform.c $(PLATFORM_SOURCES)
-platform_CPPFLAGS = $(AM_CPPFLAGS)
 platform_LDADD = $(PLATFORM_LDADD)
 
 test_link_fake_SOURCES = test-link.c $(TEST_SOURCES)

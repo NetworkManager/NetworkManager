@@ -2,15 +2,21 @@ if ENABLE_TESTS
 
 @GNOME_CODE_COVERAGE_RULES@
 
-INCLUDES=-I$(srcdir)/../ \
-	 -I$(top_srcdir)/libnm-glib \
-	 -I$(top_srcdir)/libnm-util \
-	 -I$(top_builddir)/libnm-util \
-	 -I$(top_srcdir)/include \
-	 -I$(top_builddir)/include \
-	 -I$(top_srcdir)/src/config \
-	 -I$(top_srcdir)/src/settings \
-	 -I$(top_srcdir)/src/wifi
+AM_CPPFLAGS= \
+	-I$(srcdir)/../ \
+	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
+	-I$(top_srcdir)/src/config \
+	-I$(top_srcdir)/src/settings \
+	-I$(top_srcdir)/src/wifi \
+	$(CHECK_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
+	-DSYSCONFDIR=\"nonexistent\"
 
 noinst_PROGRAMS = check_ifnet
 check_ifnet_SOURCES = \
@@ -20,13 +26,6 @@ check_ifnet_SOURCES = \
 	../net_utils.c \
 	../wpa_parser.c \
 	../errors.c
-
-check_ifnet_CPPFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
-	-DSYSCONFDIR=\"nonexistent\"
 
 check_ifnet_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)

@@ -23,7 +23,7 @@ SUBDIRS += \
 	tests
 endif
 
-INCLUDES =				\
+AM_CPPFLAGS =				\
 	-I$(top_srcdir)/include		\
 	-I$(top_builddir)/include	\
 	-I${top_srcdir}/libgsystem	\
@@ -33,7 +33,7 @@ INCLUDES =				\
 
 # add each subdirectory that contains a libNM source file. $(sort) is being used
 # primarily for its side effect of removing duplicates.
-INCLUDES += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d)
+AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d)
 
 ###########################################
 # NetworkManager
@@ -303,7 +303,7 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 nm_enum_types_sources = $(nm_sources)
 if WITH_WIMAX
 nm_enum_types_sources += devices/wimax/nm-device-wimax.h
-INCLUDES += -I$(top_srcdir)/src/devices/wimax
+AM_CPPFLAGS += -I$(top_srcdir)/src/devices/wimax
 endif
 
 BUILT_SOURCES = $(GLIB_GENERATED)
@@ -346,7 +346,7 @@ BUILT_SOURCES += $(glue_sources)
 	$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(subst -glue.h,,$@)) --mode=glib-server --output=$@ $<
 
 
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
 	$(BLUEZ_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \

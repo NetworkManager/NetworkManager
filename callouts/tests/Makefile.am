@@ -1,11 +1,13 @@
 if ENABLE_TESTS
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I${top_builddir}/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/callouts
+	-I$(top_srcdir)/callouts \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
 
 noinst_PROGRAMS = \
 	test-dispatcher-envp
@@ -14,10 +16,6 @@ noinst_PROGRAMS = \
 
 test_dispatcher_envp_SOURCES = \
 	test-dispatcher-envp.c
-
-test_dispatcher_envp_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
 
 test_dispatcher_envp_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

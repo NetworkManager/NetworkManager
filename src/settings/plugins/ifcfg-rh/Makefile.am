@@ -24,7 +24,7 @@ libifcfg_rh_io_la_SOURCES = \
 	utils.c \
 	utils.h
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/posix-signals \
@@ -33,9 +33,7 @@ INCLUDES = \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
-
-libifcfg_rh_io_la_CPPFLAGS = \
+	-I$(top_builddir)/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(NSS_CFLAGS) \
@@ -47,11 +45,6 @@ libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	plugin.h \
 	nm-ifcfg-connection.c \
 	nm-ifcfg-connection.h
-
-libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_rh_la_LIBADD = \

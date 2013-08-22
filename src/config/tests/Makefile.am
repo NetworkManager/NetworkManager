@@ -1,9 +1,11 @@
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/src/config
+	-I$(top_srcdir)/src/config \
+	$(GLIB_CFLAGS) \
+	-DSRCDIR=\""$(srcdir)"\"
 
 noinst_PROGRAMS = \
 	test-config
@@ -12,10 +14,6 @@ test_config_SOURCES = \
 	nm-test-device.c \
 	nm-test-device.h \
 	test-config.c
-
-test_config_CPPFLAGS = \
-	-DSRCDIR=\""$(srcdir)"\" \
-	$(GLIB_CFLAGS)
 
 test_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la

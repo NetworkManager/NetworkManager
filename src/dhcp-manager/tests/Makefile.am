@@ -1,9 +1,11 @@
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/libnm-util \
-	-I$(top_srcdir)/src/dhcp-manager
+	-I$(top_srcdir)/src/dhcp-manager \
+	$(GLIB_CFLAGS) \
+	-DTESTDIR="\"$(abs_srcdir)\""
 
 noinst_PROGRAMS = test-dhcp-dhclient
 
@@ -11,10 +13,6 @@ noinst_PROGRAMS = test-dhcp-dhclient
 
 test_dhcp_dhclient_SOURCES = \
 	test-dhcp-dhclient.c
-
-test_dhcp_dhclient_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	-DTESTDIR="\"$(abs_srcdir)\""
 
 test_dhcp_dhclient_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la

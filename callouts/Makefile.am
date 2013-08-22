@@ -1,5 +1,16 @@
 SUBDIRS = . tests
 
+AM_CPPFLAGS = \
+	-I${top_srcdir}/include \
+	-I${top_builddir}/include \
+	-I${top_srcdir}/libnm-util \
+	-I${top_builddir}/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\"
+
 ###########################################
 # Test libraries
 ###########################################
@@ -21,12 +32,6 @@ libexec_PROGRAMS = \
 nm_avahi_autoipd_action_SOURCES = \
 	nm-avahi-autoipd-action.c
 
-nm_avahi_autoipd_action_CPPFLAGS = 		\
-	$(DBUS_CFLAGS)						\
-	$(GLIB_CFLAGS)					\
-	-DSYSCONFDIR=\"$(sysconfdir)\"		\
-	-DLIBEXECDIR=\"$(libexecdir)\"
-
 nm_avahi_autoipd_action_LDADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
@@ -37,17 +42,6 @@ nm_dispatcher_action_SOURCES = \
 	nm-dispatcher-action.h \
 	nm-dispatcher-utils.c \
 	nm-dispatcher-utils.h
-
-nm_dispatcher_action_CPPFLAGS = \
-	-I${top_srcdir} \
-	-I${top_srcdir}/include \
-	-I${top_builddir}/include \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
-	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	-DNMCONFDIR=\"$(nmconfdir)\" \
-	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dispatcher_action_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -66,12 +60,7 @@ libtest_dispatcher_envp_la_SOURCES = \
 	nm-dispatcher-utils.h
 
 libtest_dispatcher_envp_la_CPPFLAGS = \
-	-I${top_srcdir}/include \
-	-I${top_builddir}/include \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(AM_CPPFLAGS)
 
 libtest_dispatcher_envp_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

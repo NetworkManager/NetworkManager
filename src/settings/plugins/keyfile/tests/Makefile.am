@@ -4,14 +4,20 @@ SUBDIRS=keyfiles
 
 @GNOME_CODE_COVERAGE_RULES@
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/src/settings \
-	-I$(srcdir)/../
+	-I$(srcdir)/../ \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(CODE_COVERAGE_CFLAGS) \
+	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/keyfiles\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\" \
+	-DNMCONFDIR=\"nonexistent\"
 
 noinst_PROGRAMS = test-keyfile
 
@@ -21,14 +27,6 @@ test_keyfile_SOURCES = \
 	../writer.c \
 	../errors.c \
 	../utils.c
-
-test_keyfile_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/keyfiles\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\" \
-	-DNMCONFDIR=\"nonexistent\"
 
 test_keyfile_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \

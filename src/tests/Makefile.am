@@ -1,4 +1,4 @@
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
@@ -6,7 +6,9 @@ INCLUDES = \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/dhcp-manager \
 	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src
+	-I$(top_builddir)/src \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
 
 noinst_PROGRAMS = \
 	test-dhcp-options \
@@ -20,8 +22,7 @@ test_dhcp_options_SOURCES = \
 	test-dhcp-options.c
 
 test_dhcp_options_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
@@ -33,9 +34,6 @@ test_dhcp_options_LDADD = \
 test_policy_hosts_SOURCES = \
 	test-policy-hosts.c
 
-test_policy_hosts_CPPFLAGS = \
-	$(GLIB_CFLAGS)
-
 test_policy_hosts_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
@@ -44,10 +42,6 @@ test_policy_hosts_LDADD = \
 test_wifi_ap_utils_SOURCES = \
 	test-wifi-ap-utils.c
 
-test_wifi_ap_utils_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
-
 test_wifi_ap_utils_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
@@ -55,10 +49,6 @@ test_wifi_ap_utils_LDADD = \
 
 test_ip4_config_SOURCES = \
 	test-ip4-config.c
-
-test_ip4_config_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
 
 test_ip4_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la

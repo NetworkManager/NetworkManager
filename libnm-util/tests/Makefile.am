@@ -2,11 +2,14 @@ if ENABLE_TESTS
 
 SUBDIRS=certs
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
+	-I$(top_builddir)/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\"
 
 noinst_PROGRAMS = \
 	test-settings-defaults \
@@ -18,10 +21,6 @@ noinst_PROGRAMS = \
 test_settings_defaults_SOURCES = \
 	test-settings-defaults.c
 
-test_settings_defaults_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
-
 test_settings_defaults_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
@@ -29,9 +28,6 @@ test_settings_defaults_LDADD = \
 
 test_crypto_SOURCES = \
 	test-crypto.c
-
-test_crypto_CPPFLAGS = \
-	$(GLIB_CFLAGS)
 
 test_crypto_LDADD = \
 	$(top_builddir)/libnm-util/libtest-crypto.la \
@@ -41,11 +37,6 @@ test_crypto_LDADD = \
 test_secrets_SOURCES = \
 	test-secrets.c
 
-test_secrets_CPPFLAGS = \
-	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\" \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
-
 test_secrets_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
@@ -54,10 +45,6 @@ test_secrets_LDADD = \
 test_general_SOURCES = \
 	test-general.c
 
-test_general_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
-
 test_general_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
@@ -65,10 +52,6 @@ test_general_LDADD = \
 
 test_setting_8021x_SOURCES = \
 	test-setting-8021x.c
-
-test_setting_8021x_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
 
 test_setting_8021x_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
