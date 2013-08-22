@@ -35,6 +35,7 @@ global:
 	nm_client_check_connectivity_async;
 	nm_client_check_connectivity_finish;
 	nm_client_deactivate_connection;
+	nm_client_get_activating_connection;
 	nm_client_get_active_connections;
 	nm_client_get_connectivity;
 	nm_client_get_device_by_iface;
@@ -43,6 +44,7 @@ global:
 	nm_client_get_logging;
 	nm_client_get_manager_running;
 	nm_client_get_permission_result;
+	nm_client_get_primary_connection;
 	nm_client_get_state;
 	nm_client_get_type;
 	nm_client_get_version;
