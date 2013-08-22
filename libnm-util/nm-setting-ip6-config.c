@@ -675,15 +675,6 @@ nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting)
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->ip6_privacy;
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -750,24 +741,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_METHOD);
 		return FALSE;
-	}
-
-	/* Method 'ignore' is not allowed when IPv4 is set to 'disabled' */
-	if (!strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-		GSList *list = g_slist_find_custom (all_settings, NM_SETTING_IP4_CONFIG_SETTING_NAME, find_setting_by_name);
-		if (list) {
-			NMSettingIP4Config *s_ip4 = g_slist_nth_data (list, 0);
-			if (   s_ip4
-			    && !g_strcmp0 (nm_setting_ip4_config_get_method (s_ip4), NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-				g_set_error (error,
-				             NM_SETTING_IP6_CONFIG_ERROR,
-				             NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
-				             _("IPv6 method '%s' is not allowed when IPv4 method 'disabled' is set"),
-				             priv->method);
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_METHOD);
-				return FALSE;
-			}
-		}
 	}
 
 	if (priv->dhcp_hostname && !strlen (priv->dhcp_hostname)) {
