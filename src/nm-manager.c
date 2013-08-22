@@ -217,6 +217,8 @@ typedef struct {
 
 	GSList *active_connections;
 	guint ac_cleanup_id;
+	NMActiveConnection *primary_connection;
+	NMActiveConnection *activating_connection;
 
 	GSList *devices;
 	NMState state;
@@ -298,6 +300,8 @@ enum {
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_PRIMARY_CONNECTION,
+	PROP_ACTIVATING_CONNECTION,
 
 	/* Not exported */
 	PROP_HOSTNAME,
@@ -4179,6 +4183,68 @@ firmware_dir_changed (GFileMonitor *monitor,
 	}
 }
 
+static void
+policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *best;
+	NMActiveConnection *ac;
+
+	/* Note: this assumes that it's not possible for the IP4 default
+	 * route to be going over the default-ip6-device. If that changes,
+	 * we need something more complicated here.
+	 */
+	best = nm_policy_get_default_ip4_device (priv->policy);
+	if (!best)
+		best = nm_policy_get_default_ip6_device (priv->policy);
+
+	if (best)
+		ac = NM_ACTIVE_CONNECTION (nm_device_get_act_request (best));
+	else
+		ac = NULL;
+
+	if (ac != priv->primary_connection) {
+		g_clear_object (&priv->primary_connection);
+		priv->primary_connection = ac ? g_object_ref (ac) : NULL;
+		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_name (ac) : "(none)");
+		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION);
+	}
+}
+
+static void
+policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *activating, *best;
+	NMActiveConnection *ac;
+
+	/* We only look at activating-ip6-device if activating-ip4-device
+	 * AND default-ip4-device are NULL; if default-ip4-device is
+	 * non-NULL, then activating-ip6-device is irrelevant, since while
+	 * that device might become the new default-ip6-device, it can't
+	 * become primary-connection while default-ip4-device is set to
+	 * something else.
+	 */
+	activating = nm_policy_get_activating_ip4_device (priv->policy);
+	best = nm_policy_get_default_ip4_device (priv->policy);
+	if (!activating && !best)
+		activating = nm_policy_get_activating_ip6_device (priv->policy);
+
+	if (activating)
+		ac = NM_ACTIVE_CONNECTION (nm_device_get_act_request (activating));
+	else
+		ac = NULL;
+
+	if (ac != priv->activating_connection) {
+		g_clear_object (&priv->activating_connection);
+		priv->activating_connection = ac ? g_object_ref (ac) : NULL;
+		nm_log_dbg (LOGD_CORE, "ActivatingConnection now %s", ac ? nm_active_connection_get_name (ac) : "(none)");
+		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVATING_CONNECTION);
+	}
+}
+
 #define NM_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
 #define DEV_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.Device.PermissionDenied"
 
@@ -4360,6 +4426,14 @@ nm_manager_new (NMSettings *settings,
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
 	priv->policy = nm_policy_new (singleton, settings);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
+	                  G_CALLBACK (policy_default_device_changed), singleton);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP6_DEVICE,
+	                  G_CALLBACK (policy_default_device_changed), singleton);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP4_DEVICE,
+	                  G_CALLBACK (policy_activating_device_changed), singleton);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP6_DEVICE,
+	                  G_CALLBACK (policy_activating_device_changed), singleton);
 
 	priv->connectivity = nm_connectivity_new ();
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
@@ -4491,11 +4565,15 @@ dispose (GObject *object)
 		g_object_unref (iter->data);
 	}
 	g_slist_free (priv->active_connections);
+	g_clear_object (&priv->primary_connection);
+	g_clear_object (&priv->activating_connection);
 
 	g_clear_object (&priv->connectivity);
 
 	g_free (priv->hostname);
 
+	g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_default_device_changed), singleton);
+	g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_activating_device_changed), singleton);
 	g_object_unref (priv->policy);
 
 	g_object_unref (priv->settings);
@@ -4738,6 +4816,14 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
+		break;
+	case PROP_PRIMARY_CONNECTION:
+		path = priv->primary_connection ? nm_active_connection_get_path (priv->primary_connection) : "/";
+		g_value_set_boxed (value, path);
+		break;
+	case PROP_ACTIVATING_CONNECTION:
+		path = priv->activating_connection ? nm_active_connection_get_path (priv->activating_connection) : "/";
+		g_value_set_boxed (value, path);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -5010,6 +5096,22 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                    "Connectivity state",
 		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 		                    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_PRIMARY_CONNECTION,
+		 g_param_spec_boxed (NM_MANAGER_PRIMARY_CONNECTION,
+		                     "Primary connection",
+		                     "Primary connection",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_ACTIVATING_CONNECTION,
+		 g_param_spec_boxed (NM_MANAGER_ACTIVATING_CONNECTION,
+		                     "Activating connection",
+		                     "Activating connection",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	/* Hostname is not exported over D-Bus */
 	g_object_class_install_property

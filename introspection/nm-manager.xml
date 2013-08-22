@@ -315,6 +315,25 @@
       </tp:docstring>
     </property>
 
+    <property name="PrimaryConnection" type="o" access="read">
+      <tp:docstring>
+        The object path of the "primary" active connection being used
+        to access the network. In particular, if there is no VPN
+        active, or the VPN does not have the default route, then this
+        indicates the connection that has the default route. If there
+        is a VPN active with the default route, then this indicates
+        the connection that contains the route to the VPN endpoint.
+      </tp:docstring>
+    </property>
+
+    <property name="ActivatingConnection" type="o" access="read">
+      <tp:docstring>
+        The object path of an active connection that is currently
+        being activated and which is expected to become the new
+        PrimaryConnection when it finishes activating.
+      </tp:docstring>
+    </property>
+
     <property name="Startup" type="b" access="read">
       <tp:docstring>
         Indicates whether NM is still starting up; this becomes FALSE

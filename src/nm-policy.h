@@ -32,6 +32,11 @@
 #define NM_IS_POLICY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_POLICY))
 #define NM_POLICY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_POLICY, NMPolicyClass))
 
+#define NM_POLICY_DEFAULT_IP4_DEVICE "default-ip4-device"
+#define NM_POLICY_DEFAULT_IP6_DEVICE "default-ip6-device"
+#define NM_POLICY_ACTIVATING_IP4_DEVICE "activating-ip4-device"
+#define NM_POLICY_ACTIVATING_IP6_DEVICE "activating-ip6-device"
+
 typedef struct {
 	GObject parent;
 } NMPolicy;
@@ -44,5 +49,10 @@ typedef struct {
 GType nm_policy_get_type (void);
 
 NMPolicy *nm_policy_new (NMManager *manager, NMSettings *settings);
+
+NMDevice *nm_policy_get_default_ip4_device (NMPolicy *policy);
+NMDevice *nm_policy_get_default_ip6_device (NMPolicy *policy);
+NMDevice *nm_policy_get_activating_ip4_device (NMPolicy *policy);
+NMDevice *nm_policy_get_activating_ip6_device (NMPolicy *policy);
 
 #endif /* NM_POLICY_H */
