@@ -2302,6 +2302,52 @@ test_read_onboot_no (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_NOIP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-noip"
+
+static void
+test_read_noip (void)
+{
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_NOIP,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+	g_assert_no_error (error);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2"
 #define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
 
@@ -12500,6 +12546,7 @@ int main (int argc, char **argv)
 	test_read_wired_ipv6_only ();
 	test_read_wired_dhcp6_only ();
 	test_read_onboot_no ();
+	test_read_noip ();
 	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
