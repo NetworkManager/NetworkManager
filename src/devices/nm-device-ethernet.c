@@ -1254,18 +1254,25 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->spec_match_list (device, specs);
 }
 
-static gboolean
-match_l2_config (NMDevice *self, NMConnection *connection)
+static void
+update_connection (NMDevice *device, NMConnection *connection)
 {
-	/* Can't match 802.1x or PPPoE connections; they have too much state
-	 * that's impossible to get on-the-fly from PPPoE or the supplicant.
-	 */
-	if (   nm_connection_get_setting_802_1x (connection)
-	    || nm_connection_get_setting_pppoe (connection))
-		return FALSE;
+	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
+	guint maclen;
+	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
 
-	/* FIXME: do L2 checks */
-	return TRUE;
+	if (!s_wired) {
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_wired);
+	}
+
+	if (mac && maclen == 6) {
+		GBytes *address = g_bytes_new (mac, maclen);
+
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, address, NULL);
+	}
+
+	/* We don't set the MTU as we don't know whether it was set explicitly */
 }
 
 static const GByteArray *
@@ -1386,6 +1393,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
 
+	parent_class->connection_type = NM_SETTING_WIRED_SETTING_NAME;
+
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
@@ -1404,7 +1413,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->deactivate = deactivate;
 	parent_class->spec_match_list = spec_match_list;
-	parent_class->match_l2_config = match_l2_config;
+	parent_class->update_connection = update_connection;
 	parent_class->get_connection_hw_address = get_connection_hw_address;
 	parent_class->carrier_changed = carrier_changed;
 
