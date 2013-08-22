@@ -58,8 +58,8 @@ typedef struct {
 
 	NMSettings *settings;
 
-	NMDevice *default_device4;
-	NMDevice *default_device6;
+	NMDevice *default_device4, *activating_device4;
+	NMDevice *default_device6, *activating_device6;
 
 	HostnameThread *lookup;
 	guint32 lookup_ipv4_addr;          /* IPv4 for reverse lookup */
@@ -78,6 +78,15 @@ typedef struct {
 
 G_DEFINE_TYPE (NMPolicy, nm_policy, G_TYPE_OBJECT)
 
+enum {
+	PROP_0,
+
+	PROP_DEFAULT_IP4_DEVICE,
+	PROP_DEFAULT_IP6_DEVICE,
+	PROP_ACTIVATING_IP4_DEVICE,
+	PROP_ACTIVATING_IP6_DEVICE
+};
+
 #define RETRIES_TAG "autoconnect-retries"
 #define RETRIES_DEFAULT	4
 #define RESET_RETRIES_TIMESTAMP_TAG "reset-retries-timestamp-tag"
@@ -88,7 +97,7 @@ static void schedule_activate_all (NMPolicy *policy);
 
 
 static NMDevice *
-get_best_ip4_device (NMManager *manager)
+get_best_ip4_device (NMManager *manager, gboolean fully_activated)
 {
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
@@ -101,6 +110,7 @@ get_best_ip4_device (NMManager *manager)
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMDeviceType devtype = nm_device_get_device_type (dev);
+		NMDeviceState state = nm_device_get_state (dev);
 		NMActRequest *req;
 		NMConnection *connection;
 		NMIP4Config *ip4_config;
@@ -110,12 +120,33 @@ get_best_ip4_device (NMManager *manager)
 		gboolean can_default = FALSE;
 		const char *method = NULL;
 
-		if (   nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED
-		    && nm_device_get_state (dev) != NM_DEVICE_STATE_SECONDARIES)
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    || state >= NM_DEVICE_STATE_DEACTIVATING)
+			continue;
+
+		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
 		ip4_config = nm_device_get_ip4_config (dev);
-		if (!ip4_config)
+		if (ip4_config) {
+			/* Make sure at least one of this device's IP addresses has a gateway */
+			for (i = 0; i < nm_ip4_config_get_num_addresses (ip4_config); i++) {
+				NMIP4Address *addr;
+
+				addr = nm_ip4_config_get_address (ip4_config, i);
+				if (nm_ip4_address_get_gateway (addr)) {
+					can_default = TRUE;
+					break;
+				}
+			}
+
+			if (!can_default && (devtype != NM_DEVICE_TYPE_MODEM))
+				continue;
+
+			/* 'never-default' devices can't ever be the default */
+			if (nm_ip4_config_get_never_default (ip4_config))
+				continue;
+		} else if (fully_activated)
 			continue;
 
 		req = nm_device_get_act_request (dev);
@@ -123,32 +154,17 @@ get_best_ip4_device (NMManager *manager)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 
-		/* Never set the default route through an IPv4LL-addressed device */
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4)
+		if (s_ip4) {
+			/* Never set the default route through an IPv4LL-addressed device */
 			method = nm_setting_ip4_config_get_method (s_ip4);
+			if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+				continue;
 
-		if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-			continue;
-
-		/* Make sure at least one of this device's IP addresses has a gateway */
-		for (i = 0; i < nm_ip4_config_get_num_addresses (ip4_config); i++) {
-			NMIP4Address *addr;
-
-			addr = nm_ip4_config_get_address (ip4_config, i);
-			if (nm_ip4_address_get_gateway (addr)) {
-				can_default = TRUE;
-				break;
-			}
+			/* 'never-default' devices can't ever be the default */
+			if (nm_setting_ip4_config_get_never_default (s_ip4))
+				continue;
 		}
-
-		if (!can_default && (devtype != NM_DEVICE_TYPE_MODEM))
-			continue;
-
-		/* 'never-default' devices can't ever be the default */
-		if (   (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
-		    || nm_ip4_config_get_never_default (ip4_config))
-			continue;
 
 		prio = nm_device_get_priority (dev);
 		if (prio > 0 && prio < best_prio) {
@@ -157,11 +173,25 @@ get_best_ip4_device (NMManager *manager)
 		}
 	}
 
+	if (!best)
+		return NULL;
+
+	if (!fully_activated) {
+		NMDeviceState state = nm_device_get_state (best);
+
+		/* There's only a best activating device if the best device
+		 * among all activating and already-activated devices is a
+		 * still-activating one.
+		 */
+		if (state >= NM_DEVICE_STATE_SECONDARIES)
+			return NULL;
+	}
+
 	return best;
 }
 
 static NMDevice *
-get_best_ip6_device (NMManager *manager)
+get_best_ip6_device (NMManager *manager, gboolean fully_activated)
 {
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
@@ -174,6 +204,7 @@ get_best_ip6_device (NMManager *manager)
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMDeviceType devtype = nm_device_get_device_type (dev);
+		NMDeviceState state = nm_device_get_state (dev);
 		NMActRequest *req;
 		NMConnection *connection;
 		NMIP6Config *ip6_config;
@@ -183,12 +214,31 @@ get_best_ip6_device (NMManager *manager)
 		gboolean can_default = FALSE;
 		const char *method = NULL;
 
-		if (   nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED
-		    && nm_device_get_state (dev) != NM_DEVICE_STATE_SECONDARIES)
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    || state >= NM_DEVICE_STATE_DEACTIVATING)
+			continue;
+
+		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
 		ip6_config = nm_device_get_ip6_config (dev);
-		if (!ip6_config)
+		if (ip6_config) {
+			for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
+				NMIP6Address *addr;
+
+				addr = nm_ip6_config_get_address (ip6_config, i);
+				if (nm_ip6_address_get_gateway (addr)) {
+					can_default = TRUE;
+					break;
+				}
+			}
+
+			if (!can_default && (devtype != NM_DEVICE_TYPE_MODEM))
+				continue;
+
+			if (nm_ip6_config_get_never_default (ip6_config))
+				continue;
+		} else if (fully_activated)
 			continue;
 
 		req = nm_device_get_act_request (dev);
@@ -196,37 +246,35 @@ get_best_ip6_device (NMManager *manager)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 
-		/* Never set the default route through an IPv4LL-addressed device */
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6)
+		if (s_ip6) {
 			method = nm_setting_ip6_config_get_method (s_ip6);
+			if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+				continue;
 
-		if (method && !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
-			continue;
-
-		/* Make sure at least one of this device's IP addresses has a gateway */
-		for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
-			NMIP6Address *addr;
-
-			addr = nm_ip6_config_get_address (ip6_config, i);
-			if (nm_ip6_address_get_gateway (addr)) {
-				can_default = TRUE;
-				break;
-			}
+			if (nm_setting_ip6_config_get_never_default (s_ip6))
+				continue;
 		}
-
-		if (!can_default && (devtype != NM_DEVICE_TYPE_MODEM))
-			continue;
-
-		/* 'never-default' devices can't ever be the default */
-		if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
-			continue;
 
 		prio = nm_device_get_priority (dev);
 		if (prio > 0 && prio < best_prio) {
 			best = dev;
 			best_prio = prio;
 		}
+	}
+
+	if (!best)
+		return NULL;
+
+	if (!fully_activated) {
+		NMDeviceState state = nm_device_get_state (best);
+
+		/* There's only a best activating device if the best device
+		 * among all activating and already-activated devices is an
+		 * activating one.
+		 */
+		if (state >= NM_DEVICE_STATE_SECONDARIES)
+			return NULL;
 	}
 
 	return best;
@@ -335,9 +383,9 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
-		best4 = get_best_ip4_device (priv->manager);
+		best4 = get_best_ip4_device (priv->manager, TRUE);
 	if (!best6)
-		best6 = get_best_ip6_device (priv->manager);
+		best6 = get_best_ip6_device (priv->manager, TRUE);
 
 	if (!best4 && !best6) {
 		/* No best device; fall back to original hostname or if there wasn't
@@ -534,7 +582,7 @@ get_best_ip4_config (NMPolicy *policy,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip4_config) {
-		device = get_best_ip4_device (priv->manager);
+		device = get_best_ip4_device (priv->manager, TRUE);
 		if (device) {
 			ip4_config = nm_device_get_ip4_config (device);
 			g_assert (ip4_config);
@@ -594,7 +642,13 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	 */
 	ip4_config = get_best_ip4_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
 	if (!ip4_config) {
+		gboolean changed;
+
+		changed = (priv->default_device4 != NULL);
 		priv->default_device4 = NULL;
+		if (changed)
+			g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP4_DEVICE);
+
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
@@ -638,6 +692,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
+	g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP4_DEVICE);
 }
 
 static NMIP6Config *
@@ -706,7 +761,7 @@ get_best_ip6_config (NMPolicy *policy,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip6_config) {
-		device = get_best_ip6_device (priv->manager);
+		device = get_best_ip6_device (priv->manager, TRUE);
 		if (device) {
 			req = nm_device_get_act_request (device);
 			g_assert (req);
@@ -767,7 +822,13 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	 */
 	ip6_config = get_best_ip6_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
 	if (!ip6_config) {
+		gboolean changed;
+
+		changed = (priv->default_device6 != NULL);
 		priv->default_device6 = NULL;
+		if (changed)
+			g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP6_DEVICE);
+
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
@@ -820,6 +881,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
+	g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP6_DEVICE);
 }
 
 static void
@@ -842,6 +904,30 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 	nm_dns_manager_end_updates (mgr, __func__);
 	g_object_unref (mgr);
+}
+
+static void
+check_activating_devices (NMPolicy *policy)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	GObject *object = G_OBJECT (policy);
+	NMDevice *best4, *best6 = NULL;
+
+	best4 = get_best_ip4_device (priv->manager, FALSE);
+	best6 = get_best_ip6_device (priv->manager, FALSE);
+
+	g_object_freeze_notify (object);
+
+	if (best4 != priv->activating_device4) {
+		priv->activating_device4 = best4;
+		g_object_notify (object, NM_POLICY_ACTIVATING_IP4_DEVICE);
+	}
+	if (best6 != priv->activating_device6) {
+		priv->activating_device6 = best6;
+		g_object_notify (object, NM_POLICY_ACTIVATING_IP6_DEVICE);
+	}
+
+	g_object_thaw_notify (object);
 }
 
 static void
@@ -1410,6 +1496,8 @@ device_state_changed (NMDevice *device,
 	default:
 		break;
 	}
+
+	check_activating_devices (policy);
 }
 
 static void
@@ -2024,9 +2112,59 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	return policy;
 }
 
+NMDevice *
+nm_policy_get_default_ip4_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->default_device4;
+}
+
+NMDevice *
+nm_policy_get_default_ip6_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->default_device6;
+}
+
+NMDevice *
+nm_policy_get_activating_ip4_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->activating_device4;
+}
+
+NMDevice *
+nm_policy_get_activating_ip6_device (NMPolicy *policy)
+{
+	return NM_POLICY_GET_PRIVATE (policy)->activating_device6;
+}
+
 static void
 nm_policy_init (NMPolicy *policy)
 {
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMPolicy *policy = NM_POLICY (object);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+
+	switch (prop_id) {
+	case PROP_DEFAULT_IP4_DEVICE:
+		g_value_set_object (value, priv->default_device4);
+		break;
+	case PROP_DEFAULT_IP6_DEVICE:
+		g_value_set_object (value, priv->default_device6);
+		break;
+	case PROP_ACTIVATING_IP4_DEVICE:
+		g_value_set_object (value, priv->activating_device4);
+		break;
+	case PROP_ACTIVATING_IP6_DEVICE:
+		g_value_set_object (value, priv->activating_device6);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -2104,5 +2242,35 @@ nm_policy_class_init (NMPolicyClass *policy_class)
 
 	g_type_class_add_private (policy_class, sizeof (NMPolicyPrivate));
 
+	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT_IP4_DEVICE,
+		 g_param_spec_object (NM_POLICY_DEFAULT_IP4_DEVICE,
+		                      "Default IP4 device",
+		                      "Default IP4 device",
+		                      NM_TYPE_DEVICE,
+		                      G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT_IP6_DEVICE,
+		 g_param_spec_object (NM_POLICY_DEFAULT_IP6_DEVICE,
+		                      "Default IP6 device",
+		                      "Default IP6 device",
+		                      NM_TYPE_DEVICE,
+		                      G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVATING_IP4_DEVICE,
+		 g_param_spec_object (NM_POLICY_ACTIVATING_IP4_DEVICE,
+		                      "Activating default IP4 device",
+		                      "Activating default IP4 device",
+		                      NM_TYPE_DEVICE,
+		                      G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVATING_IP6_DEVICE,
+		 g_param_spec_object (NM_POLICY_ACTIVATING_IP6_DEVICE,
+		                      "Activating default IP6 device",
+		                      "Activating default IP6 device",
+		                      NM_TYPE_DEVICE,
+		                      G_PARAM_READABLE));
 }
