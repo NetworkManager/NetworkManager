@@ -61,6 +61,8 @@ typedef struct {
 	GPtrArray *devices;
 	GPtrArray *active_connections;
 	NMConnectivityState connectivity;
+	NMActiveConnection *primary_connection;
+	NMActiveConnection *activating_connection;
 
 	DBusGProxyCall *perm_call;
 	GHashTable *permissions;
@@ -96,6 +98,8 @@ enum {
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_PRIMARY_CONNECTION,
+	PROP_ACTIVATING_CONNECTION,
 
 	LAST_PROP
 };
@@ -189,6 +193,8 @@ register_properties (NMClient *client)
 		{ NM_CLIENT_WIMAX_HARDWARE_ENABLED,    &priv->wimax_hw_enabled },
 		{ NM_CLIENT_ACTIVE_CONNECTIONS,        &priv->active_connections, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_CLIENT_CONNECTIVITY,              &priv->connectivity },
+		{ NM_CLIENT_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
+		{ NM_CLIENT_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NULL },
 	};
 
@@ -1221,6 +1227,58 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 	                          G_TYPE_INVALID);
 }
 
+/**
+ * nm_client_get_primary_connection:
+ * @client: an #NMClient
+ *
+ * Gets the #NMActiveConnection corresponding to the primary active
+ * network device.
+ *
+ * In particular, when there is no VPN active, or the VPN does not
+ * have the default route, this returns the active connection that has
+ * the default route. If there is a VPN active with the default route,
+ * then this function returns the active connection that contains the
+ * route to the VPN endpoint.
+ *
+ * If there is no default route, or the default route is over a
+ * non-NetworkManager-recognized device, this will return %NULL.
+ *
+ * Returns: (transfer none): the appropriate #NMActiveConnection, if
+ * any
+ *
+ * Since: 0.9.10
+ */
+NMActiveConnection *
+nm_client_get_primary_connection (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (client));
+	return NM_CLIENT_GET_PRIVATE (client)->primary_connection;
+}
+
+/**
+ * nm_client_get_activating_connection:
+ * @client: an #NMClient
+ *
+ * Gets the #NMActiveConnection corresponding to a
+ * currently-activating connection that is expected to become the new
+ * #NMClient:primary-connection upon successful activation.
+ *
+ * Returns: (transfer none): the appropriate #NMActiveConnection, if
+ * any.
+ *
+ * Since: 0.9.10
+ */
+NMActiveConnection *
+nm_client_get_activating_connection (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (client));
+	return NM_CLIENT_GET_PRIVATE (client)->activating_connection;
+}
+
 /****************************************************************/
 
 static void
@@ -1946,6 +2004,8 @@ dispose (GObject *object)
 
 	free_devices (client, FALSE);
 	free_active_connections (client, FALSE);
+	g_clear_object (&priv->primary_connection);
+	g_clear_object (&priv->activating_connection);
 
 	g_slist_foreach (priv->pending_activations, (GFunc) activate_info_free, NULL);
 	g_slist_free (priv->pending_activations);
@@ -2059,6 +2119,12 @@ get_property (GObject *object,
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, priv->connectivity);
+		break;
+	case PROP_PRIMARY_CONNECTION:
+		g_value_set_object (value, priv->primary_connection);
+		break;
+	case PROP_ACTIVATING_CONNECTION:
+		g_value_set_object (value, priv->activating_connection);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2255,6 +2321,38 @@ nm_client_class_init (NMClientClass *client_class)
 		                    "Connectivity state",
 		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 		                    G_PARAM_READABLE));
+
+	/**
+	 * NMClient:primary-connection:
+	 *
+	 * The #NMActiveConnection of the device with the default route;
+	 * see nm_client_get_primary_connection() for more details.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PRIMARY_CONNECTION,
+		 g_param_spec_object (NM_CLIENT_PRIMARY_CONNECTION,
+		                      "Primary connection",
+		                      "Primary connection",
+		                      NM_TYPE_ACTIVE_CONNECTION,
+		                      G_PARAM_READABLE));
+
+	/**
+	 * NMClient:activating-connection:
+	 *
+	 * The #NMActiveConnection of the activating connection that is
+	 * likely to become the new #NMClient:primary-connection.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ACTIVATING_CONNECTION,
+		 g_param_spec_object (NM_CLIENT_ACTIVATING_CONNECTION,
+		                      "Activating connection",
+		                      "Activating connection",
+		                      NM_TYPE_ACTIVE_CONNECTION,
+		                      G_PARAM_READABLE));
 
 	/* signals */
 

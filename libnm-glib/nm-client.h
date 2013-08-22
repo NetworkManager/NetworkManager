@@ -32,6 +32,7 @@
 #include "nm-object.h"
 #include "nm-device.h"
 #include "nm-active-connection.h"
+#include "nm-vpn-connection.h"
 
 G_BEGIN_DECLS
 
@@ -55,6 +56,8 @@ G_BEGIN_DECLS
 #define NM_CLIENT_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_CLIENT_ACTIVE_CONNECTIONS "active-connections"
 #define NM_CLIENT_CONNECTIVITY "connectivity"
+#define NM_CLIENT_PRIMARY_CONNECTION "primary-connection"
+#define NM_CLIENT_ACTIVATING_CONNECTION "activating-connection"
 
 /**
  * NMClientPermission:
@@ -242,6 +245,9 @@ void                nm_client_check_connectivity_async  (NMClient *client,
 NMConnectivityState nm_client_check_connectivity_finish (NMClient *client,
                                                          GAsyncResult *result,
                                                          GError **error);
+
+NMActiveConnection *nm_client_get_primary_connection (NMClient *client);
+NMActiveConnection *nm_client_get_activating_connection (NMClient *client);
 
 G_END_DECLS
 
