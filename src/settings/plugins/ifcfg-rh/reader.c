@@ -589,8 +589,8 @@ parse_ip6_address (const char *value,
 	return TRUE;
 }
 
-static gchar *
-get_numbered_tag (gchar *tag_name, gint32 which)
+static char *
+get_numbered_tag (char *tag_name, int which)
 {
 	if (which == -1)
 		return g_strdup (tag_name);
@@ -600,10 +600,10 @@ get_numbered_tag (gchar *tag_name, gint32 which)
 static gboolean
 is_any_ip4_address_defined (shvarFile *ifcfg)
 {
-	gint32 i;
+	int i;
 
 	for (i = -1; i <= 2; i++) {
-		gchar *tag;
+		char *tag;
 		char *value;
 
 		tag = get_numbered_tag ("IPADDR", i);
@@ -1341,9 +1341,9 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 	if (!value || bootproto_none) {
-		/* If there is no BOOTPROTO, no IPADDR, no PREFIX, no NETMASK, but
-		 * valid IPv6 configuration, assume that IPv4 is disabled.  Otherwise,
-		 * if there is no IPv6 configuration, assume DHCP is to be used.
+		/* If there is no BOOTPROTO (or BOOTPROTO=none), no IPADDR, no PREFIX,
+		 * no NETMASK, but valid IPv6 configuration, assume that IPv4 is disabled.
+		 * Otherwise, if there is no IPv6 configuration, assume DHCP is to be used.
 		 * Happens with minimal ifcfg files like the following that anaconda
 		 * sometimes used to write out:
 		 *
