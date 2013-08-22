@@ -69,6 +69,10 @@
 #include "nm-config.h"
 #include "nm-platform.h"
 
+#include "nm-device-bridge.h"
+#include "nm-device-bond.h"
+#include "nm-device-team.h"
+
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
 #include "nm-device-glue.h"
@@ -1634,12 +1638,14 @@ nm_device_generate_connection (NMDevice *device)
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	const char *ifname = nm_device_get_iface (device);
+	int ifindex = nm_device_get_ifindex (device);
 	NMConnection *connection;
 	NMSetting *s_con;
 	NMSetting *s_ip4;
 	NMSetting *s_ip6;
 	gs_free char *uuid = NULL;
 	gs_free char *name = NULL;
+	int master_ifindex = 0;
 
 	/* If update_connection() is not implemented, just fail. */
 	if (!klass->update_connection)
@@ -1665,6 +1671,41 @@ nm_device_generate_connection (NMDevice *device)
 	if (klass->connection_type)
 		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type, NULL);
 	nm_connection_add_setting (connection, s_con);
+
+	/* If the device is a slave, update various slave settings */
+	if (ifindex)
+		master_ifindex = nm_platform_link_get_master (ifindex);
+	if (master_ifindex) {
+		const char *master_iface = nm_platform_link_get_name (master_ifindex);
+		const char *slave_type = NULL;
+		gboolean success = FALSE;
+
+		switch (nm_platform_link_get_type (master_ifindex)) {
+		case NM_LINK_TYPE_BRIDGE:
+			slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
+			success = nm_bridge_update_slave_connection (device, connection);
+			break;
+		case NM_LINK_TYPE_BOND:
+			slave_type = NM_SETTING_BOND_SETTING_NAME;
+			success = TRUE;
+			break;
+		case NM_LINK_TYPE_TEAM:
+			slave_type = NM_SETTING_TEAM_SETTING_NAME;
+			success = nm_team_update_slave_connection (device, connection);
+			break;
+		default:
+			g_warn_if_reached ();
+			break;
+		}
+
+		if (!success)
+			nm_log_err (LOGD_DEVICE, "(%s): failed to read slave configuration", ifname);
+
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, master_iface,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
+		              NULL);
+	}
 
 	s_ip4 = nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, s_ip4);

@@ -57,6 +57,8 @@ GType nm_device_team_get_type (void);
 NMDevice *nm_device_team_new (NMPlatformLink *platform_device);
 NMDevice *nm_device_team_new_for_connection (NMConnection *connection);
 
+gboolean nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_TEAM_H */

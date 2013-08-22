@@ -31,6 +31,7 @@
 #if WITH_TEAMDCTL
 #include <teamdctl.h>
 #endif
+#include <stdlib.h>
 
 #include "nm-device-team.h"
 #include "nm-logging.h"
@@ -242,6 +243,61 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_free (config);
 	}
 #endif
+}
+
+/******************************************************************/
+
+gboolean
+nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
+{
+	NMSettingTeamPort *s_port;
+	const char *iface = nm_device_get_iface (slave);
+	char *port_config = NULL;
+	gboolean success = FALSE;
+#if WITH_TEAMDCTL
+	const char *master_iface;
+	int master_ifindex;
+	struct teamdctl *tdc;
+	int err;
+#endif
+
+	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+#if WITH_TEAMDCTL
+	master_ifindex = nm_platform_link_get_master (nm_device_get_ifindex (slave));
+	g_assert (master_ifindex > 0);
+	master_iface = nm_platform_link_get_name (master_ifindex);
+	g_assert (master_iface);
+
+	tdc = teamdctl_alloc ();
+	g_assert (tdc);
+	err = teamdctl_connect (tdc, master_iface, NULL, NULL);
+	if (err) {
+		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd for master %s",
+		            iface, master_iface);
+		teamdctl_free (tdc);
+		return FALSE;
+	}
+	/* FIXME: wait for libteamd to implement getting port config */
+/*	port_config = teamdctl_port_config_get_raw (tdc, iface); */
+	teamdctl_free (tdc);
+#endif
+
+	s_port = nm_connection_get_setting_team_port (connection);
+	if (!s_port) {
+		s_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_port));
+	}
+
+	if (port_config) {
+		g_object_set (G_OBJECT (s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
+		free (port_config);
+		success = TRUE;
+	} else
+		nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration", iface);
+
+	return success;
 }
 
 /******************************************************************/

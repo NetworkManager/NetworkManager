@@ -310,6 +310,54 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 }
 
+/**
+ * nm_bridge_update_slave_connection:
+ * @slave: the slave #NMDevice, is *not* necessarily a bridge interface
+ * @connection: the #NMConnection to update with the bridge port settings
+ *
+ * Reads bridge port configuration and updates @connection with those
+ * properties.
+ *
+ * Returns: %TRUE if the port configuration was read and @connection updated,
+ * %FALSE if not.
+ */
+gboolean
+nm_bridge_update_slave_connection (NMDevice *slave, NMConnection *connection)
+{
+	NMSettingBridgePort *s_port;
+	int ifindex = nm_device_get_ifindex (slave);
+	const Option *option;
+
+	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	s_port = nm_connection_get_setting_bridge_port (connection);
+	if (!s_port) {
+		s_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_port));
+	}
+
+	for (option = slave_options; option->name; option++) {
+		gs_free char *str = nm_platform_slave_get_option (ifindex, option->sysname);
+		int value;
+
+		if (str) {
+			value = strtol (str, NULL, 10);
+
+			/* See comments in set_sysfs_uint() about centiseconds. */
+			if (option->user_hz_compensate)
+				value /= 100;
+
+			g_object_set (s_port, option->name, value, NULL);
+		} else {
+			nm_log_warn (LOGD_BRIDGE, "(%s): failed to read bridge port setting '%s'",
+			             nm_device_get_iface (slave), option->sysname);
+		}
+	}
+
+	return TRUE;
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
