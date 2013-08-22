@@ -41,7 +41,6 @@
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
-#include "nm-policy.h"
 #include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
@@ -318,7 +317,6 @@ main (int argc, char *argv[])
 	char *connectivity_response = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
-	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
 	NMDnsManager *dns_mgr = NULL;
 	NMDBusManager *dbus_mgr = NULL;
@@ -566,12 +564,6 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	policy = nm_policy_new (manager, settings);
-	if (policy == NULL) {
-		nm_log_err (LOGD_CORE, "failed to initialize the policy.");
-		goto done;
-	}
-
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
 	if (!sup_mgr) {
@@ -628,9 +620,6 @@ main (int argc, char *argv[])
 	g_main_loop_run (main_loop);
 
 done:
-	if (policy)
-		nm_policy_destroy (policy);
-
 	if (manager)
 		g_object_unref (manager);
 

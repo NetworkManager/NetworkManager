@@ -25,9 +25,24 @@
 #include "nm-manager.h"
 #include "nm-settings.h"
 
-typedef struct NMPolicy NMPolicy;
+#define NM_TYPE_POLICY            (nm_policy_get_type ())
+#define NM_POLICY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_POLICY, NMPolicy))
+#define NM_POLICY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_POLICY, NMPolicyClass))
+#define NM_IS_POLICY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_POLICY))
+#define NM_IS_POLICY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_POLICY))
+#define NM_POLICY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_POLICY, NMPolicyClass))
+
+typedef struct {
+	GObject parent;
+} NMPolicy;
+
+typedef struct {
+	GObjectClass parent;
+
+} NMPolicyClass;
+
+GType nm_policy_get_type (void);
 
 NMPolicy *nm_policy_new (NMManager *manager, NMSettings *settings);
-void nm_policy_destroy (NMPolicy *policy);
 
 #endif /* NM_POLICY_H */
