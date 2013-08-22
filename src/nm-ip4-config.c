@@ -116,12 +116,6 @@ nm_ip4_config_capture (int ifindex)
 	priv->addresses = nm_platform_ip4_address_get_all (ifindex);
 	priv->routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
 
-	/* Require at least one IP address. */
-	if (!priv->addresses->len) {
-		g_object_unref (config);
-		return NULL;
-	}
-
 	return config;
 }
 
