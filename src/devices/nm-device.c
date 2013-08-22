@@ -187,6 +187,7 @@ typedef struct {
 	char *        path;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
+	gboolean      is_software;
 	char *        ip_iface;
 	int           ip_ifindex;
 	NMDeviceType  type;
@@ -646,6 +647,14 @@ nm_device_get_ifindex (NMDevice *self)
 	g_return_val_if_fail (self != NULL, 0);
 
 	return NM_DEVICE_GET_PRIVATE (self)->ifindex;
+}
+
+gboolean
+nm_device_is_software (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	return priv->is_software;
 }
 
 const char *
@@ -4961,6 +4970,7 @@ set_property (GObject *object, guint prop_id,
 			g_free (priv->iface);
 			priv->iface = g_strdup (platform_device->name);
 			priv->ifindex = platform_device->ifindex;
+			priv->is_software = nm_platform_link_is_software (priv->ifindex);
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
 		}

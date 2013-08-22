@@ -205,6 +205,7 @@ void            nm_device_set_path (NMDevice *dev, const char *path);
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
 int             nm_device_get_ifindex	(NMDevice *dev);
+gboolean        nm_device_is_software   (NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
 int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
