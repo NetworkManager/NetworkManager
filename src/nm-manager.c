@@ -1775,9 +1775,12 @@ local_slist_free (void *loc)
 static NMConnection *
 get_connection (NMManager *manager, NMDevice *device)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
 	NMConnection *connection = NULL;
+	NMSettingsConnection *added = NULL;
 	GSList *iter;
+	GError *error = NULL;
 
 	/* We still support the older API to match a NMDevice object to an
 	 * existing connection using nm_device_find_assumable_connection().
@@ -1835,7 +1838,18 @@ get_connection (NMManager *manager, NMDevice *device)
 	nm_log_info (LOGD_DEVICE, "(%s): Using generated connection: '%s'",
 				 nm_device_get_iface (device),
 				 nm_connection_get_id (connection));
-	return connection;
+
+	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
+	if (!added) {
+		nm_log_warn (LOGD_SETTINGS, "(%s) Couldn't save generated connection '%s': %s",
+		             nm_device_get_iface (device),
+		             nm_connection_get_id (connection),
+		             (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+	g_object_unref (connection);
+
+	return added ? NM_CONNECTION (added) : NULL;
 }
 
 static void
