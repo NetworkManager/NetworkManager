@@ -3230,7 +3230,7 @@ nmc_property_wifi_set_channel (NMSetting *setting, const char *prop, const char 
 	}
 
 	if (   !nm_utils_wifi_is_channel_valid (chan_int, "a")
-	    || !nm_utils_wifi_is_channel_valid (chan_int, "bg")) {
+	    && !nm_utils_wifi_is_channel_valid (chan_int, "bg")) {
 		g_set_error (error, 1, 0, _("'%ld' is not a valid channel"), chan_int);
 		return FALSE;
 	}
