@@ -25,6 +25,7 @@
 
 #include <netinet/ether.h>
 
+#include "gsystem-local-alloc.h"
 #include "nm-device-bridge.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
@@ -177,26 +178,45 @@ match_l2_config (NMDevice *self, NMConnection *connection)
 
 /******************************************************************/
 
+typedef struct {
+	const char *name;
+	const char *sysname;
+	gboolean default_if_zero;
+	gboolean user_hz_compensate;
+} Option;
+
+static const Option master_options[] = {
+	{ NM_SETTING_BRIDGE_STP, "stp_state", FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_PRIORITY, "priority", TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_FORWARD_DELAY, "forward_delay", TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_HELLO_TIME, "hello_time", TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_MAX_AGE, "max_age", TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_AGEING_TIME, "ageing_time", TRUE, TRUE },
+	{ NULL, NULL }
+};
+
+static const Option slave_options[] = {
+	{ NM_SETTING_BRIDGE_PORT_PRIORITY, "priority", TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_PORT_PATH_COST, "path_cost", TRUE, FALSE },
+	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "harpin_mode", FALSE, FALSE },
+	{ NULL, NULL }
+};
+
 static void
-set_sysfs_uint (const char *iface,
-                GObject *obj,
-                const char *obj_prop,
-                const char *dir,
-                const char *sysfs_prop,
-                gboolean default_if_zero,
-                gboolean user_hz_compensate)
+commit_option (NMDevice *device, GObject *setting, const Option *option, gboolean slave)
 {
-	char *path, *s;
+	int ifindex = nm_device_get_ifindex (device);
 	GParamSpec *pspec;
 	GValue val = G_VALUE_INIT;
 	guint32 uval = 0;
+	gs_free char *value = NULL;
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (obj), obj_prop);
-	g_return_if_fail (pspec != NULL);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), option->name);
+	g_assert (pspec);
 
 	/* Get the property's value */
 	g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
-	g_object_get_property (obj, obj_prop, &val);
+	g_object_get_property (setting, option->name, &val);
 	if (G_VALUE_HOLDS_BOOLEAN (&val))
 		uval = g_value_get_boolean (&val) ? 1 : 0;
 	else if (G_VALUE_HOLDS_UINT (&val)) {
@@ -205,88 +225,81 @@ set_sysfs_uint (const char *iface,
 		/* zero means "unspecified" for some NM properties but isn't in the
 		 * allowed kernel range, so reset the property to the default value.
 		 */
-		if (default_if_zero && uval == 0) {
+		if (option->default_if_zero && uval == 0) {
 			g_value_unset (&val);
 			g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
 			g_param_value_set_default (pspec, &val);
 			uval = g_value_get_uint (&val);
 		}
+
+		/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
+		 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
+		 * is almost always works out to be a multiplier of 100, so we can assume
+		 * centiseconds.  See clock_t_to_jiffies().
+		 */
+		if (option->user_hz_compensate)
+			uval *= 100;
 	} else
 		g_assert_not_reached ();
-
 	g_value_unset (&val);
 
-	/* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
-	 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
-	 * is almost always works out to be a multiplier of 100, so we can assume
-	 * centiseconds.  See clock_t_to_jiffies().
-	 */
-	if (user_hz_compensate)
-		uval *= 100;
+	value = g_strdup_printf ("%u", uval);
+	if (slave)
+		nm_platform_slave_set_option (ifindex, option->sysname, value);
+	else
+		nm_platform_master_set_option (ifindex, option->sysname, value);
+}
 
-	path = g_strdup_printf ("/sys/class/net/%s/%s/%s", iface, dir, sysfs_prop);
-	s = g_strdup_printf ("%u", uval);
-	/* FIXME: how should failure be handled? */
-	nm_utils_do_sysctl (path, s);
-	g_free (path);
-	g_free (s);
+static void
+commit_master_options (NMDevice *device, GObject *setting)
+{
+	const Option *option;
+
+	g_assert (setting);
+
+	for (option = master_options; option->name; option++)
+		commit_option (device, setting, option, FALSE);
+}
+
+static void
+commit_slave_options (NMDevice *device, GObject *setting)
+{
+	const Option *option;
+
+	g_assert (setting);
+
+	for (option = slave_options; option->name; option++)
+		commit_option (device, setting, option, TRUE);
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	NMConnection *connection;
-	NMSettingBridge *s_bridge;
-	const char *iface;
+	NMActStageReturn ret;
+	NMConnection *connection = nm_device_get_connection (device);
 
-	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_assert (connection);
 
-	ret = NM_DEVICE_CLASS (nm_device_bridge_parent_class)->act_stage1_prepare (dev, reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		connection = nm_device_get_connection (dev);
-		g_assert (connection);
+	ret = NM_DEVICE_CLASS (nm_device_bridge_parent_class)->act_stage1_prepare (device, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
 
-		s_bridge = nm_connection_get_setting_bridge (connection);
-		g_assert (s_bridge);
+	commit_master_options (device, (GObject *) nm_connection_get_setting_bridge (connection));
 
-		iface = nm_device_get_ip_iface (dev);
-		g_assert (iface);
-
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_STP, "bridge", "stp_state", FALSE, FALSE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_PRIORITY, "bridge", "priority", TRUE, FALSE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY, "bridge", "forward_delay", TRUE, TRUE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME, "bridge", "hello_time", TRUE, TRUE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_MAX_AGE, "bridge", "max_age", TRUE, TRUE);
-		set_sysfs_uint (iface, G_OBJECT (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME, "bridge", "ageing_time", TRUE, TRUE);
-	}
-	return ret;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static gboolean
 enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 {
-	gboolean success;
-	NMSettingBridgePort *s_port;
-	const char *iface = nm_device_get_ip_iface (device);
-	const char *slave_iface = nm_device_get_ip_iface (slave);
-
-	success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
-	                                    nm_device_get_ip_ifindex (slave));
-
-	if (!success)
+	if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
 		return FALSE;
 
-	/* Set port properties */
-	s_port = nm_connection_get_setting_bridge_port (connection);
-	if (s_port) {
-		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY, "brport", "priority", TRUE, FALSE);
-		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST, "brport", "path_cost", TRUE, FALSE);
-		set_sysfs_uint (slave_iface, G_OBJECT (s_port), NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "brport", "hairpin_mode", FALSE, FALSE);
-	}
+	commit_slave_options (slave, (GObject *) nm_connection_get_setting_bridge_port (connection));
 
-	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s", iface, slave_iface);
-
+	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
+	             nm_device_get_ip_iface (device),
+	             nm_device_get_ip_iface (slave));
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
 
 	return TRUE;
