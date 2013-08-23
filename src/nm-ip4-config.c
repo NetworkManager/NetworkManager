@@ -290,12 +290,13 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
 		NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-		gs_unref_object NMIP4Route *s_route = nm_ip4_route_new ();
+		NMIP4Route *s_route;
 
 		/* Ignore default route. */
 		if (!route->plen)
 			continue;
 
+		s_route = nm_ip4_route_new ();
 		nm_ip4_route_set_dest (s_route, route->network);
 		nm_ip4_route_set_prefix (s_route, route->plen);
 		nm_ip4_route_set_next_hop (s_route, route->gateway);
