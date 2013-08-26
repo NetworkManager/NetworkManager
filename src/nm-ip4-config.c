@@ -303,6 +303,7 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		nm_ip4_route_set_metric (s_route, route->metric);
 
 		nm_setting_ip4_config_add_route (setting, s_route);
+		nm_ip4_route_unref (s_route);
 	}
 
 	/* DNS */
