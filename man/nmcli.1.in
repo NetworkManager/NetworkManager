@@ -335,7 +335,7 @@ Add a connection for NetworkManager. Arguments differ according to connection ty
 .IP "\fIifname <ifname> | \(dq\&*\(dq\&\fP" 42
 \(en interface to bind the connection to. The connection will only be applicable to this
 interface name. A special value of "\fB*\fP" can be used for interface-independent connections.
-The \fIifname\fP argument is mandatory for all connection types except bond, bridge and vlan.
+The \fIifname\fP argument is mandatory for all connection types except bond, team, bridge and vlan.
 Note: use quotes around \fB*\fP to suppress shell expansion.
 .IP "\fI[con-name <connection name>]\fP" 42
 \(en connection name (when not provided a default name is generated: <type>[-<ifname>][-<num>])
@@ -357,14 +357,14 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .RS
 .TP
 .B wifi:
+.IP "\fIssid <SSID>\fP" 42
+\(en SSID
 .IP "\fI[mac <MAC address>]\fP" 42
 \(en MAC address of the device this connection is locked to
 .IP "\fI[cloned-mac <cloned MAC address>]\fP" 42
 \(en cloned MAC
 .IP "\fI[mtu <MTU>]\fP" 42
 \(en MAC
-.IP "\fI[ssid <SSID>]\fP" 42
-\(en SSID
 .RE
 .RS
 .TP
@@ -417,7 +417,7 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .RS
 .TP
 .B vlan:
-.IP "\fIdev <parent device (connection UUID, ifname, or MAC)\fP" 42
+.IP "\fIdev <parent device (connection UUID, ifname, or MAC)>\fP" 42
 \(en parent device this VLAN is on
 .IP "\fI[id <VLAN id>]\fP" 42
 \(en VLAN ID
@@ -450,8 +450,20 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .RS
 .TP
 .B bond-slave:
-.IP "\fImaster <master (ifname or connection UUID)\fP" 42
-\(en name of bridge master interface
+.IP "\fImaster <master (ifname or connection UUID)>\fP" 42
+\(en name of bond master interface
+.RE
+.RS
+.TP
+.B team:
+.IP "\fI[config <json config>]\fP" 42
+\(en configuration file
+.RE
+.RS
+.TP
+.B team-slave:
+.IP "\fImaster <master (ifname or connection UUID)>\fP" 42
+\(en name of team master interface
 .RE
 .RS
 .TP
@@ -472,7 +484,7 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .RS
 .TP
 .B bridge-slave:
-.IP "\fImaster <master (ifname or connection UUID)\fP" 42
+.IP "\fImaster <master (ifname or connection UUID)>\fP" 42
 \(en name of bridge master interface
 .IP "\fI[priority <0-63>]\fP" 42
 \(en STP priority of this slave
@@ -493,7 +505,7 @@ to be sent back out through the slave the frame was received on
 .RS
 .TP
 .B olpc-mesh:
-.IP "\fI[ssid <SSID>]\fP" 42
+.IP "\fIssid <SSID>\fP" 42
 \(en SSID
 .IP "\fI[channel <1-13>]\fP" 42
 \(en channel to use for the network
