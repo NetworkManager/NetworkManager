@@ -127,6 +127,7 @@ nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
+	gboolean success;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -159,11 +160,11 @@ nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority)
 			g_array_append_val (routes, route);
 		}
 
-		nm_platform_ip6_route_sync (ifindex, routes);
+		success = nm_platform_ip6_route_sync (ifindex, routes);
 		g_array_unref (routes);
 	}
 
-	return TRUE;
+	return success;
 }
 
 static inline gboolean

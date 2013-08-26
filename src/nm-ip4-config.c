@@ -137,6 +137,7 @@ nm_ip4_config_commit (NMIP4Config *config, int ifindex, int priority)
 		int count = nm_ip4_config_get_num_routes (config);
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
 		NMPlatformIP4Route route;
+		gboolean success;
 
 		for (i = 0; i < count; i++) {
 			memcpy (&route, nm_ip4_config_get_route (config, i), sizeof (route));
@@ -157,8 +158,10 @@ nm_ip4_config_commit (NMIP4Config *config, int ifindex, int priority)
 			g_array_append_val (routes, route);
 		}
 
-		nm_platform_ip4_route_sync (ifindex, routes);
+		success = nm_platform_ip4_route_sync (ifindex, routes);
 		g_array_unref (routes);
+		if (!success)
+			return FALSE;
 	}
 
 	/* MTU */
