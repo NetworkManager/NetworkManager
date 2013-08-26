@@ -579,6 +579,9 @@ constructed (GObject *object)
 		priv->carrier = TRUE;
 	}
 
+	if (priv->ifindex > 0)
+		priv->is_software = nm_platform_link_is_software (priv->ifindex);
+
 	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 }
@@ -5062,7 +5065,6 @@ set_property (GObject *object, guint prop_id,
 			g_free (priv->iface);
 			priv->iface = g_strdup (platform_device->name);
 			priv->ifindex = platform_device->ifindex;
-			priv->is_software = nm_platform_link_is_software (priv->ifindex);
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
 		}
