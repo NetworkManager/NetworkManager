@@ -1568,6 +1568,35 @@ nm_platform_route_flush (int ifindex)
 
 /******************************************************************/
 
+/**
+ * nm_platform_ip4_route_to_string:
+ * @route: pointer to NMPlatformIP4Route route structure
+ *
+ * A method for converting a route struct into a string representation.
+ * This is only useful for printf debugging, if you want to log what's
+ * currently happening.
+ *
+ * Returns: a string with the content of the route. Must be freed by g_free.
+ */
+char *
+nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
+{
+	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN], s_dev[16];
+	if (!route) {
+		return g_strdup ("<NULL>");
+	}
+	if (route->ifindex > 0) {
+		g_snprintf (s_dev, sizeof(s_dev), " dev [%d]", route->ifindex);
+	} else {
+		s_dev[0] = 0;
+	}
+	inet_ntop (AF_INET, &route->network, s_network, sizeof(s_network));
+	inet_ntop (AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
+	return g_strdup_printf("%s/%d via %s%s metric %d mss %d",
+	                       s_network, route->plen, s_gateway, s_dev,
+	                       route->metric, route->mss);
+}
+
 static void
 log_link (NMPlatformLink *device, const char *change_type)
 {

@@ -420,6 +420,8 @@ gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_route_flush (int ifindex);
 
+char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route);
+
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))
 put_g_free (void *ptr)
