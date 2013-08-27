@@ -92,22 +92,22 @@ typedef void (*NMSettingsAddCallback) (NMSettings *settings,
                                        DBusGMethodInvocation *context,
                                        gpointer user_data);
 
-void nm_settings_add_connection (NMSettings *self,
-                                 NMConnection *connection,
-                                 gboolean save_to_disk,
-                                 DBusGMethodInvocation *context,
-                                 NMSettingsAddCallback callback,
-                                 gpointer user_data);
+void nm_settings_add_connection_dbus (NMSettings *self,
+                                      NMConnection *connection,
+                                      gboolean save_to_disk,
+                                      DBusGMethodInvocation *context,
+                                      NMSettingsAddCallback callback,
+                                      gpointer user_data);
 
 /* Returns a list of NMSettingsConnections.  Caller must free the list with
  * g_slist_free().
  */
 GSList *nm_settings_get_connections (NMSettings *settings);
 
-NMSettingsConnection *nm_settings_add_connection_internal (NMSettings *settings,
-                                                                  NMConnection *connection,
-                                                                  gboolean save_to_disk,
-                                                                  GError **error);
+NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
+                                                  NMConnection *connection,
+                                                  gboolean save_to_disk,
+                                                  GError **error);
 NMSettingsConnection *nm_settings_get_connection_by_path (NMSettings *settings,
                                                           const char *path);
 

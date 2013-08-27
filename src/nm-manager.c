@@ -3369,12 +3369,12 @@ add_and_activate_auth_done (PendingActivation *pending, GError *error)
 		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pending->manager);
 
 		/* Basic sender auth checks performed; try to add the connection */
-		nm_settings_add_connection (priv->settings,
-                                    pending->connection,
-                                    TRUE,
-                                    pending->context,
-                                    activation_add_done,
-                                    pending);
+		nm_settings_add_connection_dbus (priv->settings,
+		                                 pending->connection,
+		                                 TRUE,
+		                                 pending->context,
+		                                 activation_add_done,
+		                                 pending);
 	}
 }
 
