@@ -307,7 +307,7 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	if (s_wifi) {
 		s_wsec = nm_connection_get_setting_wireless_security (connection);
-		if (nm_setting_wireless_get_security (s_wifi) || s_wsec)
+		if (s_wsec)
 			return NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED;
 		else
 			return NM_AUTH_PERMISSION_WIFI_SHARE_OPEN;

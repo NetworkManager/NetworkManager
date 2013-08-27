@@ -3285,9 +3285,6 @@ wireless_connection_from_ifcfg (const char *file,
 			nm_connection_add_setting (connection, security_setting);
 			if (s_8021x)
 				nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-
-			g_object_set (wireless_setting, NM_SETTING_WIRELESS_SEC,
-			              NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
 		}
 	}
 

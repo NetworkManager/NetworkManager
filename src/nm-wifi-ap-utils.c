@@ -547,7 +547,7 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	    && (ap_wpa_flags == NM_802_11_AP_SEC_NONE)
 	    && (ap_rsn_flags == NM_802_11_AP_SEC_NONE)) {
 		/* Make sure the connection doesn't specify security */
-		if (nm_setting_wireless_get_security (s_wifi) || s_wsec || s_8021x) {
+		if (s_wsec || s_8021x) {
 			g_set_error_literal (error,
 			                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 			                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -558,9 +558,6 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	}
 
 	/* Everything else requires security */
-	g_object_set (G_OBJECT (s_wifi),
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	              NULL);
 	if (!s_wsec) {
 		s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wsec));

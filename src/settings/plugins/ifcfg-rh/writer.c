@@ -911,7 +911,7 @@ write_wireless_setting (NMConnection *connection,
 	svSetValue (ifcfg, "DEFAULTKEY", NULL, FALSE);
 	svSetValue (ifcfg, "SECURITYMODE", NULL, FALSE);
 
-	if (nm_setting_wireless_get_security (s_wireless)) {
+	if (nm_connection_get_setting_wireless_security (connection)) {
 		if (!write_wireless_security_setting (connection, ifcfg, adhoc, no_8021x, error))
 			return FALSE;
 	} else {

@@ -407,11 +407,8 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 	}
 
 
-	if(security) {
-		nm_connection_add_setting(connection, NM_SETTING(wireless_security_setting));
-		g_object_set(s_wireless, NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
-	}
-
+	if (security)
+		nm_connection_add_setting (connection, NM_SETTING (wireless_security_setting));
 }
 
 static void

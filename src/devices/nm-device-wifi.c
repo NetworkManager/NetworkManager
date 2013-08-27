@@ -3001,7 +3001,7 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	}
 
 	/* have secrets, or no secrets required */
-	if (nm_setting_wireless_get_security (s_wireless)) {
+	if (nm_connection_get_setting_wireless_security (connection)) {
 		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): connection '%s' has security"
 		             ", and secrets exist.  No new secrets needed.",

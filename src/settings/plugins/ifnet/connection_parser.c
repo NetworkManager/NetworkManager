@@ -1721,15 +1721,9 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 		/* wireless security setting */
 		wsec = make_wireless_security_setting (conn_name, basepath, &s_8021x, error);
 		if (wsec) {
-			nm_connection_add_setting (connection,
-						   NM_SETTING (wsec));
+			nm_connection_add_setting (connection, NM_SETTING (wsec));
 			if (s_8021x)
-				nm_connection_add_setting (connection,
-							   NM_SETTING
-							   (s_8021x));
-			g_object_set (wireless_setting, NM_SETTING_WIRELESS_SEC,
-				      NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-				      NULL);
+				nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 		}
 
 		if (error && *error) {
@@ -2379,7 +2373,7 @@ write_wireless_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
-	if (nm_setting_wireless_get_security (s_wireless)) {
+	if (nm_connection_get_setting_wireless_security (connection)) {
 		if (!write_wireless_security_setting
 		    (connection, ssid_str, adhoc, no_8021x, error))
 			return FALSE;
