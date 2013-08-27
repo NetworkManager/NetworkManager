@@ -1179,8 +1179,15 @@ link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlat
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
+	/* Ignore other devices. */
 	if (ifindex != nm_device_get_ifindex (device))
 		return;
+
+	/* We don't filter by 'reason' because we are interested in *all* link
+	 * changes. For example a call to nm_platform_link_set_up() may result
+	 * in an internal carrier change (i.e. we ask the kernel to set IFF_UP
+	 * and it results in also setting IFF_LOWER_UP.
+	 */
 
 	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
@@ -1196,6 +1203,7 @@ link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlat
 static void
 link_changed (NMDevice *device, NMPlatformLink *info)
 {
+	/* Update carrier from link event if applicable. */
 	if (   device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT)
 	    && !device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (device, info->connected);
