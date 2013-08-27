@@ -187,8 +187,7 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, 39),     /* 10 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_MTU, 6),                        /* 11 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SEEN_BSSIDS, 35),               /* 12 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SEC, 25),                       /* 13 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN, 10),                    /* 14 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_HIDDEN, 10),                    /* 13 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRELESS_ALL     "name"","\
@@ -204,7 +203,6 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
                                             NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST","\
                                             NM_SETTING_WIRELESS_MTU","\
                                             NM_SETTING_WIRELESS_SEEN_BSSIDS","\
-                                            NM_SETTING_WIRELESS_SEC","\
                                             NM_SETTING_WIRELESS_HIDDEN
 #define NMC_FIELDS_SETTING_WIRELESS_COMMON  NMC_FIELDS_SETTING_WIRELESS_ALL
 
@@ -1276,7 +1274,6 @@ DEFINE_HWADDR_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS
 DEFINE_HWADDR_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wireless_get_mac_address_blacklist, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wireless_get_seen_bssids, NM_SETTING_WIRELESS_SEEN_BSSIDS)
-DEFINE_GETTER (nmc_property_wireless_get_sec, NM_SETTING_WIRELESS_SEC)
 DEFINE_GETTER (nmc_property_wireless_get_hidden, NM_SETTING_WIRELESS_HIDDEN)
 
 static char *
@@ -4498,12 +4495,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (WIRELESS, SEC),
-	                    nmc_property_wireless_get_sec,
-	                    NULL, /* read-only */
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, HIDDEN),
 	                    nmc_property_wireless_get_hidden,
 	                    nmc_property_set_bool,
@@ -5016,8 +5007,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 	set_val_str (arr, 10, nmc_property_wireless_get_mac_address_blacklist (setting));
 	set_val_str (arr, 11, nmc_property_wireless_get_mtu (setting));
 	set_val_str (arr, 12, nmc_property_wireless_get_seen_bssids (setting));
-	set_val_str (arr, 13, nmc_property_wireless_get_sec (setting));
-	set_val_str (arr, 14, nmc_property_wireless_get_hidden (setting));
+	set_val_str (arr, 13, nmc_property_wireless_get_hidden (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
