@@ -2006,11 +2006,14 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	}
 
 	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		char ipv6_defaultgw[INET6_ADDRSTRLEN];
+
 		/* Write out IP addresses */
 		num = nm_setting_ip6_config_get_num_addresses (s_ip6);
 
 		ip_str1 = g_string_new (NULL);
 		ip_str2 = g_string_new (NULL);
+		ipv6_defaultgw[0] = 0;
 		for (i = 0; i < num; i++) {
 			if (i == 0)
 				ip_ptr = ip_str1;
@@ -2032,13 +2035,14 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			/* We only support gateway for the first IP address for now */
 			if (i == 0) {
 				ip = nm_ip6_address_get_gateway (addr);
-				inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-				svSetValue (ifcfg, "IPV6_DEFAULTGW", buf, FALSE);
+				if (!IN6_IS_ADDR_UNSPECIFIED (ip))
+					inet_ntop (AF_INET6, ip, ipv6_defaultgw, sizeof (ipv6_defaultgw));
 			}
 		}
 
 		svSetValue (ifcfg, "IPV6ADDR", ip_str1->str, FALSE);
 		svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", ip_str2->str, FALSE);
+		svSetValue (ifcfg, "IPV6_DEFAULTGW", ipv6_defaultgw, FALSE);
 		g_string_free (ip_str1, TRUE);
 		g_string_free (ip_str2, TRUE);
 	} else {

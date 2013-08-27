@@ -6670,6 +6670,162 @@ test_write_wired_static_ip6_only (void)
 	g_object_unref (reread);
 }
 
+/* Test writing an IPv6 config with varying gateway address.
+ * For missing gateway (::), we expect no IPV6_DEFAULTGW to be written
+ * to ifcfg-rh.
+ *
+ * As user_data pass the IPv6 address of the gateway as string. NULL means
+ * not to explicitly set the gateway in the configuration before writing it.
+ * That way, the gateway actually defaults to "::".
+ */
+static void
+test_write_wired_static_ip6_only_gw (gconstpointer user_data)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
+	GByteArray *mac;
+	char *uuid;
+	struct in6_addr ip6;
+	struct in6_addr dns6;
+	NMIP6Address *addr6;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *id = NULL;
+	gboolean ignore_error = FALSE;
+	char *written_ifcfg_gateway;
+	char s_gateway6[INET6_ADDRSTRLEN] = { 0 };
+	struct in6_addr gateway6_autovar;
+	const struct in6_addr *gateway6 = NULL;
+
+	/* parsing the input argument and set the struct in6_addr "gateway6" to
+	 * the gateway address. NULL means "do not set the gateway explicitly". */
+	if (user_data) {
+		g_assert_cmpint (inet_pton (AF_INET6, user_data, &gateway6_autovar), ==, 1);
+		gateway6 = &gateway6_autovar;
+	}
+
+	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
+	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6);
+	if (gateway6)
+		inet_ntop (AF_INET6, gateway6, s_gateway6, sizeof (s_gateway6));
+
+	connection = nm_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	id = g_strdup_printf ("Test Write Wired Static IP6 Only With Gateway %s", gateway6 ? s_gateway6 : "NULL");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, id,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+	g_free (id);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	mac = g_byte_array_sized_new (sizeof (tmpmac));
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	/* Add addresses */
+	addr6 = nm_ip6_address_new ();
+	nm_ip6_address_set_address (addr6, &ip6);
+	nm_ip6_address_set_prefix (addr6, 11);
+	if (gateway6)
+		nm_ip6_address_set_gateway (addr6, gateway6);
+	nm_setting_ip6_config_add_address (s_ip6, addr6);
+	nm_ip6_address_unref (addr6);
+
+	/* DNS server */
+	nm_setting_ip6_config_add_dns (s_ip6, &dns6);
+
+	g_assert (nm_connection_verify (connection, &error));
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL, NULL, NULL,
+	                               NULL, NULL,
+	                               &error,
+	                               &ignore_error);
+
+	{
+		/* re-read the file to check that what key was written. */
+		shvarFile *ifcfg = svNewFile (testfile);
+
+		g_assert (ifcfg);
+		written_ifcfg_gateway = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
+		svCloseFile (ifcfg);
+	}
+
+	unlink (testfile);
+
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	/* access the gateway from the loaded connection. */
+	s_ip6 = nm_connection_get_setting_ip6_config (reread);
+	g_assert (s_ip6 && nm_setting_ip6_config_get_num_addresses (s_ip6)==1);
+	addr6 = nm_setting_ip6_config_get_address (s_ip6, 0);
+	g_assert (addr6);
+
+	/* assert that the gateway was written and reloaded as expected */
+	if (!gateway6 || IN6_IS_ADDR_UNSPECIFIED (gateway6)) {
+		g_assert (IN6_IS_ADDR_UNSPECIFIED (nm_ip6_address_get_gateway (addr6)));
+		g_assert (written_ifcfg_gateway==NULL);
+	} else {
+		g_assert (!IN6_IS_ADDR_UNSPECIFIED (nm_ip6_address_get_gateway (addr6)));
+		g_assert_cmpint (memcmp (nm_ip6_address_get_gateway (addr6), gateway6, sizeof (struct in6_addr)), ==, 0);
+		g_assert_cmpstr (written_ifcfg_gateway, ==, s_gateway6);
+	}
+
+	g_free (testfile);
+	g_free (written_ifcfg_gateway);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
 
 #define TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-static-routes-legacy"
 
@@ -12528,6 +12684,10 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "no-prefix/8", GUINT_TO_POINTER (8), test_read_wired_static_no_prefix);
 	g_test_add_data_func (TPATH "no-prefix/16", GUINT_TO_POINTER (16), test_read_wired_static_no_prefix);
 	g_test_add_data_func (TPATH "no-prefix/24", GUINT_TO_POINTER (24), test_read_wired_static_no_prefix);
+	g_test_add_data_func (TPATH "static-ip6-only-gw/_NULL_", NULL, test_write_wired_static_ip6_only_gw);
+	g_test_add_data_func (TPATH "static-ip6-only-gw/::", "::", test_write_wired_static_ip6_only_gw);
+	g_test_add_data_func (TPATH "static-ip6-only-gw/2001:db8:8:4::2", "2001:db8:8:4::2", test_write_wired_static_ip6_only_gw);
+	g_test_add_data_func (TPATH "static-ip6-only-gw/ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255", "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
 
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
