@@ -51,7 +51,7 @@ typedef struct {
 	gboolean vpn;
 
 	NMAuthSubject *subject;
-	NMDevice *master;
+	NMActiveConnection *master;
 
 	NMAuthChain *chain;
 	const char *wifi_shared_permission;
@@ -257,7 +257,7 @@ nm_active_connection_get_device (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->device;
 }
 
-NMDevice *
+NMActiveConnection *
 nm_active_connection_get_master (NMActiveConnection *self)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
@@ -269,24 +269,29 @@ nm_active_connection_get_master (NMActiveConnection *self)
  * nm_active_connection_set_master:
  * @self: the #NMActiveConnection
  * @master: if the activation depends on another device (ie, bond or bridge
- *    master to which this device will be enslaved) pass the #NMDevice that this
- *    activation request be enslaved to
+ * master to which this device will be enslaved) pass the #NMActiveConnection
+ * that this activation request is a child of
  *
- * Sets the master device of the active connection.
+ * Sets the master active connection of @self.
  */
 void
-nm_active_connection_set_master (NMActiveConnection *self, NMDevice *master)
+nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *master)
 {
 	NMActiveConnectionPrivate *priv;
+	NMDevice *master_device;
 
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
-	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (master));
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
 	/* Master is write-once, and must be set before exporting the object */
 	g_return_if_fail (priv->master == NULL);
 	g_return_if_fail (priv->path == NULL);
-	g_return_if_fail (master != priv->device);
+
+	master_device = nm_active_connection_get_device (master);
+	if (master_device)
+		g_return_if_fail (master_device != priv->device);
 
 	priv->master = g_object_ref (master);
 }
@@ -413,6 +418,7 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	NMDevice *master_device;
 	const char *tmp;
 
 	switch (prop_id) {
@@ -423,8 +429,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INT_DEVICE:
 		g_warn_if_fail (priv->device == NULL);
 		priv->device = g_value_dup_object (value);
-		if (priv->device)
-			g_warn_if_fail (priv->device != priv->master);
+		if (priv->device && priv->master) {
+			master_device = nm_active_connection_get_device (priv->master);
+			g_warn_if_fail (priv->device != master_device);
+		}
 		break;
 	case PROP_INT_SUBJECT:
 		priv->subject = g_value_dup_object (value);
@@ -461,6 +469,7 @@ get_property (GObject *object, guint prop_id,
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 	GPtrArray *devices;
+	NMDevice *master_device = NULL;
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
@@ -491,7 +500,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->vpn);
 		break;
 	case PROP_MASTER:
-		g_value_set_boxed (value, priv->master ? nm_device_get_path (priv->master) : "/");
+		if (priv->master)
+			master_device = nm_active_connection_get_device (priv->master);
+		g_value_set_boxed (value, master_device ? nm_device_get_path (master_device) : "/");
 		break;
 	case PROP_INT_SUBJECT:
 		g_value_set_object (value, priv->subject);
@@ -628,9 +639,9 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_object_class_install_property (object_class, PROP_INT_MASTER,
 		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_MASTER,
-		                     "Internal master device",
-		                     "Internal device",
-		                     NM_TYPE_DEVICE,
+		                     "Internal master active connection",
+		                     "Internal active connection",
+		                     NM_TYPE_ACTIVE_CONNECTION,
 		                     G_PARAM_READWRITE));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),

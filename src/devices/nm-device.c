@@ -3445,7 +3445,8 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *iface;
 	int ifindex;
-	NMDevice *master;
+	NMActiveConnection *master;
+	NMDevice *master_device;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -3471,11 +3472,12 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	 */
 	master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request));
 	if (master) {
-		if (priv->enslaved == FALSE) {
+		master_device = nm_active_connection_get_device (master);
+		if (master_device && priv->enslaved == FALSE) {
 			nm_log_info (LOGD_DEVICE, "Activation (%s) connection '%s' waiting on master '%s'",
 						 nm_device_get_iface (self),
 						 nm_connection_get_id (nm_device_get_connection (self)),
-						 nm_device_get_iface (master));
+						 nm_device_get_iface (master_device));
 		}
 		goto out;
 	}
@@ -4425,7 +4427,8 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 		nm_device_activate_schedule_stage3_ip_config_start (self);
 	} else {
-		NMDevice *master;
+		NMActiveConnection *master;
+		NMDevice *master_device;
 
 		/* HACK: update the state a bit early to avoid a race between the 
 		 * scheduled stage1 handler and nm_policy_device_change_check() thinking
@@ -4437,12 +4440,15 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 		/* Handle any dependencies this connection might have */
 		master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (req));
 		if (master) {
-			/* Master should at least already be activating */
-			g_assert (nm_device_get_state (master) > NM_DEVICE_STATE_DISCONNECTED);
+			master_device = nm_active_connection_get_device (master);
+			if (master_device) {
+				/* Master should at least already be activating */
+				g_assert (nm_device_get_state (master_device) > NM_DEVICE_STATE_DISCONNECTED);
 
-			g_assert (priv->master == NULL);
-			priv->master = g_object_ref (master);
-			nm_device_master_add_slave (master, self);
+				g_assert (priv->master == NULL);
+				priv->master = g_object_ref (master_device);
+				nm_device_master_add_slave (master_device, self);
+			}
 		}
 
 		nm_device_activate_schedule_stage1_device_prepare (self);
