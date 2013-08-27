@@ -75,8 +75,10 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST "mac-address-blacklist"
 #define NM_SETTING_WIRELESS_MTU         "mtu"
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
-#define NM_SETTING_WIRELESS_SEC         "security"
 #define NM_SETTING_WIRELESS_HIDDEN      "hidden"
+
+/* Deprecated */
+#define NM_SETTING_WIRELESS_SEC         "security"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -141,7 +143,6 @@ void              nm_setting_wireless_remove_mac_blacklist_item   (NMSettingWire
                                                                    guint32 idx);
 
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
-const char       *nm_setting_wireless_get_security           (NMSettingWireless *setting);
 gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);
 
 gboolean          nm_setting_wireless_add_seen_bssid         (NMSettingWireless *setting,
@@ -157,6 +158,9 @@ gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless 
                                                               NM80211ApSecurityFlags ap_wpa,
                                                               NM80211ApSecurityFlags ap_rsn,
                                                               NM80211Mode ap_mode);
+
+/* Deprecated */
+G_DEPRECATED const char *nm_setting_wireless_get_security (NMSettingWireless *setting);
 
 G_END_DECLS
 

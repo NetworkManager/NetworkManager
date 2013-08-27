@@ -588,6 +588,9 @@ nm_setting_wireless_get_mtu (NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  *
  * Returns: the #NMSettingWireless:security property of the setting
+ *
+ * Deprecated: 0.9.10: No longer used. Security rescrictions are recognized by
+ * the presence of NM_SETTING_WIRELESS_SECURITY_SETTING_NAME in the connection.
  **/
 const char *
 nm_setting_wireless_get_security (NMSettingWireless *setting)
@@ -685,15 +688,6 @@ nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
 
 	return (const char *) g_slist_nth_data (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids, i);
-}
-
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
 }
 
 static gboolean
@@ -817,17 +811,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SEEN_BSSIDS);
 			return FALSE;
 		}
-	}
-
-	if (   priv->security
-	    && !g_slist_find_custom (all_settings, priv->security, find_setting_by_name)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_ERROR,
-		             NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING,
-		             _("'%s' setting is required for the connection when the property is set"),
-		             priv->security);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SEC);
-		return FALSE;
 	}
 
 	return TRUE;
@@ -974,7 +957,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boxed (value, NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids);
 		break;
 	case PROP_SEC:
-		g_value_set_string (value, nm_setting_wireless_get_security (setting));
+		g_value_set_string (value, NM_SETTING_WIRELESS_GET_PRIVATE (setting)->security);
 		break;
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
@@ -1231,6 +1214,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * If the wireless connection has any security restrictions, like 802.1x,
 	 * WEP, or WPA, set this property to '802-11-wireless-security' and ensure
 	 * the connection contains a valid 802-11-wireless-security setting.
+	 *
+	 * Deprecated: 0.9.10: No longer used. Security rescrictions are recognized by
+	 * the presence of NM_SETTING_WIRELESS_SECURITY_SETTING_NAME in the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEC,
