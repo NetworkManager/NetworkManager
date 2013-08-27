@@ -3284,12 +3284,10 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		ifname_mandatory = FALSE;
 
 	if (!ifname && ifname_mandatory && nmc->ask)
-		ifname = ifname_ask = nmc_get_user_input (_("Interface name: "));
-	if (!ifname && ifname_mandatory) {
-		g_string_printf (nmc->return_text, _("Error: 'ifname' argument is required."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
+		ifname = ifname_ask = nmc_get_user_input (_("Interface name [*]: "));
+	if (!ifname && ifname_mandatory)
+		ifname = ifname_ask = g_strdup ("*");
+
 	if (ifname) {
 		if (!nm_utils_iface_valid_name (ifname) && strcmp (ifname, "*") != 0) {
 			g_string_printf (nmc->return_text,
