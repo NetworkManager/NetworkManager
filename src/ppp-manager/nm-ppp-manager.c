@@ -83,6 +83,7 @@ typedef struct {
 	NMActRequest *act_req;
 	DBusGMethodInvocation *pending_secrets_context;
 	guint32 secrets_id;
+	const char *secrets_setting_name;
 
 	guint32 ppp_watch_id;
 	guint32 ppp_timeout_handler;
@@ -347,36 +348,50 @@ cancel_get_secrets (NMPPPManager *self)
 		nm_act_request_cancel_secrets (priv->act_req, priv->secrets_id);
 		priv->secrets_id = 0;
 	}
+	priv->secrets_setting_name = NULL;
 }
 
 static gboolean
 extract_details_from_connection (NMConnection *connection,
+                                 const char *secrets_setting_name,
                                  const char **username,
                                  const char **password,
                                  GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSetting *setting;
-	const char *connection_type;
+	const char *setting_name;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (username != NULL, FALSE);
 	g_return_val_if_fail (password != NULL, FALSE);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (secrets_setting_name)
+		setting_name = secrets_setting_name;
+	else {
+		/* Get the setting matching the connection type */
+		s_con = nm_connection_get_setting_connection (connection);
+		g_assert (s_con);
 
-	connection_type = nm_setting_connection_get_connection_type (s_con);
-	g_assert (connection_type);
+		setting_name = nm_setting_connection_get_connection_type (s_con);
+		g_assert (setting_name);
+		
+		/* In case of bluetooth connection, use GSM or CDMA setting */
+		if (strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0) {
+			if (nm_connection_get_setting_gsm (connection))
+				setting_name = NM_SETTING_GSM_SETTING_NAME;
+			else
+				setting_name = NM_SETTING_CDMA_SETTING_NAME;
+		}
+	}
 
-	setting = nm_connection_get_setting_by_name (connection, connection_type);
+	setting = nm_connection_get_setting_by_name (connection, setting_name);
 	if (!setting) {
 		g_set_error_literal (error, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN,
 		                     "Missing type-specific setting; no secrets could be found.");
 		return FALSE;
 	}
 
-	/* FIXME: push this down to the settings and keep PPP manager generic */
 	if (NM_IS_SETTING_PPPOE (setting)) {
 		*username = nm_setting_pppoe_get_username (NM_SETTING_PPPOE (setting));
 		*password = nm_setting_pppoe_get_password (NM_SETTING_PPPOE (setting));
@@ -417,7 +432,7 @@ ppp_secrets_cb (NMActRequest *req,
 		goto out;
 	}
 
-	if (!extract_details_from_connection (connection, &username, &password, &local)) {
+	if (!extract_details_from_connection (connection, priv->secrets_setting_name, &username, &password, &local)) {
 		nm_log_warn (LOGD_PPP, "%s", local->message);
 		dbus_g_method_return_error (priv->pending_secrets_context, local);
 		g_clear_error (&local);
@@ -435,6 +450,7 @@ ppp_secrets_cb (NMActRequest *req,
 out:
 	priv->pending_secrets_context = NULL;
 	priv->secrets_id = 0;
+	priv->secrets_setting_name = NULL;
 }
 
 static void
@@ -443,7 +459,6 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
-	const char *setting_name;
 	const char *username = NULL;
 	const char *password = NULL;
 	guint32 tries;
@@ -454,10 +469,10 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	connection = nm_act_request_get_connection (priv->act_req);
 
 	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection, &hints);
-	if (!setting_name) {
+	priv->secrets_setting_name = nm_connection_need_secrets (connection, &hints);
+	if (!priv->secrets_setting_name) {
 		/* Use existing secrets from the connection */
-		if (extract_details_from_connection (connection, &username, &password, &error)) {
+		if (extract_details_from_connection (connection, NULL, &username, &password, &error)) {
 			/* Send existing secrets to the PPP plugin */
 			priv->pending_secrets_context = context;
 			ppp_secrets_cb (priv->act_req, priv->secrets_id, connection, NULL, manager);
@@ -478,7 +493,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_req,
-	                                               setting_name,
+	                                               priv->secrets_setting_name,
 	                                               flags,
 	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
 	                                               ppp_secrets_cb,
