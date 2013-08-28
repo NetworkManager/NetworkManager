@@ -25,6 +25,7 @@
 
 #include <netinet/ether.h>
 
+#include "gsystem-local-alloc.h"
 #include "nm-device-bond.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
@@ -179,10 +180,12 @@ match_l2_config (NMDevice *self, NMConnection *connection)
 
 /******************************************************************/
 
-static const struct {
-	const char *option;
+typedef struct {
+	const char *name;
 	const char *default_value;
-} bonding_defaults[] = {
+} Option;
+
+static const Option master_options[] = {
 	{ "mode", "balance-rr" },
 	{ "arp_interval", "0" },
 	{ "miimon", "0" },
@@ -204,98 +207,90 @@ static const struct {
 	{ NULL, NULL }
 };
 
-static void
-remove_bonding_entries (const char *iface, const char *path)
+static gboolean
+option_valid_for_nm_setting (NMSettingBond *s_bond, const Option *option)
 {
-	char cmd[20];
-	char *value, **entries;
-	gboolean ret;
-	int i;
+	const char **valid_opts = nm_setting_bond_get_valid_options (s_bond);
 
-	if (!g_file_get_contents (path, &value, NULL, NULL))
-		return;
+	for (; *valid_opts; valid_opts++)
+		if (!strcmp (option->name, *valid_opts))
+			return TRUE;
+
+	return FALSE;
+}
+
+static void
+remove_bonding_entries (NMDevice *device, const char *option)
+{
+	int ifindex = nm_device_get_ifindex (device);
+	const char *ifname = nm_device_get_iface (device);
+	gs_free char *value = nm_platform_master_get_option (ifindex, option);
+	char **entries, **entry;
+	char cmd[20];
+
+	g_return_if_fail (value);
 
 	entries = g_strsplit (value, " ", -1);
-	for (i = 0; entries[i]; i++) {
-		snprintf (cmd, sizeof (cmd), "-%s", g_strstrip (entries[i]));
-		ret = nm_utils_do_sysctl (path, cmd);
-		if (!ret) {
+	for (entry = entries; *entry; entry++) {
+		snprintf (cmd, sizeof (cmd), "-%s", g_strstrip (*entry));
+		if (!nm_platform_master_set_option (ifindex, option, cmd))
 			nm_log_warn (LOGD_HW, "(%s): failed to remove entry '%s' from '%s'",
-			             iface, entries[i], path);
-		}
+			             ifname, *entry, option);
 	}
 	g_strfreev (entries);
 }
 
 static gboolean
-option_valid_for_nm_setting (const char *option, const char **valid_opts)
+apply_bonding_config (NMDevice *device, NMSettingBond *s_bond)
 {
-	while (*valid_opts) {
-		if (strcmp (option, *valid_opts) == 0)
-			return TRUE;
-		valid_opts++;
-	}
-	return FALSE;
-}
+	int ifindex = nm_device_get_ifindex (device);
+	const char *ifname = nm_device_get_iface (device);
+	static const Option *option;
+	const char *value;
 
-static gboolean
-apply_bonding_config (const char *iface, NMSettingBond *s_bond)
-{
-	const char **valid_opts;
-	const char *option, *value;
-	char path[FILENAME_MAX];
-	char *current, *space;
-	gboolean ret;
-	int i;
-
-	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (ifindex, FALSE);
 
 	/* Remove old slaves and arp_ip_targets */
-	snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/arp_ip_target", iface);
-	remove_bonding_entries (iface, path);
-	snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/slaves", iface);
-	remove_bonding_entries (iface, path);
+	remove_bonding_entries (device, "arp_ip_target");
+	remove_bonding_entries (device, "slaves");
 
 	/* Apply config/defaults */
-	valid_opts = nm_setting_bond_get_valid_options (s_bond);
-	for (i = 0; bonding_defaults[i].option; i++) {
-		option = bonding_defaults[i].option;
-		if (option_valid_for_nm_setting (option, valid_opts))
-			value = nm_setting_bond_get_option_by_name (s_bond, option);
-		else
-			value = NULL;
-		if (!value)
-			value = bonding_defaults[i].default_value;
+	for (option = master_options; option->name; option++) {
+		gs_free char *old_value = NULL;
+		char *space;
 
-		snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/%s", iface, option);
-		if (g_file_get_contents (path, &current, NULL, NULL)) {
-			g_strstrip (current);
-			space = strchr (current, ' ');
-			if (space)
-				*space = '\0';
-			if (strcmp (current, value) != 0) {
-				ret = nm_utils_do_sysctl (path, value);
-				if (!ret) {
-					nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
-					             "'%s' to '%s'", iface, option, value);
-				}
-			}
+		value = NULL;
+		if (option_valid_for_nm_setting (s_bond, option))
+			value = nm_setting_bond_get_option_by_name (s_bond, option->name);
+		if (!value)
+			value = option->default_value;
+
+		old_value = nm_platform_master_get_option (ifindex, option->name);
+		/* FIXME: This could be handled in nm-platform. */
+		space = strchr (old_value, ' ');
+		if (space)
+			*space = '\0';
+
+		if (g_strcmp0 (value, old_value)) {
+			if (!nm_platform_master_set_option (ifindex, option->name, value))
+				nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
+				             "'%s' to '%s'", ifname, option->name, value);
 		}
 	}
 
 	/* Handle arp_ip_target */
 	value = nm_setting_bond_get_option_by_name (s_bond, "arp_ip_target");
 	if (value) {
-		char **addresses, cmd[20];
+		char **addresses, **address;
 
-		snprintf (path, sizeof (path), "/sys/class/net/%s/bonding/arp_ip_target", iface);
 		addresses = g_strsplit (value, ",", -1);
-		for (i = 0; addresses[i]; i++) {
-			snprintf (cmd, sizeof (cmd), "+%s", g_strstrip (addresses[i]));
-			ret = nm_utils_do_sysctl (path, cmd);
-			if (!ret) {
+		for (address = addresses; *address; address++) {
+			char cmd[20];
+
+			snprintf (cmd, sizeof (cmd), "+%s", g_strstrip (*address));
+			if (!nm_platform_master_set_option (ifindex, "arp_ip_target", cmd)){
 				nm_log_warn (LOGD_HW, "(%s): failed to add arp_ip_target '%s'",
-				             iface, addresses[i]);
+				             ifname, *address);
 			}
 		}
 		g_strfreev (addresses);
@@ -324,7 +319,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		/* Interface must be down to set bond options */
 		nm_device_take_down (dev, TRUE);
 
-		if (!apply_bonding_config (nm_device_get_ip_iface (dev), s_bond))
+		if (!apply_bonding_config (dev, s_bond))
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 		nm_device_bring_up (dev, TRUE, &no_firmware);
