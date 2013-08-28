@@ -34,32 +34,34 @@
 
 /* Available fields for 'general status' */
 static NmcOutputField nmc_fields_nm_status[] = {
-	{"RUNNING",    N_("RUNNING"),    15},  /* 0 */
-	{"VERSION",    N_("VERSION"),    10},  /* 1 */
-	{"STATE",      N_("STATE"),      15},  /* 2 */
-	{"NETWORKING", N_("NETWORKING"), 13},  /* 3 */
-	{"WIFI-HW",    N_("WIFI-HW"),    15},  /* 4 */
-	{"WIFI",       N_("WIFI"),       10},  /* 5 */
-	{"WWAN-HW",    N_("WWAN-HW"),    15},  /* 6 */
-	{"WWAN",       N_("WWAN"),       10},  /* 7 */
-	{"WIMAX-HW",   N_("WIMAX-HW"),   15},  /* 8 */
-	{"WIMAX",      N_("WIMAX"),      10},  /* 9 */
-	{NULL,         NULL,              0}
+	{"RUNNING",      N_("RUNNING"),      15},  /* 0 */
+	{"VERSION",      N_("VERSION"),      10},  /* 1 */
+	{"STATE",        N_("STATE"),        15},  /* 2 */
+	{"CONNECTIVITY", N_("CONNECTIVITY"), 15},  /* 3 */
+	{"NETWORKING",   N_("NETWORKING"),   13},  /* 4 */
+	{"WIFI-HW",      N_("WIFI-HW"),      15},  /* 5 */
+	{"WIFI",         N_("WIFI"),         10},  /* 6 */
+	{"WWAN-HW",      N_("WWAN-HW"),      15},  /* 7 */
+	{"WWAN",         N_("WWAN"),         10},  /* 8 */
+	{"WIMAX-HW",     N_("WIMAX-HW"),     15},  /* 9 */
+	{"WIMAX",        N_("WIMAX"),        10},  /* 10 */
+	{NULL,           NULL,                0}
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #else
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN"
 #endif
-#define NMC_FIELDS_NM_STATUS_COMMON  "STATE,WIFI-HW,WIFI,WWAN-HW,WWAN"
+#define NMC_FIELDS_NM_STATUS_COMMON  "STATE,CONNECTIVITY,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_NETWORKING     "NETWORKING"
 #define NMC_FIELDS_NM_WIFI           "WIFI"
 #define NMC_FIELDS_NM_WWAN           "WWAN"
 #define NMC_FIELDS_NM_WIMAX          "WIMAX"
+#define NMC_FIELDS_NM_CONNECTIVITY   "CONNECTIVITY"
 
 
 /* Available fields for 'general permissions' */
@@ -102,7 +104,10 @@ usage_networking (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli networking { COMMAND | help }\n\n"
-	         "  COMMAND := { [ on | off ] }\n\n"
+	         "  COMMAND := { on | off | connectivity }\n\n"
+	         "  on\n\n"
+	         "  off\n\n"
+	         "  connectivity [check]\n\n"
 	         ));
 }
 
@@ -152,11 +157,30 @@ nm_state_to_string (NMState state)
 	}
 }
 
+static const char *
+nm_connectivity_to_string (NMConnectivityState connectivity)
+{
+	switch (connectivity) {
+	case NM_CONNECTIVITY_NONE:
+		return _("none");
+	case NM_CONNECTIVITY_PORTAL:
+		return _("portal");
+	case NM_CONNECTIVITY_LIMITED:
+		return _("limited");
+	case NM_CONNECTIVITY_FULL:
+		return _("full");
+	case NM_CONNECTIVITY_UNKNOWN:
+	default:
+		return _("unknown");
+	}
+}
+
 static gboolean
 show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
 	gboolean nm_running;
 	NMState state = NM_STATE_UNKNOWN;
+	NMConnectivityState connectivity = NM_CONNECTIVITY_UNKNOWN;
 	const char *net_enabled_str;
 	const char *wireless_hw_enabled_str, *wireless_enabled_str;
 	const char *wwan_hw_enabled_str, *wwan_enabled_str;
@@ -199,6 +223,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 			return FALSE;
 
 		state = nm_client_get_state (nmc->client);
+		connectivity = nm_client_get_connectivity (nmc->client);
 		net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 		wireless_hw_enabled_str = nm_client_wireless_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 		wireless_enabled_str = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
@@ -226,14 +251,15 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	set_val_strc (arr, 0, nm_running ? _("running") : _("not running"));
 	set_val_strc (arr, 1, nm_running ? nm_client_get_version (nmc->client) : _("unknown"));
 	set_val_strc (arr, 2, nm_state_to_string (state));
-	set_val_strc (arr, 3, net_enabled_str);
-	set_val_strc (arr, 4, wireless_hw_enabled_str);
-	set_val_strc (arr, 5, wireless_enabled_str);
-	set_val_strc (arr, 6, wwan_hw_enabled_str);
-	set_val_strc (arr, 7, wwan_enabled_str);
+	set_val_strc (arr, 3, nm_connectivity_to_string (connectivity));
+	set_val_strc (arr, 4, net_enabled_str);
+	set_val_strc (arr, 5, wireless_hw_enabled_str);
+	set_val_strc (arr, 6, wireless_enabled_str);
+	set_val_strc (arr, 7, wwan_hw_enabled_str);
+	set_val_strc (arr, 8, wwan_enabled_str);
 #if WITH_WIMAX
-	set_val_strc (arr, 8, wimax_hw_enabled_str);
-	set_val_strc (arr, 9, wimax_enabled_str);
+	set_val_strc (arr, 9, wimax_hw_enabled_str);
+	set_val_strc (arr, 10, wimax_enabled_str);
 #endif
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -538,6 +564,24 @@ nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolea
 	return TRUE;
 }
 
+static gboolean
+show_networking_connectivity (NmCli *nmc)
+{
+	g_return_val_if_fail (nmc != NULL, FALSE);
+
+	if (nmc->required_fields && strcasecmp (nmc->required_fields, NMC_FIELDS_NM_CONNECTIVITY) != 0) {
+		g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+		                 nmc->required_fields, NMC_FIELDS_NM_CONNECTIVITY);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return FALSE;
+	}
+	if (nmc->print_output == NMC_PRINT_NORMAL)
+		nmc->print_output = NMC_PRINT_TERSE;
+
+	nmc->required_fields = g_strdup (NMC_FIELDS_NM_CONNECTIVITY);
+	return show_nm_status (nmc, _("Connectivity"), NMC_FIELDS_NM_STATUS_SWITCH);
+}
+
 /*
  * Entry point function for 'nmcli networking'
  */
@@ -551,6 +595,25 @@ do_networking (NmCli *nmc, int argc, char **argv)
 	else if (argc > 0) {
 		if (nmc_arg_is_help (*argv)) {
 			usage_networking ();
+		} else if (matches (*argv, "connectivity") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				/* no arguments -> get current state */
+				show_networking_connectivity (nmc);
+			} else if (matches (*argv, "check") == 0) {
+				GError *error = NULL;
+
+				nmc->get_client (nmc); /* create NMClient */
+				nm_client_check_connectivity (nmc->client, NULL, &error);
+				if (error) {
+					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				} else
+					show_networking_connectivity (nmc);
+			} else {
+				usage_networking ();
+				g_string_printf (nmc->return_text, _("Error: 'networking connectivity' command '%s' is not valid."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			}
 		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
 
 			nmc->get_client (nmc); /* create NMClient */
