@@ -426,7 +426,6 @@ wifi_connection_new (void)
 	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 	g_byte_array_free (ssid, TRUE);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));

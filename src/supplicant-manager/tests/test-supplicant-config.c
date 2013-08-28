@@ -245,7 +245,6 @@ test_wifi_wep_key (const char *detail,
 	              NM_SETTING_WIRELESS_BSSID, bssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NM_SETTING_WIRELESS_BAND, "bg",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -373,7 +372,6 @@ test_wifi_wpa_psk (const char *detail,
 	              NM_SETTING_WIRELESS_BSSID, bssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NM_SETTING_WIRELESS_BAND, "bg",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);

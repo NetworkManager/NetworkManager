@@ -218,8 +218,7 @@ fill_8021x (NMConnection *connection, const KeyData items[])
 static NMConnection *
 create_basic (const char *ssid,
               const guint8 *bssid,
-              NM80211Mode mode,
-              gboolean set_security)
+              NM80211Mode mode)
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wifi = NULL;
@@ -251,9 +250,6 @@ create_basic (const char *ssid,
 	else
 		g_assert_not_reached ();
 
-	if (set_security)
-		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
-
 	return connection;
 }
 
@@ -274,7 +270,7 @@ test_lock_bssid (void)
 	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               TRUE,
 	                               src, &error);
-	expected = create_basic (ssid, bssid, NM_802_11_MODE_INFRA, FALSE);
+	expected = create_basic (ssid, bssid, NM_802_11_MODE_INFRA);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -302,7 +298,7 @@ test_open_ap_empty_connection (void)
 	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
 	                               FALSE,
 	                               src, &error);
-	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, FALSE);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA);
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
@@ -422,7 +418,6 @@ test_ap_wpa_psk_connection_base (const char *key_mgmt,
 	const KeyData exp_wifi[] = {
 		{ NM_SETTING_WIRELESS_SSID, ssid, 0 },
 		{ NM_SETTING_WIRELESS_MODE, "infrastructure", 0 },
-		{ NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, 0 },
 		{ NULL } };
 	const KeyData both_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0 },
@@ -755,7 +750,7 @@ test_priv_ap_empty_connection (void)
 	                               src, &error);
 
 	/* Static WEP connection expected */
-	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA);
 	fill_wsec (expected, exp_wsec);
 	COMPARE (src, expected, success, error, 0, 0);
 
@@ -802,7 +797,7 @@ test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
 	 * there's no way to determine from the AP's beacon whether it's static WEP,
 	 * dynamic WEP, or LEAP.
 	 */
-	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA);
 	fill_wsec (expected, exp_wsec);
 	COMPARE (src, expected, success, error, 0, 0);
 
@@ -886,7 +881,7 @@ test_priv_ap_dynamic_wep_1 (void)
 	                               src, &error);
 
 	/* We expect a completed Dynamic WEP connection */
-	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA);
 	fill_wsec (expected, exp_wsec);
 	fill_8021x (expected, both_8021x);
 	COMPARE (src, expected, success, error, 0, 0);
@@ -937,7 +932,7 @@ test_priv_ap_dynamic_wep_2 (void)
 	                               src, &error);
 
 	/* We expect a completed Dynamic WEP connection */
-	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA);
 	fill_wsec (expected, exp_wsec);
 	fill_8021x (expected, both_8021x);
 	COMPARE (src, expected, success, error, 0, 0);
@@ -1086,7 +1081,7 @@ test_wpa_ap_empty_connection (gconstpointer data)
 	                               FALSE, src, &error);
 
 	/* WPA connection expected */
-	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA, TRUE);
+	expected = create_basic (ssid, NULL, NM_802_11_MODE_INFRA);
 	fill_wsec (expected, exp_wsec);
 	COMPARE (src, expected, success, error, 0, 0);
 

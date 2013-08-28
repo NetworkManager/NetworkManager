@@ -2623,6 +2623,7 @@ test_read_wifi_open (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
@@ -2762,17 +2763,15 @@ test_read_wifi_open (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MODE);
 
-	ASSERT (nm_setting_wireless_get_security (s_wireless) == NULL,
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
 	ASSERT (nm_setting_wireless_get_channel (s_wireless) == expected_channel,
 	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_OPEN,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_CHANNEL);
+
+	/* ===== WiFi SECURITY SETTING ===== */
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	g_assert (s_wsec == NULL);
 
 	/* ===== IPv4 SETTING ===== */
 
@@ -3248,20 +3247,6 @@ test_read_wifi_wep (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_CHANNEL);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -3492,20 +3477,6 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_CHANNEL);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -3685,20 +3656,6 @@ test_read_wifi_wep_passphrase (void)
 	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wep-passphrase-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -3823,19 +3780,6 @@ test_read_wifi_wep_40_ascii (void)
 	        TEST_IFCFG_WIFI_WEP_40_ASCII,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wep-40-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_40_ASCII,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -3959,19 +3903,6 @@ test_read_wifi_wep_104_ascii (void)
 	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WEP_104_ASCII,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
-
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wep-104-ascii-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_104_ASCII,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
@@ -4111,20 +4042,6 @@ test_read_wifi_leap (void)
 	        TEST_IFCFG_WIFI_LEAP,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_LEAP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -4224,8 +4141,6 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	/* ===== WIRELESS SETTING ===== */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
-
-	g_assert (g_strcmp0 (nm_setting_wireless_get_security (s_wifi), NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -4414,19 +4329,6 @@ test_read_wifi_wpa_psk (void)
 	        TEST_IFCFG_WIFI_WPA_PSK,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_CHANNEL);
-
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
@@ -4628,19 +4530,6 @@ test_read_wifi_wpa_psk_2 (void)
 	        TEST_IFCFG_WIFI_WPA_PSK_2,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-2-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wpa-psk-2-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_2,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -4732,19 +4621,6 @@ test_read_wifi_wpa_psk_unquoted (void)
 	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
-
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wpa-psk-unquoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
@@ -4892,19 +4768,6 @@ test_read_wifi_wpa_psk_adhoc (void)
 	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MODE);
-
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wpa-psk-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
@@ -5088,19 +4951,6 @@ test_read_wifi_wpa_psk_hex (void)
 	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
-
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wpa-psk-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
@@ -5498,8 +5348,6 @@ test_read_wifi_dynamic_wep_leap (void)
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
-
-	g_assert_cmpstr (nm_setting_wireless_get_security (s_wifi), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 
 	/* ===== WiFi SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -6016,20 +5864,6 @@ test_read_wifi_wep_no_keys (void)
 	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
-	/* Security */
-	tmp = nm_setting_wireless_get_security (s_wireless);
-	ASSERT (tmp != NULL,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: missing %s / %s key",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
-	        "wifi-wep-no-keys-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_SEC);
-
-
 	/* ===== WIRELESS SECURITY SETTING ===== */
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -6162,7 +5996,6 @@ test_read_wifi_wep_agent_keys (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
-	const char *tmp;
 	NMWepKeyType key_type;
 	gboolean success;
 	NMSettingSecretFlags flags;
@@ -6190,8 +6023,6 @@ test_read_wifi_wep_agent_keys (void)
 	/* ===== WIRELESS SETTING ===== */
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
-	tmp = nm_setting_wireless_get_security (s_wifi);
-	g_assert (g_strcmp0 (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 
 	/* ===== WIRELESS SECURITY SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -7810,7 +7641,6 @@ test_write_wifi_wep (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -7956,7 +7786,6 @@ test_write_wifi_wep_adhoc (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "adhoc",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -8100,7 +7929,6 @@ test_write_wifi_wep_passphrase (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -8239,7 +8067,6 @@ test_write_wifi_wep_40_ascii (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -8380,7 +8207,6 @@ test_write_wifi_wep_104_ascii (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -8521,7 +8347,6 @@ test_write_wifi_leap (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -8659,7 +8484,6 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 	g_byte_array_free (ssid, TRUE);
 
@@ -8799,7 +8623,6 @@ test_write_wifi_wpa_psk (const char *name,
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -8948,7 +8771,6 @@ test_write_wifi_wpa_psk_adhoc (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "adhoc",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NM_SETTING_WIRELESS_CHANNEL, 11,
 	              NM_SETTING_WIRELESS_BAND, "bg",
 	              NULL);
@@ -9091,7 +8913,6 @@ test_write_wifi_wpa_eap_tls (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -9255,7 +9076,6 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -9437,7 +9257,6 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -9597,7 +9416,6 @@ test_write_wifi_wpa_then_open (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -9679,9 +9497,6 @@ test_write_wifi_wpa_then_open (void)
 	g_object_unref (reread);
 
 	/* Now change the connection to open and recheck */
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	g_assert (s_wifi);
-	g_object_set (s_wifi, NM_SETTING_WIRELESS_SEC, NULL, NULL);
 	nm_connection_remove_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
 
 	/* Write it back out */
@@ -9794,7 +9609,6 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -9987,7 +9801,6 @@ test_write_wifi_dynamic_wep_leap (void)
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
@@ -10903,7 +10716,6 @@ test_write_wifi_wep_agent_keys (void)
 	g_byte_array_append (ssid, (guint8 *) str_ssid, strlen (str_ssid));
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NULL);
 	g_byte_array_free (ssid, TRUE);

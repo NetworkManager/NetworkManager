@@ -6,7 +6,6 @@ type=wifi
 [wifi]
 ssid=foobar
 mode=infrastructure
-security=wifi-security
 
 [wifi-security]
 key-mgmt=wpa-psk

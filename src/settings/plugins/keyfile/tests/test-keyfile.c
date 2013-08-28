@@ -3130,8 +3130,6 @@ test_read_new_wireless_group_names (void)
 
 	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
 
-	g_assert_cmpstr (nm_setting_wireless_get_security (s_wifi), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-
 	/* Wifi security setting */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
@@ -3184,7 +3182,6 @@ test_write_new_wireless_group_names (void)
 	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
 	              NULL);
 	g_byte_array_free (ssid, TRUE);
@@ -3226,11 +3223,6 @@ test_write_new_wireless_group_names (void)
 	s = g_key_file_get_string (kf, "wifi", NM_SETTING_WIRELESS_MODE, &error);
 	g_assert_no_error (error);
 	g_assert_cmpstr (s, ==, NM_SETTING_WIRELESS_MODE_INFRA);
-	g_free (s);
-
-	s = g_key_file_get_string (kf, "wifi", NM_SETTING_WIRELESS_SEC, &error);
-	g_assert_no_error (error);
-	g_assert_cmpstr (s, ==, "wifi-security");
 	g_free (s);
 
 	s = g_key_file_get_string (kf, "wifi-security", NM_SETTING_WIRELESS_SECURITY_PSK, &error);
