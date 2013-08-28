@@ -184,13 +184,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
-match_l2_config (NMDevice *self, NMConnection *connection)
-{
-	/* FIXME */
-	return TRUE;
-}
-
 /******************************************************************/
 
 static gboolean
@@ -205,6 +198,57 @@ set_bond_attr (NMDevice *device, const char *attr, const char *value)
 		             "'%s' to '%s'", nm_device_get_ip_iface (device), attr, value);
 	}
 	return ret;
+}
+
+/* Ignore certain bond options if they are zero (off/disabled) */
+static gboolean
+ignore_if_zero (const char *option, const char *value)
+{
+	if (strcmp (option, "arp_interval") &&
+	    strcmp (option, "miimon") &&
+	    strcmp (option, "downdelay") &&
+	    strcmp (option, "updelay"))
+		return FALSE;
+
+	return g_strcmp0 (value, "0") == 0 ? TRUE : FALSE;
+}
+
+static void
+update_connection (NMDevice *device, NMConnection *connection)
+{
+	NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
+	const char *ifname = nm_device_get_iface (device);
+	int ifindex = nm_device_get_ifindex (device);
+	const char **options;
+
+	if (!s_bond) {
+		s_bond = (NMSettingBond *) nm_setting_bond_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_bond);
+		g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, ifname, NULL);
+	}
+
+	/* Read bond options from sysfs and update the Bond setting to match */
+	options = nm_setting_bond_get_valid_options (s_bond);
+	while (options && *options) {
+		gs_free char *value = nm_platform_master_get_option (ifindex, *options);
+		const char *defvalue = nm_setting_bond_get_option_default (s_bond, *options);
+
+		if (value && !ignore_if_zero (*options, value) && (g_strcmp0 (value, defvalue) != 0)) {
+			/* Replace " " with "," for arp_ip_targets from the kernel */
+			if (strcmp (*options, "arp_ip_target") == 0) {
+				char *p = value;
+
+				while (p && *p) {
+					if (*p == ' ')
+						*p = ',';
+					p++;
+				}
+			}
+
+			nm_setting_bond_add_option (s_bond, *options, value);
+		}
+		options++;
+	}
 }
 
 static void
@@ -518,6 +562,8 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBondPrivate));
 
+	parent_class->connection_type = NM_SETTING_BOND_SETTING_NAME;
+
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
@@ -529,7 +575,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->match_l2_config = match_l2_config;
+	parent_class->update_connection = update_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
