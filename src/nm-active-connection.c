@@ -133,6 +133,21 @@ nm_active_connection_get_connection (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->connection;
 }
 
+void
+nm_active_connection_set_connection (NMActiveConnection *self,
+                                     NMConnection *connection)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	/* Can't change connection after the ActiveConnection is exported over D-Bus */
+	g_return_if_fail (priv->path == NULL);
+	g_return_if_fail (priv->connection == NULL || !NM_IS_SETTINGS_CONNECTION (priv->connection));
+
+	if (priv->connection)
+		g_object_unref (priv->connection);
+	priv->connection = g_object_ref (connection);
+}
+
 const char *
 nm_active_connection_get_path (NMActiveConnection *self)
 {

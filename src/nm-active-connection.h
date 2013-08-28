@@ -77,6 +77,9 @@ void          nm_active_connection_export (NMActiveConnection *self);
 
 NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
 
+void          nm_active_connection_set_connection (NMActiveConnection *self,
+                                                   NMConnection *connection);
+
 const char *  nm_active_connection_get_name       (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_path (NMActiveConnection *self);
