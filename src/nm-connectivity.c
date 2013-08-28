@@ -337,9 +337,9 @@ get_property (GObject *object, guint property_id,
 static void
 nm_connectivity_init (NMConnectivity *self)
 {
+#if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-#if WITH_CONCHECK
 	priv->soup_session = soup_session_async_new_with_options (SOUP_SESSION_TIMEOUT, 15, NULL);
 #endif
 }
