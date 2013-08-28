@@ -52,6 +52,11 @@ _nmcli_ap_ssid()
     #done
 }
 
+_nmcli_device_wifi_list_SSID()
+{
+    echo "$(nmcli -t -f SSID device wifi list 2>/dev/null | sort | uniq)"
+}
+
 _nmcli_ap_bssid()
 {
     echo "$(nmcli -e no -t -f BSSID dev wifi list 2>/dev/null)"
@@ -67,6 +72,20 @@ _nmcli_NM_dev_MAC()
     echo "$(nmcli -t dev show | grep HWADDR | cut -d':' -f2- | sort | uniq)"
 }
 
+_nmcli_array_has_value() {
+    # expects an array variable ARRAY defined and returns true
+    # if one of the arguments $@ is contained in ${ARRAY[@]}
+    local arg a
+    for arg; do
+        for a in "${ARRAY[@]}"; do
+            if [[ "$a" = "$arg" ]]; then
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
 # OPTIONS appear first at the command line (before the OBJECT).
 # This iterates over the argument list and tries to complete
 # the options. If there are options that are to be completed,
@@ -76,6 +95,7 @@ _nmcli_NM_dev_MAC()
 _nmcli_complete_OPTIONS()
 {
     local OPTIONS=( -t --terse -p --pretty -m --mode -f --fields -e --escape -n --nocheck -a --ask -w --wait -v --version -h --help )
+    local i REMOVE_OPTIONS
 
     for (( ; ; )); do
         if [[ "${#words[@]}" -le 1 ]]; then
@@ -160,266 +180,724 @@ _nmcli_complete_OPTIONS()
     done
 }
 
+# after the OPTIONS, the OBJECT, the COMMAND and possible the COMMAND_CONNECTION, the syntax for nmcli
+# expects several options with parameters. This function can parse them and remove them from the words array.
+_nmcli_complete_COMMAND_ARGS()
+{
+    local OPTIONS_ALL N_REMOVE_WORDS REMOVE_OPTIONS OPTIONS_HAS_MANDATORY i
+    OPTIONS_ALL=("${OPTIONS[@]}")
+    OPTIONS_UNKNOWN_OPTION=
+
+    OPTIONS_HAS_MANDATORY=0
+    if [[ "${#OPTIONS_MANDATORY[@]}" -ge 1 ]]; then
+        OPTIONS_HAS_MANDATORY=1
+    fi
+
+    for (( ; ; )); do
+        if [[ "${#words[@]}" -le 1 ]]; then
+            # we have no more words left...
+            if [[ ${#OPTIONS[@]} -eq 0 ]]; then
+                return 1;
+            fi
+            if [[ "$COMMAND_ARGS_WAIT_OPTIONS" -ne 1 ]]; then
+                _nmcli_list "$(echo "${OPTIONS[@]}")"
+                return 0
+            fi
+            COMMAND_ARGS_WAIT_OPTIONS=0
+            return 1
+        fi
+        ARRAY=("${OPTIONS_ALL[@]}")
+        if ! _nmcli_array_has_value "${words[0]}"; then
+            # This is an entirely unknown option.
+            OPTIONS_UNKNOWN_OPTION="?${words[0]}"
+            return 1
+        fi
+        if [[ "$OPTIONS_HAS_MANDATORY" -eq 1 && "${#OPTIONS_MANDATORY[@]}" -eq 0 ]]; then
+            # we had some mandatory options, but they are all satisfied... stop here...
+            # This means, that we can continue with more additional options from the NEXT_GROUP.
+            return 1
+        fi
+
+        N_REMOVE_WORDS=2
+        REMOVE_OPTIONS=("${words[0]}")
+        case "${words[0]}" in
+            level)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "ERROR WARN INFO DEBUG"
+                   return 0
+                fi
+                ;;
+            domains)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    local OPTIONS_DOM=(ALL DEFAULT PLATFORM RFKILL ETHER WIFI BT MB DHCP4 DHCP6 PPP WIFI_SCAN IP4 IP6 AUTOIP4 DNS VPN SHARING SUPPLICANT AGENTS SETTINGS SUSPEND CORE DEVICE OLPC_MESH WIMAX INFINIBAND FIREWALL ADSL BOND VLAN BRIDGE DBUS_PROPS TEAM CONCHECK)
+                    if [[ "${words[1]}" != "" ]]; then
+
+                        # split the comma separaeted domain string into its parts LOGD
+                        local oIFS="$IFS"
+                        IFS=","
+                        local LOGD=($(echo "${words[1]}" | sed 's/\(^\|,\)/,#/g'))
+                        IFS="$oIFS"
+                        unset oIFS
+
+                        local LOGDLAST LOGDLAST_IS_OPTION LOGDI i
+                        # first we iterate over all present domains and remove them from OPTIONS_DOM
+                        for LOGDI in ${LOGD[@]}; do
+                            LOGDI="${LOGDI:1}"
+                            LOGDLAST="$LOGDI"
+                            LOGDLAST_IS_OPTION=0
+                            for i in ${!OPTIONS_DOM[*]}; do
+                                if [[ "${OPTIONS_DOM[$i]}" = "$LOGDI" ]]; then
+                                    LOGDLAST_IS_OPTION=1
+                                    unset OPTIONS_DOM[$i]
+                                fi
+                            done
+                        done
+
+                        local OPTIONS_DOM2=()
+                        if [[ "$LOGDLAST" = "" ]]; then
+                            # we have a word that ends with ','. Just append all remaining options.
+                            for i in ${!OPTIONS_DOM[*]}; do
+                                OPTIONS_DOM2[${#OPTIONS_DOM2[@]}]="${words[1]}${OPTIONS_DOM[$i]}"
+                            done
+                        else
+                            # if the last option is not "" we keep only those option with the same prefix
+                            # as the last domain (LOGDLAST)
+                            for i in ${!OPTIONS_DOM[*]}; do
+                                if [[ "${OPTIONS_DOM[$i]:0:${#LOGDLAST}}" == "$LOGDLAST" ]]; then
+                                    # modify the option with the present prefix
+                                    OPTIONS_DOM2[${#OPTIONS_DOM2[@]}]="${words[1]}${OPTIONS_DOM[$i]:${#LOGDLAST}}"
+                                fi
+                            done
+
+                            if [[ $LOGDLAST_IS_OPTION -eq 1 ]]; then
+                                # if the last logd itself was a valid iption, ${words[1]} is itself a valid match
+                                OPTIONS_DOM2[${#OPTIONS_DOM2[@]}]="${words[1]}"
+
+                                # also, add all remaining options by comma separated to the word.
+                                for i in ${!OPTIONS_DOM[*]}; do
+                                    OPTIONS_DOM2[${#OPTIONS_DOM2[@]}]="${words[1]},${OPTIONS_DOM[$i]}"
+                                done
+                            fi
+                            if [[ ${#OPTIONS_DOM2[@]} -eq 1 ]]; then
+                                for i in ${!OPTIONS_DOM[*]}; do
+                                    if [[ "$LOGDLAST" != "${OPTIONS_DOM[$i]:0:${#LOGDLAST}}" ]]; then
+                                        OPTIONS_DOM2[${#OPTIONS_DOM2[@]}]="${OPTIONS_DOM2[0]},${OPTIONS_DOM[$i]}"
+                                    fi
+                                done
+                            fi
+
+                        fi
+                        OPTIONS_DOM=(${OPTIONS_DOM2[@]})
+                    fi
+
+                    _nmcli_list "$(echo "${OPTIONS_DOM[@]}")"
+                   return 0
+                fi
+                ;;
+            type)
+                if [[ "$OPTIONS_TYPE" != "" ]]; then
+                    return 1
+                fi
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bridge bond-slave bridge-slave"
+                   return 0
+                fi
+                OPTIONS_TYPE="${words[1]}"
+                ;;
+            master)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    if [[ "${words[1]}" = "" ]]; then
+                        _nmcli_list_nl "$(_nmcli_NM_devices)"
+                    else
+                        _nmcli_list_nl "$(printf "%s\n%s\n%s" "$(_nmcli_NM_devices)" "$(_nmcli_con_uuid)")"
+                   fi
+                   return 0
+                fi
+                ;;
+            dev)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    if [[ "${words[1]}" = "" ]]; then
+                        _nmcli_list_nl "$(_nmcli_NM_devices)"
+                    else
+                        _nmcli_list_nl "$(printf "%s\n%s\n%s" "$(_nmcli_NM_devices)" "$(_nmcli_ap_bssid)" "$(_nmcli_con_uuid)")"
+                   fi
+                   return 0
+                fi
+                ;;
+            ifname)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list_nl "$(_nmcli_NM_devices)"
+                   return 0
+                fi
+                ;;
+            mode)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb"
+                    return 0
+                fi
+                ;;
+            transport-mode)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "datagram connected"
+                    return 0
+                fi
+                ;;
+            vpn-type)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "vpnc openvpn pptp openconnect openswan"
+                    return 0
+                fi
+                ;;
+            bt-type)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "panu dun-gsm dun-cdma"
+                    return 0
+                fi
+                ;;
+            wep-key-type)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "key phrase"
+                    return 0
+                fi
+                ;;
+            autoconnect| \
+            stp| \
+            hairpin| \
+            private)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "yes no"
+                    return 0
+                fi
+                ;;
+            ip4| \
+            ip6| \
+            gw4| \
+            gw6| \
+            priority| \
+            forward-delay| \
+            hello-time| \
+            max-age| \
+            ageing-time| \
+            nsp| \
+            path-cost| \
+            name| \
+            mtu| \
+            cloned-mac| \
+            addr| \
+            config| \
+            parent| \
+            miimon| \
+            arp-interval| \
+            arp-ip-target| \
+            downdelay| \
+            updelay| \
+            p-key| \
+            mac| \
+            id| \
+            flags| \
+            ingress| \
+            dhcp-anycast| \
+            channel| \
+            egress| \
+            apn| \
+            con-name| \
+            user| \
+            password)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    return 0
+                fi
+                ;;
+            ssid)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list_nl "$(_nmcli_device_wifi_list_SSID)"
+                    return 0
+                fi
+                ;;
+            ap| \
+            bssid)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list_nl "$(_nmcli_ap_bssid)"
+                    return 0
+                fi
+                ;;
+            *)
+                echo
+                echo "unexpected option. This is a bug in the completion. Check for \"${words[0]}\""
+                echo
+                return 1
+                ;;
+        esac
+
+
+        if [[ "${#OPTIONS_NEXT_GROUP[@]}" -gt 0 ]]; then
+            ARRAY=("${OPTIONS_NEXT_GROUP[@]}")
+            if _nmcli_array_has_value "${words[0]}"; then
+                # the current value is from the next group...
+                # We back off, because the current group is complete.
+                return 1
+            fi
+        fi
+
+        words=("${words[@]:$N_REMOVE_WORDS}")
+        # remove the options already seen.
+        for i in ${!OPTIONS[*]}; do
+            if [[ "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[0]}" || "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[1]}" ]]; then
+                unset OPTIONS[$i]
+            fi
+        done
+        for i in ${!OPTIONS_MANDATORY[*]}; do
+            if [[ "${OPTIONS_MANDATORY[$i]}" = "${REMOVE_OPTIONS[0]}" || "${OPTIONS_MANDATORY[$i]}" = "${REMOVE_OPTIONS[1]}" ]]; then
+                unset OPTIONS_MANDATORY[$i]
+            fi
+        done
+    done
+}
+
+# some commands expect a connection as parameter. This connection can either be given
+# as id|uuid|path|apath. Parse that connection parameter.
+_nmcli_complete_COMMAND_CONNECTION()
+{
+    local IS_VALID_OPTION=0
+    for OPT in "${OPTIONS[@]}"; do
+        if [[ "$OPT" = "${words[0]}" ]]; then
+            IS_VALID_OPTION=1
+            break
+        fi
+    done
+    if [[ $IS_VALID_OPTION -ne 1 ]]; then
+        words=("${words[@]:1}")
+        return 1
+    fi
+    case "${words[0]}" in
+        id)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list_nl "$(_nmcli_con_id)"
+                return 0
+            fi
+            words=("${words[@]:2}")
+            ;;
+        uuid)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list_nl "$(_nmcli_con_uuid)"
+                return 0
+            fi
+            words=("${words[@]:2}")
+            ;;
+        path)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list_nl "$(_nmcli_con_path)"
+                return 0
+            fi
+            words=("${words[@]:2}")
+            ;;
+        apath)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list_nl "$(_nmcli_con_apath)"
+                return 0
+            fi
+            words=("${words[@]:2}")
+            ;;
+        *)
+            words=("${words[@]:1}")
+            ;;
+    esac
+    return 1
+}
+
+
 _nmcli()
 {
     local cur prev words cword
     _init_completion || return
 
-    # we don't care about any arguments after the current curser position
+    # we don't care about any arguments after the current cursor position
     # because we only parse from left to right. So, if there are some arguments
-    # right of the curser, just ignore them. Also don't care about ${words[0]}.
+    # right of the cursor, just ignore them. Also don't care about ${words[0]}.
     words=("${words[@]:1:$cword}")
 
     _nmcli_complete_OPTIONS && return 0
 
-    # FIXME: the following block completes certain parameters without
-    # considering enough context, while they only make sense depending on
-    # the OBJECT and COMMAND.
-    case $prev in
-        id)
-            _nmcli_list_nl "$(_nmcli_con_id)"
-            return 0
-            ;;
-        uuid)
-            _nmcli_list_nl "$(_nmcli_con_uuid)"
-            return 0
-            ;;
-        path)
-            _nmcli_list_nl "$(_nmcli_con_path)"
-            return 0
-            ;;
-        apath)
-            _nmcli_list_nl "$(_nmcli_con_apath)"
-            return 0
-            ;;
-        iface | ifname)
-            #_available_interfaces
-            _nmcli_list_nl "$(_nmcli_NM_devices)"
-            return 0
-            ;;
-        bssid)
-            _nmcli_list_nl "$(_nmcli_ap_bssid)"
-            return 0
-            ;;
-        wep-key-type)
-            _nmcli_list "key phrase"
-            return 0
-            ;;
-        autoconnect | stp | hairpin | private)
-            _nmcli_list "yes no"
-            return 0
-            ;;
-        # connection types
-        type)
-            _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn \
-                         olpc-mesh vlan bond bridge bond-slave bridge-slave"
-            return 0
-            ;;
-        # VPN types
-        vpn-type)
-            _nmcli_list "vpn-type vpnc openvpn pptp openconnect openswan"
-            return 0
-            ;;
-        # Bluetooth modes
-        bt-type)
-            _nmcli_list "panu dun-gsm dun-cdma"
-            return 0
-            ;;
-        # InfiniBand transport modes
-        transport-mode)
-            _nmcli_list "datagram connected"
-            return 0
-            ;;
-        # bonding modes
-        mode)
-            _nmcli_list "balance-rr active-backup balance-xor broadcast \
-                         802.3ad balance-tlb balance-alb"
-            return 0
-            ;;
-        # MAC addresses
-        mac)
-            _mac_addresses
-            return 0
-            ;;
-        # master interface
-        master)
-            UUIDS=$(_nmcli_con_uuid)
-            DEVICES=$(_nmcli_NM_devices)
-            _nmcli_list "$DEVICES $UUIDS"
-            return 0
-            ;;
-    esac
+    local command="${words[1]}"
+    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS ARRAY OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
 
-    local object=${words[0]}
-    local command=${words[1]}
-
-    case $object in
+    case "${words[0]}" in
         h|he|hel|help)
-            return 0
             ;;
         g|ge|gen|gene|gener|genera|general)
-            if [[ ${#words[@]} -gt 2 ]]; then
-                case $command in
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list "status permissions logging help"
+            elif [[ ${#words[@]} -gt 2 ]]; then
+                case "$command" in
                     s|st|sta|stat|statu|status | p|pe|per|perm|permi|permis|permiss|permissi|permissio|permission|permissions)
-                        return 0
                         ;;
                     l|lo|log|logg|loggi|loggin|logging)
-                        _nmcli_list "level domains"
-                        return 0
+                        words=("${words[@]:2}")
+                        OPTIONS=(level domains)
+                        _nmcli_complete_COMMAND_ARGS
                         ;;
                 esac
             fi
-
-            _nmcli_list "status permissions logging help"
             ;;
-
         n|ne|net|netw|netwo|networ|network|networki|networkin|networking)
-            if [[ ${#words[@]} -gt 2 ]]; then
-                case $command in
-                    on | off)
-                    return 0
-                    ;;
-                esac
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list "on off help"
             fi
-            _nmcli_list "on off help"
             ;;
-
         r|ra|rad|radi|radio)
-            if [[ ${#words[@]} -gt 2 ]]; then
-                case $command in
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list "all wifi wwan wimax help"
+            elif [[ ${#words[@]} -eq 3 ]]; then
+                case "$command" in
                     a|al|all | w|wi|wif|wifi | ww|wwa|wwan | wim|wima|wimax)
                         _nmcli_list "on off"
-                        return 0
                         ;;
                 esac
             fi
-
-            _nmcli_list "all wifi wwan wimax help"
             ;;
-
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
-            if [[ ${#words[@]} -gt 2 ]]; then
-                case $command in
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list "show up down add modify edit delete reload help"
+            elif [[ ${#words[@]} -gt 2 ]]; then
+                case "$command" in
                     s|sh|sho|show)
-                        local subcommand=${words[2]}
-
-                        if [[ ${#words[@]} -gt 3 ]]; then
-                            case $subcommand in
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list "configured active"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            case "${words[2]}" in
                                 c|co|con|conf|confi|config|configu|configur|configure|configured)
-                                    _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
-                                    return 0
+                                    if [[ ${#words[@]} -eq 4 ]]; then
+                                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                                    else
+                                        words=("${words[@]:3}")
+                                        OPTIONS=(id uuid path)
+                                        _nmcli_complete_COMMAND_CONNECTION
+                                    fi
                                     ;;
                                 a|ac|act|acti|activ|active)
-                                    _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
-                                    return 0
+                                    if [[ ${#words[@]} -eq 4 ]]; then
+                                        _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
+                                    else
+                                        words=("${words[@]:3}")
+                                        OPTIONS=(id uuid path apath)
+                                        _nmcli_complete_COMMAND_CONNECTION
+                                    fi
                                     ;;
                             esac
                         fi
-
-                        _nmcli_list "configured active"
-                        return 0
                         ;;
                     u|up)
-                        if [[ "$cur" == -* ]]; then
-                            _nmcli_list "--nowait --timeout"
-                        else
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\niface\nap\nnsp\n%s" "$(_nmcli_con_id)")"
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            words=("${words[@]:2}")
+                            OPTIONS=(id uuid path)
+                            _nmcli_complete_COMMAND_CONNECTION && return 0
+                            OPTIONS=(ifname ap nsp)
+                            _nmcli_complete_COMMAND_ARGS
                         fi
-                        return 0
                         ;;
                     d|do|dow|down)
-                        _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
-                        return 0
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            words=("${words[@]:2}")
+                            OPTIONS=(id uuid path apath)
+                            _nmcli_complete_COMMAND_CONNECTION
+                        fi
                         ;;
                     a|ad|add)
-                        _nmcli_list "type con-name autoconnect ifname help"
-                        return 0
-                        ;;
-                    e|ed|edi|edit)
-                        _nmcli_list_nl "$(printf "id\nuuid\npath\ntype\n%s" "$(_nmcli_con_id)")"
-                        return 0
-                        ;;
-                    m|mo|mod|modi|modif|modify)
-                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
-                        return 0
-                        ;;
-                    de|del|dele|delet|delete)
-                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
-                        return 0
-                        ;;
-                esac
-            fi
-            _nmcli_list "show up down add modify edit delete reload help"
-            ;;
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list "type ifname con-name autoconnect help"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            words=("${words[@]:2}")
+                            OPTIONS_TYPE=
+                            OPTIONS=(type ifname con-name autoconnect)
+                            OPTIONS_MANDATORY=(type ifname)
+                            COMMAND_ARGS_WAIT_OPTIONS=1
+                            _nmcli_complete_COMMAND_ARGS && return 0
 
-        d|de|dev|devi|devic|device)
-            if [[ ${#words[@]} -gt 2 ]]; then
-                case $command in
-                    sh|sho|show)
-                        _nmcli_list_nl "$(_nmcli_NM_devices)"
-                        return 0
-                        ;;
-                    d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
-                        if [[ "$cur" == -* ]]; then
-                            _nmcli_list "--nowait --timeout"
-                        else
-                            _nmcli_list_nl "$(_nmcli_NM_devices)"
-                        fi
-                        return 0
-                        ;;
-                    w|wi|wif|wifi)
-                        local subcommand=${words[2]}
-
-                        case $subcommand in
-                            l|li|lis|list)
-                                _nmcli_list "iface bssid"
-                                return 0
-                                ;;
-                            c|co|con|conn|conne|connec|connect)
-                                if [[ "$cur" == -* ]]; then
-                                    _nmcli_list "--private --nowait --timeout"
-                                else
-                                    if [[ "$prev" == "connect" ]]; then
-                                        _nmcli_list_nl "$(_nmcli_ap_ssid)"
-                                    else
-                                        _nmcli_list "password wep-key-type iface bssid name"
+                            ARRAY=("${OPTIONS[@]}")
+                            if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
+                                # we still have some missing mandatory options...
+                                if [[ "$OPTIONS_UNKNOWN_OPTION" != '' ]]; then
+                                    ARRAY="${OPTIONS[@]}"
+                                    if ! _nmcli_array_has_value "${OPTIONS_UNKNOWN_OPTION:1}"; then
+                                        # if we encountered an unknown option while having mandatory
+                                        # options, just return.
+                                        return 0
                                     fi
                                 fi
+                                _nmcli_list "$(echo "${OPTIONS[@]}")"
                                 return 0
-                                ;;
-                            r|re|res|resc|resca|rescan)
-                                if [[ "$cur" == i* ]]; then
-                                    _nmcli_list "iface"
-                                else
-                                    _nmcli_list_nl "$(_nmcli_NM_devices)"
-                                fi
-                                return 0
-                                ;;
-                        esac
+                            fi
 
-                        _nmcli_list "list connect scan"
-                        return 0
-                        ;;
-                    wim|wima|wimax)
-                        local subcommand=${words[2]}
-
-                        if [[ ${#words[@]} -gt 3 ]]; then
-                            case $subcommand in
-                                l|li|lis|list)
-                                    _nmcli_list "iface nsp"
+                            OPTIONS_IP=(ip4 ip6 gw4 gw6)
+                            OPTIONS_MANDATORY=()
+                            case "$OPTIONS_TYPE" in
+                                e|et|eth|ethe|ether|ethern|etherne|ethernet)
+                                    OPTIONS_TYPED=(mac cloned-mac mtu)
+                                    ;;
+                                wif|wifi)
+                                    OPTIONS_TYPED=(ssid mac cloned-mac mtu)
+                                    OPTIONS_MANDATORY=(ssid)
+                                    ;;
+                                wim|wima|wimax)
+                                    OPTIONS_TYPED=(mac nsp)
+                                    ;;
+                                g|gs|gsm)
+                                    OPTIONS_TYPED=(apn user password)
+                                    OPTIONS_MANDATORY=(apn)
+                                    ;;
+                                c|cd|cdm|cdma)
+                                    OPTIONS_TYPED=(user password)
+                                    ;;
+                                i|in|inf|infi|infin|infini|infinib|infiniba|infiniban|infiniband)
+                                    OPTIONS_TYPED=(mac mtu transport-mode parent p-key)
+                                    ;;
+                                bl|blu|blue|bluet|blueto|bluetoo|bluetoot|bluetooth)
+                                    OPTIONS_TYPED=(addr bt-type)
+                                    ;;
+                                vl|vla|vlan)
+                                    OPTIONS_TYPED=(dev id flags ingress egress mtu)
+                                    OPTIONS_MANDATORY=(dev)
+                                    ;;
+                                bond)
+                                    OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target)
+                                    ;;
+                                bond-|bond-s|bond-sl|bond-sla|bond-slav|bond-slave)
+                                    OPTIONS_TYPED=(master)
+                                    OPTIONS_MANDATORY=(master)
+                                    ;;
+                                team)
+                                    OPTIONS_TYPED=(config)
+                                    ;;
+                                team-|team-s|team-sl|team-sla|team-slav|team-slave)
+                                    OPTIONS_TYPED=(master)
+                                    OPTIONS_MANDATORY=(master)
+                                    ;;
+                                bridge)
+                                    OPTIONS_TYPED=(stp priority forward-delay hello-time max-age ageing-time)
+                                    ;;
+                                bridge-|bridge-s|bridge-sl|bridge-sla|bridge-slav|bridge-slave)
+                                    OPTIONS_TYPED=(master priority path-cost hairpin)
+                                    OPTIONS_MANDATORY=(master)
+                                    ;;
+                                vp|vpn)
+                                    OPTIONS_TYPED=(vpn-type user)
+                                    OPTIONS_MANDATORY=(vpn-type)
+                                    ;;
+                                o|ol|olp|olpc|olpc-|olpc-m|olpc-me|olpc-mes|olpc-mesh)
+                                    OPTIONS_TYPED=(ssid channel dhcp-anycast)
+                                    OPTIONS_MANDATORY=(ssid)
+                                    ;;
+                                *)
+                                    # for an unknown connection type, we stop completion here
                                     return 0
                                     ;;
                             esac
-                        fi
+                            if [[ "$COMMAND_ARGS_WAIT_OPTIONS" -ne 1 ]]; then
+                                # means, we are at the end of options. Nothing more to parse, just show
+                                # what are the options now.
+                                if [[ "${#OPTIONS_MANDATORY[@]}" -gt 0 ]]; then
+                                    _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_TYPED[@]}")"
+                                else
+                                    _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_TYPED[@]}") $(echo "${OPTIONS_IP[@]}")"
+                                fi
+                                return 0
+                            fi
+                            if [[ "${#OPTIONS[@]}" -gt 0 ]]; then
+                                # we still have some options from before, but no mandatory ones. Mix them with OPTIONS_TYPED
+                                # and continue parsing the options...
+                                OPTIONS=("${OPTIONS[@]}" "${OPTIONS_TYPED[@]}")
+                                OPTIONS_NEXT_GROUP=("${OPTIONS_TYPED[@]}")
+                                _nmcli_complete_COMMAND_ARGS && return 0
 
-                        _nmcli_list "list"
-                        return 0
+                                if [[ "$COMMAND_ARGS_WAIT_OPTIONS" -ne 1 ]]; then
+                                    # means, we are at the end of options. Nothing more to parse, just show
+                                    # what are the options now.
+                                    if [[ "${#OPTIONS_MANDATORY[@]}" -gt 0 ]]; then
+                                        _nmcli_list "$(echo "${OPTIONS_TYPED[@]}")"
+                                    else
+                                        _nmcli_list "$(echo "${OPTIONS_TYPED[@]}") $(echo "${OPTIONS_IP[@]}")"
+                                    fi
+                                    return 0
+                                fi
+
+                                if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
+                                    # there was an unknown option specified. Maybe we have to stop with the completion.
+                                    if [[ "${#OPTIONS_MANDATORY[@]}" -gt 0 ]]; then
+                                        # we have an unknown option, but still mandatory ones that must be fullfiled first.
+                                        return 0
+                                    fi
+                                    ARRAY=("${OPTIONS_IP[@]}")
+                                    if ! _nmcli_array_has_value "${OPTIONS_UNKNOWN_OPTION:1}"; then
+                                        # the unknown option is NOT an IP option.
+                                        return 0
+                                    fi
+                                    # The unknown option is an IP option, which is fine... continue...
+                                fi
+
+                            fi
+                            OPTIONS=("${OPTIONS_TYPED[@]}")
+                            OPTIONS_NEXT_GROUP=()
+
+                            if [[ "${#OPTIONS_MANDATORY[@]}" -ge 1 ]]; then
+                                # we have some mandatory options... don't check for IP options yet...
+                                _nmcli_complete_COMMAND_ARGS && return 0
+
+                                ARRAY=("${OPTIONS[@]}")
+                                if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
+                                    _nmcli_list "$(echo "${OPTIONS[@]}")"
+                                    return 0
+                                fi
+
+                                if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
+                                    ARRAY=("${OPTIONS_IP[@]}")
+                                    if ! _nmcli_array_has_value "${OPTIONS_UNKNOWN_OPTION:1}"; then
+                                        # the unknown option is NOT an IP option.
+                                        return 0
+                                    fi
+                                fi
+                            fi
+
+
+                            # no mandatory options... do final completion including IP options
+                            OPTIONS=("${OPTIONS[@]}" "${OPTIONS_IP[@]}")
+                            OPTIONS_NEXT_GROUP=("${OPTIONS_IP[@]}")
+                            _nmcli_complete_COMMAND_ARGS && return 0
+
+                            if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
+                                return 0
+                            fi
+
+                            if [[ "$COMMAND_ARGS_WAIT_OPTIONS" -ne 1 ]]; then
+                                # means, we are at the end of options. Nothing more to parse, just show
+                                # what are the options now.
+                                _nmcli_list "$(echo "${OPTIONS[@]}")"
+                                return 0
+                            fi
+
+                            # process the last group of options, as the OPTIONS_TYPED are already handled...
+                            OPTIONS=("${OPTIONS_IP[@]}")
+                            OPTIONS_NEXT_GROUP=()
+                            COMMAND_ARGS_WAIT_OPTIONS=0
+                            _nmcli_complete_COMMAND_ARGS && return 0
+                        fi
+                        ;;
+                    e|ed|edi|edit)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_id)")"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            words=("${words[@]:2}")
+                            if [[ "${words[0]}" = 'type' || "${words[0]}" = 'con-name' ]]; then
+                                OPTIONS=(type con-name)
+                                _nmcli_complete_COMMAND_ARGS
+                            else
+                                OPTIONS=(id uuid path apath)
+                                _nmcli_complete_COMMAND_CONNECTION
+                            fi
+                        fi
+                        ;;
+                    m|mo|mod|modi|modif|modify)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            words=("${words[@]:2}")
+                            OPTIONS=(id uuid path apath)
+                            _nmcli_complete_COMMAND_CONNECTION && return 0
+                            # FIXME: completion for <setting>.<property> value
+                        fi
+                        ;;
+                    de|del|dele|delet|delete)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                        elif [[ ${#words[@]} -gt 3 ]]; then
+                            words=("${words[@]:2}")
+                            OPTIONS=(id uuid path apath)
+                            _nmcli_complete_COMMAND_CONNECTION
+                        fi
+                        ;;
+                esac
+            fi
+            ;;
+        d|de|dev|devi|devic|device)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list "status show disconnect wifi wimax help"
+            elif [[ ${#words[@]} -gt 2 ]]; then
+                case "$command" in
+                    s|st|sta|stat|statu|status)
+                        ;;
+                    sh|sho|show| \
+                    d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(_nmcli_NM_devices)"
+                        fi
+                        ;;
+                    w|wi|wif|wifi)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list "list connect rescan"
+                        else
+                            case "${words[2]}" in
+                                l|li|lis|list)
+                                    words=("${words[@]:3}")
+                                    OPTIONS=(ifname bssid)
+                                    _nmcli_complete_COMMAND_ARGS
+                                    ;;
+                                c|co|con|conn|conne|connec|connect)
+                                    if [[ ${#words[@]} -eq 4 ]]; then
+                                        if [[ "${words[3]}" = "" ]]; then
+                                            _nmcli_list_nl "$(_nmcli_ap_ssid)"
+                                        else
+                                            _nmcli_list_nl "$(printf "%s\n%s" "$(_nmcli_ap_ssid)" "$(_nmcli_ap_bssid)")"
+                                        fi
+                                    else
+                                        words=("${words[@]:4}")
+                                        local OPTIONS=(password wep-key-type ifname bssid name private)
+                                        _nmcli_complete_COMMAND_ARGS
+                                    fi
+                                    ;;
+                                r|re|res|resc|resca|rescan)
+                                    words=("${words[@]:3}")
+                                    OPTIONS=(ifname)
+                                    _nmcli_complete_COMMAND_ARGS
+                                    ;;
+                            esac
+                        fi
+                        ;;
+                    wim|wima|wimax)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list "list"
+                        else
+                            case "${words[2]}" in
+                                l|li|lis|list)
+                                    words=("${words[@]:3}")
+                                    OPTIONS=(ifname nsp)
+                                    _nmcli_complete_COMMAND_ARGS
+                                    ;;
+                                c|co|con|conn|conne|connec|connect)
+                                    if [[ ${#words[@]} -eq 4 ]]; then
+                                        if [[ "${words[3]}" = "" ]]; then
+                                            _nmcli_list_nl "$(_nmcli_ap_ssid)"
+                                        else
+                                            _nmcli_list_nl "$(_nmcli_ap_ssid) $(_nmcli_ap_bssid)"
+                                        fi
+                                    else
+                                        words=("${words[@]:4}")
+                                        OPTIONS=(password wep-key-type ifname bssid name private)
+                                        _nmcli_complete_COMMAND_ARGS
+                                    fi
+                                    ;;
+                                r|re|res|resc|resca|rescan)
+                                    words=("${words[@]:3}")
+                                    OPTIONS=(ifname)
+                                    _nmcli_complete_COMMAND_ARGS
+                                    ;;
+                            esac
+                        fi
                         ;;
 
                 esac
             fi
-
-            _nmcli_list "status show disconnect wifi wimax help"
             ;;
     esac
 
