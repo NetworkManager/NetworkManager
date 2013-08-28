@@ -334,6 +334,28 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self), ac_state);
 }
 
+static void
+master_failed (NMActiveConnection *self)
+{
+	NMDevice *device;
+	NMDeviceState device_state;
+
+	/* If the connection has an active device, fail it */
+	device = nm_active_connection_get_device (self);
+	if (device) {
+		device_state = nm_device_get_state (device);
+		if (nm_device_is_activating (device) || (device_state == NM_DEVICE_STATE_ACTIVATED)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			return;
+		}
+	}
+
+	/* If no device, or the device wasn't active, just move to deactivated state */
+	nm_active_connection_set_state (self, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+}
+
 /********************************************************************/
 
 /**
@@ -426,11 +448,13 @@ static void
 nm_act_request_class_init (NMActRequestClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (req_class);
 
 	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
+	active_class->master_failed = master_failed;
 }
 

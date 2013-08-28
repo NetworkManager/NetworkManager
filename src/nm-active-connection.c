@@ -265,6 +265,26 @@ nm_active_connection_get_master (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->master;
 }
 
+static void
+master_state_cb (NMActiveConnection *master,
+                 GParamSpec *pspec,
+                 gpointer user_data)
+{
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
+	NMActiveConnectionState self_state = nm_active_connection_get_state (self);
+	NMActiveConnectionState master_state = nm_active_connection_get_state (master);
+
+	/* Master is deactivating, so this active connection must also deactivate */
+	if (self_state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATING &&
+	    master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		g_signal_handlers_disconnect_by_func (master,
+		                                      (GCallback) master_state_cb,
+		                                      self);
+		if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed)
+			NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed (self);
+	}
+}
+
 /**
  * nm_active_connection_set_master:
  * @self: the #NMActiveConnection
@@ -294,6 +314,10 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 		g_return_if_fail (master_device != priv->device);
 
 	priv->master = g_object_ref (master);
+	g_signal_connect (priv->master,
+	                  "notify::" NM_ACTIVE_CONNECTION_STATE,
+	                  (GCallback) master_state_cb,
+	                  self);
 }
 
 /****************************************************************/
@@ -530,6 +554,12 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->connection);
 	g_clear_object (&priv->device);
+
+	if (priv->master) {
+		g_signal_handlers_disconnect_by_func (priv->master,
+		                                      (GCallback) master_state_cb,
+		                                      NM_ACTIVE_CONNECTION (object));
+	}
 	g_clear_object (&priv->master);
 	g_clear_object (&priv->subject);
 
