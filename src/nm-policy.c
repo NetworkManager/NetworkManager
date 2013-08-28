@@ -1232,6 +1232,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	ActivateData *data;
+	const GSList *active_connections, *iter;
 
 	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
 		return;
@@ -1244,6 +1245,15 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 
 	if (!nm_device_autoconnect_allowed (device))
 		return;
+
+	/* If the device already has an activation in-progress or waiting for
+	 * authentication, don't start an auto-activation for it.
+	 */
+	active_connections = nm_manager_get_active_connections (priv->manager);
+	for (iter = active_connections; iter; iter = iter->next) {
+		if (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (iter->data)) == device)
+			return;
+	}
 
 	/* Schedule an auto-activation if there isn't one already for this device */
 	if (find_pending_activation (priv->pending_activation_checks, device) == NULL) {
