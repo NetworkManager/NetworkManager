@@ -43,6 +43,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
+#include "nm-glib-compat.h"
 
 typedef struct {
 	NMManager *manager;
