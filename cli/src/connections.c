@@ -3481,19 +3481,23 @@ static char *
 gen_connection_types (char *text, int state)
 {
 	static int list_idx, len;
-	const char *c_type;
+	const char *c_type, *a_type;
 
 	if (!state) {
 		list_idx = 0;
 		len = strlen (text);
 	}
 
-	while (   (c_type = nmc_valid_connection_types[list_idx].alias)
-	       || (c_type = nmc_valid_connection_types[list_idx].name)) {
+	while (nmc_valid_connection_types[list_idx].name) {
+		a_type = nmc_valid_connection_types[list_idx].alias;
+		c_type = nmc_valid_connection_types[list_idx].name;
 		list_idx++;
-		if (!strncmp (text, c_type, len))
+		if (a_type && !strncmp (text, a_type, len))
+			return g_strdup (a_type);
+		if (c_type && !strncmp (text, c_type, len))
 			return g_strdup (c_type);
 	}
+
 	return NULL;
 }
 
@@ -3501,7 +3505,7 @@ static char *
 gen_setting_names (char *text, int state)
 {
 	static int list_idx, len;
-	const char *s_name;
+	const char *s_name, *a_name;
 	const NameItem *valid_settings_arr;
 
 	if (!state) {
@@ -3512,10 +3516,15 @@ gen_setting_names (char *text, int state)
 	valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
 	if (!valid_settings_arr)
 		return NULL;
-	while (   (s_name = valid_settings_arr[list_idx].alias)
-	       || (s_name = valid_settings_arr[list_idx].name)) {
+	while (valid_settings_arr[list_idx].name) {
+		a_name = valid_settings_arr[list_idx].alias;
+		s_name = valid_settings_arr[list_idx].name;
 		list_idx++;
-		if (!strncmp (text, s_name, len))
+		if (len == 0 && a_name)
+			return g_strdup_printf ("%s (%s)", s_name, a_name);
+		if (a_name && !strncmp (text, a_name, len))
+			return g_strdup (a_name);
+		if (s_name && !strncmp (text, s_name, len))
 			return g_strdup (s_name);
 	}
 	return NULL;
