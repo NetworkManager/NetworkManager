@@ -27,6 +27,8 @@
 #include <unistd.h>
 #include <dbus/dbus-glib.h>
 
+#include "libgsystem.h"
+
 #include "nm-activation-request.h"
 #include "nm-logging.h"
 #include "nm-setting-wireless-security.h"
@@ -227,8 +229,8 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		ShareRule *rule = (ShareRule *) iter->data;
 		char *envp[1] = { NULL };
-		char **argv;
-		char *cmd;
+		gs_strfreev char **argv = NULL;
+		gs_free char *cmd = NULL;
 
 		cmd = g_strdup_printf ("%s --table %s %s %s",
 		                       IPTABLES_PATH,
@@ -255,9 +257,6 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 				             WEXITSTATUS (status));
 			}
 		}
-		g_free (cmd);
-		if (argv)
-			g_strfreev (argv);
 	}
 
 	g_slist_free (list);
