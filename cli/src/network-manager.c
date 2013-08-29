@@ -502,7 +502,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 				nmc->get_client (nmc); /* create NMClient */
 				nm_client_set_logging (nmc->client, level, domains, &error);
 				if (error) {
-					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+					if (g_error_matches (error, DBUS_GERROR, DBUS_GERROR_ACCESS_DENIED))
+						g_string_printf (nmc->return_text, _("Error: access denied to set logging; %s"), error->message);
+					else
+						g_string_printf (nmc->return_text, _("Error: %s"), error->message);
 					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 					goto finish;
 				}
