@@ -1569,32 +1569,125 @@ nm_platform_route_flush (int ifindex)
 /******************************************************************/
 
 /**
+ * nm_platform_ip4_address_to_string:
+ * @route: pointer to NMPlatformIP4Address address structure
+ *
+ * A method for converting an address struct into a string representation.
+ *
+ * Example output: ""
+ *
+ * Returns: a string representation of the address. The returned string
+ * is an internal buffer, so do not keep or free the returned string.
+ * Also, this function is not thread safe.
+ */
+const char *
+nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
+{
+	static char buffer[256];
+	char s_address[INET_ADDRSTRLEN];
+	const char *s_dev;
+
+	g_return_val_if_fail (address, "(unknown)");
+
+	inet_ntop (AF_INET, &address->address, s_address, sizeof (s_address));
+	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
+
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u dev %s",
+	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
+	            (guint)address->timestamp, s_dev ? s_dev : "-");
+	return buffer;
+}
+
+/**
+ * nm_platform_ip6_address_to_string:
+ * @route: pointer to NMPlatformIP6Address address structure
+ *
+ * A method for converting an address struct into a string representation.
+ *
+ * Example output: "2001:db8:0:f101::1/64 lft 4294967295 pref 4294967295 time 16922666 on dev em1"
+ *
+ * Returns: a string representation of the address. The returned string
+ * is an internal buffer, so do not keep or free the returned string.
+ * Also, this function is not thread safe.
+ */
+const char *
+nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
+{
+	static char buffer[256];
+	char s_address[INET6_ADDRSTRLEN];
+	const char *s_dev;
+
+	g_return_val_if_fail (address, "(unknown)");
+
+	inet_ntop (AF_INET6, &address->address, s_address, sizeof (s_address));
+	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
+
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u dev %s",
+	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
+	            (guint)address->timestamp, s_dev ? s_dev : "-");
+	return buffer;
+}
+
+/**
  * nm_platform_ip4_route_to_string:
  * @route: pointer to NMPlatformIP4Route route structure
  *
  * A method for converting a route struct into a string representation.
- * This is only useful for printf debugging, if you want to log what's
- * currently happening.
  *
- * Returns: a string with the content of the route. Must be freed by g_free.
+ * Example output: "192.168.1.0/24 via 0.0.0.0 dev em1 metric 0 mss 0"
+ *
+ * Returns: a string representation of the route. The returned string
+ * is an internal buffer, so do not keep or free the returned string.
+ * Also, this function is not thread safe.
  */
-char *
+const char *
 nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
-	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN], s_dev[16];
-	if (!route) {
-		return g_strdup ("<NULL>");
-	}
-	if (route->ifindex > 0) {
-		g_snprintf (s_dev, sizeof(s_dev), " dev [%d]", route->ifindex);
-	} else {
-		s_dev[0] = 0;
-	}
+	static char buffer[256];
+	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
+	const char *s_dev;
+
+	g_return_val_if_fail (route, "(unknown)");
+
 	inet_ntop (AF_INET, &route->network, s_network, sizeof(s_network));
 	inet_ntop (AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
-	return g_strdup_printf("%s/%d via %s%s metric %d mss %d",
-	                       s_network, route->plen, s_gateway, s_dev,
-	                       route->metric, route->mss);
+	s_dev = route->ifindex > 0 ? nm_platform_link_get_name (route->ifindex) : NULL;
+
+	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s dev %s metric %u mss %u",
+	            s_network, route->plen, s_gateway, s_dev ? s_dev : "-",
+	            route->metric, route->mss);
+	return buffer;
+}
+
+/**
+ * nm_platform_ip6_route_to_string:
+ * @route: pointer to NMPlatformIP6Route route structure
+ *
+ * A method for converting a route struct into a string representation.
+ *
+ * Example output: "ff02::fb/128 via :: dev em1 metric 0"
+ *
+ * Returns: a string representation of the route. The returned string
+ * is an internal buffer, so do not keep or free the returned string.
+ * Also, this function is not thread safe.
+ */
+const char *
+nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
+{
+	static char buffer[256];
+	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
+	const char *s_dev;
+
+	g_return_val_if_fail (route, "(unknown)");
+
+	inet_ntop (AF_INET6, &route->network, s_network, sizeof(s_network));
+	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof(s_gateway));
+	s_dev = route->ifindex > 0 ? nm_platform_link_get_name (route->ifindex) : NULL;
+
+	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s dev %s metric %u mss %u",
+	            s_network, route->plen, s_gateway, s_dev ? s_dev : "-",
+	            route->metric, route->mss);
+	return buffer;
 }
 
 static void
@@ -1624,13 +1717,9 @@ log_link_removed (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer u
 static void
 log_ip4_address (NMPlatformIP4Address *address, const char *change_type)
 {
-	char addr[INET_ADDRSTRLEN];
 	const char *name = nm_platform_link_get_name (address->ifindex);
 
-	inet_ntop (AF_INET, &address->address, addr, sizeof (addr));
-
-	debug ("(%s) signal: address %s: %s/%d lft %d pref %d", name, change_type, addr,
-			address->plen, address->lifetime, address->preferred);
+	debug ("(%s) signal: address %s: %s", name, change_type, nm_platform_ip4_address_to_string (address));
 }
 
 static void
@@ -1654,13 +1743,9 @@ log_ip4_address_removed (NMPlatform *p, int ifindex, NMPlatformIP4Address *addre
 static void
 log_ip6_address (NMPlatformIP6Address *address, const char *change_type)
 {
-	char addr[INET6_ADDRSTRLEN];
 	const char *name = nm_platform_link_get_name (address->ifindex);
 
-	inet_ntop (AF_INET6, &address->address, addr, sizeof (addr));
-
-	debug ("(%s) signal: address %s: %s/%d lft %d pref %d", name, change_type, addr,
-			address->plen, address->lifetime, address->preferred);
+	debug ("(%s) signal: address %s: %s", name, change_type, nm_platform_ip6_address_to_string (address));
 }
 
 static void
@@ -1684,15 +1769,7 @@ log_ip6_address_removed (NMPlatform *p, int ifindex, NMPlatformIP6Address *addre
 static void
 log_ip4_route (NMPlatformIP4Route *route, const char *change_type)
 {
-	char network[INET_ADDRSTRLEN];
-	char gateway[INET_ADDRSTRLEN];
-	int plen = route->plen;
-	const char *name = nm_platform_link_get_name (route->ifindex);
-
-	inet_ntop (AF_INET, &route->network, network, sizeof (network));
-	inet_ntop (AF_INET, &route->gateway, gateway, sizeof (gateway));
-
-	debug ("signal: route %s: %s/%d via %s dev %s metric %d", change_type, network, plen, gateway, name, route->metric);
+	debug ("signal: route %s: %s", change_type, nm_platform_ip4_route_to_string (route));
 }
 
 static void
@@ -1716,15 +1793,7 @@ log_ip4_route_removed (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gp
 static void
 log_ip6_route (NMPlatformIP6Route *route, const char *change_type)
 {
-	char network[INET6_ADDRSTRLEN];
-	char gateway[INET6_ADDRSTRLEN];
-	int plen = route->plen;
-	const char *name = nm_platform_link_get_name (route->ifindex);
-
-	inet_ntop (AF_INET6, &route->network, network, sizeof (network));
-	inet_ntop (AF_INET6, &route->gateway, gateway, sizeof (gateway));
-
-	debug ("signal: route %s: %s/%d via %s dev %s metric %d", change_type, network, plen, gateway, name, route->metric);
+	debug ("signal: route %s: %s", change_type, nm_platform_ip6_route_to_string (route));
 }
 
 static void
