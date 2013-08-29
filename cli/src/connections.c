@@ -1763,6 +1763,7 @@ static const NameItem nmc_wifi_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,        NULL,       NULL },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,          "wifi",     NULL },
 	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, "wifi-sec", NULL },
+	{ NM_SETTING_802_1X_SETTING_NAME,            NULL,       NULL },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NULL,       NULL },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        NULL,       NULL },
 	{ NULL, NULL, NULL }
