@@ -4452,15 +4452,19 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	/*
+	 * Do not allow setting 'rate' and 'tx-power'. They are not implemented in
+	 * NM core, nor in ifcfg-rh plugin (thus not preserved over re-reading).
+	 */
 	nmc_add_prop_funcs (GLUE (WIRELESS, RATE),
 	                    nmc_property_wireless_get_rate,
-	                    nmc_property_set_uint,
+	                    NULL, /* editing rate disabled */
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, TX_POWER),
 	                    nmc_property_wireless_get_tx_power,
-	                    nmc_property_set_uint,
+	                    NULL, /* editing tx-power disabled */
 	                    NULL,
 	                    NULL,
 	                    NULL);
