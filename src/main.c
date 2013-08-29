@@ -38,7 +38,7 @@
 #include <gmodule.h>
 #include <string.h>
 
-#include "gsystem-local-alloc.h"
+#include "libgsystem.h"
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"

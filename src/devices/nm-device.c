@@ -37,7 +37,7 @@
 #include <fcntl.h>
 #include <linux/if.h>
 
-#include "gsystem-local-alloc.h"
+#include "libgsystem.h"
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
