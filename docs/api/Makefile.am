@@ -16,9 +16,9 @@ GENERATED_FILES = spec.html settings-spec.xml
 if ENABLE_GTK_DOC
 
 spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
-	$(XSLTPROC) --path "$(top_builddir)/introspection:$(top_srcdir)/introspection" $(top_srcdir)/tools/doc-generator.xsl $(top_builddir)/introspection/all.xml > $@
+	$(XSLTPROC) --path "$(top_builddir)/introspection:$(top_srcdir)/introspection" $(top_srcdir)/tools/doc-generator.xsl $(top_builddir)/introspection/all.xml > spec.html
 	mkdir -p $(builddir)/html/
-	cp $@ $(builddir)/html/
+	cp spec.html $(builddir)/html/
 
 settings-spec.xml: $(top_builddir)/tools/generate-settings-spec $(top_builddir)/libnm-util/libnm-util.la
 	rm -f $(builddir)/settings-spec.xml
