@@ -1995,6 +1995,7 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
  * @length: the expected length in bytes of the result
  *
  * Parses @asc and converts it to binary form in @buffer.
+ * Bytes in @asc can be sepatared by colons (:), or hyphens (-), but not mixed.
  *
  * Return value: @buffer, or %NULL if @asc couldn't be parsed
  *   or would be shorter or longer than @length.
@@ -2006,6 +2007,7 @@ nm_utils_hwaddr_aton_len (const char *asc, gpointer buffer, gsize length)
 {
 	const char *in = asc;
 	guint8 *out = (guint8 *)buffer;
+	char delimiter = '\0';
 
 	while (length && *in) {
 		guint8 d1 = in[0], d2 = in[1];
@@ -2025,8 +2027,15 @@ nm_utils_hwaddr_aton_len (const char *asc, gpointer buffer, gsize length)
 
 		length--;
 		if (*in) {
-			if (*in != ':')
-				return NULL;
+			if (delimiter == '\0') {
+				if (*in == ':' || *in == '-')
+					delimiter = *in;
+				else
+					return NULL;
+			} else {
+				if (*in != delimiter)
+					return NULL;
+			}
 			in++;
 		}
 	}
