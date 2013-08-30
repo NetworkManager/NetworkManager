@@ -2064,7 +2064,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 
 	policy = g_object_new (NM_TYPE_POLICY, NULL);
 	priv = NM_POLICY_GET_PRIVATE (policy);
-	priv->manager = g_object_ref (manager);
+	priv->manager = manager;
 	priv->settings = g_object_ref (settings);
 	priv->update_state_id = 0;
 
@@ -2235,7 +2235,6 @@ dispose (GObject *object)
 	priv->cur_hostname = NULL;
 
 	g_clear_object (&priv->settings);
-	g_clear_object (&priv->manager);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->dispose (object);
 }
