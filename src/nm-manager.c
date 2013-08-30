@@ -2012,28 +2012,26 @@ local_slist_free (void *loc)
  * get_connection:
  * @manager: #NMManager instance
  * @device: #NMDevice instance
- * @existing: is set to %TRUE when an existing connection was returned
  *
  * Returns one of the following:
  *
- * 1) An existing connection to be assumed.
+ * 1) An existing #NMSettingsConnection to be assumed.
  *
- * 2) A generated connection to be assumed.
+ * 2) A generated #NMConnection to be assumed. You can distinguish this
+ * case using NM_IS_SETTINGS_CONNECTION().
  *
- * 3) %NULL when none of the above is available.
+ * 3) %NULL when no connection was detected or the @device doesn't support
+ * generating connections.
  *
  * Supports both nm-device's match_l2_config() and update_connection().
  */
 static NMConnection *
-get_connection (NMManager *manager, NMDevice *device, gboolean *existing)
+get_connection (NMManager *manager, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	free_slist GSList *connections = nm_settings_get_connections (priv->settings);
 	NMConnection *connection = NULL;
 	GSList *iter;
-
-	if (existing)
-		*existing = FALSE;
 
 	/* We still support the older API to match a NMDevice object to an
 	 * existing connection using nm_device_find_assumable_connection().
@@ -2050,8 +2048,6 @@ get_connection (NMManager *manager, NMDevice *device, gboolean *existing)
 			nm_log_info (LOGD_DEVICE, "(%s): Found matching connection '%s' (legacy API)",
 			            nm_device_get_iface (device),
 			            nm_connection_get_id (candidate));
-			if (existing)
-				*existing = TRUE;
 			return candidate;
 		}
 	}
@@ -2086,8 +2082,6 @@ get_connection (NMManager *manager, NMDevice *device, gboolean *existing)
 						 nm_device_get_iface (device),
 						 nm_connection_get_id (candidate));
 			g_object_unref (connection);
-			if (existing)
-				*existing = TRUE;
 			return candidate;
 		}
 	}
@@ -2192,7 +2186,7 @@ add_device (NMManager *self, NMDevice *device)
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
-	connection = get_connection (self, device, NULL);
+	connection = get_connection (self, device);
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
