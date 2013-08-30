@@ -430,6 +430,7 @@ struct _Request {
 	RequestNextFunc next_callback;
 	RequestCompleteFunc complete_callback;
 	gpointer complete_callback_data;
+	gboolean completed;
 
 	GDestroyNotify free_func;
 };
@@ -475,7 +476,7 @@ request_free (Request *req)
 	if (req->idle_id)
 		g_source_remove (req->idle_id);
 
-	if (req->cancel_callback)
+	if (!req->completed && req->cancel_callback)
 		req->cancel_callback (req);
 
 	g_free (req->detail);
@@ -492,6 +493,7 @@ req_complete_success (Request *req,
                       const char *agent_dbus_owner,
                       const char *agent_uname)
 {
+	req->completed = TRUE;
 	req->complete_callback (req,
 	                        secrets,
 	                        agent_dbus_owner,
@@ -503,6 +505,7 @@ req_complete_success (Request *req,
 static void
 req_complete_error (Request *req, GError *error)
 {
+	req->completed = TRUE;
 	req->complete_callback (req, NULL, NULL, NULL, error, req->complete_callback_data);
 }
 
