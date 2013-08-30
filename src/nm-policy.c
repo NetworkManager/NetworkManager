@@ -2182,9 +2182,12 @@ dispose (GObject *object)
 	}
 	g_clear_pointer (&priv->dev_ids, g_slist_free);
 
+	/* The manager should have disposed of ActiveConnections already, which
+	 * will have called active_connection_removed() and thus we don't need
+	 * to clean anything up.  Assert that this is TRUE.
+	 */
 	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter))
-		active_connection_removed (priv->manager, NM_ACTIVE_CONNECTION (iter->data), policy);
+	g_assert (connections == NULL);
 
 	if (priv->reset_retries_id) {
 		g_source_remove (priv->reset_retries_id);

@@ -330,6 +330,14 @@ static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,
                                              NMManager *self);
 
+static void
+active_connection_removed (NMManager *self, NMActiveConnection *active)
+{
+	g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
+	g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
+	g_object_unref (active);
+}
+
 static gboolean
 _active_connection_cleanup (gpointer user_data)
 {
@@ -347,9 +355,7 @@ _active_connection_cleanup (gpointer user_data)
 		iter = iter->next;
 		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
 			priv->active_connections = g_slist_remove (priv->active_connections, ac);
-			g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, ac);
-			g_signal_handlers_disconnect_by_func (ac, active_connection_state_changed, self);
-			g_object_unref (ac);
+			active_connection_removed (self, ac);
 			changed = TRUE;
 		}
 	}
@@ -4554,11 +4560,10 @@ dispose (GObject *object)
 		priv->ac_cleanup_id = 0;
 	}
 
-	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-		g_signal_handlers_disconnect_by_func (iter->data, active_connection_state_changed, object);
-		g_object_unref (iter->data);
-	}
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter))
+		active_connection_removed (manager, NM_ACTIVE_CONNECTION (iter->data));
 	g_slist_free (priv->active_connections);
+	priv->active_connections = NULL;
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
