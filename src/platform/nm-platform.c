@@ -1198,14 +1198,14 @@ get_time (void)
 	return tp.tv_sec;
 }
 
-/* Compute (a + b - c) in an overflow-safe manner. */
+/* Compute (a - b) in an overflow-safe manner. */
 static guint32
-addsubstract_guint32 (guint32 a, guint32 b, guint32 c)
+subtract_guint32 (guint32 a, guint32 b)
 {
-	a = a > c ? a - c : 0;
-	a = a < G_MAXUINT32 - b ? a + b : G_MAXUINT32;
+	if (a == G_MAXUINT32)
+		return G_MAXUINT32;
 
-	return a;
+	return a > b ? a - b : 0;
 }
 
 /**
@@ -1246,11 +1246,11 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 		guint32 lifetime, preferred;
 
 		if (known_address->lifetime) {
-			guint32 shift = addsubstract_guint32 (now, 0, known_address->timestamp);
+			/* Pad the timestamp by 5 seconds to avoid potential races. */
+			guint32 shift = subtract_guint32 (now, known_address->timestamp + 5);
 
-			/* Pad the lifetime by 5 seconds to avoid potential races. */
-			lifetime = addsubstract_guint32 (known_address->lifetime, 5, shift);
-			preferred = addsubstract_guint32 (known_address->lifetime, 5, shift);
+			lifetime = subtract_guint32 (known_address->lifetime, shift);
+			preferred = subtract_guint32 (known_address->lifetime, shift);
 		} else
 			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
@@ -1303,11 +1303,11 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 		guint32 lifetime, preferred;
 
 		if (known_address->lifetime) {
-			guint32 shift = addsubstract_guint32 (now, 0, known_address->timestamp);
+			/* Pad the timestamp by 5 seconds to avoid potential races. */
+			guint32 shift = subtract_guint32 (now, known_address->timestamp + 5);
 
-			/* Pad the lifetime by 5 seconds to avoid potential races. */
-			lifetime = addsubstract_guint32 (known_address->lifetime, 5, shift);
-			preferred = addsubstract_guint32 (known_address->lifetime, 5, shift);
+			lifetime = subtract_guint32 (known_address->lifetime, shift);
+			preferred = subtract_guint32 (known_address->lifetime, shift);
 		} else
 			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
