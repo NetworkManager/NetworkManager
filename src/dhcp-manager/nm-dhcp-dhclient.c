@@ -361,7 +361,7 @@ merge_dhclient_config (const char *iface,
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (conf_file != NULL, FALSE);
 
-	if (g_file_test (orig_path, G_FILE_TEST_EXISTS)) {
+	if (orig_path && g_file_test (orig_path, G_FILE_TEST_EXISTS)) {
 		GError *read_error = NULL;
 
 		if (!g_file_get_contents (orig_path, &orig, NULL, &read_error)) {
