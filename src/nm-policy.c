@@ -2203,11 +2203,13 @@ dispose (GObject *object)
 
 	for (iter = priv->manager_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (priv->manager, GPOINTER_TO_UINT (iter->data));
-	g_clear_pointer (&priv->manager_ids, g_slist_free);
+	g_slist_free (priv->manager_ids);
+	priv->manager_ids = NULL;
 
 	for (iter = priv->settings_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (priv->settings, GPOINTER_TO_UINT (iter->data));
-	g_clear_pointer (&priv->settings_ids, g_slist_free);
+	g_slist_free (priv->settings_ids);
+	priv->settings_ids = NULL;
 
 	for (iter = priv->dev_ids; iter; iter = g_slist_next (iter)) {
 		DeviceSignalId *data = iter->data;
@@ -2215,7 +2217,8 @@ dispose (GObject *object)
 		g_signal_handler_disconnect (data->device, data->id);
 		g_slice_free (DeviceSignalId, data);
 	}
-	g_clear_pointer (&priv->dev_ids, g_slist_free);
+	g_slist_free (priv->dev_ids);
+	priv->dev_ids = NULL;
 
 	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter))
@@ -2226,8 +2229,10 @@ dispose (GObject *object)
 		priv->reset_retries_id = 0;
 	}
 
-	g_clear_pointer (&priv->orig_hostname, g_free);
-	g_clear_pointer (&priv->cur_hostname, g_free);
+	g_free (priv->orig_hostname);
+	priv->orig_hostname = NULL;
+	g_free (priv->cur_hostname);
+	priv->cur_hostname = NULL;
 
 	g_clear_object (&priv->settings);
 	g_clear_object (&priv->manager);
