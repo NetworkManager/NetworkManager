@@ -419,16 +419,16 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	remove_supplicant_interface_error_handler (self);
 
-	/* Clear supplicant interface signal handlers */
-	g_signal_handlers_disconnect_matched (priv->supplicant.iface, G_SIGNAL_MATCH_DATA,
-	                                      0, 0, NULL, NULL, self);
-
 	if (priv->scanlist_cull_id) {
 		g_source_remove (priv->scanlist_cull_id);
 		priv->scanlist_cull_id = 0;
 	}
 
 	if (priv->supplicant.iface) {
+		/* Clear supplicant interface signal handlers */
+		g_signal_handlers_disconnect_matched (priv->supplicant.iface, G_SIGNAL_MATCH_DATA,
+		                                      0, 0, NULL, NULL, self);
+
 		/* Tell the supplicant to disconnect from the current AP */
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
 
