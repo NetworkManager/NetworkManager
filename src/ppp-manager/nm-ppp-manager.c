@@ -375,7 +375,7 @@ extract_details_from_connection (NMConnection *connection,
 
 		setting_name = nm_setting_connection_get_connection_type (s_con);
 		g_assert (setting_name);
-		
+
 		/* In case of bluetooth connection, use GSM or CDMA setting */
 		if (strcmp (setting_name, NM_SETTING_BLUETOOTH_SETTING_NAME) == 0) {
 			if (nm_connection_get_setting_gsm (connection))
