@@ -1557,6 +1557,28 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv6_addresses_changed_cb), NULL);
 }
 
+void
+nmc_setting_ip4_connect_handlers (NMSettingIP4Config *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
+
+	g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_ADDRESSES,
+	                  G_CALLBACK (ipv4_addresses_changed_cb), NULL);
+	g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_METHOD,
+	                  G_CALLBACK (ipv4_method_changed_cb), NULL);
+}
+
+void
+nmc_setting_ip6_connect_handlers (NMSettingIP6Config *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
+
+	g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_ADDRESSES,
+	                  G_CALLBACK (ipv6_addresses_changed_cb), NULL);
+	g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_METHOD,
+	                  G_CALLBACK (ipv6_method_changed_cb), NULL);
+}
+
 /*
  * Customize some properties of the setting so that the setting has sensible
  * values.
@@ -1570,20 +1592,12 @@ nmc_setting_custom_init (NMSetting *setting)
 		g_object_set (NM_SETTING_IP4_CONFIG (setting),
 		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 		              NULL);
-
-		g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_ADDRESSES,
-		                  G_CALLBACK (ipv4_addresses_changed_cb), NULL);
-		g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_METHOD,
-		                  G_CALLBACK (ipv4_method_changed_cb), NULL);
+		nmc_setting_ip4_connect_handlers (NM_SETTING_IP4_CONFIG (setting));
 	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
 		g_object_set (NM_SETTING_IP6_CONFIG (setting),
 		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
-
-		g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_ADDRESSES,
-		                  G_CALLBACK (ipv6_addresses_changed_cb), NULL);
-		g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_METHOD,
-		                  G_CALLBACK (ipv6_method_changed_cb), NULL);
+		nmc_setting_ip6_connect_handlers (NM_SETTING_IP6_CONFIG (setting));
 	}
 }
 

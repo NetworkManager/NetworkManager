@@ -5199,6 +5199,21 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 	}
 }
 
+static void
+editor_init_existing_connection (NMConnection *connection)
+{
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+	if (s_ip4)
+		nmc_setting_ip4_connect_handlers (s_ip4);
+	if (s_ip6)
+		nmc_setting_ip6_connect_handlers (s_ip6);
+}
+
 static NMCResultCode
 do_connection_edit (NmCli *nmc, int argc, char **argv)
 {
@@ -5302,6 +5317,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 		/* Load previously saved history commands for the connection */
 		load_history_cmds (nm_connection_get_uuid (connection));
+
+		editor_init_existing_connection (connection);
 	} else {
 		/* New connection */
 		connection_type = check_valid_name (type, nmc_valid_connection_types, &err1);
