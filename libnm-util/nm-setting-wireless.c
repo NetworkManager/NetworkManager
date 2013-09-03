@@ -164,7 +164,7 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (s_wireless);
 
-	if (!priv->security) {
+	if (!s_wireless_sec) {
 		if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
 		    || (ap_wpa != NM_802_11_AP_SEC_NONE)
 		    || (ap_rsn != NM_802_11_AP_SEC_NONE))
@@ -172,13 +172,8 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		return TRUE;
 	}
 
-	if (strcmp (priv->security, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != 0)
-		return FALSE;
-
-	if (s_wireless_sec)
-		key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
-
-	if (s_wireless_sec == NULL || !key_mgmt)
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
+	if (!key_mgmt)
 		return FALSE;
 
 	/* Static WEP */
