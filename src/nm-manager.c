@@ -1463,8 +1463,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
 		int ifindex = nm_device_get_ip_ifindex (parent);
-		int num, i;
-		guint32 from, to;
 
 		if (   !nm_platform_vlan_add (iface, ifindex,
 		           nm_setting_vlan_get_id (s_vlan),
@@ -1473,16 +1471,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
 			             iface, nm_connection_get_id (connection));
 			goto unblock;
-		}
-		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
-		for (i = 0; i < num; i++) {
-			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to))
-				nm_platform_vlan_set_ingress_map (ifindex, from, to);
-		}
-		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP);
-		for (i = 0; i < num; i++) {
-			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
-				nm_platform_vlan_set_egress_map (ifindex, from, to);
 		}
 		device = nm_device_vlan_new (iface, parent);
 	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {

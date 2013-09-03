@@ -273,6 +273,47 @@ match_l2_config (NMDevice *device, NMConnection *connection)
 	return TRUE;
 }
 
+static NMActStageReturn
+act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingVlan *s_vlan;
+	NMActStageReturn ret;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	ret = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->act_stage1_prepare (dev, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
+
+	req = nm_device_get_act_request (dev);
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_connection (req);
+	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	if (s_vlan) {
+		int ifindex = nm_device_get_ifindex (dev);
+		int num, i;
+		guint32 from, to;
+
+		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
+		for (i = 0; i < num; i++) {
+			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to))
+				nm_platform_vlan_set_ingress_map (ifindex, from, to);
+		}
+		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP);
+		for (i = 0; i < num; i++) {
+			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
+				nm_platform_vlan_set_egress_map (ifindex, from, to);
+		}
+	}
+
+	return ret;
+}
+
 /******************************************************************/
 
 static void
@@ -429,6 +470,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->bring_up = bring_up;
+	parent_class->act_stage1_prepare = act_stage1_prepare;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
