@@ -594,7 +594,7 @@ activate_nm_not_running (gpointer user_data)
 /**
  * nm_client_activate_connection:
  * @client: a #NMClient
- * @connection: an #NMConnection
+ * @connection: (allow-none): an #NMConnection
  * @device: (allow-none): the #NMDevice
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
@@ -613,6 +613,9 @@ activate_nm_not_running (gpointer user_data)
  * #NMWimaxNsp for WiMAX connections, to which you wish to connect.  If the
  * specific object is not given, NetworkManager can, in some cases, automatically
  * determine which network to connect to given the settings in @connection.
+ *
+ * If @connection is not given for a device-based activation, NetworkManager
+ * picks the best available connection for the device and activates it.
  **/
 void
 nm_client_activate_connection (NMClient *client,
@@ -628,7 +631,8 @@ nm_client_activate_connection (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	if (device)
 		g_return_if_fail (NM_IS_DEVICE (device));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	if (connection)
+		g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	info = g_slice_new0 (ActivateInfo);
 	info->act_fn = callback;
@@ -645,7 +649,7 @@ nm_client_activate_connection (NMClient *client,
 
 	dbus_g_proxy_begin_call (priv->client_proxy, "ActivateConnection",
 	                         activate_cb, info, NULL,
-	                         DBUS_TYPE_G_OBJECT_PATH, nm_connection_get_path (connection),
+	                         DBUS_TYPE_G_OBJECT_PATH, connection ? nm_connection_get_path (connection) : "/",
 	                         DBUS_TYPE_G_OBJECT_PATH, device ? nm_object_get_path (NM_OBJECT (device)) : "/",
 	                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
 	                         G_TYPE_INVALID);
