@@ -261,6 +261,22 @@ get_nsp_by_name (NMDeviceWimax *self, const char *name)
 	return NULL;
 }
 
+static NMWimaxNsp *
+get_nsp_by_path (NMDeviceWimax *self, const char *path)
+{
+	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->nsp_list; iter; iter = iter->next) {
+		NMWimaxNsp *nsp = NM_WIMAX_NSP (iter->data);
+
+		if (!g_strcmp0 (nm_wimax_nsp_get_dbus_path (nsp), path))
+			return nsp;
+	}
+
+	return NULL;
+}
+
 static gboolean
 update_availability (NMDeviceWimax *self, gboolean old_available)
 {
@@ -375,10 +391,18 @@ check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	const GSList *ns_iter = NULL;
+	NMWimaxNsp *nsp;
+
+	if (specific_object) {
+		nsp = get_nsp_by_path (NM_DEVICE_WIMAX (device), specific_object);
+		return nsp ? nm_wimax_nsp_check_compatible (nsp, connection) : FALSE;
+	}
 
 	/* Ensure the connection applies to an NSP in the scan list */
 	for (ns_iter = priv->nsp_list; ns_iter; ns_iter = ns_iter->next) {

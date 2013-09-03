@@ -140,11 +140,13 @@ typedef struct {
 	                                             GError **error);
 
 	/* Checks whether the connection is likely available to be activated,
-	 * including any live network information like scan lists.  Returns
-	 * TRUE if the connection is available; FALSE if not.
+	 * including any live network information like scan lists.  The connection
+	 * is checked against the object defined by @specific_object, if given.
+	 * Returns TRUE if the connection is available; FALSE if not.
 	 */
 	gboolean    (* check_connection_available) (NMDevice *self,
-	                                            NMConnection *connection);
+	                                            NMConnection *connection,
+	                                            const char *specific_object);
 
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
@@ -336,6 +338,9 @@ gboolean nm_device_supports_vlans (NMDevice *device);
 void     nm_device_add_pending_action    (NMDevice *device, const char *action);
 void     nm_device_remove_pending_action (NMDevice *device, const char *action);
 gboolean nm_device_has_pending_action    (NMDevice *device);
+
+GPtrArray *nm_device_get_available_connections (NMDevice *device,
+                                                const char *specific_object);
 
 G_END_DECLS
 

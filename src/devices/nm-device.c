@@ -320,7 +320,9 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
 
 static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
 
-static gboolean check_connection_available (NMDevice *device, NMConnection *connection);
+static gboolean check_connection_available (NMDevice *device,
+                                            NMConnection *connection,
+                                            const char *specific_object);
 
 static gboolean spec_match_list (NMDevice *device, const GSList *specs);
 
@@ -6613,7 +6615,7 @@ _try_add_available_connection (NMDevice *self, NMConnection *connection)
 	if (nm_device_check_connection_compatible (self, connection, NULL)) {
 		/* Let subclasses implement additional checks on the connection */
 		if (   NM_DEVICE_GET_CLASS (self)->check_connection_available
-		    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection)) {
+		    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
 
 			g_hash_table_insert (NM_DEVICE_GET_PRIVATE (self)->available_connections,
 					             g_object_ref (connection),
@@ -6631,7 +6633,9 @@ _del_available_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
 {
 	/* Default is to assume the connection is available unless a subclass
 	 * overrides this with more specific checks.
@@ -6656,6 +6660,42 @@ nm_device_recheck_available_connections (NMDevice *device)
 		_try_add_available_connection (device, NM_CONNECTION (iter->data));
 
 	_signal_available_connections_changed (device);
+}
+
+/**
+ * nm_device_get_available_connections:
+ * @device: the #NMDevice
+ * @specific_object: a specific object path if any
+ *
+ * Returns a list of connections available to activate on the device, taking
+ * into account any device-specific details given by @specific_object (like
+ * WiFi access point path).
+ *
+ * Returns: caller-owned #GPtrArray of #NMConnections
+ */
+GPtrArray *
+nm_device_get_available_connections (NMDevice *device, const char *specific_object)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	GHashTableIter iter;
+	guint num_available;
+	NMConnection *connection = NULL;
+	GPtrArray *array = NULL;
+
+	num_available = g_hash_table_size (priv->available_connections);
+	if (num_available > 0) {
+		array = g_ptr_array_sized_new (num_available);
+		g_hash_table_iter_init (&iter, priv->available_connections);
+		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL)) {
+			/* If a specific object is given, only include connections that are
+			 * compatible with it.
+			 */
+			if (   !specific_object
+			    || NM_DEVICE_GET_CLASS (device)->check_connection_available (device, connection, specific_object))
+				g_ptr_array_add (array, connection);
+		}
+	}
+	return array;
 }
 
 static void
