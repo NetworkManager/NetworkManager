@@ -1744,10 +1744,15 @@ vlan_get_info (NMPlatform *platform, int ifindex, int *parent, int *vlan_id)
 static gboolean
 vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 {
-	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
+	/* We have to use link_get() because a "blank" rtnl_link won't have the
+	 * right data structures to be able to call rtnl_link_vlan_set_ingress_map()
+	 * on it. (Likewise below in vlan_set_egress_map().)
+	 */
+	auto_nl_object struct rtnl_link *change = link_get (platform, ifindex);
 
-	g_assert (change);
-	rtnl_link_vlan_set_egress_map (change, from, to);
+	if (!change)
+		return FALSE;
+	rtnl_link_vlan_set_ingress_map (change, from, to);
 
 	return link_change (platform, ifindex, change);
 }
@@ -1755,9 +1760,10 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 static gboolean
 vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 {
-	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
+	auto_nl_object struct rtnl_link *change = link_get (platform, ifindex);
 
-	g_assert (change);
+	if (!change)
+		return FALSE;
 	rtnl_link_vlan_set_egress_map (change, from, to);
 
 	return link_change (platform, ifindex, change);
