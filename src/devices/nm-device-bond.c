@@ -378,9 +378,36 @@ release_slave (NMDevice *device, NMDevice *slave)
 /******************************************************************/
 
 NMDevice *
-nm_device_bond_new (const char *iface)
+nm_device_bond_new (NMPlatformLink *platform_device)
 {
+	g_return_val_if_fail (platform_device != NULL, NULL);
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
+	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
+	                                  NM_DEVICE_DRIVER, "bonding",
+	                                  NM_DEVICE_TYPE_DESC, "Bond",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
+	                                  NM_DEVICE_IS_MASTER, TRUE,
+	                                  NULL);
+}
+
+NMDevice *
+nm_device_bond_new_for_connection (NMConnection *connection)
+{
+	const char *iface;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+
+	iface = nm_connection_get_virtual_iface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
+
+	if (   !nm_platform_bond_add (iface)
+	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
+		nm_log_warn (LOGD_DEVICE | LOGD_BOND, "(%s): failed to create bonding master interface for '%s': %s",
+		             iface, nm_connection_get_id (connection),
+		             nm_platform_get_error_msg ());
+		return NULL;
+	}
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
 	                                  NM_DEVICE_IFACE, iface,

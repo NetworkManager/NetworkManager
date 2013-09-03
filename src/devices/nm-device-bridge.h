@@ -54,7 +54,8 @@ typedef struct {
 
 GType nm_device_bridge_get_type (void);
 
-NMDevice *nm_device_bridge_new (const char *iface);
+NMDevice *nm_device_bridge_new (NMPlatformLink *platform_device);
+NMDevice *nm_device_bridge_new_for_connection (NMConnection *connection);
 
 G_END_DECLS
 

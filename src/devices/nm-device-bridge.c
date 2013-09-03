@@ -324,9 +324,36 @@ release_slave (NMDevice *device, NMDevice *slave)
 /******************************************************************/
 
 NMDevice *
-nm_device_bridge_new (const char *iface)
+nm_device_bridge_new (NMPlatformLink *platform_device)
 {
+	g_return_val_if_fail (platform_device != NULL, NULL);
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BRIDGE,
+	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
+	                                  NM_DEVICE_DRIVER, "bridge",
+	                                  NM_DEVICE_TYPE_DESC, "Bridge",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
+	                                  NM_DEVICE_IS_MASTER, TRUE,
+	                                  NULL);
+}
+
+NMDevice *
+nm_device_bridge_new_for_connection (NMConnection *connection)
+{
+	const char *iface;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+
+	iface = nm_connection_get_virtual_iface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
+
+	if (   !nm_platform_bridge_add (iface)
+	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
+		nm_log_warn (LOGD_DEVICE | LOGD_BRIDGE, "(%s): failed to create bridge master interface for '%s': %s",
+		             iface, nm_connection_get_id (connection),
+		             nm_platform_get_error_msg ());
+		return NULL;
+	}
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BRIDGE,
 	                                  NM_DEVICE_IFACE, iface,

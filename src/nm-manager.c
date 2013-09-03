@@ -1424,70 +1424,20 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	g_signal_handlers_block_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-
-		if (   !nm_platform_bond_add (iface)
-		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bonding master interface for '%s'",
-			             iface, nm_connection_get_id (connection));
-			goto unblock;
-		}
-
-		device = nm_device_bond_new (iface);
+		device = nm_device_bond_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)) {
-		if (!nm_platform_team_add (iface)
-		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-			nm_log_warn (LOGD_DEVICE, "(%s): failed to add team master interface for '%s'",
-			             iface, nm_connection_get_id (connection));
-			goto unblock;
-		}
-
-		device = nm_device_team_new (iface);
+		device = nm_device_team_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		gboolean result;
-
-		result = nm_platform_bridge_add (iface);
-		if (!result && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-			nm_log_warn (LOGD_DEVICE, "(%s): failed to add bridging interface for '%s'",
-			             iface, nm_connection_get_id (connection));
-			goto unblock;
-		}
-
 		/* FIXME: remove when we handle bridges non-destructively */
-		if (!result && !bridge_created_by_nm (self, iface)) {
+		if (!nm_platform_link_get_ifindex (iface) > 0 && !bridge_created_by_nm (self, iface)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): cannot use existing bridge for '%s'",
 			             iface, nm_connection_get_id (connection));
-			goto unblock;
-		}
-
-		device = nm_device_bridge_new (iface);
+		} else
+			device = nm_device_bridge_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
-		int ifindex = nm_device_get_ip_ifindex (parent);
-
-		if (   !nm_platform_vlan_add (iface, ifindex,
-		           nm_setting_vlan_get_id (s_vlan),
-		           nm_setting_vlan_get_flags (s_vlan))
-		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-			nm_log_warn (LOGD_DEVICE, "(%s): failed to add VLAN interface for '%s'",
-			             iface, nm_connection_get_id (connection));
-			goto unblock;
-		}
-		device = nm_device_vlan_new (iface, parent);
+		device = nm_device_vlan_new_for_connection (connection, parent);
 	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
-		int p_key, parent_ifindex;
-
-		parent_ifindex = nm_device_get_ifindex (parent);
-		p_key = nm_setting_infiniband_get_p_key (s_infiniband);
-
-		if (   !nm_platform_infiniband_partition_add (parent_ifindex, p_key)
-		    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-			nm_log_warn (LOGD_DEVICE, "(%s): failed to add InfiniBand P_Key interface for '%s'",
-			             iface, nm_connection_get_id (connection));
-			goto unblock;
-		}
-
-		device = nm_device_infiniband_new_partition (iface, nm_device_get_driver (parent));
+		device = nm_device_infiniband_new_partition (connection, parent);
 	}
 
 	if (device) {
@@ -1495,7 +1445,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		add_device (self, device);
 	}
 
-unblock:
 	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
 
 out:
@@ -2493,15 +2442,15 @@ platform_link_added_cb (NMPlatform *platform,
 			device = nm_device_wifi_new (link);
 			break;
 		case NM_LINK_TYPE_BOND:
-			device = nm_device_bond_new (link->name);
+			device = nm_device_bond_new (link);
 			break;
 		case NM_LINK_TYPE_TEAM:
-			device = nm_device_team_new (link->name);
+			device = nm_device_team_new (link);
 			break;
 		case NM_LINK_TYPE_BRIDGE:
 			/* FIXME: always create device when we handle bridges non-destructively */
 			if (bridge_created_by_nm (self, link->name))
-				device = nm_device_bridge_new (link->name);
+				device = nm_device_bridge_new (link);
 			else
 				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", link->name);
 			break;
@@ -2510,7 +2459,7 @@ platform_link_added_cb (NMPlatform *platform,
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
 				parent = find_device_by_ifindex (self, parent_ifindex);
 				if (parent)
-					device = nm_device_vlan_new (link->name, parent);
+					device = nm_device_vlan_new (link, parent);
 				else {
 					/* If udev signaled the VLAN interface before it signaled
 					 * the VLAN's parent at startup we may not know about the

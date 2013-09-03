@@ -40,6 +40,7 @@ typedef enum {
 	NM_VLAN_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMVlanError;
 
+#define NM_DEVICE_VLAN_PARENT     "parent"
 #define NM_DEVICE_VLAN_ID         "vlan-id"
 
 typedef struct {
@@ -54,7 +55,10 @@ typedef struct {
 
 GType nm_device_vlan_get_type (void);
 
-NMDevice *nm_device_vlan_new (const char *iface, NMDevice *parent);
+NMDevice *nm_device_vlan_new (NMPlatformLink *platform_link,
+                              NMDevice       *parent);
+NMDevice *nm_device_vlan_new_for_connection (NMConnection *connection,
+                                             NMDevice     *parent);
 
 G_END_DECLS
 
