@@ -98,10 +98,10 @@ static char *join_values_with_spaces(char *dst, char **src)
 	return(dst);
 }
 
-void _ifparser_source (const char *path, const char *en_dir, int quiet);
-void _recursive_ifparser (const char *eni_file, int quiet);
+static void _ifparser_source (const char *path, const char *en_dir, int quiet);
 
-void _recursive_ifparser (const char *eni_file, int quiet)
+static void
+_recursive_ifparser (const char *eni_file, int quiet)
 {
 	FILE *inp;
 	char line[255];
@@ -228,7 +228,8 @@ void _recursive_ifparser (const char *eni_file, int quiet)
 		}
 		// source stanza takes one or more filepaths as parameters
 		else if (strcmp(token[0], "source") == 0) {
-			uint i;
+			int i;
+			char *en_dir;
 
 			skip_to_block = 0;
 
@@ -237,27 +238,17 @@ void _recursive_ifparser (const char *eni_file, int quiet)
 					g_warning ("Error: Invalid source line without parameters\n");
 				continue;
 			}
-			for (i = 1; i < toknum; ++i) {
-				char *eni_file_copy;
-				char *en_dir;
 
-				eni_file_copy = strdup (eni_file);
-				if (!eni_file_copy) {
-					if (!quiet)
-						g_warning ("Error: Skipping interfaces file %s because strdup failed\n",
-								eni_file);
-					continue;
-				}
-				en_dir = dirname (eni_file_copy);
+			en_dir = g_path_get_dirname (eni_file);
+			for (i = 1; i < toknum; ++i)
 				_ifparser_source (token[i], en_dir, quiet);
-				free (eni_file_copy);
-			}
+			g_free (en_dir);
 		}
 		else {
 			if (skip_to_block) {
 				if (!quiet) {
 					g_message ("Error: ignoring out-of-block data '%s'\n",
-							join_values_with_spaces(value, token));
+					           join_values_with_spaces(value, token));
 				}
 			} else
 				add_data(token[0], join_values_with_spaces(value, token + 1));
@@ -269,35 +260,31 @@ void _recursive_ifparser (const char *eni_file, int quiet)
 		g_message ("      interface-parser: finished parsing file %s\n", eni_file);
 }
 
-void _ifparser_source (const char *path, const char *en_dir, int quiet)
+static void
+_ifparser_source (const char *path, const char *en_dir, int quiet)
 {
-	// abs_path = en_dir + '/' + path + '\0'
-	char abs_path[strlen (en_dir) + strlen (path) + 2];
+	char *abs_path;
 	wordexp_t we;
 	uint i;
 
-	if (path[0] == '/') {
-		strncpy (abs_path, path, sizeof (abs_path));
-	}
-	else {
-		// Convert relative path to absolute path
-		snprintf (abs_path, sizeof (abs_path), "%s/%s", en_dir, path);
-	}
+	if (g_path_is_absolute (path))
+		abs_path = g_strdup (path);
+	else
+		abs_path = g_build_filename (en_dir, path, NULL);
+
 	if (!quiet)
 		g_message ("      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
 
-	// Recursively parse sourced in interfaces files
-	// (ifupdown uses WRDE_NOCMD for wordexp)
-	memset (&we, 0, sizeof (we));
+	/* ifupdown uses WRDE_NOCMD for wordexp. */
 	if (wordexp (abs_path, &we, WRDE_NOCMD)) {
 		if (!quiet)
 			g_warning ("Error: word expansion for %s failed\n", abs_path);
-		return;
+	} else {
+		for (i = 0; i < we.we_wordc; i++)
+			_recursive_ifparser (we.we_wordv[i], quiet);
+		wordfree (&we);
 	}
-	for (i = 0; i < we.we_wordc; i++) {
-		_recursive_ifparser (we.we_wordv[i], quiet);
-	}
-	wordfree (&we);
+	g_free (abs_path);
 }
 
 void ifparser_init (const char *eni_file, int quiet)
