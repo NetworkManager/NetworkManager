@@ -903,8 +903,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * address will be assigned to the interface.  If 'manual' is specified,
 	 * static IP addressing is used and at least one IP address must be given
 	 * in the 'addresses' property.  If 'ignore' is specified, IPv6
-	 * configuration is not done. This property must be set.  NOTE: the 'shared'
-	 * method are not yet supported.
+	 * configuration is not done. This property must be set.  Note: the 'shared'
+	 * method is not yet supported.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
@@ -922,7 +922,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						      "used and at least one IP address must be given in "
 						      " the 'addresses' property.  If 'ignore' is "
 						      "specified, IPv6 configuration is not done. This "
-						      "property must be set.  NOTE: the 'shared' method"
+						      "property must be set.  Note: the 'shared' method "
 						      "is not yet supported.",
 						      NULL,
 						      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
