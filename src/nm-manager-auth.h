@@ -56,16 +56,6 @@ typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        DBusGMethodInvocation *context,
                                        gpointer user_data);
 
-NMAuthChain *nm_auth_chain_new (DBusGMethodInvocation *context,
-                                NMAuthChainResultFunc done_func,
-                                gpointer user_data,
-                                const char **out_error_desc);
-
-NMAuthChain *nm_auth_chain_new_raw_message (DBusMessage *message,
-                                            gulong user_uid,
-                                            NMAuthChainResultFunc done_func,
-                                            gpointer user_data);
-
 NMAuthChain *nm_auth_chain_new_dbus_sender (const char *dbus_sender,
                                             gulong user_uid,
                                             NMAuthChainResultFunc done_func,

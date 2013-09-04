@@ -107,17 +107,16 @@ pk_authority_get (GError **error)
 #endif
 
 static NMAuthChain *
-_auth_chain_new (DBusGMethodInvocation *context,
-                 DBusMessage *message,
+_auth_chain_new (NMAuthSubject *subject,
                  const char *dbus_sender,
                  gulong user_uid,
-                 NMAuthSubject *subject,
+                 DBusGMethodInvocation *context,
                  NMAuthChainResultFunc done_func,
                  gpointer user_data)
 {
 	NMAuthChain *self;
 
-	g_return_val_if_fail (message || dbus_sender, NULL);
+	g_return_val_if_fail (subject || user_uid == 0 || dbus_sender, NULL);
 
 	self = g_malloc0 (sizeof (NMAuthChain));
 	self->refcount = 1;
@@ -132,59 +131,18 @@ _auth_chain_new (DBusGMethodInvocation *context,
 	if (subject) {
 		self->user_uid = nm_auth_subject_get_uid (subject);
 		self->subject = g_object_ref (subject);
-		return self;
-	}
-
-	if (message)
-		self->owner = g_strdup (dbus_message_get_sender (message));
-	else if (dbus_sender)
+	} else {
+		self->user_uid = user_uid;
 		self->owner = g_strdup (dbus_sender);
-
-	self->user_uid = user_uid;
-	if (user_uid > 0 && !self->owner) {
-		/* Need an owner */
-		g_warn_if_fail (self->owner);
-		nm_auth_chain_unref (self);
-		return NULL;
+		if (user_uid > 0 && !self->owner) {
+			/* Need an owner */
+			g_warn_if_fail (self->owner);
+			nm_auth_chain_unref (self);
+			self = NULL;
+		}
 	}
 
 	return self;
-}
-
-NMAuthChain *
-nm_auth_chain_new (DBusGMethodInvocation *context,
-                   NMAuthChainResultFunc done_func,
-                   gpointer user_data,
-                   const char **out_error_desc)
-{
-	gulong sender_uid = G_MAXULONG;
-	char *sender = NULL;
-	NMAuthChain *chain = NULL;
-
-	g_return_val_if_fail (context != NULL, NULL);
-
-	if (nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
-	                                     context,
-	                                     &sender,
-	                                     &sender_uid,
-	                                     NULL)) {
-		chain = _auth_chain_new (context, NULL, sender, sender_uid, NULL, done_func, user_data);
-	}
-
-	if (!chain && out_error_desc)
-		*out_error_desc = "Unable to determine request UID and sender.";
-
-	g_free (sender);
-	return chain;
-}
-
-NMAuthChain *
-nm_auth_chain_new_raw_message (DBusMessage *message,
-                               gulong user_uid,
-                               NMAuthChainResultFunc done_func,
-                               gpointer user_data)
-{
-	return _auth_chain_new (NULL, message, NULL, user_uid, NULL, done_func, user_data);
 }
 
 NMAuthChain *
@@ -193,7 +151,7 @@ nm_auth_chain_new_dbus_sender (const char *dbus_sender,
                                NMAuthChainResultFunc done_func,
                                gpointer user_data)
 {
-	return _auth_chain_new (NULL, NULL, dbus_sender, user_uid, NULL, done_func, user_data);
+	return _auth_chain_new (NULL, dbus_sender, user_uid, NULL, done_func, user_data);
 }
 
 /* Creates the NMAuthSubject automatically */
@@ -229,7 +187,7 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	NMAuthChain *chain;
 
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	chain = _auth_chain_new (context, NULL, NULL, G_MAXULONG, subject, done_func, user_data);
+	chain = _auth_chain_new (subject, NULL, G_MAXULONG, context, done_func, user_data);
 
 	/* Chains creation from a valid NMAuthSubject cannot fail since the
 	 * subject already has all the necessary auth info.
