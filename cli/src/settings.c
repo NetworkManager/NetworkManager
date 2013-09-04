@@ -4316,6 +4316,28 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
+	/* Add editable properties for NM_SETTING_TEAM_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (TEAM, INTERFACE_NAME),
+	                    nmc_property_team_get_interface_name,
+	                    nmc_property_set_ifname,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (TEAM, CONFIG),
+	                    nmc_property_team_get_config,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_TEAM_PORT_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (TEAM_PORT, CONFIG),
+	                    nmc_property_team_port_get_config,
+	                    nmc_property_set_string,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
 	/* Add editable properties for NM_SETTING_VLAN_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (VLAN, INTERFACE_NAME),
 	                    nmc_property_vlan_get_interface_name,
