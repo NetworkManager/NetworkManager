@@ -4237,7 +4237,7 @@ nm_device_set_is_nm_owned (NMDevice *device,
 {
 	NMDevicePrivate *priv;
 
-	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 
@@ -4248,7 +4248,6 @@ nm_device_set_is_nm_owned (NMDevice *device,
 	priv->is_nm_owned = TRUE;
 	return TRUE;
 }
-
 
 /*
  * nm_device_deactivate
