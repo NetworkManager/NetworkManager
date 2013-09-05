@@ -483,8 +483,14 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 finish:
 	if (ret == NULL) {
 		char *valid_vals = g_strjoinv (", ", (char **) allowed);
-		g_set_error (error, 1, 0, _("'%s' not among [%s]"),
-		             input ? input : "", valid_vals);
+		if (!input || !*input) {
+			g_set_error (error, 1, 0, _("missing name, try one of [%s]"),
+			             valid_vals);
+		} else {
+			g_set_error (error, 1, 0, _("'%s' not among [%s]"),
+			             input ? input : "", valid_vals);
+		}
+
 		g_free (valid_vals);
 	}
 	return ret;
