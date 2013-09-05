@@ -1740,169 +1740,170 @@ typedef struct NameItem {
 	const char *name;
 	const char *alias;
 	const struct NameItem *settings;
+	gboolean mandatory;
 } NameItem;
 
 static const NameItem nmc_ethernet_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_infiniband_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL, NULL },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL, NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL, NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL, NULL, TRUE  },
+	{ NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL, NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL, NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_wifi_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,        NULL,       NULL },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,          "wifi",     NULL },
-	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, "wifi-sec", NULL },
-	{ NM_SETTING_802_1X_SETTING_NAME,            NULL,       NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME,        NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,          "wifi",     NULL, TRUE  },
+	{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, "wifi-sec", NULL, FALSE },
+	{ NM_SETTING_802_1X_SETTING_NAME,            NULL,       NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,        NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_wimax_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,   NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
+	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,   NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_gsm_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,        NULL,       NULL },
-	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_GSM_SETTING_NAME,        NULL,       NULL, TRUE  },
+	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_cdma_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,       NULL },
-	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,       NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_mobile_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,   NULL },
-	{ NM_SETTING_PPP_SETTING_NAME,        NULL,   NULL },
-	{ NM_SETTING_GSM_SETTING_NAME,        NULL,   NULL },
-	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,   NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
+	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,   NULL, FALSE },
+	{ NM_SETTING_PPP_SETTING_NAME,        NULL,   NULL, FALSE },
+	{ NM_SETTING_GSM_SETTING_NAME,        NULL,   NULL, TRUE  },
+	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,   NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bluetooth_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,   NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
+	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,   NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_adsl_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,   NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
+	{ NM_SETTING_ADSL_SETTING_NAME,       NULL,   NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_ppoe_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,       NULL },
-	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,       NULL, TRUE  },
+	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_olpc_mesh_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,        NULL },
-	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,        NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,        NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,        NULL, TRUE  },
+	{ NM_SETTING_OLPC_MESH_SETTING_NAME,  "olpc-mesh", NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,        NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,        NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_vpn_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_VPN_SETTING_NAME,        NULL,   NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
+	{ NM_SETTING_VPN_SETTING_NAME,        NULL,   NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_vlan_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,       NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_VLAN_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bond_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_BOND_SETTING_NAME,       NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_BOND_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_team_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_TEAM_SETTING_NAME,       NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bridge_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_BRIDGE_SETTING_NAME,     NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bond_slave_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_team_slave_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL },
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,  NULL,       NULL },
-	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
+	{ NM_SETTING_TEAM_PORT_SETTING_NAME,  NULL,       NULL, TRUE  },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 static const NameItem nmc_bridge_slave_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL },
-	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME, NULL,       NULL },
-	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL },
-	{ NM_SETTING_802_1X_SETTING_NAME,      NULL,       NULL },
-	{ NULL, NULL, NULL }
+	{ NM_SETTING_CONNECTION_SETTING_NAME,  NULL,       NULL, TRUE  },
+	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_WIRED_SETTING_NAME,       "ethernet", NULL, TRUE  },
+	{ NM_SETTING_802_1X_SETTING_NAME,      NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
 };
 
 
@@ -2051,6 +2052,29 @@ get_valid_settings_array (const char *con_type)
 			return nmc_valid_connection_types[i].settings;
 	}
 	return NULL;
+}
+
+static gboolean
+is_setting_mandatory (NMConnection *connection, NMSetting *setting)
+{
+	NMSettingConnection *s_con;
+	const char *c_type;
+	const NameItem *item;
+	const char *name;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	c_type = nm_setting_connection_get_connection_type (s_con);
+
+	name = nm_setting_get_name (setting);
+
+	item = get_valid_settings_array (c_type);
+	while (item && item->name) {
+		if (!strcmp (name, item->name))
+			return item->mandatory;
+		item++;
+	}
+	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4325,7 +4349,7 @@ gen_nmcli_cmds (char *text, int state, const char **commands)
 static char *
 gen_nmcli_cmds_menu (char *text, int state)
 {
-	const char *commands[] = { "goto", "set", "describe", "print", "verify",
+	const char *commands[] = { "goto", "set", "remove", "describe", "print", "verify",
 	                           "save", "back", "help", "quit", "nmcli",
 	                            NULL };
 	return gen_nmcli_cmds (text, state, commands);
@@ -4545,6 +4569,7 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 					else
 						generator_func = gen_property_names;
 				} else if (   should_complete_cmd (line, "set ")
+				           || should_complete_cmd (line, "remove ")
 				           || should_complete_cmd (line, "describe ")) {
 					if (level == 0 && !strchr (line, '.')) {
 						generator_func = gen_setting_names;
@@ -4793,6 +4818,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 typedef enum {
 	NMC_EDITOR_MAIN_CMD_UNKNOWN = 0,
 	NMC_EDITOR_MAIN_CMD_GOTO,
+	NMC_EDITOR_MAIN_CMD_REMOVE,
 	NMC_EDITOR_MAIN_CMD_SET,
 	NMC_EDITOR_MAIN_CMD_DESCRIBE,
 	NMC_EDITOR_MAIN_CMD_PRINT,
@@ -4819,6 +4845,8 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 
 	if (matches (vec[0], "goto") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_GOTO;
+	else if (matches (vec[0], "remove") == 0)
+		editor_cmd = NMC_EDITOR_MAIN_CMD_REMOVE;
 	else if (matches (vec[0], "set") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_SET;
 	else if (matches (vec[0], "describe") == 0)
@@ -4855,6 +4883,7 @@ editor_main_usage (void)
 	 */
 	printf (_("---[ Main menu ]---\n"
 	          "goto     [<setting> | <prop>]        :: go to a setting or property\n"
+	          "remove   <setting>[.<prop>] | <prop> :: remove setting or reset property value\n"
 	          "set      [<setting>.<prop> <value>]  :: set property value\n"
 	          "describe [<setting>.<prop>]          :: describe property\n"
 	          "print    [all]                       :: print the connection\n"
@@ -4883,6 +4912,13 @@ editor_main_help (const char *command)
 			          "Examples: nmcli> goto connection\n"
 			          "          nmcli connection> goto secondaries\n"
 			          "          nmcli> goto ipv4.addresses\n"));
+			break;
+		case NMC_EDITOR_MAIN_CMD_REMOVE:
+			printf (_("remove <setting>[.<prop>]  :: remove setting or reset property value\n\n"
+			          "This command removes an entire setting from the connection, or if a property\n"
+			          "is given, resets that property to the default value.\n\n"
+			          "Examples: nmcli> remove wifi-sec\n"
+			          "          nmcli> remove eth.mtu\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_SET:
 			printf (_("set [<setting>.<prop> <value>]  :: set property value\n\n"
@@ -5140,6 +5176,21 @@ print_setting_description (NMSetting *setting)
 	for (i = 0; all_props && all_props[i]; i++)
 		print_property_description (setting, all_props[i]);
 	g_strfreev (all_props);
+}
+
+static gboolean
+connection_remove_setting (NMConnection *connection, NMSetting *setting)
+{
+	gboolean mandatory;
+
+	mandatory = is_setting_mandatory (connection, setting);
+	if (!mandatory) {
+		nm_connection_remove_setting (connection, G_OBJECT_TYPE (setting));
+		return TRUE;
+	}
+	printf (_("Error: setting '%s' is mandatory and cannot be removed.\n"),
+	        nm_setting_get_name (setting));
+	return FALSE;
 }
 
 static void
@@ -5717,6 +5768,79 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* submenu - level 2 - editing properties */
 				cmd_loop = property_edit_submenu (nmc, connection, rem_con, menu_ctx.curr_setting, prop_name);
+			}
+			break;
+
+		case NMC_EDITOR_MAIN_CMD_REMOVE:
+			/* Remove setting from connection, or delete value of a property */
+			if (!cmd_arg) {
+				if (menu_ctx.level == 1) {
+					const char *prop_name;
+
+					prop_name = ask_check_property (cmd_arg,
+					                                (const char **) menu_ctx.valid_props,
+					                                menu_ctx.valid_props_str);
+					if (!prop_name)
+						break;
+
+					/* Delete property value */
+					nmc_property_set_default_value (menu_ctx.curr_setting, prop_name);
+				} else
+					printf (_("Error: no argument given; valid are [%s]\n"), valid_settings_str);
+			} else {
+				NMSetting *ss = NULL;
+				gboolean descr_all;
+				char *user_s;
+
+				/* cmd_arg_s != NULL means argument is "setting.property" */
+				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
+				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+				if (user_s) {
+					ss = is_setting_valid (connection, valid_settings_arr, user_s);
+					if (!ss) {
+						if (check_valid_name (user_s, valid_settings_arr, NULL))
+							printf (_("Setting '%s' is not present in the connection.\n"), user_s);
+						else
+							printf (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
+							        user_s, valid_settings_str);
+						break;
+					}
+				} else
+					ss = menu_ctx.curr_setting;
+
+				if (descr_all) {
+					/* Remove setting from the connection */
+					connection_remove_setting (connection, ss);
+					if (ss == menu_ctx.curr_setting) {
+						/* If we removed the setting we are in, go up */
+						menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+						nmc_completion_setting = NULL;  /* for TAB completion */
+					}
+				} else {
+					GError *tmp_err = NULL;
+					char *prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
+					if (prop_name) {
+						/* Delete property value */
+						nmc_property_set_default_value (ss, prop_name);
+					} else {
+						/* If the string is not a property, try it as a setting */
+						NMSetting *s_tmp;
+						s_tmp = is_setting_valid (connection, valid_settings_arr, cmd_arg_p);
+						if (s_tmp) {
+							/* Remove setting from the connection */
+							connection_remove_setting (connection, s_tmp);
+							if (ss == menu_ctx.curr_setting) {
+								/* If we removed the setting we are in, go up */
+								menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+								nmc_completion_setting = NULL;  /* for TAB completion */
+							}
+						} else
+							printf (_("Error: %s properties, nor it is a setting name.\n"),
+							        tmp_err->message);
+						g_clear_error (&tmp_err);
+					}
+					g_free (prop_name);
+				}
 			}
 			break;
 
