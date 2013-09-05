@@ -4580,7 +4580,9 @@ ask_check_property (const char *arg,
 
 	if (!arg) {
 		printf (_("Available properties: %s\n"), valid_props_str);
-		prop_name_user = g_strstrip (readline_x (EDITOR_PROMPT_PROPERTY));
+		prop_name_user = readline_x (EDITOR_PROMPT_PROPERTY);
+		if (prop_name_user)
+			g_strstrip (prop_name_user);
 	} else
 		prop_name_user = g_strdup (arg);
 
