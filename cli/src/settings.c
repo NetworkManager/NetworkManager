@@ -4770,6 +4770,32 @@ nmc_property_set_default_value (NMSetting *setting, const char *prop)
 }
 
 /*
+ * Generic function for reseting (single value) properties.
+ *
+ * The function resets the property value to the default one. It respects
+ * nmcli restrictions for changing properties. So if 'set_func' is NULL,
+ * reseting the value is denied.
+ *
+ * Returns: TRUE on success; FALSE on failure and sets error
+ */
+gboolean
+nmc_setting_reset_property (NMSetting *setting, const char *prop, GError **error)
+{
+	const NmcPropertyFuncs *item;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->set_func) {
+		nmc_property_set_default_value (setting, prop);
+		return TRUE;
+	}
+	g_set_error_literal (error, 1, 0, _("the property can't be changed"));
+	return FALSE;
+}
+
+/*
  * Generic function for removing items for collection-type properties.
  *
  * If 'option' is not NULL, it tries to remove it, otherwise 'idx' is used.

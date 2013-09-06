@@ -5318,8 +5318,13 @@ property_edit_submenu (NmCli *nmc,
 					g_clear_error (&tmp_err);
 				}
 				g_free (option);
-			} else
-				nmc_property_set_default_value (curr_setting, prop_name);
+			} else {
+				if (!nmc_setting_reset_property (curr_setting, prop_name, &tmp_err)) {
+					printf (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+					        tmp_err->message);
+					g_clear_error (&tmp_err);
+				}
+			}
 			break;
 
 		case NMC_EDITOR_SUB_CMD_DESCRIBE:
@@ -5775,6 +5780,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			/* Remove setting from connection, or delete value of a property */
 			if (!cmd_arg) {
 				if (menu_ctx.level == 1) {
+					GError *tmp_err = NULL;
 					const char *prop_name;
 
 					prop_name = ask_check_property (cmd_arg,
@@ -5784,7 +5790,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						break;
 
 					/* Delete property value */
-					nmc_property_set_default_value (menu_ctx.curr_setting, prop_name);
+					if (!nmc_setting_reset_property (menu_ctx.curr_setting, prop_name, &tmp_err)) {
+						printf (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+						        tmp_err->message);
+						g_clear_error (&tmp_err);
+					}
 				} else
 					printf (_("Error: no argument given; valid are [%s]\n"), valid_settings_str);
 			} else {
@@ -5821,7 +5831,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					char *prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {
 						/* Delete property value */
-						nmc_property_set_default_value (ss, prop_name);
+						if (!nmc_setting_reset_property (ss, prop_name, &tmp_err)) {
+							printf (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+							        tmp_err->message);
+							g_clear_error (&tmp_err);
+						}
 					} else {
 						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;

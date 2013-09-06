@@ -66,6 +66,9 @@ gboolean    nmc_setting_set_property (NMSetting *setting,
                                       const char *prop,
                                       const char *val,
                                       GError **error);
+gboolean    nmc_setting_reset_property (NMSetting *setting,
+                                        const char *prop,
+                                        GError **error);
 gboolean    nmc_setting_remove_property_option (NMSetting *setting,
                                                 const char *prop,
                                                 const char *option,
