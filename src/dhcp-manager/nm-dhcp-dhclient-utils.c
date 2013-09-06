@@ -76,14 +76,18 @@ add_ip4_config (GString *str, NMSettingIP4Config *s_ip4, const char *hostname)
 		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
 		if (tmp) {
 			gboolean is_octets = TRUE;
-			const char *p = tmp;
+			int i = 0;
 
-			while (*p) {
-				if (!g_ascii_isxdigit (*p) && (*p != ':')) {
+			while (tmp[i]) {
+				if ((i % 3) != 2 && !g_ascii_isxdigit (tmp[i])) {
 					is_octets = FALSE;
 					break;
 				}
-				p++;
+				if ((i % 3) == 2 && tmp[i] != ':') {
+					is_octets = FALSE;
+					break;
+				}
+				i++;
 			}
 
 			/* If the client ID is just hex digits and : then don't use quotes,
