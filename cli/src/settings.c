@@ -2053,6 +2053,11 @@ done:
 
 
 /* --- NM_SETTING_CONNECTION_SETTING_NAME property setter functions --- */
+#if 0
+/*
+ * Setting/removing UUID has been forbidden.
+ * Should it be enabled later, this function can be used.
+ */
 static gboolean
 nmc_property_con_set_uuid (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
@@ -2065,6 +2070,7 @@ nmc_property_con_set_uuid (NMSetting *setting, const char *prop, const char *val
 	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
+#endif
 
 /* 'permissions' */
 /* define from libnm-util/nm-setting-connection.c */
@@ -3821,7 +3827,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, UUID),
 	                    nmc_property_connection_get_uuid,
-	                    nmc_property_con_set_uuid,
+	                    NULL, /* forbid setting/removing UUID */
 	                    NULL,
 	                    NULL,
 	                    NULL);
