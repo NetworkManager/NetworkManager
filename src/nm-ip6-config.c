@@ -107,6 +107,19 @@ same_prefix (const struct in6_addr *address1, const struct in6_addr *address2, i
 
 /******************************************************************/
 
+static gboolean
+addresses_are_duplicate (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b, gboolean consider_plen)
+{
+	return IN6_ARE_ADDR_EQUAL (&a->address, &b->address) && (!consider_plen || a->plen == b->plen);
+}
+
+static gboolean
+routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_gateway_and_metric)
+{
+	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen &&
+	       (!consider_gateway_and_metric || (IN6_ARE_ADDR_EQUAL (&a->gateway, &b->gateway) && a->metric == b->metric));
+}
+
 NMIP6Config *
 nm_ip6_config_capture (int ifindex)
 {
@@ -380,19 +393,12 @@ nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr 
 	return FALSE;
 }
 
-static gboolean
-routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
-{
-	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen;
-}
-
 /**
- * nm_ip6_config_subtract()
+ * nm_ip6_config_subtract:
  * @dst: config from which to remove everything in @src
  * @src: config to remove from @dst
  *
  * Removes everything in @src from @dst.
- *
  */
 void
 nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
@@ -450,7 +456,7 @@ nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
 		for (j = 0; j < nm_ip6_config_get_num_routes (dst); j++) {
 			const NMPlatformIP6Route *dst_route = nm_ip6_config_get_route (dst, j);
 
-			if (routes_are_duplicate (src_route, dst_route)) {
+			if (routes_are_duplicate (src_route, dst_route, FALSE)) {
 				nm_ip6_config_del_route (dst, j);
 				break;
 			}
@@ -487,6 +493,180 @@ nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
 
 	if (nm_ip6_config_get_mss (src) == nm_ip6_config_get_mss (dst))
 		nm_ip6_config_set_mss (dst, 0);
+}
+
+/**
+ * nm_ip6_config_replace:
+ * @dst: config which will be replaced with everything in @src
+ * @src: config to copy over to @dst
+ * @relevant_changes: return whether there are changes to the
+ * destination object that are relevant. This is equal to
+ * nm_ip6_config_equal() showing any difference.
+ *
+ * Replaces everything in @dst with @src so that the two configurations
+ * contain the same content -- with the exception of the dbus path.
+ *
+ * Returns: whether the @dst instance changed in any way (including minor changes,
+ * that are not signaled by the output parameter @relevant_changes).
+ */
+gboolean
+nm_ip6_config_replace (NMIP6Config *dst, NMIP6Config *src, gboolean *relevant_changes)
+{
+#ifndef G_DISABLE_ASSERT
+	gboolean config_equal;
+#endif
+	gboolean has_minor_changes = FALSE, has_relevant_changes = FALSE, are_equal;
+	guint i, num;
+	NMIP6ConfigPrivate *dst_priv, *src_priv;
+	const NMPlatformIP6Address *dst_addr, *src_addr;
+	const NMPlatformIP6Route *dst_route, *src_route;
+
+	g_return_val_if_fail (src != NULL, FALSE);
+	g_return_val_if_fail (dst != NULL, FALSE);
+	g_return_val_if_fail (src != dst, FALSE);
+
+#ifndef G_DISABLE_ASSERT
+	config_equal = nm_ip6_config_equal (dst, src);
+#endif
+
+	dst_priv = NM_IP6_CONFIG_GET_PRIVATE (dst);
+	src_priv = NM_IP6_CONFIG_GET_PRIVATE (src);
+
+	/* never_default */
+	if (src_priv->never_default != dst_priv->never_default) {
+		dst_priv->never_default = src_priv->never_default;
+		has_minor_changes = TRUE;
+	}
+
+	/* default gateway */
+	if (!IN6_ARE_ADDR_EQUAL (&src_priv->gateway, &dst_priv->gateway)) {
+		nm_ip6_config_set_gateway (dst, &src_priv->gateway);
+		has_relevant_changes = TRUE;
+	}
+
+	/* addresses */
+	num = nm_ip6_config_get_num_addresses (src);
+	are_equal = num == nm_ip6_config_get_num_addresses (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_platform_ip6_address_cmp (src_addr = nm_ip6_config_get_address (src, i),
+			                                 dst_addr = nm_ip6_config_get_address (dst, i))) {
+				are_equal = FALSE;
+				if (!addresses_are_duplicate (src_addr, dst_addr, TRUE)) {
+					has_relevant_changes = TRUE;
+					break;
+				}
+			}
+		}
+	} else
+		has_relevant_changes = TRUE;
+	if (!are_equal) {
+		nm_ip6_config_reset_addresses (dst);
+		for (i = 0; i < num; i++)
+			nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
+		has_minor_changes = TRUE;
+	}
+
+	/* routes */
+	num = nm_ip6_config_get_num_routes (src);
+	are_equal = num == nm_ip6_config_get_num_routes (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_platform_ip6_route_cmp (src_route = nm_ip6_config_get_route (src, i),
+			                               dst_route = nm_ip6_config_get_route (dst, i))) {
+				are_equal = FALSE;
+				if (!routes_are_duplicate (src_route, dst_route, TRUE)) {
+					has_relevant_changes = TRUE;
+					break;
+				}
+			}
+		}
+	} else
+		has_relevant_changes = TRUE;
+	if (!are_equal) {
+		nm_ip6_config_reset_routes (dst);
+		for (i = 0; i < num; i++)
+			nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
+		has_minor_changes = TRUE;
+	}
+
+	/* nameservers */
+	num = nm_ip6_config_get_num_nameservers (src);
+	are_equal = num == nm_ip6_config_get_num_nameservers (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (IN6_ARE_ADDR_EQUAL (nm_ip6_config_get_nameserver (src, i),
+			                        nm_ip6_config_get_nameserver (dst, i))) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip6_config_reset_nameservers (dst);
+		for (i = 0; i < num; i++)
+			nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* domains */
+	num = nm_ip6_config_get_num_domains (src);
+	are_equal = num == nm_ip6_config_get_num_domains (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (g_strcmp0 (nm_ip6_config_get_domain (src, i),
+			                nm_ip6_config_get_domain (dst, i))) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip6_config_reset_domains (dst);
+		for (i = 0; i < num; i++)
+			nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* dns searches */
+	num = nm_ip6_config_get_num_searches (src);
+	are_equal = num == nm_ip6_config_get_num_searches (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (g_strcmp0 (nm_ip6_config_get_search (src, i),
+			                nm_ip6_config_get_search (dst, i))) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip6_config_reset_searches (dst);
+		for (i = 0; i < num; i++)
+			nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* mss */
+	if (src_priv->mss != dst_priv->mss) {
+		nm_ip6_config_set_mss (dst, src_priv->mss);
+		has_minor_changes = TRUE;
+	}
+
+	/* ptp address */
+	if (!IN6_ARE_ADDR_EQUAL (&src_priv->ptp_address, &dst_priv->ptp_address)) {
+		nm_ip6_config_set_ptp_address (dst, &src_priv->ptp_address);
+		has_relevant_changes = TRUE;
+	}
+
+	/* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
+	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
+	g_assert (config_equal == !has_relevant_changes);
+
+	if (relevant_changes)
+		*relevant_changes = has_relevant_changes;
+
+	return has_relevant_changes || has_minor_changes;
 }
 
 /******************************************************************/
@@ -604,7 +784,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
-		if (routes_are_duplicate (item, new)) {
+		if (routes_are_duplicate (item, new, FALSE)) {
 			memcpy (item, new, sizeof (*item));
 			return;
 		}

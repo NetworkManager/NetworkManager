@@ -104,6 +104,19 @@ same_prefix (guint32 address1, guint32 address2, int plen)
 
 /******************************************************************/
 
+static gboolean
+addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b, gboolean consider_plen)
+{
+	return a->address == b->address && (!consider_plen || a->plen == b->plen);
+}
+
+static gboolean
+routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gboolean consider_gateway_and_metric)
+{
+	return a->network == b->network && a->plen == b->plen &&
+	       (!consider_gateway_and_metric || (a->gateway == b->gateway && a->metric == b->metric));
+}
+
 NMIP4Config *
 nm_ip4_config_capture (int ifindex)
 {
@@ -376,12 +389,11 @@ nm_ip4_config_merge (NMIP4Config *dst, NMIP4Config *src)
 }
 
 /**
- * nm_ip4_config_subtract()
+ * nm_ip4_config_subtract:
  * @dst: config from which to remove everything in @src
  * @src: config to remove from @dst
  *
  * Removes everything in @src from @dst.
- *
  */
 void
 nm_ip4_config_subtract (NMIP4Config *dst, NMIP4Config *src)
@@ -503,6 +515,228 @@ nm_ip4_config_subtract (NMIP4Config *dst, NMIP4Config *src)
 			}
 		}
 	}
+}
+
+
+/**
+ * nm_ip4_config_replace:
+ * @dst: config from which to remove everything in @src
+ * @src: config to remove from @dst
+ * @relevant_changes: return whether there are changes to the
+ * destination object that are relevant. This is equal to
+ * nm_ip4_config_equal() showing any difference.
+ *
+ * Replaces everything in @dst with @src so that the two configurations
+ * contain the same content -- with the exception of the dbus path.
+ *
+ * Returns: whether the @dst instance changed in any way (including minor changes,
+ * that are not signaled by the output parameter @relevant_changes).
+ */
+gboolean
+nm_ip4_config_replace (NMIP4Config *dst, NMIP4Config *src, gboolean *relevant_changes)
+{
+#ifndef G_DISABLE_ASSERT
+	gboolean config_equal;
+#endif
+	gboolean has_minor_changes = FALSE, has_relevant_changes = FALSE, are_equal;
+	guint i, num;
+	NMIP4ConfigPrivate *dst_priv, *src_priv;
+	const NMPlatformIP4Address *dst_addr, *src_addr;
+	const NMPlatformIP4Route *dst_route, *src_route;
+
+	g_return_val_if_fail (src != NULL, FALSE);
+	g_return_val_if_fail (dst != NULL, FALSE);
+	g_return_val_if_fail (src != dst, FALSE);
+
+#ifndef G_DISABLE_ASSERT
+	config_equal = nm_ip4_config_equal (dst, src);
+#endif
+
+	dst_priv = NM_IP4_CONFIG_GET_PRIVATE (dst);
+	src_priv = NM_IP4_CONFIG_GET_PRIVATE (src);
+
+	/* never_default */
+	if (src_priv->never_default != dst_priv->never_default) {
+		dst_priv->never_default = src_priv->never_default;
+		has_relevant_changes = TRUE;
+	}
+
+	/* default gateway */
+	if (src_priv->gateway != dst_priv->gateway) {
+		nm_ip4_config_set_gateway (dst, src_priv->gateway);
+		has_relevant_changes = TRUE;
+	}
+
+	/* addresses */
+	num = nm_ip4_config_get_num_addresses (src);
+	are_equal = num == nm_ip4_config_get_num_addresses (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_platform_ip4_address_cmp (src_addr = nm_ip4_config_get_address (src, i),
+			                                 dst_addr = nm_ip4_config_get_address (dst, i))) {
+				are_equal = FALSE;
+				if (!addresses_are_duplicate (src_addr, dst_addr, TRUE)) {
+					has_relevant_changes = TRUE;
+					break;
+				}
+			}
+		}
+	} else
+		has_relevant_changes = TRUE;
+	if (!are_equal) {
+		nm_ip4_config_reset_addresses (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_address (dst, nm_ip4_config_get_address (src, i));
+		has_minor_changes = TRUE;
+	}
+
+	/* routes */
+	num = nm_ip4_config_get_num_routes (src);
+	are_equal = num == nm_ip4_config_get_num_routes (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_platform_ip4_route_cmp (src_route = nm_ip4_config_get_route (src, i),
+			                               dst_route = nm_ip4_config_get_route (dst, i))) {
+				are_equal = FALSE;
+				if (!routes_are_duplicate (src_route, dst_route, TRUE)) {
+					has_relevant_changes = TRUE;
+					break;
+				}
+			}
+		}
+	} else
+		has_relevant_changes = TRUE;
+	if (!are_equal) {
+		nm_ip4_config_reset_routes (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_route (dst, nm_ip4_config_get_route (src, i));
+		has_minor_changes = TRUE;
+	}
+
+	/* nameservers */
+	num = nm_ip4_config_get_num_nameservers (src);
+	are_equal = num == nm_ip4_config_get_num_nameservers (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_ip4_config_get_nameserver (src, i) != nm_ip4_config_get_nameserver (dst, i)) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip4_config_reset_nameservers (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* domains */
+	num = nm_ip4_config_get_num_domains (src);
+	are_equal = num == nm_ip4_config_get_num_domains (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (g_strcmp0 (nm_ip4_config_get_domain (src, i),
+			               nm_ip4_config_get_domain (dst, i))) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip4_config_reset_domains (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* dns searches */
+	num = nm_ip4_config_get_num_searches (src);
+	are_equal = num == nm_ip4_config_get_num_searches (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (g_strcmp0 (nm_ip4_config_get_search (src, i),
+			               nm_ip4_config_get_search (dst, i))) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip4_config_reset_searches (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* mss */
+	if (src_priv->mss != dst_priv->mss) {
+		nm_ip4_config_set_mss (dst, src_priv->mss);
+		has_minor_changes = TRUE;
+	}
+
+	/* ptp address */
+	if (src_priv->ptp_address != dst_priv->ptp_address) {
+		dst_priv->ptp_address = src_priv->ptp_address;
+		has_relevant_changes = TRUE;
+	}
+
+	/* nis */
+	num = nm_ip4_config_get_num_nis_servers (src);
+	are_equal = num == nm_ip4_config_get_num_nis_servers (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_ip4_config_get_nis_server (src, i) != nm_ip4_config_get_nis_server (dst, i)) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip4_config_reset_nis_servers (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_nis_server (dst, nm_ip4_config_get_nis_server (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* nis_domain */
+	if (g_strcmp0 (src_priv->nis_domain, dst_priv->nis_domain)) {
+		nm_ip4_config_set_nis_domain (dst, src_priv->nis_domain);
+		has_relevant_changes = TRUE;
+	}
+
+	/* wins */
+	num = nm_ip4_config_get_num_wins (src);
+	are_equal = num == nm_ip4_config_get_num_wins (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (nm_ip4_config_get_wins (src, i) != nm_ip4_config_get_wins (dst, i)) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip4_config_reset_wins (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_wins (dst, nm_ip4_config_get_wins (src, i));
+		has_relevant_changes = TRUE;
+	}
+
+	/* mtu */
+	if (src_priv->mtu != dst_priv->mtu) {
+		nm_ip4_config_set_mtu (dst, src_priv->mtu);
+		has_minor_changes = TRUE;
+	}
+
+	/* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
+	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
+	g_assert (config_equal == !has_relevant_changes);
+
+	if (relevant_changes)
+		*relevant_changes = has_relevant_changes;
+
+	return has_relevant_changes || has_minor_changes;
 }
 
 void
@@ -643,12 +877,6 @@ nm_ip4_config_reset_addresses (NMIP4Config *config)
 	g_array_set_size (priv->addresses, 0);
 }
 
-static gboolean
-addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
-{
-	return a->address == b->address;
-}
-
 void
 nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 {
@@ -660,7 +888,7 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 	for (i = 0; i < priv->addresses->len; i++ ) {
 		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
 
-		if (addresses_are_duplicate (item, new)) {
+		if (addresses_are_duplicate (item, new, FALSE)) {
 			memcpy (item, new, sizeof (*item));
 			return;
 		}
@@ -705,12 +933,6 @@ nm_ip4_config_reset_routes (NMIP4Config *config)
 	g_array_set_size (priv->routes, 0);
 }
 
-static gboolean
-routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
-{
-	return a->network == b->network && a->plen == b->plen;
-}
-
 void
 nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 {
@@ -722,7 +944,7 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP4Route *item = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
-		if (routes_are_duplicate (item, new)) {
+		if (routes_are_duplicate (item, new, FALSE)) {
 			memcpy (item, new, sizeof (*item));
 			return;
 		}
