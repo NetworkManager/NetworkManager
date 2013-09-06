@@ -12,19 +12,18 @@ INCLUDES = \
 noinst_LTLIBRARIES = libbluez-manager.la
 
 libbluez_manager_la_SOURCES = \
-	nm-bluez-manager.h \
+	nm-bluez-common.h \
+	nm-bluez-device.c \
 	nm-bluez-device.h \
-	nm-bluez-common.h
+	nm-bluez-manager.h
 
 if WITH_BLUEZ5
 libbluez_manager_la_SOURCES += \
-	nm-bluez5-device.c \
 	nm-bluez5-manager.c
 else
 libbluez_manager_la_SOURCES += \
 	nm-bluez-adapter.h \
 	nm-bluez-adapter.c \
-	nm-bluez-device.c \
 	nm-bluez-manager.c
 endif
 
