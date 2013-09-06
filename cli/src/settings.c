@@ -3831,6 +3831,12 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, TYPE),
+	                    nmc_property_connection_get_type,
+	                    NULL, /* read-only */
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT),
 	                    nmc_property_connection_get_autoconnect,
 	                    nmc_property_set_bool,
@@ -3845,7 +3851,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, READ_ONLY),
 	                    nmc_property_connection_get_read_only,
-	                    NULL, /* 'read-only' is read-inly :-) */
+	                    NULL, /* 'read-only' is read-only :-) */
 	                    NULL,
 	                    NULL,
 	                    NULL);
