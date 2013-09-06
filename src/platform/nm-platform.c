@@ -1690,6 +1690,87 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 	return buffer;
 }
 
+#define _CMP_POINTER(a, b)                                  \
+    G_STMT_START {                                          \
+        if ((a) == (b))                                     \
+            return 0;                                       \
+        if (!(a))                                           \
+            return -1;                                      \
+        if (!(b))                                           \
+            return 1;                                       \
+    } G_STMT_END
+
+#define _CMP_FIELD(a, b, field)                             \
+    G_STMT_START {                                          \
+        if (((a)->field) != ((b)->field))                   \
+            return (((a)->field) < ((b)->field)) ? -1 : 1;  \
+    } G_STMT_END
+
+#define _CMP_FIELD_MEMCMP(a, b, field)                      \
+    G_STMT_START {                                          \
+        int c = memcmp (&((a)->field), &((b)->field),       \
+                        sizeof ((a)->field));               \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
+int
+nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
+{
+	_CMP_POINTER (a, b);
+	_CMP_FIELD_MEMCMP (a, b, address);
+	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD (a, b, plen);
+	_CMP_FIELD (a, b, timestamp);
+	_CMP_FIELD (a, b, lifetime);
+	_CMP_FIELD (a, b, preferred);
+	return 0;
+}
+
+int
+nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
+{
+	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD_MEMCMP (a, b, address);
+	_CMP_FIELD (a, b, plen);
+	_CMP_FIELD (a, b, timestamp);
+	_CMP_FIELD (a, b, lifetime);
+	_CMP_FIELD (a, b, preferred);
+	return 0;
+}
+
+int
+nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
+{
+	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD_MEMCMP (a, b, network);
+	_CMP_FIELD (a, b, plen);
+	_CMP_FIELD_MEMCMP (a, b, gateway);
+	_CMP_FIELD (a, b, metric);
+	_CMP_FIELD (a, b, mss);
+	return 0;
+}
+
+int
+nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
+{
+	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD_MEMCMP (a, b, network);
+	_CMP_FIELD (a, b, plen);
+	_CMP_FIELD_MEMCMP (a, b, gateway);
+	_CMP_FIELD (a, b, metric);
+	_CMP_FIELD (a, b, mss);
+	return 0;
+}
+
+#undef _CMP_POINTER
+#undef _CMP_FIELD
+#undef _CMP_FIELD_MEMCMP
+
+
 static void
 log_link (NMPlatformLink *device, const char *change_type)
 {
