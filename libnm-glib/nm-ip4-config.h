@@ -54,20 +54,24 @@ typedef struct {
 	void (*_reserved6) (void);
 } NMIP4ConfigClass;
 
+#define NM_IP4_CONFIG_GATEWAY "gateway"
 #define NM_IP4_CONFIG_ADDRESSES "addresses"
+#define NM_IP4_CONFIG_ROUTES "routes"
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
-#define NM_IP4_CONFIG_ROUTES "routes"
+#define NM_IP4_CONFIG_SEARCHES "searches"
 #define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
 
 GType nm_ip4_config_get_type (void);
 
 GObject *nm_ip4_config_new (DBusGConnection *connection, const char *object_path);
 
+const char *     nm_ip4_config_get_gateway      (NMIP4Config *config);
 const GSList *   nm_ip4_config_get_addresses    (NMIP4Config *config);
+const GSList *   nm_ip4_config_get_routes       (NMIP4Config *config);
 const GArray *   nm_ip4_config_get_nameservers  (NMIP4Config *config);
 const GPtrArray *nm_ip4_config_get_domains      (NMIP4Config *config);
-const GSList *   nm_ip4_config_get_routes       (NMIP4Config *config);
+const GPtrArray *nm_ip4_config_get_searches     (NMIP4Config *config);
 const GArray *   nm_ip4_config_get_wins_servers (NMIP4Config *config);
 
 G_END_DECLS

@@ -1524,19 +1524,23 @@ device_ip4_config_changed (NMDevice *device,
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	/* Old configs get removed immediately */
-	if (old_config)
-		nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
-
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
 	 * Prevents unecessary changes to DNS information.
 	 */
 	if (!nm_device_is_activating (device)) {
-		if (new_config)
-			nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		if (old_config != new_config) {
+			if (old_config)
+				nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
+			if (new_config)
+				nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		}
 		update_ip4_dns (policy, priv->dns_manager);
 		update_ip4_routing (policy, TRUE);
+	} else {
+		/* Old configs get removed immediately */
+		if (old_config)
+			nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
 	}
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
@@ -1554,19 +1558,23 @@ device_ip6_config_changed (NMDevice *device,
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	/* Old configs get removed immediately */
-	if (old_config)
-		nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
-
 	/* Ignore IP config changes while the device is activating, because we'll
 	 * catch all the changes when the device moves to ACTIVATED state.
 	 * Prevents unecessary changes to DNS information.
 	 */
 	if (!nm_device_is_activating (device)) {
-		if (new_config)
-			nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		if (old_config != new_config) {
+			if (old_config)
+				nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
+			if (new_config)
+				nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+		}
 		update_ip6_dns (policy, priv->dns_manager);
 		update_ip6_routing (policy, TRUE);
+	} else {
+		/* Old configs get removed immediately */
+		if (old_config)
+			nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
 	}
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);

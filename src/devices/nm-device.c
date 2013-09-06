@@ -4558,7 +4558,9 @@ nm_device_set_ip4_config (NMDevice *self,
 	NMDevicePrivate *priv;
 	const char *ip_iface;
 	NMIP4Config *old_config = NULL;
+	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
+	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -4570,36 +4572,52 @@ nm_device_set_ip4_config (NMDevice *self,
 	old_config = priv->ip4_config;
 
 	/* Always commit to nm-platform to update lifetimes */
-	if (commit && new_config)
+	if (commit && new_config) {
 		success = nm_ip4_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
-
-	if (nm_ip4_config_equal (new_config, old_config))
-		return success;
-
-	priv->ip4_config = NULL;
+		if (!success)
+			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+	}
 
 	if (new_config) {
-		priv->ip4_config = g_object_ref (new_config);
+		if (old_config) {
+			/* has_changes is set only on relevant changes, because when the configuration changes,
+			 * this causes a re-read and reset. This should only happen for relevant changes */
+			nm_ip4_config_replace (old_config, new_config, &has_changes);
+			if (has_changes) {
+				nm_log_dbg (LOGD_IP4, "(%s): update IP4Config instance (%s)",
+				            ip_iface, nm_ip4_config_get_dbus_path (old_config));
+			}
+		} else {
+			has_changes = TRUE;
+			priv->ip4_config = g_object_ref (new_config);
 
-		if (success || !commit) {
-			/* Export over D-Bus */
-			if (!nm_ip4_config_get_dbus_path (new_config))
+			if (success && !nm_ip4_config_get_dbus_path (new_config)) {
+				/* Export over D-Bus */
 				nm_ip4_config_export (new_config);
-			_update_ip4_address (self);
+			}
 		}
-
-		if (!success && reason)
-			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
-	} else {
+	} else if (old_config) {
+		has_changes = TRUE;
+		priv->ip4_config = NULL;
+		nm_log_dbg (LOGD_IP4, "(%s): clear IP4Config instance (%s)",
+		            ip_iface, nm_ip4_config_get_dbus_path (old_config));
 		/* Device config is invalid if combined config is invalid */
 		g_clear_object (&priv->dev_ip4_config);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
-	g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
+	if (has_changes) {
+		_update_ip4_address (self);
 
-	if (old_config)
-		g_object_unref (old_config);
+		if (old_config != priv->ip4_config)
+			g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_CONFIG);
+		g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
+
+		if (old_config != priv->ip4_config && old_config)
+			g_object_unref (old_config);
+	}
+
+	if (reason)
+		*reason = reason_local;
 
 	return success;
 }
@@ -4632,7 +4650,9 @@ nm_device_set_ip6_config (NMDevice *self,
 	NMDevicePrivate *priv;
 	const char *ip_iface;
 	NMIP6Config *old_config = NULL;
+	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
+	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
 	int ip_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -4644,32 +4664,48 @@ nm_device_set_ip6_config (NMDevice *self,
 	old_config = priv->ip6_config;
 
 	/* Always commit to nm-platform to update lifetimes */
-	if (commit && new_config)
+	if (commit && new_config) {
 		success = nm_ip6_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
-
-	if (nm_ip6_config_equal (new_config, old_config))
-		return success;
-
-	priv->ip6_config = NULL;
-
-	if (new_config) {
-		priv->ip6_config = g_object_ref (new_config);
-
-		if (success || !commit) {
-			/* Export over D-Bus */
-			if (!nm_ip6_config_get_dbus_path (new_config))
-				nm_ip6_config_export (new_config);
-		}
-
-		if (!success && reason)
-			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		if (!success)
+			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
 
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
-	g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
+	if (new_config) {
+		if (old_config) {
+			/* has_changes is set only on relevant changes, because when the configuration changes,
+			 * this causes a re-read and reset. This should only happen for relevant changes */
+			nm_ip6_config_replace (old_config, new_config, &has_changes);
+			if (has_changes) {
+				nm_log_dbg (LOGD_IP6, "(%s): update IP6Config instance (%s)",
+				            ip_iface, nm_ip6_config_get_dbus_path (old_config));
+			}
+		} else {
+			has_changes = TRUE;
+			priv->ip6_config = g_object_ref (new_config);
 
-	if (old_config)
-		g_object_unref (old_config);
+			if (success && !nm_ip6_config_get_dbus_path (new_config)) {
+				/* Export over D-Bus */
+				nm_ip6_config_export (new_config);
+			}
+		}
+	} else if (old_config) {
+		has_changes = TRUE;
+		priv->ip6_config = NULL;
+		nm_log_dbg (LOGD_IP6, "(%s): clear IP6Config instance (%s)",
+		            ip_iface, nm_ip6_config_get_dbus_path (old_config));
+	}
+
+	if (has_changes) {
+		if (old_config != priv->ip6_config)
+			g_object_notify (G_OBJECT (self), NM_DEVICE_IP6_CONFIG);
+		g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
+
+		if (old_config != priv->ip6_config && old_config)
+			g_object_unref (old_config);
+	}
+
+	if (reason)
+		*reason = reason_local;
 
 	return success;
 }

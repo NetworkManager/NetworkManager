@@ -54,19 +54,23 @@ typedef struct {
 	void (*_reserved6) (void);
 } NMIP6ConfigClass;
 
+#define NM_IP6_CONFIG_GATEWAY "gateway"
 #define NM_IP6_CONFIG_ADDRESSES "addresses"
+#define NM_IP6_CONFIG_ROUTES "routes"
 #define NM_IP6_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP6_CONFIG_DOMAINS "domains"
-#define NM_IP6_CONFIG_ROUTES "routes"
+#define NM_IP6_CONFIG_SEARCHES "searches"
 
 GType nm_ip6_config_get_type (void);
 
 GObject *nm_ip6_config_new (DBusGConnection *connection, const char *object_path);
 
+const char *     nm_ip6_config_get_gateway      (NMIP6Config *config);
 const GSList *   nm_ip6_config_get_addresses    (NMIP6Config *config);
+const GSList *   nm_ip6_config_get_routes       (NMIP6Config *config);
 const GSList *   nm_ip6_config_get_nameservers  (NMIP6Config *config);
 const GPtrArray *nm_ip6_config_get_domains      (NMIP6Config *config);
-const GSList *   nm_ip6_config_get_routes       (NMIP6Config *config);
+const GPtrArray *nm_ip6_config_get_searches     (NMIP6Config *config);
 
 G_END_DECLS
 

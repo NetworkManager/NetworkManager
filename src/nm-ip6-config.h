@@ -41,10 +41,12 @@ typedef struct {
 	GObjectClass parent;
 } NMIP6ConfigClass;
 
+#define NM_IP6_CONFIG_GATEWAY "gateway"
 #define NM_IP6_CONFIG_ADDRESSES "addresses"
+#define NM_IP6_CONFIG_ROUTES "routes"
 #define NM_IP6_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP6_CONFIG_DOMAINS "domains"
-#define NM_IP6_CONFIG_ROUTES "routes"
+#define NM_IP6_CONFIG_SEARCHES "searches"
 
 GType nm_ip6_config_get_type (void);
 
