@@ -260,18 +260,17 @@ nm_sources = \
 
 nm_sources += \
 	bluez-manager/nm-bluez-common.h \
+	bluez-manager/nm-bluez-device.c \
 	bluez-manager/nm-bluez-device.h \
 	bluez-manager/nm-bluez-manager.h
 
 if WITH_BLUEZ5
 nm_sources += \
-	bluez-manager/nm-bluez5-device.c \
 	bluez-manager/nm-bluez5-manager.c
 else
 nm_sources += \
 	bluez-manager/nm-bluez-adapter.h \
 	bluez-manager/nm-bluez-adapter.c \
-	bluez-manager/nm-bluez-device.c \
 	bluez-manager/nm-bluez-manager.c
 endif
 
