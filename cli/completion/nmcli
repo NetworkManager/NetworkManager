@@ -299,7 +299,13 @@ _nmcli_complete_COMMAND_ARGS()
                     return 1
                 fi
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bridge bond-slave bridge-slave"
+                    if [[ "${words[1]:0:1}" = "8" ]]; then
+                        # usually we don't want to show the 802-x types (because the shorter aliases are more
+                        # user friendly. Only complete them, if the current word already starts with an "8".
+                        _nmcli_list "802-3-ethernet 802-11-wireless 802-11-olpc-mesh"
+                    else
+                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bridge bond-slave bridge-slave"
+                    fi
                    return 0
                 fi
                 OPTIONS_TYPE="${words[1]}"
@@ -612,7 +618,7 @@ _nmcli()
                             words=("${words[@]:2}")
                             OPTIONS_TYPE=
                             OPTIONS=(type ifname con-name autoconnect)
-                            OPTIONS_MANDATORY=(type ifname)
+                            OPTIONS_MANDATORY=(type)
                             COMMAND_ARGS_WAIT_OPTIONS=1
                             _nmcli_complete_COMMAND_ARGS && return 0
 
@@ -634,9 +640,11 @@ _nmcli()
                             OPTIONS_IP=(ip4 ip6 gw4 gw6)
                             OPTIONS_MANDATORY=()
                             case "$OPTIONS_TYPE" in
+                                802-3|802-3-|802-3-e|802-3-et|802-3-eth|802-3-ethe|802-3-ether|802-3-ethern|802-3-etherne|802-3-ethernet| \
                                 e|et|eth|ethe|ether|ethern|etherne|ethernet)
                                     OPTIONS_TYPED=(mac cloned-mac mtu)
                                     ;;
+                                802-11-w|802-11-wi|802-11-wir|802-11-wire|802-11-wirel|802-11-wirele|802-11-wireles|802-11-wireless| \
                                 wif|wifi)
                                     OPTIONS_TYPED=(ssid mac cloned-mac mtu)
                                     OPTIONS_MANDATORY=(ssid)
@@ -686,6 +694,7 @@ _nmcli()
                                     OPTIONS_TYPED=(vpn-type user)
                                     OPTIONS_MANDATORY=(vpn-type)
                                     ;;
+                                802-11-o|802-11-ol|802-11-olp|802-11-olpc|802-11-olpc-|802-11-olpc-m|802-11-olpc-me|802-11-olpc-mes|802-11-olpc-mesh| \
                                 o|ol|olp|olpc|olpc-|olpc-m|olpc-me|olpc-mes|olpc-mesh)
                                     OPTIONS_TYPED=(ssid channel dhcp-anycast)
                                     OPTIONS_MANDATORY=(ssid)
