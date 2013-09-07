@@ -1362,6 +1362,29 @@ test_hwaddr_aton_malformed (void)
 	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:a@%%", ARPHRD_ETHER, buf) == NULL);
 }
 
+static void
+test_setting_old_uuid (void)
+{
+	GError *error = NULL;
+	NMSetting *setting;
+	gboolean success;
+
+	/* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
+	 * like this one. Test that we maintain compatibility. */
+	const char *uuid = "f43bec2cdd60e5da381ebb1eb1fa39f3cc52660c";
+
+	setting = nm_setting_connection_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_CONNECTION_ID, "uuidtest",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	success = nm_setting_verify (NM_SETTING (setting), NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success == TRUE);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -1393,6 +1416,7 @@ int main (int argc, char **argv)
 	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
 	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
 	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	test_setting_old_uuid ();
 
 	test_connection_to_hash_setting_name ();
 	test_setting_connection_permissions_helpers ();
