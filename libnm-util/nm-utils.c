@@ -2264,5 +2264,12 @@ nm_utils_is_uuid (const char *str)
 		p++;
 	}
 
-	return (num_dashes == 4) && (p - str == 36);
+	if ((num_dashes == 4) && (p - str == 36))
+		return TRUE;
+
+	/* Backwards compat for older configurations */
+	if ((num_dashes == 0) && (p - str == 40))
+		return TRUE;
+
+	return FALSE;
 }
