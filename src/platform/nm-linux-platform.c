@@ -364,6 +364,68 @@ nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 
 /******************************************************************/
 
+static gboolean
+ethtool_get (const char *name, gpointer edata)
+{
+	struct ifreq ifr;
+	int fd;
+
+	memset (&ifr, 0, sizeof (ifr));
+	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_data = edata;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		error ("ethtool: Could not open socket.");
+		return FALSE;
+	}
+
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		debug ("ethtool: Request failed: %s", strerror (errno));
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static int
+ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
+{
+	auto_g_free struct ethtool_sset_info *info = NULL;
+	auto_g_free struct ethtool_gstrings *strings = NULL;
+	guint32 len, i;
+
+	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
+	info->cmd = ETHTOOL_GSSET_INFO;
+	info->reserved = 0;
+	info->sset_mask = 1ULL << stringset_id;
+
+	if (!ethtool_get (ifname, info))
+		return -1;
+	if (!info->sset_mask)
+		return -1;
+
+	len = info->data[0];
+
+	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
+	strings->cmd = ETHTOOL_GSTRINGS;
+	strings->string_set = stringset_id;
+	strings->len = len;
+	if (!ethtool_get (ifname, strings))
+		return -1;
+
+	for (i = 0; i < len; i++) {
+		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
+			return i;
+	}
+
+	return -1;
+}
+
+/******************************************************************/
+
 /* Object type specific utilities */
 
 static const char *
@@ -465,6 +527,21 @@ link_is_software (struct rtnl_link *link)
 	return FALSE;
 }
 
+static const char *
+ethtool_get_driver (const char *ifname)
+{
+	struct ethtool_drvinfo drvinfo;
+
+	drvinfo.cmd = ETHTOOL_GDRVINFO;
+	if (!ethtool_get (ifname, &drvinfo))
+		return NULL;
+
+	if (!*drvinfo.driver)
+		return NULL;
+
+	return g_intern_string (drvinfo.driver);
+}
+
 static gboolean
 link_is_announcable (NMPlatform *platform, struct rtnl_link *rtnllink)
 {
@@ -494,6 +571,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 
 	if (!type) {
 		int arptype = rtnl_link_get_arptype (rtnllink);
+		const char *driver;
 
 		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
@@ -506,11 +584,16 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 			 */
 			if (g_str_has_prefix (rtnl_link_get_name (rtnllink), "ctc"))
 				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-		} else
-			return link_type_from_udev (platform,
-			                            rtnl_link_get_ifindex (rtnllink),
-			                            arptype,
-			                            out_name);
+		}
+
+		driver = ethtool_get_driver (rtnl_link_get_name (rtnllink));
+		if (!g_strcmp0 (driver, "openvswitch"))
+			return_type (NM_LINK_TYPE_OPENVSWITCH, "openvswitch");
+
+		return link_type_from_udev (platform,
+		                            rtnl_link_get_ifindex (rtnllink),
+		                            arptype,
+		                            out_name);
 	} else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "gre"))
@@ -612,6 +695,8 @@ link_init (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 		info->driver = udev_get_driver (platform, udev_device, info->ifindex);
 		if (!info->driver)
 			info->driver = rtnl_link_get_type (rtnllink);
+		if (!info->driver)
+			info->driver = ethtool_get_driver (info->name);
 		if (!info->driver)
 			info->driver = "unknown";
 		info->udi = g_udev_device_get_sysfs_path (udev_device);
@@ -1467,66 +1552,6 @@ static gboolean
 link_set_noarp (NMPlatform *platform, int ifindex)
 {
 	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE);
-}
-
-static gboolean
-ethtool_get (const char *name, gpointer edata)
-{
-	struct ifreq ifr;
-	int fd;
-
-	memset (&ifr, 0, sizeof (ifr));
-	strncpy (ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = edata;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		error ("ethtool: Could not open socket.");
-		return FALSE;
-	}
-
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		debug ("ethtool: Request failed: %s", strerror (errno));
-		close (fd);
-		return FALSE;
-	}
-
-	close (fd);
-	return TRUE;
-}
-
-static int
-ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
-{
-	auto_g_free struct ethtool_sset_info *info = NULL;
-	auto_g_free struct ethtool_gstrings *strings = NULL;
-	guint32 len, i;
-
-	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
-	info->cmd = ETHTOOL_GSSET_INFO;
-	info->reserved = 0;
-	info->sset_mask = 1ULL << stringset_id;
-
-	if (!ethtool_get (ifname, info))
-		return -1;
-	if (!info->sset_mask)
-		return -1;
-
-	len = info->data[0];
-
-	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
-	strings->cmd = ETHTOOL_GSTRINGS;
-	strings->string_set = stringset_id;
-	strings->len = len;
-	if (!ethtool_get (ifname, strings))
-		return -1;
-
-	for (i = 0; i < len; i++) {
-		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
-			return i;
-	}
-
-	return -1;
 }
 
 static gboolean
