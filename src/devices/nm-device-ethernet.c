@@ -1275,16 +1275,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* We don't set the MTU as we don't know whether it was set explicitly */
 }
 
-static const GByteArray *
-get_connection_hw_address (NMDevice *device,
-                           NMConnection *connection)
-{
-	NMSettingWired *s_wired;
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	return s_wired ? nm_setting_wired_get_mac_address (s_wired) : NULL;
-}
-
 static void
 get_link_speed (NMDevice *device)
 {
@@ -1414,7 +1404,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->deactivate = deactivate;
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->update_connection = update_connection;
-	parent_class->get_connection_hw_address = get_connection_hw_address;
 	parent_class->carrier_changed = carrier_changed;
 
 	parent_class->state_changed = device_state_changed;

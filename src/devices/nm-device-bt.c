@@ -378,16 +378,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static const GByteArray *
-get_connection_hw_address (NMDevice *device,
-                           NMConnection *connection)
-{
-	NMSettingBluetooth *s_bt;
-
-	s_bt = nm_connection_get_setting_bluetooth (connection);
-	return s_bt ? nm_setting_bluetooth_get_bdaddr (s_bt) : NULL;
-}
-
 /*****************************************************************************/
 /* IP method PPP */
 
@@ -1278,7 +1268,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
-	device_class->get_connection_hw_address = get_connection_hw_address;
 	device_class->is_available = is_available;
 
 	device_class->state_changed = device_state_changed;

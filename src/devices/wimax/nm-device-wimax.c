@@ -331,16 +331,6 @@ set_enabled (NMDevice *device, gboolean enabled)
 
 /* NMDevice methods */
 
-static const GByteArray *
-get_connection_hw_address (NMDevice *device,
-                           NMConnection *connection)
-{
-	NMSettingWimax *s_wimax;
-
-	s_wimax = nm_connection_get_setting_wimax (connection);
-	return s_wimax ? nm_setting_wimax_get_mac_address (s_wimax) : NULL;
-}
-
 static gboolean
 check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
@@ -1391,7 +1381,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->deactivate = deactivate;
 	device_class->set_enabled = set_enabled;
-	device_class->get_connection_hw_address = get_connection_hw_address;
 
 	device_class->state_changed = device_state_changed;
 

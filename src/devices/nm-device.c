@@ -6495,58 +6495,6 @@ nm_device_find_assumable_connection (NMDevice *device, const GSList *connections
 	return NULL;
 }
 
-/**
- * nm_device_hwaddr_matches:
- * @device: the device to use when matching the hardware address
- * @connection: the connection which supplies the hardware address
- * @other_hwaddr: if given, use this address instead of the device's actual
- *   hardware address
- * @other_hwaddr_len: length in bytes of @other_hwaddr
- * @fail_if_no_hwaddr: whether to fail the match if @connection does not contain
- *   a hardware address
- *
- * Matches a the devices hardware address (or @other_hwaddr if given) against
- * the hardware-specific setting in @connection.  Allows for device-agnostic
- * hardware address matching without having to know the internal details of
- * the connection and which settings are used by each device subclass.
- *
- * Returns: %TRUE if the @device 's hardware address or @other_hwaddr matches
- *  a hardware address in a hardware-specific setting in @connection
- */
-gboolean
-nm_device_hwaddr_matches (NMDevice *device,
-                          NMConnection *connection,
-                          const guint8 *other_hwaddr,
-                          guint other_hwaddr_len,
-                          gboolean fail_if_no_hwaddr)
-{
-	NMDevicePrivate *priv;
-	const GByteArray *setting_hwaddr;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (other_hwaddr)
-		g_return_val_if_fail (other_hwaddr_len != priv->hw_addr_len, FALSE);
-
-	if (!NM_DEVICE_GET_CLASS (device)->get_connection_hw_address)
-		return FALSE;
-
-	setting_hwaddr = NM_DEVICE_GET_CLASS (device)->get_connection_hw_address (device, connection);
-	if (setting_hwaddr) {
-		g_return_val_if_fail (setting_hwaddr->len == priv->hw_addr_len, FALSE);
-
-		if (other_hwaddr) {
-			if (memcmp (setting_hwaddr->data, other_hwaddr, priv->hw_addr_len) == 0)
-				return TRUE;
-		} else if (memcmp (setting_hwaddr->data, priv->hw_addr, priv->hw_addr_len) == 0)
-			return TRUE;
-	} else if (fail_if_no_hwaddr == FALSE)
-		return TRUE;
-
-	return FALSE;
-}
-
 void
 nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout)
 {

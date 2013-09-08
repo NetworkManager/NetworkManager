@@ -3318,16 +3318,6 @@ can_interrupt_activation (NMDevice *dev)
 	return FALSE;
 }
 
-static const GByteArray *
-get_connection_hw_address (NMDevice *device,
-                           NMConnection *connection)
-{
-	NMSettingWireless *s_wifi;
-
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	return s_wifi ? nm_setting_wireless_get_mac_address (s_wifi) : NULL;
-}
-
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -3630,7 +3620,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
 	parent_class->can_interrupt_activation = can_interrupt_activation;
-	parent_class->get_connection_hw_address = get_connection_hw_address;
 
 	parent_class->state_changed = device_state_changed;
 

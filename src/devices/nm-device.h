@@ -196,9 +196,6 @@ typedef struct {
 	gboolean        (* match_l2_config) (NMDevice *self, NMConnection *connection);
 	void            (* update_connection) (NMDevice *device, NMConnection *connection);
 
-	const GByteArray * (* get_connection_hw_address) (NMDevice *self,
-	                                                  NMConnection *connection);
-
 	gboolean        (* enslave_slave) (NMDevice *self,
 	                                   NMDevice *slave,
 	                                   NMConnection *connection);
@@ -286,12 +283,6 @@ gboolean nm_device_can_assume_connections (NMDevice *device);
 
 NMConnection * nm_device_find_assumable_connection (NMDevice *device,
                                                     const GSList *connections);
-
-gboolean nm_device_hwaddr_matches (NMDevice *device,
-                                   NMConnection *connection,
-                                   const guint8 *other_hwaddr,
-                                   guint other_hwaddr_len,
-                                   gboolean fail_if_no_hwaddr);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 

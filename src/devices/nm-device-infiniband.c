@@ -306,16 +306,6 @@ match_l2_config (NMDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
-static const GByteArray *
-get_connection_hw_address (NMDevice *device,
-                           NMConnection *connection)
-{
-	NMSettingInfiniband *s_ib;
-
-	s_ib = nm_connection_get_setting_infiniband (connection);
-	return s_ib ? nm_setting_infiniband_get_mac_address (s_ib) : NULL;
-}
-
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -358,7 +348,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	parent_class->match_l2_config = match_l2_config;
-	parent_class->get_connection_hw_address = get_connection_hw_address;
 
 	/* properties */
 
