@@ -36,6 +36,8 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	gulong name_owner_changed_id;
 
+	NMConnectionProvider *provider;
+
 	GDBusProxy *proxy;
 
 	GHashTable *devices;
@@ -117,7 +119,7 @@ device_added (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
-	device = nm_bluez_device_new (path);
+	device = nm_bluez_device_new (path, priv->provider);
 	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
 	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
@@ -329,7 +331,7 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
 /****************************************************************/
 
 NMBluezManager *
-nm_bluez_manager_get (void)
+nm_bluez_manager_get (NMConnectionProvider *provider)
 {
 	static NMBluezManager *singleton = NULL;
 
@@ -338,6 +340,9 @@ nm_bluez_manager_get (void)
 
 	singleton = (NMBluezManager *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
 	g_assert (singleton);
+
+	/* Cache the connection provider for NMBluezAdapter objects */
+	NM_BLUEZ_MANAGER_GET_PRIVATE (singleton)->provider = provider;
 
 	return singleton;
 }

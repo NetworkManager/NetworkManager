@@ -65,10 +65,8 @@ typedef struct {
 
 	char *bt_iface;
 
-#if ! WITH_BLUEZ5
 	NMConnectionProvider *provider;
 	GSList *connections;
-#endif
 } NMBluezDevicePrivate;
 
 
@@ -167,10 +165,9 @@ check_emit_usable (NMBluezDevice *self)
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 	              priv->address &&
 #if WITH_BLUEZ5
-	              priv->adapter && priv->dbus_connection
-#else
-	              priv->connections
+	              priv->adapter && priv->dbus_connection &&
 #endif
+	              priv->connections
 	              );
 	if (new_usable != priv->usable) {
 		priv->usable = new_usable;
@@ -180,7 +177,6 @@ check_emit_usable (NMBluezDevice *self)
 
 /********************************************************************/
 
-#if ! WITH_BLUEZ5
 static gboolean
 connection_compatible (NMBluezDevice *self, NMConnection *connection)
 {
@@ -270,7 +266,6 @@ cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
 }
 
 /***********************************************************/
-#endif
 
 void
 nm_bluez_device_disconnect (NMBluezDevice *self)
@@ -670,6 +665,9 @@ query_properties (NMBluezDevice *self)
 		g_variant_unref (v);
 	}
 
+	/* Check if any connections match this device */
+	cp_connections_loaded (priv->provider, self);
+
 	priv->initialized = TRUE;
 	g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
 
@@ -791,11 +789,7 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 /********************************************************************/
 
 NMBluezDevice *
-nm_bluez_device_new (const char *path
-#if ! WITH_BLUEZ5
-                     , NMConnectionProvider *provider
-#endif
-                    )
+nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 {
 	NMBluezDevice *self;
 	NMBluezDevicePrivate *priv;
@@ -804,9 +798,7 @@ nm_bluez_device_new (const char *path
 #endif
 
 	g_return_val_if_fail (path != NULL, NULL);
-#if ! WITH_BLUEZ5
 	g_return_val_if_fail (provider != NULL, NULL);
-#endif
 
 	self = (NMBluezDevice *) g_object_new (NM_TYPE_BLUEZ_DEVICE,
 	                                       NM_BLUEZ_DEVICE_PATH, path,
@@ -816,23 +808,6 @@ nm_bluez_device_new (const char *path
 
 	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
-#if WITH_BLUEZ5
-	g_bus_get (G_BUS_TYPE_SYSTEM,
-	           NULL,
-	           (GAsyncReadyCallback) on_bus_acquired,
-	           self);
-
-	g_object_ref (self);
-	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                          G_DBUS_PROXY_FLAGS_NONE,
-	                          NULL,
-	                          BLUEZ_SERVICE,
-	                          priv->path,
-	                          BLUEZ_DEVICE_INTERFACE,
-	                          NULL,
-	                          (GAsyncReadyCallback) on_proxy_acquired,
-	                          self);
-#else
 	priv->provider = provider;
 
 	g_signal_connect (priv->provider,
@@ -855,6 +830,23 @@ nm_bluez_device_new (const char *path
 	                  G_CALLBACK (cp_connections_loaded),
 	                  self);
 
+#if WITH_BLUEZ5
+	g_bus_get (G_BUS_TYPE_SYSTEM,
+	           NULL,
+	           (GAsyncReadyCallback) on_bus_acquired,
+	           self);
+
+	g_object_ref (self);
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_NONE,
+	                          NULL,
+	                          BLUEZ_SERVICE,
+	                          priv->path,
+	                          BLUEZ_DEVICE_INTERFACE,
+	                          NULL,
+	                          (GAsyncReadyCallback) on_proxy_acquired,
+	                          self);
+#else
 	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 
 	priv->proxy4 = dbus_g_proxy_new_for_name (connection,
@@ -887,10 +879,6 @@ dispose (GObject *object)
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
-#if WITH_BLUEZ5
-	g_clear_object (&priv->adapter);
-	g_clear_object (&priv->dbus_connection);
-#else
 	g_slist_foreach (priv->connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (priv->connections);
 	priv->connections = NULL;
@@ -900,6 +888,10 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
 
+#if WITH_BLUEZ5
+	g_clear_object (&priv->adapter);
+	g_clear_object (&priv->dbus_connection);
+#else
 	g_clear_object (&priv->connection_proxy);
 #endif
 

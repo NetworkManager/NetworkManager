@@ -61,13 +61,7 @@ typedef struct {
 
 GType nm_bluez_manager_get_type (void);
 
-NMBluezManager *nm_bluez_manager_get (
-#if WITH_BLUEZ5
-                                      void
-#else
-                                      NMConnectionProvider *provider
-#endif
-                                      );
+NMBluezManager *nm_bluez_manager_get (NMConnectionProvider *provider);
 
 void nm_bluez_manager_query_devices (NMBluezManager *manager);
 
