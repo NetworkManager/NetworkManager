@@ -41,7 +41,6 @@
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
-#include "nm-device-ethernet.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-rdisc.h"
@@ -6644,8 +6643,7 @@ cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpoin
 gboolean
 nm_device_supports_vlans (NMDevice *device)
 {
-	/* At the moment, NM's VLAN code assumes all VLANs are over ethernet. */
-	return NM_IS_DEVICE_ETHERNET (device);
+	return nm_platform_link_supports_vlans (nm_device_get_ifindex (device));
 }
 
 gboolean
