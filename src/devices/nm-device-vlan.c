@@ -46,6 +46,8 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 #define NM_VLAN_ERROR (nm_vlan_error_quark ())
 
 typedef struct {
+	guint8 initial_hw_addr[ETH_ALEN];
+
 	gboolean disposed;
 	gboolean invalid;
 
@@ -75,6 +77,21 @@ nm_vlan_error_quark (void)
 }
 
 /******************************************************************/
+
+static void
+update_initial_hw_address (NMDevice *dev)
+{
+	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+	char *mac_str;
+
+	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+
+	mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER);
+	nm_log_dbg (LOGD_DEVICE | LOGD_VLAN, "(%s): read initial MAC address %s",
+	            nm_device_get_iface (dev), mac_str);
+	g_free (mac_str);
+}
 
 static guint32
 get_generic_capabilities (NMDevice *dev)
@@ -294,6 +311,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
+	NMSettingWired *s_wired;
+	const GByteArray *cloned_mac;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -307,6 +326,14 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	connection = nm_act_request_get_connection (req);
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		/* Set device MAC address if the connection wants to change it */
+		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+		if (cloned_mac && (cloned_mac->len == ETH_ALEN))
+			nm_device_set_hw_addr (dev, (const guint8 *) cloned_mac->data, "set", LOGD_VLAN);
+	}
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	if (s_vlan) {
@@ -327,6 +354,34 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	}
 
 	return ret;
+}
+
+static void
+ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	guint32 mtu;
+
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		mtu = nm_setting_wired_get_mtu (s_wired);
+		if (mtu)
+			nm_ip4_config_set_mtu (config, mtu);
+	}
+}
+
+static void
+deactivate (NMDevice *device)
+{
+	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+
+	/* Reset MAC address back to initial address */
+	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
 }
 
 /******************************************************************/
@@ -550,9 +605,12 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
+	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->bring_up = bring_up;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
+	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
+	parent_class->deactivate = deactivate;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;

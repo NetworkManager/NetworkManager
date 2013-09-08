@@ -784,48 +784,6 @@ bring_up (NMDevice *device, gboolean *no_firmware)
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->bring_up (device, no_firmware);
 }
 
-static gboolean
-_set_hw_addr (NMDeviceWifi *self, const guint8 *addr, const char *detail)
-{
-	NMDevice *dev = NM_DEVICE (self);
-	const char *iface;
-	char *mac_str = NULL;
-	gboolean success = FALSE;
-	const guint8 *cur_addr = nm_device_get_hw_address (dev, NULL);
-
-	g_return_val_if_fail (addr != NULL, FALSE);
-
-	iface = nm_device_get_iface (dev);
-
-	mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-
-	/* Do nothing if current MAC is same */
-	if (cur_addr && !memcmp (cur_addr, addr, ETH_ALEN)) {
-		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed", iface);
-		g_free (mac_str);
-		return TRUE;
-	}
-
-	/* Can't change MAC address while device is up */
-	nm_device_take_down (dev, FALSE);
-
-	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (dev), addr, ETH_ALEN);
-	if (success) {
-		/* MAC address succesfully changed; update the current MAC to match */
-		nm_device_update_hw_address (dev);
-		nm_log_info (LOGD_DEVICE | LOGD_ETHER, "(%s): %s MAC address to %s",
-		             iface, detail, mac_str);
-	} else {
-		nm_log_warn (LOGD_DEVICE | LOGD_ETHER, "(%s): failed to %s MAC address to %s",
-		             iface, detail, mac_str);
-	}
-	bring_up (dev, NULL);
-	g_free (mac_str);
-
-	return success;
-}
-
 static void
 remove_access_point (NMDeviceWifi *device,
                      NMAccessPoint *ap,
@@ -896,7 +854,7 @@ deactivate (NMDevice *dev)
 	    remove_access_point (self, orig_ap, TRUE);
 
 	/* Reset MAC address back to initial address */
-	_set_hw_addr (self, priv->initial_hw_addr, "reset");
+	nm_device_set_hw_addr (dev, priv->initial_hw_addr, "reset", LOGD_WIFI);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
@@ -2881,7 +2839,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	/* Set spoof MAC to the interface */
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	if (cloned_mac && (cloned_mac->len == ETH_ALEN))
-		_set_hw_addr (self, (const guint8 *) cloned_mac->data, "set");
+		nm_device_set_hw_addr (dev, (const guint8 *) cloned_mac->data, "set", LOGD_WIFI);
 
 	/* AP mode never uses a specific object or existing scanned AP */
 	if (priv->mode != NM_802_11_MODE_AP) {

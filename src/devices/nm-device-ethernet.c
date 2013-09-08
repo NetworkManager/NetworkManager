@@ -301,54 +301,6 @@ nm_device_ethernet_new (NMPlatformLink *platform_device)
 	                                  NULL);
 }
 
-static gboolean
-_set_hw_addr (NMDeviceEthernet *self, const guint8 *addr, const char *detail)
-{
-	NMDevice *dev = NM_DEVICE (self);
-	const char *iface;
-	char *mac_str = NULL;
-	gboolean success = FALSE;
-	const guint8 *cur_addr = nm_device_get_hw_address (dev, NULL);
-
-	g_return_val_if_fail (addr != NULL, FALSE);
-
-	iface = nm_device_get_iface (dev);
-
-	/* Do nothing if current MAC is same */
-	if (cur_addr && !memcmp (cur_addr, addr, ETH_ALEN)) {
-		nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): no MAC address change needed", iface);
-		return TRUE;
-	}
-
-	mac_str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-	                           addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-
-	/* Can't change MAC address while device is up */
-	nm_device_take_down (dev, FALSE);
-
-	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (dev), addr, ETH_ALEN);
-	if (success) {
-		/* MAC address succesfully changed; update the current MAC to match */
-		nm_device_update_hw_address (dev);
-		cur_addr = nm_device_get_hw_address (dev, NULL);
-		if (memcmp (cur_addr, addr, ETH_ALEN) == 0) {
-			nm_log_info (LOGD_DEVICE | LOGD_ETHER, "(%s): %s MAC address to %s",
-			             iface, detail, mac_str);
-		} else {
-			nm_log_warn (LOGD_DEVICE | LOGD_ETHER, "(%s): new MAC address %s "
-			             "not successfully set",
-			             iface, mac_str);
-		}
-	} else {
-		nm_log_warn (LOGD_DEVICE | LOGD_ETHER, "(%s): failed to %s MAC address to %s",
-		             iface, detail, mac_str);
-	}
-	nm_device_bring_up (dev, FALSE, NULL);
-	g_free (mac_str);
-
-	return success;
-}
-
 static void
 update_permanent_hw_address (NMDevice *dev)
 {
@@ -953,7 +905,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 			/* Set device MAC address if the connection wants to change it */
 			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 			if (cloned_mac && (cloned_mac->len == ETH_ALEN))
-				_set_hw_addr (self, (const guint8 *) cloned_mac->data, "set");
+				nm_device_set_hw_addr (dev, cloned_mac->data, "set", LOGD_ETHER);
 		}
 	}
 
@@ -1178,7 +1130,7 @@ deactivate (NMDevice *device)
 	supplicant_interface_release (self);
 
 	/* Reset MAC address back to initial address */
-	_set_hw_addr (self, priv->initial_hw_addr, "reset");
+	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);
 }
 
 static gboolean

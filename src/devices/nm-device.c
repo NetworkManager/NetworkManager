@@ -6704,6 +6704,55 @@ nm_device_update_hw_address (NMDevice *dev)
 	return changed;
 }
 
+gboolean
+nm_device_set_hw_addr (NMDevice *device, const guint8 *addr,
+                       const char *detail, guint64 hw_log_domain)
+{
+	const char *iface;
+	char *mac_str = NULL;
+	gboolean success = FALSE;
+	guint len;
+	const guint8 *cur_addr = nm_device_get_hw_address (device, &len);
+
+	g_return_val_if_fail (addr != NULL, FALSE);
+
+	iface = nm_device_get_iface (device);
+
+	/* Do nothing if current MAC is same */
+	if (cur_addr && !memcmp (cur_addr, addr, len)) {
+		nm_log_dbg (LOGD_DEVICE | hw_log_domain, "(%s): no MAC address change needed", iface);
+		return TRUE;
+	}
+
+	mac_str = nm_utils_hwaddr_ntoa_len (addr, len);
+
+	/* Can't change MAC address while device is up */
+	nm_device_take_down (device, FALSE);
+
+	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (device), addr, len);
+	if (success) {
+		/* MAC address succesfully changed; update the current MAC to match */
+		nm_device_update_hw_address (device);
+		cur_addr = nm_device_get_hw_address (device, NULL);
+		if (memcmp (cur_addr, addr, len) == 0) {
+			nm_log_info (LOGD_DEVICE | hw_log_domain, "(%s): %s MAC address to %s",
+			             iface, detail, mac_str);
+		} else {
+			nm_log_warn (LOGD_DEVICE | hw_log_domain, "(%s): new MAC address %s "
+			             "not successfully set",
+			             iface, mac_str);
+			success = FALSE;
+		}
+	} else {
+		nm_log_warn (LOGD_DEVICE | hw_log_domain, "(%s): failed to %s MAC address to %s",
+		             iface, detail, mac_str);
+	}
+	nm_device_bring_up (device, NULL);
+	g_free (mac_str);
+
+	return success;
+}
+
 void
 nm_device_add_pending_action (NMDevice *device, const char *action)
 {
