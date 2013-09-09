@@ -155,6 +155,34 @@ test_quote_client_id (void)
 
 /*******************************************/
 
+static const char *ascii_client_id_expected = \
+	"# Created by NetworkManager\n"
+	"\n"
+	"send dhcp-client-identifier \"qb:cd:ef:12:34:56\"; # added by NetworkManager\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_ascii_client_id (void)
+{
+	test_config (NULL, ascii_client_id_expected,
+	             NULL,
+	             "qb:cd:ef:12:34:56",
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
 static const char *override_hostname_orig = \
 	"send host-name \"foobar\";\n";
 
@@ -436,6 +464,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
 	g_test_add_func ("/dhcp/dhclient/quote_client_id", test_quote_client_id);
+	g_test_add_func ("/dhcp/dhclient/ascii_client_id", test_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/override_hostname", test_override_hostname);
 	g_test_add_func ("/dhcp/dhclient/existing_alsoreq", test_existing_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/existing_multiline_alsoreq", test_existing_multiline_alsoreq);
