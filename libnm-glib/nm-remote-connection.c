@@ -71,6 +71,7 @@ typedef struct {
 	DBusGProxyCall *call;
 	GFunc callback;
 	gpointer user_data;
+	gboolean extra_ref;
 } RemoteCall;
 
 typedef struct {
@@ -118,6 +119,10 @@ remote_call_complete (NMRemoteConnection *self, RemoteCall *call)
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	priv->calls = g_slist_remove (priv->calls, call);
+
+	if (call->extra_ref)
+		g_object_unref (self);
+
 	/* Don't need to cancel it since this function should only be called from
 	 * the dispose handler (where the proxy will be destroyed immediately after)
 	 * or from the call's completion callback.
@@ -285,6 +290,14 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 	call->self = self;
 	call->callback = (GFunc) callback;
 	call->user_data = user_data;
+
+	if (callback) {
+		/* Grab an extra ref on @self to make sure it doesn't get
+		 * destroyed by the NMRemoteSettings before the callback runs.
+		 */
+		g_object_ref (self);
+		call->extra_ref = TRUE;
+	}
 
 	call->call = dbus_g_proxy_begin_call (priv->proxy, "Delete",
 	                                      result_cb, call, NULL,
