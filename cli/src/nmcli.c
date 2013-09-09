@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 #include <locale.h>
 
 #include <glib.h>
@@ -55,6 +56,7 @@ typedef struct {
 
 /* --- Global variables --- */
 GMainLoop *loop = NULL;
+static sigset_t signal_set;
 
 
 /* Get an error quark for use with GError */
@@ -263,27 +265,67 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
-static void
-signal_handler (int signo)
-{
-	if (signo == SIGINT || signo == SIGTERM) {
-		g_message (_("Caught signal %d, shutting down..."), signo);
-		g_main_loop_quit (loop);
+void *signal_handling_thread (void *arg);
+/*
+ * Thread function waiting for signals and processing them.
+ * Wait for signals in signal set. The semantics of sigwait() require that all
+ * threads (including the thread calling sigwait()) have the signal masked, for
+ * reliable operation. Otherwise, a signal that arrives while this thread is
+ * not blocked in sigwait() might be delivered to another thread.
+ */
+void *
+signal_handling_thread (void *arg) {
+	int signo;
+
+	while (1) {
+		sigwait (&signal_set, &signo);
+
+		switch (signo) {
+		case SIGINT:
+		case SIGQUIT:
+		case SIGTERM:
+			printf (_("\nError: nmcli terminated by signal %d."), signo);
+			exit (1);
+			break;
+		default:
+			break;
+		}
 	}
+	return NULL;
 }
 
-static void
+/*
+ * Mask the signals we are interested in and create a signal handling thread.
+ * Because all threads inherit the signal mask from their creator, all threads
+ * in the process will have the signals masked. That's why setup_signals() has
+ * to be called before creating other threads.
+ */
+static gboolean
 setup_signals (void)
 {
-	struct sigaction action;
-	sigset_t mask;
+	pthread_t signal_thread_id;
+	int status;
 
-	sigemptyset (&mask);
-	action.sa_handler = signal_handler;
-	action.sa_mask = mask;
-	action.sa_flags = 0;
-	sigaction (SIGTERM,  &action, NULL);
-	sigaction (SIGINT,  &action, NULL);
+	sigemptyset (&signal_set);
+	sigaddset (&signal_set, SIGINT);
+	sigaddset (&signal_set, SIGQUIT);
+	sigaddset (&signal_set, SIGTERM);
+
+	/* Block all signals of interest. */
+	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
+	if (status != 0) {
+		fprintf (stderr, _("Failed to set signal mask: %d"), status);
+		return FALSE;
+	}
+
+       /* Create the signal handling thread. */
+	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);
+	if (status != 0) {
+		fprintf (stderr, _("Failed to create signal handling thread: %d"), status);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static NMClient *
@@ -368,6 +410,10 @@ main (int argc, char *argv[])
 	NmCli nmc;
 	ArgsInfo args_info = { &nmc, argc, argv };
 
+	/* Set up unix signal handling */
+	if (!setup_signals ())
+		exit (NMC_RESULT_ERROR_UNKNOWN);
+
 	/* Set locale to use environment variables */
 	setlocale (LC_ALL, "");
 
@@ -384,7 +430,6 @@ main (int argc, char *argv[])
 	g_idle_add (start, &args_info);
 
 	loop = g_main_loop_new (NULL, FALSE);  /* create main loop */
-	setup_signals ();                      /* setup UNIX signals */
 	g_main_loop_run (loop);                /* run main loop */
 
 	/* Print result descripting text */
