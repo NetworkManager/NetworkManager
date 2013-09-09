@@ -1087,36 +1087,48 @@ pending_activation_destroy (PendingActivation *pending,
 /*******************************************************************/
 
 static NMDevice *
-get_device_from_hwaddr (NMManager *self, NMConnection *connection)
+get_device_from_hwaddr (NMManager *self, const GByteArray *setting_mac)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	const guint8 *device_mac;
+	guint device_mac_len;
 	GSList *iter;
 
+	if (!setting_mac)
+		return NULL;
+
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (nm_device_hwaddr_matches (NM_DEVICE (iter->data), connection, NULL, 0, TRUE))
-			return iter->data;
+		NMDevice *device = iter->data;
+
+		device_mac = nm_device_get_hw_address (iter->data, &device_mac_len);
+		if (   setting_mac->len == device_mac_len
+		    && memcmp (setting_mac->data, device_mac, device_mac_len) == 0)
+			return device;
 	}
 	return NULL;
 }
 
-static NMDevice*
+static NMDevice *
 find_vlan_parent (NMManager *self,
-                  NMConnection *connection,
-                  gboolean check_hwaddr)
+                  NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingVlan *s_vlan;
+	NMSettingWired *s_wired;
 	NMConnection *parent_connection;
 	const char *parent_iface;
 	NMDevice *parent = NULL;
+	const GByteArray *setting_mac;
 	GSList *iter;
 
-	/* The 'parent' property could be either an interface name, a connection
-	 * UUID, or even given by the MAC address of the connection's ethernet
-	 * or WiFi setting.
+	/* The 'parent' property could be given by an interface name, a
+	 * connection UUID, or the MAC address of an NMSettingWired.
 	 */
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_return_val_if_fail (s_vlan != NULL, NULL);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	setting_mac = s_wired ? nm_setting_wired_get_mac_address (s_wired) : NULL;
 
 	parent_iface = nm_setting_vlan_get_parent (s_vlan);
 	if (parent_iface) {
@@ -1142,18 +1154,14 @@ find_vlan_parent (NMManager *self,
 				}
 
 				/* Check the hardware address of the parent connection */
-				if (check_hwaddr)
-					return get_device_from_hwaddr (self, parent_connection);
+				return get_device_from_hwaddr (self, setting_mac);
 			}
 			return NULL;
 		}
 	}
 
 	/* Try the hardware address from the VLAN connection's hardware setting */
-	if (check_hwaddr)
-		return get_device_from_hwaddr (self, connection);
-
-	return NULL;
+	return get_device_from_hwaddr (self, setting_mac);
 }
 
 static NMDevice *
@@ -1163,6 +1171,7 @@ find_infiniband_parent (NMManager *self,
 	NMSettingInfiniband *s_infiniband;
 	const char *parent_iface;
 	NMDevice *parent = NULL;
+	const GByteArray *setting_mac;
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_return_val_if_fail (s_infiniband != NULL, NULL);
@@ -1174,7 +1183,8 @@ find_infiniband_parent (NMManager *self,
 			return parent;
 	}
 
-	return get_device_from_hwaddr (self, connection);
+	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
+	return get_device_from_hwaddr (self, setting_mac);
 }
 
 /**
@@ -1217,7 +1227,7 @@ get_virtual_iface_name (NMManager *self,
 		s_vlan = nm_connection_get_setting_vlan (connection);
 		g_return_val_if_fail (s_vlan != NULL, NULL);
 
-		parent = find_vlan_parent (self, connection, TRUE);
+		parent = find_vlan_parent (self, connection);
 		if (parent) {
 			ifname = nm_connection_get_virtual_iface_name (connection);
 

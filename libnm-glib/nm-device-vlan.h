@@ -41,6 +41,7 @@ G_BEGIN_DECLS
  * @NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION: the VLAN connection was invalid
  * @NM_DEVICE_VLAN_ERROR_ID_MISMATCH: the VLAN identifiers of the connection and the device mismatched
  * @NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
+ * @NM_DEVICE_VLAN_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
  */
 typedef enum {
 	NM_DEVICE_VLAN_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
@@ -48,6 +49,7 @@ typedef enum {
 	NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION, /*< nick=InvalidVlanConnection >*/
 	NM_DEVICE_VLAN_ERROR_ID_MISMATCH,             /*< nick=IdMismatch >*/
 	NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH,      /*< nick=InterfaceMismatch >*/
+	NM_DEVICE_VLAN_ERROR_MAC_MISMATCH,            /*< nick=MacMismatch >*/
 } NMDeviceVlanError;
 
 #define NM_DEVICE_VLAN_ERROR nm_device_vlan_error_quark ()

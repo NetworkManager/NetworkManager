@@ -681,8 +681,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * If given, specifies the kernel name of the VLAN interface. If not given,
 	 * a default name will be constructed from the interface described by the
 	 * parent interface and the #NMSettingVlan:id , ex 'eth2.1'. The parent
-	 * interface may be given by the #NMSettingVlan:parent property or by a
-	 * hardware address property, eg #NMSettingWired:mac-address.
+	 * interface may be given by the #NMSettingVlan:parent property or by the
+	 * #NMSettingWired:mac-address property of an #NMSettingWired.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IFACE_NAME,
@@ -693,9 +693,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     "constructed from the interface described by the "
 		                     "parent interface and the 'id' property, ex "
 		                     "'eth2.1'. The parent interface may be given by "
-		                     "the 'parent' property or by a hardware address "
-		                     "property, eg the 'wired' settings' 'mac-address' "
-		                     "property.",
+		                     "the 'parent' property or by the 'mac-address' "
+		                     "property of a 'wired' setting.",
 		                     NULL,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
@@ -704,8 +703,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 *
 	 * If given, specifies the parent interface name or parent connection UUID
 	 * from which this VLAN interface should be created.  If this property is
-	 * not specified, the connection must contain a hardware address in a
-	 * hardware-specific setting, like #NMSettingWired:mac-address.
+	 * not specified, the connection must contain a #NMSettingWired:mac-address
+	 * in an #NMSettingWired setting.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
@@ -715,8 +714,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     "parent connection UUID from which this VLAN "
 		                     "interface should be created.  If this property is "
 		                     "not specified, the connection must contain a "
-		                     "hardware address in a hardware-specific setting, "
-		                     "like the 'wired' settings' 'mac-address' property.",
+		                     "'wired' setting with a 'mac-address' property.",
 		                     NULL,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 

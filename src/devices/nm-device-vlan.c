@@ -145,6 +145,28 @@ match_parent (NMDeviceVlan *self, const char *parent, GError **error)
 }
 
 static gboolean
+match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
+{
+	  NMSettingWired *s_wired;
+	  const GByteArray *mac;
+	  const guint8 *device_mac;
+	  guint device_mac_len;
+
+	  s_wired = nm_connection_get_setting_wired (connection);
+	  if (!s_wired)
+		  return !fail_if_no_hwaddr;
+
+	  mac = nm_setting_wired_get_mac_address (s_wired);
+	  if (!mac)
+		  return !fail_if_no_hwaddr;
+
+	  device_mac = nm_device_get_hw_address (device, &device_mac_len);
+
+	  return (   mac->len == device_mac_len
+	          && memcmp (mac->data, device_mac, device_mac_len) == 0);
+}
+
+static gboolean
 check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
                              GError **error)
@@ -175,8 +197,8 @@ check_connection_compatible (NMDevice *device,
 		if (!match_parent (NM_DEVICE_VLAN (device), parent, error))
 			return FALSE;
 	} else {
-		/* Parent could be a MAC address in a hardware-specific setting */
-		if (!nm_device_hwaddr_matches (priv->parent, connection, NULL, 0, TRUE)) {
+		/* Parent could be a MAC address in an NMSettingWired */
+		if (!match_hwaddr (device, connection, TRUE)) {
 			g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
 					     "Failed to match the VLAN parent interface via hardware address.");
 			return FALSE;
@@ -206,7 +228,6 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
 
 	nm_utils_complete_generic (connection,
@@ -226,15 +247,11 @@ complete_connection (NMDevice *device,
 	/* If there's no VLAN interface, no parent, and no hardware address in the
 	 * settings, then there's not enough information to complete the setting.
 	 */
-	if (!nm_setting_vlan_get_parent (s_vlan)) {
-		if (!nm_device_hwaddr_matches (priv->parent, connection, NULL, 0, TRUE)) {
-			/* FIXME: put hw_addr into the connection in the appropriate
-			 * hardware-specific setting.
-			 */
-			g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-				                 "The 'vlan' setting had no interface name, parent, or hardware address.");
-			return FALSE;
-		}
+	if (   !nm_setting_vlan_get_parent (s_vlan)
+	    && !match_hwaddr (device, connection, TRUE)) {
+		g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
+		                     "The 'vlan' setting had no interface name, parent, or hardware address.");
+		return FALSE;
 	}
 
 	return TRUE;
@@ -243,11 +260,8 @@ complete_connection (NMDevice *device,
 static gboolean
 match_l2_config (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
 	gboolean fail_if_no_hwaddr = FALSE;
-	const guint8 *hw_addr;
-	guint hw_addr_len;
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
@@ -267,8 +281,7 @@ match_l2_config (NMDevice *device, NMConnection *connection)
 	 * address will be in.  The VLAN device shouldn't have to know what kind
 	 * of interface the parent is.
 	 */
-	hw_addr = nm_device_get_hw_address (device, &hw_addr_len);
-	if (!nm_device_hwaddr_matches (priv->parent, connection, hw_addr, hw_addr_len, fail_if_no_hwaddr))
+	if (!match_hwaddr (device, connection, fail_if_no_hwaddr))
 		return FALSE;
 
 	/* FIXME: any more L2 checks? */
