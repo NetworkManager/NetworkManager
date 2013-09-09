@@ -7259,6 +7259,7 @@ test_write_wired_static_ip6_only_gw (const char *gateway_addr)
 	char s_gateway6[INET6_ADDRSTRLEN] = { 0 };
 	struct in6_addr gateway6_autovar;
 	const struct in6_addr *gateway6 = NULL;
+	char *unmanaged = NULL, *keyfile = NULL, *routefile = NULL, *route6file = NULL;
 
 	/* parsing the input argument and set the struct in6_addr "gateway6" to
 	 * the gateway address. NULL means "do not set the gateway explicitly". */
@@ -7341,8 +7342,11 @@ test_write_wired_static_ip6_only_gw (const char *gateway_addr)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_ETHERNET,
-	                               NULL, NULL, NULL,
-	                               NULL, NULL,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
 	                               &error,
 	                               &ignore_error);
 
@@ -7359,6 +7363,12 @@ test_write_wired_static_ip6_only_gw (const char *gateway_addr)
 
 	g_assert_no_error (error);
 	g_assert (reread);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+
 	g_assert (nm_connection_verify (reread, &error));
 	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
@@ -12602,10 +12612,15 @@ test_read_vlan_physdev (void)
 	NMConnection *connection;
 	GError *error = NULL;
 	NMSettingVlan *s_vlan;
+	char *unmanaged = NULL, *keyfile = NULL, *routefile = NULL, *route6file = NULL;
 
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	                                   NULL, TYPE_ETHERNET, NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error, NULL);
 	g_assert_no_error (error);
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
@@ -12618,6 +12633,11 @@ test_read_vlan_physdev (void)
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 3);
 
 	g_object_unref (connection);
+
+	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
 }
 
 static void
