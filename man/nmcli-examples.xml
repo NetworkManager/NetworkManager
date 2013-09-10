@@ -388,7 +388,7 @@ fi
       networking. When a wired interface is connected, Wi-Fi will be set
       to airplane mode (rfkilled). When the wired interface is disconnected,
       Wi-Fi will be turned back on.
-      Name this script e.g. 70-wifi-wired-exclusive.sh and put it into /etc/networkManager/dispatcher.d/.
+      Name this script e.g. 70-wifi-wired-exclusive.sh and put it into /etc/NetworkManager/dispatcher.d/.
       See <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>
       manual page for more information about NetworkManager dispatcher scripts.
     </para>
