@@ -284,6 +284,7 @@ signal_handling_thread (void *arg) {
 		case SIGINT:
 		case SIGQUIT:
 		case SIGTERM:
+			nmc_cleanup_readline ();
 			printf (_("\nError: nmcli terminated by signal %d."), signo);
 			exit (1);
 			break;

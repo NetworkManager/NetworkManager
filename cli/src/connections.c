@@ -4307,6 +4307,8 @@ typedef struct {
 	int *rl_attempted_completion_over_x;
 	int *rl_completion_append_character_x;
 	const char **rl_completer_word_break_characters_x;
+	void (*rl_free_line_state_func) (void);
+	void (*rl_cleanup_after_signal_func) (void);
 } EditLibSymbols;
 
 static EditLibSymbols edit_lib_symbols;
@@ -4663,6 +4665,12 @@ load_cmd_line_edit_lib (void)
 	if (!g_module_symbol (module, "rl_completer_word_break_characters",
 	                      (gpointer) (&edit_lib_symbols.rl_completer_word_break_characters_x)))
 		goto error;
+	if (!g_module_symbol (module, "rl_free_line_state",
+	                      (gpointer) (&edit_lib_symbols.rl_free_line_state_func)))
+		goto error;
+	if (!g_module_symbol (module, "rl_cleanup_after_signal",
+	                      (gpointer) (&edit_lib_symbols.rl_cleanup_after_signal_func)))
+		goto error;
 
 	/* Set a pointer to an alternative function to create matches */
 	*edit_lib_symbols.rl_attempted_completion_function_x = (CPPFunction *) nmcli_editor_tab_completion;
@@ -4674,6 +4682,15 @@ load_cmd_line_edit_lib (void)
 error:
 	g_module_close (module);
 	return NULL;
+}
+
+void
+nmc_cleanup_readline (void)
+{
+	if (edit_lib_symbols.rl_free_line_state_func)
+		edit_lib_symbols.rl_free_line_state_func ();
+	if (edit_lib_symbols.rl_cleanup_after_signal_func)
+		edit_lib_symbols.rl_cleanup_after_signal_func ();
 }
 
 static char *

@@ -24,4 +24,6 @@
 
 NMCResultCode do_connections (NmCli *nmc, int argc, char **argv);
 
+void nmc_cleanup_readline (void);
+
 #endif /* NMC_CONNECTIONS_H */
