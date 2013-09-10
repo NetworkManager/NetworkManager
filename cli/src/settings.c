@@ -3399,22 +3399,39 @@ nmc_property_wifi_set_wep_key (NMSetting *setting, const char *prop, const char 
 static gboolean
 nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	const char *valid_wep_types[] = { "key", "passphrase", NULL };
-	const char *type_str;
+	unsigned long  type_int;
+	const char *valid_wep_types[] = { "unknown", "key", "passphrase", NULL };
+	const char *type_str = NULL;
 	NMWepKeyType type = NM_WEP_KEY_TYPE_UNKNOWN;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!(type_str = nmc_string_is_valid (val, valid_wep_types, error)))
-		return FALSE;
-
-	if (type_str == valid_wep_types[0])
-		type = NM_WEP_KEY_TYPE_KEY;
-	else if (type_str == valid_wep_types[1])
-		type = NM_WEP_KEY_TYPE_PASSPHRASE;
+	if (!nmc_string_to_uint (val, TRUE, 0, 2, &type_int)) {
+		if (!(type_str = nmc_string_is_valid (val, valid_wep_types, NULL))) {
+			g_set_error (error, 1, 0, _("'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"), val);
+			return FALSE;
+		}
+		if (type_str == valid_wep_types[1])
+			type = NM_WEP_KEY_TYPE_KEY;
+		else if (type_str == valid_wep_types[2])
+			type = NM_WEP_KEY_TYPE_PASSPHRASE;
+	} else
+		type = (NMWepKeyType) type_int;
 
 	g_object_set (setting, prop, type, NULL);
 	return TRUE;
+}
+
+static const char *
+nmc_property_wifi_describe_wep_key_type (NMSetting *setting, const char *prop)
+{
+	static char *desc = NULL;
+
+	if (G_UNLIKELY (desc == NULL)) {
+		desc = g_strdup_printf (_("Enter the type of WEP keys. The accepted values are: "
+		                          "0 or unknown, 1 or key, and 2 or passphrase.\n"));
+	}
+	return desc;
 }
 
 /* 'psk' */
@@ -4657,7 +4674,7 @@ nmc_properties_init (void)
 	                    nmc_property_wifi_sec_get_wep_key_type,
 	                    nmc_property_wifi_set_wep_key_type,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_wifi_describe_wep_key_type,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PSK),
 	                    nmc_property_wifi_sec_get_psk,
