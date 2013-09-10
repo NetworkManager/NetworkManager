@@ -857,10 +857,6 @@ test_priv_ap_dynamic_wep_1 (void)
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep40", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep104", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep40", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep104", 0 },
 	    { NULL } };
 	gboolean success;
 	GError *error = NULL;
@@ -908,10 +904,6 @@ test_priv_ap_dynamic_wep_2 (void)
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep40", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "wep104", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep40", 0 },
-	    { NM_SETTING_WIRELESS_SECURITY_GROUP, "wep104", 0 },
 	    { NULL } };
 	gboolean success;
 	GError *error = NULL;

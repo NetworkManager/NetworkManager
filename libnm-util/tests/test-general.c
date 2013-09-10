@@ -2008,7 +2008,7 @@ test_setting_wireless_security_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_wireless_security_clear_protos (s_wsec));
 
 	/* Pairwise ciphers */
-	ASSERT_CHANGED (nm_setting_wireless_security_add_pairwise (s_wsec, "wep40"));
+	ASSERT_CHANGED (nm_setting_wireless_security_add_pairwise (s_wsec, "tkip"));
 	ASSERT_CHANGED (nm_setting_wireless_security_remove_pairwise (s_wsec, 0));
 	ASSERT_UNCHANGED (nm_setting_wireless_security_remove_pairwise (s_wsec, 1));
 

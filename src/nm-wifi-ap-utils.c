@@ -156,7 +156,7 @@ verify_no_wpa (NMSettingWirelessSecurity *s_wsec,
 		const char *pw;
 
 		pw = nm_setting_wireless_security_get_pairwise (s_wsec, i);
-		if (strcmp (pw, "wep40") && strcmp (pw, "wep104")) {
+		if (!strcmp (pw, "tkip") || !strcmp (pw, "ccmp")) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -610,10 +610,6 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 			              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x",
 			              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",
 			              NULL);
-			nm_setting_wireless_security_add_pairwise (s_wsec, "wep40");
-			nm_setting_wireless_security_add_pairwise (s_wsec, "wep104");
-			nm_setting_wireless_security_add_group (s_wsec, "wep40");
-			nm_setting_wireless_security_add_group (s_wsec, "wep104");
 
 			if (s_8021x) {
 				/* Dynamic WEP requires a valid 802.1x setting since we can't
