@@ -252,7 +252,12 @@ deactivate (NMDevice *device)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
+	NMActStageReturn ret;
 	NMActRequest *req;
+
+	ret = NM_DEVICE_CLASS (nm_device_modem_parent_class)->act_stage1_prepare (device, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);

@@ -147,6 +147,7 @@ get_generic_capabilities (NMDevice *dev)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
+	NMActStageReturn ret;
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingInfiniband *s_infiniband;
@@ -155,6 +156,10 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	gboolean ok;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (dev, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
 
 	req = nm_device_get_act_request (dev);
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -186,7 +191,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	return NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (dev, reason);
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static void
