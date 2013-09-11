@@ -1246,7 +1246,7 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
  * Returns: (transfer none): the appropriate #NMActiveConnection, if
  * any
  *
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 NMActiveConnection *
 nm_client_get_primary_connection (NMClient *client)
@@ -1268,7 +1268,7 @@ nm_client_get_primary_connection (NMClient *client)
  * Returns: (transfer none): the appropriate #NMActiveConnection, if
  * any.
  *
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 NMActiveConnection *
 nm_client_get_activating_connection (NMClient *client)
@@ -1418,7 +1418,7 @@ client_device_removed (NMObject *client, NMObject *device)
  * connectivity state first before returning any information.
  *
  * Returns: the current connectivity state
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 NMConnectivityState
 nm_client_get_connectivity (NMClient *client)
@@ -1447,7 +1447,7 @@ nm_client_get_connectivity (NMClient *client)
  * if you do not want to block.
  *
  * Returns: the (new) current connectivity state
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 NMConnectivityState
 nm_client_check_connectivity (NMClient *client,
@@ -1533,7 +1533,7 @@ check_connectivity_cancelled_cb (GCancellable *cancellable,
  * which (immediately) returns the most recent known state without
  * re-checking, and nm_client_check_connectivity(), which blocks.
  *
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 void
 nm_client_check_connectivity_async (NMClient *client,
@@ -1578,7 +1578,7 @@ nm_client_check_connectivity_async (NMClient *client,
  * call.
  *
  * Returns: the (new) current connectivity state
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 NMConnectivityState
 nm_client_check_connectivity_finish (NMClient *client,
@@ -2312,7 +2312,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The network connectivity state.
 	 *
-	 * Since: 0.9.10
+	 * Since: 0.9.8.6
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY,
@@ -2328,7 +2328,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * The #NMActiveConnection of the device with the default route;
 	 * see nm_client_get_primary_connection() for more details.
 	 *
-	 * Since: 0.9.10
+	 * Since: 0.9.8.6
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION,
@@ -2344,7 +2344,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * The #NMActiveConnection of the activating connection that is
 	 * likely to become the new #NMClient:primary-connection.
 	 *
-	 * Since: 0.9.10
+	 * Since: 0.9.8.6
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_CONNECTION,

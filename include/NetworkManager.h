@@ -112,7 +112,7 @@ typedef enum {
  * @NM_CONNECTIVITY_FULL: The host is connected to a network, and
  *   appears to be able to reach the full Internet.
  *
- * Since: 0.9.10
+ * Since: 0.9.8.6
  */
 typedef enum {
 	NM_CONNECTIVITY_UNKNOWN,
