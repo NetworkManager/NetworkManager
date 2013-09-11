@@ -4853,7 +4853,7 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 	NmcEditorMainCmd editor_cmd = NMC_EDITOR_MAIN_CMD_UNKNOWN;
 	char **vec;
 
-	vec = g_strsplit_set (cmd, " \t", 2);
+	vec = nmc_strsplit_set (cmd, " \t", 2);
 	if (g_strv_length (vec) < 1) {
 		if (cmd_arg)
 			*cmd_arg = NULL;
@@ -4885,7 +4885,7 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 
 	/* set pointer to command argument */
 	if (cmd_arg)
-		*cmd_arg = g_strdup (vec[1]);
+		*cmd_arg = g_strstrip (g_strdup (vec[1]));
 
 	g_strfreev (vec);
 	return editor_cmd;
@@ -5020,7 +5020,7 @@ parse_editor_sub_cmd (const char *cmd, char **cmd_arg)
 	NmcEditorSubCmd editor_cmd = NMC_EDITOR_SUB_CMD_UNKNOWN;
 	char **vec;
 
-	vec = g_strsplit_set (cmd, " \t", 2);
+	vec = nmc_strsplit_set (cmd, " \t", 2);
 	if (g_strv_length (vec) < 1) {
 		if (cmd_arg)
 			*cmd_arg = NULL;
@@ -5418,9 +5418,9 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 	if (!str)
 		return;
 
-	args = g_strsplit_set (str, " \t", 2);
+	args = nmc_strsplit_set (str, " \t", 2);
 	if (args[0]) {
-		items = g_strsplit_set (args[0], ".", 2);
+		items = nmc_strsplit_set (args[0], ".", 2);
 		if (g_strv_length (items) == 2) {
 			if (setting)
 				*setting = g_strdup (items[0]);
@@ -5433,7 +5433,7 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 		g_strfreev (items);
 
 		if (value && args[1])
-			*value = g_strdup (args[1]);
+			*value = g_strstrip (g_strdup (args[1]));
 	}
 	g_strfreev (args);
 }
