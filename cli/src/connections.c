@@ -4321,6 +4321,7 @@ set_deftext (void)
 	    && edit_lib_symbols.rl_insert_text_func
 	    && edit_lib_symbols.rl_startup_hook_x) {
 		edit_lib_symbols.rl_insert_text_func (pre_input_deftext);
+		g_free (pre_input_deftext);
 		pre_input_deftext = NULL;
 		*edit_lib_symbols.rl_startup_hook_x = NULL;
 	}
@@ -5301,7 +5302,7 @@ property_edit_submenu (NmCli *nmc,
 
 		case NMC_EDITOR_SUB_CMD_CHANGE:
 			*edit_lib_symbols.rl_startup_hook_x = set_deftext;
-			pre_input_deftext = nmc_setting_get_property (curr_setting, prop_name, NULL);
+			pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
 			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
 			prop_val_user = readline_x (tmp_prompt);
 
@@ -5360,9 +5361,9 @@ property_edit_submenu (NmCli *nmc,
 				else
 					printf (_("Unknown command argument: '%s'\n"), cmd_property_arg);
 			} else {
-				printf ("%s: %s\n",
-				        prop_name,
-				        nmc_setting_get_property (curr_setting, prop_name, NULL));
+				char *prop_val =  nmc_setting_get_property (curr_setting, prop_name, NULL);
+				printf ("%s: %s\n", prop_name, prop_val);
+				g_free (prop_val);
 			}
 			break;
 

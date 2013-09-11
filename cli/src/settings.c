@@ -1414,6 +1414,7 @@ typedef	gboolean     (*NmcPropertySetFunc)      (NMSetting *, const char *, cons
 typedef	gboolean     (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
 typedef	const char * (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
 typedef	const char * (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
+typedef	      char * (*NmcPropertyOut2InFunc)   (const char *);
 
 typedef struct {
 	NmcPropertyGetFunc get_func;           /* func getting property values */
@@ -1421,6 +1422,7 @@ typedef struct {
 	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */
 	NmcPropertyDescribeFunc describe_func; /* func returning property description */
 	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */
+	NmcPropertyOut2InFunc out2in_func;     /* func converting property values from output to input format */
 } NmcPropertyFuncs;
 
 NMSetting *
@@ -1932,6 +1934,17 @@ nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GEr
 }
 
 static gboolean
+nmc_property_set_mtu (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	const char *mtu = val;
+
+	if (strcmp (mtu, "auto") == 0)
+		mtu = "0";
+
+	return nmc_property_set_uint (setting, prop, mtu, error);
+}
+
+static gboolean
 nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -2051,6 +2064,16 @@ done:
 		return TRUE; \
 	}
 
+static char *
+nmc_property_out2in_cut_paren (const char *out_format)
+{
+	const char *p;
+	size_t n;
+
+	p = strstr (out_format, " (");
+	n = p ? p - out_format : strlen (out_format);
+	return g_strndup (out_format, n);
+}
 
 /* --- NM_SETTING_CONNECTION_SETTING_NAME property setter functions --- */
 #if 0
@@ -2572,9 +2595,14 @@ nmc_property_ib_set_p_key (NMSetting *setting, const char *prop, const char *val
 		p_key_valid = nmc_string_to_int_base (val + 2, 16, TRUE, 0, G_MAXUINT16, &p_key_int);
 	else
 		p_key_valid = nmc_string_to_int (val, TRUE, -1, G_MAXUINT16, &p_key_int);
+
 	if (!p_key_valid) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid IBoIP P_Key"), val);
-		return FALSE;
+		if (strcmp (val, "default") == 0)
+			p_key_int = -1;
+		else {
+			g_set_error (error, 1, 0, _("'%s' is not a valid IBoIP P_Key"), val);
+			return FALSE;
+		}
 	}
 	g_object_set (setting, prop, (gint) p_key_int, NULL);
 	return TRUE;
@@ -2710,6 +2738,41 @@ nmc_property_ipv4_describe_addresses (NMSetting *setting, const char *prop)
 	         "Example: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n");
 }
 
+/*
+ * from: { ip = 1.2.3.4/24, gw = 1.2.3.254 }; { ip = 2.2.2.2/16, gw = 5.5.5.5 }
+ * to:   1.2.3.4/24 1.2.3.254, 2.2.2.2/16 5.5.5.5
+ * from: { ip = 11::22/64, gw = 22::33 }; { ip = ab::cd/64, gw = ab::1 }
+ * to:   11::22/64 22:33, ab::cd/64 ab::1
+*/
+static char *
+nmc_property_out2in_addresses (const char *out_format)
+{
+        GRegex *regex;
+	GString *str;
+        char **strv;
+	int i;
+
+	str = g_string_sized_new (128);
+	regex = g_regex_new ("\\{ ip = ([^/]+)/([^,]+), gw = ([^ ]+) \\}", 0, 0, NULL);
+
+	strv = g_regex_split (regex, out_format, 0);
+	for (i = 1; strv && strv[i] && strv[i+1] && strv[i+2]; i=i+4) {
+		g_string_append (str, strv[i]); /* IP */
+		g_string_append_c (str, '/');
+		g_string_append (str, strv[i+1]); /* prefix */
+		g_string_append_c (str, ' ');
+		g_string_append (str, strv[i+2]); /* gateway */
+		g_string_append (str, ", ");
+	}
+	if (str->len > 0)
+		g_string_truncate (str, str->len - 2);
+
+	g_strfreev (strv);
+	g_regex_unref (regex);
+
+	return g_string_free (str, FALSE);
+}
+
 /* 'routes' */
 static gboolean
 nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
@@ -2757,6 +2820,37 @@ nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
 	         "Missing prefix is regarded as a prefix of 32.\n"
 	         "Missing metric is regarded as a metric of 0.\n\n"
 	         "Example: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n");
+}
+
+static char *
+nmc_property_out2in_routes (const char *out_format)
+{
+        GRegex *regex;
+	GString *str;
+        char **strv;
+	int i;
+
+	str = g_string_sized_new (128);
+	regex = g_regex_new ("\\{ dst = ([^/]+)/([^,]+), nh = ([^,]+), mt = ([^ ]+) \\}", 0, 0, NULL);
+
+	strv = g_regex_split (regex, out_format, 0);
+	for (i = 1; strv && strv[i] && strv[i+1] && strv[i+2] && strv[i+3]; i=i+5) {
+		g_string_append (str, strv[i]); /* IP */
+		g_string_append_c (str, '/');
+		g_string_append (str, strv[i+1]); /* prefix */
+		g_string_append_c (str, ' ');
+		g_string_append (str, strv[i+2]); /* next hop */
+		g_string_append_c (str, ' ');
+		g_string_append (str, strv[i+3]); /* metric */
+		g_string_append (str, ", ");
+	}
+	if (str->len > 0)
+		g_string_truncate (str, str->len - 2);
+
+	g_strfreev (strv);
+	g_regex_unref (regex);
+
+	return g_string_free (str, FALSE);
 }
 
 /* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property setter functions --- */
@@ -3456,7 +3550,8 @@ nmc_add_prop_funcs (char *key,
                     NmcPropertySetFunc set_func,
                     NmcPropertyRemoveFunc remove_func,
                     NmcPropertyDescribeFunc describe_func,
-                    NmcPropertyValuesFunc values_func)
+                    NmcPropertyValuesFunc values_func,
+                    NmcPropertyOut2InFunc out2in_func)
 {
 	NmcPropertyFuncs *item = g_malloc0 (sizeof (NmcPropertyFuncs));
 	item->get_func = get_func;
@@ -3464,6 +3559,7 @@ nmc_add_prop_funcs (char *key,
 	item->remove_func = remove_func;
 	item->describe_func = describe_func;
 	item->values_func = values_func;
+	item->out2in_func = out2in_func;
 
 	g_hash_table_insert (nmc_properties, key, item);
 }
@@ -3485,10 +3581,12 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_set_eap,
 	                    nmc_property_802_1X_remove_idx_eap,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, IDENTITY),
 	                    nmc_property_802_1X_get_identity,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3497,10 +3595,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PAC_FILE),
 	                    nmc_property_802_1X_get_pac_file,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3509,10 +3609,12 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_set_ca_cert,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, CA_PATH),
 	                    nmc_property_802_1X_get_ca_path,
                             nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3521,16 +3623,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, ALTSUBJECT_MATCHES),
 	                    nmc_property_802_1X_get_altsubject_matches,
 	                    nmc_property_802_1X_set_altsubject_matches,
 	                    nmc_property_802_1X_remove_idx_altsubject_matches,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, CLIENT_CERT),
 	                    nmc_property_802_1X_get_client_cert,
 	                    nmc_property_802_1X_set_client_cert,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3539,34 +3644,40 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_set_phase1_peapver,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_802_1X_allowed_phase1_peapver);
+	                    nmc_property_802_1X_allowed_phase1_peapver,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE1_PEAPLABEL),
 	                    nmc_property_802_1X_get_phase1_peaplabel,
 	                    nmc_property_802_1X_set_phase1_peaplabel,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_802_1X_allowed_phase1_peaplabel);
+	                    nmc_property_802_1X_allowed_phase1_peaplabel,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE1_FAST_PROVISIONING),
 	                    nmc_property_802_1X_get_phase1_fast_provisioning,
 	                    nmc_property_802_1X_set_phase1_fast_provisioning,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_802_1X_allowed_phase1_fast_provisioning);
+	                    nmc_property_802_1X_allowed_phase1_fast_provisioning,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_AUTH),
 	                    nmc_property_802_1X_get_phase2_auth,
 	                    nmc_property_802_1X_set_phase2_auth,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_802_1X_allowed_phase2_auth);
+	                    nmc_property_802_1X_allowed_phase2_auth,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_AUTHEAP),
 	                    nmc_property_802_1X_get_phase2_autheap,
 	                    nmc_property_802_1X_set_phase2_autheap,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_802_1X_allowed_phase2_autheap);
+	                    nmc_property_802_1X_allowed_phase2_autheap,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_CA_CERT),
 	                    nmc_property_802_1X_get_phase2_ca_cert,
 	                    nmc_property_802_1X_set_phase2_ca_cert,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3575,10 +3686,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_SUBJECT_MATCH),
 	                    nmc_property_802_1X_get_phase2_subject_match,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3587,10 +3700,12 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_set_phase2_altsubject_matches,
 	                    nmc_property_802_1X_remove_idx_phase2_altsubject_matches,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_CLIENT_CERT),
 	                    nmc_property_802_1X_get_phase2_client_cert,
 	                    nmc_property_802_1X_set_phase2_client_cert,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3599,34 +3714,40 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_FLAGS),
 	                    nmc_property_802_1X_get_password_flags,
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_RAW),
 	                    nmc_property_802_1X_get_password_raw,
 	                    nmc_property_802_1X_set_password_raw,
 	                    NULL,
 	                    nmc_property_802_1X_describe_password_raw,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_RAW_FLAGS),
 	                    nmc_property_802_1X_get_password_raw_flags,
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY),
 	                    nmc_property_802_1X_get_private_key,
 	                    nmc_property_802_1X_set_private_key,
 	                    NULL,
 	                    nmc_property_802_1X_describe_private_key,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY_PASSWORD),
 	                    nmc_property_802_1X_get_private_key_password,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3635,16 +3756,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY),
 	                    nmc_property_802_1X_get_phase2_private_key,
 	                    nmc_property_802_1X_set_phase2_private_key,
 	                    NULL,
 	                    nmc_property_802_1X_describe_private_key,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY_PASSWORD),
 	                    nmc_property_802_1X_get_phase2_private_key_password,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3653,10 +3777,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (802_1X, PIN),
 	                    nmc_property_802_1X_get_pin,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3665,10 +3791,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (802_1X, SYSTEM_CA_CERTS),
 	                    nmc_property_802_1X_get_system_ca_certs,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3679,10 +3807,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (ADSL, PASSWORD),
 	                    nmc_property_adsl_get_password,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3691,28 +3821,33 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (ADSL, PROTOCOL),
 	                    nmc_property_adsl_get_protocol,
 	                    nmc_property_adsl_set_protocol,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_adsl_allowed_protocol);
+	                    nmc_property_adsl_allowed_protocol,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (ADSL, ENCAPSULATION),
 	                    nmc_property_adsl_get_encapsulation,
 	                    nmc_property_adsl_set_encapsulation,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_adsl_allowed_encapsulation);
+	                    nmc_property_adsl_allowed_encapsulation,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (ADSL, VPI),
 	                    nmc_property_adsl_get_vpi,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (ADSL, VCI),
 	                    nmc_property_adsl_get_vci,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3723,10 +3858,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_mac,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BLUETOOTH, TYPE),
 	                    nmc_property_bluetooth_get_type,
 	                    nmc_property_bluetooth_set_type,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3737,18 +3874,21 @@ nmc_properties_init (void)
 	                    nmc_property_set_ifname,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BOND, OPTIONS),
 	                    nmc_property_bond_get_options,
 	                    nmc_property_bond_set_options,
 	                    nmc_property_bond_remove_option_options,
 	                    nmc_property_bond_describe_options,
-	                    nmc_property_bond_allowed_options);
+	                    nmc_property_bond_allowed_options,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_BRIDGE_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (BRIDGE, INTERFACE_NAME),
 	                    nmc_property_bridge_get_interface_name,
 	                    nmc_property_set_ifname,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3757,10 +3897,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE, PRIORITY),
 	                    nmc_property_bridge_get_priority,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3769,10 +3911,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE, HELLO_TIME),
 	                    nmc_property_bridge_get_hello_time,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3781,10 +3925,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE, AGEING_TIME),
 	                    nmc_property_bridge_get_ageing_time,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3795,16 +3941,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE_PORT, PATH_COST),
 	                    nmc_property_bridge_port_get_path_cost,
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE_PORT, HAIRPIN_MODE),
 	                    nmc_property_bridge_port_get_hairpin_mode,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3815,10 +3964,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CDMA, USERNAME),
 	                    nmc_property_cdma_get_username,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3827,18 +3978,21 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CDMA, PASSWORD_FLAGS),
 	                    nmc_property_cdma_get_password_flags,
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 
 	/* Add editable properties for NM_SETTING_CONNECTION_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (CONNECTION, ID),
 	                    nmc_property_connection_get_id,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3847,10 +4001,12 @@ nmc_properties_init (void)
 	                    NULL, /* forbid setting/removing UUID */
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, INTERFACE_NAME),
 	                    nmc_property_connection_get_interface_name,
 	                    nmc_property_set_ifname,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3859,10 +4015,12 @@ nmc_properties_init (void)
 	                    NULL, /* read-only */
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT),
 	                    nmc_property_connection_get_autoconnect,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3871,10 +4029,12 @@ nmc_properties_init (void)
 	                    NULL, /* read-only */
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, READ_ONLY),
 	                    nmc_property_connection_get_read_only,
 	                    NULL, /* 'read-only' is read-only :-) */
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3883,10 +4043,12 @@ nmc_properties_init (void)
 	                    nmc_property_connection_set_permissions,
 	                    nmc_property_connection_remove_idx_permissions,
 	                    nmc_property_connection_describe_permissions,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, ZONE),
 	                    nmc_property_connection_get_zone,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3895,22 +4057,26 @@ nmc_properties_init (void)
 	                    nmc_property_con_set_master,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SLAVE_TYPE),
 	                    nmc_property_connection_get_slave_type,
 	                    nmc_property_con_set_slave_type,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_con_allowed_slave_type);
+	                    nmc_property_con_allowed_slave_type,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
 	                    nmc_property_connection_get_secondaries,
 	                    nmc_property_connection_set_secondaries,
 	                    nmc_property_connection_remove_idx_secondaries,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, GATEWAY_PING_TIMEOUT),
 	                    nmc_property_connection_get_gateway_ping_timeout,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3921,10 +4087,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, USERNAME),
 	                    nmc_property_gsm_get_username,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3933,16 +4101,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, PASSWORD_FLAGS),
 	                    nmc_property_gsm_get_password_flags,
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (GSM, APN),
 	                    nmc_property_gsm_get_apn,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3951,10 +4122,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, NETWORK_TYPE),
 	                    nmc_property_gsm_get_network_type,
 	                    nmc_property_set_int,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3963,10 +4136,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (GSM, PIN),
 	                    nmc_property_gsm_get_pin,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3975,10 +4150,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (GSM, HOME_ONLY),
 	                    nmc_property_gsm_get_home_only,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -3989,10 +4166,12 @@ nmc_properties_init (void)
 	                    nmc_property_ib_set_mac,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (INFINIBAND, MTU),
 	                    nmc_property_ib_get_mtu,
-	                    nmc_property_set_uint,
+	                    nmc_property_set_mtu,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4001,16 +4180,19 @@ nmc_properties_init (void)
 	                    nmc_property_ib_set_transport_mode,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_ib_allowed_transport_mode);
+	                    nmc_property_ib_allowed_transport_mode,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (INFINIBAND, P_KEY),
 	                    nmc_property_ib_get_p_key,
 	                    nmc_property_ib_set_p_key,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (INFINIBAND, PARENT),
 	                    nmc_property_ib_get_parent,
 	                    nmc_property_set_ifname,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4021,17 +4203,20 @@ nmc_properties_init (void)
 	                    nmc_property_ipv4_set_method,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_ipv4_allowed_method);
+	                    nmc_property_ipv4_allowed_method,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS),
 	                    nmc_property_ipv4_get_dns,
 	                    nmc_property_ipv4_set_dns,
 	                    nmc_property_ipv4_remove_idx_dns,
 	                    nmc_property_ipv4_describe_dns,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS_SEARCH),
 	                    nmc_property_ipv4_get_dns_search,
 	                    nmc_property_ipv4_set_dns_search,
 	                    nmc_property_ipv4_remove_idx_dns_search,
+	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ADDRESSES),
@@ -4039,16 +4224,19 @@ nmc_properties_init (void)
 	                    nmc_property_ipv4_set_addresses,
 	                    nmc_property_ipv4_remove_idx_addresses,
 	                    nmc_property_ipv4_describe_addresses,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_addresses);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ROUTES),
 	                    nmc_property_ipv4_get_routes,
 	                    nmc_property_ipv4_set_routes,
 	                    nmc_property_ipv4_remove_idx_routes,
 	                    nmc_property_ipv4_describe_routes,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_routes);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, IGNORE_AUTO_ROUTES),
 	                    nmc_property_ipv4_get_ignore_auto_routes,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4057,10 +4245,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_CLIENT_ID),
 	                    nmc_property_ipv4_get_dhcp_client_id,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4069,10 +4259,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_HOSTNAME),
 	                    nmc_property_ipv4_get_dhcp_hostname,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4081,10 +4273,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, MAY_FAIL),
 	                    nmc_property_ipv4_get_may_fail,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4095,17 +4289,20 @@ nmc_properties_init (void)
 	                    nmc_property_ipv6_set_method,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_ipv6_allowed_method);
+	                    nmc_property_ipv6_allowed_method,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS),
 	                    nmc_property_ipv6_get_dns,
 	                    nmc_property_ipv6_set_dns,
 	                    nmc_property_ipv6_remove_idx_dns,
 	                    nmc_property_ipv6_describe_dns,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS_SEARCH),
 	                    nmc_property_ipv6_get_dns_search,
 	                    nmc_property_ipv6_set_dns_search,
 	                    nmc_property_ipv6_remove_idx_dns_search,
+	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ADDRESSES),
@@ -4113,16 +4310,19 @@ nmc_properties_init (void)
 	                    nmc_property_ipv6_set_addresses,
 	                    nmc_property_ipv6_remove_idx_addresses,
 	                    nmc_property_ipv6_describe_addresses,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_addresses);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ROUTES),
 	                    nmc_property_ipv6_get_routes,
 	                    nmc_property_ipv6_set_routes,
 	                    nmc_property_ipv6_remove_idx_routes,
 	                    nmc_property_ipv6_describe_routes,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_routes);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IGNORE_AUTO_ROUTES),
 	                    nmc_property_ipv6_get_ignore_auto_routes,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4131,10 +4331,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, NEVER_DEFAULT),
 	                    nmc_property_ipv6_get_never_default,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4143,16 +4345,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IP6_PRIVACY),
 	                    nmc_property_ipv6_get_ip6_privacy,
 	                    nmc_property_ipv6_set_ip6_privacy,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DHCP_HOSTNAME),
 	                    nmc_property_ipv6_get_dhcp_hostname,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4163,16 +4368,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_ssid,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (OLPC_MESH, CHANNEL),
 	                    nmc_property_olpc_get_channel,
 	                    nmc_property_olpc_set_channel,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (OLPC_MESH, DHCP_ANYCAST_ADDRESS),
 	                    nmc_property_olpc_get_anycast_address,
 	                    nmc_property_set_mac,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4183,10 +4391,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, REFUSE_EAP),
 	                    nmc_property_ppp_get_refuse_eap,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4195,10 +4405,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, REFUSE_CHAP),
 	                    nmc_property_ppp_get_refuse_chap,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4207,10 +4419,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, REFUSE_MSCHAPV2),
 	                    nmc_property_ppp_get_refuse_mschapv2,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4219,10 +4433,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, NODEFLATE),
 	                    nmc_property_ppp_get_nodeflate,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4231,10 +4447,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, REQUIRE_MPPE),
 	                    nmc_property_ppp_get_require_mppe,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4243,10 +4461,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, MPPE_STATEFUL),
 	                    nmc_property_ppp_get_mppe_stateful,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4255,10 +4475,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, BAUD),
 	                    nmc_property_ppp_get_baud,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4267,10 +4489,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, MTU),
 	                    nmc_property_ppp_get_mtu,
-	                    nmc_property_set_uint,
+	                    nmc_property_set_mtu,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4279,10 +4503,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPP, LCP_ECHO_INTERVAL),
 	                    nmc_property_ppp_get_lcp_echo_interval,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4293,10 +4519,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPPOE, USERNAME),
 	                    nmc_property_pppoe_get_username,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4305,18 +4533,21 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPPOE, PASSWORD_FLAGS),
 	                    nmc_property_pppoe_get_password_flags,
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 
 	/* Add editable properties for NM_SETTING_SERIAL_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (SERIAL, BAUD),
 	                    nmc_property_serial_get_baud,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4325,10 +4556,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (SERIAL, PARITY),
 	                    nmc_property_serial_get_parity,
 	                    nmc_property_serial_set_parity,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4337,10 +4570,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (SERIAL, SEND_DELAY),
 	                    nmc_property_serial_get_send_delay,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4351,10 +4586,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_ifname,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (TEAM, CONFIG),
 	                    nmc_property_team_get_config,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4365,6 +4602,7 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_VLAN_SETTING_NAME */
@@ -4373,10 +4611,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_ifname,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VLAN, PARENT),
 	                    nmc_property_vlan_get_parent,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4385,10 +4625,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_uint,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VLAN, FLAGS),
 	                    nmc_property_vlan_get_flags,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4397,11 +4639,13 @@ nmc_properties_init (void)
 	                    nmc_property_vlan_set_ingress_priority_map,
 	                    nmc_property_vlan_remove_idx_ingress_priority_map,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VLAN, EGRESS_PRIORITY_MAP),
 	                    nmc_property_vlan_get_egress_priority_map,
 	                    nmc_property_vlan_set_egress_priority_map,
 	                    nmc_property_vlan_remove_idx_egress_priority_map,
+	                    NULL,
 	                    NULL,
 	                    NULL);
 
@@ -4411,10 +4655,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VPN, USER_NAME),
 	                    nmc_property_vpn_get_user_name,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4423,11 +4669,13 @@ nmc_properties_init (void)
 	                    nmc_property_vpn_set_data,
 	                    nmc_property_vpn_remove_option_data,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VPN, SECRETS),
 	                    nmc_property_vpn_get_secrets,
 	                    nmc_property_vpn_set_secrets,
 	                    nmc_property_vpn_remove_option_secret,
+	                    NULL,
 	                    NULL,
 	                    NULL);
 
@@ -4437,10 +4685,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIMAX, MAC_ADDRESS),
 	                    nmc_property_wimax_get_mac_address,
 	                    nmc_property_set_mac,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4451,9 +4701,11 @@ nmc_properties_init (void)
 	                    NULL, /*nmc_property_wired_set_port,*/
 	                    NULL,
 	                    NULL,
-	                    NULL); /*nmc_property_wired_allowed_port);*/
+	                    NULL, /*nmc_property_wired_allowed_port,*/
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, SPEED),
 	                    nmc_property_wired_get_speed,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4463,9 +4715,11 @@ nmc_properties_init (void)
 	                    NULL, /*nmc_property_wired_set_duplex,*/
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL); /*nmc_property_wired_allowed_duplex);*/
 	nmc_add_prop_funcs (GLUE (WIRED, AUTO_NEGOTIATE),
 	                    nmc_property_wired_get_auto_negotiate,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4475,10 +4729,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_mac,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, CLONED_MAC_ADDRESS),
 	                    nmc_property_wired_get_cloned_mac_address,
 	                    nmc_property_set_mac,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4487,10 +4743,12 @@ nmc_properties_init (void)
 	                    nmc_property_wired_set_mac_address_blacklist,
 	                    nmc_property_wired_remove_idx_mac_address_blacklist,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, MTU),
 	                    nmc_property_wired_get_mtu,
-	                    nmc_property_set_uint,
+	                    nmc_property_set_mtu,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4499,24 +4757,28 @@ nmc_properties_init (void)
 	                    nmc_property_wired_set_s390_subchannels,
 	                    NULL,
 	                    nmc_property_wired_describe_s390_subchannels,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, S390_NETTYPE),
 	                    nmc_property_wired_get_s390_nettype,
 	                    nmc_property_wired_set_s390_nettype,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_wired_allowed_s390_nettype);
+	                    nmc_property_wired_allowed_s390_nettype,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRED, S390_OPTIONS),
 	                    nmc_property_wired_get_s390_options,
 	                    nmc_property_wired_set_s390_options,
 	                    nmc_property_wired_remove_option_s390_options,
 	                    nmc_property_wired_describe_s390_options,
-	                    nmc_property_wired_allowed_s390_options);
+	                    nmc_property_wired_allowed_s390_options,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_WIRELESS_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (WIRELESS, SSID),
 	                    nmc_property_wireless_get_ssid,
 	                    nmc_property_set_ssid,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4525,22 +4787,26 @@ nmc_properties_init (void)
 	                    nmc_property_wifi_set_mode,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_wifi_allowed_mode);
+	                    nmc_property_wifi_allowed_mode,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, BAND),
 	                    nmc_property_wireless_get_band,
 	                    nmc_property_wifi_set_band,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_wifi_allowed_band);
+	                    nmc_property_wifi_allowed_band,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, CHANNEL),
 	                    nmc_property_wireless_get_channel,
 	                    nmc_property_wifi_set_channel,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, BSSID),
 	                    nmc_property_wireless_get_bssid,
 	                    nmc_property_set_mac,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4553,10 +4819,12 @@ nmc_properties_init (void)
 	                    NULL, /* editing rate disabled */
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, TX_POWER),
 	                    nmc_property_wireless_get_tx_power,
 	                    NULL, /* editing tx-power disabled */
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4565,10 +4833,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_mac,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, CLONED_MAC_ADDRESS),
 	                    nmc_property_wireless_get_cloned_mac_address,
 	                    nmc_property_set_mac,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4577,22 +4847,26 @@ nmc_properties_init (void)
 	                    nmc_property_wireless_set_mac_address_blacklist,
 	                    nmc_property_wireless_remove_idx_mac_address_blacklist,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, SEEN_BSSIDS),
 	                    nmc_property_wireless_get_seen_bssids,
 	                    NULL, /* read-only */
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, MTU),
 	                    nmc_property_wireless_get_mtu,
-	                    nmc_property_set_uint,
+	                    nmc_property_set_mtu,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS, HIDDEN),
 	                    nmc_property_wireless_get_hidden,
 	                    nmc_property_set_bool,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4603,10 +4877,12 @@ nmc_properties_init (void)
 	                    nmc_property_wifi_sec_set_key_mgmt,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_wifi_sec_allowed_key_mgmt);
+	                    nmc_property_wifi_sec_allowed_key_mgmt,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_TX_KEYIDX),
 	                    nmc_property_wifi_sec_get_wep_tx_keyidx,
 	                    nmc_property_set_uint,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4615,28 +4891,33 @@ nmc_properties_init (void)
 	                    nmc_property_wifi_sec_set_auth_alg,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_wifi_sec_allowed_auth_alg);
+	                    nmc_property_wifi_sec_allowed_auth_alg,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PROTO),
 	                    nmc_property_wifi_sec_get_proto,
 	                    nmc_property_wifi_sec_set_proto,
 	                    nmc_property_wifi_sec_remove_idx_proto,
 	                    NULL,
-	                    nmc_property_wifi_sec_allowed_proto);
+	                    nmc_property_wifi_sec_allowed_proto,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PAIRWISE),
 	                    nmc_property_wifi_sec_get_pairwise,
 	                    nmc_property_wifi_sec_set_pairwise,
 	                    nmc_property_wifi_sec_remove_idx_pairwise,
 	                    NULL,
-	                    nmc_property_wifi_sec_allowed_pairwise);
+	                    nmc_property_wifi_sec_allowed_pairwise,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, GROUP),
 	                    nmc_property_wifi_sec_get_group,
 	                    nmc_property_wifi_sec_set_group,
 	                    nmc_property_wifi_sec_remove_idx_group,
 	                    NULL,
-	                    nmc_property_wifi_sec_allowed_group);
+	                    nmc_property_wifi_sec_allowed_group,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_USERNAME),
 	                    nmc_property_wifi_sec_get_leap_username,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4645,10 +4926,12 @@ nmc_properties_init (void)
 	                    nmc_property_wifi_set_wep_key,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY1),
 	                    nmc_property_wifi_sec_get_wep_key1,
 	                    nmc_property_wifi_set_wep_key,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4657,10 +4940,12 @@ nmc_properties_init (void)
 	                    nmc_property_wifi_set_wep_key,
 	                    NULL,
 	                    NULL,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY3),
 	                    nmc_property_wifi_sec_get_wep_key3,
 	                    nmc_property_wifi_set_wep_key,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4669,16 +4954,19 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY_TYPE),
 	                    nmc_property_wifi_sec_get_wep_key_type,
 	                    nmc_property_wifi_set_wep_key_type,
 	                    NULL,
 	                    nmc_property_wifi_describe_wep_key_type,
+	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PSK),
 	                    nmc_property_wifi_sec_get_psk,
 	                    nmc_property_wifi_set_psk,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4687,10 +4975,12 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_PASSWORD),
 	                    nmc_property_wifi_sec_get_leap_password,
 	                    nmc_property_set_string,
+	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4699,7 +4989,8 @@ nmc_properties_init (void)
 	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
-	                    NULL);
+	                    NULL,
+	                    nmc_property_out2in_cut_paren);
 }
 
 void
@@ -4725,6 +5016,29 @@ nmc_properties_find (const char *s_name, const char *p_name)
 	return item;
 }
 
+static char *
+get_property_val (NMSetting *setting, const char *prop, gboolean convert, GError **error)
+{
+	const NmcPropertyFuncs *item;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	item = nmc_properties_find (nm_setting_get_name (setting), prop);
+	if (item && item->get_func) {
+		char *prop_val = item->get_func (setting);
+		if (convert && item->out2in_func) {
+			char *converted = item->out2in_func (prop_val);
+			g_free (prop_val);
+			return converted;
+		} else
+			return prop_val;
+	}
+
+	g_set_error_literal (error, 1, 0, _("don't know how to get the property value"));
+	return NULL;
+}
+
 /*
  * Generic function for getting property value.
  *
@@ -4735,17 +5049,17 @@ nmc_properties_find (const char *s_name, const char *p_name)
 char *
 nmc_setting_get_property (NMSetting *setting, const char *prop, GError **error)
 {
-	const NmcPropertyFuncs *item;
+	return get_property_val (setting, prop, FALSE, error);
+}
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->get_func)
-		return item->get_func (setting);
-
-	g_set_error_literal (error, 1, 0, _("don't know how to get the property value"));
-	return NULL;
+/*
+ * The same as nmc_setting_get_property(), but in addition converts
+ * usual output format into a simpler one, used as input in the editor.
+ */
+char *
+nmc_setting_get_property_out2in (NMSetting *setting, const char *prop, GError **error)
+{
+	return get_property_val (setting, prop, TRUE, error);
 }
 
 /*
