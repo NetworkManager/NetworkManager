@@ -4885,7 +4885,7 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 
 	/* set pointer to command argument */
 	if (cmd_arg)
-		*cmd_arg = g_strstrip (g_strdup (vec[1]));
+		*cmd_arg = vec[1] ? g_strstrip (g_strdup (vec[1])) : NULL;
 
 	g_strfreev (vec);
 	return editor_cmd;
