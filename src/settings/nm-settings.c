@@ -1744,6 +1744,14 @@ get_connections (NMConnectionProvider *provider)
 	return g_slist_reverse (list);
 }
 
+static gboolean
+has_connections_loaded (NMConnectionProvider *provider)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (provider);
+
+	return priv->connections_loaded;
+}
+
 /***************************************************************/
 
 NMSettings *
@@ -1781,6 +1789,7 @@ connection_provider_init (NMConnectionProvider *cp_class)
 {
     cp_class->get_best_connections = get_best_connections;
     cp_class->get_connections = get_connections;
+    cp_class->has_connections_loaded = has_connections_loaded;
 }
 
 static void

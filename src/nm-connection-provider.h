@@ -58,6 +58,8 @@ struct _NMConnectionProvider {
 
 	const GSList * (*get_connections) (NMConnectionProvider *self);
 
+	gboolean (*has_connections_loaded) (NMConnectionProvider *self);
+
 	/* Signals */
 	void (*connection_added)   (NMConnectionProvider *self, NMConnection *connection);
 
@@ -102,5 +104,17 @@ GSList *nm_connection_provider_get_best_connections (NMConnectionProvider *self,
  *   not be freed.
  */
 const GSList *nm_connection_provider_get_connections (NMConnectionProvider *self);
+
+/**
+ * nm_connection_provider_has_connections_loaded:
+ * @self: the #NMConnectionProvider
+ *
+ * Returns: TRUE or FALSE indicating whether the connections of the provider are already
+ *   loaded. If they are not yet loaded, the provider will not emit the signals
+ *   NM_CP_SIGNAL_CONNECTION_ADDED, NM_CP_SIGNAL_CONNECTION_UPDATED and
+ *   NM_CP_SIGNAL_CONNECTION_REMOVED until NM_CP_SIGNAL_CONNECTIONS_LOADED gets
+ *   emited.
+ */
+gboolean nm_connection_provider_has_connections_loaded (NMConnectionProvider *self);
 
 #endif /* NM_CONNECTION_PROVIDER_H */
