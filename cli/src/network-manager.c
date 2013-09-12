@@ -253,7 +253,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	set_val_strc (arr, 0, nm_running ? _("running") : _("not running"));
 	set_val_strc (arr, 1, nm_running ? nm_client_get_version (nmc->client) : _("unknown"));
 	set_val_strc (arr, 2, nm_state_to_string (state));
-	set_val_strc (arr, 3, startup ? _("starting") : _("started"));
+	set_val_strc (arr, 3, nm_running ? (startup ? _("starting") : _("started")) : _("unknown"));
 	set_val_strc (arr, 4, nm_connectivity_to_string (connectivity));
 	set_val_strc (arr, 5, net_enabled_str);
 	set_val_strc (arr, 6, wireless_hw_enabled_str);
