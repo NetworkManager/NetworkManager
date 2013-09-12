@@ -179,7 +179,7 @@ nm_connectivity_to_string (NMConnectivityState connectivity)
 static gboolean
 show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
-	gboolean nm_running, startup;
+	gboolean nm_running, startup = FALSE;
 	NMState state = NM_STATE_UNKNOWN;
 	NMConnectivityState connectivity = NM_CONNECTIVITY_UNKNOWN;
 	const char *net_enabled_str;
