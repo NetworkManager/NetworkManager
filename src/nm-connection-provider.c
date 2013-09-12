@@ -40,6 +40,15 @@ nm_connection_provider_get_connections (NMConnectionProvider *self)
 	return NULL;
 }
 
+gboolean
+nm_connection_provider_has_connections_loaded (NMConnectionProvider *self)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), FALSE);
+
+	g_assert (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->has_connections_loaded);
+	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->has_connections_loaded (self);
+}
+
 /*****************************************************************************/
 
 static void
