@@ -546,7 +546,13 @@ _nmcli()
             ;;
         n|ne|net|netw|netwo|networ|network|networki|networkin|networking)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "on off help"
+                _nmcli_list "on off connectivity help"
+            elif [[ ${#words[@]} -eq 3 ]]; then
+                case "$command" in
+                    c|co|con|conn|conne|connec|connect|connecti|connectiv|connectivi|connectivit|connectivity)
+                        _nmcli_list "check"
+                        ;;
+                esac
             fi
             ;;
         r|ra|rad|radi|radio)
