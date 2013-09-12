@@ -1001,7 +1001,7 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	iter = connections = nm_settings_get_connections (priv->settings);
+	iter = connections = nm_manager_get_activatable_connections (priv->manager);
 
 	/* Remove connections that shouldn't be auto-activated */
 	while (iter) {

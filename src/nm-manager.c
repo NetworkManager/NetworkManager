@@ -400,6 +400,46 @@ nm_manager_get_active_connections (NMManager *manager)
 }
 
 static NMActiveConnection *
+find_ac_for_connection (NMManager *manager, NMConnection *connection)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+	NMActiveConnection *ac;
+	NMConnection *ac_connection;
+	const char *uuid;
+
+	uuid = nm_connection_get_uuid (connection);
+	for (iter = priv->active_connections; iter; iter = iter->next) {
+		ac = iter->data;
+		ac_connection = nm_active_connection_get_connection (ac);
+
+		if (!strcmp (nm_connection_get_uuid (ac_connection), uuid))
+			return ac;
+	}
+
+	return NULL;
+}
+
+GSList *
+nm_manager_get_activatable_connections (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *all_connections = nm_settings_get_connections (priv->settings);
+	GSList *connections = NULL, *iter;
+	NMConnection *connection;
+
+	for (iter = all_connections; iter; iter = iter->next) {
+		connection = iter->data;
+
+		if (!find_ac_for_connection (manager, connection))
+			connections = g_slist_prepend (connections, connection);
+	}
+
+	g_slist_free (all_connections);
+	return connections;
+}
+
+static NMActiveConnection *
 active_connection_get_by_path (NMManager *manager, const char *path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -1735,8 +1775,7 @@ local_slist_free (void *loc)
 static NMConnection *
 get_connection (NMManager *manager, NMDevice *device)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	free_slist GSList *connections = nm_settings_get_connections (priv->settings);
+	free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
 	NMConnection *connection = NULL;
 	GSList *iter;
 
@@ -2471,7 +2510,7 @@ find_master (NMManager *self,
 			 * virtual interfaces and see if one of their virtual interface
 			 * names matches the master.
 			 */
-			connections = nm_settings_get_connections (priv->settings);
+			connections = nm_manager_get_activatable_connections (self);
 			for (iter = connections; iter && !master_connection; iter = g_slist_next (iter)) {
 				NMConnection *candidate = iter->data;
 				char *vname;
@@ -2569,7 +2608,7 @@ ensure_master_active_connection (NMManager *self,
 			g_assert (master_connection == NULL);
 
 			/* Find a compatible connection and activate this device using it */
-			connections = nm_settings_get_connections (priv->settings);
+			connections = nm_manager_get_activatable_connections (self);
 			for (iter = connections; iter; iter = g_slist_next (iter)) {
 				NMConnection *candidate = NM_CONNECTION (iter->data);
 
@@ -2906,8 +2945,28 @@ _new_active_connection (NMManager *self,
                         NMAuthSubject *subject,
                         GError **error)
 {
+	NMActiveConnection *existing_ac;
+
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
+
+	/* Can't create new AC for already-active connection */
+	existing_ac = find_ac_for_connection (self, connection);
+	if (existing_ac) {
+		NMDevice *existing_device = nm_active_connection_get_device (existing_ac);
+
+		if (NM_IS_VPN_CONNECTION (existing_ac) || existing_device == device) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
+			             "Connection '%s' is already active",
+			             nm_connection_get_id (connection));
+		} else {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
+			             "Connection '%s' is already active on %s",
+			             nm_connection_get_id (connection),
+			             nm_device_get_iface (existing_device));
+		}
+		return NULL;
+	}
 
 	/* Normalize the specific object */
 	if (specific_object && g_strcmp0 (specific_object, "/") == 0)

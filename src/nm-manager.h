@@ -48,6 +48,7 @@ typedef enum {
 	NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE, /*< nick=UnsupportedConnectionType >*/
 	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
 	NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,     /*< nick=AutoconnectNotAllowed >*/
+	NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,   /*< nick=ConnectionAlreadyActive >*/
 } NMManagerError;
 
 #define NM_MANAGER_VERSION "version"
@@ -103,6 +104,7 @@ NMManager *nm_manager_get (void);
 void nm_manager_start (NMManager *manager);
 
 const GSList *nm_manager_get_active_connections (NMManager *manager);
+GSList *nm_manager_get_activatable_connections (NMManager *manager);
 
 /* Device handling */
 
