@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -535,7 +535,7 @@ nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
 	g_return_val_if_fail (switch_name != NULL, FALSE);
 
 	if (nmc->required_fields && strcasecmp (nmc->required_fields, switch_name) != 0) {
-		g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
+		g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed field: %s)"),
 		                 nmc->required_fields, switch_name);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
@@ -543,8 +543,9 @@ nmc_switch_show (NmCli *nmc, const char *switch_name, const char *header)
 	if (nmc->print_output == NMC_PRINT_NORMAL)
 		nmc->print_output = NMC_PRINT_TERSE;
 
-	nmc->required_fields = g_strdup (switch_name);
-	return show_nm_status (nmc, header, NMC_FIELDS_NM_STATUS_SWITCH);
+	if (!nmc->required_fields)
+		nmc->required_fields = g_strdup (switch_name);
+	return show_nm_status (nmc, header, NULL);
 }
 
 static gboolean
@@ -570,19 +571,7 @@ nmc_switch_parse_on_off (NmCli *nmc, const char *arg1, const char *arg2, gboolea
 static gboolean
 show_networking_connectivity (NmCli *nmc)
 {
-	g_return_val_if_fail (nmc != NULL, FALSE);
-
-	if (nmc->required_fields && strcasecmp (nmc->required_fields, NMC_FIELDS_NM_CONNECTIVITY) != 0) {
-		g_string_printf (nmc->return_text, _("Error: '--fields' value '%s' is not valid here (allowed fields: %s)"),
-		                 nmc->required_fields, NMC_FIELDS_NM_CONNECTIVITY);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return FALSE;
-	}
-	if (nmc->print_output == NMC_PRINT_NORMAL)
-		nmc->print_output = NMC_PRINT_TERSE;
-
-	nmc->required_fields = g_strdup (NMC_FIELDS_NM_CONNECTIVITY);
-	return show_nm_status (nmc, _("Connectivity"), NMC_FIELDS_NM_STATUS_SWITCH);
+	return nmc_switch_show (nmc, NMC_FIELDS_NM_CONNECTIVITY, _("Connectivity"));
 }
 
 /*
@@ -609,7 +598,8 @@ do_networking (NmCli *nmc, int argc, char **argv)
 				nm_client_check_connectivity (nmc->client, NULL, &error);
 				if (error) {
 					g_string_printf (nmc->return_text, _("Error: %s."), error->message);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+					g_clear_error (&error);
 				} else
 					show_networking_connectivity (nmc);
 			} else {
