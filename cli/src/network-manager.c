@@ -37,22 +37,23 @@ static NmcOutputField nmc_fields_nm_status[] = {
 	{"RUNNING",      N_("RUNNING"),      15},  /* 0 */
 	{"VERSION",      N_("VERSION"),      10},  /* 1 */
 	{"STATE",        N_("STATE"),        15},  /* 2 */
-	{"CONNECTIVITY", N_("CONNECTIVITY"), 15},  /* 3 */
-	{"NETWORKING",   N_("NETWORKING"),   13},  /* 4 */
-	{"WIFI-HW",      N_("WIFI-HW"),      15},  /* 5 */
-	{"WIFI",         N_("WIFI"),         10},  /* 6 */
-	{"WWAN-HW",      N_("WWAN-HW"),      15},  /* 7 */
-	{"WWAN",         N_("WWAN"),         10},  /* 8 */
-	{"WIMAX-HW",     N_("WIMAX-HW"),     15},  /* 9 */
-	{"WIMAX",        N_("WIMAX"),        10},  /* 10 */
+	{"STARTUP",      N_("STARTUP"),      10},  /* 3 */
+	{"CONNECTIVITY", N_("CONNECTIVITY"), 15},  /* 4 */
+	{"NETWORKING",   N_("NETWORKING"),   13},  /* 5 */
+	{"WIFI-HW",      N_("WIFI-HW"),      15},  /* 6 */
+	{"WIFI",         N_("WIFI"),         10},  /* 7 */
+	{"WWAN-HW",      N_("WWAN-HW"),      15},  /* 8 */
+	{"WWAN",         N_("WWAN"),         10},  /* 9 */
+	{"WIMAX-HW",     N_("WIMAX-HW"),     15},  /* 10 */
+	{"WIMAX",        N_("WIMAX"),        10},  /* 11 */
 	{NULL,           NULL,                0}
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
 #else
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
+#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN"
 #endif
@@ -178,7 +179,7 @@ nm_connectivity_to_string (NMConnectivityState connectivity)
 static gboolean
 show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
-	gboolean nm_running;
+	gboolean nm_running, startup;
 	NMState state = NM_STATE_UNKNOWN;
 	NMConnectivityState connectivity = NM_CONNECTIVITY_UNKNOWN;
 	const char *net_enabled_str;
@@ -223,6 +224,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 			return FALSE;
 
 		state = nm_client_get_state (nmc->client);
+		startup = nm_client_get_startup (nmc->client);
 		connectivity = nm_client_get_connectivity (nmc->client);
 		net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
 		wireless_hw_enabled_str = nm_client_wireless_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
@@ -251,15 +253,16 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	set_val_strc (arr, 0, nm_running ? _("running") : _("not running"));
 	set_val_strc (arr, 1, nm_running ? nm_client_get_version (nmc->client) : _("unknown"));
 	set_val_strc (arr, 2, nm_state_to_string (state));
-	set_val_strc (arr, 3, nm_connectivity_to_string (connectivity));
-	set_val_strc (arr, 4, net_enabled_str);
-	set_val_strc (arr, 5, wireless_hw_enabled_str);
-	set_val_strc (arr, 6, wireless_enabled_str);
-	set_val_strc (arr, 7, wwan_hw_enabled_str);
-	set_val_strc (arr, 8, wwan_enabled_str);
+	set_val_strc (arr, 3, startup ? _("starting") : _("started"));
+	set_val_strc (arr, 4, nm_connectivity_to_string (connectivity));
+	set_val_strc (arr, 5, net_enabled_str);
+	set_val_strc (arr, 6, wireless_hw_enabled_str);
+	set_val_strc (arr, 7, wireless_enabled_str);
+	set_val_strc (arr, 8, wwan_hw_enabled_str);
+	set_val_strc (arr, 9, wwan_enabled_str);
 #if WITH_WIMAX
-	set_val_strc (arr, 9, wimax_hw_enabled_str);
-	set_val_strc (arr, 10, wimax_enabled_str);
+	set_val_strc (arr, 10, wimax_hw_enabled_str);
+	set_val_strc (arr, 11, wimax_enabled_str);
 #endif
 	g_ptr_array_add (nmc->output_data, arr);
 
