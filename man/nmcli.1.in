@@ -181,7 +181,7 @@ Use this object to show NetworkManager networking status, or enable/disable
 networking. Disabling networking deconfigures all devices and changes them to
 the 'unmanaged' state.
 .TP
-.SS \fICOMMAND\fP := { [ on | off ] }
+.SS \fICOMMAND\fP := { [ on | off | connectivity ] }
 .sp
 .RS
 .TP
@@ -190,6 +190,27 @@ the 'unmanaged' state.
 Get networking\(hyenabled status or enable/disable networking by NetworkManager.
 All interfaces managed by NetworkManager are deactivated when networking has
 been disabled.
+.TP
+.B connectivity [check]
+.br
+Get network connectivity state.
+The optional \fIcheck\fP argument tells NetworkManager to re-check the connectivity,
+else the most recent known connectivity state is displayed without re-checking.
+.br
+Possible states are:
+.RS
+.PP
+.IP \fInone\fP 9
+\(en the host is not connected to any network
+.IP \fIportal\fP 9
+\(en the host is behind a captive portal and cannot reach the full Internet
+.IP \fIlimited\fP 9
+\(en the host is connected to a network, but it has no access to the Internet
+.IP \fIfull\fP 9
+\(en the host is connected to a network and has the full access to the Internet
+.IP \fIunknown\fP 9
+\(en the connectivity status cannot be found out
+.RE
 .RE
 
 .TP
