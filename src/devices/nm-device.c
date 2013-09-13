@@ -6747,7 +6747,7 @@ nm_device_set_hw_addr (NMDevice *device, const guint8 *addr,
 		nm_log_warn (LOGD_DEVICE | hw_log_domain, "(%s): failed to %s MAC address to %s",
 		             iface, detail, mac_str);
 	}
-	nm_device_bring_up (device, NULL);
+	nm_device_bring_up (device, TRUE, NULL);
 	g_free (mac_str);
 
 	return success;
