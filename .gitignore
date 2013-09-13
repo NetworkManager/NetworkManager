@@ -176,6 +176,7 @@ valgrind-*.log
 /libnm-util/tests/test-need-secrets
 /libnm-util/tests/test-secrets
 /libnm-util/tests/test-setting-8021x
+/libnm-util/tests/test-setting-dcb
 /libnm-glib/tests/test-remote-settings-client
 /src/tests/test-dhcp-options
 /src/tests/test-ip4-config
