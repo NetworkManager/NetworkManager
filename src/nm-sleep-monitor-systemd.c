@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
+#include <glib/gi18n.h>
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
 
