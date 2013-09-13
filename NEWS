@@ -1,3 +1,37 @@
+================================================
+NetworkManager-0.9.8.4
+Overview of changes since NetworkManager-0.9.8.2
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Removed some spurious warnings
+* Root clients running outside a login session now have the right permissions
+* WiFi AP mode and EAP-FAST support are now detected correctly
+* Bonding config removes inappropriate options when switching modes
+* Fix reading of bond connections with keyfile plugin
+* Fix hang when dbus-daemon restarts
+* Fix crash when VPN disconnection fails
+* The dispatcher now exposes IPv6 VPN info, and IPv4/IPv6 DNS search domains
+* Build fix to support dhcpcd 6.x
+* Fix crash on startup when no dhcp client is available
+* Fix device descriptions when using the latest udev
+* Fix some possible obscure problems at startup
+* Always clear the default route correctly when disconnecting mobile broadband
+* Keyfile plugin now ignores more emacs temporary files
+* When using dnsmasq, pass all nameservers to it, not just the first
+* Kill dhclient if nm-dhcp-client-action encounters a fatal error
+* Fix dispatcher systemd unit install
+* Make ifcfg-rh VLAN parsing match initscripts better
+* Change threshold for WiFi background scanning under WPA Enterprise
+* Fix crash when deleting a currently-active connection
+* Fix ifcfg-rh's handling of IPV6_DEFAULTGW
+* Fix manager State transitions when connectivity checking is enabled
+* Add Connectivity property to distinguish portals from "limited connectivity"
+* Add PrimaryConnection and ActivatingConnection properties to simplify UI code
+* Old connection files containing UUIDs without hyphens work again
+
+
 ==============================================
 NetworkManager-0.9.8.2
 Overview of changes since NetworkManager-0.9.8
