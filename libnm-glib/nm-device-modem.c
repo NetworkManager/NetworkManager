@@ -127,6 +127,11 @@ get_type_description (NMDevice *device)
 		return NULL;
 }
 
+#define MODEM_CAPS_3GPP(caps) (caps & (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS |    \
+                                       NM_DEVICE_MODEM_CAPABILITY_LTE))
+
+#define MODEM_CAPS_3GPP2(caps) (caps & (NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -156,8 +161,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	current_caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
-	if (   !(s_gsm && (current_caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS))
-	    && !(s_cdma && (current_caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))) {
+	if (!(s_gsm && MODEM_CAPS_3GPP (current_caps)) && !(s_cdma && MODEM_CAPS_3GPP2 (current_caps))) {
 		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_MISSING_DEVICE_CAPS,
 		             "The device missed capabilities required by the GSM/CDMA connection.");
 		return FALSE;
