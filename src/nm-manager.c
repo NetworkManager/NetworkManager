@@ -1439,7 +1439,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_team_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		/* FIXME: remove when we handle bridges non-destructively */
-		if (!nm_platform_link_get_ifindex (iface) > 0 && !bridge_created_by_nm (self, iface)) {
+		if (nm_platform_link_get_ifindex (iface) > 0 && !bridge_created_by_nm (self, iface)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): cannot use existing bridge for '%s'",
 			             iface, nm_connection_get_id (connection));
 		} else
