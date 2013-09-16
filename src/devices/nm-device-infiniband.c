@@ -236,7 +236,10 @@ check_connection_compatible (NMDevice *device,
 
 	if (s_infiniband) {
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-		if (mac && memcmp (mac->data, nm_device_get_hw_address (device, NULL), INFINIBAND_ALEN)) {
+		/* We only compare the last 8 bytes */
+		if (mac && memcmp (mac->data + INFINIBAND_ALEN - 8,
+		                   nm_device_get_hw_address (device, NULL) + INFINIBAND_ALEN - 8,
+		                   8)) {
 			g_set_error (error,
 			             NM_INFINIBAND_ERROR,
 			             NM_INFINIBAND_ERROR_CONNECTION_INCOMPATIBLE,
@@ -306,6 +309,38 @@ match_l2_config (NMDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
+static gboolean
+spec_match_list (NMDevice *device, const GSList *specs)
+{
+	char *hwaddr_str, *spec_str;
+	const GSList *iter;
+
+	if (NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->spec_match_list (device, specs))
+		return TRUE;
+
+	hwaddr_str = nm_utils_hwaddr_ntoa (nm_device_get_hw_address (device, NULL),
+	                                   ARPHRD_INFINIBAND);
+
+	/* InfiniBand hardware address matches only need to match the last
+	 * 8 bytes. In string format, that means we skip the first 36
+	 * characters of hwaddr_str, and the first 40 of the spec (to skip
+	 * "mac:" too).
+	 */
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		spec_str = iter->data;
+
+		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
+		    && strlen (spec_str) > 40
+		    && !g_ascii_strcasecmp (spec_str + 40, hwaddr_str + 36)) {
+			g_free (hwaddr_str);
+			return TRUE;
+		}
+	}
+
+	g_free (hwaddr_str);
+	return FALSE;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -344,6 +379,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
+	parent_class->spec_match_list = spec_match_list;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;

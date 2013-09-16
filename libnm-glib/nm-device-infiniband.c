@@ -169,7 +169,9 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 			return FALSE;
 		}
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-		if (mac && hwaddr && memcmp (mac->data, hwaddr, INFINIBAND_ALEN)) {
+
+		/* We only match against the last 8 bytes */
+		if (mac && hwaddr && memcmp (mac->data + INFINIBAND_ALEN - 8, hwaddr + INFINIBAND_ALEN - 8, 8)) {
 			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;
