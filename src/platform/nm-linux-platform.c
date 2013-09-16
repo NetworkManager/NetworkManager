@@ -543,7 +543,7 @@ ethtool_get_driver (const char *ifname)
 }
 
 static gboolean
-link_is_announcable (NMPlatform *platform, struct rtnl_link *rtnllink)
+link_is_announceable (NMPlatform *platform, struct rtnl_link *rtnllink)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
@@ -1203,7 +1203,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		 * already removed and announced.
 		 */
 		if (event == RTM_DELLINK) {
-			if (!link_is_announcable (platform, (struct rtnl_link *) object))
+			if (!link_is_announceable (platform, (struct rtnl_link *) object))
 				return NL_OK;
 		}
 		announce_object (platform, cached_object, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
@@ -1331,7 +1331,7 @@ link_get_all (NMPlatform *platform)
 	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
 		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
 
-		if (link_is_announcable (platform, rtnl_link)) {
+		if (link_is_announceable (platform, rtnl_link)) {
 			link_init (platform, &device, rtnl_link);
 			g_array_append_val (links, device);
 		}
@@ -1393,7 +1393,7 @@ link_get (NMPlatform *platform, int ifindex)
 	}
 
 	/* physical interfaces must be found by udev before they can be used */
-	if (!link_is_announcable (platform, rtnllink)) {
+	if (!link_is_announceable (platform, rtnllink)) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 		return NULL;
 	}
