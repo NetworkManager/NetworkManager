@@ -502,12 +502,18 @@ link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char 
 static gboolean
 link_is_software (struct rtnl_link *link)
 {
-	const char *type = rtnl_link_get_type (link);
+	const char *type;
 
 	/* FIXME: replace somehow with NMLinkType or nm_platform_is_software(), but
 	 * solve the infinite callstack problems that getting the type of a TUN/TAP
 	 * device causes.
 	 */
+
+	if (   rtnl_link_get_arptype (link) == ARPHRD_INFINIBAND
+	    && strchr (rtnl_link_get_name (link), '.'))
+		return TRUE;
+
+	type = rtnl_link_get_type (link);
 	if (type == NULL)
 		return FALSE;
 
@@ -1893,6 +1899,14 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	success = nm_platform_sysctl_set (path, id);
 	g_free (id);
 	g_free (path);
+
+	if (success) {
+		auto_nl_object struct rtnl_link *rtnllink = rtnl_link_alloc ();
+		auto_g_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
+
+		rtnl_link_set_name (rtnllink, ifname);
+		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
+	}
 
 	return success;
 }
