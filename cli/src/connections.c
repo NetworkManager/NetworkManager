@@ -1612,10 +1612,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
-	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
+	if (nm_connection_get_virtual_iface_name (connection))
 		is_virtual = TRUE;
 
 	device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &error);
