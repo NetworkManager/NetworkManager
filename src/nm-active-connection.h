@@ -44,7 +44,7 @@
 #define NM_ACTIVE_CONNECTION_VPN             "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER          "master"
 
-/* Internal non-exported construct-time properties */
+/* Internal non-exported properties */
 #define NM_ACTIVE_CONNECTION_INT_CONNECTION     "int-connection"
 #define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
 #define NM_ACTIVE_CONNECTION_INT_SUBJECT        "int-subject"
@@ -113,6 +113,8 @@ void          nm_active_connection_set_state (NMActiveConnection *self,
                                               NMActiveConnectionState state);
 
 NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
+
+gboolean      nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device);
 
 NMAuthSubject *nm_active_connection_get_subject (NMActiveConnection *self);
 

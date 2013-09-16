@@ -358,9 +358,11 @@ master_failed (NMActiveConnection *self)
  * @specific_object: the object path of the specific object (ie, WiFi access point,
  *    etc) that will be used to activate @connection and @device
  * @subject: the #NMAuthSubject representing the requestor of the activation
- * @device: the device/interface to configure according to @connection
+ * @device: the device/interface to configure according to @connection; or %NULL
+ * if the connection describes a software device which will be created during
+ * connection activation
  *
- * Begins activation of @device using the given @connection and other details.
+ * Creates a new device-based activation request.
  *
  * Returns: the new activation request on success, %NULL on error.
  */
@@ -371,7 +373,7 @@ nm_act_request_new (NMConnection *connection,
                     NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (!device || NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
 	return (NMActRequest *) g_object_new (NM_TYPE_ACT_REQUEST,

@@ -320,6 +320,33 @@ device_state_changed (NMDevice *device,
 		NM_ACTIVE_CONNECTION_GET_CLASS (self)->device_state_changed (self, device, new_state, old_state);
 }
 
+gboolean
+nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
+	g_return_val_if_fail (!device || NM_IS_DEVICE (device), FALSE);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (device) {
+		g_return_val_if_fail (priv->device == NULL, FALSE);
+
+		/* Device obviously can't be its own master */
+		g_return_val_if_fail (!priv->master || device != nm_active_connection_get_device (priv->master), FALSE);
+
+		priv->device = g_object_ref (device);
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_DEVICE);
+
+		priv->device_state_id = g_signal_connect (device,
+		                                          "state-changed",
+		                                          G_CALLBACK (device_state_changed),
+		                                          self);
+	}
+	return TRUE;
+}
+
 NMActiveConnection *
 nm_active_connection_get_master (NMActiveConnection *self)
 {
@@ -410,7 +437,6 @@ void
 nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *master)
 {
 	NMActiveConnectionPrivate *priv;
-	NMDevice *master_device;
 
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (master));
@@ -420,10 +446,10 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 	/* Master is write-once, and must be set before exporting the object */
 	g_return_if_fail (priv->master == NULL);
 	g_return_if_fail (priv->path == NULL);
-
-	master_device = nm_active_connection_get_device (master);
-	if (master_device)
-		g_return_if_fail (master_device != priv->device);
+	if (priv->device) {
+		/* Note, the master ActiveConnection may not yet have a device */
+		g_return_if_fail (priv->device != nm_active_connection_get_device (master));
+	}
 
 	priv->master = g_object_ref (master);
 	g_signal_connect (priv->master,
@@ -556,7 +582,6 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
-	NMDevice *master_device;
 	const char *tmp;
 
 	switch (prop_id) {
@@ -565,18 +590,7 @@ set_property (GObject *object, guint prop_id,
 		priv->connection = g_value_dup_object (value);
 		break;
 	case PROP_INT_DEVICE:
-		g_return_if_fail (priv->device == NULL);
-		priv->device = g_value_dup_object (value);
-		if (priv->device && priv->master) {
-			master_device = nm_active_connection_get_device (priv->master);
-			g_warn_if_fail (priv->device != master_device);
-		}
-		if (priv->device) {
-			priv->device_state_id = g_signal_connect (priv->device,
-			                                          "state-changed",
-			                                          G_CALLBACK (device_state_changed),
-			                                          NM_ACTIVE_CONNECTION (object));
-		}
+		nm_active_connection_set_device (NM_ACTIVE_CONNECTION (object), g_value_get_object (value));
 		break;
 	case PROP_INT_SUBJECT:
 		priv->subject = g_value_dup_object (value);
@@ -787,7 +801,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                     "Internal device",
 		                     "Internal device",
 		                     NM_TYPE_DEVICE,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                     G_PARAM_READWRITE));
 
 	g_object_class_install_property (object_class, PROP_INT_SUBJECT,
 		g_param_spec_object (NM_ACTIVE_CONNECTION_INT_SUBJECT,
