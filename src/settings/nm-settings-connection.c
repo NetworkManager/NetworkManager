@@ -1563,7 +1563,7 @@ gboolean
 nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
                                       guint64 *out_timestamp)
 {
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), 0);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
 
 	if (out_timestamp)
 		*out_timestamp = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp;
@@ -1590,6 +1590,8 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
 	char *data, *tmp;
 	gsize len;
 	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 
 	/* Update timestamp in private storage */
 	priv->timestamp = timestamp;
@@ -1639,6 +1641,8 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
 	GKeyFile *timestamps_file;
 	GError *err = NULL;
 	char *tmp_str;
+
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 
 	/* Get timestamp from database file */
 	timestamps_file = g_key_file_new ();

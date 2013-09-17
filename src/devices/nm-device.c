@@ -6013,11 +6013,11 @@ nm_device_state_changed (NMDevice *device,
 		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), device, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
-		connection = nm_act_request_get_connection (req);
+		connection = nm_device_get_connection (device);
 		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s) failed for connection '%s'",
 		             nm_device_get_iface (device),
-		             nm_connection_get_id (connection));
+		             connection ? nm_connection_get_id (connection) : "<unknown>");
 
 		/* Notify any slaves of the unexpected failure */
 		nm_device_master_release_slaves (device, TRUE);
@@ -6027,7 +6027,7 @@ nm_device_state_changed (NMDevice *device,
 		 * failed (zero timestamp), connections that succeeded (non-zero timestamp),
 		 * and those we haven't tried yet (no timestamp).
 		 */
-		if (!nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), NULL)) {
+		if (connection && !nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), NULL)) {
 			nm_settings_connection_update_timestamp (NM_SETTINGS_CONNECTION (connection),
 			                                         (guint64) 0,
 			                                         TRUE);
