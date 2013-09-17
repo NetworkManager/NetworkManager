@@ -49,6 +49,17 @@ nm_connection_provider_has_connections_loaded (NMConnectionProvider *self)
 	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->has_connections_loaded (self);
 }
 
+NMConnection *
+nm_connection_provider_add_connection (NMConnectionProvider *self,
+                                       NMConnection *connection,
+                                       GError **error)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
+
+	g_assert (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->add_connection);
+	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->add_connection (self, connection, error);
+}
+
 /*****************************************************************************/
 
 static void

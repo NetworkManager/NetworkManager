@@ -60,6 +60,10 @@ struct _NMConnectionProvider {
 
 	gboolean (*has_connections_loaded) (NMConnectionProvider *self);
 
+	NMConnection * (*add_connection) (NMConnectionProvider *self,
+	                                  NMConnection *connection,
+	                                  GError **error);
+
 	/* Signals */
 	void (*connection_added)   (NMConnectionProvider *self, NMConnection *connection);
 
@@ -116,5 +120,18 @@ const GSList *nm_connection_provider_get_connections (NMConnectionProvider *self
  *   emited.
  */
 gboolean nm_connection_provider_has_connections_loaded (NMConnectionProvider *self);
+
+
+/**
+ * nm_connection_provider_add_connection:
+ * @self: the #NMConnectionProvider
+ * @connection: the connection to be added
+ * @error: returns any error if adding fails
+ *
+ * returns: a newly added #NMConnection.
+ */
+NMConnection *nm_connection_provider_add_connection (NMConnectionProvider *self,
+                                                     NMConnection *connection,
+                                                     GError **error);
 
 #endif /* NM_CONNECTION_PROVIDER_H */
