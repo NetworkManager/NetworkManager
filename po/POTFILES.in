@@ -36,6 +36,7 @@ libnm-util/nm-setting-wireless.c
 libnm-util/nm-utils.c
 policy/org.freedesktop.NetworkManager.policy.in.in
 src/main.c
+src/bluez-manager/nm-bluez-device.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-dhclient-utils.c
 src/dhcp-manager/nm-dhcp-manager.c

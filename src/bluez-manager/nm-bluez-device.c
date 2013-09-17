@@ -20,6 +20,7 @@
  */
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <gio/gio.h>
 #include <string.h>
 #include <net/ethernet.h>
@@ -35,6 +36,7 @@
 #endif
 #include "nm-bluez-device.h"
 #include "nm-logging.h"
+#include "nm-utils.h"
 
 
 G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
@@ -67,6 +69,9 @@ typedef struct {
 
 	NMConnectionProvider *provider;
 	GSList *connections;
+
+	NMConnection *pan_connection;
+	gboolean pan_connection_no_autocreate;
 } NMBluezDevicePrivate;
 
 
@@ -89,6 +94,11 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
+
+
+static void cp_connection_added (NMConnectionProvider *provider,
+                                 NMConnection *connection, NMBluezDevice *self);
+
 
 /***********************************************************/
 
@@ -157,18 +167,130 @@ nm_bluez_device_get_connected (NMBluezDevice *self)
 }
 
 static void
+pan_connection_check_create (NMBluezDevice *self)
+{
+	NMConnection *connection;
+	NMConnection *added;
+	NMSetting *setting;
+	char *uuid, *id;
+	GByteArray *bdaddr_array;
+	GError *error = NULL;
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->capabilities & NM_BT_CAPABILITY_NAP);
+	g_return_if_fail (priv->connections == NULL);
+	g_return_if_fail (priv->name);
+
+	if (priv->pan_connection || priv->pan_connection_no_autocreate) {
+		/* already have a connection or we don't want to create one, nothing to do. */
+		return;
+	}
+
+	if (!nm_connection_provider_has_connections_loaded (priv->provider)) {
+		/* do not try to create any connections until the connection provider is ready. */
+		return;
+	}
+
+	/* Only try once to create a connection. If it does not succeed, we do not try again. Also,
+	 * if the connection gets deleted later, do not create another one for this device. */
+	priv->pan_connection_no_autocreate = TRUE;
+
+	/* create a new connection */
+
+	connection = nm_connection_new ();
+
+	/* Setting: Connection */
+	uuid = nm_utils_uuid_generate ();
+	id = g_strdup_printf (_("%s Network"), priv->name);
+	setting = nm_setting_connection_new ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, id,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BLUETOOTH_SETTING_NAME,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	/* Setting: Bluetooth */
+	bdaddr_array = g_byte_array_sized_new (sizeof (priv->bin_address));
+	g_byte_array_append (bdaddr_array, priv->bin_address, sizeof (priv->bin_address));
+	setting = nm_setting_bluetooth_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_BLUETOOTH_BDADDR, bdaddr_array,
+	              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+	g_byte_array_free (bdaddr_array, TRUE);
+
+	/* Setting: IPv4 */
+	setting = nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, FALSE,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	/* Setting: IPv6 */
+	setting = nm_setting_ip6_config_new ();
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+	nm_connection_add_setting (connection, setting);
+
+	/* Adding a new connection raises a signal which eventually calls check_emit_usable (again)
+	 * which then already finds the suitable connection in priv->connections. This is confusing,
+	 * so block the signal. check_emit_usable will succeed after this function call returns. */
+	g_signal_handlers_block_by_func (priv->provider, cp_connection_added, self);
+	added = nm_connection_provider_add_connection (priv->provider, connection, FALSE, &error);
+	g_signal_handlers_unblock_by_func (priv->provider, cp_connection_added, self);
+
+	if (added) {
+		g_assert (g_slist_find (priv->connections, added));
+
+		priv->pan_connection = added;
+		nm_log_dbg (LOGD_SETTINGS, "added new Bluetooth connection for NAP device '%s': '%s' (%s)", priv->path, id, uuid);
+	} else {
+		nm_log_warn (LOGD_SETTINGS, "couldn't add new Bluetooth connection for NAP device '%s': '%s' (%s): %d / %s",
+		             priv->path, id, uuid, error ? error->code : -1,
+		             (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+
+	g_object_unref (connection);
+	g_free (id);
+	g_free (uuid);
+}
+
+static void
 check_emit_usable (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	gboolean new_usable;
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
-	              priv->address &&
 #if WITH_BLUEZ5
 	              priv->adapter && priv->dbus_connection &&
+	              (priv->capabilities & NM_BT_CAPABILITY_NAP) && /* BlueZ5 is only usable with NAP devices */
 #endif
-	              priv->connections
-	              );
+	              priv->address);
+
+	if (!new_usable)
+		goto END;
+
+	if (priv->connections)
+		goto END;
+
+	if (!(priv->capabilities & NM_BT_CAPABILITY_NAP)) {
+		/* non NAP devices are only usable, if they already have a connection. */
+		new_usable = FALSE;
+		goto END;
+	}
+
+	pan_connection_check_create (self);
+	new_usable = !!priv->pan_connection;
+
+END:
 	if (new_usable != priv->usable) {
 		priv->usable = new_usable;
 		g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_USABLE);
@@ -201,11 +323,11 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
 	if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
 	    && !(priv->capabilities & NM_BT_CAPABILITY_DUN))
-	    	return FALSE;
+		return FALSE;
 
 	if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)
 	    && !(priv->capabilities & NM_BT_CAPABILITY_NAP))
-	    	return FALSE;
+		return FALSE;
 
 	return TRUE;
 }
@@ -239,6 +361,9 @@ cp_connection_removed (NMConnectionProvider *provider,
 
 	if (g_slist_find (priv->connections, connection)) {
 		priv->connections = g_slist_remove (priv->connections, connection);
+		if (priv->pan_connection == connection) {
+			priv->pan_connection = NULL;
+		}
 		g_object_unref (connection);
 		check_emit_usable (self);
 	}
