@@ -854,12 +854,13 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "status show disconnect wifi wimax help"
+                _nmcli_list "status show connect disconnect wifi wimax help"
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
                         ;;
                     sh|sho|show| \
+                    c|co|con|conn|conne|connec|connect| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_list_nl "$(_nmcli_NM_devices)"
