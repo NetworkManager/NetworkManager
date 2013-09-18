@@ -2569,7 +2569,7 @@ msgstr "%d. IPv4 വിലാസം അസാധു"
 #: ../libnm-util/nm-setting-ip4-config.c:787
 #, c-format
 msgid "%d. IPv4 address has invalid prefix"
-msgstr "%d. IPv4 '%s''%s' വിലാസത്തില്‍ അസാധുവായ പ്രീഫിക്സ്"
+msgstr "%d. IPv4 വിലാസത്തില്‍ അസാധുവായ പ്രീഫിക്സ്"
 
 #: ../libnm-util/nm-setting-ip4-config.c:803
 #, c-format
