@@ -80,7 +80,7 @@ gboolean nm_bluez_device_get_connected (NMBluezDevice *self);
 
 void
 nm_bluez_device_connect_async (NMBluezDevice *self,
-                               gboolean dun,
+                               NMBluetoothCapabilities connection_bt_type,
                                GAsyncReadyCallback callback,
                                gpointer user_data);
 
@@ -90,8 +90,7 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
                                 GError **error);
 
 void
-nm_bluez_device_call_disconnect (NMBluezDevice *self,
-                                 gboolean dun);
+nm_bluez_device_call_disconnect (NMBluezDevice *self);
 
 #endif /* NM_BLUEZ_DEVICE_H */
 

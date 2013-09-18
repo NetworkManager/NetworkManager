@@ -45,6 +45,7 @@ typedef struct {
 
 	gboolean initialized;
 	gboolean usable;
+	NMBluetoothCapabilities connection_bt_type;
 
 	char *address;
 	guint8 bin_address[ETH_ALEN];
@@ -252,14 +253,16 @@ cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
 /***********************************************************/
 
 void
-nm_bluez_device_call_disconnect (NMBluezDevice *self, gboolean dun)
+nm_bluez_device_call_disconnect (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP || priv->connection_bt_type == NM_BT_CAPABILITY_DUN);
 
 	if (!priv->type_proxy)
 		return;
 
-	if (dun) {
+	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
 		/* Don't ever pass NULL through dbus; rfcomm_iface
 		 * might happen to be NULL for some reason.
 		 */
@@ -273,6 +276,7 @@ nm_bluez_device_call_disconnect (NMBluezDevice *self, gboolean dun)
 	}
 
 	g_clear_object (&priv->type_proxy);
+	priv->connection_bt_type = NM_BT_CAPABILITY_NONE;
 }
 
 static void
@@ -306,13 +310,15 @@ bluez_connect_cb (DBusGProxy *proxy,
 
 void
 nm_bluez_device_connect_async (NMBluezDevice *self,
-                               gboolean dun,
+                               NMBluetoothCapabilities connection_bt_type,
                                GAsyncReadyCallback callback,
                                gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	DBusGConnection *connection;
+
+	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP || connection_bt_type == NM_BT_CAPABILITY_DUN);
 
 	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 
@@ -324,7 +330,7 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 	priv->type_proxy = dbus_g_proxy_new_for_name (connection,
 	                                              BLUEZ_SERVICE,
 	                                              priv->path,
-	                                              dun ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
+	                                              connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
 	if (!priv->type_proxy)
 		g_simple_async_report_error_in_idle (G_OBJECT (self),
 	                                             callback,
@@ -332,14 +338,17 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 	                                             G_IO_ERROR,
 	                                             G_IO_ERROR_FAILED,
 	                                             "Unable to create proxy");
-	else
+	else {
 		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
 		                                      bluez_connect_cb,
 		                                      simple,
 		                                      NULL,
 		                                      20000,
-		                                      G_TYPE_STRING, dun ? BLUETOOTH_CONNECT_DUN : BLUETOOTH_CONNECT_NAP,
+		                                      G_TYPE_STRING,
+		                                      connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUETOOTH_CONNECT_DUN : BLUETOOTH_CONNECT_NAP,
 		                                      G_TYPE_INVALID);
+		priv->connection_bt_type = connection_bt_type;
+	}
 }
 
 const char *
