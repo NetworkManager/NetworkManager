@@ -322,23 +322,32 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 
 	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 
-	simple = g_simple_async_result_new (G_OBJECT (self),
-	                                    callback,
-	                                    user_data,
-	                                    nm_bluez_device_connect_async);
 
+	if (priv->type_proxy) {
+		g_simple_async_report_error_in_idle (G_OBJECT (self),
+		                                     callback,
+		                                     user_data,
+		                                     G_IO_ERROR,
+		                                     G_IO_ERROR_FAILED,
+		                                     "Already connected to bluez service");
+		return;
+	}
 	priv->type_proxy = dbus_g_proxy_new_for_name (connection,
 	                                              BLUEZ_SERVICE,
 	                                              priv->path,
 	                                              connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
-	if (!priv->type_proxy)
+	if (!priv->type_proxy) {
 		g_simple_async_report_error_in_idle (G_OBJECT (self),
-	                                             callback,
-	                                             user_data,
-	                                             G_IO_ERROR,
-	                                             G_IO_ERROR_FAILED,
-	                                             "Unable to create proxy");
-	else {
+		                                     callback,
+		                                     user_data,
+		                                     G_IO_ERROR,
+		                                     G_IO_ERROR_FAILED,
+		                                     "Unable to create proxy");
+	} else {
+		simple = g_simple_async_result_new (G_OBJECT (self),
+		                                    callback,
+		                                    user_data,
+		                                    nm_bluez_device_connect_async);
 		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
 		                                      bluez_connect_cb,
 		                                      simple,
