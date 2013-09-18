@@ -866,7 +866,6 @@ static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	gboolean dun = FALSE;
 	NMConnection *connection;
 
 	connection = nm_device_get_connection (device);
@@ -882,18 +881,13 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	if (priv->bt_type == NM_BT_CAPABILITY_DUN)
-		dun = TRUE;
-	else if (priv->bt_type == NM_BT_CAPABILITY_NAP)
-		dun = FALSE;
-	else
-		g_assert_not_reached ();
-
 	nm_log_dbg (LOGD_BT, "(%s): requesting connection to the device",
 	            nm_device_get_iface (device));
 
 	/* Connect to the BT device */
-	nm_bluez_device_connect_async (priv->bt_device, dun, bluez_connect_cb, device);
+	nm_bluez_device_connect_async (priv->bt_device,
+	                               priv->bt_type & (NM_BT_CAPABILITY_DUN | NM_BT_CAPABILITY_NAP),
+	                               bluez_connect_cb, device);
 
 	if (priv->timeout_id)
 		g_source_remove (priv->timeout_id);
@@ -944,15 +938,11 @@ static void
 deactivate (NMDevice *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	gboolean dun;
-
-	dun = priv->bt_type == NM_BT_CAPABILITY_DUN;
 
 	priv->have_iface = FALSE;
 	priv->connected = FALSE;
 
-	if (dun) {
-
+	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		if (priv->modem) {
 			nm_modem_deactivate (priv->modem, device);
 
@@ -968,7 +958,8 @@ deactivate (NMDevice *device)
 		}
 	}
 
-	nm_bluez_device_call_disconnect (priv->bt_device, dun);
+	if (priv->bt_type != NM_BT_CAPABILITY_NONE)
+		nm_bluez_device_call_disconnect (priv->bt_device);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);
