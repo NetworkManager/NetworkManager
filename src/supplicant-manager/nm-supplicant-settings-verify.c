@@ -74,7 +74,7 @@ const char * key_mgmt_allowed[] = { "WPA-PSK", "WPA-EAP", "IEEE8021X", "WPA-NONE
                                     "NONE", NULL };
 const char * auth_alg_allowed[] = { "OPEN", "SHARED", "LEAP", NULL };
 const char * eap_allowed[] =      { "LEAP", "MD5", "TLS", "PEAP", "TTLS", "SIM",
-                                    "PSK", "FAST", NULL };
+                                    "PSK", "FAST", "PWD", NULL };
 
 const char * phase1_allowed[] =   {"peapver=0", "peapver=1", "peaplabel=1",
                                     "peap_outer_success=0", "include_tls_length=1",

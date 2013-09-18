@@ -2395,6 +2395,7 @@ typedef struct {
 
 static EAPMethodsTable eap_methods_table[] = {
 	{ "leap", need_secrets_password, verify_identity },
+	{ "pwd", need_secrets_password, verify_identity },
 	{ "md5", need_secrets_password, verify_identity },
 	{ "pap", need_secrets_password, verify_identity },
 	{ "chap", need_secrets_password, verify_identity },
@@ -2520,7 +2521,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
 	const char *valid_phase1_peaplabel[] = { "0", "1", NULL };
 	const char *valid_phase1_fast_pac[] = { "0", "1", "2", "3", NULL };
@@ -3024,7 +3025,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * NMSetting8021x:eap:
 	 *
 	 * The allowed EAP method to be used when authenticating to the network with
-	 * 802.1x.  Valid methods are: "leap", "md5", "tls", "peap", "ttls", and
+	 * 802.1x.  Valid methods are: "leap", "md5", "tls", "peap", "ttls", "pwd" and
 	 * "fast".  Each method requires different configuration using the
 	 * properties of this object; refer to wpa_supplicant documentation for the
 	 * allowed combinations.
@@ -3036,7 +3037,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "The allowed EAP method to be used when "
 							   "authenticating to the network with 802.1x. "
 							   "Valid methods are: 'leap', 'md5', 'tls', 'peap', "
-							   "'ttls', and 'fast'. Each method requires "
+							   "'ttls', 'pwd', and 'fast'. Each method requires "
 							   "different configuration using the properties of "
 							   "this setting; refer to wpa_supplicant "
 							   "documentation for the allowed combinations.",

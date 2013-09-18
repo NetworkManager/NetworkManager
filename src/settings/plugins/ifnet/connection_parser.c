@@ -98,6 +98,7 @@ typedef struct {
 
 static EAPReader eap_readers[] = {
 	{"md5", eap_simple_reader, TRUE},
+	{"pwd", eap_simple_reader, TRUE},
 	{"pap", eap_simple_reader, TRUE},
 	{"chap", eap_simple_reader, TRUE},
 	{"mschap", eap_simple_reader, TRUE},

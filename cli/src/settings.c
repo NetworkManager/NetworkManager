@@ -2302,7 +2302,7 @@ DEFINE_SETTER_STR_LIST_MULTI (check_and_add_802_1X_eap,
 static gboolean
 nmc_property_802_1X_set_eap (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
 	return check_and_add_802_1X_eap (setting, prop, val, valid_eap, error);
 }
 DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_eap,

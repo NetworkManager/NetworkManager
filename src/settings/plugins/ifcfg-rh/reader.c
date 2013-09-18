@@ -2700,6 +2700,7 @@ static EAPReader eap_readers[] = {
 	{ "mschap", eap_simple_reader, TRUE },
 	{ "mschapv2", eap_simple_reader, TRUE },
 	{ "leap", eap_simple_reader, FALSE },
+	{ "pwd", eap_simple_reader, FALSE },
 	{ "tls", eap_tls_reader, FALSE },
 	{ "peap", eap_peap_reader, FALSE },
 	{ "ttls", eap_ttls_reader, FALSE },
