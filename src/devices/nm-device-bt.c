@@ -69,7 +69,6 @@ typedef struct {
 	guint32 capabilities;
 
 	gboolean connected;
-	guint32 connected_id;
 	gboolean have_iface;
 
 	DBusGProxy *type_proxy;
@@ -1138,9 +1137,9 @@ constructed (GObject *object)
 	priv->bdaddr = nm_utils_hwaddr_ntoa (my_hwaddr, ARPHRD_ETHER);
 
 	/* Watch for BT device property changes */
-	priv->connected_id = g_signal_connect (priv->bt_device, "notify::connected",
-					       G_CALLBACK (bluez_connected_changed),
-					       object);
+	g_signal_connect (priv->bt_device, "notify::" NM_BLUEZ_DEVICE_CONNECTED,
+	                  G_CALLBACK (bluez_connected_changed),
+	                  object);
 }
 
 static void
@@ -1200,10 +1199,9 @@ dispose (GObject *object)
 		priv->timeout_id = 0;
 	}
 
-	if (priv->connected_id) {
-		g_source_remove (priv->connected_id);
-		priv->connected_id = 0;
-	}
+	g_signal_handlers_disconnect_by_func (priv->bt_device,
+	                                      G_CALLBACK (bluez_connected_changed),
+	                                      object);
 
 	if (priv->dbus_mgr && priv->mm_watch_id) {
 		g_signal_handler_disconnect (priv->dbus_mgr, priv->mm_watch_id);
