@@ -41,7 +41,7 @@ G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 typedef struct {
 	char *path;
 	DBusGProxy *proxy;
-	DBusGProxy *type_proxy;
+	DBusGProxy *connection_proxy;
 
 	gboolean initialized;
 	gboolean usable;
@@ -259,7 +259,7 @@ nm_bluez_device_call_disconnect (NMBluezDevice *self)
 
 	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP || priv->connection_bt_type == NM_BT_CAPABILITY_DUN);
 
-	if (!priv->type_proxy)
+	if (!priv->connection_proxy)
 		return;
 
 	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
@@ -267,15 +267,15 @@ nm_bluez_device_call_disconnect (NMBluezDevice *self)
 		 * might happen to be NULL for some reason.
 		 */
 		if (priv->rfcomm_iface)
-		dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
-		                            G_TYPE_STRING, priv->rfcomm_iface,
-		                            G_TYPE_INVALID);
+			dbus_g_proxy_call_no_reply (priv->connection_proxy, "Disconnect",
+			                            G_TYPE_STRING, priv->rfcomm_iface,
+			                            G_TYPE_INVALID);
 	} else {
-		dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
+		dbus_g_proxy_call_no_reply (priv->connection_proxy, "Disconnect",
 		                            G_TYPE_INVALID);
 	}
 
-	g_clear_object (&priv->type_proxy);
+	g_clear_object (&priv->connection_proxy);
 	priv->connection_bt_type = NM_BT_CAPABILITY_NONE;
 }
 
@@ -295,8 +295,8 @@ bluez_connect_cb (DBusGProxy *proxy,
 	                           G_TYPE_INVALID) == FALSE)
 		g_simple_async_result_take_error (result, error);
 	else if (!device || !strlen (device)) {
-		g_simple_async_result_set_error(result, G_IO_ERROR, G_IO_ERROR_FAILED,
-						"Invalid argument received");
+		g_simple_async_result_set_error (result, G_IO_ERROR, G_IO_ERROR_FAILED,
+		                                 "Invalid argument received");
 	} else {
 		g_simple_async_result_set_op_res_gpointer (result,
 		                                           g_strdup (device),
@@ -323,7 +323,7 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 
 
-	if (priv->type_proxy) {
+	if (priv->connection_proxy) {
 		g_simple_async_report_error_in_idle (G_OBJECT (self),
 		                                     callback,
 		                                     user_data,
@@ -332,11 +332,11 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 		                                     "Already connected to bluez service");
 		return;
 	}
-	priv->type_proxy = dbus_g_proxy_new_for_name (connection,
-	                                              BLUEZ_SERVICE,
-	                                              priv->path,
-	                                              connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
-	if (!priv->type_proxy) {
+	priv->connection_proxy = dbus_g_proxy_new_for_name (connection,
+	                                                    BLUEZ_SERVICE,
+	                                                    priv->path,
+	                                                    connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
+	if (!priv->connection_proxy) {
 		g_simple_async_report_error_in_idle (G_OBJECT (self),
 		                                     callback,
 		                                     user_data,
@@ -348,7 +348,7 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 		                                    callback,
 		                                    user_data,
 		                                    nm_bluez_device_connect_async);
-		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
+		dbus_g_proxy_begin_call_with_timeout (priv->connection_proxy, "Connect",
 		                                      bluez_connect_cb,
 		                                      simple,
 		                                      NULL,
@@ -607,7 +607,7 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
 
-	g_clear_object (&priv->type_proxy);
+	g_clear_object (&priv->connection_proxy);
 
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
 }
