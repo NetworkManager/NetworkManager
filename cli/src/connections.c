@@ -2862,16 +2862,58 @@ split_address (char* str, char **ip, char **gw, char **rest)
 }
 
 static void
+ask_for_ip_addresses (NMConnection *connection, int family)
+{
+	gboolean ip_loop;
+	GError *error = NULL;
+	char *str, *ip, *gw, *rest;
+	const char *prompt;
+	gboolean added;
+	gpointer ipaddr;
+
+	if (family == 4)
+		prompt =_("IPv4 address (IP[/plen] [gateway]) [none]: ");
+	else
+		prompt =_("IPv6 address (IP[/plen] [gateway]) [none]: ");
+
+	ip_loop = TRUE;
+	do {
+		str = nmc_get_user_input (prompt);
+		split_address (str, &ip, &gw, &rest);
+		if (ip) {
+			if (family == 4)
+				ipaddr = nmc_parse_and_build_ip4_address (ip, gw, &error);
+			else
+				ipaddr = nmc_parse_and_build_ip6_address (ip, gw, &error);
+			if (ipaddr) {
+				if (family == 4)
+					added = add_ip4_address_to_connection ((NMIP4Address *) ipaddr, connection);
+				else
+					added = add_ip6_address_to_connection ((NMIP6Address *) ipaddr, connection);
+				gw = gw ? gw : (family == 4) ? "0.0.0.0" : "::";
+				if (added)
+					printf (_("  Address successfully added: %s %s\n"), ip, gw);
+				else
+					printf (_("  Warning: address already present: %s %s\n"), ip, gw);
+				if (rest)
+					printf (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
+			} else {
+				g_prefix_error (&error, _("Error: "));
+				printf ("%s\n", error->message);
+				g_clear_error (&error);
+			}
+		} else
+			ip_loop = FALSE;
+
+		g_free (str);
+	} while (ip_loop);
+}
+
+static void
 do_questionnaire_ip (NMConnection *connection)
 {
 	char *answer;
 	gboolean answer_bool;
-	gboolean ip_loop;
-	GError *error = NULL;
-	NMIP4Address *ip4addr;
-	NMIP6Address *ip6addr;
-	char *str, *ip, *gw, *rest;
-	gboolean added;
 
 	/* Ask for IP addresses */
 	answer = nmc_get_user_input (_("Do you want to add IP addresses? (yes/no) [yes] "));
@@ -2879,57 +2921,9 @@ do_questionnaire_ip (NMConnection *connection)
 		return;
 
 	printf (_("Press <Enter> to finish adding addresses.\n"));
-	ip_loop = TRUE;
-	do {
-		str = nmc_get_user_input (_("IPv4 address (IP[/plen] [gateway]) [none]: "));
-		split_address (str, &ip, &gw, &rest);
-		if (ip) {
-			ip4addr = nmc_parse_and_build_ip4_address (ip, gw, &error);
-			if (ip4addr) {
-				added = add_ip4_address_to_connection (ip4addr, connection);
-				gw = gw ? gw : "0.0.0.0";
-				if (added)
-					printf (_("  Address successfully added: %s %s\n"), ip, gw);
-				else
-					printf (_("  Warning: address already present: %s %s\n"), ip, gw);
-				if (rest)
-					printf (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
-			} else {
-				g_prefix_error (&error, _("Error: "));
-				printf ("%s\n", error->message);
-				g_clear_error (&error);
-			}
-		} else
-			ip_loop = FALSE;
 
-		g_free (str);
-	} while (ip_loop);
-
-	ip_loop = TRUE;
-	do {
-		str = nmc_get_user_input (_("IPv6 address (IP[/plen] [gateway]) [none]: "));
-		split_address (str, &ip, &gw, &rest);
-		if (ip) {
-			ip6addr = nmc_parse_and_build_ip6_address (ip, gw, &error);
-			if (ip6addr) {
-				added = add_ip6_address_to_connection (ip6addr, connection);
-				gw = gw ? gw : "::";
-				if (added)
-					printf (_("  Address successfully added: %s %s\n"), ip, gw);
-				else
-					printf (_("  Warning: address already present: %s %s\n"), ip, gw);
-				if (rest)
-					printf (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
-			} else {
-				g_prefix_error (&error, _("Error: "));
-				printf ("%s\n", error->message);
-				g_clear_error (&error);
-			}
-		} else
-			ip_loop = FALSE;
-
-		g_free (str);
-	} while (ip_loop);
+	ask_for_ip_addresses (connection, 4);
+	ask_for_ip_addresses (connection, 6);
 
 	return;
 }
