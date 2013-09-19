@@ -2844,6 +2844,29 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 	return;
 }
 
+static gboolean
+split_address (char* str, char **ip, char **gw, char **rest)
+{
+	size_t n1, n2, n3, n4, n5;
+
+	*ip = *gw = *rest = NULL;
+	if (!str)
+		return FALSE;
+
+	n1 = strspn  (str,    " \t");
+	n2 = strcspn (str+n1, " \t\0") + n1;
+	n3 = strspn  (str+n2, " \t")   + n2;
+	n4 = strcspn (str+n3, " \t\0") + n3;
+	n5 = strspn  (str+n4, " \t")   + n4;
+
+	str[n2] = str[n4] = '\0';
+	*ip = str[n1] ? str + n1 : NULL;
+	*gw = str[n3] ? str + n3 : NULL;
+	*rest = str[n5] ? str + n5 : NULL;
+
+	return TRUE;
+}
+
 static void
 do_questionnaire_ip (NMConnection *connection)
 {
@@ -2853,7 +2876,7 @@ do_questionnaire_ip (NMConnection *connection)
 	GError *error = NULL;
 	NMIP4Address *ip4addr;
 	NMIP6Address *ip6addr;
-	char *ip4, *ip6;
+	char *str, *ip, *gw, *rest;
 
 	/* Ask for IP addresses */
 	answer = nmc_get_user_input (_("Do you want to add IP addresses? (yes/no) [yes] "));
@@ -2862,11 +2885,14 @@ do_questionnaire_ip (NMConnection *connection)
 
 	ip_loop = TRUE;
 	do {
-		ip4 = nmc_get_user_input (_("IPv4 address (IP[/plen] [gateway]) [none]: "));
-		if (ip4) {
-			ip4addr = nmc_parse_and_build_ip4_address (ip4, NULL, &error);
+		str = nmc_get_user_input (_("IPv4 address (IP[/plen] [gateway]) [none]: "));
+		split_address (str, &ip, &gw, &rest);
+		if (ip) {
+			ip4addr = nmc_parse_and_build_ip4_address (ip, gw, &error);
 			if (ip4addr) {
 				add_ip4_address_to_connection (ip4addr, connection);
+				if (rest)
+					printf (_("Warning: ignoring garbage at the end: '%s'\n"), rest);
 			} else {
 				g_prefix_error (&error, _("Error: "));
 				printf ("%s\n", error->message);
@@ -2875,16 +2901,19 @@ do_questionnaire_ip (NMConnection *connection)
 		} else
 			ip_loop = FALSE;
 
-		g_free (ip4);
+		g_free (str);
 	} while (ip_loop);
 
 	ip_loop = TRUE;
 	do {
-		ip6 = nmc_get_user_input (_("IPv6 address (IP[/plen] [gateway]) [none]: "));
-		if (ip6) {
-			ip6addr = nmc_parse_and_build_ip6_address (ip6, NULL, &error);
+		str = nmc_get_user_input (_("IPv6 address (IP[/plen] [gateway]) [none]: "));
+		split_address (str, &ip, &gw, &rest);
+		if (ip) {
+			ip6addr = nmc_parse_and_build_ip6_address (ip, gw, &error);
 			if (ip6addr) {
 				add_ip6_address_to_connection (ip6addr, connection);
+				if (rest)
+					printf (_("Warning: ignoring garbage at the end: '%s'\n"), rest);
 			} else {
 				g_prefix_error (&error, _("Error: "));
 				printf ("%s\n", error->message);
@@ -2893,7 +2922,7 @@ do_questionnaire_ip (NMConnection *connection)
 		} else
 			ip_loop = FALSE;
 
-		g_free (ip6);
+		g_free (str);
 	} while (ip_loop);
 
 	return;
