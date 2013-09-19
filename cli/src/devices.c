@@ -1197,8 +1197,9 @@ disconnect_device_cb (NMDevice *device, GError *error, gpointer user_data)
 
 		if (nmc->nowait_flag || state == NM_DEVICE_STATE_DISCONNECTED) {
 			/* Don't want to wait or device already disconnected */
-			if (state == NM_DEVICE_STATE_DISCONNECTED && nmc->print_output == NMC_PRINT_PRETTY) {
-				nmc_terminal_erase_line ();
+			if (state == NM_DEVICE_STATE_DISCONNECTED) {
+				if (nmc->print_output == NMC_PRINT_PRETTY)
+					nmc_terminal_erase_line ();
 				printf (_("Device '%s' has been disconnected.\n"), nm_device_get_iface (device));
 			}
 			quit ();
@@ -1539,13 +1540,12 @@ monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data
 	state = nm_device_get_state_reason (device, &reason);
 
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		if (nmc->print_output == NMC_PRINT_PRETTY) {
-			NMActiveConnection *active = nm_device_get_active_connection (device);
+		NMActiveConnection *active = nm_device_get_active_connection (device);
 
+		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-			printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-			        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
-		}
+		printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+		        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 		quit ();
 	} else if (state == NM_DEVICE_STATE_FAILED) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
@@ -1588,7 +1588,9 @@ add_and_activate_cb (NMClient *client,
 
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* User doesn't want to wait or already activated */
-			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED && nmc->print_output == NMC_PRINT_PRETTY) {
+			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+				if (nmc->print_output == NMC_PRINT_PRETTY)
+					nmc_terminal_erase_line ();
 				printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
 				        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 			}

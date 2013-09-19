@@ -1297,11 +1297,10 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 	state = nm_active_connection_get_state (active);
 
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		if (nmc->print_output == NMC_PRINT_PRETTY) {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-			printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
-			        nm_object_get_path (NM_OBJECT (active)));
-		}
+		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
+		        nm_object_get_path (NM_OBJECT (active)));
 		quit ();
 	} else if (   state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
 	           || state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
@@ -1328,11 +1327,10 @@ vpn_connection_state_cb (NMVPNConnection *vpn,
 		break;
 
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		if (nmc->print_output == NMC_PRINT_PRETTY) {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-			printf (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
-			        nm_object_get_path (NM_OBJECT (vpn)));
-		}
+		printf (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
+		        nm_object_get_path (NM_OBJECT (vpn)));
 		quit ();
 		break;
 
@@ -1456,8 +1454,9 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 			/* User doesn't want to wait or already activated */
-			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED && nmc->print_output == NMC_PRINT_PRETTY) {
-				nmc_terminal_erase_line ();
+			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+				if (nmc->print_output == NMC_PRINT_PRETTY)
+					nmc_terminal_erase_line ();
 				printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
 				        nm_object_get_path (NM_OBJECT (active)));
 			}
@@ -4139,10 +4138,9 @@ add_connection_cb (NMRemoteSettings *settings,
 		                 info->con_name, error->code, error->message);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 	} else {
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			printf (_("Connection '%s' (%s) successfully added.\n"),
-			        nm_connection_get_id (NM_CONNECTION (connection)),
-			        nm_connection_get_uuid (NM_CONNECTION (connection)));
+		printf (_("Connection '%s' (%s) successfully added.\n"),
+		        nm_connection_get_id (NM_CONNECTION (connection)),
+		        nm_connection_get_uuid (NM_CONNECTION (connection)));
 	}
 
 	g_free (info->con_name);
