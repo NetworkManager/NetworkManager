@@ -446,7 +446,7 @@ nmc_parse_and_build_ip6_address (const char *ip_str, const char *gw_str, GError 
 	if (plen) {
 		if (!nmc_string_to_int (plen, TRUE, 1, 128, &prefix)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <0-128> allowed"), plen);
+			             _("invalid prefix '%s'; <1-128> allowed"), plen);
 			goto finish;
 		}
 	}
