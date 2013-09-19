@@ -2314,7 +2314,7 @@ bridge_prop_string_to_uint (const char *str,
 
 	if (!nmc_string_to_uint (str, TRUE, pspec->minimum, pspec->maximum, out_val)) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("Error: '%s': '%s' is not valid; use <%d-%d>."),
+		             _("Error: '%s': '%s' is not valid; use <%u-%u>."),
 		             nmc_arg, str, pspec->minimum, pspec->maximum);
 		return FALSE;
 	}
@@ -2609,40 +2609,36 @@ do_questionnaire_bond (char **mode, char **miimon, char **downdelay, char **upde
 	if (!*miimon) {
 		do {
 			*miimon = nmc_get_user_input (_("Bonding miimon [100]): "));
-			*miimon = *miimon ? *miimon : g_strdup ("100");
-			once_more = !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
+			once_more = *miimon && !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
 			if (once_more)
-				printf (_("Error: 'miimon': '%s' is not a valid number <0-%d>.\n"),
+				printf (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
 				        *miimon, G_MAXUINT32);
 		} while (once_more);
 	}
 	if (!*downdelay) {
 		do {
 			*downdelay = nmc_get_user_input (_("Bonding downdelay [0]): "));
-			*downdelay = *downdelay ? *downdelay : g_strdup ("0");
-			once_more = !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
+			once_more = *downdelay && !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
 			if (once_more)
-				printf (_("Error: 'downdelay': '%s' is not a valid number <0-%d>.\n"),
+				printf (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
 				        *downdelay, G_MAXUINT32);
 		} while (once_more);
 	}
 	if (!*updelay) {
 		do {
 			*updelay = nmc_get_user_input (_("Bonding updelay [0]): "));
-			*updelay = *updelay ? *updelay : g_strdup ("0");
-			once_more = !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
+			once_more = *updelay && !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
 			if (once_more)
-				printf (_("Error: 'updelay': '%s' is not a valid number <0-%d>.\n"),
+				printf (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
 				        *updelay, G_MAXUINT32);
 		} while (once_more);
 	}
 	if (!*arpinterval) {
 		do {
 			*arpinterval = nmc_get_user_input (_("Bonding arp-interval [0]): "));
-			*arpinterval = *arpinterval ? *arpinterval : g_strdup ("0");
-			once_more = !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
+			once_more = *arpinterval && !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
 			if (once_more)
-				printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%d>.\n"),
+				printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
 				        *arpinterval, G_MAXUINT32);
 		} while (once_more);
 	}
@@ -3562,11 +3558,11 @@ cleanup_vlan:
 		}
 		if (bond_miimon)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON, bond_miimon);
-		if (bond_downdelay)
+		if (bond_downdelay && strcmp (bond_downdelay, "0") != 0)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY, bond_downdelay);
-		if (bond_updelay)
+		if (bond_updelay && strcmp (bond_updelay, "0") != 0)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_UPDELAY, bond_updelay);
-		if (bond_arpinterval)
+		if (bond_arpinterval && strcmp (bond_arpinterval, "0") != 0)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL, bond_arpinterval);
 		if (bond_arpiptarget)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, bond_arpiptarget);
