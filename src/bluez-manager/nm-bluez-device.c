@@ -513,10 +513,10 @@ on_adapter_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	if (!priv->adapter) {
 		nm_log_warn (LOGD_BT, "failed to acquire adapter proxy: %s.", error->message);
 		g_clear_error (&error);
-		return;
-	}
+	} else
+		check_emit_usable (self);
 
-	check_emit_usable (self);
+	g_object_unref (self);
 }
 
 static void
@@ -657,6 +657,7 @@ query_properties (NMBluezDevice *self)
 
 	v = g_dbus_proxy_get_cached_property (priv->proxy5, "Adapter");
 	if (v) {
+		g_object_ref (self);
 		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 		                          G_DBUS_PROXY_FLAGS_NONE,
 		                          NULL,
@@ -759,13 +760,13 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 		nm_log_warn (LOGD_BT, "failed to acquire device proxy: %s.", error->message);
 		g_clear_error (&error);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
-		return;
+	} else {
+		g_signal_connect (priv->proxy5, "g-properties-changed",
+		                  G_CALLBACK (properties_changed), self);
+
+		query_properties (self);
 	}
-
-	g_signal_connect (priv->proxy5, "g-properties-changed",
-	                  G_CALLBACK (properties_changed), self);
-
-	query_properties (self);
+	g_object_unref (self);
 }
 
 static void
@@ -821,6 +822,7 @@ nm_bluez_device_new (const char *path
 	           (GAsyncReadyCallback) on_bus_acquired,
 	           self);
 
+	g_object_ref (self);
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_NONE,
 	                          NULL,
