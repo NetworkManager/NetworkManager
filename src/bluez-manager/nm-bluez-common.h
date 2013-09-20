@@ -31,7 +31,7 @@
 #define BLUEZ_MANAGER_PATH      "/"
 #define OBJECT_MANAGER_INTERFACE "org.freedesktop.DBus.ObjectManager"
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 
 #define BLUEZ_ADAPTER_INTERFACE "org.bluez.Adapter1"
 #define BLUEZ_DEVICE_INTERFACE  "org.bluez.Device1"

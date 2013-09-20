@@ -17,14 +17,14 @@ libbluez_manager_la_SOURCES = \
 	nm-bluez-device.h \
 	nm-bluez-manager.h
 
-if WITH_BLUEZ5
-libbluez_manager_la_SOURCES += \
-	nm-bluez5-manager.c
-else
+if WITH_BLUEZ4
 libbluez_manager_la_SOURCES += \
 	nm-bluez-adapter.h \
 	nm-bluez-adapter.c \
 	nm-bluez-manager.c
+else
+libbluez_manager_la_SOURCES += \
+	nm-bluez5-manager.c
 endif
 
 libbluez_manager_la_CPPFLAGS = \
