@@ -24,7 +24,7 @@ libbluez_manager_la_SOURCES += \
 	nm-bluez4-manager.c
 else
 libbluez_manager_la_SOURCES += \
-	nm-bluez5-manager.c
+	nm-bluez-manager.c
 endif
 
 libbluez_manager_la_CPPFLAGS = \
