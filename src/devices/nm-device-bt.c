@@ -904,7 +904,7 @@ deactivate (NMDevice *device)
 		}
 	}
 
-	nm_bluez_device_call_disconnect (priv->bt_device);
+	nm_bluez_device_disconnect (priv->bt_device);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);
