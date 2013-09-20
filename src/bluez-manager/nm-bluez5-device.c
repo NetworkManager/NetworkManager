@@ -305,8 +305,7 @@ on_adapter_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	priv->adapter = g_dbus_proxy_new_for_bus_finish (res, &error);
 
 	if (!priv->adapter) {
-		nm_log_warn (LOGD_BT, "failed to acquire adapter proxy: %s.",
-		             error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_BT, "failed to acquire adapter proxy: %s.", error->message);
 		g_clear_error (&error);
 		return;
 	}
@@ -431,8 +430,7 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	priv->proxy5 = g_dbus_proxy_new_for_bus_finish (res, &error);
 
 	if (!priv->proxy5) {
-		nm_log_warn (LOGD_BT, "failed to acquire device proxy: %s.",
-		             error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_BT, "failed to acquire device proxy: %s.", error->message);
 		g_clear_error (&error);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
 		return;
@@ -453,8 +451,7 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	priv->dbus_connection = g_bus_get_finish (res, &error);
 
 	if (!priv->dbus_connection) {
-		nm_log_warn (LOGD_BT, "failed to acquire bus connection: %s.",
-		             error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_BT, "failed to acquire bus connection: %s.", error->message);
 		g_clear_error (&error);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
 		return;
