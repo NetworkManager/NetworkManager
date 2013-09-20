@@ -4449,6 +4449,35 @@ uuid_from_file (const char *filename)
 	return uuid;
 }
 
+static void
+check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
+{
+	if (!s_ip6)
+		return;
+
+	/* If there is no IPv4 config or it doesn't contain DNS searches,
+	 * read DOMAIN and put the domains into IPv6.
+	 */
+	if (!s_ip4 || nm_setting_ip4_config_get_num_dns_searches (NM_SETTING_IP4_CONFIG (s_ip4)) == 0) {
+		/* DNS searches */
+		char *value = svGetValue (ifcfg, "DOMAIN", FALSE);
+		if (value) {
+			char **searches = g_strsplit (value, " ", 0);
+			if (searches) {
+				char **item;
+				for (item = searches; *item; item++) {
+					if (strlen (*item)) {
+						if (!nm_setting_ip6_config_add_dns_search (NM_SETTING_IP6_CONFIG (s_ip6), *item))
+							PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS domain '%s'", *item);
+					}
+				}
+				g_strfreev (searches);
+			}
+			g_free (value);
+		}
+	}
+}
+
 NMConnection *
 connection_from_file (const char *filename,
                       const char *network_file,  /* for unit tests only */
@@ -4614,6 +4643,7 @@ connection_from_file (const char *filename,
 	} else if (utils_ignore_ip_config (connection)) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring IP6 configuration");
 		g_object_unref (s_ip6);
+		s_ip6 = NULL;
 	} else {
 		const char *method;
 
@@ -4631,8 +4661,15 @@ connection_from_file (const char *filename,
 	} else if (s_ip4 && utils_ignore_ip_config (connection)) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring IP4 configuration");
 		g_object_unref (s_ip4);
+		s_ip4 = NULL;
 	} else if (s_ip4)
 		nm_connection_add_setting (connection, s_ip4);
+
+	/* There is only one DOMAIN variable and it is read and put to IPv4 config
+	 * But if IPv4 is disabled or the config fails for some reason, we read
+	 * DOMAIN and put the values into IPv6 config instead.
+	 */
+	check_dns_search_domains (parsed, s_ip4, s_ip6);
 
 	/* Bridge port? */
 	s_port = make_bridge_port_setting (parsed);

@@ -1974,7 +1974,7 @@ test_read_wired_ipv6_manual (void)
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
+	        NM_SETTING_IP6_CONFIG_DNS_SEARCH);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -2127,12 +2127,11 @@ test_read_wired_ipv6_only (void)
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
 		NM_SETTING_IP6_CONFIG_DNS);
 
-	/* DNS domains - none as domains are stuffed to 'ipv4' setting */
-	ASSERT (nm_setting_ip6_config_get_num_dns_searches (s_ip6) == 0,
-	        "wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIRED_IPV6_MANUAL,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
+	/* DNS domains should be in IPv6, because IPv4 is disabled */
+	g_assert_cmpint (nm_setting_ip6_config_get_num_dns_searches (s_ip6), ==, 3);
+	g_assert_cmpstr (nm_setting_ip6_config_get_dns_search (s_ip6, 0), ==, "lorem.com");
+	g_assert_cmpstr (nm_setting_ip6_config_get_dns_search (s_ip6, 1), ==, "ipsum.org");
+	g_assert_cmpstr (nm_setting_ip6_config_get_dns_search (s_ip6, 2), ==, "dolor.edu");
 
 	g_free (unmanaged);
 	g_free (keyfile);
