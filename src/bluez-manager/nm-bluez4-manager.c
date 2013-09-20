@@ -28,7 +28,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-marshal.h"
 #include "nm-bluez-manager.h"
-#include "nm-bluez-adapter.h"
+#include "nm-bluez4-adapter.h"
 #include "nm-dbus-manager.h"
 #include "nm-bluez-common.h"
 

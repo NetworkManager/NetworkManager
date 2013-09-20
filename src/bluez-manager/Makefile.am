@@ -19,9 +19,9 @@ libbluez_manager_la_SOURCES = \
 
 if WITH_BLUEZ4
 libbluez_manager_la_SOURCES += \
-	nm-bluez-adapter.h \
-	nm-bluez-adapter.c \
-	nm-bluez-manager.c
+	nm-bluez4-adapter.h \
+	nm-bluez4-adapter.c \
+	nm-bluez4-manager.c
 else
 libbluez_manager_la_SOURCES += \
 	nm-bluez5-manager.c
