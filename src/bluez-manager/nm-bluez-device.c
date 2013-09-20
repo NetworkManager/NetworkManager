@@ -268,10 +268,16 @@ check_emit_usable (NMBluezDevice *self)
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	gboolean new_usable;
 
+	/* only expect the supported capabilities set. */
+	g_assert ((priv->capabilities & ~(  NM_BT_CAPABILITY_NAP
+#if ! WITH_BLUEZ5
+	                                  | NM_BT_CAPABILITY_DUN
+#endif
+	                                 )) == NM_BT_CAPABILITY_NONE);
+
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 #if WITH_BLUEZ5
 	              priv->adapter && priv->dbus_connection &&
-	              (priv->capabilities & NM_BT_CAPABILITY_NAP) && /* BlueZ5 is only usable with NAP devices */
 #endif
 	              priv->address);
 
@@ -621,6 +627,30 @@ convert_uuids_to_capabilities (const char **strings)
 	return capabilities;
 }
 
+static void
+_set_property_capabilities (NMBluezDevice *self, const char **uuids, gboolean notify)
+{
+	guint32 uint_val;
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	uint_val = convert_uuids_to_capabilities (uuids);
+	if (priv->capabilities != uint_val) {
+		if (priv->capabilities) {
+			/* changing (relevant) capabilities is not supported and ignored -- except setting initially */
+			nm_log_warn (LOGD_BT, "ignore change of capabilities for Bluetooth device %s from %u to %u",
+			             priv->path, priv->capabilities, uint_val);
+			return;
+		}
+		nm_log_dbg (LOGD_BT, "set capabilities for Bluetooth device %s: %s%s%s", priv->path,
+		            uint_val & NM_BT_CAPABILITY_NAP ? "NAP" : "",
+		            ((uint_val & NM_BT_CAPABILITY_DUN) && (uint_val &NM_BT_CAPABILITY_NAP)) ? " | " : "",
+		            uint_val & NM_BT_CAPABILITY_DUN ? "DUN" : "");
+		priv->capabilities = uint_val;
+		if (notify)
+			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CAPABILITIES);
+	}
+}
+
 #if WITH_BLUEZ5
 static void
 on_adapter_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
@@ -651,10 +681,10 @@ properties_changed (GDBusProxy *proxy5,
 	const char *property;
 	const char *str;
 	GVariant *v;
-	guint32 uint_val;
 	gint int_val;
 	const char **strv;
 
+	g_object_freeze_notify (G_OBJECT (self));
 	g_variant_iter_init (&i, changed_properties);
 	while (g_variant_iter_next (&i, "{&sv}", &property, &v)) {
 		if (!strcmp (property, "Name")) {
@@ -672,12 +702,8 @@ properties_changed (GDBusProxy *proxy5,
 			}
 		} else if (!strcmp (property, "UUIDs")) {
 			strv = g_variant_get_strv (v, NULL);
-			uint_val = convert_uuids_to_capabilities (strv);
+			_set_property_capabilities (self, strv, TRUE);
 			g_free (strv);
-			if (priv->capabilities != uint_val) {
-				priv->capabilities = uint_val;
-				g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CAPABILITIES);
-			}
 		} else if (!strcmp (property, "Connected")) {
 			gboolean connected = g_variant_get_boolean (v);
 			if (priv->connected != connected) {
@@ -687,6 +713,7 @@ properties_changed (GDBusProxy *proxy5,
 		}
 		g_variant_unref (v);
 	}
+	g_object_thaw_notify (G_OBJECT (self));
 
 	check_emit_usable (self);
 }
@@ -700,9 +727,9 @@ property_changed (DBusGProxy *proxy4,
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (user_data);
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	const char *str;
-	guint32 uint_val;
 	gint int_val;
 
+	g_object_freeze_notify (G_OBJECT (self));
 	{
 		if (!strcmp (property, "Name")) {
 			str = g_value_get_string (value);
@@ -720,11 +747,7 @@ property_changed (DBusGProxy *proxy4,
 				g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_RSSI);
 			}
 		} else if (!strcmp (property, "UUIDs")) {
-			uint_val = convert_uuids_to_capabilities ((const char **) g_value_get_boxed (value));
-			if (priv->capabilities != uint_val) {
-				priv->capabilities = uint_val;
-				g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CAPABILITIES);
-			}
+			_set_property_capabilities (self, (const char **) g_value_get_boxed (value), TRUE);
 		} else if (!strcmp (property, "Connected")) {
 			gboolean connected = g_value_get_boolean (value);
 			if (priv->connected != connected) {
@@ -733,6 +756,7 @@ property_changed (DBusGProxy *proxy4,
 			}
 		}
 	}
+	g_object_thaw_notify (G_OBJECT (self));
 
 	check_emit_usable (self);
 }
@@ -770,7 +794,7 @@ query_properties (NMBluezDevice *self)
 	v = g_dbus_proxy_get_cached_property (priv->proxy5, "UUIDs");
 	if (v) {
 		uuids = g_variant_get_strv (v, NULL);
-		priv->capabilities = convert_uuids_to_capabilities (uuids);
+		_set_property_capabilities (self, uuids, FALSE);
 		g_variant_unref (v);
 	} else
 		priv->capabilities = NM_BT_CAPABILITY_NONE;
@@ -807,7 +831,6 @@ get_properties_cb (DBusGProxy *proxy4, DBusGProxyCall *call, gpointer user_data)
 	GHashTable *properties = NULL;
 	GError *err = NULL;
 	GValue *value;
-	const char **uuids;
 	struct ether_addr *tmp;
 
 	if (!dbus_g_proxy_end_call (proxy4, call, &err,
@@ -836,8 +859,7 @@ get_properties_cb (DBusGProxy *proxy4, DBusGProxyCall *call, gpointer user_data)
 
 	value = g_hash_table_lookup (properties, "UUIDs");
 	if (value) {
-		uuids = (const char **) g_value_get_boxed (value);
-		priv->capabilities = convert_uuids_to_capabilities (uuids);
+		_set_property_capabilities (self, (const char **) g_value_get_boxed (value), FALSE);
 	} else
 		priv->capabilities = NM_BT_CAPABILITY_NONE;
 
