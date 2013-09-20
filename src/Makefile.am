@@ -264,14 +264,14 @@ nm_sources += \
 	bluez-manager/nm-bluez-device.h \
 	bluez-manager/nm-bluez-manager.h
 
-if WITH_BLUEZ5
-nm_sources += \
-	bluez-manager/nm-bluez5-manager.c
-else
+if WITH_BLUEZ4
 nm_sources += \
 	bluez-manager/nm-bluez-adapter.h \
 	bluez-manager/nm-bluez-adapter.c \
 	bluez-manager/nm-bluez-manager.c
+else
+nm_sources += \
+	bluez-manager/nm-bluez5-manager.c
 endif
 
 if WITH_MODEM_MANAGER_1

@@ -30,7 +30,7 @@
 #include "nm-setting-bluetooth.h"
 
 #include "nm-bluez-common.h"
-#if ! WITH_BLUEZ5
+#if WITH_BLUEZ4
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #endif
@@ -45,7 +45,7 @@ G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 
 typedef struct {
 	char *path;
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	GDBusProxy *proxy5;
 	GDBusProxy *adapter;
 	GDBusConnection *dbus_connection;
@@ -270,13 +270,13 @@ check_emit_usable (NMBluezDevice *self)
 
 	/* only expect the supported capabilities set. */
 	g_assert ((priv->capabilities & ~(  NM_BT_CAPABILITY_NAP
-#if ! WITH_BLUEZ5
+#if WITH_BLUEZ4
 	                                  | NM_BT_CAPABILITY_DUN
 #endif
 	                                 )) == NM_BT_CAPABILITY_NONE);
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	              priv->adapter && priv->dbus_connection &&
 #endif
 	              priv->address);
@@ -403,7 +403,7 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	g_return_if_fail (priv->dbus_connection);
 	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP);
 
@@ -442,7 +442,7 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 }
 
 static void
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 bluez_connect_pan_cb (GDBusConnection *dbus_connection,
                       GAsyncResult *res,
                       gpointer user_data)
@@ -458,7 +458,7 @@ bluez_connect_cb (DBusGProxy *proxy4,
 	GError *error = NULL;
 	char *device;
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	GVariant *variant;
 
 	variant = g_dbus_connection_call_finish (dbus_connection, res, &error);
@@ -503,13 +503,13 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 {
 	GSimpleAsyncResult *simple;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-#if ! WITH_BLUEZ5
+#if WITH_BLUEZ4
 	DBusGConnection *connection;
 
 	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 #endif
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP);
 
 	simple = g_simple_async_result_new (G_OBJECT (self),
@@ -609,7 +609,7 @@ convert_uuids_to_capabilities (const char **strings)
 		parts = g_strsplit (*iter, "-", -1);
 		if (parts && parts[0]) {
 			switch (g_ascii_strtoull (parts[0], NULL, 16)) {
-#if ! WITH_BLUEZ5
+#if WITH_BLUEZ4
 			case 0x1103:
 				capabilities |= NM_BT_CAPABILITY_DUN;
 				break;
@@ -651,7 +651,7 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids, gboolean no
 	}
 }
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 static void
 on_adapter_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 {
@@ -762,7 +762,7 @@ property_changed (DBusGProxy *proxy4,
 }
 #endif
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 static void
 query_properties (NMBluezDevice *self)
 {
@@ -892,7 +892,7 @@ query_properties (NMBluezDevice *self)
 #endif
 
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 static void
 on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 {
@@ -940,7 +940,7 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 {
 	NMBluezDevice *self;
 	NMBluezDevicePrivate *priv;
-#if ! WITH_BLUEZ5
+#if WITH_BLUEZ4
 	DBusGConnection *connection;
 #endif
 
@@ -977,7 +977,7 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 	                  G_CALLBACK (cp_connections_loaded),
 	                  self);
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	g_bus_get (G_BUS_TYPE_SYSTEM,
 	           NULL,
 	           (GAsyncReadyCallback) on_bus_acquired,
@@ -1035,7 +1035,7 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
 
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	g_clear_object (&priv->adapter);
 	g_clear_object (&priv->dbus_connection);
 #else
@@ -1054,7 +1054,7 @@ finalize (GObject *object)
 	g_free (priv->address);
 	g_free (priv->name);
 	g_free (priv->bt_iface);
-#if WITH_BLUEZ5
+#if ! WITH_BLUEZ4
 	g_object_unref (priv->proxy5);
 #else
 	g_object_unref (priv->proxy4);
