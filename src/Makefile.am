@@ -271,7 +271,7 @@ nm_sources += \
 	bluez-manager/nm-bluez4-manager.c
 else
 nm_sources += \
-	bluez-manager/nm-bluez5-manager.c
+	bluez-manager/nm-bluez-manager.c
 endif
 
 if WITH_MODEM_MANAGER_1
