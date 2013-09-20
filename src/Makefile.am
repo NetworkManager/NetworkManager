@@ -266,9 +266,9 @@ nm_sources += \
 
 if WITH_BLUEZ4
 nm_sources += \
-	bluez-manager/nm-bluez-adapter.h \
-	bluez-manager/nm-bluez-adapter.c \
-	bluez-manager/nm-bluez-manager.c
+	bluez-manager/nm-bluez4-adapter.h \
+	bluez-manager/nm-bluez4-adapter.c \
+	bluez-manager/nm-bluez4-manager.c
 else
 nm_sources += \
 	bluez-manager/nm-bluez5-manager.c
