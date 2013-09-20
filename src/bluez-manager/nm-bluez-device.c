@@ -274,7 +274,7 @@ cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
 #endif
 
 void
-nm_bluez_device_call_disconnect (NMBluezDevice *self)
+nm_bluez_device_disconnect (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 

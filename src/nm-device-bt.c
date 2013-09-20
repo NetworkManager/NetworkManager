@@ -959,7 +959,7 @@ deactivate (NMDevice *device)
 	}
 
 	if (priv->bt_type != NM_BT_CAPABILITY_NONE)
-		nm_bluez_device_call_disconnect (priv->bt_device);
+		nm_bluez_device_disconnect (priv->bt_device);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);

@@ -95,7 +95,7 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
                                 GError **error);
 
 void
-nm_bluez_device_call_disconnect (NMBluezDevice *self);
+nm_bluez_device_disconnect (NMBluezDevice *self);
 
 #endif /* NM_BLUEZ_DEVICE_H */
 
