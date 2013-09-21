@@ -223,11 +223,11 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * The #GPtrArray containing #NMSettingIP4Address<!-- -->es of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_ADDRESSES,
-		 g_param_spec_pointer (NM_IP4_CONFIG_ADDRESSES,
-						       "Addresses",
-						       "Addresses",
-						       G_PARAM_READABLE));
+	    (object_class, PROP_ADDRESSES,
+	     g_param_spec_pointer (NM_IP4_CONFIG_ADDRESSES,
+	                           "Addresses",
+	                           "Addresses",
+	                           G_PARAM_READABLE));
 
 	/**
 	 * NMIP4Config:nameservers:
@@ -235,12 +235,12 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * The #GArray containing name servers (%guint32<!-- -->es) of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_NAMESERVERS,
-		 g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS,
-						    "Nameservers",
-						    "Nameservers",
-						    NM_TYPE_UINT_ARRAY,
-						    G_PARAM_READABLE));
+	    (object_class, PROP_NAMESERVERS,
+	     g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS,
+	                         "Nameservers",
+	                         "Nameservers",
+	                         NM_TYPE_UINT_ARRAY,
+	                         G_PARAM_READABLE));
 
 	/**
 	 * NMIP4Config:domains:
@@ -248,12 +248,12 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * The #GPtrArray containing domain strings of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_DOMAINS,
-		 g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS,
-						    "Domains",
-						    "Domains",
-						    NM_TYPE_STRING_ARRAY,
-						    G_PARAM_READABLE));
+	    (object_class, PROP_DOMAINS,
+	     g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS,
+	                         "Domains",
+	                         "Domains",
+	                         NM_TYPE_STRING_ARRAY,
+	                         G_PARAM_READABLE));
 
 	/**
 	 * NMIP4Config:routes:
@@ -261,11 +261,11 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * The #GPtrArray containing #NMSettingIP4Route<!-- -->s of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_ROUTES,
-		 g_param_spec_pointer (NM_IP4_CONFIG_ROUTES,
-						       "Routes",
-						       "Routes",
-						       G_PARAM_READABLE));
+	    (object_class, PROP_ROUTES,
+	     g_param_spec_pointer (NM_IP4_CONFIG_ROUTES,
+	                           "Routes",
+	                           "Routes",
+	                           G_PARAM_READABLE));
 
 	/**
 	 * NMIP4Config:wins-servers:
@@ -273,12 +273,12 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * The #GArray containing WINS servers (%guint32<!-- -->es) of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_WINS_SERVERS,
-		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS,
-						    "WINS Servers",
-						    "WINS Servers",
-						    NM_TYPE_UINT_ARRAY,
-						    G_PARAM_READABLE));
+	    (object_class, PROP_WINS_SERVERS,
+	     g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS,
+	                         "WINS Servers",
+	                         "WINS Servers",
+	                         NM_TYPE_UINT_ARRAY,
+	                         G_PARAM_READABLE));
 }
 
 /**
@@ -294,9 +294,9 @@ GObject *
 nm_ip4_config_new (DBusGConnection *connection, const char *object_path)
 {
 	return (GObject *) g_object_new (NM_TYPE_IP4_CONFIG,
-									 NM_OBJECT_DBUS_CONNECTION, connection,
-									 NM_OBJECT_DBUS_PATH, object_path,
-									 NULL);
+	                                 NM_OBJECT_DBUS_CONNECTION, connection,
+	                                 NM_OBJECT_DBUS_PATH, object_path,
+	                                 NULL);
 }
 
 /**

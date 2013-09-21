@@ -274,7 +274,7 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 		s_addr = nm_ip6_address_new ();
-	
+
 		nm_ip6_address_set_address (s_addr, &address->address);
 		nm_ip6_address_set_prefix (s_addr, address->plen);
 		if (gateway)
@@ -1093,33 +1093,33 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	/* properties */
 	g_object_class_install_property (object_class, PROP_ADDRESSES,
-		g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
-		                    "Addresses",
-		                    "IP6 addresses",
-		                    DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                    G_PARAM_READABLE));
+	    g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
+	                        "Addresses",
+	                        "IP6 addresses",
+	                        DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
+	                        G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, PROP_NAMESERVERS,
-		g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
-		                    "Nameservers",
-		                    "DNS list",
-		                    DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-		                    G_PARAM_READABLE));
+	    g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
+	                        "Nameservers",
+	                        "DNS list",
+	                        DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
+	                        G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, PROP_DOMAINS,
-		g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
-		                    "Domains",
-		                    "Domains",
-		                    DBUS_TYPE_G_ARRAY_OF_STRING,
-		                    G_PARAM_READABLE));
+	    g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
+	                        "Domains",
+	                        "Domains",
+	                        DBUS_TYPE_G_ARRAY_OF_STRING,
+	                        G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, PROP_ROUTES,
-		g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
-		                    "Routes",
-		                    "Routes",
-		                    DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-		                    G_PARAM_READABLE));
+	    g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
+	                        "Routes",
+	                        "Routes",
+	                        DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
+	                        G_PARAM_READABLE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (config_class),
-									 &dbus_glib_nm_ip6_config_object_info);
+	                                 &dbus_glib_nm_ip6_config_object_info);
 }

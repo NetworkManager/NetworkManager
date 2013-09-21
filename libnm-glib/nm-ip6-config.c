@@ -308,12 +308,12 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * #NMSettingIP6Address objects that is more usable than the raw data.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_ADDRESSES,
-		 g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
-						     "Addresses",
-						     "Addresses",
-						     NM_TYPE_IP6_ADDRESS_OBJECT_ARRAY,
-						     G_PARAM_READABLE));
+	    (object_class, PROP_ADDRESSES,
+	     g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
+	                         "Addresses",
+	                         "Addresses",
+	                         NM_TYPE_IP6_ADDRESS_OBJECT_ARRAY,
+	                         G_PARAM_READABLE));
 
 	/**
 	 * NMIP6Config:nameservers:
@@ -322,12 +322,12 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * contain the addresses of nameservers of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_NAMESERVERS,
-		 g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
-						    "Nameservers",
-						    "Nameservers",
-						    NM_TYPE_IP6_ADDRESS_ARRAY,
-						    G_PARAM_READABLE));
+	    (object_class, PROP_NAMESERVERS,
+	     g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
+	                        "Nameservers",
+	                        "Nameservers",
+	                        NM_TYPE_IP6_ADDRESS_ARRAY,
+	                        G_PARAM_READABLE));
 
 	/**
 	 * NMIP6Config:domains:
@@ -335,12 +335,12 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * The #GPtrArray containing domain strings of the configuration.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_DOMAINS,
-		 g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
-						    "Domains",
-						    "Domains",
-						    NM_TYPE_STRING_ARRAY,
-						    G_PARAM_READABLE));
+	    (object_class, PROP_DOMAINS,
+	     g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
+	                        "Domains",
+	                        "Domains",
+	                        NM_TYPE_STRING_ARRAY,
+	                        G_PARAM_READABLE));
 
 	/**
 	 * NMIP6Config:routes:
@@ -350,11 +350,11 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * #NMSettingIP6Address objects that is more usable than the raw data.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_ROUTES,
-		 g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
-		                     "Routes",
-		                     "Routes",
-		                     NM_TYPE_IP6_ROUTE_OBJECT_ARRAY,
-		                     G_PARAM_READABLE));
+	    (object_class, PROP_ROUTES,
+	     g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
+	                         "Routes",
+	                         "Routes",
+	                         NM_TYPE_IP6_ROUTE_OBJECT_ARRAY,
+	                         G_PARAM_READABLE));
 }
 
