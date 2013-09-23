@@ -1311,6 +1311,7 @@ sysctl_get (NMPlatform *platform, const char *path)
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
 		error ("error reading %s: %s", path, error->message);
+		g_clear_error (&error);
 		return NULL;
 	}
 
