@@ -45,13 +45,12 @@ G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 
 typedef struct {
 	char *path;
+	GDBusConnection *dbus_connection;
 #if ! WITH_BLUEZ4
 	GDBusProxy *proxy5;
 	GDBusProxy *adapter;
-	GDBusConnection *dbus_connection;
 #else
 	DBusGProxy *proxy4;
-	DBusGProxy *connection_proxy;
 #endif
 
 	gboolean initialized;
@@ -277,9 +276,9 @@ check_emit_usable (NMBluezDevice *self)
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 #if ! WITH_BLUEZ4
-	              priv->adapter && priv->dbus_connection &&
+	              priv->adapter &&
 #endif
-	              priv->address);
+	              priv->dbus_connection && priv->address);
 
 	if (!new_usable)
 		goto END;
@@ -398,67 +397,75 @@ cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
 
 /***********************************************************/
 
+static void
+bluez_disconnect_cb (GDBusConnection *dbus_connection,
+                     GAsyncResult *res,
+                     gpointer user_data)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (user_data);
+	GError *error = NULL;
+	GVariant *variant;
+
+	variant = g_dbus_connection_call_finish (dbus_connection, res, &error);
+	if (!variant) {
+		nm_log_warn (LOGD_BT, "%s: failed to disconnect: %s", priv->address, error->message);
+		g_error_free (error);
+	} else
+		g_variant_unref (variant);
+}
+
 void
 nm_bluez_device_disconnect (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	GVariant *args = NULL;
+	const char *dbus_iface = BLUEZ_NETWORK_INTERFACE;
+
+	g_return_if_fail (priv->dbus_connection);
 
 #if ! WITH_BLUEZ4
-	g_return_if_fail (priv->dbus_connection);
 	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP);
+#else
+	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP || priv->connection_bt_type == NM_BT_CAPABILITY_DUN);
+
+	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
+		/* Can't pass a NULL interface name through dbus to bluez, so just
+		 * ignore the disconnect if the interface isn't known.
+		 */
+		if (!priv->bt_iface)
+			return;
+
+		args = g_variant_new ("(s)", priv->bt_iface),
+		dbus_iface = BLUEZ_SERIAL_INTERFACE;
+	}
+#endif
 
 	g_dbus_connection_call (priv->dbus_connection,
 	                        BLUEZ_SERVICE,
 	                        priv->path,
-	                        BLUEZ_NETWORK_INTERFACE,
+	                        dbus_iface,
 	                        "Disconnect",
-	                        g_variant_new ("()"),
+	                        args ? args : g_variant_new ("()"),
 	                        NULL,
 	                        G_DBUS_CALL_FLAGS_NONE,
-	                        -1,
-	                        NULL, NULL, NULL);
-#else
-	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP || priv->connection_bt_type == NM_BT_CAPABILITY_DUN);
+	                        10000,
+	                        NULL,
+	                        (GAsyncReadyCallback) bluez_disconnect_cb,
+	                        self);
 
-	if (!priv->connection_proxy)
-		return;
-
-	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
-		/* Don't ever pass NULL through dbus; bt_iface
-		 * might happen to be NULL for some reason.
-		 */
-		if (priv->bt_iface)
-			dbus_g_proxy_call_no_reply (priv->connection_proxy, "Disconnect",
-			                            G_TYPE_STRING, priv->bt_iface,
-			                            G_TYPE_INVALID);
-	} else {
-		dbus_g_proxy_call_no_reply (priv->connection_proxy, "Disconnect",
-		                            G_TYPE_INVALID);
-	}
-
-	g_clear_object (&priv->connection_proxy);
-#endif
 	priv->connection_bt_type = NM_BT_CAPABILITY_NONE;
 }
 
 static void
-#if ! WITH_BLUEZ4
-bluez_connect_pan_cb (GDBusConnection *dbus_connection,
-                      GAsyncResult *res,
-                      gpointer user_data)
-#else
-bluez_connect_cb (DBusGProxy *proxy4,
-                  DBusGProxyCall *call_id,
+bluez_connect_cb (GDBusConnection *dbus_connection,
+                  GAsyncResult *res,
                   gpointer user_data)
-#endif
 {
 	GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (result)));
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GError *error = NULL;
 	char *device;
-
-#if ! WITH_BLUEZ4
 	GVariant *variant;
 
 	variant = g_dbus_connection_call_finish (dbus_connection, res, &error);
@@ -474,22 +481,6 @@ bluez_connect_cb (DBusGProxy *proxy4,
 		priv->bt_iface = device;
 		g_variant_unref (variant);
 	}
-#else
-	if (dbus_g_proxy_end_call (proxy4, call_id, &error,
-	                           G_TYPE_STRING, &device,
-	                           G_TYPE_INVALID) == FALSE)
-		g_simple_async_result_take_error (result, error);
-	else if (!device || !strlen (device)) {
-		g_simple_async_result_set_error (result, G_IO_ERROR, G_IO_ERROR_FAILED,
-		                                 "Invalid argument received");
-		g_free (device);
-	} else {
-		g_simple_async_result_set_op_res_gpointer (result,
-		                                           g_strdup (device),
-		                                           g_free);
-		priv->bt_iface = device;
-	}
-#endif
 
 	g_simple_async_result_complete (result);
 	g_object_unref (result);
@@ -503,74 +494,40 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 {
 	GSimpleAsyncResult *simple;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-#if WITH_BLUEZ4
-	DBusGConnection *connection;
+	const char *dbus_iface = BLUEZ_NETWORK_INTERFACE;
+	const char *connect_type = BLUETOOTH_CONNECT_NAP;
 
-	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-#endif
-
+	g_return_if_fail (priv->capabilities & connection_bt_type & (NM_BT_CAPABILITY_DUN | NM_BT_CAPABILITY_NAP));
 #if ! WITH_BLUEZ4
 	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP);
+#else
+	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP || connection_bt_type == NM_BT_CAPABILITY_DUN);
+
+	if (connection_bt_type == NM_BT_CAPABILITY_DUN) {
+		dbus_iface = BLUEZ_SERIAL_INTERFACE;
+		connect_type = BLUETOOTH_CONNECT_DUN;
+	}
+#endif
 
 	simple = g_simple_async_result_new (G_OBJECT (self),
 	                                    callback,
 	                                    user_data,
 	                                    nm_bluez_device_connect_async);
 
-	/* For PAN we call Connect() on org.bluez.Network1 */
 	g_dbus_connection_call (priv->dbus_connection,
 	                        BLUEZ_SERVICE,
 	                        priv->path,
-	                        BLUEZ_NETWORK_INTERFACE,
+	                        dbus_iface,
 	                        "Connect",
-	                        g_variant_new ("(s)", BLUETOOTH_CONNECT_NAP),
+	                        g_variant_new ("(s)", connect_type),
 	                        NULL,
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        20000,
 	                        NULL,
-	                        (GAsyncReadyCallback) bluez_connect_pan_cb,
+	                        (GAsyncReadyCallback) bluez_connect_cb,
 	                        simple);
 
 	priv->connection_bt_type = connection_bt_type;
-#else
-	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP || connection_bt_type == NM_BT_CAPABILITY_DUN);
-
-	if (priv->connection_proxy) {
-		g_simple_async_report_error_in_idle (G_OBJECT (self),
-		                                     callback,
-		                                     user_data,
-		                                     G_IO_ERROR,
-		                                     G_IO_ERROR_FAILED,
-		                                     "Already connected to bluez service");
-		return;
-	}
-	priv->connection_proxy = dbus_g_proxy_new_for_name (connection,
-	                                                    BLUEZ_SERVICE,
-	                                                    priv->path,
-	                                                    connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUEZ_SERIAL_INTERFACE : BLUEZ_NETWORK_INTERFACE);
-	if (!priv->connection_proxy) {
-		g_simple_async_report_error_in_idle (G_OBJECT (self),
-		                                     callback,
-		                                     user_data,
-		                                     G_IO_ERROR,
-		                                     G_IO_ERROR_FAILED,
-		                                     "Unable to create proxy");
-	} else {
-		simple = g_simple_async_result_new (G_OBJECT (self),
-		                                    callback,
-		                                    user_data,
-		                                    nm_bluez_device_connect_async);
-		dbus_g_proxy_begin_call_with_timeout (priv->connection_proxy, "Connect",
-		                                      bluez_connect_cb,
-		                                      simple,
-		                                      NULL,
-		                                      20000,
-		                                      G_TYPE_STRING,
-		                                      connection_bt_type == NM_BT_CAPABILITY_DUN ? BLUETOOTH_CONNECT_DUN : BLUETOOTH_CONNECT_NAP,
-		                                      G_TYPE_INVALID);
-		priv->connection_bt_type = connection_bt_type;
-	}
-#endif
 }
 
 const char *
@@ -913,6 +870,7 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	}
 	g_object_unref (self);
 }
+#endif
 
 static void
 on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
@@ -931,7 +889,6 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 
 	check_emit_usable (self);
 }
-#endif
 
 /********************************************************************/
 
@@ -977,12 +934,12 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 	                  G_CALLBACK (cp_connections_loaded),
 	                  self);
 
-#if ! WITH_BLUEZ4
 	g_bus_get (G_BUS_TYPE_SYSTEM,
 	           NULL,
 	           (GAsyncReadyCallback) on_bus_acquired,
 	           self);
 
+#if ! WITH_BLUEZ4
 	g_object_ref (self);
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_NONE,
@@ -1037,10 +994,8 @@ dispose (GObject *object)
 
 #if ! WITH_BLUEZ4
 	g_clear_object (&priv->adapter);
-	g_clear_object (&priv->dbus_connection);
-#else
-	g_clear_object (&priv->connection_proxy);
 #endif
+	g_clear_object (&priv->dbus_connection);
 
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
 }
