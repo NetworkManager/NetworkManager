@@ -1946,12 +1946,16 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
 	val = nm_platform_sysctl_get (path);
 	g_free (path);
+	if (!val)
+		return FALSE;
 	props->group = strtoll (val, NULL, 10);
 	g_free (val);
 
 	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
 	val = nm_platform_sysctl_get (path);
 	g_free (path);
+	if (!val)
+		return FALSE;
 	flags = strtoul (val, NULL, 16);
 	props->mode = ((flags & TUN_TYPE_MASK) == TUN_TUN_DEV) ? "tun" : "tap";
 	props->no_pi = !!(flags & IFF_NO_PI);
