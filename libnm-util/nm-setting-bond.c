@@ -93,6 +93,7 @@ static const BondDefault defaults[] = {
 	{ NM_SETTING_BOND_OPTION_UPDELAY,       "0"          },
 	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,  "0"          },
 	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET, ""           },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,       ""           },
 };
 
 /**
@@ -370,6 +371,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	                              NULL };
 	int miimon = 0, arp_interval = 0;
 	const char *arp_ip_target = NULL;
+	const char *primary;
 
 	if (!priv->interface_name || !strlen(priv->interface_name)) {
 		g_set_error_literal (error,
@@ -456,6 +458,31 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 	}
+
+	primary = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_PRIMARY);
+	if (strcmp (value, "active-backup") == 0) {
+		if (primary && !nm_utils_iface_valid_name (primary)) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             _("'%s' is not a valid interface name for '%s' option"),
+			             primary, NM_SETTING_BOND_OPTION_PRIMARY);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			return FALSE;
+		}
+	} else {
+		if (primary) {
+			g_set_error (error,
+			             NM_SETTING_BOND_ERROR,
+			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+			             _("'%s' option is only valid for '%s=%s'"),
+			             NM_SETTING_BOND_OPTION_PRIMARY,
+			             NM_SETTING_BOND_OPTION_MODE, "active-backup");
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			return FALSE;
+		}
+	}
+
 	if (g_slist_find_custom (all_settings, NM_SETTING_INFINIBAND_SETTING_NAME, find_setting_by_name)) {
 		if (strcmp (value, "active-backup") != 0) {
 			g_set_error (error,

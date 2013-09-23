@@ -65,6 +65,7 @@ GQuark nm_setting_bond_error_quark (void);
 #define NM_SETTING_BOND_OPTION_UPDELAY       "updelay"
 #define NM_SETTING_BOND_OPTION_ARP_INTERVAL  "arp_interval"
 #define NM_SETTING_BOND_OPTION_ARP_IP_TARGET "arp_ip_target"
+#define NM_SETTING_BOND_OPTION_PRIMARY       "primary"
 
 typedef struct {
 	NMSetting parent;
