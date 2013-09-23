@@ -49,6 +49,7 @@ typedef struct {
 #if ! WITH_BLUEZ4
 	GDBusProxy *proxy5;
 	GDBusProxy *adapter;
+	gboolean adapter_powered;
 #else
 	DBusGProxy *proxy4;
 #endif
@@ -276,7 +277,7 @@ check_emit_usable (NMBluezDevice *self)
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 #if ! WITH_BLUEZ4
-	              priv->adapter &&
+	              priv->adapter && priv->adapter_powered &&
 #endif
 	              priv->dbus_connection && priv->address);
 
@@ -610,18 +611,57 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids, gboolean no
 
 #if ! WITH_BLUEZ4
 static void
+adapter_properties_changed (GDBusProxy *proxy5,
+                            GVariant *changed_properties,
+                            GStrv invalidated_properties,
+                            gpointer user_data)
+{
+	NMBluezDevice *self = NM_BLUEZ_DEVICE (user_data);
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	GVariantIter i;
+	const char *property;
+	GVariant *v;
+
+	g_variant_iter_init (&i, changed_properties);
+	while (g_variant_iter_next (&i, "{&sv}", &property, &v)) {
+		if (!strcmp (property, "Powered")) {
+			gboolean powered = g_variant_get_boolean (v);
+			if (priv->adapter_powered != powered)
+				priv->adapter_powered = powered;
+		}
+		g_variant_unref (v);
+	}
+
+	check_emit_usable (self);
+}
+
+static void
 on_adapter_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GError *error;
+	GVariant *v;
 
 	priv->adapter = g_dbus_proxy_new_for_bus_finish (res, &error);
-
 	if (!priv->adapter) {
 		nm_log_warn (LOGD_BT, "failed to acquire adapter proxy: %s.", error->message);
 		g_clear_error (&error);
-	} else
+		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
+	} else {
+		g_signal_connect (priv->adapter, "g-properties-changed",
+		                  G_CALLBACK (adapter_properties_changed), self);
+
+		/* Check adapter's powered state */
+		v = g_dbus_proxy_get_cached_property (priv->adapter, "Powered");
+		priv->adapter_powered = v ? g_variant_get_boolean (v) : FALSE;
+		if (v)
+			g_variant_unref (v);
+
+		priv->initialized = TRUE;
+		g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
+
 		check_emit_usable (self);
+	}
 
 	g_object_unref (self);
 }
@@ -758,7 +798,6 @@ query_properties (NMBluezDevice *self)
 
 	v = g_dbus_proxy_get_cached_property (priv->proxy5, "Adapter");
 	if (v) {
-		g_object_ref (self);
 		g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 		                          G_DBUS_PROXY_FLAGS_NONE,
 		                          NULL,
@@ -767,17 +806,12 @@ query_properties (NMBluezDevice *self)
 		                          BLUEZ_ADAPTER_INTERFACE,
 		                          NULL,
 		                          (GAsyncReadyCallback) on_adapter_acquired,
-		                          self);
+		                          g_object_ref (self));
 		g_variant_unref (v);
 	}
 
 	/* Check if any connections match this device */
 	cp_connections_loaded (priv->provider, self);
-
-	priv->initialized = TRUE;
-	g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
-
-	check_emit_usable (self);
 }
 #else
 static void
