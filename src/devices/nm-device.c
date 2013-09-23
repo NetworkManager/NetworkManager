@@ -6347,6 +6347,9 @@ nm_device_spec_match_list (NMDevice *device, const GSList *specs)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
+	if (!specs)
+		return FALSE;
+
 	return NM_DEVICE_GET_CLASS (device)->spec_match_list (device, specs);
 }
 
