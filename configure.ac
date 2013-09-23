@@ -275,6 +275,7 @@ if (test "${enable_bluez4}" = "yes"); then
 	AC_DEFINE(WITH_BLUEZ4, 1, [Define if you have BlueZ 4 support])
 else
 	AC_DEFINE(WITH_BLUEZ4, 0, [Define if you have BlueZ 4 support])
+	enable_bluez4=no
 fi
 AM_CONDITIONAL(WITH_BLUEZ4, test "${enable_bluez4}" = "yes")
 
