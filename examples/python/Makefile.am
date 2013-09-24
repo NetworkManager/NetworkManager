@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	get-active-connection-uuids.py \
 	list-devices.py \
 	goi-list-connections.py \
-	goi-device-state-ip4config.py
+	goi-device-state-ip4config.py \
+	goi-firewall-zone.py
