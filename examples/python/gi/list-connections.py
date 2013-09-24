@@ -18,7 +18,7 @@
 # Copyright (C) 2012 Red Hat, Inc.
 #
 
-from gi.repository import GObject, NetworkManager, NMClient
+from gi.repository import GLib, NetworkManager, NMClient
 
 # This example asks settings service for all configured connections.
 # Unfortunately, at this time since libnm-glib still makes heavy use of
@@ -40,7 +40,7 @@ def connections_read(settings):
     main_loop.quit()    
 
 if __name__ == "__main__":
-    main_loop = GObject.MainLoop()
+    main_loop = GLib.MainLoop()
     settings = NMClient.RemoteSettings.new(None);
 
     # connections are read asynchronously, so we need to wait for the

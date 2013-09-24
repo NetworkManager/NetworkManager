@@ -20,7 +20,7 @@
 #
 
 import sys
-from gi.repository import GObject, NetworkManager, NMClient
+from gi.repository import GLib, NetworkManager, NMClient
 
 #
 # This example demonstrates how to get and change firewall zone in a
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2 and len(sys.argv) != 3:
         sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
 
-    main_loop = GObject.MainLoop()
+    main_loop = GLib.MainLoop()
     settings = NMClient.RemoteSettings.new(None);
 
     # Connections are read asynchronously, so we have to wait for the

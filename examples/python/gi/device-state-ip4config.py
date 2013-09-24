@@ -21,7 +21,7 @@
 #
 
 import sys
-from gi.repository import GObject, NetworkManager, NMClient
+from gi.repository import GLib, NetworkManager, NMClient
 
 #
 #  This example shows how to get NMIP4Config from NMDevice after it is activated.
@@ -59,6 +59,6 @@ if __name__ == "__main__":
     print "---------------------------------------"
 
     dev.connect('state-changed', state_changed)
-    main_loop = GObject.MainLoop()
+    main_loop = GLib.MainLoop()
     main_loop.run()
 
