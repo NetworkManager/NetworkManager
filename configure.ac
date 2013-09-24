@@ -767,6 +767,8 @@ NetworkManager.pc
 examples/Makefile
 examples/shell/Makefile
 examples/python/Makefile
+examples/python/dbus/Makefile
+examples/python/gi/Makefile
 examples/ruby/Makefile
 examples/C/Makefile
 examples/C/glib/Makefile
