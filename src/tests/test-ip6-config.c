@@ -93,8 +93,9 @@ test_subtract (void)
 {
 	NMIP6Config *src, *dst;
 	NMPlatformIP6Address addr;
+	NMPlatformIP6Route route;
 	const NMPlatformIP6Address *test_addr;
-	NMPlatformIP6Route route, *test_route;
+	const NMPlatformIP6Route *test_route;
 	const char *expected_addr = "1122:3344:5566::7788";
 	guint32 expected_addr_plen = 96;
 	const char *expected_route_dest = "9991:8882:7773::";

@@ -256,7 +256,7 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
-		NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+		const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
 		NMIP6Address *s_addr;
 
 		/* Ignore link-local address. */
@@ -289,7 +289,7 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
-		NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
+		const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
 		NMIP6Route *s_route = nm_ip6_route_new ();
 
 		/* Ignore link-local route. */
@@ -371,7 +371,7 @@ nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr 
 	int i;
 
 	for (i = 0; i < num; i++) {
-		NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
+		const NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
 
 		if (item->plen <= plen && same_prefix (&item->address, network, item->plen))
 			return TRUE;
@@ -381,7 +381,7 @@ nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr 
 }
 
 static gboolean
-routes_are_duplicate (NMPlatformIP6Route *a, NMPlatformIP6Route *b)
+routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
 {
 	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen;
 }
@@ -445,10 +445,10 @@ nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
 
 	/* routes */
 	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++) {
-		NMPlatformIP6Route *src_route = nm_ip6_config_get_route (src, i);
+		const NMPlatformIP6Route *src_route = nm_ip6_config_get_route (src, i);
 
 		for (j = 0; j < nm_ip6_config_get_num_routes (dst); j++) {
-			NMPlatformIP6Route *dst_route = nm_ip6_config_get_route (dst, j);
+			const NMPlatformIP6Route *dst_route = nm_ip6_config_get_route (dst, j);
 
 			if (routes_are_duplicate (src_route, dst_route)) {
 				nm_ip6_config_del_route (dst, j);
@@ -575,7 +575,7 @@ nm_ip6_config_get_num_addresses (NMIP6Config *config)
 	return priv->addresses->len;
 }
 
-NMPlatformIP6Address *
+const NMPlatformIP6Address *
 nm_ip6_config_get_address (NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -594,7 +594,7 @@ nm_ip6_config_reset_routes (NMIP6Config *config)
 }
 
 void
-nm_ip6_config_add_route (NMIP6Config *config, NMPlatformIP6Route *new)
+nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
@@ -631,7 +631,7 @@ nm_ip6_config_get_num_routes (NMIP6Config *config)
 	return priv->routes->len;
 }
 
-NMPlatformIP6Route *
+const NMPlatformIP6Route *
 nm_ip6_config_get_route (NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
@@ -865,14 +865,14 @@ nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 		hash_in6addr (sum, nm_ip6_config_get_gateway (config));
 
 		for (i = 0; i < nm_ip6_config_get_num_addresses (config); i++) {
-			NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+			const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
 
 			hash_in6addr (sum, &address->address);
 			hash_u32 (sum, address->plen);
 		}
 
 		for (i = 0; i < nm_ip6_config_get_num_routes (config); i++) {
-			NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
+			const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
 
 			hash_in6addr (sum, &route->network);
 			hash_u32 (sum, route->plen);
@@ -991,7 +991,7 @@ get_property (GObject *object, guint prop_id,
 			int i;
 
 			for (i = 0; i < naddr; i++) {
-				NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
+				const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
 
 				GValueArray *array = g_value_array_new (3);
 				GValue element = G_VALUE_INIT;
@@ -1032,7 +1032,7 @@ get_property (GObject *object, guint prop_id,
 			int i;
 
 			for (i = 0; i < nroutes; i++) {
-				NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
+				const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
 
 				GValueArray *array = g_value_array_new (4);
 				GByteArray *ba;

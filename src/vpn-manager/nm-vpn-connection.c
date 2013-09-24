@@ -577,7 +577,7 @@ print_vpn_config (NMVPNConnection *connection)
 
 		num = nm_ip4_config_get_num_routes (priv->ip4_config);
 		for (i = 0; i < num; i++) {
-			NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
+			const NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
 
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
 			             ip_address_to_string (route->network),
@@ -616,7 +616,7 @@ print_vpn_config (NMVPNConnection *connection)
 
 		num = nm_ip6_config_get_num_routes (priv->ip6_config);
 		for (i = 0; i < num; i++) {
-			NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
+			const NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
 
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
 			             ip6_address_to_string (&route->network),

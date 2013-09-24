@@ -292,7 +292,7 @@ nm_ip4_config_update_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
-		NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
+		const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
 		NMIP4Route *s_route;
 
 		/* Ignore default route. */
@@ -430,10 +430,10 @@ nm_ip4_config_subtract (NMIP4Config *dst, NMIP4Config *src)
 
 	/* routes */
 	for (i = 0; i < nm_ip4_config_get_num_routes (src); i++) {
-		NMPlatformIP4Route *src_route = nm_ip4_config_get_route (src, i);
+		const NMPlatformIP4Route *src_route = nm_ip4_config_get_route (src, i);
 
 		for (j = 0; j < nm_ip4_config_get_num_routes (dst); j++) {
-			NMPlatformIP4Route *dst_route = nm_ip4_config_get_route (dst, j);
+			const NMPlatformIP4Route *dst_route = nm_ip4_config_get_route (dst, j);
 
 			if (src_route->network == dst_route->network && src_route->plen == dst_route->plen) {
 				nm_ip4_config_del_route (dst, j);
@@ -545,7 +545,7 @@ nm_ip4_config_dump (NMIP4Config *config, const char *detail)
 
 	/* routes */
 	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
-		NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
+		const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
 
 		if (inet_ntop (AF_INET, &route->network, buf, sizeof (buf)) &&
 		    inet_ntop (AF_INET, &route->gateway, buf2, sizeof (buf2))) {
@@ -706,13 +706,13 @@ nm_ip4_config_reset_routes (NMIP4Config *config)
 }
 
 static gboolean
-routes_are_duplicate (NMPlatformIP4Route *a, NMPlatformIP4Route *b)
+routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
 {
 	return a->network == b->network && a->plen == b->plen;
 }
 
 void
-nm_ip4_config_add_route (NMIP4Config *config, NMPlatformIP4Route *new)
+nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	int i;
@@ -749,7 +749,7 @@ nm_ip4_config_get_num_routes (NMIP4Config *config)
 	return priv->routes->len;
 }
 
-NMPlatformIP4Route *
+const NMPlatformIP4Route *
 nm_ip4_config_get_route (NMIP4Config *config, guint i)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);

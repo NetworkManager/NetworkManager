@@ -479,7 +479,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		                                                     G_SOCKET_FAMILY_IPV4);
 	} else {
 		NMIP6Config *ip6_config;
-		NMPlatformIP6Address *addr6;
+		const NMPlatformIP6Address *addr6;
 
 		ip6_config = nm_device_get_ip6_config (best6);
 		if (   !ip6_config

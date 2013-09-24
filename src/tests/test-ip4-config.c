@@ -102,8 +102,9 @@ test_subtract (void)
 {
 	NMIP4Config *src, *dst;
 	NMPlatformIP4Address addr;
+	NMPlatformIP4Route route;
 	const NMPlatformIP4Address *test_addr;
-	NMPlatformIP4Route route, *test_route;
+	const NMPlatformIP4Route *test_route;
 	const char *expected_addr = "192.168.1.12";
 	guint32 expected_addr_plen = 24;
 	const char *expected_route_dest = "8.7.6.5";

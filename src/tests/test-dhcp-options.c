@@ -102,7 +102,7 @@ test_generic_options (const char *client)
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
-	NMPlatformIP4Route *route;
+	const NMPlatformIP4Route *route;
 	guint32 tmp;
 	const char *expected_addr = "192.168.1.106";
 	const char *expected_gw = "192.168.1.1";
@@ -258,7 +258,7 @@ ip4_test_route (const char *test,
                 const char *expected_gw,
                 guint expected_prefix)
 {
-	NMPlatformIP4Route *route;
+	const NMPlatformIP4Route *route;
 	guint32 tmp;
 
 	route = nm_ip4_config_get_route (ip4_config, route_num);

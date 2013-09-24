@@ -77,14 +77,14 @@ void nm_ip6_config_reset_addresses (NMIP6Config *config);
 void nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *address);
 void nm_ip6_config_del_address (NMIP6Config *config, guint i);
 guint nm_ip6_config_get_num_addresses (NMIP6Config *config);
-NMPlatformIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
+const NMPlatformIP6Address *nm_ip6_config_get_address (NMIP6Config *config, guint i);
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);
-void nm_ip6_config_add_route (NMIP6Config *config, NMPlatformIP6Route *route);
+void nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *route);
 void nm_ip6_config_del_route (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_routes (NMIP6Config *config);
-NMPlatformIP6Route *  nm_ip6_config_get_route (NMIP6Config *config, guint32 i);
+const NMPlatformIP6Route *nm_ip6_config_get_route (NMIP6Config *config, guint32 i);
 
 /* Nameservers */
 void nm_ip6_config_reset_nameservers (NMIP6Config *config);
