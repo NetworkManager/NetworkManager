@@ -533,7 +533,7 @@ nm_ip6_config_reset_addresses (NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	g_array_set_size (priv->nameservers, 0);
+	g_array_set_size (priv->addresses, 0);
 }
 
 void
