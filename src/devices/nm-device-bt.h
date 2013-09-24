@@ -22,6 +22,7 @@
 #define NM_DEVICE_BT_H
 
 #include <nm-device.h>
+#include "nm-bluez-device.h"
 #include "nm-modem.h"
 
 G_BEGIN_DECLS
@@ -41,6 +42,7 @@ typedef enum {
 
 #define NM_DEVICE_BT_NAME         "name"
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
+#define NM_DEVICE_BT_DEVICE       "bt-device"
 
 typedef struct {
 	NMDevice parent;
@@ -55,7 +57,8 @@ typedef struct {
 
 GType nm_device_bt_get_type (void);
 
-NMDevice *nm_device_bt_new (const char *udi,
+NMDevice *nm_device_bt_new (NMBluezDevice *bt_device,
+                            const char *udi,
                             const char *bdaddr,
                             const char *name,
                             guint32 capabilities);

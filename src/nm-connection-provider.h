@@ -58,6 +58,13 @@ struct _NMConnectionProvider {
 
 	const GSList * (*get_connections) (NMConnectionProvider *self);
 
+	gboolean (*has_connections_loaded) (NMConnectionProvider *self);
+
+	NMConnection * (*add_connection) (NMConnectionProvider *self,
+	                                  NMConnection *connection,
+	                                  gboolean save_to_disk,
+	                                  GError **error);
+
 	/* Signals */
 	void (*connection_added)   (NMConnectionProvider *self, NMConnection *connection);
 
@@ -102,5 +109,32 @@ GSList *nm_connection_provider_get_best_connections (NMConnectionProvider *self,
  *   not be freed.
  */
 const GSList *nm_connection_provider_get_connections (NMConnectionProvider *self);
+
+/**
+ * nm_connection_provider_has_connections_loaded:
+ * @self: the #NMConnectionProvider
+ *
+ * Returns: TRUE or FALSE indicating whether the connections of the provider are already
+ *   loaded. If they are not yet loaded, the provider will not emit the signals
+ *   NM_CP_SIGNAL_CONNECTION_ADDED, NM_CP_SIGNAL_CONNECTION_UPDATED and
+ *   NM_CP_SIGNAL_CONNECTION_REMOVED until NM_CP_SIGNAL_CONNECTIONS_LOADED gets
+ *   emited.
+ */
+gboolean nm_connection_provider_has_connections_loaded (NMConnectionProvider *self);
+
+
+/**
+ * nm_connection_provider_add_connection:
+ * @self: the #NMConnectionProvider
+ * @connection: the connection to be added
+ * @save_to_disk: whether to store the connection on disk
+ * @error: returns any error if adding fails
+ *
+ * returns: a newly added #NMConnection.
+ */
+NMConnection *nm_connection_provider_add_connection (NMConnectionProvider *self,
+                                                     NMConnection *connection,
+                                                     gboolean save_to_disk,
+                                                     GError **error);
 
 #endif /* NM_CONNECTION_PROVIDER_H */

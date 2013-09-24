@@ -930,6 +930,16 @@ nm_settings_add_connection (NMSettings *self,
 	return NULL;
 }
 
+static NMConnection *
+_nm_connection_provider_add_connection (NMConnectionProvider *provider,
+                                        NMConnection *connection,
+                                        gboolean save_to_disk,
+                                        GError **error)
+{
+	g_assert (NM_IS_CONNECTION_PROVIDER (provider) && NM_IS_SETTINGS (provider));
+	return NM_CONNECTION (nm_settings_add_connection (NM_SETTINGS (provider), connection, save_to_disk, error));
+}
+
 static gboolean
 secrets_filter_cb (NMSetting *setting,
                    const char *secret,
@@ -1635,6 +1645,14 @@ get_connections (NMConnectionProvider *provider)
 	return g_slist_reverse (list);
 }
 
+static gboolean
+has_connections_loaded (NMConnectionProvider *provider)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (provider);
+
+	return priv->connections_loaded;
+}
+
 /***************************************************************/
 
 NMSettings *
@@ -1667,6 +1685,8 @@ connection_provider_init (NMConnectionProvider *cp_class)
 {
     cp_class->get_best_connections = get_best_connections;
     cp_class->get_connections = get_connections;
+    cp_class->has_connections_loaded = has_connections_loaded;
+    cp_class->add_connection = _nm_connection_provider_add_connection;
 }
 
 static void

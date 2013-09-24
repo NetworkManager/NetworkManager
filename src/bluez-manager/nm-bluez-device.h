@@ -23,7 +23,9 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <gio/gio.h>
 
+#include <config.h>
 #include "nm-connection.h"
 #include "nm-connection-provider.h"
 
@@ -40,6 +42,7 @@
 #define NM_BLUEZ_DEVICE_CAPABILITIES "capabilities"
 #define NM_BLUEZ_DEVICE_RSSI         "rssi"
 #define NM_BLUEZ_DEVICE_USABLE       "usable"
+#define NM_BLUEZ_DEVICE_CONNECTED    "connected"
 
 typedef struct {
 	GObject parent;
@@ -73,6 +76,22 @@ guint32 nm_bluez_device_get_class (NMBluezDevice *self);
 guint32 nm_bluez_device_get_capabilities (NMBluezDevice *self);
 
 gint nm_bluez_device_get_rssi (NMBluezDevice *self);
+
+gboolean nm_bluez_device_get_connected (NMBluezDevice *self);
+
+void
+nm_bluez_device_connect_async (NMBluezDevice *self,
+                               NMBluetoothCapabilities connection_bt_type,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data);
+
+const char *
+nm_bluez_device_connect_finish (NMBluezDevice *self,
+                                GAsyncResult *result,
+                                GError **error);
+
+void
+nm_bluez_device_disconnect (NMBluezDevice *self);
 
 #endif /* NM_BLUEZ_DEVICE_H */
 
