@@ -255,6 +255,18 @@ else
 fi
 AC_SUBST(UDEV_BASE_DIR)
 
+# BlueZ
+AC_ARG_ENABLE(bluez4, AS_HELP_STRING([--enable-bluez4],
+              [build with BlueZ 4 support instead of BlueZ 5]),
+              [enable_bluez4=${enableval}])
+if (test "${enable_bluez4}" = "yes"); then
+	AC_DEFINE(WITH_BLUEZ4, 1, [Define if you have BlueZ 4 support])
+else
+	AC_DEFINE(WITH_BLUEZ4, 0, [Define if you have BlueZ 4 support])
+	enable_bluez4=no
+fi
+AM_CONDITIONAL(WITH_BLUEZ4, test "${enable_bluez4}" = "yes")
+
 # systemd unit support
 AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
 	[Directory for systemd service files]))
@@ -760,6 +772,7 @@ echo "  wimax: $enable_wimax"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
+echo "  bluez 4: $enable_bluez4"
 echo
 
 echo "Configuration plugins"
