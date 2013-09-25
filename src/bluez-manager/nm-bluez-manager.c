@@ -97,6 +97,21 @@ remove_device (NMBluezManager *self, NMBluezDevice *device)
 }
 
 static void
+remove_all_devices (NMBluezManager *self)
+{
+	GHashTableIter iter;
+	NMBluezDevice *device;
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_hash_table_iter_init (&iter, priv->devices);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device)) {
+		g_hash_table_iter_steal (&iter);
+		remove_device (self, device);
+		g_object_unref (device);
+	}
+}
+
+static void
 device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self)
 {
 	gboolean usable = nm_bluez_device_get_usable (device);
@@ -152,8 +167,7 @@ device_removed (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
 
 	device = g_hash_table_lookup (priv->devices, path);
 	if (device) {
-		g_object_ref (device);
-		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
+		g_hash_table_steal (priv->devices, nm_bluez_device_get_path (device));
 		remove_device (NM_BLUEZ_MANAGER (self), device);
 		g_object_unref (device);
 	}
@@ -289,15 +303,8 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
 		return;
 
 	if (old_owner_good && !new_owner_good) {
-		if (priv->devices) {
-			GHashTableIter iter;
-			NMBluezDevice *device;
-
-			g_hash_table_iter_init (&iter, priv->devices);
-			while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device))
-				remove_device (self, device);
-			g_hash_table_remove_all (priv->devices);
-		}
+		if (priv->devices)
+			remove_all_devices (self);
 	}
 }
 
@@ -305,21 +312,16 @@ static void
 bluez_cleanup (NMBluezManager *self, gboolean do_signal)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-	NMBluezDevice *device;
-	GHashTableIter iter;
 
 	if (priv->proxy) {
 		g_object_unref (priv->proxy);
 		priv->proxy = NULL;
 	}
 
-	if (do_signal) {
-		g_hash_table_iter_init (&iter, priv->devices);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device))
-			remove_device (self, device);
-	}
-
-	g_hash_table_remove_all (priv->devices);
+	if (do_signal)
+		remove_all_devices (self);
+	else
+		g_hash_table_remove_all (priv->devices);
 }
 
 static void
