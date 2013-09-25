@@ -56,6 +56,9 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static void device_initialized (NMBluezDevice *device, gboolean success, NMBluezManager *self);
+static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self);
+
 static void
 emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
 {
@@ -79,6 +82,18 @@ nm_bluez_manager_query_devices (NMBluezManager *self)
 		if (nm_bluez_device_get_usable (device))
 			emit_bdaddr_added (self, device);
 	}
+}
+
+static void
+remove_device (NMBluezManager *self, NMBluezDevice *device)
+{
+	if (nm_bluez_device_get_usable (device)) {
+		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
+		               nm_bluez_device_get_address (device),
+		               nm_bluez_device_get_path (device));
+	}
+	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_initialized), self);
+	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_usable), self);
 }
 
 static void
@@ -139,11 +154,7 @@ device_removed (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
 	if (device) {
 		g_object_ref (device);
 		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
-
-		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-		               nm_bluez_device_get_address (device),
-		               nm_bluez_device_get_path (device));
-
+		remove_device (NM_BLUEZ_MANAGER (self), device);
 		g_object_unref (device);
 	}
 }
@@ -284,9 +295,7 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
 
 			g_hash_table_iter_init (&iter, priv->devices);
 			while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device))
-				g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-				               nm_bluez_device_get_address (device),
-				               nm_bluez_device_get_path (device));
+				remove_device (self, device);
 			g_hash_table_remove_all (priv->devices);
 		}
 	}
@@ -307,9 +316,7 @@ bluez_cleanup (NMBluezManager *self, gboolean do_signal)
 	if (do_signal) {
 		g_hash_table_iter_init (&iter, priv->devices);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device))
-			g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-				       nm_bluez_device_get_address (device),
-				       nm_bluez_device_get_path (device));
+			remove_device (self, device);
 	}
 
 	g_hash_table_remove_all (priv->devices);
