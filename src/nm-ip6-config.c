@@ -84,7 +84,7 @@ nm_ip6_config_export (NMIP6Config *config)
 }
 
 const char *
-nm_ip6_config_get_dbus_path (NMIP6Config *config)
+nm_ip6_config_get_dbus_path (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -144,7 +144,7 @@ nm_ip6_config_capture (int ifindex)
 }
 
 gboolean
-nm_ip6_config_commit (NMIP6Config *config, int ifindex, int priority)
+nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
@@ -263,7 +263,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 }
 
 void
-nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
+nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *setting)
 {
 	const struct in6_addr *gateway;
 	guint naddresses, nroutes, nnameservers, nsearches;
@@ -350,7 +350,7 @@ nm_ip6_config_update_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 /******************************************************************/
 
 void
-nm_ip6_config_merge (NMIP6Config *dst, NMIP6Config *src)
+nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
 {
 	guint32 i;
 
@@ -394,7 +394,7 @@ nm_ip6_config_merge (NMIP6Config *dst, NMIP6Config *src)
 }
 
 gboolean
-nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr *network, int plen)
+nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *network, int plen)
 {
 	int num = nm_ip6_config_get_num_addresses (config);
 	int i;
@@ -417,7 +417,7 @@ nm_ip6_config_destination_is_direct (NMIP6Config *config, const struct in6_addr 
  * Removes everything in @src from @dst.
  */
 void
-nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
+nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 {
 	guint32 i, j;
 	const struct in6_addr *dst_tmp, *src_tmp;
@@ -530,7 +530,7 @@ nm_ip6_config_subtract (NMIP6Config *dst, NMIP6Config *src)
  * that are not signaled by the output parameter @relevant_changes).
  */
 gboolean
-nm_ip6_config_replace (NMIP6Config *dst, NMIP6Config *src, gboolean *relevant_changes)
+nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relevant_changes)
 {
 #ifndef G_DISABLE_ASSERT
 	gboolean config_equal;
@@ -704,7 +704,7 @@ nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default)
 }
 
 gboolean
-nm_ip6_config_get_never_default (NMIP6Config *config)
+nm_ip6_config_get_never_default (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -729,7 +729,7 @@ nm_ip6_config_set_gateway (NMIP6Config *config, const struct in6_addr *gateway)
 }
 
 const struct in6_addr *
-nm_ip6_config_get_gateway (NMIP6Config *config)
+nm_ip6_config_get_gateway (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -786,7 +786,7 @@ nm_ip6_config_del_address (NMIP6Config *config, guint i)
 }
 
 guint
-nm_ip6_config_get_num_addresses (NMIP6Config *config)
+nm_ip6_config_get_num_addresses (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -794,7 +794,7 @@ nm_ip6_config_get_num_addresses (NMIP6Config *config)
 }
 
 const NMPlatformIP6Address *
-nm_ip6_config_get_address (NMIP6Config *config, guint i)
+nm_ip6_config_get_address (const NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -850,7 +850,7 @@ nm_ip6_config_del_route (NMIP6Config *config, guint i)
 }
 
 guint
-nm_ip6_config_get_num_routes (NMIP6Config *config)
+nm_ip6_config_get_num_routes (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -858,7 +858,7 @@ nm_ip6_config_get_num_routes (NMIP6Config *config)
 }
 
 const NMPlatformIP6Route *
-nm_ip6_config_get_route (NMIP6Config *config, guint i)
+nm_ip6_config_get_route (const NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -906,7 +906,7 @@ nm_ip6_config_del_nameserver (NMIP6Config *config, guint i)
 }
 
 guint32
-nm_ip6_config_get_num_nameservers (NMIP6Config *config)
+nm_ip6_config_get_num_nameservers (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -914,7 +914,7 @@ nm_ip6_config_get_num_nameservers (NMIP6Config *config)
 }
 
 const struct in6_addr *
-nm_ip6_config_get_nameserver (NMIP6Config *config, guint i)
+nm_ip6_config_get_nameserver (const NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -963,7 +963,7 @@ nm_ip6_config_del_domain (NMIP6Config *config, guint i)
 }
 
 guint32
-nm_ip6_config_get_num_domains (NMIP6Config *config)
+nm_ip6_config_get_num_domains (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -971,7 +971,7 @@ nm_ip6_config_get_num_domains (NMIP6Config *config)
 }
 
 const char *
-nm_ip6_config_get_domain (NMIP6Config *config, guint i)
+nm_ip6_config_get_domain (const NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -1020,7 +1020,7 @@ nm_ip6_config_del_search (NMIP6Config *config, guint i)
 }
 
 guint32
-nm_ip6_config_get_num_searches (NMIP6Config *config)
+nm_ip6_config_get_num_searches (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -1028,7 +1028,7 @@ nm_ip6_config_get_num_searches (NMIP6Config *config)
 }
 
 const char *
-nm_ip6_config_get_search (NMIP6Config *config, guint i)
+nm_ip6_config_get_search (const NMIP6Config *config, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -1046,7 +1046,7 @@ nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss)
 }
 
 guint32
-nm_ip6_config_get_mss (NMIP6Config *config)
+nm_ip6_config_get_mss (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -1068,7 +1068,7 @@ nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_a
 }
 
 const struct in6_addr *
-nm_ip6_config_get_ptp_address (NMIP6Config *config)
+nm_ip6_config_get_ptp_address (const NMIP6Config *config)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
@@ -1093,7 +1093,7 @@ hash_in6addr (GChecksum *sum, const struct in6_addr *a)
 }
 
 void
-nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
+nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 {
 	guint32 i;
 	const struct in6_addr *in6a;
@@ -1141,7 +1141,7 @@ nm_ip6_config_hash (NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 }
 
 gboolean
-nm_ip6_config_equal (NMIP6Config *a, NMIP6Config *b)
+nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 {
 	GChecksum *a_checksum = g_checksum_new (G_CHECKSUM_SHA1);
 	GChecksum *b_checksum = g_checksum_new (G_CHECKSUM_SHA1);
