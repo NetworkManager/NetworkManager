@@ -320,6 +320,10 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 	if (!s_bt)
 		return FALSE;
 
+	if (!priv->address) {
+		/* unless address is set, bin_address is not initialized. */
+		return FALSE;
+	}
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
 	if (!bdaddr || bdaddr->len != ETH_ALEN)
 		return FALSE;
@@ -609,6 +613,44 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids, gboolean no
 	}
 }
 
+/**
+ * priv->address can only be set one to a certain (non NULL) value. Every later attempt
+ * to reset it to another value will be ignored and a warning will be logged.
+ *
+ * When setting the address for the first time, we also set bin_address.
+ **/
+static void
+_set_property_address (NMBluezDevice *self, const char *addr)
+{
+	struct ether_addr *tmp;
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	if (g_strcmp0 (priv->address, addr) == 0)
+		return;
+
+	if (!addr) {
+		nm_log_warn (LOGD_BT, "[%s] cannot reset address from '%s' to NULL", priv->path, priv->address);
+		return;
+	}
+
+	if (priv->address != NULL) {
+		nm_log_warn (LOGD_BT, "[%s] cannot reset address from '%s' to '%s'", priv->path, priv->address, addr);
+		return;
+	}
+
+	tmp = ether_aton (addr);
+	if (!tmp) {
+		if (priv->address)
+			nm_log_warn (LOGD_BT, "[%s] cannot reset address from '%s' to '%s' (invalid value)", priv->path, priv->address, addr);
+		else
+			nm_log_warn (LOGD_BT, "[%s] cannot reset address from NULL to '%s' (invalid value)", priv->path, addr);
+		return;
+	}
+	memcpy (priv->bin_address, tmp->ether_addr_octet, ETH_ALEN);
+	priv->address = g_strdup (addr);
+	return;
+}
+
 #if ! WITH_BLUEZ4
 static void
 adapter_properties_changed (GDBusProxy *proxy5,
@@ -766,17 +808,11 @@ query_properties (NMBluezDevice *self)
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GVariant *v;
 	const char **uuids;
-	struct ether_addr *tmp;
 
 	v = g_dbus_proxy_get_cached_property (priv->proxy5, "Address");
-	priv->address = v ? g_variant_dup_string (v, NULL) : NULL;
+	_set_property_address (self, v ? g_variant_get_string (v, NULL) : NULL);
 	if (v)
 		g_variant_unref (v);
-	if (priv->address) {
-		tmp = ether_aton (priv->address);
-		g_assert (tmp);
-		memcpy (priv->bin_address, tmp->ether_addr_octet, ETH_ALEN);
-	}
 
 	v = g_dbus_proxy_get_cached_property (priv->proxy5, "Name");
 	priv->name = v ? g_variant_dup_string (v, NULL) : NULL;
@@ -835,12 +871,7 @@ get_properties_cb (DBusGProxy *proxy4, DBusGProxyCall *call, gpointer user_data)
 	}
 
 	value = g_hash_table_lookup (properties, "Address");
-	priv->address = value ? g_value_dup_string (value) : NULL;
-	if (priv->address) {
-		tmp = ether_aton (priv->address);
-		g_assert (tmp);
-		memcpy (priv->bin_address, tmp->ether_addr_octet, ETH_ALEN);
-	}
+	_set_property_address (self, value ? g_value_get_string (value) : NULL);
 
 	value = g_hash_table_lookup (properties, "Name");
 	priv->name = value ? g_value_dup_string (value) : NULL;
