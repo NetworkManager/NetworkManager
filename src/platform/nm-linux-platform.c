@@ -536,7 +536,7 @@ link_is_software (struct rtnl_link *link)
 static const char *
 ethtool_get_driver (const char *ifname)
 {
-	struct ethtool_drvinfo drvinfo;
+	struct ethtool_drvinfo drvinfo = { 0 };
 
 	drvinfo.cmd = ETHTOOL_GDRVINFO;
 	if (!ethtool_get (ifname, &drvinfo))
