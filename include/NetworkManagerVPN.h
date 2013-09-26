@@ -41,6 +41,7 @@
 #define NM_DBUS_NO_VPN_CONNECTIONS			"org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
 #define NM_DBUS_INVALID_VPN_CONNECTION		"org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
 
+#define NM_DBUS_VPN_ERROR_PREFIX		"org.freedesktop.NetworkManager.VPN.Error"
 #define NM_DBUS_VPN_STARTING_IN_PROGRESS	"StartingInProgress"
 #define NM_DBUS_VPN_ALREADY_STARTED		"AlreadyStarted"
 #define NM_DBUS_VPN_STOPPING_IN_PROGRESS	"StoppingInProgress"

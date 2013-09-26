@@ -1181,7 +1181,7 @@ connect_interactive_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data
 		return;
 	}
 
-	if (dbus_g_error_has_name (err, "org.freedesktop.NetworkManager.VPN.Plugin.InteractiveNotSupported")) {
+	if (dbus_g_error_has_name (err, NM_DBUS_VPN_ERROR_PREFIX "." NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED)) {
 		/* Fall back to Connect() */
 		dbus_g_proxy_begin_call (priv->proxy, "Connect",
 		                         connect_cb, self, NULL,
