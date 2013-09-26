@@ -1265,18 +1265,16 @@ static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
                   const char *iscsiadm_path,
-                  gboolean can_disable_ip4,
                   GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
 	char *route_path = NULL;
-	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+	char *method;
 	gint32 i;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE;
-	gboolean bootproto_none = FALSE;
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 
@@ -1308,65 +1306,47 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	value = svGetValue (ifcfg, "BOOTPROTO", FALSE);
-	if (value) {
-		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
-			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
-		else if (!g_ascii_strcasecmp (value, "ibft")) {
-			g_free (value);
-			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default, NULL);
-			/* iSCSI Boot Firmware Table: need to read values from the iSCSI 
-			 * firmware for this device and create the IP4 setting using those.
-			 */
-			if (fill_ip4_setting_from_ibft (ifcfg, s_ip4, iscsiadm_path, error))
-				return NM_SETTING (s_ip4);
-			g_object_unref (s_ip4);
-			return NULL;
-		} else if (!g_ascii_strcasecmp (value, "autoip")) {
-			g_free (value);
-			g_object_set (s_ip4,
-			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
-			              NULL);
-			return NM_SETTING (s_ip4);
-		} else if (!g_ascii_strcasecmp (value, "shared")) {
-			g_free (value);
-			g_object_set (s_ip4,
-			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
-			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
-			              NULL);
-			return NM_SETTING (s_ip4);
-		} else if (!g_ascii_strcasecmp (value, "none")) {
-			bootproto_none = TRUE;
-			can_disable_ip4 = TRUE;
-		} else if (!g_ascii_strcasecmp (value, "static")) {
-			/* Static IP */
-		} else if (strlen (value)) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Unknown BOOTPROTO '%s'", value);
-			g_free (value);
-			goto done;
-		}
+
+	if (!value || !*value || !g_ascii_strcasecmp (value, "none")) {
+		if (is_any_ip4_address_defined (ifcfg))
+			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+		else
+			method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+	} else if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")) {
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+	} else if (!g_ascii_strcasecmp (value, "static")) {
+		method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+	} else if (!g_ascii_strcasecmp (value, "ibft")) {
 		g_free (value);
-	}
-	if (!value || bootproto_none) {
-		/* If there is no BOOTPROTO (or BOOTPROTO=none), no IPADDR, no PREFIX,
-		 * no NETMASK, but valid IPv6 configuration, assume that IPv4 is disabled.
-		 * Otherwise, if there is no IPv6 configuration, assume DHCP is to be used.
-		 * Happens with minimal ifcfg files like the following that anaconda
-		 * sometimes used to write out:
-		 *
-		 * DEVICE=eth0
-		 * HWADDR=11:22:33:44:55:66
-		 *
+		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default, NULL);
+		/* iSCSI Boot Firmware Table: need to read values from the iSCSI
+		 * firmware for this device and create the IP4 setting using those.
 		 */
-		if (!is_any_ip4_address_defined (ifcfg)) {
-			if (can_disable_ip4)
-				/* Nope, no IPv4 */
-				method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-			else
-				method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
-		}
+		if (fill_ip4_setting_from_ibft (ifcfg, s_ip4, iscsiadm_path, error))
+			return NM_SETTING (s_ip4);
+		g_object_unref (s_ip4);
+		return NULL;
+	} else if (!g_ascii_strcasecmp (value, "autoip")) {
+		g_free (value);
+		g_object_set (s_ip4,
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NULL);
+		return NM_SETTING (s_ip4);
+	} else if (!g_ascii_strcasecmp (value, "shared")) {
+		g_free (value);
+		g_object_set (s_ip4,
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
+		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NULL);
+		return NM_SETTING (s_ip4);
+	} else {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		             "Unknown BOOTPROTO '%s'", value);
+		g_free (value);
+		goto done;
 	}
+	g_free (value);
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP4_CONFIG_METHOD, method,
@@ -4503,7 +4483,6 @@ connection_from_file (const char *filename,
 	NMSetting *s_ip4, *s_ip6, *s_port;
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
-	gboolean can_disable_ip4 = FALSE;
 	char *unmanaged = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
@@ -4647,16 +4626,10 @@ connection_from_file (const char *filename,
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
-	} else {
-		const char *method;
-
+	} else
 		nm_connection_add_setting (connection, s_ip6);
-		method = nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (s_ip6));
-		if (method && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
-			can_disable_ip4 = TRUE;
-	}
 
-	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, can_disable_ip4, error);
+	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, error);
 	if (!s_ip4) {
 		g_object_unref (connection);
 		connection = NULL;

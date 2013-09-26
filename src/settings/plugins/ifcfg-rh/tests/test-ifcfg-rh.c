@@ -182,6 +182,7 @@ test_read_basic (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	GError *error = NULL;
 	const GByteArray *array;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
@@ -221,11 +222,16 @@ test_read_basic (void)
 	g_assert (memcmp (array->data, &expected_mac_address[0], ETH_ALEN) == 0);
 
 	/* ===== IPv4 SETTING ===== */
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+
+	/* ===== IPv6 SETTING ===== */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE);
 
 	g_object_unref (connection);
 }
@@ -275,7 +281,7 @@ test_read_variables_corner_cases (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
 
 	g_object_unref (connection);
