@@ -35,6 +35,9 @@ main (int argc, char **argv)
 	}
 
 	rdisc = new (ifindex, ifname);
+	if (!rdisc)
+		return EXIT_FAILURE;
+
 	nm_rdisc_set_lladdr (rdisc, mac, 6);
 
 	nm_rdisc_start (rdisc);

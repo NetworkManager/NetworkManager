@@ -50,13 +50,23 @@ G_DEFINE_TYPE (NMLNDPRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 NMRDisc *
 nm_lndp_rdisc_new (int ifindex, const char *ifname)
 {
-	NMRDisc *rdisc = g_object_new (NM_TYPE_LNDP_RDISC, NULL);
+	NMRDisc *rdisc;
+	NMLNDPRDiscPrivate *priv;
+	int error;
 
+	rdisc = g_object_new (NM_TYPE_LNDP_RDISC, NULL);
 	g_assert (rdisc);
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
 
+	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+	error = ndp_open (&priv->ndp);
+	if (error != 0) {
+		g_object_unref (rdisc);
+		debug ("(%s): error creating socket for NDP; errno=%d", ifname, -error);
+		return NULL;
+	}
 	return rdisc;
 }
 
@@ -594,11 +604,6 @@ start (NMRDisc *rdisc)
 static void
 nm_lndp_rdisc_init (NMLNDPRDisc *lndp_rdisc)
 {
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (lndp_rdisc);
-	int error;
-	
-	error = ndp_open (&priv->ndp);
-	g_assert (!error);
 }
 
 static void
@@ -615,7 +620,8 @@ nm_lndp_rdisc_finalize (GObject *object)
 	if (priv->event_id)
 		g_source_remove (priv->event_id);
 
-	ndp_close (priv->ndp);
+	if (priv->ndp)
+		ndp_close (priv->ndp);
 }
 
 static void
