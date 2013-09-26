@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
 #ifndef NM_VPN_PLUGIN_H
@@ -63,19 +63,23 @@ G_BEGIN_DECLS
  * @NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID: the operation could not be performed
  *  because the connection was invalid.  Usually means that the connection's
  *  VPN setting was missing some required data item or secret.
+ * @NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED: the operation could not be
+ *  performed as the plugin does not support interactive operations, such as
+ *  ConnectInteractive() or NewSecrets()
  *
  * Returned by the VPN service plugin to indicate errors.
  **/
 typedef enum {
-	NM_VPN_PLUGIN_ERROR_GENERAL,              /*< nick=General >*/
-	NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS, /*< nick=StartingInProgress >*/
-	NM_VPN_PLUGIN_ERROR_ALREADY_STARTED,      /*< nick=AlreadyStarted >*/
-	NM_VPN_PLUGIN_ERROR_STOPPING_IN_PROGRESS, /*< nick=StoppingInProgress >*/
-	NM_VPN_PLUGIN_ERROR_ALREADY_STOPPED,      /*< nick=AlreadyStopped >*/
-	NM_VPN_PLUGIN_ERROR_WRONG_STATE,          /*< nick=WrongState >*/
-	NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,        /*< nick=BadArguments >*/
-	NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,        /*< nick=LaunchFailed >*/
-	NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,   /*< nick=ConnectionInvalid >*/
+	NM_VPN_PLUGIN_ERROR_GENERAL,                   /*< nick=General >*/
+	NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS,      /*< nick=StartingInProgress >*/
+	NM_VPN_PLUGIN_ERROR_ALREADY_STARTED,           /*< nick=AlreadyStarted >*/
+	NM_VPN_PLUGIN_ERROR_STOPPING_IN_PROGRESS,      /*< nick=StoppingInProgress >*/
+	NM_VPN_PLUGIN_ERROR_ALREADY_STOPPED,           /*< nick=AlreadyStopped >*/
+	NM_VPN_PLUGIN_ERROR_WRONG_STATE,               /*< nick=WrongState >*/
+	NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,             /*< nick=BadArguments >*/
+	NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,             /*< nick=LaunchFailed >*/
+	NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,        /*< nick=ConnectionInvalid >*/
+	NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED  /*< nick=InteractiveNotSupported >*/
 } NMVPNPluginError;
 
 #define NM_VPN_PLUGIN_ERROR      (nm_vpn_plugin_error_quark ())

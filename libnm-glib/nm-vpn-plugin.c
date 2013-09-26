@@ -457,14 +457,15 @@ _connect_generic (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
 
 	priv->interactive = FALSE;
 	if (details && !vpn_class->connect_interactive) {
-		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_GENERAL,
+		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED,
 		                     "Plugin does not implement ConnectInteractive()");
 		return FALSE;
 	}
+
+	nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
 
 	if (details) {
 		priv->interactive = TRUE;
@@ -586,7 +587,7 @@ impl_vpn_plugin_new_secrets (NMVPNPlugin *plugin,
 	}
 
 	if (!NM_VPN_PLUGIN_GET_CLASS (plugin)->new_secrets) {
-		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_GENERAL,
+		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED,
 		                     "Could not accept new secrets: plugin cannot process interactive secrets");
 		g_object_unref (connection);
 		return FALSE;

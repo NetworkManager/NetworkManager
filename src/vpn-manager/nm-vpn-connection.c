@@ -1181,11 +1181,20 @@ connect_interactive_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data
 		return;
 	}
 
-	/* Fall back to Connect() */
-	dbus_g_proxy_begin_call (priv->proxy, "Connect",
-	                         connect_cb, self, NULL,
-	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, priv->connect_hash,
-	                         G_TYPE_INVALID);
+	if (dbus_g_error_has_name (err, "org.freedesktop.NetworkManager.VPN.Plugin.InteractiveNotSupported")) {
+		/* Fall back to Connect() */
+		dbus_g_proxy_begin_call (priv->proxy, "Connect",
+		                         connect_cb, self, NULL,
+		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, priv->connect_hash,
+		                         G_TYPE_INVALID);
+	} else {
+		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect interactively: '%s'.",
+		             nm_connection_get_id (priv->connection), err->message);
+		g_error_free (err);
+		nm_vpn_connection_set_vpn_state (self,
+		                                 NM_VPN_CONNECTION_STATE_FAILED,
+		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
+	}
 }
 
 /* Add a username to a hashed connection */

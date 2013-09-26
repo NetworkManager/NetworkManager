@@ -52,6 +52,7 @@
         <tp:error name="org.freedesktop.NetworkManager.VPN.Error.BadArguments"/>
         <tp:error name="org.freedesktop.NetworkManager.VPN.Error.LaunchFailed"/>
         <tp:error name="org.freedesktop.NetworkManager.VPN.Error.WrongState"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.InteractiveNotSupported"/>
       </tp:possible-errors>
     </method>
 
@@ -191,6 +192,7 @@
         <tp:error name="org.freedesktop.NetworkManager.VPN.Error.WrongState"/>
         <tp:error name="org.freedesktop.NetworkManager.VPN.Error.BadArguments"/>
         <tp:error name="org.freedesktop.NetworkManager.VPN.Error.LaunchFailed"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.InteractiveNotSupported"/>
       </tp:possible-errors>
     </method>
 

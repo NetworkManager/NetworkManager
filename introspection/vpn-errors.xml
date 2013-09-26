@@ -28,5 +28,11 @@
   <tp:error name="ConnectionInvalid">
     <tp:docstring>The request could not be processed because the VPN connection settings were invalid.</tp:docstring>
   </tp:error>
+  <tp:error name="InteractiveNotSupported">
+    <tp:docstring>
+      The request could not be processed because the plugin does not support
+      interactive operations, such as ConnectInteractive() or NewSecrets().
+    </tp:docstring>
+  </tp:error>
 </tp:errors>
 

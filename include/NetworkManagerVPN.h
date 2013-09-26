@@ -47,6 +47,7 @@
 #define NM_DBUS_VPN_ALREADY_STOPPED		"AlreadyStopped"
 #define NM_DBUS_VPN_WRONG_STATE			"WrongState"
 #define NM_DBUS_VPN_BAD_ARGUMENTS			"BadArguments"
+#define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED	"InteractiveNotSupported"
 
 
 /*
