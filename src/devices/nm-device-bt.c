@@ -880,15 +880,11 @@ static void
 deactivate (NMDevice *device)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
-	gboolean dun;
-
-	dun = priv->bt_type == NM_BT_CAPABILITY_DUN;
 
 	priv->have_iface = FALSE;
 	priv->connected = FALSE;
 
-	if (dun) {
-
+	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		if (priv->modem) {
 			nm_modem_deactivate (priv->modem, device);
 
@@ -904,7 +900,8 @@ deactivate (NMDevice *device)
 		}
 	}
 
-	nm_bluez_device_disconnect (priv->bt_device);
+	if (priv->bt_type != NM_BT_CAPABILITY_NONE)
+		nm_bluez_device_disconnect (priv->bt_device);
 
 	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);
