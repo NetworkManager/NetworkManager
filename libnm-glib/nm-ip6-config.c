@@ -376,8 +376,8 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
-	    (object_class, PROP_ROUTES,
-	     g_param_spec_string (NM_IP6_CONFIG_ROUTES,
+	    (object_class, PROP_GATEWAY,
+	     g_param_spec_string (NM_IP6_CONFIG_GATEWAY,
 	                          "Gateway",
 	                          "Gateway",
 	                          NULL,
