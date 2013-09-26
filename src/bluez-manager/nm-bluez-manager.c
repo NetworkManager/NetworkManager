@@ -222,8 +222,12 @@ get_managed_objects_cb (GDBusProxy *proxy,
 	variant = g_dbus_proxy_call_finish (proxy, res, &error);
 
 	if (!variant) {
-		nm_log_warn (LOGD_BT, "Couldn't get managed objects: %s",
-		             error && error->message ? error->message : "(unknown)");
+		if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD))
+			nm_log_warn (LOGD_BT, "Couldn't get managed objects: not running Bluez5?");
+		else {
+			nm_log_warn (LOGD_BT, "Couldn't get managed objects: %s",
+				         error && error->message ? error->message : "(unknown)");
+		}
 		g_clear_error (&error);
 		return;
 	}
