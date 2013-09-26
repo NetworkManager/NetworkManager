@@ -14,7 +14,11 @@
       <tp:docstring>The path of the connection.</tp:docstring>
     </property>
     <property name="SpecificObject" type="o" access="read">
-      <tp:docstring>A specific object associated with the active connection.</tp:docstring>
+      <tp:docstring>
+        A specific object associated with the active connection.  This property
+        reflects the specific object used during connection activation, and will
+        not change over the lifetime of the ActiveConnection once set.
+      </tp:docstring>
     </property>
     <property name="Uuid" type="s" access="read">
       <tp:docstring>
