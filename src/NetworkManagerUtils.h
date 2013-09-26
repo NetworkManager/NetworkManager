@@ -82,6 +82,9 @@ gboolean nm_utils_get_proc_sys_net_value_with_bounds (const char *path,
                                                       gint32 valid_min,
                                                       gint32 valid_max);
 
+void nm_utils_normalize_connection (NMConnection *connection,
+                                    gboolean      default_enable_ipv6);
+
 void nm_utils_complete_generic (NMConnection *connection,
                                 const char *ctype,
                                 const GSList *existing,

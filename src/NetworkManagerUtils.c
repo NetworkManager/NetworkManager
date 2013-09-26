@@ -298,10 +298,10 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 	const char *method = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		method = nm_setting_ip4_config_get_method (s_ip4);
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	g_assert (method);
 
-	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
+	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
 		return NULL;  /* Not shared */
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -577,6 +577,72 @@ get_new_connection_name (const GSList *existing,
 }
 
 void
+nm_utils_normalize_connection (NMConnection *connection,
+                               gboolean default_enable_ipv6)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+	const char *default_ip6_method =
+		default_enable_ipv6 ? NM_SETTING_IP6_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	NMSetting *setting;
+	const char *method;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+	/* Slave connections don't have IP configuration. */
+	if (nm_setting_connection_get_master (s_con)) {
+		default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+		default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+
+		if (s_ip4) {
+			method = nm_setting_ip4_config_get_method (s_ip4);
+			if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0) {
+				nm_log_warn (LOGD_SETTINGS, "ignoring IP4 config on slave '%s'",
+				             nm_connection_get_id (connection));
+				nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+				s_ip4 = NULL;
+			}
+		}
+
+		if (s_ip6) {
+			method = nm_setting_ip6_config_get_method (s_ip6);
+			if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0) {
+				nm_log_warn (LOGD_SETTINGS, "ignoring IP6 config on slave '%s'",
+				             nm_connection_get_id (connection));
+				nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+				s_ip6 = NULL;
+			}
+		}
+	}
+
+	/* Ensure all connections have IP4 and IP6 settings objects. If no
+	 * IP6 setting was specified, then assume that means IP6 config is allowed
+	 * to fail. But if no IP4 setting was specified, assume the caller was just
+	 * being lazy.
+	 */
+	if (!s_ip4) {
+		setting = nm_setting_ip4_config_new ();
+		nm_connection_add_setting (connection, setting);
+
+		g_object_set (setting,
+		              NM_SETTING_IP4_CONFIG_METHOD, default_ip4_method,
+		              NULL);
+	}
+	if (!s_ip6) {
+		setting = nm_setting_ip6_config_new ();
+		nm_connection_add_setting (connection, setting);
+
+		g_object_set (setting,
+		              NM_SETTING_IP6_CONFIG_METHOD, default_ip6_method,
+		              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+		              NULL);
+	}
+}
+
+void
 nm_utils_complete_generic (NMConnection *connection,
                            const char *ctype,
                            const GSList *existing,
@@ -585,9 +651,6 @@ nm_utils_complete_generic (NMConnection *connection,
                            gboolean default_enable_ipv6)
 {
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
-	const char *method;
 	char *id, *uuid;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -610,31 +673,8 @@ nm_utils_complete_generic (NMConnection *connection,
 		g_free (id);
 	}
 
-	/* Add an 'auto' IPv4 connection if present */
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (!s_ip4) {
-		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-	}
-	method = nm_setting_ip4_config_get_method (s_ip4);
-	if (!method) {
-		g_object_set (G_OBJECT (s_ip4),
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-		              NULL);
-	}
-
-	/* Add an 'auto' IPv6 setting if allowed and not preset */
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (!s_ip6 && default_enable_ipv6) {
-		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_ip6));
-	}
-	if (s_ip6 && !nm_setting_ip6_config_get_method (s_ip6)) {
-		g_object_set (G_OBJECT (s_ip6),
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-		              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
-		              NULL);
-	}
+	/* Normalize */
+	nm_utils_normalize_connection (connection, default_enable_ipv6);
 }
 
 char *

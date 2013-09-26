@@ -70,35 +70,33 @@ add_hostname (GString *str, const char *format, const char *hostname)
 static void
 add_ip4_config (GString *str, NMSettingIP4Config *s_ip4, const char *hostname)
 {
-	if (s_ip4) {
-		const char *tmp;
+	const char *tmp;
 
-		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-		if (tmp) {
-			gboolean is_octets = TRUE;
-			int i = 0;
+	tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
+	if (tmp) {
+		gboolean is_octets = TRUE;
+		int i = 0;
 
-			while (tmp[i]) {
-				if ((i % 3) != 2 && !g_ascii_isxdigit (tmp[i])) {
-					is_octets = FALSE;
-					break;
-				}
-				if ((i % 3) == 2 && tmp[i] != ':') {
-					is_octets = FALSE;
-					break;
-				}
-				i++;
+		while (tmp[i]) {
+			if ((i % 3) != 2 && !g_ascii_isxdigit (tmp[i])) {
+				is_octets = FALSE;
+				break;
 			}
-
-			/* If the client ID is just hex digits and : then don't use quotes,
-			 * because dhclient expects either a quoted ASCII string, or a byte
-			 * array formated as hex octets separated by :
-			 */
-			if (is_octets)
-				g_string_append_printf (str, CLIENTID_FORMAT_OCTETS "\n", tmp);
-			else
-				g_string_append_printf (str, CLIENTID_FORMAT "\n", tmp);
+			if ((i % 3) == 2 && tmp[i] != ':') {
+				is_octets = FALSE;
+				break;
+			}
+			i++;
 		}
+
+		/* If the client ID is just hex digits and : then don't use quotes,
+		 * because dhclient expects either a quoted ASCII string, or a byte
+		 * array formated as hex octets separated by :
+		 */
+		if (is_octets)
+			g_string_append_printf (str, CLIENTID_FORMAT_OCTETS "\n", tmp);
+		else
+			g_string_append_printf (str, CLIENTID_FORMAT "\n", tmp);
 	}
 
 	add_hostname (str, HOSTNAME4_FORMAT "\n", hostname);
@@ -159,8 +157,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			/* Override config file "dhcp-client-id" and use one from the
 			 * connection.
 			 */
-			if (   s_ip4
-			    && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
+			if (   nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
 			    && !strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG)))
 				continue;
 

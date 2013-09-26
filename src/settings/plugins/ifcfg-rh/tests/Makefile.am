@@ -13,6 +13,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/posix-signals \

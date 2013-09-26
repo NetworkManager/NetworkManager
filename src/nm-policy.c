@@ -144,16 +144,15 @@ get_best_ip4_device (NMManager *manager, gboolean fully_activated)
 		g_assert (connection);
 
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4) {
-			/* Never set the default route through an IPv4LL-addressed device */
-			method = nm_setting_ip4_config_get_method (s_ip4);
-			if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-				continue;
 
-			/* 'never-default' devices can't ever be the default */
-			if (nm_setting_ip4_config_get_never_default (s_ip4))
-				continue;
-		}
+		/* Never set the default route through an IPv4LL-addressed device */
+		method = nm_setting_ip4_config_get_method (s_ip4);
+		if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+			continue;
+
+		/* 'never-default' devices can't ever be the default */
+		if (nm_setting_ip4_config_get_never_default (s_ip4))
+			continue;
 
 		prio = nm_device_get_priority (dev);
 		if (prio > 0 && prio < best_prio) {
@@ -223,14 +222,13 @@ get_best_ip6_device (NMManager *manager, gboolean fully_activated)
 		g_assert (connection);
 
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6) {
-			method = nm_setting_ip6_config_get_method (s_ip6);
-			if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
-				continue;
 
-			if (nm_setting_ip6_config_get_never_default (s_ip6))
-				continue;
-		}
+		method = nm_setting_ip6_config_get_method (s_ip6);
+		if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+			continue;
+
+		if (nm_setting_ip6_config_get_never_default (s_ip6))
+			continue;
 
 		prio = nm_device_get_priority (dev);
 		if (prio > 0 && prio < best_prio) {
@@ -575,7 +573,7 @@ get_best_ip4_config (NMPolicy *policy,
 
 			/* Check the user's preference from the NMConnection */
 			s_ip4 = nm_connection_get_setting_ip4_config (tmp);
-			if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+			if (nm_setting_ip4_config_get_never_default (s_ip4))
 				continue;
 		}
 
@@ -753,7 +751,7 @@ get_best_ip6_config (NMPolicy *policy,
 
 			/* Check the user's preference from the NMConnection */
 			s_ip6 = nm_connection_get_setting_ip6_config (tmp);
-			if (s_ip6 && nm_setting_ip6_config_get_never_default (s_ip6))
+			if (nm_setting_ip6_config_get_never_default (s_ip6))
 				continue;
 		}
 

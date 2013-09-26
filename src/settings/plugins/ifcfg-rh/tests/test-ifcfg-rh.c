@@ -47,6 +47,7 @@
 #include <nm-setting-vlan.h>
 
 #include "nm-test-helpers.h"
+#include "NetworkManagerUtils.h"
 
 #include "common.h"
 #include "reader.h"
@@ -6222,6 +6223,9 @@ test_write_wired_static (void)
 	ASSERT (testfile != NULL,
 	        "wired-static-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -6341,6 +6345,9 @@ test_write_wired_dhcp (void)
 
 	ASSERT (testfile != NULL,
 	        "wired-dhcp-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -6465,6 +6472,9 @@ test_write_wired_static_ip6_only (void)
 
 	ASSERT (testfile != NULL,
 	        "wired-static-ip6-only-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -6609,6 +6619,9 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (testfile);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -6764,6 +6777,9 @@ test_read_write_static_routes_legacy (void)
 
 	ASSERT (testfile != NULL,
 	        "read-write-static-routes-legacy-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -6937,6 +6953,9 @@ test_write_wired_static_routes (void)
 	ASSERT (testfile != NULL,
 	        "wired-static-routes-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -7065,6 +7084,9 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 
 	ASSERT (testfile != NULL,
 	        "wired-dhcp-8021x-peap-mschapv2write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -7247,6 +7269,9 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	}
 	g_assert (success);
 	g_assert (testfile != NULL);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -7433,6 +7458,9 @@ test_write_wifi_open (void)
 	ASSERT (testfile != NULL,
 	        "wifi-open-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -7561,6 +7589,9 @@ test_write_wifi_open_hex_ssid (void)
 	ASSERT (testfile != NULL,
 	        "wifi-open-hex-ssid-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -7688,6 +7719,9 @@ test_write_wifi_wep (void)
 
 	ASSERT (testfile != NULL,
 	        "wifi-wep-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -7837,6 +7871,9 @@ test_write_wifi_wep_adhoc (void)
 	ASSERT (testfile != NULL,
 	        "wifi-wep-adhoc-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -7974,6 +8011,9 @@ test_write_wifi_wep_passphrase (void)
 
 	ASSERT (testfile != NULL,
 	        "wifi-wep-passphrase-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -8115,6 +8155,9 @@ test_write_wifi_wep_40_ascii (void)
 	ASSERT (testfile != NULL,
 	        "wifi-wep-40-ascii-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -8255,6 +8298,9 @@ test_write_wifi_wep_104_ascii (void)
 	ASSERT (testfile != NULL,
 	        "wifi-wep-104-ascii-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -8392,6 +8438,9 @@ test_write_wifi_leap (void)
 	ASSERT (testfile != NULL,
 	        "wifi-leap-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -8527,6 +8576,9 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (testfile);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -8681,6 +8733,9 @@ test_write_wifi_wpa_psk (const char *name,
 	ASSERT (testfile != NULL,
 	        test_name, "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -8828,6 +8883,9 @@ test_write_wifi_wpa_psk_adhoc (void)
 
 	ASSERT (testfile != NULL,
 	        "wifi-wpa-psk-adhoc-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -8991,6 +9049,9 @@ test_write_wifi_wpa_eap_tls (void)
 
 	ASSERT (testfile != NULL,
 	        "wifi-wpa-eap-tls-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -9173,6 +9234,9 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	ASSERT (testfile != NULL,
 	        "wifi-wpa-eap-ttls-tls-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -9326,6 +9390,9 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	ASSERT (testfile != NULL,
 	        "wifi-wpa-eap-ttls-mschapv2-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -9467,6 +9534,9 @@ test_write_wifi_wpa_then_open (void)
 	g_assert (success);
 	g_assert (testfile);
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -9510,6 +9580,9 @@ test_write_wifi_wpa_then_open (void)
 	unlink (keyfile);
 	g_free (keyfile);
 	keyfile = NULL;
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read it for comparison */
 	reread = connection_from_file (testfile,
@@ -9660,6 +9733,9 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	g_assert (success);
 	g_assert (testfile);
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -9709,6 +9785,9 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 
 	g_free (keyfile);
 	keyfile = NULL;
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read it for comparison */
 	reread = connection_from_file (testfile,
@@ -9851,6 +9930,9 @@ test_write_wifi_dynamic_wep_leap (void)
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (testfile);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -10376,6 +10458,9 @@ test_write_wired_qeth_dhcp (void)
 	ASSERT (testfile != NULL,
 	        "wired-qeth-dhcp-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -10509,6 +10594,9 @@ test_write_wired_ctc_dhcp (void)
 
 	svCloseFile (ifcfg);
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -10617,6 +10705,9 @@ test_write_permissions (void)
 
 	ASSERT (testfile != NULL,
 	        "permissions-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -10744,6 +10835,9 @@ test_write_wifi_wep_agent_keys (void)
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (testfile != NULL);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -11138,6 +11232,9 @@ test_write_bridge_main (void)
 	g_assert (success);
 	g_assert_cmpstr (testfile, !=, NULL);
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -11289,6 +11386,9 @@ test_write_bridge_component (void)
 	g_assert_no_error (error);
 	g_assert (success);
 	g_assert (testfile);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -11622,6 +11722,9 @@ test_write_vlan_only_vlanid (void)
 	                                 &error);
 	g_assert (success);
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (written,
 	                               NULL,
@@ -11727,6 +11830,9 @@ test_write_ethernet_missing_ipv6 (void)
 
 	ASSERT (testfile != NULL,
 	        "ethernet-missing-ipv6", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -11916,6 +12022,9 @@ test_write_bond_main (void)
 	ASSERT (testfile != NULL,
 	        "bond-main-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -12062,6 +12171,9 @@ test_write_bond_slave (void)
 
 	ASSERT (testfile != NULL,
 	        "bond-slave-write", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -12274,6 +12386,9 @@ test_write_infiniband (void)
 	ASSERT (testfile != NULL,
 	        "infiniband-write", "didn't get ifcfg file path back after writing connection");
 
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
 	                               NULL,
@@ -12423,6 +12538,9 @@ test_write_bond_slave_ib (void)
 
 	ASSERT (testfile != NULL,
 	        "bond-slave-write-ib", "didn't get ifcfg file path back after writing connection");
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,

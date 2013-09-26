@@ -1316,11 +1316,9 @@ can_auto_connect (NMDevice *dev,
 
 	/* Use the connection if it's a shared connection */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4) {
-		method = nm_setting_ip4_config_get_method (s_ip4);
-		if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-			return TRUE;
-	}
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		return TRUE;
 
 	for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
 		NMAccessPoint *ap = NM_AP (ap_iter->data);
@@ -1500,10 +1498,8 @@ scanning_allowed (NMDeviceWifi *self)
 		/* Don't scan when a shared connection is active; it makes drivers mad */
 		connection = nm_act_request_get_connection (req);
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4)
-			ip4_method = nm_setting_ip4_config_get_method (s_ip4);
-
-		if (s_ip4 && !strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		ip4_method = nm_setting_ip4_config_get_method (s_ip4);
+		if (!strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 			return FALSE;
 
 		/* Don't scan when the connection is locked to a specifc AP, since
@@ -3140,8 +3136,7 @@ act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+	may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
 	if (chain_up)
@@ -3162,8 +3157,7 @@ act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	if (s_ip6)
-		may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+	may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
 	if (chain_up)

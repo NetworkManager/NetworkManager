@@ -519,28 +519,21 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            guint8 *dhcp_anycast_addr)
 {
 	NMDHCPManagerPrivate *priv;
-	const char *hostname = NULL;
-	gboolean send_hostname = TRUE;
+	const char *hostname, *method;
+	gboolean send_hostname;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	if (s_ip4) {
-		const char *method = nm_setting_ip4_config_get_method (s_ip4);
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
 
-		if (method) {
-			/* Method must be 'auto' */
-			g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
-		}
-
-		send_hostname = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4);
-		if (send_hostname)
-			hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
-	}
-
+	send_hostname = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4);
 	if (send_hostname) {
+		hostname = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+
 		/* If we're supposed to send the hostname to the DHCP server but
 		 * the user didn't specify one, then use the hostname from the
 		 * hostname provider if there is one, otherwise use the persistent
@@ -553,7 +546,8 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 			        !strcmp (hostname, "localhost6.localdomain6")))
 				hostname = NULL;
 		}
-	}
+	} else
+		hostname = NULL;
 
 	return client_start (self, iface, hwaddr, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, hostname, FALSE);
 }
@@ -570,15 +564,14 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            gboolean info_only)
 {
 	NMDHCPManagerPrivate *priv;
-	const char *hostname = NULL;
+	const char *hostname;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	if (s_ip6)
-		hostname = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
+	hostname = nm_setting_ip6_config_get_dhcp_hostname (s_ip6);
 	if (!hostname && priv->hostname_provider) {
 		hostname = nm_hostname_provider_get_hostname (priv->hostname_provider);
 		if (   g_strcmp0 (hostname, "localhost.localdomain") == 0

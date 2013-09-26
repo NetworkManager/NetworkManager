@@ -68,6 +68,7 @@
 #include "nm-settings-utils.h"
 #include "nm-connection-provider.h"
 #include "nm-config.h"
+#include "NetworkManagerUtils.h"
 
 /* LINKER CRACKROCK */
 #define EXPORT(sym) void * __export_##sym = &sym;
@@ -799,6 +800,8 @@ claim_connection (NMSettings *self,
 		if (data == connection)
 			return;
 	}
+
+	nm_utils_normalize_connection (NM_CONNECTION (connection), TRUE);
 
 	if (!nm_connection_verify (NM_CONNECTION (connection), &error)) {
 		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: '%s' / '%s' invalid: %d",

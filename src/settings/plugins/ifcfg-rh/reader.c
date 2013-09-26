@@ -52,6 +52,7 @@
 
 #include "wifi-utils.h"
 #include "nm-posix-signals.h"
+#include "NetworkManagerUtils.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -4646,10 +4647,6 @@ connection_from_file (const char *filename,
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
-	} else if (utils_ignore_ip_config (connection)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring IP6 configuration");
-		g_object_unref (s_ip6);
-		s_ip6 = NULL;
 	} else {
 		const char *method;
 
@@ -4664,11 +4661,7 @@ connection_from_file (const char *filename,
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
-	} else if (s_ip4 && utils_ignore_ip_config (connection)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring IP4 configuration");
-		g_object_unref (s_ip4);
-		s_ip4 = NULL;
-	} else if (s_ip4)
+	} else
 		nm_connection_add_setting (connection, s_ip4);
 
 	/* There is only one DOMAIN variable and it is read and put to IPv4 config
@@ -4702,6 +4695,8 @@ connection_from_file (const char *filename,
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);
 	}
 	g_free (bootproto);
+
+	nm_utils_normalize_connection (connection, TRUE);
 
 	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);

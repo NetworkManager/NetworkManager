@@ -25,6 +25,8 @@ libifcfg_rh_io_la_SOURCES = \
 	utils.h
 
 AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/posix-signals \
