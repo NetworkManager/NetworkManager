@@ -858,7 +858,6 @@ get_properties_cb (DBusGProxy *proxy4, DBusGProxyCall *call, gpointer user_data)
 	GHashTable *properties = NULL;
 	GError *err = NULL;
 	GValue *value;
-	struct ether_addr *tmp;
 
 	if (!dbus_g_proxy_end_call (proxy4, call, &err,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &properties,
