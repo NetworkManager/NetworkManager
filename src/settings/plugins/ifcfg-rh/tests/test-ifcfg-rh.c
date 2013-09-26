@@ -45,6 +45,7 @@
 #include <nm-setting-cdma.h>
 #include <nm-setting-serial.h>
 #include <nm-setting-vlan.h>
+#include <nm-setting-dcb.h>
 
 #include "nm-test-helpers.h"
 #include "NetworkManagerUtils.h"
@@ -12712,6 +12713,416 @@ test_write_bond_slave_ib (void)
 	g_object_unref (reread);
 }
 
+#define DCB_ALL_FLAGS (NM_SETTING_DCB_FLAG_ENABLE | \
+                       NM_SETTING_DCB_FLAG_ADVERTISE | \
+                       NM_SETTING_DCB_FLAG_WILLING)
+
+static void
+test_read_dcb_basic (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingDcb *s_dcb;
+	gboolean success;
+	guint i;
+	guint expected_group_ids[8] = { 0, 0, 0, 0, 1, 1, 1, 0xF };
+	guint expected_group_bandwidths[8] = { 25, 0, 0, 75, 0, 0, 0, 0 };
+	guint expected_bandwidths[8] = { 5, 10, 30, 25, 10, 50, 5, 0 };
+	gboolean expected_strict[8] = { FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE };
+	guint expected_traffic_classes[8] = { 7, 6, 5, 4, 3, 2, 1, 0 };
+	gboolean expected_pfcs[8] = { TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE };
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_dcb = nm_connection_get_setting_dcb (connection);
+	g_assert (s_dcb);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_fcoe_flags (s_dcb), ==, DCB_ALL_FLAGS);
+	g_assert_cmpint (nm_setting_dcb_get_app_fcoe_priority (s_dcb), ==, 7);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_iscsi_flags (s_dcb), ==, DCB_ALL_FLAGS);
+		g_assert_cmpint (nm_setting_dcb_get_app_iscsi_priority (s_dcb), ==, 6);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_fip_flags (s_dcb), ==, DCB_ALL_FLAGS);
+	g_assert_cmpint (nm_setting_dcb_get_app_fip_priority (s_dcb), ==, 2);
+
+	g_assert_cmpint (nm_setting_dcb_get_priority_flow_control_flags (s_dcb), ==, (NM_SETTING_DCB_FLAG_ENABLE | NM_SETTING_DCB_FLAG_ADVERTISE));
+	for (i = 0; i < 8; i++)
+		g_assert_cmpint (nm_setting_dcb_get_priority_flow_control (s_dcb, i), ==, expected_pfcs[i]);
+
+	g_assert_cmpint (nm_setting_dcb_get_priority_group_flags (s_dcb), ==, DCB_ALL_FLAGS);
+
+	/* Group IDs */
+	for (i = 0; i < 8; i++)
+		g_assert_cmpint (nm_setting_dcb_get_priority_group_id (s_dcb, i), ==, expected_group_ids[i]);
+
+	/* Group bandwidth */
+	for (i = 0; i < 8; i++)
+		g_assert_cmpint (nm_setting_dcb_get_priority_group_bandwidth (s_dcb, i), ==, expected_group_bandwidths[i]);
+
+	/* User priority bandwidth */
+	for (i = 0; i < 8; i++)
+		g_assert_cmpint (nm_setting_dcb_get_priority_bandwidth (s_dcb, i), ==, expected_bandwidths[i]);
+
+	/* Strict bandwidth */
+	for (i = 0; i < 8; i++)
+		g_assert_cmpint (nm_setting_dcb_get_priority_strict_bandwidth (s_dcb, i), ==, expected_strict[i]);
+
+	/* Traffic class */
+	for (i = 0; i < 8; i++)
+		g_assert_cmpint (nm_setting_dcb_get_priority_traffic_class (s_dcb, i), ==, expected_traffic_classes[i]);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_dcb_basic (void)
+{
+	NMConnection *connection, *reread;
+	GError *error = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingDcb *s_dcb;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	gboolean success, ignore_error;
+	guint i;
+	char *uuid, *testfile;
+	const guint group_ids[8] = { 4, 0xF, 6, 0xF, 1, 7, 3, 0xF };
+	const guint group_bandwidths[8] = { 10, 20, 15, 10, 2, 3, 35, 5 };
+	const guint bandwidths[8] = { 10, 20, 30, 40, 50, 10, 0, 25 };
+	const gboolean strict[8] = { TRUE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE };
+	const guint traffic_classes[8] = { 3, 4, 7, 2, 1, 0, 5, 6 };
+	const gboolean pfcs[8] = { TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE };
+
+	connection = nm_connection_new ();
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_ID, "dcb-test",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "eth0",
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP stuff */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_object_set (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	/* DCB */
+	s_dcb = (NMSettingDcb *) nm_setting_dcb_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_dcb));
+
+	g_object_set (G_OBJECT (s_dcb),
+	              NM_SETTING_DCB_APP_FCOE_FLAGS, DCB_ALL_FLAGS,
+	              NM_SETTING_DCB_APP_FCOE_PRIORITY, 5,
+	              NM_SETTING_DCB_APP_ISCSI_FLAGS, DCB_ALL_FLAGS,
+	              NM_SETTING_DCB_APP_ISCSI_PRIORITY, 1,
+	              NM_SETTING_DCB_APP_FIP_FLAGS, DCB_ALL_FLAGS,
+	              NM_SETTING_DCB_APP_FIP_PRIORITY, 3,
+	              NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, DCB_ALL_FLAGS,
+	              NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, DCB_ALL_FLAGS,
+	              NULL);
+
+	for (i = 0; i < 8; i++) {
+		nm_setting_dcb_set_priority_flow_control (s_dcb, i, pfcs[i]);
+		nm_setting_dcb_set_priority_group_id (s_dcb, i, group_ids[i]);
+		nm_setting_dcb_set_priority_group_bandwidth (s_dcb, i, group_bandwidths[i]);
+		nm_setting_dcb_set_priority_bandwidth (s_dcb, i, bandwidths[i]);
+		nm_setting_dcb_set_priority_strict_bandwidth (s_dcb, i, strict[i]);
+		nm_setting_dcb_set_priority_traffic_class (s_dcb, i, traffic_classes[i]);
+	}
+
+	g_assert (nm_connection_verify (connection, &error));
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL, NULL, NULL,
+	                               NULL, NULL,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_object_unref (connection);
+	g_object_unref (reread);
+	g_free (testfile);
+}
+
+static void
+test_read_dcb_default_app_priorities (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingDcb *s_dcb;
+	gboolean success;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-default-app-priorities",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_dcb = nm_connection_get_setting_dcb (connection);
+	g_assert (s_dcb);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_fcoe_flags (s_dcb), ==, NM_SETTING_DCB_FLAG_ENABLE);
+	g_assert_cmpint (nm_setting_dcb_get_app_fcoe_priority (s_dcb), ==, -1);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_iscsi_flags (s_dcb), ==, NM_SETTING_DCB_FLAG_ENABLE);
+	g_assert_cmpint (nm_setting_dcb_get_app_iscsi_priority (s_dcb), ==, -1);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_fip_flags (s_dcb), ==, NM_SETTING_DCB_FLAG_ENABLE);
+	g_assert_cmpint (nm_setting_dcb_get_app_fip_priority (s_dcb), ==, -1);
+
+	g_object_unref (connection);
+}
+
+static void
+test_read_dcb_bad_booleans (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "invalid boolean digit"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_dcb_short_booleans (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "boolean array must be 8 characters"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_dcb_bad_uints (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "invalid uint digit"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_dcb_short_uints (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "uint array must be 8 characters"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_dcb_bad_percent (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "invalid percent element"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_dcb_short_percent (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "percent array must be 8 elements"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_dcb_pgpct_not_100 (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert (strstr (error->message, "invalid percentage sum"));
+	g_assert (connection == NULL);
+}
+
+static void
+test_read_fcoe_mode (gconstpointer user_data)
+{
+	const char *expected_mode = user_data;
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingDcb *s_dcb;
+	gboolean success;
+	char *file;
+
+	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-fcoe-%s", expected_mode);
+	connection = connection_from_file (file, NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_free (file);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_dcb = nm_connection_get_setting_dcb (connection);
+	g_assert (s_dcb);
+
+	g_assert_cmpint (nm_setting_dcb_get_app_fcoe_flags (s_dcb), ==, NM_SETTING_DCB_FLAG_ENABLE);
+	g_assert_cmpstr (nm_setting_dcb_get_app_fcoe_mode (s_dcb), ==, expected_mode);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_fcoe_mode (gconstpointer user_data)
+{
+	const char *expected_mode = user_data;
+	NMConnection *connection, *reread;
+	GError *error = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingDcb *s_dcb;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	gboolean success, ignore_error;
+	char *uuid, *testfile;
+
+	connection = nm_connection_new ();
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_ID, "fcoe-test",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "eth0",
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP stuff */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_object_set (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	/* DCB */
+	s_dcb = (NMSettingDcb *) nm_setting_dcb_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_dcb));
+
+	g_object_set (G_OBJECT (s_dcb),
+	              NM_SETTING_DCB_APP_FCOE_FLAGS, NM_SETTING_DCB_FLAG_ENABLE,
+	              NM_SETTING_DCB_APP_FCOE_MODE, expected_mode,
+	              NULL);
+
+	g_assert (nm_connection_verify (connection, &error));
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	{
+		shvarFile *ifcfg = svNewFile (testfile);
+		char *written_mode;
+
+		g_assert (ifcfg);
+		written_mode = svGetValue (ifcfg, "DCB_APP_FCOE_MODE", FALSE);
+		svCloseFile (ifcfg);
+		g_assert_cmpstr (written_mode, ==, expected_mode);
+		g_free (written_mode);
+	}
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL, NULL, NULL,
+	                               NULL, NULL,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_object_unref (connection);
+	g_object_unref (reread);
+	g_free (testfile);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -12897,6 +13308,20 @@ int main (int argc, char **argv)
 	test_read_ibft_malformed ("ibft-bad-gateway-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-gateway");
 	test_read_ibft_malformed ("ibft-bad-dns1-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns1");
 	test_read_ibft_malformed ("ibft-bad-dns2-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns2");
+	g_test_add_func (TPATH "dcb/read-basic", test_read_dcb_basic);
+	g_test_add_func (TPATH "dcb/write-basic", test_write_dcb_basic);
+	g_test_add_func (TPATH "dcb/default-app-priorities", test_read_dcb_default_app_priorities);
+	g_test_add_func (TPATH "dcb/bad-booleans", test_read_dcb_bad_booleans);
+	g_test_add_func (TPATH "dcb/short-booleans", test_read_dcb_short_booleans);
+	g_test_add_func (TPATH "dcb/bad-uints", test_read_dcb_bad_uints);
+	g_test_add_func (TPATH "dcb/short-uints", test_read_dcb_short_uints);
+	g_test_add_func (TPATH "dcb/bad-percent", test_read_dcb_bad_percent);
+	g_test_add_func (TPATH "dcb/short-percent", test_read_dcb_short_percent);
+	g_test_add_func (TPATH "dcb/pgpct-not-100", test_read_dcb_pgpct_not_100);
+	g_test_add_data_func (TPATH "fcoe/fabric", (gpointer) NM_SETTING_DCB_FCOE_MODE_FABRIC, test_read_fcoe_mode);
+	g_test_add_data_func (TPATH "fcoe/vn2vn", (gpointer) NM_SETTING_DCB_FCOE_MODE_VN2VN, test_read_fcoe_mode);
+	g_test_add_data_func (TPATH "fcoe/write-fabric", (gpointer) NM_SETTING_DCB_FCOE_MODE_FABRIC, test_write_fcoe_mode);
+	g_test_add_data_func (TPATH "fcoe/write-vn2vn", (gpointer) NM_SETTING_DCB_FCOE_MODE_VN2VN, test_write_fcoe_mode);
 
 	/* bonding */
 	test_read_bond_main ();

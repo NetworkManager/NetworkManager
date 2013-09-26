@@ -96,7 +96,18 @@ EXTRA_DIST = \
 	ifcfg-test-infiniband \
 	ifcfg-test-bond-main \
 	ifcfg-test-bond-slave \
-	ifcfg-test-bond-slave-ib
+	ifcfg-test-bond-slave-ib \
+	ifcfg-test-dcb \
+	ifcfg-test-dcb-default-app-priorities \
+	ifcfg-test-dcb-bad-booleans \
+	ifcfg-test-dcb-short-booleans \
+	ifcfg-test-dcb-bad-uints \
+	ifcfg-test-dcb-short-uints \
+	ifcfg-test-dcb-bad-percent \
+	ifcfg-test-dcb-short-percent \
+	ifcfg-test-dcb-pgpct-not-100 \
+	ifcfg-test-fcoe-fabric \
+	ifcfg-test-fcoe-vn2vn
 
 check-local:
 	@for f in $(EXTRA_DIST); do \

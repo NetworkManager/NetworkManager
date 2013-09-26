@@ -1471,6 +1471,165 @@ write_team_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **er
 }
 
 static void
+write_dcb_flags (shvarFile *ifcfg, const char *tag, NMSettingDcbFlags flags)
+{
+	char *prop;
+
+	prop = g_strdup_printf ("DCB_%s_ENABLE", tag);
+	svSetValue (ifcfg, prop, (flags & NM_SETTING_DCB_FLAG_ENABLE) ? "yes" : NULL, FALSE);
+	g_free (prop);
+
+	prop = g_strdup_printf ("DCB_%s_ADVERTISE", tag);
+	svSetValue (ifcfg, prop, (flags & NM_SETTING_DCB_FLAG_ADVERTISE) ? "yes" : NULL, FALSE);
+	g_free (prop);
+
+	prop = g_strdup_printf ("DCB_%s_WILLING", tag);
+	svSetValue (ifcfg, prop, (flags & NM_SETTING_DCB_FLAG_WILLING) ? "yes" : NULL, FALSE);
+	g_free (prop);
+}
+
+static void
+write_dcb_app (shvarFile *ifcfg,
+               const char *tag,
+               NMSettingDcbFlags flags,
+               gint priority)
+{
+	char *prop, *tmp = NULL;
+
+	write_dcb_flags (ifcfg, tag, flags);
+
+	if ((flags & NM_SETTING_DCB_FLAG_ENABLE) && (priority >= 0))
+		tmp = g_strdup_printf ("%d", priority);
+	prop = g_strdup_printf ("DCB_%s_PRIORITY", tag);
+	svSetValue (ifcfg, prop, tmp, FALSE);
+	g_free (prop);
+	g_free (tmp);
+}
+
+typedef gboolean (*DcbGetBoolFunc) (NMSettingDcb *, guint);
+
+static void
+write_dcb_bool_array (shvarFile *ifcfg,
+                      const char *key,
+                      NMSettingDcb *s_dcb,
+                      NMSettingDcbFlags flags,
+                      DcbGetBoolFunc get_func)
+{
+	char str[9];
+	guint i;
+
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		svSetValue (ifcfg, key, NULL, FALSE);
+		return;
+	}
+
+	str[8] = 0;
+	for (i = 0; i < 8; i++)
+		str[i] = get_func (s_dcb, i) ? '1' : '0';
+	svSetValue (ifcfg, key, str, FALSE);
+}
+
+typedef guint (*DcbGetUintFunc) (NMSettingDcb *, guint);
+
+static void
+write_dcb_uint_array (shvarFile *ifcfg,
+                      const char *key,
+                      NMSettingDcb *s_dcb,
+                      NMSettingDcbFlags flags,
+                      DcbGetUintFunc get_func)
+{
+	char str[9];
+	guint i, num;
+
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		svSetValue (ifcfg, key, NULL, FALSE);
+		return;
+	}
+
+	str[8] = 0;
+	for (i = 0; i < 8; i++) {
+		num = get_func (s_dcb, i);
+		if (num < 10)
+			str[i] = '0' + num;
+		else if (num == 15)
+			str[i] = 'f';
+		else
+			g_assert_not_reached ();
+	}
+	svSetValue (ifcfg, key, str, FALSE);
+}
+
+static void
+write_dcb_percent_array (shvarFile *ifcfg,
+                         const char *key,
+                         NMSettingDcb *s_dcb,
+                         NMSettingDcbFlags flags,
+                         DcbGetUintFunc get_func)
+{
+	GString *str;
+	guint i;
+
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		svSetValue (ifcfg, key, NULL, FALSE);
+		return;
+	}
+
+	str = g_string_sized_new (30);
+	for (i = 0; i < 8; i++) {
+		if (str->len)
+			g_string_append_c (str, ',');
+		g_string_append_printf (str, "%d", get_func (s_dcb, i));
+	}
+	svSetValue (ifcfg, key, str->str, FALSE);
+	g_string_free (str, TRUE);
+}
+
+static gboolean
+write_dcb_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingDcb *s_dcb;
+	NMSettingDcbFlags flags;
+
+	s_dcb = nm_connection_get_setting_dcb (connection);
+	if (!s_dcb) {
+		svSetValue (ifcfg, "DCB", NULL, FALSE);
+		return TRUE;
+	}
+
+	svSetValue (ifcfg, "DCB", "yes", FALSE);
+
+	write_dcb_app (ifcfg, "APP_FCOE",
+	               nm_setting_dcb_get_app_fcoe_flags (s_dcb),
+	               nm_setting_dcb_get_app_fcoe_priority (s_dcb));
+	if (nm_setting_dcb_get_app_fcoe_flags (s_dcb) & NM_SETTING_DCB_FLAG_ENABLE)
+		svSetValue (ifcfg, "DCB_APP_FCOE_MODE", nm_setting_dcb_get_app_fcoe_mode (s_dcb), FALSE);
+	else
+		svSetValue (ifcfg, "DCB_APP_FCOE_MODE", NULL, FALSE);
+
+	write_dcb_app (ifcfg, "APP_ISCSI",
+	               nm_setting_dcb_get_app_iscsi_flags (s_dcb),
+	               nm_setting_dcb_get_app_iscsi_priority (s_dcb));
+	write_dcb_app (ifcfg, "APP_FIP",
+	               nm_setting_dcb_get_app_fip_flags (s_dcb),
+	               nm_setting_dcb_get_app_fip_priority (s_dcb));
+
+	write_dcb_flags (ifcfg, "PFC", nm_setting_dcb_get_priority_flow_control_flags (s_dcb));
+	write_dcb_bool_array (ifcfg, "DCB_PFC_UP", s_dcb,
+	                      nm_setting_dcb_get_priority_flow_control_flags (s_dcb),
+	                      nm_setting_dcb_get_priority_flow_control);
+
+	flags = nm_setting_dcb_get_priority_group_flags (s_dcb);
+	write_dcb_flags (ifcfg, "PG", flags);
+	write_dcb_uint_array (ifcfg, "DCB_PG_ID", s_dcb, flags, nm_setting_dcb_get_priority_group_id);
+	write_dcb_percent_array (ifcfg, "DCB_PG_PCT", s_dcb, flags, nm_setting_dcb_get_priority_group_bandwidth);
+	write_dcb_percent_array (ifcfg, "DCB_PG_UPPCT", s_dcb, flags, nm_setting_dcb_get_priority_bandwidth);
+	write_dcb_bool_array (ifcfg, "DCB_PG_STRICT", s_dcb, flags, nm_setting_dcb_get_priority_strict_bandwidth);
+	write_dcb_uint_array (ifcfg, "DCB_PG_UP2TC", s_dcb, flags, nm_setting_dcb_get_priority_traffic_class);
+
+	return TRUE;
+}
+
+static void
 write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 {
 	guint32 n, i;
@@ -2273,6 +2432,9 @@ write_connection (NMConnection *connection,
 		goto out;
 
 	if (!write_team_port_setting (connection, ifcfg, error))
+		goto out;
+
+	if (!write_dcb_setting (connection, ifcfg, error))
 		goto out;
 
 	if (!utils_ignore_ip_config (connection)) {

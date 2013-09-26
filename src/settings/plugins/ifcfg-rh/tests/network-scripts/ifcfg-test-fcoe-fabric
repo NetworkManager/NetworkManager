@@ -1,0 +1,6 @@
+TYPE=Ethernet
+DEVICE=eth0
+DCB=yes
+DCB_APP_FCOE_ENABLE=yes
+DCB_APP_FCOE_MODE=fabric
+
