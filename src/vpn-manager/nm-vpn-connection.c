@@ -71,9 +71,6 @@ typedef struct {
 	SecretsReq secrets_idx;
 	char *username;
 
-	NMDevice *parent_dev;
-	gulong device_monitor;
-
 	NMVPNConnectionState vpn_state;
 	NMVPNConnectionStateReason failure_reason;
 	DBusGProxy *proxy;
@@ -163,7 +160,7 @@ call_plugin_disconnect (NMVPNConnection *self)
 }
 
 static void
-vpn_cleanup (NMVPNConnection *connection)
+vpn_cleanup (NMVPNConnection *connection, NMDevice *parent_dev)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
@@ -173,8 +170,8 @@ vpn_cleanup (NMVPNConnection *connection)
 		nm_platform_address_flush (priv->ip_ifindex);
 	}
 
-	nm_device_set_vpn4_config (priv->parent_dev, NULL);
-	nm_device_set_vpn6_config (priv->parent_dev, NULL);
+	nm_device_set_vpn4_config (parent_dev, NULL);
+	nm_device_set_vpn6_config (parent_dev, NULL);
 
 	g_free (priv->banner);
 	priv->banner = NULL;
@@ -197,6 +194,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 {
 	NMVPNConnectionPrivate *priv;
 	NMVPNConnectionState old_vpn_state;
+	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 
@@ -242,7 +240,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		/* Let dispatcher scripts know we're up and running */
 		nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_UP,
 		                        priv->connection,
-		                        priv->parent_dev,
+		                        parent_dev,
 		                        priv->ip_iface,
 		                        priv->ip4_config,
 		                        priv->ip6_config,
@@ -255,7 +253,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 			/* Let dispatcher scripts know we're about to go down */
 			nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
 			                        priv->connection,
-			                        priv->parent_dev,
+			                        parent_dev,
 			                        priv->ip_iface,
 			                        NULL,
 			                        NULL,
@@ -265,7 +263,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 
 		/* Tear down and clean up the connection */
 		call_plugin_disconnect (connection);
-		vpn_cleanup (connection);
+		vpn_cleanup (connection, parent_dev);
 		/* Fall through */
 	default:
 		priv->secrets_idx = SECRETS_REQ_SYSTEM;
@@ -276,20 +274,17 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 }
 
 static void
-device_state_changed (NMDevice *device,
+device_state_changed (NMActiveConnection *active,
+                      NMDevice *device,
                       NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
+                      NMDeviceState old_state)
 {
-	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
-
 	if (new_state <= NM_DEVICE_STATE_DISCONNECTED) {
-		nm_vpn_connection_set_vpn_state (connection,
+		nm_vpn_connection_set_vpn_state (NM_VPN_CONNECTION (active),
 		                                 NM_VPN_CONNECTION_STATE_DISCONNECTED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	} else if (new_state == NM_DEVICE_STATE_FAILED) {
-		nm_vpn_connection_set_vpn_state (connection,
+		nm_vpn_connection_set_vpn_state (NM_VPN_CONNECTION (active),
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	}
@@ -655,6 +650,7 @@ static gboolean
 nm_vpn_connection_apply_config (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
 
 	nm_platform_link_set_up (priv->ip_ifindex);
 
@@ -671,9 +667,9 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 
 	/* Add any explicit route to the VPN gateway through the parent device */
 	if (priv->ip4_external_gw)
-		add_ip4_vpn_gateway_route (priv->parent_dev, priv->ip4_external_gw);
+		add_ip4_vpn_gateway_route (parent_dev, priv->ip4_external_gw);
 	if (priv->ip6_external_gw)
-		add_ip6_vpn_gateway_route (priv->parent_dev, priv->ip6_external_gw);
+		add_ip6_vpn_gateway_route (parent_dev, priv->ip6_external_gw);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));
@@ -1400,14 +1396,6 @@ nm_vpn_connection_get_ip_ifindex (NMVPNConnection *connection)
 	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip_ifindex;
 }
 
-NMDevice *
-nm_vpn_connection_get_parent_device (NMVPNConnection *connection)
-{
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
-
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->parent_dev;
-}
-
 guint32
 nm_vpn_connection_get_ip4_internal_gateway (NMVPNConnection *connection)
 {
@@ -1677,23 +1665,12 @@ nm_vpn_connection_init (NMVPNConnection *self)
 static void
 constructed (GObject *object)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 	NMConnection *connection;
-	NMDevice *device;
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
 
 	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (object));
-	priv->connection = g_object_ref (connection);
-
-	device = (NMDevice *) nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-	g_assert (device);
-
-	priv->parent_dev = g_object_ref (device);
-
-	priv->device_monitor = g_signal_connect (device, "state-changed",
-	                                         G_CALLBACK (device_state_changed),
-	                                         object);
+	NM_VPN_CONNECTION_GET_PRIVATE (object)->connection = g_object_ref (connection);
 }
 
 static void
@@ -1714,11 +1691,6 @@ dispose (GObject *object)
 		g_free (priv->ip6_internal_gw);
 	if (priv->ip6_external_gw)
 		g_free (priv->ip6_external_gw);
-
-	if (priv->device_monitor)
-		g_signal_handler_disconnect (priv->parent_dev, priv->device_monitor);
-
-	g_clear_object (&priv->parent_dev);
 
 	if (priv->ip4_config)
 		g_object_unref (priv->ip4_config);
@@ -1758,6 +1730,7 @@ get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMDevice *parent_dev;
 
 	switch (prop_id) {
 	case PROP_VPN_STATE:
@@ -1767,7 +1740,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
 	case PROP_MASTER:
-		g_value_set_boxed (value, nm_device_get_path (priv->parent_dev));
+		parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
+		g_value_set_boxed (value, parent_dev ? nm_device_get_path (parent_dev) : "/");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1789,6 +1763,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	active_class->master_failed = master_failed;
+	active_class->device_state_changed = device_state_changed;
 
 	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
 

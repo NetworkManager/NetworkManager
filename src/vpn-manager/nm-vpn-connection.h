@@ -82,7 +82,6 @@ NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVPNConnection *connect
 NMIP6Config *        nm_vpn_connection_get_ip6_config  (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_ip_iface    (NMVPNConnection *connection);
 int                  nm_vpn_connection_get_ip_ifindex  (NMVPNConnection *connection);
-NMDevice *           nm_vpn_connection_get_parent_device (NMVPNConnection *connection);
 guint32              nm_vpn_connection_get_ip4_internal_gateway (NMVPNConnection *connection);
 struct in6_addr *    nm_vpn_connection_get_ip6_internal_gateway (NMVPNConnection *connection);
 

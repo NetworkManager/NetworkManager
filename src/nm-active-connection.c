@@ -44,6 +44,7 @@ typedef struct {
 	char *path;
 	char *specific_object;
 	NMDevice *device;
+	guint32 device_state_id;
 
 	gboolean is_default;
 	gboolean is_default6;
@@ -119,8 +120,10 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	}
 
 	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
-		/* Device is no longer relevant when deactivated */
-		g_clear_object (&priv->device);
+		/* Device is no longer relevant when deactivated; emit property change
+		 * notification so clients re-read the value, which will be NULL due to
+		 * conditions in get_property().
+		 */
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEVICES);
 	}
 }
@@ -276,6 +279,45 @@ nm_active_connection_get_device (NMActiveConnection *self)
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->device;
+}
+
+static void
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
+{
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (old_state < NM_DEVICE_STATE_DISCONNECTED)
+		return;
+
+	if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
+		/* Ignore disconnects if this ActiveConnection has not yet started
+		 * activating.  This is caused by activating a device when it's
+		 * already activated, which causes a deactivating of the device before
+		 * activating the new connection.
+		 */
+		if (new_state == NM_DEVICE_STATE_DISCONNECTED &&
+		    old_state > NM_DEVICE_STATE_DISCONNECTED &&
+		    priv->state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+			return;
+		}
+
+		/* If the device used to be active, but now is disconnected/failed, we
+		 * no longer care about its state.
+		 */
+		if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state == NM_DEVICE_STATE_FAILED) {
+			g_signal_handler_disconnect (device, priv->device_state_id);
+			priv->device_state_id = 0;
+		}
+	}
+
+	/* Let subclasses handle the state change */
+	if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->device_state_changed)
+		NM_ACTIVE_CONNECTION_GET_CLASS (self)->device_state_changed (self, device, new_state, old_state);
 }
 
 NMActiveConnection *
@@ -523,11 +565,17 @@ set_property (GObject *object, guint prop_id,
 		priv->connection = g_value_dup_object (value);
 		break;
 	case PROP_INT_DEVICE:
-		g_warn_if_fail (priv->device == NULL);
+		g_return_if_fail (priv->device == NULL);
 		priv->device = g_value_dup_object (value);
 		if (priv->device && priv->master) {
 			master_device = nm_active_connection_get_device (priv->master);
 			g_warn_if_fail (priv->device != master_device);
+		}
+		if (priv->device) {
+			priv->device_state_id = g_signal_connect (priv->device,
+			                                          "state-changed",
+			                                          G_CALLBACK (device_state_changed),
+			                                          NM_ACTIVE_CONNECTION (object));
 		}
 		break;
 	case PROP_INT_SUBJECT:
@@ -579,7 +627,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DEVICES:
 		devices = g_ptr_array_sized_new (1);
-		if (priv->device)
+		if (priv->device && priv->state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
 			g_ptr_array_add (devices, g_strdup (nm_device_get_path (priv->device)));
 		g_value_take_boxed (value, devices);
 		break;
@@ -628,6 +676,12 @@ dispose (GObject *object)
 	priv->specific_object = NULL;
 
 	g_clear_object (&priv->connection);
+
+	if (priv->device_state_id) {
+		g_assert (priv->device);
+		g_signal_handler_disconnect (priv->device, priv->device_state_id);
+		priv->device_state_id = 0;
+	}
 	g_clear_object (&priv->device);
 
 	if (priv->master) {

@@ -58,7 +58,14 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	void (*master_failed) (NMActiveConnection *connection);
+	/* re-emits device state changes as a convenience for subclasses for
+	 * device states >= DISCONNECTED.
+	 */
+	void (*device_state_changed) (NMActiveConnection *connection,
+	                              NMDevice *device,
+	                              NMDeviceState new_state,
+	                              NMDeviceState old_state);
+	void (*master_failed)  (NMActiveConnection *connection);
 } NMActiveConnectionClass;
 
 GType         nm_active_connection_get_type (void);

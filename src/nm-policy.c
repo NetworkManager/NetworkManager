@@ -669,7 +669,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	gw_addr = nm_ip4_config_get_gateway (ip4_config);
 
 	if (vpn) {
-		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
+		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
 		NMIP4Config *parent_ip4 = nm_device_get_ip4_config (parent);
 		guint32 parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
@@ -683,7 +683,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 			}
 		}
 
-		default_device = nm_vpn_connection_get_parent_device (vpn);
+		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 	} else {
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
@@ -856,7 +856,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		gw_addr = &in6addr_any;
 
 	if (vpn) {
-		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
+		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
 		NMIP6Config *parent_ip6 = nm_device_get_ip6_config (parent);
 		guint32 parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
@@ -873,7 +873,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 			}
 		}
 
-		default_device6 = nm_vpn_connection_get_parent_device (vpn);
+		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 	} else {
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
@@ -1136,7 +1136,7 @@ process_secondaries (NMPolicy *policy,
 	ac_path = nm_active_connection_get_path (active);
 
 	if (NM_IS_VPN_CONNECTION (active))
-		device = nm_vpn_connection_get_parent_device (NM_VPN_CONNECTION (active));
+		device = nm_active_connection_get_device (active);
 
 	for (iter = priv->pending_secondaries; iter; iter = g_slist_next (iter)) {
 		PendingSecondaryData *secondary_data = (PendingSecondaryData *) iter->data;
@@ -1740,7 +1740,7 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	nm_dns_manager_begin_updates (mgr, __func__);
 
 	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
-	parent = nm_vpn_connection_get_parent_device (vpn);
+	parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config) {
