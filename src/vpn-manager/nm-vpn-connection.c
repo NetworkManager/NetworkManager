@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2012 Red Hat, Inc.
+ * Copyright (C) 2005 - 2013 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -558,7 +558,7 @@ print_vpn_config (NMVPNConnection *connection)
 	} else if (priv->ip6_external_gw) {
 		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
 		             ip6_address_to_string (priv->ip6_external_gw));
-	} 
+	}
 
 	nm_log_info (LOGD_VPN, "Tunnel Device: %s", priv->ip_iface);
 
@@ -1157,7 +1157,7 @@ connect_cb (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 		return;
 	}
 
-	nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.", 
+	nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.",
 	             nm_connection_get_id (priv->connection), err->message);
 	g_error_free (err);
 	nm_vpn_connection_set_vpn_state (self,
@@ -1809,7 +1809,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		g_signal_new ("vpn-state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL, NULL, 
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	signals[INTERNAL_STATE_CHANGED] =
