@@ -49,6 +49,7 @@
 #define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
 #define NM_ACTIVE_CONNECTION_INT_SUBJECT        "int-subject"
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
+#define NM_ACTIVE_CONNECTION_INT_MASTER_READY   "int-master-ready"
 
 typedef struct {
 	GObject parent;
@@ -113,6 +114,8 @@ gboolean      nm_active_connection_get_user_requested (NMActiveConnection *self)
 gulong        nm_active_connection_get_user_uid (NMActiveConnection *self);
 
 NMActiveConnection *nm_active_connection_get_master (NMActiveConnection *self);
+
+gboolean      nm_active_connection_get_master_ready (NMActiveConnection *self);
 
 void          nm_active_connection_set_master (NMActiveConnection *self,
                                                NMActiveConnection *master);

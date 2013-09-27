@@ -52,6 +52,7 @@ typedef struct {
 
 	NMAuthSubject *subject;
 	NMActiveConnection *master;
+	gboolean master_ready;
 
 	NMAuthChain *chain;
 	const char *wifi_shared_permission;
@@ -76,9 +77,12 @@ enum {
 	PROP_INT_DEVICE,
 	PROP_INT_SUBJECT,
 	PROP_INT_MASTER,
+	PROP_INT_MASTER_READY,
 
 	LAST_PROP
 };
+
+static void check_master_ready (NMActiveConnection *self);
 
 /****************************************************************/
 
@@ -105,6 +109,8 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	old_state = priv->state;
 	priv->state = new_state;
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
+
+	check_master_ready (self);
 
 	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
@@ -280,6 +286,53 @@ nm_active_connection_get_master (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->master;
 }
 
+/**
+ * nm_active_connection_get_master_ready:
+ * @self: the #NMActiveConnection
+ *
+ * Returns: %TRUE if the connection has a master connection, and that
+ * master connection is ready to accept slaves.  Otherwise %FALSE.
+ */
+gboolean
+nm_active_connection_get_master_ready (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->master_ready;
+}
+
+static void
+check_master_ready (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMActiveConnectionState master_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+
+	if (priv->state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+		return;
+	if (!priv->master)
+		return;
+	if (priv->master_ready)
+		return;
+
+	/* ActiveConnetions don't enter the ACTIVATING state until they have a
+	 * NMDevice in PREPARE or higher states, so the master active connection's
+	 * device will be ready to accept slaves when the master is in ACTIVATING
+	 * or higher states.
+	 */
+	master_state = nm_active_connection_get_state (priv->master);
+	if (   master_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
+	    || master_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		priv->master_ready = TRUE;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_MASTER_READY);
+
+		/* Also notify clients to recheck the exported 'master' property to
+		 * ensure that if the master connection was created without a device
+		 * that we notify clients when the master device is known.
+		 */
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_MASTER);
+	}
+}
+
 static void
 master_state_cb (NMActiveConnection *master,
                  GParamSpec *pspec,
@@ -288,6 +341,8 @@ master_state_cb (NMActiveConnection *master,
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
 	NMActiveConnectionState self_state = nm_active_connection_get_state (self);
 	NMActiveConnectionState master_state = nm_active_connection_get_state (master);
+
+	check_master_ready (self);
 
 	/* Master is deactivating, so this active connection must also deactivate */
 	if (self_state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATING &&
@@ -333,6 +388,8 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 	                  "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  (GCallback) master_state_cb,
 	                  self);
+
+	check_master_ready (self);
 }
 
 /****************************************************************/
@@ -546,6 +603,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_INT_SUBJECT:
 		g_value_set_object (value, priv->subject);
 		break;
+	case PROP_INT_MASTER_READY:
+		g_value_set_boolean (value, priv->master_ready);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -688,6 +748,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                     "Internal active connection",
 		                     NM_TYPE_ACTIVE_CONNECTION,
 		                     G_PARAM_READWRITE));
+
+	g_object_class_install_property (object_class, PROP_INT_MASTER_READY,
+		g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+		                      "Internal master active connection ready for slaves",
+		                      "Internal active connection ready",
+		                      FALSE, G_PARAM_READABLE));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (ac_class),
