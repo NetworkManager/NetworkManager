@@ -1723,8 +1723,6 @@ vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
 	update_routing_and_dns (policy, TRUE);
 
 	nm_dns_manager_end_updates (mgr, __func__);
-
-	process_secondaries (policy, NM_ACTIVE_CONNECTION (vpn), TRUE);
 }
 
 static void
@@ -1757,8 +1755,23 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	update_routing_and_dns (policy, TRUE);
 
 	nm_dns_manager_end_updates (mgr, __func__);
+}
 
-	process_secondaries (policy, NM_ACTIVE_CONNECTION (vpn), FALSE);
+static void
+vpn_connection_state_changed (NMVPNConnection *vpn,
+                              NMVPNConnectionState new_state,
+                              NMVPNConnectionState old_state,
+                              NMVPNConnectionStateReason reason,
+                              NMPolicy *policy)
+{
+	if (new_state == NM_VPN_CONNECTION_STATE_ACTIVATED)
+		vpn_connection_activated (policy, vpn);
+	else if (new_state >= NM_VPN_CONNECTION_STATE_FAILED) {
+		/* Only clean up IP/DNS if the connection ever got past IP_CONFIG */
+		if (old_state >= NM_VPN_CONNECTION_STATE_IP_CONFIG_GET &&
+		    old_state <= NM_VPN_CONNECTION_STATE_ACTIVATED)
+			vpn_connection_deactivated (policy, vpn);
+	}
 }
 
 static void
@@ -1766,18 +1779,12 @@ active_connection_state_changed (NMActiveConnection *active,
                                  GParamSpec *pspec,
                                  NMPolicy *policy)
 {
-	switch (nm_active_connection_get_state (active)) {
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-		if (NM_IS_VPN_CONNECTION (active))
-			vpn_connection_activated (policy, NM_VPN_CONNECTION (active));
-		break;
-	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-		if (NM_IS_VPN_CONNECTION (active))
-			vpn_connection_deactivated (policy, NM_VPN_CONNECTION (active));
-		break;
-	default:
-		break;
-	}
+	NMActiveConnectionState state = nm_active_connection_get_state (active);
+
+	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		process_secondaries (policy, active, TRUE);
+	else if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
+		process_secondaries (policy, active, FALSE);
 }
 
 static void
@@ -1785,7 +1792,13 @@ active_connection_added (NMManager *manager,
                          NMActiveConnection *active,
                          gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicy *policy = NM_POLICY (user_data);
+
+	if (NM_IS_VPN_CONNECTION (active)) {
+		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
+		                  G_CALLBACK (vpn_connection_state_changed),
+		                  policy);
+	}
 
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
@@ -1797,9 +1810,14 @@ active_connection_removed (NMManager *manager,
                            NMActiveConnection *active,
                            gpointer user_data)
 {
+	NMPolicy *policy = NM_POLICY (user_data);
+
+	g_signal_handlers_disconnect_by_func (active,
+	                                      vpn_connection_state_changed,
+	                                      policy);
 	g_signal_handlers_disconnect_by_func (active,
 	                                      active_connection_state_changed,
-	                                      (NMPolicy *) user_data);
+	                                      policy);
 }
 
 /**************************************************************************/
