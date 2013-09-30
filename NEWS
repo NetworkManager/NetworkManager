@@ -1,4 +1,16 @@
 ================================================
+NetworkManager-0.9.8.6
+Overview of changes since NetworkManager-0.9.8.4
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Now supports BlueZ 5. If you are still using BlueZ 4, configure with
+  --enable-bluez4 to disable BlueZ 5 support and enable BlueZ 4 support.
+  (It is not possible to build with support for both versions.)
+
+
+================================================
 NetworkManager-0.9.8.4
 Overview of changes since NetworkManager-0.9.8.2
 ================================================
