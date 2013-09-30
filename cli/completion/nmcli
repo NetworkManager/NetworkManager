@@ -304,7 +304,7 @@ _nmcli_complete_COMMAND_ARGS()
                         # user friendly. Only complete them, if the current word already starts with an "8".
                         _nmcli_list "802-3-ethernet 802-11-wireless 802-11-olpc-mesh"
                     else
-                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bridge bond-slave bridge-slave"
+                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bond-slave bridge bridge-slave team team-slave"
                     fi
                    return 0
                 fi
