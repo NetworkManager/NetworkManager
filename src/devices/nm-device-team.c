@@ -683,6 +683,8 @@ static void
 dispose (GObject *object)
 {
 	teamd_cleanup (NM_DEVICE (object));
+
+	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
 }
 
 static void
