@@ -473,9 +473,13 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 static void
 teamd_stop (NMDevice *dev, NMDeviceTeamPrivate *priv)
 {
-	g_return_if_fail (priv->teamd_pid > 0);
-	nm_log_info (LOGD_TEAM, "Deactivation (%s) stopping teamd...",
-	             nm_device_get_ip_iface (dev));
+	if (priv->teamd_pid > 0) {
+		nm_log_info (LOGD_TEAM, "Deactivation (%s) stopping teamd...",
+		             nm_device_get_ip_iface (dev));
+	} else {
+		nm_log_dbg (LOGD_TEAM, "Deactivation (%s) stopping teamd (not started)...",
+		            nm_device_get_ip_iface (dev));
+	}
 	teamd_cleanup (dev);
 }
 
