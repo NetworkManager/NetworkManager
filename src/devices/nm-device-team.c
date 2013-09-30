@@ -60,7 +60,6 @@ typedef struct {
 	guint teamd_process_watch;
 	guint teamd_timeout;
 	guint teamd_dbus_watch;
-	gboolean teamd_on_dbus;
 } NMDeviceTeamPrivate;
 
 enum {
@@ -264,8 +263,6 @@ teamd_cleanup (NMDevice *dev)
 #endif
 
 	teamd_timeout_remove (dev);
-
-	priv->teamd_on_dbus = FALSE;
 }
 
 static gboolean
@@ -295,7 +292,6 @@ teamd_dbus_appeared (GDBusConnection *connection,
 		return;
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
-	priv->teamd_on_dbus = FALSE;
 	teamd_timeout_remove (dev);
 #if WITH_TEAMDCTL
 	if (!priv->tdc) {
@@ -323,7 +319,7 @@ teamd_dbus_vanished (GDBusConnection *connection,
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 	NMDeviceState state;
 
-	if (!priv->teamd_dbus_watch || !priv->teamd_on_dbus)
+	if (!priv->teamd_dbus_watch)
 		return;
 	nm_log_info (LOGD_TEAM, "(%s): teamd vanished from D-Bus", nm_device_get_iface (dev));
 	teamd_cleanup (dev);
