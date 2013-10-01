@@ -23,6 +23,9 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
@@ -81,19 +84,43 @@ enum {
 	LAST_PROP
 };
 
+enum {
+	TYPE_INT,
+	TYPE_STR,
+	TYPE_BOTH,
+	TYPE_IP,
+};
+
 typedef struct {
 	const char *opt;
 	const char *val;
+	guint opt_type;
+	guint min;
+	guint max;
+	char *list[10];
 } BondDefault;
 
 static const BondDefault defaults[] = {
-	{ NM_SETTING_BOND_OPTION_MODE,          "balance-rr" },
-	{ NM_SETTING_BOND_OPTION_MIIMON,        "100"        },
-	{ NM_SETTING_BOND_OPTION_DOWNDELAY,     "0"          },
-	{ NM_SETTING_BOND_OPTION_UPDELAY,       "0"          },
-	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,  "0"          },
-	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET, ""           },
-	{ NM_SETTING_BOND_OPTION_PRIMARY,       ""           },
+	{ NM_SETTING_BOND_OPTION_MODE,             "balance-rr", TYPE_BOTH, 0, 6,
+	  { "balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb", NULL } },
+	{ NM_SETTING_BOND_OPTION_MIIMON,           "100",        TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_DOWNDELAY,        "0",          TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_UPDELAY,          "0",          TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_ARP_INTERVAL,     "0",          TYPE_INT, 0, G_MAXINT },
+	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,    "",           TYPE_IP },
+	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,     "0",          TYPE_BOTH, 0, 3,
+	  { "none", "active", "backup", "all", NULL } },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           TYPE_STR },
+	{ NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, "0",          TYPE_BOTH, 0, 2,
+	  { "always", "better", "failure", NULL } },
+	{ NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,    "0",          TYPE_BOTH, 0, 2,
+	  { "none", "active", "follow", NULL } },
+	{ NM_SETTING_BOND_OPTION_USE_CARRIER,      "1",          TYPE_INT, 0, 1 },
+	{ NM_SETTING_BOND_OPTION_AD_SELECT,        "0",          TYPE_BOTH, 0, 2,
+	  { "stable", "bandwidth", "count", NULL } },
+	{ NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, "0",          TYPE_BOTH, 0, 2,
+	  { "layer2", "layer3+4", "layer2+3", NULL } },
+	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          TYPE_INT, 0, 255 },
 };
 
 /**
@@ -192,7 +219,61 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 }
 
 static gboolean
-validate_option (const char *name)
+validate_int (const char *name, const char *value, const BondDefault *def)
+{
+	glong num;
+	guint i;
+
+	for (i = 0; i < strlen (value); i++) {
+		if (!g_ascii_isdigit (value[i]) && value[i] != '-')
+			return FALSE;
+	}
+
+	errno = 0;
+	num = strtol (value, NULL, 10);
+	if (errno)
+		return FALSE;
+	if (num < def->min || num > def->max)
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
+validate_list (const char *name, const char *value, const BondDefault *def)
+{
+	guint i;
+
+	for (i = 0; def->list && i < G_N_ELEMENTS (def->list) && def->list[i]; i++) {
+		if (g_strcmp0 (def->list[i], value) == 0)
+			return TRUE;
+	}
+
+	/* empty validation list means all values pass */
+	return (def->list == NULL || def->list[0] == NULL) ? TRUE : FALSE;
+}
+
+static gboolean
+validate_ip (const char *name, const char *value)
+{
+	char **ips, **iter;
+	gboolean success = TRUE;
+	struct in_addr addr;
+
+	if (!value || !value[0])
+		return FALSE;
+
+	ips = g_strsplit_set (value, ",", 0);
+	for (iter = ips; iter && *iter && success; iter++)
+		success = !!inet_aton (*iter, &addr);
+	g_strfreev (ips);
+
+	return success;
+}
+
+/* If value is NULL, validates name only */
+static gboolean
+validate_option (const char *name, const char *value)
 {
 	guint i;
 
@@ -200,8 +281,21 @@ validate_option (const char *name)
 	g_return_val_if_fail (name[0] != '\0', FALSE);
 
 	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
-		if (g_strcmp0 (defaults[i].opt, name) == 0)
-			return TRUE;
+		if (g_strcmp0 (defaults[i].opt, name) == 0) {
+			if (value == NULL)
+				return TRUE;
+			else if (defaults[i].opt_type == TYPE_INT)
+				return validate_int (name, value, &defaults[i]);
+			else if (defaults[i].opt_type == TYPE_STR)
+				return validate_list (name, value, &defaults[i]);
+			else if (defaults[i].opt_type == TYPE_BOTH)
+				return    validate_int (name, value, &defaults[i])
+				       || validate_list (name, value, &defaults[i]);
+			else if (defaults[i].opt_type == TYPE_IP)
+				return validate_ip (name, value);
+
+			return FALSE;
+		}
 	}
 	return FALSE;
 }
@@ -222,7 +316,7 @@ nm_setting_bond_get_option_by_name (NMSettingBond *setting,
                                     const char *name)
 {
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
-	g_return_val_if_fail (validate_option (name), NULL);
+	g_return_val_if_fail (validate_option (name, NULL), NULL);
 
 	return g_hash_table_lookup (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
 }
@@ -246,16 +340,12 @@ gboolean nm_setting_bond_add_option (NMSettingBond *setting,
                                      const char *value)
 {
 	NMSettingBondPrivate *priv;
-	size_t value_len;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
-	g_return_val_if_fail (validate_option (name), FALSE);
+	g_return_val_if_fail (validate_option (name, value), FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
-
-	value_len = strlen (value);
-	g_return_val_if_fail (value_len > 0 && value_len < 200, FALSE);
 
 	g_hash_table_insert (priv->options, g_strdup (name), g_strdup (value));
 
@@ -293,7 +383,7 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
-	g_return_val_if_fail (validate_option (name), FALSE);
+	g_return_val_if_fail (validate_option (name, NULL), FALSE);
 
 	found = g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
 	if (found)
@@ -338,7 +428,7 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
-	g_return_val_if_fail (validate_option (name), NULL);
+	g_return_val_if_fail (validate_option (name, NULL), NULL);
 
 	for (i = 0; i < G_N_ELEMENTS (defaults); i++) {
 		if (g_strcmp0 (defaults[i].opt, name) == 0)
@@ -386,10 +476,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	g_hash_table_iter_init (&iter, priv->options);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
-		if (   !validate_option (key)
-		    || !value[0]
-		    || (strlen (value) > 200)
-		    || strchr (value, ' ')) {
+		if (!value[0] || !validate_option (key, value)) {
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
@@ -589,7 +676,6 @@ nm_setting_bond_init (NMSettingBond *setting)
 
 	/* Default values: */
 	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MODE, "balance-rr");
-	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MIIMON, "100");
 }
 
 static void

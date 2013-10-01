@@ -59,13 +59,20 @@ GQuark nm_setting_bond_error_quark (void);
 #define NM_SETTING_BOND_OPTIONS "options"
 
 /* Valid options for the 'options' property */
-#define NM_SETTING_BOND_OPTION_MODE          "mode"
-#define NM_SETTING_BOND_OPTION_MIIMON        "miimon"
-#define NM_SETTING_BOND_OPTION_DOWNDELAY     "downdelay"
-#define NM_SETTING_BOND_OPTION_UPDELAY       "updelay"
-#define NM_SETTING_BOND_OPTION_ARP_INTERVAL  "arp_interval"
-#define NM_SETTING_BOND_OPTION_ARP_IP_TARGET "arp_ip_target"
-#define NM_SETTING_BOND_OPTION_PRIMARY       "primary"
+#define NM_SETTING_BOND_OPTION_MODE             "mode"
+#define NM_SETTING_BOND_OPTION_MIIMON           "miimon"
+#define NM_SETTING_BOND_OPTION_DOWNDELAY        "downdelay"
+#define NM_SETTING_BOND_OPTION_UPDELAY          "updelay"
+#define NM_SETTING_BOND_OPTION_ARP_INTERVAL     "arp_interval"
+#define NM_SETTING_BOND_OPTION_ARP_IP_TARGET    "arp_ip_target"
+#define NM_SETTING_BOND_OPTION_ARP_VALIDATE     "arp_validate"
+#define NM_SETTING_BOND_OPTION_PRIMARY          "primary"
+#define NM_SETTING_BOND_OPTION_PRIMARY_RESELECT "primary_reselect"
+#define NM_SETTING_BOND_OPTION_FAIL_OVER_MAC    "fail_over_mac"
+#define NM_SETTING_BOND_OPTION_USE_CARRIER      "use_carrier"
+#define NM_SETTING_BOND_OPTION_AD_SELECT        "ad_select"
+#define NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY "xmit_hash_policy"
+#define NM_SETTING_BOND_OPTION_RESEND_IGMP      "resend_igmp"
 
 typedef struct {
 	NMSetting parent;

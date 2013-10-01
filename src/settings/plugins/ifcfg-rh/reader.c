@@ -3722,8 +3722,24 @@ handle_bond_option (NMSettingBond *s_bond,
                     const char *key,
                     const char *value)
 {
-	if (!nm_setting_bond_add_option (s_bond, key, value))
+	char *sanitized = NULL, *j;
+	const char *p = value;
+
+	/* Remove any quotes or +/- from arp_ip_target */
+	if (!g_strcmp0 (key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET) && value && value[0]) {
+		if (*p == '\'' || *p == '"')
+			p++;
+		j = sanitized = g_malloc0 (strlen (p) + 1);
+		while (*p) {
+			if (*p != '+' && *p != '-' && *p != '\'' && *p != '"')
+				*j++ = *p;
+			p++;
+		}
+	}
+
+	if (!nm_setting_bond_add_option (s_bond, key, sanitized ? sanitized : value))
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid bonding option '%s'", key);
+	g_free (sanitized);
 }
 
 static NMSetting *
