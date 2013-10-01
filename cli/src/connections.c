@@ -2624,14 +2624,14 @@ static void
 do_questionnaire_bond (char **mode, char **miimon, char **downdelay, char **updelay,
                        char **arpinterval, char **arpiptarget)
 {
-	char *answer;
+	char *answer, *monitor_mode;
 	gboolean answer_bool;
 	unsigned long tmp;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'bond' arguments. */
-	printf (_("There are 6 optional arguments for 'bond' connection type.\n"));
+	printf (_("There are optional arguments for 'bond' connection type.\n"));
 	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
 	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
 		g_free (answer);
@@ -2654,56 +2654,73 @@ do_questionnaire_bond (char **mode, char **miimon, char **downdelay, char **upde
 			}
 		} while (!mode_tmp);
 	}
-	if (!*miimon) {
-		do {
-			*miimon = nmc_get_user_input (_("Bonding miimon [100]): "));
-			once_more = *miimon && !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
-			if (once_more) {
-				printf (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
-				        *miimon, G_MAXUINT32);
-				g_free (*miimon);
-			}
-		} while (once_more);
-	}
-	if (!*downdelay) {
-		do {
-			*downdelay = nmc_get_user_input (_("Bonding downdelay [0]): "));
-			once_more = *downdelay && !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
-			if (once_more) {
-				printf (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
-				        *downdelay, G_MAXUINT32);
-				g_free (*downdelay);
-			}
-		} while (once_more);
-	}
-	if (!*updelay) {
-		do {
-			*updelay = nmc_get_user_input (_("Bonding updelay [0]): "));
-			once_more = *updelay && !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
-			if (once_more) {
-				printf (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
-				        *updelay, G_MAXUINT32);
-				g_free (*updelay);
-			}
-		} while (once_more);
-	}
-	if (!*arpinterval) {
-		do {
-			*arpinterval = nmc_get_user_input (_("Bonding arp-interval [0]): "));
-			once_more = *arpinterval && !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
-			if (once_more) {
-				printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
-				        *arpinterval, G_MAXUINT32);
-				g_free (*arpinterval);
-			}
-		} while (once_more);
-	}
-	if (!*arpiptarget) {
-		//FIXME: verify the string
-		*arpiptarget = nmc_get_user_input (_("Bonding arp-ip-target [none]): "));
+
+	do {
+		monitor_mode = nmc_get_user_input (_("Bonding monitoring mode (miimon or arp) [miimon]: "));
+		if (!monitor_mode)
+			monitor_mode = g_strdup ("miimon");
+		once_more = strcmp (monitor_mode, "miimon") && strcmp (monitor_mode, "arp");
+		if (once_more) {
+			printf (_("Error: '%s' is not a valid monitoring mode'; use '%s' or '%s'.\n"),
+			        monitor_mode, "miimon", "arp");
+			g_free (monitor_mode);
+		}
+	} while (once_more);
+
+	if (strcmp (monitor_mode, "miimon") == 0) {
+		if (!*miimon) {
+			do {
+				*miimon = nmc_get_user_input (_("Bonding miimon [100]): "));
+				once_more = *miimon && !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
+				if (once_more) {
+					printf (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
+					        *miimon, G_MAXUINT32);
+					g_free (*miimon);
+				}
+			} while (once_more);
+		}
+		if (!*downdelay) {
+			do {
+				*downdelay = nmc_get_user_input (_("Bonding downdelay [0]): "));
+				once_more = *downdelay && !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
+				if (once_more) {
+					printf (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
+					        *downdelay, G_MAXUINT32);
+					g_free (*downdelay);
+				}
+			} while (once_more);
+		}
+		if (!*updelay) {
+			do {
+				*updelay = nmc_get_user_input (_("Bonding updelay [0]): "));
+				once_more = *updelay && !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
+				if (once_more) {
+					printf (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
+					        *updelay, G_MAXUINT32);
+					g_free (*updelay);
+				}
+			} while (once_more);
+		}
+	} else {
+		if (!*arpinterval) {
+			do {
+				*arpinterval = nmc_get_user_input (_("Bonding arp-interval [0]): "));
+				once_more = *arpinterval && !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
+				if (once_more) {
+					printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
+					        *arpinterval, G_MAXUINT32);
+					g_free (*arpinterval);
+				}
+			} while (once_more);
+		}
+		if (!*arpiptarget) {
+			//FIXME: verify the string
+			*arpiptarget = nmc_get_user_input (_("Bonding arp-ip-target [none]): "));
+		}
 	}
 
 	g_free (answer);
+	g_free (monitor_mode);
 	return;
 }
 
