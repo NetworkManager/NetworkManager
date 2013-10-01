@@ -183,33 +183,35 @@ match_l2_config (NMDevice *self, NMConnection *connection)
 /******************************************************************/
 
 static gboolean
-set_bond_attr (const char *iface, const char *attr, const char *value)
+set_bond_attr (NMDevice *device, const char *attr, const char *value)
 {
-	char file[FILENAME_MAX];
 	gboolean ret;
+	int ifindex = nm_device_get_ifindex (device);
 
-	snprintf (file, sizeof (file), "/sys/class/net/%s/bonding/%s", iface, attr);
-	ret = nm_utils_do_sysctl (file, value);
+	ret = nm_platform_master_set_option (ifindex, attr, value);
 	if (!ret) {
 		nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
-		             "'%s' to '%s': %d", iface, attr, value, errno);
+		             "'%s' to '%s'", nm_device_get_ip_iface (device), attr, value);
 	}
 	return ret;
 }
 
 static void
-set_arp_targets (const char *iface,
+set_arp_targets (NMDevice *device,
                  const char *value,
                  const char *delim,
                  const char *prefix)
 {
 	char **items, **iter, *tmp;
 
+	if (!value || !*value)
+		return;
+
 	items = g_strsplit_set (value, delim, 0);
 	for (iter = items; iter && *iter; iter++) {
 		if (*iter[0]) {
 			tmp = g_strdup_printf ("%s%s", prefix, *iter);
-			set_bond_attr (iface, "arp_ip_target", tmp);
+			set_bond_attr (device, "arp_ip_target", tmp);
 			g_free (tmp);
 		}
 	}
@@ -217,16 +219,17 @@ set_arp_targets (const char *iface,
 }
 
 static void
-set_simple_option (const char *iface,
+set_simple_option (NMDevice *device,
                    const char *attr,
                    NMSettingBond *s_bond,
                    const char *opt)
 {
-	const char *value, *def;
+	const char *value;
 
 	value = nm_setting_bond_get_option_by_name (s_bond, opt);
-	def = nm_setting_bond_get_option_default (s_bond, opt);
-	set_bond_attr (iface, attr, value ? value : def);
+	if (!value)
+		value = nm_setting_bond_get_option_default (s_bond, opt);
+	set_bond_attr (device, attr, value);
 }
 
 static NMActStageReturn
@@ -234,9 +237,9 @@ apply_bonding_config (NMDevice *device)
 {
 	NMConnection *connection;
 	NMSettingBond *s_bond;
-	const char *iface = nm_device_get_ip_iface (device);
+	int ifindex = nm_device_get_ifindex (device);
 	const char *mode, *value;
-	char *path, *contents;
+	char *contents;
 	gboolean set_arp_interval = TRUE;
 
 	/* Option restrictions:
@@ -264,12 +267,12 @@ apply_bonding_config (NMDevice *device)
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON);
 	if (value && atoi (value)) {
 		/* clear arp interval */
-		set_bond_attr (iface, "arp_interval", "0");
+		set_bond_attr (device, "arp_interval", "0");
 		set_arp_interval = FALSE;
 
-		set_bond_attr (iface, "miimon", value);
-		set_simple_option (iface, "updelay", s_bond, NM_SETTING_BOND_OPTION_UPDELAY);
-		set_simple_option (iface, "downdelay", s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY);
+		set_bond_attr (device, "miimon", value);
+		set_simple_option (device, "updelay", s_bond, NM_SETTING_BOND_OPTION_UPDELAY);
+		set_simple_option (device, "downdelay", s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY);
 	} else if (!value) {
 		/* If not given, and arp_interval is not given, default to 100 */
 		long int val_int;
@@ -279,18 +282,18 @@ apply_bonding_config (NMDevice *device)
 		errno = 0;
 		val_int = strtol (value ? value : "0", &end, 10);
 		if (!value || (val_int == 0 && errno == 0 && *end == '\0'))
-			set_bond_attr (iface, "miimon", "100");
+			set_bond_attr (device, "miimon", "100");
 	}
 
 	/* The stuff after 'mode' requires the given mode or doesn't care */
-	set_bond_attr (iface, "mode", mode);
+	set_bond_attr (device, "mode", mode);
 
 	/* arp_interval not compatible with ALB, TLB */
 	if (g_strcmp0 (mode, "balance-alb") == 0 || g_strcmp0 (mode, "balance-tlb") == 0)
 		set_arp_interval = FALSE;
 
 	if (set_arp_interval) {
-		set_simple_option (iface, "arp_interval", s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+		set_simple_option (device, "arp_interval", s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
 
 		/* Just let miimon get cleared automatically; even setting miimon to
 		 * 0 (disabled) clears arp_interval.
@@ -303,36 +306,32 @@ apply_bonding_config (NMDevice *device)
 	    && g_strcmp0 (value, "0") != 0
 	    && g_strcmp0 (value, "none") != 0
 	    && g_strcmp0 (mode, "active-backup") == 0)
-		set_bond_attr (iface, "arp_validate", value);
+		set_bond_attr (device, "arp_validate", value);
 	else
-		set_bond_attr (iface, "arp_validate", "0");
+		set_bond_attr (device, "arp_validate", "0");
 
 	if (   g_strcmp0 (mode, "active-backup") == 0
 	    || g_strcmp0 (mode, "balance-alb") == 0
 	    || g_strcmp0 (mode, "balance-tlb") == 0) {
 		value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
-		set_bond_attr (iface, "primary", value ? value : "");
+		set_bond_attr (device, "primary", value ? value : "");
 	}
 
 	/* Clear ARP targets */
-	path = g_strdup_printf ("/sys/class/net/%s/bonding/arp_ip_target", iface);
-	if (g_file_get_contents (path, &contents, NULL, NULL)) {
-		set_arp_targets (iface, contents, " \n", "-");
-		g_free (contents);
-	}
-	g_free (path);
+	contents = nm_platform_master_get_option (ifindex, "arp_ip_target");
+	set_arp_targets (device, contents, " \n", "-");
+	g_free (contents);
 
 	/* Add new ARP targets */
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-	if (value)
-		set_arp_targets (iface, value, ",", "+");
+	set_arp_targets (device, value, ",", "+");
 
-	set_simple_option (iface, "primary_reselect", s_bond, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT);
-	set_simple_option (iface, "fail_over_mac", s_bond, NM_SETTING_BOND_OPTION_FAIL_OVER_MAC);
-	set_simple_option (iface, "use_carrier", s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER);
-	set_simple_option (iface, "ad_select", s_bond, NM_SETTING_BOND_OPTION_AD_SELECT);
-	set_simple_option (iface, "xmit_hash_policy", s_bond, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY);
-	set_simple_option (iface, "resend_igmp", s_bond, NM_SETTING_BOND_OPTION_RESEND_IGMP);
+	set_simple_option (device, "primary_reselect", s_bond, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT);
+	set_simple_option (device, "fail_over_mac", s_bond, NM_SETTING_BOND_OPTION_FAIL_OVER_MAC);
+	set_simple_option (device, "use_carrier", s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER);
+	set_simple_option (device, "ad_select", s_bond, NM_SETTING_BOND_OPTION_AD_SELECT);
+	set_simple_option (device, "xmit_hash_policy", s_bond, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY);
+	set_simple_option (device, "resend_igmp", s_bond, NM_SETTING_BOND_OPTION_RESEND_IGMP);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
