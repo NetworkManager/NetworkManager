@@ -2684,7 +2684,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 	if (strcmp (monitor_mode, "miimon") == 0) {
 		if (!*miimon) {
 			do {
-				*miimon = nmc_get_user_input (_("Bonding miimon [100]): "));
+				*miimon = nmc_get_user_input (_("Bonding miimon [100]: "));
 				once_more = *miimon && !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
@@ -2695,7 +2695,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		}
 		if (!*downdelay) {
 			do {
-				*downdelay = nmc_get_user_input (_("Bonding downdelay [0]): "));
+				*downdelay = nmc_get_user_input (_("Bonding downdelay [0]: "));
 				once_more = *downdelay && !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
@@ -2706,7 +2706,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		}
 		if (!*updelay) {
 			do {
-				*updelay = nmc_get_user_input (_("Bonding updelay [0]): "));
+				*updelay = nmc_get_user_input (_("Bonding updelay [0]: "));
 				once_more = *updelay && !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
@@ -2718,7 +2718,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 	} else {
 		if (!*arpinterval) {
 			do {
-				*arpinterval = nmc_get_user_input (_("Bonding arp-interval [0]): "));
+				*arpinterval = nmc_get_user_input (_("Bonding arp-interval [0]: "));
 				once_more = *arpinterval && !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
@@ -2729,7 +2729,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		}
 		if (!*arpiptarget) {
 			//FIXME: verify the string
-			*arpiptarget = nmc_get_user_input (_("Bonding arp-ip-target [none]): "));
+			*arpiptarget = nmc_get_user_input (_("Bonding arp-ip-target [none]: "));
 		}
 	}
 
@@ -2771,7 +2771,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 	}
 	if (!*priority) {
 		do {
-			*priority = nmc_get_user_input (_("STP priority [128]): "));
+			*priority = nmc_get_user_input (_("STP priority [128]: "));
 			*priority = *priority ? *priority : g_strdup ("128");
 			once_more = !nmc_string_to_uint (*priority, TRUE, 0, G_MAXUINT16, &tmp);
 			if (once_more) {
@@ -2783,7 +2783,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 	}
 	if (!*fwd_delay) {
 		do {
-			*fwd_delay = nmc_get_user_input (_("Forward delay [15]): "));
+			*fwd_delay = nmc_get_user_input (_("Forward delay [15]: "));
 			*fwd_delay = *fwd_delay ? *fwd_delay : g_strdup ("15");
 			once_more = !nmc_string_to_uint (*fwd_delay, TRUE, 2, 30, &tmp);
 			if (once_more) {
@@ -2796,7 +2796,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 
 	if (!*hello_time) {
 		do {
-			*hello_time = nmc_get_user_input (_("Hello time [2]): "));
+			*hello_time = nmc_get_user_input (_("Hello time [2]: "));
 			*hello_time = *hello_time ? *hello_time : g_strdup ("2");
 			once_more = !nmc_string_to_uint (*hello_time, TRUE, 1, 10, &tmp);
 			if (once_more) {
@@ -2808,7 +2808,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 	}
 	if (!*max_age) {
 		do {
-			*max_age = nmc_get_user_input (_("Max age [20]): "));
+			*max_age = nmc_get_user_input (_("Max age [20]: "));
 			*max_age = *max_age ? *max_age : g_strdup ("20");
 			once_more = !nmc_string_to_uint (*max_age, TRUE, 6, 40, &tmp);
 			if (once_more) {
@@ -2820,7 +2820,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 	}
 	if (!*ageing_time) {
 		do {
-			*ageing_time = nmc_get_user_input (_("MAC address ageing time [300]): "));
+			*ageing_time = nmc_get_user_input (_("MAC address ageing time [300]: "));
 			*ageing_time = *ageing_time ? *ageing_time : g_strdup ("300");
 			once_more = !nmc_string_to_uint (*ageing_time, TRUE, 0, 1000000, &tmp);
 			if (once_more) {
@@ -2854,7 +2854,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 
 	if (!*priority) {
 		do {
-			*priority = nmc_get_user_input (_("Bridge port priority [32]): "));
+			*priority = nmc_get_user_input (_("Bridge port priority [32]: "));
 			*priority = *priority ? *priority : g_strdup ("32");
 			once_more = !bridge_prop_string_to_uint (*priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
 			                                         NM_SETTING_BRIDGE_PORT_PRIORITY, &tmp, &error);
@@ -2867,7 +2867,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 	}
 	if (!*path_cost) {
 		do {
-			*path_cost = nmc_get_user_input (_("Bridge port STP path cost [100]): "));
+			*path_cost = nmc_get_user_input (_("Bridge port STP path cost [100]: "));
 			*path_cost = *path_cost ? *path_cost : g_strdup ("100");
 			once_more = !bridge_prop_string_to_uint (*path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
 			                                         NM_SETTING_BRIDGE_PORT_PATH_COST, &tmp, &error);
@@ -2936,7 +2936,7 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 
 	if (!*channel) {
 		do {
-			*channel = nmc_get_user_input (_("OLPC Mesh channel [1]): "));
+			*channel = nmc_get_user_input (_("OLPC Mesh channel [1]: "));
 			once_more = *channel && !nmc_string_to_uint (*channel, TRUE, 1, 13, &tmp);
 			if (once_more) {
 				printf (_("Error: 'channel': '%s' is not a valid number <1-13>.\n"),
