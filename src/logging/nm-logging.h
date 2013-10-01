@@ -70,10 +70,12 @@ enum {
 
 /* Log levels */
 enum {
-	LOGL_ERR   = 1,
-	LOGL_WARN  = 2,
-	LOGL_INFO  = 3,
-	LOGL_DEBUG = 4
+	LOGL_DEBUG,
+	LOGL_INFO,
+	LOGL_WARN,
+	LOGL_ERR,
+
+	LOGL_MAX
 };
 
 typedef enum {

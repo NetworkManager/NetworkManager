@@ -185,14 +185,19 @@
 	<listitem><para>
 	  Sets how much information NetworkManager sends to the log destination (usually
 	  syslog's "daemon" facility).  By default, only informational, warning, and error
-	  messages are logged.
+	  messages are logged. See the section on <literal>logging</literal> in
+	  <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  for more information.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
 	<term><option>--log-domains</option></term>
-	<listitem><para>A comma-separated list specifying which
-	operations are logged to the log destination (usually syslog).
-	By default, most domains are logging-enabled.
+	<listitem><para>
+	  A comma-separated list specifying which operations are logged to the log
+	  destination (usually syslog). By default, most domains are logging-enabled.
+	  See the section on <literal>logging</literal> in
+	  <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  for more information.
 	</para></listitem>
       </varlistentry>
     </variablelist>

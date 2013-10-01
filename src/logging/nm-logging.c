@@ -54,8 +54,9 @@ nm_log_handler (const gchar *log_domain,
 
 #define LOGD_DEFAULT (LOGD_ALL & ~(LOGD_WIFI_SCAN | LOGD_DBUS_PROPS))
 
-static guint32 log_level = LOGL_INFO | LOGL_WARN | LOGL_ERR;
-static guint64 log_domains = LOGD_DEFAULT;
+static guint32 log_level = LOGL_INFO;
+static char *log_domains;
+static guint64 logging[LOGL_MAX];
 static gboolean syslog_opened;
 
 typedef struct {
@@ -63,12 +64,12 @@ typedef struct {
 	const char *name;
 } LogDesc;
 
-static const LogDesc level_descs[] = {
-	{ LOGL_ERR, "ERR" },
-	{ LOGL_WARN | LOGL_ERR, "WARN" },
-	{ LOGL_INFO | LOGL_WARN | LOGL_ERR, "INFO" },
-	{ LOGL_DEBUG | LOGL_INFO | LOGL_WARN | LOGL_ERR, "DEBUG" },
-	{ 0, NULL }
+static const char *level_names[LOGL_MAX] = {
+	/* Must be in sync with nm-logging.h */
+	"DEBUG",
+	"INFO",
+	"WARN",
+	"ERR",
 };
 
 static const LogDesc domain_descs[] = {
@@ -130,80 +131,116 @@ nm_logging_error_quark (void)
 
 /************************************************************************/
 
+static gboolean
+match_log_level (const char  *level,
+                 guint32     *out_level,
+                 GError     **error)
+{
+	int i;
+
+	for (i = 0; i < LOGL_MAX; i++) {
+		if (!strcasecmp (level_names[i], level)) {
+			*out_level = i;
+			return TRUE;
+		}
+	}
+
+	g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_LEVEL,
+	             _("Unknown log level '%s'"), level);
+	return FALSE;
+}
+
 gboolean
 nm_logging_setup (const char *level, const char *domains, GError **error)
 {
-	char **tmp, **iter;
-	guint64 new_domains = 0;
+	guint64 new_logging[LOGL_MAX];
+	guint32 new_log_level = log_level;
+	int i;
+
+	if (!domains)
+		domains = log_domains ? log_domains : "DEFAULT";
+
+	for (i = 0; i < LOGL_MAX; i++)
+		new_logging[i] = 0;
 
 	/* levels */
 	if (level && strlen (level)) {
-		gboolean found = FALSE;
-		const LogDesc *diter;
-
-		for (diter = &level_descs[0]; diter->name; diter++) {
-			if (!strcasecmp (diter->name, level)) {
-				log_level = diter->num;
-				found = TRUE;
-				break;
-			}
-		}
-
-		if (!found) {
-			g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_LEVEL,
-			             _("Unknown log level '%s'"), level);
+		if (!match_log_level (level, &new_log_level, error))
 			return FALSE;
-		}
 	}
 
 	/* domains */
 	if (domains && strlen (domains)) {
+		char **tmp, **iter;
+
 		tmp = g_strsplit_set (domains, ", ", 0);
 		for (iter = tmp; iter && *iter; iter++) {
 			const LogDesc *diter;
-			gboolean found = FALSE;
+			guint32 domain_log_level;
+			guint64 bits;
+			char *p;
 
 			if (!strlen (*iter))
 				continue;
 
-			for (diter = &domain_descs[0]; diter->name; diter++) {
-				if (!strcasecmp (diter->name, *iter)) {
-					new_domains |= diter->num;
-					found = TRUE;
-					break;
+			p = strchr (*iter, ':');
+			if (p) {
+				*p = '\0';
+				if (!match_log_level (p + 1, &domain_log_level, error)) {
+					g_strfreev (tmp);
+					return FALSE;
+				}
+			} else
+				domain_log_level = new_log_level;
+
+			bits = 0;
+
+			/* Check for combined domains */
+			if (!strcasecmp (*iter, LOGD_ALL_STRING))
+				bits = LOGD_ALL;
+			else if (!strcasecmp (*iter, LOGD_DEFAULT_STRING))
+				bits = LOGD_DEFAULT;
+			else if (!strcasecmp (*iter, LOGD_DHCP_STRING))
+				bits = LOGD_DHCP;
+			else if (!strcasecmp (*iter, LOGD_IP_STRING))
+				bits = LOGD_IP;
+
+			/* Check for compatibility domains */
+			else if (!strcasecmp (*iter, "HW"))
+				bits = LOGD_PLATFORM;
+
+			else {
+				for (diter = &domain_descs[0]; diter->name; diter++) {
+					if (!strcasecmp (diter->name, *iter)) {
+						bits = diter->num;
+						break;
+					}
 				}
 			}
 
-			/* Check for combined domains */
-			if (!strcasecmp (*iter, LOGD_ALL_STRING)) {
-				new_domains = LOGD_ALL;
-				found = TRUE;
-			} else if (!strcasecmp (*iter, LOGD_DEFAULT_STRING)) {
-				new_domains = LOGD_DEFAULT;
-				found = TRUE;
-			} else if (!strcasecmp (*iter, LOGD_DHCP_STRING)) {
-				new_domains |= LOGD_DHCP;
-				found = TRUE;
-			} else if (!strcasecmp (*iter, LOGD_IP_STRING)) {
-				new_domains |= LOGD_IP;
-				found = TRUE;
-			}
-
-			/* Check for compatibility domains */
-			if (!strcasecmp (*iter, "HW")) {
-				new_domains |= LOGD_PLATFORM;
-				found = TRUE;
-			}
-
-			if (!found) {
+			if (!bits) {
 				g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
 				             _("Unknown log domain '%s'"), *iter);
 				return FALSE;
 			}
+
+			for (i = 0; i < domain_log_level; i++)
+				new_logging[i] &= ~bits;
+			for (i = domain_log_level; i < LOGL_MAX; i++)
+				new_logging[i] |= bits;
 		}
 		g_strfreev (tmp);
-		log_domains = new_domains;
+
+		if (log_domains != (char *)domains) {
+			g_free (log_domains);
+			log_domains = g_strdup (domains);
+		}
+
+		for (i = 0; i < LOGL_MAX; i++)
+			logging[i] = new_logging[i];
 	}
+
+	log_level = new_log_level;
 
 	return TRUE;
 }
@@ -211,14 +248,7 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 const char *
 nm_logging_level_to_string (void)
 {
-	const LogDesc *diter;
-
-	for (diter = &level_descs[0]; diter->name; diter++) {
-		if (diter->num == log_level)
-			return diter->name;
-	}
-	g_warn_if_reached ();
-	return "";
+	return level_names[log_level];
 }
 
 const char *
@@ -227,13 +257,13 @@ nm_logging_all_levels_to_string (void)
 	static GString *str;
 
 	if (G_UNLIKELY (!str)) {
-		const LogDesc *diter;
+		int i;
 
 		str = g_string_new (NULL);
-		for (diter = &level_descs[0]; diter->name; diter++) {
+		for (i = 0; i < LOGL_MAX; i++) {
 			if (str->len)
 				g_string_append_c (str, ',');
-			g_string_append (str, diter->name);
+			g_string_append (str, level_names[i]);
 		}
 	}
 
@@ -245,13 +275,37 @@ nm_logging_domains_to_string (void)
 {
 	const LogDesc *diter;
 	GString *str;
+	int i;
+
+	/* We don't just return g_strdup (log_domains) because we want to expand
+	 * "DEFAULT" and "ALL".
+	 */
 
 	str = g_string_sized_new (75);
 	for (diter = &domain_descs[0]; diter->name; diter++) {
-		if (diter->num & log_domains) {
-			if (str->len)
-				g_string_append_c (str, ',');
-			g_string_append (str, diter->name);
+		/* If it's set for any lower level, it will also be set for LOGL_ERR */
+		if (!(diter->num & logging[LOGL_ERR]))
+			continue;
+
+		if (str->len)
+			g_string_append_c (str, ',');
+		g_string_append (str, diter->name);
+
+		/* Check if it's logging at a lower level than the default. */
+		for (i = 0; i < log_level; i++) {
+			if (diter->num & logging[i]) {
+				g_string_append_printf (str, ":%s", level_names[i]);
+				break;
+			}
+		}
+		/* Check if it's logging at a higher level than the default. */
+		if (!(diter->num & logging[log_level])) {
+			for (i = log_level + 1; i < LOGL_MAX; i++) {
+				if (diter->num & logging[i]) {
+					g_string_append_printf (str, ":%s", level_names[i]);
+					break;
+				}
+			}
 		}
 	}
 	return g_string_free (str, FALSE);
@@ -283,7 +337,9 @@ nm_logging_all_domains_to_string (void)
 gboolean
 nm_logging_enabled (guint32 level, guint64 domain)
 {
-	return !!(log_level & level) && !!(log_domains & domain);
+	g_return_val_if_fail (level < LOGL_MAX, FALSE);
+
+	return !!(logging[level] & domain);
 }
 
 void
@@ -300,29 +356,37 @@ _nm_log (const char *loc,
 	GTimeVal tv;
 	int syslog_level = LOG_INFO;
 
-	if (!(log_level & level) || !(log_domains & domain))
+	g_return_if_fail (level < LOGL_MAX);
+
+	if (!(logging[level] & domain))
 		return;
 
 	va_start (args, fmt);
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	if ((log_level & LOGL_DEBUG) && (level == LOGL_DEBUG)) {
+	switch (level) {
+	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
 		fullmsg = g_strdup_printf ("<debug> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
-	} else if ((log_level & LOGL_INFO) && (level == LOGL_INFO)) {
+		break;
+	case LOGL_INFO:
 		syslog_level = LOG_INFO;
 		fullmsg = g_strconcat ("<info> ", msg, NULL);
-	} else if ((log_level & LOGL_WARN) && (level == LOGL_WARN)) {
+		break;
+	case LOGL_WARN:
 		syslog_level = LOG_WARNING;
 		fullmsg = g_strconcat ("<warn> ", msg, NULL);
-	} else if ((log_level & LOGL_ERR) && (level == LOGL_ERR)) {
+		break;
+	case LOGL_ERR:
 		syslog_level = LOG_ERR;
 		g_get_current_time (&tv);
 		fullmsg = g_strdup_printf ("<error> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
-	} else
+		break;
+	default:
 		g_assert_not_reached ();
+	}
 
 	if (syslog_opened)
 		syslog (syslog_level, "%s", fullmsg);
