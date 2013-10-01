@@ -267,6 +267,7 @@ usage_connection_add (void)
 	         "                  [mtu <MTU>]\n\n"
 	         "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\n"
 	         "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
+	         "                  [primary <ifname>]\n"
 	         "                  [miimon <num>]\n"
 	         "                  [downdelay <num>]\n"
 	         "                  [updelay <num>]\n"
@@ -2621,7 +2622,8 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 }
 
 static void
-do_questionnaire_bond (char **mode, char **miimon, char **downdelay, char **updelay,
+do_questionnaire_bond (char **mode, char **primary, char **miimon,
+                       char **downdelay, char **updelay,
                        char **arpinterval, char **arpiptarget)
 {
 	char *answer, *monitor_mode;
@@ -2653,6 +2655,18 @@ do_questionnaire_bond (char **mode, char **miimon, char **downdelay, char **upde
 				g_clear_error (&error);
 			}
 		} while (!mode_tmp);
+	}
+
+	if (g_strcmp0 (*mode, "active-backup") == 0 && !*primary) {
+		do {
+			*primary = nmc_get_user_input (_("Bonding primary interface [none]: "));
+			once_more = *primary && !nm_utils_iface_valid_name (*primary);
+			if (once_more) {
+				printf (_("Error: 'primary': '%s' is not a valid interface name.\n"),
+				        *primary);
+				g_free (*primary);
+			}
+		} while (once_more);
 	}
 
 	do {
@@ -3614,6 +3628,8 @@ cleanup_vlan:
 		const char *ifname = NULL;
 		const char *bond_mode_c = NULL;
 		char *bond_mode = NULL;
+		const char *bond_primary_c = NULL;
+		char *bond_primary = NULL;
 		const char *bond_miimon_c = NULL;
 		char *bond_miimon = NULL;
 		const char *bond_downdelay_c = NULL;
@@ -3625,6 +3641,7 @@ cleanup_vlan:
 		const char *bond_arpiptarget_c = NULL;
 		char *bond_arpiptarget = NULL;
 		nmc_arg_t exp_args[] = { {"mode",          TRUE, &bond_mode_c,        FALSE},
+		                         {"primary",       TRUE, &bond_primary_c,     FALSE},
 		                         {"miimon",        TRUE, &bond_miimon_c,      FALSE},
 		                         {"downdelay",     TRUE, &bond_downdelay_c,   FALSE},
 		                         {"updelay",       TRUE, &bond_updelay_c,     FALSE},
@@ -3637,13 +3654,15 @@ cleanup_vlan:
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		bond_mode = bond_mode_c ? g_strdup (bond_mode_c) : NULL;
+		bond_primary = bond_primary_c ? g_strdup (bond_primary_c) : NULL;
 		bond_miimon = bond_miimon_c ? g_strdup (bond_miimon_c) : NULL;
 		bond_downdelay = bond_downdelay_c ? g_strdup (bond_downdelay_c) : NULL;
 		bond_updelay = bond_updelay_c ? g_strdup (bond_updelay_c) : NULL;
 		bond_arpinterval = bond_arpinterval_c ? g_strdup (bond_arpinterval_c) : NULL;
 		bond_arpiptarget = bond_arpiptarget_c ? g_strdup (bond_arpiptarget_c) : NULL;
 		if (ask)
-			do_questionnaire_bond (&bond_mode, &bond_miimon, &bond_downdelay, &bond_updelay,
+			do_questionnaire_bond (&bond_mode, &bond_primary, &bond_miimon,
+			                       &bond_downdelay, &bond_updelay,
 			                       &bond_arpinterval, &bond_arpiptarget);
 
 		/* Use connection's ifname as 'bond' ifname if exists, else generate one */
@@ -3673,6 +3692,15 @@ cleanup_vlan:
 			}
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MODE, bm);
 		}
+		if (bond_primary) {
+			if (!nm_utils_iface_valid_name (bond_primary)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'primary': '%s' is not a valid interface name."),
+				             bond_primary);
+				goto cleanup_bond;
+			}
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_PRIMARY, bond_primary);
+		}
 		if (bond_miimon)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON, bond_miimon);
 		if (bond_downdelay && strcmp (bond_downdelay, "0") != 0)
@@ -3688,6 +3716,7 @@ cleanup_vlan:
 cleanup_bond:
 		g_free (bond_ifname);
 		g_free (bond_mode);
+		g_free (bond_primary);
 		g_free (bond_miimon);
 		g_free (bond_downdelay);
 		g_free (bond_updelay);

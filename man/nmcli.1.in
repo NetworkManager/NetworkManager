@@ -457,6 +457,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .IP "\fI[mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\fP"
 .IP "\fI      802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\fP" 42
 \(en bonding mode
+.IP "\fI[primary <ifname>]\fP" 42
+\(en primary interface name (for "active-backup" mode)
 .IP "\fI[miimon <num>]\fP" 42
 \(en miimon
 .IP "\fI[downdelay <num>]\fP" 42
