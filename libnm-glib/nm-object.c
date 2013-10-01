@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include <gio/gio.h>
+#include <stdlib.h>
 #include <nm-utils.h>
 #include "NetworkManager.h"
 #include "nm-object.h"
@@ -33,7 +34,8 @@
 #include "nm-types.h"
 #include "nm-dbus-helpers-private.h"
 
-#define DEBUG 0
+static gboolean debug = FALSE;
+#define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
 
 static void nm_object_initable_iface_init (GInitableIface *iface);
 static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
@@ -944,9 +946,7 @@ handle_property_changed (NMObject *self, const char *dbus_name, GValue *value, g
 	}
 
 	if (!found) {
-#if DEBUG
-		g_warning ("Property '%s' unhandled.", prop_name);
-#endif
+		dbgmsg ("Property '%s' unhandled.", prop_name);
 		goto out;
 	}
 
@@ -959,21 +959,20 @@ handle_property_changed (NMObject *self, const char *dbus_name, GValue *value, g
 		goto out;
 	}
 
-#if DEBUG
-	{
+	if (G_UNLIKELY (debug)) {
 		char *s;
 		s = g_strdup_value_contents (value);
-		g_message ("PC: %p (%s) prop (%s) '%s' value (%s) %s",
-		           self, G_OBJECT_TYPE_NAME (self),
-		           g_type_name (pspec->value_type), prop_name,
-		           G_VALUE_TYPE_NAME (value), s);
+		dbgmsg ("PC: (%p) %s::%s => '%s' (%s%s%s)",
+		        self, G_OBJECT_TYPE_NAME (self),
+		        prop_name,
+		        s,
+		        G_VALUE_TYPE_NAME (value),
+		        pi->object_type ? " / " : "",
+		        pi->object_type ? g_type_name (pi->object_type) : "");
 		g_free (s);
 	}
-#endif
+
 	if (pi->object_type) {
-#if DEBUG
-		g_message ("   Value is object type %s", g_type_name (pi->object_type));
-#endif
 		if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 			success = handle_object_property (self, pspec->name, value, pi, synchronously);
 		else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
@@ -1095,12 +1094,21 @@ _nm_object_register_properties (NMObject *object,
                                 const NMPropertiesInfo *info)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	static gsize dval = 0;
+	const char *debugstr;
 	NMPropertiesInfo *tmp;
 	GHashTable *instance;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (proxy != NULL);
 	g_return_if_fail (info != NULL);
+
+	if (g_once_init_enter (&dval)) {
+		debugstr = getenv ("LIBNM_GLIB_DEBUG");
+		if (debugstr && strstr (debugstr, "properties-changed"))
+			debug = TRUE;
+		g_once_init_leave (&dval, 1);
+	}
 
 	priv->property_interfaces = g_slist_prepend (priv->property_interfaces,
 	                                             g_strdup (dbus_g_proxy_get_interface (proxy)));
