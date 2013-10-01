@@ -1348,6 +1348,7 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
+	memset (&address, 0, sizeof (address));
 	address.plen = 128;
 	address.timestamp = get_time ();
 
@@ -1370,7 +1371,6 @@ ip6_options_to_config (NMDHCPClient *self)
 			goto error;
 		}
 
-		memset (&address, 0, sizeof (address));
 		address.address = tmp_addr;
 		nm_log_info (LOGD_DHCP6, "  address %s", str);
 
