@@ -549,7 +549,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 		g_ptr_array_add (argv, (gpointer) config);
 	}
 
-	if (nm_logging_level_enabled (LOGL_DEBUG))
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_TEAM))
 		g_ptr_array_add (argv, (gpointer) "-gg");
 	g_ptr_array_add (argv, NULL);
 

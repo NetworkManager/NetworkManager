@@ -2480,7 +2480,7 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 	argv[i++] = "--script";
 	argv[i++] = (char *) nm_device_autoipd_helper_path;
 
-	if (nm_logging_level_enabled (LOGL_DEBUG))
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_AUTOIP4))
 		argv[i++] = "--debug";
 	argv[i++] = (char *) nm_device_get_ip_iface (self);
 	argv[i++] = NULL;
@@ -5047,7 +5047,7 @@ spawn_ping (NMDevice *self,
 
 	args[6] = str_timeout = g_strdup_printf ("%u", timeout);
 
-	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+	if (nm_logging_enabled (LOGL_DEBUG, log_domain)) {
 		cmd = g_strjoinv (" ", (gchar **) args);
 		nm_log_dbg (log_domain, "(%s): running '%s'",
 		            nm_device_get_iface (self),

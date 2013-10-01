@@ -831,8 +831,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 	nm_cmd_line_add_string (cmd, ",");
 
 	ppp_debug = !!getenv ("NM_PPP_DEBUG");
-	if (   nm_logging_level_enabled (LOGL_DEBUG)
-	    && nm_logging_domain_enabled (LOGD_PPP))
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PPP))
 		ppp_debug = TRUE;
 
 	if (ppp_debug)

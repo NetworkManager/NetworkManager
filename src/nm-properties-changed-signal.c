@@ -102,7 +102,7 @@ properties_changed (gpointer data)
 
 	g_assert (info);
 
-	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DBUS_PROPS)) {
 		GString *buf = g_string_new (NULL);
 
 		g_hash_table_foreach (info->hash, add_to_string, buf);

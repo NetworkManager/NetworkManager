@@ -281,15 +281,9 @@ nm_logging_all_domains_to_string (void)
 }
 
 gboolean
-nm_logging_level_enabled (guint32 level)
+nm_logging_enabled (guint32 level, guint64 domain)
 {
-	return !!(log_level & level);
-}
-
-gboolean
-nm_logging_domain_enabled (guint64 domain)
-{
-	return !!(log_domains & domain);
+	return !!(log_level & level) && !!(log_domains & domain);
 }
 
 void
