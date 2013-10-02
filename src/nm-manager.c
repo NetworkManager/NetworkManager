@@ -67,7 +67,11 @@
 #include "nm-atm-manager.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
-#include "nm-bluez-manager.h"
+#if WITH_BLUEZ4
+#include "nm-bluez4-manager.h"
+#else
+#include "nm-bluez5-manager.h"
+#endif
 #include "nm-bluez-common.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"

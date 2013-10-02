@@ -26,7 +26,7 @@
 #include <gio/gio.h>
 
 #include "nm-logging.h"
-#include "nm-bluez-manager.h"
+#include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 
