@@ -98,6 +98,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static void cp_connection_added (NMConnectionProvider *provider,
                                  NMConnection *connection, NMBluezDevice *self);
+static gboolean connection_compatible (NMBluezDevice *self, NMConnection *connection);
 
 
 /***********************************************************/
@@ -246,8 +247,10 @@ pan_connection_check_create (NMBluezDevice *self)
 	g_signal_handlers_unblock_by_func (priv->provider, cp_connection_added, self);
 
 	if (added) {
-		g_assert (g_slist_find (priv->connections, added));
+		g_assert (!g_slist_find (priv->connections, added));
+		g_assert (connection_compatible (self, added));
 
+		priv->connections = g_slist_prepend (priv->connections, g_object_ref (added));
 		priv->pan_connection = added;
 		nm_log_dbg (LOGD_SETTINGS, "added new Bluetooth connection for NAP device '%s': '%s' (%s)", priv->path, id, uuid);
 	} else {
