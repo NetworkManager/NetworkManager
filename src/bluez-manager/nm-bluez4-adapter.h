@@ -18,8 +18,8 @@
  * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ_ADAPTER_H
-#define NM_BLUEZ_ADAPTER_H
+#ifndef NM_BLUEZ4_ADAPTER_H
+#define NM_BLUEZ4_ADAPTER_H
 
 #include <glib.h>
 #include <glib-object.h>
@@ -27,43 +27,43 @@
 #include "nm-bluez-device.h"
 #include "nm-connection-provider.h"
 
-#define NM_TYPE_BLUEZ_ADAPTER            (nm_bluez_adapter_get_type ())
-#define NM_BLUEZ_ADAPTER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ_ADAPTER, NMBluezAdapter))
-#define NM_BLUEZ_ADAPTER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_BLUEZ_ADAPTER, NMBluezAdapterClass))
-#define NM_IS_BLUEZ_ADAPTER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_BLUEZ_ADAPTER))
-#define NM_IS_BLUEZ_ADAPTER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ_ADAPTER))
-#define NM_BLUEZ_ADAPTER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ_ADAPTER, NMBluezAdapterClass))
+#define NM_TYPE_BLUEZ4_ADAPTER            (nm_bluez4_adapter_get_type ())
+#define NM_BLUEZ4_ADAPTER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4Adapter))
+#define NM_BLUEZ4_ADAPTER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4AdapterClass))
+#define NM_IS_BLUEZ4_ADAPTER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_BLUEZ4_ADAPTER))
+#define NM_IS_BLUEZ4_ADAPTER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ4_ADAPTER))
+#define NM_BLUEZ4_ADAPTER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4AdapterClass))
 
-#define NM_BLUEZ_ADAPTER_PATH    "path"
-#define NM_BLUEZ_ADAPTER_ADDRESS "address"
+#define NM_BLUEZ4_ADAPTER_PATH    "path"
+#define NM_BLUEZ4_ADAPTER_ADDRESS "address"
 
 typedef struct {
 	GObject parent;
-} NMBluezAdapter;
+} NMBluez4Adapter;
 
 typedef struct {
 	GObjectClass parent;
 
 	/* virtual functions */
-	void (*initialized)    (NMBluezAdapter *self, gboolean success);
+	void (*initialized)    (NMBluez4Adapter *self, gboolean success);
 
-	void (*device_added)   (NMBluezAdapter *self, NMBluezDevice *device);
+	void (*device_added)   (NMBluez4Adapter *self, NMBluezDevice *device);
 
-	void (*device_removed) (NMBluezAdapter *self, NMBluezDevice *device);
-} NMBluezAdapterClass;
+	void (*device_removed) (NMBluez4Adapter *self, NMBluezDevice *device);
+} NMBluez4AdapterClass;
 
-GType nm_bluez_adapter_get_type (void);
+GType nm_bluez4_adapter_get_type (void);
 
-NMBluezAdapter *nm_bluez_adapter_new (const char *path,
-                                      NMConnectionProvider *provider);
+NMBluez4Adapter *nm_bluez4_adapter_new (const char *path,
+                                        NMConnectionProvider *provider);
 
-const char *nm_bluez_adapter_get_path (NMBluezAdapter *self);
+const char *nm_bluez4_adapter_get_path (NMBluez4Adapter *self);
 
-const char *nm_bluez_adapter_get_address (NMBluezAdapter *self);
+const char *nm_bluez4_adapter_get_address (NMBluez4Adapter *self);
 
-gboolean nm_bluez_adapter_get_initialized (NMBluezAdapter *self);
+gboolean nm_bluez4_adapter_get_initialized (NMBluez4Adapter *self);
 
-GSList *nm_bluez_adapter_get_devices (NMBluezAdapter *self);
+GSList *nm_bluez4_adapter_get_devices (NMBluez4Adapter *self);
 
-#endif /* NM_BLUEZ_ADAPTER_H */
+#endif /* NM_BLUEZ4_ADAPTER_H */
 

@@ -354,7 +354,7 @@ nm_bluez_manager_get (NMConnectionProvider *provider)
 	singleton = (NMBluezManager *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
 	g_assert (singleton);
 
-	/* Cache the connection provider for NMBluezAdapter objects */
+	/* Cache the connection provider */
 	NM_BLUEZ_MANAGER_GET_PRIVATE (singleton)->provider = provider;
 
 	return singleton;

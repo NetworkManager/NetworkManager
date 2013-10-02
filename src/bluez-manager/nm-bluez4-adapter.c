@@ -30,9 +30,9 @@
 #include "nm-logging.h"
 
 
-G_DEFINE_TYPE (NMBluezAdapter, nm_bluez_adapter, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)
 
-#define NM_BLUEZ_ADAPTER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ_ADAPTER, NMBluezAdapterPrivate))
+#define NM_BLUEZ4_ADAPTER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4AdapterPrivate))
 
 typedef struct {
 	char *path;
@@ -44,7 +44,7 @@ typedef struct {
 
 	/* Cached for devices */
 	NMConnectionProvider *provider;
-} NMBluezAdapterPrivate;
+} NMBluez4AdapterPrivate;
 
 
 enum {
@@ -65,37 +65,37 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 const char *
-nm_bluez_adapter_get_path (NMBluezAdapter *self)
+nm_bluez4_adapter_get_path (NMBluez4Adapter *self)
 {
-	g_return_val_if_fail (NM_IS_BLUEZ_ADAPTER (self), NULL);
+	g_return_val_if_fail (NM_IS_BLUEZ4_ADAPTER (self), NULL);
 
-	return NM_BLUEZ_ADAPTER_GET_PRIVATE (self)->path;
+	return NM_BLUEZ4_ADAPTER_GET_PRIVATE (self)->path;
 }
 
 const char *
-nm_bluez_adapter_get_address (NMBluezAdapter *self)
+nm_bluez4_adapter_get_address (NMBluez4Adapter *self)
 {
-	g_return_val_if_fail (NM_IS_BLUEZ_ADAPTER (self), NULL);
+	g_return_val_if_fail (NM_IS_BLUEZ4_ADAPTER (self), NULL);
 
-	return NM_BLUEZ_ADAPTER_GET_PRIVATE (self)->address;
+	return NM_BLUEZ4_ADAPTER_GET_PRIVATE (self)->address;
 }
 
 gboolean
-nm_bluez_adapter_get_initialized (NMBluezAdapter *self)
+nm_bluez4_adapter_get_initialized (NMBluez4Adapter *self)
 {
-	g_return_val_if_fail (NM_IS_BLUEZ_ADAPTER (self), FALSE);
+	g_return_val_if_fail (NM_IS_BLUEZ4_ADAPTER (self), FALSE);
 
-	return NM_BLUEZ_ADAPTER_GET_PRIVATE (self)->initialized;
+	return NM_BLUEZ4_ADAPTER_GET_PRIVATE (self)->initialized;
 }
 
 GSList *
-nm_bluez_adapter_get_devices (NMBluezAdapter *self)
+nm_bluez4_adapter_get_devices (NMBluez4Adapter *self)
 {
 	GSList *devices = NULL;
 	GHashTableIter iter;
 	NMBluezDevice *device;
 
-	g_hash_table_iter_init (&iter, NM_BLUEZ_ADAPTER_GET_PRIVATE (self)->devices);
+	g_hash_table_iter_init (&iter, NM_BLUEZ4_ADAPTER_GET_PRIVATE (self)->devices);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device)) {
 		if (nm_bluez_device_get_usable (device))
 			devices = g_slist_append (devices, device);
@@ -106,7 +106,7 @@ nm_bluez_adapter_get_devices (NMBluezAdapter *self)
 static void
 device_usable (NMBluezDevice *device, GParamSpec *pspec, gpointer user_data)
 {
-	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
 	gboolean usable = nm_bluez_device_get_usable (device);
 
 	nm_log_dbg (LOGD_BT, "(%s): bluez device now %s",
@@ -125,8 +125,8 @@ device_usable (NMBluezDevice *device, GParamSpec *pspec, gpointer user_data)
 static void
 device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 {
-	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
 	            nm_bluez_device_get_path (device),
@@ -138,8 +138,8 @@ device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 static void
 device_created (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
 	device = nm_bluez_device_new (path, priv->provider, 4);
@@ -153,8 +153,8 @@ device_created (DBusGProxy *proxy, const char *path, gpointer user_data)
 static void
 device_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
 	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
@@ -172,8 +172,8 @@ device_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 static void
 get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
-	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (user_data);
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	GHashTable *properties = NULL;
 	GError *err = NULL;
 	GValue *value;
@@ -207,9 +207,9 @@ done:
 }
 
 static void
-query_properties (NMBluezAdapter *self)
+query_properties (NMBluez4Adapter *self)
 {
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	DBusGProxyCall *call;
 
 	call = dbus_g_proxy_begin_call (priv->proxy, "GetProperties",
@@ -224,20 +224,20 @@ query_properties (NMBluezAdapter *self)
 
 /***********************************************************/
 
-NMBluezAdapter *
-nm_bluez_adapter_new (const char *path, NMConnectionProvider *provider)
+NMBluez4Adapter *
+nm_bluez4_adapter_new (const char *path, NMConnectionProvider *provider)
 {
-	NMBluezAdapter *self;
-	NMBluezAdapterPrivate *priv;
+	NMBluez4Adapter *self;
+	NMBluez4AdapterPrivate *priv;
 	DBusGConnection *connection;
 
-	self = (NMBluezAdapter *) g_object_new (NM_TYPE_BLUEZ_ADAPTER,
-	                                        NM_BLUEZ_ADAPTER_PATH, path,
-	                                        NULL);
+	self = (NMBluez4Adapter *) g_object_new (NM_TYPE_BLUEZ4_ADAPTER,
+	                                         NM_BLUEZ4_ADAPTER_PATH, path,
+	                                         NULL);
 	if (!self)
 		return NULL;
 
-	priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	priv->provider = provider;
 
@@ -263,9 +263,9 @@ nm_bluez_adapter_new (const char *path, NMConnectionProvider *provider)
 }
 
 static void
-nm_bluez_adapter_init (NMBluezAdapter *self)
+nm_bluez4_adapter_init (NMBluez4Adapter *self)
 {
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                       NULL, g_object_unref);
@@ -274,8 +274,8 @@ nm_bluez_adapter_init (NMBluezAdapter *self)
 static void
 dispose (GObject *object)
 {
-	NMBluezAdapter *self = NM_BLUEZ_ADAPTER (object);
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (self);
+	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (object);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 	GHashTableIter iter;
 	NMBluezDevice *device;
 
@@ -284,27 +284,27 @@ dispose (GObject *object)
 		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
 	g_hash_table_remove_all (priv->devices);
 
-	G_OBJECT_CLASS (nm_bluez_adapter_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_bluez4_adapter_parent_class)->dispose (object);
 }
 
 static void
 finalize (GObject *object)
 {
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (object);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (object);
 
 	g_hash_table_destroy (priv->devices);
 	g_free (priv->address);
 	g_free (priv->path);
 	g_object_unref (priv->proxy);
 
-	G_OBJECT_CLASS (nm_bluez_adapter_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_bluez4_adapter_parent_class)->finalize (object);
 }
 
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (object);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_PATH:
@@ -323,7 +323,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMBluezAdapterPrivate *priv = NM_BLUEZ_ADAPTER_GET_PRIVATE (object);
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_PATH:
@@ -337,11 +337,11 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
+nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMBluezAdapterPrivate));
+	g_type_class_add_private (config_class, sizeof (NMBluez4AdapterPrivate));
 
 	/* virtual methods */
 	object_class->get_property = get_property;
@@ -352,7 +352,7 @@ nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_BLUEZ_ADAPTER_PATH,
+		 g_param_spec_string (NM_BLUEZ4_ADAPTER_PATH,
 		                      "DBus Path",
 		                      "DBus Path",
 		                      NULL,
@@ -360,7 +360,7 @@ nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
 
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS,
-		 g_param_spec_string (NM_BLUEZ_ADAPTER_ADDRESS,
+		 g_param_spec_string (NM_BLUEZ4_ADAPTER_ADDRESS,
 		                      "Address",
 		                      "Address",
 		                      NULL,
@@ -370,7 +370,7 @@ nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
 	signals[INITIALIZED] = g_signal_new ("initialized",
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
-	                                     G_STRUCT_OFFSET (NMBluezAdapterClass, initialized),
+	                                     G_STRUCT_OFFSET (NMBluez4AdapterClass, initialized),
 	                                     NULL, NULL,
 	                                     g_cclosure_marshal_VOID__BOOLEAN,
 	                                     G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
@@ -378,7 +378,7 @@ nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
 	signals[DEVICE_ADDED] = g_signal_new ("device-added",
 	                                      G_OBJECT_CLASS_TYPE (object_class),
 	                                      G_SIGNAL_RUN_LAST,
-	                                      G_STRUCT_OFFSET (NMBluezAdapterClass, device_added),
+	                                      G_STRUCT_OFFSET (NMBluez4AdapterClass, device_added),
 	                                      NULL, NULL,
 	                                      g_cclosure_marshal_VOID__OBJECT,
 	                                      G_TYPE_NONE, 1, G_TYPE_OBJECT);
@@ -386,7 +386,7 @@ nm_bluez_adapter_class_init (NMBluezAdapterClass *config_class)
 	signals[DEVICE_REMOVED] = g_signal_new ("device-removed",
 	                                        G_OBJECT_CLASS_TYPE (object_class),
 	                                        G_SIGNAL_RUN_LAST,
-	                                        G_STRUCT_OFFSET (NMBluezAdapterClass, device_removed),
+	                                        G_STRUCT_OFFSET (NMBluez4AdapterClass, device_removed),
 	                                        NULL, NULL,
 	                                        g_cclosure_marshal_VOID__OBJECT,
 	                                        G_TYPE_NONE, 1, G_TYPE_OBJECT);
