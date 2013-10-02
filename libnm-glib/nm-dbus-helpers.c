@@ -88,6 +88,7 @@ _nm_dbus_is_connection_private (DBusGConnection *connection)
 		return FALSE;
 	return !!dbus_connection_get_data (dbus_g_connection_get_connection (connection), priv_slot);
 }
+
 DBusGProxy *
 _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
                                    const char *path,
