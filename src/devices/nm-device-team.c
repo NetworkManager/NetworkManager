@@ -347,7 +347,10 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 	NMDevice *dev = NM_DEVICE (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 
+	g_return_if_fail (priv->teamd_process_watch);
+
 	nm_log_info (LOGD_TEAM, "(%s): teamd died", nm_device_get_iface (dev));
+	priv->teamd_process_watch = 0;
 	priv->teamd_pid = 0;
 	teamd_cleanup (dev, TRUE);
 }
