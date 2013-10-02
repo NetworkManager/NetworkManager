@@ -241,7 +241,7 @@ teamd_cleanup (NMDevice *dev)
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 
 	if (priv->teamd_dbus_watch) {
-		g_source_remove (priv->teamd_dbus_watch);
+		g_bus_unwatch_name (priv->teamd_dbus_watch);
 		priv->teamd_dbus_watch = 0;
 	}
 
