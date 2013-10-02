@@ -427,15 +427,18 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GVariant *args = NULL;
-	const char *dbus_iface = BLUEZ_NETWORK_INTERFACE;
+	const char *dbus_iface;
 
 	g_return_if_fail (priv->dbus_connection);
 
 #if ! WITH_BLUEZ4
 	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP);
+
+	dbus_iface = BLUEZ5_NETWORK_INTERFACE;
 #else
 	g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP || priv->connection_bt_type == NM_BT_CAPABILITY_DUN);
 
+	dbus_iface = BLUEZ4_NETWORK_INTERFACE;
 	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
 		/* Can't pass a NULL interface name through dbus to bluez, so just
 		 * ignore the disconnect if the interface isn't known.
@@ -444,7 +447,7 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 			return;
 
 		args = g_variant_new ("(s)", priv->bt_iface),
-		dbus_iface = BLUEZ_SERIAL_INTERFACE;
+		dbus_iface = BLUEZ4_SERIAL_INTERFACE;
 	}
 #endif
 
@@ -504,17 +507,20 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 {
 	GSimpleAsyncResult *simple;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	const char *dbus_iface = BLUEZ_NETWORK_INTERFACE;
+	const char *dbus_iface;
 	const char *connect_type = BLUETOOTH_CONNECT_NAP;
 
 	g_return_if_fail (priv->capabilities & connection_bt_type & (NM_BT_CAPABILITY_DUN | NM_BT_CAPABILITY_NAP));
 #if ! WITH_BLUEZ4
 	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP);
+
+	dbus_iface = BLUEZ5_NETWORK_INTERFACE;
 #else
 	g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP || connection_bt_type == NM_BT_CAPABILITY_DUN);
 
+	dbus_iface = BLUEZ4_NETWORK_INTERFACE;
 	if (connection_bt_type == NM_BT_CAPABILITY_DUN) {
-		dbus_iface = BLUEZ_SERIAL_INTERFACE;
+		dbus_iface = BLUEZ4_SERIAL_INTERFACE;
 		connect_type = BLUETOOTH_CONNECT_DUN;
 	}
 #endif
@@ -844,7 +850,7 @@ query_properties (NMBluezDevice *self)
 		                          NULL,
 		                          BLUEZ_SERVICE,
 		                          g_variant_get_string (v, NULL),
-		                          BLUEZ_ADAPTER_INTERFACE,
+		                          BLUEZ5_ADAPTER_INTERFACE,
 		                          NULL,
 		                          (GAsyncReadyCallback) on_adapter_acquired,
 		                          g_object_ref (self));
@@ -1015,7 +1021,7 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 	                          NULL,
 	                          BLUEZ_SERVICE,
 	                          priv->path,
-	                          BLUEZ_DEVICE_INTERFACE,
+	                          BLUEZ5_DEVICE_INTERFACE,
 	                          NULL,
 	                          (GAsyncReadyCallback) on_proxy_acquired,
 	                          self);
@@ -1025,7 +1031,7 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider)
 	priv->proxy4 = dbus_g_proxy_new_for_name (connection,
 	                                          BLUEZ_SERVICE,
 	                                          priv->path,
-	                                          BLUEZ_DEVICE_INTERFACE);
+	                                          BLUEZ4_DEVICE_INTERFACE);
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,

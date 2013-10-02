@@ -246,7 +246,7 @@ nm_bluez_adapter_new (const char *path, NMConnectionProvider *provider)
 	priv->proxy = dbus_g_proxy_new_for_name (connection,
 	                                         BLUEZ_SERVICE,
 	                                         priv->path,
-	                                         BLUEZ_ADAPTER_INTERFACE);
+	                                         BLUEZ4_ADAPTER_INTERFACE);
 
 	dbus_g_proxy_add_signal (priv->proxy, "DeviceCreated",
 	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);

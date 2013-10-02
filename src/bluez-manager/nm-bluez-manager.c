@@ -192,7 +192,7 @@ object_manager_g_signal (GDBusProxy     *proxy,
 		ifaces = g_variant_get_strv (variant, &length);
 
 		for (i = 0; i < length; i++) {
-			if (!strcmp (ifaces[i], BLUEZ_DEVICE_INTERFACE)) {
+			if (!strcmp (ifaces[i], BLUEZ5_DEVICE_INTERFACE)) {
 				device_removed (proxy, path, self);
 				break;
 			}
@@ -203,7 +203,7 @@ object_manager_g_signal (GDBusProxy     *proxy,
 	} else if (!strcmp (signal_name, "InterfacesAdded")) {
 		g_variant_get (parameters, "(&o*)", &path, &variant);
 
-		if (g_variant_lookup_value (variant, BLUEZ_DEVICE_INTERFACE,
+		if (g_variant_lookup_value (variant, BLUEZ5_DEVICE_INTERFACE,
 		                            G_VARIANT_TYPE_DICTIONARY))
 			device_added (proxy, path, self);
 	}
@@ -233,7 +233,7 @@ get_managed_objects_cb (GDBusProxy *proxy,
 	}
 	g_variant_iter_init (&i, g_variant_get_child_value (variant, 0));
 	while ((g_variant_iter_next (&i, "{&o*}", &path, &ifaces))) {
-		if (g_variant_lookup_value (ifaces, BLUEZ_DEVICE_INTERFACE,
+		if (g_variant_lookup_value (ifaces, BLUEZ5_DEVICE_INTERFACE,
 		                            G_VARIANT_TYPE_DICTIONARY)) {
 			device_added (proxy, path, self);
 		}

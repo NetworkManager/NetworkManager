@@ -31,21 +31,15 @@
 #define BLUEZ_MANAGER_PATH      "/"
 #define OBJECT_MANAGER_INTERFACE "org.freedesktop.DBus.ObjectManager"
 
-#if ! WITH_BLUEZ4
+#define BLUEZ5_ADAPTER_INTERFACE "org.bluez.Adapter1"
+#define BLUEZ5_DEVICE_INTERFACE  "org.bluez.Device1"
+#define BLUEZ5_NETWORK_INTERFACE "org.bluez.Network1"
 
-#define BLUEZ_ADAPTER_INTERFACE "org.bluez.Adapter1"
-#define BLUEZ_DEVICE_INTERFACE  "org.bluez.Device1"
-#define BLUEZ_NETWORK_INTERFACE "org.bluez.Network1"
-
-#else
-
-#define BLUEZ_MANAGER_INTERFACE "org.bluez.Manager"
-#define BLUEZ_ADAPTER_INTERFACE "org.bluez.Adapter"
-#define BLUEZ_DEVICE_INTERFACE  "org.bluez.Device"
-#define BLUEZ_SERIAL_INTERFACE  "org.bluez.Serial"
-#define BLUEZ_NETWORK_INTERFACE "org.bluez.Network"
-
-#endif /* WITH_BLUEZ */
+#define BLUEZ4_MANAGER_INTERFACE "org.bluez.Manager"
+#define BLUEZ4_ADAPTER_INTERFACE "org.bluez.Adapter"
+#define BLUEZ4_DEVICE_INTERFACE  "org.bluez.Device"
+#define BLUEZ4_SERIAL_INTERFACE  "org.bluez.Serial"
+#define BLUEZ4_NETWORK_INTERFACE "org.bluez.Network"
 
 #endif  /* NM_BLUEZ_COMMON_H */
 

@@ -226,7 +226,7 @@ bluez_connect (NMBluezManager *self)
 	priv->proxy = dbus_g_proxy_new_for_name (connection,
 	                                         BLUEZ_SERVICE,
 	                                         BLUEZ_MANAGER_PATH,
-	                                         BLUEZ_MANAGER_INTERFACE);
+	                                         BLUEZ4_MANAGER_INTERFACE);
 
 	dbus_g_proxy_add_signal (priv->proxy, "AdapterRemoved",
 	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
