@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ4_MANAGER_H
-#define NM_BLUEZ4_MANAGER_H
+#ifndef NM_BLUEZ_MANAGER_H
+#define NM_BLUEZ_MANAGER_H
 
 #include <glib.h>
 #include <glib-object.h>
@@ -30,37 +30,42 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_BLUEZ4_MANAGER            (nm_bluez4_manager_get_type ())
-#define NM_BLUEZ4_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ4_MANAGER, NMBluez4Manager))
-#define NM_BLUEZ4_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_BLUEZ4_MANAGER, NMBluez4ManagerClass))
-#define NM_IS_BLUEZ4_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_BLUEZ4_MANAGER))
-#define NM_IS_BLUEZ4_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ4_MANAGER))
-#define NM_BLUEZ4_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ4_MANAGER, NMBluez4ManagerClass))
+#define NM_TYPE_BLUEZ_MANAGER            (nm_bluez_manager_get_type ())
+#define NM_BLUEZ_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BLUEZ_MANAGER, NMBluezManager))
+#define NM_BLUEZ_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_BLUEZ_MANAGER, NMBluezManagerClass))
+#define NM_IS_BLUEZ_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_BLUEZ_MANAGER))
+#define NM_IS_BLUEZ_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ_MANAGER))
+#define NM_BLUEZ_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ_MANAGER, NMBluezManagerClass))
+
+#define NM_BLUEZ_MANAGER_BDADDR_ADDED   "bdaddr-added"
+#define NM_BLUEZ_MANAGER_BDADDR_REMOVED "bdaddr-removed"
+
+#define NM_BLUEZ_MANAGER_PROVIDER "provider"
 
 typedef struct {
 	GObject parent;
-} NMBluez4Manager;
+} NMBluezManager;
 
 typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	void (*bdaddr_added) (NMBluez4Manager *manager,
+	void (*bdaddr_added) (NMBluezManager *manager,
 	                      const char *bdaddr,
 	                      const char *name,
 	                      const char *object_path,
 	                      guint uuids);
 
-	void (*bdaddr_removed) (NMBluez4Manager *manager,
+	void (*bdaddr_removed) (NMBluezManager *manager,
 	                        const char *bdaddr,
 	                        const char *object_path);
-} NMBluez4ManagerClass;
+} NMBluezManagerClass;
 
-GType nm_bluez4_manager_get_type (void);
+GType nm_bluez_manager_get_type (void);
 
-NMBluez4Manager *nm_bluez4_manager_new (NMConnectionProvider *provider);
+NMBluezManager *nm_bluez_manager_new (NMConnectionProvider *provider);
 
-void nm_bluez4_manager_query_devices (NMBluez4Manager *manager);
+void nm_bluez_manager_query_devices (NMBluezManager *manager);
 
-#endif /* NM_BLUEZ4_MANAGER_H */
+#endif /* NM_BLUEZ_MANAGER_H */
 

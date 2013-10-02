@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  * Copyright (C) 2013 Intel Corporation.
  */
 
@@ -26,6 +26,7 @@
 #include <gio/gio.h>
 
 #include "nm-logging.h"
+#include "nm-bluez-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
@@ -41,11 +42,11 @@ typedef struct {
 	GDBusProxy *proxy;
 
 	GHashTable *devices;
-} NMBluezManagerPrivate;
+} NMBluez5ManagerPrivate;
 
-#define NM_BLUEZ_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ_MANAGER, NMBluezManagerPrivate))
+#define NM_BLUEZ5_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ5_MANAGER, NMBluez5ManagerPrivate))
 
-G_DEFINE_TYPE (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 
 enum {
 	BDADDR_ADDED,
@@ -56,11 +57,11 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void device_initialized (NMBluezDevice *device, gboolean success, NMBluezManager *self);
-static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self);
+static void device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *self);
+static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self);
 
 static void
-emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
+emit_bdaddr_added (NMBluez5Manager *self, NMBluezDevice *device)
 {
 	g_signal_emit (self, signals[BDADDR_ADDED], 0,
 	               device,
@@ -71,9 +72,9 @@ emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
 }
 
 void
-nm_bluez_manager_query_devices (NMBluezManager *self)
+nm_bluez5_manager_query_devices (NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 	GHashTableIter iter;
 
@@ -85,7 +86,7 @@ nm_bluez_manager_query_devices (NMBluezManager *self)
 }
 
 static void
-remove_device (NMBluezManager *self, NMBluezDevice *device)
+remove_device (NMBluez5Manager *self, NMBluezDevice *device)
 {
 	if (nm_bluez_device_get_usable (device)) {
 		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
@@ -97,11 +98,11 @@ remove_device (NMBluezManager *self, NMBluezDevice *device)
 }
 
 static void
-remove_all_devices (NMBluezManager *self)
+remove_all_devices (NMBluez5Manager *self)
 {
 	GHashTableIter iter;
 	NMBluezDevice *device;
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	g_hash_table_iter_init (&iter, priv->devices);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device)) {
@@ -112,7 +113,7 @@ remove_all_devices (NMBluezManager *self)
 }
 
 static void
-device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self)
+device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self)
 {
 	gboolean usable = nm_bluez_device_get_usable (device);
 
@@ -132,9 +133,9 @@ device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self)
 }
 
 static void
-device_initialized (NMBluezDevice *device, gboolean success, NMBluezManager *self)
+device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
 	            nm_bluez_device_get_path (device),
@@ -144,9 +145,9 @@ device_initialized (NMBluezDevice *device, gboolean success, NMBluezManager *sel
 }
 
 static void
-device_added (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
+device_added (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
 	device = nm_bluez_device_new (path, priv->provider, 5);
@@ -158,9 +159,9 @@ device_added (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
 }
 
 static void
-device_removed (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
+device_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
 
 	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
@@ -168,7 +169,7 @@ device_removed (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
 	device = g_hash_table_lookup (priv->devices, path);
 	if (device) {
 		g_hash_table_steal (priv->devices, nm_bluez_device_get_path (device));
-		remove_device (NM_BLUEZ_MANAGER (self), device);
+		remove_device (NM_BLUEZ5_MANAGER (self), device);
 		g_object_unref (device);
 	}
 }
@@ -178,7 +179,7 @@ object_manager_g_signal (GDBusProxy     *proxy,
                          gchar          *sender_name,
                          gchar          *signal_name,
                          GVariant       *parameters,
-                         NMBluezManager *self)
+                         NMBluez5Manager *self)
 {
 	GVariant *variant;
 	const gchar *path;
@@ -212,7 +213,7 @@ object_manager_g_signal (GDBusProxy     *proxy,
 static void
 get_managed_objects_cb (GDBusProxy *proxy,
                         GAsyncResult *res,
-                        NMBluezManager *self)
+                        NMBluez5Manager *self)
 {
 	GVariant *variant, *ifaces;
 	GVariantIter i;
@@ -245,9 +246,9 @@ get_managed_objects_cb (GDBusProxy *proxy,
 static void
 on_proxy_acquired (GObject *object,
                    GAsyncResult *res,
-                   NMBluezManager *self)
+                   NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 
 	priv->proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
@@ -273,9 +274,9 @@ on_proxy_acquired (GObject *object,
 }
 
 static void
-bluez_connect (NMBluezManager *self)
+bluez_connect (NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	g_return_if_fail (priv->proxy == NULL);
 
@@ -297,8 +298,8 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
                        const char *new_owner,
                        gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5Manager *self = NM_BLUEZ5_MANAGER (user_data);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
@@ -313,9 +314,9 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
 }
 
 static void
-bluez_cleanup (NMBluezManager *self, gboolean do_signal)
+bluez_cleanup (NMBluez5Manager *self, gboolean do_signal)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	if (priv->proxy) {
 		g_object_unref (priv->proxy);
@@ -333,7 +334,7 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
                             DBusGConnection *connection,
                             gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
+	NMBluez5Manager *self = NM_BLUEZ5_MANAGER (user_data);
 
 	if (!connection)
 		bluez_cleanup (self, TRUE);
@@ -343,27 +344,20 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
 
 /****************************************************************/
 
-NMBluezManager *
-nm_bluez_manager_get (NMConnectionProvider *provider)
+NMBluez5Manager *
+nm_bluez5_manager_new (NMConnectionProvider *provider)
 {
-	static NMBluezManager *singleton = NULL;
+	NMBluez5Manager *instance = NULL;
 
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = (NMBluezManager *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
-	g_assert (singleton);
-
-	/* Cache the connection provider */
-	NM_BLUEZ_MANAGER_GET_PRIVATE (singleton)->provider = provider;
-
-	return singleton;
+	instance = g_object_new (NM_TYPE_BLUEZ5_MANAGER, NULL);
+	NM_BLUEZ5_MANAGER_GET_PRIVATE (instance)->provider = provider;
+	return instance;
 }
 
 static void
-nm_bluez_manager_init (NMBluezManager *self)
+nm_bluez5_manager_init (NMBluez5Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	g_assert (priv->dbus_mgr);
@@ -387,8 +381,8 @@ nm_bluez_manager_init (NMBluezManager *self)
 static void
 dispose (GObject *object)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez5Manager *self = NM_BLUEZ5_MANAGER (object);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 
 	bluez_cleanup (self, FALSE);
 
@@ -398,25 +392,25 @@ dispose (GObject *object)
 		priv->dbus_mgr = NULL;
 	}
 
-	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_bluez5_manager_parent_class)->dispose (object);
 }
 
 static void
 finalize (GObject *object)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (object);
+	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (object);
 
 	g_hash_table_destroy (priv->devices);
 
-	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_bluez5_manager_parent_class)->finalize (object);
 }
 
 static void
-nm_bluez_manager_class_init (NMBluezManagerClass *klass)
+nm_bluez5_manager_class_init (NMBluez5ManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMBluezManagerPrivate));
+	g_type_class_add_private (klass, sizeof (NMBluez5ManagerPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;
@@ -427,7 +421,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
+		              G_STRUCT_OFFSET (NMBluez5ManagerClass, bdaddr_added),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
 		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
@@ -436,7 +430,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),
+		              G_STRUCT_OFFSET (NMBluez5ManagerClass, bdaddr_removed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }

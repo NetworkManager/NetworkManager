@@ -67,11 +67,7 @@
 #include "nm-atm-manager.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
-#if WITH_BLUEZ4
-#include "nm-bluez4-manager.h"
-#else
-#include "nm-bluez5-manager.h"
-#endif
+#include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
@@ -4462,7 +4458,7 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  singleton);
 
-	priv->bluez_mgr = nm_bluez_manager_get (NM_CONNECTION_PROVIDER (priv->settings));
+	priv->bluez_mgr = nm_bluez_manager_new (NM_CONNECTION_PROVIDER (priv->settings));
 
 	g_signal_connect (priv->bluez_mgr,
 	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
