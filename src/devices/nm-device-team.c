@@ -271,10 +271,10 @@ teamd_timeout_cb (gpointer user_data)
 	NMDevice *dev = NM_DEVICE (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 
-	if (priv->teamd_timeout) {
-		nm_log_info (LOGD_TEAM, "(%s): teamd timed out.", nm_device_get_iface (dev));
-		teamd_cleanup (dev);
-	}
+	g_return_val_if_fail (priv->teamd_timeout, FALSE);
+
+	nm_log_info (LOGD_TEAM, "(%s): teamd timed out.", nm_device_get_iface (dev));
+	teamd_cleanup (dev);
 
 	return FALSE;
 }
@@ -288,8 +288,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	NMDevice *dev = NM_DEVICE (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 
-	if (!priv->teamd_dbus_watch)
-		return;
+	g_return_if_fail (priv->teamd_dbus_watch);
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
 	teamd_timeout_remove (dev);
@@ -319,8 +318,8 @@ teamd_dbus_vanished (GDBusConnection *connection,
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 	NMDeviceState state;
 
-	if (!priv->teamd_dbus_watch)
-		return;
+	g_return_if_fail (priv->teamd_dbus_watch);
+
 	nm_log_info (LOGD_TEAM, "(%s): teamd vanished from D-Bus", nm_device_get_iface (dev));
 	teamd_cleanup (dev);
 
@@ -378,6 +377,19 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 	GError *error = NULL;
 	gboolean ret;
 	int status;
+
+	if (priv->teamd_dbus_watch ||
+	    priv->teamd_process_watch ||
+	    priv->teamd_pid > 0 ||
+#if WITH_TEAMDCTL
+	    priv->tdc ||
+#endif
+	    priv->teamd_timeout)
+	{
+		/* FIXME g_assert that this never hits. For now, be more reluctant, and try to recover. */
+		g_warn_if_reached ();
+		teamd_cleanup (dev);
+	}
 
 	teamd_binary = teamd_paths;
 	while (*teamd_binary != NULL) {
