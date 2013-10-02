@@ -236,7 +236,7 @@ teamd_timeout_remove (NMDevice *dev)
 }
 
 static void
-teamd_cleanup (NMDevice *dev)
+teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 
@@ -263,6 +263,12 @@ teamd_cleanup (NMDevice *dev)
 #endif
 
 	teamd_timeout_remove (dev);
+
+	if (device_state_failed) {
+		if (nm_device_is_activating (dev) ||
+		    (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED))
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+	}
 }
 
 static gboolean
@@ -274,7 +280,7 @@ teamd_timeout_cb (gpointer user_data)
 	g_return_val_if_fail (priv->teamd_timeout, FALSE);
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd timed out.", nm_device_get_iface (dev));
-	teamd_cleanup (dev);
+	teamd_cleanup (dev, TRUE);
 
 	return FALSE;
 }
@@ -316,7 +322,6 @@ teamd_dbus_vanished (GDBusConnection *connection,
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
-	NMDeviceState state;
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
@@ -333,11 +338,7 @@ teamd_dbus_vanished (GDBusConnection *connection,
 	}
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd vanished from D-Bus", nm_device_get_iface (dev));
-	teamd_cleanup (dev);
-
-	state = nm_device_get_state (dev);
-	if (nm_device_is_activating (dev) || (state == NM_DEVICE_STATE_ACTIVATED))
-		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+	teamd_cleanup (dev, TRUE);
 }
 
 static void
@@ -345,15 +346,10 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
-	NMDeviceState state;
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd died", nm_device_get_iface (dev));
 	priv->teamd_pid = 0;
-	teamd_cleanup (dev);
-
-	state = nm_device_get_state (dev);
-	if (nm_device_is_activating (dev) || (state == NM_DEVICE_STATE_ACTIVATED))
-		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+	teamd_cleanup (dev, TRUE);
 }
 
 static void
@@ -400,7 +396,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 	{
 		/* FIXME g_assert that this never hits. For now, be more reluctant, and try to recover. */
 		g_warn_if_reached ();
-		teamd_cleanup (dev);
+		teamd_cleanup (dev, FALSE);
 	}
 
 	teamd_binary = teamd_paths;
@@ -477,6 +473,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 		             "Activation (%s) failed to start teamd: %s",
 		             iface, error->message);
 		g_clear_error (&error);
+		teamd_cleanup (dev, FALSE);
 		return FALSE;
 	}
 
@@ -500,7 +497,7 @@ teamd_stop (NMDevice *dev, NMDeviceTeamPrivate *priv)
 		nm_log_dbg (LOGD_TEAM, "Deactivation (%s) stopping teamd (not started)...",
 		            nm_device_get_ip_iface (dev));
 	}
-	teamd_cleanup (dev);
+	teamd_cleanup (dev, FALSE);
 }
 
 static NMActStageReturn
@@ -706,7 +703,7 @@ set_property (GObject *object, guint prop_id,
 static void
 dispose (GObject *object)
 {
-	teamd_cleanup (NM_DEVICE (object));
+	teamd_cleanup (NM_DEVICE (object), FALSE);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
 }
