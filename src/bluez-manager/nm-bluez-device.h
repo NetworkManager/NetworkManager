@@ -59,7 +59,7 @@ typedef struct {
 
 GType nm_bluez_device_get_type (void);
 
-NMBluezDevice *nm_bluez_device_new (const char *path, NMConnectionProvider *provider);
+NMBluezDevice *nm_bluez_device_new (const char *path, NMConnectionProvider *provider, int bluez_version);
 
 const char *nm_bluez_device_get_path (NMBluezDevice *self);
 
