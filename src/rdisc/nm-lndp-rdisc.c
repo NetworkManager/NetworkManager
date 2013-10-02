@@ -401,6 +401,25 @@ fill_address_from_mac (struct in6_addr *address, const char *mac)
 	memcpy (identifier + 5, mac + 3, 3);
 }
 
+/* Ensure the given address is masked with its prefix and that all host
+ * bits are set to zero.  Some IPv6 router advertisement daemons (eg, radvd)
+ * don't enforce this in their configuration.
+ */
+static void
+set_address_masked (struct in6_addr *dst, struct in6_addr *src, guint8 plen)
+{
+	guint nbytes = plen / 8;
+	guint nbits = plen % 8;
+
+	g_return_if_fail (plen <= 128);
+	g_assert (src);
+	g_assert (dst);
+
+	memset (dst, 0, sizeof (*dst));
+	memcpy (dst, src, nbytes);
+	dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+}
+
 static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 {
@@ -475,8 +494,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 		/* Device route */
 		memset (&route, 0, sizeof (route));
-		route.network = *ndp_msg_opt_prefix (msg, offset);
 		route.plen = ndp_msg_opt_prefix_len (msg, offset);
+		set_address_masked (&route.network, ndp_msg_opt_prefix (msg, offset), route.plen);
 		route.timestamp = now;
 		if (ndp_msg_opt_prefix_flag_on_link (msg, offset)) {
 			route.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset);
@@ -506,8 +525,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		/* Routers through this particular gateway */
 		memset (&route, 0, sizeof (route));
 		route.gateway = gateway.address;
-		route.network = *ndp_msg_opt_route_prefix (msg, offset);
 		route.plen = ndp_msg_opt_route_prefix_len (msg, offset);
+		set_address_masked (&route.network, ndp_msg_opt_route_prefix (msg, offset), route.plen);
 		route.timestamp = now;
 		route.lifetime = ndp_msg_opt_route_lifetime (msg, offset);
 		route.preference = translate_preference (ndp_msg_opt_route_preference (msg, offset));
