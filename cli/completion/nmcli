@@ -330,6 +330,7 @@ _nmcli_complete_COMMAND_ARGS()
                    return 0
                 fi
                 ;;
+            primary| \
             ifname)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list_nl "$(_nmcli_NM_devices)"
@@ -676,7 +677,7 @@ _nmcli()
                                     OPTIONS_MANDATORY=(dev)
                                     ;;
                                 bond)
-                                    OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target)
+                                    OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target primary)
                                     ;;
                                 bond-|bond-s|bond-sl|bond-sla|bond-slav|bond-slave)
                                     OPTIONS_TYPED=(master)
