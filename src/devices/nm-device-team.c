@@ -320,6 +320,18 @@ teamd_dbus_vanished (GDBusConnection *connection,
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
+	if (priv->teamd_timeout) {
+		/* g_bus_watch_name will always raise an initial signal, to indicate whether the
+		 * name exists/not exists initially. Do not take this as a failure, until the
+		 * startup timeout is over.
+		 *
+		 * Note that g_bus_watch_name is guaranteed to alternate vanished/appeared signals,
+		 * so we won't hit this condition again (because the next signal is either 'appeared'
+		 * or 'timeout'). */
+		nm_log_dbg (LOGD_TEAM, "(%s): teamd vanished from D-Bus (ignored)", nm_device_get_iface (dev));
+		return;
+	}
+
 	nm_log_info (LOGD_TEAM, "(%s): teamd vanished from D-Bus", nm_device_get_iface (dev));
 	teamd_cleanup (dev);
 
