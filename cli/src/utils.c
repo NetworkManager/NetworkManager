@@ -696,6 +696,11 @@ nmc_empty_output_fields (NmCli *nmc)
 	/* Empty output_data array */
 	if (nmc->output_data->len > 0)
 		g_ptr_array_remove_range (nmc->output_data, 0, nmc->output_data->len);
+
+	if (nmc->print_fields.indices) {
+		g_array_free (nmc->print_fields.indices, TRUE);
+		nmc->print_fields.indices = NULL;
+	}
 }
 
 static char *

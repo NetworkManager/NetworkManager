@@ -388,8 +388,6 @@ nmc_cleanup (NmCli *nmc)
 	g_free (nmc->required_fields);
 	nmc_empty_output_fields (nmc);
 	g_ptr_array_unref (nmc->output_data);
-	if (nmc->print_fields.indices)
-		g_array_free (nmc->print_fields.indices, TRUE);
 }
 
 static gboolean

@@ -383,7 +383,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	}
 
 	if (print_settings_array)
-		g_array_free (print_settings_array, FALSE);
+		g_array_free (print_settings_array, TRUE);
 
 	return TRUE;
 }
@@ -472,8 +472,6 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_CON_SHOW_ALL;
 	char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
-	NmcOutputField *tmpl, *arr;
-	size_t tmpl_len;
 	gboolean printed = FALSE;
 
 	nmc->should_wait = FALSE;
@@ -485,15 +483,16 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	else
 		fields_str = nmc->required_fields;
 
-	tmpl = nmc_fields_con_show;
-	tmpl_len = sizeof (nmc_fields_con_show);
-	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error1);
-	/* error1 is checked later - it's not valid for connection details */
-
 	if (argc == 0) {
-		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
-			goto error;
+		NmcOutputField *tmpl, *arr;
+		size_t tmpl_len;
+
+		tmpl = nmc_fields_con_show;
+		tmpl_len = sizeof (nmc_fields_con_show);
+		nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error1);
 		if (error1)
+			goto error;
+		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
 			goto error;
 
 		/* Add headers */
@@ -505,8 +504,6 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		g_slist_foreach (nmc->system_connections, fill_output_connection, nmc);
 		print_data (nmc);  /* Print all data */
 	} else {
-		g_clear_error (&error1); /* the error1 is only relevant for 'show configured' without arguments */
-
 		while (argc > 0) {
 			NMConnection *con;
 			const char *selector = NULL;
@@ -976,7 +973,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	}
 
 	if (print_groups)
-		g_array_free (print_groups, FALSE);
+		g_array_free (print_groups, TRUE);
 
 	return TRUE;
 }
@@ -1399,7 +1396,7 @@ progress_vpn_cb (gpointer user_data)
 typedef struct {
 	NmCli *nmc;
 	NMDevice *device;
-	const char *con_type;
+	char *con_type;
 } ActivateConnectionInfo;
 
 static gboolean
@@ -1428,6 +1425,7 @@ master_iface_slaves_check (gpointer user_data)
 		quit ();
 	}
 
+	g_free (info->con_type);
 	g_free (info);
 	return FALSE;
 }
@@ -1497,6 +1495,7 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 			}
 		}
 	}
+	g_free (info->con_type);
 	g_free (info);
 }
 
@@ -1638,7 +1637,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
 	info->device = device;
-	info->con_type = con_type;
+	info->con_type = g_strdup (con_type);
 
 	nm_client_activate_connection (nmc->client,
 	                               connection,
