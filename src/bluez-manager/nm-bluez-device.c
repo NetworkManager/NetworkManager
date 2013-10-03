@@ -470,7 +470,8 @@ bluez_connect_cb (GDBusConnection *dbus_connection,
                   gpointer user_data)
 {
 	GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
-	NMBluezDevice *self = NM_BLUEZ_DEVICE (g_async_result_get_source_object (G_ASYNC_RESULT (result)));
+	GObject *result_object = g_async_result_get_source_object (G_ASYNC_RESULT (result));
+	NMBluezDevice *self = NM_BLUEZ_DEVICE (result_object);
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GError *error = NULL;
 	char *device;
@@ -492,6 +493,7 @@ bluez_connect_cb (GDBusConnection *dbus_connection,
 
 	g_simple_async_result_complete (result);
 	g_object_unref (result);
+	g_object_unref (result_object);
 }
 
 void
