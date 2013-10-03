@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -4498,7 +4498,7 @@ set_deftext (void)
 }
 
 static char *
-gen_nmcli_cmds (char *text, int state, const char **commands)
+gen_func_basic (char *text, int state, const char **words)
 {
 	static int list_idx, len;
 	const char *name;
@@ -4508,8 +4508,8 @@ gen_nmcli_cmds (char *text, int state, const char **commands)
 		len = strlen (text);
 	}
 
-	/* Return the next name which partially matches from the command list. */
-	while ((name = commands[list_idx])) {
+	/* Return the next name which partially matches one from the 'words' list. */
+	while ((name = words[list_idx])) {
 		list_idx++;
 
 		if (strncmp (name, text, len) == 0)
@@ -4521,40 +4521,54 @@ gen_nmcli_cmds (char *text, int state, const char **commands)
 static char *
 gen_nmcli_cmds_menu (char *text, int state)
 {
-	const char *commands[] = { "goto", "set", "remove", "describe", "print", "verify",
-	                           "save", "back", "help", "quit", "nmcli",
-	                            NULL };
-	return gen_nmcli_cmds (text, state, commands);
+	const char *words[] = { "goto", "set", "remove", "describe", "print", "verify",
+	                        "save", "back", "help", "quit", "nmcli",
+	                        NULL };
+	return gen_func_basic (text, state, words);
 }
 
 static char *
 gen_nmcli_cmds_submenu (char *text, int state)
 {
-	const char *commands[] = { "set", "add", "change", "remove", "describe",
-	                           "print", "back", "help", "quit",
-	                            NULL };
-	return gen_nmcli_cmds (text, state, commands);
+	const char *words[] = { "set", "add", "change", "remove", "describe",
+	                        "print", "back", "help", "quit",
+	                        NULL };
+	return gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_nmcli (char *text, int state)
 {
-	const char *commands[] = { "status-line", "save-confirmation", "prompt-color", NULL };
-	return gen_nmcli_cmds (text, state, commands);
+	const char *words[] = { "status-line", "save-confirmation", "prompt-color", NULL };
+	return gen_func_basic (text, state, words);
+}
+
+static char *
+gen_cmd_nmcli_prompt_color (char *text, int state)
+{
+	const char *words[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", NULL };
+	return gen_func_basic (text, state, words);
+}
+
+static char *
+gen_func_bool_values (char *text, int state)
+{
+	const char *words[] = { "yes", "no", NULL };
+	return gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_verify0 (char *text, int state)
 {
-	const char *commands[] = { "all", NULL };
-	return gen_nmcli_cmds (text, state, commands);
+	const char *words[] = { "all", NULL };
+	return gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_print2 (char *text, int state)
 {
-	const char *commands[] = { "setting", "connection", "all", NULL };
-	return gen_nmcli_cmds (text, state, commands);
+	const char *words[] = { "setting", "connection", "all", NULL };
+	return gen_func_basic (text, state, words);
 }
 
 static char *
@@ -4618,22 +4632,17 @@ gen_property_names (char *text, int state)
 	char *ret = NULL;
 	char *line = g_strdup (*edit_lib_symbols.rl_line_buffer_x);
 	const char *setting_name;
-	char *text_p = text;
 	char **strv = NULL;
 	const NameItem *valid_settings_arr;
 	const char *p1;
 
-	/* Try to get the setting from 'line' - setting_name.partial_property */
+	/* Try to get the setting from 'line' - setting_name.property */
 	p1 = strchr (line, '.');
 	if (p1) {
 		while (p1 > line && !g_ascii_isspace (*p1))
 			p1--;
 
 		strv = g_strsplit (p1+1, ".", 2);
-		if (g_strv_length (strv) == 2)
-			text_p = strv[1];
-		else
-			text_p = "";
 
 		valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
 		setting_name = check_valid_name (strv[0], valid_settings_arr, NULL);
@@ -4645,7 +4654,7 @@ gen_property_names (char *text, int state)
 
 	if (setting) {
 		valid_props = nmc_setting_get_valid_properties (setting);
-		ret = gen_nmcli_cmds (text_p, state, (const char **) valid_props);
+		ret = gen_func_basic (text, state, (const char **) valid_props);
 	}
 
 	g_free (line);
@@ -4656,33 +4665,98 @@ gen_property_names (char *text, int state)
 	return ret;
 }
 
+typedef char * (*my_gen_func_ptr) (char *, int);
+static my_gen_func_ptr
+get_gen_func_cmd_nmcli (char *str)
+{
+	if (!str)
+		return NULL;
+	if (matches (str, "status-line") == 0)
+		return gen_func_bool_values;
+	if (matches (str, "save-confirmation") == 0)
+		return gen_func_bool_values;
+	if (matches (str, "prompt-color") == 0)
+		return gen_cmd_nmcli_prompt_color;
+	return NULL;
+}
+
 /*
- * Helper function to parse line for completion:
- * TRUE -  complete when "cmd ", "cmd stri"
- * FALSE - don't complete when already "cmd string "
+ * Helper function parsing line for completion.
+ * IN:
+ *   line : the whole line to be parsed
+ *   end  : the position of cursor in the line
+ *   cmd  : command to match
+ * OUT:
+ *   cw_num    : is set to the word number being completed (1, 2, 3, 4).
+ *   prev_word : returns the previous word (so that we have some context).
+ *
+ * Returns TRUE when the first word of the 'line' matches 'cmd'.
+ *
  * Examples:
- * "describe "                - return TRUE
- * "describe ipv"             - return TRUE
- * "describe 802-1x "         - return FALSE
- * "describe connection.i"    - return TRUE
- * "describe connection.id "  - return FALSE
+ * line="rem"              cmd="remove"   -> TRUE  cw_num=1
+ * line="set con"          cmd="set"      -> TRUE  cw_num=2
+ * line="go ipv4.method"   cmd="goto"     -> TRUE  cw_num=2
+ * line="  des eth.mtu "   cmd="describe" -> TRUE  cw_num=3
+ * line=" bla ipv4.method" cmd="goto"     -> FALSE
  */
 static gboolean
-should_complete_cmd (const char *line, const char *cmd)
+should_complete_cmd (const char *line, int end, const char *cmd,
+                     int *cw_num, char **prev_word)
 {
-	if (g_str_has_prefix (line, cmd)) {
-		const char *p1 = line + strlen (cmd);
-		const char *p2;
+	char *tmp;
+	const char *word1, *word2, *word3;
+	size_t n1, n2, n3, n4, n5, n6;
+	gboolean word1_done, word2_done, word3_done;
+	gboolean ret = FALSE;
 
-		while (*p1 && g_ascii_isspace (*p1))
-			p1++;
-		p2 = p1;
-		while (*p2 && !g_ascii_isspace (*p2))
-			p2++;
-		if (*p2 == '\0')
-			return TRUE;
+	if (!line)
+		return FALSE;
+
+	tmp = g_strdup (line);
+
+	n1 = strspn  (tmp,    " \t");
+	n2 = strcspn (tmp+n1, " \t\0") + n1;
+	n3 = strspn  (tmp+n2, " \t")   + n2;
+	n4 = strcspn (tmp+n3, " \t\0") + n3;
+	n5 = strspn  (tmp+n4, " \t")   + n4;
+	n6 = strcspn (tmp+n5, " \t\0") + n5;
+
+	word1_done = end > n2;
+	word2_done = end > n4;
+	word3_done = end > n6;
+	tmp[n2] = tmp[n4] = tmp[n6] = '\0';
+
+	word1 = tmp[n1] ? tmp + n1 : NULL;
+	word2 = tmp[n3] ? tmp + n3 : NULL;
+	word3 = tmp[n5] ? tmp + n5 : NULL;
+
+	if (!word1_done) {
+		if (cw_num)
+			*cw_num = 1;
+		if (prev_word)
+			*prev_word = NULL;
+	} else if (!word2_done) {
+		if (cw_num)
+			*cw_num = 2;
+		if (prev_word)
+			*prev_word = g_strdup (word1);
+	} else if (!word3_done) {
+		if (cw_num)
+			*cw_num = 3;
+		if (prev_word)
+			*prev_word = g_strdup (word2);
+	} else {
+		if (cw_num)
+			*cw_num = 4;
+		if (prev_word)
+			*prev_word = g_strdup (word3);
 	}
-	return FALSE;
+
+	if (word1 && matches (word1, cmd) == 0)
+		ret = TRUE;
+
+	g_free (tmp);
+	return ret;
 }
 
 /*
@@ -4701,6 +4775,9 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	gboolean copy_char;
 	const char *p1;
 	char *p2, *prompt_tmp;
+	char *word = NULL;
+	size_t n1;
+	int num;
 
 	/* Restore standard append character to space */
 	*edit_lib_symbols.rl_completion_append_character_x = ' ';
@@ -4720,6 +4797,9 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	}
 	*p2 = '\0';
 
+	/* Find the first non-space character */
+	n1 = strspn (line, " \t");
+
 	/* Choose the right generator function */
 	if (strcmp (prompt_tmp, EDITOR_PROMPT_CON_TYPE) == 0)
 		generator_func = gen_connection_types;
@@ -4730,41 +4810,46 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	else if (g_str_has_prefix (prompt_tmp, "nmcli")) {
 		if (!strchr (prompt_tmp, '.')) {
 			int level = g_str_has_prefix (prompt_tmp, "nmcli>") ? 0 : 1;
+			const char *dot = strchr (line, '.');
 
 			/* Main menu  - level 0,1 */
-			if (start == 0)
+			if (start == n1)
 				generator_func = gen_nmcli_cmds_menu;
 			else {
-				if (should_complete_cmd (line, "goto ")) {
-					if (level == 0 && !strchr (line, '.'))
+				if (should_complete_cmd (line, end, "goto", &num, NULL) && num <= 2) {
+					if (level == 0 && (!dot || dot >= line + end))
 						generator_func = gen_setting_names;
 					else
 						generator_func = gen_property_names;
-				} else if (   should_complete_cmd (line, "set ")
-				           || should_complete_cmd (line, "remove ")
-				           || should_complete_cmd (line, "describe ")) {
-					if (level == 0 && !strchr (line, '.')) {
+				} else if (  (   should_complete_cmd (line, end, "set", &num, NULL)
+				              || should_complete_cmd (line, end, "remove", &num, NULL)
+				              || should_complete_cmd (line, end, "describe", &num, NULL))
+				           && num <= 2) {
+					if (level == 0 && (!dot || dot >= line + end)) {
 						generator_func = gen_setting_names;
 						*edit_lib_symbols.rl_completion_append_character_x = '.';
-					}
-					else
+					} else
 						generator_func = gen_property_names;
-				} else if (should_complete_cmd (line, "nmcli "))
-					generator_func = gen_cmd_nmcli;
-				else if (   should_complete_cmd (line, "print ")
-				         || should_complete_cmd (line, "verify "))
-					generator_func = gen_cmd_verify0;
-				else if (should_complete_cmd (line, "help "))
+				} else if (should_complete_cmd (line, end, "nmcli", &num, &word)) {
+					if (num < 3)
+						generator_func = gen_cmd_nmcli;
+					else if (num == 3)
+						generator_func = get_gen_func_cmd_nmcli (word);
+				} else if (   should_complete_cmd (line, end, "print", &num, NULL)
+				           || should_complete_cmd (line, end, "verify", &num, NULL)) {
+					if (num <= 2)
+						generator_func = gen_cmd_verify0;
+				} else if (should_complete_cmd (line, end, "help", &num, NULL) && num <= 2)
 					generator_func = gen_nmcli_cmds_menu;
 			}
 		} else {
 			/* Submenu - level 2 */
-			if (start == 0)
+			if (start == n1)
 				generator_func = gen_nmcli_cmds_submenu;
 			else {
-				if (should_complete_cmd (line, "print "))
+				if (should_complete_cmd (line, end, "print", &num, NULL) && num <= 2)
 					generator_func = gen_cmd_print2;
-				else if (should_complete_cmd (line, "help "))
+				else if (should_complete_cmd (line, end, "help", &num, NULL) && num <= 2)
 					generator_func = gen_nmcli_cmds_submenu;
 			}
 		}
@@ -4778,6 +4863,7 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 		*edit_lib_symbols.rl_attempted_completion_over_x = 1;
 
 	g_free (prompt_tmp);
+	g_free (word);
 	return match_array;
 }
 
