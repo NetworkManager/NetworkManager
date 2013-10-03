@@ -4588,6 +4588,7 @@ typedef struct {
 	char **rl_line_buffer_x;
 	char **rl_prompt_x;
 	int *rl_attempted_completion_over_x;
+	int *rl_complete_with_tilde_expansion_x;
 	int *rl_completion_append_character_x;
 	const char **rl_completer_word_break_characters_x;
 	void (*rl_free_line_state_func) (void);
@@ -4905,6 +4906,63 @@ should_complete_cmd (const char *line, int end, const char *cmd,
 	return ret;
 }
 
+static gboolean
+should_complete_files (const char *prompt, const char *line)
+{
+	char *prop = NULL;
+	gboolean found = FALSE;
+	const char *file_properties[] = {
+		/* '802-1x' properties */
+		"ca-cert",
+		"ca-path",
+		"client-cert",
+		"pac-file",
+		"phase2-ca-cert",
+		"phase2-ca-path",
+		"phase2-client-cert",
+		"private-key",
+		"phase2-private-key",
+		/* 'team' and 'team-port' properties */
+		"config",
+		NULL
+	};
+
+	/* If prompt is set take the property name from it, else extract it from line */
+	if (!prompt) {
+		const char *p1;
+		size_t num;
+		p1 = strchr (line, '.');
+		if (p1) {
+			p1++;
+		} else {
+			size_t n1, n2, n3;
+			n1 = strspn  (line,    " \t");
+			n2 = strcspn (line+n1, " \t\0") + n1;
+			n3 = strspn  (line+n2, " \t")   + n2;
+			p1 = line + n3;
+		}
+		num = strcspn (p1, " \t\0");
+		prop = g_strndup (p1, num);
+	} else {
+		const char *p1, *dot;
+		size_t num;
+		p1 = strchr (prompt, ' ');
+		/* prompt looks like this: "nmcli 802-1x>" or "nmcli 802-1x.pac-file>" */
+		if (p1) {
+			dot = strchr (p1 + 1, '.');
+			p1 = dot ? dot + 1 : p1;
+			num = strcspn  (p1, ">");
+			prop = g_strndup (p1, num);
+		}
+	}
+
+	if (prop) {
+		found = !!nmc_string_is_valid (prop, file_properties, NULL);
+		g_free (prop);
+	}
+	return found;
+}
+
 /*
  * Attempt to complete on the contents of TEXT.  START and END show the
  * region of TEXT that contains the word to complete.  We can use the
@@ -4927,6 +4985,12 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 
 	/* Restore standard append character to space */
 	*edit_lib_symbols.rl_completion_append_character_x = ' ';
+
+	/* Disable default filename completion */
+	*edit_lib_symbols.rl_attempted_completion_over_x = 1;
+
+	/* Enable tilde expansion when filenames are completed */
+	*edit_lib_symbols.rl_complete_with_tilde_expansion_x = 1;
 
 	/* Filter out possible ANSI color escape sequences */
 	p1 = prompt;
@@ -4967,8 +5031,17 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 						generator_func = gen_setting_names;
 					else
 						generator_func = gen_property_names;
-				} else if (  (   should_complete_cmd (line, end, "set", &num, NULL)
-				              || should_complete_cmd (line, end, "remove", &num, NULL)
+				} else if (should_complete_cmd (line, end, "set", &num, NULL)) {
+					if (num < 3) {
+						if (level == 0 && (!dot || dot >= line + end)) {
+							generator_func = gen_setting_names;
+							*edit_lib_symbols.rl_completion_append_character_x = '.';
+						} else
+							generator_func = gen_property_names;
+					} else if (num == 3 && should_complete_files (NULL, line)) {
+						*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+					}
+				} else if (  (   should_complete_cmd (line, end, "remove", &num, NULL)
 				              || should_complete_cmd (line, end, "describe", &num, NULL))
 				           && num <= 2) {
 					if (level == 0 && (!dot || dot >= line + end)) {
@@ -4995,6 +5068,11 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 			if (start == n1)
 				generator_func = gen_nmcli_cmds_submenu;
 			else {
+				if (   should_complete_cmd (line, end, "add", &num, NULL)
+				    || should_complete_cmd (line, end, "set", &num, NULL)) {
+					if (num <= 2 && should_complete_files (prompt_tmp, line))
+						*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+				}
 				if (should_complete_cmd (line, end, "print", &num, NULL) && num <= 2)
 					generator_func = gen_cmd_print2;
 				else if (should_complete_cmd (line, end, "help", &num, NULL) && num <= 2)
@@ -5005,10 +5083,6 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 
 	if (generator_func)
 		match_array = edit_lib_symbols.completion_matches_func (text, generator_func);
-
-	/* Disable default filename completion */
-	if (!match_array)
-		*edit_lib_symbols.rl_attempted_completion_over_x = 1;
 
 	g_free (prompt_tmp);
 	g_free (word);
@@ -5062,6 +5136,9 @@ load_cmd_line_edit_lib (void)
 		goto error;
 	if (!g_module_symbol (module, "rl_attempted_completion_over",
 	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_over_x)))
+		goto error;
+	if (!g_module_symbol (module, "rl_complete_with_tilde_expansion",
+	                      (gpointer) (&edit_lib_symbols.rl_complete_with_tilde_expansion_x)))
 		goto error;
 	if (!g_module_symbol (module, "rl_completion_append_character",
 	                      (gpointer) (&edit_lib_symbols.rl_completion_append_character_x)))
