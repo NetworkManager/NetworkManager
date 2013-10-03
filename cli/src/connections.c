@@ -5512,7 +5512,10 @@ property_edit_submenu (NmCli *nmc,
 		char *cmd_property_arg;
 
 		/* Connection is dirty? (not saved or differs from the saved) */
-		dirty = !nm_connection_compare (connection, NM_CONNECTION (rem_con), NM_SETTING_COMPARE_FLAG_EXACT);
+		dirty = !nm_connection_compare (connection,
+		                                rem_con ? NM_CONNECTION (rem_con) : NULL,
+		                                NM_SETTING_COMPARE_FLAG_EXACT);
+
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty);
 
@@ -5891,7 +5894,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			                                                     nm_connection_get_uuid (connection));
 
 		/* Connection is dirty? (not saved or differs from the saved) */
-		dirty = !nm_connection_compare (connection, NM_CONNECTION (rem_con), NM_SETTING_COMPARE_FLAG_EXACT);
+		dirty = !nm_connection_compare (connection,
+		                                rem_con ? NM_CONNECTION (rem_con) : NULL,
+		                                NM_SETTING_COMPARE_FLAG_EXACT);
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty);
 
