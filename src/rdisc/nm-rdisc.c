@@ -120,7 +120,7 @@ config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed)
 		NMRDiscRoute *route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
 
 		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-		debug ("  route %s pref %d exp %u", addrstr, route->preference, expiry (route));
+		debug ("  route %s/%d pref %d exp %u", addrstr, route->plen, route->preference, expiry (route));
 	}
 	for (i = 0; i < rdisc->dns_servers->len; i++) {
 		NMRDiscDNSServer *dns_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
