@@ -264,16 +264,14 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 	                            G_TYPE_BOOLEAN, &priv->nm_running,
 	                            G_TYPE_INVALID)) {
 		init_async_complete (simple, error);
-		return;
-	}
-
-	if (!priv->nm_running) {
+	} else if (!priv->nm_running) {
 		priv->inited = TRUE;
 		init_async_complete (simple, NULL);
-		return;
-	}
+	} else
+		_nm_object_reload_properties_async (self, init_async_got_properties, simple);
 
-	_nm_object_reload_properties_async (self, init_async_got_properties, simple);
+	/* g_async_result_get_source_object() adds a ref */
+	g_object_unref (self);
 }
 
 static void
