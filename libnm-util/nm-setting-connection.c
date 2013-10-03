@@ -773,6 +773,7 @@ finalize (GObject *object)
 	g_free (priv->master);
 	g_free (priv->slave_type);
 	nm_utils_slist_free (priv->permissions, (GDestroyNotify) permission_free);
+	nm_utils_slist_free (priv->secondaries, g_free);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
 }

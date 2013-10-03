@@ -636,6 +636,8 @@ finalize (GObject *object)
 	g_free (priv->parent);
 	nm_utils_slist_free (priv->ingress_priority_map, g_free);
 	nm_utils_slist_free (priv->egress_priority_map, g_free);
+
+	G_OBJECT_CLASS (nm_setting_vlan_parent_class)->finalize (object);
 }
 
 static void
