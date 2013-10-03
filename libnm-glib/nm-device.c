@@ -366,7 +366,6 @@ finalize (GObject *object)
 	g_free (priv->firmware_version);
 	g_free (priv->product);
 	g_free (priv->vendor);
-	g_free (priv->type_description);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
