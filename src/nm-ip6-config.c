@@ -617,8 +617,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	are_equal = num == nm_ip6_config_get_num_nameservers (dst);
 	if (are_equal) {
 		for (i = 0; i < num; i++ ) {
-			if (IN6_ARE_ADDR_EQUAL (nm_ip6_config_get_nameserver (src, i),
-			                        nm_ip6_config_get_nameserver (dst, i))) {
+			if (!IN6_ARE_ADDR_EQUAL (nm_ip6_config_get_nameserver (src, i),
+			                         nm_ip6_config_get_nameserver (dst, i))) {
 				are_equal = FALSE;
 				break;
 			}
