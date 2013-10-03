@@ -870,6 +870,7 @@ finalize (GObject *object)
 	g_free (priv->master);
 	g_free (priv->slave_type);
 	g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
+	g_slist_free_full (priv->secondaries, g_free);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
 }

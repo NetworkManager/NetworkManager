@@ -226,6 +226,11 @@ device_state_change_reloaded (GObject *object,
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	StateChangeData *data = user_data;
+	NMDeviceState old_state = data->old_state;
+	NMDeviceState new_state = data->new_state;
+	NMDeviceStateReason reason = data->reason;
+
+	g_slice_free (StateChangeData, data);
 
 	_nm_object_reload_properties_finish (NM_OBJECT (object), result, NULL);
 
@@ -234,17 +239,16 @@ device_state_change_reloaded (GObject *object,
 	 * they'll finish in the right order. In that case, only emit the signal
 	 * for the last one.
 	 */
-	if (priv->last_seen_state != data->new_state)
+	if (priv->last_seen_state != new_state)
 		return;
 
 	/* Ensure that nm_device_get_state() will return the right value even if
 	 * we haven't processed the corresponding PropertiesChanged yet.
 	 */
-	priv->state = data->new_state;
+	priv->state = new_state;
 
 	g_signal_emit (self, signals[STATE_CHANGED], 0,
-	               data->new_state, data->old_state, data->reason);
-	g_slice_free (StateChangeData, data);
+	               new_state, old_state, reason);
 }
 
 static void
@@ -384,6 +388,7 @@ finalize (GObject *object)
 	g_free (priv->firmware_version);
 	g_free (priv->product);
 	g_free (priv->vendor);
+	g_free (priv->type_description);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }

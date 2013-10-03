@@ -501,7 +501,7 @@ static void
 recheck_pending_activations (NMClient *self, const char *failed_path, GError *error)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-	GSList *iter;
+	GSList *iter, *next;
 	const GPtrArray *active_connections;
 	gboolean found_in_active = FALSE;
 	gboolean found_in_pending = FALSE;
@@ -516,8 +516,10 @@ recheck_pending_activations (NMClient *self, const char *failed_path, GError *er
 	 * If the connection to activate doesn't make it to active_connections,
 	 * due to an error, we have to call the callback for failed_path.
 	 */
-	for (iter = priv->pending_activations; iter; iter = g_slist_next (iter)) {
+	for (iter = priv->pending_activations; iter; iter = next) {
 		ActivateInfo *info = iter->data;
+
+		next = g_slist_next (iter);
 
 		if (!found_in_pending && failed_path && g_strcmp0 (failed_path, info->active_path) == 0) {
 			found_in_pending = TRUE;

@@ -741,8 +741,10 @@ add_to_object_array_unique (GPtrArray *array, GObject *obj)
 
 	if (obj != NULL) {
 		for (i = 0; i < array->len; i++) {
-			if (g_ptr_array_index (array, i) == obj)
+			if (g_ptr_array_index (array, i) == obj) {
+				g_object_unref (obj);
 				return;
+			}
 		}
 		g_ptr_array_add (array, obj);
 	}
