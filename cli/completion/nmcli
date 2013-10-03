@@ -732,9 +732,9 @@ _nmcli()
                                     # means, we are at the end of options. Nothing more to parse, just show
                                     # what are the options now.
                                     if [[ "${#OPTIONS_MANDATORY[@]}" -gt 0 ]]; then
-                                        _nmcli_list "$(echo "${OPTIONS_TYPED[@]}")"
+                                        _nmcli_list "$(echo "${OPTIONS[@]}")"
                                     else
-                                        _nmcli_list "$(echo "${OPTIONS_TYPED[@]}") $(echo "${OPTIONS_IP[@]}")"
+                                        _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_IP[@]}")"
                                     fi
                                     return 0
                                 fi
