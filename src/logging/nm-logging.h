@@ -61,6 +61,7 @@ enum {
 	LOGD_DBUS_PROPS = (1LL << 31),
 	LOGD_TEAM       = (1LL << 32),
 	LOGD_CONCHECK   = (1LL << 33),
+	LOGD_DCB        = (1LL << 34), /* Data Center Bridging */
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
