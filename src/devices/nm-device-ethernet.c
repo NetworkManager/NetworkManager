@@ -55,6 +55,7 @@
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
+#include "nm-dcb.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -1045,8 +1046,23 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMSettingConnection *s_con;
 	const char *connection_type;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMSettingDcb *s_dcb;
+	GError *error = NULL;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	/* DCB and FCoE setup */
+	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	if (s_dcb) {
+		if (!nm_dcb_setup (nm_device_get_iface (device), s_dcb, &error)) {
+			nm_log_warn (LOGD_DEVICE | LOGD_HW,
+			             "Activation (%s/wired) failed to enable DCB/FCoE: %s",
+			             nm_device_get_iface (device), error->message);
+			g_clear_error (&error);
+			*reason = NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED;
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+	}
 
 	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
@@ -1113,6 +1129,8 @@ deactivate (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMSettingDcb *s_dcb;
+	GError *error = NULL;
 
 	/* Clear wired secrets tries when deactivating */
 	clear_secrets_tries (device);
@@ -1128,6 +1146,17 @@ deactivate (NMDevice *device)
 	}
 
 	supplicant_interface_release (self);
+
+	/* Tear down DCB/FCoE if it was enabled */
+	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	if (s_dcb) {
+		if (!nm_dcb_cleanup (nm_device_get_iface (device), &error)) {
+			nm_log_warn (LOGD_DEVICE | LOGD_HW,
+			             "(%s) failed to disable DCB/FCoE: %s",
+			             nm_device_get_iface (device), error->message);
+			g_clear_error (&error);
+		}
+	}
 
 	/* Reset MAC address back to initial address */
 	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);

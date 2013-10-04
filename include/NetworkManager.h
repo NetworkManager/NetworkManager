@@ -545,6 +545,9 @@ typedef enum {
 	/* A secondary connection of the base connection failed */
 	NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED = 54,
 
+	/* DCB or FCoE setup failed */
+	NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED = 55,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

@@ -579,6 +579,11 @@
           A secondary connection of the base connection failed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="DCB_FCOE_FAILED" value="55">
+        <tp:docstring>
+          DCB or FCoE setup failed.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">
