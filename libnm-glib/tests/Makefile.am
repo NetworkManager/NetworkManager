@@ -29,6 +29,10 @@ TEST_RSS_BIN = test-remote-settings-service.py
 EXTRA_DIST = $(TEST_RSS_BIN)
 
 check-local: test-remote-settings-client
-	$(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN)
+	if test -z "$$DBUS_SESSION_BUS_ADDRESS" ; then \
+	    dbus-launch --exit-with-session $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN); \
+	else \
+	    $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN); \
+	fi;
 
 endif
