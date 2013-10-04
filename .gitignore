@@ -178,6 +178,7 @@ valgrind-*.log
 /libnm-util/tests/test-setting-8021x
 /libnm-util/tests/test-setting-dcb
 /libnm-glib/tests/test-remote-settings-client
+/src/tests/test-dcb
 /src/tests/test-dhcp-options
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
