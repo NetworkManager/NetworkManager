@@ -246,7 +246,6 @@ commit_changes (NMSettingsConnection *connection,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 	GError *error = NULL;
 	NMConnection *reread;
-	char *unmanaged = NULL, *keyfile = NULL, *routefile = NULL, *route6file = NULL;
 	gboolean same = FALSE, success = FALSE;
 	char *ifcfg_path = NULL;
 
@@ -256,13 +255,9 @@ commit_changes (NMSettingsConnection *connection,
 	 */
 	if (priv->path) {
 		reread = connection_from_file (priv->path, NULL, NULL, NULL,
-		                               &unmanaged, &keyfile, &routefile, &route6file,
-		                               NULL, NULL);
-		g_free (unmanaged);
-		g_free (keyfile);
-		g_free (routefile);
-		g_free (route6file);
-
+		                               NULL, NULL, NULL, NULL,
+		                               &error, NULL);
+		g_clear_error (&error);
 		if (reread) {
 			same = nm_connection_compare (NM_CONNECTION (connection),
 			                              reread,
