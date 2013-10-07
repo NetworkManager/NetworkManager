@@ -1113,7 +1113,7 @@ static void
 pending_secondary_data_free (PendingSecondaryData *data)
 {
 	g_object_unref (data->device);
-	g_slist_free_full (data->secondaries, g_free);
+	g_slist_free_full (data->secondaries, g_object_unref);
 	memset (data, 0, sizeof (*data));
 	g_free (data);
 }
@@ -1124,51 +1124,47 @@ process_secondaries (NMPolicy *policy,
                      gboolean connected)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDevice *device = NULL;
-	const char *ac_path;
 	GSList *iter, *iter2;
 
-	nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' %s; active path '%s'",
-	            nm_active_connection_get_name (active),
-	            connected ? "SUCCEEDED" : "FAILED",
-	            nm_active_connection_get_path (active));
-
-	ac_path = nm_active_connection_get_path (active);
-
-	if (NM_IS_VPN_CONNECTION (active))
-		device = nm_active_connection_get_device (active);
-
+	/* Loop through devices waiting for secondary connections to activate */
 	for (iter = priv->pending_secondaries; iter; iter = g_slist_next (iter)) {
 		PendingSecondaryData *secondary_data = (PendingSecondaryData *) iter->data;
 		NMDevice *item_device = secondary_data->device;
 
-		if (!device || item_device == device) {
-			for (iter2 = secondary_data->secondaries; iter2; iter2 = g_slist_next (iter2)) {
-				char *list_ac_path = (char *) iter2->data;
+		/* Look for 'active' in each device's secondary connections list */
+		for (iter2 = secondary_data->secondaries; iter2; iter2 = g_slist_next (iter2)) {
+			NMActiveConnection *secondary_active = NM_ACTIVE_CONNECTION (iter2->data);
 
-				if (g_strcmp0 (ac_path, list_ac_path) == 0) {
-					if (connected) {
-						/* Secondary connection activated */
-						secondary_data->secondaries = g_slist_remove (secondary_data->secondaries, list_ac_path);
-						g_free (list_ac_path);
-						if (!secondary_data->secondaries) {
-							/* None secondary UUID remained -> remove the secondary data item */
-							priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
-							pending_secondary_data_free (secondary_data);
-							nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
-							return;
-						}
-					} else {
-						/* Secondary connection failed -> do not watch other connections */
-						priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
-						pending_secondary_data_free (secondary_data);
-						nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
-						                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
-						return;
-					}
+			if (active != secondary_active)
+				continue;
+
+			if (connected) {
+				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' SUCCEEDED; active path '%s'",
+				            nm_active_connection_get_name (active),
+				            nm_active_connection_get_path (active));
+
+				/* Secondary connection activated */
+				secondary_data->secondaries = g_slist_remove (secondary_data->secondaries, secondary_active);
+				g_object_unref (secondary_active);
+				if (!secondary_data->secondaries) {
+					/* No secondary UUID remained -> remove the secondary data item */
+					priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
+					pending_secondary_data_free (secondary_data);
+					nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+					break;
 				}
+			} else {
+				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' FAILED; active path '%s'",
+				            nm_active_connection_get_name (active),
+				            nm_active_connection_get_path (active));
+
+				/* Secondary connection failed -> do not watch other connections */
+				priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
+				pending_secondary_data_free (secondary_data);
+				nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
+				                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
+				break;
 			}
-			return;
 		}
 	}
 }
@@ -1363,10 +1359,9 @@ activate_secondary_connections (NMPolicy *policy,
 			                                     device,
 			                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 			                                     &error);
-			if (ac) {
-				secondary_ac_list = g_slist_append (secondary_ac_list,
-				                                    g_strdup (nm_active_connection_get_path (ac)));
-			} else {
+			if (ac)
+				secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
+			else {
 				nm_log_warn (LOGD_DEVICE, "Secondary connection '%s' auto-activation failed: (%d) %s",
 				             sec_uuid,
 				             error ? error->code : 0,
@@ -1387,7 +1382,7 @@ activate_secondary_connections (NMPolicy *policy,
 		secondary_data = pending_secondary_data_new (device, secondary_ac_list);
 		priv->pending_secondaries = g_slist_append (priv->pending_secondaries, secondary_data);
 	} else
-		g_slist_free_full (secondary_ac_list, g_free);
+		g_slist_free_full (secondary_ac_list, g_object_unref);
 
 	return success;
 }
