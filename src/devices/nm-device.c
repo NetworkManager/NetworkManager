@@ -3329,8 +3329,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
 	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
 		if (!addrconf6_start (self)) {
-			*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
+			/* IPv6 might be disabled; allow IPv4 to proceed */
+			ret = NM_ACT_STAGE_RETURN_STOP;
 		} else
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
