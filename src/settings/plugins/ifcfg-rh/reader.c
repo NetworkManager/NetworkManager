@@ -1120,9 +1120,9 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
-	const char *pattern_to1 = "^\\s*(" IPV6_ADDR_REGEX "|default)"  /* IPv6 or 'default' keyword */
+	const char *pattern_to1 = "^\\s*(default|" IPV6_ADDR_REGEX ")"  /* IPv6 or 'default' keyword */
 	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
-	const char *pattern_to2 = "to\\s+(" IPV6_ADDR_REGEX "|default)" /* IPv6 or 'default' keyword */
+	const char *pattern_to2 = "to\\s+(default|" IPV6_ADDR_REGEX ")" /* IPv6 or 'default' keyword */
 	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
 	const char *pattern_via = "via\\s+(" IPV6_ADDR_REGEX ")";       /* IPv6 of gateway */
 	const char *pattern_metric = "metric\\s+(\\d+)";                /* metric */
@@ -1168,8 +1168,14 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			}
 		}
 		dest = g_match_info_fetch (match_info, 1);
-		if (!strcmp (dest, "default"))
-			strcpy (dest, "::");
+		if (!g_strcmp0 (dest, "default")) {
+			/* Ignore default route - NM handles it internally */
+			g_free (dest);
+			g_match_info_free (match_info);
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring manual default route: '%s' (%s)",
+			             *iter, filename);
+			continue;
+		}
 		if (inet_pton (AF_INET6, dest, &ip6_addr) != 1) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				     "Invalid IP6 route destination address '%s'", dest);
