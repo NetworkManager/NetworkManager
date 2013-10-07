@@ -348,15 +348,6 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 	g_assert_not_reached ();
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -485,7 +476,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (g_slist_find_custom (all_settings, NM_SETTING_INFINIBAND_SETTING_NAME, find_setting_by_name)) {
+	if (nm_setting_find_in_list (all_settings, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		if (strcmp (value, "active-backup") != 0) {
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,

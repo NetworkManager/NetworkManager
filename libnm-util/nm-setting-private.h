@@ -51,5 +51,7 @@ gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 static void __attribute__((constructor)) register_setting (void) \
 { g_type_init (); g_type_ensure (x); }
 
+NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_name);
+
 #endif  /* NM_SETTING_PRIVATE_H */
 

@@ -132,15 +132,6 @@ nm_setting_bluetooth_get_bdaddr (NMSettingBluetooth *setting)
 	return NM_SETTING_BLUETOOTH_GET_PRIVATE (setting)->bdaddr;
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -187,12 +178,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	    && !strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN)) {
 		gboolean gsm = FALSE, cdma = FALSE;
 
-		gsm = !!g_slist_find_custom (all_settings,
-		                             (gpointer) NM_SETTING_GSM_SETTING_NAME,
-		                             find_setting_by_name);
-		cdma = !!g_slist_find_custom (all_settings,
-		                              (gpointer) NM_SETTING_CDMA_SETTING_NAME,
-		                              find_setting_by_name);
+		gsm = !!nm_setting_find_in_list (all_settings, NM_SETTING_GSM_SETTING_NAME);
+		cdma = !!nm_setting_find_in_list (all_settings, NM_SETTING_CDMA_SETTING_NAME);
 
 		if (!gsm && !cdma) {
 			g_set_error (error,

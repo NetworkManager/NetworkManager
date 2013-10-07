@@ -678,15 +678,6 @@ nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
 }
 
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -781,7 +772,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	/* Make sure the corresponding 'type' item is present */
-	if (all_settings && !g_slist_find_custom (all_settings, priv->type, find_setting_by_name)) {
+	if (all_settings && !nm_setting_find_in_list (all_settings, priv->type)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
@@ -796,14 +787,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	 */
 	if (priv->slave_type && all_settings &&
 	    !strcmp(priv->slave_type, NM_SETTING_BOND_SETTING_NAME)) {
-		GSList *list;
+		NMSettingIP4Config *s_ip4;
+		NMSettingIP6Config *s_ip6;
 
-		list = g_slist_find_custom (all_settings, NM_SETTING_IP4_CONFIG_SETTING_NAME,
-		                            find_setting_by_name);
-		if (list) {
-			NMSettingIP4Config *s_ip4 = g_slist_nth_data (list, 0);
-			g_assert (s_ip4);
-
+		s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_find_in_list (all_settings, NM_SETTING_IP4_CONFIG_SETTING_NAME));
+		if (s_ip4) {
 			if (strcmp (nm_setting_ip4_config_get_method (s_ip4),
 			            NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
 				g_set_error_literal (error,
@@ -815,12 +803,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			}
 		}
 
-		list = g_slist_find_custom (all_settings, NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		                            find_setting_by_name);
-		if (list) {
-			NMSettingIP6Config *s_ip6 = g_slist_nth_data (list, 0);
-			g_assert (s_ip6);
-
+		s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_find_in_list (all_settings, NM_SETTING_IP6_CONFIG_SETTING_NAME));
+		if (s_ip6) {
 			if (strcmp (nm_setting_ip6_config_get_method (s_ip6),
 			            NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 				g_set_error_literal (error,

@@ -415,6 +415,28 @@ nm_setting_duplicate (NMSetting *setting)
 	return NM_SETTING (dup);
 }
 
+static gint
+find_setting_by_name (gconstpointer a, gconstpointer b)
+{
+	NMSetting *setting = NM_SETTING (a);
+	const char *str = (const char *) b;
+
+	return strcmp (nm_setting_get_name (setting), str);
+}
+
+NMSetting *
+nm_setting_find_in_list (GSList     *settings_list,
+                         const char *setting_name)
+{
+	GSList *found;
+
+	found = g_slist_find_custom (settings_list, setting_name, find_setting_by_name);
+	if (found)
+		return found->data;
+	else
+		return NULL;
+}
+
 /**
  * nm_setting_get_name:
  * @setting: the #NMSetting

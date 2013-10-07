@@ -777,15 +777,6 @@ no_secrets:
 	return NULL;
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -847,7 +838,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (   (strcmp (priv->key_mgmt, "ieee8021x") == 0)
 		    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)) {
 			/* Need an 802.1x setting too */
-			if (!g_slist_find_custom (all_settings, NM_SETTING_802_1X_SETTING_NAME, find_setting_by_name)) {
+			if (!nm_setting_find_in_list (all_settings, NM_SETTING_802_1X_SETTING_NAME)) {
 				g_set_error (error,
 				             NM_SETTING_WIRELESS_SECURITY_ERROR,
 				             NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING,
