@@ -6288,10 +6288,24 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					        nmc_editor_error->code, nmc_editor_error->message);
 
 					g_error_free (nmc_editor_error);
-				} else
+				} else {
+					NMRemoteConnection *con_tmp;
+
 					printf (_("Connection '%s' (%s) successfully saved.\n"),
 					        nm_connection_get_id (connection),
 					        nm_connection_get_uuid (connection));
+
+					/* Replace local connection with the remote one to be sure they are equal.
+					 * This mitigates problems with plugins not preserving some properties or
+					 * adding ipv{4,6} settings when not present.
+					 */
+					con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
+					                                                     nm_connection_get_uuid (connection));
+					if (con_tmp)
+						nm_connection_replace_settings_from_connection (connection,
+						                                                NM_CONNECTION (con_tmp),
+						                                                NULL);
+				}
 
 				nmc_editor_cb_called = FALSE;
 				nmc_editor_error = NULL;
