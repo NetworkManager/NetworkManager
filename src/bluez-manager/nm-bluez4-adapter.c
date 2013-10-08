@@ -64,6 +64,8 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static void device_do_remove (NMBluez4Adapter *self, NMBluezDevice *device);
+
 const char *
 nm_bluez4_adapter_get_path (NMBluez4Adapter *self)
 {
@@ -104,35 +106,53 @@ nm_bluez4_adapter_get_devices (NMBluez4Adapter *self)
 }
 
 static void
+emit_device_removed (NMBluez4Adapter *self, NMBluezDevice *device)
+{
+	nm_log_dbg (LOGD_BT, "(%s): bluez device now unusable",
+	            nm_bluez_device_get_path (device));
+	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
+}
+
+static void
 device_usable (NMBluezDevice *device, GParamSpec *pspec, gpointer user_data)
 {
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
-	gboolean usable = nm_bluez_device_get_usable (device);
 
-	nm_log_dbg (LOGD_BT, "(%s): bluez device now %s",
-	            nm_bluez_device_get_path (device),
-	            usable ? "usable" : "unusable");
-
-	if (usable) {
-		nm_log_dbg (LOGD_BT, "(%s): bluez device address %s",
-				    nm_bluez_device_get_path (device),
-				    nm_bluez_device_get_address (device));
+	if (nm_bluez_device_get_usable (device)) {
+		nm_log_dbg (LOGD_BT, "(%s): bluez device now usable (device address is %s)",
+		            nm_bluez_device_get_path (device),
+		            nm_bluez_device_get_address (device));
 		g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	} else
-		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
+		emit_device_removed (self, device);
 }
 
 static void
 device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 {
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (user_data);
-	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
 	            nm_bluez_device_get_path (device),
 	            success ? "initialized" : "failed to initialize");
 	if (!success)
-		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
+		device_do_remove (self, device);
+}
+
+static void
+device_do_remove (NMBluez4Adapter *self, NMBluezDevice *device)
+{
+	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
+
+	if (g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device))) {
+		g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_initialized), self);
+		g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_usable), self);
+
+		if (nm_bluez_device_get_usable (device))
+			emit_device_removed (self, device);
+
+		g_object_unref (device);
+	}
 }
 
 static void
@@ -160,12 +180,8 @@ device_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
 
 	device = g_hash_table_lookup (priv->devices, path);
-	if (device) {
-		g_object_ref (device);
-		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
-		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
-		g_object_unref (device);
-	}
+	if (device)
+		device_do_remove (self, device);
 }
 
 
@@ -268,7 +284,13 @@ nm_bluez4_adapter_init (NMBluez4Adapter *self)
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
 	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                       NULL, g_object_unref);
+	                                       NULL, NULL);
+}
+
+static gboolean
+_find_all (gpointer key, gpointer value, gpointer user_data)
+{
+	return TRUE;
 }
 
 static void
@@ -276,13 +298,10 @@ dispose (GObject *object)
 {
 	NMBluez4Adapter *self = NM_BLUEZ4_ADAPTER (object);
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
-	GHashTableIter iter;
 	NMBluezDevice *device;
 
-	g_hash_table_iter_init (&iter, priv->devices);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device))
-		g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
-	g_hash_table_remove_all (priv->devices);
+	while ((device = g_hash_table_find (priv->devices, _find_all, NULL)))
+		device_do_remove (self, device);
 
 	G_OBJECT_CLASS (nm_bluez4_adapter_parent_class)->dispose (object);
 }
