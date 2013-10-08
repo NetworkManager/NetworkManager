@@ -540,25 +540,25 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		addrs = g_strsplit (arp_ip_target, ",", -1);
 		if (!addrs[0]) {
-			g_strfreev (addrs);
 			g_set_error (error,
 			             NM_SETTING_BOND_ERROR,
 			             NM_SETTING_BOND_ERROR_INVALID_OPTION,
 			             _("'%s' option is empty"),
 			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+			g_strfreev (addrs);
 			return FALSE;
 		}
 
 		for (i = 0; addrs[i]; i++) {
 			if (!inet_pton (AF_INET, addrs[i], &addr)) {
-				g_strfreev (addrs);
 				g_set_error (error,
 				             NM_SETTING_BOND_ERROR,
 				             NM_SETTING_BOND_ERROR_INVALID_OPTION,
 				             _("'%s' is not a valid IPv4 address for '%s' option"),
 				             NM_SETTING_BOND_OPTION_ARP_IP_TARGET, addrs[i]);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+				g_strfreev (addrs);
 				return FALSE;
 			}
 		}
