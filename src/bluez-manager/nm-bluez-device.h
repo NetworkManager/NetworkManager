@@ -40,7 +40,6 @@
 #define NM_BLUEZ_DEVICE_ADDRESS      "address"
 #define NM_BLUEZ_DEVICE_NAME         "name"
 #define NM_BLUEZ_DEVICE_CAPABILITIES "capabilities"
-#define NM_BLUEZ_DEVICE_RSSI         "rssi"
 #define NM_BLUEZ_DEVICE_USABLE       "usable"
 #define NM_BLUEZ_DEVICE_CONNECTED    "connected"
 
@@ -74,8 +73,6 @@ const char *nm_bluez_device_get_name (NMBluezDevice *self);
 guint32 nm_bluez_device_get_class (NMBluezDevice *self);
 
 guint32 nm_bluez_device_get_capabilities (NMBluezDevice *self);
-
-gint nm_bluez_device_get_rssi (NMBluezDevice *self);
 
 gboolean nm_bluez_device_get_connected (NMBluezDevice *self);
 
