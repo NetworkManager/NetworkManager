@@ -5282,18 +5282,11 @@ set_property (GObject *object, guint prop_id,
 }
 
 static gboolean
-has_ip_config (NMDevice *self)
+ip_config_valid (NMDeviceState state)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->ip4_state != IP_DONE && priv->ip6_state != IP_DONE)
-		return FALSE;
-
-	if (priv->state == NM_DEVICE_STATE_UNMANAGED)
-		return TRUE;
-
-	return (priv->state >= NM_DEVICE_STATE_IP_CONFIG
-	        && priv->state <= NM_DEVICE_STATE_DEACTIVATING);
+	return (state == NM_DEVICE_STATE_UNMANAGED) ||
+	        (state >= NM_DEVICE_STATE_IP_CHECK &&
+	         state <= NM_DEVICE_STATE_DEACTIVATING);
 }
 
 static void
@@ -5315,7 +5308,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->iface);
 		break;
 	case PROP_IP_IFACE:
-		if (has_ip_config (self))
+		if (ip_config_valid (priv->state))
 			g_value_set_string (value, nm_device_get_ip_iface (self));
 		else
 			g_value_set_string (value, NULL);
@@ -5342,25 +5335,25 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->carrier);
 		break;
 	case PROP_IP4_CONFIG:
-		if (has_ip_config (self) && priv->ip4_config)
+		if (ip_config_valid (priv->state) && priv->ip4_config)
 			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_DHCP4_CONFIG:
-		if (has_ip_config (self) && priv->dhcp4_client)
+		if (ip_config_valid (priv->state) && priv->dhcp4_client)
 			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_IP6_CONFIG:
-		if (has_ip_config (self) && priv->ip6_config)
+		if (ip_config_valid (priv->state) && priv->ip6_config)
 			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_DHCP6_CONFIG:
-		if (has_ip_config (self) && priv->dhcp6_client)
+		if (ip_config_valid (priv->state) && priv->dhcp6_client)
 			g_value_set_boxed (value, nm_dhcp6_config_get_dbus_path (priv->dhcp6_config));
 		else
 			g_value_set_boxed (value, "/");
@@ -5918,6 +5911,16 @@ state_implies_pending_action (NMDeviceState state)
 	        && state < NM_DEVICE_STATE_ACTIVATED);
 }
 
+static void
+notify_ip_properties (NMDevice *device)
+{
+	g_object_notify (G_OBJECT (device), NM_DEVICE_IP_IFACE);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_IP4_CONFIG);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_IP6_CONFIG);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
+}
+
 void
 nm_device_state_changed (NMDevice *device,
                          NMDeviceState state,
@@ -6077,6 +6080,11 @@ nm_device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
 		nm_device_start_ip_check (device);
+
+		/* IP-related properties are only valid when the device has IP configuration;
+		 * now that it does, ensure their change notifications are emitted.
+		 */
+		notify_ip_properties (device);
 		break;
 	case NM_DEVICE_STATE_SECONDARIES:
 		ip_check_gw_ping_cleanup (device);
@@ -6092,6 +6100,12 @@ nm_device_state_changed (NMDevice *device,
 
 	if (old_state == NM_DEVICE_STATE_ACTIVATED)
 		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL);
+
+	/* IP-related properties are only valid when the device has IP configuration.
+	 * If it no longer does, ensure their change notifications are emitted.
+	 */
+	if (ip_config_valid (old_state) && !ip_config_valid (state))
+	    notify_ip_properties (device);
 
 	/* Dispose of the cached activation request */
 	if (req)
