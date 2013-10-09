@@ -1244,7 +1244,6 @@ impl_settings_reload_connections (NMSettings *self,
 		return;
 	}
 	if (caller_uid != 0) {
-		nm_log_warn (LOGD_SETTINGS, "ReloadConnections: permission denied to %lu", caller_uid);
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Permission denied");
