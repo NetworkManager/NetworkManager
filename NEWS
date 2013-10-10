@@ -1,4 +1,15 @@
 ================================================
+NetworkManager-0.9.8.8
+Overview of changes since NetworkManager-0.9.8.6
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fixes to the BlueZ code
+* A few memory leak fixes
+* Minor docs fixes
+
+================================================
 NetworkManager-0.9.8.6
 Overview of changes since NetworkManager-0.9.8.4
 ================================================
