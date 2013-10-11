@@ -143,9 +143,14 @@ main (int argc, char *argv[])
 	}
 
 	g_type_init ();
-	loop = g_main_loop_new (NULL, FALSE);
 
 	client = nm_client_new ();
+	if (!client) {
+		g_printerr (_("Error: Could not create NMClient object."));
+		return 2;
+	}
+
+	loop = g_main_loop_new (NULL, FALSE);
 
 	if (!nm_client_get_manager_running (client)) {
 		if (exit_no_nm)
