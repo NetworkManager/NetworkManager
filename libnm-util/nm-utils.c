@@ -1998,8 +1998,6 @@ nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, routes);
 }
 
-/* FIXME: the Posix namespace does not exist, and thus neither does
-   the in6_addr struct. Marking (skip) for now */
 /**
  * nm_utils_ip6_dns_from_gvalue: (skip)
  * @value: a #GValue
@@ -2007,8 +2005,7 @@ nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value)
  * Converts a #GValue containing a #GPtrArray of IP6 DNS, represented as
  * #GByteArray<!-- -->s into a #GSList of #in6_addr<!-- -->s.
  *
- * Returns: (transfer full) (element-type Posix.in6_addr): a #GSList of IP6
- * addresses.
+ * Returns: a #GSList of IP6 addresses.
  */
 GSList *
 nm_utils_ip6_dns_from_gvalue (const GValue *value)
