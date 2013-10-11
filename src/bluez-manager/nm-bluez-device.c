@@ -33,6 +33,7 @@
 #include "nm-bluez-device.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
+#include "nm-settings-connection.h"
 
 
 G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
@@ -66,6 +67,7 @@ typedef struct {
 	GSList *connections;
 
 	NMConnection *pan_connection;
+	NMConnection *pan_connection_original;
 	gboolean pan_connection_no_autocreate;
 } NMBluezDevicePrivate;
 
@@ -240,18 +242,21 @@ pan_connection_check_create (NMBluezDevice *self)
 	if (added) {
 		g_assert (!g_slist_find (priv->connections, added));
 		g_assert (connection_compatible (self, added));
+		g_assert (nm_connection_compare (added, connection, NM_SETTING_COMPARE_FLAG_EXACT));
 
 		priv->connections = g_slist_prepend (priv->connections, g_object_ref (added));
 		priv->pan_connection = added;
-		nm_log_dbg (LOGD_SETTINGS, "bluez[%s] added new Bluetooth connection for NAP device: '%s' (%s)", priv->path, id, uuid);
+		priv->pan_connection_original = connection;
+		nm_log_dbg (LOGD_BT, "bluez[%s] added new Bluetooth connection for NAP device: '%s' (%s)", priv->path, id, uuid);
 	} else {
-		nm_log_warn (LOGD_SETTINGS, "bluez[%s] couldn't add new Bluetooth connection for NAP device: '%s' (%s): %d / %s",
+		nm_log_warn (LOGD_BT, "bluez[%s] couldn't add new Bluetooth connection for NAP device: '%s' (%s): %d / %s",
 		             priv->path, id, uuid, error ? error->code : -1,
 		             (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
+
+		g_object_unref (connection);
 	}
 
-	g_object_unref (connection);
 	g_free (id);
 	g_free (uuid);
 }
@@ -363,6 +368,7 @@ cp_connection_removed (NMConnectionProvider *provider,
 		priv->connections = g_slist_remove (priv->connections, connection);
 		if (priv->pan_connection == connection) {
 			priv->pan_connection = NULL;
+			g_clear_object (&priv->pan_connection_original);
 		}
 		g_object_unref (connection);
 		check_emit_usable (self);
@@ -1005,20 +1011,38 @@ dispose (GObject *object)
 {
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (object);
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	NMConnection *to_delete = NULL;
 
-	g_slist_foreach (priv->connections, (GFunc) g_object_unref, NULL);
-	g_slist_free (priv->connections);
-	priv->connections = NULL;
+	if (priv->pan_connection) {
+		/* Check whether we want to remove the created connection. If so, we take a reference
+		 * and delete it at the end of dispose(). */
+		if (   nm_settings_connection_get_unsaved (NM_SETTINGS_CONNECTION (priv->pan_connection))
+		    && nm_connection_compare (priv->pan_connection, priv->pan_connection_original, NM_SETTING_COMPARE_FLAG_EXACT))
+			to_delete = g_object_ref (priv->pan_connection);
+
+		priv->pan_connection = NULL;
+		g_clear_object (&priv->pan_connection_original);
+	}
 
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
 
+	g_slist_free_full (priv->connections, g_object_unref);
+	priv->connections = NULL;
+
 	g_clear_object (&priv->adapter5);
 	g_clear_object (&priv->dbus_connection);
 
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->dispose (object);
+
+	if (to_delete) {
+		nm_log_dbg (LOGD_BT, "bluez[%s] removing Bluetooth connection for NAP device: '%s' (%s)", priv->path,
+		            nm_connection_get_id (to_delete), nm_connection_get_uuid (to_delete));
+		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (to_delete), NULL, NULL);
+		g_object_unref (to_delete);
+	}
 }
 
 static void
