@@ -96,6 +96,8 @@ typedef struct {
 	GUdevClient *client;
 	char *product;
 	char *vendor;
+
+	char *physical_port_id;
 } NMDevicePrivate;
 
 enum {
@@ -121,6 +123,7 @@ enum {
 	PROP_DEVICE_TYPE,
 	PROP_ACTIVE_CONNECTION,
 	PROP_AVAILABLE_CONNECTIONS,
+	PROP_PHYSICAL_PORT_ID,
 
 	LAST_PROP
 };
@@ -199,6 +202,7 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_STATE_REASON,      &priv->state, demarshal_state_reason },
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_DEVICE_AVAILABLE_CONNECTIONS, &priv->available_connections, NULL, NM_TYPE_REMOTE_CONNECTION },
+		{ NM_DEVICE_PHYSICAL_PORT_ID,  &priv->physical_port_id },
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
@@ -389,6 +393,7 @@ finalize (GObject *object)
 	g_free (priv->product);
 	g_free (priv->vendor);
 	g_free (priv->type_description);
+	g_free (priv->physical_port_id);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
@@ -472,6 +477,9 @@ get_property (GObject *object,
 		break;
 	case PROP_VENDOR:
 		g_value_set_string (value, nm_device_get_vendor (device));
+		break;
+	case PROP_PHYSICAL_PORT_ID:
+		g_value_set_string (value, nm_device_get_physical_port_id (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -803,6 +811,22 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "Product string",
 						  NULL,
 						  G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:physical-port-id:
+	 *
+	 * The physical port ID of the device. (See
+	 * nm_device_get_physical_port_id().)
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PHYSICAL_PORT_ID,
+		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID,
+		                      "Physical Port ID",
+		                      "Physical port ID",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
 	/* signals */
 
@@ -1515,6 +1539,37 @@ nm_device_get_vendor (NMDevice *device)
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
 	}
 	return priv->vendor;
+}
+
+/**
+ * nm_device_get_physical_port_id:
+ * @device: a #NMDevice
+ *
+ * Gets the physical port ID of the #NMDevice. If non-%NULL, this is
+ * an opaque string that can be used to recognize when
+ * seemingly-unrelated #NMDevices are actually just different virtual
+ * ports on a single physical port. (Eg, NPAR / SR-IOV.)
+ *
+ * Returns: the physical port ID of the device, or %NULL if the port
+ *   ID is unknown. This is the internal string used by the device and
+ *   must not be modified.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_device_get_physical_port_id (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	if (priv->physical_port_id && *priv->physical_port_id)
+		return priv->physical_port_id;
+	else
+		return NULL;
 }
 
 typedef struct {

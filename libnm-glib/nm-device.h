@@ -80,6 +80,7 @@ GQuark nm_device_error_quark (void);
 #define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 #define NM_DEVICE_VENDOR "vendor"
 #define NM_DEVICE_PRODUCT "product"
+#define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 
 typedef struct {
 	NMObject parent;
@@ -135,6 +136,7 @@ NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
 const GPtrArray *    nm_device_get_available_connections(NMDevice *device);
 const char *         nm_device_get_product          (NMDevice *device);
 const char *         nm_device_get_vendor           (NMDevice *device);
+const char *         nm_device_get_physical_port_id (NMDevice *device);
 
 typedef void (*NMDeviceDeactivateFn) (NMDevice *device, GError *error, gpointer user_data);
 
