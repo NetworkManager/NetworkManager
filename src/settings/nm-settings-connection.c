@@ -504,7 +504,7 @@ nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
 	g_return_if_fail (NM_IS_CONNECTION (new_connection));
 
 	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, &error)) {
-		nm_settings_connection_commit_changes (self, callback ? callback : ignore_cb, user_data);
+		nm_settings_connection_commit_changes (self, callback, user_data);
 	} else {
 		if (callback)
 			callback (self, error, user_data);
@@ -533,17 +533,17 @@ nm_settings_connection_commit_changes (NMSettingsConnection *connection,
                                        gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (callback != NULL);
 
 	if (NM_SETTINGS_CONNECTION_GET_CLASS (connection)->commit_changes) {
 		NM_SETTINGS_CONNECTION_GET_CLASS (connection)->commit_changes (connection,
-		                                                               callback,
+		                                                               callback ? callback : ignore_cb,
 		                                                               user_data);
 	} else {
 		GError *error = g_error_new (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
 		                             "%s: %s:%d commit_changes() unimplemented", __func__, __FILE__, __LINE__);
-		callback (connection, error, user_data);
+		if (callback)
+			callback (connection, error, user_data);
 		g_error_free (error);
 	}
 }
@@ -554,17 +554,17 @@ nm_settings_connection_delete (NMSettingsConnection *connection,
                                gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (callback != NULL);
 
 	if (NM_SETTINGS_CONNECTION_GET_CLASS (connection)->delete) {
 		NM_SETTINGS_CONNECTION_GET_CLASS (connection)->delete (connection,
-		                                                       callback,
+		                                                       callback ? callback : ignore_cb,
 		                                                       user_data);
 	} else {
 		GError *error = g_error_new (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
 		                             "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
-		callback (connection, error, user_data);
+		if (callback)
+			callback (connection, error, user_data);
 		g_error_free (error);
 	}
 }

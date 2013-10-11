@@ -182,13 +182,6 @@ sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class)
 }
 
 static void
-ignore_cb (NMSettingsConnection *connection,
-           GError *error,
-           gpointer user_data)
-{
-}
-
-static void
 bind_device_to_connection (SCPluginIfupdown *self,
                            GUdevDevice *device,
                            NMIfupdownConnection *exported)
@@ -228,7 +221,7 @@ bind_device_to_connection (SCPluginIfupdown *self,
 	}
 	g_byte_array_free (mac_address, TRUE);
 
-	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
+	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), NULL, NULL);
 }    
 
 static void
@@ -433,7 +426,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			exported = g_hash_table_lookup (priv->connections, block->name);
 			if (exported) {
 				PLUGIN_PRINT("SCPlugin-Ifupdown", "deleting %s from connections", block->name);
-				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), ignore_cb, NULL);
+				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), NULL, NULL);
 				g_hash_table_remove (priv->connections, block->name);
 			}
 
