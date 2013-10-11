@@ -144,7 +144,7 @@ nm_device_bond_get_carrier (NMDeviceBond *device)
  * Gets the devices currently slaved to @device.
  *
  * Returns: (element-type NMClient.Device): the #GPtrArray containing
- * #NMDevice<!-- -->s that are slaves of @device. This is the internal
+ * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
  *
  * Since: 0.9.6.4

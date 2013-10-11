@@ -374,7 +374,7 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
  * nm_device_ethernet_get_hw_address().
  *
  * Returns: (transfer none) (element-type NMClient.Device): a #GPtrArray
- * containing all the #NMDevice<!-- -->s.  The returned array is owned by the
+ * containing all the #NMDevices.  The returned array is owned by the
  * #NMClient object and should not be modified.
  **/
 const GPtrArray *
@@ -789,7 +789,7 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
  * Gets the active connections.
  *
  * Returns: (transfer none) (element-type NMClient.ActiveConnection): a #GPtrArray
- *  containing all the active #NMActiveConnection<!-- -->s.
+ *  containing all the active #NMActiveConnections.
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray * 

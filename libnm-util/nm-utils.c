@@ -461,7 +461,7 @@ value_dup (gpointer key, gpointer val, gpointer user_data)
  * nm_utils_gvalue_hash_dup:
  * @hash: a #GHashTable mapping string:GValue
  *
- * Utility function to duplicate a hash table of GValues.
+ * Utility function to duplicate a hash table of #GValues.
  *
  * Returns: (transfer container) (element-type utf8 GObject.Value): a newly allocated duplicated #GHashTable, caller must free the
  * returned hash with g_hash_table_unref() or g_hash_table_destroy()
@@ -883,11 +883,11 @@ nm_utils_wpa_psk_valid (const char *psk)
 
 /**
  * nm_utils_ip4_addresses_from_gvalue:
- * @value: gvalue containing a GPtrArray of GArrays of guint32s
+ * @value: #GValue containing a #GPtrArray of #GArrays of #guint32s
  *
- * Utility function to convert a #GPtrArray of #GArrays of guint32s representing
+ * Utility function to convert a #GPtrArray of #GArrays of #guint32s representing
  * a list of NetworkManager IPv4 addresses (which is a tuple of address, gateway,
- * and prefix) into a GSList of #NMIP4Address objects.  The specific format of
+ * and prefix) into a #GSList of #NMIP4Address objects.  The specific format of
  * this serialization is not guaranteed to be stable and the #GArray may be
  * extended in the future.
  *
@@ -928,7 +928,7 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
  * g_value_unset().
  *
  * Utility function to convert a #GSList of #NMIP4Address objects into a
- * GPtrArray of GArrays of guint32s representing a list of NetworkManager IPv4
+ * #GPtrArray of #GArrays of #guint32s representing a list of NetworkManager IPv4
  * addresses (which is a tuple of address, gateway, and prefix).   The specific
  * format of this serialization is not guaranteed to be stable and may be
  * extended in the future.
@@ -965,11 +965,11 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
 
 /**
  * nm_utils_ip4_routes_from_gvalue:
- * @value: gvalue containing a GPtrArray of GArrays of guint32s
+ * @value: #GValue containing a #GPtrArray of #GArrays of #guint32s
  *
- * Utility function to convert a GPtrArray of GArrays of guint32s representing
+ * Utility function to convert a #GPtrArray of #GArrays of #guint32s representing
  * a list of NetworkManager IPv4 routes (which is a tuple of route, next hop,
- * prefix, and metric) into a GSList of #NMIP4Route objects.  The specific
+ * prefix, and metric) into a #GSList of #NMIP4Route objects.  The specific
  * format of this serialization is not guaranteed to be stable and may be
  * extended in the future.
  *
@@ -1011,7 +1011,7 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
  * g_value_unset().
  *
  * Utility function to convert a #GSList of #NMIP4Route objects into a
- * GPtrArray of GArrays of guint32s representing a list of NetworkManager IPv4
+ * #GPtrArray of #GArrays of #guint32s representing a list of NetworkManager IPv4
  * routes (which is a tuple of route, next hop, prefix, and metric).   The
  * specific format of this serialization is not guaranteed to be stable and may
  * be extended in the future.
@@ -1128,11 +1128,11 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
 
 /**
  * nm_utils_ip6_addresses_from_gvalue:
- * @value: gvalue containing a GPtrArray of GValueArrays of (GArray of guchars) and guint32
+ * @value: gvalue containing a GPtrArray of GValueArrays of (GArray of guchars) and #guint32
  *
- * Utility function to convert a #GPtrArray of #GValueArrays of (#GArray of guchars) and guint32
+ * Utility function to convert a #GPtrArray of #GValueArrays of (#GArray of guchars) and #guint32
  * representing a list of NetworkManager IPv6 addresses (which is a tuple of address,
- * prefix, and gateway), into a GSList of #NMIP6Address objects.  The specific format of
+ * prefix, and gateway), into a #GSList of #NMIP6Address objects.  The specific format of
  * this serialization is not guaranteed to be stable and the #GValueArray may be
  * extended in the future.
  *
@@ -1213,7 +1213,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
  * g_value_unset().
  *
  * Utility function to convert a #GSList of #NMIP6Address objects into a
- * GPtrArray of GValueArrays representing a list of NetworkManager IPv6 addresses
+ * #GPtrArray of #GValueArrays representing a list of NetworkManager IPv6 addresses
  * (which is a tuple of address, prefix, and gateway). The specific format of
  * this serialization is not guaranteed to be stable and may be extended in the
  * future.
@@ -1264,13 +1264,13 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 
 /**
  * nm_utils_ip6_routes_from_gvalue:
- * @value: gvalue containing a GPtrArray of GValueArrays of (GArray or guchars), guint32,
- * (GArray of guchars), and guint32
+ * @value: #GValue containing a #GPtrArray of #GValueArrays of (#GArray of #guchars), #guint32,
+ * (#GArray of #guchars), and #guint32
  *
- * Utility function GPtrArray of GValueArrays of (GArray or guchars), guint32,
- * (GArray of guchars), and guint32 representing a list of NetworkManager IPv6
+ * Utility function #GPtrArray of #GValueArrays of (#GArray of #guchars), #guint32,
+ * (#GArray of #guchars), and #guint32 representing a list of NetworkManager IPv6
  * routes (which is a tuple of destination, prefix, next hop, and metric)
- * into a GSList of #NMIP6Route objects.  The specific format of this serialization
+ * into a #GSList of #NMIP6Route objects.  The specific format of this serialization
  * is not guaranteed to be stable and may be extended in the future.
  *
  * Returns: (transfer full) (element-type NetworkManager.IP6Route): a newly allocated #GSList of #NMIP6Route objects
@@ -1334,8 +1334,8 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
  * which should be unset by the caller (when no longer needed) with
  * g_value_unset().
  *
- * Utility function to convert a #GSList of #NMIP6Route objects into a GPtrArray of
- * GValueArrays of (GArray or guchars), guint32, (GArray of guchars), and guint32
+ * Utility function to convert a #GSList of #NMIP6Route objects into a #GPtrArray of
+ * #GValueArrays of (#GArray of #guchars), #guint32, (#GArray of #guchars), and #guint32
  * representing a list of NetworkManager IPv6 routes (which is a tuple of destination,
  * prefix, next hop, and metric).  The specific format of this serialization is not 
  * guaranteed to be stable and may be extended in the future.
@@ -1396,7 +1396,7 @@ nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value)
  * @value: a #GValue
  *
  * Converts a #GValue containing a #GPtrArray of IP6 DNS, represented as
- * #GByteArray<!-- -->s into a #GSList of #in6_addr<!-- -->s.
+ * #GByteArrays into a #GSList of <literal><type>struct in6_addr</type></literal>s.
  *
  * Returns: (transfer full) (element-type Posix.in6_addr): a #GSList of IP6
  * addresses.
@@ -1434,10 +1434,11 @@ nm_utils_ip6_dns_from_gvalue (const GValue *value)
  * addresses, which should be unset by the caller (when no longer needed) with
  * g_value_unset().
  *
- * Utility function to convert a #GSList of 'struct in6_addr' structs into a
- * GPtrArray of GByteArrays representing each server's IPv6 addresses in
- * network byte order.  The specific format of this serialization is not
- * guaranteed to be stable and may be extended in the future.
+ * Utility function to convert a #GSList of <literal><type>struct
+ * in6_addr</type></literal> structs into a #GPtrArray of #GByteArrays
+ * representing each server's IPv6 addresses in network byte order.
+ * The specific format of this serialization is not guaranteed to be
+ * stable and may be extended in the future.
  */
 void
 nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value)

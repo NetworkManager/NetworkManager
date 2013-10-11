@@ -204,7 +204,7 @@ _nm_active_connection_type_for_path_async (DBusGConnection *connection,
  * nm_active_connection_get_connection:
  * @connection: a #NMActiveConnection
  *
- * Gets the #NMConnection<!-- -->'s DBus object path.
+ * Gets the #NMConnection's DBus object path.
  *
  * Returns: the object path of the #NMConnection inside of #NMActiveConnection.
  * This is the internal string used by the connection, and must not be modified.
@@ -222,7 +222,7 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
  * nm_active_connection_get_uuid:
  * @connection: a #NMActiveConnection
  *
- * Gets the #NMConnection<!-- -->'s UUID.
+ * Gets the #NMConnection's UUID.
  *
  * Returns: the UUID of the #NMConnection that backs the #NMActiveConnection.
  * This is the internal string used by the connection, and must not be modified.
@@ -258,9 +258,9 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
  * nm_active_connection_get_devices:
  * @connection: a #NMActiveConnection
  *
- * Gets the #NMDevice<!-- -->s used for the active connections.
+ * Gets the #NMDevices used for the active connections.
  *
- * Returns: (element-type NMClient.Device): the #GPtrArray containing #NMDevice<!-- -->s.
+ * Returns: (element-type NMClient.Device): the #GPtrArray containing #NMDevices.
  * This is the internal copy used by the connection, and must not be modified.
  **/
 const GPtrArray *

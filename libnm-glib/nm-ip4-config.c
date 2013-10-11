@@ -254,7 +254,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:addresses:
 	 *
-	 * The #GPtrArray containing #NMSettingIP4Address<!-- -->es of the configuration.
+	 * The #GPtrArray containing #NMIP4Address<!-- -->es of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
@@ -266,7 +266,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:routes:
 	 *
-	 * The #GPtrArray containing #NMSettingIP4Route<!-- -->s of the configuration.
+	 * The #GPtrArray containing #NMSettingIP4Routes of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
@@ -278,7 +278,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:nameservers:
 	 *
-	 * The #GArray containing name servers (%guint32<!-- -->es) of the configuration.
+	 * The #GArray containing name servers (#guint32s) of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_NAMESERVERS,
@@ -319,7 +319,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:wins-servers:
 	 *
-	 * The #GArray containing WINS servers (%guint32<!-- -->es) of the configuration.
+	 * The #GArray containing WINS servers (#guint32s) of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_WINS_SERVERS,
@@ -391,8 +391,9 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: (element-type guint32): the #GArray containing %guint32<!-- -->s. This is the internal copy used by the
- * configuration and must not be modified.
+ * Returns: (element-type guint32): the #GArray containing #guint32s.
+ * This is the internal copy used by the configuration and must not be
+ * modified.
  **/
 const GArray *
 nm_ip4_config_get_nameservers (NMIP4Config *config)
@@ -447,8 +448,9 @@ nm_ip4_config_get_searches (NMIP4Config *config)
  *
  * Gets the Windows Internet Name Service servers (WINS).
  *
- * Returns: (element-type guint32): the #GArray containing %guint32<!-- -->s.
- * This is the internal copy used by the configuration and must not be modified.
+ * Returns: (element-type guint32): the #GArray containing #guint32s.
+ * This is the internal copy used by the configuration and must not be
+ * modified.
  **/
 const GArray *
 nm_ip4_config_get_wins_servers (NMIP4Config *config)
@@ -466,7 +468,7 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  * Gets the routes.
  *
  * Returns: (element-type NetworkManager.IP4Route): the #GSList containing
- * #NMIP4Route<!-- -->s. This is the internal copy used by the configuration,
+ * #NMIP4Routes. This is the internal copy used by the configuration,
  * and must not be modified.
  **/
 const GSList *
