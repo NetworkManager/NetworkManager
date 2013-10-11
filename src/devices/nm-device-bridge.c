@@ -203,7 +203,7 @@ static const Option slave_options[] = {
 };
 
 static void
-commit_option (NMDevice *device, GObject *setting, const Option *option, gboolean slave)
+commit_option (NMDevice *device, NMSetting *setting, const Option *option, gboolean slave)
 {
 	int ifindex = nm_device_get_ifindex (device);
 	GParamSpec *pspec;
@@ -211,12 +211,14 @@ commit_option (NMDevice *device, GObject *setting, const Option *option, gboolea
 	guint32 uval = 0;
 	gs_free char *value = NULL;
 
+	g_assert (setting);
+
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), option->name);
 	g_assert (pspec);
 
 	/* Get the property's value */
 	g_value_init (&val, G_PARAM_SPEC_VALUE_TYPE (pspec));
-	g_object_get_property (setting, option->name, &val);
+	g_object_get_property ((GObject *) setting, option->name, &val);
 	if (G_VALUE_HOLDS_BOOLEAN (&val))
 		uval = g_value_get_boolean (&val) ? 1 : 0;
 	else if (G_VALUE_HOLDS_UINT (&val)) {
@@ -251,25 +253,30 @@ commit_option (NMDevice *device, GObject *setting, const Option *option, gboolea
 }
 
 static void
-commit_master_options (NMDevice *device, GObject *setting)
+commit_master_options (NMDevice *device, NMSettingBridge *setting)
 {
 	const Option *option;
-
-	g_assert (setting);
+	NMSetting *s = NM_SETTING (setting);
 
 	for (option = master_options; option->name; option++)
-		commit_option (device, setting, option, FALSE);
+		commit_option (device, s, option, FALSE);
 }
 
 static void
-commit_slave_options (NMDevice *device, GObject *setting)
+commit_slave_options (NMDevice *device, NMSettingBridgePort *setting)
 {
 	const Option *option;
+	NMSetting *s, *s_clear = NULL;
 
-	g_assert (setting);
+	if (setting)
+		s = NM_SETTING (setting);
+	else
+		s = s_clear = nm_setting_bridge_port_new ();
 
 	for (option = slave_options; option->name; option++)
-		commit_option (device, setting, option, TRUE);
+		commit_option (device, s, option, TRUE);
+
+	g_clear_object (&s_clear);
 }
 
 static NMActStageReturn
@@ -284,7 +291,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
-	commit_master_options (device, (GObject *) nm_connection_get_setting_bridge (connection));
+	commit_master_options (device, nm_connection_get_setting_bridge (connection));
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
@@ -295,7 +302,7 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
 		return FALSE;
 
-	commit_slave_options (slave, (GObject *) nm_connection_get_setting_bridge_port (connection));
+	commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
 
 	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
 	             nm_device_get_ip_iface (device),
