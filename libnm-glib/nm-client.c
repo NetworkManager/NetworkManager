@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
 #include <dbus/dbus-glib.h>
@@ -1616,7 +1616,7 @@ nm_client_check_connectivity_finish (NMClient *client,
  * control them.  To access and modify network configuration data, use the
  * #NMRemoteSettings object.
  *
- * Returns: a new #NMClient
+ * Returns: a new #NMClient or NULL on an error
  **/
 NMClient *
 nm_client_new (void)
@@ -1624,7 +1624,13 @@ nm_client_new (void)
 	NMClient *client;
 
 	client = g_object_new (NM_TYPE_CLIENT, NM_OBJECT_DBUS_PATH, NM_DBUS_PATH, NULL);
-	_nm_object_ensure_inited (NM_OBJECT (client));
+
+	/* NMObject's constructor() can fail on a D-Bus connection error. So we can
+	 * get NULL here instead of a valid NMClient object.
+	 */
+	if (client)
+		_nm_object_ensure_inited (NM_OBJECT (client));
+
 	return client;
 }
 
@@ -1650,7 +1656,8 @@ client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
  *
  * Creates a new #NMClient and begins asynchronously initializing it.
  * @callback will be called when it is done; use
- * nm_client_new_finish() to get the result.
+ * nm_client_new_finish() to get the result. Note that on an error,
+ * the callback can be invoked with two first parameters as NULL.
  *
  * NOTE: #NMClient provides information about devices and a mechanism to
  * control them.  To access and modify network configuration data, use the
@@ -1664,8 +1671,16 @@ nm_client_new_async (GCancellable *cancellable,
 	NMClient *client;
 	GSimpleAsyncResult *simple;
 
-	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
 	client = g_object_new (NM_TYPE_CLIENT, NM_OBJECT_DBUS_PATH, NM_DBUS_PATH, NULL);
+	/* When client is NULL, do no continue with initialization and run callback
+	 * directly with result == NULL indicating NMClient creation failure.
+	 */
+	if (!client) {
+		callback (NULL, NULL, user_data);
+		return;
+	}
+
+	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
 	g_async_initable_init_async (G_ASYNC_INITABLE (client), G_PRIORITY_DEFAULT,
 	                             cancellable, client_inited, simple);
 }
@@ -1683,6 +1698,16 @@ NMClient *
 nm_client_new_finish (GAsyncResult *result, GError **error)
 {
 	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!result) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_UNKNOWN,
+		                     "NMClient initialization failed (or you passed NULL 'result' by mistake)");
+		return NULL;
+	}
 
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, NULL, nm_client_new_async), NULL);
 
