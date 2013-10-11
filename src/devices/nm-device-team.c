@@ -546,6 +546,8 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 	NMSettingTeamPort *s_team_port;
 
+	nm_device_master_check_slave_physical_port (device, slave, LOGD_TEAM);
+
 	nm_device_take_down (slave, TRUE);
 
 	s_team_port = nm_connection_get_setting_team_port (connection);

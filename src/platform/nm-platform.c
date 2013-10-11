@@ -734,6 +734,24 @@ nm_platform_link_get_mtu (int ifindex)
 }
 
 /**
+ * nm_platform_link_get_mtu:
+ * @ifindex: Interface index
+ *
+ * Returns: physical port ID for the interface, or %NULL on error
+ * or if the interface has no physical port ID.
+ */
+char *
+nm_platform_link_get_physical_port_id (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, NULL);
+	g_return_val_if_fail (klass->link_get_physical_port_id, NULL);
+
+	return klass->link_get_physical_port_id (platform, ifindex);
+}
+
+/**
  * nm_platform_link_enslave:
  * @master: Interface index of the master
  * @slave: Interface index of the slave

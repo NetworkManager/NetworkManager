@@ -60,6 +60,7 @@
 #define NM_DEVICE_AUTOCONNECT      "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
 #define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
+#define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
@@ -336,6 +337,8 @@ gboolean nm_device_has_pending_action    (NMDevice *device);
 
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
+
+const char *nm_device_get_physical_port_id (NMDevice *device);
 
 G_END_DECLS
 

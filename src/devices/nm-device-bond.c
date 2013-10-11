@@ -364,6 +364,8 @@ enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 
+	nm_device_master_check_slave_physical_port (device, slave, LOGD_BOND);
+
 	nm_device_take_down (slave, TRUE);
 
 	success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),

@@ -129,6 +129,7 @@ enum {
 	PROP_RFKILL_TYPE,
 	PROP_IFINDEX,
 	PROP_AVAILABLE_CONNECTIONS,
+	PROP_PHYSICAL_PORT_ID,
 	PROP_IS_MASTER,
 	PROP_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
@@ -202,6 +203,7 @@ typedef struct {
 	GHashTable *  available_connections;
 	guint8        hw_addr[NM_UTILS_HWADDR_LEN_MAX];
 	guint         hw_addr_len;
+	char *        physical_port_id;
 
 	gboolean      manager_managed; /* whether managed by NMManager or not */
 	gboolean      default_unmanaged; /* whether unmanaged by default */
@@ -589,8 +591,10 @@ constructed (GObject *object)
 		priv->carrier = TRUE;
 	}
 
-	if (priv->ifindex > 0)
+	if (priv->ifindex > 0) {
 		priv->is_software = nm_platform_link_is_software (priv->ifindex);
+		priv->physical_port_id = nm_platform_link_get_physical_port_id (priv->ifindex);
+	}
 
 	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
@@ -1335,6 +1339,49 @@ nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex)
 			return info->slave;
 	}
 	return NULL;
+}
+
+/**
+ * nm_device_master_check_slave_physical_port:
+ * @dev: the master device
+ * @slave: a slave device
+ * @log_domain: domain to log a warning in
+ *
+ * Checks if @dev already has a slave with the same #NMDevice:physical-port-id
+ * as @slave, and logs a warning if so.
+ */
+void
+nm_device_master_check_slave_physical_port (NMDevice *dev, NMDevice *slave,
+                                            guint64 log_domain)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
+	const char *slave_physical_port_id, *existing_physical_port_id;
+	SlaveInfo *info;
+	GSList *iter;
+
+	slave_physical_port_id = nm_device_get_physical_port_id (slave);
+	if (!slave_physical_port_id)
+		return;
+
+	for (iter = priv->slaves; iter; iter = iter->next) {
+		info = iter->data;
+		if (info->slave == slave)
+			continue;
+
+		existing_physical_port_id = nm_device_get_physical_port_id (info->slave);
+		if (!g_strcmp0 (slave_physical_port_id, existing_physical_port_id)) {
+			nm_log_warn (log_domain, "(%s): slave %s shares a physical port with existing slave %s",
+			             nm_device_get_ip_iface (dev),
+			             nm_device_get_ip_iface (slave),
+			             nm_device_get_ip_iface (info->slave));
+			/* Since this function will get called for every slave, we only have
+			 * to warn about the first match we find; if there are other matches
+			 * later in the list, we will have already warned about them matching
+			 * @existing earlier.
+			 */
+			return;
+		}
+	}
 }
 
 /**
@@ -5172,6 +5219,8 @@ dispose (GObject *object)
 	g_hash_table_unref (priv->available_connections);
 	priv->available_connections = NULL;
 
+	g_clear_pointer (&priv->physical_port_id, g_free);
+
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
@@ -5432,6 +5481,9 @@ get_property (GObject *object, guint prop_id,
 			g_ptr_array_add (array, g_strdup (nm_connection_get_path (connection)));
 		g_value_take_boxed (value, array);
 		break;
+	case PROP_PHYSICAL_PORT_ID:
+		g_value_set_string (value, priv->physical_port_id);
+		break;
 	case PROP_IS_MASTER:
 		g_value_set_boolean (value, priv->is_master);
 		break;
@@ -5687,6 +5739,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                     "AvailableConnections",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 		                     G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_PHYSICAL_PORT_ID,
+		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID,
+		                      "PhysicalPortId",
+		                      "PhysicalPortId",
+		                      NULL,
+		                      G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_IS_MASTER,
@@ -6907,4 +6967,12 @@ nm_device_has_pending_action (NMDevice *device)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	return priv->pending_actions > 0;
+}
+
+const char *
+nm_device_get_physical_port_id (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	return priv->physical_port_id;
 }

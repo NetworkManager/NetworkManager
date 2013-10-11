@@ -125,6 +125,14 @@
         An array of object paths of every configured connection that is currently 'available' through this device.
       </tp:docstring>
     </property>
+    <property name="PhysicalPortId" type="s" access="read">
+      <tp:docstring>
+        If non-empty, an (opaque) indicator of the physical network
+        port associated with the device. This can be used to recognize
+	when two seemingly-separate hardware devices are actually just
+	different virtual interfaces to the same physical port.
+      </tp:docstring>
+    </property>
 
     <method name="Disconnect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>

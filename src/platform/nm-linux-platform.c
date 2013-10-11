@@ -1725,6 +1725,26 @@ link_get_mtu (NMPlatform *platform, int ifindex)
 	return rtnllink ? rtnl_link_get_mtu (rtnllink) : 0;
 }
 
+static char *
+link_get_physical_port_id (NMPlatform *platform, int ifindex)
+{
+	const char *ifname;
+	char *path, *id;
+
+	ifname = nm_platform_link_get_name (ifindex);
+	if (!ifname)
+		return NULL;
+
+	path = g_strdup_printf ("/sys/class/net/%s/physical_port_id", ifname);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		id = sysctl_get (platform, path);
+	else
+		id = NULL;
+	g_free (path);
+
+	return id;
+}
+
 static int
 vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
 {
@@ -2718,6 +2738,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
+
+	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
