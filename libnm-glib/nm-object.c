@@ -152,15 +152,15 @@ nm_object_init (NMObject *object)
 
 static GObject*
 constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
 	GObject *object;
 	NMObjectPrivate *priv;
 
 	object = G_OBJECT_CLASS (nm_object_parent_class)->constructor (type,
-																   n_construct_params,
-																   construct_params);
+	                                                               n_construct_params,
+	                                                               construct_params);
 
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
@@ -289,10 +289,10 @@ init_async (GAsyncInitable *initable, int io_priority,
 	else {
 		/* Check if NM is running */
 		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-			                     init_async_got_manager_running,
-			                     simple, NULL,
-			                     G_TYPE_STRING, NM_DBUS_SERVICE,
-			                     G_TYPE_INVALID);
+		                         init_async_got_manager_running,
+		                         simple, NULL,
+		                         G_TYPE_STRING, NM_DBUS_SERVICE,
+		                         G_TYPE_INVALID);
 	}
 }
 
@@ -1216,12 +1216,12 @@ _nm_object_reload_property (NMObject *object,
 		return;
 
 	if (!dbus_g_proxy_call_with_timeout (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
-							"Get", 15000, &err,
-							G_TYPE_STRING, interface,
-							G_TYPE_STRING, prop_name,
-							G_TYPE_INVALID,
-							G_TYPE_VALUE, &value,
-							G_TYPE_INVALID)) {
+	                                     "Get", 15000, &err,
+	                                     G_TYPE_STRING, interface,
+	                                     G_TYPE_STRING, prop_name,
+	                                     G_TYPE_INVALID,
+	                                     G_TYPE_VALUE, &value,
+	                                     G_TYPE_INVALID)) {
 		/* Don't warn about D-Bus no reply/timeout errors; it's mostly noise and
 		 * happens for example when NM quits and the applet is still running.
 		 */
@@ -1243,9 +1243,9 @@ _nm_object_reload_property (NMObject *object,
 
 void
 _nm_object_set_property (NMObject *object,
-						const char *interface,
-						const char *prop_name,
-						GValue *value)
+                         const char *interface,
+                         const char *prop_name,
+                         GValue *value)
 {
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (interface != NULL);
