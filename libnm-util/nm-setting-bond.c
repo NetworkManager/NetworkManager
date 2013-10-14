@@ -89,6 +89,7 @@ enum {
 	TYPE_STR,
 	TYPE_BOTH,
 	TYPE_IP,
+	TYPE_IFNAME,
 };
 
 typedef struct {
@@ -110,7 +111,7 @@ static const BondDefault defaults[] = {
 	{ NM_SETTING_BOND_OPTION_ARP_IP_TARGET,    "",           TYPE_IP },
 	{ NM_SETTING_BOND_OPTION_ARP_VALIDATE,     "0",          TYPE_BOTH, 0, 3,
 	  { "none", "active", "backup", "all", NULL } },
-	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           TYPE_STR },
+	{ NM_SETTING_BOND_OPTION_PRIMARY,          "",           TYPE_IFNAME },
 	{ NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, "0",          TYPE_BOTH, 0, 2,
 	  { "always", "better", "failure", NULL } },
 	{ NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,    "0",          TYPE_BOTH, 0, 2,
@@ -271,6 +272,15 @@ validate_ip (const char *name, const char *value)
 	return success;
 }
 
+static gboolean
+validate_ifname (const char *name, const char *value)
+{
+	if (!value || !value[0])
+		return FALSE;
+
+	return nm_utils_iface_valid_name (value);
+}
+
 /**
  * nm_setting_bond_validate_option:
  * @name: the name of the option to validate
@@ -307,6 +317,8 @@ nm_setting_bond_validate_option (const char *name,
 				       || validate_list (name, value, &defaults[i]);
 			case TYPE_IP:
 				return validate_ip (name, value);
+			case TYPE_IFNAME:
+				return validate_ifname (name, value);
 			}
 			return FALSE;
 		}
