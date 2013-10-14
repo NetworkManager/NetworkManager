@@ -143,14 +143,15 @@ get_best_ip4_device (NMManager *manager, gboolean fully_activated)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-
-		/* Never set the default route through an IPv4LL-addressed device */
-		method = nm_setting_ip4_config_get_method (s_ip4);
-		if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		/* If IPv4 is disabled or link-local-only, it can't be the default */
+		if (   !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
+		    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 			continue;
 
 		/* 'never-default' devices can't ever be the default */
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		g_assert (s_ip4);
 		if (nm_setting_ip4_config_get_never_default (s_ip4))
 			continue;
 
@@ -221,12 +222,13 @@ get_best_ip6_device (NMManager *manager, gboolean fully_activated)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		method = nm_setting_ip6_config_get_method (s_ip6);
-		if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
+		    || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
 			continue;
 
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		g_assert (s_ip6);
 		if (nm_setting_ip6_config_get_never_default (s_ip6))
 			continue;
 

@@ -1298,7 +1298,6 @@ can_auto_connect (NMDevice *dev,
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	GSList *ap_iter;
-	NMSettingIP4Config *s_ip4;
 	const char *method = NULL;
 	guint64 timestamp = 0;
 
@@ -1315,8 +1314,7 @@ can_auto_connect (NMDevice *dev,
 	}
 
 	/* Use the connection if it's a shared connection */
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	method = nm_setting_ip4_config_get_method (s_ip4);
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		return TRUE;
 
@@ -1490,15 +1488,14 @@ scanning_allowed (NMDeviceWifi *self)
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (req) {
 		NMConnection *connection;
-		NMSettingIP4Config *s_ip4;
 		NMSettingWireless *s_wifi;
 		const char *ip4_method = NULL;
 		const GByteArray *bssid;
 
 		/* Don't scan when a shared connection is active; it makes drivers mad */
 		connection = nm_act_request_get_connection (req);
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		ip4_method = nm_setting_ip4_config_get_method (s_ip4);
+		ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+
 		if (!strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 			return FALSE;
 

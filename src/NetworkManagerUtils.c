@@ -294,13 +294,9 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 {
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
 	const char *method = NULL;
 
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	method = nm_setting_ip4_config_get_method (s_ip4);
-	g_assert (method);
-
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0)
 		return NULL;  /* Not shared */
 
@@ -592,19 +588,17 @@ nm_utils_normalize_connection (NMConnection *connection,
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 
-	/* Slave connections don't have IP configuration. */
 	if (nm_setting_connection_get_master (s_con)) {
-		default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-		default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+		/* Slave connections don't have IP configuration. */
 
 		if (s_ip4) {
 			method = nm_setting_ip4_config_get_method (s_ip4);
 			if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0) {
 				nm_log_warn (LOGD_SETTINGS, "ignoring IP4 config on slave '%s'",
 				             nm_connection_get_id (connection));
-				nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-				s_ip4 = NULL;
 			}
+			nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+			s_ip4 = NULL;
 		}
 
 		if (s_ip6) {
@@ -612,34 +606,77 @@ nm_utils_normalize_connection (NMConnection *connection,
 			if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0) {
 				nm_log_warn (LOGD_SETTINGS, "ignoring IP6 config on slave '%s'",
 				             nm_connection_get_id (connection));
-				nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-				s_ip6 = NULL;
 			}
+			nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+			s_ip6 = NULL;
+		}
+	} else {
+		/* Ensure all non-slave connections have IP4 and IP6 settings objects. If no
+		 * IP6 setting was specified, then assume that means IP6 config is allowed
+		 * to fail. But if no IP4 setting was specified, assume the caller was just
+		 * being lazy.
+		 */
+		if (!s_ip4) {
+			setting = nm_setting_ip4_config_new ();
+			nm_connection_add_setting (connection, setting);
+
+			g_object_set (setting,
+			              NM_SETTING_IP4_CONFIG_METHOD, default_ip4_method,
+			              NULL);
+		}
+		if (!s_ip6) {
+			setting = nm_setting_ip6_config_new ();
+			nm_connection_add_setting (connection, setting);
+
+			g_object_set (setting,
+			              NM_SETTING_IP6_CONFIG_METHOD, default_ip6_method,
+			              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+			              NULL);
 		}
 	}
+}
 
-	/* Ensure all connections have IP4 and IP6 settings objects. If no
-	 * IP6 setting was specified, then assume that means IP6 config is allowed
-	 * to fail. But if no IP4 setting was specified, assume the caller was just
-	 * being lazy.
-	 */
-	if (!s_ip4) {
-		setting = nm_setting_ip4_config_new ();
-		nm_connection_add_setting (connection, setting);
+const char *
+nm_utils_get_ip_config_method (NMConnection *connection,
+                               GType         ip_setting_type)
+{
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	const char *method;
 
-		g_object_set (setting,
-		              NM_SETTING_IP4_CONFIG_METHOD, default_ip4_method,
-		              NULL);
-	}
-	if (!s_ip6) {
-		setting = nm_setting_ip6_config_new ();
-		nm_connection_add_setting (connection, setting);
+	s_con = nm_connection_get_setting_connection (connection);
 
-		g_object_set (setting,
-		              NM_SETTING_IP6_CONFIG_METHOD, default_ip6_method,
-		              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
-		              NULL);
-	}
+	if (ip_setting_type == NM_TYPE_SETTING_IP4_CONFIG) {
+		g_return_val_if_fail (s_con != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+		if (nm_setting_connection_get_master (s_con))
+			return NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+		else {
+			s_ip4 = nm_connection_get_setting_ip4_config (connection);
+			g_return_val_if_fail (s_ip4 != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+			method = nm_setting_ip4_config_get_method (s_ip4);
+			g_return_val_if_fail (method != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+			return method;
+		}
+
+	} else if (ip_setting_type == NM_TYPE_SETTING_IP6_CONFIG) {
+		g_return_val_if_fail (s_con != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+
+		if (nm_setting_connection_get_master (s_con))
+			return NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+		else {
+			s_ip6 = nm_connection_get_setting_ip6_config (connection);
+			g_return_val_if_fail (s_ip6 != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+			method = nm_setting_ip6_config_get_method (s_ip6);
+			g_return_val_if_fail (method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+
+			return method;
+		}
+
+	} else
+		g_assert_not_reached ();
 }
 
 void
