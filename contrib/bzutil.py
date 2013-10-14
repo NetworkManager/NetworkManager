@@ -54,51 +54,86 @@ class CmdBase:
         print_usage()
 
 
+# class to hold information about a bugzilla entry
+class BzInfo:
+    def __init__(self, bzid):
+        self.bzid = bzid
+    @property
+    def bztype(self):
+        return None
+    @property
+    def url(self):
+        return None
+    def __cmp__(self, other):
+        return cmp( (self.bztype, self.bzid), (other.bztype, other.bzid) )
+    def __hash__(self):
+        return hash( (self.bztype, self.bzid) )
+    def __str__(self):
+        return "%s #%s" % (self.bztype, self.bzid)
+    def __repr__(self):
+        return "BzInfo(\"%s\", \"%s\")" % (self.bztype, self.bzid)
+
+class BzInfoBgo(BzInfo):
+    def __init__(self, bzid):
+        BzInfo.__init__(self, bzid)
+    @BzInfo.bztype.getter
+    def bztype(self):
+        return "bgo"
+    @BzInfo.url.getter
+    def url(self):
+        return "https://bugzilla.gnome.org/show_bug.cgi?id=%s" % self.bzid
+
+class BzInfoRhbz(BzInfo):
+    def __init__(self, bzid):
+        BzInfo.__init__(self, bzid)
+    @BzInfo.bztype.getter
+    def bztype(self):
+        return "rhbz"
+    @BzInfo.url.getter
+    def url(self):
+        return "https://bugzilla.redhat.com/show_bug.cgi?id=%s" % self.bzid
+
+
+class UtilParseCommitMessage(CmdBase):
+
+    _patterns = [
+            ('(^|\W)(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)',                     lambda m: BzInfoBgo(m.group('id'))),
+            ('https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7})($|\W)', lambda m: BzInfoBgo(m.group('id'))),
+            ('(^|\W)(?P<type>rh(bz)?)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)',                 lambda m: BzInfoRhbz(m.group('id'))),
+            ('https://bugzilla\.redhat\.com/show_bug.cgi\?id=(?P<id>[0-9]{4,7})($|\W)', lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)#(?P<id>[0-9]{4,7})($|\W)',                                         lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)(bz|bug)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)',                          lambda m: BzInfoRhbz(m.group('id'))),
+        ]
+    _patterns = [(re.compile(p[0]), p[1]) for p in _patterns]
+
+    def __init__(self, commit):
+        self.commit = commit
+        self._result = None
+
+    @property
+    def result(self):
+        if not self._result:
+            message = git_commit_message(self.commit)
+            data = []
+
+            for pattern in UtilParseCommitMessage._patterns:
+                for match in pattern[0].finditer(message):
+                    m = pattern[1](match)
+                    if m:
+                        data.append(m)
+
+            self._result = list(set(data))
+        return self._result
+
+    def __str__(self):
+        return str( (self.commit, self.result) )
+    def __repr__(self):
+        return str(self)
+
+
 
 
 class CmdParseCommitMessage(CmdBase):
-
-    patterns = [
-            ('(^|\W)(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)', lambda m: ('bgo', m.group('id'))),
-            ('https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7})($|\W)', lambda m: ('bgo', m.group('id'))),
-            ('(^|\W)(?P<type>rh(bz)?)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)', lambda m: ('rhbz', m.group('id'))),
-            ('https://bugzilla\.redhat\.com/show_bug.cgi\?id=(?P<id>[0-9]{4,7})($|\W)', lambda m: ('rhbz', m.group('id'))),
-        ]
-    patterns = [(re.compile(p[0]), p[1]) for p in patterns]
-
-    @staticmethod
-    def parse_result_to_url(result):
-        t = result[0]
-        i = result[1]
-        if t == 'bgo':
-            return "https://bugzilla.gnome.org/show_bug.cgi?id=%s" % i
-        if t == 'rhbz':
-            return "https://bugzilla.redhat.com/show_bug.cgi?id=%s" %i
-
-
-    @staticmethod
-    def parse_commit(commit):
-        message = git_commit_message(commit)
-        data = []
-
-        for pattern in CmdParseCommitMessage.patterns:
-            for match in pattern[0].finditer(message):
-                m = pattern[1](match)
-                if m:
-                    data.append(m)
-
-        return list(set(data))
-
-    class ParseResult:
-
-        def __init__(self, commit):
-            self.commit = commit
-            self.parse_result = CmdParseCommitMessage.parse_commit(commit)
-
-        def __str__(self):
-            return str( (self.commit, self.parse_result) )
-        def __repr__(self):
-            return str(self)
 
     def __init__(self, name):
         CmdBase.__init__(self, name)
@@ -111,25 +146,24 @@ class CmdParseCommitMessage(CmdBase):
     def run(self, argv):
         self.options = self.parser.parse_args(argv)
 
-        result = [  (   ref,
-                        [CmdParseCommitMessage.ParseResult(commit) for commit in git_ref_list(ref)]
-                    ) for ref in self.options.commit]
+        result_all = [ (ref, [UtilParseCommitMessage(commit) for commit in git_ref_list(ref)]) for ref in self.options.commit]
 
-        for r in result:
-            print("ref: %s" % r[0])
-            for pr in r[1]:
-                print("  %s" % git_summary(pr.commit, self.options.color))
-                for prr in pr.parse_result:
-                    print("    %-4s #%-8s %s" % (prr[0], prr[1], CmdParseCommitMessage.parse_result_to_url(prr)))
+        for ref_data in result_all:
+            print("ref: %s" % ref_data[0])
+            for commit_data in ref_data[1]:
+                print("  %s" % git_summary(commit_data.commit, self.options.color))
+                for result in commit_data.result:
+                    print("    %-4s #%-8s %s" % (result.bztype, result.bzid, result.url))
 
-        result2 = [ pr for r in result for pr in r[1] if pr.parse_result ]
+        result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if commit_data.result ]
 
         print
         print('sorted:')
-        for pr in sorted(set(result2), key=lambda pr2: git_get_commit_date(pr2.commit), reverse=True):
-            print("  %s" % git_summary(pr.commit, self.options.color))
-            for prr in pr.parse_result:
-                print("    %-4s #%-8s %s" % (prr[0], prr[1], CmdParseCommitMessage.parse_result_to_url(prr)))
+        for commit_data in sorted(set(result_reduced), key=lambda commit_data: git_get_commit_date(commit_data.commit), reverse=True):
+            print("  %s" % git_summary(commit_data.commit, self.options.color))
+            for result in commit_data.result:
+                print("    %-4s #%-8s %s" % (result.bztype, result.bzid, result.url))
+            print
 
 
 
