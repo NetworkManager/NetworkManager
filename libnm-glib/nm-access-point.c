@@ -354,7 +354,6 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 
 	/* Band and Channel/Frequency */
 	ap_freq = nm_access_point_get_frequency (ap);
-	g_warn_if_fail (ap_freq > 0);
 	if (ap_freq) {
 		setting_band = nm_setting_wireless_get_band (s_wifi);
 		if (g_strcmp0 (setting_band, "a") == 0) {
