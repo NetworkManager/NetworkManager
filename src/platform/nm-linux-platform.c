@@ -2534,6 +2534,7 @@ udev_device_removed (NMPlatform *platform,
 		g_hash_table_iter_init (&iter, priv->udev_devices);
 		while (g_hash_table_iter_next (&iter, &key, &value)) {
 			if ((GUdevDevice *)value == udev_device) {
+				ifindex = GPOINTER_TO_INT (key);
 				g_hash_table_iter_remove (&iter);
 				break;
 			}
