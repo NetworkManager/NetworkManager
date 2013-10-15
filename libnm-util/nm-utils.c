@@ -991,7 +991,7 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 			g_warning ("Ignoring invalid IP4 route");
 			continue;
 		}
-		
+
 		route = nm_ip4_route_new ();
 		nm_ip4_route_set_dest (route, g_array_index (array, guint32, 0));
 		nm_ip4_route_set_prefix (route, g_array_index (array, guint32, 1));

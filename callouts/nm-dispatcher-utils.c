@@ -310,7 +310,7 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 				first = FALSE;
 			}
 		}
-	
+
 		items = g_slist_prepend (items, tmp->str);
 		g_string_free (tmp, FALSE);
 	}
@@ -448,7 +448,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 			return NULL;
 		}
 		ip_iface = g_value_get_string (value);
-	}	
+	}
 
 	/* Device type */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_TYPE);

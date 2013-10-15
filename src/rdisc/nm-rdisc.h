@@ -85,12 +85,12 @@ typedef struct {
 } NMRDiscDNSDomain;
 
 typedef enum {
-	NM_RDISC_CONFIG_DHCP_LEVEL = 1 << 0,
-	NM_RDISC_CONFIG_GATEWAYS = 1 << 1,
-	NM_RDISC_CONFIG_ADDRESSES = 1 << 2,
-	NM_RDISC_CONFIG_ROUTES = 1 << 3,
-	NM_RDISC_CONFIG_DNS_SERVERS = 1 << 4,
-	NM_RDISC_CONFIG_DNS_DOMAINS = 1 << 5
+	NM_RDISC_CONFIG_DHCP_LEVEL                          = 1 << 0,
+	NM_RDISC_CONFIG_GATEWAYS                            = 1 << 1,
+	NM_RDISC_CONFIG_ADDRESSES                           = 1 << 2,
+	NM_RDISC_CONFIG_ROUTES                              = 1 << 3,
+	NM_RDISC_CONFIG_DNS_SERVERS                         = 1 << 4,
+	NM_RDISC_CONFIG_DNS_DOMAINS                         = 1 << 5
 } NMRDiscConfigMap;
 
 /**

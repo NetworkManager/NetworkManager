@@ -3177,8 +3177,8 @@ addrconf6_start (NMDevice *self)
 		return FALSE;
 	}
 
-	priv->rdisc_config_changed_sigid = g_signal_connect (
-			priv->rdisc, NM_RDISC_CONFIG_CHANGED, G_CALLBACK (rdisc_config_changed), self);
+	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
+	                                                     G_CALLBACK (rdisc_config_changed), self);
 
 	/* FIXME: what if interface has no lladdr, like PPP? */
 	if (priv->hw_addr_len)

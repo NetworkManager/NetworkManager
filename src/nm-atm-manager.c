@@ -183,7 +183,7 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->client);
 
-	G_OBJECT_CLASS (nm_atm_manager_parent_class)->dispose (object);	
+	G_OBJECT_CLASS (nm_atm_manager_parent_class)->dispose (object);
 }
 
 static void

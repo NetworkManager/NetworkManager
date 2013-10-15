@@ -279,9 +279,9 @@ typedef struct {
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
 	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen,
-			guint32 lifetime, guint32 preferred_lft);
+	                             guint32 lifetime, guint32 preferred_lft);
 	gboolean (*ip6_address_add) (NMPlatform *, int ifindex, struct in6_addr address, int plen,
-			guint32 lifetime, guint32 preferred_lft);
+	                             guint32 lifetime, guint32 preferred_lft);
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
@@ -290,9 +290,9 @@ typedef struct {
 	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex,
-		in_addr_t network, int plen, in_addr_t gateway, int prio, int mss);
+	                           in_addr_t network, int plen, in_addr_t gateway, int prio, int mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex,
-		struct in6_addr network, int plen, struct in6_addr gateway, int prio, int mss);
+	                           struct in6_addr network, int plen, struct in6_addr gateway, int prio, int mss);
 	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
 	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
 	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
@@ -400,9 +400,9 @@ gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *p
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);
 gboolean nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen,
-		guint32 lifetime, guint32 preferred_lft);
+                                      guint32 lifetime, guint32 preferred_lft);
 gboolean nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen,
-		guint32 lifetime, guint32 preferred_lft);
+                                      guint32 lifetime, guint32 preferred_lft);
 gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
@@ -415,9 +415,9 @@ GArray *nm_platform_ip4_route_get_all (int ifindex, gboolean include_default);
 GArray *nm_platform_ip6_route_get_all (int ifindex, gboolean include_default);
 gboolean nm_platform_route_set_metric (int ifindex, int metric);
 gboolean nm_platform_ip4_route_add (int ifindex,
-		in_addr_t network, int plen, in_addr_t gateway, int metric, int mss);
+                                    in_addr_t network, int plen, in_addr_t gateway, int metric, int mss);
 gboolean nm_platform_ip6_route_add (int ifindex,
-		struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss);
+                                    struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss);
 gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric);
 gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric);
 gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric);

@@ -878,7 +878,7 @@ set_property (GObject *object, guint prop_id,
 		g_array_free (priv->dns, TRUE);
 		priv->dns = g_value_dup_boxed (value);
 		if (!priv->dns)
-			priv->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);			
+			priv->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 		break;
 	case PROP_DNS_SEARCH:
 		g_slist_free_full (priv->dns_search, g_free);

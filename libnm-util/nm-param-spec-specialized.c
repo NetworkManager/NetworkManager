@@ -345,7 +345,7 @@ _gvalues_compare_map (const GValue *value1, const GValue *value2)
 	}
 
 	hash1 = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _gvalue_destroy);
-	dbus_g_type_map_value_iterate (value1, iterate_map, &hash1); 
+	dbus_g_type_map_value_iterate (value1, iterate_map, &hash1);
 	len1 = g_hash_table_size (hash1);
 
 	hash2 = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _gvalue_destroy);

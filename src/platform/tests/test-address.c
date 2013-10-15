@@ -218,7 +218,7 @@ test_ip6_address_external (void)
 	g_assert (!nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 
 	/* Add/delete conflict */
-	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d", 
+	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
 			IP6_ADDRESS, IP6_PLEN, DEVICE_NAME, lifetime, preferred);
 	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
 	no_error ();
