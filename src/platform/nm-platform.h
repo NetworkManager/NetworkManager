@@ -24,6 +24,7 @@
 #include <glib-object.h>
 #include <netinet/in.h>
 #include <linux/if.h>
+#include <linux/if_addr.h>
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -134,6 +135,7 @@ typedef struct {
 	guint32 timestamp;
 	guint32 lifetime;
 	guint32 preferred;
+	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 } NMPlatformIP6Address;
 
 typedef struct {
@@ -281,7 +283,7 @@ typedef struct {
 	gboolean (*ip4_address_add) (NMPlatform *, int ifindex, in_addr_t address, int plen,
 	                             guint32 lifetime, guint32 preferred_lft);
 	gboolean (*ip6_address_add) (NMPlatform *, int ifindex, struct in6_addr address, int plen,
-	                             guint32 lifetime, guint32 preferred_lft);
+	                             guint32 lifetime, guint32 preferred_lft, guint flags);
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
@@ -402,7 +404,7 @@ GArray *nm_platform_ip6_address_get_all (int ifindex);
 gboolean nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen,
                                       guint32 lifetime, guint32 preferred_lft);
 gboolean nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen,
-                                      guint32 lifetime, guint32 preferred_lft);
+                                      guint32 lifetime, guint32 preferred_lft, guint flags);
 gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);

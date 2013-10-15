@@ -109,20 +109,21 @@ test_ip6_address (void)
 	struct in6_addr addr;
 	guint32 lifetime = 2000;
 	guint32 preferred = 1000;
+	guint flags = 0;
 
 	inet_pton (AF_INET6, IP6_ADDRESS, &addr);
 
 	/* Add address */
 	g_assert (!nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	no_error ();
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	no_error ();
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
 	accept_signal (address_changed);
 
@@ -205,6 +206,7 @@ test_ip6_address_external (void)
 	struct in6_addr addr;
 	guint32 lifetime = 2000;
 	guint32 preferred = 1000;
+	guint flags = 0;
 
 	inet_pton (AF_INET6, IP6_ADDRESS, &addr);
 
@@ -220,7 +222,7 @@ test_ip6_address_external (void)
 	/* Add/delete conflict */
 	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
 			IP6_ADDRESS, IP6_PLEN, DEVICE_NAME, lifetime, preferred);
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	accept_signal (address_added);

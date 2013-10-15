@@ -775,7 +775,7 @@ ip4_address_add (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, gu
 }
 
 static gboolean
-ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen, guint32 lifetime, guint32 preferred)
+ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen, guint32 lifetime, guint32 preferred, guint flags)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP6Address address;
@@ -788,6 +788,7 @@ ip6_address_add (NMPlatform *platform, int ifindex, struct in6_addr addr, int pl
 	address.timestamp = get_time ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
+	address.flags = flags;
 
 	for (i = 0; i < priv->ip6_addresses->len; i++) {
 		NMPlatformIP6Address *item = &g_array_index (priv->ip6_addresses, NMPlatformIP6Address, i);

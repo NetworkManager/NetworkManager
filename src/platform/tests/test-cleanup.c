@@ -23,6 +23,7 @@ test_cleanup_internal ()
 	int preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 	int metric = 20;
 	int mss = 1000;
+	guint flags = 0;
 
 	inet_pton (AF_INET, "192.0.2.1", &addr4);
 	inet_pton (AF_INET, "192.0.3.0", &network4);
@@ -41,7 +42,7 @@ test_cleanup_internal ()
 
 	/* Add routes and addresses */
 	g_assert (nm_platform_ip4_address_add (ifindex, addr4, plen4, lifetime, preferred));
-	g_assert (nm_platform_ip6_address_add (ifindex, addr6, plen6, lifetime, preferred));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr6, plen6, lifetime, preferred, flags));
 	g_assert (nm_platform_ip4_route_add (ifindex, gateway4, 32, INADDR_ANY, metric, mss));
 	g_assert (nm_platform_ip4_route_add (ifindex, network4, plen4, gateway4, metric, mss));
 	g_assert (nm_platform_ip4_route_add (ifindex, 0, 0, gateway4, metric, mss));

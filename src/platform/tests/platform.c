@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <netlink/route/addr.h>
 
 #include "nm-platform.h"
 #include "nm-linux-platform.h"
@@ -538,8 +539,9 @@ do_ip6_address_add (char **argv)
 	if (ifindex && parse_ip6_address (*argv++, &address, &plen)) {
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
+		guint flags = (*argv) ? rtnl_addr_str2flags (*argv++) : 0;
 
-		gboolean value = nm_platform_ip6_address_add (ifindex, address, plen, lifetime, preferred);
+		gboolean value = nm_platform_ip6_address_add (ifindex, address, plen, lifetime, preferred, flags);
 		return value;
 	} else
 		return FALSE;
@@ -765,7 +767,7 @@ static const command_t commands[] = {
 	{ "ip4-address-get-all", "print all IPv4 addresses", do_ip4_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-address-get-all", "print all IPv6 addresses", do_ip6_address_get_all, 1, "<ifname/ifindex>" },
 	{ "ip4-address-add", "add IPv4 address", do_ip4_address_add, 4, "<ifname/ifindex> <address>/<plen> <lifetime> <>" },
-	{ "ip6-address-add", "add IPv6 address", do_ip6_address_add, 4, "<ifname/ifindex> <address>/<plen> <lifetime> <>" },
+	{ "ip6-address-add", "add IPv6 address", do_ip6_address_add, 4, "<ifname/ifindex> <address>/<plen> <lifetime> [<flags>] <>" },
 	{ "ip4-address-delete", "delete IPv4 address", do_ip4_address_delete, 2,
 		"<ifname/ifindex> <address>/<plen>" },
 	{ "ip6-address-delete", "delete IPv6 address", do_ip6_address_delete, 2,

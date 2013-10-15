@@ -24,6 +24,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <netlink/route/addr.h>
 
 #include "nm-platform.h"
 #include "nm-logging.h"
@@ -1100,7 +1101,7 @@ nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen, guint32 l
 }
 
 gboolean
-nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen, guint32 lifetime, guint32 preferred)
+nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen, guint32 lifetime, guint32 preferred, guint flags)
 {
 	reset_error ();
 
@@ -1111,7 +1112,7 @@ nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen, gui
 	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
 	debug ("address: adding or updating IPv6 address");
-	return klass->ip6_address_add (platform, ifindex, address, plen, lifetime, preferred);
+	return klass->ip6_address_add (platform, ifindex, address, plen, lifetime, preferred, flags);
 }
 
 gboolean
@@ -1329,7 +1330,8 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 		} else
 			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
-		if (!nm_platform_ip6_address_add (ifindex, known_address->address, known_address->plen, lifetime, preferred))
+		if (!nm_platform_ip6_address_add (ifindex, known_address->address, known_address->plen,
+		                                  lifetime, preferred, known_address->flags))
 			return FALSE;
 	}
 
@@ -1637,8 +1639,10 @@ const char *
 nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 {
 	static char buffer[256];
+	char s_flags[256];
 	char s_address[INET6_ADDRSTRLEN];
 	const char *s_dev;
+	char *str_flags;
 	char *str_dev;
 
 	g_return_val_if_fail (address, "(unknown)");
@@ -1648,10 +1652,15 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s",
+	rtnl_addr_flags2str(address->flags, s_flags, sizeof(s_flags));
+	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
+
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
-	            str_dev ? str_dev : "");
+	            str_dev ? str_dev : "",
+	            str_flags ? str_flags : "");
+	g_free (str_flags);
 	g_free (str_dev);
 	return buffer;
 }
@@ -1775,6 +1784,7 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
+	_CMP_FIELD (a, b, flags);
 	return 0;
 }
 
