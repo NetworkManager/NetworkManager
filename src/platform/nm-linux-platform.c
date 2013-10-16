@@ -45,6 +45,7 @@
 
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
+#include "wifi/wifi-utils.h"
 
 /* This is only included for the translation of VLAN flags */
 #include "nm-setting-vlan.h"
@@ -477,7 +478,7 @@ link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char 
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
-	const char *prop;
+	const char *prop, *name, *sysfs_path;
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
 	if (!udev_device)
@@ -488,7 +489,9 @@ link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char 
 		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
 
 	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
-	if (g_strcmp0 (prop, "wlan") == 0)
+	name = g_udev_device_get_name (udev_device);
+	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
+	if (g_strcmp0 (prop, "wlan") == 0 || wifi_utils_is_wifi (name, sysfs_path))
 		return_type (NM_LINK_TYPE_WIFI, "wifi");
 	else if (g_strcmp0 (prop, "wwan") == 0)
 		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
