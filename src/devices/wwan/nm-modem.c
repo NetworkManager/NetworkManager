@@ -62,6 +62,7 @@ typedef struct {
 	char *ppp_iface;
 	NMModemIPMethod ip4_method;
 	NMModemIPMethod ip6_method;
+	NMUtilsIPv6IfaceId iid;
 	NMModemState state;
 	NMModemState prev_state;  /* revert to this state if enable/disable fails */
 	char *device_id;
@@ -86,6 +87,7 @@ enum {
 	PPP_FAILED,
 	PREPARE_RESULT,
 	IP4_CONFIG_RESULT,
+	IP6_CONFIG_RESULT,
 	AUTH_REQUESTED,
 	AUTH_RESULT,
 	REMOVED,
@@ -228,6 +230,97 @@ nm_modem_get_supported_ip_types (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->ip_types;
 }
 
+/**
+ * nm_modem_get_connection_ip_type:
+ * @self: the #NMModem
+ * @connection: the #NMConnection to determine IP type to use
+ *
+ * Given a modem and a connection, determine which NMModemIpType to use
+ * when connecting.
+ *
+ * Returns: a single %NMModemIpType value
+ */
+NMModemIPType
+nm_modem_get_connection_ip_type (NMModem *self,
+                                 NMConnection *connection,
+                                 GError **error)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	const char *method;
+	gboolean ip4 = TRUE, ip6 = TRUE;
+	gboolean ip4_may_fail = TRUE, ip6_may_fail = TRUE;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4) {
+		method = nm_setting_ip4_config_get_method (s_ip4);
+		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+			ip4 = FALSE;
+		ip4_may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+	}
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	if (s_ip6) {
+		method = nm_setting_ip6_config_get_method (s_ip6);
+		if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+			ip6 = FALSE;
+		ip6_may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+	}
+
+	if (ip4 && !ip6) {
+		if (!(priv->ip_types & NM_MODEM_IP_TYPE_IPV4)) {
+			g_set_error_literal (error,
+			                     NM_MODEM_ERROR,
+			                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+			                     "Connection requested IPv4 but IPv4 is "
+			                     "unsuported by the modem.");
+			return NM_MODEM_IP_TYPE_UNKNOWN;
+		}
+		return NM_MODEM_IP_TYPE_IPV4;
+	}
+
+	if (ip6 && !ip4) {
+		if (!(priv->ip_types & NM_MODEM_IP_TYPE_IPV6)) {
+			g_set_error_literal (error,
+			                     NM_MODEM_ERROR,
+			                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+			                     "Connection requested IPv6 but IPv6 is "
+			                     "unsuported by the modem.");
+			return NM_MODEM_IP_TYPE_UNKNOWN;
+		}
+		return NM_MODEM_IP_TYPE_IPV6;
+	}
+
+	if (ip4 && ip6) {
+		/* Modem supports dual-stack */
+		if (priv->ip_types & NM_MODEM_IP_TYPE_IPV4V6)
+			return NM_MODEM_IP_TYPE_IPV4V6;
+
+		/* Both IPv4 and IPv6 requested, but modem doesn't support dual-stack;
+		 * if one method is marked "may-fail" then use the other.
+		 */
+		if (ip6_may_fail)
+			return NM_MODEM_IP_TYPE_IPV4;
+		else if (ip4_may_fail)
+			return NM_MODEM_IP_TYPE_IPV6;
+
+		g_set_error_literal (error,
+		                     NM_MODEM_ERROR,
+		                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+		                     "Connection requested both IPv4 and IPv6 "
+		                     "but dual-stack addressing is unsupported "
+		                     "by the modem.");
+		return NM_MODEM_IP_TYPE_UNKNOWN;
+	}
+
+	g_set_error_literal (error,
+	                     NM_MODEM_ERROR,
+	                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+	                     "Connection specified no IP configuration!");
+	return NM_MODEM_IP_TYPE_UNKNOWN;
+}
+
 /*****************************************************************************/
 /* IP method PPP */
 
@@ -247,13 +340,24 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 }
 
 static void
+set_data_port (NMModem *self, const char *new_data_port)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	if (g_strcmp0 (priv->data_port, new_data_port) != 0) {
+		g_free (priv->data_port);
+		priv->data_port = g_strdup (new_data_port);
+		g_object_notify (G_OBJECT (self), NM_MODEM_DATA_PORT);
+	}
+}
+
+static void
 ppp_ip4_config (NMPPPManager *ppp_manager,
 				const char *iface,
 				NMIP4Config *config,
 				gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 	guint32 i, num;
 	guint32 bad_dns1 = htonl (0x0A0B0C0D);
 	guint32 good_dns1 = htonl (0x04020201);  /* GTE nameserver */
@@ -262,9 +366,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	gboolean dns_workaround = FALSE;
 
 	/* Notify about the new data port to use */
-	g_free (priv->ppp_iface);
-	priv->ppp_iface = g_strdup (iface);
-	g_object_notify (G_OBJECT (self), NM_MODEM_DATA_PORT);
+	set_data_port (self, iface);
 
 	/* Work around a PPP bug (#1732) which causes many mobile broadband
 	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
@@ -306,6 +408,23 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 }
 
 static void
+ppp_ip6_config (NMPPPManager *ppp_manager,
+                const char *iface,
+                const NMUtilsIPv6IfaceId *iid,
+                NMIP6Config *config,
+                gpointer user_data)
+{
+	NMModem *self = NM_MODEM (user_data);
+
+	/* Notify about the new data port to use */
+	set_data_port (self, iface);
+
+	NM_MODEM_GET_PRIVATE (self)->iid = *iid;
+
+	nm_modem_emit_ip6_config_result (self, config, NULL);
+}
+
+static void
 ppp_stats (NMPPPManager *ppp_manager,
 		   guint32 in_bytes,
 		   guint32 out_bytes,
@@ -323,19 +442,26 @@ ppp_stats (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-ppp_stage3_ip4_config_start (NMModem *self,
-                             NMActRequest *req,
-                             NMDeviceStateReason *reason)
+ppp_stage3_ip_config_start (NMModem *self,
+                            NMActRequest *req,
+                            NMDeviceStateReason *reason)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 	const char *ppp_name = NULL;
 	GError *error = NULL;
 	NMActStageReturn ret;
-	guint ip_timeout = 20;
+	guint ip_timeout = 30;
 
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason !=	NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	/* If we're already running PPP don't restart it; for example, if both
+	 * IPv4 and IPv6 are requested, IPv4 gets started first, but we use the
+	 * same pppd for both v4 and v6.
+	 */
+	if (priv->ppp_manager)
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 
 	if (NM_MODEM_GET_CLASS (self)->get_user_pass) {
 		NMConnection *connection = nm_act_request_get_connection (req);
@@ -346,7 +472,7 @@ ppp_stage3_ip4_config_start (NMModem *self,
 	}
 
 	/* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
-	 * use the default one (20s) */
+	 * use the default one (30s) */
 	if (priv->mm_ip_timeout > 0) {
 		nm_log_info (LOGD_PPP, "using modem-specified IP timeout: %u seconds",
 		             priv->mm_ip_timeout);
@@ -360,6 +486,9 @@ ppp_stage3_ip4_config_start (NMModem *self,
 		                  self);
 		g_signal_connect (priv->ppp_manager, "ip4-config",
 		                  G_CALLBACK (ppp_ip4_config),
+		                  self);
+		g_signal_connect (priv->ppp_manager, "ip6-config",
+		                  G_CALLBACK (ppp_ip6_config),
 		                  self);
 		g_signal_connect (priv->ppp_manager, "stats",
 		                  G_CALLBACK (ppp_stats),
@@ -405,7 +534,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	priv = NM_MODEM_GET_PRIVATE (self);
 	switch (priv->ip4_method) {
 	case NM_MODEM_IP_METHOD_PPP:
-		ret = ppp_stage3_ip4_config_start (self, req, reason);
+		ret = ppp_stage3_ip_config_start (self, req, reason);
 		break;
 	case NM_MODEM_IP_METHOD_STATIC:
 		ret = NM_MODEM_GET_CLASS (self)->static_stage3_ip4_config_start (self, req, reason);
@@ -445,15 +574,82 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 
 /*****************************************************************************/
 
+void
+nm_modem_emit_ip6_config_result (NMModem *self,
+                                 NMIP6Config *config,
+                                 GError *error)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	guint i, num;
+	gboolean do_slaac = TRUE;
+
+	if (error) {
+		g_signal_emit (self, signals[IP6_CONFIG_RESULT], 0, NULL, FALSE, error);
+		return;
+	}
+
+	if (config) {
+		/* If the IPv6 configuration only included a Link-Local address, then
+		 * we have to run SLAAC to get the full IPv6 configuration.
+		 */
+		num = nm_ip6_config_get_num_addresses (config);
+		g_assert (num > 0);
+		for (i = 0; i < num; i++) {
+			const NMPlatformIP6Address * addr = nm_ip6_config_get_address (config, i);
+
+			if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+				if (!priv->iid.id)
+					priv->iid.id = ((guint64 *)(&addr->address.s6_addr))[1];
+			} else
+				do_slaac = FALSE;
+		}
+	}
+	g_assert (config || do_slaac);
+
+	g_signal_emit (self, signals[IP6_CONFIG_RESULT], 0, config, do_slaac, NULL);
+}
+
+static NMActStageReturn
+stage3_ip6_config_request (NMModem *self, NMDeviceStateReason *reason)
+{
+	*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+	return NM_ACT_STAGE_RETURN_FAILURE;
+}
+
 NMActStageReturn
 nm_modem_stage3_ip6_config_start (NMModem *self,
-                                  NMDevice *device,
-                                  NMDeviceClass *device_class,
+                                  NMActRequest *req,
                                   NMDeviceStateReason *reason)
 {
-	/* FIXME: We don't support IPv6 on modems quite yet... */
-	nm_device_activate_schedule_ip6_config_timeout (device);
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+	NMModemPrivate *priv;
+	NMActStageReturn ret;
+
+	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	priv = NM_MODEM_GET_PRIVATE (self);
+	switch (priv->ip6_method) {
+	case NM_MODEM_IP_METHOD_PPP:
+		ret = ppp_stage3_ip_config_start (self, req, reason);
+		break;
+	case NM_MODEM_IP_METHOD_STATIC:
+	case NM_MODEM_IP_METHOD_AUTO:
+		/* Both static and DHCP/Auto retrieve a base IP config from the modem
+		 * which in the static case is the full config, and the DHCP/Auto case
+		 * is just the IPv6LL address to use for SLAAC.
+		 */
+		ret = NM_MODEM_GET_CLASS (self)->stage3_ip6_config_request (self, reason);
+		break;
+	default:
+		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip6_method);
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		break;
+	}
+
+	return ret;
 }
 
 /*****************************************************************************/
@@ -779,6 +975,15 @@ nm_modem_owns_port (NMModem *self, const char *iface)
 	return FALSE;
 }
 
+gboolean
+nm_modem_get_iid (NMModem *self, NMUtilsIPv6IfaceId *out_iid)
+{
+	g_return_val_if_fail (NM_IS_MODEM (self), FALSE);
+
+	*out_iid = NM_MODEM_GET_PRIVATE (self)->iid;
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 void
@@ -978,6 +1183,7 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->finalize = finalize;
 
 	klass->act_stage1_prepare = act_stage1_prepare;
+	klass->stage3_ip6_config_request = stage3_ip6_config_request;
 	klass->deactivate = deactivate;
 
 	/* Properties */
@@ -1098,6 +1304,27 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_STRUCT_OFFSET (NMModemClass, ip4_config_result),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_POINTER);
+
+	/**
+	 * NMModem::ip6-config-result:
+	 * @modem: the #NMModem  on which the signal is emitted
+	 * @config: the #NMIP6Config to apply to the modem's data port
+	 * @do_slaac: %TRUE if IPv6 SLAAC should be started
+	 * @error: a #GError if any error occurred during IP configuration
+	 *
+	 * This signal is emitted when IPv6 configuration has completed or failed.
+	 * If @error is set the configuration failed.  If @config is set, then
+	 * the details should be applied to the data port before any further
+	 * configuration (like SLAAC) is done.  @do_slaac indicates whether SLAAC
+	 * should be started after applying @config to the data port.
+	 */
+	signals[IP6_CONFIG_RESULT] =
+		g_signal_new (NM_MODEM_IP6_CONFIG_RESULT,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, ip6_config_result),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 3, G_TYPE_OBJECT, G_TYPE_BOOLEAN, G_TYPE_POINTER);
 
 	signals[PREPARE_RESULT] =
 		g_signal_new (NM_MODEM_PREPARE_RESULT,

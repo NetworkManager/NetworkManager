@@ -20,6 +20,7 @@
 
 #include "config.h"
 
+#include <string.h>
 #include <glib.h>
 
 #include "nm-device-modem.h"
@@ -30,6 +31,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-settings-connection.h"
 #include "nm-modem-broadband.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
@@ -153,7 +155,7 @@ modem_ip4_config_result (NMModem *self,
 	g_return_if_fail (nm_device_activate_ip4_state_in_conf (device) == TRUE);
 
 	if (error) {
-		nm_log_warn (LOGD_MB | LOGD_IP4, "retrieving IP4 configuration failed: (%d) %s",
+		nm_log_warn (LOGD_MB | LOGD_IP4, "retrieving IPv4 configuration failed: (%d) %s",
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 
@@ -165,13 +167,88 @@ modem_ip4_config_result (NMModem *self,
 }
 
 static void
+modem_ip6_config_result (NMModem *self,
+                         NMIP6Config *config,
+                         gboolean do_slaac,
+                         GError *error,
+                         gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMActStageReturn ret;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	NMIP6Config *ignored = NULL;
+	gboolean got_config = !!config;
+
+	g_return_if_fail (nm_device_activate_ip6_state_in_conf (device) == TRUE);
+
+	if (error) {
+		nm_log_warn (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: (%d) %s",
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
+
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		return;
+	}
+
+	/* Re-enable IPv6 on the interface */
+	nm_device_ipv6_sysctl_set (device, "disable_ipv6", "0");
+
+	if (config)
+		nm_device_set_wwan_ip6_config (device, config);
+
+	if (do_slaac == FALSE) {
+		if (got_config)
+			nm_device_activate_schedule_ip6_config_result (device);
+		else {
+			nm_log_warn (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: SLAAC not requested and no addresses");
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		}
+		return;
+	}
+
+	/* Start SLAAC now that we have a link-local address from the modem */
+	ret = NM_DEVICE_CLASS (nm_device_modem_parent_class)->act_stage3_ip6_config_start (device, &ignored, &reason);
+	g_assert (ignored == NULL);
+	switch (ret) {
+	case NM_ACT_STAGE_RETURN_FAILURE:
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+		break;
+	case NM_ACT_STAGE_RETURN_STOP:
+		/* all done */
+		nm_device_activate_schedule_ip6_config_result (device);
+		break;
+	case NM_ACT_STAGE_RETURN_POSTPONE:
+		/* let SLAAC run */
+		break;
+	default:
+		/* Should never get here since we've assured that the IPv6 method
+		 * will either be "auto" or "ignored" when starting IPv6 configuration.
+		 */
+		g_assert_not_reached ();
+	}
+}
+
+static void
 data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
+	const char *old = nm_device_get_ip_iface (self);
+	const char *new = nm_modem_get_data_port (modem);
+	gboolean changed = FALSE;
+
+	if (new && g_strcmp0 (new, old))
+		changed = TRUE;
 
 	/* We set the IP iface in the device as soon as we know it, so that we
 	 * properly ifup it if needed */
-	nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
+	nm_device_set_ip_iface (self, new);
+
+	/* Disable IPv6 immediately on the interface since NM handles IPv6
+	 * internally, and leaving it enabled could allow the kernel's IPv6
+	 * RA handling code to run before NM is ready.
+	 */
+	if (changed)
+		nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 }
 
 static void
@@ -395,10 +472,41 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *reason)
 {
+	NMConnection *connection;
+	const char *method;
+
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+
+	/* Only Ignore and Auto methods make sense for WWAN */
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+		return NM_ACT_STAGE_RETURN_STOP;
+
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
+		nm_log_warn (LOGD_IP6, "(%s): unhandled WWAN IPv6 method '%s'; will fail",
+		             nm_device_get_iface (device), method);
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
-	                                         device,
-	                                         NM_DEVICE_CLASS (nm_device_modem_parent_class),
+	                                         nm_device_get_act_request (device),
 	                                         reason);
+}
+
+static gboolean
+get_ip_iface_identifier (NMDevice *device, NMUtilsIPv6IfaceId *out_iid)
+{
+	NMDeviceModem *self = NM_DEVICE_MODEM (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
+	gboolean success;
+
+	g_return_val_if_fail (priv->modem, FALSE);
+	success = nm_modem_get_iid (priv->modem, out_iid);
+	if (!success)
+		success = NM_DEVICE_CLASS (nm_device_modem_parent_class)->get_ip_iface_identifier (device, out_iid);
+	return success;
 }
 
 /*****************************************************************************/
@@ -488,8 +596,10 @@ nm_device_modem_new (NMModem *modem)
 
 	/* If the data port is known, set it as the IP interface immediately */
 	data_port = nm_modem_get_data_port (modem);
-	if (data_port)
+	if (data_port) {
 		nm_device_set_ip_iface (device, data_port);
+		nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
+	}
 
 	return device;
 }
@@ -511,6 +621,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_PPP_FAILED, G_CALLBACK (ppp_failed), self);
 	g_signal_connect (modem, NM_MODEM_PREPARE_RESULT, G_CALLBACK (modem_prepare_result), self);
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
+	g_signal_connect (modem, NM_MODEM_IP6_CONFIG_RESULT, G_CALLBACK (modem_ip6_config_result), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
@@ -605,6 +716,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->set_enabled = set_enabled;
 	device_class->owns_iface = owns_iface;
 	device_class->is_available = is_available;
+	device_class->get_ip_iface_identifier = get_ip_iface_identifier;
 
 	device_class->state_changed = device_state_changed;
 

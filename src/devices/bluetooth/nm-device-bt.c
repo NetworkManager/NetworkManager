@@ -882,8 +882,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		ret = nm_modem_stage3_ip6_config_start (NM_DEVICE_BT_GET_PRIVATE (device)->modem,
-		                                        device,
-		                                        NM_DEVICE_CLASS (nm_device_bt_parent_class),
+		                                        nm_device_get_act_request (device),
 		                                        reason);
 	} else
 		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);

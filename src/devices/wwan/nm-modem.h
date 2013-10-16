@@ -55,6 +55,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
 #define NM_MODEM_PREPARE_RESULT    "prepare-result"
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
+#define NM_MODEM_IP6_CONFIG_RESULT "ip6-config-result"
 #define NM_MODEM_AUTH_REQUESTED    "auth-requested"
 #define NM_MODEM_AUTH_RESULT       "auth-result"
 #define NM_MODEM_REMOVED           "removed"
@@ -147,6 +148,12 @@ typedef struct {
 	                                                    NMActRequest *req,
 	                                                    NMDeviceStateReason *reason);
 
+	/* Request the IP6 config; when the config returns the modem
+	 * subclass should emit the ip6_config_result signal.
+	 */
+	NMActStageReturn (*stage3_ip6_config_request) (NMModem *self,
+	                                               NMDeviceStateReason *reason);
+
 	void (*set_mm_enabled)                     (NMModem *self, gboolean enabled);
 
 	void (*disconnect)                         (NMModem *self, gboolean warn);
@@ -161,6 +168,10 @@ typedef struct {
 
 	void (*prepare_result)    (NMModem *self, gboolean success, NMDeviceStateReason reason);
 	void (*ip4_config_result) (NMModem *self, NMIP4Config *config, GError *error);
+	void (*ip6_config_result) (NMModem *self,
+	                           NMIP6Config *config,
+	                           gboolean do_slaac,
+	                           GError *error);
 
 	void (*auth_requested)    (NMModem *self);
 	void (*auth_result)       (NMModem *self, GError *error);
@@ -179,6 +190,7 @@ const char *nm_modem_get_uid          (NMModem *modem);
 const char *nm_modem_get_control_port (NMModem *modem);
 const char *nm_modem_get_data_port    (NMModem *modem);
 const char *nm_modem_get_driver       (NMModem *modem);
+gboolean    nm_modem_get_iid          (NMModem *modem, NMUtilsIPv6IfaceId *out_iid);
 
 gboolean    nm_modem_owns_port        (NMModem *modem, const char *iface);
 
@@ -207,8 +219,7 @@ NMActStageReturn nm_modem_stage3_ip4_config_start (NMModem *modem,
                                                    NMDeviceStateReason *reason);
 
 NMActStageReturn nm_modem_stage3_ip6_config_start (NMModem *modem,
-                                                   NMDevice *device,
-                                                   NMDeviceClass *device_class,
+                                                   NMActRequest *req,
                                                    NMDeviceStateReason *reason);
 
 void nm_modem_ip4_pre_commit (NMModem *modem, NMDevice *device, NMIP4Config *config);
@@ -238,6 +249,15 @@ NMModemIPType nm_modem_get_supported_ip_types (NMModem *self);
 
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);
+
+NMModemIPType nm_modem_get_connection_ip_type (NMModem *self,
+                                               NMConnection *connection,
+                                               GError **error);
+
+/* For subclasses */
+void nm_modem_emit_ip6_config_result (NMModem *self,
+                                      NMIP6Config *config,
+                                      GError *error);
 
 G_END_DECLS
 
