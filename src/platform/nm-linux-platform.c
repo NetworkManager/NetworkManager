@@ -2485,8 +2485,8 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex"))
-		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+	if (g_udev_device_get_property (udev_device, "IFINDEX"))
+		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	else {
 		warning ("(%s): failed to get device's ifindex", ifname);
 		return;
@@ -2517,15 +2517,16 @@ udev_device_removed (NMPlatform *platform,
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int ifindex = 0;
 
-	if (g_udev_device_get_sysfs_attr (udev_device, "ifindex")) {
-		ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+	if (g_udev_device_get_property (udev_device, "IFINDEX")) {
+		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 		g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
 	} else {
 		GHashTableIter iter;
 		gpointer key, value;
 
-		/* On removal we aren't always be able to read properties like IFINDEX
-		 * anymore, as they may have already been removed from sysfs.
+		/* This should not happen, but just to be sure.
+		 * If we can't get IFINDEX, go through the devices and
+		 * compare the pointers.
 		 */
 		g_hash_table_iter_init (&iter, priv->udev_devices);
 		while (g_hash_table_iter_next (&iter, &key, &value)) {
@@ -2536,7 +2537,7 @@ udev_device_removed (NMPlatform *platform,
 		}
 	}
 
-    /* Announce device removal if it's still in the Netlink cache. */
+	/* Announce device removal if it's still in the Netlink cache. */
 	if (ifindex) {
 		auto_nl_object struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
 
@@ -2554,6 +2555,7 @@ handle_udev_event (GUdevClient *client,
 	NMPlatform *platform = NM_PLATFORM (user_data);
 	const char *subsys;
 	const char *ifindex;
+	guint64 seqnum;
 
 	g_return_if_fail (action != NULL);
 
@@ -2561,11 +2563,11 @@ handle_udev_event (GUdevClient *client,
 	subsys = g_udev_device_get_subsystem (udev_device);
 	g_return_if_fail (!g_strcmp0 (subsys, "net"));
 
-	ifindex = g_udev_device_get_sysfs_attr (udev_device, "ifindex");
-
-	debug ("UDEV event: action '%s' subsys '%s' device '%s' (%s)",
+	ifindex = g_udev_device_get_property (udev_device, "IFINDEX");
+	seqnum = g_udev_device_get_seqnum (udev_device);
+	debug ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
 	       action, subsys, g_udev_device_get_name (udev_device),
-	       ifindex ? ifindex : "unknown");
+	       ifindex ? ifindex : "unknown", seqnum);
 
 	if (!strcmp (action, "add"))
 		udev_device_added (platform, udev_device);

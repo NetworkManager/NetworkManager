@@ -146,6 +146,7 @@ handle_uevent (GUdevClient *client,
 	NMAtmManager *self = NM_ATM_MANAGER (user_data);
 	const char *subsys;
 	const char *ifindex;
+	guint64 seqnum;
 
 	g_return_if_fail (action != NULL);
 
@@ -153,10 +154,10 @@ handle_uevent (GUdevClient *client,
 	subsys = g_udev_device_get_subsystem (device);
 	g_return_if_fail (!g_strcmp0 (subsys, "atm"));
 
-	ifindex = g_udev_device_get_sysfs_attr (device, "ifindex");
-
-	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s' (%s)",
-	            action, subsys, g_udev_device_get_name (device), ifindex ? ifindex : "unknown");
+	ifindex = g_udev_device_get_property (device, "IFINDEX");
+	seqnum = g_udev_device_get_seqnum (device);
+	nm_log_dbg (LOGD_HW, "UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
+	            action, subsys, g_udev_device_get_name (device), ifindex ? ifindex : "unknown", seqnum);
 
 	if (!strcmp (action, "add"))
 		adsl_add (self, device);
