@@ -1183,7 +1183,14 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	cached_object = nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
 
-	debug ("netlink event (type %d)", event);
+	/* Just for debugging */
+	if (object_type_from_nl_object (object) == LINK) {
+		int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
+		const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
+		debug ("netlink event (type %d) for link: %s (%d)",
+		       event, name ? name : "(unknown)", ifindex);
+	} else
+		debug ("netlink event (type %d)", event);
 
 	hack_empty_master_iff_lower_up (platform, kernel_object);
 
