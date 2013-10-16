@@ -47,6 +47,7 @@ enum {
 	PROP_STATE,
 	PROP_DEVICE_ID,
 	PROP_SIM_ID,
+	PROP_IP_TYPES,
 
 	LAST_PROP
 };
@@ -63,6 +64,7 @@ typedef struct {
 	NMModemState prev_state;  /* revert to this state if enable/disable fails */
 	char *device_id;
 	char *sim_id;
+	NMModemIPType ip_types;
 
 	NMPPPManager *ppp_manager;
 
@@ -216,6 +218,12 @@ void
 nm_modem_emit_removed (NMModem *self)
 {
 	g_signal_emit (self, signals[REMOVED], 0);
+}
+
+NMModemIPType
+nm_modem_get_supported_ip_types (NMModem *self)
+{
+	return NM_MODEM_GET_PRIVATE (self)->ip_types;
 }
 
 /*****************************************************************************/
@@ -861,6 +869,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SIM_ID:
 		g_value_set_string (value, priv->sim_id);
 		break;
+	case PROP_IP_TYPES:
+		g_value_set_uint (value, priv->ip_types);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -908,6 +919,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_SIM_ID:
 		g_free (priv->sim_id);
 		priv->sim_id = g_value_dup_string (value);
+		break;
+	case PROP_IP_TYPES:
+		priv->ip_types = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1035,6 +1049,14 @@ nm_modem_class_init (NMModemClass *klass)
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 		                      G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_IP_TYPES,
+		 g_param_spec_uint (NM_MODEM_IP_TYPES,
+		                    "IP Types",
+		                    "Supported IP types",
+		                    0, G_MAXUINT32, NM_MODEM_IP_TYPE_IPV4,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/* Signals */
 

@@ -47,6 +47,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_STATE        "state"
 #define NM_MODEM_DEVICE_ID    "device-id"
 #define NM_MODEM_SIM_ID       "sim-id"
+#define NM_MODEM_IP_TYPES     "ip-types"   /* Supported IP types */
 
 /* Signals */
 #define NM_MODEM_PPP_STATS         "ppp-stats"
@@ -62,12 +63,32 @@ G_BEGIN_DECLS
 #define MM_MODEM_IP_METHOD_STATIC 1
 #define MM_MODEM_IP_METHOD_DHCP   2
 
+/**
+ * NMModemIPType:
+ * @NM_MODEM_IP_TYPE_UNKNOWN: unknown or no IP support
+ * @NM_MODEM_IP_TYPE_IPV4: IPv4-only bearers are supported
+ * @NM_MODEM_IP_TYPE_IPV6: IPv6-only bearers are supported
+ * @NM_MODEM_IP_TYPE_IPV4V6: dual-stack IPv4 + IPv6 bearers are supported
+ *
+ * Indicates what IP protocols the modem supports for an IP bearer.  Any
+ * combination of flags is possible.  For example, (%NM_MODEM_IP_TYPE_IPV4 |
+ * %NM_MODEM_IP_TYPE_IPV6) indicates that the modem supports IPv4 and IPv6
+ * but not simultaneously on the same bearer.
+ */ 
+typedef enum {
+	NM_MODEM_IP_TYPE_UNKNOWN = 0x0,
+	NM_MODEM_IP_TYPE_IPV4 = 0x1,
+	NM_MODEM_IP_TYPE_IPV6 = 0x2,
+	NM_MODEM_IP_TYPE_IPV4V6 = 0x4
+} NMModemIPType;
+
 typedef enum {
 	NM_MODEM_ERROR_CONNECTION_NOT_GSM,      /*< nick=ConnectionNotGsm >*/
 	NM_MODEM_ERROR_CONNECTION_NOT_CDMA,     /*< nick=ConnectionNotCdma >*/
 	NM_MODEM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
 	NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 	NM_MODEM_ERROR_INITIALIZATION_FAILED,   /*< nick=InitializationFailed >*/
+	NM_MODEM_ERROR_IP_CONFIG_INVALID,       /*< nick=IpConfigInvalid >*/
 } NMModemError;
 
 typedef enum {  /*< underscore_name=nm_modem_state >*/
@@ -208,6 +229,8 @@ void          nm_modem_set_state (NMModem *self,
                                   const char *reason);
 void          nm_modem_set_prev_state (NMModem *self, const char *reason);
 const char *  nm_modem_state_to_string (NMModemState state);
+
+NMModemIPType nm_modem_get_supported_ip_types (NMModem *self);
 
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);

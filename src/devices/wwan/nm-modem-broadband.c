@@ -807,6 +807,21 @@ modem_state_changed (MMModem *modem,
 
 /*****************************************************************************/
 
+static NMModemIPType
+mm_ip_family_to_nm (MMBearerIpFamily family)
+{
+	NMModemIPType nm_type = NM_MODEM_IP_TYPE_UNKNOWN;
+
+	if (family & MM_BEARER_IP_FAMILY_IPV4)
+		nm_type |= NM_MODEM_IP_TYPE_IPV4;
+	if (family & MM_BEARER_IP_FAMILY_IPV6)
+		nm_type |= NM_MODEM_IP_TYPE_IPV6;
+	if (family & MM_BEARER_IP_FAMILY_IPV4V6)
+		nm_type |= MM_BEARER_IP_FAMILY_IPV4V6;
+
+	return nm_type;
+}
+
 NMModem *
 nm_modem_broadband_new (GObject *object, GError **error)
 {
@@ -831,6 +846,7 @@ nm_modem_broadband_new (GObject *object, GError **error)
 	                      NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
 	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
 	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
+	                      NM_MODEM_IP_TYPES, mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem_iface)),
 	                      NM_MODEM_STATE, mm_state_to_nm (mm_modem_get_state (modem_iface)),
 	                      NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
 	                      NM_MODEM_BROADBAND_MODEM, modem_object,
