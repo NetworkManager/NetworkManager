@@ -615,11 +615,19 @@ nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
                                   const char *uuid,
                                   gboolean ipv6)
 {
+	NMDHCPManagerPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	return NM_DHCP_MANAGER_GET_PRIVATE (self)->get_lease_config_func (iface, uuid, ipv6);
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+
+	if (priv->get_lease_config_func)
+		return priv->get_lease_config_func (iface, uuid, ipv6);
+
+	nm_log_warn (LOGD_DHCP, "Cannot get a DHCP lease config (no usable DHCP client was found!)");
+	return NULL;
 }
 
 NMIP4Config *
