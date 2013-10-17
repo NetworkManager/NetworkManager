@@ -879,6 +879,20 @@ remove_default_wired_connection (NMSettings *self,
 	}
 }
 
+/**
+ * nm_settings_add_connection:
+ * @self: the #NMSettings object
+ * @connection: the source connection to create a new #NMSettingsConnection from
+ * @save_to_disk: %TRUE to save the connection to disk immediately, %FALSE to
+ * not save to disk
+ * @error: on return, a location to store any errors that may occur
+ *
+ * Creates a new #NMSettingsConnection for the given source @connection.  
+ * The returned object is owned by @self and the caller must reference
+ * the object to continue using it.
+ *
+ * Returns: the new #NMSettingsConnection or %NULL
+ */
 NMSettingsConnection *
 nm_settings_add_connection (NMSettings *self,
                             NMConnection *connection,
