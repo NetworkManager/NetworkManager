@@ -118,7 +118,8 @@ struct _NMSystemConfigInterface {
 	 * Initialize the plugin-specific connection and return a new
 	 * NMSettingsConnection subclass that contains the same settings as the
 	 * original connection.  The connection should only be saved to backing
-	 * storage if @save_to_disk is TRUE.
+	 * storage if @save_to_disk is TRUE.  The returned object is owned by the
+	 * plugin and must be referenced by the owner if necessary.
 	 */
 	NMSettingsConnection * (*add_connection) (NMSystemConfigInterface *config,
 	                                          NMConnection *connection,

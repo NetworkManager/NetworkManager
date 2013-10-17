@@ -156,6 +156,22 @@ nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 	return NULL;
 }
 
+/**
+ * nm_system_config_interface_add_connection:
+ * @config: the #NMSystemConfigInterface
+ * @connection: the source connection to create a plugin-specific
+ * #NMSettingsConnection from
+ * @save_to_disk: %TRUE to save the connection to disk immediately, %FALSE to
+ * not save to disk
+ * @error: on return, a location to store any errors that may occur
+ *
+ * Creates a new #NMSettingsConnection for the given source @connection.  If the
+ * plugin cannot handle the given connection type, it should return %NULL and
+ * set @error.  The plugin owns the returned object and the caller must reference
+ * the object if it wishes to continue using it.
+ *
+ * Returns: the new #NMSettingsConnection or %NULL
+ */
 NMSettingsConnection *
 nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                            NMConnection *connection,

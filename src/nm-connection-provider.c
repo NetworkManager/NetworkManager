@@ -49,6 +49,20 @@ nm_connection_provider_has_connections_loaded (NMConnectionProvider *self)
 	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->has_connections_loaded (self);
 }
 
+/**
+ * nm_connection_provider_add_connection:
+ * @self: the #NMConnectionProvider
+ * @connection: the source connection to create a new #NMSettingsConnection from
+ * @save_to_disk: %TRUE to save the connection to disk immediately, %FALSE to
+ * not save to disk
+ * @error: on return, a location to store any errors that may occur
+ *
+ * Creates a new #NMSettingsConnection for the given source @connection.  
+ * The plugin owns the returned object and the caller must reference the object
+ * to continue using it.
+ *
+ * Returns: the new #NMSettingsConnection or %NULL
+ */
 NMConnection *
 nm_connection_provider_add_connection (NMConnectionProvider *self,
                                        NMConnection *connection,
