@@ -3057,7 +3057,7 @@ nm_manager_activate_connection (NMManager *manager,
 			iface = get_virtual_iface_name (manager, connection, NULL);
 			if (!iface) {
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-					                 "Failed to determine connection's virtual interface name");
+				                     "Failed to determine connection's virtual interface name");
 				return NULL;
 			}
 
@@ -3065,7 +3065,7 @@ nm_manager_activate_connection (NMManager *manager,
 			g_free (iface);
 			if (!matched) {
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-					                 "Device given by path did not match connection's virtual interface name");
+				                     "Device given by path did not match connection's virtual interface name");
 				return NULL;
 			}
 		}
@@ -3078,14 +3078,14 @@ nm_manager_activate_connection (NMManager *manager,
 		 */
 		if (!connection_needs_virtual_device (connection)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                 "This connection requires an existing device.");
+			                     "This connection requires an existing device.");
 			return NULL;
 		}
 
 		iface = get_virtual_iface_name (manager, connection, NULL);
 		if (!iface) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                 "Failed to determine connection's virtual interface name");
+			                     "Failed to determine connection's virtual interface name");
 			return NULL;
 		}
 
@@ -3096,7 +3096,7 @@ nm_manager_activate_connection (NMManager *manager,
 			device = system_create_virtual_device (manager, connection);
 			if (!device) {
 				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-						             "Failed to create virtual interface");
+				                     "Failed to create virtual interface");
 				return NULL;
 			}
 
@@ -3116,7 +3116,7 @@ nm_manager_activate_connection (NMManager *manager,
 
 	if (!nm_device_can_activate (device, connection)) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-			                 "Device not managed by NetworkManager or unavailable");
+		                     "Device not managed by NetworkManager or unavailable");
 		return NULL;
 	}
 
@@ -3133,7 +3133,7 @@ nm_manager_activate_connection (NMManager *manager,
 	/* Try to find the master connection/device if the connection has a dependency */
 	if (!find_master (manager, connection, device, &master_connection, &master_device)) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                 "Master connection not found or invalid");
+		                     "Master connection not found or invalid");
 		return NULL;
 	}
 
@@ -3157,7 +3157,7 @@ nm_manager_activate_connection (NMManager *manager,
 		 */
 		if (master_connection && !is_compatible_with_slave (master_connection, connection)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
-					             "The master connection was not compatible");
+			                     "The master connection was not compatible");
 			return NULL;
 		}
 
