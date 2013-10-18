@@ -108,7 +108,7 @@ demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, 
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->routes, (GFunc) g_free, NULL);
+	g_slist_foreach (priv->routes, (GFunc) nm_ip4_route_unref, NULL);
 	g_slist_free (priv->routes);
 	priv->routes = NULL;
 
@@ -156,10 +156,10 @@ finalize (GObject *object)
 
 	g_free (priv->gateway);
 
-	g_slist_foreach (priv->addresses, (GFunc) g_free, NULL);
+	g_slist_foreach (priv->addresses, (GFunc) nm_ip4_address_unref, NULL);
 	g_slist_free (priv->addresses);
 
-	g_slist_foreach (priv->routes, (GFunc) g_free, NULL);
+	g_slist_foreach (priv->routes, (GFunc) nm_ip4_route_unref, NULL);
 	g_slist_free (priv->routes);
 
 	if (priv->nameservers)
