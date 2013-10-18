@@ -42,6 +42,7 @@
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
+#include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
@@ -4339,6 +4340,14 @@ disconnect_cb (NMDevice *device,
 			g_error_free (local);
 		} else {
 			priv->autoconnect = FALSE;
+
+			/* Software devices are removed when manually disconnected and thus
+			 * we need to track the autoconnect flag outside the device.
+			 */
+			nm_manager_prevent_device_auto_connect (nm_manager_get (),
+			                                        nm_device_get_ip_iface (device),
+			                                        TRUE);
+
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);

@@ -263,6 +263,9 @@ typedef struct {
 
 	GHashTable *nm_bridges;
 
+	/* Track auto-activation for software devices */
+	GHashTable *noauto_sw_devices;
+
 	gboolean startup;
 	gboolean disposed;
 } NMManagerPrivate;
@@ -3096,13 +3099,29 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 
 		device = find_device_by_ip_iface (manager, iface);
-		g_free (iface);
 		if (!device) {
-			/* Create it */
+			/* Create the software device. Only exception is when:
+			 * - this is an auto-activation *and* the device denies auto-activation
+			 *   at this time (the device was manually disconnected/deleted before)
+			 */
+			if (!nm_manager_can_device_auto_connect (manager, iface)) {
+				if (dbus_sender) {
+					/* Manual activation - allow device auto-activation again */
+					nm_manager_prevent_device_auto_connect (manager, iface, FALSE);
+				} else {
+					g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,
+					             "'%s' does not allow automatic connections at this time => software device '%s' not created for '%s'",
+					             iface, nm_connection_get_id (connection), iface);
+					g_free (iface);
+					return NULL;
+				}
+			}
+
 			device = system_create_virtual_device (manager, connection);
 			if (!device) {
-				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                     "Failed to create virtual interface");
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "Failed to create virtual interface '%s'", iface);
+				g_free (iface);
 				return NULL;
 			}
 
@@ -3118,6 +3137,7 @@ nm_manager_activate_connection (NMManager *manager,
 				                         NM_DEVICE_STATE_REASON_NONE);
 			}
 		}
+		g_free (iface);
 	}
 
 	if (!nm_device_can_activate (device, connection)) {
@@ -3496,6 +3516,30 @@ impl_manager_deactivate_connection (NMManager *self,
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
+}
+
+/*
+ * Track (software) devices that cannot auto activate.
+ * It is needed especially for software devices, that can be removed and added
+ * again. So we can't simply use a flag inside the device.
+ */
+void
+nm_manager_prevent_device_auto_connect (NMManager *manager, const char *ifname, gboolean prevent)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (prevent)
+		g_hash_table_add (priv->noauto_sw_devices, g_strdup (ifname));
+	else
+		g_hash_table_remove (priv->noauto_sw_devices, ifname);
+}
+
+gboolean
+nm_manager_can_device_auto_connect (NMManager *manager, const char *ifname)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	return !g_hash_table_contains (priv->noauto_sw_devices, ifname);
 }
 
 static void
@@ -4575,6 +4619,8 @@ dispose (GObject *object)
 		g_object_unref (priv->fw_monitor);
 	}
 
+	g_hash_table_unref (priv->noauto_sw_devices);
+
 	g_slist_free (priv->factories);
 
 	if (priv->timestamp_update_id) {
@@ -4937,6 +4983,9 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_CORE, "failed to monitor kernel firmware directory '%s'.",
 		             KERNEL_FIRMWARE_DIR);
 	}
+
+	/* Hash table storing software devices that should not auto activate */
+	priv->noauto_sw_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
 	load_device_factories (manager);
 
