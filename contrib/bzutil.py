@@ -76,6 +76,7 @@ class CmdBase:
 
 class BzClient:
     COMMON_FIELDS = ['id', 'depends_on', 'blocks', 'flags', 'keywords', 'status', 'component']
+    DEFAULT_FIELDS = ['summary', 'status', 'flags', 'cf_fixed_in']
 
     def __init__(self, url, config):
         transport = None
@@ -94,7 +95,7 @@ class BzClient:
                                 'password': password})
 
     _getBZDataCache = {}
-    def getBZData(self, bzid, include_fields = COMMON_FIELDS):
+    def getBZData(self, bzid, include_fields = DEFAULT_FIELDS):
         if not self._config.get('rhbz_passwd', None) or not self._config.get('rhbz_user', None):
             raise PasswordError('The Bugzilla password has not been set')
         user = self._config['rhbz_user'];
@@ -112,8 +113,11 @@ class BzClient:
 
         self._login(user, passwd)
 
-        bugs_data = self._client.Bug.get({'ids': bzid,
-                                          'include_fields': include_fields})
+        params = {'ids': bzid}
+        if include_fields is not None:
+            params['include_fields'] = include_fields
+
+        bugs_data = self._client.Bug.get(params)
         bug_data = bugs_data['bugs'][0]
         BzClient._getBZDataCache[key] = bug_data
         return bug_data
@@ -178,7 +182,7 @@ class BzInfoRhbz(BzInfo):
 
 
 
-class UtilParseCommitMessage(CmdBase):
+class UtilParseCommitMessage:
 
     _patterns = [
             ('(^|\W)(?P<replace>(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                            lambda m: BzInfoBgo(m.group('id'))),
@@ -263,7 +267,7 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--color', '-c', dest='color', action='store_true')
         self.parser.add_argument('--conf', metavar='conf', default=('%s/.bzutil.conf' % os.path.expanduser("~")))
         self.parser.add_argument('--bz', action='append')
-        self.parser.add_argument('commit', metavar='commit', type=str, nargs='+',
+        self.parser.add_argument('commit', metavar='commit', type=str, nargs='*',
                                  help='commit ids to parse')
 
     @staticmethod
@@ -330,19 +334,27 @@ class CmdParseCommitMessage(CmdBase):
         result_reduced = result_reduced + result_man
         result_reduced = sorted(set(result_reduced), key=lambda commit_data: commit_data.get_commit_date(), reverse=True)
 
-        print
+        if result_all:
+            print
         print('sorted:')
         for commit_data in result_reduced:
             print("  %s" % commit_data.commit_summary(self.options.color))
             for result in commit_data.result:
                 print("    %-4s #%-8s %s" % (result.bztype, result.bzid, result.url))
                 bzdata = result.getBZData()
-                for k in CmdParseCommitMessage._order_keys(bzdata.keys(), ['status', 'flags']):
+                for k in CmdParseCommitMessage._order_keys(bzdata.keys(), BzClient.DEFAULT_FIELDS):
                     if k == 'flags':
                         for flag in bzdata[k]:
                             print("         %-20s = %s" % ('#'+flag['name'], self._colored(flag['status'], CmdParseCommitMessage._colormap_flag)))
+                    elif k == 'summary':
+                        print("         %-20s = \"%s\"" % (k, bzdata[k]))
                     elif k == 'status':
                         print("         %-20s = %s" % (k, self._colored(bzdata[k], CmdParseCommitMessage._colormap_status)))
+                    elif k == 'cf_fixed_in':
+                        if bzdata[k]:
+                            print("         %-20s = %s" % (k, bzdata[k]))
+                    else:
+                        print("         %-20s = %s" % (k, bzdata[k]))
             print
 
 
