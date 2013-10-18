@@ -638,7 +638,7 @@ dispose (GObject *object)
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
 
 	if (priv->disposed)
-		return;
+		goto out;
 
 	priv->disposed = TRUE;
 
@@ -665,6 +665,7 @@ dispose (GObject *object)
 		priv->connections = NULL;
 	}
 
+out:
 	G_OBJECT_CLASS (sc_plugin_keyfile_parent_class)->dispose (object);
 }
 
