@@ -267,8 +267,7 @@ foreach_item_helper (GHashTable *hash,
 		func (siter->data, value, user_data);
 	}
 
-	g_slist_foreach (copied, (GFunc) g_free, NULL);
-	g_slist_free (copied);
+	g_slist_free_full (copied, g_free);
 }
 
 /**

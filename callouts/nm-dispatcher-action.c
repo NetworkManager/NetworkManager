@@ -121,8 +121,10 @@ struct Request {
 };
 
 static void
-script_info_free (ScriptInfo *info)
+script_info_free (gpointer ptr)
 {
+	ScriptInfo *info = ptr;
+
 	g_free (info->script);
 	g_free (info->error);
 	g_free (info);
@@ -134,10 +136,8 @@ request_free (Request *request)
 	g_free (request->action);
 	g_free (request->iface);
 	g_strfreev (request->envp);
-	if (request->scripts) {
-		g_ptr_array_foreach (request->scripts, (GFunc) script_info_free, NULL);
+	if (request->scripts)
 		g_ptr_array_free (request->scripts, TRUE);
-	}
 }
 
 static gboolean
@@ -464,7 +464,7 @@ impl_dispatch (Handler *h,
 
 	request->iface = g_strdup (iface);
 
-	request->scripts = g_ptr_array_sized_new (5);
+	request->scripts = g_ptr_array_new_full (5, script_info_free);
 	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
 		ScriptInfo *s = g_malloc0 (sizeof (*s));
 		s->request = request;

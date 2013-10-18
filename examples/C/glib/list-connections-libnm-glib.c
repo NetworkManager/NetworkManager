@@ -67,7 +67,7 @@ setup_signals (void)
 
 /* Print details of connection */
 static void
-show_connection (NMConnection *data, gpointer user_data)
+show_connection (gpointer data, gpointer user_data)
 {
 	NMConnection *connection = (NMConnection *) data;
 	NMSettingConnection *s_con;
@@ -107,7 +107,7 @@ get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 
 	printf ("Connections:\n===================\n");
 
-	g_slist_foreach (connections, (GFunc) show_connection, NULL);
+	g_slist_foreach (connections, show_connection, NULL);
 
 	g_slist_free (connections);
 	g_object_unref (settings);

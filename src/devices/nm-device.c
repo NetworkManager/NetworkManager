@@ -6412,13 +6412,11 @@ ip4_match_config (NMDevice *self, NMConnection *connection)
 				break;
 			}
 		}
-		g_slist_foreach (leases, (GFunc) g_object_unref, NULL);
-		g_slist_free (leases);
+		g_slist_free_full (leases, g_object_unref);
 		return found;
 	} else {
 		/* Maybe the connection used to be DHCP and there are stale leases; ignore them */
-		g_slist_foreach (leases, (GFunc) g_object_unref, NULL);
-		g_slist_free (leases);
+		g_slist_free_full (leases, g_object_unref);
 	}
 
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {

@@ -246,7 +246,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->proxy);
 
 	if (priv->slaves) {
-		g_ptr_array_foreach (priv->slaves, (GFunc) g_object_unref, NULL);
+		g_ptr_array_set_free_func (priv->slaves, g_object_unref);
 		g_ptr_array_free (priv->slaves, TRUE);
 		priv->slaves = NULL;
 	}

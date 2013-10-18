@@ -363,8 +363,7 @@ _nm_ip6_address_array_demarshal (GValue *value, GSList **dest)
 		return FALSE;
 
 	if (*dest) {
-		g_slist_foreach (*dest, (GFunc) g_free, NULL);
-		g_slist_free (*dest);
+		g_slist_free_full (*dest, g_free);
 		*dest = NULL;
 	}
 

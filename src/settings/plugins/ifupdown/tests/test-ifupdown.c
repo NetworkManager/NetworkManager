@@ -57,8 +57,10 @@ expected_key_new (const char *key, const char *data)
 }
 
 static void
-expected_key_free (ExpectedKey *k)
+expected_key_free (gpointer ptr)
 {
+	ExpectedKey *k = ptr;
+
 	g_assert (k);
 	g_free (k->key);
 	g_free (k->data);
@@ -81,11 +83,12 @@ expected_block_new (const char *type, const char *name)
 }
 
 static void
-expected_block_free (ExpectedBlock *b)
+expected_block_free (gpointer ptr)
 {
+	ExpectedBlock *b = ptr;
+
 	g_assert (b);
-	g_slist_foreach (b->keys, (GFunc) expected_key_free, NULL);
-	g_slist_free (b->keys);
+	g_slist_free_full (b->keys, expected_key_free);
 	g_free (b->type);
 	g_free (b->name);
 	memset (b, 0, sizeof (ExpectedBlock));
@@ -122,8 +125,7 @@ static void
 expected_free (Expected *e)
 {
 	g_assert (e);
-	g_slist_foreach (e->blocks, (GFunc) expected_block_free, NULL);
-	g_slist_free (e->blocks);
+	g_slist_free_full (e->blocks, expected_block_free);
 	memset (e, 0, sizeof (Expected));
 	g_free (e);
 }

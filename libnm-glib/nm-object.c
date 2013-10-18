@@ -317,12 +317,10 @@ dispose (GObject *object)
 		priv->notify_id = 0;
 	}
 
-	g_slist_foreach (priv->notify_props, (GFunc) g_free, NULL);
-	g_slist_free (priv->notify_props);
+	g_slist_free_full (priv->notify_props, g_free);
 	priv->notify_props = NULL;
 
-	g_slist_foreach (priv->property_interfaces, (GFunc) g_free, NULL);
-	g_slist_free (priv->property_interfaces);
+	g_slist_free_full (priv->property_interfaces, g_free);
 	priv->property_interfaces = NULL;
 
 	g_clear_object (&priv->properties_proxy);
@@ -341,8 +339,7 @@ finalize (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->property_tables, (GFunc) g_hash_table_destroy, NULL);
-	g_slist_free (priv->property_tables);
+	g_slist_free_full (priv->property_tables, (GDestroyNotify) g_hash_table_destroy);
 	g_free (priv->path);
 
 	if (priv->pseudo_properties)

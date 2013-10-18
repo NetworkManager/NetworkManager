@@ -4501,8 +4501,7 @@ dispose (GObject *object)
 	}
 	priv->disposed = TRUE;
 
-	g_slist_foreach (priv->auth_chains, (GFunc) nm_auth_chain_unref, NULL);
-	g_slist_free (priv->auth_chains);
+	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 
 	nm_auth_changed_func_unregister (authority_changed_cb, manager);
 

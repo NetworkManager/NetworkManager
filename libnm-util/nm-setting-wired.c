@@ -674,7 +674,7 @@ finalize (GObject *object)
 	g_slist_free_full (priv->mac_address_blacklist, g_free);
 
 	if (priv->s390_subchannels) {
-		g_ptr_array_foreach (priv->s390_subchannels, (GFunc) g_free, NULL);
+		g_ptr_array_set_free_func (priv->s390_subchannels, g_free);
 		g_ptr_array_free (priv->s390_subchannels, TRUE);
 	}
 
@@ -728,7 +728,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_S390_SUBCHANNELS:
 		if (priv->s390_subchannels) {
-			g_ptr_array_foreach (priv->s390_subchannels, (GFunc) g_free, NULL);
+			g_ptr_array_set_free_func (priv->s390_subchannels, g_free);
 			g_ptr_array_free (priv->s390_subchannels, TRUE);
 		}
 		priv->s390_subchannels = g_value_dup_boxed (value);

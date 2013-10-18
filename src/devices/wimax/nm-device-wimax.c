@@ -1349,8 +1349,7 @@ dispose (GObject *object)
 
 	set_current_nsp (self, NULL);
 
-	g_slist_foreach (priv->nsp_list, (GFunc) g_object_unref, NULL);
-	g_slist_free (priv->nsp_list);
+	g_slist_free_full (priv->nsp_list, g_object_unref);
 
 	iwmx_sdk_new_callback_unregister (wmx_new_sdk_cb, self);
 	nm_wimax_util_sdk_unref ();

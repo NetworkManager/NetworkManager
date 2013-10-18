@@ -2034,8 +2034,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
-	g_slist_foreach (priv->pending_activations, (GFunc) activate_info_free, NULL);
-	g_slist_free (priv->pending_activations);
+	g_slist_free_full (priv->pending_activations, (GDestroyNotify) activate_info_free);
 	priv->pending_activations = NULL;
 
 	g_hash_table_destroy (priv->permissions);

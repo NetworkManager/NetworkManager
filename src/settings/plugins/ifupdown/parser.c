@@ -240,9 +240,7 @@ string_to_glist_of_strings(const gchar* data)
 static void
 slist_free_all(gpointer slist)
 {
-	GSList *list = (GSList *) slist;
-	g_slist_foreach (list, (GFunc) g_free, NULL);
-	g_slist_free (list);
+	g_slist_free_full ((GSList *) slist, g_free);
 }
 
 static void

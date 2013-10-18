@@ -509,8 +509,7 @@ dispose (GObject *object)
 		g_free (priv->identifier);
 		g_free (priv->owner_username);
 
-		g_slist_foreach (priv->permissions, (GFunc) g_free, NULL);
-		g_slist_free (priv->permissions);
+		g_slist_free_full (priv->permissions, g_free);
 
 		g_hash_table_destroy (priv->requests);
 

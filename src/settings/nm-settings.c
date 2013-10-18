@@ -361,8 +361,7 @@ clear_unmanaged_specs (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	g_slist_foreach (priv->unmanaged_specs, (GFunc) g_free, NULL);
-	g_slist_free (priv->unmanaged_specs);
+	g_slist_free_full (priv->unmanaged_specs, g_free);
 	priv->unmanaged_specs = NULL;
 }
 
@@ -658,8 +657,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	if (!keyfile_added)
 		add_keyfile_plugin (self);
 
-	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
-	g_slist_free (list);
+	g_slist_free_full (list, g_object_unref);
 
 	return success;
 }
@@ -1732,11 +1730,9 @@ dispose (GObject *object)
 {
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
 
-	for (iter = priv->auths; iter; iter = g_slist_next (iter))
-		nm_auth_chain_unref ((NMAuthChain *) iter->data);
-	g_slist_free (priv->auths);
+	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_unref);
+	priv->auths = NULL;
 
 	priv->dbus_mgr = NULL;
 
@@ -1757,8 +1753,7 @@ finalize (GObject *object)
 
 	clear_unmanaged_specs (self);
 
-	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
-	g_slist_free (priv->plugins);
+	g_slist_free_full (priv->plugins, g_object_unref);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->finalize (object);
 }

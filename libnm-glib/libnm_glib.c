@@ -456,8 +456,7 @@ _libnm_glib_ctx_free (libnm_glib_ctx *ctx)
 	if (ctx->callbacks_lock)
 		g_mutex_free (ctx->callbacks_lock);
 
-	g_slist_foreach (ctx->callbacks, (GFunc)g_free, NULL);
-	g_slist_free (ctx->callbacks);
+	g_slist_free_full (ctx->callbacks, g_free);
 
 	if (ctx->thread)
 		g_thread_join (ctx->thread);

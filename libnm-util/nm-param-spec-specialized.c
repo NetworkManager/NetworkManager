@@ -291,10 +291,8 @@ _gvalues_compare_collection (const GValue *value1, const GValue *value2)
 				ret = _gvalues_compare ((GValue *) iter1->data, (GValue *) iter2->data);
 		}
 
-		g_slist_foreach (list1, (GFunc) _gvalue_destroy, NULL);
-		g_slist_free (list1);
-		g_slist_foreach (list2, (GFunc) _gvalue_destroy, NULL);
-		g_slist_free (list2);
+		g_slist_free_full (list1, _gvalue_destroy);
+		g_slist_free_full (list2, _gvalue_destroy);
 	}
 
 	return ret;

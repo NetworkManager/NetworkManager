@@ -80,8 +80,7 @@ demarshal_ip6_address_array (NMObject *object, GParamSpec *pspec, GValue *value,
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->addresses, (GFunc) nm_ip6_address_unref, NULL);
-	g_slist_free (priv->addresses);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
 	priv->addresses = NULL;
 
 	priv->addresses = nm_utils_ip6_addresses_from_gvalue (value);
@@ -127,8 +126,7 @@ demarshal_ip6_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, 
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->routes, (GFunc) nm_ip6_route_unref, NULL);
-	g_slist_free (priv->routes);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
 	priv->routes = NULL;
 
 	priv->routes = nm_utils_ip6_routes_from_gvalue (value);
@@ -289,22 +287,17 @@ finalize (GObject *object)
 
 	g_free (priv->gateway);
 
-	g_slist_foreach (priv->addresses, (GFunc) nm_ip6_address_unref, NULL);
-	g_slist_free (priv->addresses);
-
-	g_slist_foreach (priv->routes, (GFunc) nm_ip6_route_unref, NULL);
-	g_slist_free (priv->routes);
-
-	g_slist_foreach (priv->nameservers, (GFunc) g_free, NULL);
-	g_slist_free (priv->nameservers);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
+	g_slist_free_full (priv->nameservers, g_free);
 
 	if (priv->domains) {
-		g_ptr_array_foreach (priv->domains, (GFunc) g_free, NULL);
+		g_ptr_array_set_free_func (priv->domains, g_free);
 		g_ptr_array_free (priv->domains, TRUE);
 	}
 
 	if (priv->searches) {
-		g_ptr_array_foreach (priv->searches, (GFunc) g_free, NULL);
+		g_ptr_array_set_free_func (priv->searches, g_free);
 		g_ptr_array_free (priv->searches, TRUE);
 	}
 

@@ -354,7 +354,7 @@ dispose (GObject *object)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
 	if (priv->devices) {
-		g_ptr_array_foreach (priv->devices, (GFunc) g_object_unref, NULL);
+		g_ptr_array_set_free_func (priv->devices, g_object_unref);
 		g_ptr_array_free (priv->devices, TRUE);
 		priv->devices = NULL;
 	}

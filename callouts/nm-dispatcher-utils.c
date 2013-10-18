@@ -130,10 +130,8 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 	}
 	if (num)
 		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, num));
-	if (addresses) {
-		g_slist_foreach (addresses, (GFunc) nm_ip4_address_unref, NULL);
-		g_slist_free (addresses);
-	}
+	if (addresses)
+		g_slist_free_full (addresses, (GDestroyNotify) nm_ip4_address_unref);
 
 	/* DNS servers */
 	val = g_hash_table_lookup (ip4_config, "nameservers");
@@ -219,10 +217,8 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		items = g_slist_prepend (items, routetmp);
 	}
 	items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, num));
-	if (routes) {
-		g_slist_foreach (routes, (GFunc) nm_ip4_route_unref, NULL);
-		g_slist_free (routes);
-	}
+	if (routes)
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip4_route_unref);
 
 	return items;
 }
@@ -289,10 +285,8 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 	}
 	if (num)
 		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, num));
-	if (addresses) {
-		g_slist_foreach (addresses, (GFunc) nm_ip6_address_unref, NULL);
-		g_slist_free (addresses);
-	}
+	if (addresses)
+		g_slist_free_full (addresses, (GDestroyNotify) nm_ip6_address_unref);
 
 	/* DNS servers */
 	val = g_hash_table_lookup (ip6_config, "nameservers");
@@ -352,10 +346,8 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 	}
 	if (num)
 		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ROUTES=%d", prefix, num));
-	if (routes) {
-		g_slist_foreach (routes, (GFunc) nm_ip6_route_unref, NULL);
-		g_slist_free (routes);
-	}
+	if (routes)
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip6_route_unref);
 
 	return items;
 }

@@ -214,8 +214,10 @@ private_server_new (const char *path,
 }
 
 static void
-private_server_free (PrivateServer *s)
+private_server_free (gpointer ptr)
 {
+	PrivateServer *s = ptr;
+
 	unlink (s->address);
 	g_free (s->address);
 	g_free (s->tag);
@@ -472,8 +474,7 @@ nm_dbus_manager_dispose (GObject *object)
 		priv->exported = NULL;
 	}
 
-	g_slist_foreach (priv->private_servers, (GFunc) private_server_free, NULL);
-	g_slist_free (priv->private_servers);
+	g_slist_free_full (priv->private_servers, private_server_free);
 	priv->private_servers = NULL;
 	priv->priv_server = NULL;
 

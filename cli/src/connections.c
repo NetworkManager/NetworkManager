@@ -389,7 +389,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 }
 
 static void
-fill_output_connection (NMConnection *data, gpointer user_data)
+fill_output_connection (gpointer data, gpointer user_data)
 {
 	NMConnection *connection = (NMConnection *) data;
 	NmCli *nmc = (NmCli *) user_data;
@@ -502,7 +502,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		g_ptr_array_add (nmc->output_data, arr);
 
 		/* Add values */
-		g_slist_foreach (nmc->system_connections, (GFunc) fill_output_connection, nmc);
+		g_slist_foreach (nmc->system_connections, fill_output_connection, nmc);
 		print_data (nmc);  /* Print all data */
 	} else {
 		g_clear_error (&error1); /* the error1 is only relevant for 'show configured' without arguments */
