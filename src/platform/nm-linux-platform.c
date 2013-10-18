@@ -495,6 +495,8 @@ link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char 
 		return_type (NM_LINK_TYPE_WIFI, "wifi");
 	else if (g_strcmp0 (prop, "wwan") == 0)
 		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
+	else if (g_strcmp0 (prop, "wimax") == 0)
+		return_type (NM_LINK_TYPE_WIMAX, "wimax");
 
 	if (arptype == ARPHRD_ETHER)
 		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
