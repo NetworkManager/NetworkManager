@@ -181,12 +181,12 @@ class BzInfoRhbz(BzInfo):
 class UtilParseCommitMessage(CmdBase):
 
     _patterns = [
-            ('(^|\W)(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)',                     lambda m: BzInfoBgo(m.group('id'))),
-            ('https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7})($|\W)', lambda m: BzInfoBgo(m.group('id'))),
-            ('(^|\W)(?P<type>rh(bz)?)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)',                 lambda m: BzInfoRhbz(m.group('id'))),
-            ('https://bugzilla\.redhat\.com/show_bug.cgi\?id=(?P<id>[0-9]{4,7})($|\W)', lambda m: BzInfoRhbz(m.group('id'))),
-            ('(^|\W)#(?P<id>[0-9]{4,7})($|\W)',                                         lambda m: BzInfoRhbz(m.group('id'))),
-            ('(^|\W)(bz|bug)[ ]?[#]?(?P<id>[0-9]{4,7})($|\W)',                          lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)(?P<replace>(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                            lambda m: BzInfoBgo(m.group('id'))),
+            ('(^|\W)(?P<replace>https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoBgo(m.group('id'))),
+            ('(^|\W)(?P<replace>(?P<type>rh(bz)?)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                        lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)(?P<replace>https://bugzilla\.redhat\.com/show_bug.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)(?P<replace>(bz|bug)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                                 lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)(?P<replace>#(?P<id>[0-9]{4,7}))($|\W)',                                                lambda m: BzInfoRhbz(m.group('id'))),
         ]
     _patterns = [(re.compile(p[0]), p[1]) for p in _patterns]
 
@@ -202,11 +202,30 @@ class UtilParseCommitMessage(CmdBase):
             message = git_commit_message(self.commit)
             data = []
 
-            for pattern in UtilParseCommitMessage._patterns:
-                for match in pattern[0].finditer(message):
-                    m = pattern[1](match)
-                    if m:
-                        data.append(m)
+            while message:
+                match = None;
+                match_ctor = None
+
+                # we iterate over the patterns and search for the match that starts at left most position.
+                for pattern in UtilParseCommitMessage._patterns:
+                    m = pattern[0].search(message);
+                    if m is not None:
+                        if match is None:
+                            match = m
+                            match_ctor = pattern[1]
+                        elif m.start() < match.start():
+                            match = m;
+                            match_ctor = pattern[1]
+                if match is None:
+                    break
+                m = match_ctor(match)
+                if m:
+                    data.append(m)
+
+                # remove everything before the end of the match 'replace' group.
+                group = match.group('replace')
+                assert group, "need a replace match group, otherwise there is an endless loop";
+                message = message[match.end('replace'):];
 
             self._result = list(set(data))
         return self._result
@@ -279,7 +298,7 @@ class CmdParseCommitMessage(CmdBase):
 
         result_man = []
         obzi = 0
-        for obz in self.options.bz:
+        for obz in (self.options.bz if self.options.bz else []):
             bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
             result_man2 = []
             for bzii in bz_tuples:
