@@ -49,6 +49,18 @@ NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la $(LIBN
 noinst_LTLIBRARIES = libNetworkManager.la
 
 nm_sources = \
+	bluez-manager/nm-bluez-common.h \
+	bluez-manager/nm-bluez-device.c \
+	bluez-manager/nm-bluez-device.h \
+	bluez-manager/nm-bluez-manager.c \
+	bluez-manager/nm-bluez-manager.h \
+	bluez-manager/nm-bluez4-adapter.c \
+	bluez-manager/nm-bluez4-adapter.h \
+	bluez-manager/nm-bluez4-manager.c \
+	bluez-manager/nm-bluez4-manager.h \
+	bluez-manager/nm-bluez5-manager.c \
+	bluez-manager/nm-bluez5-manager.h \
+	\
 	config/nm-config.c \
 	config/nm-config.h \
 	config/nm-config-device.c \
@@ -257,22 +269,6 @@ nm_sources = \
 	nm-wifi-ap.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
-
-nm_sources += \
-	bluez-manager/nm-bluez-common.h \
-	bluez-manager/nm-bluez-device.c \
-	bluez-manager/nm-bluez-device.h \
-	bluez-manager/nm-bluez-manager.h
-
-if WITH_BLUEZ4
-nm_sources += \
-	bluez-manager/nm-bluez4-adapter.h \
-	bluez-manager/nm-bluez4-adapter.c \
-	bluez-manager/nm-bluez4-manager.c
-else
-nm_sources += \
-	bluez-manager/nm-bluez-manager.c
-endif
 
 if WITH_MODEM_MANAGER_1
 nm_sources += \

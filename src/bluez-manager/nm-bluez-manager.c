@@ -15,9 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
- * Copyright (C) 2013 Intel Corporation.
+ * Copyright (C) 2013 Red Hat, Inc.
  */
 
 #include <signal.h>
@@ -27,25 +25,36 @@
 
 #include "nm-logging.h"
 #include "nm-bluez-manager.h"
+#include "nm-bluez4-manager.h"
+#include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 
 #include "nm-dbus-manager.h"
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
-	gulong name_owner_changed_id;
+	int bluez_version;
 
 	NMConnectionProvider *provider;
+	NMBluez4Manager *manager4;
+	NMBluez5Manager *manager5;
 
-	GDBusProxy *proxy;
+	guint watch_name_id;
 
-	GHashTable *devices;
+	GDBusProxy *introspect_proxy;
+	GCancellable *async_cancellable;
 } NMBluezManagerPrivate;
 
 #define NM_BLUEZ_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ_MANAGER, NMBluezManagerPrivate))
 
 G_DEFINE_TYPE (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT)
+
+enum {
+    PROP_0,
+    PROP_PROVIDER,
+
+    LAST_PROP
+};
 
 enum {
 	BDADDR_ADDED,
@@ -56,333 +65,370 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void device_initialized (NMBluezDevice *device, gboolean success, NMBluezManager *self);
-static void device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self);
+
+static void check_bluez_and_try_setup (NMBluezManager *self);
+
+
+struct AsyncData {
+	NMBluezManager *self;
+	GCancellable *async_cancellable;
+};
+
+static struct AsyncData *
+async_data_pack (NMBluezManager *self)
+{
+	struct AsyncData *data = g_new (struct AsyncData, 1);
+
+	data->self = self;
+	data->async_cancellable = g_object_ref (NM_BLUEZ_MANAGER_GET_PRIVATE (self)->async_cancellable);
+	return data;
+}
+
+static NMBluezManager *
+async_data_unpack (struct AsyncData *async_data)
+{
+	NMBluezManager *self = g_cancellable_is_cancelled (async_data->async_cancellable)
+	                       ? NULL : async_data->self;
+
+	g_object_unref (async_data->async_cancellable);
+	g_free (async_data);
+	return self;
+}
+
+
+/**
+ * Cancel any current attempt to detect the version and cleanup
+ * the related fields.
+ **/
+static void
+cleanup_checking (NMBluezManager *self, gboolean do_unwatch_name)
+{
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	if (priv->async_cancellable) {
+		g_cancellable_cancel (priv->async_cancellable);
+		g_clear_object (&priv->async_cancellable);
+	}
+
+	g_clear_object (&priv->introspect_proxy);
+
+	if (do_unwatch_name && priv->watch_name_id) {
+		g_bus_unwatch_name (priv->watch_name_id);
+		priv->watch_name_id = 0;
+	}
+}
+
 
 static void
-emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
+manager_bdaddr_added_cb (NMBluez4Manager *bluez_mgr,
+                         NMBluezDevice *bt_device,
+                         const char *bdaddr,
+                         const char *name,
+                         const char *object_path,
+                         guint32 uuids,
+                         gpointer user_data)
 {
-	g_signal_emit (self, signals[BDADDR_ADDED], 0,
-	               device,
-	               nm_bluez_device_get_address (device),
-	               nm_bluez_device_get_name (device),
-	               nm_bluez_device_get_path (device),
-	               nm_bluez_device_get_capabilities (device));
+	/* forward the signal... */
+	g_signal_emit (NM_BLUEZ_MANAGER (user_data), signals[BDADDR_ADDED], 0,
+	               bt_device,
+	               bdaddr,
+	               name,
+	               object_path,
+	               uuids);
 }
+
+static void
+manager_bdaddr_removed_cb (NMBluez4Manager *bluez_mgr,
+                           const char *bdaddr,
+                           const char *object_path,
+                           gpointer user_data)
+{
+	/* forward the signal... */
+	g_signal_emit (NM_BLUEZ_MANAGER (user_data), signals[BDADDR_REMOVED], 0,
+	               bdaddr,
+	               object_path);
+}
+
+
+static void
+setup_version_number (NMBluezManager *self, int bluez_version)
+{
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->bluez_version);
+
+	nm_log_info (LOGD_BT, "use BlueZ version %d", bluez_version);
+
+	priv->bluez_version = bluez_version;
+
+	/* Just detected the version. Cleanup the ongoing checking/detection. */
+	cleanup_checking (self, TRUE);
+}
+
+static void
+setup_bluez4 (NMBluezManager *self)
+{
+	NMBluez4Manager *manager;
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->manager4 && !priv->manager5 && !priv->bluez_version);
+
+	setup_version_number (self, 4);
+	priv->manager4 = manager = nm_bluez4_manager_new (priv->provider);
+
+	g_signal_connect (manager,
+	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
+	                  G_CALLBACK (manager_bdaddr_added_cb),
+	                  self);
+	g_signal_connect (manager,
+	                  NM_BLUEZ_MANAGER_BDADDR_REMOVED,
+	                  G_CALLBACK (manager_bdaddr_removed_cb),
+	                  self);
+
+	nm_bluez4_manager_query_devices (manager);
+}
+
+static void
+setup_bluez5 (NMBluezManager *self)
+{
+	NMBluez5Manager *manager;
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->manager4 && !priv->manager5 && !priv->bluez_version);
+
+	setup_version_number (self, 5);
+	priv->manager5 = manager = nm_bluez5_manager_new (priv->provider);
+
+	g_signal_connect (manager,
+	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
+	                  G_CALLBACK (manager_bdaddr_added_cb),
+	                  self);
+	g_signal_connect (manager,
+	                  NM_BLUEZ_MANAGER_BDADDR_REMOVED,
+	                  G_CALLBACK (manager_bdaddr_removed_cb),
+	                  self);
+
+	nm_bluez5_manager_query_devices (manager);
+}
+
+
+static void
+watch_name_on_appeared (GDBusConnection *connection,
+                        const gchar *name,
+                        const gchar *name_owner,
+                        gpointer user_data)
+{
+	check_bluez_and_try_setup (NM_BLUEZ_MANAGER (user_data));
+}
+
+
+static void
+check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, const char *reason)
+{
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->bluez_version);
+
+	switch (bluez_version) {
+	case 4:
+		setup_bluez4 (self);
+		break;
+	case 5:
+		setup_bluez5 (self);
+		break;
+	default:
+		nm_log_dbg (LOGD_BT, "detecting BlueZ version failed: %s", reason);
+
+		/* cancel current attempts to detect the version. */
+		cleanup_checking (self, FALSE);
+		if (!priv->watch_name_id) {
+			priv->watch_name_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+			                                        BLUEZ_SERVICE,
+			                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
+			                                        watch_name_on_appeared,
+			                                        NULL,
+			                                        self,
+			                                        NULL);
+		}
+		break;
+	}
+}
+
+static void
+check_bluez_and_try_setup_do_introspect (GObject *source_object,
+                                         GAsyncResult *res,
+                                         gpointer user_data)
+{
+	NMBluezManager *self = async_data_unpack (user_data);
+	NMBluezManagerPrivate *priv;
+	GError *error = NULL;
+	GVariant *result;
+	const char *xml_data;
+	int bluez_version = 0;
+	const char *reason = NULL;
+
+	if (!self)
+		return;
+
+	priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->introspect_proxy);
+	g_return_if_fail (!g_cancellable_is_cancelled (priv->async_cancellable));
+	g_return_if_fail (!priv->bluez_version);
+
+	g_clear_object (&priv->async_cancellable);
+
+	result = g_dbus_proxy_call_finish (priv->introspect_proxy, res, &error);
+
+	if (!result) {
+		char *reason2 = g_strdup_printf ("introspect failed with %s", error->message);
+		check_bluez_and_try_setup_final_step (self, 0, reason2);
+		g_error_free (error);
+		g_free (reason2);
+		return;
+	}
+
+	g_variant_get (result, "(&s)", &xml_data);
+
+	/* might not be the best approach to detect the version, but it's good enough in practice. */
+	if (strstr (xml_data, "org.freedesktop.DBus.ObjectManager"))
+		bluez_version = 5;
+	else if (strstr (xml_data, BLUEZ4_MANAGER_INTERFACE))
+		bluez_version = 4;
+	else
+		reason = "unexpected introspect result";
+
+	g_variant_unref (result);
+
+	check_bluez_and_try_setup_final_step (self, bluez_version, reason);
+}
+
+static void
+check_bluez_and_try_setup_on_new_proxy (GObject *source_object,
+                                        GAsyncResult *res,
+                                        gpointer user_data)
+{
+	NMBluezManager *self = async_data_unpack (user_data);
+	NMBluezManagerPrivate *priv;
+	GError *error = NULL;
+
+	if (!self)
+		return;
+
+	priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->introspect_proxy);
+	g_return_if_fail (!g_cancellable_is_cancelled (priv->async_cancellable));
+	g_return_if_fail (!priv->bluez_version);
+
+	priv->introspect_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
+
+	if (!priv->introspect_proxy) {
+		char *reason = g_strdup_printf ("bluez error creating dbus proxy: %s", error->message);
+		check_bluez_and_try_setup_final_step (self, 0, reason);
+		g_error_free (error);
+		g_free (reason);
+		return;
+	}
+
+	g_dbus_proxy_call (priv->introspect_proxy,
+	                   "Introspect",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                   3000,
+	                   priv->async_cancellable,
+	                   check_bluez_and_try_setup_do_introspect,
+	                   async_data_pack (self));
+}
+
+static void
+check_bluez_and_try_setup (NMBluezManager *self)
+{
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (!priv->bluez_version);
+
+	/* there should be no ongoing detection. Anyway, cleanup_checking. */
+	cleanup_checking (self, FALSE);
+
+	priv->async_cancellable = g_cancellable_new ();
+
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                          NULL,
+	                          BLUEZ_SERVICE,
+	                          "/",
+	                          DBUS_INTERFACE_INTROSPECTABLE,
+	                          priv->async_cancellable,
+	                          check_bluez_and_try_setup_on_new_proxy,
+	                          async_data_pack (self));
+}
+
 
 void
 nm_bluez_manager_query_devices (NMBluezManager *self)
 {
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-	NMBluezDevice *device;
-	GHashTableIter iter;
 
-	g_hash_table_iter_init (&iter, priv->devices);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device)) {
-		if (nm_bluez_device_get_usable (device))
-			emit_bdaddr_added (self, device);
+	switch (priv->bluez_version) {
+	case 4:
+		nm_bluez4_manager_query_devices (priv->manager4);
+		break;
+	case 5:
+		nm_bluez5_manager_query_devices (priv->manager5);
+		break;
+	default:
+		/* the proxy implementation does nothing in this case. */
+		break;
 	}
 }
 
-static void
-remove_device (NMBluezManager *self, NMBluezDevice *device)
-{
-	if (nm_bluez_device_get_usable (device)) {
-		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-		               nm_bluez_device_get_address (device),
-		               nm_bluez_device_get_path (device));
-	}
-	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_initialized), self);
-	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_usable), self);
-}
-
-static void
-remove_all_devices (NMBluezManager *self)
-{
-	GHashTableIter iter;
-	NMBluezDevice *device;
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	g_hash_table_iter_init (&iter, priv->devices);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &device)) {
-		g_hash_table_iter_steal (&iter);
-		remove_device (self, device);
-		g_object_unref (device);
-	}
-}
-
-static void
-device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluezManager *self)
-{
-	gboolean usable = nm_bluez_device_get_usable (device);
-
-	nm_log_dbg (LOGD_BT, "(%s): bluez device now %s",
-	            nm_bluez_device_get_path (device),
-	            usable ? "usable" : "unusable");
-
-	if (usable) {
-		nm_log_dbg (LOGD_BT, "(%s): bluez device address %s",
-				    nm_bluez_device_get_path (device),
-				    nm_bluez_device_get_address (device));
-		emit_bdaddr_added (self, device);
-	} else
-		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-		               nm_bluez_device_get_address (device),
-		               nm_bluez_device_get_path (device));
-}
-
-static void
-device_initialized (NMBluezDevice *device, gboolean success, NMBluezManager *self)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	nm_log_dbg (LOGD_BT, "(%s): bluez device %s",
-	            nm_bluez_device_get_path (device),
-	            success ? "initialized" : "failed to initialize");
-	if (!success)
-		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
-}
-
-static void
-device_added (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-	NMBluezDevice *device;
-
-	device = nm_bluez_device_new (path, priv->provider);
-	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
-	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
-	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
-
-	nm_log_dbg (LOGD_BT, "(%s): new bluez device found", path);
-}
-
-static void
-device_removed (GDBusProxy *proxy, const gchar *path, NMBluezManager *self)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-	NMBluezDevice *device;
-
-	nm_log_dbg (LOGD_BT, "(%s): bluez device removed", path);
-
-	device = g_hash_table_lookup (priv->devices, path);
-	if (device) {
-		g_hash_table_steal (priv->devices, nm_bluez_device_get_path (device));
-		remove_device (NM_BLUEZ_MANAGER (self), device);
-		g_object_unref (device);
-	}
-}
-
-static void
-object_manager_g_signal (GDBusProxy     *proxy,
-                         gchar          *sender_name,
-                         gchar          *signal_name,
-                         GVariant       *parameters,
-                         NMBluezManager *self)
-{
-	GVariant *variant;
-	const gchar *path;
-
-	if (!strcmp (signal_name, "InterfacesRemoved")) {
-		const gchar **ifaces;
-		gsize i, length;
-
-		g_variant_get (parameters, "(&o*)", &path, &variant);
-
-		ifaces = g_variant_get_strv (variant, &length);
-
-		for (i = 0; i < length; i++) {
-			if (!strcmp (ifaces[i], BLUEZ_DEVICE_INTERFACE)) {
-				device_removed (proxy, path, self);
-				break;
-			}
-		}
-
-		g_free (ifaces);
-
-	} else if (!strcmp (signal_name, "InterfacesAdded")) {
-		g_variant_get (parameters, "(&o*)", &path, &variant);
-
-		if (g_variant_lookup_value (variant, BLUEZ_DEVICE_INTERFACE,
-		                            G_VARIANT_TYPE_DICTIONARY))
-			device_added (proxy, path, self);
-	}
-}
-
-static void
-get_managed_objects_cb (GDBusProxy *proxy,
-                        GAsyncResult *res,
-                        NMBluezManager *self)
-{
-	GVariant *variant, *ifaces;
-	GVariantIter i;
-	GError *error = NULL;
-	const char *path;
-
-	variant = g_dbus_proxy_call_finish (proxy, res, &error);
-
-	if (!variant) {
-		if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD))
-			nm_log_warn (LOGD_BT, "Couldn't get managed objects: not running Bluez5?");
-		else {
-			nm_log_warn (LOGD_BT, "Couldn't get managed objects: %s",
-				         error && error->message ? error->message : "(unknown)");
-		}
-		g_clear_error (&error);
-		return;
-	}
-	g_variant_iter_init (&i, g_variant_get_child_value (variant, 0));
-	while ((g_variant_iter_next (&i, "{&o*}", &path, &ifaces))) {
-		if (g_variant_lookup_value (ifaces, BLUEZ_DEVICE_INTERFACE,
-		                            G_VARIANT_TYPE_DICTIONARY)) {
-			device_added (proxy, path, self);
-		}
-	}
-
-	g_variant_unref (variant);
-}
-
-static void
-on_proxy_acquired (GObject *object,
-                   GAsyncResult *res,
-                   NMBluezManager *self)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	priv->proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
-
-	if (!priv->proxy) {
-		nm_log_warn (LOGD_BT, "Couldn't acquire object manager proxy: %s",
-		             error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return;
-	}
-
-	/* Get already managed devices. */
-	g_dbus_proxy_call (priv->proxy, "GetManagedObjects",
-	                   NULL,
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1,
-	                   NULL,
-	                   (GAsyncReadyCallback) get_managed_objects_cb,
-	                   self);
-
-	g_signal_connect (priv->proxy, "g-signal",
-	                  G_CALLBACK (object_manager_g_signal), self);
-}
-
-static void
-bluez_connect (NMBluezManager *self)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	g_return_if_fail (priv->proxy == NULL);
-
-	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-	                          G_DBUS_PROXY_FLAGS_NONE,
-	                          NULL,
-	                          BLUEZ_SERVICE,
-	                          BLUEZ_MANAGER_PATH,
-	                          OBJECT_MANAGER_INTERFACE,
-	                          NULL,
-	                          (GAsyncReadyCallback) on_proxy_acquired,
-	                          self);
-}
-
-static void
-name_owner_changed_cb (NMDBusManager *dbus_mgr,
-                       const char *name,
-                       const char *old_owner,
-                       const char *new_owner,
-                       gpointer user_data)
-{
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-	gboolean old_owner_good = (old_owner && strlen (old_owner));
-	gboolean new_owner_good = (new_owner && strlen (new_owner));
-
-	/* Can't handle the signal if its not from the Bluez */
-	if (strcmp (BLUEZ_SERVICE, name))
-		return;
-
-	if (old_owner_good && !new_owner_good) {
-		if (priv->devices)
-			remove_all_devices (self);
-	}
-}
-
-static void
-bluez_cleanup (NMBluezManager *self, gboolean do_signal)
-{
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
-
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
-
-	if (do_signal)
-		remove_all_devices (self);
-	else
-		g_hash_table_remove_all (priv->devices);
-}
-
-static void
-dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
-                            DBusGConnection *connection,
-                            gpointer user_data)
-{
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-
-	if (!connection)
-		bluez_cleanup (self, TRUE);
-	else
-		bluez_connect (self);
-}
-
-/****************************************************************/
 
 NMBluezManager *
-nm_bluez_manager_get (NMConnectionProvider *provider)
+nm_bluez_manager_new (NMConnectionProvider *provider)
 {
-	static NMBluezManager *singleton = NULL;
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (provider), NULL);
 
-	if (singleton)
-		return g_object_ref (singleton);
+	return g_object_new (NM_TYPE_BLUEZ_MANAGER,
+	                     NM_BLUEZ_MANAGER_PROVIDER,
+	                     provider,
+	                     NULL);
+}
 
-	singleton = (NMBluezManager *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
-	g_assert (singleton);
 
-	/* Cache the connection provider for NMBluezAdapter objects */
-	NM_BLUEZ_MANAGER_GET_PRIVATE (singleton)->provider = provider;
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (object);
 
-	return singleton;
+	switch (prop_id) {
+	case PROP_PROVIDER:
+		/* Construct only */
+		priv->provider = g_value_dup_object (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
-nm_bluez_manager_init (NMBluezManager *self)
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (object);
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
-	g_assert (priv->dbus_mgr);
-
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                  G_CALLBACK (name_owner_changed_cb),
-	                  self);
-
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
-	                  G_CALLBACK (dbus_connection_changed_cb),
-	                  self);
-
-	bluez_connect (self);
-
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                       NULL, g_object_unref);
+	switch (prop_id) {
+	case PROP_PROVIDER:
+		g_value_set_object (value, priv->provider);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
+
 
 static void
 dispose (GObject *object)
@@ -390,25 +436,40 @@ dispose (GObject *object)
 	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
 	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	bluez_cleanup (self, FALSE);
+	g_clear_object (&priv->provider);
 
-	if (priv->dbus_mgr) {
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, name_owner_changed_cb, self);
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, self);
-		priv->dbus_mgr = NULL;
+	if (priv->manager4) {
+		g_signal_handlers_disconnect_by_func (priv->manager4, G_CALLBACK (manager_bdaddr_added_cb), self);
+		g_signal_handlers_disconnect_by_func (priv->manager4, G_CALLBACK (manager_bdaddr_removed_cb), self);
+		g_clear_object (&priv->manager4);
+	}
+	if (priv->manager5) {
+		g_signal_handlers_disconnect_by_func (priv->manager5, G_CALLBACK (manager_bdaddr_added_cb), self);
+		g_signal_handlers_disconnect_by_func (priv->manager5, G_CALLBACK (manager_bdaddr_removed_cb), self);
+		g_clear_object (&priv->manager5);
 	}
 
-	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
+	cleanup_checking (self, TRUE);
+
+	priv->bluez_version = 0;
 }
 
 static void
-finalize (GObject *object)
+constructed (GObject *object)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (object);
+	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
+	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
 
-	g_hash_table_destroy (priv->devices);
+	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->constructed (object);
 
-	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->finalize (object);
+	g_return_if_fail (priv->provider);
+
+	check_bluez_and_try_setup (self);
+}
+
+static void
+nm_bluez_manager_init (NMBluezManager *self)
+{
 }
 
 static void
@@ -420,23 +481,34 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+	object_class->constructed = constructed;
+
+	g_object_class_install_property
+	    (object_class, PROP_PROVIDER,
+	     g_param_spec_object (NM_BLUEZ_MANAGER_PROVIDER,
+	                          "Provider",
+	                          "Connection Provider",
+	                          NM_TYPE_CONNECTION_PROVIDER,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[BDADDR_ADDED] =
-		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
-		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
+	    g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
+	                  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[BDADDR_REMOVED] =
-		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
+	    g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
+

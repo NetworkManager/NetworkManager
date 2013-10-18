@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
 #include <signal.h>
@@ -27,6 +27,7 @@
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-bluez-manager.h"
+#include "nm-bluez4-manager.h"
 #include "nm-bluez4-adapter.h"
 #include "nm-dbus-manager.h"
 #include "nm-bluez-common.h"
@@ -40,12 +41,12 @@ typedef struct {
 
 	DBusGProxy *proxy;
 
-	NMBluezAdapter *adapter;
-} NMBluezManagerPrivate;
+	NMBluez4Adapter *adapter;
+} NMBluez4ManagerPrivate;
 
-#define NM_BLUEZ_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ_MANAGER, NMBluezManagerPrivate))
+#define NM_BLUEZ4_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_BLUEZ4_MANAGER, NMBluez4ManagerPrivate))
 
-G_DEFINE_TYPE (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMBluez4Manager, nm_bluez4_manager, G_TYPE_OBJECT)
 
 enum {
 	BDADDR_ADDED,
@@ -58,7 +59,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static void
 
-emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
+emit_bdaddr_added (NMBluez4Manager *self, NMBluezDevice *device)
 {
 	g_signal_emit (self, signals[BDADDR_ADDED], 0,
 	               device,
@@ -69,30 +70,30 @@ emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
 }
 
 void
-nm_bluez_manager_query_devices (NMBluezManager *self)
+nm_bluez4_manager_query_devices (NMBluez4Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	GSList *devices, *iter;
 
 	if (!priv->adapter)
 		return;
 
-	devices = nm_bluez_adapter_get_devices (priv->adapter);
+	devices = nm_bluez4_adapter_get_devices (priv->adapter);
 	for (iter = devices; iter; iter = g_slist_next (iter))
 		emit_bdaddr_added (self, NM_BLUEZ_DEVICE (iter->data));
 	g_slist_free (devices);
 }
 
 static void
-device_added (NMBluezAdapter *adapter, NMBluezDevice *device, gpointer user_data)
+device_added (NMBluez4Adapter *adapter, NMBluezDevice *device, gpointer user_data)
 {
-	emit_bdaddr_added (NM_BLUEZ_MANAGER (user_data), device);
+	emit_bdaddr_added (NM_BLUEZ4_MANAGER (user_data), device);
 }
 
 static void
-device_removed (NMBluezAdapter *adapter, NMBluezDevice *device, gpointer user_data)
+device_removed (NMBluez4Adapter *adapter, NMBluezDevice *device, gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
+	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
 
 	g_signal_emit (self, signals[BDADDR_REMOVED], 0,
 	               nm_bluez_device_get_address (device),
@@ -100,15 +101,15 @@ device_removed (NMBluezAdapter *adapter, NMBluezDevice *device, gpointer user_da
 }
 
 static void
-adapter_initialized (NMBluezAdapter *adapter, gboolean success, gpointer user_data)
+adapter_initialized (NMBluez4Adapter *adapter, gboolean success, gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
 	if (success) {
 		GSList *devices, *iter;
 
-		devices = nm_bluez_adapter_get_devices (adapter);
+		devices = nm_bluez4_adapter_get_devices (adapter);
 		for (iter = devices; iter; iter = g_slist_next (iter))
 			emit_bdaddr_added (self, NM_BLUEZ_DEVICE (iter->data));
 		g_slist_free (devices);
@@ -122,15 +123,15 @@ adapter_initialized (NMBluezAdapter *adapter, gboolean success, gpointer user_da
 }
 
 static void
-adapter_removed (DBusGProxy *proxy, const char *path, NMBluezManager *self)
+adapter_removed (DBusGProxy *proxy, const char *path, NMBluez4Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
-	if (priv->adapter && !strcmp (path, nm_bluez_adapter_get_path (priv->adapter))) {
-		if (nm_bluez_adapter_get_initialized (priv->adapter)) {
+	if (priv->adapter && !strcmp (path, nm_bluez4_adapter_get_path (priv->adapter))) {
+		if (nm_bluez4_adapter_get_initialized (priv->adapter)) {
 			GSList *devices, *iter;
 
-			devices = nm_bluez_adapter_get_devices (priv->adapter);
+			devices = nm_bluez4_adapter_get_devices (priv->adapter);
 			for (iter = devices; iter; iter = g_slist_next (iter)) {
 				NMBluezDevice *device = NM_BLUEZ_DEVICE (iter->data);
 
@@ -147,13 +148,13 @@ adapter_removed (DBusGProxy *proxy, const char *path, NMBluezManager *self)
 }
 
 static void
-default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluezManager *self)
+default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluez4Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	const char *cur_path = NULL;
 
 	if (priv->adapter)
-		cur_path = nm_bluez_adapter_get_path (priv->adapter);
+		cur_path = nm_bluez4_adapter_get_path (priv->adapter);
 
 	if (cur_path) {
 		if (!path || strcmp (path, cur_path)) {
@@ -167,7 +168,7 @@ default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluezManager *se
 
 	/* Add the new default adapter */
 	if (path) {
-		priv->adapter = nm_bluez_adapter_new (path, priv->provider);
+		priv->adapter = nm_bluez4_adapter_new (path, priv->provider);
 		g_signal_connect (priv->adapter, "initialized", G_CALLBACK (adapter_initialized), self);
 	}
 }
@@ -175,8 +176,8 @@ default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluezManager *se
 static void
 default_adapter_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	const char *default_adapter = NULL;
 	GError *err = NULL;
 
@@ -198,9 +199,9 @@ default_adapter_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 }
 
 static void
-query_default_adapter (NMBluezManager *self)
+query_default_adapter (NMBluez4Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	DBusGProxyCall *call;
 
 	call = dbus_g_proxy_begin_call (priv->proxy, "DefaultAdapter",
@@ -212,9 +213,9 @@ query_default_adapter (NMBluezManager *self)
 }
 
 static void
-bluez_connect (NMBluezManager *self)
+bluez_connect (NMBluez4Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	DBusGConnection *connection;
 
 	g_return_if_fail (priv->proxy == NULL);
@@ -226,7 +227,7 @@ bluez_connect (NMBluezManager *self)
 	priv->proxy = dbus_g_proxy_new_for_name (connection,
 	                                         BLUEZ_SERVICE,
 	                                         BLUEZ_MANAGER_PATH,
-	                                         BLUEZ_MANAGER_INTERFACE);
+	                                         BLUEZ4_MANAGER_INTERFACE);
 
 	dbus_g_proxy_add_signal (priv->proxy, "AdapterRemoved",
 	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
@@ -248,8 +249,8 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
                        const char *new_owner,
                        gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
@@ -269,9 +270,9 @@ name_owner_changed_cb (NMDBusManager *dbus_mgr,
 }
 
 static void
-bluez_cleanup (NMBluezManager *self, gboolean do_signal)
+bluez_cleanup (NMBluez4Manager *self, gboolean do_signal)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
 	if (priv->proxy) {
 		g_object_unref (priv->proxy);
@@ -289,7 +290,7 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
                             DBusGConnection *connection,
                             gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
+	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
 
 	if (!connection)
 		bluez_cleanup (self, TRUE);
@@ -299,27 +300,20 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
 
 /****************************************************************/
 
-NMBluezManager *
-nm_bluez_manager_get (NMConnectionProvider *provider)
+NMBluez4Manager *
+nm_bluez4_manager_new (NMConnectionProvider *provider)
 {
-	static NMBluezManager *singleton = NULL;
+	NMBluez4Manager *instance;
 
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = (NMBluezManager *) g_object_new (NM_TYPE_BLUEZ_MANAGER, NULL);
-	g_assert (singleton);
-
-	/* Cache the connection provider for NMBluezAdapter objects */
-	NM_BLUEZ_MANAGER_GET_PRIVATE (singleton)->provider = provider;
-
-	return singleton;
+	instance = g_object_new (NM_TYPE_BLUEZ4_MANAGER, NULL);
+	NM_BLUEZ4_MANAGER_GET_PRIVATE (instance)->provider = provider;
+	return instance;
 }
 
 static void
-nm_bluez_manager_init (NMBluezManager *self)
+nm_bluez4_manager_init (NMBluez4Manager *self)
 {
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 	g_assert (priv->dbus_mgr);
@@ -340,8 +334,8 @@ nm_bluez_manager_init (NMBluezManager *self)
 static void
 dispose (GObject *object)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
-	NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE (self);
+	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (object);
+	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
 	bluez_cleanup (self, FALSE);
 
@@ -351,15 +345,15 @@ dispose (GObject *object)
 		priv->dbus_mgr = NULL;
 	}
 
-	G_OBJECT_CLASS (nm_bluez_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_bluez4_manager_parent_class)->dispose (object);
 }
 
 static void
-nm_bluez_manager_class_init (NMBluezManagerClass *klass)
+nm_bluez4_manager_class_init (NMBluez4ManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	g_type_class_add_private (klass, sizeof (NMBluezManagerPrivate));
+	g_type_class_add_private (klass, sizeof (NMBluez4ManagerPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;
@@ -369,7 +363,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_ADDED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
+		              G_STRUCT_OFFSET (NMBluez4ManagerClass, bdaddr_added),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
 		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
@@ -378,7 +372,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),
+		              G_STRUCT_OFFSET (NMBluez4ManagerClass, bdaddr_removed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
