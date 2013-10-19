@@ -556,7 +556,7 @@ If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, or \fIpath\fP can be used.
 See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 Not providing an <ID> means that a new connection will be added.
 .sp
-The interactive editor will guide you through the connection editation and
+The interactive editor will guide you through the connection editing and
 allow you to change connection parameters according to your needs by means of
 a simple menu-driven interface. The editor indicates what settings and
 properties can be modified and provides an inline help.

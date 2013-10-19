@@ -2910,8 +2910,8 @@ nmc_property_ipv6_describe_dns (NMSetting *setting, const char *prop)
 	         "configuration method is 'auto' these DNS servers are appended "
 	         "to those (if any) returned by automatic configuration.  DNS "
 	         "servers cannot be used with the 'shared' or 'link-local' IPv6 "
-	         "configuration methods, as there is no usptream network. In "
-	         "all other IPv6 configuration methods methods, these DNS "
+	         "configuration methods, as there is no upstream network. In "
+	         "all other IPv6 configuration methods, these DNS "
 	         "servers are used as the only DNS servers for this connection.\n\n"
 	         "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n");
 }

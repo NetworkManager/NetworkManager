@@ -71,7 +71,7 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	if (data->received)
 		g_error ("Received signal '%s' a second time.", data->name);
 
-	debug ("Recieved signal '%s' ifindex %d ifname '%s'.", data->name, ifindex, received->name);
+	debug ("Received signal '%s' ifindex %d ifname '%s'.", data->name, ifindex, received->name);
 	data->received = TRUE;
 
 	/* Check the data */

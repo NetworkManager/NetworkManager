@@ -327,7 +327,7 @@ arping_wait_lan=2
 # Please ensure your VLAN IDs are NOT zero-padded
 vlans_eth0="1 2"
 
-# You may not want to assign an IP the the physical interface, but we still
+# You may not want to assign an IP to the physical interface, but we still
 # need it up.
 config_eth0=( "null" )
 
@@ -361,7 +361,7 @@ vlan_start_eth0="no"
 
 # To bond interfaces together
 slaves_bond0="eth0 eth1 eth2"
-config_bond0=( "null" ) # You may not want to assign an IP the the bond
+config_bond0=( "null" ) # You may not want to assign an IP to the bond
 
 # If any of the slaves require extra configuration - for example wireless or
 # ppp devices - we need to depend function on the bonded interfaces

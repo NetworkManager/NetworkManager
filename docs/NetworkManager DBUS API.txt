@@ -103,7 +103,7 @@ The Device object is the NM representation of a network device.  To refer to a N
 DBUS Service:			"org.freedesktop.NetworkManager"
 DBUS Interface:		"org.freedesktop.NetworkManager.Devices"
 
-Note that there is no DBUS Object Path listed above, the object path will always the the NM Device identfier returned from such methods as "getActiveDevice" and "getDevices".
+Note that there is no DBUS Object Path listed above, the object path will always the NM Device identfier returned from such methods as "getActiveDevice" and "getDevices".
 
 Methods:
 

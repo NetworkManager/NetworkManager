@@ -833,7 +833,7 @@ system_config_interface_init (NMSystemConfigInterface *sci_intf)
 /*******************************************************************/
 
 /* Factory function: this is the first entry point for NetworkManager, which
- * gets called during NM startup to create the the instance of this plugin
+ * gets called during NM startup to create the instance of this plugin
  * that NetworkManager will actually use.  Since every plugin is a singleton
  * we just return a singleton instance.  This function should never be called
  * twice.

@@ -263,7 +263,7 @@ nm_connection_get_setting (NMConnection *connection, GType setting_type)
  * @name: a setting name
  *
  * Gets the #NMSetting with the given name, if one has been previously added
- * the the #NMConnection.
+ * the #NMConnection.
  *
  * Returns: (transfer none): the #NMSetting, or %NULL if no setting with that name was previously
  * added to the #NMConnection

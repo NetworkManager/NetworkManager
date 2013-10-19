@@ -129,7 +129,7 @@ nm_vpn_service_connections_stop (NMVPNService *service,
 	GSList *iter, *copy;
 
 	/* Copy because stopping the connection may remove it from the list
-	 * in the the NMVPNService objects' VPN connection state handler.
+	 * in the NMVPNService objects' VPN connection state handler.
 	 */
 	copy = g_slist_copy (priv->connections);
 	for (iter = copy; iter; iter = iter->next) {

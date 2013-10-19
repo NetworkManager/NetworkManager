@@ -1454,7 +1454,7 @@ _get_udev_property (NMDevice *device,
 	/* Balance the initial g_udev_client_query_by_subsystem_and_name() */
 	g_object_unref (udev_device);
 
-	/* Prefer the the encoded value which comes directly from the device
+	/* Prefer the encoded value which comes directly from the device
 	 * over the hwdata database value.
 	 */
 	if (enc_value) {

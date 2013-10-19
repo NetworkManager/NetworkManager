@@ -679,7 +679,7 @@ clear_one_hash (GHashTable *table)
 
 	/* Build up the list of connections; we can't emit "removed" during hash
 	 * table iteration because emission of the "removed" signal may trigger code
-	 * that explicitly removes the the connection from the hash table somewhere
+	 * that explicitly removes the connection from the hash table somewhere
 	 * else.
 	 */
 	g_hash_table_iter_init (&iter, table);

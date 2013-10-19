@@ -350,7 +350,7 @@ ipv4.may-fail:                          yes
 nmcli> verify 
 Verify connection: OK
 nmcli> save
-Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) sucessfully saved.
+Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully saved.
 nmcli> quit
       </screen>
     </example>

@@ -706,7 +706,7 @@ periodic_update (gpointer user_data)
 	/* In IBSS mode, most newer firmware/drivers do "BSS coalescing" where
 	 * multiple IBSS stations using the same SSID will eventually switch to
 	 * using the same BSSID to avoid network segmentation.  When this happens,
-	 * the card's reported BSSID will change, but the the new BSS may not
+	 * the card's reported BSSID will change, but the new BSS may not
 	 * be in the scan list, since scanning isn't done in ad-hoc mode for
 	 * various reasons.  So pull the BSSID from the card and update the
 	 * current AP with it, if the current AP is adhoc.

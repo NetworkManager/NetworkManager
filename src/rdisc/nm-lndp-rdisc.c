@@ -444,7 +444,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * single time when the configuration is finished and updates can
 	 * come at any time.
 	 */
-	debug ("Recieved router advertisement: %d at %d", rdisc->ifindex, (int) now);
+	debug ("Received router advertisement: %d at %d", rdisc->ifindex, (int) now);
 
 	if (priv->send_rs_id) {
 		g_source_remove (priv->send_rs_id);

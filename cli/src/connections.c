@@ -2675,7 +2675,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 			monitor_mode = g_strdup ("miimon");
 		once_more = strcmp (monitor_mode, "miimon") && strcmp (monitor_mode, "arp");
 		if (once_more) {
-			printf (_("Error: '%s' is not a valid monitoring mode'; use '%s' or '%s'.\n"),
+			printf (_("Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"),
 			        monitor_mode, "miimon", "arp");
 			g_free (monitor_mode);
 		}
@@ -4180,7 +4180,7 @@ cleanup_olpc:
 
 	} else {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("Error: '%s' is a not valid connection type."),
+		             _("Error: '%s' is not a valid connection type."),
 		             con_type);
 		return FALSE;
 	}
@@ -5180,7 +5180,7 @@ editor_main_help (const char *command)
 
 		switch (cmd) {
 		case NMC_EDITOR_MAIN_CMD_GOTO:
-			printf (_("goto <setting>[.<prop>] | <prop>  :: enter setting/property for editation\n\n"
+			printf (_("goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n\n"
 			          "This command enters into a setting or property for editing it.\n\n"
 			          "Examples: nmcli> goto connection\n"
 			          "          nmcli connection> goto secondaries\n"
@@ -5196,7 +5196,7 @@ editor_main_help (const char *command)
 		case NMC_EDITOR_MAIN_CMD_SET:
 			printf (_("set [<setting>.<prop> <value>]  :: set property value\n\n"
 			          "This command sets property value.\n\n"
-			          "Example: nmcli> s con.id My connection\n"));
+			          "Example: nmcli> set con.id My connection\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_DESCRIBE:
 			printf (_("describe [<setting>.<prop>]  :: describe property\n\n"
@@ -5484,7 +5484,7 @@ editor_show_status_line (NMConnection *connection, gboolean dirty)
 }
 
 /*
- * Submenu for detailed property editation
+ * Submenu for detailed property editing
  * Return: TRUE - continue;  FALSE - should quit
  */
 static gboolean
@@ -6289,7 +6289,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					g_error_free (nmc_editor_error);
 				} else
-					printf (_("Connection '%s' (%s) sucessfully saved.\n"),
+					printf (_("Connection '%s' (%s) successfully saved.\n"),
 					        nm_connection_get_id (connection),
 					        nm_connection_get_uuid (connection));
 

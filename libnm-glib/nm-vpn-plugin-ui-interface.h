@@ -68,7 +68,7 @@ typedef enum /*< flags >*/ {
 /* Short display name of the VPN plugin */
 #define NM_VPN_PLUGIN_UI_INTERFACE_NAME "name"
 
-/* Longer description of the the VPN plugin */
+/* Longer description of the VPN plugin */
 #define NM_VPN_PLUGIN_UI_INTERFACE_DESC "desc"
 
 /* D-Bus service name of the plugin's VPN service */
