@@ -2464,15 +2464,12 @@ dhcp4_state_changed (NMDHCPClient *client,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	NMDeviceState dev_state;
 	NMIP4Config *config;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
 
 	nm_log_dbg (LOGD_DHCP4, "(%s): new DHCPv4 client state %d",
 	            nm_device_get_iface (device), state);
-
-	dev_state = nm_device_get_state (device);
 
 	switch (state) {
 	case DHC_BOUND4:     /* lease obtained */
@@ -2864,14 +2861,11 @@ dhcp6_state_changed (NMDHCPClient *client,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	NMDeviceState dev_state;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
 
 	nm_log_dbg (LOGD_DHCP6, "(%s): new DHCPv6 client state %d",
 	            nm_device_get_iface (device), state);
-
-	dev_state = nm_device_get_state (device);
 
 	switch (state) {
 	case DHC_BOUND6:
