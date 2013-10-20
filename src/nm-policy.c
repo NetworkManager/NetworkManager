@@ -627,7 +627,7 @@ static void
 update_ip4_routing (NMPolicy *policy, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDevice *best = NULL, *parent;
+	NMDevice *best = NULL, *parent, *default_device;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
@@ -680,15 +680,20 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		                                         nm_ip4_config_get_mss (ip4_config),
 		                                         nm_device_get_ip_ifindex (parent),
 		                                         parent_mss);
+		default_device = parent;
 	} else {
 		nm_system_replace_default_ip4_route (ip_ifindex,
 		                                     gw_addr,
 		                                     nm_ip4_config_get_mss (ip4_config));
+		default_device = best;
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
-	priv->default_device4 = best;
 
+	if (default_device == priv->default_device4)
+		return;
+
+	priv->default_device4 = default_device;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
@@ -806,7 +811,7 @@ static void
 update_ip6_routing (NMPolicy *policy, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDevice *best = NULL, *parent;
+	NMDevice *best = NULL, *parent, *default_device6;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
@@ -868,16 +873,21 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		                                         nm_ip6_config_get_mss (ip6_config),
 		                                         nm_device_get_ip_ifindex (parent),
 		                                         parent_mss);
+		default_device6 = parent;
 	} else {
 		if (gw_addr)
 			nm_system_replace_default_ip6_route (ip_ifindex, gw_addr);
 		else
 			nm_log_dbg (LOGD_IP6, "missing default IPv6 gateway");
+		default_device6 = best;
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
-	priv->default_device6 = best;
 
+	if (default_device6 == priv->default_device6)
+		return;
+
+	priv->default_device6 = default_device6;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
