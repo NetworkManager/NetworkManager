@@ -1742,7 +1742,7 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 
 	rtnl_link_set_link (rtnllink, parent);
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);
-	rtnl_link_vlan_set_flags (rtnllink, vlan_flags);
+	rtnl_link_vlan_set_flags (rtnllink, kernel_flags);
 
 	return add_object (platform, object);
 }
