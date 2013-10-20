@@ -638,7 +638,7 @@ static void
 update_ip4_routing (NMPolicy *policy, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDevice *best = NULL;
+	NMDevice *best = NULL, *default_device;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
@@ -682,6 +682,8 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set default route.");
 			}
 		}
+
+		default_device = nm_vpn_connection_get_parent_device (vpn);
 	} else {
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
@@ -691,14 +693,16 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 				nm_log_err (LOGD_IP4, "Failed to set default route.");
 			}
 		}
+
+		default_device = best;
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
 
-	if (best == priv->default_device4)
+	if (default_device == priv->default_device4)
 		return;
 
-	priv->default_device4 = best;
+	priv->default_device4 = default_device;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
@@ -816,7 +820,7 @@ static void
 update_ip6_routing (NMPolicy *policy, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDevice *best = NULL;
+	NMDevice *best = NULL, *default_device6;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
@@ -870,6 +874,8 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set default route.");
 			}
 		}
+
+		default_device6 = nm_vpn_connection_get_parent_device (vpn);
 	} else {
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
@@ -879,14 +885,16 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 				nm_log_err (LOGD_IP6, "Failed to set default route.");
 			}
 		}
+
+		default_device6 = best;
 	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
 
-	if (best == priv->default_device6)
+	if (default_device6 == priv->default_device6)
 		return;
 
-	priv->default_device6 = best;
+	priv->default_device6 = default_device6;
 	connection = nm_active_connection_get_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
