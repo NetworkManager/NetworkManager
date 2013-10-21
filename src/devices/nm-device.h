@@ -250,11 +250,6 @@ gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave);
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
 gboolean        nm_device_is_master         (NMDevice *dev);
 
-/* Slave */
-void            nm_device_slave_notify_enslaved (NMDevice *dev,
-                                                 gboolean enslaved,
-                                                 gboolean master_failed);
-
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
 

@@ -348,6 +348,10 @@ static void nm_device_queued_ip_config_change_clear (NMDevice *self);
 static void update_ip_config (NMDevice *self);
 static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
 
+static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
+static void nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed);
+
+
 static const char const *platform_ip_signals[] = {
 	NM_PLATFORM_IP4_ADDRESS_ADDED,
 	NM_PLATFORM_IP4_ADDRESS_CHANGED,
@@ -945,10 +949,9 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
 
 	g_warn_if_fail (info->enslaved == FALSE);
 	success = NM_DEVICE_GET_CLASS (dev)->enslave_slave (dev, slave, connection);
-	if (success) {
-		info->enslaved = TRUE;
-		nm_device_slave_notify_enslaved (info->slave, TRUE, FALSE);
-	}
+
+	info->enslaved = success;
+	nm_device_slave_notify_enslave (info->slave, success);
 
 	/* Ensure the device's hardware address is up-to-date; it often changes
 	 * when slaves change.
@@ -974,7 +977,7 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  * nm_device_release_one_slave:
  * @dev: the master device
  * @slave: the slave device to release
- * @failed: %TRUE if the release was unexpected, ie the master failed
+ * @master_failed: %TRUE if the release was unexpected, ie the master failed
  *
  * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function releases the previously enslaved @slave.
@@ -983,7 +986,7 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  *  other devices, or if @slave was never enslaved.
  */
 static gboolean
-nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean failed)
+nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean master_failed)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	SlaveInfo *info;
@@ -1000,7 +1003,7 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean failed)
 		success = NM_DEVICE_GET_CLASS (dev)->release_slave (dev, slave);
 		g_warn_if_fail (success);
 	}
-	nm_device_slave_notify_enslaved (info->slave, FALSE, failed);
+	nm_device_slave_notify_release (info->slave, master_failed);
 
 	priv->slaves = g_slist_remove (priv->slaves, info);
 	free_slave_info (info);
@@ -1361,64 +1364,82 @@ nm_device_master_release_slaves (NMDevice *self, gboolean failed)
 
 
 /**
- * nm_device_slave_notify_enslaved:
+ * nm_device_slave_notify_enslave:
  * @dev: the slave device
- * @enslaved: %TRUE if the device is now enslaved, %FALSE if released
- * @master_failed: if released, indicates whether the release was unexpected,
- *   ie the master device failed.
+ * @success: whether the enslaving operation succeeded
  *
- * Notifies a slave that it has been enslaved or released.  If released, provides
- * information on whether the release was expected or not, and thus whether the
- * slave should fail it's activation or gracefully deactivate.
+ * Notifies a slave that either it has been enslaved, or else its master tried
+ * to enslave it and failed.
  */
 void
-nm_device_slave_notify_enslaved (NMDevice *dev,
-                                 gboolean enslaved,
-                                 gboolean master_failed)
+nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	NMConnection *connection = nm_device_get_connection (dev);
 
-	if (enslaved) {
-		g_assert (priv->master);
-		g_warn_if_fail (priv->enslaved == FALSE);
-		g_warn_if_fail (priv->state == NM_DEVICE_STATE_IP_CONFIG);
+	g_assert (priv->master);
+	g_warn_if_fail (priv->enslaved == FALSE);
+	g_warn_if_fail (priv->state == NM_DEVICE_STATE_IP_CONFIG);
 
+	if (success) {
 		nm_log_info (LOGD_DEVICE,
 				     "Activation (%s) connection '%s' enslaved, continuing activation",
 				     nm_device_get_iface (dev),
 				     nm_connection_get_id (connection));
 
-		/* Now that we're enslaved, proceed with activation.  Remember, slaves
-		 * don't have any IP configuration, so they skip directly to SECONDARIES.
-		 */
 		priv->enslaved = TRUE;
-		priv->ip4_state = IP_DONE;
-		priv->ip6_state = IP_DONE;
-		nm_device_queue_state (dev, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
 	} else {
-		NMDeviceState new_state = NM_DEVICE_STATE_DISCONNECTED;
-		NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+		nm_log_warn (LOGD_DEVICE,
+		             "Activation (%s) connection '%s' could not be enslaved",
+		             nm_device_get_iface (dev),
+		             nm_connection_get_id (connection));
+	}
 
-		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
-		    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
-			if (master_failed) {
-				new_state = NM_DEVICE_STATE_FAILED;
-				reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+	priv->ip4_state = IP_DONE;
+	priv->ip6_state = IP_DONE;
+	nm_device_queue_state (dev,
+	                       success ? NM_DEVICE_STATE_SECONDARIES : NM_DEVICE_STATE_FAILED,
+	                       NM_DEVICE_STATE_REASON_NONE);
+}
 
-				nm_log_warn (LOGD_DEVICE,
-				             "Activation (%s) connection '%s' master failed",
-				             nm_device_get_iface (dev),
-				             nm_connection_get_id (connection));
-			} else {
-				nm_log_dbg (LOGD_DEVICE,
-				            "Activation (%s) connection '%s' master deactivated",
-				            nm_device_get_iface (dev),
-				            nm_connection_get_id (connection));
-			}
+/**
+ * nm_device_slave_notify_release:
+ * @dev: the slave device
+ * @master_failed: indicates whether the release was unexpected,
+ *   ie the master device failed.
+ *
+ * Notifies a slave that it has been released, and whether this was expected
+ * or not.
+ */
+void
+nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
+	NMConnection *connection = nm_device_get_connection (dev);
+	NMDeviceState new_state;
+	NMDeviceStateReason reason;
 
-			nm_device_queue_state (dev, new_state, reason);
+	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+	    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
+		if (master_failed) {
+			new_state = NM_DEVICE_STATE_FAILED;
+			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+
+			nm_log_warn (LOGD_DEVICE,
+			             "Activation (%s) connection '%s' master failed",
+			             nm_device_get_iface (dev),
+			             nm_connection_get_id (connection));
+		} else {
+			new_state = NM_DEVICE_STATE_DISCONNECTED;
+			reason = NM_DEVICE_STATE_REASON_NONE;
+
+			nm_log_dbg (LOGD_DEVICE,
+			            "Activation (%s) connection '%s' master deactivated",
+			            nm_device_get_iface (dev),
+			            nm_connection_get_id (connection));
 		}
+
+		nm_device_queue_state (dev, new_state, reason);
 	}
 }
 
@@ -3505,6 +3526,8 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
 
+	priv->ip4_state = priv->ip6_state = IP_WAIT;
+
 	iface = nm_device_get_iface (self);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
@@ -3514,20 +3537,19 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	if (ifindex && !nm_platform_link_is_up (ifindex))
 		nm_platform_link_set_up (ifindex);
 
-	priv->ip4_state = priv->ip6_state = IP_WAIT;
-
 	/* If the device is a slave, then we don't do any IP configuration but we
 	 * use the IP config stage to indicate to the master we're ready for
-	 * enslavement.  Either the master has already enslaved us, in which case
-	 * our state transition to SECONDARIES is already queued courtesy of
-	 * nm_device_slave_notify_enslaved(), or the master is still activating,
-	 * in which case we postpone activation here until the master enslaves us,
-	 * which calls nm_device_slave_notify_enslaved().
+	 * enslavement.  If the master is already activating, it will have tried to
+	 * enslave us when we changed state to IP_CONFIG, causing us to queue a
+	 * transition to SECONDARIES (or FAILED if the enslavement failed), with
+	 * our IP states set to IP_DONE either way.  If the master isn't yet
+	 * activating, then they'll still be in IP_WAIT.  Either way, we bail out
+	 * of IP config here.
 	 */
 	master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request));
 	if (master) {
 		master_device = nm_active_connection_get_device (master);
-		if (master_device && priv->enslaved == FALSE) {
+		if (priv->ip4_state == IP_WAIT && priv->ip6_state == IP_WAIT) {
 			nm_log_info (LOGD_DEVICE, "Activation (%s) connection '%s' waiting on master '%s'",
 						 nm_device_get_iface (self),
 						 nm_connection_get_id (nm_device_get_connection (self)),
