@@ -666,6 +666,93 @@ test_read_wired_dhcp (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_wired_dhcp_plus_ip (void)
+{
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	GError *error = NULL;
+	guint32 addr4;
+	struct in6_addr addr6;
+	NMIP4Address *ip4_addr;
+	NMIP6Address *ip6_addr;
+	gboolean success;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* ===== IPv4 SETTING ===== */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip4_config_get_may_fail (s_ip4));
+
+	/* DNS Addresses */
+	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpint (inet_pton (AF_INET, "4.2.2.1", &addr4), >, 0);
+	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, addr4);
+	g_assert_cmpint (inet_pton (AF_INET, "4.2.2.2", &addr4), >, 0);
+	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, addr4);
+
+	/* IP addresses */
+	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
+	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr);
+	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
+	g_assert_cmpint (inet_pton (AF_INET, "1.2.3.4", &addr4), >, 0);
+	g_assert_cmpint (nm_ip4_address_get_address (ip4_addr), ==, addr4);
+	g_assert_cmpint (inet_pton (AF_INET, "1.1.1.1", &addr4), >, 0);
+	g_assert_cmpint (nm_ip4_address_get_gateway (ip4_addr), ==, addr4);
+
+	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	g_assert (ip4_addr);
+	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 16);
+	g_assert_cmpint (inet_pton (AF_INET, "9.8.7.6", &addr4), >, 0);
+	g_assert_cmpint (nm_ip4_address_get_address (ip4_addr), ==, addr4);
+
+	/* ===== IPv6 SETTING ===== */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip6_config_get_may_fail (s_ip6));
+
+	/* DNS Addresses */
+	g_assert_cmpint (nm_setting_ip6_config_get_num_dns (s_ip6), ==, 2);
+	g_assert_cmpint (inet_pton (AF_INET6, "1:2:3:4::a", &addr6), >, 0);
+	g_assert (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr6));
+	g_assert_cmpint (inet_pton (AF_INET6, "1:2:3:4::b", &addr6), >, 0);
+	g_assert (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr6));
+
+	/* IP addresses */
+	g_assert_cmpint (nm_setting_ip6_config_get_num_addresses (s_ip6), ==, 3);
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
+	g_assert (ip6_addr);
+	g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 56);
+	g_assert_cmpint (inet_pton (AF_INET6, "1001:abba::1234", &addr6), >, 0);
+	g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 1);
+	g_assert (ip6_addr);
+	g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 64);
+	g_assert_cmpint (inet_pton (AF_INET6, "2001:abba::2234", &addr6), >, 0);
+	g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+
+	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 2);
+	g_assert (ip6_addr);
+	g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 96);
+	g_assert_cmpint (inet_pton (AF_INET6, "3001:abba::3234", &addr6), >, 0);
+	g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIRED_GLOBAL_GATEWAY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway"
 #define TEST_NETWORK_WIRED_GLOBAL_GATEWAY TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway"
 
@@ -6382,6 +6469,49 @@ test_write_wired_dhcp (void)
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wired_dhcp_plus_ip (void)
+{
+	NMConnection *connection, *reread;
+	char *written = NULL;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &written,
+	                                 &error);
+	g_assert (success);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL, NULL,
+	                               NULL, NULL, NULL, &error, NULL);
+	unlink (written);
+	g_free (written);
+
+	g_assert_no_error (error);
+	g_assert (reread != NULL);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -12627,6 +12757,7 @@ int main (int argc, char **argv)
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
 	test_read_wired_dhcp ();
+	g_test_add_func (TPATH "dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
 	test_read_wired_defroute_no ();
@@ -12688,6 +12819,7 @@ int main (int argc, char **argv)
 	test_write_wired_static_routes ();
 	test_read_write_static_routes_legacy ();
 	test_write_wired_dhcp ();
+	g_test_add_func (TPATH "dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
 	test_write_wired_dhcp_8021x_peap_mschapv2 ();
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);

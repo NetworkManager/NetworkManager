@@ -1359,26 +1359,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
 		return NM_SETTING (s_ip4);
 
-	/* Handle manual settings */
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-		for (i = -1; i < 256; i++) {
-			NMIP4Address *addr = NULL;
-
-			if (!read_full_ip4_address (ifcfg, network_file, i, &addr, error))
-				goto done;
-			if (!addr) {
-				/* The first mandatory variable is 2-indexed (IPADDR2)
-				 * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
-				if (i > 1)
-					break;
-				continue;
-			}
-
-			if (!nm_setting_ip4_config_add_address (s_ip4, addr))
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
-			nm_ip4_address_unref (addr);
-		}
-	} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+	/* Handle DHCP settings */
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
@@ -1388,6 +1370,29 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (value && strlen (value))
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, value, NULL);
 		g_free (value);
+	}
+
+	/* Read static IP addresses.
+	 * Read them even for AUTO method - in this case the addresses are
+	 * added to the automatic ones. Note that this is not currently supported by
+	 * the legacy 'network' service (ifup-eth).
+	 */
+	for (i = -1; i < 256; i++) {
+		NMIP4Address *addr = NULL;
+
+		if (!read_full_ip4_address (ifcfg, network_file, i, &addr, error))
+			goto done;
+		if (!addr) {
+			/* The first mandatory variable is 2-indexed (IPADDR2)
+			 * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
+			if (i > 1)
+				break;
+			continue;
+		}
+
+		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
+		nm_ip4_address_unref (addr);
 	}
 
 	/* DNS servers
@@ -1516,6 +1521,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *route6_path = NULL;
 	gboolean ipv6init, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+	char *ipv6addr, *ipv6addr_secondaries;
+	char **list = NULL, **iter;
 	guint32 i;
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE;
@@ -1632,44 +1639,45 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
 		return NM_SETTING (s_ip6);
 
-	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
-		char *val;
-		char *ipv6addr, *ipv6addr_secondaries;
-		char **list = NULL, **iter;
-
-		ipv6addr = svGetValue (ifcfg, "IPV6ADDR", FALSE);
-		ipv6addr_secondaries = svGetValue (ifcfg, "IPV6ADDR_SECONDARIES", FALSE);
-
-		val = g_strjoin (ipv6addr && ipv6addr_secondaries ? " " : NULL,
-		                 ipv6addr ? ipv6addr : "",
-		                 ipv6addr_secondaries ? ipv6addr_secondaries : "",
-		                 NULL);
-		g_free (ipv6addr);
-		g_free (ipv6addr_secondaries);
-
-		list = g_strsplit_set (val, " ", 0);
-		g_free (val);
-		for (iter = list, i = 0; iter && *iter; iter++, i++) {
-			NMIP6Address *addr = NULL;
-
-			if (!parse_full_ip6_address (ifcfg, network_file, *iter, i, &addr, error)) {
-				g_strfreev (list);
-				goto error;
-			}
-
-			if (!nm_setting_ip6_config_add_address (s_ip6, addr))
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP6 address");
-			nm_ip6_address_unref (addr);
-		}
-		g_strfreev (list);
-	} else if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
-	           || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+	if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	    || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
 		/* METHOD_AUTO may trigger DHCPv6, so save the hostname to send to DHCP */
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && value[0])
 			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 	}
+
+	/* Read static IP addresses.
+	 * Read them even for AUTO and DHCP methods - in this case the addresses are
+	 * added to the automatic ones. Note that this is not currently supported by
+	 * the legacy 'network' service (ifup-eth).
+	 */
+	ipv6addr = svGetValue (ifcfg, "IPV6ADDR", FALSE);
+	ipv6addr_secondaries = svGetValue (ifcfg, "IPV6ADDR_SECONDARIES", FALSE);
+
+	value = g_strjoin (ipv6addr && ipv6addr_secondaries ? " " : NULL,
+	                   ipv6addr ? ipv6addr : "",
+	                   ipv6addr_secondaries ? ipv6addr_secondaries : "",
+	                   NULL);
+	g_free (ipv6addr);
+	g_free (ipv6addr_secondaries);
+
+	list = g_strsplit_set (value, " ", 0);
+	g_free (value);
+	for (iter = list, i = 0; iter && *iter; iter++, i++) {
+		NMIP6Address *addr = NULL;
+
+		if (!parse_full_ip6_address (ifcfg, network_file, *iter, i, &addr, error)) {
+			g_strfreev (list);
+			goto error;
+		}
+
+		if (!nm_setting_ip6_config_add_address (s_ip6, addr))
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP6 address");
+		nm_ip6_address_unref (addr);
+	}
+	g_strfreev (list);
 
 	/* DNS servers
 	 * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())

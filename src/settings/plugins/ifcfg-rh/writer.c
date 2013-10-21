@@ -1955,6 +1955,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	guint32 i, num, num4;
 	GString *searches;
 	char buf[INET6_ADDRSTRLEN];
+	char ipv6_defaultgw[INET6_ADDRSTRLEN];
 	NMIP6Address *addr;
 	const struct in6_addr *ip;
 	GString *ip_str1, *ip_str2, *ip_ptr;
@@ -2005,51 +2006,41 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		/* TODO */
 	}
 
-	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
-		char ipv6_defaultgw[INET6_ADDRSTRLEN];
+	/* Write out IP addresses */
+	num = nm_setting_ip6_config_get_num_addresses (s_ip6);
+	ip_str1 = g_string_new (NULL);
+	ip_str2 = g_string_new (NULL);
+	ipv6_defaultgw[0] = 0;
+	for (i = 0; i < num; i++) {
+		if (i == 0)
+			ip_ptr = ip_str1;
+		else
+			ip_ptr = ip_str2;
 
-		/* Write out IP addresses */
-		num = nm_setting_ip6_config_get_num_addresses (s_ip6);
+		addr = nm_setting_ip6_config_get_address (s_ip6, i);
+		ip = nm_ip6_address_get_address (addr);
+		prefix = g_strdup_printf ("%u", nm_ip6_address_get_prefix (addr));
+		memset (buf, 0, sizeof (buf));
+		inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
+		if (i > 1)
+			g_string_append_c (ip_ptr, ' ');  /* separate addresses in IPV6ADDR_SECONDARIES */
+		g_string_append (ip_ptr, buf);
+		g_string_append_c (ip_ptr, '/');
+		g_string_append (ip_ptr, prefix);
+		g_free (prefix);
 
-		ip_str1 = g_string_new (NULL);
-		ip_str2 = g_string_new (NULL);
-		ipv6_defaultgw[0] = 0;
-		for (i = 0; i < num; i++) {
-			if (i == 0)
-				ip_ptr = ip_str1;
-			else
-				ip_ptr = ip_str2;
-
-			addr = nm_setting_ip6_config_get_address (s_ip6, i);
-			ip = nm_ip6_address_get_address (addr);
-			prefix = g_strdup_printf ("%u", nm_ip6_address_get_prefix (addr));
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-			if (i > 1)
-				g_string_append_c (ip_ptr, ' ');  /* separate addresses in IPV6ADDR_SECONDARIES */
-			g_string_append (ip_ptr, buf);
-			g_string_append_c (ip_ptr, '/');
-			g_string_append (ip_ptr, prefix);
-			g_free (prefix);
-
-			/* We only support gateway for the first IP address for now */
-			if (i == 0) {
-				ip = nm_ip6_address_get_gateway (addr);
-				if (!IN6_IS_ADDR_UNSPECIFIED (ip))
-					inet_ntop (AF_INET6, ip, ipv6_defaultgw, sizeof (ipv6_defaultgw));
-			}
+		/* We only support gateway for the first IP address for now */
+		if (i == 0) {
+			ip = nm_ip6_address_get_gateway (addr);
+			if (!IN6_IS_ADDR_UNSPECIFIED (ip))
+				inet_ntop (AF_INET6, ip, ipv6_defaultgw, sizeof (ipv6_defaultgw));
 		}
-
-		svSetValue (ifcfg, "IPV6ADDR", ip_str1->str, FALSE);
-		svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", ip_str2->str, FALSE);
-		svSetValue (ifcfg, "IPV6_DEFAULTGW", ipv6_defaultgw, FALSE);
-		g_string_free (ip_str1, TRUE);
-		g_string_free (ip_str2, TRUE);
-	} else {
-		svSetValue (ifcfg, "IPV6ADDR", NULL, FALSE);
-		svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", NULL, FALSE);
-		svSetValue (ifcfg, "IPV6_DEFAULTGW", NULL, FALSE);
 	}
+	svSetValue (ifcfg, "IPV6ADDR", ip_str1->str, FALSE);
+	svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", ip_str2->str, FALSE);
+	svSetValue (ifcfg, "IPV6_DEFAULTGW", ipv6_defaultgw, FALSE);
+	g_string_free (ip_str1, TRUE);
+	g_string_free (ip_str2, TRUE);
 
 	/* Write out DNS - 'DNS' key is used both for IPv4 and IPv6 */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);

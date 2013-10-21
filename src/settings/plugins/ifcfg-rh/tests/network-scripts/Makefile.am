@@ -5,6 +5,7 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static \
 	ifcfg-test-wired-static-bootproto \
 	ifcfg-test-wired-dhcp \
+	ifcfg-test-wired-dhcp-plus-ip \
 	ifcfg-test-wired-dhcp6-only \
 	ifcfg-test-wired-global-gateway \
 	network-test-wired-global-gateway \
