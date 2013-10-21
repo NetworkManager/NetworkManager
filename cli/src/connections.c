@@ -6469,6 +6469,15 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 			return;
 		nm_connection_add_setting (connection, setting);
 
+		/* Always add IPv4 and IPv6 settings */
+		setting = nm_setting_ip4_config_new ();
+		nmc_setting_custom_init (setting);
+		nm_connection_add_setting (connection, setting);
+
+		setting = nm_setting_ip6_config_new ();
+		nmc_setting_custom_init (setting);
+		nm_connection_add_setting (connection, setting);
+
 		/* Set a sensible bond/bridge interface name by default */
 		if (g_strcmp0 (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
 			g_object_set (NM_SETTING_BOND (setting),
