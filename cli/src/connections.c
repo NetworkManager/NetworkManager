@@ -6427,19 +6427,19 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
-	// TODO: properly initialize connection according to its type,
-	// use sensible defaults.
-	// This function is still a stub.
+	/* Initialize new connection according to its type using sensible defaults. */
 
 	if (g_strcmp0 (con_type, "bond-slave") == 0)
 		slave_type = NM_SETTING_BOND_SETTING_NAME;
+	if (g_strcmp0 (con_type, "team-slave") == 0)
+		slave_type = NM_SETTING_TEAM_SETTING_NAME;
 	if (g_strcmp0 (con_type, "bridge-slave") == 0)
 		slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
 
 	if (slave_type) {
 		const char *dev_ifname = get_ethernet_device_name (nmc);
 
-		/* For bond/bridge slaves add 'wired' setting */
+		/* For bond/team/bridge slaves add 'wired' setting */
 		setting = nm_setting_wired_new ();
 		nm_connection_add_setting (connection, setting);
 
@@ -6448,8 +6448,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 		              NM_SETTING_CONNECTION_MASTER, dev_ifname ? dev_ifname : "eth0",
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		              NULL);
-	}
-	else {
+	} else {
 		/* Add a "base" setting to the connection by default */
 		setting = nmc_setting_new_for_name (con_type);
 		if (!setting)
