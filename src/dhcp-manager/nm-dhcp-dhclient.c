@@ -337,7 +337,7 @@ nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean
 	}
 
 out:
-	g_slist_foreach (parsed, (GFunc) g_hash_table_destroy, NULL);
+	g_slist_free_full (parsed, (GDestroyNotify) g_hash_table_destroy);
 	g_free (leasefile);
 	return leases;
 }
