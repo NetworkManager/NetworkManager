@@ -505,7 +505,7 @@ link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char 
 }
 
 static gboolean
-link_is_software (struct rtnl_link *link)
+link_is_software (struct rtnl_link *rtnllink)
 {
 	const char *type;
 
@@ -514,11 +514,11 @@ link_is_software (struct rtnl_link *link)
 	 * device causes.
 	 */
 
-	if (   rtnl_link_get_arptype (link) == ARPHRD_INFINIBAND
-	    && strchr (rtnl_link_get_name (link), '.'))
+	if (   rtnl_link_get_arptype (rtnllink) == ARPHRD_INFINIBAND
+	    && strchr (rtnl_link_get_name (rtnllink), '.'))
 		return TRUE;
 
-	type = rtnl_link_get_type (link);
+	type = rtnl_link_get_type (rtnllink);
 	if (type == NULL)
 		return FALSE;
 
@@ -1646,7 +1646,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 	const char *name = nm_platform_link_get_name (ifindex);
 	auto_g_free struct ethtool_gfeatures *features = NULL;
-	int index, block, bit, size;
+	int idx, block, bit, size;
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!rtnllink || rtnl_link_get_arptype (rtnllink) != ARPHRD_ETHER)
@@ -1655,14 +1655,14 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 	if (!name)
 		return FALSE;
 
-	index = ethtool_get_stringset_index (name, ETH_SS_FEATURES, "vlan-challenged");
-	if (index == -1) {
+	idx = ethtool_get_stringset_index (name, ETH_SS_FEATURES, "vlan-challenged");
+	if (idx == -1) {
 		debug ("vlan-challenged ethtool feature does not exist?");
 		return FALSE;
 	}
 
-	block = index /  32;
-	bit = index % 32;
+	block = idx /  32;
+	bit = idx % 32;
 	size = block + 1;
 
 	features = g_malloc0 (sizeof (*features) + size * sizeof (struct ethtool_get_features_block));

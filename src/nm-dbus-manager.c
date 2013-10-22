@@ -787,7 +787,7 @@ nm_dbus_manager_register_exported_type (NMDBusManager         *self,
                                         GType                  object_type,
                                         const DBusGObjectInfo *info)
 {
-	const char *properties_info, *dbus_name, *gobject_name, *access;
+	const char *properties_info, *dbus_name, *gobject_name, *tmp_access;
 
 	dbus_g_object_type_install_info (object_type, info);
 	if (!info->exported_properties)
@@ -798,8 +798,8 @@ nm_dbus_manager_register_exported_type (NMDBusManager         *self,
 		/* The format is: "interface\0DBusPropertyName\0gobject_property_name\0access\0" */
 		dbus_name = strchr (properties_info, '\0') + 1;
 		gobject_name = strchr (dbus_name, '\0') + 1;
-		access = strchr (gobject_name, '\0') + 1;
-		properties_info = strchr (access, '\0') + 1;
+		tmp_access = strchr (gobject_name, '\0') + 1;
+		properties_info = strchr (tmp_access, '\0') + 1;
 
 		/* Note that nm-properties-changed-signal takes advantage of the
 		 * fact that @dbus_name and @gobject_name are static data that won't

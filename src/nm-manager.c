@@ -174,7 +174,7 @@ static void rfkill_change_wifi (const char *desc, gboolean enabled);
 static void
 platform_link_added_cb (NMPlatform *platform,
                         int ifindex,
-                        NMPlatformLink *link,
+                        NMPlatformLink *plink,
                         NMPlatformReason reason,
                         gpointer user_data);
 
@@ -2401,7 +2401,7 @@ load_device_factories (NMManager *self)
 static void
 platform_link_added_cb (NMPlatform *platform,
                         int ifindex,
-                        NMPlatformLink *link,
+                        NMPlatformLink *plink,
                         NMPlatformReason reason,
                         gpointer user_data)
 {
@@ -2421,7 +2421,7 @@ platform_link_added_cb (NMPlatform *platform,
 		NMDeviceFactoryCreateFunc create_func = iter->data;
 
 		g_clear_error (&error);
-		device = (NMDevice *) create_func (link, &error);
+		device = (NMDevice *) create_func (plink, &error);
 		if (device && NM_IS_DEVICE (device)) {
 			g_assert_no_error (error);
 			break;  /* success! */
@@ -2429,7 +2429,7 @@ platform_link_added_cb (NMPlatform *platform,
 
 		if (error) {
 			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
-			             link->udi,
+			             plink->udi,
 			             error ? error->code : -1,
 			             error ? error->message : "(unknown)");
 			g_clear_error (&error);
@@ -2441,63 +2441,63 @@ platform_link_added_cb (NMPlatform *platform,
 		int parent_ifindex = -1;
 		NMDevice *parent;
 
-		switch (link->type) {
+		switch (plink->type) {
 		case NM_LINK_TYPE_ETHERNET:
-			device = nm_device_ethernet_new (link);
+			device = nm_device_ethernet_new (plink);
 			break;
 		case NM_LINK_TYPE_INFINIBAND:
-			device = nm_device_infiniband_new (link);
+			device = nm_device_infiniband_new (plink);
 			break;
 		case NM_LINK_TYPE_OLPC_MESH:
-			device = nm_device_olpc_mesh_new (link);
+			device = nm_device_olpc_mesh_new (plink);
 			break;
 		case NM_LINK_TYPE_WIFI:
-			device = nm_device_wifi_new (link);
+			device = nm_device_wifi_new (plink);
 			break;
 		case NM_LINK_TYPE_BOND:
-			device = nm_device_bond_new (link);
+			device = nm_device_bond_new (plink);
 			break;
 		case NM_LINK_TYPE_TEAM:
-			device = nm_device_team_new (link);
+			device = nm_device_team_new (plink);
 			break;
 		case NM_LINK_TYPE_BRIDGE:
 			/* FIXME: always create device when we handle bridges non-destructively */
-			if (bridge_created_by_nm (self, link->name))
-				device = nm_device_bridge_new (link);
+			if (bridge_created_by_nm (self, plink->name))
+				device = nm_device_bridge_new (plink);
 			else
-				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", link->name);
+				nm_log_info (LOGD_BRIDGE, "(%s): ignoring bridge not created by NetworkManager", plink->name);
 			break;
 		case NM_LINK_TYPE_VLAN:
 			/* Have to find the parent device */
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
 				parent = find_device_by_ifindex (self, parent_ifindex);
 				if (parent)
-					device = nm_device_vlan_new (link, parent);
+					device = nm_device_vlan_new (plink, parent);
 				else {
 					/* If udev signaled the VLAN interface before it signaled
 					 * the VLAN's parent at startup we may not know about the
 					 * parent device yet.  But we'll find it on the second pass
 					 * from nm_manager_start().
 					 */
-					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", link->name);
+					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
 				}
 			} else
-				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", link->name);
+				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", plink->name);
 			break;
 		case NM_LINK_TYPE_VETH:
-			device = nm_device_veth_new (link);
+			device = nm_device_veth_new (plink);
 			break;
 		case NM_LINK_TYPE_TUN:
 		case NM_LINK_TYPE_TAP:
-			device = nm_device_tun_new (link);
+			device = nm_device_tun_new (plink);
 			break;
 		case NM_LINK_TYPE_MACVLAN:
 		case NM_LINK_TYPE_MACVTAP:
-			device = nm_device_macvlan_new (link);
+			device = nm_device_macvlan_new (plink);
 			break;
 		case NM_LINK_TYPE_GRE:
 		case NM_LINK_TYPE_GRETAP:
-			device = nm_device_gre_new (link);
+			device = nm_device_gre_new (plink);
 			break;
 
 		case NM_LINK_TYPE_WWAN_ETHERNET:
@@ -2513,7 +2513,7 @@ platform_link_added_cb (NMPlatform *platform,
 			break;
 
 		default:
-			device = nm_device_generic_new (link);
+			device = nm_device_generic_new (plink);
 			break;
 		}
 	}
@@ -2525,7 +2525,7 @@ platform_link_added_cb (NMPlatform *platform,
 static void
 platform_link_removed_cb (NMPlatform *platform,
                           int ifindex,
-                          NMPlatformLink *link,
+                          NMPlatformLink *plink,
                           NMPlatformReason reason,
                           gpointer user_data)
 {
