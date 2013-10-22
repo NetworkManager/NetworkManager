@@ -134,9 +134,10 @@ request_free (Request *request)
 	g_free (request->action);
 	g_free (request->iface);
 	g_strfreev (request->envp);
-	if (request->scripts)
+	if (request->scripts) {
 		g_ptr_array_foreach (request->scripts, (GFunc) script_info_free, NULL);
-	g_ptr_array_free (request->scripts, TRUE);
+		g_ptr_array_free (request->scripts, TRUE);
+	}
 }
 
 static gboolean
@@ -172,7 +173,7 @@ next_script (gpointer user_data)
 	}
 
 	/* All done */
-	results = g_ptr_array_sized_new (request->scripts->len);
+	results = g_ptr_array_new_full (request->scripts->len, (GDestroyNotify) g_value_array_free);
 	for (i = 0; i < request->scripts->len; i++) {
 		ScriptInfo *script = g_ptr_array_index (request->scripts, i);
 		GValue elt = G_VALUE_INIT;
@@ -203,6 +204,7 @@ next_script (gpointer user_data)
 	dbus_g_method_return (request->context, results);
 
 	request_free (request);
+	g_ptr_array_unref (results);
 	return FALSE;
 }
 

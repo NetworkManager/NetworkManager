@@ -44,12 +44,16 @@
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
-#define g_value_array_free(value_array) \
-  G_GNUC_EXTENSION ({ \
-    G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
-    g_value_array_free (value_array); \
-    G_GNUC_END_IGNORE_DEPRECATIONS \
-  })
+static inline void
+__g_value_array_free (GValueArray *value_array)
+{
+	G_GNUC_EXTENSION ({
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+		g_value_array_free (value_array);
+		G_GNUC_END_IGNORE_DEPRECATIONS
+	});
+}
+#define g_value_array_free __g_value_array_free
 
 #define g_value_array_copy(value_array) \
   G_GNUC_EXTENSION ({ \
