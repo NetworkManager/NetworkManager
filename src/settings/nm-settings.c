@@ -136,6 +136,7 @@ typedef struct {
 	gboolean connections_loaded;
 	GHashTable *connections;
 	GSList *unmanaged_specs;
+	GSList *get_connections_cache;
 } NMSettingsPrivate;
 
 #define NM_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTINGS, NMSettingsPrivate))
@@ -1646,19 +1647,21 @@ get_best_connections (NMConnectionProvider *provider,
 static const GSList *
 get_connections (NMConnectionProvider *provider)
 {
-	static GSList *list = NULL;
+	GSList *list = NULL;
 	NMSettings *self = NM_SETTINGS (provider);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
 	NMSettingsConnection *connection;
 
-	/* Lazily free the list with every call so we can keep it 'const' for callers */
-	g_slist_free (list);
-	list = NULL;
-
-	g_hash_table_iter_init (&iter, NM_SETTINGS_GET_PRIVATE (self)->connections);
+	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection))
 		list = g_slist_prepend (list, connection);
-	return g_slist_reverse (list);
+	list = g_slist_reverse (list);
+
+	/* Cache the list every call so we can keep it 'const' for callers */
+	g_slist_free (priv->get_connections_cache);
+	priv->get_connections_cache = list;
+	return list;
 }
 
 static gboolean
@@ -1750,6 +1753,7 @@ finalize (GObject *object)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->connections);
+	g_slist_free (priv->get_connections_cache);
 
 	clear_unmanaged_specs (self);
 
