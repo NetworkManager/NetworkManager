@@ -1570,7 +1570,7 @@ dispose (GObject *object)
 
 		nm_auth_changed_func_unregister (authority_changed_cb, NM_AGENT_MANAGER (object));
 
-		g_slist_foreach (priv->chains, (GFunc) nm_auth_chain_unref, NULL);
+		g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
 
 		g_hash_table_destroy (priv->agents);
 		g_hash_table_destroy (priv->requests);
