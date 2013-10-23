@@ -29,7 +29,21 @@ echo "TOKEN        : \"$_TOKEN\""
 echo "DRY_RUN      : ${DRY_RUN:-no}"
 
 for _BRANCH; do
-    git rev-parse --verify -q "$_BRANCH" >/dev/null || die "Error parsing revision \"$_BRANCH\""
+    _B="$(git rev-parse -q --verify "$_BRANCH")" || die "Error parsing revision \"$_BRANCH\""
+    if [[ "$NO_CHECK_UPSTREAM" == "" ]]; then
+        if [[ "$FOUND" = "" ]]; then
+            echo
+            echo "checking that the commits are pushed upstream... disable with NO_CHECK_UPSTREAM..."
+        fi
+        FOUND=0
+        for H in `git for-each-ref --format='%(objectname)' 'refs/remotes/origin/'`; do
+            if [[ "$(git merge-base "$H" "$_B")" = "$_B" ]]; then
+                FOUND=1
+                break
+            fi
+        done
+        [[ "$FOUND" = 1 ]] || die "error: $_BRANCH ($_B) does not seem to be reachable from upstream refs/remotes/origin/*. Did you push it? Set NO_CHECK_UPSTREAM to bypass this check"
+    fi
 done
 
 i=0
