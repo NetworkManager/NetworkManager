@@ -56,7 +56,7 @@
 #include "connections.h"
 
 /* Activation timeout waiting for bond/team/bridge slaves (in seconds) */
-#define BB_SLAVES_TIMEOUT 10
+#define SLAVES_UP_TIMEOUT 10
 
 /* define some prompts for connection editor */
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
@@ -1396,7 +1396,6 @@ progress_vpn_cb (gpointer user_data)
 typedef struct {
 	NmCli *nmc;
 	NMDevice *device;
-	char *con_type;
 } ActivateConnectionInfo;
 
 static gboolean
@@ -1405,14 +1404,13 @@ master_iface_slaves_check (gpointer user_data)
 	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
-	const char *con_type = info->con_type;
 	const GPtrArray *slaves = NULL;
 
-	if (strcmp (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
+	if (NM_IS_DEVICE_BOND (device))
 		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
-	else if (strcmp (con_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
+	else if (NM_IS_DEVICE_TEAM (device))
 		slaves = nm_device_team_get_slaves (NM_DEVICE_TEAM (device));
-	else if (strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
+	else if (NM_IS_DEVICE_BRIDGE (device))
 		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
 	else
 		g_warning ("%s: should not be reached.", __func__);
@@ -1425,7 +1423,6 @@ master_iface_slaves_check (gpointer user_data)
 		quit ();
 	}
 
-	g_free (info->con_type);
 	g_free (info);
 	return FALSE;
 }
@@ -1486,16 +1483,14 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 
 			/* Check for bond or team or bridge slaves */
-			if (   !strcmp (info->con_type, NM_SETTING_BOND_SETTING_NAME)
-			    || !strcmp (info->con_type, NM_SETTING_TEAM_SETTING_NAME)
-			    || !strcmp (info->con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		
-				g_timeout_add_seconds (BB_SLAVES_TIMEOUT, master_iface_slaves_check, info);
+			if (   NM_IS_DEVICE_BOND (device)
+			    || NM_IS_DEVICE_TEAM (device)
+			    || NM_IS_DEVICE_BRIDGE (device)) {
+				g_timeout_add_seconds (SLAVES_UP_TIMEOUT, master_iface_slaves_check, info);
 				return; /* info will be freed in master_iface_slaves_check () */
 			}
 		}
 	}
-	g_free (info->con_type);
 	g_free (info);
 }
 
@@ -1507,8 +1502,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *spec_object = NULL;
 	gboolean device_found;
 	NMConnection *connection = NULL;
-	NMSettingConnection *s_con;
-	const char *con_type;
 	const char *ifname = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
@@ -1608,10 +1601,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-	con_type = nm_setting_connection_get_connection_type (s_con);
-
 	if (nm_connection_get_virtual_iface_name (connection))
 		is_virtual = TRUE;
 
@@ -1637,7 +1626,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
 	info->device = device;
-	info->con_type = g_strdup (con_type);
 
 	nm_client_activate_connection (nmc->client,
 	                               connection,
