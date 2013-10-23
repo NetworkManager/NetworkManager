@@ -105,8 +105,11 @@ add_address (NMRDisc *rdisc, const NMRDiscAddress *new)
 		NMRDiscAddress *item = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
-			memcpy (item, new, sizeof (*new));
-			return FALSE;
+			gboolean changed = item->timestamp + item->lifetime  != new->timestamp + new->lifetime ||
+			                   item->timestamp + item->preferred != new->timestamp + new->preferred;
+
+			*item = *new;
+			return changed;
 		}
 	}
 
