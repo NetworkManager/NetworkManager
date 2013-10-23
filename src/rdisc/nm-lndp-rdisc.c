@@ -426,12 +426,15 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	NMRDisc *rdisc = (NMRDisc *) user_data;
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	NMRDiscConfigMap changed = 0;
-	size_t lladdrlen;
-	const char *lladdr = g_bytes_get_data (rdisc->lladdr, &lladdrlen);
+	size_t lladdrlen = 0;
+	const char *lladdr = NULL;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	NMRDiscGateway gateway;
 	guint32 now = get_time ();
 	int offset;
+
+	if (rdisc->lladdr)
+		lladdr = g_bytes_get_data (rdisc->lladdr, &lladdrlen);
 
 	/* Router discovery is subject to the following RFC documents:
 	 *

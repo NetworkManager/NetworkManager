@@ -41,7 +41,9 @@ static guint signals[LAST_SIGNAL] = { 0 };
 void
 nm_rdisc_set_lladdr (NMRDisc *rdisc, const char *addr, size_t addrlen)
 {
-	rdisc->lladdr = g_bytes_new (addr, addrlen);
+	if (rdisc->lladdr)
+		g_bytes_unref (rdisc->lladdr);
+	rdisc->lladdr = addr ? g_bytes_new (addr, addrlen) : NULL;
 }
 
 void
@@ -145,6 +147,7 @@ nm_rdisc_init (NMRDisc *rdisc)
 	rdisc->routes = g_array_new (FALSE, FALSE, sizeof (NMRDiscRoute));
 	rdisc->dns_servers = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSServer));
 	rdisc->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSDomain));
+	rdisc->lladdr = NULL;
 }
 
 static void
@@ -158,6 +161,9 @@ nm_rdisc_finalize (GObject *object)
 	g_array_unref (rdisc->routes);
 	g_array_unref (rdisc->dns_servers);
 	g_array_unref (rdisc->dns_domains);
+
+	if (rdisc->lladdr)
+		g_bytes_unref (rdisc->lladdr);
 }
 
 static void
