@@ -40,6 +40,7 @@ typedef enum {
 	NM_SETTINGS_ERROR_ADD_FAILED,                  /*< nick=AddFailed >*/
 	NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED, /*< nick=SaveHostnameNotSupported >*/
 	NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,        /*< nick=SaveHostnameFailed >*/
+	NM_SETTINGS_ERROR_HOSTNAME_INVALID,            /*< nick=HostnameInvalid >*/
 	NM_SETTINGS_ERROR_UUID_EXISTS,                 /*< nick=UuidExists >*/
 } NMSettingsError;
 

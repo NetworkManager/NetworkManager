@@ -1356,6 +1356,33 @@ pk_hostname_cb (NMAuthChain *chain,
 	nm_auth_chain_unref (chain);
 }
 
+static gboolean
+validate_hostname (const char *hostname)
+{
+	const char *p;
+	gboolean dot = TRUE;
+
+	if (!hostname || !hostname[0])
+		return FALSE;
+
+	for (p = hostname; *p; p++) {
+		if (*p == '.') {
+			if (dot)
+				return FALSE;
+			dot = TRUE;
+		} else {
+			if (!g_ascii_isalnum (*p) && (*p != '-') && (*p != '_'))
+				return FALSE;
+			dot = FALSE;
+		}
+	}
+
+	if (dot)
+		return FALSE;
+
+	return (p - hostname <= HOST_NAME_MAX);
+}
+
 static void
 impl_settings_save_hostname (NMSettings *self,
                              const char *hostname,
@@ -1364,6 +1391,14 @@ impl_settings_save_hostname (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	GError *error = NULL;
+
+	/* Minimal validation of the hostname */
+	if (!validate_hostname (hostname)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_HOSTNAME_INVALID,
+		                             "The hostname was too long or contained invalid characters.");
+		goto done;
+	}
 
 	/* Do any of the plugins support setting the hostname? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
