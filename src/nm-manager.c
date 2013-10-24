@@ -3111,7 +3111,7 @@ nm_manager_activate_connection (NMManager *manager,
 				} else {
 					g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,
 					             "'%s' does not allow automatic connections at this time => software device '%s' not created for '%s'",
-					             iface, nm_connection_get_id (connection), iface);
+					             iface, iface, nm_connection_get_id (connection));
 					g_free (iface);
 					return NULL;
 				}
