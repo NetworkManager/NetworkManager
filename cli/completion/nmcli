@@ -464,17 +464,15 @@ _nmcli_complete_COMMAND_ARGS()
 # as id|uuid|path|apath. Parse that connection parameter.
 _nmcli_complete_COMMAND_CONNECTION()
 {
-    local IS_VALID_OPTION=0
-    for OPT in "${OPTIONS[@]}"; do
-        if [[ "$OPT" = "${words[0]}" ]]; then
-            IS_VALID_OPTION=1
-            break
-        fi
-    done
-    if [[ $IS_VALID_OPTION -ne 1 ]]; then
+    ARRAY=("${OPTIONS[@]}")
+    if ! _nmcli_array_has_value "${words[0]}"; then
+        COMMAND_CONNECTION_TYPE=
+        COMMAND_CONNECTION_ID="${words[0]}"
         words=("${words[@]:1}")
         return 1
     fi
+    COMMAND_CONNECTION_TYPE="${words[0]}"
+    COMMAND_CONNECTION_ID="${words[1]}"
     case "${words[0]}" in
         id)
             if [[ ${#words[@]} -eq 2 ]]; then
@@ -505,6 +503,8 @@ _nmcli_complete_COMMAND_CONNECTION()
             words=("${words[@]:2}")
             ;;
         *)
+            COMMAND_CONNECTION_TYPE=
+            COMMAND_CONNECTION_ID="${words[0]}"
             words=("${words[@]:1}")
             ;;
     esac
@@ -526,6 +526,7 @@ _nmcli()
 
     local command="${words[1]}"
     local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS ARRAY OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
+    local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID
 
     case "${words[0]}" in
         h|he|hel|help)
@@ -821,7 +822,7 @@ _nmcli()
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
                             _nmcli_complete_COMMAND_CONNECTION && return 0
-                            # FIXME: completion for <setting>.<property> value
+                            _nmcli_list_nl "$(nmcli connection show configured "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
                         fi
                         ;;
                     de|del|dele|delet|delete)
