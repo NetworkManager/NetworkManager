@@ -6185,9 +6185,11 @@ nm_device_state_changed (NMDevice *device,
 		 * carrier changes or rfkill.  But don't deactivate devices that are
 		 * about to assume a connection since that defeats the purpose of
 		 * assuming the device's existing connection.
+		 *
+		 * Note that we "deactivate" the device even when coming from
+		 * UNMANAGED, to ensure that it's in a clean state.
 		 */
-		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED &&
-		    old_state != NM_DEVICE_STATE_UNMANAGED)
+		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
 			nm_device_deactivate (device, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
