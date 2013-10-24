@@ -583,7 +583,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 	/* never_default */
 	if (src_priv->never_default != dst_priv->never_default) {
 		dst_priv->never_default = src_priv->never_default;
-		has_relevant_changes = TRUE;
+		has_minor_changes = TRUE;
 	}
 
 	/* default gateway */
