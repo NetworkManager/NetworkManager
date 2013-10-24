@@ -544,7 +544,6 @@ constructor (GType type,
 	device_get_driver_info (priv->iface, &priv->driver_version, &priv->firmware_version);
 
 	update_ip6_property_paths (dev);
-	save_ip6_properties (dev);
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
@@ -3505,7 +3504,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		if (!addrconf6_start (self)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
 			ret = NM_ACT_STAGE_RETURN_STOP;
@@ -3519,27 +3518,16 @@ act_stage3_ip6_config_start (NMDevice *self,
 			g_assert (*out_config);
 		}
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
-		/* Router advertisements shouldn't be used in pure DHCP mode */
-		if (priv->ip6_accept_ra_path)
-			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
-
 		priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_MANAGED;
 		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
-		/* reset the saved RA value when ipv6 is ignored */
-		if (priv->ip6_accept_ra_path) {
-			nm_platform_sysctl_set (priv->ip6_accept_ra_path,
-			                        priv->ip6_accept_ra_save ? "1" : "0");
-		}
+		restore_ip6_properties (self);
 		ret = NM_ACT_STAGE_RETURN_STOP;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0) {
 		/* New blank config */
 		*out_config = nm_ip6_config_new ();
 		g_assert (*out_config);
 
-		/* Router advertisements shouldn't be used in manual mode */
-		if (priv->ip6_accept_ra_path)
-			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else {
 		nm_log_warn (LOGD_IP6, "(%s): unhandled IPv6 config method '%s'; will fail",
@@ -5226,15 +5214,21 @@ dispose (GObject *object)
 	g_warn_if_fail (priv->slaves == NULL);
 	g_assert (priv->master_ready_id == 0);
 
-	/* Take the device itself down and clear its IPv4 configuration */
+	/* Take the device itself down and clear its IP configuration */
 	if (nm_device_get_managed (self) && deconfigure) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		if (nm_device_get_act_request (self))
 			nm_device_deactivate (self, NM_DEVICE_STATE_REASON_REMOVED);
 		nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
+		nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
 
 		nm_device_take_down (self, FALSE);
+
+		restore_ip6_properties (self);
+
+		/* do a final check whether we should delete_link */
+		delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
 	}
 	g_clear_object (&priv->dev_ip4_config);
 	g_clear_object (&priv->ext_ip4_config);
@@ -5246,13 +5240,6 @@ dispose (GObject *object)
 	g_clear_object (&priv->dhcp6_ip6_config);
 	g_clear_object (&priv->vpn6_config);
 	g_clear_object (&priv->ext_ip6_config);
-
-	/* On dispose, do a final check whether we should delete_link */
-	delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
-
-	/* Reset the saved IPv6 properties if the device is managed. */
-	if (priv->state > NM_DEVICE_STATE_UNMANAGED)
-		restore_ip6_properties (self);
 
 	g_free (priv->ip6_accept_ra_path);
 	g_free (priv->ip6_use_tempaddr_path);
@@ -6150,9 +6137,16 @@ nm_device_state_changed (NMDevice *device,
 			if (nm_device_get_act_request (device))
 				nm_device_deactivate (device, reason);
 			nm_device_take_down (device, TRUE);
+			restore_ip6_properties (device);
 		}
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
+		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
+			save_ip6_properties (device);
+			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
+			nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
+		}
+
 		if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
 			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware)
 				nm_log_warn (LOGD_HW, "(%s): firmware may be missing.", nm_device_get_iface (device));
