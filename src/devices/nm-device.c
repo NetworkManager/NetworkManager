@@ -394,68 +394,66 @@ nm_device_init (NMDevice *self)
 }
 
 static void
-update_accept_ra_save (NMDevice *self)
+update_ip6_property_paths (NMDevice *self)
 {
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *ip_iface;
 	char *new_path;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
 
 	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", ip_iface);
-	g_assert (new_path);
-
 	if (priv->ip6_accept_ra_path) {
-		/* If the IP iface is different from before, use the new value */
+		/* If ip_iface hasn't changed, then there's nothing to do */
 		if (!strcmp (new_path, priv->ip6_accept_ra_path)) {
 			g_free (new_path);
 			return;
 		}
+
+		/* If ip_iface did change, then any values we saved before are irrelevant. */
+		priv->ip6_accept_ra_save = -1;
+		priv->ip6_use_tempaddr_save = -1;
+
 		g_free (priv->ip6_accept_ra_path);
+		g_free (priv->ip6_use_tempaddr_path);
 	}
 
-	/* Grab the original value of "accept_ra" so we can restore it when NM exits */
 	priv->ip6_accept_ra_path = new_path;
-	priv->ip6_accept_ra_save = nm_platform_sysctl_get_uint (priv->ip6_accept_ra_path);
-	if (priv->ip6_accept_ra_save < 0 || priv->ip6_accept_ra_save > 2) {
-		g_free (priv->ip6_accept_ra_path);
-		priv->ip6_accept_ra_path = NULL;
-	}
+
+	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/use_tempaddr", ip_iface);
+	priv->ip6_use_tempaddr_path = new_path;
 }
 
 static void
-update_ip6_privacy_save (NMDevice *self)
+save_ip6_properties (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-	const char *ip_iface;
-	char *new_path;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	priv->ip6_accept_ra_save = nm_platform_sysctl_get_uint (priv->ip6_accept_ra_path);
+	if (priv->ip6_accept_ra_save > 2)
+		priv->ip6_accept_ra_save = -1;
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	ip_iface = nm_device_get_ip_iface (self);
+	priv->ip6_use_tempaddr_save = nm_platform_sysctl_get_uint (priv->ip6_use_tempaddr_path);
+	if (priv->ip6_use_tempaddr_save > 2)
+		priv->ip6_use_tempaddr_save = -1;
+}
 
-	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/use_tempaddr", ip_iface);
-	g_assert (new_path);
+static void
+restore_ip6_properties (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	char tmp[16];
 
-	if (priv->ip6_use_tempaddr_path) {
-		/* If the IP iface is different from before, use the new value */
-		if (!strcmp (new_path, priv->ip6_use_tempaddr_path)) {
-			g_free (new_path);
-			return;
-		}
-		g_free (priv->ip6_use_tempaddr_path);
+	if (   priv->ip6_accept_ra_save != -1
+	    && g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
+		snprintf (tmp, sizeof (tmp), "%d", priv->ip6_accept_ra_save);
+		nm_platform_sysctl_set (priv->ip6_accept_ra_path, tmp);
 	}
 
-	/* Grab the original value of "use_tempaddr" so we can restore it when NM exits */
-	priv->ip6_use_tempaddr_path = new_path;
-	priv->ip6_use_tempaddr_save = nm_platform_sysctl_get_uint (priv->ip6_use_tempaddr_path);
-	if (priv->ip6_use_tempaddr_save < 0 || priv->ip6_use_tempaddr_save > 2) {
-		g_free (priv->ip6_use_tempaddr_path);
-		priv->ip6_use_tempaddr_path = NULL;
+	if (   priv->ip6_use_tempaddr_save != -1
+	    && g_file_test (priv->ip6_use_tempaddr_path, G_FILE_TEST_EXISTS)) {
+		snprintf (tmp, sizeof (tmp), "%d", priv->ip6_use_tempaddr_save);
+		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, tmp);
 	}
 }
 
@@ -545,8 +543,8 @@ constructor (GType type,
 
 	device_get_driver_info (priv->iface, &priv->driver_version, &priv->firmware_version);
 
-	update_accept_ra_save (dev);
-	update_ip6_privacy_save (dev);
+	update_ip6_property_paths (dev);
+	save_ip6_properties (dev);
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
@@ -726,6 +724,8 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
 		}
 	}
+
+	update_ip6_property_paths (self);
 
 	/* Emit change notification */
 	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
@@ -3345,7 +3345,6 @@ addrconf6_start (NMDevice *self)
 	}
 
 	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), nm_device_get_ip_iface (self));
-
 	if (!priv->rdisc) {
 		nm_log_err (LOGD_IP6, "Failed to start router discovery.");
 		return FALSE;
@@ -3504,9 +3503,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 		}
 	}
 
-	update_accept_ra_save (self);
-	update_ip6_privacy_save (self);
-
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
@@ -3579,8 +3575,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		ip6_privacy_str = "2";
 	break;
 	}
-	if (priv->ip6_use_tempaddr_path)
-		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, ip6_privacy_str);
+	nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, ip6_privacy_str);
 
 	return ret;
 }
@@ -4503,13 +4498,9 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	dnsmasq_cleanup (self);
 	aipd_cleanup (self);
 
-	/* Turn off router advertisements until they are needed */
-	if (priv->ip6_accept_ra_path)
-		nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
-
-	/* Turn off IPv6 privacy extensions */
-	if (priv->ip6_use_tempaddr_path)
-		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
+	/* Turn off kernel IPv6 */
+	nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
+	nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
@@ -5259,24 +5250,10 @@ dispose (GObject *object)
 	/* On dispose, do a final check whether we should delete_link */
 	delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
 
-	/* Reset the saved RA value if the device is managed. */
-	if (priv->state > NM_DEVICE_STATE_UNMANAGED) {
-		/* reset the saved RA value */
-		if (   priv->ip6_accept_ra_path
-			&& g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
-			nm_platform_sysctl_set (priv->ip6_accept_ra_path,
-			                        priv->ip6_accept_ra_save ? "1" : "0");
-		}
+	/* Reset the saved IPv6 properties if the device is managed. */
+	if (priv->state > NM_DEVICE_STATE_UNMANAGED)
+		restore_ip6_properties (self);
 
-		/* reset the saved use_tempaddr value */
-		if (   priv->ip6_use_tempaddr_path
-			&& g_file_test (priv->ip6_use_tempaddr_path, G_FILE_TEST_EXISTS)) {
-			char tmp[16];
-
-			snprintf (tmp, sizeof (tmp), "%d", priv->ip6_use_tempaddr_save);
-			nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, tmp);
-		}
-	}
 	g_free (priv->ip6_accept_ra_path);
 	g_free (priv->ip6_use_tempaddr_path);
 
