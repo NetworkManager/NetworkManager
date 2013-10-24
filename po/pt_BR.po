@@ -14,8 +14,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2013-10-02 14:26+0000\n"
-"PO-Revision-Date: 2013-10-08 16:08-0300\n"
+"POT-Creation-Date: 2013-10-20 02:24+0000\n"
+"PO-Revision-Date: 2013-10-24 13:14-0300\n"
 "Last-Translator: Enrico Nicoletto <liverig@gmail.com>\n"
 "Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
 "Language: pt_BR\n"
@@ -23,7 +23,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.5.7\n"
 
 #: ../cli/src/common.c:34 ../cli/src/common.c:46 ../cli/src/common.c:54
 #: ../cli/src/common.c:65 ../cli/src/connections.c:145
@@ -629,91 +629,6 @@ msgstr ""
 
 #: ../cli/src/connections.c:233
 #, c-format
-#| msgid ""
-#| "Usage: nmcli connection add { OPTIONS | help }\n"
-#| "  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
-#| "\n"
-#| "  COMMON_OPTIONS:\n"
-#| "                  type <type>\n"
-#| "                  ifname <interface name> | \"*\"\n"
-#| "                  [con-name <connection name>]\n"
-#| "                  [autoconnect yes|no]\n"
-#| "\n"
-#| "  TYPE_SPECIFIC_OPTIONS:\n"
-#| "    ethernet:     [mac <MAC address>]\n"
-#| "                  [cloned-mac <cloned MAC address>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "\n"
-#| "    wifi:         ssid <SSID>\n"
-#| "                  [mac <MAC address>]\n"
-#| "                  [cloned-mac <cloned MAC address>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "\n"
-#| "    wimax:        [mac <MAC address>]\n"
-#| "                  [nsp <NSP>]\n"
-#| "\n"
-#| "    gsm:          apn <APN>\n"
-#| "                  [user <username>]\n"
-#| "                  [password <password>]\n"
-#| "\n"
-#| "    cdma:         [user <username>]\n"
-#| "                  [password <password>]\n"
-#| "\n"
-#| "    infiniband:   [mac <MAC address>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "                  [transport-mode datagram | connected]\n"
-#| "                  [parent <ifname>]\n"
-#| "                  [p-key <IPoIB P_Key>]\n"
-#| "\n"
-#| "    bluetooth:    [addr <bluetooth address>]\n"
-#| "                  [bt-type panu|dun-gsm|dun-cdma]\n"
-#| "\n"
-#| "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
-#| "                  [id <VLAN id>]\n"
-#| "                  [flags <VLAN flags>]\n"
-#| "                  [ingress <ingress priority mapping>]\n"
-#| "                  [egress <egress priority mapping>]\n"
-#| "                  [mtu <MTU>]\n"
-#| "\n"
-#| "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor "
-#| "(2) | broadcast (3) |\n"
-#| "                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-#| "(6)]\n"
-#| "                  [miimon <num>]\n"
-#| "                  [downdelay <num>]\n"
-#| "                  [updelay <num>]\n"
-#| "                  [arp-interval <num>]\n"
-#| "                  [arp-ip-target <num>]\n"
-#| "\n"
-#| "    bond-slave:   master <master (ifname or connection UUID)>\n"
-#| "\n"
-#| "    team:         [config <json config>]\n"
-#| "\n"
-#| "    team-slave:   master <master (ifname or connection UUID)>\n"
-#| "                  [config <json config>]\n"
-#| "\n"
-#| "    bridge:       [stp yes|no>]\n"
-#| "                  [priority <num>]\n"
-#| "                  [forward-delay <2-30>]\n"
-#| "                  [hello-time <1-10>]\n"
-#| "                  [max-age <6-40>]\n"
-#| "                  [ageing-time <0-1000000>]\n"
-#| "\n"
-#| "    bridge-slave: master <master (ifname or connection UUID)\n"
-#| "                  [priority <0-63>]\n"
-#| "                  [path-cost <1-65535>]\n"
-#| "                  [hairpin yes|no]\n"
-#| "\n"
-#| "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
-#| "                  [user <username>]\n"
-#| "\n"
-#| "    olpc-mesh:    ssid <SSID>\n"
-#| "                  [channel <1-13>]\n"
-#| "                  [dhcp-anycast <MAC address>]\n"
-#| "\n"
-#| "  IP_OPTIONS:\n"
-#| "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-#| "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 msgid ""
 "Usage: nmcli connection add { OPTIONS | help }\n"
 "  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n"
@@ -910,7 +825,7 @@ msgstr "nunca"
 #. "CAPABILITIES"
 #: ../cli/src/connections.c:422 ../cli/src/connections.c:423
 #: ../cli/src/connections.c:672 ../cli/src/connections.c:673
-#: ../cli/src/connections.c:675 ../cli/src/connections.c:5397
+#: ../cli/src/connections.c:675 ../cli/src/connections.c:5483
 #: ../cli/src/devices.c:489 ../cli/src/devices.c:539 ../cli/src/devices.c:673
 #: ../cli/src/devices.c:674 ../cli/src/devices.c:675 ../cli/src/devices.c:706
 #: ../cli/src/devices.c:734 ../cli/src/devices.c:735 ../cli/src/devices.c:736
@@ -921,7 +836,7 @@ msgstr "sim"
 
 #: ../cli/src/connections.c:422 ../cli/src/connections.c:423
 #: ../cli/src/connections.c:672 ../cli/src/connections.c:673
-#: ../cli/src/connections.c:675 ../cli/src/connections.c:5397
+#: ../cli/src/connections.c:675 ../cli/src/connections.c:5483
 #: ../cli/src/devices.c:489 ../cli/src/devices.c:539 ../cli/src/devices.c:673
 #: ../cli/src/devices.c:674 ../cli/src/devices.c:675 ../cli/src/devices.c:706
 #: ../cli/src/devices.c:734 ../cli/src/devices.c:735 ../cli/src/devices.c:736
@@ -938,8 +853,8 @@ msgstr "Lista de conexões configuradas"
 #: ../cli/src/connections.c:519 ../cli/src/connections.c:1048
 #: ../cli/src/connections.c:1547 ../cli/src/connections.c:1568
 #: ../cli/src/connections.c:1577 ../cli/src/connections.c:1587
-#: ../cli/src/connections.c:1706 ../cli/src/connections.c:6666
-#: ../cli/src/connections.c:6841 ../cli/src/devices.c:1351
+#: ../cli/src/connections.c:1706 ../cli/src/connections.c:6757
+#: ../cli/src/connections.c:6932 ../cli/src/devices.c:1351
 #: ../cli/src/devices.c:1359 ../cli/src/devices.c:1750
 #: ../cli/src/devices.c:1757 ../cli/src/devices.c:1771
 #: ../cli/src/devices.c:1778 ../cli/src/devices.c:1795
@@ -964,8 +879,8 @@ msgstr "Erro: 'show configured': %s"
 msgid "Error: 'show configured': %s; allowed fields: %s"
 msgstr "Erro: 'show configured': %s; campos permitidos: %s"
 
-#: ../cli/src/connections.c:554 ../cli/src/connections.c:6907
-#: ../cli/src/connections.c:7017 ../cli/src/devices.c:1978
+#: ../cli/src/connections.c:554 ../cli/src/connections.c:6998
+#: ../cli/src/connections.c:7108 ../cli/src/devices.c:1978
 #: ../cli/src/devices.c:2327 ../cli/src/network-manager.c:428
 #: ../cli/src/network-manager.c:458 ../cli/src/network-manager.c:468
 #: ../cli/src/network-manager.c:476 ../cli/src/network-manager.c:486
@@ -1036,8 +951,8 @@ msgid "Active connection details"
 msgstr "Detalhe das conexões ativas"
 
 #: ../cli/src/connections.c:1000 ../cli/src/connections.c:1607
-#: ../cli/src/connections.c:1689 ../cli/src/connections.c:6695
-#: ../cli/src/connections.c:6810 ../cli/src/connections.c:6901
+#: ../cli/src/connections.c:1689 ../cli/src/connections.c:6786
+#: ../cli/src/connections.c:6901 ../cli/src/connections.c:6992
 #: ../cli/src/devices.c:1058 ../cli/src/devices.c:1105
 #: ../cli/src/devices.c:1256 ../cli/src/devices.c:1397
 #: ../cli/src/devices.c:1837 ../cli/src/devices.c:2140
@@ -1172,12 +1087,12 @@ msgid "Error: Connection activation failed: %s"
 msgstr "Erro: a ativação da conexão falhou: %s"
 
 #: ../cli/src/connections.c:1531 ../cli/src/connections.c:1674
-#: ../cli/src/connections.c:6817
+#: ../cli/src/connections.c:6908
 msgid "Connection (name, UUID, or path): "
 msgstr "Conexão (nome, UUID, ou caminho): "
 
 #: ../cli/src/connections.c:1536 ../cli/src/connections.c:1679
-#: ../cli/src/connections.c:6822
+#: ../cli/src/connections.c:6913
 #, c-format
 msgid "Error: No connection specified."
 msgstr "Erro: nenhuma conexão especificada."
@@ -1386,7 +1301,6 @@ msgstr "Mapas de prioridade de egresso [nenhum]: "
 #. Ask for optional 'bond' arguments.
 #: ../cli/src/connections.c:2636
 #, c-format
-#| msgid "There are 6 optional arguments for 'bond' connection type.\n"
 msgid "There are optional arguments for 'bond' connection type.\n"
 msgstr "Há argumentos opcionais para o tipo de conexão \"vinculada\".\n"
 
@@ -1395,13 +1309,11 @@ msgid "Bonding mode [balance-rr]: "
 msgstr "Modo de vinculação [balanço-rr]: "
 
 #: ../cli/src/connections.c:2662
-#| msgid "Parent interface [none]: "
 msgid "Bonding primary interface [none]: "
 msgstr "Vinculação da interface principal [nenhuma]: "
 
 #: ../cli/src/connections.c:2665
 #, c-format
-#| msgid "Error: 'parent': '%s' is not a valid interface name."
 msgid "Error: 'primary': '%s' is not a valid interface name.\n"
 msgstr "Erro: \"primary\": \"%s\" não é um nome de interface válido.\n"
 
@@ -1411,13 +1323,12 @@ msgstr "Modo de monitoração de vinculação (miimon ou arp) [miimon]: "
 
 #: ../cli/src/connections.c:2678
 #, c-format
-#| msgid "Error: '%s' is not a valid timeout for '%s' option."
-msgid "Error: '%s' is not a valid monitoring mode'; use '%s' or '%s'.\n"
+#| msgid "Error: '%s' is not a valid monitoring mode'; use '%s' or '%s'.\n"
+msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "Erro: \"%s\" não é um modo de monitoramento válido; use \"%s\" ou \"%s\".\n"
 
 #: ../cli/src/connections.c:2687
-#| msgid "Bonding miimon [100]): "
 msgid "Bonding miimon [100]: "
 msgstr "Vinculação miimon [100]: "
 
@@ -1427,7 +1338,6 @@ msgid "Error: 'miimon': '%s' is not a valid number <0-%u>.\n"
 msgstr "Erro: \"miimon\": \"%s\" não é um número válido <0-%u>.\n"
 
 #: ../cli/src/connections.c:2698
-#| msgid "Bonding downdelay [0]): "
 msgid "Bonding downdelay [0]: "
 msgstr "Vinculação downdelay [0]: "
 
@@ -1437,7 +1347,6 @@ msgid "Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"
 msgstr "Erro: 'downdelay': '%s' não é um número válido <0-%u>.\n"
 
 #: ../cli/src/connections.c:2709
-#| msgid "Bonding updelay [0]): "
 msgid "Bonding updelay [0]: "
 msgstr "Vinculação updelay [0]: "
 
@@ -1447,7 +1356,6 @@ msgid "Error: 'updelay': '%s' is not a valid number <0-%u>.\n"
 msgstr "Erro: 'updelay': '%s' não é um número válido <0-%u>.\n"
 
 #: ../cli/src/connections.c:2721
-#| msgid "Bonding arp-interval [0]): "
 msgid "Bonding arp-interval [0]: "
 msgstr "Vinculação intervalo arp [0]: "
 
@@ -1458,7 +1366,6 @@ msgstr "Erro: 'arp-interval': '%s' não é um número válido <0-%u>.\n"
 
 #. FIXME: verify the string
 #: ../cli/src/connections.c:2732
-#| msgid "Bonding arp-ip-target [none]): "
 msgid "Bonding arp-ip-target [none]: "
 msgstr "Vinculação arp-ip-destino [nenhum]: "
 
@@ -1478,7 +1385,6 @@ msgid "Error: 'stp': '%s'.\n"
 msgstr "Erro: 'stp': '%s'.\n"
 
 #: ../cli/src/connections.c:2774
-#| msgid "STP priority [128]): "
 msgid "STP priority [128]: "
 msgstr "Prioridade STP [128]: "
 
@@ -1488,7 +1394,6 @@ msgid "Error: 'priority': '%s' is not a valid number <0-%d>.\n"
 msgstr "Erro: 'priority': '%s' não é um número válido <0-%d>.\n"
 
 #: ../cli/src/connections.c:2786
-#| msgid "Forward delay [15]): "
 msgid "Forward delay [15]: "
 msgstr "Atraso de encaminhamento [15]: "
 
@@ -1499,7 +1404,6 @@ msgstr "Errr: 'forward-delay': '%s' não é um número válido <2-30>.\n"
 
 # Adotei a tradução de Hello time como Tempo de saudação --Enrico
 #: ../cli/src/connections.c:2799
-#| msgid "Hello time [2]): "
 msgid "Hello time [2]: "
 msgstr "Tempo de saudação [2]: "
 
@@ -1509,7 +1413,6 @@ msgid "Error: 'hello-time': '%s' is not a valid number <1-10>.\n"
 msgstr "Erro: 'hello-time': '%s' não é um número válido <1-10>.\n"
 
 #: ../cli/src/connections.c:2811
-#| msgid "Max age [20]): "
 msgid "Max age [20]: "
 msgstr "Tempo de expiração máximo [20]: "
 
@@ -1519,7 +1422,6 @@ msgid "Error: 'max-age': '%s' is not a valid number <6-40>.\n"
 msgstr "Erro: 'max-age': '%s' não é um número válido <6-40>.\n"
 
 #: ../cli/src/connections.c:2823
-#| msgid "MAC address ageing time [300]): "
 msgid "MAC address ageing time [300]: "
 msgstr "Tempo de vencimento do endereço MAC [300]: "
 
@@ -1535,12 +1437,10 @@ msgid "There are 3 optional arguments for 'bridge-slave' connection type.\n"
 msgstr "Há 3 argumentos opcionais para o tipo de conexão \"ponte-escrava\".\n"
 
 #: ../cli/src/connections.c:2857
-#| msgid "Bridge port priority [32]): "
 msgid "Bridge port priority [32]: "
 msgstr "Prioridade da porta da ponte [32]: "
 
 #: ../cli/src/connections.c:2870
-#| msgid "Bridge port STP path cost [100]): "
 msgid "Bridge port STP path cost [100]: "
 msgstr "Custo do caminho STP da porta da ponte [100]: "
 
@@ -1566,7 +1466,6 @@ msgid "There are 2 optional arguments for 'OLPC Mesh' connection type.\n"
 msgstr "Há 2 argumentos opcionais para o tipo de conexão \"OLPC Mesh\".\n"
 
 #: ../cli/src/connections.c:2939
-#| msgid "OLPC Mesh channel [1]): "
 msgid "OLPC Mesh channel [1]: "
 msgstr "Canal da malha OLPC [1]: "
 
@@ -1600,7 +1499,6 @@ msgstr "  Aviso: endereço já existente: %s %s\n"
 
 #: ../cli/src/connections.c:3022
 #, c-format
-#| msgid "Warning: ignoring garbage at the end: '%s'\n"
 msgid "  Warning: ignoring garbage at the end: '%s'\n"
 msgstr "  Aviso: ignorando lixo ao final: '%s'\n"
 
@@ -1694,7 +1592,6 @@ msgstr "Erro: 'mode': %s."
 
 #: ../cli/src/connections.c:3698
 #, c-format
-#| msgid "Error: 'parent': '%s' is not a valid interface name."
 msgid "Error: 'primary': '%s' is not a valid interface name."
 msgstr "Erro: \"primary\": \"%s\" não é um nome de interface válido."
 
@@ -1760,7 +1657,8 @@ msgstr "Erro: \"channel\": \"%s\" não é válido; use <1-13>."
 
 #: ../cli/src/connections.c:4183
 #, c-format
-msgid "Error: '%s' is a not valid connection type."
+#| msgid "Error: '%s' is a not valid connection type."
+msgid "Error: '%s' is not a valid connection type."
 msgstr "Erro: \"%s\" não é um tipo de conexão válido."
 
 #: ../cli/src/connections.c:4279
@@ -1801,7 +1699,7 @@ msgstr "Nome da interface [*]: "
 msgid "Error: 'ifname': '%s' is not a valid interface nor '*'."
 msgstr "Erro: 'ifname': '%s' não é uma interface válida nem '*'."
 
-#: ../cli/src/connections.c:4993
+#: ../cli/src/connections.c:5079
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "[valores de configuração '%s']\n"
@@ -1809,7 +1707,7 @@ msgstr "[valores de configuração '%s']\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../cli/src/connections.c:5071
+#: ../cli/src/connections.c:5157
 #, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -1841,10 +1739,19 @@ msgstr ""
 "nmcli    <opção-conf> <valor>       :: configuração do nmcli\n"
 "quit                                 :: sai do nmcli\n"
 
-#: ../cli/src/connections.c:5097
+#: ../cli/src/connections.c:5183
 #, c-format
+#| msgid ""
+#| "goto <setting>[.<prop>] | <prop>  :: enter setting/property for "
+#| "editation\n"
+#| "\n"
+#| "This command enters into a setting or property for editing it.\n"
+#| "\n"
+#| "Examples: nmcli> goto connection\n"
+#| "          nmcli connection> goto secondaries\n"
+#| "          nmcli> goto ipv4.addresses\n"
 msgid ""
-"goto <setting>[.<prop>] | <prop>  :: enter setting/property for editation\n"
+"goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
 "\n"
 "This command enters into a setting or property for editing it.\n"
 "\n"
@@ -1861,7 +1768,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: ../cli/src/connections.c:5104
+#: ../cli/src/connections.c:5190
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -1883,22 +1790,28 @@ msgstr ""
 "Exemplos: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: ../cli/src/connections.c:5111
+#: ../cli/src/connections.c:5197
 #, c-format
+#| msgid ""
+#| "set [<setting>.<prop> <value>]  :: set property value\n"
+#| "\n"
+#| "This command sets property value.\n"
+#| "\n"
+#| "Example: nmcli> s con.id My connection\n"
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
 "\n"
 "This command sets property value.\n"
 "\n"
-"Example: nmcli> s con.id My connection\n"
+"Example: nmcli> set con.id My connection\n"
 msgstr ""
 "set [<configuração>.<prop> <valor>]  :: define valor da propriedade\n"
 "\n"
 "Este comando configura o valor da propriedade.\n"
 "\n"
-"Exemplo: nmcli> s con.id Minha conexão\n"
+"Exemplo: nmcli> set con.id Minha conexão\n"
 
-#: ../cli/src/connections.c:5116
+#: ../cli/src/connections.c:5202
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -1911,7 +1824,7 @@ msgstr ""
 "Mostra a descrição da propriedade. Você pode consultar a página do manual nm-"
 "settings(5) para ver todas as configurações e propriedades do NM.\n"
 
-#: ../cli/src/connections.c:5121
+#: ../cli/src/connections.c:5207
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -1926,7 +1839,7 @@ msgstr ""
 "\n"
 "Exemplo: nmcli ipv4> print all\n"
 
-#: ../cli/src/connections.c:5126
+#: ../cli/src/connections.c:5212
 #, c-format
 msgid ""
 "verify [all]  :: verify setting or connection validity\n"
@@ -1945,7 +1858,7 @@ msgstr ""
 "Exemplos: nmcli> verify\n"
 "          nmcli bond> verify\n"
 
-#: ../cli/src/connections.c:5133
+#: ../cli/src/connections.c:5219
 #, c-format
 msgid ""
 "save  :: save the connection\n"
@@ -1956,7 +1869,7 @@ msgstr ""
 "\n"
 "Envia a conexão ao NetworkManager que, por sua vez, irá salvá-la.\n"
 
-#: ../cli/src/connections.c:5137 ../cli/src/connections.c:5287
+#: ../cli/src/connections.c:5223 ../cli/src/connections.c:5373
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -1965,7 +1878,7 @@ msgstr ""
 "back  :: vai ao nível de menu superior\n"
 "\n"
 
-#: ../cli/src/connections.c:5140
+#: ../cli/src/connections.c:5226
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -1974,7 +1887,7 @@ msgstr ""
 "help/? [<comando>]  :: ajuda para os comandos do nmcli \n"
 "\n"
 
-#: ../cli/src/connections.c:5143
+#: ../cli/src/connections.c:5229
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -2017,7 +1930,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: ../cli/src/connections.c:5163 ../cli/src/connections.c:5293
+#: ../cli/src/connections.c:5249 ../cli/src/connections.c:5379
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -2030,8 +1943,8 @@ msgstr ""
 "Este comando sai do nmcli. Quando a conexão sendo editada não foi salva, o "
 "usuário é solicitado a confirmar a ação.\n"
 
-#: ../cli/src/connections.c:5168 ../cli/src/connections.c:5298
-#: ../cli/src/connections.c:5567 ../cli/src/connections.c:6290
+#: ../cli/src/connections.c:5254 ../cli/src/connections.c:5384
+#: ../cli/src/connections.c:5656 ../cli/src/connections.c:6381
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Comando desconhecido: '%s'\n"
@@ -2039,7 +1952,7 @@ msgstr "Comando desconhecido: '%s'\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../cli/src/connections.c:5234
+#: ../cli/src/connections.c:5320
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -2067,7 +1980,7 @@ msgstr ""
 "comando\n"
 "quit                             :: sai do nmcli\n"
 
-#: ../cli/src/connections.c:5259
+#: ../cli/src/connections.c:5345
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -2078,7 +1991,7 @@ msgstr ""
 "\n"
 "Este comando configura o <valor> fornecido à propriedade\n"
 
-#: ../cli/src/connections.c:5263
+#: ../cli/src/connections.c:5349
 #, c-format
 msgid ""
 "add [<value>]  :: add new option to the property\n"
@@ -2093,7 +2006,7 @@ msgstr ""
 "seja um tipo de contêiner. Para propriedades com valores únicos, isto "
 "substitui o valor (semelhante ao 'set').\n"
 
-#: ../cli/src/connections.c:5269
+#: ../cli/src/connections.c:5355
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -2104,7 +2017,7 @@ msgstr ""
 "\n"
 "Exibe o valor atual e permite sua edição.\n"
 
-#: ../cli/src/connections.c:5273
+#: ../cli/src/connections.c:5359
 #, c-format
 msgid ""
 "remove [<index>|<option>]  :: delete the value\n"
@@ -2115,7 +2028,7 @@ msgstr ""
 "\n"
 "Remove o valor da propriedade (define-o como padrão).\n"
 
-#: ../cli/src/connections.c:5277
+#: ../cli/src/connections.c:5363
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -2128,7 +2041,7 @@ msgstr ""
 "Mostra a descrição da propriedade. Você pode consultar a página do manual nm-"
 "settings(5) para ver todas as configurações e propriedades do NM.\n"
 
-#: ../cli/src/connections.c:5282
+#: ../cli/src/connections.c:5368
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -2143,7 +2056,7 @@ msgstr ""
 "Mostra o valor da propriedade. Fornecendo um argumento, você também pode "
 "exibir valores para toda a conexão ou configuração.\n"
 
-#: ../cli/src/connections.c:5290
+#: ../cli/src/connections.c:5376
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -2152,75 +2065,75 @@ msgstr ""
 "help/? [<comando>]  :: ajuda para os comandos do nmcli\n"
 "\n"
 
-#: ../cli/src/connections.c:5378
+#: ../cli/src/connections.c:5464
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr "Erro: a configuração \"%s\" é obrigatória e não pode ser removida.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../cli/src/connections.c:5396
+#: ../cli/src/connections.c:5482
 #, c-format
 msgid "[ Connection type: %s | name: %s | UUID: %s | dirty: %s ]\n"
 msgstr "[ Tipo da conexão: %s | nome: %s | UUID: %s | impurezas: %s ]\n"
 
-#: ../cli/src/connections.c:5446 ../cli/src/connections.c:5842
-#: ../cli/src/connections.c:5900
+#: ../cli/src/connections.c:5535 ../cli/src/connections.c:5933
+#: ../cli/src/connections.c:5991
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Digite o valor de \"%s\":"
 
-#: ../cli/src/connections.c:5463 ../cli/src/connections.c:5482
-#: ../cli/src/connections.c:5848 ../cli/src/connections.c:5907
+#: ../cli/src/connections.c:5552 ../cli/src/connections.c:5571
+#: ../cli/src/connections.c:5939 ../cli/src/connections.c:5998
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Erro: falha ao definir propriedade \"%s\": %s\n"
 
-#: ../cli/src/connections.c:5475
+#: ../cli/src/connections.c:5564
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Edite o valor de \"%s\":"
 
-#: ../cli/src/connections.c:5504
+#: ../cli/src/connections.c:5593
 #, c-format
 msgid "Error: %s\n"
 msgstr "Erro: %s\n"
 
-#: ../cli/src/connections.c:5510 ../cli/src/connections.c:5981
-#: ../cli/src/connections.c:6022
+#: ../cli/src/connections.c:5599 ../cli/src/connections.c:6072
+#: ../cli/src/connections.c:6113
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Erro: falha ao remover valor de '%s': %s\n"
 
-#: ../cli/src/connections.c:5531
+#: ../cli/src/connections.c:5620
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Argumento de comando desconhecido: \"%s\"\n"
 
-#: ../cli/src/connections.c:5551 ../cli/src/connections.c:6278
+#: ../cli/src/connections.c:5640 ../cli/src/connections.c:6369
 msgid "The connection is not saved. Do you really want to quit? [y/n]\n"
 msgstr "A conexão não foi salva. Você realmente deseja sair? [s/n]\n"
 
-#: ../cli/src/connections.c:5663
+#: ../cli/src/connections.c:5752
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Configurações disponíveis: %s\n"
 
-#: ../cli/src/connections.c:5672
+#: ../cli/src/connections.c:5761
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Erro: nome de configuração inválido; %s\n"
 
-#: ../cli/src/connections.c:5689
+#: ../cli/src/connections.c:5778
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Propriedades disponíveis: %s\n"
 
-#: ../cli/src/connections.c:5697
+#: ../cli/src/connections.c:5786
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Erro: propriedade %s\n"
 
-#: ../cli/src/connections.c:5724
+#: ../cli/src/connections.c:5813
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
 "immediate activation of the connection.\n"
@@ -2230,146 +2143,147 @@ msgstr ""
 "ativação imediata da conexão.\n"
 "Você ainda deseja salvar? [sim] "
 
-#: ../cli/src/connections.c:5794
+#: ../cli/src/connections.c:5883
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Você pode editar as seguintes configurações: %s\n"
 
-#: ../cli/src/connections.c:5840 ../cli/src/connections.c:5898
+#: ../cli/src/connections.c:5931 ../cli/src/connections.c:5989
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Valores permitidos para a propriedade \"%s\": %s\n"
 
-#: ../cli/src/connections.c:5852 ../cli/src/connections.c:6063
+#: ../cli/src/connections.c:5943 ../cli/src/connections.c:6154
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "Erro: nenhuma configuração selecionada; as válidas são [%s]\n"
 
-#: ../cli/src/connections.c:5853
+#: ../cli/src/connections.c:5944
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "primeiro use 'goto <configuração>' ou 'set <configuração>.<propriedade>'\n"
 
-#: ../cli/src/connections.c:5868 ../cli/src/connections.c:6001
-#: ../cli/src/connections.c:6080
+#: ../cli/src/connections.c:5959 ../cli/src/connections.c:6092
+#: ../cli/src/connections.c:6171
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "Erro: argumento de configuração \"%s\" inválido; os válidos são [%s]\n"
 
-#: ../cli/src/connections.c:5878
+#: ../cli/src/connections.c:5969
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Erro: falta configuração para a propriedade \"%s\"\n"
 
-#: ../cli/src/connections.c:5885
+#: ../cli/src/connections.c:5976
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Erro: propriedade inválida: %s\n"
 
-#: ../cli/src/connections.c:5934
+#: ../cli/src/connections.c:6025
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Erro: configuração desconhecida: \"%s\"\n"
 
-#: ../cli/src/connections.c:5947
+#: ../cli/src/connections.c:6038
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Você pode editar as seguintes propriedades: %s\n"
 
-#: ../cli/src/connections.c:5986
+#: ../cli/src/connections.c:6077
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Erro: nenhum argumento fornecido; os válidos são [%s]\n"
 
-#: ../cli/src/connections.c:5999
+#: ../cli/src/connections.c:6090
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "A configuração \"%s\" não está presente na conexão.\n"
 
-#: ../cli/src/connections.c:6039
+#: ../cli/src/connections.c:6130
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Erro: propriedades %s, tampouco é um nome de configuração válido.\n"
 
-#: ../cli/src/connections.c:6064
+#: ../cli/src/connections.c:6155
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "primeiro use 'goto <configuração>' ou 'describe <configuração>."
 "<propriedade>'\n"
 
-#: ../cli/src/connections.c:6105
+#: ../cli/src/connections.c:6196
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr ""
 "Erro: propriedade inválida: %s, tampouco um nome de configuração válido.\n"
 
-#: ../cli/src/connections.c:6129
+#: ../cli/src/connections.c:6220
 #, c-format
 msgid "Error: '%s' setting not present\n"
 msgstr "Erro: configuração \"%s\" ausente\n"
 
-#: ../cli/src/connections.c:6132
+#: ../cli/src/connections.c:6223
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Erro: configuração desconhecida: \"%s\"\n"
 
-#: ../cli/src/connections.c:6148
+#: ../cli/src/connections.c:6239
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Verificar configuração \"%s\": %s\n"
 
-#: ../cli/src/connections.c:6155
+#: ../cli/src/connections.c:6246
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Verificar conexão: %s\n"
 
-#: ../cli/src/connections.c:6194
+#: ../cli/src/connections.c:6285
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: (%d) %s\n"
 msgstr "Erro: falha ao salvar '%s' (%s) na conexão: (%d) %s\n"
 
-#: ../cli/src/connections.c:6201
+#: ../cli/src/connections.c:6292
 #, c-format
-msgid "Connection '%s' (%s) sucessfully saved.\n"
+#| msgid "Connection '%s' (%s) sucessfully saved.\n"
+msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "A conexão \"%s\" (%s) foi salva com sucesso.\n"
 
-#: ../cli/src/connections.c:6209
+#: ../cli/src/connections.c:6300
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Erro: falha na verificação de conexão: %s\n"
 
-#: ../cli/src/connections.c:6210
+#: ../cli/src/connections.c:6301
 msgid "(unknown error)"
 msgstr "(erro desconhecido)"
 
-#: ../cli/src/connections.c:6233
+#: ../cli/src/connections.c:6324
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Erro: estado da linha (\"status-line\"): %s\n"
 
-#: ../cli/src/connections.c:6241
+#: ../cli/src/connections.c:6332
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Erro: salvar confirmação: %s\n"
 
-#: ../cli/src/connections.c:6249
+#: ../cli/src/connections.c:6340
 #, c-format
 msgid "Error: bad color number: '%s'; use <0-8>\n"
 msgstr "Erro: número ruim para cor: \"%s\"; use <0-8>\n"
 
-#: ../cli/src/connections.c:6261
+#: ../cli/src/connections.c:6352
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "Configuração atual do nmcli:\n"
 
-#: ../cli/src/connections.c:6269
+#: ../cli/src/connections.c:6360
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "A opção de configuração \"%s\" é inválida; é permitido [%s]\n"
 
-#: ../cli/src/connections.c:6469
+#: ../cli/src/connections.c:6560
 #, c-format
 msgid ""
 ">>> Command-line editing is not available. Consider installing a line "
@@ -2387,23 +2301,23 @@ msgstr ""
 "readline/rltop.html\n"
 "  - NetBSD Editline (libedit)     http://www.thrysoee.dk/editline/\n"
 
-#: ../cli/src/connections.c:6495
+#: ../cli/src/connections.c:6586
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "Erro: apenas um \"id\", uuid, ou \"path\" podem ser fornecidos."
 
-#: ../cli/src/connections.c:6507 ../cli/src/connections.c:6702
+#: ../cli/src/connections.c:6598 ../cli/src/connections.c:6793
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Erro: conexão desconhecida: \"%s\"."
 
-#: ../cli/src/connections.c:6522
+#: ../cli/src/connections.c:6613
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Aviso: editando a conexão existente \"%s\"; o argumento \"type\" é ignorado\n"
 
-#: ../cli/src/connections.c:6525
+#: ../cli/src/connections.c:6616
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -2411,122 +2325,122 @@ msgstr ""
 "Aviso: editando a conexão existente \"%s\"; o argumento \"con-name\" é "
 "ignorado\n"
 
-#: ../cli/src/connections.c:6539
+#: ../cli/src/connections.c:6630
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Tipos de conexões válidos: %s\n"
 
-#: ../cli/src/connections.c:6541
+#: ../cli/src/connections.c:6632
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Erro: tipo de conexão inválido; %s\n"
 
-#: ../cli/src/connections.c:6577
+#: ../cli/src/connections.c:6668
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| editor de conexões interativas nmcli |==="
 
-#: ../cli/src/connections.c:6580
+#: ../cli/src/connections.c:6671
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Editando conexão existente \"%s\": \"%s\""
 
-#: ../cli/src/connections.c:6582
+#: ../cli/src/connections.c:6673
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Adicioando uma nova conexão \"%s\""
 
-#: ../cli/src/connections.c:6584
+#: ../cli/src/connections.c:6675
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "Digite 'help' ou '?' para comandos disponíveis."
 
-#: ../cli/src/connections.c:6586
+#: ../cli/src/connections.c:6677
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "Digite 'describe [<configuração>.<prop>]' para exibir descrição detalhada da "
 "propriedade."
 
-#: ../cli/src/connections.c:6623
+#: ../cli/src/connections.c:6714
 #, c-format
 msgid "Error: Failed to modify connection '%s': (%d) %s"
 msgstr "Erro: falha ao modificar a conexão \"%s\": (%d) %s"
 
-#: ../cli/src/connections.c:6629
+#: ../cli/src/connections.c:6720
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "A conexão \"%s\" (%s) foi modificada com sucesso.\n"
 
-#: ../cli/src/connections.c:6656
+#: ../cli/src/connections.c:6747
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "Erro: nenhum argumento foi fornecido."
 
-#: ../cli/src/connections.c:6680
+#: ../cli/src/connections.c:6771
 #, c-format
 msgid "Error: connection ID is missing."
 msgstr "Erro: está faltando o ID da conexão."
 
-#: ../cli/src/connections.c:6685
+#: ../cli/src/connections.c:6776
 #, c-format
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "Erro: está faltando argumento <configuração>.<propriedade>."
 
-#: ../cli/src/connections.c:6708
+#: ../cli/src/connections.c:6799
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Erro: inválida <configuração>.<propriedade> '%s'."
 
-#: ../cli/src/connections.c:6723
+#: ../cli/src/connections.c:6814
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Erro: configuração inválida ou não permitida \"%s\": %s."
 
-#: ../cli/src/connections.c:6744
+#: ../cli/src/connections.c:6835
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Erro: propriedade inválida '%s': %s."
 
-#: ../cli/src/connections.c:6750
+#: ../cli/src/connections.c:6841
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "Erro: falha ao modificar %s.%s: %s."
 
-#: ../cli/src/connections.c:6780
+#: ../cli/src/connections.c:6871
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "Erro: a exclusão da conexão falhou: %s"
 
-#: ../cli/src/connections.c:6850
+#: ../cli/src/connections.c:6941
 #, c-format
 msgid "Error: unknown connection: %s\n"
 msgstr "Erro: conexão desconhecida: %s\n"
 
 #. truncate trailing ", "
-#: ../cli/src/connections.c:6884
+#: ../cli/src/connections.c:6975
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Erro: não é possível excluir conexão(ões) desconhecida(s): %s."
 
-#: ../cli/src/connections.c:6968
+#: ../cli/src/connections.c:7059
 #, c-format
 msgid ""
 "Error: 'configured' or 'active' command is expected for 'connection show'."
 msgstr ""
 "Erro: era esperado o comando 'configured' ou 'active' para 'connection show'."
 
-#: ../cli/src/connections.c:7008
+#: ../cli/src/connections.c:7099
 #, c-format
 msgid "Error: '%s' is not valid 'connection' command."
 msgstr "Erro: \"%s\" não é um comando de \"connection\" válido."
 
-#: ../cli/src/connections.c:7073
+#: ../cli/src/connections.c:7164
 #, c-format
 msgid "Error: Could not get system settings."
 msgstr "Erro: Não foi possível obter as configurações do sistema."
 
-#: ../cli/src/connections.c:7083
+#: ../cli/src/connections.c:7174
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr ""
@@ -3607,7 +3521,8 @@ msgstr "Falha ao definir máscara do sinal: %d"
 msgid "Failed to create signal handling thread: %d"
 msgstr "Ocorreu falha ao criar o segmento de manipulação de sinal: %d"
 
-#: ../cli/src/nmcli.c:338
+#: ../cli/src/nmcli.c:338 ../test/nm-online.c:149
+#, c-format
 msgid "Error: Could not create NMClient object."
 msgstr "Erro: não foi possível criar objeto NMClient."
 
@@ -3988,13 +3903,22 @@ msgstr ""
 "Exemplo: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 
 #: ../cli/src/settings.c:2909
+#| msgid ""
+#| "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
+#| "method is 'auto' these DNS servers are appended to those (if any) "
+#| "returned by automatic configuration.  DNS servers cannot be used with the "
+#| "'shared' or 'link-local' IPv6 configuration methods, as there is no "
+#| "usptream network. In all other IPv6 configuration methods methods, these "
+#| "DNS servers are used as the only DNS servers for this connection.\n"
+#| "\n"
+#| "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
 "by automatic configuration.  DNS servers cannot be used with the 'shared' or "
-"'link-local' IPv6 configuration methods, as there is no usptream network. In "
-"all other IPv6 configuration methods methods, these DNS servers are used as "
-"the only DNS servers for this connection.\n"
+"'link-local' IPv6 configuration methods, as there is no upstream network. In "
+"all other IPv6 configuration methods, these DNS servers are used as the only "
+"DNS servers for this connection.\n"
 "\n"
 "Example: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 msgstr ""
@@ -4002,7 +3926,7 @@ msgstr ""
 "configuração IPv6 for 'auto' estes servidores DNS são acrescentados a "
 "aqueles (caso existam) retornados pela configuração automática.  Servidores "
 "de DNS não podem ser usados com os métodos de configuração IPv6 'shared' ou "
-"'link-local', já que não há nenhuma rede acima (upstream). Em todos os "
+"'link-local', caso não exista nenhuma rede acima (upstream). Em todos os "
 "outros métodos de configuração IPv6, estes servidores DNS são usados como os "
 "únicos servidores DNS para esta conexão.\n"
 "\n"
@@ -4656,13 +4580,11 @@ msgstr "\"%s=%s\" não é compatível com \"%s > 0\""
 
 #: ../libnm-util/nm-setting-bond.c:470
 #, c-format
-#| msgid "'%s' is not a valid interface name"
 msgid "'%s' is not a valid interface name for '%s' option"
 msgstr "\"%s\" não é um nome de interface válido para a opção \"%s\""
 
 #: ../libnm-util/nm-setting-bond.c:480
 #, c-format
-#| msgid "'%s' is not a valid value for '%s'"
 msgid "'%s' option is only valid for '%s=%s'"
 msgstr "A opção \"%s\" é válida apenas para \"%s=%s\""
 
@@ -4677,12 +4599,12 @@ msgstr "\"%s=%s\" não é uma configuração válida para \"%s\""
 msgid "'%s' option requires '%s' option to be set"
 msgstr "A opção \"%s\" requer que a opção \"%s\" seja definida"
 
-#: ../libnm-util/nm-setting-bond.c:547
+#: ../libnm-util/nm-setting-bond.c:546
 #, c-format
 msgid "'%s' option is empty"
 msgstr "opção \"%s\" está vazia"
 
-#: ../libnm-util/nm-setting-bond.c:559
+#: ../libnm-util/nm-setting-bond.c:558
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "\"%s\" não é um endereço IPv4 válido para a opção \"%s\""
@@ -5110,16 +5032,16 @@ msgstr "Falha ao analisar o arquivo de estado %s: (%d) %s\n"
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Não pode ser daemonizado: %s [erro %u]\n"
 
-#: ../src/bluez-manager/nm-bluez-device.c:204
+#: ../src/bluez-manager/nm-bluez-device.c:198
 #, c-format
 msgid "%s Network"
 msgstr "Rede %s"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:143
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:141
 msgid "# Created by NetworkManager\n"
 msgstr "# Criado pelo NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:150
+#: ../src/dhcp-manager/nm-dhcp-dhclient-utils.c:148
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -5317,20 +5239,20 @@ msgstr "não foi possível associar-se ao grupo do netlink: %s"
 msgid "NetworkManager needs to turn off networks"
 msgstr "O NetworkManager precisa desligar as redes"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:112
+#: ../src/settings/plugins/ifcfg-rh/reader.c:113
 msgid "System"
 msgstr "Sistema"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3803
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3790
 msgid "Bond"
 msgstr "Vínculo"
 
 # Teaming network connections means combining them, so I adopted 'União' --Enrico.
-#: ../src/settings/plugins/ifcfg-rh/reader.c:3889
+#: ../src/settings/plugins/ifcfg-rh/reader.c:3876
 msgid "Team"
 msgstr "União"
 
-#: ../src/settings/plugins/ifcfg-rh/reader.c:4077
+#: ../src/settings/plugins/ifcfg-rh/reader.c:4064
 msgid "Bridge"
 msgstr "Ponte"
 
