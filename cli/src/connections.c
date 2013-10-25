@@ -6419,7 +6419,7 @@ get_ethernet_device_name (NmCli *nmc)
 static void
 editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 {
-	NMSetting *setting;
+	NMSetting *setting, *base_setting;
 	NMSettingConnection *s_con;
 	const char *con_type;
 	const char *slave_type = NULL;
@@ -6451,27 +6451,18 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 		              NULL);
 	} else {
 		/* Add a "base" setting to the connection by default */
-		setting = nmc_setting_new_for_name (con_type);
-		if (!setting)
+		base_setting = nmc_setting_new_for_name (con_type);
+		if (!base_setting)
 			return;
-		nm_connection_add_setting (connection, setting);
-
-		/* Always add IPv4 and IPv6 settings */
-		setting = nm_setting_ip4_config_new ();
-		nmc_setting_custom_init (setting);
-		nm_connection_add_setting (connection, setting);
-
-		setting = nm_setting_ip6_config_new ();
-		nmc_setting_custom_init (setting);
-		nm_connection_add_setting (connection, setting);
+		nm_connection_add_setting (connection, base_setting);
 
 		/* Set a sensible bond/bridge interface name by default */
 		if (g_strcmp0 (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_BOND (setting),
+			g_object_set (NM_SETTING_BOND (base_setting),
 			              NM_SETTING_BOND_INTERFACE_NAME, "nm-bond",
 			              NULL);
 		if (g_strcmp0 (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_BRIDGE (setting),
+			g_object_set (NM_SETTING_BRIDGE (base_setting),
 			              NM_SETTING_BRIDGE_INTERFACE_NAME, "nm-bridge",
 			              NULL);
 
@@ -6479,7 +6470,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 		if (g_strcmp0 (con_type, NM_SETTING_VLAN_SETTING_NAME) == 0) {
 			const char *dev_ifname = get_ethernet_device_name (nmc);
 
-			g_object_set (NM_SETTING_VLAN (setting),
+			g_object_set (NM_SETTING_VLAN (base_setting),
 			              NM_SETTING_VLAN_PARENT, dev_ifname ? dev_ifname : "eth0",
 			              NM_SETTING_VLAN_ID, 1,
 			              NULL);
@@ -6491,21 +6482,38 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 
 		/* Initialize 'transport-mode' so that 'infiniband' is valid */
 		if (g_strcmp0 (con_type, NM_SETTING_INFINIBAND_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_INFINIBAND (setting),
+			g_object_set (NM_SETTING_INFINIBAND (base_setting),
 			              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 			              NULL);
 
 		/* Initialize 'number' so that 'cdma' is valid */
 		if (g_strcmp0 (con_type, NM_SETTING_CDMA_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_CDMA (setting),
+			g_object_set (NM_SETTING_CDMA (base_setting),
 			              NM_SETTING_CDMA_NUMBER, "#777",
 			              NULL);
 
 		/* Initialize 'number' so that 'gsm' is valid */
 		if (g_strcmp0 (con_type, NM_SETTING_GSM_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_GSM (setting),
+			g_object_set (NM_SETTING_GSM (base_setting),
 			              NM_SETTING_GSM_NUMBER, "*99#",
 			              NULL);
+
+		/* For Wi-Fi set mode to "infrastructure". Even though mode == NULL
+		 * is regarded as "infrastructure", explicit value makes no doubts.
+		 */
+		if (g_strcmp0 (con_type, NM_SETTING_WIRELESS_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_WIRELESS (base_setting),
+			              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+			              NULL);
+
+		/* Always add IPv4 and IPv6 settings for non-slave connections */
+		setting = nm_setting_ip4_config_new ();
+		nmc_setting_custom_init (setting);
+		nm_connection_add_setting (connection, setting);
+
+		setting = nm_setting_ip6_config_new ();
+		nmc_setting_custom_init (setting);
+		nm_connection_add_setting (connection, setting);
 	}
 }
 
