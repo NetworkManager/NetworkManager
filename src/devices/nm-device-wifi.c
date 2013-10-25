@@ -1034,7 +1034,8 @@ check_connection_available (NMDevice *device, NMConnection *connection)
 	 * started at any time.
 	 */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, "adhoc") == 0 || g_strcmp0 (mode, "ap") == 0)
+	if (   g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
+	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
 		return TRUE;
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either */
@@ -2807,11 +2808,11 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	g_assert (s_wireless);
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
-	if (g_strcmp0 (mode, "infra") == 0)
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) == 0)
 		priv->mode = NM_802_11_MODE_INFRA;
-	else if (g_strcmp0 (mode, "adhoc") == 0)
+	else if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0)
 		priv->mode = NM_802_11_MODE_ADHOC;
-	else if (g_strcmp0 (mode, "ap") == 0) {
+	else if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
 		priv->mode = NM_802_11_MODE_AP;
 
 		/* Scanning not done in AP mode; clear the scan list */
