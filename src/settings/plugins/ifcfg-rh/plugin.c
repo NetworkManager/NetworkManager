@@ -96,14 +96,6 @@ typedef struct {
 
 
 static void
-connection_unmanaged_changed (NMIfcfgConnection *connection,
-                              GParamSpec *pspec,
-                              gpointer user_data)
-{
-	g_signal_emit_by_name (SC_PLUGIN_IFCFG (user_data), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-}
-
-static void
 connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
@@ -171,12 +163,6 @@ _internal_new_connection (SCPluginIfcfg *self,
 			device_id = spec;
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' / device '%s' "
 		              "due to NM_CONTROLLED=no.", cid, device_id);
-	} else {
-		/* Wait for the connection to become unmanaged once it knows the
-		 * hardware IDs of its device, if/when the device gets plugged in.
-		 */
-		g_signal_connect (G_OBJECT (connection), "notify::" NM_IFCFG_CONNECTION_UNMANAGED,
-		                  G_CALLBACK (connection_unmanaged_changed), self);
 	}
 
 	/* watch changes of ifcfg hardlinks */
@@ -317,21 +303,18 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	}
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
+	g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
 
 	if (new_unmanaged) {
 		if (!old_unmanaged) {
 			g_object_ref (existing);
 			/* Unexport the connection by telling the settings service it's
-			 * been removed, and notify the settings service by signalling that
-			 * unmanaged specs have changed.
+			 * been removed.
 			 */
 			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (existing));
 			/* Remove the path so that claim_connection() doesn't complain later when
 			 * interface gets managed and connection is re-added. */
 			nm_connection_set_path (NM_CONNECTION (existing), NULL);
-
-			g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
-			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 			g_object_unref (existing);
 		}
 	} else {
@@ -350,12 +333,11 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			/* Shouldn't ever get here as 'new' was verified by the reader already */
 			g_assert_no_error (error);
 		}
-
-		/* Update unmanaged status */
-		g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
-		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 	}
 	g_object_unref (new);
+
+	if (g_strcmp0 (old_unmanaged, new_unmanaged))
+		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 }
 
 static void
