@@ -170,7 +170,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 		else
 			device_id = spec;
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' / device '%s' "
-		              "due to NM_CONTROLLED/BRIDGE/VLAN.", cid, device_id);
+		              "due to NM_CONTROLLED=no.", cid, device_id);
 	} else {
 		/* Wait for the connection to become unmanaged once it knows the
 		 * hardware IDs of its device, if/when the device gets plugged in.
