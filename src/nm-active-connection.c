@@ -87,6 +87,24 @@ static void check_master_ready (NMActiveConnection *self);
 
 /****************************************************************/
 
+static const char *
+state_to_string (NMActiveConnectionState state)
+{
+	switch (state) {
+	case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
+		return "unknown";
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
+		return "activating";
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
+		return "activated";
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
+		return "deactivating";
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
+		return "deactivated";
+	}
+	return "(none)";
+}
+
 NMActiveConnectionState
 nm_active_connection_get_state (NMActiveConnection *self)
 {
@@ -376,12 +394,18 @@ check_master_ready (NMActiveConnection *self)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMActiveConnectionState master_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
-	if (priv->state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+	if (priv->state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+		nm_log_dbg (LOGD_DEVICE, "(%p): not signalling master-ready (not activating)", self);
 		return;
-	if (!priv->master)
+	}
+	if (!priv->master) {
+		nm_log_dbg (LOGD_DEVICE, "(%p): not signalling master-ready (no master)", self);
 		return;
-	if (priv->master_ready)
+	}
+	if (priv->master_ready) {
+		nm_log_dbg (LOGD_DEVICE, "(%p): not signalling master-ready (already signaled)", self);
 		return;
+	}
 
 	/* ActiveConnetions don't enter the ACTIVATING state until they have a
 	 * NMDevice in PREPARE or higher states, so the master active connection's
@@ -389,8 +413,13 @@ check_master_ready (NMActiveConnection *self)
 	 * or higher states.
 	 */
 	master_state = nm_active_connection_get_state (priv->master);
+	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] state now '%s' (%d)",
+	            self, priv->master, state_to_string (master_state), master_state);
+
 	if (   master_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
 	    || master_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		nm_log_dbg (LOGD_DEVICE, "(%p): signalling master-ready", self);
+
 		priv->master_ready = TRUE;
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_MASTER_READY);
 
@@ -413,9 +442,15 @@ master_state_cb (NMActiveConnection *master,
 
 	check_master_ready (self);
 
+	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] state now '%s' (%d)",
+	            self, master, state_to_string (master_state), master_state);
+
 	/* Master is deactivating, so this active connection must also deactivate */
 	if (self_state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATING &&
 	    master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] '%s' failed",
+		            self, master, nm_active_connection_get_name (master));
+
 		g_signal_handlers_disconnect_by_func (master,
 		                                      (GCallback) master_state_cb,
 		                                      self);
@@ -450,6 +485,9 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 		/* Note, the master ActiveConnection may not yet have a device */
 		g_return_if_fail (priv->device != nm_active_connection_get_device (master));
 	}
+
+	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection is [%p] %s",
+	            self, master, nm_active_connection_get_name (master));
 
 	priv->master = g_object_ref (master);
 	g_signal_connect (priv->master,
