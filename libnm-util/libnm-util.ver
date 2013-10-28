@@ -593,6 +593,8 @@ global:
 	nm_utils_hwaddr_type;
 	nm_utils_hwaddr_valid;
 	nm_utils_iface_valid_name;
+	nm_utils_inet4_ntop;
+	nm_utils_inet6_ntop;
 	nm_utils_init;
 	nm_utils_ip4_addresses_from_gvalue;
 	nm_utils_ip4_addresses_to_gvalue;

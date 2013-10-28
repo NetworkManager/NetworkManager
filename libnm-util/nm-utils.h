@@ -154,6 +154,16 @@ gboolean    nm_utils_iface_valid_name(const char *name);
 
 gboolean nm_utils_is_uuid (const char *str);
 
+/**
+ * NM_UTILS_INET_ADDRSTRLEN:
+ *
+ * Defines the minimal length for a char buffer that is suitable as @dst argument
+ * for both nm_utils_inet4_ntop() and nm_utils_inet6_ntop().
+ **/
+#define NM_UTILS_INET_ADDRSTRLEN     INET6_ADDRSTRLEN
+const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
+const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
+
 G_END_DECLS
 
 #endif /* NM_UTILS_H */

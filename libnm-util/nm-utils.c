@@ -2273,3 +2273,58 @@ nm_utils_is_uuid (const char *str)
 
 	return FALSE;
 }
+
+static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
+
+/**
+ * nm_utils_inet4_ntop:
+ * @inaddr: the address that should be converted to string.
+ * @dst: the destination buffer, it must contain at least %INET_ADDRSTRLEN
+ *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
+ *  a pointer to an internal, static buffer (shared with nm_utils_inet6_ntop()).
+ *  Beware, that the internal buffer will be overwritten with ever new call
+ *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
+ *  own @dst buffer. Also, using the internal buffer is not thread safe. When
+ *  in doubt, pass your own @dst buffer to avoid these issues.
+ *
+ * Wrapper for inet_ntop.
+ *
+ * Returns: the input buffer @dst, or a pointer to an
+ *  internal, static buffer. This function cannot fail.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
+{
+	return inet_ntop (AF_INET, &inaddr, dst ? dst : _nm_utils_inet_ntop_buffer,
+	                  INET_ADDRSTRLEN);
+}
+
+/**
+ * nm_utils_inet6_ntop:
+ * @in6addr: the address that should be converted to string.
+ * @dst: the destination buffer, it must contain at least %INET6_ADDRSTRLEN
+ *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
+ *  a pointer to an internal, static buffer (shared with nm_utils_inet4_ntop()).
+ *  Beware, that the internal buffer will be overwritten with ever new call
+ *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
+ *  own @dst buffer. Also, using the internal buffer is not thread safe. When
+ *  in doubt, pass your own @dst buffer to avoid these issues.
+ *
+ * Wrapper for inet_ntop.
+ *
+ * Returns: the input buffer @dst, or a pointer to an
+ *  internal, static buffer. %NULL is not allowed as @in6addr,
+ *  otherwise, this function cannot fail.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
+{
+	g_return_val_if_fail (in6addr, NULL);
+	return inet_ntop (AF_INET6, in6addr, dst ? dst : _nm_utils_inet_ntop_buffer,
+	                  INET6_ADDRSTRLEN);
+}
+
