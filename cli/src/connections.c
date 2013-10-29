@@ -201,8 +201,13 @@ static ArgsInfo args_info;
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
 /* for readline TAB completion */
-static const char *nmc_completion_con_type = NULL;
-static NMSetting *nmc_completion_setting = NULL;
+typedef struct {
+	NmCli *nmc;
+	const char *con_type;
+	NMConnection *connection;
+	NMSetting *setting;
+} TabCompletionInfo;
+static TabCompletionInfo nmc_tab_completion = {NULL, NULL, NULL, NULL};
 
 static void
 usage (void)
@@ -4617,7 +4622,7 @@ gen_setting_names (char *text, int state)
 		len = strlen (text);
 	}
 
-	valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
+	valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
 	if (!valid_settings_arr)
 		return NULL;
 	while (valid_settings_arr[list_idx].name) {
@@ -4654,12 +4659,12 @@ gen_property_names (char *text, int state)
 
 		strv = g_strsplit (p1+1, ".", 2);
 
-		valid_settings_arr = get_valid_settings_array (nmc_completion_con_type);
+		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
 		setting_name = check_valid_name (strv[0], valid_settings_arr, NULL);
 		setting = nmc_setting_new_for_name (setting_name);
 	} else {
 		/* Else take the current setting, if any */
-		setting = nmc_completion_setting ? g_object_ref (nmc_completion_setting) : NULL;
+		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
 	}
 
 	if (setting) {
@@ -4672,6 +4677,38 @@ gen_property_names (char *text, int state)
 	g_strfreev (valid_props);
 	if (setting)
 		g_object_unref (setting);
+	return ret;
+}
+
+static char *
+gen_compat_devices (char *text, int state)
+{
+	int i, j = 0;
+	const GPtrArray *devices;
+	const char **compatible_devices;
+	char *ret;
+
+	devices = nm_client_get_devices (nmc_tab_completion.nmc->client);
+	if (!devices || devices->len < 1)
+		return NULL;
+
+	compatible_devices = g_new (const char *, devices->len + 1);
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *dev = g_ptr_array_index (devices, i);
+		const char *ifname = nm_device_get_ip_iface (dev);
+		NMDevice *device = NULL;
+		const char *spec_object = NULL;
+
+		if (find_device_for_connection (nmc_tab_completion.nmc, nmc_tab_completion.connection,
+		                                ifname, NULL, NULL, &device, &spec_object, NULL)) {
+			compatible_devices[j++] = ifname;
+		}
+	}
+	compatible_devices[j] = NULL;
+
+	ret = gen_func_basic (text, state, compatible_devices);
+
+	g_free (compatible_devices);
 	return ret;
 }
 
@@ -4849,6 +4886,8 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 				           || should_complete_cmd (line, end, "verify", &num, NULL)) {
 					if (num <= 2)
 						generator_func = gen_cmd_verify0;
+				} else if (should_complete_cmd (line, end, "activate", &num, NULL) && num <= 2) {
+					generator_func = gen_compat_devices;
 				} else if (should_complete_cmd (line, end, "help", &num, NULL) && num <= 2)
 					generator_func = gen_nmcli_cmds_menu;
 			}
@@ -6132,7 +6171,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nm_connection_add_setting (connection, setting);
 				}
 				/* Set global variable for use in TAB completion */
-				nmc_completion_setting = setting;
+				nmc_tab_completion.setting = setting;
 
 				/* Switch to level 1 */
 				menu_switch_to_level1 (&menu_ctx, setting, setting_name, nmc->editor_prompt_color);
@@ -6205,7 +6244,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (ss == menu_ctx.curr_setting) {
 						/* If we removed the setting we are in, go up */
 						menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
-						nmc_completion_setting = NULL;  /* for TAB completion */
+						nmc_tab_completion.setting = NULL;  /* for TAB completion */
 					}
 				} else {
 					GError *tmp_err = NULL;
@@ -6227,7 +6266,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
 								menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
-								nmc_completion_setting = NULL;  /* for TAB completion */
+								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
 						} else
 							printf (_("Error: %s properties, nor it is a setting name.\n"),
@@ -6491,7 +6530,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
 				menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
-				nmc_completion_setting = NULL;  /* for TAB completion */
+				nmc_tab_completion.setting = NULL;  /* for TAB completion */
 			}
 			break;
 
@@ -6877,8 +6916,10 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	printf (_("Type 'describe [<setting>.<prop>]' for detailed property description."));
 	printf ("\n\n");
 
-	/* Set global variable for use in TAB completion */
-	nmc_completion_con_type = connection_type;
+	/* Set global variables for use in TAB completion */
+	nmc_tab_completion.nmc = nmc;
+	nmc_tab_completion.con_type = connection_type;
+	nmc_tab_completion.connection = connection;
 
 	/* Run menu loop */
 	editor_menu_main (nmc, connection, connection_type);
