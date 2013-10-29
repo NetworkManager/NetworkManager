@@ -61,12 +61,14 @@ typedef struct {
 	char *route6file;
 	int route6file_wd;
 
-	char *unmanaged;
+	char *unmanaged_spec;
+	char *unrecognized_spec;
 } NMIfcfgConnectionPrivate;
 
 enum {
 	PROP_0,
-	PROP_UNMANAGED,
+	PROP_UNMANAGED_SPEC,
+	PROP_UNRECOGNIZED_SPEC,
 	LAST_PROP
 };
 
@@ -105,7 +107,8 @@ nm_ifcfg_connection_new (NMConnection *source,
 {
 	GObject *object;
 	NMConnection *tmp;
-	char *unmanaged = NULL;
+	char *unhandled_spec = NULL;
+	const char *unmanaged_spec = NULL, *unrecognized_spec = NULL;
 	gboolean update_unsaved = TRUE;
 
 	g_assert (source || full_path);
@@ -117,7 +120,7 @@ nm_ifcfg_connection_new (NMConnection *source,
 		char *keyfile = NULL, *routefile = NULL, *route6file = NULL;
 
 		tmp = connection_from_file (full_path, NULL, NULL, NULL,
-		                            &unmanaged,
+		                            &unhandled_spec,
 		                            &keyfile,
 		                            &routefile,
 		                            &route6file,
@@ -133,8 +136,14 @@ nm_ifcfg_connection_new (NMConnection *source,
 		update_unsaved = FALSE;
 	}
 
+	if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unmanaged:"))
+		unmanaged_spec = unhandled_spec + strlen ("unmanaged:");
+	else if (unhandled_spec && g_str_has_prefix (unhandled_spec, "unrecognized:"))
+		unrecognized_spec = unhandled_spec + strlen ("unrecognized:");
+
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
-	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
+	                                   NM_IFCFG_CONNECTION_UNMANAGED_SPEC, unmanaged_spec,
+	                                   NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, unrecognized_spec,
 	                                   NULL);
 	if (object) {
 		/* Update our settings with what was read from the file */
@@ -152,6 +161,7 @@ nm_ifcfg_connection_new (NMConnection *source,
 	}
 
 	g_object_unref (tmp);
+	g_free (unhandled_spec);
 	return (NMIfcfgConnection *) object;
 }
 
@@ -234,7 +244,15 @@ nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 {
 	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
 
-	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
+	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged_spec;
+}
+
+const char *
+nm_ifcfg_connection_get_unrecognized_spec (NMIfcfgConnection *self)
+{
+	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
+
+	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unrecognized_spec;
 }
 
 static void
@@ -344,8 +362,11 @@ set_property (GObject *object, guint prop_id,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_UNMANAGED:
-		priv->unmanaged = g_value_dup_string (value);
+	case PROP_UNMANAGED_SPEC:
+		priv->unmanaged_spec = g_value_dup_string (value);
+		break;
+	case PROP_UNRECOGNIZED_SPEC:
+		priv->unrecognized_spec = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -360,8 +381,11 @@ get_property (GObject *object, guint prop_id,
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_UNMANAGED:
-		g_value_set_string (value, priv->unmanaged);
+	case PROP_UNMANAGED_SPEC:
+		g_value_set_string (value, priv->unmanaged_spec);
+		break;
+	case PROP_UNRECOGNIZED_SPEC:
+		g_value_set_string (value, priv->unrecognized_spec);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -386,12 +410,19 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 
 	/* Properties */
 	g_object_class_install_property
-		(object_class, PROP_UNMANAGED,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED,
-						  "Unmanaged",
-						  "Unmanaged",
+		(object_class, PROP_UNMANAGED_SPEC,
+		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED_SPEC,
+						  "Unmanaged spec",
+						  "Unmanaged spec",
 						  NULL,
 						  G_PARAM_READWRITE));
+	g_object_class_install_property
+		(object_class, PROP_UNRECOGNIZED_SPEC,
+		 g_param_spec_string (NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC,
+		                      "Unrecognized spec",
+		                      "Unrecognized spec",
+		                      NULL,
+		                      G_PARAM_READWRITE));
 
 	signals[IFCFG_CHANGED] =
 		g_signal_new ("ifcfg-changed",

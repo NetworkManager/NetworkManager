@@ -33,7 +33,8 @@ G_BEGIN_DECLS
 #define NM_IS_IFCFG_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IFCFG_CONNECTION))
 #define NM_IFCFG_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionClass))
 
-#define NM_IFCFG_CONNECTION_UNMANAGED "unmanaged"
+#define NM_IFCFG_CONNECTION_UNMANAGED_SPEC    "unmanaged-spec"
+#define NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC "unrecognized-spec"
 
 typedef struct {
 	NMSettingsConnection parent;
@@ -56,6 +57,7 @@ void        nm_ifcfg_connection_set_path (NMIfcfgConnection *self,
                                           const char *ifcfg_path);
 
 const char *nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self);
+const char *nm_ifcfg_connection_get_unrecognized_spec (NMIfcfgConnection *self);
 
 gboolean nm_ifcfg_connection_update (NMIfcfgConnection *self,
                                      GHashTable *new_settings,

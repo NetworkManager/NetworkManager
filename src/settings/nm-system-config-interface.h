@@ -53,6 +53,7 @@ GObject * nm_system_config_factory (void);
 #define NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME "hostname"
 
 #define NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED "unmanaged-specs-changed"
+#define NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED "unrecognized-specs-changed"
 #define NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED "connection-added"
 
 typedef enum {
@@ -100,19 +101,22 @@ struct _NMSystemConfigInterface {
 	 * service, and each element must be allocated using g_malloc() or its
 	 * variants (g_strdup, g_strdup_printf, etc).
 	 *
-	 * Each string in the list must follow the format <method>:<data>, where
-	 * the method and data are one of the following:
-	 *
-	 * Method: mac    Data: device MAC address formatted with leading zeros and
-	 *                      lowercase letters, like 00:0a:0b:0c:0d:0e
-	 *
-	 * Method: s390-subchannels  Data: string of 2 or 3 s390 subchannels
-	 *                                 separated by commas (,) that identify the
-	 *                                 device, like "0.0.09a0,0.0.09a1,0.0.09a2".
-	 *                                 The string may contain only the following
-	 *                                 characters: [a-fA-F0-9,.]
+	 * Each string in the list must be in one of the formats recognized by
+	 * nm_device_spec_match_list().
 	 */
 	GSList * (*get_unmanaged_specs) (NMSystemConfigInterface *config);
+
+	/*
+	 * Return a string list of specifications of devices for which at least
+	 * one non-NetworkManager-based configuration is defined. Returned list
+	 * will be freed by the system settings service, and each element must be
+	 * allocated using g_malloc() or its variants (g_strdup, g_strdup_printf,
+	 * etc).
+	 *
+	 * Each string in the list must be in one of the formats recognized by
+	 * nm_device_spec_match_list().
+	 */
+	GSList * (*get_unrecognized_specs) (NMSystemConfigInterface *config);
 
 	/*
 	 * Initialize the plugin-specific connection and return a new
@@ -134,6 +138,9 @@ struct _NMSystemConfigInterface {
 
 	/* Emitted when the list of unmanaged device specifications changes */
 	void (*unmanaged_specs_changed) (NMSystemConfigInterface *config);
+
+	/* Emitted when the list of devices with unrecognized connections changes */
+	void (*unrecognized_specs_changed) (NMSystemConfigInterface *config);
 };
 
 GType nm_system_config_interface_get_type (void);
@@ -146,6 +153,7 @@ GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *con
 void nm_system_config_interface_reload_connections (NMSystemConfigInterface *config);
 
 GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config);
+GSList *nm_system_config_interface_get_unrecognized_specs (NMSystemConfigInterface *config);
 
 NMSettingsConnection *nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                                                  NMConnection *connection,

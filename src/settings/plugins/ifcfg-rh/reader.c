@@ -4739,34 +4739,53 @@ vlan_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
-static char *
-get_unmanaged_spec (shvarFile *ifcfg)
+static NMConnection *
+create_unhandled_connection (const char *filename, shvarFile *ifcfg,
+                             const char *type, char **out_spec)
 {
-	char *value, *unmanaged;
+	NMConnection *connection;
+	NMSetting *s_con;
+	char *value;
 
+	g_assert (out_spec != NULL);
+
+	connection = nm_connection_new ();
+
+	/* Get NAME, UUID, etc. We need to set a connection type (generic) and add
+	 * an empty type-specific setting as well, to make sure it passes
+	 * nm_connection_verify() later.
+	 */
+	s_con = make_connection_setting (filename, ifcfg, NM_SETTING_GENERIC_SETTING_NAME,
+	                                 NULL, NULL);
+	nm_connection_add_setting (connection, s_con);
+
+	nm_connection_add_setting (connection, nm_setting_generic_new ());
+
+	/* Get a spec */
 	value = svGetValue (ifcfg, "HWADDR", FALSE);
 	if (value) {
 		char *lower = g_ascii_strdown (value, -1);
-		unmanaged = g_strdup_printf ("mac:%s", lower);
+		*out_spec = g_strdup_printf ("%s:mac:%s", type, lower);
 		g_free (lower);
 		g_free (value);
-		return unmanaged;
+		return connection;
 	}
 
 	value = svGetValue (ifcfg, "SUBCHANNELS", FALSE);
 	if (value) {
-		unmanaged = g_strdup_printf ("s390-subchannels:%s", value);
+		*out_spec = g_strdup_printf ("%s:s390-subchannels:%s", type, value);
 		g_free (value);
-		return unmanaged;
+		return connection;
 	}
 
 	value = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (value) {
-		unmanaged = g_strdup_printf ("interface-name:%s", value);
+		*out_spec = g_strdup_printf ("%s:interface-name:%s", type, value);
 		g_free (value);
-		return unmanaged;
+		return connection;
 	}
 
+	g_object_unref (connection);
 	return NULL;
 }
 
@@ -4832,7 +4851,7 @@ connection_from_file (const char *filename,
                       const char *network_file,  /* for unit tests only */
                       const char *test_type,     /* for unit tests only */
                       const char *iscsiadm_path, /* for unit tests only */
-                      char **out_unmanaged,
+                      char **out_unhandled,
                       char **out_keyfile,
                       char **out_routefile,
                       char **out_route6file,
@@ -4846,8 +4865,8 @@ connection_from_file (const char *filename,
 	const char *ifcfg_name = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
-	if (out_unmanaged)
-		g_return_val_if_fail (*out_unmanaged == NULL, NULL);
+	if (out_unhandled)
+		g_return_val_if_fail (*out_unhandled == NULL, NULL);
 	if (out_keyfile)
 		g_return_val_if_fail (*out_keyfile == NULL, NULL);
 	if (out_routefile)
@@ -4877,22 +4896,11 @@ connection_from_file (const char *filename,
 	}
 
 	if (!svTrueValue (parsed, "NM_CONTROLLED", TRUE)) {
-		NMSetting *s_con;
+		g_assert (out_unhandled != NULL);
 
-		g_assert (out_unmanaged != NULL);
-
-		connection = nm_connection_new ();
-
-		/* Get NAME, UUID, etc. We need to set a connection type (generic) and add
-		 * an empty type-specific setting as well, to make sure it passes
-		 * nm_connection_verify() later.
-		 */
-		s_con = make_connection_setting (filename, parsed, NM_SETTING_GENERIC_SETTING_NAME,
-		                                 NULL, NULL);
-		nm_connection_add_setting (connection, s_con);
-		nm_connection_add_setting (connection, nm_setting_generic_new ());
-
-		*out_unmanaged = get_unmanaged_spec (parsed);
+		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
+		if (!connection)
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
 		goto done;
 	}
 
@@ -4977,7 +4985,12 @@ connection_from_file (const char *filename,
 	else if (!strcasecmp (type, TYPE_BRIDGE))
 		connection = bridge_connection_from_ifcfg (filename, parsed, error);
 	else {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Unknown connection type '%s'", type);
+		g_assert (out_unhandled != NULL);
+
+		connection = create_unhandled_connection (filename, parsed, "unrecognized", out_unhandled);
+		if (!connection)
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: connection type was unrecognized but device was not uniquely identified; device may be managed");
+		goto done;
 	}
 	g_free (type);
 

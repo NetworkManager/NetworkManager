@@ -1,0 +1,7 @@
+TYPE=PPP-over-InfiniBand
+NAME=U Can't Touch This
+DEVICE=pppoipoib0
+HWADDR=00:11:22:33
+BOOTPROTO=dhcp
+ONBOOT=yes
+

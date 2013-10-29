@@ -84,6 +84,14 @@ interface_init (gpointer g_iface)
 				  g_cclosure_marshal_VOID__VOID,
 				  G_TYPE_NONE, 0);
 
+	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED,
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              G_STRUCT_OFFSET (NMSystemConfigInterface, unrecognized_specs_changed),
+	              NULL, NULL,
+	              g_cclosure_marshal_VOID__VOID,
+	              G_TYPE_NONE, 0);
+
 	initialized = TRUE;
 }
 
@@ -153,6 +161,16 @@ nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_specs)
 		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_specs (config);
+	return NULL;
+}
+
+GSList *
+nm_system_config_interface_get_unrecognized_specs (NMSystemConfigInterface *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unrecognized_specs)
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unrecognized_specs (config);
 	return NULL;
 }
 

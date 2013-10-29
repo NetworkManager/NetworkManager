@@ -293,7 +293,7 @@ test_read_unmanaged (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unmanaged = NULL;
+	char *unhandled_spec = NULL;
 	GError *error = NULL;
 	const char *expected_id = "System test-nm-controlled";
 	guint64 expected_timestamp = 0;
@@ -301,14 +301,14 @@ test_read_unmanaged (void)
 
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
 	                                   NULL, TYPE_ETHERNET, NULL,
-	                                   &unmanaged,
+	                                   &unhandled_spec,
 	                                   NULL, NULL, NULL, &error, NULL);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert_cmpstr (unmanaged, ==, "mac:00:11:22:33:f8:9f");
+	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:mac:00:11:22:33:f8:9f");
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -317,7 +317,7 @@ test_read_unmanaged (void)
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
-	g_free (unmanaged);
+	g_free (unhandled_spec);
 	g_object_unref (connection);
 }
 
@@ -326,7 +326,7 @@ test_read_unmanaged_unrecognized (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unmanaged = NULL;
+	char *unhandled_spec = NULL;
 	GError *error = NULL;
 	const char *expected_id = "PigeonNet";
 	guint64 expected_timestamp = 0;
@@ -334,14 +334,45 @@ test_read_unmanaged_unrecognized (void)
 
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
 	                                   NULL, NULL, NULL,
-	                                   &unmanaged,
+	                                   &unhandled_spec,
 	                                   NULL, NULL, NULL, &error, NULL);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert_cmpstr (unmanaged, ==, "interface-name:ipoac0");
+	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:interface-name:ipoac0");
+
+	/* ===== CONNECTION SETTING ===== */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
+
+	g_object_unref (connection);
+}
+
+static void
+test_read_unrecognized (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	char *unhandled_spec = NULL;
+	GError *error = NULL;
+	const char *expected_id = "U Can't Touch This";
+	guint64 expected_timestamp = 0;
+	gboolean success;
+
+	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
+	                                   NULL, NULL, NULL,
+	                                   &unhandled_spec,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert_cmpstr (unhandled_spec, ==, "unrecognized:mac:00:11:22:33");
 
 	/* ===== CONNECTION SETTING ===== */
 	s_con = nm_connection_get_setting_connection (connection);
@@ -13169,6 +13200,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func (TPATH "unmanaged", test_read_unmanaged);
 	g_test_add_func (TPATH "unmanaged-unrecognized", test_read_unmanaged_unrecognized);
+	g_test_add_func (TPATH "unrecognized", test_read_unrecognized);
 	g_test_add_func (TPATH "basic", test_read_basic);
 	g_test_add_func (TPATH "variables-corner-cases", test_read_variables_corner_cases);
 	g_test_add_data_func (TPATH "no-prefix/8", GUINT_TO_POINTER (8), test_read_wired_static_no_prefix);

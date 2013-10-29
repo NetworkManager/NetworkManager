@@ -115,6 +115,7 @@ static void impl_settings_save_hostname (NMSettings *self,
 #include "nm-settings-glue.h"
 
 static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
+static void unrecognized_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
 
 static void connection_provider_init (NMConnectionProvider *cp_class);
 
@@ -136,6 +137,7 @@ typedef struct {
 	gboolean connections_loaded;
 	GHashTable *connections;
 	GSList *unmanaged_specs;
+	GSList *unrecognized_specs;
 	GSList *get_connections_cache;
 } NMSettingsPrivate;
 
@@ -201,11 +203,14 @@ load_connections (NMSettings *self)
 		                  G_CALLBACK (plugin_connection_added), self);
 		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
 		                  G_CALLBACK (unmanaged_specs_changed), self);
+		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED,
+		                  G_CALLBACK (unrecognized_specs_changed), self);
 	}
 
 	priv->connections_loaded = TRUE;
 
 	unmanaged_specs_changed (NULL, self);
+	unrecognized_specs_changed (NULL, self);
 
 	g_signal_emit (self, signals[CONNECTIONS_LOADED], 0);
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTIONS_LOADED);
@@ -356,15 +361,6 @@ nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 	return (NMSettingsConnection *) g_hash_table_lookup (priv->connections, path);
 }
 
-static void
-clear_unmanaged_specs (NMSettings *self)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	g_slist_free_full (priv->unmanaged_specs, g_free);
-	priv->unmanaged_specs = NULL;
-}
-
 static char*
 uscore_to_wincaps (const char *uscore)
 {
@@ -466,16 +462,40 @@ nm_settings_get_hostname (NMSettings *self)
 }
 
 static gboolean
-find_unmanaged_device (NMSettings *self, const char *needle)
+find_spec (GSList *spec_list, const char *spec)
+{
+	GSList *iter;
+
+	for (iter = spec_list; iter; iter = g_slist_next (iter)) {
+		if (!strcmp ((const char *) iter->data, spec))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static void
+update_specs (NMSettings *self, GSList **specs_ptr,
+              GSList * (*get_specs_func) (NMSystemConfigInterface *))
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 
-	for (iter = priv->unmanaged_specs; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((const char *) iter->data, needle))
-			return TRUE;
+	g_slist_free_full (*specs_ptr, g_free);
+	*specs_ptr = NULL;
+
+	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+		GSList *specs, *specs_iter;
+
+		specs = get_specs_func (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
+		for (specs_iter = specs; specs_iter; specs_iter = specs_iter->next) {
+			if (!find_spec (*specs_ptr, (const char *) specs_iter->data)) {
+				*specs_ptr = g_slist_prepend (*specs_ptr, specs_iter->data);
+			} else
+				g_free (specs_iter->data);
+		}
+
+		g_slist_free (specs);
 	}
-	return FALSE;
 }
 
 static void
@@ -484,26 +504,21 @@ unmanaged_specs_changed (NMSystemConfigInterface *config,
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
 
-	clear_unmanaged_specs (self);
-
-	/* Ask all the plugins for their unmanaged specs */
-	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		GSList *specs, *specs_iter;
-
-		specs = nm_system_config_interface_get_unmanaged_specs (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
-		for (specs_iter = specs; specs_iter; specs_iter = specs_iter->next) {
-			if (!find_unmanaged_device (self, (const char *) specs_iter->data)) {
-				priv->unmanaged_specs = g_slist_prepend (priv->unmanaged_specs, specs_iter->data);
-			} else
-				g_free (specs_iter->data);
-		}
-
-		g_slist_free (specs);
-	}
-
+	update_specs (self, &priv->unmanaged_specs,
+	              nm_system_config_interface_get_unmanaged_specs);
 	g_object_notify (G_OBJECT (self), NM_SETTINGS_UNMANAGED_SPECS);
+}
+
+static void
+unrecognized_specs_changed (NMSystemConfigInterface *config,
+                               gpointer user_data)
+{
+	NMSettings *self = NM_SETTINGS (user_data);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	update_specs (self, &priv->unrecognized_specs,
+	              nm_system_config_interface_get_unrecognized_specs);
 }
 
 static void
@@ -1430,6 +1445,10 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		}
 	}
 
+	/* See if there's a known non-NetworkManager configuration for the device */
+	if (nm_device_spec_match_list (device, priv->unrecognized_specs))
+		return TRUE;
+
 	return FALSE;
 }
 
@@ -1698,6 +1717,7 @@ nm_settings_new (GError **error)
 	}
 
 	unmanaged_specs_changed (NULL, self);
+	unrecognized_specs_changed (NULL, self);
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
@@ -1757,7 +1777,8 @@ finalize (GObject *object)
 	g_hash_table_destroy (priv->connections);
 	g_slist_free (priv->get_connections_cache);
 
-	clear_unmanaged_specs (self);
+	g_slist_free_full (priv->unmanaged_specs, g_free);
+	g_slist_free_full (priv->unrecognized_specs, g_free);
 
 	g_slist_free_full (priv->plugins, g_object_unref);
 

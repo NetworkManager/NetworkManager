@@ -163,6 +163,9 @@ _internal_new_connection (SCPluginIfcfg *self,
 			device_id = spec;
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' / device '%s' "
 		              "due to NM_CONTROLLED=no.", cid, device_id);
+	} else if (nm_ifcfg_connection_get_unrecognized_spec (connection)) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' "
+		              "of unrecognized type.", cid);
 	}
 
 	/* watch changes of ifcfg hardlinks */
@@ -178,21 +181,24 @@ static void
 remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	gboolean managed = FALSE;
+	gboolean unmanaged, unrecognized;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (connection != NULL);
 
-	managed = !nm_ifcfg_connection_get_unmanaged_spec (connection);
+	unmanaged = !!nm_ifcfg_connection_get_unmanaged_spec (connection);
+	unrecognized = !!nm_ifcfg_connection_get_unrecognized_spec (connection);
 
 	g_object_ref (connection);
 	g_hash_table_remove (priv->connections, nm_connection_get_uuid (NM_CONNECTION (connection)));
 	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
 
-	/* Emit unmanaged changes _after_ removing the connection */
-	if (managed == FALSE)
+	/* Emit changes _after_ removing the connection */
+	if (unmanaged)
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+	if (unrecognized)
+		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
 }
 
 static NMIfcfgConnection *
@@ -238,6 +244,8 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	GError *error = NULL;
 	gboolean ignore_error = FALSE;
 	const char *new_unmanaged = NULL, *old_unmanaged = NULL;
+	const char *new_unrecognized = NULL, *old_unrecognized = NULL;
+	gboolean unmanaged_changed, unrecognized_changed;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (path != NULL);
@@ -261,12 +269,12 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		/* New connection */
 		new = _internal_new_connection (self, path, NULL, NULL);
 		if (new) {
-			if (nm_ifcfg_connection_get_unmanaged_spec (new)) {
+			if (nm_ifcfg_connection_get_unmanaged_spec (new))
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-			} else {
-				/* Only managed connections are announced to the settings service */
+			else if (nm_ifcfg_connection_get_unrecognized_spec (new))
+				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
+			else
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
-			}
 		}
 		return;
 	}
@@ -289,25 +297,30 @@ connection_new_or_changed (SCPluginIfcfg *self,
 
 	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (existing));
 	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
+	unmanaged_changed = g_strcmp0 (old_unmanaged, new_unmanaged);
 
-	/* When interface is unmanaged or the connections and unmanaged specs are the same
-	 * there's nothing to do */
-	if (   (g_strcmp0 (old_unmanaged, new_unmanaged) == 0 && new_unmanaged != NULL)
-	    || (   nm_connection_compare (NM_CONNECTION (existing),
-	                                  NM_CONNECTION (new),
-	                                  NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
-	                                    NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
-	        && g_strcmp0 (old_unmanaged, new_unmanaged) == 0)) {
+	old_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (NM_IFCFG_CONNECTION (existing));
+	new_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (NM_IFCFG_CONNECTION (new));
+	unrecognized_changed = g_strcmp0 (old_unrecognized, new_unrecognized);
 
+	if (   !unmanaged_changed
+	    && !unrecognized_changed
+	    && nm_connection_compare (NM_CONNECTION (existing),
+	                              NM_CONNECTION (new),
+	                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+	                                  NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 		g_object_unref (new);
 		return;
 	}
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
-	g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
+	g_object_set (existing,
+	              NM_IFCFG_CONNECTION_UNMANAGED_SPEC, new_unmanaged,
+	              NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, new_unrecognized,
+	              NULL);
 
-	if (new_unmanaged) {
-		if (!old_unmanaged) {
+	if (new_unmanaged || new_unrecognized) {
+		if (!old_unmanaged && !old_unrecognized) {
 			g_object_ref (existing);
 			/* Unexport the connection by telling the settings service it's
 			 * been removed.
@@ -325,11 +338,15 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			                     existing);
 		}
 	} else {
-		if (old_unmanaged) {  /* now managed */
-			const char *cid = nm_connection_get_id (NM_CONNECTION (new));
+		const char *cid = nm_connection_get_id (NM_CONNECTION (new));
 
+		if (old_unmanaged /* && !new_unmanaged */) {
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Managing connection '%s' and its "
 			              "device because NM_CONTROLLED was true.", cid);
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
+		} else if (old_unrecognized /* && !new_unrecognized */) {
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Managing connection '%s' "
+			              "because it is now a recognized type.", cid);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
 		}
 
@@ -343,8 +360,10 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	}
 	g_object_unref (new);
 
-	if (g_strcmp0 (old_unmanaged, new_unmanaged))
+	if (unmanaged_changed)
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+	if (unrecognized_changed)
+		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
 }
 
 static void
@@ -482,7 +501,8 @@ get_connections (NMSystemConfigInterface *config)
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		if (!nm_ifcfg_connection_get_unmanaged_spec (connection))
+		if (   !nm_ifcfg_connection_get_unmanaged_spec (connection)
+		    && !nm_ifcfg_connection_get_unrecognized_spec (connection))
 			list = g_slist_prepend (list, connection);
 	}
 
@@ -498,18 +518,19 @@ reload_connections (NMSystemConfigInterface *config)
 }
 
 static GSList *
-get_unmanaged_specs (NMSystemConfigInterface *config)
+get_unhandled_specs (NMSystemConfigInterface *config,
+                     const char *property)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
 	GSList *list = NULL, *list_iter;
 	GHashTableIter iter;
-	NMIfcfgConnection *connection;
-	const char *spec;
+	gpointer connection;
+	char *spec;
 	gboolean found;
 
 	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		spec = nm_ifcfg_connection_get_unmanaged_spec (connection);
+	while (g_hash_table_iter_next (&iter, NULL, &connection)) {
+		g_object_get (connection, property, &spec, NULL);
 		if (spec) {
 			/* Ignore duplicates */
 			for (list_iter = list, found = FALSE; list_iter; list_iter = g_slist_next (list_iter)) {
@@ -518,11 +539,25 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 					break;
 				}
 			}
-			if (!found)
-				list = g_slist_prepend (list, g_strdup (spec));
+			if (found)
+				g_free (spec);
+			else
+				list = g_slist_prepend (list, spec);
 		}
 	}
 	return list;
+}
+
+static GSList *
+get_unmanaged_specs (NMSystemConfigInterface *config)
+{
+	return get_unhandled_specs (config, NM_IFCFG_CONNECTION_UNMANAGED_SPEC);
+}
+
+static GSList *
+get_unrecognized_specs (NMSystemConfigInterface *config)
+{
+	return get_unhandled_specs (config, NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC);
 }
 
 static NMSettingsConnection *
@@ -678,7 +713,9 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	}
 
 	connection = find_by_path (plugin, in_ifcfg);
-	if (!connection || nm_ifcfg_connection_get_unmanaged_spec (connection)) {
+	if (   !connection
+	    || nm_ifcfg_connection_get_unmanaged_spec (connection)
+	    || nm_ifcfg_connection_get_unrecognized_spec (connection)) {
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
 		             NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -930,6 +967,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	system_config_interface_class->add_connection = add_connection;
 	system_config_interface_class->reload_connections = reload_connections;
 	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
+	system_config_interface_class->get_unrecognized_specs = get_unrecognized_specs;
 	system_config_interface_class->init = init;
 }
 
