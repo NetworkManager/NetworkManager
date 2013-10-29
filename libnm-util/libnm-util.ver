@@ -299,6 +299,7 @@ global:
 	nm_setting_generic_error_get_type;
 	nm_setting_generic_error_quark;
 	nm_setting_generic_get_type;
+	nm_setting_generic_new;
 	nm_setting_get_name;
 	nm_setting_get_secret_flags;
 	nm_setting_get_type;
