@@ -320,6 +320,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 
 	if (new_unmanaged) {
 		if (!old_unmanaged) {
+			g_object_ref (existing);
 			/* Unexport the connection by telling the settings service it's
 			 * been removed, and notify the settings service by signalling that
 			 * unmanaged specs have changed.
@@ -331,6 +332,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 
 			g_object_set (existing, NM_IFCFG_CONNECTION_UNMANAGED, new_unmanaged, NULL);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+			g_object_unref (existing);
 		}
 	} else {
 		if (old_unmanaged) {  /* now managed */
