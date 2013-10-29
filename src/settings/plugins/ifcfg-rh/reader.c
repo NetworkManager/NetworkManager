@@ -49,6 +49,7 @@
 #include <nm-setting-bridge.h>
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-dcb.h>
+#include <nm-setting-generic.h>
 #include <nm-utils.h>
 
 #include "wifi-utils.h"
@@ -3403,8 +3404,6 @@ make_wireless_security_setting (shvarFile *ifcfg,
 
 static NMSetting *
 make_wireless_setting (shvarFile *ifcfg,
-                       gboolean nm_controlled,
-                       char **unmanaged,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
@@ -3417,13 +3416,6 @@ make_wireless_setting (shvarFile *ifcfg,
 	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
-
-			if (!nm_controlled) {
-				*unmanaged = g_strdup_printf ("mac:%02x:%02x:%02x:%02x:%02x:%02x",
-				                              array->data[0], array->data[1], array->data[2],
-				                              array->data[3], array->data[4], array->data[5]);
-			}
-
 			g_byte_array_free (array, TRUE);
 		}
 	} else {
@@ -3523,16 +3515,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, array, NULL);
 		g_byte_array_free (array, TRUE);
 		g_free (value);
-	} else {
-		/* Only fail on lack of SSID if device is managed */
-		if (nm_controlled) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing SSID");
-			goto error;
-		}
 	}
-
-	if (!nm_controlled)
-		goto done;
 
 	value = svGetValue (ifcfg, "MODE", FALSE);
 	if (value) {
@@ -3611,7 +3594,6 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-done:
 	return NM_SETTING (s_wireless);
 
 error:
@@ -3623,8 +3605,6 @@ error:
 static NMConnection *
 wireless_connection_from_ifcfg (const char *file,
                                 shvarFile *ifcfg,
-                                gboolean nm_controlled,
-                                char **unmanaged,
                                 GError **error)
 {
 	NMConnection *connection = NULL;
@@ -3645,7 +3625,7 @@ wireless_connection_from_ifcfg (const char *file,
 	connection = nm_connection_new ();
 
 	/* Wireless */
-	wireless_setting = make_wireless_setting (ifcfg, nm_controlled, unmanaged, error);
+	wireless_setting = make_wireless_setting (ifcfg, error);
 	if (!wireless_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -3658,23 +3638,21 @@ wireless_connection_from_ifcfg (const char *file,
 	else
 		printable_ssid = g_strdup_printf ("unmanaged");
 
-	if (nm_controlled) {
-		mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));
-		if (mode && !strcmp (mode, "adhoc"))
-			adhoc = TRUE;
+	mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));
+	if (mode && !strcmp (mode, "adhoc"))
+		adhoc = TRUE;
 
-		/* Wireless security */
-		security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, error);
-		if (*error) {
-			g_free (printable_ssid);
-			g_object_unref (connection);
-			return NULL;
-		}
-		if (security_setting) {
-			nm_connection_add_setting (connection, security_setting);
-			if (s_8021x)
-				nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-		}
+	/* Wireless security */
+	security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, error);
+	if (*error) {
+		g_free (printable_ssid);
+		g_object_unref (connection);
+		return NULL;
+	}
+	if (security_setting) {
+		nm_connection_add_setting (connection, security_setting);
+		if (s_8021x)
+			nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 	}
 
 	/* Connection */
@@ -3690,12 +3668,9 @@ wireless_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	/* Don't verify if unmanaged since we may not have an SSID or whatever */
-	if (nm_controlled) {
-		if (!nm_connection_verify (connection, error)) {
-			g_object_unref (connection);
-			return NULL;
-		}
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
 	}
 
 	return connection;
@@ -3704,8 +3679,6 @@ wireless_connection_from_ifcfg (const char *file,
 static NMSetting *
 make_wired_setting (shvarFile *ifcfg,
                     const char *file,
-                    gboolean nm_controlled,
-                    char **unmanaged,
                     NMSetting8021x **s_8021x,
                     GError **error)
 {
@@ -3733,13 +3706,6 @@ make_wired_setting (shvarFile *ifcfg,
 	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
-
-			if (!nm_controlled) {
-				*unmanaged = g_strdup_printf ("mac:%02x:%02x:%02x:%02x:%02x:%02x",
-				                              mac->data[0], mac->data[1], mac->data[2],
-				                              mac->data[3], mac->data[4], mac->data[5]);
-			}
-
 			g_byte_array_free (mac, TRUE);
 		}
 	} else {
@@ -3781,10 +3747,6 @@ make_wired_setting (shvarFile *ifcfg,
 
 				g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, array, NULL);
 				g_ptr_array_free (array, TRUE);
-
-				/* set the unmanaged spec too */
-				if (!nm_controlled && !*unmanaged)
-					*unmanaged = g_strdup_printf ("s390-subchannels:%s", value);
 			}
 			g_strfreev (chans);
 		}
@@ -3892,8 +3854,6 @@ error:
 static NMConnection *
 wired_connection_from_ifcfg (const char *file,
                              shvarFile *ifcfg,
-                             gboolean nm_controlled,
-                             char **unmanaged,
                              GError **error)
 {
 	NMConnection *connection = NULL;
@@ -3917,7 +3877,7 @@ wired_connection_from_ifcfg (const char *file,
 	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
 	if (!wired_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4004,8 +3964,6 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 static NMSetting *
 make_infiniband_setting (shvarFile *ifcfg,
                          const char *file,
-                         gboolean nm_controlled,
-                         char **unmanaged,
                          GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
@@ -4030,13 +3988,6 @@ make_infiniband_setting (shvarFile *ifcfg,
 	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_INFINIBAND, &mac, error)) {
 		if (mac) {
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
-
-			if (!nm_controlled) {
-				char *mac_str = nm_utils_hwaddr_ntoa (mac->data, ARPHRD_INFINIBAND);
-				*unmanaged = g_strdup_printf ("mac:%s", mac_str);
-				g_free (mac_str);
-			}
-
 			g_byte_array_free (mac, TRUE);
 		}
 	} else {
@@ -4070,8 +4021,6 @@ make_infiniband_setting (shvarFile *ifcfg,
 static NMConnection *
 infiniband_connection_from_ifcfg (const char *file,
                                   shvarFile *ifcfg,
-                                  gboolean nm_controlled,
-                                  char **unmanaged,
                                   GError **error)
 {
 	NMConnection *connection = NULL;
@@ -4094,7 +4043,7 @@ infiniband_connection_from_ifcfg (const char *file,
 	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
 
-	infiniband_setting = make_infiniband_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	infiniband_setting = make_infiniband_setting (ifcfg, file, error);
 	if (!infiniband_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4137,8 +4086,6 @@ handle_bond_option (NMSettingBond *s_bond,
 static NMSetting *
 make_bond_setting (shvarFile *ifcfg,
                    const char *file,
-                   gboolean nm_controlled,
-                   char **unmanaged,
                    GError **error)
 {
 	NMSettingBond *s_bond;
@@ -4189,8 +4136,6 @@ error:
 static NMConnection *
 bond_connection_from_ifcfg (const char *file,
                             shvarFile *ifcfg,
-                            gboolean nm_controlled,
-                            char **unmanaged,
                             GError **error)
 {
 	NMConnection *connection = NULL;
@@ -4213,14 +4158,14 @@ bond_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	bond_setting = make_bond_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	bond_setting = make_bond_setting (ifcfg, file, error);
 	if (!bond_setting) {
 		g_object_unref (connection);
 		return NULL;
 	}
 	nm_connection_add_setting (connection, bond_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
 	if (!wired_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4241,8 +4186,6 @@ bond_connection_from_ifcfg (const char *file,
 static NMSetting *
 make_team_setting (shvarFile *ifcfg,
                    const char *file,
-                   gboolean nm_controlled,
-                   char **unmanaged,
                    GError **error)
 {
 	NMSettingTeam *s_team;
@@ -4275,8 +4218,6 @@ error:
 static NMConnection *
 team_connection_from_ifcfg (const char *file,
                             shvarFile *ifcfg,
-                            gboolean nm_controlled,
-                            char **unmanaged,
                             GError **error)
 {
 	NMConnection *connection = NULL;
@@ -4299,14 +4240,14 @@ team_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	team_setting = make_team_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	team_setting = make_team_setting (ifcfg, file, error);
 	if (!team_setting) {
 		g_object_unref (connection);
 		return NULL;
 	}
 	nm_connection_add_setting (connection, team_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
 	if (!wired_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4397,8 +4338,6 @@ handle_bridging_opts (NMSetting *setting,
 static NMSetting *
 make_bridge_setting (shvarFile *ifcfg,
                      const char *file,
-                     gboolean nm_controlled,
-                     char **unmanaged,
                      GError **error)
 {
 	NMSettingBridge *s_bridge;
@@ -4465,8 +4404,6 @@ error:
 static NMConnection *
 bridge_connection_from_ifcfg (const char *file,
                               shvarFile *ifcfg,
-                              gboolean nm_controlled,
-                              char **unmanaged,
                               GError **error)
 {
 	NMConnection *connection = NULL;
@@ -4487,7 +4424,7 @@ bridge_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	bridge_setting = make_bridge_setting (ifcfg, file, nm_controlled, unmanaged, error);
+	bridge_setting = make_bridge_setting (ifcfg, file, error);
 	if (!bridge_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4626,9 +4563,7 @@ parse_prio_map_list (NMSettingVlan *s_vlan,
 static NMSetting *
 make_vlan_setting (shvarFile *ifcfg,
                    const char *file,
-                   gboolean nm_controlled,
                    char **out_master,
-                   char **unmanaged,
                    NMSetting8021x **s_8021x,
                    GError **error)
 {
@@ -4748,8 +4683,6 @@ error:
 static NMConnection *
 vlan_connection_from_ifcfg (const char *file,
                             shvarFile *ifcfg,
-                            gboolean nm_controlled,
-                            char **unmanaged,
                             GError **error)
 {
 	NMConnection *connection = NULL;
@@ -4773,7 +4706,7 @@ vlan_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	vlan_setting = make_vlan_setting (ifcfg, file, nm_controlled, &master, unmanaged, &s_8021x, error);
+	vlan_setting = make_vlan_setting (ifcfg, file, &master, &s_8021x, error);
 	if (!vlan_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4789,7 +4722,7 @@ vlan_connection_from_ifcfg (const char *file,
 		g_free (master);
 	}
 
-	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
 	if (!wired_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -4806,23 +4739,35 @@ vlan_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
-static void
-ensure_unmanaged (shvarFile *ifcfg,
-                  char **unmanaged)
+static char *
+get_unmanaged_spec (shvarFile *ifcfg)
 {
-	char *value;
+	char *value, *unmanaged;
 
-	if (*unmanaged)
-		return;
+	value = svGetValue (ifcfg, "HWADDR", FALSE);
+	if (value) {
+		char *lower = g_ascii_strdown (value, -1);
+		unmanaged = g_strdup_printf ("mac:%s", lower);
+		g_free (lower);
+		g_free (value);
+		return unmanaged;
+	}
+
+	value = svGetValue (ifcfg, "SUBCHANNELS", FALSE);
+	if (value) {
+		unmanaged = g_strdup_printf ("s390-subchannels:%s", value);
+		g_free (value);
+		return unmanaged;
+	}
 
 	value = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (value) {
-		*unmanaged = g_strdup_printf ("interface-name:%s", value);
+		unmanaged = g_strdup_printf ("interface-name:%s", value);
 		g_free (value);
-		return;
+		return unmanaged;
 	}
 
-	PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
+	return NULL;
 }
 
 char *
@@ -4896,11 +4841,9 @@ connection_from_file (const char *filename,
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
-	char *type, *devtype, *nmc = NULL, *bootproto;
+	char *type, *devtype, *bootproto;
 	NMSetting *s_ip4, *s_ip6, *s_port, *s_dcb = NULL;
 	const char *ifcfg_name = NULL;
-	gboolean nm_controlled = TRUE;
-	char *unmanaged = NULL;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	if (out_unmanaged)
@@ -4931,6 +4874,26 @@ connection_from_file (const char *filename,
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Couldn't parse file '%s'", filename);
 		return NULL;
+	}
+
+	if (!svTrueValue (parsed, "NM_CONTROLLED", TRUE)) {
+		NMSetting *s_con;
+
+		g_assert (out_unmanaged != NULL);
+
+		connection = nm_connection_new ();
+
+		/* Get NAME, UUID, etc. We need to set a connection type (generic) and add
+		 * an empty type-specific setting as well, to make sure it passes
+		 * nm_connection_verify() later.
+		 */
+		s_con = make_connection_setting (filename, parsed, NM_SETTING_GENERIC_SETTING_NAME,
+		                                 NULL, NULL);
+		nm_connection_add_setting (connection, s_con);
+		nm_connection_add_setting (connection, nm_setting_generic_new ());
+
+		*out_unmanaged = get_unmanaged_spec (parsed);
+		goto done;
 	}
 
 	type = NULL;
@@ -4991,18 +4954,6 @@ connection_from_file (const char *filename,
 		}
 	}
 
-	nmc = svGetValue (parsed, "NM_CONTROLLED", FALSE);
-	if (nmc) {
-		char *lower;
-
-		lower = g_ascii_strdown (nmc, -1);
-		g_free (nmc);
-
-		if (!strcmp (lower, "no") || !strcmp (lower, "n") || !strcmp (lower, "false"))
-			nm_controlled = FALSE;
-		g_free (lower);
-	}
-
 	if (svTrueValue (parsed, "BONDING_MASTER", FALSE) &&
 	    strcasecmp (type, TYPE_BOND)) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
@@ -5012,30 +4963,25 @@ connection_from_file (const char *filename,
 
 	/* Construct the connection */
 	if (!strcasecmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = wired_connection_from_ifcfg (filename, parsed, error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = wireless_connection_from_ifcfg (filename, parsed, error);
 	else if (!strcasecmp (type, TYPE_INFINIBAND))
-		connection = infiniband_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = infiniband_connection_from_ifcfg (filename, parsed, error);
 	else if (!strcasecmp (type, TYPE_BOND))
-		connection = bond_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = bond_connection_from_ifcfg (filename, parsed, error);
 	else if (!strcasecmp (type, TYPE_TEAM))
-		connection = team_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = team_connection_from_ifcfg (filename, parsed, error);
 	else if (!strcasecmp (type, TYPE_VLAN))
-		connection = vlan_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = vlan_connection_from_ifcfg (filename, parsed, error);
 	else if (!strcasecmp (type, TYPE_BRIDGE))
-		connection = bridge_connection_from_ifcfg (filename, parsed, nm_controlled, &unmanaged, error);
+		connection = bridge_connection_from_ifcfg (filename, parsed, error);
 	else {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Unknown connection type '%s'", type);
 	}
-
-	if (!nm_controlled)
-		ensure_unmanaged (parsed, &unmanaged);
-
 	g_free (type);
 
-	/* Don't bother reading the connection fully if it's unmanaged or ignored */
-	if (!connection || unmanaged)
+	if (!connection)
 		goto done;
 
 	s_ip6 = make_ip6_setting (parsed, network_file, iscsiadm_path, error);
@@ -5109,11 +5055,6 @@ connection_from_file (const char *filename,
 		*out_route6file = utils_get_route6_path (filename);
 
 done:
-	if (out_unmanaged)
-		*out_unmanaged = unmanaged;
-	else
-		g_free (unmanaged);
-
 	svCloseFile (parsed);
 	return connection;
 }

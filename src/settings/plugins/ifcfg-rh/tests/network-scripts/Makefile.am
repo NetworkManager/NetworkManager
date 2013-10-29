@@ -2,6 +2,7 @@ EXTRA_DIST = \
 	ifcfg-test-minimal \
 	ifcfg-test-variables-corner-cases-1 \
 	ifcfg-test-nm-controlled \
+	ifcfg-test-nm-controlled-unrecognized \
 	ifcfg-test-wired-static \
 	ifcfg-test-wired-static-bootproto \
 	ifcfg-test-wired-dhcp \
