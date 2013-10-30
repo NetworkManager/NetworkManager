@@ -3560,7 +3560,7 @@ cleanup_bt:
 			goto cleanup_vlan;
 		if (!check_and_convert_vlan_prio_maps (ingress, NM_VLAN_INGRESS_MAP, &ingress_arr, error))
 			goto cleanup_vlan;
-		if (!check_and_convert_vlan_prio_maps (egress, NM_VLAN_EGRESS_MAP, &ingress_arr, error))
+		if (!check_and_convert_vlan_prio_maps (egress, NM_VLAN_EGRESS_MAP, &egress_arr, error))
 			goto cleanup_vlan;
 
 		/* Add 'vlan' setting */
