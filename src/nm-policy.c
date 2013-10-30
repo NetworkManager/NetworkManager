@@ -855,11 +855,6 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	if (!gw_addr)
 		gw_addr = &in6addr_any;
 
-	/* If we don't find a paired gateway, try the generic IPv6 gateway */
-	if (   IN6_IS_ADDR_UNSPECIFIED (gw_addr)
-	    && nm_ip6_config_get_gateway (ip6_config))
-		gw_addr = nm_ip6_config_get_gateway (ip6_config);
-
 	if (vpn) {
 		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
