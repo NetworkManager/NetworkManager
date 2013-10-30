@@ -576,11 +576,13 @@ print_vpn_config (NMVPNConnection *connection)
 		num = nm_ip4_config_get_num_routes (priv->ip4_config);
 		for (i = 0; i < num; i++) {
 			const NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
+			char *s = g_strdup (ip_address_to_string (route->gateway));
 
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
 			             ip_address_to_string (route->network),
 			             route->plen,
-			             ip_address_to_string (route->gateway));
+			             s);
+			g_free (s);
 		}
 
 		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
@@ -615,11 +617,13 @@ print_vpn_config (NMVPNConnection *connection)
 		num = nm_ip6_config_get_num_routes (priv->ip6_config);
 		for (i = 0; i < num; i++) {
 			const NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
+			char *s = g_strdup (ip6_address_to_string (&route->gateway));
 
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
 			             ip6_address_to_string (&route->network),
 			             route->plen,
-			             ip6_address_to_string (&route->gateway));
+			             s);
+			g_free (s);
 		}
 
 		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
