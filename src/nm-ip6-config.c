@@ -791,7 +791,6 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 	const struct in6_addr *tmp;
 	guint32 i;
 	const char *str;
-	char buf[INET6_ADDRSTRLEN];
 
 	g_return_if_fail (config != NULL);
 
@@ -807,14 +806,13 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 
 	/* default gateway */
 	tmp = nm_ip6_config_get_gateway (config);
-	if (tmp && inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
-		g_message ("     gw: %s", buf);
+	if (tmp)
+		g_message ("     gw: %s", nm_utils_inet6_ntop (tmp, NULL));
 
 	/* nameservers */
 	for (i = 0; i < nm_ip6_config_get_num_nameservers (config); i++) {
 		tmp = nm_ip6_config_get_nameserver (config, i);
-		if (inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
-			g_message ("     ns: %s", buf);
+		g_message ("     ns: %s", nm_utils_inet6_ntop (tmp, NULL));
 	}
 
 	/* routes */
@@ -1355,10 +1353,9 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_GATEWAY:
-		if (!IN6_IS_ADDR_UNSPECIFIED (&priv->gateway)) {
-			char addr_buf[INET6_ADDRSTRLEN];
-			g_value_set_string (value, inet_ntop (AF_INET6, &priv->gateway, addr_buf, sizeof (addr_buf)));
-		} else
+		if (!IN6_IS_ADDR_UNSPECIFIED (&priv->gateway))
+			g_value_set_string (value, nm_utils_inet6_ntop (&priv->gateway, NULL));
+		else
 			g_value_set_string (value, NULL);
 		break;
 	case PROP_ADDRESSES:

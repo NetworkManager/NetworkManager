@@ -860,7 +860,6 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 {
 	guint32 i, tmp;
 	const char *str;
-	char buf[INET_ADDRSTRLEN];
 
 	g_return_if_fail (config != NULL);
 
@@ -876,14 +875,12 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	/* default gateway */
 	tmp = nm_ip4_config_get_gateway (config);
-	if (inet_ntop (AF_INET, (void *) &tmp, buf, sizeof (buf)))
-		g_message ("     gw: %s", buf);
+	g_message ("     gw: %s", nm_utils_inet4_ntop (tmp, NULL));
 
 	/* nameservers */
 	for (i = 0; i < nm_ip4_config_get_num_nameservers (config); i++) {
 		tmp = nm_ip4_config_get_nameserver (config, i);
-		if (inet_ntop (AF_INET, (void *) &tmp, buf, sizeof (buf)))
-			g_message ("     ns: %s", buf);
+		g_message ("     ns: %s", nm_utils_inet4_ntop (tmp, NULL));
 	}
 
 	/* routes */
@@ -903,20 +900,16 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (config); i++) {
-		guint32 nis = nm_ip4_config_get_nis_server (config, i);
-
-		if (inet_ntop (AF_INET, (void *) &nis, buf, sizeof (buf)))
-			g_message ("    nis: %s", buf);
+		tmp = nm_ip4_config_get_nis_server (config, i);
+		g_message ("    nis: %s", nm_utils_inet4_ntop (tmp, NULL));
 	}
 
 	g_message (" nisdmn: %s", nm_ip4_config_get_nis_domain (config));
 
 	/* WINS */
 	for (i = 0; i < nm_ip4_config_get_num_wins (config); i++) {
-		guint32 wins = nm_ip4_config_get_wins (config, i);
-
-		if (inet_ntop (AF_INET, (void *) &wins, buf, sizeof (buf)))
-			g_message ("   wins: %s", buf);
+		tmp = nm_ip4_config_get_wins (config, i);
+		g_message ("   wins: %s", nm_utils_inet4_ntop (tmp, NULL));
 	}
 
 	g_message (" n-dflt: %d", nm_ip4_config_get_never_default (config));
@@ -1576,10 +1569,9 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_GATEWAY:
-		if (priv->gateway) {
-			char addr_buf[INET_ADDRSTRLEN];
-			g_value_set_string (value, inet_ntop (AF_INET, &priv->gateway, addr_buf, sizeof (addr_buf)));
-		} else
+		if (priv->gateway)
+			g_value_set_string (value, nm_utils_inet4_ntop (priv->gateway, NULL));
+		else
 			g_value_set_string (value, NULL);
 		break;
 	case PROP_ADDRESSES:

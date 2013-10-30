@@ -30,6 +30,7 @@
 #include <glib/gi18n.h>
 
 #include "nm-dns-dnsmasq.h"
+#include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -71,7 +72,7 @@ find_dnsmasq (void)
 static gboolean
 add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 {
-	char buf[INET_ADDRSTRLEN + 1];
+	char buf[INET_ADDRSTRLEN];
 	in_addr_t addr;
 	int nnameservers, i_nameserver, n, i;
 	gboolean added = FALSE;
@@ -86,9 +87,7 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 
 		for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
 			addr = nm_ip4_config_get_nameserver (ip4, i_nameserver);
-			memset (&buf[0], 0, sizeof (buf));
-			if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
-				return FALSE;
+			nm_utils_inet4_ntop (addr, buf);
 
 			/* searches are preferred over domains */
 			n = nm_ip4_config_get_num_searches (ip4);
@@ -126,10 +125,8 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 	/* If no searches or domains, just add the namservers */
 	if (!added) {
 		for (i = 0; i < nnameservers; i++) {
-			memset (&buf[0], 0, sizeof (buf));
 			addr = nm_ip4_config_get_nameserver (ip4, i);
-			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf)))
-				g_string_append_printf (str, "server=%s\n", buf);
+			g_string_append_printf (str, "server=%s\n", nm_utils_inet4_ntop (addr, NULL));
 		}
 	}
 

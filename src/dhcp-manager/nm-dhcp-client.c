@@ -965,16 +965,14 @@ ip4_process_dhclient_rfc3442_routes (const char *str,
 			/* gateway passed as classless static route */
 			*gwaddr = route.gateway;
 		} else {
-			char addr[INET_ADDRSTRLEN + 1];
-			char nh[INET_ADDRSTRLEN + 1];
+			char addr[INET_ADDRSTRLEN];
 
 			/* normal route */
 			nm_ip4_config_add_route (ip4_config, &route);
 
-			inet_ntop (AF_INET, &route.network, addr, sizeof (addr));
-			inet_ntop (AF_INET, &route.gateway, nh, sizeof (nh));
 			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s",
-			             addr, route.plen, nh);
+			             nm_utils_inet4_ntop (route.network, addr), route.plen,
+			             nm_utils_inet4_ntop (route.gateway, NULL));
 		}
 	}
 
@@ -1180,10 +1178,7 @@ ip4_options_to_config (NMDHCPClient *self)
 		process_classful_routes (priv->options, ip4_config);
 
 	if (gwaddr) {
-		char buf[INET_ADDRSTRLEN + 1];
-
-		inet_ntop (AF_INET, &gwaddr, buf, sizeof (buf));
-		nm_log_info (LOGD_DHCP4, "  gateway %s", buf);
+		nm_log_info (LOGD_DHCP4, "  gateway %s", nm_utils_inet4_ntop (gwaddr, NULL));
 		nm_ip4_config_set_gateway (ip4_config, gwaddr);
 	} else {
 		/* If the gateway wasn't provided as a classless static route with a

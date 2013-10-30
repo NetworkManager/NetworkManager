@@ -510,37 +510,6 @@ plugin_state_changed (DBusGProxy *proxy,
 	}
 }
 
-static char addr_to_string_buf[INET6_ADDRSTRLEN + 1];
-
-static const char *
-ip_address_to_string (guint32 numeric)
-{
-	guint32 temp_addr;
-
-	memset (&addr_to_string_buf, '\0', sizeof (addr_to_string_buf));
-	temp_addr = numeric;
-
-	if (inet_ntop (AF_INET, &temp_addr, addr_to_string_buf, INET_ADDRSTRLEN)) {
-		return addr_to_string_buf;
-	} else {
-		nm_log_warn (LOGD_VPN, "error converting IP4 address 0x%X",
-		             ntohl (temp_addr));
-		return NULL;
-	}
-}
-
-static const char *
-ip6_address_to_string (const struct in6_addr *addr)
-{
-	memset (addr_to_string_buf, '\0', sizeof (addr_to_string_buf));
-	if (inet_ntop (AF_INET6, addr, addr_to_string_buf, INET6_ADDRSTRLEN)) {
-		return addr_to_string_buf;
-	} else {
-		nm_log_warn (LOGD_VPN, "error converting IP6 address");
-		return NULL;
-	}
-}
-
 static void
 print_vpn_config (NMVPNConnection *connection)
 {
@@ -549,13 +518,14 @@ print_vpn_config (NMVPNConnection *connection)
 	const NMPlatformIP6Address *address6;
 	char *dns_domain = NULL;
 	guint32 num, i;
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
 
 	if (priv->ip4_external_gw) {
 		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
-		             ip_address_to_string (priv->ip4_external_gw));
+		             nm_utils_inet4_ntop (priv->ip4_external_gw, NULL));
 	} else if (priv->ip6_external_gw) {
 		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
-		             ip6_address_to_string (priv->ip6_external_gw));
+		             nm_utils_inet6_ntop (priv->ip6_external_gw, NULL));
 	}
 
 	nm_log_info (LOGD_VPN, "Tunnel Device: %s", priv->ip_iface);
@@ -566,22 +536,20 @@ print_vpn_config (NMVPNConnection *connection)
 		address4 = nm_ip4_config_get_address (priv->ip4_config, 0);
 
 		if (priv->ip4_internal_gw)
-			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", ip_address_to_string (priv->ip4_internal_gw));
-		nm_log_info (LOGD_VPN, "  Internal Address: %s", ip_address_to_string (address4->address));
+			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", nm_utils_inet4_ntop (priv->ip4_internal_gw, NULL));
+		nm_log_info (LOGD_VPN, "  Internal Address: %s", nm_utils_inet4_ntop (address4->address, NULL));
 		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", address4->plen);
-		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s", ip_address_to_string (address4->peer_address));
+		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, NULL));
 		nm_log_info (LOGD_VPN, "  Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
 
 		num = nm_ip4_config_get_num_routes (priv->ip4_config);
 		for (i = 0; i < num; i++) {
 			const NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
-			char *s = g_strdup (ip_address_to_string (route->gateway));
 
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
-			             ip_address_to_string (route->network),
+			             nm_utils_inet4_ntop (route->network, NULL),
 			             route->plen,
-			             s);
-			g_free (s);
+			             nm_utils_inet4_ntop (route->gateway, buf));
 		}
 
 		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
@@ -590,7 +558,7 @@ print_vpn_config (NMVPNConnection *connection)
 		num = nm_ip4_config_get_num_nameservers (priv->ip4_config);
 		for (i = 0; i < num; i++) {
 			nm_log_info (LOGD_VPN, "  Internal DNS: %s",
-			             ip_address_to_string (nm_ip4_config_get_nameserver (priv->ip4_config, i)));
+			             nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (priv->ip4_config, i), NULL));
 		}
 
 		if (nm_ip4_config_get_num_domains (priv->ip4_config) > 0)
@@ -606,22 +574,20 @@ print_vpn_config (NMVPNConnection *connection)
 		address6 = nm_ip6_config_get_address (priv->ip6_config, 0);
 
 		if (priv->ip6_internal_gw)
-			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", ip6_address_to_string (priv->ip6_internal_gw));
-		nm_log_info (LOGD_VPN, "  Internal Address: %s", ip6_address_to_string (&address6->address));
+			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", nm_utils_inet6_ntop (priv->ip6_internal_gw, NULL));
+		nm_log_info (LOGD_VPN, "  Internal Address: %s", nm_utils_inet6_ntop (&address6->address, NULL));
 		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", address6->plen);
-		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s", ip6_address_to_string (&address6->peer_address));
+		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s", nm_utils_inet6_ntop (&address6->peer_address, NULL));
 		nm_log_info (LOGD_VPN, "  Maximum Segment Size (MSS): %d", nm_ip6_config_get_mss (priv->ip6_config));
 
 		num = nm_ip6_config_get_num_routes (priv->ip6_config);
 		for (i = 0; i < num; i++) {
 			const NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
-			char *s = g_strdup (ip6_address_to_string (&route->gateway));
 
 			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
-			             ip6_address_to_string (&route->network),
+			             nm_utils_inet6_ntop (&route->network, NULL),
 			             route->plen,
-			             s);
-			g_free (s);
+			             nm_utils_inet6_ntop (&route->gateway, buf));
 		}
 
 		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
@@ -630,7 +596,7 @@ print_vpn_config (NMVPNConnection *connection)
 		num = nm_ip6_config_get_num_nameservers (priv->ip6_config);
 		for (i = 0; i < num; i++) {
 			nm_log_info (LOGD_VPN, "  Internal DNS: %s",
-			             ip6_address_to_string (nm_ip6_config_get_nameserver (priv->ip6_config, i)));
+			             nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (priv->ip6_config, i), NULL));
 		}
 
 		if (nm_ip6_config_get_num_domains (priv->ip6_config) > 0)

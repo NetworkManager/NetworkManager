@@ -144,18 +144,13 @@ _nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_va
 
 	printable = g_string_new (NULL);
 	while (array && (i < array->len)) {
-		char buf[INET_ADDRSTRLEN + 1];
 		guint32 addr;
 
 		if (i > 0)
 			g_string_append (printable, ", ");
 
-		memset (buf, 0, sizeof (buf));
 		addr = g_array_index (array, guint32, i++);
-		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-			g_warning ("%s: error converting IP4 address 0x%X",
-			           __func__, ntohl (addr));
-		g_string_append (printable, buf);
+		g_string_append (printable, nm_utils_inet4_ntop (addr, NULL));
 	}
 
 	g_value_take_string (dest_value, g_string_free (printable, FALSE));
@@ -167,6 +162,7 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 	GPtrArray *ptr_array;
 	GString *printable;
 	guint i = 0;
+	char buf[INET_ADDRSTRLEN];
 
 	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT));
 
@@ -175,8 +171,6 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 	printable = g_string_new (NULL);
 	while (ptr_array && (i < ptr_array->len)) {
 		GArray *array;
-		char buf[INET_ADDRSTRLEN + 1];
-		guint32 addr;
 		gboolean is_addr; /* array contains address x route */
 
 		if (i > 0)
@@ -190,11 +184,7 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 		}
 		is_addr = (array->len < 4);
 
-		memset (buf, 0, sizeof (buf));
-		addr = g_array_index (array, guint32, 0);
-		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-			g_warning ("%s: error converting IP4 address 0x%X",
-			           __func__, ntohl (addr));
+		nm_utils_inet4_ntop (g_array_index (array, guint32, 0), buf);
 		if (is_addr)
 			g_string_append_printf (printable, "ip = %s", buf);
 		else
@@ -204,11 +194,7 @@ _nm_utils_convert_ip4_addr_route_struct_array_to_string (const GValue *src_value
 		                        g_array_index (array, guint32, 1));
 
 		if (array->len > 2) {
-			memset (buf, 0, sizeof (buf));
-			addr = g_array_index (array, guint32, 2);
-			if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-				g_warning ("%s: error converting IP4 address 0x%X",
-				           __func__, ntohl (addr));
+			nm_utils_inet4_ntop (g_array_index (array, guint32, 2), buf);
 			if (is_addr)
 				g_string_append_printf (printable, ", gw = %s", buf);
 			else
@@ -309,23 +295,6 @@ _nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_va
 	g_value_take_string (dest_value, g_string_free (printable, FALSE));
 }
 
-static gboolean
-_nm_utils_inet6_ntop (struct in6_addr *addr, char *buf)
-{
-	if (!inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN)) {
-		int i;
-		GString *ip6_str = g_string_new (NULL);
-		g_string_append_printf (ip6_str, "%02X", addr->s6_addr[0]);
-		for (i = 1; i < 16; i++)
-			g_string_append_printf (ip6_str, " %02X", addr->s6_addr[i]);
-		g_warning ("%s: error converting IP6 address %s",
-		           __func__, ip6_str->str);
-		g_string_free (ip6_str, TRUE);
-		return FALSE;
-	}
-	return TRUE;
-}
-
 static void
 _nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest_value)
 {
@@ -340,7 +309,6 @@ _nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest
 	printable = g_string_new (NULL);
 	while (ptr_array && (i < ptr_array->len)) {
 		GByteArray *bytearray;
-		char buf[INET6_ADDRSTRLEN];
 		struct in6_addr *addr;
 
 		if (i > 0)
@@ -352,9 +320,7 @@ _nm_utils_convert_ip6_dns_array_to_string (const GValue *src_value, GValue *dest
 			continue;
 		}
 		addr = (struct in6_addr *) bytearray->data;
-		memset (buf, 0, sizeof (buf));
-		_nm_utils_inet6_ntop (addr, buf);
-		g_string_append (printable, buf);
+		g_string_append (printable, nm_utils_inet6_ntop (addr, NULL));
 	}
 
 	g_value_take_string (dest_value, g_string_free (printable, FALSE));
@@ -376,7 +342,6 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 		GValueArray *elements;
 		GValue *tmp;
 		GByteArray *ba_addr;
-		char buf[INET6_ADDRSTRLEN];
 		struct in6_addr *addr;
 		guint32 prefix;
 
@@ -401,9 +366,7 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
-		memset (buf, 0, sizeof (buf));
-		_nm_utils_inet6_ntop (addr, buf);
-		g_string_append_printf (printable, "ip = %s", buf);
+		g_string_append_printf (printable, "ip = %s", nm_utils_inet6_ntop (addr, NULL));
 
 		/* Prefix */
 		tmp = g_value_array_get_nth (elements, 1);
@@ -423,9 +386,7 @@ _nm_utils_convert_ip6_addr_struct_array_to_string (const GValue *src_value, GVal
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
-		memset (buf, 0, sizeof (buf));
-		_nm_utils_inet6_ntop (addr, buf);
-		g_string_append_printf (printable, "gw = %s", buf);
+		g_string_append_printf (printable, "gw = %s", nm_utils_inet6_ntop (addr, NULL));
 		g_string_append (printable, " }");
 	}
 
@@ -448,7 +409,6 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 		GValueArray *elements;
 		GValue *tmp;
 		GByteArray *ba_addr;
-		char buf[INET6_ADDRSTRLEN];
 		struct in6_addr *addr;
 		guint32 prefix, metric;
 
@@ -474,9 +434,7 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
-		memset (buf, 0, sizeof (buf));
-		_nm_utils_inet6_ntop (addr, buf);
-		g_string_append_printf (printable, "dst = %s", buf);
+		g_string_append_printf (printable, "dst = %s", nm_utils_inet6_ntop (addr, NULL));
 
 		/* Prefix */
 		tmp = g_value_array_get_nth (elements, 1);
@@ -496,9 +454,7 @@ _nm_utils_convert_ip6_route_struct_array_to_string (const GValue *src_value, GVa
 			continue;
 		}
 		addr = (struct in6_addr *) ba_addr->data;
-		memset (buf, 0, sizeof (buf));
-		_nm_utils_inet6_ntop (addr, buf);
-		g_string_append_printf (printable, "nh = %s", buf);
+		g_string_append_printf (printable, "nh = %s", nm_utils_inet6_ntop (addr, NULL));
 		g_string_append (printable, ", ");
 
 		/* Metric */

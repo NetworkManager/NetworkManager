@@ -96,6 +96,8 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 	guint32 num, i;
 	GString *tmp;
 	GValue *val;
+	char str_addr[INET_ADDRSTRLEN];
+	char str_gw[INET_ADDRSTRLEN];
 
 	if (ip4_config == NULL)
 		return items;
@@ -110,20 +112,11 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 
 	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
 		NMIP4Address *addr = (NMIP4Address *) iter->data;
-		char str_addr[INET_ADDRSTRLEN + 1];
-		char str_gw[INET_ADDRSTRLEN + 1];
-		guint32 tmp_addr;
 		guint32 ip_prefix = nm_ip4_address_get_prefix (addr);
 		char *addrtmp;
 
-		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr = nm_ip4_address_get_address (addr);
-		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
-
-		memset (str_gw, 0, sizeof (str_gw));
-		tmp_addr = nm_ip4_address_get_gateway (addr);
-		inet_ntop (AF_INET, &tmp_addr, str_gw, sizeof (str_gw));
+		nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), str_addr);
+		nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), str_gw);
 
 		addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
 		items = g_slist_prepend (items, addrtmp);
@@ -145,16 +138,12 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		g_string_append_printf (tmp, "%sIP4_NAMESERVERS=", prefix);
 		for (i = 0; i < dns->len; i++) {
 			guint32 addr;
-			char buf[INET_ADDRSTRLEN + 1];
 
 			addr = g_array_index (dns, guint32, i);
-			memset (buf, 0, sizeof (buf));
-			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-				if (!first)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, buf);
-				first = FALSE;
-			}
+			if (!first)
+				g_string_append_c (tmp, ' ');
+			g_string_append (tmp, nm_utils_inet4_ntop (addr, NULL));
+			first = FALSE;
 		}
 		items = g_slist_prepend (items, tmp->str);
 		g_string_free (tmp, FALSE);
@@ -175,16 +164,12 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 		g_string_append_printf (tmp, "%sIP4_WINS_SERVERS=", prefix);
 		for (i = 0; i < wins->len; i++) {
 			guint32 addr;
-			char buf[INET_ADDRSTRLEN + 1];
 
 			addr = g_array_index (wins, guint32, i);
-			memset (buf, 0, sizeof (buf));
-			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-				if (!first)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, buf);
-				first = FALSE;
-			}
+			if (!first)
+				g_string_append_c (tmp, ' ');
+			g_string_append (tmp, nm_utils_inet4_ntop (addr, NULL));
+			first = FALSE;
 		}
 		items = g_slist_prepend (items, tmp->str);
 		g_string_free (tmp, FALSE);
@@ -197,23 +182,14 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 
 	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
 		NMIP4Route *route = (NMIP4Route *) iter->data;
-		char str_addr[INET_ADDRSTRLEN + 1];
-		char str_nh[INET_ADDRSTRLEN + 1];
-		guint32 tmp_addr;
 		guint32 ip_prefix = nm_ip4_route_get_prefix (route);
 		guint32 metric = nm_ip4_route_get_metric (route);
 		char *routetmp;
 
-		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr = nm_ip4_route_get_dest (route);
-		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
+		nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), str_addr);
+		nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), str_gw);
 
-		memset (str_nh, 0, sizeof (str_nh));
-		tmp_addr = nm_ip4_route_get_next_hop (route);
-		inet_ntop (AF_INET, &tmp_addr, str_nh, sizeof (str_nh));
-
-		routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_nh, metric);
+		routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_gw, metric);
 		items = g_slist_prepend (items, routetmp);
 	}
 	items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, num));
@@ -251,6 +227,8 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 	guint32 num;
 	GString *tmp;
 	GValue *val;
+	char str_addr[INET6_ADDRSTRLEN];
+	char str_gw[INET6_ADDRSTRLEN];
 
 	if (ip6_config == NULL)
 		return items;
@@ -265,20 +243,11 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 
 	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
 		NMIP6Address *addr = (NMIP6Address *) iter->data;
-		char str_addr[INET6_ADDRSTRLEN + 1];
-		char str_gw[INET6_ADDRSTRLEN + 1];
-		const struct in6_addr *tmp_addr;
 		guint32 ip_prefix = nm_ip6_address_get_prefix (addr);
 		char *addrtmp;
 
-		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr = nm_ip6_address_get_address (addr);
-		if (!inet_ntop (AF_INET6, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
-
-		memset (str_gw, 0, sizeof (str_gw));
-		tmp_addr = nm_ip6_address_get_gateway (addr);
-		inet_ntop (AF_INET6, &tmp_addr, str_gw, sizeof (str_gw));
+		nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), str_addr);
+		nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), str_gw);
 
 		addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
 		items = g_slist_prepend (items, addrtmp);
@@ -294,21 +263,18 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 		dns = nm_utils_ip6_dns_from_gvalue (val);
 
 	if (g_slist_length (dns)) {
+		gboolean first = TRUE;
+
 		tmp = g_string_new (NULL);
 		g_string_append_printf (tmp, "%sIP6_NAMESERVERS=", prefix);
 
 		for (iter = dns; iter; iter = g_slist_next (iter)) {
 			const struct in6_addr *addr = iter->data;
-			gboolean first = TRUE;
-			char buf[INET6_ADDRSTRLEN + 1];
 
-			memset (buf, 0, sizeof (buf));
-			if (inet_ntop (AF_INET6, addr, buf, sizeof (buf))) {
-				if (!first)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, buf);
-				first = FALSE;
-			}
+			if (!first)
+				g_string_append_c (tmp, ' ');
+			g_string_append (tmp, nm_utils_inet6_ntop (addr, NULL));
+			first = FALSE;
 		}
 
 		items = g_slist_prepend (items, tmp->str);
@@ -325,23 +291,14 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 
 	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
 		NMIP6Route *route = (NMIP6Route *) iter->data;
-		char str_addr[INET6_ADDRSTRLEN + 1];
-		char str_nh[INET6_ADDRSTRLEN + 1];
-		const struct in6_addr *tmp_addr;
 		guint32 ip_prefix = nm_ip6_route_get_prefix (route);
 		guint32 metric = nm_ip6_route_get_metric (route);
 		char *routetmp;
 
-		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr = nm_ip6_route_get_dest (route);
-		if (!inet_ntop (AF_INET6, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
+		nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), str_addr);
+		nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), str_gw);
 
-		memset (str_nh, 0, sizeof (str_nh));
-		tmp_addr = nm_ip6_route_get_next_hop (route);
-		inet_ntop (AF_INET6, &tmp_addr, str_nh, sizeof (str_nh));
-
-		routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_nh, metric);
+		routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_gw, metric);
 		items = g_slist_prepend (items, routetmp);
 	}
 	if (num)
