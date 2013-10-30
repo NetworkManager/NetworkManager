@@ -822,7 +822,9 @@ _nmcli()
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
                             _nmcli_complete_COMMAND_CONNECTION && return 0
-                            _nmcli_list_nl "$(nmcli connection show configured "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                            if [[ ${#words[@]} -le 1 ]]; then
+                                _nmcli_list_nl "$(nmcli connection show configured "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                            fi
                         fi
                         ;;
                     de|del|dele|delet|delete)
