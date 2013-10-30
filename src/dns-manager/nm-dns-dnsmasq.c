@@ -133,49 +133,26 @@ add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
 	return TRUE;
 }
 
-#define IP6_ADDR_BUFLEN (INET6_ADDRSTRLEN + 50)
-
 static char *
 ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
 {
-	char *buf, *p;
+	char *buf;
 
-	/* allocate enough space for the address + interface name */
-	buf = g_malloc0 (IP6_ADDR_BUFLEN + 1);
-
-	/* inet_ntop is probably supposed to do this for us, but it doesn't */
 	if (IN6_IS_ADDR_V4MAPPED (addr)) {
-		if (!inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, IP6_ADDR_BUFLEN))
-			goto error;
-		return buf;
-	}
-
-	if (!inet_ntop (AF_INET6, addr, buf, IP6_ADDR_BUFLEN))
-		goto error;
-
-	/* In the case of addr being a link-local address, inet_ntop can either
-	 * return an address with scope identifier already in place (like
-	 * fe80::202:b3ff:fe8d:7aaf%wlan0) or it returns an address without
-	 * scope identifier at all (like fe80::202:b3ff:fe8d:7aaf)
-	 */
-	p = strchr (buf, '%');
-	if (p) {
-		/* If we got a scope identifier, we need to replace the '%'
-		 * with '@', since dnsmasq supports '%' in server= addresses
+		/* inet_ntop is probably supposed to do this for us, but it doesn't */
+		buf = g_malloc (INET_ADDRSTRLEN);
+		nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
+	} else if (!iface || !iface[0] || !IN6_IS_ADDR_LINKLOCAL (addr)) {
+		buf = g_malloc (INET6_ADDRSTRLEN);
+		nm_utils_inet6_ntop (addr, buf);
+	} else {
+		/* If we got a scope identifier, we need use '%' instead of
+		 * '@', since dnsmasq supports '%' in server= addresses
 		 * only since version 2.58 and up
 		 */
-		*p = '@';
-	} else if (IN6_IS_ADDR_LINKLOCAL (addr)) {
-		/* If we got no scope identifier at all append the interface name */
-		strncat (buf, "@", IP6_ADDR_BUFLEN - strlen (buf));
-		strncat (buf, iface, IP6_ADDR_BUFLEN - strlen (buf));
+		buf = g_strconcat (nm_utils_inet6_ntop (addr, NULL), "@", iface, NULL);
 	}
-
 	return buf;
-
-error:
-	g_free (buf);
-	return NULL;
 }
 
 static gboolean
@@ -199,8 +176,6 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 		for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
 			addr = nm_ip6_config_get_nameserver (ip6, i_nameserver);
 			buf = ip6_addr_to_string (addr, iface);
-			if (!buf)
-				return FALSE;
 
 			/* searches are preferred over domains */
 			n = nm_ip6_config_get_num_searches (ip6);
@@ -221,9 +196,9 @@ add_ip6_config (GString *str, NMIP6Config *ip6, gboolean split)
 					added = TRUE;
 				}
 			}
-		}
 
-		g_free (buf);
+			g_free (buf);
+		}
 	}
 
 	/* If no searches or domains, just add the namservers */
