@@ -860,12 +860,15 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
 		NMIP6Config *parent_ip6 = nm_device_get_ip6_config (parent);
 		guint32 parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
-		struct in6_addr int_gw = *nm_vpn_connection_get_ip6_internal_gateway (vpn);
+		const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
-		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, int_gw, 0, mss)) {
+		if (!int_gw)
+			int_gw = &in6addr_any;
+
+		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, 0, mss)) {
 			nm_platform_ip6_route_add (parent_ifindex, *gw_addr, 128, in6addr_any, 0, parent_mss);
-			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, int_gw, 0, mss)) {
+			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, 0, mss)) {
 				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set default route.");
 			}
 		}
