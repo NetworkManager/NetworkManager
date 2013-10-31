@@ -176,7 +176,9 @@ add_lease_option (GHashTable *hash, char *line)
 }
 
 GSList *
-nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean ipv6)
+nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
+                                       const char *uuid,
+                                       gboolean ipv6)
 {
 	GSList *parsed = NULL, *iter, *leases = NULL;
 	char *contents = NULL;
