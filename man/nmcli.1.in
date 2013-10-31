@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "8 August 2013"
+.TH NMCLI "1" "31 October 2013"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -596,10 +596,12 @@ See \fBshow active\fP above for the description of the <ID>-specifying keywords.
 .TP
 .B reload
 .br
-Reload all connection files from disk. By default, connections are re-read
-automatically any time they change, so you only need to use this command when
-the auto-loading feature is disabled ("monitor-connection-files=false"
-in NetworkManager.conf).
+Reload all connection files from disk. \fINetworkManager\fP does not monitor
+changes to connection files by default. So you need to use this command in order
+to tell \fINetworkManager\fP to re-read the connection profiles from disk when
+a change was made to them. However, the auto-loading feature can be enabled and
+then \fINetworkManager\fP will reload connection files any time they change
+(monitor-connection-files=true in \fINetworkManager.conf\fP(5)).
 .RE
 
 .TP
@@ -759,7 +761,7 @@ lists all currently active connections.
 
 .IP "\fB\f(CWnmcli \-p connection show active \(dq\&My default em1\(dq\&\fP\fP"
 .IP
-shows details for "My default em1" active connection, like IP, DHCP 
+shows details for "My default em1" active connection, like IP, DHCP
 information.
 
 .IP "\fB\f(CWnmcli \-f name,autoconnect c s c\fP\fP"
