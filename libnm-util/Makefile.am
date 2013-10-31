@@ -32,6 +32,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-bridge.h		\
 	nm-setting-bridge-port.h	\
 	nm-setting-connection.h		\
+	nm-setting-dcb.h                \
 	nm-setting-infiniband.h		\
 	nm-setting-ip4-config.h		\
 	nm-setting-vlan.h		\
@@ -71,6 +72,7 @@ libnm_util_la_csources = \
 	nm-setting-bridge.c		\
 	nm-setting-bridge-port.c	\
 	nm-setting-connection.c		\
+	nm-setting-dcb.c                \
 	nm-setting-infiniband.c		\
 	nm-setting-ip4-config.c		\
 	nm-setting-vlan.c		\

@@ -48,6 +48,7 @@
 #include <nm-setting-team-port.h>
 #include <nm-setting-bridge.h>
 #include <nm-setting-bridge-port.h>
+#include <nm-setting-dcb.h>
 #include <nm-utils.h>
 
 #include "wifi-utils.h"
@@ -74,7 +75,7 @@ get_int (const char *str, int *value)
 
 	errno = 0;
 	tmp = strtol (str, &e, 0);
-	if (errno || *e != '\0')
+	if (errno || *e != '\0' || tmp > G_MAXINT || tmp < G_MININT)
 		return FALSE;
 	*value = (int) tmp;
 	return TRUE;
@@ -1770,6 +1771,397 @@ check_if_team_slave (shvarFile *ifcfg,
 	g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, value, NULL);
 	g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME, NULL);
 	g_free (value);
+}
+
+typedef struct {
+	const char *enable_key;
+	const char *advertise_key;
+	const char *willing_key;
+	const char *flags_prop;
+} DcbFlagsProperty;
+
+enum {
+	DCB_APP_FCOE_FLAGS = 0,
+	DCB_APP_ISCSI_FLAGS = 1,
+	DCB_APP_FIP_FLAGS = 2,
+	DCB_PFC_FLAGS = 3,
+	DCB_PG_FLAGS = 4,
+};
+
+static DcbFlagsProperty dcb_flags_props[] = {
+	{ "DCB_APP_FCOE_ENABLE",    "DCB_APP_FCOE_ADVERTISE",    "DCB_APP_FCOE_WILLING",    NM_SETTING_DCB_APP_FCOE_FLAGS },
+	{ "DCB_APP_ISCSI_ENABLE",   "DCB_APP_ISCSI_ADVERTISE",   "DCB_APP_ISCSI_WILLING",   NM_SETTING_DCB_APP_ISCSI_FLAGS },
+	{ "DCB_APP_FIP_ENABLE",     "DCB_APP_FIP_ADVERTISE",     "DCB_APP_FIP_WILLING",     NM_SETTING_DCB_APP_FIP_FLAGS },
+	{ "DCB_PFC_ENABLE",         "DCB_PFC_ADVERTISE",         "DCB_PFC_WILLING",         NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS },
+	{ "DCB_PG_ENABLE",          "DCB_PG_ADVERTISE",          "DCB_PG_WILLING",          NM_SETTING_DCB_PRIORITY_GROUP_FLAGS },
+	{ NULL },
+};
+
+static NMSettingDcbFlags
+read_dcb_flags (shvarFile *ifcfg, DcbFlagsProperty *property)
+{
+	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
+
+	if (svTrueValue (ifcfg, property->enable_key, FALSE))
+		flags |= NM_SETTING_DCB_FLAG_ENABLE;
+	if (svTrueValue (ifcfg, property->advertise_key, FALSE))
+		flags |= NM_SETTING_DCB_FLAG_ADVERTISE;
+	if (svTrueValue (ifcfg, property->willing_key, FALSE))
+		flags |= NM_SETTING_DCB_FLAG_WILLING;
+
+	return flags;
+}
+
+static gboolean
+read_dcb_app (shvarFile *ifcfg,
+              NMSettingDcb *s_dcb,
+              const char *app,
+              DcbFlagsProperty *flags_prop,
+              const char *priority_prop,
+              GError **error)
+{
+	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
+	char *tmp, *val;
+	gboolean success = TRUE;
+	int priority = -1;
+
+	flags = read_dcb_flags (ifcfg, flags_prop);
+
+	/* Priority */
+	tmp = g_strdup_printf ("DCB_APP_%s_PRIORITY", app);
+	val = svGetValue (ifcfg, tmp, FALSE);
+	if (val) {
+		success = get_int (val, &priority);
+		if (success)
+			success = (priority >= 0 && priority <= 7);
+		if (!success) {
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			             "Invalid %s value '%s' (expected 0 - 7)",
+			             tmp, val);
+		}
+		g_free (val);
+
+		if (!(flags & NM_SETTING_DCB_FLAG_ENABLE))
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring DCB %s priority; app not enabled", app);
+	}
+	g_free (tmp);
+
+	if (success) {
+		g_object_set (G_OBJECT (s_dcb),
+		              flags_prop->flags_prop, flags,
+		              priority_prop, (guint) priority,
+		              NULL);
+	}
+
+	return success;
+}
+
+typedef void (*DcbSetBoolFunc) (NMSettingDcb *, guint, gboolean);
+
+static gboolean
+read_dcb_bool_array (shvarFile *ifcfg,
+                     NMSettingDcb *s_dcb,
+                     NMSettingDcbFlags flags,
+                     const char *prop,
+                     const char *desc,
+                     DcbSetBoolFunc set_func,
+                     GError **error)
+{
+	char *val;
+	gboolean success = FALSE;
+	guint i;
+
+	val = svGetValue (ifcfg, prop, FALSE);
+	if (!val)
+		return TRUE;
+
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring %s; %s is not enabled", prop, desc);
+		success = TRUE;
+		goto out;
+	}
+
+	val = g_strstrip (val);
+	if (strlen (val) != 8) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s value '%s' must be 8 characters long", prop, val);
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "boolean array must be 8 characters");
+		goto out;
+	}
+
+	/* All characters must be either 0 or 1 */
+	for (i = 0; i < 8; i++) {
+		if (val[i] != '0' && val[i] != '1') {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s value '%s': not all 0s and 1s", prop, val);
+			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid boolean digit");
+			goto out;
+		}
+		set_func (s_dcb, i, (val[i] == '1'));
+	}
+	success = TRUE;
+
+out:
+	g_free (val);
+	return success;
+}
+
+typedef void (*DcbSetUintFunc) (NMSettingDcb *, guint, guint);
+
+static gboolean
+read_dcb_uint_array (shvarFile *ifcfg,
+                     NMSettingDcb *s_dcb,
+                     NMSettingDcbFlags flags,
+                     const char *prop,
+                     const char *desc,
+                     gboolean f_allowed,
+                     DcbSetUintFunc set_func,
+                     GError **error)
+{
+	char *val;
+	gboolean success = FALSE;
+	guint i;
+
+	val = svGetValue (ifcfg, prop, FALSE);
+	if (!val)
+		return TRUE;
+
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring %s; %s is not enabled", prop, desc);
+		success = TRUE;
+		goto out;
+	}
+
+	val = g_strstrip (val);
+	if (strlen (val) != 8) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s value '%s' must be 8 characters long", prop, val);
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "uint array must be 8 characters");
+		goto out;
+	}
+
+	/* All characters must be either 0 - 7 or (optionally) f */
+	for (i = 0; i < 8; i++) {
+		if (val[i] >= '0' && val[i] <= '7')
+			set_func (s_dcb, i, val[i] - '0');
+		else if (f_allowed && (val[i] == 'f' || val[i] == 'F'))
+			set_func (s_dcb, i, 15);
+		else {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s value '%s': not 0 - 7%s",
+			             prop, val, f_allowed ? " or 'f'" : "");
+			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid uint digit");
+			goto out;
+		}
+	}
+	success = TRUE;
+
+out:
+	g_free (val);
+	return success;
+}
+
+static gboolean
+read_dcb_percent_array (shvarFile *ifcfg,
+                        NMSettingDcb *s_dcb,
+                        NMSettingDcbFlags flags,
+                        const char *prop,
+                        const char *desc,
+                        gboolean sum_pct,
+                        DcbSetUintFunc set_func,
+                        GError **error)
+{
+	char *val;
+	gboolean success = FALSE;
+	char **split = NULL, **iter;
+	int tmp;
+	guint i, sum = 0;
+
+	val = svGetValue (ifcfg, prop, FALSE);
+	if (!val)
+		return TRUE;
+
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring %s; %s is not enabled", prop, desc);
+		success = TRUE;
+		goto out;
+	}
+
+	val = g_strstrip (val);
+	split = g_strsplit_set (val, ",", 0);
+	if (!split || (g_strv_length (split) != 8)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s percentage list value '%s'", prop, val);
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "percent array must be 8 elements");
+		goto out;
+	}
+
+	for (iter = split, i = 0; iter && *iter; iter++, i++) {
+		if (!get_int (*iter, &tmp) || tmp < 0 || tmp > 100) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s percentage value '%s'", prop, *iter);
+			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid percent element");
+			goto out;
+		}
+		set_func (s_dcb, i, (guint) tmp);
+		sum += (guint) tmp;
+	}
+
+	if (sum_pct && (sum != 100)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s percentages do not equal 100%%", prop);
+		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid percentage sum");
+		goto out;
+	}
+
+	success = TRUE;
+
+out:
+	if (split)
+		g_strfreev (split);
+	g_free (val);
+	return success;
+}
+
+static gboolean
+make_dcb_setting (shvarFile *ifcfg,
+                  const char *network_file,
+                  NMSetting **out_setting,
+                  GError **error)
+{
+	NMSettingDcb *s_dcb = NULL;
+	gboolean dcb_on;
+	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
+	char *val;
+
+	g_return_val_if_fail (out_setting != NULL, FALSE);
+
+	dcb_on = !!svTrueValue (ifcfg, "DCB", FALSE);
+	if (!dcb_on)
+		return TRUE;
+
+	s_dcb = (NMSettingDcb *) nm_setting_dcb_new ();
+	g_assert (s_dcb);
+
+	/* FCOE */
+	if (!read_dcb_app (ifcfg, s_dcb, "FCOE",
+	                   &dcb_flags_props[DCB_APP_FCOE_FLAGS],
+	                   NM_SETTING_DCB_APP_FCOE_PRIORITY,
+	                   error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+	if (nm_setting_dcb_get_app_fcoe_flags (s_dcb) & NM_SETTING_DCB_FLAG_ENABLE) {
+		val = svGetValue (ifcfg, "DCB_APP_FCOE_MODE", FALSE);
+		if (val) {
+			if (strcmp (val, NM_SETTING_DCB_FCOE_MODE_FABRIC) == 0 ||
+			    strcmp (val, NM_SETTING_DCB_FCOE_MODE_VN2VN) == 0)
+				g_object_set (G_OBJECT (s_dcb), NM_SETTING_DCB_APP_FCOE_MODE, val, NULL);
+			else {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid FCoE mode '%s'", val);
+				g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid FCoE mode");
+				g_free (val);
+				g_object_unref (s_dcb);
+				return FALSE;
+			}
+			g_free (val);
+		}
+	}
+
+	/* iSCSI */
+	if (!read_dcb_app (ifcfg, s_dcb, "ISCSI",
+	                   &dcb_flags_props[DCB_APP_ISCSI_FLAGS],
+	                   NM_SETTING_DCB_APP_ISCSI_PRIORITY,
+	                   error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	/* FIP */
+	if (!read_dcb_app (ifcfg, s_dcb, "FIP",
+	                   &dcb_flags_props[DCB_APP_FIP_FLAGS],
+	                   NM_SETTING_DCB_APP_FIP_PRIORITY,
+	                   error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	/* Priority Flow Control */
+	flags = read_dcb_flags (ifcfg, &dcb_flags_props[DCB_PFC_FLAGS]);
+	g_object_set (G_OBJECT (s_dcb), NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, flags, NULL);
+
+	if (!read_dcb_bool_array (ifcfg,
+	                          s_dcb,
+	                          flags,
+	                          "DCB_PFC_UP",
+	                          "PFC",
+	                          nm_setting_dcb_set_priority_flow_control,
+	                          error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	/* Priority Groups */
+	flags = read_dcb_flags (ifcfg, &dcb_flags_props[DCB_PG_FLAGS]);
+	g_object_set (G_OBJECT (s_dcb), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, flags, NULL);
+
+	if (!read_dcb_uint_array (ifcfg,
+	                          s_dcb,
+	                          flags,
+	                          "DCB_PG_ID",
+	                          "PGID",
+	                          TRUE,
+	                          nm_setting_dcb_set_priority_group_id,
+	                          error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	/* Group bandwidth */
+	if (!read_dcb_percent_array (ifcfg,
+	                             s_dcb,
+	                             flags,
+	                             "DCB_PG_PCT",
+	                             "PGPCT",
+	                             TRUE,
+	                             nm_setting_dcb_set_priority_group_bandwidth,
+	                             error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	/* Priority bandwidth */
+	if (!read_dcb_percent_array (ifcfg,
+	                             s_dcb,
+	                             flags,
+	                             "DCB_PG_UPPCT",
+	                             "UPPCT",
+	                             FALSE,
+	                             nm_setting_dcb_set_priority_bandwidth,
+	                             error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	/* Strict Bandwidth */
+	if (!read_dcb_bool_array (ifcfg,
+	                          s_dcb,
+	                          flags,
+	                          "DCB_PG_STRICT",
+	                          "STRICT",
+	                          nm_setting_dcb_set_priority_strict_bandwidth,
+	                          error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	if (!read_dcb_uint_array (ifcfg,
+	                          s_dcb,
+	                          flags,
+	                          "DCB_PG_UP2TC",
+	                          "UP2TC",
+	                          FALSE,
+	                          nm_setting_dcb_set_priority_traffic_class,
+	                          error)) {
+		g_object_unref (s_dcb);
+		return FALSE;
+	}
+
+	*out_setting = NM_SETTING (s_dcb);
+	return TRUE;
 }
 
 static gboolean
@@ -4505,7 +4897,7 @@ connection_from_file (const char *filename,
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
 	char *type, *devtype, *nmc = NULL, *bootproto;
-	NMSetting *s_ip4, *s_ip6, *s_port;
+	NMSetting *s_ip4, *s_ip6, *s_port, *s_dcb = NULL;
 	const char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
 	char *unmanaged = NULL;
@@ -4677,6 +5069,14 @@ connection_from_file (const char *filename,
 	s_port = make_team_port_setting (parsed);
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
+
+	if (!make_dcb_setting (parsed, network_file, &s_dcb, error)) {
+		g_object_unref (connection);
+		connection = NULL;
+		goto done;
+	}
+	if (s_dcb)
+		nm_connection_add_setting (connection, s_dcb);
 
 	/* iSCSI / ibft connections are read-only since their settings are
 	 * stored in NVRAM and can only be changed in BIOS.

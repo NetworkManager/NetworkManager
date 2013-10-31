@@ -19,6 +19,7 @@ libnm-util/nm-setting-bridge-port.c
 libnm-util/nm-setting-bridge.c
 libnm-util/nm-setting-cdma.c
 libnm-util/nm-setting-connection.c
+libnm-util/nm-setting-dcb.c
 libnm-util/nm-setting-gsm.c
 libnm-util/nm-setting-infiniband.c
 libnm-util/nm-setting-ip4-config.c

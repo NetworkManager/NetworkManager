@@ -1327,6 +1327,22 @@ nm_connection_get_setting_connection (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_setting_dcb:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingDcb the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingDcb if the connection contains one, otherwise NULL
+ **/
+NMSettingDcb *
+nm_connection_get_setting_dcb (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingDcb *) nm_connection_get_setting (connection, NM_TYPE_SETTING_DCB);
+}
+
+/**
  * nm_connection_get_setting_generic:
  * @connection: the #NMConnection
  *

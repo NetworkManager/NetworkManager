@@ -39,6 +39,7 @@
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-cdma.h>
 #include <nm-setting-connection.h>
+#include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
 #include <nm-setting-gsm.h>
 #include <nm-setting-infiniband.h>
@@ -208,6 +209,7 @@ NMSettingBridge *          nm_connection_get_setting_bridge            (NMConnec
 NMSettingBridgePort *      nm_connection_get_setting_bridge_port       (NMConnection *connection);
 NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);
 NMSettingConnection *      nm_connection_get_setting_connection        (NMConnection *connection);
+NMSettingDcb *             nm_connection_get_setting_dcb               (NMConnection *connection);
 NMSettingGeneric *         nm_connection_get_setting_generic           (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
 NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);

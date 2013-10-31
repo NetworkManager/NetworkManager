@@ -230,6 +230,8 @@ nm_sources = \
 	nm-connectivity.h \
 	nm-dbus-manager.c \
 	nm-dbus-manager.h \
+	nm-dcb.c \
+	nm-dcb.h \
 	nm-dhcp4-config.c \
 	nm-dhcp4-config.h \
 	nm-dhcp6-config.c \
