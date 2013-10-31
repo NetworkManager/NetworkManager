@@ -96,12 +96,11 @@ ip4_start (NMDHCPClient *client,
 	GPid pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
-	const char *iface, *uuid;
+	const char *iface;
 
 	g_return_val_if_fail (priv->pid_file == NULL, -1);
 
 	iface = nm_dhcp_client_get_iface (client);
-	uuid = nm_dhcp_client_get_uuid (client);
 
 	priv->pid_file = g_strdup_printf (NMSTATEDIR "/dhcpcd-%s.pid", iface);
 
@@ -175,7 +174,8 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client, release, duid);
 
 	if (priv->pid_file)
-		remove (priv->pid_file);
+		if (remove (priv->pid_file) == -1)
+			nm_log_dbg (LOGD_DHCP, "Could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
 
 	/* FIXME: implement release... */
 }

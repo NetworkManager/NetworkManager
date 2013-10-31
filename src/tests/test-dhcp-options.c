@@ -235,6 +235,7 @@ test_wins_options (const char *client)
 	ASSERT (nm_ip4_config_get_num_addresses (ip4_config) == 1,
 	        "dhcp-wins", "unexpected number of IP addresses");
 	address = nm_ip4_config_get_address (ip4_config, 0);
+	ASSERT (address != NULL, "dhcp-wins", "unexpectedly did not get address #0");
 
 	ASSERT (nm_ip4_config_get_num_wins (ip4_config) == 2,
 	        "dhcp-wins", "unexpected number of WINS servers");

@@ -302,7 +302,7 @@ verify_wpa_psk (NMSettingWirelessSecurity *s_wsec,
 			/* Ad-Hoc WPA requires 'wpa' proto, 'none' pairwise, and 'tkip' group */
 			n = nm_setting_wireless_security_get_num_protos (s_wsec);
 			tmp = (n > 0) ? nm_setting_wireless_security_get_proto (s_wsec, 0) : NULL;
-			if (n > 1 || strcmp (tmp, "wpa")) {
+			if (n > 1 || !tmp || strcmp (tmp, "wpa")) {
 				g_set_error_literal (error,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -312,7 +312,7 @@ verify_wpa_psk (NMSettingWirelessSecurity *s_wsec,
 
 			n = nm_setting_wireless_security_get_num_pairwise (s_wsec);
 			tmp = (n > 0) ? nm_setting_wireless_security_get_pairwise (s_wsec, 0) : NULL;
-			if (n > 1 || strcmp (tmp, "none")) {
+			if (n > 1 || !tmp || strcmp (tmp, "none")) {
 				g_set_error_literal (error,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -322,7 +322,7 @@ verify_wpa_psk (NMSettingWirelessSecurity *s_wsec,
 
 			n = nm_setting_wireless_security_get_num_groups (s_wsec);
 			tmp = (n > 0) ? nm_setting_wireless_security_get_group (s_wsec, 0) : NULL;
-			if (n > 1 || strcmp (tmp, "tkip")) {
+			if (n > 1 || !tmp || strcmp (tmp, "tkip")) {
 				g_set_error_literal (error,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,

@@ -462,7 +462,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		if (priv->agent_secrets) {
 			hash = nm_connection_to_hash (priv->agent_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 			if (hash) {
-				nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, NULL);
+				(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, NULL);
 				g_hash_table_destroy (hash);
 			}
 		}

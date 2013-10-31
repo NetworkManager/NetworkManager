@@ -245,13 +245,13 @@ validate_list (const char *name, const char *value, const BondDefault *def)
 {
 	guint i;
 
-	for (i = 0; def->list && i < G_N_ELEMENTS (def->list) && def->list[i]; i++) {
+	for (i = 0; i < G_N_ELEMENTS (def->list) && def->list[i]; i++) {
 		if (g_strcmp0 (def->list[i], value) == 0)
 			return TRUE;
 	}
 
 	/* empty validation list means all values pass */
-	return (def->list == NULL || def->list[0] == NULL) ? TRUE : FALSE;
+	return def->list[0] == NULL ? TRUE : FALSE;
 }
 
 static gboolean

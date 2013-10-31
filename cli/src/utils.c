@@ -131,7 +131,7 @@ nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GErr
 			if (have_mandatory && !last)
 				return TRUE;
 
-			if (p && p->name)
+			if (p->name)
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: Argument '%s' was expected, but '%s' provided."), p->name, **argv);
 			else

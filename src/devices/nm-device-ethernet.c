@@ -228,7 +228,6 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMDeviceEthernetPrivate *priv;
 	NMDevice *self;
 	int ifindex;
 
@@ -237,7 +236,6 @@ constructor (GType type,
 	                                                                        construct_params);
 	if (object) {
 		self = NM_DEVICE (object);
-		priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 		ifindex = nm_device_get_ifindex (self);
 
 		g_assert (   nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_ETHERNET
@@ -1262,7 +1260,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
-	if (priv->perm_hw_addr && memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+	if (memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
 		array = g_byte_array_sized_new (ETH_ALEN);
 		g_byte_array_append (array, priv->perm_hw_addr, ETH_ALEN);
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, array, NULL);

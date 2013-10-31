@@ -35,6 +35,7 @@ setup_config (const char *config_file, const char *config_dir, ...)
 	char **argv, *arg;
 	int argc;
 	GOptionContext *context;
+	gboolean success;
 
 	args = g_ptr_array_new ();
 	g_ptr_array_add (args, "test-config");
@@ -53,8 +54,11 @@ setup_config (const char *config_file, const char *config_dir, ...)
 
 	context = g_option_context_new (NULL);
 	g_option_context_add_main_entries (context, nm_config_get_options (), NULL);
-	g_option_context_parse (context, &argc, &argv, NULL);
+	success = g_option_context_parse (context, &argc, &argv, NULL);
 	g_option_context_free (context);
+
+	if (!success)
+		g_printerr ("Invalid options.\n");
 
 	g_ptr_array_free (args, TRUE);
 }
@@ -87,10 +91,12 @@ test_config_simple (void)
 	g_free (value);
 
 	value = nm_config_get_value (config, "extra-section", "no-key", &error);
+	g_assert (!value);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND);
 	g_clear_error (&error);
 
 	value = nm_config_get_value (config, "no-section", "no-key", &error);
+	g_assert (!value);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND);
 	g_clear_error (&error);
 
@@ -105,6 +111,7 @@ test_config_non_existent (void)
 
 	setup_config (SRCDIR "/no-such-file", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
+	g_assert (!config);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND);
 }
 
@@ -116,6 +123,7 @@ test_config_parse_error (void)
 
 	setup_config (SRCDIR "/bad.conf", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
+	g_assert (!config);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
 }
 
@@ -266,6 +274,7 @@ test_config_confdir_parse_error (void)
 	/* Using SRCDIR as the conf dir will pick up bad.conf */
 	setup_config (SRCDIR "/NetworkManager.conf", SRCDIR, NULL);
 	config = nm_config_new (&error);
+	g_assert (!config);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
 }
 

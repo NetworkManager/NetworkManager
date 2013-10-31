@@ -677,7 +677,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
 		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss)) {
-			nm_platform_ip4_route_add (parent_ifindex, gw_addr, 32, 0, 0, parent_mss);
+			(void) nm_platform_ip4_route_add (parent_ifindex, gw_addr, 32, 0, 0, parent_mss);
 			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss)) {
 				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set default route.");
 			}
@@ -688,7 +688,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
 		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, 0, mss)) {
-			nm_platform_ip4_route_add (ip_ifindex, gw_addr, 32, 0, 0, mss);
+			(void) nm_platform_ip4_route_add (ip_ifindex, gw_addr, 32, 0, 0, mss);
 			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, 0, mss)) {
 				nm_log_err (LOGD_IP4, "Failed to set default route.");
 			}
@@ -867,7 +867,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 			int_gw = &in6addr_any;
 
 		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, 0, mss)) {
-			nm_platform_ip6_route_add (parent_ifindex, *gw_addr, 128, in6addr_any, 0, parent_mss);
+			(void) nm_platform_ip6_route_add (parent_ifindex, *gw_addr, 128, in6addr_any, 0, parent_mss);
 			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, 0, mss)) {
 				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set default route.");
 			}
@@ -878,7 +878,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
 		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss)) {
-			nm_platform_ip6_route_add (ip_ifindex, *gw_addr, 128, in6addr_any, 0, mss);
+			(void) nm_platform_ip6_route_add (ip_ifindex, *gw_addr, 128, in6addr_any, 0, mss);
 			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss)) {
 				nm_log_err (LOGD_IP6, "Failed to set default route.");
 			}
@@ -1740,14 +1740,9 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	NMDnsManager *mgr;
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
-	const char *ip_iface;
-	NMDevice *parent;
 
 	mgr = nm_dns_manager_get ();
 	nm_dns_manager_begin_updates (mgr, __func__);
-
-	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
-	parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config) {

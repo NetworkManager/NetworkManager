@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #include "NetworkManager.h"
 #include "nm-dbus-manager.h"
@@ -476,7 +477,8 @@ nm_dbus_manager_init (NMDBusManager *self)
 
 #if HAVE_DBUS_GLIB_100
 	/* Set up our main private DBus socket */
-	mkdir (NMRUNDIR, 0700);
+	if (mkdir (NMRUNDIR, 0700) == -1)
+		nm_log_warn (LOGD_CORE, "Error creating directory \"%s\": %d (%s)", NMRUNDIR, errno, g_strerror (errno));
 	priv->priv_server = private_server_new (PRIV_SOCK_PATH, PRIV_SOCK_TAG, self);
 	if (priv->priv_server) {
 		priv->private_servers = g_slist_append (priv->private_servers, priv->priv_server);

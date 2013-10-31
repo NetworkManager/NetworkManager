@@ -43,7 +43,8 @@ dump_interface (NMPlatformLink *link)
 	if (link->driver)
 		printf ("    driver: %s\n", link->driver);
 	printf ("    UDI: %s\n", link->udi);
-	nm_platform_vlan_get_info (link->ifindex, &vlan_parent, &vlan_id);
+	if (!nm_platform_vlan_get_info (link->ifindex, &vlan_parent, &vlan_id))
+		g_assert_not_reached ();
 	if (vlan_parent)
 		printf ("    vlan parent %d id %d\n", vlan_parent, vlan_id);
 

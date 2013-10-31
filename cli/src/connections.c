@@ -358,6 +358,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
 	}
+	g_assert (print_settings_array);
 
 	/* Main header */
 	nmc->print_fields.header_name = _("Connection details");
@@ -388,8 +389,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 		}
 	}
 
-	if (print_settings_array)
-		g_array_free (print_settings_array, TRUE);
+	g_array_free (print_settings_array, TRUE);
 
 	return TRUE;
 }
@@ -859,6 +859,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
 	}
+	g_assert (print_groups);
 
 	/* Main header */
 	nmc->print_fields.header_name = _("Active connection details");
@@ -978,8 +979,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 		}
 	}
 
-	if (print_groups)
-		g_array_free (print_groups, TRUE);
+	g_array_free (print_groups, TRUE);
 
 	return TRUE;
 }
@@ -5589,6 +5589,8 @@ connection_remove_setting (NMConnection *connection, NMSetting *setting)
 {
 	gboolean mandatory;
 
+	g_return_val_if_fail (setting, FALSE);
+
 	mandatory = is_setting_mandatory (connection, setting);
 	if (!mandatory) {
 		nm_connection_remove_setting (connection, G_OBJECT_TYPE (setting));
@@ -6268,6 +6270,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						if (s_tmp) {
 							/* Remove setting from the connection */
 							connection_remove_setting (connection, s_tmp);
+							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
 								menu_switch_to_level0 (&menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
@@ -6382,14 +6385,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			if (   menu_ctx.curr_setting
 			    && (!cmd_arg || strcmp (cmd_arg, "all") != 0)) {
 				GError *tmp_err = NULL;
-				nm_setting_verify (menu_ctx.curr_setting, NULL, &tmp_err);
+				(void) nm_setting_verify (menu_ctx.curr_setting, NULL, &tmp_err);
 				printf (_("Verify setting '%s': %s\n"),
 				        nm_setting_get_name (menu_ctx.curr_setting),
 				        tmp_err ? tmp_err->message : "OK");
 				g_clear_error (&tmp_err);
 			} else {
 				GError *tmp_err = NULL;
-				nm_connection_verify (connection, &tmp_err);
+				(void) nm_connection_verify (connection, &tmp_err);
 				printf (_("Verify connection: %s\n"),
 				        tmp_err ? tmp_err->message : "OK");
 				g_clear_error (&tmp_err);
@@ -6939,8 +6942,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 
 error:
-	if (connection)
-		g_object_unref (connection);
+	g_assert (!connection);
 	g_free (type_ask);
 
 	nmc->should_wait = FALSE;

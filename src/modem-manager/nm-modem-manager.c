@@ -187,23 +187,22 @@ poke_modem_cb (gpointer user_data)
 	NMModemManager *self = NM_MODEM_MANAGER (user_data);
 	DBusGConnection *g_connection;
 	DBusGProxy *proxy;
-	DBusGProxyCall *call;
 
 	g_connection = nm_dbus_manager_get_connection (self->priv->dbus_mgr);
 	proxy = dbus_g_proxy_new_for_name (g_connection,
-									   MM_OLD_DBUS_SERVICE,
-									   MM_OLD_DBUS_PATH,
-									   MM_OLD_DBUS_INTERFACE);
+	                                   MM_OLD_DBUS_SERVICE,
+	                                   MM_OLD_DBUS_PATH,
+	                                   MM_OLD_DBUS_INTERFACE);
 
 	nm_log_dbg (LOGD_MB, "Requesting to (re)launch modem-manager...");
 
-	call = dbus_g_proxy_begin_call_with_timeout (proxy,
-	                                             "EnumerateDevices",
-	                                             mm_poke_cb,
-	                                             NULL,
-	                                             NULL,
-	                                             5000,
-	                                             G_TYPE_INVALID);
+	dbus_g_proxy_begin_call_with_timeout (proxy,
+	                                      "EnumerateDevices",
+	                                      mm_poke_cb,
+	                                      NULL,
+	                                      NULL,
+	                                      5000,
+	                                      G_TYPE_INVALID);
 	return TRUE;
 }
 

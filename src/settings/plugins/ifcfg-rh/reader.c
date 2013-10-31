@@ -3254,6 +3254,7 @@ make_wpa_setting (shvarFile *ifcfg,
 		g_free (allow_rsn);
 	}
 
+	/* coverity[dereference] */
 	if (!strcmp (value, "WPA-PSK")) {
 		NMSettingSecretFlags psk_flags;
 

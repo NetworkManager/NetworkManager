@@ -213,8 +213,8 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			err = g_value_get_string (tmp);
 
 			if (result != DISPATCH_RESULT_SUCCESS) {
-				nm_log_warn (LOGD_CORE, "Dispatcher script %s: %s",
-				             dispatch_result_to_string (result), err);
+				nm_log_warn (LOGD_CORE, "Dispatcher script \"%s\" failed with %s: %s",
+				             script, dispatch_result_to_string (result), err);
 			}
 
 next:
@@ -282,7 +282,6 @@ _dispatcher_call (DispatcherAction action,
 	GHashTable *device_dhcp6_props;
 	GHashTable *vpn_ip4_props;
 	GHashTable *vpn_ip6_props;
-	DBusGProxyCall *call;
 	DispatchInfo *info;
 
 	/* All actions except 'hostname' require a device */
@@ -339,23 +338,23 @@ _dispatcher_call (DispatcherAction action,
 	info->user_data = user_data;
 
 	/* Send the action to the dispatcher */
-	call = dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
-	                                             dispatcher_done_cb,
-	                                             info,
-	                                             (GDestroyNotify) dispatcher_info_free,
-	                                             15000,
-	                                             G_TYPE_STRING, action_to_string (action),
-	                                             DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_ip4_props,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_ip6_props,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp4_props,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp6_props,
-	                                             G_TYPE_STRING, vpn_iface ? vpn_iface : "",
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
-	                                             DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
-	                                             G_TYPE_INVALID);
+	dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
+	                                      dispatcher_done_cb,
+	                                      info,
+	                                      (GDestroyNotify) dispatcher_info_free,
+	                                      15000,
+	                                      G_TYPE_STRING, action_to_string (action),
+	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_ip4_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_ip6_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp4_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp6_props,
+	                                      G_TYPE_STRING, vpn_iface ? vpn_iface : "",
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
+	                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
+	                                      G_TYPE_INVALID);
 	g_hash_table_destroy (connection_hash);
 	g_hash_table_destroy (connection_props);
 	g_hash_table_destroy (device_props);

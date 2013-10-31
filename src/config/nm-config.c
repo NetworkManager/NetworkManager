@@ -147,7 +147,7 @@ nm_config_get_connectivity_interval (NMConfig *config)
 	/* We store interval as signed internally to track whether it's
 	 * set or not, but report as unsigned to callers.
 	 */
-	return CLAMP (NM_CONFIG_GET_PRIVATE (config)->connectivity_interval, 0, G_MAXINT32);
+	return MAX (NM_CONFIG_GET_PRIVATE (config)->connectivity_interval, 0);
 }
 
 const char *

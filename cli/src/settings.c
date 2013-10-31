@@ -1056,8 +1056,8 @@ nmc_property_connection_get_permissions (NMSetting *setting)
 
 	perm = g_string_new (NULL);
 	for (i = 0; i < nm_setting_connection_get_num_permissions (s_con); i++) {
-		nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL);
-		g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
+		if (nm_setting_connection_get_permission (s_con, i, &perm_type, &perm_item, NULL))
+			g_string_append_printf (perm, "%s:%s,", perm_type, perm_item);
 	}
 	if (perm->len > 0)
 		g_string_truncate (perm, perm->len-1); /* remove trailing , */

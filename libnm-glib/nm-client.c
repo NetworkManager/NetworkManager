@@ -1824,8 +1824,13 @@ static void
 constructed (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+	GError *error = NULL;
 
-	nm_utils_init (NULL);
+	if (!nm_utils_init (&error)) {
+		g_warning ("Couldn't initilize nm-utils/crypto system: %d %s",
+		           error->code, error->message);
+		g_clear_error (&error);
+	}
 
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
 

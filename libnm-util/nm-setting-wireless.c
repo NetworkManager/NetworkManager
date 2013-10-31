@@ -146,7 +146,7 @@ match_cipher (const char *cipher,
  *
  * Returns: %TRUE if the given settings are compatible with the access point's
  * security flags and mode, %FALSE if they are not.
- */ 
+ */
 gboolean
 nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
                                             NMSettingWirelessSecurity *s_wireless_sec,
@@ -155,14 +155,11 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
                                             NM80211ApSecurityFlags ap_rsn,
                                             NM80211Mode ap_mode)
 {
-	NMSettingWirelessPrivate *priv;
 	const char *key_mgmt = NULL, *cipher;
 	guint32 num, i;
 	gboolean found = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (s_wireless), FALSE);
-
-	priv = NM_SETTING_WIRELESS_GET_PRIVATE (s_wireless);
 
 	if (!s_wireless_sec) {
 		if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)

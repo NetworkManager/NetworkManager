@@ -526,9 +526,11 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
 
 	if (priv->conf_file)
-		remove (priv->conf_file);
+		if (remove (priv->conf_file) == -1)
+			nm_log_dbg (LOGD_DHCP, "Could not remove dhcp config file \"%s\": %d (%s)", priv->conf_file, errno, g_strerror (errno));
 	if (priv->pid_file) {
-		remove (priv->pid_file);
+		if (remove (priv->pid_file) == -1)
+			nm_log_dbg (LOGD_DHCP, "Could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
 		g_free (priv->pid_file);
 		priv->pid_file = NULL;
 	}

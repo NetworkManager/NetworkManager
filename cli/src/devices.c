@@ -424,7 +424,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	freq = nm_access_point_get_frequency (ap);
 	mode = nm_access_point_get_mode (ap);
 	bitrate = nm_access_point_get_max_bitrate (ap);
-	strength = CLAMP (nm_access_point_get_strength (ap), 0, 100);
+	strength = MIN (nm_access_point_get_strength (ap), 100);
 
 	/* Convert to strings */
 	ssid_str = nm_utils_ssid_to_utf8 (ssid);

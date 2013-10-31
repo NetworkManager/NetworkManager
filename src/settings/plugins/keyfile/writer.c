@@ -712,7 +712,10 @@ cert_writer (GKeyFile *file,
 			break;
 		}
 	}
-	g_return_if_fail (objtype != NULL);
+	if (!objtype) {
+		g_return_if_fail (objtype);
+		return;
+	}
 
 	scheme = objtype->scheme_func (NM_SETTING_802_1X (setting));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
@@ -902,7 +905,7 @@ write_setting_value (NMSetting *setting,
 	 * the secret flags there are in a third-level hash in the 'secrets'
 	 * property.
 	 */
-	if (pspec->flags & NM_SETTING_PARAM_SECRET && !NM_IS_SETTING_VPN (setting)) {
+	if (pspec && (pspec->flags & NM_SETTING_PARAM_SECRET) && !NM_IS_SETTING_VPN (setting)) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);

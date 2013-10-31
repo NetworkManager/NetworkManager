@@ -1009,7 +1009,7 @@ read_one_setting_value (NMSetting *setting,
 	/* If there's a custom parser for this key, handle that before the generic
 	 * parsers below.
 	 */
-	if (parser && parser->setting_name) {
+	if (parser->setting_name) {
 		(*parser->parser) (setting, key, info->keyfile, info->keyfile_path);
 		return;
 	}

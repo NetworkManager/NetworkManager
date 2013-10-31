@@ -264,17 +264,16 @@ get_credentials (char *username, char *password)
 		return 1;
 	}
 
+	g_return_val_if_fail (username && password, -1);
 	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), -1);
 
 	g_message ("nm-ppp-plugin: (%s): passwd-hook, requesting credentials...", __func__);
 
-	dbus_g_proxy_call (proxy, "NeedSecrets", &err,
-	                   G_TYPE_INVALID,
-	                   G_TYPE_STRING, &my_username,
-	                   G_TYPE_STRING, &my_password,
-	                   G_TYPE_INVALID);
-
-	if (err) {
+	if (!dbus_g_proxy_call (proxy, "NeedSecrets", &err,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_STRING, &my_username,
+	                        G_TYPE_STRING, &my_password,
+	                        G_TYPE_INVALID)) {
 		g_warning ("nm-ppp-plugin: (%s): could not get secrets: (%d) %s",
 		           __func__,
 		           err ? err->code : -1,

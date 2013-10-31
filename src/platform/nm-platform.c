@@ -1147,7 +1147,6 @@ nm_platform_ip4_address_add (int ifindex, in_addr_t address, int plen, guint32 l
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
-	g_return_val_if_fail (preferred >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_add, FALSE);
 
 	debug ("address: adding or updating IPv4 address");
@@ -1162,7 +1161,6 @@ nm_platform_ip6_address_add (int ifindex, struct in6_addr address, int plen, gui
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
-	g_return_val_if_fail (preferred >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
 	debug ("address: adding or updating IPv6 address");

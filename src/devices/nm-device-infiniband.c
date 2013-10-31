@@ -68,22 +68,19 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMDeviceInfinibandPrivate *priv;
 	NMDevice *self;
 
 	object = G_OBJECT_CLASS (nm_device_infiniband_parent_class)->constructor (type,
-	                                                                        n_construct_params,
-	                                                                        construct_params);
+	                                                                          n_construct_params,
+	                                                                          construct_params);
 	if (!object)
 		return NULL;
 
 	self = NM_DEVICE (object);
-	priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_HW | LOGD_INFINIBAND, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            nm_device_get_ifindex (NM_DEVICE (self)));
-
+	            nm_device_get_iface (self),
+	            nm_device_get_ifindex (self));
 	return object;
 }
 

@@ -147,12 +147,12 @@ call_plugin_disconnect (NMVPNConnection *self)
 	GError *error = NULL;
 
 	if (priv->proxy) {
-		dbus_g_proxy_call (priv->proxy, "Disconnect", &error,
-		                   G_TYPE_INVALID,
-		                   G_TYPE_INVALID);
-		if (error)
+		if (!dbus_g_proxy_call (priv->proxy, "Disconnect", &error,
+		                        G_TYPE_INVALID,
+		                        G_TYPE_INVALID)) {
 			nm_log_warn (LOGD_VPN, "error disconnecting VPN: %s", error->message);
-		g_clear_error (&error);
+			g_error_free (error);
+		}
 
 		g_object_unref (priv->proxy);
 		priv->proxy = NULL;

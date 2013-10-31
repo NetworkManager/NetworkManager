@@ -46,7 +46,10 @@ add_ip4_to_rdns_array (guint32 ip, GPtrArray *domains) /* network byte order */
 	else if (defprefix == 24)
 		str = g_strdup_printf ("%u.%u.%u.in-addr.arpa", p[2] & 0xFF, p[1] & 0xFF, p[0] & 0xFF);
 
-	g_return_if_fail (str != NULL);
+	if (!str) {
+		g_return_if_fail (str != NULL);
+		return;
+	}
 
 	/* Suppress duplicates */
 	for (i = 0; i < domains->len; i++) {

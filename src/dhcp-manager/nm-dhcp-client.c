@@ -328,7 +328,7 @@ machine_id_parse (const char *in, uuid_t uu)
 	g_return_val_if_fail (in != NULL, FALSE);
 	g_return_val_if_fail (strlen (in) == 32, FALSE);
 
-	for (i = 0; i < 32; i++, cp++) {
+	for (i = 0; i < 32; i++) {
 		if (!g_ascii_isxdigit (in[i]))
 			return FALSE;
 	}
@@ -521,7 +521,9 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 		}
 	}
 
-	remove (pid_file);
+	if (remove (pid_file) == -1)
+		nm_log_dbg (LOGD_DHCP, "Could not remove dhcp pid file \"%s\": %d (%s)", pid_file, errno, g_strerror (errno));
+
 	g_free (proc_path);
 	g_free (pid_contents);
 	g_free (proc_contents);

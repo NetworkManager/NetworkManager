@@ -318,7 +318,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, nm_device_get_iface (device), NULL);
 	}
 
-	nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id);
+	(void) nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id);
 	if (priv->vlan_id != vlan_id) {
 		priv->vlan_id = vlan_id;
 		g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_ID);

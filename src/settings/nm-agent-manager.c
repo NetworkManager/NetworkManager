@@ -887,7 +887,7 @@ get_agent_request_secrets (ConnectionRequest *req, gboolean include_system_secre
 	nm_connection_clear_secrets (tmp);
 	if (include_system_secrets) {
 		if (req->existing_secrets)
-			nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, NULL);
+			(void) nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, NULL);
 	} else {
 		/* Update secret flags in the temporary connection to indicate that
 		 * the system secrets we're not sending to the agent aren't required,

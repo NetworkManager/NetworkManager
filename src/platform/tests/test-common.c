@@ -101,8 +101,8 @@ run_command (const char *format, ...)
 	va_list ap;
 
 	va_start (ap, format);
-
 	command = g_strdup_vprintf (format, ap);
+	va_end (ap);
 	debug ("Running command: %s", command);
 	g_assert (!system (command));
 	debug ("Command finished.");

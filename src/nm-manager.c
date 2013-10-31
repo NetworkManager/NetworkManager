@@ -2662,6 +2662,10 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMConnection *connection;
 	NMConnection *master_connection = NULL;
 
+	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
 	g_assert (NM_IS_VPN_CONNECTION (active) == FALSE);
 
 	connection = nm_active_connection_get_connection (active);
@@ -2937,8 +2941,8 @@ _internal_activation_auth_done (NMActiveConnection *active,
 	if (success) {
 		if (_internal_activate_generic (self, active, &error))
 			return;
-		g_assert (error);
 	}
+	g_assert (error_desc || error);
 
 	active_connection_remove (self, active);
 	nm_log_warn (LOGD_CORE, "Failed to activate '%s': %s",
@@ -2955,15 +2959,12 @@ nm_manager_activate_connection (NMManager *self,
                                 NMAuthSubject *subject,
                                 GError **error)
 {
-	NMManagerPrivate *priv;
 	NMActiveConnection *active;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
-
-	priv = NM_MANAGER_GET_PRIVATE (self);
 
 	active = _new_active_connection (self,
 	                                 connection,

@@ -416,7 +416,7 @@ nm_utils_same_ssid (const GByteArray * ssid1,
 
 	if (ssid1 == ssid2)
 		return TRUE;
-	if ((ssid1 && !ssid2) || (!ssid1 && ssid2))
+	if (!ssid1 || !ssid2)
 		return FALSE;
 
 	ssid1_len = ssid1->len;
@@ -724,6 +724,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			/* Ad-Hoc WPA APs won't necessarily have the PSK flag set, and
 			 * they don't have any pairwise ciphers. */
 			if (adhoc) {
+				/* coverity[dead_error_line] */
 				if (   (ap_wpa & NM_802_11_AP_SEC_GROUP_TKIP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
@@ -752,6 +753,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			/* Ad-Hoc WPA APs won't necessarily have the PSK flag set, and
 			 * they don't have any pairwise ciphers, nor any RSA flags yet. */
 			if (adhoc) {
+				/* coverity[dead_error_line] */
 				if (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP)
 					return TRUE;
 				if (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP)

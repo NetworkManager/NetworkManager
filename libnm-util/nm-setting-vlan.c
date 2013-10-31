@@ -250,7 +250,6 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
                                   NMVlanPriorityMap map,
                                   const char *str)
 {
-	NMSettingVlanPrivate *priv = NULL;
 	GSList *list = NULL, *iter = NULL;
 	PriorityMap *item = NULL;
 
@@ -258,7 +257,6 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 	g_return_val_if_fail (str && str[0], FALSE);
 
-	priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 	list = get_map (setting, map);
 
 	item = priority_map_new_from_str (map, str);

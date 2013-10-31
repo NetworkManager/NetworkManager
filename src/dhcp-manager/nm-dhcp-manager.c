@@ -193,16 +193,12 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
                               GHashTable *options,
                               gpointer user_data)
 {
-	NMDHCPManager *manager;
-	NMDHCPManagerPrivate *priv;
+	NMDHCPManager *manager = NM_DHCP_MANAGER (user_data);
 	NMDHCPClient *client;
 	char *iface = NULL;
 	char *pid_str = NULL;
 	char *reason = NULL;
 	unsigned long temp;
-
-	manager = NM_DHCP_MANAGER (user_data);
-	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
 	iface = get_option (options, "interface");
 	if (iface == NULL) {
@@ -299,8 +295,10 @@ get_client_type (const char *client, GError **error)
 	/* If a client was disabled at build-time, its *_PATH define will be
 	 * an empty string.
 	 */
+	/* coverity[array_null] */
 	if (DHCLIENT_PATH && strlen (DHCLIENT_PATH))
 		dhclient_path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
+	/* coverity[array_null] */
 	if (DHCPCD_PATH && strlen (DHCPCD_PATH))
 		dhcpcd_path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
 

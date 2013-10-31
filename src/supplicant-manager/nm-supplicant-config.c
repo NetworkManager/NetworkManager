@@ -246,7 +246,7 @@ nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
                                   guint32 ap_scan)
 {
 	g_return_if_fail (NM_IS_SUPPLICANT_CONFIG (self));
-	g_return_if_fail (ap_scan >= 0 && ap_scan <= 2);
+	g_return_if_fail (ap_scan <= 2);
 
 	NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->ap_scan = ap_scan;
 }
