@@ -304,14 +304,20 @@ When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show configured'.
 .TP
 .B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]
+.RE
+.RS
+.B up ifname <ifname> [ap <BSSID>] [nsp <name>]
+.RS
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
 path. If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP or \fIpath\fP can be
-used. When requiring a particular device to activate the connection on, the
-\fIifname\fP option with interface name should be given. In case of a VPN
-connection, the \fIifname\fP option specify the device of the base connection.
-The \fIap\fP option specify what particular AP should be used in case of
-a Wi\(hyFi connection.
+used.  When requiring a particular device to activate the connection on, the
+\fIifname\fP option with interface name should be given.  If the <ID> is not
+given an \fIifname\fP is required, and NetworkManager will activate the best
+available connection for the given \fIifname\fP.  In case of a VPN connection,
+the \fIifname\fP option specifies the device of the base connection. The
+\fIap\fP option specify what particular AP should be used in case of a Wi\(hyFi
+connection.
 .br
 If '--wait' option is not specified, the default timeout will be 90 seconds.
 .br
@@ -325,6 +331,7 @@ Available options are:
 \(en BSSID of the AP which the command should connect to (for Wi\(hyFi connections)
 .IP \fInsp\fP 13
 \(en NSP (Network Service Provider) which the command should connect to (for WiMAX connections)
+.RE
 .RE
 .TP
 .B down [ id | uuid | path | apath ] <ID>
@@ -608,7 +615,7 @@ then \fINetworkManager\fP will reload connection files any time they change
 .B device - show and manage network interfaces
 .br
 .TP
-.SS \fICOMMAND\fP := { status | show | disconnect | wifi | wimax }
+.SS \fICOMMAND\fP := { status | show | connect | disconnect | wifi | wimax }
 .sp
 .RS
 .TP
@@ -623,6 +630,13 @@ This is the default action if no command is specified to \fIdevice\fP object.
 Show detailed information about devices.  Without an argument, all devices are
 examined. To get information for a specific device, the interface name has
 to be provided.
+.TP
+.B connect <ifname>
+.br
+Connect the device. NetworkManager will try to find a suitable connection that
+will be activated. It will also consider connections that are not set to auto connect.
+.br
+If '--wait' option is not specified, the default timeout will be 90 seconds.
 .TP
 .B disconnect <ifname>
 .br

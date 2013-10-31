@@ -3110,6 +3110,61 @@ impl_manager_activate_connection (NMManager *self,
 	gboolean is_vpn = FALSE;
 	GError *error = NULL;
 
+	/* Normalize object paths */
+	if (g_strcmp0 (connection_path, "/") == 0)
+		connection_path = NULL;
+	if (g_strcmp0 (specific_object_path, "/") == 0)
+		specific_object_path = NULL;
+	if (g_strcmp0 (device_path, "/") == 0)
+		device_path = NULL;
+
+	/* If the connection path is given and valid, that connection is activated.
+	 * Otherwise the "best" connection for the device is chosen and activated,
+	 * regardless of whether that connection is autoconnect-enabled or not
+	 * (since this is an explicit request, not an auto-activation request).
+	 */
+	if (!connection_path) {
+		GPtrArray *available;
+		guint64 best_timestamp = 0;
+		guint i;
+
+		/* If no connection is given, find a suitable connection for the given device path */
+		if (!device_path) {
+			error = g_error_new_literal (NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			                             "Only devices may be activated without a specifying a connection");
+			goto error;
+		}
+		device = nm_manager_get_device_by_path (self, device_path);
+		if (!device) {
+			error = g_error_new (NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			                     "Cannot activate unknown device %s", device_path);
+			goto error;
+		}
+
+		available = nm_device_get_available_connections (device, specific_object_path);
+		for (i = 0; available && i < available->len; i++) {
+			NMSettingsConnection *candidate = g_ptr_array_index (available, i);
+			guint64 candidate_timestamp = 0;
+
+			nm_settings_connection_get_timestamp (candidate, &candidate_timestamp);
+			if (!connection_path || (candidate_timestamp > best_timestamp)) {
+				connection_path = nm_connection_get_path (NM_CONNECTION (candidate));
+				best_timestamp = candidate_timestamp;
+			}
+		}
+
+		if (available)
+			g_ptr_array_free (available, TRUE);
+
+		if (!connection_path) {
+			error = g_error_new_literal (NM_MANAGER_ERROR,
+			                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+			                             "The device has no connections available.");
+			goto error;
+		}
+	}
+
+	g_assert (connection_path);
 	connection = (NMConnection *) nm_settings_get_connection_by_path (priv->settings, connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,

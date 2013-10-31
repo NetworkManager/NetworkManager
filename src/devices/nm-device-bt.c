@@ -221,7 +221,9 @@ check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	guint32 bt_type;

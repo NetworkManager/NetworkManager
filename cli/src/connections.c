@@ -218,9 +218,9 @@ usage (void)
 	         "  show configured [[ id | uuid | path ] <ID>]\n\n"
 	         "  show active     [[ id | uuid | path | apath ] <ID>]\n\n"
 #if WITH_WIMAX
-	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
+	         "  up [[ id | uuid | path ] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
 #else
-	         "  up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>]\n\n"
+	         "  up [[ id | uuid | path ] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
 #endif
 	         "  down [ id | uuid | path | apath ] <ID>\n\n"
 	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
@@ -1517,18 +1517,31 @@ nmc_activate_connection (NmCli *nmc,
 	GError *local = NULL;
 
 	g_return_val_if_fail (nmc != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection) || ifname, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (nm_connection_get_virtual_iface_name (connection))
-		is_virtual = TRUE;
+	if (connection) {
+		if (nm_connection_get_virtual_iface_name (connection))
+			is_virtual = TRUE;
 
-	device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &local);
-	/* Virtual connection may not have their interfaces created yet */
-	if (!device_found && !is_virtual) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
-		             "%s", local && local->message ? local->message : _("unknown error"));
-		g_clear_error (&local);
+		device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &local);
+		/* Virtual connection may not have their interfaces created yet */
+		if (!device_found && !is_virtual) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
+				     "%s", local && local->message ? local->message : _("unknown error"));
+			g_clear_error (&local);
+			return FALSE;
+		}
+	} else if (ifname) {
+		device = nm_client_get_device_by_iface (nmc->client, ifname);
+		if (!device) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
+			             _("unknown device '%s'."), ifname);
+			return FALSE;
+		}
+	} else {
+		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
+		                     _("no connection and no device given."));
 		return FALSE;
 	}
 
@@ -1554,7 +1567,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *nsp = NULL;
 	GError *error = NULL;
 	const char *selector = NULL;
-	const char *name;
+	const char *name = NULL;
 	char *line = NULL;
 
 	/*
@@ -1570,12 +1583,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			name = line ? line : "";
 			// TODO: enhancement:  when just Enter is pressed (line is NULL), list
 			// available connections so that the user can select one
-		} else {
-			g_string_printf (nmc->return_text, _("Error: No connection specified."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
 		}
-	} else {
+	} else if (strcmp (*argv, "ifname") != 0) {
 		if (   strcmp (*argv, "id") == 0
 		    || strcmp (*argv, "uuid") == 0
 		    || strcmp (*argv, "path") == 0) {
@@ -1589,16 +1598,11 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			name = *argv;
 		}
 		name = *argv;
+		next_arg (&argc, &argv);
 	}
 
-	connection = find_connection (nmc->system_connections, selector, name);
-
-	if (!connection) {
-		g_string_printf (nmc->return_text, _("Error: Unknown connection: %s."), name);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		goto error;
-	}
-	next_arg (&argc, &argv);
+	if (name)
+		connection = find_connection (nmc->system_connections, selector, name);
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {

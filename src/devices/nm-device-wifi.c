@@ -1021,12 +1021,21 @@ check_connection_compatible (NMDevice *device,
 
 
 static gboolean
-check_connection_available (NMDevice *device, NMConnection *connection)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
 	const char *mode;
 	GSList *ap_iter = NULL;
+
+	if (specific_object) {
+		NMAccessPoint *ap;
+
+		ap = get_ap_by_path (NM_DEVICE_WIFI (device), specific_object);
+		return ap ? nm_ap_check_compatible (ap, connection) : FALSE;
+	}
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 

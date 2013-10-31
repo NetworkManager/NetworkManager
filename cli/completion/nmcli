@@ -502,6 +502,13 @@ _nmcli_complete_COMMAND_CONNECTION()
             fi
             words=("${words[@]:2}")
             ;;
+        ifname)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_list_nl "$(_nmcli_NM_devices)"
+                return 0
+            fi
+            words=("${words[@]:2}")
+            ;;
         *)
             COMMAND_CONNECTION_TYPE=
             COMMAND_CONNECTION_ID="${words[0]}"
@@ -601,12 +608,18 @@ _nmcli()
                         ;;
                     u|up)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                            _nmcli_list_nl "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_id)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
+                            local COMMAND_CONNECTION_TYPE=''
                             words=("${words[@]:2}")
-                            OPTIONS=(id uuid path)
+                            OPTIONS=(ifname id uuid path)
                             _nmcli_complete_COMMAND_CONNECTION && return 0
-                            OPTIONS=(ifname ap nsp)
+
+                            if [[ "$COMMAND_CONNECTION_TYPE" = "ifname" ]]; then
+                                OPTIONS=(ap nsp)
+                            else
+                                OPTIONS=(ifname ap nsp)
+                            fi
                             _nmcli_complete_COMMAND_ARGS
                         fi
                         ;;
@@ -841,12 +854,13 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "status show disconnect wifi wimax help"
+                _nmcli_list "status show connect disconnect wifi wimax help"
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
                         ;;
                     sh|sho|show| \
+                    c|co|con|conn|conne|connec|connect| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_list_nl "$(_nmcli_NM_devices)"
