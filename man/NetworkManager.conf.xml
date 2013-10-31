@@ -104,7 +104,7 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	is disabled by default; NetworkManager will only read
 	the connection files at startup, and when explicitly requested
 	via the ReloadConnections D-Bus call. If this key is set to
-	'<literal>true</literal>', then NetworkManager wil reload
+	'<literal>true</literal>', then NetworkManager will reload
 	connection files any time they changed.</para></listitem>
       </varlistentry>
       <varlistentry>
