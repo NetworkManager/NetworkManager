@@ -678,7 +678,8 @@ periodic_update (gpointer user_data)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *new_ap;
-	guint32 new_rate, percent;
+	guint32 new_rate;
+	int percent;
 	NMDeviceState state;
 	guint32 supplicant_state;
 
