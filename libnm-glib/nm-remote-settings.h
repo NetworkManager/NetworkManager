@@ -79,6 +79,11 @@ typedef void (*NMRemoteSettingsAddConnectionFunc) (NMRemoteSettings *settings,
                                                    GError *error,
                                                    gpointer user_data);
 
+typedef void (*NMRemoteSettingsLoadConnectionsFunc) (NMRemoteSettings *settings,
+                                                     char **failures,
+                                                     GError *error,
+                                                     gpointer user_data);
+
 typedef void (*NMRemoteSettingsSaveHostnameFunc) (NMRemoteSettings *settings,
                                                   GError *error,
                                                   gpointer user_data);
@@ -134,6 +139,11 @@ gboolean nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
                                                     NMConnection *connection,
                                                     NMRemoteSettingsAddConnectionFunc callback,
                                                     gpointer user_data);
+
+gboolean nm_remote_settings_load_connections (NMRemoteSettings *settings,
+                                              char **filenames,
+                                              char ***failures,
+                                              GError **error);
 
 gboolean nm_remote_settings_reload_connections (NMRemoteSettings *settings,
                                                 GError **error);

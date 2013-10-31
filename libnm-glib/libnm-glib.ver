@@ -244,6 +244,7 @@ global:
 	nm_remote_settings_get_connection_by_uuid;
 	nm_remote_settings_get_type;
 	nm_remote_settings_list_connections;
+	nm_remote_settings_load_connections;
 	nm_remote_settings_new;
 	nm_remote_settings_new_async;
 	nm_remote_settings_new_finish;

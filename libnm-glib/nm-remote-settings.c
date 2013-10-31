@@ -630,6 +630,72 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 }
 
 /**
+ * nm_remote_settings_load_connections:
+ * @settings: the %NMRemoteSettings
+ * @filenames: %NULL-terminated array of filenames to load
+ * @failures: (out) (transfer full): on return, a %NULL-terminated array of
+ *   filenames that failed to load
+ * @error: return location for #GError
+ *
+ * Requests that the remote settings service load or reload the given files,
+ * adding or updating the connections described within.
+ *
+ * The changes to the indicated files will not yet be reflected in
+ * @settings's connections array when the function returns.
+ *
+ * If all of the indicated files were successfully loaded, the
+ * function will return %TRUE, and @failures will be set to %NULL. If
+ * NetworkManager tried to load the files, but some (or all) failed,
+ * then @failures will be set to a %NULL-terminated array of the
+ * filenames that failed to load.
+
+ * Returns: %TRUE if NetworkManager at least tried to load @filenames,
+ * %FALSE if an error occurred (eg, permission denied).
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_remote_settings_load_connections (NMRemoteSettings *settings,
+                                     char **filenames,
+                                     char ***failures,
+                                     GError **error)
+{
+	NMRemoteSettingsPrivate *priv;
+	char **my_failures = NULL;
+	gboolean ret = FALSE;
+
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
+	g_return_val_if_fail (filenames != NULL, NULL);
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+
+	_nm_remote_settings_ensure_inited (settings);
+
+	if (!priv->service_running) {
+		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
+		                     NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,
+		                     "NetworkManager is not running.");
+		return FALSE;
+	}
+
+	dbus_g_proxy_call (priv->proxy, "LoadConnections", error,
+	                   G_TYPE_STRV, filenames,
+	                   G_TYPE_INVALID,
+	                   G_TYPE_BOOLEAN, &ret,
+	                   G_TYPE_STRV, &my_failures,
+	                   G_TYPE_INVALID);
+
+	if (failures) {
+		if (my_failures && !*my_failures)
+			g_clear_pointer (&my_failures, g_free);
+		*failures = my_failures;
+	} else
+		g_strfreev (my_failures);
+
+	return ret;
+}
+
+/**
  * nm_remote_settings_reload_connections:
  * @settings: the #NMRemoteSettings
  * @error: return location for #GError
