@@ -133,7 +133,7 @@ org.freedesktop.NetworkManager.settings.modify.hostname   auth
     </example>
     <para>
       This command shows configured polkit permissions for various NetworkManager
-      operation. These permissions or actions (using polkit language) are configured
+      operations. These permissions or actions (using polkit language) are configured
       by a system administrator and are not meant to be changed by users. The usual
       place for the polkit configuration is /usr/share/polkit-1/actions/org.freedesktop.NetworkManager.policy.
       <emphasis>pkaction</emphasis> command can display description for polkit actions.
@@ -170,9 +170,9 @@ $ nmcli -p con show conf my-con-em1
       </programlisting>
     </example>
     <para>
-      The first command adds an ethernet connection named <emphasis>my-con-em1</emphasis>
+      The first command adds an Ethernet connection named <emphasis>my-con-em1</emphasis>
       that is bound to interface name <emphasis>em1</emphasis>. The connection is configured
-      with static IP addresses. The second and third commands modifies DNS parameters of the
+      with static IP addresses. The second and third commands modify DNS parameters of the
       new connection profile. Using the last <emphasis>con show configured</emphasis> the
       connection is displayed so that all parameters can be reviewed.
     </para>
@@ -246,7 +246,7 @@ nmcli ipv4.addresses> desc
 
 === [addresses] ===
 [setting description]
-Array of IPv4 address structures.  Each IPv4 address structure is composed of 3 32-bit values; the first being the IPv4 address (network byte order), the second the prefix (1 - 32), and last the IPv4 gateway (network byte order). The gateway may be left as 0 if no gateway exists for that subnet.  For the 'auto' method, given IP addresses are appended to those returned by automatic configuration.  Addresses cannot be used with the 'shared', 'link-local', or 'disabled' methods as addressing is either automatic or disabled with these methods.
+Array of IPv4 address structures.  Each IPv4 address structure is composed of three 32-bit values; the first being the IPv4 address (network byte order), the second the prefix (1 - 32), and last the IPv4 gateway (network byte order). The gateway may be left as 0 if no gateway exists for that subnet.  For the 'auto' method, given IP addresses are appended to those returned by automatic configuration.  Addresses cannot be used with the 'shared', 'link-local', or 'disabled' methods as addressing is either automatic or disabled with these methods.
 
 [nmcli description]
 Enter a list of IPv4 addresses formatted as:
@@ -356,7 +356,7 @@ nmcli> quit
     </example>
     <para>
       Example session in the nmcli interactive connection editor.
-      The scenario creates an ethernet connection (configuration) with static addressing (IPs and DNS).
+      The scenario creates an Ethernet connection (configuration) with static addressing (IPs and DNS).
     </para>
 
     <example><title>nmcli usage in a NetworkManager dispatcher script to make ethernet/Wi-Fi mutually exclusive</title>
