@@ -512,6 +512,30 @@ get_connections (NMSystemConfigInterface *config)
 	return list;
 }
 
+static gboolean
+load_connection (NMSystemConfigInterface *config,
+                 const char *filename)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
+	NMIfcfgConnection *connection;
+	int dir_len = strlen (IFCFG_DIR);
+
+	if (   strncmp (filename, IFCFG_DIR, dir_len) != 0
+	    || filename[dir_len] != '/'
+	    || strchr (filename + dir_len + 1, '/') != NULL)
+		return FALSE;
+
+	if (utils_should_ignore_file (filename + dir_len + 1, TRUE))
+		return FALSE;
+
+	connection = find_by_path (plugin, filename);
+	connection_new_or_changed (plugin, filename, connection, NULL);
+	if (!connection)
+		connection = find_by_path (plugin, filename);
+
+	return (connection != NULL);
+}
+
 static void
 reload_connections (NMSystemConfigInterface *config)
 {
@@ -968,6 +992,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
 	system_config_interface_class->add_connection = add_connection;
+	system_config_interface_class->load_connection = load_connection;
 	system_config_interface_class->reload_connections = reload_connections;
 	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
 	system_config_interface_class->get_unrecognized_specs = get_unrecognized_specs;

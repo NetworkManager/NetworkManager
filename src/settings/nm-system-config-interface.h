@@ -90,6 +90,12 @@ struct _NMSystemConfigInterface {
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
+	/* Requests that the plugin load/reload a single connection, if it
+	 * recognizes the filename. Returns success or failure.
+	 */
+	gboolean (*load_connection) (NMSystemConfigInterface *config,
+	                             const char *filename);
+
 	/* Requests that the plugin reload all connection files from disk,
 	 * and emit signals reflecting new, changed, and removed connections.
 	 */
@@ -150,6 +156,8 @@ void nm_system_config_interface_init (NMSystemConfigInterface *config,
 
 GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
 
+gboolean nm_system_config_interface_load_connection (NMSystemConfigInterface *config,
+                                                     const char *filename);
 void nm_system_config_interface_reload_connections (NMSystemConfigInterface *config);
 
 GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config);

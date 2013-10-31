@@ -145,6 +145,17 @@ nm_system_config_interface_get_connections (NMSystemConfigInterface *config)
 	return NULL;
 }
 
+gboolean
+nm_system_config_interface_load_connection (NMSystemConfigInterface *config,
+                                            const char *filename)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->load_connection)
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->load_connection (config, filename);
+	return FALSE;
+}
+
 void
 nm_system_config_interface_reload_connections (NMSystemConfigInterface *config)
 {

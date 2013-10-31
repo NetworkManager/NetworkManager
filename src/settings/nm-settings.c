@@ -104,6 +104,10 @@ static void impl_settings_add_connection_unsaved (NMSettings *self,
                                                   GHashTable *settings,
                                                   DBusGMethodInvocation *context);
 
+static void impl_settings_load_connections (NMSettings *self,
+                                            char **filenames,
+                                            DBusGMethodInvocation *context);
+
 static void impl_settings_reload_connections (NMSettings *self,
                                               DBusGMethodInvocation *context);
 
@@ -1223,22 +1227,20 @@ impl_settings_add_connection_unsaved (NMSettings *self,
 	impl_settings_add_connection_helper (self, settings, FALSE, context);
 }
 
-static void
-impl_settings_reload_connections (NMSettings *self,
-                                  DBusGMethodInvocation *context)
+static gboolean
+ensure_root (NMDBusManager         *dbus_mgr,
+             DBusGMethodInvocation *context)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
 	gulong caller_uid;
 	GError *error = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
+	if (!nm_dbus_manager_get_caller_info (dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		return;
+		return FALSE;
 	}
 	if (caller_uid != 0) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -1246,8 +1248,56 @@ impl_settings_reload_connections (NMSettings *self,
 		                             "Permission denied");
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
-		return;
+		return FALSE;
 	}
+
+	return TRUE;
+}
+
+static void
+impl_settings_load_connections (NMSettings *self,
+                                char **filenames,
+                                DBusGMethodInvocation *context)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GPtrArray *failures;
+	GSList *iter;
+	int i;
+
+	if (!ensure_root (priv->dbus_mgr, context))
+		return;
+
+	failures = g_ptr_array_new ();
+
+	for (i = 0; filenames[i]; i++) {
+		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+
+			if (nm_system_config_interface_load_connection (plugin, filenames[i]))
+				break;
+		}
+
+		if (!iter) {
+			if (!g_path_is_absolute (filenames[i]))
+				nm_log_warn (LOGD_SETTINGS, "Connection filename '%s' is not an absolute path", filenames[i]);
+			g_ptr_array_add (failures, (char *) filenames[i]);
+		}
+	}
+
+	g_ptr_array_add (failures, NULL);
+	dbus_g_method_return (context, failures->len == 1, failures->pdata);
+	g_ptr_array_unref (failures);
+}
+
+static void
+impl_settings_reload_connections (NMSettings *self,
+                                  DBusGMethodInvocation *context)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+
+	if (!ensure_root (priv->dbus_mgr, context))
+		return;
 
 	if (!priv->connections_loaded) {
 		load_connections (self);

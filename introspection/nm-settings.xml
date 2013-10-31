@@ -82,6 +82,40 @@
       </arg>
     </method>
 
+    <method name="LoadConnections">
+      <tp:docstring>
+        Loads or reloads the indicated connections from disk. You
+        should call this after making changes directly to an on-disk
+        connection file to make sure that NetworkManager sees the
+        changes. (If "monitor-connection-files" in NetworkManager.conf
+        is "true", then this will have no real effect, but is
+        harmless.) As with AddConnection(), this operation does not
+        necessarily start the network connection.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_load_connections"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="filenames" type="as" direction="in">
+        <tp:docstring>
+          Array of paths to on-disk connection profiles in directories
+          monitored by NetworkManager.
+        </tp:docstring>
+      </arg>
+      <arg name="status" type="b" direction="out">
+        <tp:docstring>
+          Success or failure of the operation as a whole. True if
+          NetworkManager at least tried to load the indicated
+          connections, even if it did not succeed. False if an error
+          occurred before trying to load the connections (eg,
+          permission denied).
+        </tp:docstring>
+      </arg>
+      <arg name="failures" type="as" direction="out">
+        <tp:docstring>
+          Paths of connection files that could not be loaded.
+        </tp:docstring>
+      </arg>
+    </method>
+
     <method name="ReloadConnections">
       <tp:docstring>
         Tells NetworkManager to reload all connection files from disk,

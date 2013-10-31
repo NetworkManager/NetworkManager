@@ -406,6 +406,33 @@ get_connections (NMSystemConfigInterface *config)
 	return list;
 }
 
+static gboolean
+load_connection (NMSystemConfigInterface *config,
+                 const char *filename)
+{
+	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	NMKeyfileConnection *connection;
+	int dir_len = strlen (KEYFILE_DIR);
+
+	if (   strncmp (filename, KEYFILE_DIR, dir_len) != 0
+	    || filename[dir_len] != '/'
+	    || strchr (filename + dir_len + 1, '/') != NULL)
+		return FALSE;
+
+	if (nm_keyfile_plugin_utils_should_ignore_file (filename + dir_len + 1))
+		return FALSE;
+
+	connection = find_by_path (self, filename);
+	if (connection)
+		update_connection (self, connection, filename);
+	else {
+		new_connection (self, filename, NULL);
+		connection = find_by_path (self, filename);
+	}
+
+	return (connection != NULL);
+}
+
 static void
 reload_connections (NMSystemConfigInterface *config)
 {
@@ -705,6 +732,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 {
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
+	system_config_interface_class->load_connection = load_connection;
 	system_config_interface_class->reload_connections = reload_connections;
 	system_config_interface_class->add_connection = add_connection;
 	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
