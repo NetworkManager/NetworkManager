@@ -176,12 +176,12 @@ add_lease_option (GHashTable *hash, char *line)
 	g_hash_table_insert (hash, g_strdup (line), g_strdup (spc));
 }
 
-static gboolean
-lease_valid (const char *str_expire)
+static GTimeSpan
+lease_validity_span (const char *str_expire)
 {
 	GDateTime *expire = NULL, *now = NULL;
 	struct tm expire_tm;
-	gboolean valid = FALSE;
+	GTimeSpan span = -1;
 
 	g_return_val_if_fail (str_expire != NULL, FALSE);
 
@@ -203,17 +203,14 @@ lease_valid (const char *str_expire)
 	                              expire_tm.tm_hour,
 	                              expire_tm.tm_min,
 	                              expire_tm.tm_sec);
+	g_warn_if_fail (expire);
 	if (expire) {
 		now = g_date_time_new_now_utc ();
-		valid = (g_date_time_difference (expire, now) > 0);
+		span = g_date_time_difference (expire, now);
 		g_date_time_unref (expire);
 		g_date_time_unref (now);
-	} else {
-		nm_log_warn (LOGD_DHCP, "couldn't convert DHCP lease file expire time '%s'",
-		             str_expire);
 	}
-
-	return valid;
+	return span;
 }
 
 GSList *
@@ -281,6 +278,7 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 		NMIP4Config *ip4;
 		NMPlatformIP4Address address;
 		const char *data;
+		GTimeSpan expiry;
 		guint32 tmp;
 		guint32 plen;
 
@@ -292,8 +290,9 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 			continue;
 
 		data = g_hash_table_lookup (hash, "expire");
-		if (data && !lease_valid (data))
+		if (!data)
 			continue;
+		expiry = lease_validity_span (data);
 
 		data = g_hash_table_lookup (hash, "fixed-address");
 		if (!data)
@@ -322,6 +321,8 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 			plen = nm_utils_ip4_get_default_prefix (address.address);
 		}
 		address.plen = plen;
+		address.lifetime = address.preferred = expiry / G_TIME_SPAN_SECOND;
+		nm_ip4_config_add_address (ip4, &address);
 
 		/* Gateway */
 		data = g_hash_table_lookup (hash, "option routers");
@@ -333,7 +334,32 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 			nm_ip4_config_set_gateway (ip4, tmp);
 		}
 
-		nm_ip4_config_add_address (ip4, &address);
+		data = g_hash_table_lookup (hash, "option domain-name-servers");
+		if (data) {
+			char **dns, **dns_iter;
+
+			dns = g_strsplit_set (data, ",", -1);
+			for (dns_iter = dns; dns_iter && *dns_iter; dns_iter++) {
+				if (inet_pton (AF_INET, *dns_iter, &tmp))
+					nm_ip4_config_add_nameserver (ip4, tmp);
+			}
+			if (dns)
+				g_strfreev (dns);
+		}
+
+		data = g_hash_table_lookup (hash, "option domain-name");
+		if (data) {
+			char *unquoted, *p;
+
+			/* strip quotes */
+			p = unquoted = g_strdup (data[0] == '"' ? data + 1 : data);
+			if ((strlen (p) > 1) && (p[strlen (p) - 1] == '"'))
+				p[strlen (p) - 1] = '\0';
+
+			nm_ip4_config_add_domain (ip4, unquoted);
+			g_free (unquoted);
+		}
+
 		leases = g_slist_append (leases, ip4);
 		continue;
 
