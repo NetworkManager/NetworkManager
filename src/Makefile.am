@@ -248,6 +248,8 @@ nm_sources = \
 	nm-ip6-config.h \
 	nm-manager-auth.c \
 	nm-manager-auth.h \
+	nm-auth-subject.c \
+	nm-auth-subject.h \
 	nm-manager.c \
 	nm-manager.h \
 	nm-netlink-monitor.c \

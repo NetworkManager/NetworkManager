@@ -2790,6 +2790,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMActStageReturn ret;
 	NMAccessPoint *ap = NULL;
 	NMActRequest *req;
 	NMConnection *connection;
@@ -2797,6 +2798,10 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	const GByteArray *cloned_mac;
 	GSList *iter;
 	const char *mode;
+
+	ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage1_prepare (dev, reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);

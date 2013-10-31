@@ -288,6 +288,7 @@ typedef struct {
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
 	gboolean        enslaved;
+	guint           master_ready_id;
 
 	/* slave management */
 	gboolean        is_master;
@@ -1935,10 +1936,61 @@ nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 	return FALSE;
 }
 
+static void
+master_ready_cb (NMActiveConnection *active,
+                 GParamSpec *pspec,
+                 NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMActiveConnection *master;
+
+	g_assert (priv->state == NM_DEVICE_STATE_PREPARE);
+
+	/* Notify a master device that it has a new slave */
+	g_assert (nm_active_connection_get_master_ready (active));
+	master = nm_active_connection_get_master (active);
+
+	priv->master = g_object_ref (nm_active_connection_get_device (master));
+	nm_device_master_add_slave (priv->master, self);
+
+	nm_log_dbg (LOGD_DEVICE, "(%s): master connection ready; master device %s",
+	            nm_device_get_iface (self),
+	            nm_device_get_iface (priv->master));
+
+	if (priv->master_ready_id) {
+		g_signal_handler_disconnect (active, priv->master_ready_id);
+		priv->master_ready_id = 0;
+	}
+
+	nm_device_activate_schedule_stage2_device_config (self);
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 {
-	return NM_ACT_STAGE_RETURN_SUCCESS;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+
+	if (nm_active_connection_get_master (active)) {
+		/* If the master connection is ready for slaves, attach ourselves */
+		if (nm_active_connection_get_master_ready (active))
+			master_ready_cb (active, NULL, self);
+		else {
+			nm_log_dbg (LOGD_DEVICE, "(%s): waiting for master connection to become ready",
+			            nm_device_get_iface (self));
+
+			/* Attach a signal handler and wait for the master connection to begin activating */
+			g_assert (priv->master_ready_id == 0);
+			priv->master_ready_id = g_signal_connect (active,
+			                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
+			                                          (GCallback) master_ready_cb,
+			                                          self);
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		}
+	}
+
+	return ret;
 }
 
 /*
@@ -3445,7 +3497,8 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *iface;
 	int ifindex;
-	NMDevice *master;
+	NMActiveConnection *master;
+	NMDevice *master_device;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -3471,11 +3524,12 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	 */
 	master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request));
 	if (master) {
-		if (priv->enslaved == FALSE) {
+		master_device = nm_active_connection_get_device (master);
+		if (master_device && priv->enslaved == FALSE) {
 			nm_log_info (LOGD_DEVICE, "Activation (%s) connection '%s' waiting on master '%s'",
 						 nm_device_get_iface (self),
 						 nm_connection_get_id (nm_device_get_connection (self)),
-						 nm_device_get_iface (master));
+						 nm_device_get_iface (master_device));
 		}
 		goto out;
 	}
@@ -4022,6 +4076,11 @@ clear_act_request (NMDevice *self)
 
 	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
 
+	if (priv->master_ready_id) {
+		g_signal_handler_disconnect (priv->act_request, priv->master_ready_id);
+		priv->master_ready_id = 0;
+	}
+
 	g_object_unref (priv->act_request);
 	priv->act_request = NULL;
 }
@@ -4425,25 +4484,12 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 		nm_device_activate_schedule_stage3_ip_config_start (self);
 	} else {
-		NMDevice *master;
-
 		/* HACK: update the state a bit early to avoid a race between the 
 		 * scheduled stage1 handler and nm_policy_device_change_check() thinking
 		 * that the activation request isn't deferred because the deferred bit
 		 * gets cleared a bit too early, when the connection becomes valid.
 		 */
 		nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
-
-		/* Handle any dependencies this connection might have */
-		master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (req));
-		if (master) {
-			/* Master should at least already be activating */
-			g_assert (nm_device_get_state (master) > NM_DEVICE_STATE_DISCONNECTED);
-
-			g_assert (priv->master == NULL);
-			priv->master = g_object_ref (master);
-			nm_device_master_add_slave (master, self);
-		}
 
 		nm_device_activate_schedule_stage1_device_prepare (self);
 	}
@@ -5027,6 +5073,7 @@ dispose (GObject *object)
 	dnsmasq_cleanup (self);
 
 	g_warn_if_fail (priv->slaves == NULL);
+	g_assert (priv->master_ready_id == 0);
 
 	/* Take the device itself down and clear its IPv4 configuration */
 	if (nm_device_get_managed (self) && deconfigure) {

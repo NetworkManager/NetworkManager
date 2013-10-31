@@ -54,13 +54,9 @@ const char *nm_vpn_service_get_dbus_service (NMVPNService *service);
 /* Returns the path of the VPN service's .name file */
 const char *nm_vpn_service_get_name_file (NMVPNService *service);
 
-NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
-                                           NMConnection *connection,
-                                           NMDevice *device,
-                                           const char *specific_object,
-                                           gboolean user_requested,
-                                           gulong user_uid,
-                                           GError **error);
+gboolean nm_vpn_service_activate (NMVPNService *service,
+                                  NMVPNConnection *vpn,
+                                  GError **error);
 
 const GSList *nm_vpn_service_get_active_connections (NMVPNService *service);
 

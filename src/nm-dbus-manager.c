@@ -267,6 +267,27 @@ private_server_get_connection_owner (PrivateServer *s, DBusGConnection *connecti
 
 /**************************************************************/
 
+static gboolean
+_bus_get_unix_pid (NMDBusManager *self,
+                   const char *sender,
+                   gulong *out_pid,
+                   GError **error)
+{
+	guint32 unix_pid = G_MAXUINT32;
+
+	if (!dbus_g_proxy_call_with_timeout (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
+	                                     "GetConnectionUnixProcessID", 2000, error,
+	                                     G_TYPE_STRING, sender,
+	                                     G_TYPE_INVALID,
+	                                     G_TYPE_UINT, &unix_pid,
+	                                     G_TYPE_INVALID)) {
+		return FALSE;
+	}
+
+	*out_pid = (gulong) unix_pid;
+	return TRUE;
+}
+
 /**
  * _get_caller_info_from_context():
  *
@@ -279,7 +300,8 @@ _get_caller_info (NMDBusManager *self,
                   DBusConnection *connection,
                   DBusMessage *message,
                   char **out_sender,
-                  gulong *out_uid)
+                  gulong *out_uid,
+                  gulong *out_pid)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	DBusGConnection *gconn;
@@ -312,6 +334,10 @@ _get_caller_info (NMDBusManager *self,
 					*out_uid = 0;
 				if (out_sender)
 					*out_sender = g_strdup (priv_sender);
+				if (out_pid) {
+					if (!dbus_connection_get_unix_process_id (connection, out_pid))
+						*out_pid = G_MAXULONG;
+				}
 				return TRUE;
 			}
 		}
@@ -331,6 +357,14 @@ _get_caller_info (NMDBusManager *self,
 		}
 	}
 
+	if (out_pid) {
+		if (!_bus_get_unix_pid (self, sender, out_pid, NULL)) {
+			*out_pid = G_MAXULONG;
+			g_free (sender);
+			return FALSE;
+		}
+	}
+
 	if (out_sender)
 		*out_sender = g_strdup (sender);
 
@@ -342,9 +376,10 @@ gboolean
 nm_dbus_manager_get_caller_info (NMDBusManager *self,
                                  DBusGMethodInvocation *context,
                                  char **out_sender,
-                                 gulong *out_uid)
+                                 gulong *out_uid,
+                                 gulong *out_pid)
 {
-	return _get_caller_info (self, context, NULL, NULL, out_sender, out_uid);
+	return _get_caller_info (self, context, NULL, NULL, out_sender, out_uid, out_pid);
 }
 
 gboolean
@@ -352,9 +387,10 @@ nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                               DBusConnection *connection,
                                               DBusMessage *message,
                                               char **out_sender,
-                                              gulong *out_uid)
+                                              gulong *out_uid,
+                                              gulong *out_pid)
 {
-	return _get_caller_info (self, NULL, connection, message, out_sender, out_uid);
+	return _get_caller_info (self, NULL, connection, message, out_sender, out_uid, out_pid);
 }
 
 gboolean

@@ -669,7 +669,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	gw_addr = nm_ip4_config_get_gateway (ip4_config);
 
 	if (vpn) {
-		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
+		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
 		NMIP4Config *parent_ip4 = nm_device_get_ip4_config (parent);
 		guint32 parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
@@ -683,7 +683,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 			}
 		}
 
-		default_device = nm_vpn_connection_get_parent_device (vpn);
+		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 	} else {
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
@@ -856,7 +856,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		gw_addr = &in6addr_any;
 
 	if (vpn) {
-		NMDevice *parent = nm_vpn_connection_get_parent_device (vpn);
+		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
 		NMIP6Config *parent_ip6 = nm_device_get_ip6_config (parent);
 		guint32 parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
@@ -873,7 +873,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 			}
 		}
 
-		default_device6 = nm_vpn_connection_get_parent_device (vpn);
+		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 	} else {
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
@@ -1034,14 +1034,16 @@ auto_activate_device (gpointer user_data)
 	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
 	if (best_connection) {
 		GError *error = NULL;
+		NMAuthSubject *subject;
 
 		nm_log_info (LOGD_DEVICE, "Auto-activating connection '%s'.",
 		             nm_connection_get_id (best_connection));
+		subject = nm_auth_subject_new_internal ();
 		if (!nm_manager_activate_connection (priv->manager,
 		                                     best_connection,
 		                                     specific_object,
-		                                     nm_device_get_path (data->device),
-		                                     NULL,
+		                                     data->device,
+		                                     subject,
 		                                     &error)) {
 			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
 			             nm_connection_get_id (best_connection),
@@ -1049,6 +1051,7 @@ auto_activate_device (gpointer user_data)
 			             error ? error->message : "(none)");
 			g_error_free (error);
 		}
+		g_object_unref (subject);
 	}
 
 	g_slist_free (connections);
@@ -1110,7 +1113,7 @@ static void
 pending_secondary_data_free (PendingSecondaryData *data)
 {
 	g_object_unref (data->device);
-	g_slist_free_full (data->secondaries, g_free);
+	g_slist_free_full (data->secondaries, g_object_unref);
 	memset (data, 0, sizeof (*data));
 	g_free (data);
 }
@@ -1121,51 +1124,47 @@ process_secondaries (NMPolicy *policy,
                      gboolean connected)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDevice *device = NULL;
-	const char *ac_path;
 	GSList *iter, *iter2;
 
-	nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' %s; active path '%s'",
-	            nm_active_connection_get_name (active),
-	            connected ? "SUCCEEDED" : "FAILED",
-	            nm_active_connection_get_path (active));
-
-	ac_path = nm_active_connection_get_path (active);
-
-	if (NM_IS_VPN_CONNECTION (active))
-		device = nm_vpn_connection_get_parent_device (NM_VPN_CONNECTION (active));
-
+	/* Loop through devices waiting for secondary connections to activate */
 	for (iter = priv->pending_secondaries; iter; iter = g_slist_next (iter)) {
 		PendingSecondaryData *secondary_data = (PendingSecondaryData *) iter->data;
 		NMDevice *item_device = secondary_data->device;
 
-		if (!device || item_device == device) {
-			for (iter2 = secondary_data->secondaries; iter2; iter2 = g_slist_next (iter2)) {
-				char *list_ac_path = (char *) iter2->data;
+		/* Look for 'active' in each device's secondary connections list */
+		for (iter2 = secondary_data->secondaries; iter2; iter2 = g_slist_next (iter2)) {
+			NMActiveConnection *secondary_active = NM_ACTIVE_CONNECTION (iter2->data);
 
-				if (g_strcmp0 (ac_path, list_ac_path) == 0) {
-					if (connected) {
-						/* Secondary connection activated */
-						secondary_data->secondaries = g_slist_remove (secondary_data->secondaries, list_ac_path);
-						g_free (list_ac_path);
-						if (!secondary_data->secondaries) {
-							/* None secondary UUID remained -> remove the secondary data item */
-							priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
-							pending_secondary_data_free (secondary_data);
-							nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
-							return;
-						}
-					} else {
-						/* Secondary connection failed -> do not watch other connections */
-						priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
-						pending_secondary_data_free (secondary_data);
-						nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
-						                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
-						return;
-					}
+			if (active != secondary_active)
+				continue;
+
+			if (connected) {
+				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' SUCCEEDED; active path '%s'",
+				            nm_active_connection_get_name (active),
+				            nm_active_connection_get_path (active));
+
+				/* Secondary connection activated */
+				secondary_data->secondaries = g_slist_remove (secondary_data->secondaries, secondary_active);
+				g_object_unref (secondary_active);
+				if (!secondary_data->secondaries) {
+					/* No secondary UUID remained -> remove the secondary data item */
+					priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
+					pending_secondary_data_free (secondary_data);
+					nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+					break;
 				}
+			} else {
+				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' FAILED; active path '%s'",
+				            nm_active_connection_get_name (active),
+				            nm_active_connection_get_path (active));
+
+				/* Secondary connection failed -> do not watch other connections */
+				priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
+				pending_secondary_data_free (secondary_data);
+				nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
+				                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
+				break;
 			}
-			return;
 		}
 	}
 }
@@ -1233,6 +1232,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	ActivateData *data;
+	const GSList *active_connections, *iter;
 
 	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
 		return;
@@ -1245,6 +1245,15 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 
 	if (!nm_device_autoconnect_allowed (device))
 		return;
+
+	/* If the device already has an activation in-progress or waiting for
+	 * authentication, don't start an auto-activation for it.
+	 */
+	active_connections = nm_manager_get_active_connections (priv->manager);
+	for (iter = active_connections; iter; iter = iter->next) {
+		if (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (iter->data)) == device)
+			return;
+	}
 
 	/* Schedule an auto-activation if there isn't one already for this device */
 	if (find_pending_activation (priv->pending_activation_checks, device) == NULL) {
@@ -1357,13 +1366,12 @@ activate_secondary_connections (NMPolicy *policy,
 			ac = nm_manager_activate_connection (priv->manager,
 			                                     NM_CONNECTION (settings_con),
 			                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
-			                                     nm_device_get_path (device),
-			                                     nm_act_request_get_dbus_sender (req),
+			                                     device,
+			                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 			                                     &error);
-			if (ac) {
-				secondary_ac_list = g_slist_append (secondary_ac_list,
-				                                    g_strdup (nm_active_connection_get_path (ac)));
-			} else {
+			if (ac)
+				secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
+			else {
 				nm_log_warn (LOGD_DEVICE, "Secondary connection '%s' auto-activation failed: (%d) %s",
 				             sec_uuid,
 				             error ? error->code : 0,
@@ -1384,7 +1392,7 @@ activate_secondary_connections (NMPolicy *policy,
 		secondary_data = pending_secondary_data_new (device, secondary_ac_list);
 		priv->pending_secondaries = g_slist_append (priv->pending_secondaries, secondary_data);
 	} else
-		g_slist_free_full (secondary_ac_list, g_free);
+		g_slist_free_full (secondary_ac_list, g_object_unref);
 
 	return success;
 }
@@ -1720,8 +1728,6 @@ vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
 	update_routing_and_dns (policy, TRUE);
 
 	nm_dns_manager_end_updates (mgr, __func__);
-
-	process_secondaries (policy, NM_ACTIVE_CONNECTION (vpn), TRUE);
 }
 
 static void
@@ -1737,7 +1743,7 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	nm_dns_manager_begin_updates (mgr, __func__);
 
 	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
-	parent = nm_vpn_connection_get_parent_device (vpn);
+	parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config) {
@@ -1754,8 +1760,23 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 	update_routing_and_dns (policy, TRUE);
 
 	nm_dns_manager_end_updates (mgr, __func__);
+}
 
-	process_secondaries (policy, NM_ACTIVE_CONNECTION (vpn), FALSE);
+static void
+vpn_connection_state_changed (NMVPNConnection *vpn,
+                              NMVPNConnectionState new_state,
+                              NMVPNConnectionState old_state,
+                              NMVPNConnectionStateReason reason,
+                              NMPolicy *policy)
+{
+	if (new_state == NM_VPN_CONNECTION_STATE_ACTIVATED)
+		vpn_connection_activated (policy, vpn);
+	else if (new_state >= NM_VPN_CONNECTION_STATE_FAILED) {
+		/* Only clean up IP/DNS if the connection ever got past IP_CONFIG */
+		if (old_state >= NM_VPN_CONNECTION_STATE_IP_CONFIG_GET &&
+		    old_state <= NM_VPN_CONNECTION_STATE_ACTIVATED)
+			vpn_connection_deactivated (policy, vpn);
+	}
 }
 
 static void
@@ -1763,18 +1784,12 @@ active_connection_state_changed (NMActiveConnection *active,
                                  GParamSpec *pspec,
                                  NMPolicy *policy)
 {
-	switch (nm_active_connection_get_state (active)) {
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-		if (NM_IS_VPN_CONNECTION (active))
-			vpn_connection_activated (policy, NM_VPN_CONNECTION (active));
-		break;
-	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-		if (NM_IS_VPN_CONNECTION (active))
-			vpn_connection_deactivated (policy, NM_VPN_CONNECTION (active));
-		break;
-	default:
-		break;
-	}
+	NMActiveConnectionState state = nm_active_connection_get_state (active);
+
+	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+		process_secondaries (policy, active, TRUE);
+	else if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
+		process_secondaries (policy, active, FALSE);
 }
 
 static void
@@ -1782,7 +1797,13 @@ active_connection_added (NMManager *manager,
                          NMActiveConnection *active,
                          gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicy *policy = NM_POLICY (user_data);
+
+	if (NM_IS_VPN_CONNECTION (active)) {
+		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
+		                  G_CALLBACK (vpn_connection_state_changed),
+		                  policy);
+	}
 
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
@@ -1794,9 +1815,14 @@ active_connection_removed (NMManager *manager,
                            NMActiveConnection *active,
                            gpointer user_data)
 {
+	NMPolicy *policy = NM_POLICY (user_data);
+
+	g_signal_handlers_disconnect_by_func (active,
+	                                      vpn_connection_state_changed,
+	                                      policy);
 	g_signal_handlers_disconnect_by_func (active,
 	                                      active_connection_state_changed,
-	                                      (NMPolicy *) user_data);
+	                                      policy);
 }
 
 /**************************************************************************/

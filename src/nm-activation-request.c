@@ -51,10 +51,6 @@ typedef struct {
 } ShareRule;
 
 typedef struct {
-	NMConnection *connection;
-	NMDevice *device;
-	guint device_state_id;
-	char *dbus_sender;
 	GSList *secrets_calls;
 	gboolean shared;
 	GSList *share_rules;
@@ -68,14 +64,6 @@ nm_act_request_get_connection (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
 	return nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (req));
-}
-
-const char *
-nm_act_request_get_dbus_sender (NMActRequest *req)
-{
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
-
-	return NM_ACT_REQUEST_GET_PRIVATE (req)->dbus_sender;
 }
 
 /*******************************************************************/
@@ -157,6 +145,7 @@ void
 nm_act_request_cancel_secrets (NMActRequest *self, guint32 call_id)
 {
 	NMActRequestPrivate *priv;
+	NMConnection *connection;
 	GSList *iter;
 
 	g_return_if_fail (self);
@@ -165,6 +154,7 @@ nm_act_request_cancel_secrets (NMActRequest *self, guint32 call_id)
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
+	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (self));
 	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
 		GetSecretsInfo *info = iter->data;
 
@@ -173,7 +163,7 @@ nm_act_request_cancel_secrets (NMActRequest *self, guint32 call_id)
 			priv->secrets_calls = g_slist_remove_link (priv->secrets_calls, iter);
 			g_slist_free (iter);
 
-			nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), call_id);
+			nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (connection), call_id);
 			g_free (info);
 			break;
 		}
@@ -295,13 +285,15 @@ nm_act_request_add_share_rule (NMActRequest *req,
 /********************************************************************/
 
 static void
-device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
+device_state_changed (NMActiveConnection *active,
+                      NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state)
 {
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 	NMActiveConnectionState ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
 	/* Set NMActiveConnection state based on the device's state */
-	switch (nm_device_get_state (device)) {
+	switch (new_state) {
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_CONFIG:
 	case NM_DEVICE_STATE_NEED_AUTH:
@@ -321,13 +313,6 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
-
-		/* No longer need to pay attention to device state */
-		if (priv->device && priv->device_state_id) {
-			g_signal_handler_disconnect (priv->device, priv->device_state_id);
-			priv->device_state_id = 0;
-		}
-		g_clear_object (&priv->device);
 		break;
 	default:
 		break;
@@ -335,11 +320,33 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
 
 	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
 	    || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (self), FALSE);
-		nm_active_connection_set_default6 (NM_ACTIVE_CONNECTION (self), FALSE);
+		nm_active_connection_set_default (active, FALSE);
+		nm_active_connection_set_default6 (active, FALSE);
 	}
 
-	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self), ac_state);
+	nm_active_connection_set_state (active, ac_state);
+}
+
+static void
+master_failed (NMActiveConnection *self)
+{
+	NMDevice *device;
+	NMDeviceState device_state;
+
+	/* If the connection has an active device, fail it */
+	device = nm_active_connection_get_device (self);
+	if (device) {
+		device_state = nm_device_get_state (device);
+		if (nm_device_is_activating (device) || (device_state == NM_DEVICE_STATE_ACTIVATED)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+			return;
+		}
+	}
+
+	/* If no device, or the device wasn't active, just move to deactivated state */
+	nm_active_connection_set_state (self, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 }
 
 /********************************************************************/
@@ -350,48 +357,31 @@ device_state_changed (NMDevice *device, GParamSpec *pspec, NMActRequest *self)
  * @connection: the connection to activate @device with
  * @specific_object: the object path of the specific object (ie, WiFi access point,
  *    etc) that will be used to activate @connection and @device
- * @user_requested: pass %TRUE if the activation was requested via D-Bus,
- *    otherwise %FALSE if requested internally by NM (ie, autoconnect)
- * @user_uid: if @user_requested is %TRUE, the Unix UID of the user that requested
- * @dbus_sender: if @user_requested is %TRUE, the D-BUS sender that requested
- *    the activation
- * @device: the device/interface to configure according to @connection
- * @master: if the activation depends on another device (ie, bond or bridge
- *    or team master to which this device will be enslaved) pass the #NMDevice
- *    that this activation request be enslaved to
+ * @subject: the #NMAuthSubject representing the requestor of the activation
+ * @device: the device/interface to configure according to @connection; or %NULL
+ * if the connection describes a software device which will be created during
+ * connection activation
  *
- * Begins activation of @device using the given @connection and other details.
+ * Creates a new device-based activation request.
  *
  * Returns: the new activation request on success, %NULL on error.
  */
 NMActRequest *
 nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
-                    gboolean user_requested,
-                    gulong user_uid,
-                    const char *dbus_sender,
-                    NMDevice *device,
-                    NMDevice *master)
+                    NMAuthSubject *subject,
+                    NMDevice *device)
 {
-	GObject *object;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_DEVICE (device), NULL);
+	g_return_val_if_fail (!device || NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
-	object = g_object_new (NM_TYPE_ACT_REQUEST,
-	                       NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
-	                       NM_ACTIVE_CONNECTION_INT_DEVICE, device,
-	                       NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
-	                       NM_ACTIVE_CONNECTION_INT_USER_REQUESTED, user_requested,
-	                       NM_ACTIVE_CONNECTION_INT_USER_UID, user_uid,
-	                       NM_ACTIVE_CONNECTION_INT_MASTER, master,
-	                       NULL);
-	if (object) {
-		nm_active_connection_export (NM_ACTIVE_CONNECTION (object));
-		NM_ACT_REQUEST_GET_PRIVATE (object)->dbus_sender = g_strdup (dbus_sender);
-	}
-
-	return (NMActRequest *) object;
+	return (NMActRequest *) g_object_new (NM_TYPE_ACT_REQUEST,
+	                                      NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
+	                                      NM_ACTIVE_CONNECTION_INT_DEVICE, device,
+	                                      NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
+	                                      NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
+	                                      NULL);
 }
 
 static void
@@ -400,37 +390,11 @@ nm_act_request_init (NMActRequest *req)
 }
 
 static void
-constructed (GObject *object)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
-	NMConnection *connection;
-	NMDevice *device;
-
-	G_OBJECT_CLASS (nm_act_request_parent_class)->constructed (object);
-
-	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (object));
-	priv->connection = g_object_ref (connection);
-
-	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-	if (device) {
-		priv->device = g_object_ref (device);
-		priv->device_state_id = g_signal_connect (priv->device,
-		                                          "notify::" NM_DEVICE_STATE,
-		                                          G_CALLBACK (device_state_changed),
-		                                          NM_ACT_REQUEST (object));
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
+	NMConnection *connection;
 	GSList *iter;
-
-	if (priv->device && priv->device_state_id) {
-		g_signal_handler_disconnect (priv->device, priv->device_state_id);
-		priv->device_state_id = 0;
-	}
 
 	/* Clear any share rules */
 	if (priv->share_rules) {
@@ -439,21 +403,15 @@ dispose (GObject *object)
 	}
 
 	/* Kill any in-progress secrets requests */
-	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
+	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (object));
+	for (iter = priv->secrets_calls; connection && iter; iter = g_slist_next (iter)) {
 		GetSecretsInfo *info = iter->data;
 
-		g_assert (priv->connection);
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), info->call_id);
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (connection), info->call_id);
 		g_free (info);
 	}
 	g_slist_free (priv->secrets_calls);
 	priv->secrets_calls = NULL;
-
-	g_free (priv->dbus_sender);
-	priv->dbus_sender = NULL;
-
-	g_clear_object (&priv->device);
-	g_clear_object (&priv->connection);
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
@@ -462,11 +420,13 @@ static void
 nm_act_request_class_init (NMActRequestClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (req_class);
 
 	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
+	active_class->master_failed = master_failed;
+	active_class->device_state_changed = device_state_changed;
 }
 

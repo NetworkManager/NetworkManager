@@ -1013,6 +1013,8 @@ pk_add_cb (NMAuthChain *chain,
 	const char *perm;
 	gboolean save_to_disk;
 
+	g_assert (context);
+
 	priv->auths = g_slist_remove (priv->auths, chain);
 
 	perm = nm_auth_chain_get_data (chain, "perm");
@@ -1092,12 +1094,14 @@ nm_settings_add_connection_dbus (NMSettings *self,
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
+	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
 	GError *error = NULL, *tmp_error = NULL;
-	gulong caller_uid = G_MAXULONG;
 	char *error_desc = NULL;
-	const char *auth_error_desc = NULL;
 	const char *perm;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (context != NULL);
 
 	/* Connection must be valid, of course */
 	if (!nm_connection_verify (connection, &tmp_error)) {
@@ -1106,9 +1110,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		                     "The connection was invalid: %s",
 		                     tmp_error ? tmp_error->message : "(unknown)");
 		g_error_free (tmp_error);
-		callback (self, NULL, error, context, user_data);
-		g_error_free (error);
-		return;
+		goto done;
 	}
 
 	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
@@ -1119,9 +1121,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                             "WPA Ad-Hoc disabled due to kernel bugs");
-		callback (self, NULL, error, context, user_data);
-		g_error_free (error);
-		return;
+		goto done;
 	}
 
 	/* Do any of the plugins support adding? */
@@ -1129,32 +1129,29 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
-		callback (self, NULL, error, context, user_data);
-		g_error_free (error);
-		return;
+		goto done;
 	}
 
-	/* Get the caller's UID */
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid)) {
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request UID.");
-		callback (self, NULL, error, context, user_data);
-		g_error_free (error);
-		return;
+		                             "Unable to determine UID of request.");
+		goto done;
 	}
 
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (!nm_auth_uid_in_acl (connection, priv->session_monitor, caller_uid, &error_desc)) {
+	if (!nm_auth_uid_in_acl (connection,
+	                         priv->session_monitor,
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		g_free (error_desc);
-		callback (self, NULL, error, context, user_data);
-		g_error_free (error);
-		return;
+		goto done;
 	}
 
 	/* If the caller is the only user in the connection's permissions, then
@@ -1169,23 +1166,29 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 
 	/* Validate the user request */
-	chain = nm_auth_chain_new (context, pk_add_cb, self, &auth_error_desc);
-	if (chain) {
-		priv->auths = g_slist_append (priv->auths, chain);
-		nm_auth_chain_add_call (chain, perm, TRUE);
-		nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
-		nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
-		nm_auth_chain_set_data (chain, "callback", callback, NULL);
-		nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
-		nm_auth_chain_set_data_ulong (chain, "caller-uid", caller_uid);
-		nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
-	} else {
+	chain = nm_auth_chain_new_subject (subject, context, pk_add_cb, self);
+	if (!chain) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             auth_error_desc);
-		callback (self, NULL, error, context, user_data);
-		g_error_free (error);
+		                             "Unable to authenticate the request.");
+		goto done;
 	}
+
+	priv->auths = g_slist_append (priv->auths, chain);
+	nm_auth_chain_add_call (chain, perm, TRUE);
+	nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
+	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
+	nm_auth_chain_set_data (chain, "callback", callback, NULL);
+	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
+	nm_auth_chain_set_data_ulong (chain, "caller-uid", nm_auth_subject_get_uid (subject));
+	nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
+
+done:
+	if (error)
+		callback (self, NULL, error, context, user_data);
+
+	g_clear_error (&error);
+	g_clear_object (&subject);
 }
 
 static void
@@ -1251,7 +1254,7 @@ impl_settings_reload_connections (NMSettings *self,
 	gulong caller_uid;
 	GError *error = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid)) {
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");
@@ -1293,6 +1296,8 @@ pk_hostname_cb (NMAuthChain *chain,
 	GError *error = NULL;
 	GSList *iter;
 	const char *hostname;
+
+	g_assert (context);
 
 	priv->auths = g_slist_remove (priv->auths, chain);
 
@@ -1344,30 +1349,31 @@ impl_settings_save_hostname (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	GError *error = NULL;
-	const char *error_desc = NULL;
 
 	/* Do any of the plugins support setting the hostname? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 		                             "None of the registered plugins support setting the hostname.");
-	} else {
-		chain = nm_auth_chain_new (context, pk_hostname_cb, self, &error_desc);
-		if (chain) {
-			priv->auths = g_slist_append (priv->auths, chain);
-			nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
-			nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
-		} else {
-			error = g_error_new_literal (NM_SETTINGS_ERROR,
-			                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-			                             error_desc);
-		}
+		goto done;
 	}
 
-	if (error) {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+	chain = nm_auth_chain_new_context (context, pk_hostname_cb, self);
+	if (!chain) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to authenticate the request.");
+		goto done;
 	}
+
+	priv->auths = g_slist_append (priv->auths, chain);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
+	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
+
+done:
+	if (error)
+		dbus_g_method_return_error (context, error);
+	g_clear_error (&error);
 }
 
 static gboolean

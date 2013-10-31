@@ -78,7 +78,7 @@ get_service_by_namefile (NMVPNManager *self, const char *namefile)
 }
 
 static NMVPNConnection *
-find_active_vpn_connection_by_connection (NMVPNManager *self, NMConnection *connection)
+find_active_vpn_connection (NMVPNManager *self, NMConnection *connection)
 {
 	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
 	GHashTableIter iter;
@@ -104,66 +104,53 @@ find_active_vpn_connection_by_connection (NMVPNManager *self, NMConnection *conn
 	return found;
 }
 
-NMActiveConnection *
+gboolean
 nm_vpn_manager_activate_connection (NMVPNManager *manager,
-                                    NMConnection *connection,
-                                    NMDevice *device,
-                                    const char *specific_object,
-                                    gboolean user_requested,
-                                    gulong user_uid,
+                                    NMVPNConnection *vpn,
                                     GError **error)
 {
-	NMSettingVPN *vpn_setting;
+	NMVPNConnection *existing = NULL;
+	NMConnection *connection;
+	NMSettingVPN *s_vpn;
 	NMVPNService *service;
-	NMVPNConnection *vpn = NULL;
 	const char *service_name;
+	NMDevice *device;
 
-	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-	g_return_val_if_fail (error != NULL, NULL);
-	g_return_val_if_fail (*error == NULL, NULL);
+	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), FALSE);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
 
+	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
+	g_assert (device);
 	if (   nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED
 	    && nm_device_get_state (device) != NM_DEVICE_STATE_SECONDARIES) {
-		g_set_error (error,
-		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE,
-		             "%s", "The base device for the VPN connection was not active.");
-		return NULL;
+		g_set_error_literal (error, NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE,
+		                     "The base device for the VPN connection was not active.");
+		return FALSE;
 	}
 
-	vpn_setting = nm_connection_get_setting_vpn (connection);
-	if (!vpn_setting) {
-		g_set_error (error,
-		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_CONNECTION_INVALID,
-		             "%s", "The connection was not a VPN connection.");
-		return NULL;
-	}
+	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (vpn));
+	g_assert (connection);
+	s_vpn = nm_connection_get_setting_vpn (connection);
+	g_assert (s_vpn);
 
-	vpn = find_active_vpn_connection_by_connection (manager, connection);
-	if (vpn) {
-		nm_vpn_connection_disconnect (vpn, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
-		vpn = NULL;
-	}
-
-	service_name = nm_setting_vpn_get_service_type (vpn_setting);
+	service_name = nm_setting_vpn_get_service_type (s_vpn);
 	g_assert (service_name);
 	service = g_hash_table_lookup (NM_VPN_MANAGER_GET_PRIVATE (manager)->services, service_name);
 	if (!service) {
-		g_set_error (error,
-		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_INVALID,
+		g_set_error (error, NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_INVALID,
 		             "The VPN service '%s' was not installed.",
 		             service_name);
-		return NULL;
+		return FALSE;
 	}
 
-	return (NMActiveConnection *) nm_vpn_service_activate (service,
-	                                                       connection,
-	                                                       device,
-	                                                       specific_object,
-	                                                       user_requested,
-	                                                       user_uid,
-	                                                       error);
+	existing = find_active_vpn_connection (manager,
+	                                       nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (vpn)));
+	if (existing)
+		nm_vpn_connection_disconnect (vpn, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+
+	return nm_vpn_service_activate (service, vpn, error);
 }
 
 gboolean

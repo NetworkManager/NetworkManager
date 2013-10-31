@@ -31,6 +31,7 @@
 #include "nm-secret-agent.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 #include "nm-logging.h"
 
 G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
@@ -40,12 +41,9 @@ G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
                                         NMSecretAgentPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	char *description;
-	char *owner;
+	NMAuthSubject *subject;
 	char *identifier;
-	uid_t owner_uid;
 	char *owner_username;
 	NMSecretAgentCapabilities capabilities;
 	guint32 hash;
@@ -106,10 +104,10 @@ nm_secret_agent_get_description (NMSecretAgent *agent)
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
 	if (!priv->description) {
-		priv->description = g_strdup_printf ("%s/%s/%u",
-		                                     priv->owner,
+		priv->description = g_strdup_printf ("%s/%s/%lu",
+		                                     nm_auth_subject_get_dbus_sender (priv->subject),
 		                                     priv->identifier,
-		                                     priv->owner_uid);
+		                                     nm_auth_subject_get_uid (priv->subject));
 	}
 
 	return priv->description;
@@ -120,7 +118,7 @@ nm_secret_agent_get_dbus_owner (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
-	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner;
+	return nm_auth_subject_get_dbus_sender (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
 }
 
 const char *
@@ -131,16 +129,16 @@ nm_secret_agent_get_identifier (NMSecretAgent *agent)
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->identifier;
 }
 
-uid_t
+gulong
 nm_secret_agent_get_owner_uid  (NMSecretAgent *agent)
 {
-	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXUINT);
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXULONG);
 
-	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_uid;
+	return nm_auth_subject_get_uid (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
 }
 
 const char *
-nm_secret_agent_get_owner_username(NMSecretAgent *agent)
+nm_secret_agent_get_owner_username (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
@@ -156,11 +154,19 @@ nm_secret_agent_get_capabilities (NMSecretAgent *agent)
 }
 
 guint32
-nm_secret_agent_get_hash  (NMSecretAgent *agent)
+nm_secret_agent_get_hash (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), 0);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->hash;
+}
+
+NMAuthSubject *
+nm_secret_agent_get_subject (NMSecretAgent *agent)
+{
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
+
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->subject;
 }
 
 /**
@@ -443,9 +449,8 @@ proxy_cleanup (NMSecretAgent *self)
 
 NMSecretAgent *
 nm_secret_agent_new (DBusGMethodInvocation *context,
-                     const char *owner,
+                     NMAuthSubject *subject,
                      const char *identifier,
-                     uid_t owner_uid,
                      NMSecretAgentCapabilities capabilities)
 {
 	NMSecretAgent *self;
@@ -453,10 +458,11 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	char *hash_str, *username;
 	struct passwd *pw;
 
-	g_return_val_if_fail (owner != NULL, NULL);
+	g_return_val_if_fail (context != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
 
-	pw = getpwuid (owner_uid);
+	pw = getpwuid (nm_auth_subject_get_uid (subject));
 	g_return_val_if_fail (pw != NULL, NULL);
 	g_return_val_if_fail (pw->pw_name[0] != '\0', NULL);
 	username = g_strdup (pw->pw_name);
@@ -464,19 +470,18 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	self = (NMSecretAgent *) g_object_new (NM_TYPE_SECRET_AGENT, NULL);
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	priv->owner = g_strdup (owner);
 	priv->identifier = g_strdup (identifier);
-	priv->owner_uid = owner_uid;
 	priv->owner_username = g_strdup (username);
 	priv->capabilities = capabilities;
+	priv->subject = g_object_ref (subject);
 
-	hash_str = g_strdup_printf ("%08u%s", owner_uid, identifier);
+	hash_str = g_strdup_printf ("%16lu%s", nm_auth_subject_get_uid (subject), identifier);
 	priv->hash = g_str_hash (hash_str);
 	g_free (hash_str);
 
 	priv->proxy = nm_dbus_manager_new_proxy (nm_dbus_manager_get (),
 	                                         context,
-	                                         owner,
+	                                         nm_auth_subject_get_dbus_sender (subject),
 	                                         NM_DBUS_PATH_SECRET_AGENT,
 	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (priv->proxy);
@@ -501,20 +506,20 @@ dispose (GObject *object)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (object);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
+	g_clear_pointer (&priv->description, g_free);
+	g_clear_pointer (&priv->identifier, g_free);
+	g_clear_pointer (&priv->owner_username, g_free);
 
-		g_free (priv->description);
-		g_free (priv->owner);
-		g_free (priv->identifier);
-		g_free (priv->owner_username);
+	g_slist_free_full (priv->permissions, g_free);
+	priv->permissions = NULL;
 
-		g_slist_free_full (priv->permissions, g_free);
-
+	if (priv->requests) {
 		g_hash_table_destroy (priv->requests);
-
-		proxy_cleanup (NM_SECRET_AGENT (object));
+		priv->requests = NULL;
 	}
+
+	proxy_cleanup (NM_SECRET_AGENT (object));
+	g_clear_object (&priv->subject);
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->dispose (object);
 }
