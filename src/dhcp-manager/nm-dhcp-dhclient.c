@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #include <config.h>
 
@@ -175,6 +176,46 @@ add_lease_option (GHashTable *hash, char *line)
 	g_hash_table_insert (hash, g_strdup (line), g_strdup (spc));
 }
 
+static gboolean
+lease_valid (const char *str_expire)
+{
+	GDateTime *expire = NULL, *now = NULL;
+	struct tm expire_tm;
+	gboolean valid = FALSE;
+
+	g_return_val_if_fail (str_expire != NULL, FALSE);
+
+	/* Skip initial number (day of week?) */
+	if (!isdigit (*str_expire++))
+		return -1;
+	if (!isspace (*str_expire++))
+		return -1;
+	/* Read lease expiration (in UTC) */
+	if (!strptime (str_expire, "%t%Y/%m/%d %H:%M:%S", &expire_tm)) {
+		nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file expire time '%s'",
+		             str_expire);
+		return -1;
+	}
+
+	expire = g_date_time_new_utc (expire_tm.tm_year + 1900,
+	                              expire_tm.tm_mon + 1,
+	                              expire_tm.tm_mday,
+	                              expire_tm.tm_hour,
+	                              expire_tm.tm_min,
+	                              expire_tm.tm_sec);
+	if (expire) {
+		now = g_date_time_new_now_utc ();
+		valid = (g_date_time_difference (expire, now) > 0);
+		g_date_time_unref (expire);
+		g_date_time_unref (now);
+	} else {
+		nm_log_warn (LOGD_DHCP, "couldn't convert DHCP lease file expire time '%s'",
+		             str_expire);
+	}
+
+	return valid;
+}
+
 GSList *
 nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
                                        const char *uuid,
@@ -242,7 +283,6 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 		const char *data;
 		guint32 tmp;
 		guint32 plen;
-		struct tm expire;
 
 		hash = iter->data;
 
@@ -252,45 +292,8 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 			continue;
 
 		data = g_hash_table_lookup (hash, "expire");
-		if (data) {
-			time_t now_tt;
-			struct tm *now;
-
-			/* Read lease expiration (in UTC) */
-			if (!strptime (data, "%w %Y/%m/%d %H:%M:%S", &expire)) {
-				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file expire time '%s'",
-				             data);
-				continue;
-			}
-
-			now_tt = time (NULL);
-			now = gmtime(&now_tt);
-
-			/* Ignore this lease if it's already expired */
-			if (expire.tm_year < now->tm_year)
-				continue;
-			else if (expire.tm_year == now->tm_year) {
-				if (expire.tm_mon < now->tm_mon)
-					continue;
-				else if (expire.tm_mon == now->tm_mon) {
-					if (expire.tm_mday < now->tm_mday)
-						continue;
-					else if (expire.tm_mday == now->tm_mday) {
-						if (expire.tm_hour < now->tm_hour)
-							continue;
-						else if (expire.tm_hour == now->tm_hour) {
-							if (expire.tm_min < now->tm_min)
-								continue;
-							else if (expire.tm_min == now->tm_min) {
-								if (expire.tm_sec <= now->tm_sec)
-									continue;
-							}
-						}
-					}
-				}
-			}
-			/* If we get this far, the lease hasn't expired */
-		}
+		if (data && !lease_valid (data))
+			continue;
 
 		data = g_hash_table_lookup (hash, "fixed-address");
 		if (!data)
