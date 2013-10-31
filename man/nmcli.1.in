@@ -272,7 +272,7 @@ be saved as two connections which both apply to eth0, one for DHCP (called
 connected to the DHCP-enabled network the user would run "nmcli con up default"
 , and when connected to the static network the user would run "nmcli con up testing".
 .TP
-.SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | reload }
+.SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | reload | load }
 .sp
 .RS
 .TP
@@ -615,6 +615,12 @@ to tell \fINetworkManager\fP to re-read the connection profiles from disk when
 a change was made to them. However, the auto-loading feature can be enabled and
 then \fINetworkManager\fP will reload connection files any time they change
 (monitor-connection-files=true in \fINetworkManager.conf\fP(5)).
+.TP
+.B load <filename> [<filename>...]
+.br
+Load/reload one or more connection files from disk. Use this after manually
+editing a connection file to ensure that \fBNetworkManager\fP is aware
+of its latest state.
 .RE
 
 .TP

@@ -227,7 +227,8 @@ usage (void)
 	         "  modify [ id | uuid | path ] <ID> <setting>.<property> <value>\n\n"
 	         "  edit [ id | uuid | path ] <ID>  |  [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	         "  delete [ id | uuid | path ] <ID>\n\n"
-	         "  reload\n\n\n"
+	         "  reload\n\n"
+	         "  load <filename> [ <filename>... ]\n\n\n"
 	         ));
 }
 
@@ -313,6 +314,7 @@ static const char *real_con_commands[] = {
 	"edit",
 	"delete",
 	"reload",
+	"load",
 	NULL
 };
 
@@ -7262,6 +7264,50 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static NMCResultCode
+do_connection_load (NmCli *nmc, int argc, char **argv)
+{
+	GError *error = NULL;
+	char **filenames, **failures = NULL;
+	int i;
+
+	nmc->return_value = NMC_RESULT_SUCCESS;
+	nmc->should_wait = FALSE;
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		return nmc->return_value;
+	}
+
+	if (argc == 0) {
+		g_string_printf (nmc->return_text, _("Error: No connection specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		return nmc->return_value;
+	}
+
+	filenames = g_new (char *, argc + 1);
+	for (i = 0; i < argc; i++)
+		filenames[i] = argv[i];
+	filenames[i] = NULL;
+
+	nm_remote_settings_load_connections (nmc->system_settings, filenames, &failures, &error);
+	g_free (filenames);
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_error_free (error);
+	}
+
+	if (failures) {
+		for (i = 0; failures[i]; i++)
+			fprintf (stderr, _("Could not load file '%s'\n"), failures[i]);
+		g_strfreev (failures);
+	}
+
+	return nmc->return_value;
+}
+
 
 typedef struct {
 	NmCli *nmc;
@@ -7346,6 +7392,9 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches(*argv, "reload") == 0) {
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
+		}
+		else if (matches(*argv, "load") == 0) {
+			nmc->return_value = do_connection_load (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "modify") == 0) {
 			nmc->return_value = do_connection_modify (nmc, argc-1, argv+1);
