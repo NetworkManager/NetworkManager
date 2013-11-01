@@ -139,7 +139,7 @@ match_log_level (const char  *level,
 	int i;
 
 	for (i = 0; i < LOGL_MAX; i++) {
-		if (!strcasecmp (level_names[i], level)) {
+		if (!g_ascii_strcasecmp (level_names[i], level)) {
 			*out_level = i;
 			return TRUE;
 		}
@@ -200,22 +200,22 @@ nm_logging_setup (const char  *level,
 			bits = 0;
 
 			/* Check for combined domains */
-			if (!strcasecmp (*iter, LOGD_ALL_STRING))
+			if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING))
 				bits = LOGD_ALL;
-			else if (!strcasecmp (*iter, LOGD_DEFAULT_STRING))
+			else if (!g_ascii_strcasecmp (*iter, LOGD_DEFAULT_STRING))
 				bits = LOGD_DEFAULT;
-			else if (!strcasecmp (*iter, LOGD_DHCP_STRING))
+			else if (!g_ascii_strcasecmp (*iter, LOGD_DHCP_STRING))
 				bits = LOGD_DHCP;
-			else if (!strcasecmp (*iter, LOGD_IP_STRING))
+			else if (!g_ascii_strcasecmp (*iter, LOGD_IP_STRING))
 				bits = LOGD_IP;
 
 			/* Check for compatibility domains */
-			else if (!strcasecmp (*iter, "HW"))
+			else if (!g_ascii_strcasecmp (*iter, "HW"))
 				bits = LOGD_PLATFORM;
 
 			else {
 				for (diter = &domain_descs[0]; diter->name; diter++) {
-					if (!strcasecmp (diter->name, *iter)) {
+					if (!g_ascii_strcasecmp (diter->name, *iter)) {
 						bits = diter->num;
 						break;
 					}
