@@ -3293,7 +3293,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection = NULL;
 	GSList *all_connections = NULL;
-	NMActiveConnection *active;
+	NMActiveConnection *active = NULL;
 	NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	NMDevice *device = NULL;
