@@ -35,6 +35,7 @@
 #include <nm-setting-8021x.h>
 
 #include "common.h"
+#include "nm-config.h"
 #include "nm-ifcfg-connection.h"
 #include "reader.h"
 #include "writer.h"
@@ -206,7 +207,6 @@ void
 nm_ifcfg_connection_set_path (NMIfcfgConnection *self, const char *ifcfg_path)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
-	NMInotifyHelper *ih;
 
 	g_return_if_fail (ifcfg_path != NULL);
 
@@ -214,20 +214,19 @@ nm_ifcfg_connection_set_path (NMIfcfgConnection *self, const char *ifcfg_path)
 	g_free (priv->path);
 
 	priv->path = g_strdup (ifcfg_path);
-
-	ih = nm_inotify_helper_get ();
-	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), self);
-
-	priv->file_wd = nm_inotify_helper_add_watch (ih, ifcfg_path);
-
 	priv->keyfile = utils_get_keys_path (ifcfg_path);
-	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, priv->keyfile);
-
 	priv->routefile = utils_get_route_path (ifcfg_path);
-	priv->routefile_wd = nm_inotify_helper_add_watch (ih, priv->routefile);
-
 	priv->route6file = utils_get_route6_path (ifcfg_path);
-	priv->route6file_wd = nm_inotify_helper_add_watch (ih, priv->route6file);
+
+	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
+		NMInotifyHelper *ih = nm_inotify_helper_get ();
+
+		priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), self);
+		priv->file_wd = nm_inotify_helper_add_watch (ih, ifcfg_path);
+		priv->keyfile_wd = nm_inotify_helper_add_watch (ih, priv->keyfile);
+		priv->routefile_wd = nm_inotify_helper_add_watch (ih, priv->routefile);
+		priv->route6file_wd = nm_inotify_helper_add_watch (ih, priv->route6file);
+	}
 }
 
 const char *
