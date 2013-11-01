@@ -956,7 +956,8 @@ nm_connection_is_type (NMConnection *connection, const char *type)
 	g_return_val_if_fail (type != NULL, FALSE);
 
 	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!s_con)
+		return FALSE;
 
 	type2 = nm_setting_connection_get_connection_type (s_con);
 

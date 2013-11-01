@@ -3299,15 +3299,16 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
 
-	if (!settings || !g_hash_table_size (settings)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		                             "Settings required to create a connection.");
-		goto error;
-	}
-
-	/* Try to create a new connection with the given settings */
+	/* Try to create a new connection with the given settings.
+	 * We allow empty settings for AddAndActivateConnection(). In that case,
+	 * the connection will be completed in nm_utils_complete_generic() or 
+	 * nm_device_complete_connection() below. Just make sure we don't expect
+	 * specific data being in the connection till then (especially in
+	 * validate_activation_request()).
+	 */
 	connection = nm_connection_new ();
-	nm_connection_replace_settings (connection, settings, NULL);
+	if (settings && g_hash_table_size (settings))
+		nm_connection_replace_settings (connection, settings, NULL);
 
 	subject = validate_activation_request (self,
 	                                       context,
