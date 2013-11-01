@@ -233,6 +233,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
                            NMIfcfgConnection *existing,
                            char **out_old_path)
 {
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMIfcfgConnection *new;
 	GError *error = NULL;
 	gboolean ignore_error = FALSE;
@@ -315,7 +316,13 @@ connection_new_or_changed (SCPluginIfcfg *self,
 			/* Remove the path so that claim_connection() doesn't complain later when
 			 * interface gets managed and connection is re-added. */
 			nm_connection_set_path (NM_CONNECTION (existing), NULL);
-			g_object_unref (existing);
+
+			/* signal_remove() will end up removing the connection from our hash,
+			 * so add it back now.
+			 */
+			g_hash_table_insert (priv->connections,
+			                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (existing))),
+			                     existing);
 		}
 	} else {
 		if (old_unmanaged) {  /* now managed */
