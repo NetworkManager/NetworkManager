@@ -4227,23 +4227,25 @@ cleanup_olpc:
 			if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
 				return FALSE;
 
+			/* coverity[dead_error_begin] */
 			if (ip4) {
 				ip4addr = nmc_parse_and_build_ip4_address (ip4, gw4, error);
 				if (!ip4addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
 				}
+				add_ip4_address_to_connection (ip4addr, connection);
 			}
-			add_ip4_address_to_connection (ip4addr, connection);
 
+			/* coverity[dead_error_begin] */
 			if (ip6) {
 				ip6addr = nmc_parse_and_build_ip6_address (ip6, gw6, error);
 				if (!ip6addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
 				}
+				add_ip6_address_to_connection (ip6addr, connection);
 			}
-			add_ip6_address_to_connection (ip6addr, connection);
 		}
 
 		/* Ask for addresses if '--ask' is specified. */
