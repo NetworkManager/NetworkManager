@@ -1,0 +1,15 @@
+# missing routers option
+lease {
+  interface "wlan0";
+  fixed-address 192.168.1.180;
+  option subnet-mask 255.255.255.0;
+  option dhcp-lease-time 600;
+  option dhcp-message-type 5;
+  option domain-name-servers 192.168.1.1;
+  option dhcp-server-identifier 192.168.1.1;
+  option broadcast-address 192.168.1.255;
+  renew 5 2013/11/01 19:56:15;
+  rebind 5 2013/11/01 20:00:44;
+  expire 5 2013/11/01 20:01:59;
+}
+
