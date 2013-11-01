@@ -959,9 +959,8 @@ nm_connection_is_type (NMConnection *connection, const char *type)
 	g_assert (s_con);
 
 	type2 = nm_setting_connection_get_connection_type (s_con);
-	g_assert (type2);
 
-	return !strcmp (type2, type);
+	return (g_strcmp0 (type2, type) == 0);
 }
 
 /**
