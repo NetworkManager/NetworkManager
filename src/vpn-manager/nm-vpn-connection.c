@@ -1084,7 +1084,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 			 * the VPN server, we want to use the NM created route instead of
 			 * whatever the server provides.
 			 */
-			if (IN6_ARE_ADDR_EQUAL (&route.network, priv->ip6_external_gw) && route.plen == 128)
+			if (priv->ip6_external_gw && IN6_ARE_ADDR_EQUAL (&route.network, priv->ip6_external_gw) && route.plen == 128)
 				continue;
 
 			/* Otherwise accept the VPN-provided route */
