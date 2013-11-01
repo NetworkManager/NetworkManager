@@ -160,7 +160,7 @@ find_by_path (SCPluginKeyfile *self, const char *path)
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_str_equal (path, nm_keyfile_connection_get_path (candidate)))
+		if (g_strcmp0 (path, nm_keyfile_connection_get_path (candidate)) == 0)
 			return candidate;
 	}
 	return NULL;
