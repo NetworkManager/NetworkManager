@@ -461,7 +461,7 @@ find_connection (GSList *list, const char *filter_type, const char *filter_val)
 		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
 		        && strcmp (filter_val, uuid) == 0)
 		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
-		        && (strcmp (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))))
+		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))))
 			return connection;
 
 		iterator = g_slist_next (iterator);
@@ -734,9 +734,9 @@ find_active_connection (const GPtrArray *active_cons, const GSList *cons,
 		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
 		        && strcmp (filter_val, uuid) == 0)
 		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
-		        && (strcmp (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))
+		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))
 		    || (   (!filter_type || strcmp (filter_type, "apath") == 0)
-		        && (strcmp (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0))))
+		        && (g_strcmp0 (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0))))
 			return candidate;
 	}
 	return NULL;
