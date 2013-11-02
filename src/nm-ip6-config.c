@@ -129,6 +129,8 @@ nm_ip6_config_capture (int ifindex)
 {
 	NMIP6Config *config;
 	NMIP6ConfigPrivate *priv;
+	guint i;
+	gboolean gateway_changed = FALSE;
 
 	/* Slaves have no IP configuration */
 	if (nm_platform_link_get_master (ifindex) > 0)
@@ -141,11 +143,28 @@ nm_ip6_config_capture (int ifindex)
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip6_address_get_all (ifindex);
-	priv->routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
+	priv->routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
+
+	/* Extract gateway from default route */
+	for (i = 0; i < priv->routes->len; i++) {
+		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
+
+		if (IN6_IS_ADDR_UNSPECIFIED (&route->network)) {
+			if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &route->gateway)) {
+				priv->gateway = route->gateway;
+				gateway_changed = TRUE;
+			}
+			/* Remove the default route from the list */
+			g_array_remove_index (priv->routes, i);
+			break;
+		}
+	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
+	if (gateway_changed)
+		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;
 }
