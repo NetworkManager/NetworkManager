@@ -981,6 +981,22 @@ nm_ip4_config_get_address (const NMIP4Config *config, guint i)
 	return &g_array_index (priv->addresses, NMPlatformIP4Address, i);
 }
 
+gboolean
+nm_ip4_config_address_exists (const NMIP4Config *config,
+                              const NMPlatformIP4Address *needle)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	guint i;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP4Address *haystack = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
+
+		if (needle->address == haystack->address && needle->plen == haystack->plen)
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /******************************************************************/
 
 void

@@ -880,6 +880,23 @@ nm_ip6_config_get_address (const NMIP6Config *config, guint i)
 	return &g_array_index (priv->addresses, NMPlatformIP6Address, i);
 }
 
+gboolean
+nm_ip6_config_address_exists (const NMIP6Config *config,
+                              const NMPlatformIP6Address *needle)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	guint i;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP6Address *haystack = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+
+		if (   IN6_ARE_ADDR_EQUAL (&needle->address, &haystack->address)
+		    && needle->plen == haystack->plen)
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /******************************************************************/
 
 void
