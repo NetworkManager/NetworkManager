@@ -1806,7 +1806,6 @@ nm_device_check_connection_compatible (NMDevice *device,
  * @device: #NMDevice instance
  *
  * This is a convenience function to determine whether connection assumption
- * via old match_l2_config() or new update_connection() virtual functions
  * is available for this device.
  *
  * Use this function when you need to determine whether full cleanup should
@@ -1821,9 +1820,7 @@ nm_device_check_connection_compatible (NMDevice *device,
 gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
-	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
-
-	return klass->match_l2_config || klass->update_connection;
+	return !!NM_DEVICE_GET_CLASS (device)->update_connection;
 }
 
 static void
@@ -6560,125 +6557,6 @@ spec_match_list (NMDevice *device, const GSList *specs)
 		matched = nm_match_spec_interface_name (specs, nm_device_get_iface (device));
 
 	return matched;
-}
-
-static gboolean
-ip4_match_config (NMDevice *self, NMConnection *connection)
-{
-	NMSettingIP4Config *s_ip4;
-	int i, num;
-	GSList *leases, *iter;
-	NMDHCPManager *dhcp_mgr;
-	const char *method;
-
-	/* Get any saved leases that apply to this connection */
-	dhcp_mgr = nm_dhcp_manager_get ();
-	leases = nm_dhcp_manager_get_lease_config (dhcp_mgr,
-	                                           nm_device_get_iface (self),
-	                                           nm_connection_get_uuid (connection),
-						   FALSE);
-	g_object_unref (dhcp_mgr);
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		gboolean found = FALSE;
-
-		/* Find at least one lease's address on the device */
-		for (iter = leases; iter; iter = g_slist_next (iter)) {
-			NMIP4Config *ip4_config = iter->data;
-			const NMPlatformIP4Address *address = nm_ip4_config_get_address (ip4_config, 0);
-
-			if (address && nm_platform_ip4_address_exists (nm_device_get_ip_ifindex (self),
-			                                               address->address,
-			                                               address->plen)) {
-				found = TRUE; /* Yay, device has same address as a lease */
-				break;
-			}
-		}
-		g_slist_free_full (leases, g_object_unref);
-		return found;
-	} else {
-		/* Maybe the connection used to be DHCP and there are stale leases; ignore them */
-		g_slist_free_full (leases, g_object_unref);
-	}
-
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-		// FIXME: Enforce no ipv4 addresses?
-		return TRUE;
-	}
-
-	/* 'shared' and 'link-local' aren't supported methods because 'shared'
-	 * requires too much iptables and dnsmasq state to be reclaimed, and
-	 * avahi-autoipd isn't smart enough to allow the link-local address to be
-	 * determined at any point other than when it was first assigned.
-	 */
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
-		return FALSE;
-
-	/* Everything below for static addressing */
-
-	/* Find all IP4 addresses of this connection on the device */
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4) {
-		num = nm_setting_ip4_config_get_num_addresses (s_ip4);
-		for (i = 0; i < num; i++) {
-			NMIP4Address *addr = nm_setting_ip4_config_get_address (s_ip4, i);
-
-			if (!nm_platform_ip4_address_exists (nm_device_get_ip_ifindex (self),
-			                                     nm_ip4_address_get_address (addr),
-			                                     nm_ip4_address_get_prefix (addr)))
-				return FALSE;
-		}
-	}
-
-	/* Success; all the connection's static IP addresses are assigned to the device */
-	return TRUE;
-}
-
-/**
- * nm_device_find_assumable_connection:
- * @device: an #NMDevice
- * @connections: (element-type NMConnection): a list of connections
- *
- * Searches @connections for one that matches the currently-configured
- * state of @device (in both L2 and L3 configuration). That is, it
- * looks for the connection such that if you activated that connection
- * on @device, it would result in @device having the configuration
- * that it has now. This is used at startup to attempt to match
- * already-active devices with corresponding #NMConnections.
- *
- * Some device types (eg, Wi-Fi) and subtypes (eg, PPPoE) can't be
- * matched reliably, so this will always fail for those devices.
- *
- * Returns: (transfer none): an #NMConnection that matches @device's
- *   current state, or %NULL if none match.
- */
-NMConnection *
-nm_device_find_assumable_connection (NMDevice *device, const GSList *connections)
-{
-	const GSList *iter;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	if (!NM_DEVICE_GET_CLASS (device)->match_l2_config)
-		return NULL;
-
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (!nm_device_check_connection_compatible (device, candidate, NULL))
-			continue;
-
-		if (!ip4_match_config (device, candidate))
-			continue;
-
-		/* FIXME: match IPv6 config */
-
-		if (NM_DEVICE_GET_CLASS (device)->match_l2_config (device, candidate))
-			return candidate;
-	}
-
-	return NULL;
 }
 
 void

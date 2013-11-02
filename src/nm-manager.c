@@ -1756,24 +1756,15 @@ local_slist_free (void *loc)
 }
 
 /**
- * get_connection:
+ * get_existing_connection:
  * @manager: #NMManager instance
  * @device: #NMDevice instance
  *
- * Returns one of the following:
- *
- * 1) An existing #NMSettingsConnection to be assumed.
- *
- * 2) A generated #NMConnection to be assumed. You can distinguish this
- * case using NM_IS_SETTINGS_CONNECTION().
- *
- * 3) %NULL when no connection was detected or the @device doesn't support
- * generating connections.
- *
- * Supports both nm-device's match_l2_config() and update_connection().
+ * Returns: a #NMSettingsConnection to be assumed by the device, or %NULL if
+ *   the device does not support assuming existing connections.
  */
 static NMConnection *
-get_connection (NMManager *manager, NMDevice *device)
+get_existing_connection (NMManager *manager, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
@@ -1781,25 +1772,6 @@ get_connection (NMManager *manager, NMDevice *device)
 	NMSettingsConnection *added = NULL;
 	GSList *iter;
 	GError *error = NULL;
-
-	/* We still support the older API to match a NMDevice object to an
-	 * existing connection using nm_device_find_assumable_connection().
-	 *
-	 * When the older API is still available for a particular device
-	 * type, we use it. To opt for the newer interface, the NMDevice
-	 * subclass must omit the match_l2_config virtual function
-	 * implementation.
-	 */
-	if (NM_DEVICE_GET_CLASS (device)->match_l2_config) {
-		NMConnection *candidate = nm_device_find_assumable_connection (device, connections);
-
-		if (candidate) {
-			nm_log_info (LOGD_DEVICE, "(%s): Found matching connection '%s' (legacy API)",
-			            nm_device_get_iface (device),
-			            nm_connection_get_id (candidate));
-			return candidate;
-		}
-	}
 
 	/* The core of the API is nm_device_generate_connection() function and
 	 * update_connection() virtual method and the convenient connection_type
@@ -1946,7 +1918,7 @@ add_device (NMManager *self, NMDevice *device)
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
-	connection = get_connection (self, device);
+	connection = get_existing_connection (self, device);
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
