@@ -1773,6 +1773,8 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	GSList *iter;
 	GError *error = NULL;
 
+	nm_device_capture_initial_config (device);
+
 	/* The core of the API is nm_device_generate_connection() function and
 	 * update_connection() virtual method and the convenient connection_type
 	 * class attribute. Subclasses supporting the new API must have

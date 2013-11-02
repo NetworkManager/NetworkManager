@@ -353,7 +353,7 @@ static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *
 static void check_carrier (NMDevice *device);
 
 static void nm_device_queued_ip_config_change_clear (NMDevice *self);
-static void update_ip_config (NMDevice *self);
+static void update_ip_config (NMDevice *self, gboolean capture_dhcp);
 static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
 
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
@@ -549,7 +549,6 @@ constructor (GType type,
 
 	update_accept_ra_save (dev);
 	update_ip6_privacy_save (dev);
-	update_ip_config (dev);
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
@@ -6384,8 +6383,107 @@ nm_device_get_state (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->state;
 }
 
+static NMIP4Config *
+find_ip4_lease_config (NMDevice *device,
+                       NMConnection *connection,
+                       NMIP4Config *ext_ip4_config)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	const char *ip_iface = nm_device_get_ip_iface (device);
+	GSList *leases, *liter;
+	NMIP4Config *found = NULL;
+
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (ext_ip4_config), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	leases = nm_dhcp_manager_get_lease_ip_configs (priv->dhcp_manager,
+	                                               ip_iface,
+	                                               nm_connection_get_uuid (connection),
+	                                               FALSE);
+	for (liter = leases; liter && !found; liter = liter->next) {
+		NMIP4Config *lease_config = liter->data;
+		const NMPlatformIP4Address *address = nm_ip4_config_get_address (lease_config, 0);
+		guint32 gateway = nm_ip4_config_get_gateway (lease_config);
+
+		g_assert (address);
+		if (!nm_ip4_config_address_exists (ext_ip4_config, address))
+			continue;
+		if (gateway != nm_ip4_config_get_gateway (ext_ip4_config))
+			continue;
+		found = g_object_ref (lease_config);
+	}
+
+	g_slist_free_full (leases, g_object_unref);
+	return found;
+}
+
 static void
-update_ip_config (NMDevice *self)
+capture_lease_config (NMDevice *device,
+                      NMIP4Config *ext_ip4_config,
+                      NMIP4Config **out_ip4_config,
+                      NMIP6Config *ext_ip6_config,
+                      NMIP6Config **out_ip6_config)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	const GSList *connections, *citer;
+	guint i;
+	gboolean dhcp_used = FALSE;
+
+	/* Ensure at least one address on the device has a non-infinite lifetime,
+	 * otherwise DHCP cannot possibly be active on the device right now.
+	 */
+	if (ext_ip4_config && out_ip4_config) {
+		for (i = 0; i < nm_ip4_config_get_num_addresses (ext_ip4_config); i++) {
+			const NMPlatformIP4Address *addr = nm_ip4_config_get_address (ext_ip4_config, i);
+
+			if (addr->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
+				dhcp_used = TRUE;
+				break;
+			}
+		}
+	} else if (ext_ip6_config && out_ip6_config) {
+		for (i = 0; i < nm_ip6_config_get_num_addresses (ext_ip6_config); i++) {
+			const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ext_ip6_config, i);
+
+			if (addr->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
+				dhcp_used = TRUE;
+				break;
+			}
+		}
+	} else {
+		g_return_if_fail (   (ext_ip6_config && out_ip6_config)
+		                  || (ext_ip4_config && out_ip4_config));
+	}
+
+	if (!dhcp_used)
+		return;
+
+	connections = nm_connection_provider_get_connections (priv->con_provider);
+	for (citer = connections; citer; citer = citer->next) {
+		NMConnection *candidate = citer->data;
+		const char *method;
+
+		if (!nm_device_check_connection_compatible (device, candidate, NULL))
+			continue;
+
+		/* IPv4 leases */
+		method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP4_CONFIG);
+		if (out_ip4_config && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
+			*out_ip4_config = find_ip4_lease_config (device, candidate, ext_ip4_config);
+			if (*out_ip4_config)
+				return;
+		}
+
+		/* IPv6 leases */
+		method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP6_CONFIG);
+		if (out_ip6_config && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+			/* FIXME: implement find_ip6_lease_config() */
+		}
+	}
+}
+
+static void
+update_ip_config (NMDevice *self, gboolean capture_dhcp)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
@@ -6398,7 +6496,12 @@ update_ip_config (NMDevice *self)
 	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
 	priv->ext_ip4_config = nm_ip4_config_capture (ifindex);
+
 	if (priv->ext_ip4_config) {
+		if (capture_dhcp) {
+			g_clear_object (&priv->dev_ip4_config);
+			capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
+		}
 		if (priv->dev_ip4_config)
 			nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config);
 		if (priv->vpn4_config)
@@ -6434,6 +6537,12 @@ update_ip_config (NMDevice *self)
 	}
 }
 
+void
+nm_device_capture_initial_config (NMDevice *dev)
+{
+	update_ip_config (dev, TRUE);
+}
+
 static gboolean
 queued_ip_config_change (gpointer user_data)
 {
@@ -6445,7 +6554,7 @@ queued_ip_config_change (gpointer user_data)
 		return TRUE;
 
 	priv->queued_ip_config_id = 0;
-	update_ip_config (self);
+	update_ip_config (self, FALSE);
 	return FALSE;
 }
 
