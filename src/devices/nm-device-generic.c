@@ -68,12 +68,6 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *device)
-{
-	return TRUE;
-}
-
-static gboolean
 check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
                              GError **error)
@@ -196,7 +190,6 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 
 	/* properties */
