@@ -878,6 +878,12 @@ _nmcli()
                             _nmcli_complete_COMMAND_CONNECTION
                         fi
                         ;;
+                    l|lo|loa|load)
+                        if [[ ${#words[@]} -gt 2 ]]; then
+                            compopt -o default
+                            COMPREPLY=()
+                        fi
+                        ;;
                 esac
             fi
             ;;
