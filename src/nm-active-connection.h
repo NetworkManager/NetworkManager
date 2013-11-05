@@ -120,8 +120,6 @@ NMAuthSubject *nm_active_connection_get_subject (NMActiveConnection *self);
 
 gboolean      nm_active_connection_get_user_requested (NMActiveConnection *self);
 
-gulong        nm_active_connection_get_user_uid (NMActiveConnection *self);
-
 NMActiveConnection *nm_active_connection_get_master (NMActiveConnection *self);
 
 gboolean      nm_active_connection_get_master_ready (NMActiveConnection *self);

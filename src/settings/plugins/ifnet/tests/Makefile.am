@@ -9,11 +9,14 @@ AM_CPPFLAGS= \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
+	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/wifi \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
 	-DSYSCONFDIR=\"nonexistent\"

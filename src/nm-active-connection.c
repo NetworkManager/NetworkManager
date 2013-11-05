@@ -282,17 +282,6 @@ nm_active_connection_get_user_requested (NMActiveConnection *self)
 	return !nm_auth_subject_get_internal (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->subject);
 }
 
-gulong
-nm_active_connection_get_user_uid (NMActiveConnection *self)
-{
-	NMActiveConnectionPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), G_MAXULONG);
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
-
-	return nm_auth_subject_get_uid (priv->subject);
-}
-
 NMDevice *
 nm_active_connection_get_device (NMActiveConnection *self)
 {

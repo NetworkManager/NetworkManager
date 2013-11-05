@@ -961,7 +961,7 @@ secrets_filter_cb (NMSetting *setting,
 static void
 send_agent_owned_secrets (NMSettings *self,
                           NMSettingsConnection *connection,
-                          gulong caller_uid)
+                          NMAuthSubject *subject)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMConnection *for_agent;
@@ -974,7 +974,7 @@ send_agent_owned_secrets (NMSettings *self,
 	nm_connection_clear_secrets_with_flags (for_agent,
 	                                        secrets_filter_cb,
 	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-	nm_agent_manager_save_secrets (priv->agent_mgr, for_agent, TRUE, caller_uid);
+	nm_agent_manager_save_secrets (priv->agent_mgr, for_agent, subject);
 	g_object_unref (for_agent);
 }
 
@@ -992,7 +992,7 @@ pk_add_cb (NMAuthChain *chain,
 	NMSettingsConnection *added = NULL;
 	NMSettingsAddCallback callback;
 	gpointer callback_data;
-	gulong caller_uid;
+	NMAuthSubject *subject;
 	const char *perm;
 	gboolean save_to_disk;
 
@@ -1023,13 +1023,13 @@ pk_add_cb (NMAuthChain *chain,
 
 	callback = nm_auth_chain_get_data (chain, "callback");
 	callback_data = nm_auth_chain_get_data (chain, "callback-data");
-	caller_uid = nm_auth_chain_get_data_ulong (chain, "caller-uid");
+	subject = nm_auth_chain_get_data (chain, "subject");
 
 	callback (self, added, error, context, callback_data);
 
 	/* Send agent-owned secrets to the agents */
 	if (!error && added)
-		send_agent_owned_secrets (self, added, caller_uid);
+		send_agent_owned_secrets (self, added, subject);
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
@@ -1163,7 +1163,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
-	nm_auth_chain_set_data_ulong (chain, "caller-uid", nm_auth_subject_get_uid (subject));
+	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
 	nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
 
 done:

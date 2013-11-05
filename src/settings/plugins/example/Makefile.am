@@ -1,4 +1,5 @@
 AM_CPPFLAGS = \
+	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
@@ -7,6 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	-DNMCONFDIR=\"$(nmconfdir)\"
 
 # 'noinst' here because this is an example plugin we don't want to install

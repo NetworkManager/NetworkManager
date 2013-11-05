@@ -38,6 +38,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	$(NSS_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"

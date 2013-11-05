@@ -620,7 +620,7 @@ do_delete (NMSettingsConnection *connection,
 	/* Tell agents to remove secrets for this connection */
 	for_agents = nm_connection_duplicate (NM_CONNECTION (connection));
 	nm_connection_clear_secrets (for_agents);
-	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents, FALSE, 0);
+	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents);
 	g_object_unref (for_agents);
 
 	/* Remove timestamp from timestamps database file */
@@ -850,10 +850,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 /**
  * nm_settings_connection_get_secrets:
  * @connection: the #NMSettingsConnection
- * @filter_by_uid: if TRUE, only request secrets from agents registered by the
- * same UID as @uid.
- * @uid: when @filter_by_uid is TRUE, only request secrets from agents belonging
- * to this UID
+ * @subject: the #NMAuthSubject originating the request
  * @setting_name: the setting to return secrets for
  * @flags: flags to modify the secrets request
  * @hints: key names in @setting_name for which secrets may be required, or some
@@ -868,8 +865,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
  **/
 guint32 
 nm_settings_connection_get_secrets (NMSettingsConnection *self,
-                                    gboolean filter_by_uid,
-                                    gulong uid,
+                                    NMAuthSubject *subject,
                                     const char *setting_name,
                                     NMSettingsGetSecretsFlags flags,
                                     const char **hints,
@@ -903,8 +899,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	existing_secrets = nm_connection_to_hash (priv->system_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                        NM_CONNECTION (self),
-	                                        filter_by_uid,
-	                                        uid,
+	                                        subject,
 	                                        existing_secrets,
 	                                        setting_name,
 	                                        flags,
@@ -949,7 +944,7 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 
 typedef void (*AuthCallback) (NMSettingsConnection *connection, 
                               DBusGMethodInvocation *context,
-                              gulong sender_uid,
+                              NMAuthSubject *subject,
                               GError *error,
                               gpointer data);
 
@@ -966,7 +961,7 @@ pk_auth_cb (NMAuthChain *chain,
 	const char *perm;
 	AuthCallback callback;
 	gpointer callback_data;
-	gulong sender_uid;
+	NMAuthSubject *subject;
 
 	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
 
@@ -988,8 +983,8 @@ pk_auth_cb (NMAuthChain *chain,
 
 	callback = nm_auth_chain_get_data (chain, "callback");
 	callback_data = nm_auth_chain_get_data (chain, "callback-data");
-	sender_uid = nm_auth_chain_get_data_ulong (chain, "sender-uid");
-	callback (self, context, sender_uid, error, callback_data);
+	subject = nm_auth_chain_get_data (chain, "subject");
+	callback (self, context, subject, error, callback_data);
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
@@ -1030,7 +1025,6 @@ auth_start (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	gulong sender_uid = G_MAXULONG;
 	GError *error = NULL;
 	char *error_desc = NULL;
 
@@ -1047,14 +1041,14 @@ auth_start (NMSettingsConnection *self,
 		                             error_desc);
 		g_free (error_desc);
 
-		callback (self, context, G_MAXULONG, error, callback_data);
+		callback (self, context, subject, error, callback_data);
 		g_clear_error (&error);
 		return;
 	}
 
 	if (!check_permission) {
 		/* Don't need polkit auth, automatic success */
-		callback (self, context, nm_auth_subject_get_uid (subject), NULL, callback_data);
+		callback (self, context, subject, NULL, callback_data);
 		return;
 	}
 
@@ -1064,7 +1058,7 @@ auth_start (NMSettingsConnection *self,
 		                     NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                     "Unable to authenticate the request.");
-		callback (self, context, G_MAXULONG, error, callback_data);
+		callback (self, context, subject, error, callback_data);
 		g_clear_error (&error);
 		return;
 	}
@@ -1073,7 +1067,7 @@ auth_start (NMSettingsConnection *self,
 	nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
-	nm_auth_chain_set_data_ulong (chain, "sender-uid", sender_uid);
+	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
 	nm_auth_chain_add_call (chain, check_permission, TRUE);
 }
 
@@ -1113,7 +1107,7 @@ check_writable (NMConnection *connection, GError **error)
 static void
 get_settings_auth_cb (NMSettingsConnection *self, 
                       DBusGMethodInvocation *context,
-                      gulong sender_uid,
+                      NMAuthSubject *subject,
                       GError *error,
                       gpointer data)
 {
@@ -1197,7 +1191,7 @@ impl_settings_connection_get_settings (NMSettingsConnection *self,
 typedef struct {
 	DBusGMethodInvocation *context;
 	NMAgentManager *agent_mgr;
-	gulong sender_uid;
+	NMAuthSubject *subject;
 	NMConnection *new_settings;
 	gboolean save_to_disk;
 } UpdateInfo;
@@ -1212,6 +1206,7 @@ update_complete (NMSettingsConnection *self,
 	else
 		dbus_g_method_return (info->context);
 
+	g_clear_object (&info->subject);
 	g_clear_object (&info->agent_mgr);
 	g_clear_object (&info->new_settings);
 	memset (info, 0, sizeof (*info));
@@ -1235,7 +1230,7 @@ con_update_cb (NMSettingsConnection *self,
 		nm_connection_clear_secrets_with_flags (for_agent,
 		                                        secrets_filter_cb,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, TRUE, info->sender_uid);
+		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, info->subject);
 		g_object_unref (for_agent);
 
 		g_signal_emit (self, signals[DBUS_UPDATED], 0);
@@ -1247,7 +1242,7 @@ con_update_cb (NMSettingsConnection *self,
 static void
 update_auth_cb (NMSettingsConnection *self,
                 DBusGMethodInvocation *context,
-                gulong sender_uid,
+                NMAuthSubject *subject,
                 GError *error,
                 gpointer data)
 {
@@ -1258,8 +1253,6 @@ update_auth_cb (NMSettingsConnection *self,
 		update_complete (self, info, error);
 		return;
 	}
-
-	info->sender_uid = sender_uid;
 
 	/* Cache the new secrets from the agent, as stuff like inotify-triggered
 	 * changes to connection's backing config files will blow them away if
@@ -1363,14 +1356,13 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	info = g_malloc0 (sizeof (*info));
 	info->context = context;
 	info->agent_mgr = g_object_ref (priv->agent_mgr);
-	info->sender_uid = G_MAXULONG;
+	info->subject = subject;
 	info->save_to_disk = save_to_disk;
 	info->new_settings = tmp;
 
 	permission = get_update_modify_permission (NM_CONNECTION (self),
 	                                           tmp ? tmp : NM_CONNECTION (self));
 	auth_start (self, context, subject, permission, update_auth_cb, info);
-	g_object_unref (subject);
 	return;
 
 error:
@@ -1426,7 +1418,7 @@ con_delete_cb (NMSettingsConnection *connection,
 static void
 delete_auth_cb (NMSettingsConnection *self, 
                 DBusGMethodInvocation *context,
-                gulong sender_uid,
+                NMAuthSubject *subject,
                 GError *error,
                 gpointer data)
 {
@@ -1513,7 +1505,7 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 static void
 dbus_secrets_auth_cb (NMSettingsConnection *self, 
                       DBusGMethodInvocation *context,
-                      gulong sender_uid,
+                      NMAuthSubject *subject,
                       GError *error,
                       gpointer user_data)
 {
@@ -1524,8 +1516,7 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
 
 	if (!error) {
 		call_id = nm_settings_connection_get_secrets (self,
-			                                          TRUE,
-			                                          sender_uid,
+			                                          subject,
 			                                          setting_name,
 			                                          NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED,
 			                                          NULL,

@@ -6,10 +6,12 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	-DTEST_ENI_DIR=\"$(abs_srcdir)\"
 
 noinst_PROGRAMS = test-ifupdown

@@ -105,7 +105,6 @@ nm_act_request_get_secrets (NMActRequest *self,
 	GetSecretsInfo *info;
 	guint32 call_id;
 	NMConnection *connection;
-	gboolean user_requested;
 	const char *hints[2] = { hint, NULL };
 
 	g_return_val_if_fail (self, 0);
@@ -118,14 +117,12 @@ nm_act_request_get_secrets (NMActRequest *self,
 	info->callback = callback;
 	info->callback_data = callback_data;
 
-	user_requested = nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self));
-	if (user_requested)
+	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
 		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
 
 	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (self));
 	call_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (connection),
-	                                              user_requested,
-	                                              nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (self)),
+	                                              nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (self)),
 	                                              setting_name,
 	                                              flags,
 	                                              hints,

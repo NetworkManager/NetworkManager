@@ -24,6 +24,7 @@
 
 #include <nm-connection.h>
 #include "nm-settings-flags.h"
+#include "nm-auth-subject.h"
 #include <net/ethernet.h>
 
 G_BEGIN_DECLS
@@ -107,8 +108,7 @@ typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *connectio
                                                  gpointer user_data);
 
 guint32 nm_settings_connection_get_secrets (NMSettingsConnection *connection,
-                                            gboolean filter_by_uid,
-                                            gulong uid,
+                                            NMAuthSubject *subject,
                                             const char *setting_name,
                                             NMSettingsGetSecretsFlags flags,
                                             const char **hints,

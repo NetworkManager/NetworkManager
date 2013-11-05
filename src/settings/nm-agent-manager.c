@@ -413,8 +413,7 @@ struct _Request {
 	char *detail;
 	char *verb;
 
-	gboolean filter_by_uid;
-	gulong uid_filter;
+	NMAuthSubject *subject;
 
 	/* Current agent being asked for secrets */
 	NMSecretAgent *current;
@@ -447,8 +446,7 @@ static Request *
 request_new (gsize struct_size,
              const char *detail,
              const char *verb,
-             gboolean filter_by_uid,
-             gulong uid_filter,
+             NMAuthSubject *subject,
              RequestCompleteFunc complete_callback,
              gpointer complete_callback_data,
              RequestAddAgentFunc add_agent_callback,
@@ -462,8 +460,7 @@ request_new (gsize struct_size,
 	req->reqid = next_req_id++;
 	req->detail = g_strdup (detail);
 	req->verb = g_strdup (verb);
-	req->filter_by_uid = filter_by_uid;
-	req->uid_filter = uid_filter;
+	req->subject = g_object_ref (subject);
 	req->complete_callback = complete_callback;
 	req->complete_callback_data = complete_callback_data;
 	req->add_agent_callback = add_agent_callback,
@@ -484,6 +481,8 @@ request_free (Request *req)
 
 	if (!req->completed && req->cancel_callback)
 		req->cancel_callback (req);
+
+	g_object_unref (req->subject);
 
 	g_free (req->detail);
 	g_free (req->verb);
@@ -547,8 +546,6 @@ agent_compare_func (NMSecretAgent *a, NMSecretAgent *b, gpointer user_data)
 static void
 request_add_agent (Request *req, NMSecretAgent *agent)
 {
-	uid_t agent_uid;
-
 	g_return_if_fail (req != NULL);
 	g_return_if_fail (agent != NULL);
 
@@ -559,13 +556,19 @@ request_add_agent (Request *req, NMSecretAgent *agent)
 		return;
 
 	/* If the request should filter agents by UID, do that now */
-	agent_uid = nm_secret_agent_get_owner_uid (agent);
-	if (req->filter_by_uid && (agent_uid != req->uid_filter)) {
-		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s "
-		            "(uid %d not required %ld)",
-		            nm_secret_agent_get_description (agent),
-		            req, req->detail, agent_uid, req->uid_filter);
-		return;
+	if (!nm_auth_subject_get_internal (req->subject)) {
+		uid_t agent_uid, subject_uid;
+
+		agent_uid = nm_secret_agent_get_owner_uid (agent);
+		subject_uid = nm_auth_subject_get_uid (req->subject);
+		if (agent_uid != subject_uid) {
+			nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s "
+			            "(uid %ld not required %ld)",
+			            nm_secret_agent_get_description (agent),
+			            req, req->detail,
+			            (long)agent_uid, (long)subject_uid);
+			return;
+		}
 	}
 
 	nm_log_dbg (LOGD_AGENTS, "(%s) agent allowed for secrets request %p/%s",
@@ -712,8 +715,7 @@ connection_request_add_agent (Request *parent, NMSecretAgent *agent)
 
 static ConnectionRequest *
 connection_request_new_get (NMConnection *connection,
-                            gboolean filter_by_uid,
-                            gulong uid_filter,
+                            NMAuthSubject *subject,
                             GHashTable *existing_secrets,
                             const char *setting_name,
                             const char *verb,
@@ -733,8 +735,7 @@ connection_request_new_get (NMConnection *connection,
 	req = (ConnectionRequest *) request_new (sizeof (ConnectionRequest),
 	                                         nm_connection_get_id (connection),
 	                                         verb,
-	                                         filter_by_uid,
-	                                         uid_filter,
+	                                         subject,
 	                                         complete_callback,
 	                                         complete_callback_data,
 	                                         connection_request_add_agent,
@@ -758,8 +759,7 @@ connection_request_new_get (NMConnection *connection,
 
 static ConnectionRequest *
 connection_request_new_other (NMConnection *connection,
-                              gboolean filter_by_uid,
-                              gulong uid_filter,
+                              NMAuthSubject *subject,
                               const char *verb,
                               RequestCompleteFunc complete_callback,
                               gpointer complete_callback_data,
@@ -770,8 +770,7 @@ connection_request_new_other (NMConnection *connection,
 	req = (ConnectionRequest *) request_new (sizeof (ConnectionRequest),
 	                                         nm_connection_get_id (connection),
 	                                         verb,
-	                                         filter_by_uid,
-	                                         uid_filter,
+	                                         subject,
 	                                         complete_callback,
 	                                         complete_callback_data,
 	                                         NULL,
@@ -1146,8 +1145,7 @@ get_cancel_cb (Request *parent)
 guint32
 nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMConnection *connection,
-                              gboolean filter_by_uid,
-                              gulong uid_filter,
+                              NMAuthSubject *subject,
                               GHashTable *existing_secrets,
                               const char *setting_name,
                               NMSettingsGetSecretsFlags flags,
@@ -1178,8 +1176,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	 */
 
 	req = connection_request_new_get (connection,
-	                                  filter_by_uid,
-	                                  uid_filter,
+	                                  subject,
 	                                  existing_secrets,
 	                                  setting_name,
 	                                  "getting",
@@ -1279,8 +1276,7 @@ save_complete_cb (Request *req,
 guint32
 nm_agent_manager_save_secrets (NMAgentManager *self,
                                NMConnection *connection,
-                               gboolean filter_by_uid,
-                               gulong uid_filter)
+                               NMAuthSubject *subject)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	ConnectionRequest *req;
@@ -1295,8 +1291,7 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	            nm_connection_get_id (connection));
 
 	req = connection_request_new_other (connection,
-	                                    filter_by_uid,
-	                                    uid_filter,
+	                                    subject,
 	                                    "saving",
 	                                    save_complete_cb,
 	                                    self,
@@ -1367,11 +1362,10 @@ delete_complete_cb (Request *req,
 
 guint32
 nm_agent_manager_delete_secrets (NMAgentManager *self,
-                                 NMConnection *connection,
-                                 gboolean filter_by_uid,
-                                 gulong uid_filter)
+                                 NMConnection *connection)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+	NMAuthSubject *subject;
 	ConnectionRequest *req;
 	Request *parent;
 
@@ -1383,13 +1377,14 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	            nm_connection_get_path (connection),
 	            nm_connection_get_id (connection));
 
+	subject = nm_auth_subject_new_internal ();
 	req = connection_request_new_other (connection,
-	                                    filter_by_uid,
-	                                    uid_filter,
+	                                    subject,
 	                                    "deleting",
 	                                    delete_complete_cb,
 	                                    self,
 	                                    delete_next_cb);
+	g_object_unref (subject);
 	parent = (Request *) req;
 	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (parent->reqid), req);
 
@@ -1421,8 +1416,7 @@ nm_agent_manager_get_agent_by_user (NMAgentManager *self, const char *username)
 
 gboolean
 nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
-                                             gboolean filter_by_uid,
-                                             gulong owner_uid,
+                                             NMAuthSubject *subject,
                                              NMSecretAgentCapabilities capability)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (manager);
@@ -1431,7 +1425,8 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 
 	g_hash_table_iter_init (&iter, priv->agents);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
-		if (filter_by_uid && nm_secret_agent_get_owner_uid (agent) != owner_uid)
+		if (   !nm_auth_subject_get_internal (subject)
+		    && nm_secret_agent_get_owner_uid (agent) != nm_auth_subject_get_uid (subject))
 			continue;
 
 		if (!(nm_secret_agent_get_capabilities (agent) & capability))

@@ -1271,8 +1271,7 @@ really_activate (NMVPNConnection *connection, const char *username)
 	 */
 	agent_mgr = nm_agent_manager_get ();
 	if (nm_agent_manager_all_agents_have_capability (agent_mgr,
-	                                                 nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (connection)),
-	                                                 nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (connection)),
+	                                                 nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (connection)),
 	                                                 NM_SECRET_AGENT_CAPABILITY_VPN_HINTS)) {
 		nm_log_dbg (LOGD_VPN, "Allowing interactive secrets as all agents have that capability");
 		dbus_g_proxy_begin_call (priv->proxy, "ConnectInteractive",
@@ -1601,8 +1600,7 @@ get_secrets (NMVPNConnection *self,
 		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
 
 	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
-	                                                       filter_by_uid,
-	                                                       nm_active_connection_get_user_uid (NM_ACTIVE_CONNECTION (self)),
+	                                                       nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (self)),
 	                                                       NM_SETTING_VPN_SETTING_NAME,
 	                                                       flags,
 	                                                       hints,

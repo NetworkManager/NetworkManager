@@ -75,8 +75,7 @@ typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
 
 guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
                                       NMConnection *connection,
-                                      gboolean filter_by_uid,
-                                      gulong uid,
+                                      NMAuthSubject *subject,
                                       GHashTable *existing_secrets,
                                       const char *setting_name,
                                       NMSettingsGetSecretsFlags flags,
@@ -91,20 +90,16 @@ void nm_agent_manager_cancel_secrets (NMAgentManager *manager,
 
 guint32 nm_agent_manager_save_secrets (NMAgentManager *manager,
                                        NMConnection *connection,
-                                       gboolean filter_by_uid,
-                                       gulong uid_filter);
+                                       NMAuthSubject *subject);
 
 guint32 nm_agent_manager_delete_secrets (NMAgentManager *manager,
-                                         NMConnection *connection,
-                                         gboolean filter_by_uid,
-                                         gulong uid_filter);
+                                         NMConnection *connection);
 
 NMSecretAgent *nm_agent_manager_get_agent_by_user (NMAgentManager *manager,
                                                    const char *username);
 
 gboolean nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
-                                                      gboolean filter_by_uid,
-                                                      gulong owner_uid,
+                                                      NMAuthSubject *subject,
                                                       NMSecretAgentCapabilities capability);
 
 #endif /* NM_AGENT_MANAGER_H */
