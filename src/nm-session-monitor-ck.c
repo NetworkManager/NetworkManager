@@ -354,10 +354,8 @@ nm_session_monitor_get (void)
 {
 	static NMSessionMonitor *singleton = NULL;
 
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = NM_SESSION_MONITOR (g_object_new (NM_TYPE_SESSION_MONITOR, NULL));
+	if (!singleton)
+		singleton = NM_SESSION_MONITOR (g_object_new (NM_TYPE_SESSION_MONITOR, NULL));
 	return singleton;
 }
 

@@ -133,7 +133,6 @@ typedef struct {
 
 	NMConfig *config;
 
-	NMSessionMonitor *session_monitor;
 	GSList *auths;
 
 	GSList *plugins;
@@ -1128,7 +1127,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
 	if (!nm_auth_uid_in_acl (connection,
-	                         priv->session_monitor,
+	                         nm_session_monitor_get (),
 	                         nm_auth_subject_get_uid (subject),
 	                         &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -1817,8 +1816,6 @@ nm_settings_init (NMSettings *self)
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
-	priv->session_monitor = nm_session_monitor_get ();
-
 	/* Hold a reference to the agent manager so it stays alive; the only
 	 * other holders are NMSettingsConnection objects which are often
 	 * transient, and we don't want the agent manager to get destroyed and
@@ -1840,7 +1837,6 @@ dispose (GObject *object)
 
 	priv->dbus_mgr = NULL;
 
-	g_object_unref (priv->session_monitor);
 	g_object_unref (priv->agent_mgr);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->dispose (object);

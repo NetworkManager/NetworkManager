@@ -47,7 +47,6 @@ typedef struct {
 	gboolean disposed;
 
 	NMDBusManager *dbus_mgr;
-	NMSessionMonitor *session_monitor;
 
 	/* Auth chains for checking agent permissions */
 	GSList *chains;
@@ -70,9 +69,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct _Request Request;
 
-static void request_add_agent (Request *req,
-                               NMSecretAgent *agent,
-                               NMSessionMonitor *session_monitor);
+static void request_add_agent (Request *req, NMSecretAgent *agent);
 
 static void request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs);
 
@@ -251,7 +248,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 		/* Add this agent to any in-progress secrets requests */
 		g_hash_table_iter_init (&iter, priv->requests);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &req))
-			request_add_agent (req, agent, priv->session_monitor);
+			request_add_agent (req, agent);
 	}
 
 	nm_auth_chain_unref (chain);
@@ -298,7 +295,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	sender_uid = nm_auth_subject_get_uid (subject);
 
 	if (   0 != sender_uid
-	    && !nm_session_monitor_uid_has_session (priv->session_monitor,
+	    && !nm_session_monitor_uid_has_session (nm_session_monitor_get (),
 	                                            sender_uid,
 	                                            NULL,
 	                                            &local)) {
@@ -406,9 +403,7 @@ typedef void (*RequestCompleteFunc) (Request *req,
                                      const char *agent_username,
                                      GError *error,
                                      gpointer user_data);
-typedef gboolean (*RequestAddAgentFunc) (Request *req,
-                                         NMSecretAgent *agent,
-                                         NMSessionMonitor *session_monitor);
+typedef gboolean (*RequestAddAgentFunc) (Request *req, NMSecretAgent *agent);
 typedef void (*RequestNextFunc) (Request *req);
 typedef void (*RequestCancelFunc) (Request *req);
 
@@ -523,7 +518,6 @@ req_complete_error (Request *req, GError *error)
 static gint
 agent_compare_func (NMSecretAgent *a, NMSecretAgent *b, gpointer user_data)
 {
-	NMSessionMonitor *session_monitor = NM_SESSION_MONITOR (user_data);
 	gboolean a_active, b_active;
 
 	if (a && !b)
@@ -534,10 +528,10 @@ agent_compare_func (NMSecretAgent *a, NMSecretAgent *b, gpointer user_data)
 		return 1;
 
 	/* Prefer agents in active sessions */
-	a_active = nm_session_monitor_uid_active (session_monitor,
+	a_active = nm_session_monitor_uid_active (nm_session_monitor_get (),
 	                                          nm_secret_agent_get_owner_uid (a),
 	                                          NULL);
-	b_active = nm_session_monitor_uid_active (session_monitor,
+	b_active = nm_session_monitor_uid_active (nm_session_monitor_get (),
 	                                          nm_secret_agent_get_owner_uid (b),
 	                                          NULL);
 	if (a_active && !b_active)
@@ -551,9 +545,7 @@ agent_compare_func (NMSecretAgent *a, NMSecretAgent *b, gpointer user_data)
 }
 
 static void
-request_add_agent (Request *req,
-                   NMSecretAgent *agent,
-                   NMSessionMonitor *session_monitor)
+request_add_agent (Request *req, NMSecretAgent *agent)
 {
 	uid_t agent_uid;
 
@@ -563,7 +555,7 @@ request_add_agent (Request *req,
 	if (g_slist_find (req->asked, GUINT_TO_POINTER (nm_secret_agent_get_hash (agent))))
 		return;
 
-	if (req->add_agent_callback && !req->add_agent_callback (req, agent, session_monitor))
+	if (req->add_agent_callback && !req->add_agent_callback (req, agent))
 		return;
 
 	/* If the request should filter agents by UID, do that now */
@@ -584,7 +576,7 @@ request_add_agent (Request *req,
 	req->pending = g_slist_insert_sorted_with_data (req->pending,
 	                                                g_object_ref (agent),
 	                                                (GCompareDataFunc) agent_compare_func,
-	                                                session_monitor);
+	                                                NULL);
 }
 
 static void
@@ -596,7 +588,7 @@ request_add_agents (NMAgentManager *self, Request *req)
 
 	g_hash_table_iter_init (&iter, priv->agents);
 	while (g_hash_table_iter_next (&iter, NULL, &data))
-		request_add_agent (req, NM_SECRET_AGENT (data), priv->session_monitor);
+		request_add_agent (req, NM_SECRET_AGENT (data));
 }
 
 static void
@@ -699,9 +691,7 @@ connection_request_free (gpointer data)
 }
 
 static gboolean
-connection_request_add_agent (Request *parent,
-                              NMSecretAgent *agent,
-                              NMSessionMonitor *session_monitor)
+connection_request_add_agent (Request *parent, NMSecretAgent *agent)
 {
 	ConnectionRequest *req = (ConnectionRequest *) parent;
 	uid_t agent_uid = nm_secret_agent_get_owner_uid (agent);
@@ -709,7 +699,7 @@ connection_request_add_agent (Request *parent,
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (!nm_auth_uid_in_acl (req->connection, session_monitor, agent_uid, NULL)) {
+	if (!nm_auth_uid_in_acl (req->connection, nm_session_monitor_get (), agent_uid, NULL)) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
 		            nm_secret_agent_get_description (agent),
 		            parent, parent->detail);
@@ -1546,7 +1536,6 @@ nm_agent_manager_get (void)
 	g_assert (singleton);
 
 	priv = NM_AGENT_MANAGER_GET_PRIVATE (singleton);
-	priv->session_monitor = nm_session_monitor_get ();
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, singleton);
@@ -1588,7 +1577,6 @@ dispose (GObject *object)
 		g_hash_table_destroy (priv->agents);
 		g_hash_table_destroy (priv->requests);
 
-		g_object_unref (priv->session_monitor);
 		priv->dbus_mgr = NULL;
 	}
 
