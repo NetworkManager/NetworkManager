@@ -1592,7 +1592,35 @@ write_dcb_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
 	if (!s_dcb) {
-		svSetValue (ifcfg, "DCB", NULL, FALSE);
+		static const char *clear_keys[] = {
+		    "DCB",
+		    KEY_DCB_APP_FCOE_ENABLE,
+		    KEY_DCB_APP_FCOE_ADVERTISE,
+		    KEY_DCB_APP_FCOE_WILLING,
+		    KEY_DCB_APP_FCOE_MODE,
+		    KEY_DCB_APP_ISCSI_ENABLE,
+		    KEY_DCB_APP_ISCSI_ADVERTISE,
+		    KEY_DCB_APP_ISCSI_WILLING,
+		    KEY_DCB_APP_FIP_ENABLE,
+		    KEY_DCB_APP_FIP_ADVERTISE,
+		    KEY_DCB_APP_FIP_WILLING,
+		    KEY_DCB_PFC_ENABLE,
+		    KEY_DCB_PFC_ADVERTISE,
+		    KEY_DCB_PFC_WILLING,
+		    KEY_DCB_PFC_UP,
+		    KEY_DCB_PG_ENABLE,
+		    KEY_DCB_PG_ADVERTISE,
+		    KEY_DCB_PG_WILLING,
+		    KEY_DCB_PG_ID,
+		    KEY_DCB_PG_PCT,
+		    KEY_DCB_PG_UPPCT,
+		    KEY_DCB_PG_STRICT,
+		    KEY_DCB_PG_UP2TC,
+		    NULL };
+		const char **iter;
+
+		for (iter = clear_keys; *iter; iter++)
+			svSetValue (ifcfg, *iter, NULL, FALSE);
 		return TRUE;
 	}
 
@@ -1602,9 +1630,9 @@ write_dcb_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	               nm_setting_dcb_get_app_fcoe_flags (s_dcb),
 	               nm_setting_dcb_get_app_fcoe_priority (s_dcb));
 	if (nm_setting_dcb_get_app_fcoe_flags (s_dcb) & NM_SETTING_DCB_FLAG_ENABLE)
-		svSetValue (ifcfg, "DCB_APP_FCOE_MODE", nm_setting_dcb_get_app_fcoe_mode (s_dcb), FALSE);
+		svSetValue (ifcfg, KEY_DCB_APP_FCOE_MODE, nm_setting_dcb_get_app_fcoe_mode (s_dcb), FALSE);
 	else
-		svSetValue (ifcfg, "DCB_APP_FCOE_MODE", NULL, FALSE);
+		svSetValue (ifcfg, KEY_DCB_APP_FCOE_MODE, NULL, FALSE);
 
 	write_dcb_app (ifcfg, "APP_ISCSI",
 	               nm_setting_dcb_get_app_iscsi_flags (s_dcb),
@@ -1614,17 +1642,17 @@ write_dcb_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	               nm_setting_dcb_get_app_fip_priority (s_dcb));
 
 	write_dcb_flags (ifcfg, "PFC", nm_setting_dcb_get_priority_flow_control_flags (s_dcb));
-	write_dcb_bool_array (ifcfg, "DCB_PFC_UP", s_dcb,
+	write_dcb_bool_array (ifcfg, KEY_DCB_PFC_UP, s_dcb,
 	                      nm_setting_dcb_get_priority_flow_control_flags (s_dcb),
 	                      nm_setting_dcb_get_priority_flow_control);
 
 	flags = nm_setting_dcb_get_priority_group_flags (s_dcb);
 	write_dcb_flags (ifcfg, "PG", flags);
-	write_dcb_uint_array (ifcfg, "DCB_PG_ID", s_dcb, flags, nm_setting_dcb_get_priority_group_id);
-	write_dcb_percent_array (ifcfg, "DCB_PG_PCT", s_dcb, flags, nm_setting_dcb_get_priority_group_bandwidth);
-	write_dcb_percent_array (ifcfg, "DCB_PG_UPPCT", s_dcb, flags, nm_setting_dcb_get_priority_bandwidth);
-	write_dcb_bool_array (ifcfg, "DCB_PG_STRICT", s_dcb, flags, nm_setting_dcb_get_priority_strict_bandwidth);
-	write_dcb_uint_array (ifcfg, "DCB_PG_UP2TC", s_dcb, flags, nm_setting_dcb_get_priority_traffic_class);
+	write_dcb_uint_array (ifcfg, KEY_DCB_PG_ID, s_dcb, flags, nm_setting_dcb_get_priority_group_id);
+	write_dcb_percent_array (ifcfg, KEY_DCB_PG_PCT, s_dcb, flags, nm_setting_dcb_get_priority_group_bandwidth);
+	write_dcb_percent_array (ifcfg, KEY_DCB_PG_UPPCT, s_dcb, flags, nm_setting_dcb_get_priority_bandwidth);
+	write_dcb_bool_array (ifcfg, KEY_DCB_PG_STRICT, s_dcb, flags, nm_setting_dcb_get_priority_strict_bandwidth);
+	write_dcb_uint_array (ifcfg, KEY_DCB_PG_UP2TC, s_dcb, flags, nm_setting_dcb_get_priority_traffic_class);
 
 	return TRUE;
 }

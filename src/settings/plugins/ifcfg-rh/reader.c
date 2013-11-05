@@ -1790,11 +1790,11 @@ enum {
 };
 
 static DcbFlagsProperty dcb_flags_props[] = {
-	{ "DCB_APP_FCOE_ENABLE",    "DCB_APP_FCOE_ADVERTISE",    "DCB_APP_FCOE_WILLING",    NM_SETTING_DCB_APP_FCOE_FLAGS },
-	{ "DCB_APP_ISCSI_ENABLE",   "DCB_APP_ISCSI_ADVERTISE",   "DCB_APP_ISCSI_WILLING",   NM_SETTING_DCB_APP_ISCSI_FLAGS },
-	{ "DCB_APP_FIP_ENABLE",     "DCB_APP_FIP_ADVERTISE",     "DCB_APP_FIP_WILLING",     NM_SETTING_DCB_APP_FIP_FLAGS },
-	{ "DCB_PFC_ENABLE",         "DCB_PFC_ADVERTISE",         "DCB_PFC_WILLING",         NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS },
-	{ "DCB_PG_ENABLE",          "DCB_PG_ADVERTISE",          "DCB_PG_WILLING",          NM_SETTING_DCB_PRIORITY_GROUP_FLAGS },
+	{ KEY_DCB_APP_FCOE_ENABLE,  KEY_DCB_APP_FCOE_ADVERTISE,  KEY_DCB_APP_FCOE_WILLING,  NM_SETTING_DCB_APP_FCOE_FLAGS },
+	{ KEY_DCB_APP_ISCSI_ENABLE, KEY_DCB_APP_ISCSI_ADVERTISE, KEY_DCB_APP_ISCSI_WILLING, NM_SETTING_DCB_APP_ISCSI_FLAGS },
+	{ KEY_DCB_APP_FIP_ENABLE,   KEY_DCB_APP_FIP_ADVERTISE,   KEY_DCB_APP_FIP_WILLING,   NM_SETTING_DCB_APP_FIP_FLAGS },
+	{ KEY_DCB_PFC_ENABLE,       KEY_DCB_PFC_ADVERTISE,       KEY_DCB_PFC_WILLING,       NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS },
+	{ KEY_DCB_PG_ENABLE,        KEY_DCB_PG_ADVERTISE,        KEY_DCB_PG_WILLING,        NM_SETTING_DCB_PRIORITY_GROUP_FLAGS },
 	{ NULL },
 };
 
@@ -2046,7 +2046,7 @@ make_dcb_setting (shvarFile *ifcfg,
 		return FALSE;
 	}
 	if (nm_setting_dcb_get_app_fcoe_flags (s_dcb) & NM_SETTING_DCB_FLAG_ENABLE) {
-		val = svGetValue (ifcfg, "DCB_APP_FCOE_MODE", FALSE);
+		val = svGetValue (ifcfg, KEY_DCB_APP_FCOE_MODE, FALSE);
 		if (val) {
 			if (strcmp (val, NM_SETTING_DCB_FCOE_MODE_FABRIC) == 0 ||
 			    strcmp (val, NM_SETTING_DCB_FCOE_MODE_VN2VN) == 0)
@@ -2087,7 +2087,7 @@ make_dcb_setting (shvarFile *ifcfg,
 	if (!read_dcb_bool_array (ifcfg,
 	                          s_dcb,
 	                          flags,
-	                          "DCB_PFC_UP",
+	                          KEY_DCB_PFC_UP,
 	                          "PFC",
 	                          nm_setting_dcb_set_priority_flow_control,
 	                          error)) {
@@ -2102,7 +2102,7 @@ make_dcb_setting (shvarFile *ifcfg,
 	if (!read_dcb_uint_array (ifcfg,
 	                          s_dcb,
 	                          flags,
-	                          "DCB_PG_ID",
+	                          KEY_DCB_PG_ID,
 	                          "PGID",
 	                          TRUE,
 	                          nm_setting_dcb_set_priority_group_id,
@@ -2115,7 +2115,7 @@ make_dcb_setting (shvarFile *ifcfg,
 	if (!read_dcb_percent_array (ifcfg,
 	                             s_dcb,
 	                             flags,
-	                             "DCB_PG_PCT",
+	                             KEY_DCB_PG_PCT,
 	                             "PGPCT",
 	                             TRUE,
 	                             nm_setting_dcb_set_priority_group_bandwidth,
@@ -2128,7 +2128,7 @@ make_dcb_setting (shvarFile *ifcfg,
 	if (!read_dcb_percent_array (ifcfg,
 	                             s_dcb,
 	                             flags,
-	                             "DCB_PG_UPPCT",
+	                             KEY_DCB_PG_UPPCT,
 	                             "UPPCT",
 	                             FALSE,
 	                             nm_setting_dcb_set_priority_bandwidth,
@@ -2141,7 +2141,7 @@ make_dcb_setting (shvarFile *ifcfg,
 	if (!read_dcb_bool_array (ifcfg,
 	                          s_dcb,
 	                          flags,
-	                          "DCB_PG_STRICT",
+	                          KEY_DCB_PG_STRICT,
 	                          "STRICT",
 	                          nm_setting_dcb_set_priority_strict_bandwidth,
 	                          error)) {
@@ -2152,7 +2152,7 @@ make_dcb_setting (shvarFile *ifcfg,
 	if (!read_dcb_uint_array (ifcfg,
 	                          s_dcb,
 	                          flags,
-	                          "DCB_PG_UP2TC",
+	                          KEY_DCB_PG_UP2TC,
 	                          "UP2TC",
 	                          FALSE,
 	                          nm_setting_dcb_set_priority_traffic_class,
