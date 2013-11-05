@@ -1020,41 +1020,6 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean master_fai
 	return success;
 }
 
-static gboolean
-connection_is_static (NMConnection *connection)
-{
-	const char *method;
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0)
-		return FALSE;
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0)
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
-has_static_connection (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const GSList *connections, *iter;
-
-	connections = nm_connection_provider_get_connections (priv->con_provider);
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *connection = iter->data;
-
-		if (   nm_device_check_connection_compatible (self, connection, NULL)
-		    && connection_is_static (connection))
-			return TRUE;
-	}
-	return FALSE;
-}
-
 static void
 carrier_changed (NMDevice *device, gboolean carrier)
 {
@@ -1062,6 +1027,8 @@ carrier_changed (NMDevice *device, gboolean carrier)
 
 	if (!nm_device_get_managed (device))
 		return;
+
+	nm_device_recheck_available_connections (device);
 
 	if (priv->ignore_carrier) {
 		/* Ignore all carrier-off, and ignore carrier-on on connected devices */
@@ -1530,13 +1497,7 @@ is_available (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	if (!priv->carrier) {
-		if (priv->ignore_carrier && has_static_connection (device))
-			return TRUE;
-		return FALSE;
-	}
-
-	return TRUE;
+	return priv->carrier || priv->ignore_carrier;
 }
 
 /**
@@ -1565,56 +1526,6 @@ nm_device_is_available (NMDevice *self)
 		return FALSE;
 
 	return NM_DEVICE_GET_CLASS (self)->is_available (self);
-}
-
-/**
- * nm_device_can_activate:
- * @self: the #NMDevice
- * @connection: (allow-none) an #NMConnection, or %NULL
- *
- * Checks if @self can currently activate @connection. In particular,
- * this requires that @self is available (per
- * nm_device_is_available()); that it is either managed or able to
- * become managed; and that it is able to activate @connection in its
- * current state (eg, if @connection requires carrier, then @self has
- * carrier).
- *
- * If @connection is %NULL, this just checks that @self could
- * theoretically activate *some* connection.
- *
- * Returns: %TRUE or %FALSE
- */
-gboolean
-nm_device_can_activate (NMDevice *self, NMConnection *connection)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (!priv->manager_managed)
-		return FALSE;
-
-	if (   connection
-	    && !nm_device_check_connection_compatible (self, connection, NULL))
-		return FALSE;
-
-	if (priv->default_unmanaged) {
-		if (!nm_device_is_available (self))
-			return FALSE;
-	} else if (priv->state < NM_DEVICE_STATE_DISCONNECTED) {
-		if (priv->state != NM_DEVICE_STATE_UNAVAILABLE || priv->carrier || !priv->ignore_carrier)
-			return FALSE;
-
-		/* @self is UNAVAILABLE because it doesn't have carrier, but
-		 * ignore-carrier is set, so we might be able to ignore that.
-		 */
-		if (connection && connection_is_static (connection))
-			return TRUE;
-		else if (!connection && has_static_connection (self))
-			return TRUE;
-		else
-			return FALSE;
-	}
-
-	return TRUE;
 }
 
 gboolean
@@ -1693,7 +1604,7 @@ can_auto_connect (NMDevice *device,
 	if (!nm_setting_connection_get_autoconnect (s_con))
 		return FALSE;
 
-	return nm_device_can_activate (device, connection);
+	return nm_device_connection_is_available (device, connection);
 }
 
 static gboolean
@@ -4527,22 +4438,14 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	             nm_device_get_iface (self),
 	             nm_connection_get_id (connection));
 
-	if (priv->state < NM_DEVICE_STATE_DISCONNECTED) {
-		g_return_if_fail (nm_device_can_activate (self, connection));
-
-		if (priv->state == NM_DEVICE_STATE_UNMANAGED) {
-			nm_device_state_changed (self,
-			                         NM_DEVICE_STATE_UNAVAILABLE,
-			                         NM_DEVICE_STATE_REASON_NONE);
-		}
-		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
-			nm_device_state_changed (self,
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
-		}
+	/* Move default unmanaged devices to DISCONNECTED state here */
+	if (priv->default_unmanaged && priv->state == NM_DEVICE_STATE_UNMANAGED) {
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
-	g_warn_if_fail (priv->state == NM_DEVICE_STATE_DISCONNECTED);
+	g_assert (nm_device_connection_is_available (self, connection));
 
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
@@ -6102,7 +6005,7 @@ nm_device_state_changed (NMDevice *device,
 			nm_device_deactivate (device, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
+		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
 			nm_device_deactivate (device, reason);
 		break;
 	default:
@@ -6674,6 +6577,23 @@ nm_device_get_autoconnect (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
 }
 
+gboolean
+nm_device_connection_is_available (NMDevice *device, NMConnection *connection)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->default_unmanaged && (priv->state == NM_DEVICE_STATE_UNMANAGED)) {
+		/* default-unmanaged  devices in UNMANAGED state have no available connections
+		 * so we must manually check whether the connection is available here.
+		 */
+		if (   nm_device_check_connection_compatible (device, connection, NULL)
+		    && NM_DEVICE_GET_CLASS (device)->check_connection_available (device, connection, NULL))
+			return TRUE;
+	}
+
+	return !!g_hash_table_lookup (priv->available_connections, connection);
+}
+
 static void
 _signal_available_connections_changed (NMDevice *device)
 {
@@ -6695,13 +6615,10 @@ _try_add_available_connection (NMDevice *self, NMConnection *connection)
 		return FALSE;
 
 	if (nm_device_check_connection_compatible (self, connection, NULL)) {
-		/* Let subclasses implement additional checks on the connection */
-		if (   NM_DEVICE_GET_CLASS (self)->check_connection_available
-		    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
-
+		if (NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
 			g_hash_table_insert (NM_DEVICE_GET_PRIVATE (self)->available_connections,
-					             g_object_ref (connection),
-					             GUINT_TO_POINTER (1));
+			                     g_object_ref (connection),
+			                     GUINT_TO_POINTER (1));
 			return TRUE;
 		}
 	}
@@ -6715,13 +6632,65 @@ _del_available_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
+connection_requires_carrier (NMConnection *connection)
+{
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	const char *method;
+	gboolean ip4_carrier_wanted = FALSE, ip6_carrier_wanted = FALSE;
+	gboolean ip4_used = FALSE, ip6_used = FALSE;
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
+	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0) {
+		ip4_carrier_wanted = TRUE;
+
+		/* If IPv4 wants a carrier and cannot fail, the whole connection
+		 * requires a carrier regardless of the IPv6 method.
+		 */
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		if (s_ip4 && !nm_setting_ip4_config_get_may_fail (s_ip4))
+			return TRUE;
+	}
+	ip4_used = (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0);
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
+	    && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0) {
+		ip6_carrier_wanted = TRUE;
+
+		/* If IPv6 wants a carrier and cannot fail, the whole connection
+		 * requires a carrier regardless of the IPv4 method.
+		 */
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6 && !nm_setting_ip6_config_get_may_fail (s_ip6))
+			return TRUE;
+	}
+	ip6_used = (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0);
+
+	/* If an IP version wants a carrier and and the other IP version isn't
+	 * used, the connection requires carrier since it will just fail without one.
+	 */
+	if (ip4_carrier_wanted && !ip6_used)
+		return TRUE;
+	if (ip6_carrier_wanted && !ip4_used)
+		return TRUE;
+
+	/* If both want a carrier, the whole connection wants a carrier */
+	return ip4_carrier_wanted && ip6_carrier_wanted;
+}
+
+static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             const char *specific_object)
 {
-	/* Default is to assume the connection is available unless a subclass
-	 * overrides this with more specific checks.
+	/* Connections which require a network connection are not available when
+	 * the device has no carrier, even with ignore-carrer=TRUE.
 	 */
+	if (NM_DEVICE_GET_PRIVATE (device)->carrier == FALSE)
+		return connection_requires_carrier (connection) ? FALSE : TRUE;
+
 	return TRUE;
 }
 
@@ -6735,13 +6704,15 @@ nm_device_recheck_available_connections (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE(device);
 
-	_clear_available_connections (device, FALSE);
+	if (priv->con_provider) {
+		_clear_available_connections (device, FALSE);
 
-	connections = nm_connection_provider_get_connections (priv->con_provider);
-	for (iter = connections; iter; iter = g_slist_next (iter))
-		_try_add_available_connection (device, NM_CONNECTION (iter->data));
+		connections = nm_connection_provider_get_connections (priv->con_provider);
+		for (iter = connections; iter; iter = g_slist_next (iter))
+			_try_add_available_connection (device, NM_CONNECTION (iter->data));
 
-	_signal_available_connections_changed (device);
+		_signal_available_connections_changed (device);
+	}
 }
 
 /**

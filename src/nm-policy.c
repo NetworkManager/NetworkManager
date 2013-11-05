@@ -1237,9 +1237,6 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
 		return;
 
-	if (!nm_device_can_activate (device, NULL))
-		return;
-
 	if (!nm_device_get_enabled (device))
 		return;
 

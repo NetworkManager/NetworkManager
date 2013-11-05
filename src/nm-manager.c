@@ -1953,7 +1953,9 @@ add_device (NMManager *self, NMDevice *device)
 	system_create_virtual_devices (self);
 
 	/* If the device has a connection it can assume, do that now */
-	if (connection && nm_device_can_activate (device, connection)) {
+	if (   connection
+	    && nm_device_is_available (device)
+	    && nm_device_connection_is_available (device, connection)) {
 		NMActiveConnection *active;
 		NMAuthSubject *subject;
 		GError *error = NULL;
@@ -1961,14 +1963,10 @@ add_device (NMManager *self, NMDevice *device)
 		nm_log_dbg (LOGD_DEVICE, "(%s): will attempt to assume connection",
 		            nm_device_get_iface (device));
 
-		/* Tear down any existing connection */
-		if (nm_device_get_act_request (device)) {
-			nm_log_info (LOGD_DEVICE, "(%s): disconnecting for new activation request.",
-				         nm_device_get_iface (device));
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
-		}
+		/* Move device to DISCONNECTED to activate the connection */
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
 		subject = nm_auth_subject_new_internal ();
 		active = _new_active_connection (self, connection, NULL, device, subject, &error);
@@ -2618,7 +2616,7 @@ ensure_master_active_connection (NMManager *self,
 				if (!is_compatible_with_slave (candidate, connection))
 					continue;
 
-				if (nm_device_check_connection_compatible (master_device, candidate, NULL)) {
+				if (nm_device_connection_is_available (master_device, candidate)) {
 					master_ac = nm_manager_activate_connection (self,
 					                                            candidate,
 					                                            NULL,
@@ -2659,7 +2657,7 @@ ensure_master_active_connection (NMManager *self,
 				continue;
 			}
 
-			if (!nm_device_check_connection_compatible (candidate, master_connection, NULL))
+			if (!nm_device_connection_is_available (candidate, master_connection))
 				continue;
 
 			found_device = TRUE;
@@ -2772,8 +2770,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 		/* A newly created device, if allowed to be managed by NM, will be
 		 * in the UNAVAILABLE state here.  To ensure it can be activated
-		 * immediately, we transition it to DISCONNECTED so it passes the
-		 * nm_device_can_activate() check below.
+		 * immediately, we transition it to DISCONNECTED.
 		 */
 		if (   nm_device_is_available (device)
 			&& (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
@@ -2783,13 +2780,11 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		}
 	}
 
-	/* Final connection must be compatible with the device */
-	if (!nm_device_check_connection_compatible (device, connection, error))
-		return FALSE;
-
-	if (!nm_device_can_activate (device, connection)) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
-		                     "Device not managed by NetworkManager or unavailable");
+	/* Final connection must be available on device */
+	if (!nm_device_connection_is_available (device, connection)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+		             "Connection '%s' is not available on the device %s at this time.",
+		             nm_connection_get_id (connection), nm_device_get_iface (device));
 		return FALSE;
 	}
 
