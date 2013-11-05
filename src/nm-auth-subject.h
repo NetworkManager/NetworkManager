@@ -57,6 +57,8 @@ NMAuthSubject *nm_auth_subject_new_internal (void);
 
 gulong nm_auth_subject_get_uid (NMAuthSubject *subject);
 
+gulong nm_auth_subject_get_pid (NMAuthSubject *subject);
+
 const char *nm_auth_subject_get_dbus_sender (NMAuthSubject *subject);
 
 gboolean nm_auth_subject_get_internal (NMAuthSubject *subject);

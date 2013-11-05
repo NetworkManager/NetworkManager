@@ -145,6 +145,14 @@ nm_secret_agent_get_owner_username (NMSecretAgent *agent)
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->owner_username;
 }
 
+gulong
+nm_secret_agent_get_pid (NMSecretAgent *agent)
+{
+	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXULONG);
+
+	return nm_auth_subject_get_pid (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
+}
+
 NMSecretAgentCapabilities
 nm_secret_agent_get_capabilities (NMSecretAgent *agent)
 {

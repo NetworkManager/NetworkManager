@@ -71,6 +71,8 @@ gulong      nm_secret_agent_get_owner_uid  (NMSecretAgent *agent);
 
 const char *nm_secret_agent_get_owner_username (NMSecretAgent *agent);
 
+gulong      nm_secret_agent_get_pid        (NMSecretAgent *agent);
+
 NMSecretAgentCapabilities nm_secret_agent_get_capabilities (NMSecretAgent *agent);
 
 guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);

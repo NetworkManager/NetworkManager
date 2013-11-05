@@ -515,16 +515,27 @@ req_complete_error (Request *req, GError *error)
 }
 
 static gint
-agent_compare_func (NMSecretAgent *a, NMSecretAgent *b, gpointer user_data)
+agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 {
+	NMSecretAgent *a = (NMSecretAgent *)aa;
+	NMSecretAgent *b = (NMSecretAgent *)bb;
+	Request *req = user_data;
 	gboolean a_active, b_active;
+	gulong a_pid, b_pid, requester;
 
-	if (a && !b)
-		return -1;
-	else if (a == b)
-		return 0;
-	else if (!a && b)
-		return 1;
+	/* Prefer agents in the process the request came from */
+	requester = nm_auth_subject_get_pid (req->subject);
+	if (requester != G_MAXULONG) {
+		a_pid = nm_secret_agent_get_pid (a);
+		b_pid = nm_secret_agent_get_pid (b);
+
+		if (a_pid != b_pid) {
+			if (a_pid == requester)
+				return -1;
+			else if (b_pid == requester)
+				return 1;
+		}
+	}
 
 	/* Prefer agents in active sessions */
 	a_active = nm_session_monitor_uid_active (nm_session_monitor_get (),
@@ -575,11 +586,11 @@ request_add_agent (Request *req, NMSecretAgent *agent)
 	            nm_secret_agent_get_description (agent),
 	            req, req->detail);
 
-	/* Add this agent to the list, preferring active sessions */
+	/* Add this agent to the list, sorted appropriately */
 	req->pending = g_slist_insert_sorted_with_data (req->pending,
 	                                                g_object_ref (agent),
-	                                                (GCompareDataFunc) agent_compare_func,
-	                                                NULL);
+	                                                agent_compare_func,
+	                                                req);
 }
 
 static void

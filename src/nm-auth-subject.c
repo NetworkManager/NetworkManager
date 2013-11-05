@@ -151,6 +151,12 @@ nm_auth_subject_get_uid (NMAuthSubject *subject)
 	return NM_AUTH_SUBJECT_GET_PRIVATE (subject)->uid;
 }
 
+gulong
+nm_auth_subject_get_pid (NMAuthSubject *subject)
+{
+	return NM_AUTH_SUBJECT_GET_PRIVATE (subject)->pid;
+}
+
 const char *
 nm_auth_subject_get_dbus_sender (NMAuthSubject *subject)
 {
