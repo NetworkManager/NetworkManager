@@ -84,6 +84,17 @@ is_available (NMDevice *dev)
 }
 
 static gboolean
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
+{
+	/* Connections are always available because the carrier state is determined
+	 * by the bridge port carrier states, not the bridge's state.
+	 */
+	return TRUE;
+}
+
+static gboolean
 check_connection_compatible (NMDevice *device,
                              NMConnection *connection,
                              GError **error)
@@ -436,6 +447,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 
 	parent_class->match_l2_config = match_l2_config;
