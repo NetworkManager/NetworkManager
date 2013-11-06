@@ -618,6 +618,43 @@ static NmcOutputField nmc_fields_setting_team_port[] = {
                                              NM_SETTING_TEAM_PORT_CONFIG
 #define NMC_FIELDS_SETTING_TEAM_PORT_COMMON  NMC_FIELDS_SETTING_TEAM_PORT_ALL
 
+/* Available fields for NM_SETTING_DCB_SETTING_NAME */
+static NmcOutputField nmc_fields_setting_dcb[] = {
+	SETTING_FIELD ("name",  8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_FLAGS, 5),                  /* 1 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_PRIORITY, 5),               /* 2 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_MODE, 8),                   /* 3 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_ISCSI_FLAGS, 5),                 /* 4 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_ISCSI_PRIORITY, 5),              /* 5 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_FIP_FLAGS, 5),                   /* 6 */
+	SETTING_FIELD (NM_SETTING_DCB_APP_FIP_PRIORITY, 5),                /* 7 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, 5),     /* 8 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL, 10),          /* 9 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, 5),            /* 10 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_GROUP_ID, 10),              /* 11 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH, 30),       /* 12 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_BANDWIDTH, 30),             /* 13 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH, 10),      /* 14 */
+	SETTING_FIELD (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS, 30),         /* 15 */
+	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+};
+#define NMC_FIELDS_SETTING_DCB_ALL     "name"","\
+                                       NM_SETTING_DCB_APP_FCOE_FLAGS","\
+                                       NM_SETTING_DCB_APP_FCOE_PRIORITY","\
+                                       NM_SETTING_DCB_APP_FCOE_MODE","\
+                                       NM_SETTING_DCB_APP_ISCSI_FLAGS","\
+                                       NM_SETTING_DCB_APP_ISCSI_PRIORITY","\
+                                       NM_SETTING_DCB_APP_FIP_FLAGS","\
+                                       NM_SETTING_DCB_APP_FIP_PRIORITY","\
+                                       NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS","\
+                                       NM_SETTING_DCB_PRIORITY_FLOW_CONTROL","\
+                                       NM_SETTING_DCB_PRIORITY_GROUP_FLAGS","\
+                                       NM_SETTING_DCB_PRIORITY_GROUP_ID","\
+                                       NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH","\
+                                       NM_SETTING_DCB_PRIORITY_BANDWIDTH","\
+                                       NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH","\
+                                       NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS
+#define NMC_FIELDS_SETTING_DCB_COMMON  NMC_FIELDS_SETTING_DCB_ALL
 
 /*----------------------------------------------------------------------------*/
 
@@ -1070,6 +1107,119 @@ DEFINE_GETTER (nmc_property_connection_get_master, NM_SETTING_CONNECTION_MASTER)
 DEFINE_GETTER (nmc_property_connection_get_slave_type, NM_SETTING_CONNECTION_SLAVE_TYPE)
 DEFINE_GETTER (nmc_property_connection_get_secondaries, NM_SETTING_CONNECTION_SECONDARIES)
 DEFINE_GETTER (nmc_property_connection_get_gateway_ping_timeout, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT)
+
+/* --- NM_SETTING_DCB_SETTING_NAME property get functions --- */
+static char *
+dcb_flags_to_string (NMSettingDcbFlags flags)
+{
+	GString *flag_str;
+
+	if (flags == 0)
+		return g_strdup (_("0 (disabled)"));
+
+	flag_str = g_string_new (NULL);
+	g_string_printf (flag_str, "%d (", flags);
+
+	if (flags & NM_SETTING_DCB_FLAG_ENABLE)
+		g_string_append (flag_str, _("enabled, "));
+	if (flags & NM_SETTING_DCB_FLAG_ADVERTISE)
+		g_string_append (flag_str, _("advertise, "));
+	if (flags & NM_SETTING_DCB_FLAG_WILLING)
+		g_string_append (flag_str, _("willing, "));
+
+	if (flag_str->str[flag_str->len-1] == '(')
+		g_string_append (flag_str, _("unknown"));
+	else
+		g_string_truncate (flag_str, flag_str->len-2);  /* chop off trailing ', ' */
+
+	g_string_append_c (flag_str, ')');
+
+	return g_string_free (flag_str, FALSE);
+}
+
+#define DEFINE_DCB_FLAGS_GETTER(func_name, property_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		GValue val = G_VALUE_INIT; \
+		g_value_init (&val, G_TYPE_UINT); \
+		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		return dcb_flags_to_string (g_value_get_uint (&val)); \
+	}
+
+static char *
+dcb_app_priority_to_string (gint priority)
+{
+	return (priority == -1) ? g_strdup (_("-1 (unset)")) : g_strdup_printf ("%d", priority);
+}
+
+#define DEFINE_DCB_APP_PRIORITY_GETTER(func_name, property_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		GValue val = G_VALUE_INIT; \
+		g_value_init (&val, G_TYPE_INT); \
+		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		return dcb_app_priority_to_string (g_value_get_int (&val)); \
+	}
+
+#define DEFINE_DCB_BOOL_GETTER(func_name, getter_func_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
+		GString *str; \
+		guint i; \
+ \
+		str = g_string_new (NULL); \
+		for (i = 0; i < 8; i++) { \
+			if (getter_func_name (s_dcb,  i)) \
+				g_string_append_c (str, '1'); \
+			else \
+				g_string_append_c (str, '0'); \
+\
+			if (i < 7) \
+				g_string_append_c (str, ','); \
+		} \
+\
+		return g_string_free (str, FALSE); \
+	}
+
+#define DEFINE_DCB_UINT_GETTER(func_name, getter_func_name) \
+	static char * \
+	func_name (NMSetting *setting) \
+	{ \
+		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
+		GString *str; \
+		guint i; \
+ \
+		str = g_string_new (NULL); \
+		for (i = 0; i < 8; i++) { \
+			g_string_append_printf (str, "%u", getter_func_name (s_dcb, i)); \
+			if (i < 7) \
+				g_string_append_c (str, ','); \
+		} \
+\
+		return g_string_free (str, FALSE); \
+	}
+
+DEFINE_DCB_FLAGS_GETTER (nmc_property_dcb_get_app_fcoe_flags, NM_SETTING_DCB_APP_FCOE_FLAGS)
+DEFINE_DCB_APP_PRIORITY_GETTER (nmc_property_dcb_get_app_fcoe_priority, NM_SETTING_DCB_APP_FCOE_PRIORITY)
+DEFINE_GETTER (nmc_property_dcb_get_app_fcoe_mode, NM_SETTING_DCB_APP_FCOE_MODE)
+DEFINE_DCB_FLAGS_GETTER (nmc_property_dcb_get_app_iscsi_flags, NM_SETTING_DCB_APP_ISCSI_FLAGS)
+DEFINE_DCB_APP_PRIORITY_GETTER (nmc_property_dcb_get_app_iscsi_priority, NM_SETTING_DCB_APP_ISCSI_PRIORITY)
+DEFINE_DCB_FLAGS_GETTER (nmc_property_dcb_get_app_fip_flags, NM_SETTING_DCB_APP_FIP_FLAGS)
+DEFINE_DCB_APP_PRIORITY_GETTER (nmc_property_dcb_get_app_fip_priority, NM_SETTING_DCB_APP_FIP_PRIORITY)
+
+DEFINE_DCB_FLAGS_GETTER (nmc_property_dcb_get_pfc_flags, NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS)
+DEFINE_DCB_BOOL_GETTER (nmc_property_dcb_get_pfc, nm_setting_dcb_get_priority_flow_control)
+
+DEFINE_DCB_FLAGS_GETTER (nmc_property_dcb_get_pg_flags, NM_SETTING_DCB_PRIORITY_GROUP_FLAGS)
+DEFINE_DCB_UINT_GETTER (nmc_property_dcb_get_pg_group_id, nm_setting_dcb_get_priority_group_id)
+DEFINE_DCB_UINT_GETTER (nmc_property_dcb_get_pg_group_bandwidth, nm_setting_dcb_get_priority_group_bandwidth)
+DEFINE_DCB_UINT_GETTER (nmc_property_dcb_get_pg_bandwidth, nm_setting_dcb_get_priority_bandwidth)
+DEFINE_DCB_BOOL_GETTER (nmc_property_dcb_get_pg_strict, nm_setting_dcb_get_priority_strict_bandwidth)
+DEFINE_DCB_UINT_GETTER (nmc_property_dcb_get_pg_traffic_class, nm_setting_dcb_get_priority_traffic_class)
 
 /* --- NM_SETTING_GSM_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_gsm_get_number, NM_SETTING_GSM_NUMBER)
@@ -3570,6 +3720,265 @@ nmc_property_wifi_set_psk (NMSetting *setting, const char *prop, const char *val
 	return TRUE;
 }
 
+#define DCB_ALL_FLAGS (NM_SETTING_DCB_FLAG_ENABLE | NM_SETTING_DCB_FLAG_ADVERTISE | NM_SETTING_DCB_FLAG_WILLING)
+
+/* DCB stuff */
+static gboolean
+nmc_property_dcb_set_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char **strv = NULL, **iter;
+	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
+	long int t;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	/* Check for overall hex numeric value */
+	if (nmc_string_to_int_base (val, 0, TRUE, 0, DCB_ALL_FLAGS, &t))
+		flags = (guint) t;
+	else {
+		/* Check for individual flag numbers */
+		strv = nmc_strsplit_set (val, " \t,", 0);
+		for (iter = strv; iter && *iter; iter++) {
+			if (!nmc_string_to_int_base (*iter, 0, TRUE, 0, DCB_ALL_FLAGS, &t))
+				t = -1;
+
+			if (   g_ascii_strcasecmp (*iter, "enable") == 0
+			    || g_ascii_strcasecmp (*iter, "enabled") == 0
+			    || t == NM_SETTING_DCB_FLAG_ENABLE)
+				flags |= NM_SETTING_DCB_FLAG_ENABLE;
+			else if (   g_ascii_strcasecmp (*iter, "advertise") == 0
+				 || t == NM_SETTING_DCB_FLAG_ADVERTISE)
+				flags |= NM_SETTING_DCB_FLAG_ADVERTISE;
+			else if (   g_ascii_strcasecmp (*iter, "willing") == 0
+				 || t == NM_SETTING_DCB_FLAG_WILLING)
+				flags |= NM_SETTING_DCB_FLAG_WILLING;
+			else if (   g_ascii_strcasecmp (*iter, "disable") == 0
+				 || g_ascii_strcasecmp (*iter, "disabled") == 0
+				 || t == 0) {
+				/* pass */
+			} else {
+				g_set_error (error, 1, 0, _("'%s' is not a valid DCB flag"), *iter);
+				return FALSE;
+			}
+		}
+		g_strfreev (strv);
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_uint (setting, prop, (guint) flags, error))
+		return FALSE;
+
+	g_object_set (setting, prop, (guint) flags, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_dcb_set_priority (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	unsigned long priority = 0;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (val, FALSE, 0, 7, &priority)) {
+		g_set_error (error, 1, 0, _("'%s' is not a DCB app priority"), val);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_uint (setting, prop, (guint) priority, error))
+		return FALSE;
+
+	g_object_set (setting, prop, (guint) priority, NULL);
+	return TRUE;
+}
+
+static gboolean
+dcb_parse_uint_array (const char *val,
+                      guint max,
+                      guint other,
+                      guint *out_array,
+                      GError **error)
+{
+	char **items, **iter;
+	guint i = 0;
+
+	g_return_val_if_fail (out_array != NULL, FALSE);
+
+	items = g_strsplit_set (val, ",", -1);
+	if (g_strv_length (items) != 8) {
+		g_set_error_literal (error, 1, 0, _("must contain 8 comma-separated numbers"));
+		goto error;
+	}
+
+	for (iter = items; iter && *iter; iter++) {
+		long int num = 0;
+		gboolean success;
+
+		*iter = g_strstrip (*iter);
+		success = nmc_string_to_int_base (*iter, 10, TRUE, 0, other ? other : max, &num);
+
+		/* If number is greater than 'max' it must equal 'other' */
+		if (success && other && (num > max) && (num != other))
+			success = FALSE;
+
+		if (!success) {
+			if (other) {
+				g_set_error (error, 1, 0, _("'%s' not a number between 0 and %u (inclusive) or %u"),
+					     *iter, max, other);
+			} else {
+				g_set_error (error, 1, 0, _("'%s' not a number between 0 and %u (inclusive)"),
+					     *iter, max);
+			}
+			goto error;
+		}
+		out_array[i++] = (guint) num;
+	}
+
+	return TRUE;
+
+error:
+	g_strfreev (items);
+	return FALSE;
+}
+
+static void
+dcb_check_feature_enabled (NMSettingDcb *s_dcb, const char *flags_prop)
+{
+	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
+
+	g_object_get (s_dcb, flags_prop, &flags, NULL);
+	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE))
+		printf (_("Warning: changes will have no effect until '%s' includes 1 (enabled)\n\n"), flags_prop);
+}
+
+static gboolean
+nmc_property_dcb_set_pfc (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	guint i = 0;
+	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!dcb_parse_uint_array (val, 1, 0, nums, error))
+		return FALSE;
+
+	for (i = 0; i < 8; i++)
+		nm_setting_dcb_set_priority_flow_control (NM_SETTING_DCB (setting), i, !!nums[i]);
+
+	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_dcb_set_pg_group_id (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	guint i = 0;
+	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!dcb_parse_uint_array (val, 7, 15, nums, error))
+		return FALSE;
+
+	for (i = 0; i < 8; i++)
+		nm_setting_dcb_set_priority_group_id (NM_SETTING_DCB (setting), i, nums[i]);
+
+	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_dcb_set_pg_group_bandwidth (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	guint i = 0, sum = 0;
+	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!dcb_parse_uint_array (val, 100, 0, nums, error))
+		return FALSE;
+
+	for (i = 0; i < 8; i++)
+		sum += nums[i];
+	if (sum != 100) {
+		g_set_error_literal (error, 1, 0, _("bandwidth percentages must total 100%%"));
+		return FALSE;
+	}
+
+	for (i = 0; i < 8; i++)
+		nm_setting_dcb_set_priority_group_bandwidth (NM_SETTING_DCB (setting), i, nums[i]);
+
+	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_dcb_set_pg_bandwidth (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	guint i = 0;
+	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!dcb_parse_uint_array (val, 100, 0, nums, error))
+		return FALSE;
+
+	for (i = 0; i < 8; i++)
+		nm_setting_dcb_set_priority_bandwidth (NM_SETTING_DCB (setting), i, nums[i]);
+
+	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_dcb_set_pg_strict (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	guint i = 0;
+	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!dcb_parse_uint_array (val, 1, 0, nums, error))
+		return FALSE;
+
+	for (i = 0; i < 8; i++)
+		nm_setting_dcb_set_priority_strict_bandwidth (NM_SETTING_DCB (setting), i, !!nums[i]);
+
+	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_dcb_set_pg_traffic_class (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	guint i = 0;
+	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!dcb_parse_uint_array (val, 7, 0, nums, error))
+		return FALSE;
+
+	for (i = 0; i < 8; i++)
+		nm_setting_dcb_set_priority_traffic_class (NM_SETTING_DCB (setting), i, nums[i]);
+
+	dcb_check_feature_enabled (NM_SETTING_DCB (setting), NM_SETTING_DCB_PRIORITY_GROUP_FLAGS);
+	return TRUE;
+}
+
+/* 'app-fcoe-mode' */
+static const char *_dcb_valid_fcoe_modes[] = { NM_SETTING_DCB_FCOE_MODE_FABRIC,
+                                               NM_SETTING_DCB_FCOE_MODE_VN2VN,
+                                               NULL };
+
+static gboolean
+nmc_property_dcb_set_app_fcoe_mode (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	return check_and_set_string (setting, prop, val, _dcb_valid_fcoe_modes, error);
+}
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_dcb_allowed_app_fcoe_modes, _dcb_valid_fcoe_modes)
+
 /*----------------------------------------------------------------------------*/
 
 static void
@@ -4104,6 +4513,113 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (CONNECTION, GATEWAY_PING_TIMEOUT),
 	                    nmc_property_connection_get_gateway_ping_timeout,
 	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
+	/* Add editable properties for NM_SETTING_DCB_SETTING_NAME */
+	nmc_add_prop_funcs (GLUE (DCB, APP_FCOE_FLAGS),
+	                    nmc_property_dcb_get_app_fcoe_flags,
+	                    nmc_property_dcb_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, APP_FCOE_MODE),
+	                    nmc_property_dcb_get_app_fcoe_mode,
+	                    nmc_property_dcb_set_app_fcoe_mode,
+	                    NULL,
+	                    NULL,
+	                    nmc_property_dcb_allowed_app_fcoe_modes,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, APP_FCOE_PRIORITY),
+	                    nmc_property_dcb_get_app_fcoe_priority,
+	                    nmc_property_dcb_set_priority,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, APP_ISCSI_FLAGS),
+	                    nmc_property_dcb_get_app_iscsi_flags,
+	                    nmc_property_dcb_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, APP_ISCSI_PRIORITY),
+	                    nmc_property_dcb_get_app_iscsi_priority,
+	                    nmc_property_dcb_set_priority,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, APP_FIP_FLAGS),
+	                    nmc_property_dcb_get_app_fip_flags,
+	                    nmc_property_dcb_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, APP_FIP_PRIORITY),
+	                    nmc_property_dcb_get_app_fip_priority,
+	                    nmc_property_dcb_set_priority,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_FLOW_CONTROL_FLAGS),
+	                    nmc_property_dcb_get_pfc_flags,
+	                    nmc_property_dcb_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_FLOW_CONTROL),
+	                    nmc_property_dcb_get_pfc,
+	                    nmc_property_dcb_set_pfc,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_GROUP_FLAGS),
+	                    nmc_property_dcb_get_pg_flags,
+	                    nmc_property_dcb_set_flags,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_GROUP_ID),
+	                    nmc_property_dcb_get_pg_group_id,
+	                    nmc_property_dcb_set_pg_group_id,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_GROUP_BANDWIDTH),
+	                    nmc_property_dcb_get_pg_group_bandwidth,
+	                    nmc_property_dcb_set_pg_group_bandwidth,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_BANDWIDTH),
+	                    nmc_property_dcb_get_pg_bandwidth,
+	                    nmc_property_dcb_set_pg_bandwidth,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_STRICT_BANDWIDTH),
+	                    nmc_property_dcb_get_pg_strict,
+	                    nmc_property_dcb_set_pg_strict,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (DCB, PRIORITY_TRAFFIC_CLASS),
+	                    nmc_property_dcb_get_pg_traffic_class,
+	                    nmc_property_dcb_set_pg_traffic_class,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -6084,6 +6600,45 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc)
 	return TRUE;
 }
 
+static gboolean
+setting_dcb_details (NMSetting *setting, NmCli *nmc)
+{
+	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
+	NmcOutputField *tmpl, *arr;
+	size_t tmpl_len;
+
+	g_return_val_if_fail (NM_IS_SETTING_DCB (s_dcb), FALSE);
+
+	tmpl = nmc_fields_setting_dcb;
+	tmpl_len = sizeof (nmc_fields_setting_dcb);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_DCB_ALL, tmpl, NULL);
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+	g_ptr_array_add (nmc->output_data, arr);
+
+	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
+	set_val_str (arr, 1, nmc_property_dcb_get_app_fcoe_flags (setting));
+	set_val_str (arr, 2, nmc_property_dcb_get_app_fcoe_priority (setting));
+	set_val_str (arr, 3, nmc_property_dcb_get_app_fcoe_mode (setting));
+	set_val_str (arr, 4, nmc_property_dcb_get_app_iscsi_flags (setting));
+	set_val_str (arr, 5, nmc_property_dcb_get_app_iscsi_priority (setting));
+	set_val_str (arr, 6, nmc_property_dcb_get_app_fip_flags (setting));
+	set_val_str (arr, 7, nmc_property_dcb_get_app_fip_priority (setting));
+	set_val_str (arr, 8, nmc_property_dcb_get_pfc_flags (setting));
+	set_val_str (arr, 9, nmc_property_dcb_get_pfc (setting));
+	set_val_str (arr, 10, nmc_property_dcb_get_pg_flags (setting));
+	set_val_str (arr, 11, nmc_property_dcb_get_pg_group_id (setting));
+	set_val_str (arr, 12, nmc_property_dcb_get_pg_group_bandwidth (setting));
+	set_val_str (arr, 13, nmc_property_dcb_get_pg_bandwidth (setting));
+	set_val_str (arr, 14, nmc_property_dcb_get_pg_strict (setting));
+	set_val_str (arr, 15, nmc_property_dcb_get_pg_traffic_class (setting));
+	g_ptr_array_add (nmc->output_data, arr);
+
+	print_data (nmc);  /* Print all data */
+
+	return TRUE;
+}
+
 typedef struct {
 	const char *sname;
 	gboolean (*func) (NMSetting *setting, NmCli *nmc);
@@ -6114,6 +6669,7 @@ static const SettingDetails detail_printers[] = {
 	{ NM_SETTING_BRIDGE_PORT_SETTING_NAME,       setting_bridge_port_details },
 	{ NM_SETTING_TEAM_SETTING_NAME,              setting_team_details },
 	{ NM_SETTING_TEAM_PORT_SETTING_NAME,         setting_team_port_details },
+	{ NM_SETTING_DCB_SETTING_NAME,               setting_dcb_details },
 	{ NULL },
 };
 

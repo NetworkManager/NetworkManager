@@ -42,6 +42,7 @@
 #include <nm-setting-bridge.h>
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-vlan.h>
+#include <nm-setting-dcb.h>
 
 #include "nmcli.h"
 #include "utils.h"

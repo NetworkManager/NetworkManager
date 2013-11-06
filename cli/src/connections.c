@@ -107,6 +107,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME, 0),           /* 21 */
 	SETTING_FIELD (NM_SETTING_TEAM_SETTING_NAME, 0),                  /* 22 */
 	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME, 0),             /* 23 */
+	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME, 0),                   /* 24 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
@@ -131,7 +132,8 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_BRIDGE_SETTING_NAME","\
                                          NM_SETTING_BRIDGE_PORT_SETTING_NAME","\
                                          NM_SETTING_TEAM_SETTING_NAME","\
-                                         NM_SETTING_TEAM_PORT_SETTING_NAME
+                                         NM_SETTING_TEAM_PORT_SETTING_NAME"," \
+                                         NM_SETTING_DCB_SETTING_NAME
 #if WITH_WIMAX
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
                                          NM_SETTING_WIMAX_SETTING_NAME
@@ -1773,6 +1775,7 @@ static const NameItem nmc_ethernet_settings [] = {
 	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_DCB_SETTING_NAME,        NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
 };
 
