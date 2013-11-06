@@ -806,7 +806,6 @@ wifi_nl80211_init (const char *iface, int ifindex)
 
 	nl80211->freqs = device_info.freqs;
 	nl80211->num_freqs = device_info.num_freqs;
-	nl80211->parent.can_scan_ssid = device_info.can_scan_ssid;
 	nl80211->parent.caps = device_info.caps;
 
 	nm_log_info (LOGD_HW | LOGD_WIFI,

@@ -37,8 +37,6 @@ void wifi_utils_deinit (WifiData *data);
 
 NMDeviceWifiCapabilities wifi_utils_get_caps (WifiData *data);
 
-gboolean wifi_utils_can_scan_ssid (WifiData *data);
-
 NM80211Mode wifi_utils_get_mode (WifiData *data);
 
 gboolean wifi_utils_set_mode (WifiData *data, const NM80211Mode mode);

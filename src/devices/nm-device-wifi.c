@@ -2650,7 +2650,7 @@ remove_supplicant_timeouts (NMDeviceWifi *self)
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceWifi *self,
                          NMConnection *connection,
-                         NMAccessPoint *ap)
+                         guint32 fixed_freq)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSupplicantConfig *config = NULL;
@@ -2674,9 +2674,7 @@ build_supplicant_config (NMDeviceWifi *self,
 
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
-	                                                nm_ap_get_broadcast (ap),
-	                                                nm_ap_get_freq (ap),
-	                                                wifi_utils_can_scan_ssid (priv->wifi_data))) {
+	                                                fixed_freq)) {
 		nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
@@ -2973,7 +2971,7 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 		ensure_hotspot_frequency (self, s_wireless, ap);
 
 	/* Build up the supplicant configuration */
-	config = build_supplicant_config (self, connection, ap);
+	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap));
 	if (config == NULL) {
 		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): couldn't build wireless configuration.",
