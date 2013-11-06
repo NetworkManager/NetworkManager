@@ -1653,8 +1653,6 @@ nm_device_generate_connection (NMDevice *device)
 
 	connection = nm_connection_new ();
 	s_con = nm_setting_connection_new ();
-	s_ip4 = nm_setting_ip4_config_new ();
-	s_ip6 = nm_setting_ip6_config_new ();
 	uuid = nm_utils_uuid_generate ();
 	name = g_strdup_printf ("%s", ifname);
 
@@ -1666,12 +1664,21 @@ nm_device_generate_connection (NMDevice *device)
 	              NULL);
 	if (klass->connection_type)
 		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type, NULL);
-	nm_ip4_config_update_setting (priv->ip4_config, (NMSettingIP4Config *) s_ip4);
-	nm_ip6_config_update_setting (priv->ip6_config, (NMSettingIP6Config *) s_ip6);
-
 	nm_connection_add_setting (connection, s_con);
+
+	s_ip4 = nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, s_ip4);
+	if (priv->ip4_config)
+		nm_ip4_config_update_setting (priv->ip4_config, (NMSettingIP4Config *) s_ip4);
+	else
+		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NULL);
+
+	s_ip6 = nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, s_ip6);
+	if (priv->ip6_config)
+		nm_ip6_config_update_setting (priv->ip6_config, (NMSettingIP6Config *) s_ip6);
+	else
+		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 
 	klass->update_connection (device, connection);
 

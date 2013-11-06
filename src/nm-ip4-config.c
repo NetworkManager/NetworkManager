@@ -127,8 +127,15 @@ routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, 
 NMIP4Config *
 nm_ip4_config_capture (int ifindex)
 {
-	NMIP4Config *config = nm_ip4_config_new ();
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	NMIP4Config *config;
+	NMIP4ConfigPrivate *priv;
+
+	/* Slaves have no IP configuration */
+	if (nm_platform_link_get_master (ifindex) > 0)
+		return NULL;
+
+	config = nm_ip4_config_new ();
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
