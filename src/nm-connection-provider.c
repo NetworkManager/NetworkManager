@@ -14,6 +14,7 @@
  */
 
 #include "nm-connection-provider.h"
+#include "nm-utils.h"
 
 GSList *
 nm_connection_provider_get_best_connections (NMConnectionProvider *self,
@@ -73,6 +74,25 @@ nm_connection_provider_add_connection (NMConnectionProvider *self,
 
 	g_assert (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->add_connection);
 	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->add_connection (self, connection, save_to_disk, error);
+}
+
+/**
+ * nm_connection_provider_get_connection_by_uuid:
+ * @self: the #NMConnectionProvider
+ * @uuid: the UUID to search for
+ *
+ * Returns: the connection with the given @uuid, or %NULL
+ */
+NMConnection *
+nm_connection_provider_get_connection_by_uuid (NMConnectionProvider *self,
+                                               const char *uuid)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
+	g_return_val_if_fail (nm_utils_is_uuid (uuid), NULL);
+
+	g_assert (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_connection_by_uuid);
+	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->get_connection_by_uuid (self, uuid);
 }
 
 /*****************************************************************************/

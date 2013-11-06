@@ -1730,6 +1730,12 @@ has_connections_loaded (NMConnectionProvider *provider)
 	return priv->connections_loaded;
 }
 
+static NMConnection *
+cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
+{
+	return NM_CONNECTION (nm_settings_get_connection_by_uuid (NM_SETTINGS (provider), uuid));
+}
+
 /***************************************************************/
 
 NMSettings *
@@ -1765,6 +1771,7 @@ connection_provider_init (NMConnectionProvider *cp_class)
     cp_class->get_connections = get_connections;
     cp_class->has_connections_loaded = has_connections_loaded;
     cp_class->add_connection = _nm_connection_provider_add_connection;
+    cp_class->get_connection_by_uuid = cp_get_connection_by_uuid;
 }
 
 static void

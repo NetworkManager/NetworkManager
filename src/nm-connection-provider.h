@@ -65,6 +65,9 @@ struct _NMConnectionProvider {
 	                                  gboolean save_to_disk,
 	                                  GError **error);
 
+	NMConnection * (*get_connection_by_uuid) (NMConnectionProvider *self,
+	                                          const char *uuid);
+
 	/* Signals */
 	void (*connection_added)   (NMConnectionProvider *self, NMConnection *connection);
 
@@ -136,5 +139,8 @@ NMConnection *nm_connection_provider_add_connection (NMConnectionProvider *self,
                                                      NMConnection *connection,
                                                      gboolean save_to_disk,
                                                      GError **error);
+
+NMConnection *nm_connection_provider_get_connection_by_uuid (NMConnectionProvider *self,
+                                                             const char *uuid);
 
 #endif /* NM_CONNECTION_PROVIDER_H */
