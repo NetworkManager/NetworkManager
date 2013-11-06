@@ -1351,35 +1351,42 @@ activate_secondary_connections (NMPolicy *policy,
 
 	for (i = 0; i < nm_setting_connection_get_num_secondaries (s_con); i++) {
 		const char *sec_uuid = nm_setting_connection_get_secondary (s_con, i);
+		NMActRequest *req;
 
 		settings_con = nm_settings_get_connection_by_uuid (priv->settings, sec_uuid);
-		if (settings_con) {
-			NMActRequest *req = nm_device_get_act_request (device);
-			g_assert (req);
-
-			nm_log_dbg (LOGD_DEVICE, "Activating secondary connection '%s (%s)' for base connection '%s (%s)'",
-			            nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid,
-			            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
-			ac = nm_manager_activate_connection (priv->manager,
-			                                     NM_CONNECTION (settings_con),
-			                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
-			                                     device,
-			                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
-			                                     &error);
-			if (ac)
-				secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
-			else {
-				nm_log_warn (LOGD_DEVICE, "Secondary connection '%s' auto-activation failed: (%d) %s",
-				             sec_uuid,
-				             error ? error->code : 0,
-				             (error && error->message) ? error->message : "unknown");
-				g_clear_error (&error);
-				success = FALSE;
-				break;
-			}
-		} else {
+		if (!settings_con) {
 			nm_log_warn (LOGD_DEVICE, "Secondary connection '%s' auto-activation failed: The connection doesn't exist.",
 			             sec_uuid);
+			success = FALSE;
+			break;
+		}
+		if (!nm_connection_is_type (NM_CONNECTION (settings_con), NM_SETTING_VPN_SETTING_NAME)) {
+			nm_log_warn (LOGD_DEVICE, "Secondary connection '%s (%s)' auto-activation failed: The connection is not a VPN.",
+			             nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid);
+			success = FALSE;
+			break;
+		}
+
+		req = nm_device_get_act_request (device);
+		g_assert (req);
+
+		nm_log_dbg (LOGD_DEVICE, "Activating secondary connection '%s (%s)' for base connection '%s (%s)'",
+		            nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid,
+		            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
+		ac = nm_manager_activate_connection (priv->manager,
+		                                     NM_CONNECTION (settings_con),
+		                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
+		                                     device,
+		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
+		                                     &error);
+		if (ac)
+			secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
+		else {
+			nm_log_warn (LOGD_DEVICE, "Secondary connection '%s (%s)' auto-activation failed: (%d) %s",
+			             nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid,
+			             error ? error->code : 0,
+			             (error && error->message) ? error->message : "unknown");
+			g_clear_error (&error);
 			success = FALSE;
 			break;
 		}
