@@ -269,6 +269,8 @@ typedef struct {
 	/* IP6 config from autoconf */
 	NMIP6Config *  ac_ip6_config;
 
+	guint          linklocal6_timeout_id;
+
 	char *         ip6_accept_ra_path;
 	gint32         ip6_accept_ra_save;
 
@@ -353,6 +355,7 @@ static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platf
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed);
 
+static void addrconf6_start_with_link_ready (NMDevice *self);
 
 static const char const *platform_ip_signals[] = {
 	NM_PLATFORM_IP4_ADDRESS_ADDED,
@@ -3043,6 +3046,104 @@ dhcp6_start (NMDevice *self,
 
 /******************************************/
 
+static gboolean
+linklocal6_config_is_ready (const NMIP6Config *ip6_config)
+{
+	int i;
+
+	if (!ip6_config)
+		return FALSE;
+
+	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
+		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address) &&
+		    !(addr->flags & IFA_F_TENTATIVE))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static void
+linklocal6_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->linklocal6_timeout_id) {
+		g_source_remove (priv->linklocal6_timeout_id);
+		priv->linklocal6_timeout_id = 0;
+	}
+}
+
+static gboolean
+linklocal6_timeout_cb (gpointer user_data)
+{
+	NMDevice *self = user_data;
+
+	linklocal6_cleanup (self);
+
+	nm_log_dbg (LOGD_DEVICE, "[%s] linklocal6: waiting for link-local addresses failed due to timeout",
+	             nm_device_get_iface (self));
+
+	nm_device_activate_schedule_ip6_config_timeout (self);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+linklocal6_complete (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	const char *method;
+
+	g_assert (priv->linklocal6_timeout_id);
+	g_assert (linklocal6_config_is_ready (priv->ip6_config));
+
+	linklocal6_cleanup (self);
+
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+
+	nm_log_dbg (LOGD_DEVICE, "[%s] linklocal6: waiting for link-local addresses successful, continue with method %s",
+	             nm_device_get_iface (self), method);
+
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0)
+		addrconf6_start_with_link_ready (self);
+	else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
+		nm_device_activate_schedule_ip6_config_result (self);
+	else
+		g_return_if_fail (FALSE);
+}
+
+static NMActStageReturn
+linklocal6_start (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	const char *method;
+
+	linklocal6_cleanup (self);
+
+	if (linklocal6_config_is_ready (priv->ip6_config))
+		return NM_ACT_STAGE_RETURN_SUCCESS;
+
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	nm_log_dbg (LOGD_DEVICE, "[%s] linklocal6: starting IPv6 with method '%s', but the device has no link-local addresses configured. Wait.",
+	            nm_device_get_iface (self), method);
+
+	priv->linklocal6_timeout_id = g_timeout_add_seconds (5, linklocal6_timeout_cb, self);
+
+	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
+/******************************************/
+
 static void dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static void
@@ -3159,6 +3260,7 @@ addrconf6_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
+	NMActStageReturn ret;
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
@@ -3170,23 +3272,40 @@ addrconf6_start (NMDevice *self)
 	}
 
 	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), nm_device_get_ip_iface (self));
-	nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 
 	if (!priv->rdisc) {
 		nm_log_err (LOGD_IP6, "Failed to start router discovery.");
 		return FALSE;
 	}
 
-	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
-	                                                     G_CALLBACK (rdisc_config_changed), self);
+	/* ensure link local is ready... */
+	ret = linklocal6_start (self);
+
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
+		addrconf6_start_with_link_ready (self);
+	else
+		g_return_val_if_fail (ret == NM_ACT_STAGE_RETURN_POSTPONE, TRUE);
+
+	return TRUE;
+}
+
+static void
+addrconf6_start_with_link_ready (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_assert (priv->rdisc);
 
 	/* FIXME: what if interface has no lladdr, like PPP? */
 	if (priv->hw_addr_len)
 		nm_rdisc_set_lladdr (priv->rdisc, (const char *) priv->hw_addr, priv->hw_addr_len);
 
-	nm_rdisc_start (priv->rdisc);
+	nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 
-	return TRUE;
+	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
+	                                                     G_CALLBACK (rdisc_config_changed), self);
+
+	nm_rdisc_start (priv->rdisc);
 }
 
 static void
@@ -3205,31 +3324,6 @@ addrconf6_cleanup (NMDevice *self)
 }
 
 /******************************************/
-
-static int
-linklocal6_start (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int i;
-
-	if (priv->ip6_config) {
-		for (i = 0; i < nm_ip6_config_get_num_addresses (priv->ip6_config); i++) {
-			const NMPlatformIP6Address *addr = nm_ip6_config_get_address (priv->ip6_config, i);
-
-			if (addr->plen == 128 && IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
-				/* FIXME: only accept the address if it is no longer TENTATIVE */
-				return NM_ACT_STAGE_RETURN_SUCCESS;
-			}
-		}
-	}
-
-	/* FIXME: we should NM_ACT_STAGE_RETURN_POSTPONE and wait until with timeout
-	 * we get a link local address that is no longer TENTATIVE. */
-	nm_log_warn (LOGD_DEVICE, "[%s] starting IPv6 with mode 'link-local', but the device has no link-local addresses configured.",
-	             nm_device_get_iface (self));
-
-	return NM_ACT_STAGE_RETURN_STOP;
-}
 
 /* Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
  * /lib/sysctl.d/sysctl.conf
@@ -4329,6 +4423,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	dhcp4_cleanup (self, TRUE, FALSE);
 	dhcp6_cleanup (self, TRUE, FALSE);
+	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
 	aipd_cleanup (self);
@@ -5069,6 +5164,7 @@ dispose (GObject *object)
 	/* Clean up and stop DHCP */
 	dhcp4_cleanup (self, deconfigure, FALSE);
 	dhcp6_cleanup (self, deconfigure, FALSE);
+	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
 
@@ -6243,6 +6339,7 @@ update_ip_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
+	gboolean linklocal6_just_completed = FALSE;
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
@@ -6264,6 +6361,11 @@ update_ip_config (NMDevice *self)
 	g_clear_object (&priv->ext_ip6_config);
 	priv->ext_ip6_config = nm_ip6_config_capture (ifindex);
 	if (priv->ext_ip6_config) {
+
+		/* Check this before modifying ext_ip6_config */
+		linklocal6_just_completed = priv->linklocal6_timeout_id &&
+		                            linklocal6_config_is_ready (priv->ext_ip6_config);
+
 		if (priv->ac_ip6_config)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->ac_ip6_config);
 		if (priv->dhcp6_ip6_config)
@@ -6272,6 +6374,13 @@ update_ip_config (NMDevice *self)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->vpn6_config);
 
 		ip6_config_merge_and_apply (self, FALSE, NULL);
+	}
+
+	if (linklocal6_just_completed) {
+		/* linklocal6 is ready now, do the state transition... we are also
+		 * invoked as g_idle_add, so no problems with reentrance doing it now.
+		 */
+		linklocal6_complete (self);
 	}
 }
 
