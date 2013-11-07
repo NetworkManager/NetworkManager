@@ -307,11 +307,39 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
-match_l2_config (NMDevice *self, NMConnection *connection)
+static void
+update_connection (NMDevice *device, NMConnection *connection)
 {
-	/* FIXME */
-	return TRUE;
+	NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
+	guint maclen;
+	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
+	static const guint8 null_mac[INFINIBAND_ALEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	GByteArray *array;
+	char *mode_path, *contents;
+	const char *transport_mode = "datagram";
+
+	if (!s_infiniband) {
+		s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_infiniband);
+	}
+
+	if (mac && (maclen == INFINIBAND_ALEN) && (memcmp (mac, null_mac, maclen) != 0)) {
+		array = g_byte_array_sized_new (maclen);
+		g_byte_array_append (array, (guint8 *) mac, maclen);
+		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
+		g_byte_array_unref (array);
+	}
+
+	mode_path = g_strdup_printf ("/sys/class/net/%s/mode", nm_device_get_iface (device));
+	if (g_file_get_contents (mode_path, &contents, NULL, NULL)) {
+		if (strstr (contents, "datagram"))
+			transport_mode = "datagram";
+		else if (strstr (contents, "connected"))
+			transport_mode = "connected";
+	}
+	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);
+	g_free (mode_path);
+	g_free (contents);
 }
 
 static gboolean
@@ -384,11 +412,11 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
+	parent_class->update_connection = update_connection;
 	parent_class->spec_match_list = spec_match_list;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
-	parent_class->match_l2_config = match_l2_config;
 
 	/* properties */
 
