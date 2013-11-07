@@ -254,12 +254,9 @@ gboolean        nm_device_is_master         (NMDevice *dev);
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
-gboolean		nm_device_is_available   (NMDevice     *dev);
-gboolean		nm_device_can_activate   (NMDevice     *dev,
-                                          NMConnection *connection);
-
+gboolean        nm_device_is_available   (NMDevice *dev);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
-gboolean		nm_device_ignore_carrier (NMDevice *dev);
+gboolean        nm_device_ignore_carrier (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *device);
 
@@ -339,6 +336,8 @@ GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
 
 const char *nm_device_get_physical_port_id (NMDevice *device);
+
+gboolean   nm_device_connection_is_available (NMDevice *device, NMConnection *connection);
 
 G_END_DECLS
 
