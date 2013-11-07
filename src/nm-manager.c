@@ -151,7 +151,7 @@ static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
                                              const char *object_path,
                                              gpointer user_data);
 
-static void add_device (NMManager *self, NMDevice *device);
+static void add_device (NMManager *self, NMDevice *device, gboolean nm_created);
 static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
 
 static void hostname_provider_init (NMHostnameProvider *provider_class);
@@ -572,7 +572,7 @@ modem_added (NMModemManager *modem_manager,
 	/* Make the new modem device */
 	device = nm_device_modem_new (modem, driver);
 	if (device)
-		add_device (self, device);
+		add_device (self, device, TRUE);
 }
 
 static void
@@ -1243,7 +1243,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	if (device) {
 		nm_device_set_is_nm_owned (device, TRUE);
-		add_device (self, device);
+		add_device (self, device, TRUE);
 	}
 
 	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
@@ -1827,14 +1827,14 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 }
 
 static void
-add_device (NMManager *self, NMDevice *device)
+add_device (NMManager *self, NMDevice *device, gboolean nm_created)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	NMDeviceType devtype;
@@ -1920,7 +1920,9 @@ add_device (NMManager *self, NMDevice *device)
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
-	connection = get_existing_connection (self, device);
+	/* Don't bother generating a connection for devices NM just created */
+	if (!nm_created)
+		connection = get_existing_connection (self, device);
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
@@ -2005,7 +2007,7 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 		             has_dun && has_nap ? " " : "",
 		             has_nap ? "NAP" : "");
 
-		add_device (manager, device);
+		add_device (manager, device, TRUE);
 	}
 }
 
@@ -2309,7 +2311,7 @@ platform_link_added_cb (NMPlatform *platform,
 	}
 
 	if (device)
-		add_device (self, device);
+		add_device (self, device, FALSE);
 }
 
 static void
@@ -2346,7 +2348,7 @@ atm_device_added_cb (NMAtmManager *atm_mgr,
 
 	device = nm_device_adsl_new (sysfs_path, iface, driver);
 	if (device)
-		add_device (self, device);
+		add_device (self, device, FALSE);
 }
 
 static void
