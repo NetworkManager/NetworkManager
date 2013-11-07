@@ -95,6 +95,13 @@ check_connection_compatible (NMDevice *device,
 	return TRUE;
 }
 
+static void
+update_connection (NMDevice *device, NMConnection *connection)
+{
+	if (!nm_connection_get_setting_generic (connection))
+		nm_connection_add_setting (connection, nm_setting_generic_new ());
+}
+
 /**************************************************************/
 
 NMDevice *
@@ -184,6 +191,8 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceGenericPrivate));
 
+	parent_class->connection_type = NM_SETTING_GENERIC_SETTING_NAME;
+
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
@@ -191,6 +200,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->check_connection_compatible = check_connection_compatible;
+	parent_class->update_connection = update_connection;
 
 	/* properties */
 	g_object_class_install_property
