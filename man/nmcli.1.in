@@ -19,9 +19,9 @@
 .\" with this manual; if not, write to the Free Software Foundation, Inc.,
 .\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .\"
-.\" Copyright (C) 2010 - 2013 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "12 December 2013"
+.TH NMCLI "1" "14 January 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -97,8 +97,7 @@ producing more structured information, that cannot be displayed on a single
 line, default is \fImultiline\fP. Currently, they are:
 .br
 .nf
-  'nmcli connection show configured <ID>'
-  'nmcli connection show active <ID>'
+  'nmcli connection show <ID>'
   'nmcli device show'
 .fi
 \fItabular\fP   \(en Output is a table where each line describes a single entry.
@@ -276,12 +275,21 @@ connected to the DHCP-enabled network the user would run "nmcli con up default"
 .sp
 .RS
 .TP
-.B show active     [[ id | uuid | path | apath ] <ID>]
+.B show [--active]
 .br
-Shows connections which are currently used by a device to connect to a network.
-Without a parameter, all active connections are listed.  In order to show the
-connection details, \fI<ID>\fP must be provided. \fIid\fP, \fIuuid\fP,
-\fIpath\fP and \fIapath\fP keywords can be used if \fI<ID>\fP is ambiguous.
+List in-memory and on-disk connection profiles, some of which may also be
+active if a device is using that connection profile. Without a parameter, all
+profiles are listed. When --active option is specified, only the active profiles
+are shown.
+.TP
+.B show [--active] [ id | uuid | path | apath ] <ID> ...
+.br
+Show details for specified connections. By default, both static configuration
+and active connection data are displayed.  When --active option is specified,
+only the active profiles are taken into
+account.
+\fIid\fP, \fIuuid\fP, \fIpath\fP and \fIapath\fP keywords can be used if
+\fI<ID>\fP is ambiguous.
 .RS
 .PP
 Optional <ID>-specifying keywords are:
@@ -295,19 +303,24 @@ in the format of /org/freedesktop/NetworkManager/Settings/<num> or just <num>
 .IP \fIapath\fP 13
 \(en the <ID> denotes a D-Bus active connection path
 in the format of /org/freedesktop/NetworkManager/ActiveConnection/<num> or just <num>
+.PP
+It is possible to filter the output using the global \fI--fields\fP option. Use the following
+values:
 .RE
-.TP
-.B show configured [[ id | uuid | path ] <ID>]
-.br
-Shows in-memory and on-disk connections, some of which may also be \fIactive\fP
-if a device is using that connection.  Without a parameter, all connections
-are listed.  In order to show connection details, \fI<ID>\fP must be
-provided. \fIid\fP, \fIuuid\fP and \fIpath\fP keywords can be used if
-\fI<ID>\fP is ambiguous. See \fBshow active\fP above for the description of
-the keywords.
-.br
+.RS
+.PP
+.IP \fIprofile\fP 13
+\(en only shows static profile configuration
+.IP \fIactive\fP 13
+\(en only shows active connection data (when the profile is active)
+.PP
+You can also specify particular fields. For static configuration, use setting and property names
+as described in \fInm-settings\fP(5) manual page. For active data use GENERAL, IP4, DHCP4, IP6,
+DHCP6, VPN.
+.PP
 When no command is given to the \fIconnection\fP object, the default action
-is 'nmcli connection show configured'.
+is 'nmcli connection show'.
+.RE
 .TP
 .B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]
 .RE
@@ -327,7 +340,7 @@ connection.
 .br
 If '--wait' option is not specified, the default timeout will be 90 seconds.
 .br
-See \fBshow active\fP above for the description of the <ID>-specifying keywords.
+See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
 .RS
 .PP
 Available options are:
@@ -357,7 +370,7 @@ The connection is identified by its name, UUID or D-Bus path.
 If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, \fIpath\fP or
 \fIapath\fP can be used.
 .br
-See \fBshow active\fP above for the description of the <ID>-specifying keywords.
+See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
 .TP
 .B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS
 .br
@@ -583,7 +596,7 @@ Edit an existing connection or add a new one, using an interactive editor.
 .br
 The existing connection is identified by its name, UUID or D-Bus path.
 If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, or \fIpath\fP can be used.
-See \fBshow active\fP above for the description of the <ID>-specifying keywords.
+See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
 Not providing an <ID> means that a new connection will be added.
 .sp
 The interactive editor will guide you through the connection editing and
@@ -621,7 +634,7 @@ Delete a configured connection. The connection to be deleted is identified by
 its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
 \fIuuid\fP or \fIpath\fP can be used.
 .br
-See \fBshow active\fP above for the description of the <ID>-specifying keywords.
+See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
 .TP
 .B reload
 .br
@@ -791,34 +804,38 @@ shows the overall status of NetworkManager.
 .IP
 switches Wi\(hyFi off.
 
-.IP "\fB\f(CWnmcli connection show configured\fP\fP"
+.IP "\fB\f(CWnmcli connection show\fP\fP"
 .IP
 lists all connections NetworkManager has.
 
-.IP "\fB\f(CWnmcli \-p \-m multiline \-f all con show c\fP\fP"
+.IP "\fB\f(CWnmcli \-p \-m multiline \-f all con show\fP\fP"
 .IP
 shows all configured connections in multi-line mode.
 
-.IP "\fB\f(CWnmcli \-p connection show active\fP\fP"
+.IP "\fB\f(CWnmcli connection show --active\fP\fP"
 .IP
 lists all currently active connections.
 
-.IP "\fB\f(CWnmcli \-p connection show active \(dq\&My default em1\(dq\&\fP\fP"
+.IP "\fB\f(CWnmcli \-f name,autoconnect c s\fP\fP"
+.IP
+shows all connection profile names and their auto-connect property.
+
+.IP "\fB\f(CWnmcli \-p connection show \(dq\&My default em1\(dq\&\fP\fP"
+.IP
+shows details for "My default em1" connection profile.
+
+.IP "\fB\f(CWnmcli \-f active connection show \(dq\&My default em1\(dq\&\fP\fP"
 .IP
 shows details for "My default em1" active connection, like IP, DHCP
-information.
+information, etc.
 
-.IP "\fB\f(CWnmcli \-f name,autoconnect c s c\fP\fP"
+.IP "\fB\f(CWnmcli -f profile con s \(dq\&My wired connection\(dq\&\fP\fP"
 .IP
-shows all connections' names and their auto-connect settings.
-
-.IP "\fB\f(CWnmcli con s c \(dq\&My wired connection\(dq\&\fP\fP"
-.IP
-shows all details of the connection with "My wired connection" name.
+shows static configuration details of the connection profile with "My wired connection" name.
 
 .IP "\fB\f(CWnmcli \-p con up \(dq\&My wired connection\(dq\& ifname eth0\fP\fP"
 .IP
-activates the connection with name "My wired connection" on interface eth0.
+activates the connection profile with name "My wired connection" on interface eth0.
 The \-p option makes nmcli show progress of the activation.
 
 .IP "\fB\f(CWnmcli con up 6b028a27\-6dc9\-4411\-9886\-e9ad1dd43761 ap 00:3A:98:7C:42:D3\fP\fP"
