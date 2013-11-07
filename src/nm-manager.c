@@ -1956,6 +1956,7 @@ add_device (NMManager *self, NMDevice *device, gboolean nm_created)
 		subject = nm_auth_subject_new_internal ();
 		active = _new_active_connection (self, connection, NULL, device, subject, &error);
 		if (active) {
+			nm_active_connection_set_assumed (active, TRUE);
 			nm_active_connection_export (active);
 			active_connection_add (self, active);
 			nm_device_activate (device, NM_ACT_REQUEST (active));
