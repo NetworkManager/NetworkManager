@@ -1940,9 +1940,7 @@ add_device (NMManager *self, NMDevice *device, gboolean nm_created)
 	system_create_virtual_devices (self);
 
 	/* If the device has a connection it can assume, do that now */
-	if (   connection
-	    && nm_device_is_available (device)
-	    && nm_device_connection_is_available (device, connection)) {
+	if (connection) {
 		NMActiveConnection *active;
 		NMAuthSubject *subject;
 		GError *error = NULL;

@@ -4613,8 +4613,6 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
-	g_assert (nm_device_connection_is_available (self, connection));
-
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
