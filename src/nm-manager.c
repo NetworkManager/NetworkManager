@@ -1782,11 +1782,8 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	 * returns NULL.
 	 */
 	connection = nm_device_generate_connection (device);
-	if (!connection) {
-		nm_log_info (LOGD_DEVICE, "(%s): No existing connection detected.",
-		             nm_device_get_iface (device));
+	if (!connection)
 		return NULL;
-	}
 
 	/* Now we need to compare the generated connection to each configured
 	 * connection. The comparison function is the heart of the connection
@@ -1801,7 +1798,7 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 		NMConnection *candidate = NM_CONNECTION (iter->data);
 
 		if (nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_CANDIDATE)) {
-			nm_log_info (LOGD_DEVICE, "(%s): Found matching connection: '%s'",
+			nm_log_info (LOGD_DEVICE, "(%s): found matching connection '%s'",
 						 nm_device_get_iface (device),
 						 nm_connection_get_id (candidate));
 			g_object_unref (connection);
@@ -1809,9 +1806,9 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 		}
 	}
 
-	nm_log_info (LOGD_DEVICE, "(%s): Using generated connection: '%s'",
-				 nm_device_get_iface (device),
-				 nm_connection_get_id (connection));
+	nm_log_dbg (LOGD_DEVICE, "(%s): generated connection '%s'",
+				nm_device_get_iface (device),
+				nm_connection_get_id (connection));
 
 	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
 	if (!added) {

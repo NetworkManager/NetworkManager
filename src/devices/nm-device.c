@@ -1654,8 +1654,6 @@ nm_device_generate_connection (NMDevice *device)
 	if (!device_has_config (device))
 		return NULL;
 
-	nm_log_info (LOGD_DEVICE, "(%s): Generating connection from current device status.", ifname);
-
 	connection = nm_connection_new ();
 	s_con = nm_setting_connection_new ();
 	uuid = nm_utils_uuid_generate ();
