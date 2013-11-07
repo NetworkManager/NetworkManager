@@ -1632,6 +1632,10 @@ device_has_config (NMDevice *device)
 	if (nm_device_is_software (device))
 		return TRUE;
 
+	/* Slaves are also configured by definition */
+	if (nm_platform_link_get_master (priv->ifindex) > 0)
+		return TRUE;
+
 	return FALSE;
 }
 
