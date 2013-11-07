@@ -93,8 +93,9 @@ usage_general (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli general { COMMAND | help }\n\n"
-	         "  COMMAND := { status | permissions | logging }\n\n"
+	         "  COMMAND := { status | hostname | permissions | logging }\n\n"
 	         "  status\n\n"
+	         "  hostname [<hostname>]\n\n"
 	         "  permissions\n\n"
 	         "  logging [level <log level>] [domains <log domains>]\n\n"
 	         ));
@@ -445,6 +446,19 @@ show_general_logging (NmCli *nmc)
 	return TRUE;
 }
 
+static void
+save_hostname_cb (NMRemoteSettings *settings, GError *error, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: failed to set hostname: (%d) %s"),
+		                 error->code, error->message);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
 /*
  * Entry point function for general operations 'nmcli general'
  */
@@ -473,6 +487,35 @@ do_general (NmCli *nmc, int argc, char **argv)
 				goto finish;
 			}
 			show_nm_status (nmc, NULL, NULL);
+		}
+		else if (matches (*argv, "hostname") == 0) {
+			NMRemoteSettings *rem_settings;
+
+			/* get system settings */
+			if (!(rem_settings = nm_remote_settings_new (NULL))) {
+				g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
+				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				goto finish;
+			}
+
+			if (next_arg (&argc, &argv) != 0) {
+				/* no arguments -> get hostname */
+				char *hostname = NULL;
+
+				g_object_get (rem_settings, NM_REMOTE_SETTINGS_HOSTNAME, &hostname, NULL);
+				if (hostname)
+					printf ("%s\n", hostname);
+				g_free (hostname);
+			} else {
+				/* hostname provided -> set it */
+				const char *hostname = *argv;
+
+				if (next_arg (&argc, &argv) == 0)
+					printf ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
+
+				nmc->should_wait = TRUE;
+				nm_remote_settings_save_hostname (rem_settings, hostname, save_hostname_cb, nmc);
+			}
 		}
 		else if (matches (*argv, "permissions") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
@@ -527,7 +570,6 @@ do_general (NmCli *nmc, int argc, char **argv)
 finish:
 	if (error)
 		g_error_free (error);
-	quit ();
 	return nmc->return_value;
 }
 

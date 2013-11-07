@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "31 October 2013"
+.TH NMCLI "1" "7 November 2013"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -147,12 +147,12 @@ Show \fInmcli\fP version.
 Print help information.
 .SS \fIOBJECT\fP
 .TP
-.B general \- general NetworkManager status and operations
+.B general \- general \fINetworkManager\fP status and operations
 .br
 Use this object to show NetworkManager status and permissions. You can also get
-and change NetworkManager logging level and domains.
+and change system hostname, as well as NetworkManager logging level and domains.
 .TP
-.SS \fICOMMAND\fP := { status | permissions | logging }
+.SS \fICOMMAND\fP := { status | hostname | permissions | logging }
 .sp
 .RS
 .TP
@@ -160,6 +160,12 @@ and change NetworkManager logging level and domains.
 .br
 Show overall status of NetworkManager. This is the default action, when no additional
 command is provided for \fIgeneral\fP object.
+.TP
+.B hostname [<hostname>]
+.br
+Get and change system hostname. With no arguments, this prints currently configured hostname.
+When you pass a hostname, it will be handed over to NetworkManager to be set as a new system
+hostname.
 .TP
 .B permissions
 .br
