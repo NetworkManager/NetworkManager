@@ -1005,7 +1005,8 @@ nm_connection_dump (NMConnection *connection)
 	const char *setting_name;
 	char *str;
 
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	if (!connection)
+		return;
 
 	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting)) {
