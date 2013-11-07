@@ -592,6 +592,11 @@
           DCB or FCoE setup failed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="TEAMD_CONTROL_FAILED" value="56">
+        <tp:docstring>
+          teamd control failed.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

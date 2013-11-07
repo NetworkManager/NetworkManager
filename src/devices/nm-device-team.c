@@ -195,11 +195,53 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
+#if WITH_TEAMDCTL
 static gboolean
-match_l2_config (NMDevice *self, NMConnection *connection)
+ensure_teamd_connection (NMDevice *self)
 {
-	/* FIXME */
-	return TRUE;
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+	int err;
+
+	if (priv->tdc)
+		return TRUE;
+
+	priv->tdc = teamdctl_alloc ();
+	g_assert (priv->tdc);
+	err = teamdctl_connect (priv->tdc, nm_device_get_iface (self), NULL, NULL);
+	if (err) {
+		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd", nm_device_get_iface (self));
+		teamdctl_free (priv->tdc);
+		priv->tdc = NULL;
+	}
+
+	return !!priv->tdc;
+}
+#endif
+
+static void
+update_connection (NMDevice *device, NMConnection *connection)
+{
+	NMSettingTeam *s_team = nm_connection_get_setting_team (connection);
+	const char *iface = nm_device_get_iface (device);
+
+	if (!s_team) {
+		s_team = (NMSettingTeam *) nm_setting_team_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_team);
+		g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_INTERFACE_NAME, iface, NULL);
+	}
+
+#if WITH_TEAMDCTL
+	if (ensure_teamd_connection (device)) {
+		char *config;
+
+		config = teamdctl_config_get_raw (NM_DEVICE_TEAM_GET_PRIVATE (device)->tdc);
+		if (config)
+			g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, config, NULL);
+		else
+			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd config", iface);
+		g_free (config);
+	}
+#endif
 }
 
 /******************************************************************/
@@ -279,7 +321,7 @@ teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 	if (device_state_failed) {
 		if (nm_device_is_activating (dev) ||
 		    (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED))
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 	}
 }
 
@@ -311,17 +353,9 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
 	teamd_timeout_remove (dev);
 #if WITH_TEAMDCTL
-	if (!priv->tdc) {
-		int err;
-
-		priv->tdc = teamdctl_alloc ();
-		g_assert (priv->tdc);
-		err = teamdctl_connect (priv->tdc, nm_device_get_iface (dev), NULL, NULL);
-		if (err) {
-			nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd", nm_device_get_iface (dev));
-			teamdctl_free (priv->tdc);
-			priv->tdc = NULL;
-		}
+	if (!ensure_teamd_connection (dev)) {
+		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+		return;
 	}
 #endif
 	nm_device_activate_schedule_stage2_device_config (dev);
@@ -744,8 +778,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
-
-	parent_class->match_l2_config = match_l2_config;
+	parent_class->update_connection = update_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->deactivate = deactivate;
