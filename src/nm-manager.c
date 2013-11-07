@@ -166,6 +166,7 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
 static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
+static NMDevice *find_device_by_iface (NMManager *self, const gchar *iface);
 
 static void rfkill_change_wifi (const char *desc, gboolean enabled);
 
@@ -175,6 +176,12 @@ platform_link_added_cb (NMPlatform *platform,
                         NMPlatformLink *plink,
                         NMPlatformReason reason,
                         gpointer user_data);
+
+static gboolean find_master (NMManager *self,
+                             NMConnection *connection,
+                             NMDevice *device,
+                             NMConnection **out_master_connection,
+                             NMDevice **out_master_device);
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -1956,6 +1963,21 @@ add_device (NMManager *self, NMDevice *device, gboolean nm_created)
 		subject = nm_auth_subject_new_internal ();
 		active = _new_active_connection (self, connection, NULL, device, subject, &error);
 		if (active) {
+			NMDevice *master = NULL;
+			NMActRequest *master_req;
+
+			/* If the device is a slave or VLAN, find the master ActiveConnection */
+			if (find_master (self, connection, device, NULL, &master) && master) {
+				master_req = nm_device_get_act_request (master);
+				if (master_req)
+					nm_active_connection_set_master (active, NM_ACTIVE_CONNECTION (master_req));
+				else {
+					nm_log_warn (LOGD_DEVICE, "(%s): master device %s not activating!",
+					             nm_device_get_iface (device),
+					             nm_device_get_iface (master));
+				}
+			}
+
 			nm_active_connection_set_assumed (active, TRUE);
 			nm_active_connection_export (active);
 			active_connection_add (self, active);
