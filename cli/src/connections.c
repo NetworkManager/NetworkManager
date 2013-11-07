@@ -1517,7 +1517,6 @@ nmc_activate_connection (NmCli *nmc,
 	GError *local = NULL;
 
 	g_return_val_if_fail (nmc != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection) || ifname, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	if (connection) {
@@ -1541,7 +1540,7 @@ nmc_activate_connection (NmCli *nmc,
 		}
 	} else {
 		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
-		                     _("no connection and no device given."));
+		                     _("neither a valid connection nor device given"));
 		return FALSE;
 	}
 
