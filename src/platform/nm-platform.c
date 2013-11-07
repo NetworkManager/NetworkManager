@@ -267,37 +267,6 @@ nm_platform_query_devices (void)
 	g_array_unref (links_array);
 }
 
-static int
-compare_links (gconstpointer a, gconstpointer b)
-{
-	NMPlatformLink *link_a = (NMPlatformLink *) a;
-	NMPlatformLink *link_b = (NMPlatformLink *) b;
-	int sortindex_a, sortindex_b;
-
-	/* We mostly want to sort by ifindex. However, slaves should sort
-	 * before their masters, and children (eg, VLANs) should sort after
-	 * their parents.
-	 */
-	if (link_a->master)
-		sortindex_a = link_a->master * 3 - 1;
-	else if (link_a->parent)
-		sortindex_a = link_a->parent * 3 + 1;
-	else
-		sortindex_a = link_a->ifindex * 3;
-
-	if (link_b->master)
-		sortindex_b = link_b->master * 3 - 1;
-	else if (link_b->parent)
-		sortindex_b = link_b->parent * 3 + 1;
-	else
-		sortindex_b = link_b->ifindex * 3;
-
-	if (sortindex_a == sortindex_b)
-		return link_a->ifindex - link_b->ifindex;
-	else
-		return sortindex_a - sortindex_b;
-}
-
 /**
  * nm_platform_link_get_all:
  *
@@ -307,15 +276,100 @@ compare_links (gconstpointer a, gconstpointer b)
 GArray *
 nm_platform_link_get_all (void)
 {
-	GArray *links;
+	GArray *links, *result;
+	guint i, j, nresult;
+	GHashTable *unseen;
+	NMPlatformLink *item;
 
 	reset_error ();
 
 	g_return_val_if_fail (klass->link_get_all, NULL);
 
 	links = klass->link_get_all (platform);
-	g_array_sort (links, compare_links);
-	return links;
+
+	if (!links || links->len == 0)
+		return links;
+
+	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
+	for (i = 0; i < links->len; i++) {
+		item = &g_array_index (links, NMPlatformLink, i);
+
+		if (item->ifindex <= 0 || g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex))) {
+			g_warn_if_reached ();
+			item->ifindex = 0;
+			continue;
+		}
+
+		g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL);
+	}
+
+#ifndef G_DISABLE_ASSERT
+	/* Ensure that link_get_all returns a consistent and valid result. */
+	for (i = 0; i < links->len; i++) {
+		item = &g_array_index (links, NMPlatformLink, i);
+
+		if (!item->ifindex)
+			continue;
+		if (item->master != 0) {
+			g_warn_if_fail (item->master > 0);
+			g_warn_if_fail (item->master != item->ifindex);
+			g_warn_if_fail (g_hash_table_contains (unseen, GINT_TO_POINTER (item->master)));
+		}
+		if (item->parent != 0) {
+			g_warn_if_fail (item->parent > 0);
+			g_warn_if_fail (item->parent != item->ifindex);
+			g_warn_if_fail (g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)));
+		}
+	}
+#endif
+
+	/* Re-order the links list such that children/slaves come after all ancestors */
+	nresult = g_hash_table_size (unseen);
+	result = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), nresult);
+	g_array_set_size (result, nresult);
+
+	j = 0;
+	do {
+		gboolean found_something = FALSE;
+		guint first_idx = G_MAXUINT;
+
+		for (i = 0; i < links->len; i++) {
+			item = &g_array_index (links, NMPlatformLink, i);
+
+			if (!item->ifindex)
+				continue;
+
+			if (first_idx == G_MAXUINT)
+				first_idx = i;
+
+			g_assert (g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
+
+			if (item->master > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->master)))
+				continue;
+			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
+				continue;
+
+			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
+			g_array_index (result, NMPlatformLink, j++) = *item;
+			item->ifindex = 0;
+			found_something = TRUE;
+		}
+
+		if (!found_something) {
+			/* there is a circle, pop the first (remaining) element from the list */
+			g_warn_if_reached ();
+			item = &g_array_index (links, NMPlatformLink, first_idx);
+
+			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
+			g_array_index (result, NMPlatformLink, j++) = *item;
+			item->ifindex = 0;
+		}
+	} while (j < nresult);
+
+	g_hash_table_destroy (unseen);
+	g_array_free (links, TRUE);
+
+	return result;
 }
 
 /**
