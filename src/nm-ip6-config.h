@@ -68,6 +68,7 @@ void nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src);
 void nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src);
 gboolean nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relevant_changes);
 int nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6_addr *dest, int plen);
+void nm_ip6_config_dump (const NMIP6Config *config, const char *detail);
 
 /* Gateways */
 void nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default);

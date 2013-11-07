@@ -770,22 +770,20 @@ void
 nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 {
 	guint32 i, tmp;
+	const char *str;
 	char buf[INET_ADDRSTRLEN];
-	char buf2[INET_ADDRSTRLEN];
 
 	g_return_if_fail (config != NULL);
 
 	g_message ("--------- NMIP4Config %p (%s)", config, detail);
 
-	/* addresses */
-	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
-		const NMPlatformIP4Address *addr = nm_ip4_config_get_address (config, i);
+	str = nm_ip4_config_get_dbus_path (config);
+	if (str)
+		g_message ("   path: %s", str);
 
-		if (inet_ntop (AF_INET, (void *) &addr->address, buf, sizeof (buf))) {
-			g_message ("      a: %s/%u timestamp:%u lifetime:%u preferred:%u",
-			           buf, addr->plen, addr->timestamp, addr->lifetime, addr->preferred);
-		}
-	}
+	/* addresses */
+	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++)
+		g_message ("      a: %s", nm_platform_ip4_address_to_string (nm_ip4_config_get_address (config, i)));
 
 	/* ptp address */
 	tmp = nm_ip4_config_get_ptp_address (config);
@@ -805,15 +803,8 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	}
 
 	/* routes */
-	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
-		const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-
-		if (inet_ntop (AF_INET, &route->network, buf, sizeof (buf)) &&
-		    inet_ntop (AF_INET, &route->gateway, buf2, sizeof (buf2))) {
-			g_message ("     rt: %s/%u via %s metric:%u",
-			           buf, route->plen, buf2, route->metric);
-		}
-	}
+	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++)
+		g_message ("     rt: %s", nm_platform_ip4_route_to_string (nm_ip4_config_get_route (config, i)));
 
 	/* domains */
 	for (i = 0; i < nm_ip4_config_get_num_domains (config); i++)
@@ -824,6 +815,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 		g_message (" search: %s", nm_ip4_config_get_search (config, i));
 
 	g_message ("    mss: %u", nm_ip4_config_get_mss (config));
+	g_message ("    mtu: %u", nm_ip4_config_get_mtu (config));
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (config); i++) {
@@ -842,6 +834,8 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 		if (inet_ntop (AF_INET, (void *) &wins, buf, sizeof (buf)))
 			g_message ("   wins: %s", buf);
 	}
+
+	g_message (" n-dflt: %d", nm_ip4_config_get_never_default (config));
 }
 
 gboolean
@@ -867,7 +861,7 @@ nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	priv->never_default = never_default;
+	priv->never_default = !!never_default;
 }
 
 gboolean

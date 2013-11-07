@@ -693,6 +693,59 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	return has_relevant_changes || has_minor_changes;
 }
 
+void
+nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
+{
+	const struct in6_addr *tmp;
+	guint32 i;
+	const char *str;
+	char buf[INET6_ADDRSTRLEN];
+
+	g_return_if_fail (config != NULL);
+
+	g_message ("--------- NMIP6Config %p (%s)", config, detail);
+
+	str = nm_ip6_config_get_dbus_path (config);
+	if (str)
+		g_message ("   path: %s", str);
+
+	/* addresses */
+	for (i = 0; i < nm_ip6_config_get_num_addresses (config); i++)
+		g_message ("      a: %s", nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i)));
+
+	/* ptp address */
+	tmp = nm_ip6_config_get_ptp_address (config);
+	if (tmp && inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
+		g_message ("    ptp: %s", buf);
+
+	/* default gateway */
+	tmp = nm_ip6_config_get_gateway (config);
+	if (tmp && inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
+		g_message ("     gw: %s", buf);
+
+	/* nameservers */
+	for (i = 0; i < nm_ip6_config_get_num_nameservers (config); i++) {
+		tmp = nm_ip6_config_get_nameserver (config, i);
+		if (inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
+			g_message ("     ns: %s", buf);
+	}
+
+	/* routes */
+	for (i = 0; i < nm_ip6_config_get_num_routes (config); i++)
+		g_message ("     rt: %s", nm_platform_ip6_route_to_string (nm_ip6_config_get_route (config, i)));
+
+	/* domains */
+	for (i = 0; i < nm_ip6_config_get_num_domains (config); i++)
+		g_message (" domain: %s", nm_ip6_config_get_domain (config, i));
+
+	/* dns searches */
+	for (i = 0; i < nm_ip6_config_get_num_searches (config); i++)
+		g_message (" search: %s", nm_ip6_config_get_search (config, i));
+
+	g_message ("    mss: %u", nm_ip6_config_get_mss (config));
+	g_message (" n-dflt: %d", nm_ip6_config_get_never_default (config));
+}
+
 /******************************************************************/
 
 void
@@ -700,7 +753,7 @@ nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_default)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
-	priv->never_default = never_default;
+	priv->never_default = !!never_default;
 }
 
 gboolean
