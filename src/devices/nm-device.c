@@ -3206,6 +3206,31 @@ addrconf6_cleanup (NMDevice *self)
 
 /******************************************/
 
+static int
+linklocal6_start (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int i;
+
+	if (priv->ip6_config) {
+		for (i = 0; i < nm_ip6_config_get_num_addresses (priv->ip6_config); i++) {
+			const NMPlatformIP6Address *addr = nm_ip6_config_get_address (priv->ip6_config, i);
+
+			if (addr->plen == 128 && IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+				/* FIXME: only accept the address if it is no longer TENTATIVE */
+				return NM_ACT_STAGE_RETURN_SUCCESS;
+			}
+		}
+	}
+
+	/* FIXME: we should NM_ACT_STAGE_RETURN_POSTPONE and wait until with timeout
+	 * we get a link local address that is no longer TENTATIVE. */
+	nm_log_warn (LOGD_DEVICE, "[%s] starting IPv6 with mode 'link-local', but the device has no link-local addresses configured.",
+	             nm_device_get_iface (self));
+
+	return NM_ACT_STAGE_RETURN_STOP;
+}
+
 /* Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
  * /lib/sysctl.d/sysctl.conf
  */
@@ -3317,13 +3342,14 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
+	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		if (!addrconf6_start (self)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
 			ret = NM_ACT_STAGE_RETURN_STOP;
 		} else
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
+		ret = linklocal6_start (self);
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		/* Router advertisements shouldn't be used in pure DHCP mode */
 		if (priv->ip6_accept_ra_path)
