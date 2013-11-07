@@ -209,7 +209,7 @@ static const Option master_options[] = {
 static const Option slave_options[] = {
 	{ NM_SETTING_BRIDGE_PORT_PRIORITY, "priority", TRUE, FALSE },
 	{ NM_SETTING_BRIDGE_PORT_PATH_COST, "path_cost", TRUE, FALSE },
-	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "harpin_mode", FALSE, FALSE },
+	{ NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", FALSE, FALSE },
 	{ NULL, NULL }
 };
 
