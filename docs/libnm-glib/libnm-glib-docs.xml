@@ -75,6 +75,8 @@
     <xi:include href="xml/nm-device-adsl.xml"/>
     <xi:include href="xml/nm-device-bond.xml"/>
     <xi:include href="xml/nm-device-bridge.xml"/>
+    <xi:include href="xml/nm-device-team.xml"/>
+    <xi:include href="xml/nm-device-generic.xml"/>
     <xi:include href="xml/nm-device-infiniband.xml"/>
     <xi:include href="xml/nm-device-vlan.xml"/>
     <xi:include href="xml/nm-device-olpc-mesh.xml"/>

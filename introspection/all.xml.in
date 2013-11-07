@@ -37,6 +37,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="nm-device-infiniband.xml"/>
 <xi:include href="nm-device-bond.xml"/>
 <xi:include href="nm-device-bridge.xml"/>
+<xi:include href="nm-device-team.xml"/>
+<xi:include href="nm-device-generic.xml"/>
 <xi:include href="nm-device-vlan.xml"/>
 <xi:include href="nm-device-adsl.xml"/>
 <xi:include href="nm-wimax-nsp.xml"/>
