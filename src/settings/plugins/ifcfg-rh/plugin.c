@@ -212,7 +212,7 @@ find_by_path (SCPluginIfcfg *self, const char *path)
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_str_equal (path, nm_ifcfg_connection_get_path (candidate)))
+		if (g_strcmp0 (path, nm_ifcfg_connection_get_path (candidate)) == 0)
 			return candidate;
 	}
 	return NULL;
@@ -445,8 +445,11 @@ read_connections (SCPluginIfcfg *plugin)
 
 	oldconns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		g_hash_table_insert (oldconns, g_strdup (nm_ifcfg_connection_get_path (value)), value);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		const char *ifcfg_path = nm_ifcfg_connection_get_path (value);
+		if (ifcfg_path)
+			g_hash_table_insert (oldconns, g_strdup (ifcfg_path), value);
+	}
 
 	while ((item = g_dir_read_name (dir))) {
 		char *full_path, *old_path;
