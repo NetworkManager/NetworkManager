@@ -1879,7 +1879,7 @@ slave_category (NMPlatform *platform, int slave)
 {
 	int master = link_get_master (platform, slave);
 
-	if (master) {
+	if (master <= 0) {
 		platform->error = NM_PLATFORM_ERROR_NOT_SLAVE;
 		return NULL;
 	}
