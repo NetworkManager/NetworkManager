@@ -413,20 +413,23 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 }
 
 static gboolean
-enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
+enslave_slave (NMDevice *device,
+               NMDevice *slave,
+               NMConnection *connection,
+               gboolean configure)
 {
-	gboolean success, no_firmware = FALSE;
+	gboolean success = TRUE, no_firmware = FALSE;
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 
 	nm_device_master_check_slave_physical_port (device, slave, LOGD_BOND);
 
-	nm_device_take_down (slave, TRUE);
-
-	success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
-	                                    nm_device_get_ip_ifindex (slave));
-
-	nm_device_bring_up (slave, TRUE, &no_firmware);
+	if (configure) {
+		nm_device_take_down (slave, TRUE);
+		success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
+		                                    nm_device_get_ip_ifindex (slave));
+		nm_device_bring_up (slave, TRUE, &no_firmware);
+	}
 
 	if (success) {
 		nm_log_info (LOGD_BOND, "(%s): enslaved bond slave %s", iface, slave_iface);

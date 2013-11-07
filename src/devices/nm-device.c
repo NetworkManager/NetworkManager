@@ -168,6 +168,7 @@ typedef struct {
 typedef struct {
 	NMDevice *slave;
 	gboolean enslaved;
+	gboolean configure;
 	guint watch_id;
 } SlaveInfo;
 
@@ -958,7 +959,7 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
 		return FALSE;
 
 	g_warn_if_fail (info->enslaved == FALSE);
-	success = NM_DEVICE_GET_CLASS (dev)->enslave_slave (dev, slave, connection);
+	success = NM_DEVICE_GET_CLASS (dev)->enslave_slave (dev, slave, connection, info->configure);
 
 	info->enslaved = success;
 	nm_device_slave_notify_enslave (info->slave, success);
@@ -1245,6 +1246,8 @@ slave_state_changed (NMDevice *slave,
  * nm_device_master_add_slave:
  * @dev: the master device
  * @slave: the slave device to enslave
+ * @configure: pass %TRUE if the slave should be configured by the master, or
+ * %FALSE if it is already configured outside NetworkManager
  *
  * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function adds @slave to the slave list for later enslavement.
@@ -1252,7 +1255,7 @@ slave_state_changed (NMDevice *slave,
  * Returns: %TRUE on success, %FALSE on failure
  */
 gboolean
-nm_device_master_add_slave (NMDevice *dev, NMDevice *slave)
+nm_device_master_add_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	SlaveInfo *info;
@@ -1265,6 +1268,7 @@ nm_device_master_add_slave (NMDevice *dev, NMDevice *slave)
 	if (!find_slave_info (dev, slave)) {
 		info = g_malloc0 (sizeof (SlaveInfo));
 		info->slave = g_object_ref (slave);
+		info->configure = configure;
 		info->watch_id = g_signal_connect (slave, "state-changed",
 		                                   G_CALLBACK (slave_state_changed), dev);
 		priv->slaves = g_slist_prepend (priv->slaves, info);
@@ -1977,7 +1981,9 @@ master_ready_cb (NMActiveConnection *active,
 	master = nm_active_connection_get_master (active);
 
 	priv->master = g_object_ref (nm_active_connection_get_device (master));
-	nm_device_master_add_slave (priv->master, self);
+	nm_device_master_add_slave (priv->master,
+	                            self,
+	                            nm_active_connection_get_assumed (active) ? FALSE : TRUE);
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): master connection ready; master device %s",
 	            nm_device_get_iface (self),
@@ -1994,9 +2000,45 @@ master_ready_cb (NMActiveConnection *active,
 static NMActStageReturn
 act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 {
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+/*
+ * nm_device_activate_stage1_device_prepare
+ *
+ * Prepare for device activation
+ *
+ */
+static gboolean
+nm_device_activate_stage1_device_prepare (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+
+	/* Clear the activation source ID now that this stage has run */
+	activation_source_clear (self, FALSE, 0);
+
+	priv->ip4_state = priv->ip6_state = IP_NONE;
+
+	iface = nm_device_get_iface (self);
+	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
+	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
+
+	/* Assumed connections were already set up outside NetworkManager */
+	if (!nm_active_connection_get_assumed (active)) {
+		ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
+		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+			goto out;
+		} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+			goto out;
+		}
+		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+	}
 
 	if (nm_active_connection_get_master (active)) {
 		/* If the master connection is ready for slaves, attach ourselves */
@@ -2012,47 +2054,10 @@ act_stage1_prepare (NMDevice *self, NMDeviceStateReason *reason)
 			                                          "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
 			                                          (GCallback) master_ready_cb,
 			                                          self);
-			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+			/* Postpone */
 		}
-	}
-
-	return ret;
-}
-
-/*
- * nm_device_activate_stage1_device_prepare
- *
- * Prepare for device activation
- *
- */
-static gboolean
-nm_device_activate_stage1_device_prepare (gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *iface;
-	NMActStageReturn ret;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-
-	/* Clear the activation source ID now that this stage has run */
-	activation_source_clear (self, FALSE, 0);
-
-	priv->ip4_state = priv->ip6_state = IP_NONE;
-
-	iface = nm_device_get_iface (self);
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
-	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
-
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
-	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
-		goto out;
-	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-		goto out;
-	}
-	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
-
-	nm_device_activate_schedule_stage2_device_config (self);
+	} else
+		nm_device_activate_schedule_stage2_device_config (self);
 
 out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) complete.", iface);
@@ -2085,17 +2090,6 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 static NMActStageReturn
 act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
-	GSList *iter;
-
-	/* If we have slaves that aren't yet enslaved, do that now */
-	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
-		SlaveInfo *info = iter->data;
-
-		if (nm_device_get_state (info->slave) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_enslave_slave (dev, info->slave, nm_device_get_connection (info->slave));
-	}
-
 	/* Nothing to do */
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
@@ -2111,10 +2105,13 @@ static gboolean
 nm_device_activate_stage2_device_config (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	const char *     iface;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *iface;
 	NMActStageReturn ret;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	gboolean no_firmware = FALSE;
+	NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+	GSList *iter;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -2123,23 +2120,33 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-	if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
-		if (no_firmware)
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
-		else
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-		goto out;
+	/* Assumed connections were already set up outside NetworkManager */
+	if (!nm_active_connection_get_assumed (active)) {
+		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
+			if (no_firmware)
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_FIRMWARE_MISSING);
+			else
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			goto out;
+		}
+
+		ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, &reason);
+		if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+			goto out;
+		else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+			goto out;
+		}
+		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 	}
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, &reason);
-	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
-		goto out;
-	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
-	{
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
-		goto out;
+	/* If we have slaves that aren't yet enslaved, do that now */
+	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
+		SlaveInfo *info = iter->data;
+
+		if (nm_device_get_state (info->slave) == NM_DEVICE_STATE_IP_CONFIG)
+			nm_device_enslave_slave (self, info->slave, nm_device_get_connection (info->slave));
 	}
-	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
 
@@ -4616,23 +4623,14 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	if (priv->state_reason == NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
-		/* If it's an assumed connection, let the device subclass short-circuit
-		 * the normal connection process and just copy its IP configs from the
-		 * interface.
-		 */
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-		nm_device_activate_schedule_stage3_ip_config_start (self);
-	} else {
-		/* HACK: update the state a bit early to avoid a race between the 
-		 * scheduled stage1 handler and nm_policy_device_change_check() thinking
-		 * that the activation request isn't deferred because the deferred bit
-		 * gets cleared a bit too early, when the connection becomes valid.
-		 */
-		nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
+	/* HACK: update the state a bit early to avoid a race between the 
+	 * scheduled stage1 handler and nm_policy_device_change_check() thinking
+	 * that the activation request isn't deferred because the deferred bit
+	 * gets cleared a bit too early, when the connection becomes valid.
+	 */
+	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
-		nm_device_activate_schedule_stage1_device_prepare (self);
-	}
+	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
 /*

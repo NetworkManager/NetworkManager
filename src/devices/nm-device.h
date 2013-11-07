@@ -185,7 +185,8 @@ typedef struct {
 
 	gboolean        (* enslave_slave) (NMDevice *self,
 	                                   NMDevice *slave,
-	                                   NMConnection *connection);
+	                                   NMConnection *connection,
+	                                   gboolean configure);
 
 	gboolean        (* release_slave) (NMDevice *self,
 	                                   NMDevice *slave);
@@ -233,7 +234,7 @@ void            nm_device_set_vpn6_config   (NMDevice *dev, NMIP6Config *config)
 void            nm_device_capture_initial_config (NMDevice *dev);
 
 /* Master */
-gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave);
+gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave, gboolean configure);
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
 gboolean        nm_device_is_master         (NMDevice *dev);
 

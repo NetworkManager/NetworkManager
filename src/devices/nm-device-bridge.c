@@ -376,12 +376,17 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static gboolean
-enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
+enslave_slave (NMDevice *device,
+               NMDevice *slave,
+               NMConnection *connection,
+               gboolean configure)
 {
-	if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
-		return FALSE;
+	if (configure) {
+		if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
+			return FALSE;
 
-	commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
+		commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
+	}
 
 	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
 	             nm_device_get_ip_iface (device),
