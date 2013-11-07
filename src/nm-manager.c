@@ -1200,8 +1200,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	iface = get_virtual_iface_name (self, connection, &parent);
 	if (!iface) {
-		nm_log_warn (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
-		             nm_connection_get_id (connection));
+		nm_log_dbg (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
+		            nm_connection_get_id (connection));
 		return NULL;
 	}
 
