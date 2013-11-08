@@ -183,6 +183,8 @@ static gboolean find_master (NMManager *self,
                              NMConnection **out_master_connection,
                              NMDevice **out_master_device);
 
+static void nm_manager_update_state (NMManager *manager);
+
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -377,6 +379,8 @@ active_connection_state_changed (NMActiveConnection *active,
 		if (!priv->ac_cleanup_id)
 			priv->ac_cleanup_id = g_idle_add (_active_connection_cleanup, self);
 	}
+
+	nm_manager_update_state (self);
 }
 
 static void
@@ -645,12 +649,59 @@ checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
 	g_object_unref (manager);
 }
 
+static NMState
+find_best_device_state (NMManager *manager, gboolean *want_connectivity_check)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMState best_state = NM_STATE_DISCONNECTED;
+	GSList *iter;
+
+	for (iter = priv->active_connections; iter; iter = iter->next) {
+		NMActiveConnection *ac = NM_ACTIVE_CONNECTION (iter->data);
+		NMActiveConnectionState ac_state = nm_active_connection_get_state (ac);
+
+		switch (ac_state) {
+		case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
+			if (   nm_active_connection_get_default (ac)
+			    || nm_active_connection_get_default6 (ac)) {
+				nm_connectivity_set_online (priv->connectivity, TRUE);
+				if (nm_connectivity_get_state (priv->connectivity) == NM_CONNECTIVITY_FULL) {
+					*want_connectivity_check = FALSE;
+					return NM_STATE_CONNECTED_GLOBAL;
+				}
+
+				best_state = NM_STATE_CONNECTING;
+				*want_connectivity_check = TRUE;
+			} else {
+				if (best_state < NM_STATE_CONNECTING)
+					best_state = NM_STATE_CONNECTED_LOCAL;
+			}
+			break;
+		case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
+			if (!nm_active_connection_get_assumed (ac)) {
+				if (best_state != NM_STATE_CONNECTED_GLOBAL)
+					best_state = NM_STATE_CONNECTING;
+			}
+			break;
+		case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
+			if (!nm_active_connection_get_assumed (ac)) {
+				if (best_state < NM_STATE_DISCONNECTING)
+					best_state = NM_STATE_DISCONNECTING;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return best_state;
+}
+
 static void
 nm_manager_update_state (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
-	GSList *iter;
 	gboolean want_connectivity_check = FALSE;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
@@ -659,30 +710,8 @@ nm_manager_update_state (NMManager *manager)
 
 	if (manager_sleeping (manager))
 		new_state = NM_STATE_ASLEEP;
-	else {
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDevice *dev = NM_DEVICE (iter->data);
-			NMDeviceState state = nm_device_get_state (dev);
-
-			if (state == NM_DEVICE_STATE_ACTIVATED) {
-				nm_connectivity_set_online (priv->connectivity, TRUE);
-				if (nm_connectivity_get_state (priv->connectivity) != NM_CONNECTIVITY_FULL) {
-					new_state = NM_STATE_CONNECTING;
-					want_connectivity_check = TRUE;
-				} else {
-					new_state = NM_STATE_CONNECTED_GLOBAL;
-					break;
-				}
-			}
-
-			if (nm_device_is_activating (dev))
-				new_state = NM_STATE_CONNECTING;
-			else if (new_state != NM_STATE_CONNECTING) {
-				if (state == NM_DEVICE_STATE_DEACTIVATING)
-					new_state = NM_STATE_DISCONNECTING;
-			}
-		}
-	}
+	else
+		new_state = find_best_device_state (manager, &want_connectivity_check);
 
 	if (new_state == NM_STATE_CONNECTING && want_connectivity_check) {
 		nm_connectivity_check_async (priv->connectivity,
@@ -715,8 +744,6 @@ manager_device_state_changed (NMDevice *device,
 	default:
 		break;
 	}
-
-	nm_manager_update_state (self);
 }
 
 static void device_has_pending_action_changed (NMDevice *device,
