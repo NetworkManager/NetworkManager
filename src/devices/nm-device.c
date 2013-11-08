@@ -3444,6 +3444,11 @@ act_stage3_ip6_config_start (NMDevice *self,
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
 		ret = linklocal6_start (self);
+		if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
+			/* New blank config; LL address is already in priv->ext_ip6_config */
+			*out_config = nm_ip6_config_new ();
+			g_assert (*out_config);
+		}
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		/* Router advertisements shouldn't be used in pure DHCP mode */
 		if (priv->ip6_accept_ra_path)
