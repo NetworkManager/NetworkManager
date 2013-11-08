@@ -1653,6 +1653,7 @@ nm_device_generate_connection (NMDevice *device)
 	gs_free char *uuid = NULL;
 	gs_free char *name = NULL;
 	int master_ifindex = 0;
+	const char *ip4_method, *ip6_method;
 
 	/* If update_connection() is not implemented, just fail. */
 	if (!klass->update_connection)
@@ -1730,6 +1731,19 @@ nm_device_generate_connection (NMDevice *device)
 
 	/* Check the connection in case of update_connection() bug. */
 	g_return_val_if_fail (nm_connection_verify (connection, NULL), NULL);
+
+	/* Ignore the connection if it has no IP configuration,
+	 * no slave configuration, and is not a master interface.
+	 */
+	ip4_method = nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (s_ip4));
+	ip6_method = nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (s_ip6));
+	if (   strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
+	    && strcmp (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
+	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
+	    && !nm_platform_link_supports_slaves (priv->ifindex)) {
+		g_object_unref (connection);
+		connection = NULL;
+	}
 
 	return connection;
 }
