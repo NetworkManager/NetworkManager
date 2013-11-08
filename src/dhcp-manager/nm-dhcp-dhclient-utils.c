@@ -25,6 +25,8 @@
 #include <ctype.h>
 
 #include "nm-dhcp-dhclient-utils.h"
+#include "nm-ip4-config.h"
+#include "nm-utils.h"
 
 #define CLIENTID_TAG            "send dhcp-client-identifier"
 #define CLIENTID_FORMAT         CLIENTID_TAG " \"%s\"; # added by NetworkManager"
@@ -422,5 +424,236 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 
 	g_string_free (s, TRUE);
 	return success;
+}
+
+static void
+add_lease_option (GHashTable *hash, char *line)
+{
+	char *spc;
+	size_t len;
+
+	/* Find the space after "option" */
+	spc = strchr (line, ' ');
+	if (!spc)
+		return;
+
+	/* Find the option tag's data, which is after the second space */
+	if (g_str_has_prefix (line, "option ")) {
+		while (g_ascii_isspace (*spc))
+			spc++;
+		spc = strchr (spc + 1, ' ');
+		if (!spc)
+			return;
+	}
+
+	/* Split the line at the space */
+	*spc = '\0';
+	spc++;
+
+	/* Kill the ';' at the end of the line, if any */
+	len = strlen (spc);
+	if (*(spc + len - 1) == ';')
+		*(spc + len - 1) = '\0';
+
+	/* Strip leading quote */
+	while (g_ascii_isspace (*spc))
+		spc++;
+	if (*spc == '"')
+		spc++;
+
+	/* Strip trailing quote */
+	len = strlen (spc);
+	if (len > 0 && spc[len - 1] == '"')
+		spc[len - 1] = '\0';
+
+	if (spc[0])
+		g_hash_table_insert (hash, g_strdup (line), g_strdup (spc));
+}
+
+#define LEASE_INVALID    G_MININT64
+static GTimeSpan
+lease_validity_span (const char *str_expire, GDateTime *now)
+{
+	GDateTime *expire = NULL;
+	struct tm expire_tm;
+	GTimeSpan span;
+
+	g_return_val_if_fail (now != NULL, LEASE_INVALID);
+	g_return_val_if_fail (str_expire != NULL, LEASE_INVALID);
+
+	/* Skip initial number (day of week?) */
+	if (!isdigit (*str_expire++))
+		return LEASE_INVALID;
+	if (!isspace (*str_expire++))
+		return LEASE_INVALID;
+	/* Read lease expiration (in UTC) */
+	if (!strptime (str_expire, "%t%Y/%m/%d %H:%M:%S", &expire_tm))
+		return LEASE_INVALID;
+
+	expire = g_date_time_new_utc (expire_tm.tm_year + 1900,
+	                              expire_tm.tm_mon + 1,
+	                              expire_tm.tm_mday,
+	                              expire_tm.tm_hour,
+	                              expire_tm.tm_min,
+	                              expire_tm.tm_sec);
+	if (!expire)
+		return LEASE_INVALID;
+
+	span = g_date_time_difference (expire, now);
+	g_date_time_unref (expire);
+
+	/* GDateTime only supports a range of less then 10000 years, so span can
+	 * not overflow or be equal to LEASE_INVALID */
+	return span;
+}
+
+/**
+ * nm_dhcp_dhclient_read_lease_ip_configs:
+ * @iface: the interface name to match leases with
+ * @contents: the contents of a dhclient leasefile
+ * @ipv6: whether to read IPv4 or IPv6 leases
+ * @now: the current UTC date/time; pass %NULL to automatically use current
+ *  UTC time.  Testcases may need a different value for 'now'
+ *
+ * Reads dhclient leases from @contents and parses them into either
+ * #NMIP4Config or #NMIP6Config objects depending on the value of @ipv6.
+ *
+ * Returns: a #GSList of #NMIP4Config objects (if @ipv6 is %FALSE) or a list of
+ * #NMIP6Config objects (if @ipv6 is %TRUE) containing the lease data.
+ */
+GSList *
+nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
+                                        const char *contents,
+                                        gboolean ipv6,
+                                        GDateTime *now)
+{
+	GSList *parsed = NULL, *iter, *leases = NULL;
+	char **line, **split = NULL;
+	GHashTable *hash = NULL;
+
+	g_return_val_if_fail (contents != NULL, NULL);
+
+	split = g_strsplit_set (contents, "\n\r", -1);
+	if (!split)
+		return NULL;
+
+	for (line = split; line && *line; line++) {
+		*line = g_strstrip (*line);
+
+		if (*line[0] == '#') {
+			/* Comment */
+		} else if (!strcmp (*line, "}")) {
+			/* Lease ends */
+			parsed = g_slist_append (parsed, hash);
+			hash = NULL;
+		} else if (!strcmp (*line, "lease {")) {
+			/* Beginning of a new lease */
+			if (hash) {
+				/* Ignore malformed lease that doesn't end before new one starts */
+				g_hash_table_destroy (hash);
+			}
+
+			hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+		} else if (hash && strlen (*line))
+			add_lease_option (hash, *line);
+	}
+	g_strfreev (split);
+
+	/* Check if the last lease in the file was properly ended */
+	if (hash) {
+		/* Ignore malformed lease that doesn't end before new one starts */
+		g_hash_table_destroy (hash);
+		hash = NULL;
+	}
+
+	if (now)
+		g_date_time_ref (now);
+	else
+		now = g_date_time_new_now_utc ();
+
+	for (iter = parsed; iter; iter = g_slist_next (iter)) {
+		NMIP4Config *ip4;
+		NMPlatformIP4Address address;
+		const char *value;
+		GTimeSpan expiry;
+		guint32 tmp, gw = 0;
+
+		hash = iter->data;
+
+		/* Make sure this lease is for the interface we want */
+		value = g_hash_table_lookup (hash, "interface");
+		if (!value || strcmp (value, iface))
+			continue;
+
+		value = g_hash_table_lookup (hash, "expire");
+		if (!value)
+			continue;
+		expiry = lease_validity_span (value, now);
+		if (expiry == LEASE_INVALID)
+			continue;
+
+		/* scale expiry to seconds (and CLAMP into the range of guint32) */
+		expiry = CLAMP (expiry / G_TIME_SPAN_SECOND, 0, G_MAXUINT32-1);
+		if (expiry <= 0) {
+			/* the address is already expired. Don't even add it. */
+			continue;
+		}
+
+		memset (&address, 0, sizeof (address));
+
+		/* IP4 address */
+		value = g_hash_table_lookup (hash, "fixed-address");
+		if (!value)
+			continue;
+		if (!inet_pton (AF_INET, value, &address.address))
+			continue;
+
+		/* Gateway */
+		value = g_hash_table_lookup (hash, "option routers");
+		if (!value)
+			continue;
+		if (!inet_pton (AF_INET, value, &gw))
+			continue;
+
+		/* Netmask */
+		value = g_hash_table_lookup (hash, "option subnet-mask");
+		if (value && inet_pton (AF_INET, value, &tmp))
+			address.plen = nm_utils_ip4_netmask_to_prefix (tmp);
+
+		/* Get default netmask for the IP according to appropriate class. */
+		if (!address.plen)
+			address.plen = nm_utils_ip4_get_default_prefix (address.address);
+
+		address.lifetime = address.preferred = expiry;
+
+		ip4 = nm_ip4_config_new ();
+		nm_ip4_config_add_address (ip4, &address);
+		nm_ip4_config_set_gateway (ip4, gw);
+
+		value = g_hash_table_lookup (hash, "option domain-name-servers");
+		if (value) {
+			char **dns, **dns_iter;
+
+			dns = g_strsplit_set (value, ",", -1);
+			for (dns_iter = dns; dns_iter && *dns_iter; dns_iter++) {
+				if (inet_pton (AF_INET, *dns_iter, &tmp))
+					nm_ip4_config_add_nameserver (ip4, tmp);
+			}
+			if (dns)
+				g_strfreev (dns);
+		}
+
+		value = g_hash_table_lookup (hash, "option domain-name");
+		if (value && value[0])
+			nm_ip4_config_add_domain (ip4, value);
+
+		/* FIXME: static routes */
+
+		leases = g_slist_append (leases, ip4);
+	}
+
+	g_date_time_unref (now);
+	g_slist_free_full (parsed, (GDestroyNotify) g_hash_table_destroy);
+	return leases;
 }
 

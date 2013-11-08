@@ -129,4 +129,9 @@ gboolean      nm_active_connection_get_master_ready (NMActiveConnection *self);
 void          nm_active_connection_set_master (NMActiveConnection *self,
                                                NMActiveConnection *master);
 
+void          nm_active_connection_set_assumed (NMActiveConnection *self,
+                                                gboolean assumed);
+
+gboolean      nm_active_connection_get_assumed (NMActiveConnection *self);
+
 #endif /* NM_ACTIVE_CONNECTION_H */

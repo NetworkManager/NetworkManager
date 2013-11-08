@@ -180,28 +180,13 @@ typedef struct {
 
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
 
-	/* FIXME: We currently support match_l2_config() virtual function for
-	 * compatibility. When match_l2_config() is not present, we use the
-	 * new update_connection() virtual function which should first call
-	 * NMDevice's implementation and then perform type-specific adjustments.
-	 * 
-	 * Therefore subclasses that implement the new API *must* leave
-	 * match_l2_config set to NULL and implement update_connection, while
-	 * subclasses that implement the old API *must* set match_l2_config
-	 * (update_connection is ignored).
-	 *
-	 * Subclasses which don't implement any of the APIs for connection assumption
-	 * *should* leave generate_connection NULL.
-	 *
-	 * The update_connection() virtual function is also used for live
-	 * reconfiguration of the connection according to link level changes.
-	 */
-	gboolean        (* match_l2_config) (NMDevice *self, NMConnection *connection);
+	/* Update the connection with currently configured L2 settings */
 	void            (* update_connection) (NMDevice *device, NMConnection *connection);
 
 	gboolean        (* enslave_slave) (NMDevice *self,
 	                                   NMDevice *slave,
-	                                   NMConnection *connection);
+	                                   NMConnection *connection,
+	                                   gboolean configure);
 
 	gboolean        (* release_slave) (NMDevice *self,
 	                                   NMDevice *slave);
@@ -246,8 +231,10 @@ void            nm_device_set_vpn4_config   (NMDevice *dev, NMIP4Config *config)
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 void            nm_device_set_vpn6_config   (NMDevice *dev, NMIP6Config *config);
 
+void            nm_device_capture_initial_config (NMDevice *dev);
+
 /* Master */
-gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave);
+gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave, gboolean configure);
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
 gboolean        nm_device_is_master         (NMDevice *dev);
 

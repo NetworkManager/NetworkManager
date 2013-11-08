@@ -44,5 +44,10 @@ gboolean nm_dhcp_dhclient_save_duid (const char *leasefile,
                                      const char *escaped_duid,
                                      GError **error);
 
+GSList *nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
+                                                const char *contents,
+                                                gboolean ipv6,
+                                                GDateTime *now);
+
 #endif /* NM_DHCP_DHCLIENT_UTILS_H */
 

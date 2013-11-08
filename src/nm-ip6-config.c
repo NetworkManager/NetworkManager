@@ -127,18 +127,44 @@ routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, 
 NMIP6Config *
 nm_ip6_config_capture (int ifindex)
 {
-	NMIP6Config *config = nm_ip6_config_new ();
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	NMIP6Config *config;
+	NMIP6ConfigPrivate *priv;
+	guint i;
+	gboolean gateway_changed = FALSE;
+
+	/* Slaves have no IP configuration */
+	if (nm_platform_link_get_master (ifindex) > 0)
+		return NULL;
+
+	config = nm_ip6_config_new ();
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip6_address_get_all (ifindex);
-	priv->routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
+	priv->routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
+
+	/* Extract gateway from default route */
+	for (i = 0; i < priv->routes->len; i++) {
+		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
+
+		if (IN6_IS_ADDR_UNSPECIFIED (&route->network)) {
+			if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &route->gateway)) {
+				priv->gateway = route->gateway;
+				gateway_changed = TRUE;
+			}
+			/* Remove the default route from the list */
+			g_array_remove_index (priv->routes, i);
+			break;
+		}
+	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
+	if (gateway_changed)
+		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;
 }
@@ -285,8 +311,11 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		NMIP6Address *s_addr;
 
 		/* Ignore link-local address. */
-		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+		if (IN6_IS_ADDR_LINKLOCAL (&address->address)) {
+			if (!method)
+				method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
 			continue;
+		}
 
 		/* Detect dynamic address */
 		if (address->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
@@ -295,7 +324,7 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		}
 
 		/* Static address found. */
-		if (!method)
+		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 		s_addr = nm_ip6_address_new ();
@@ -308,9 +337,12 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		nm_setting_ip6_config_add_address (setting, s_addr);
 		nm_ip6_address_unref (s_addr);
 	}
-	if (!method)
-		method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
-	g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
+
+	/* Only use 'ignore' if the method wasn't previously set */
+	if (!method && !nm_setting_ip6_config_get_method (setting))
+		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+	if (method)
+		g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
@@ -852,6 +884,23 @@ nm_ip6_config_get_address (const NMIP6Config *config, guint i)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+}
+
+gboolean
+nm_ip6_config_address_exists (const NMIP6Config *config,
+                              const NMPlatformIP6Address *needle)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	guint i;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP6Address *haystack = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+
+		if (   IN6_ARE_ADDR_EQUAL (&needle->address, &haystack->address)
+		    && needle->plen == haystack->plen)
+			return TRUE;
+	}
+	return FALSE;
 }
 
 /******************************************************************/

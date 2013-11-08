@@ -1060,14 +1060,18 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 			announce_object (platform, cached_object, REMOVED, reason);
 		}
 	} else {
-		g_return_val_if_fail (kernel_object, FALSE);
+		if (!kernel_object)
+			return FALSE;
 
 		hack_empty_master_iff_lower_up (platform, kernel_object);
 
 		if (cached_object)
 			nl_cache_remove (cached_object);
 		nle = nl_cache_add (cache, kernel_object);
-		g_return_val_if_fail (!nle, FALSE);
+		if (nle) {
+			nm_log_dbg (LOGD_PLATFORM, "refresh_object(reason %d) failed during nl_cache_add with %d", reason, nle);
+			return FALSE;
+		}
 
 		announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED, reason);
 

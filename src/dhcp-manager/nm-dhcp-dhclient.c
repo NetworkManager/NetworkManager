@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #include <config.h>
 
@@ -135,214 +136,30 @@ get_dhclient_leasefile (const char *iface,
 	return NULL;
 }
 
-static void
-add_lease_option (GHashTable *hash, char *line)
-{
-	char *spc;
-
-	spc = strchr (line, ' ');
-	if (!spc) {
-		nm_log_warn (LOGD_DHCP, "DHCP lease file line '%s' did not contain a space", line);
-		return;
-	}
-
-	/* If it's an 'option' line, split at second space */
-	if (g_str_has_prefix (line, "option ")) {
-		spc = strchr (spc + 1, ' ');
-		if (!spc) {
-			nm_log_warn (LOGD_DHCP, "DHCP lease file option line '%s' did not contain a second space",
-			             line);
-			return;
-		}
-	}
-
-	/* Split the line at the space */
-	*spc = '\0';
-	spc++;
-
-	/* Kill the ';' at the end of the line, if any */
-	if (*(spc + strlen (spc) - 1) == ';')
-		*(spc + strlen (spc) - 1) = '\0';
-
-	/* Treat 'interface' specially */
-	if (g_str_has_prefix (line, "interface")) {
-		if (*(spc) == '"')
-			spc++; /* Jump past the " */
-		if (*(spc + strlen (spc) - 1) == '"')
-			*(spc + strlen (spc) - 1) = '\0';  /* Kill trailing " */
-	}
-
-	g_hash_table_insert (hash, g_strdup (line), g_strdup (spc));
-}
-
 GSList *
-nm_dhcp_dhclient_get_lease_config (const char *iface, const char *uuid, gboolean ipv6)
+nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
+                                       const char *uuid,
+                                       gboolean ipv6)
 {
-	GSList *parsed = NULL, *iter, *leases = NULL;
 	char *contents = NULL;
 	char *leasefile;
-	char **line, **split = NULL;
-	GHashTable *hash = NULL;
-
-	/* IPv6 not supported */
-	if (ipv6)
-		return NULL;
+	GSList *leases = NULL;
 
 	leasefile = get_dhclient_leasefile (iface, uuid, FALSE, NULL);
 	if (!leasefile)
 		return NULL;
 
-	if (!g_file_test (leasefile, G_FILE_TEST_EXISTS))
-		goto out;
+	if (   g_file_test (leasefile, G_FILE_TEST_EXISTS)
+	    && g_file_get_contents (leasefile, &contents, NULL, NULL)
+	    && contents
+	    && contents[0])
+		leases = nm_dhcp_dhclient_read_lease_ip_configs (iface, contents, ipv6, NULL);
 
-	if (!g_file_get_contents (leasefile, &contents, NULL, NULL))
-		goto out;
-
-	split = g_strsplit_set (contents, "\n\r", -1);
-	g_free (contents);
-	if (!split)
-		goto out;
-
-	for (line = split; line && *line; line++) {
-		*line = g_strstrip (*line);
-
-		if (!strcmp (*line, "}")) {
-			/* Lease ends */
-			parsed = g_slist_append (parsed, hash);
-			hash = NULL;
-		} else if (!strcmp (*line, "lease {")) {
-			/* Beginning of a new lease */
-			if (hash) {
-				nm_log_warn (LOGD_DHCP, "DHCP lease file %s malformed; new lease started "
-				             "without ending previous lease",
-				             leasefile);
-				g_hash_table_destroy (hash);
-			}
-
-			hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-		} else if (strlen (*line))
-			add_lease_option (hash, *line);
-	}
-	g_strfreev (split);
-
-	/* Check if the last lease in the file was properly ended */
-	if (hash) {
-		nm_log_warn (LOGD_DHCP, "DHCP lease file %s malformed; new lease started "
-		             "without ending previous lease",
-		             leasefile);
-		g_hash_table_destroy (hash);
-		hash = NULL;
-	}
-
-	for (iter = parsed; iter; iter = g_slist_next (iter)) {
-		NMIP4Config *ip4;
-		NMPlatformIP4Address address;
-		const char *data;
-		guint32 tmp;
-		guint32 plen;
-		struct tm expire;
-
-		hash = iter->data;
-
-		/* Make sure this lease is for the interface we want */
-		data = g_hash_table_lookup (hash, "interface");
-		if (!data || strcmp (data, iface))
-			continue;
-
-		data = g_hash_table_lookup (hash, "expire");
-		if (data) {
-			time_t now_tt;
-			struct tm *now;
-
-			/* Read lease expiration (in UTC) */
-			if (!strptime (data, "%w %Y/%m/%d %H:%M:%S", &expire)) {
-				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file expire time '%s'",
-				             data);
-				continue;
-			}
-
-			now_tt = time (NULL);
-			now = gmtime(&now_tt);
-
-			/* Ignore this lease if it's already expired */
-			if (expire.tm_year < now->tm_year)
-				continue;
-			else if (expire.tm_year == now->tm_year) {
-				if (expire.tm_mon < now->tm_mon)
-					continue;
-				else if (expire.tm_mon == now->tm_mon) {
-					if (expire.tm_mday < now->tm_mday)
-						continue;
-					else if (expire.tm_mday == now->tm_mday) {
-						if (expire.tm_hour < now->tm_hour)
-							continue;
-						else if (expire.tm_hour == now->tm_hour) {
-							if (expire.tm_min < now->tm_min)
-								continue;
-							else if (expire.tm_min == now->tm_min) {
-								if (expire.tm_sec <= now->tm_sec)
-									continue;
-							}
-						}
-					}
-				}
-			}
-			/* If we get this far, the lease hasn't expired */
-		}
-
-		data = g_hash_table_lookup (hash, "fixed-address");
-		if (!data)
-			continue;
-
-		ip4 = nm_ip4_config_new ();
-		memset (&address, 0, sizeof (address));
-
-		/* IP4 address */
-		if (!inet_pton (AF_INET, data, &tmp)) {
-			nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 address '%s'", data);
-			goto error;
-		}
-		address.address = tmp;
-
-		/* Netmask */
-		data = g_hash_table_lookup (hash, "option subnet-mask");
-		if (data) {
-			if (!inet_pton (AF_INET, data, &tmp)) {
-				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 subnet mask '%s'", data);
-				goto error;
-			}
-			plen = nm_utils_ip4_netmask_to_prefix (tmp);
-		} else {
-			/* Get default netmask for the IP according to appropriate class. */
-			plen = nm_utils_ip4_get_default_prefix (address.address);
-		}
-		address.plen = plen;
-
-		/* Gateway */
-		data = g_hash_table_lookup (hash, "option routers");
-		if (data) {
-			if (!inet_pton (AF_INET, data, &tmp)) {
-				nm_log_warn (LOGD_DHCP, "couldn't parse DHCP lease file IP4 gateway '%s'", data);
-				goto error;
-			}
-			nm_ip4_config_set_gateway (ip4, tmp);
-		}
-
-		nm_ip4_config_add_address (ip4, &address);
-		leases = g_slist_append (leases, ip4);
-		continue;
-
-	error:
-		g_object_unref (ip4);
-	}
-
-out:
-	g_slist_free_full (parsed, (GDestroyNotify) g_hash_table_destroy);
 	g_free (leasefile);
+	g_free (contents);
+
 	return leases;
 }
-
-
 
 static gboolean
 merge_dhclient_config (const char *iface,

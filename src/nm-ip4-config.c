@@ -127,18 +127,44 @@ routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, 
 NMIP4Config *
 nm_ip4_config_capture (int ifindex)
 {
-	NMIP4Config *config = nm_ip4_config_new ();
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	NMIP4Config *config;
+	NMIP4ConfigPrivate *priv;
+	guint i;
+	gboolean gateway_changed = FALSE;
+
+	/* Slaves have no IP configuration */
+	if (nm_platform_link_get_master (ifindex) > 0)
+		return NULL;
+
+	config = nm_ip4_config_new ();
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip4_address_get_all (ifindex);
-	priv->routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
+	priv->routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
+
+	/* Extract gateway from default route */
+	for (i = 0; i < priv->routes->len; i++) {
+		const NMPlatformIP4Route *route = &g_array_index (priv->routes, NMPlatformIP4Route, i);
+
+		if (route->network == 0) {
+			if (priv->gateway != route->gateway) {
+				priv->gateway = route->gateway;
+				gateway_changed = TRUE;
+			}
+			/* Remove the default route from the list */
+			g_array_remove_index (priv->routes, i);
+			break;
+		}
+	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
+	if (gateway_changed)
+		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;
 }
@@ -314,9 +340,12 @@ nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *set
 		nm_setting_ip4_config_add_address (setting, s_addr);
 		nm_ip4_address_unref (s_addr);
 	}
-	if (!method)
+
+	/* Only use 'disabled' if the method wasn't previously set */
+	if (!method && !nm_setting_ip4_config_get_method (setting))
 		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
+	if (method)
+		g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
@@ -953,6 +982,22 @@ nm_ip4_config_get_address (const NMIP4Config *config, guint i)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	return &g_array_index (priv->addresses, NMPlatformIP4Address, i);
+}
+
+gboolean
+nm_ip4_config_address_exists (const NMIP4Config *config,
+                              const NMPlatformIP4Address *needle)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	guint i;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP4Address *haystack = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
+
+		if (needle->address == haystack->address && needle->plen == haystack->plen)
+			return TRUE;
+	}
+	return FALSE;
 }
 
 /******************************************************************/

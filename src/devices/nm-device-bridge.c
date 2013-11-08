@@ -24,6 +24,7 @@
 #include <glib/gi18n.h>
 
 #include <netinet/ether.h>
+#include <stdlib.h>
 
 #include "gsystem-local-alloc.h"
 #include "nm-device-bridge.h"
@@ -180,13 +181,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static gboolean
-match_l2_config (NMDevice *self, NMConnection *connection)
-{
-	/* FIXME */
-	return TRUE;
-}
-
 /******************************************************************/
 
 typedef struct {
@@ -290,6 +284,80 @@ commit_slave_options (NMDevice *device, NMSettingBridgePort *setting)
 	g_clear_object (&s_clear);
 }
 
+static void
+update_connection (NMDevice *device, NMConnection *connection)
+{
+	NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
+	const char *ifname = nm_device_get_iface (device);
+	int ifindex = nm_device_get_ifindex (device);
+	const Option *option;
+
+	if (!s_bridge) {
+		s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_bridge);
+		g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, ifname, NULL);
+	}
+
+	for (option = master_options; option->name; option++) {
+		gs_free char *str = nm_platform_master_get_option (ifindex, option->sysname);
+		int value = strtol (str, NULL, 10);
+
+		/* See comments in set_sysfs_uint() about centiseconds. */
+		if (option->user_hz_compensate)
+			value /= 100;
+
+		g_object_set (s_bridge, option->name, value, NULL);
+	}
+}
+
+/**
+ * nm_bridge_update_slave_connection:
+ * @slave: the slave #NMDevice, is *not* necessarily a bridge interface
+ * @connection: the #NMConnection to update with the bridge port settings
+ *
+ * Reads bridge port configuration and updates @connection with those
+ * properties.
+ *
+ * Returns: %TRUE if the port configuration was read and @connection updated,
+ * %FALSE if not.
+ */
+gboolean
+nm_bridge_update_slave_connection (NMDevice *slave, NMConnection *connection)
+{
+	NMSettingBridgePort *s_port;
+	int ifindex = nm_device_get_ifindex (slave);
+	const Option *option;
+
+	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	s_port = nm_connection_get_setting_bridge_port (connection);
+	if (!s_port) {
+		s_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_port));
+	}
+
+	for (option = slave_options; option->name; option++) {
+		gs_free char *str = nm_platform_slave_get_option (ifindex, option->sysname);
+		int value;
+
+		if (str) {
+			value = strtol (str, NULL, 10);
+
+			/* See comments in set_sysfs_uint() about centiseconds. */
+			if (option->user_hz_compensate)
+				value /= 100;
+
+			g_object_set (s_port, option->name, value, NULL);
+		} else {
+			nm_log_warn (LOGD_BRIDGE, "(%s): failed to read bridge port setting '%s'",
+			             nm_device_get_iface (slave), option->sysname);
+		}
+	}
+
+	return TRUE;
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -308,12 +376,17 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static gboolean
-enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection)
+enslave_slave (NMDevice *device,
+               NMDevice *slave,
+               NMConnection *connection,
+               gboolean configure)
 {
-	if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
-		return FALSE;
+	if (configure) {
+		if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
+			return FALSE;
 
-	commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
+		commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
+	}
 
 	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
 	             nm_device_get_ip_iface (device),
@@ -439,6 +512,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBridgePrivate));
 
+	parent_class->connection_type = NM_SETTING_BRIDGE_SETTING_NAME;
+
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
@@ -450,7 +525,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->match_l2_config = match_l2_config;
+	parent_class->update_connection = update_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;

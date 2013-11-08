@@ -124,16 +124,16 @@ typedef struct {
 	in_addr_t address;
 	int plen;
 	guint32 timestamp;
-	guint32 lifetime;
-	guint32 preferred;
+	guint32 lifetime;   /* seconds */
+	guint32 preferred;  /* seconds */
 } NMPlatformIP4Address;
 
 typedef struct {
 	int ifindex;
 	struct in6_addr address;
 	int plen;
-	guint32 timestamp;
-	guint32 lifetime;
+	guint32 timestamp;  /* seconds */
+	guint32 lifetime;   /* seconds */
 	guint32 preferred;
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 } NMPlatformIP6Address;

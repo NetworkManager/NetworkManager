@@ -548,6 +548,9 @@ typedef enum {
 	/* DCB or FCoE setup failed */
 	NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED = 55,
 
+	/* teamd control failed */
+	NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED = 56,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

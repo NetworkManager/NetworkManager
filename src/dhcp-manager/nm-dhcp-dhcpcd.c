@@ -71,12 +71,6 @@ nm_dhcp_dhcpcd_get_path (const char *try_first)
 	return *path;
 }
 
-GSList *
-nm_dhcp_dhcpcd_get_lease_config (const char *iface, const char *uuid, gboolean ipv6)
-{
-	return NULL;
-}
-
 static void
 dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 {

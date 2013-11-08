@@ -55,6 +55,8 @@ typedef struct {
 	NMActiveConnection *master;
 	gboolean master_ready;
 
+	gboolean assumed;
+
 	NMAuthChain *chain;
 	const char *wifi_shared_permission;
 	NMActiveConnectionAuthResultFunc result_func;
@@ -496,6 +498,21 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 	                  self);
 
 	check_master_ready (self);
+}
+
+void
+nm_active_connection_set_assumed (NMActiveConnection *self, gboolean assumed)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->assumed == FALSE);
+	priv->assumed = assumed;
+}
+
+gboolean
+nm_active_connection_get_assumed (NMActiveConnection *self)
+{
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->assumed;
 }
 
 /****************************************************************/

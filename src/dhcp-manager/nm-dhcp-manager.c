@@ -71,7 +71,7 @@ typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid, gbo
 
 typedef struct {
 	GType               client_type;
-	GetLeaseConfigFunc  get_lease_config_func;
+	GetLeaseConfigFunc  get_lease_ip_configs_func;
 
 	NMDBusManager *     dbus_mgr;
 	guint               new_conn_id;
@@ -313,7 +313,7 @@ get_client_type (const char *client, GError **error)
 			g_set_error_literal (error,
 			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
 			                     _("no usable DHCP client could be found."));
-			return 0;
+			return G_TYPE_INVALID;
 		}
 	}
 
@@ -322,7 +322,7 @@ get_client_type (const char *client, GError **error)
 			g_set_error_literal (error,
 			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
 			                     _("'dhclient' could be found."));
-			return 0;
+			return G_TYPE_INVALID;
 		}
 		return NM_TYPE_DHCP_DHCLIENT;
 	}
@@ -332,7 +332,7 @@ get_client_type (const char *client, GError **error)
 			g_set_error_literal (error,
 			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
 			                     _("'dhcpcd' could be found."));
-			return 0;
+			return G_TYPE_INVALID;
 		}
 		return NM_TYPE_DHCP_DHCPCD;
 	}
@@ -340,7 +340,7 @@ get_client_type (const char *client, GError **error)
 	g_set_error (error,
 	             NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
 	             _("unsupported DHCP client '%s'"), client);
-	return 0;
+	return G_TYPE_INVALID;
 }
 
 NMDHCPManager *
@@ -362,15 +362,14 @@ nm_dhcp_manager_get (void)
 	/* Client-specific setup */
 	client = nm_config_get_dhcp_client (nm_config_get ());
 	priv->client_type = get_client_type (client, &error);
+
 	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
-		priv->get_lease_config_func = nm_dhcp_dhclient_get_lease_config;
-	else if (priv->client_type == NM_TYPE_DHCP_DHCPCD)
-		priv->get_lease_config_func = nm_dhcp_dhcpcd_get_lease_config;
-	else {
+		priv->get_lease_ip_configs_func = nm_dhcp_dhclient_get_lease_ip_configs;
+	else if (priv->client_type == G_TYPE_INVALID) {
 		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
 		             error->message);
-		g_error_free (error);
 	}
+	g_clear_error (&error);
 
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
@@ -610,10 +609,10 @@ nm_dhcp_manager_set_hostname_provider (NMDHCPManager *manager,
 }
 
 GSList *
-nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
-                                  const char *iface,
-                                  const char *uuid,
-                                  gboolean ipv6)
+nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
+                                      const char *iface,
+                                      const char *uuid,
+                                      gboolean ipv6)
 {
 	NMDHCPManagerPrivate *priv;
 
@@ -623,10 +622,8 @@ nm_dhcp_manager_get_lease_config (NMDHCPManager *self,
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
-	if (priv->get_lease_config_func)
-		return priv->get_lease_config_func (iface, uuid, ipv6);
-
-	nm_log_warn (LOGD_DHCP, "Cannot get a DHCP lease config (no usable DHCP client was found!)");
+	if (priv->get_lease_ip_configs_func)
+		return priv->get_lease_ip_configs_func (iface, uuid, ipv6);
 	return NULL;
 }
 

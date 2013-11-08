@@ -1238,19 +1238,38 @@ spec_match_list (NMDevice *device, const GSList *specs)
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
 	guint maclen;
 	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
+	static const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
+	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
+	GByteArray *array;
 
 	if (!s_wired) {
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_wired);
 	}
 
-	if (mac && maclen == 6) {
-		GBytes *address = g_bytes_new (mac, maclen);
+	/* If the device reports a permanent address, use that for the MAC address
+	 * and the current MAC, if different, is the cloned MAC.
+	 */
+	if (priv->perm_hw_addr && memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+		array = g_byte_array_sized_new (ETH_ALEN);
+		g_byte_array_append (array, priv->perm_hw_addr, ETH_ALEN);
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, array, NULL);
+		g_byte_array_unref (array);
 
-		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, address, NULL);
+		mac_prop = NULL;
+		if (mac && memcmp (priv->perm_hw_addr, mac, ETH_ALEN))
+			mac_prop = NM_SETTING_WIRED_CLONED_MAC_ADDRESS;
+	}
+
+	if (mac_prop && mac && maclen == ETH_ALEN) {
+		array = g_byte_array_sized_new (ETH_ALEN);
+		g_byte_array_append (array, (guint8 *) mac, maclen);
+		g_object_set (s_wired, mac_prop, array, NULL);
+		g_byte_array_unref (array);
 	}
 
 	/* We don't set the MTU as we don't know whether it was set explicitly */
