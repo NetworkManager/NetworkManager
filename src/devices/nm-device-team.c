@@ -270,6 +270,7 @@ teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 	if (priv->tdc) {
 		teamdctl_disconnect (priv->tdc);
 		teamdctl_free (priv->tdc);
+		priv->tdc = NULL;
 	}
 #endif
 
