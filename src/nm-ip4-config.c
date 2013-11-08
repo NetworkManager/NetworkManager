@@ -340,9 +340,12 @@ nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *set
 		nm_setting_ip4_config_add_address (setting, s_addr);
 		nm_ip4_address_unref (s_addr);
 	}
-	if (!method)
+
+	/* Only use 'disabled' if the method wasn't previously set */
+	if (!method && !nm_setting_ip4_config_get_method (setting))
 		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
+	if (method)
+		g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {

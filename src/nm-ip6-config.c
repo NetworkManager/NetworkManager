@@ -311,8 +311,11 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		NMIP6Address *s_addr;
 
 		/* Ignore link-local address. */
-		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+		if (IN6_IS_ADDR_LINKLOCAL (&address->address)) {
+			if (!method)
+				method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
 			continue;
+		}
 
 		/* Detect dynamic address */
 		if (address->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
@@ -321,7 +324,7 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		}
 
 		/* Static address found. */
-		if (!method)
+		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 		s_addr = nm_ip6_address_new ();
@@ -334,9 +337,12 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		nm_setting_ip6_config_add_address (setting, s_addr);
 		nm_ip6_address_unref (s_addr);
 	}
-	if (!method)
-		method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
-	g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
+
+	/* Only use 'ignore' if the method wasn't previously set */
+	if (!method && !nm_setting_ip6_config_get_method (setting))
+		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+	if (method)
+		g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
