@@ -5112,7 +5112,7 @@ nm_device_take_down (NMDevice *self, gboolean block)
 	if (NM_DEVICE_GET_CLASS (self)->take_down)
 		NM_DEVICE_GET_CLASS (self)->take_down (self);
 
-	/* Wait for the device to come up if requested */
+	/* Wait for the device to go down if requested */
 	while (block && nm_device_is_up (self) && (tries++ < 50))
 		g_usleep (200);
 }
