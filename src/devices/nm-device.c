@@ -721,7 +721,10 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	priv->ip_iface = g_strdup (iface);
 	if (priv->ip_iface) {
 		priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
-		if (priv->ip_ifindex <= 0) {
+		if (priv->ip_ifindex > 0) {
+			if (!nm_platform_link_is_up (priv->ip_ifindex))
+				nm_platform_link_set_up (priv->ip_ifindex);
+		} else {
 			/* Device IP interface must always be a kernel network interface */
 			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
 		}
@@ -3669,7 +3672,6 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *iface;
-	int ifindex;
 	NMActiveConnection *master;
 	NMDevice *master_device;
 
@@ -3682,10 +3684,11 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-	/* Make sure the interface is up before trying to do anything with it */
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex && !nm_platform_link_is_up (ifindex))
-		nm_platform_link_set_up (ifindex);
+	/* Device should be up before we can do anything with it */
+	if (!nm_platform_link_is_up (nm_device_get_ip_ifindex (self))) {
+		nm_log_warn (LOGD_DEVICE, "(%s): interface %s not up for IP configuration",
+		             iface, nm_device_get_ip_iface (self));
+	}
 
 	/* If the device is a slave, then we don't do any IP configuration but we
 	 * use the IP config stage to indicate to the master we're ready for
@@ -4076,7 +4079,6 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	const char *iface, *method;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	int ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
@@ -4090,10 +4092,11 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	/* Make sure the interface is up again just because */
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex && !nm_platform_link_is_up (ifindex))
-		nm_platform_link_set_up (ifindex);
+	/* Device should be up before we can do anything with it */
+	if (!nm_platform_link_is_up (nm_device_get_ip_ifindex (self))) {
+		nm_log_warn (LOGD_DEVICE, "(%s): interface %s not up for IP configuration",
+		             iface, nm_device_get_ip_iface (self));
+	}
 
 	/* NULL to use the existing priv->dev_ip4_config */
 	if (!ip4_config_merge_and_apply (self, NULL, TRUE, &reason)) {
@@ -4169,7 +4172,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	const char *iface;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
-	int ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
@@ -4183,10 +4185,8 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	/* Make sure the interface is up again just because */
-	ifindex = nm_device_get_ip_ifindex (self);
-	if (ifindex && !nm_platform_link_is_up (ifindex))
-		nm_platform_link_set_up (ifindex);
+	/* Device should be up before we can do anything with it */
+	g_warn_if_fail (nm_platform_link_is_up (nm_device_get_ip_ifindex (self)));
 
 	/* Allow setting MTU etc */
 	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
