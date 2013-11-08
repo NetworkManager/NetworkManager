@@ -70,18 +70,6 @@ void        value_hash_add_object_property (GHashTable *hash,
                                             const char *prop,
                                             GType val_type);
 
-gboolean nm_utils_do_sysctl (const char *path, const char *value);
-
-gboolean nm_utils_get_proc_sys_net_value (const char *path,
-                                          const char *iface,
-                                          gint32 *out_value);
-
-gboolean nm_utils_get_proc_sys_net_value_with_bounds (const char *path,
-                                                      const char *iface,
-                                                      gint32 *out_value,
-                                                      gint32 valid_min,
-                                                      gint32 valid_max);
-
 void nm_utils_normalize_connection (NMConnection *connection,
                                     gboolean      default_enable_ipv6);
 const char *nm_utils_get_ip_config_method (NMConnection *connection,

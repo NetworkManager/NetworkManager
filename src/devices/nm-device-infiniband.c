@@ -180,7 +180,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		}
 	}
 
-	ok = nm_utils_do_sysctl (mode_path, transport_mode);
+	ok = nm_platform_sysctl_set (mode_path, transport_mode);
 	g_free (mode_path);
 
 	if (!ok) {

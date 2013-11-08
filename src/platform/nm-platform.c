@@ -243,6 +243,31 @@ nm_platform_sysctl_get (const char *path)
 	return klass->sysctl_get (platform, path);
 }
 
+/**
+ * nm_platform_sysctl_get_uint:
+ * @path: Absolute path to sysctl
+ *
+ * Returns: (unsigned integer) contents of the sysctl file, or -1 on error
+ */
+int
+nm_platform_sysctl_get_uint (const char *path)
+{
+	char *value, *end;
+	long tmp;
+	int ret = -1;
+
+	value = nm_platform_sysctl_get (path);
+	if (!value)
+		return ret;
+
+	tmp = strtoul (value, &end, 10);
+	if (!*end)
+		ret = tmp;
+	g_free (value);
+
+	return ret;
+}
+
 /******************************************************************/
 
 /**

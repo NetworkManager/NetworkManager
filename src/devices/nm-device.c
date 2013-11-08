@@ -419,10 +419,8 @@ update_accept_ra_save (NMDevice *self)
 
 	/* Grab the original value of "accept_ra" so we can restore it when NM exits */
 	priv->ip6_accept_ra_path = new_path;
-	if (!nm_utils_get_proc_sys_net_value_with_bounds (priv->ip6_accept_ra_path,
-	                                                  ip_iface,
-	                                                  &priv->ip6_accept_ra_save,
-	                                                  0, 2)) {
+	priv->ip6_accept_ra_save = nm_platform_sysctl_get_uint (priv->ip6_accept_ra_path);
+	if (priv->ip6_accept_ra_save < 0 || priv->ip6_accept_ra_save > 2) {
 		g_free (priv->ip6_accept_ra_path);
 		priv->ip6_accept_ra_path = NULL;
 	}
@@ -454,9 +452,8 @@ update_ip6_privacy_save (NMDevice *self)
 
 	/* Grab the original value of "use_tempaddr" so we can restore it when NM exits */
 	priv->ip6_privacy_tempaddr_path = new_path;
-	if (!nm_utils_get_proc_sys_net_value (priv->ip6_privacy_tempaddr_path,
-	                                      ip_iface,
-	                                      &priv->ip6_privacy_tempaddr_save)) {
+	priv->ip6_privacy_tempaddr_save = nm_platform_sysctl_get_uint (priv->ip6_privacy_tempaddr_path);
+	if (priv->ip6_privacy_tempaddr_save < 0 || priv->ip6_privacy_tempaddr_save > 2) {
 		g_free (priv->ip6_privacy_tempaddr_path);
 		priv->ip6_privacy_tempaddr_path = NULL;
 	}
@@ -3528,15 +3525,15 @@ act_stage3_ip6_config_start (NMDevice *self,
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		/* Router advertisements shouldn't be used in pure DHCP mode */
 		if (priv->ip6_accept_ra_path)
-			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0");
+			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 
 		priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_MANAGED;
 		ret = dhcp6_start (self, connection, priv->dhcp6_mode, reason);
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		/* reset the saved RA value when ipv6 is ignored */
 		if (priv->ip6_accept_ra_path) {
-			nm_utils_do_sysctl (priv->ip6_accept_ra_path,
-			                    priv->ip6_accept_ra_save ? "1" : "0");
+			nm_platform_sysctl_set (priv->ip6_accept_ra_path,
+			                        priv->ip6_accept_ra_save ? "1" : "0");
 		}
 		ret = NM_ACT_STAGE_RETURN_STOP;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0) {
@@ -3546,7 +3543,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 		/* Router advertisements shouldn't be used in manual mode */
 		if (priv->ip6_accept_ra_path)
-			nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0");
+			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else {
 		nm_log_warn (LOGD_IP6, "(%s): unhandled IPv6 config method '%s'; will fail",
@@ -3583,7 +3580,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	break;
 	}
 	if (priv->ip6_privacy_tempaddr_path)
-		nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, ip6_privacy_str);
+		nm_platform_sysctl_set (priv->ip6_privacy_tempaddr_path, ip6_privacy_str);
 
 	return ret;
 }
@@ -3971,13 +3968,13 @@ share_init (void)
 	                    NULL };
 	char **iter;
 
-	if (!nm_utils_do_sysctl ("/proc/sys/net/ipv4/ip_forward", "1")) {
+	if (!nm_platform_sysctl_set ("/proc/sys/net/ipv4/ip_forward", "1")) {
 		nm_log_err (LOGD_SHARING, "Error starting IP forwarding: (%d) %s",
 					errno, strerror (errno));
 		return FALSE;
 	}
 
-	if (!nm_utils_do_sysctl ("/proc/sys/net/ipv4/ip_dynaddr", "1")) {
+	if (!nm_platform_sysctl_set ("/proc/sys/net/ipv4/ip_dynaddr", "1")) {
 		nm_log_err (LOGD_SHARING, "error starting IP forwarding: (%d) %s",
 					errno, strerror (errno));
 	}
@@ -4508,11 +4505,11 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	/* Turn off router advertisements until they are needed */
 	if (priv->ip6_accept_ra_path)
-		nm_utils_do_sysctl (priv->ip6_accept_ra_path, "0");
+		nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 
 	/* Turn off IPv6 privacy extensions */
 	if (priv->ip6_privacy_tempaddr_path)
-		nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, "0");
+		nm_platform_sysctl_set (priv->ip6_privacy_tempaddr_path, "0");
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
@@ -5267,8 +5264,8 @@ dispose (GObject *object)
 		/* reset the saved RA value */
 		if (   priv->ip6_accept_ra_path
 			&& g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
-			nm_utils_do_sysctl (priv->ip6_accept_ra_path,
-								priv->ip6_accept_ra_save ? "1" : "0");
+			nm_platform_sysctl_set (priv->ip6_accept_ra_path,
+			                        priv->ip6_accept_ra_save ? "1" : "0");
 		}
 
 		/* reset the saved use_tempaddr value */
@@ -5277,7 +5274,7 @@ dispose (GObject *object)
 			char tmp[16];
 
 			snprintf (tmp, sizeof (tmp), "%d", priv->ip6_privacy_tempaddr_save);
-			nm_utils_do_sysctl (priv->ip6_privacy_tempaddr_path, tmp);
+			nm_platform_sysctl_set (priv->ip6_privacy_tempaddr_path, tmp);
 		}
 	}
 	g_free (priv->ip6_accept_ra_path);
