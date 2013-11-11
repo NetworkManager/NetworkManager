@@ -555,9 +555,18 @@ _nmcli()
             ;;
         g|ge|gen|gene|gener|genera|general)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" status permissions logging
+                _nmcli_complete_commands "$command" status permissions logging hostname
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
+                    ho|hos|host|hostn|hostna|hostnam|hostname)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_list_nl "$(printf '%s\n%s\n%s\n' \
+                                            "$(nmcli general hostname 2>/dev/null)" \
+                                            "$(cat /etc/hostname 2>/dev/null)" \
+                                            "$(hostnamectl status 2>/dev/null | sed -n '1s/^.\+hostname: \(.\+\)$/\1/p')" \
+                                            "$HOSTNAME")"
+                        fi
+                        ;;
                     l|lo|log|logg|loggi|loggin|logging)
                         words=("${words[@]:2}")
                         OPTIONS=(level domains)
