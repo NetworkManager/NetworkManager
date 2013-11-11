@@ -310,6 +310,7 @@ update_permanent_hw_address (NMDevice *dev)
 	struct ifreq req;
 	struct ethtool_perm_addr *epaddr = NULL;
 	int fd, ret;
+	const guint8 *mac;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -332,7 +333,11 @@ update_permanent_hw_address (NMDevice *dev)
 		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): unable to read permanent MAC address (error %d)",
 		            nm_device_get_iface (dev), errno);
 		/* Fall back to current address */
-		memcpy (epaddr->data, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+		mac = nm_device_get_hw_address (dev, NULL);
+		if (mac)
+			memcpy (epaddr->data, mac, ETH_ALEN);
+		else
+			memset (epaddr->data, 0, ETH_ALEN);
 	}
 
 	if (memcmp (&priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
@@ -350,11 +355,14 @@ update_initial_hw_address (NMDevice *dev)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	char *mac_str;
+	const guint8 *mac;
 
 	/* This sets initial MAC address from current MAC address. It should only
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
-	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+	mac = nm_device_get_hw_address (dev, NULL);
+	if (mac)
+		memcpy (priv->initial_hw_addr, mac, ETH_ALEN);
 
 	mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER);
 	nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): read initial MAC address %s",
@@ -1241,7 +1249,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
 	guint maclen;
-	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
+	const guint8 *mac = nm_device_get_hw_address (device, &maclen);
 	static const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GByteArray *array;
