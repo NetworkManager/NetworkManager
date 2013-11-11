@@ -518,6 +518,15 @@ _nmcli_complete_COMMAND_CONNECTION()
     return 1
 }
 
+_nmcli_complete_commands() {
+    local command="$1"
+    shift
+    if [[ "x${command:0:1}" == 'x-' ]]; then
+        _nmcli_list "-h --help"
+    else
+        _nmcli_list "help $*"
+    fi
+}
 
 _nmcli()
 {
@@ -540,11 +549,9 @@ _nmcli()
             ;;
         g|ge|gen|gene|gener|genera|general)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "status permissions logging help"
+                _nmcli_complete_commands "$command" status permissions logging
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
-                    s|st|sta|stat|statu|status | p|pe|per|perm|permi|permis|permiss|permissi|permissio|permission|permissions)
-                        ;;
                     l|lo|log|logg|loggi|loggin|logging)
                         words=("${words[@]:2}")
                         OPTIONS=(level domains)
@@ -555,7 +562,7 @@ _nmcli()
             ;;
         n|ne|net|netw|netwo|networ|network|networki|networkin|networking)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "on off connectivity help"
+                _nmcli_complete_commands "$command" on off connectivity
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
                     c|co|con|conn|conne|connec|connect|connecti|connectiv|connectivi|connectivit|connectivity)
@@ -566,7 +573,7 @@ _nmcli()
             ;;
         r|ra|rad|radi|radio)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "all wifi wwan wimax help"
+                _nmcli_complete_commands "$command" all wifi wwan wimax
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
                     a|al|all | w|wi|wif|wifi | ww|wwa|wwan | wim|wima|wimax)
@@ -577,7 +584,7 @@ _nmcli()
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "show up down add modify edit delete reload help"
+                _nmcli_complete_commands "$command" show up down add modify edit delete reload
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
@@ -634,7 +641,7 @@ _nmcli()
                         ;;
                     a|ad|add)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list "type ifname con-name autoconnect help"
+                            _nmcli_complete_commands "${words[2]}" type ifname con-name autoconnect
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS_TYPE=
@@ -854,7 +861,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list "status show connect disconnect wifi wimax help"
+                _nmcli_complete_commands "$command" status show connect disconnect wifi wimax
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
