@@ -463,7 +463,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (argc > 0) {
-		if (matches (*argv, "status") == 0) {
+		if (nmc_arg_is_help (*argv)) {
+			usage_general ();
+		}
+		else if (matches (*argv, "status") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -513,9 +516,6 @@ do_general (NmCli *nmc, int argc, char **argv)
 					goto finish;
 				}
 			}
-		}
-		else if (nmc_arg_is_help (*argv)) {
-			usage_general ();
 		}
 		else {
 			usage_general ();
@@ -645,7 +645,10 @@ do_radio (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (argc > 0) {
-		if (matches (*argv, "all") == 0) {
+		if (nmc_arg_is_help (*argv)) {
+			usage_radio ();
+		}
+		else if (matches (*argv, "all") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show all radio switches */
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
@@ -703,9 +706,6 @@ do_radio (NmCli *nmc, int argc, char **argv)
 			}
 		}
 #endif
-		else if (nmc_arg_is_help (*argv)) {
-			usage_radio ();
-		}
 		else {
 			usage_radio ();
 			g_string_printf (nmc->return_text, _("Error: 'radio' command '%s' is not valid."), *argv);

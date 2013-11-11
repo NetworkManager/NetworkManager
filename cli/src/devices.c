@@ -2427,7 +2427,10 @@ do_devices (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (argc > 0) {
-		if (matches (*argv, "status") == 0) {
+		if (nmc_arg_is_help (*argv)) {
+			usage ();
+		}
+		else if (matches (*argv, "status") == 0) {
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = do_devices_status (nmc, argc-1, argv+1);
@@ -2455,9 +2458,6 @@ do_devices (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_device_wimax (nmc, argc-1, argv+1);
 		}
 #endif
-		else if (nmc_arg_is_help (*argv)) {
-			usage ();
-		}
 		else {
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: 'dev' command '%s' is not valid."), *argv);

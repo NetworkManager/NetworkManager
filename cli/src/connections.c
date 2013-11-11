@@ -7290,7 +7290,11 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 			goto opt_error;
 		nmc->return_value = do_connections_show (nmc, argc, argv);
 	} else {
-		if (matches (*argv, "show") == 0) {
+		if (nmc_arg_is_help (*argv)) {
+			usage ();
+			nmc->should_wait = FALSE;
+		}
+		else if (matches (*argv, "show") == 0) {
 			arg_ret = next_arg (&argc, &argv);
 			if (arg_ret != 0 || matches (*argv, "configured") == 0) {
 				next_arg (&argc, &argv);
@@ -7333,10 +7337,6 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches (*argv, "modify") == 0) {
 			nmc->return_value = do_connection_modify (nmc, argc-1, argv+1);
-		}
-		else if (nmc_arg_is_help (*argv)) {
-			usage ();
-			nmc->should_wait = FALSE;
 		}
 		else {
 			usage ();
