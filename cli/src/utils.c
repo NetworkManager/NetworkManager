@@ -38,8 +38,8 @@
 int
 matches (const char *cmd, const char *pattern)
 {
-	int len = strlen (cmd);
-	if (len > strlen (pattern))
+	size_t len = strlen (cmd);
+	if (!len || len > strlen (pattern))
 		return -1;
 	return memcmp (pattern, cmd, len);
 }
