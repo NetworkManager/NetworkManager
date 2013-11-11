@@ -4193,7 +4193,7 @@ make_team_setting (shvarFile *ifcfg,
 
 	s_team = NM_SETTING_TEAM (nm_setting_team_new ());
 
-	value = svGetValue (ifcfg, "DEVICE", FALSE);
+	value = svGetValue (ifcfg, "DEVICE", TRUE);
 	if (!value || !strlen (value)) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
 		goto error;
@@ -4202,7 +4202,7 @@ make_team_setting (shvarFile *ifcfg,
 	g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
-	value = svGetValue (ifcfg, "TEAM_CONFIG", FALSE);
+	value = svGetValue (ifcfg, "TEAM_CONFIG", TRUE);
 	if (value) {
 		g_object_set (s_team, NM_SETTING_TEAM_CONFIG, value, NULL);
 		g_free (value);
@@ -4496,7 +4496,7 @@ make_team_port_setting (shvarFile *ifcfg)
 	NMSetting *s_port = NULL;
 	char *value;
 
-	value = svGetValue (ifcfg, "TEAM_PORT_CONFIG", FALSE);
+	value = svGetValue (ifcfg, "TEAM_PORT_CONFIG", TRUE);
 	if (value) {
 		s_port = nm_setting_team_port_new ();
 		g_object_set (s_port, NM_SETTING_TEAM_PORT_CONFIG, value, NULL);
