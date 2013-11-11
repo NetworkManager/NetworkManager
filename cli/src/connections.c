@@ -280,9 +280,9 @@ usage_connection_add (void)
 	         "                  [arp-interval <num>]\n"
 	         "                  [arp-ip-target <num>]\n\n"
 	         "    bond-slave:   master <master (ifname or connection UUID)>\n\n"
-	         "    team:         [config <json config>]\n\n"
+	         "    team:         [config <file>|<raw JSON data>]\n\n"
 	         "    team-slave:   master <master (ifname or connection UUID)>\n"
-	         "                  [config <json config>]\n\n"
+	         "                  [config <file>|<raw JSON data>]\n\n"
 	         "    bridge:       [stp yes|no>]\n"
 	         "                  [priority <num>]\n"
 	         "                  [forward-delay <2-30>]\n"
@@ -2767,6 +2767,53 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 }
 
 static void
+do_questionnaire_team_common (const char *type_name, char **config)
+{
+	char *answer;
+	gboolean answer_bool;
+	gboolean once_more;
+	char *json = NULL;
+	GError *error = NULL;
+
+	/* Ask for optional 'team' arguments. */
+	printf (_("There is 1 optional argument for '%s' connection type.\n"), type_name);
+	answer = nmc_get_user_input (_("Do you want to provide it? (yes/no) [yes] "));
+	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
+		g_free (answer);
+		return;
+	}
+
+	if (!*config) {
+		do {
+			*config = nmc_get_user_input (_("Team JSON configuration [none]: "));
+			once_more = !nmc_team_check_config (*config, &json, &error);
+			if (once_more) {
+				printf ("Error: %s\n", error->message);
+				g_clear_error (&error);
+				g_free (*config);
+			}
+		} while (once_more);
+	}
+
+	*config = json;
+	g_free (answer);
+	return;
+}
+
+/* Both team and team-slave curently have just ithe same one optional argument */
+static void
+do_questionnaire_team (char **config)
+{
+	do_questionnaire_team_common (_("team"), config);
+}
+
+static void
+do_questionnaire_team_slave (char **config)
+{
+	do_questionnaire_team_common (_("team-slave"), config);
+}
+
+static void
 do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
                          char **hello_time, char **max_age, char **ageing_time)
 {
@@ -3792,14 +3839,22 @@ cleanup_bond:
 
 	} else if (!strcmp (con_type, NM_SETTING_TEAM_SETTING_NAME)) {
 		/* Build up the settings required for 'team' */
+		gboolean success = FALSE;
 		char *team_ifname = NULL;
 		const char *ifname = NULL;
-		const char *config = NULL;
-		nmc_arg_t exp_args[] = { {"config", TRUE, &config, FALSE},
+		const char *config_c = NULL;
+		char *config = NULL;
+		char *json = NULL;
+		nmc_arg_t exp_args[] = { {"config", TRUE, &config_c, FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
 			return FALSE;
+
+		/* Also ask for all optional arguments if '--ask' is specified. */
+		config = g_strdup (config_c);
+		if (ask)
+			do_questionnaire_team (&config);
 
 		/* Use connection's ifname as 'team' ifname if exists, else generate one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
@@ -3815,22 +3870,35 @@ cleanup_bond:
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_team));
 
+		if (!nmc_team_check_config (config, &json, error)) {
+			g_prefix_error (error, _("Error: "));
+			goto cleanup_team;
+		}
+
 		/* Set team options */
 		g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, team_ifname, NULL);
-		if (config)
-			g_object_set (s_team, NM_SETTING_TEAM_CONFIG, config, NULL);
+		g_object_set (s_team, NM_SETTING_TEAM_CONFIG, json, NULL);
 
+		success = TRUE;
+cleanup_team:
 		g_free (team_ifname);
+		g_free (config);
+		g_free (json);
+		if (!success)
+			return FALSE;
 
 	} else if (!strcmp (con_type, "team-slave")) {
 		/* Build up the settings required for 'team-slave' */
+		gboolean success = FALSE;
 		const char *master = NULL;
 		char *master_ask = NULL;
 		const char *type = NULL;
-		const char *config = NULL;
-		nmc_arg_t exp_args[] = { {"master", TRUE, &master, !ask},
-		                         {"type",   TRUE, &type,   FALSE},
-		                         {"config",  TRUE, &config,  FALSE},
+		const char *config_c = NULL;
+		char *config = NULL;
+		char *json = NULL;
+		nmc_arg_t exp_args[] = { {"master", TRUE, &master,   !ask},
+		                         {"type",   TRUE, &type,     FALSE},
+		                         {"config", TRUE, &config_c, FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
@@ -3844,6 +3912,11 @@ cleanup_bond:
 			return FALSE;
 		}
 
+		/* Also ask for all optional arguments if '--ask' is specified. */
+		config = g_strdup (config_c);
+		if (ask)
+			do_questionnaire_team_slave (&config);
+
 		if (type)
 			printf (_("Warning: 'type' is currently ignored. "
 			          "We only support ethernet slaves for now.\n"));
@@ -3852,8 +3925,13 @@ cleanup_bond:
 		s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_team_port));
 
-		if (config)
-			g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, config, NULL);
+		if (!nmc_team_check_config (config, &json, error)) {
+			g_prefix_error (error, _("Error: "));
+			goto cleanup_team_slave;
+		}
+
+		/* Set team-port options */
+		g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, json, NULL);
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
@@ -3866,7 +3944,13 @@ cleanup_bond:
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
+		success = TRUE;
+cleanup_team_slave:
 		g_free (master_ask);
+		g_free (config);
+		g_free (json);
+		if (!success)
+			return FALSE;
 
 	} else if (!strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		/* Build up the settings required for 'bridge' */

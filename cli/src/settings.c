@@ -3100,6 +3100,34 @@ nmc_property_serial_set_parity (NMSetting *setting, const char *prop, const char
 	return TRUE;
 }
 
+/* --- NM_SETTING_TEAM_SETTING_NAME property functions --- */
+/* --- NM_SETTING_TEAM_PORT_SETTING_NAME property functions --- */
+static gboolean
+nmc_property_team_set_config (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	char *json = NULL;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_team_check_config (val, &json, error)) {
+		return FALSE;
+	}
+	g_object_set (setting, prop, json, NULL);
+	g_free (json);
+	return TRUE;
+}
+
+static const char *
+nmc_property_team_describe_config (NMSetting *setting, const char *prop)
+{
+	return _("nmcli can accepts both direct JSON configuration data and a file name containing "
+	         "the configuration. In the latter case the file is read and the contents is put "
+	         "into this property.\n\n"
+	         "Examples: set team.config "
+	         "{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
+	         "          set team.config /etc/my-team.conf\n");
+}
+
 /* --- NM_SETTING_VLAN_SETTING_NAME property setter functions --- */
 static gboolean
 nmc_property_vlan_set_prio_map (NMSetting *setting,
@@ -4590,18 +4618,18 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (TEAM, CONFIG),
 	                    nmc_property_team_get_config,
-	                    nmc_property_set_string,
+	                    nmc_property_team_set_config,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_team_describe_config,
 	                    NULL,
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_TEAM_PORT_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (TEAM_PORT, CONFIG),
 	                    nmc_property_team_port_get_config,
-	                    nmc_property_set_string,
+	                    nmc_property_team_set_config,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_team_describe_config,
 	                    NULL,
 	                    NULL);
 

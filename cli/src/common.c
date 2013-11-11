@@ -891,3 +891,36 @@ nmc_bond_validate_mode (const char *mode, GError **error)
 		return nmc_string_is_valid (mode, valid_modes, error);
 }
 
+gboolean
+nmc_team_check_config (const char *config, char **out_config, GError **error)
+{
+	char *contents = NULL;
+	size_t c_len = 0;
+
+	*out_config = NULL;
+
+	if (!config || strlen (config) == strspn (config, " \t"))
+		return TRUE;
+
+	/* 'config' can be either a file name or raw JSON config data */
+	if (g_file_test (config, G_FILE_TEST_EXISTS))
+		g_file_get_contents (config, &contents, NULL, NULL);
+	else
+		contents = g_strdup (config);
+
+	if (contents) {
+		g_strstrip (contents);
+		c_len = strlen (contents);
+	}
+
+	/* Do a simple validity check */
+	if (!contents || !contents[0] || c_len > 100000 || contents[0] != '{' || contents[c_len-1] != '}') {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("'%s' is not a valid team configuration or file name."), config);
+		g_free (contents);
+		return FALSE;
+	}
+	*out_config = contents;
+	return TRUE;
+}
+
