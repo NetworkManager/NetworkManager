@@ -83,6 +83,7 @@ enum {
 enum {
 	UPDATED,
 	REMOVED,
+	DBUS_UPDATED,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -1236,6 +1237,8 @@ con_update_cb (NMSettingsConnection *self,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, TRUE, info->sender_uid);
 		g_object_unref (for_agent);
+
+		g_signal_emit (self, signals[DBUS_UPDATED], 0);
 	}
 
 	update_complete (self, info, error);
@@ -2035,12 +2038,23 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		                       G_PARAM_READABLE));
 
 	/* Signals */
+
+	/* Emitted when the connection is changed for any reason */
 	signals[UPDATED] = 
 		g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,
 		              G_TYPE_FROM_CLASS (class),
 		              G_SIGNAL_RUN_FIRST,
 		              0,
 		              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
+
+	/* Emitted when connection is changed from D-Bus */
+	signals[DBUS_UPDATED] =
+		g_signal_new (NM_SETTINGS_CONNECTION_DBUS_UPDATED,
+		              G_TYPE_FROM_CLASS (class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 

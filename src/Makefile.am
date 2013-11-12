@@ -163,8 +163,6 @@ nm_sources = \
 	\
 	settings/nm-agent-manager.c \
 	settings/nm-agent-manager.h \
-	settings/nm-default-wired-connection.c \
-	settings/nm-default-wired-connection.h \
 	settings/nm-inotify-helper.c \
 	settings/nm-inotify-helper.h \
 	settings/nm-secret-agent.c \

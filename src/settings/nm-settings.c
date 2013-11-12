@@ -58,7 +58,6 @@
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-error.h"
-#include "nm-default-wired-connection.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager-auth.h"
@@ -878,21 +877,6 @@ claim_connection (NMSettings *self,
 	}
 }
 
-static void
-remove_default_wired_connection (NMSettings *self,
-                                 NMSettingsConnection *connection,
-                                 gboolean do_signal)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	const char *path = nm_connection_get_path (NM_CONNECTION (connection));
-
-	if (g_hash_table_lookup (priv->connections, path)) {
-		if (do_signal)
-			g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_CONNECTION_REMOVED);
-		g_hash_table_remove (priv->connections, path);
-	}
-}
-
 /**
  * nm_settings_add_connection:
  * @self: the #NMSettings object
@@ -1487,93 +1471,77 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	return FALSE;
 }
 
-#define DEFAULT_WIRED_TAG "default-wired"
+#define DEFAULT_WIRED_CONNECTION_TAG "default-wired-connection"
+#define DEFAULT_WIRED_DEVICE_TAG     "default-wired-device"
+
+static void default_wired_clear_tag (NMSettings *self,
+                                     NMDevice *device,
+                                     NMSettingsConnection *connection,
+                                     gboolean add_to_no_auto_default);
 
 static void
-default_wired_deleted (NMDefaultWiredConnection *wired,
-                       NMSettings *self)
+default_wired_connection_removed_cb (NMSettingsConnection *connection, NMSettings *self)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMDevice *device;
-	NMSettingConnection *s_con;
 
-	device = nm_default_wired_connection_get_device (wired);
-	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_TAG, NULL);
-
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (wired));
-	g_assert (s_con);
-
-	/* Ignore removals of read-only connections, since they couldn't have
-	 * been removed by the user.
-	 */
-	if (nm_setting_connection_get_read_only (s_con))
-		return;
-
-	/* When the default wired connection is removed (either deleted or saved
-	 * to a new persistent connection by a plugin), write the MAC address of
-	 * the wired device to the config file and don't create a new default wired
+	/* When the default wired connection is removed (either deleted or saved to
+	 * a new persistent connection by a plugin), write the MAC address of the
+	 * wired device to the config file and don't create a new default wired
 	 * connection for that device again.
 	 */
-	nm_config_set_ethernet_no_auto_default (priv->config, NM_CONFIG_DEVICE (device));
+	device = g_object_get_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG);
+	if (device)
+		default_wired_clear_tag (self, device, connection, TRUE);
 }
 
 static void
-delete_cb (NMSettingsConnection *connection, GError *error, gpointer user_data)
+default_wired_connection_dbus_updated_cb (NMSettingsConnection *connection, NMSettings *self)
 {
-}
+	NMDevice *device;
 
-static void
-default_wired_try_update (NMDefaultWiredConnection *wired,
-                          NMSettings *self)
-{
-	GError *error = NULL;
-	const char *id;
-	NMSettingsConnection *added;
-
-	/* Try to move this default wired conneciton to a plugin so that it has
-	 * persistent storage.
+	/* The connection has been changed by the user, it should no longer be
+	 * considered a default wired connection, and should no longer affect
+	 * the no-auto-default configuration option.
 	 */
+	device = g_object_get_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG);
+	if (device)
+		default_wired_clear_tag (self, device, connection, FALSE);
+}
 
-	/* Keep it alive over removal so we can re-add it if we need to */
-	g_object_ref (wired);
+static void
+default_wired_clear_tag (NMSettings *self,
+                         NMDevice *device,
+                         NMSettingsConnection *connection,
+                         gboolean add_to_no_auto_default)
+{
+	g_return_if_fail (NM_IS_SETTINGS (self));
+	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (device == g_object_get_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG));
+	g_return_if_fail (connection == g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG));
 
-	id = nm_connection_get_id (NM_CONNECTION (wired));
-	g_assert (id);
+	g_object_set_data (G_OBJECT (connection), DEFAULT_WIRED_DEVICE_TAG, NULL);
+	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, NULL);
 
-	remove_default_wired_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
-	added = nm_settings_add_connection (self, NM_CONNECTION (wired), TRUE, &error);
-	if (added) {
-		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (wired), delete_cb, NULL);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_removed_cb), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_dbus_updated_cb), self);
 
-		g_object_set_data (G_OBJECT (nm_default_wired_connection_get_device (wired)),
-		                   DEFAULT_WIRED_TAG,
-		                   NULL);
-		nm_log_info (LOGD_SETTINGS, "Saved default wired connection '%s' to persistent storage", id);
-	} else {
-		nm_log_warn (LOGD_SETTINGS, "couldn't save default wired connection '%s': %d / %s",
-			         id,
-			         error ? error->code : -1,
-			         (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-
-		/* If there was an error, don't destroy the default wired connection,
-		 * but add it back to the system settings service. Connection is already
-		 * exported on the bus, don't export it again, thus do_export == FALSE.
-		 */
-		claim_connection (self, NM_SETTINGS_CONNECTION (wired), FALSE);
-	}
-
-	g_object_unref (wired);
+	if (add_to_no_auto_default)
+		nm_config_set_ethernet_no_auto_default (NM_SETTINGS_GET_PRIVATE (self)->config, NM_CONFIG_DEVICE (device));
 }
 
 void
 nm_settings_device_added (NMSettings *self, NMDevice *device)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	NMDefaultWiredConnection *wired;
-	gboolean read_only = TRUE;
-	const char *id;
-	char *defname;
+	NMConnection *connection;
+	NMSettingsConnection *added;
+	NMSetting *setting;
+	GError *error = NULL;
+	const guint8 *hw_address;
+	char *defname, *uuid;
+	guint len = 0;
+	GByteArray *mac;
 
 	if (!NM_IS_DEVICE_ETHERNET (device))
 		return;
@@ -1582,45 +1550,77 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	 * ignore it.
 	 */
 	if (   !nm_device_get_managed (device)
-	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_TAG)
+	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG)
 	    || have_connection_for_device (self, device)
 	    || !nm_config_get_ethernet_can_auto_default (priv->config, NM_CONFIG_DEVICE (device)))
 		return;
 
-	if (get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))
-		read_only = FALSE;
-
-	defname = nm_settings_utils_get_default_wired_name (priv->connections);
-	wired = nm_default_wired_connection_new (device, defname, read_only);
-	g_free (defname);
-	if (!wired)
+	hw_address = nm_device_get_hw_address (device, &len);
+	if (!hw_address)
 		return;
 
-	id = nm_connection_get_id (NM_CONNECTION (wired));
-	g_assert (id);
+	connection = nm_connection_new ();
+	g_assert (connection);
+	setting = nm_setting_connection_new ();
+	g_assert (setting);
+	nm_connection_add_setting (connection, setting);
 
-	nm_log_info (LOGD_SETTINGS, "Added default wired connection '%s' for %s",
-	             id, nm_device_get_udi (device));
+	defname = nm_settings_utils_get_default_wired_name (priv->connections);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, defname,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
+	              NULL);
+	g_free (uuid);
+	g_free (defname);
 
-	g_signal_connect (wired, "try-update", (GCallback) default_wired_try_update, self);
-	g_signal_connect (wired, "deleted", (GCallback) default_wired_deleted, self);
-	claim_connection (self, NM_SETTINGS_CONNECTION (wired), TRUE);
-	g_object_unref (wired);
+	/* Lock the connection to the device */
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
 
-	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_TAG, wired);
+	mac = g_byte_array_sized_new (len);
+	g_byte_array_append (mac, hw_address, len);
+	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+	g_byte_array_unref (mac);
+
+	/* Add the connection */
+	added = nm_settings_add_connection (self, connection, FALSE, &error);
+	g_object_unref (connection);
+
+	if (!added) {
+		nm_log_warn (LOGD_SETTINGS, "(%s) couldn't create default wired connection: %s",
+		             nm_device_get_iface (device),
+		             (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return;
+	}
+
+	g_object_set_data (G_OBJECT (added), DEFAULT_WIRED_DEVICE_TAG, device);
+	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, added);
+
+	g_signal_connect (added, NM_SETTINGS_CONNECTION_DBUS_UPDATED,
+	                  G_CALLBACK (default_wired_connection_dbus_updated_cb), self);
+	g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
+	                  G_CALLBACK (default_wired_connection_removed_cb), self);
+
+	nm_log_info (LOGD_SETTINGS, "(%s): created default wired connection '%s'",
+	             nm_device_get_iface (device),
+	             nm_connection_get_id (NM_CONNECTION (added)));
 }
 
 void
 nm_settings_device_removed (NMSettings *self, NMDevice *device)
 {
-	NMDefaultWiredConnection *connection;
+	NMSettingsConnection *connection;
 
-	if (!NM_IS_DEVICE_ETHERNET (device))
-		return;
-
-	connection = (NMDefaultWiredConnection *) g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_TAG);
-	if (connection)
-		remove_default_wired_connection (self, NM_SETTINGS_CONNECTION (connection), TRUE);
+	connection = g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG);
+	if (connection) {
+		default_wired_clear_tag (self, device, connection, FALSE);
+		nm_settings_connection_delete (connection, NULL, NULL);
+	}
 }
 
 /***************************************************************/

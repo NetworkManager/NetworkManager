@@ -41,6 +41,9 @@ G_BEGIN_DECLS
 #define NM_SETTINGS_CONNECTION_GET_SECRETS "get-secrets"
 #define NM_SETTINGS_CONNECTION_CANCEL_SECRETS "cancel-secrets"
 
+/* Emitted when connection is changed from D-Bus */
+#define NM_SETTINGS_CONNECTION_DBUS_UPDATED "dbus-updated"
+
 /* Properties */
 #define NM_SETTINGS_CONNECTION_VISIBLE "visible"
 #define NM_SETTINGS_CONNECTION_UNSAVED "unsaved"
