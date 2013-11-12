@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2012 Red Hat, Inc.
+ * Copyright (C) 2008 - 2013 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -345,8 +345,11 @@ read_connections (NMSystemConfigInterface *config)
 
 	oldconns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		g_hash_table_insert (oldconns, g_strdup (nm_keyfile_connection_get_path (data)), data);
+	while (g_hash_table_iter_next (&iter, NULL, &data)) {
+		const char *con_path = nm_keyfile_connection_get_path (data);
+		if (con_path)
+			g_hash_table_insert (oldconns, g_strdup (con_path), data);
+	}
 
 	while ((item = g_dir_read_name (dir))) {
 		NMKeyfileConnection *connection;
