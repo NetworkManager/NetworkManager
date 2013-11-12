@@ -2153,7 +2153,7 @@ static const char *
 nmc_property_connection_describe_permissions (NMSetting *setting, const char *prop)
 {
 	return _("Enter a list of user permissions. This is a list of user names formatted as:\n"
-	         "  [user:]<user name 1>, [user:]<user name 2>,... \n"
+	         "  [user:]<user name 1>, [user:]<user name 2>,...\n"
 	         "The items can be separated by commas or spaces.\n\n"
 	         "Example: alice bob charlie\n");
 }
@@ -2816,7 +2816,7 @@ static const char *
 nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
 {
 	return _("Enter a list of IPv4 routes formatted as:\n"
-	         "  ip/[prefix] next-hop [metric],... \n"
+	         "  ip/[prefix] next-hop [metric],...\n"
 	         "Missing prefix is regarded as a prefix of 32.\n"
 	         "Missing metric is regarded as a metric of 0.\n\n"
 	         "Example: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n");
@@ -3033,7 +3033,7 @@ static const char *
 nmc_property_ipv6_describe_routes (NMSetting *setting, const char *prop)
 {
 	return _("Enter a list of IPv6 routes formatted as:\n"
-	         "  ip/[prefix] next-hop [metric],... \n"
+	         "  ip/[prefix] next-hop [metric],...\n"
 	         "Missing prefix is regarded as a prefix of 128.\n"
 	         "Missing metric is regarded as a metric of 0.\n\n"
 	         "Example: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n");
@@ -3321,7 +3321,7 @@ nmc_property_wired_describe_s390_options (NMSetting *setting, const char *prop)
 		options_str = g_strjoinv (", ", (char **) valid_options);
 
 		desc = g_strdup_printf (_("Enter a list of S/390 options formatted as:\n"
-		                          "  option = <value>, option = <value>,... \n"
+		                          "  option = <value>, option = <value>,...\n"
 		                          "Valid options are: %s\n"),
 		                        options_str);
 		g_free (options_str);
