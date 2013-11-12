@@ -538,6 +538,12 @@ _nmcli()
     # right of the cursor, just ignore them. Also don't care about ${words[0]}.
     words=("${words[@]:1:$cword}")
 
+    # _init_completion returns the words with all the quotes and escaping
+    # characters. We don't care about them, drop them at first.
+    for i in ${!words[*]}; do
+        words[i]="$(echo "${words[i]}" | xargs 2>/dev/null || true)"
+    done
+
     _nmcli_complete_OPTIONS && return 0
 
     local command="${words[1]}"
