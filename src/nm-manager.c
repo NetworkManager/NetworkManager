@@ -2894,20 +2894,23 @@ _new_active_connection (NMManager *self,
 
 	/* Can't create new AC for already-active connection */
 	existing_ac = find_ac_for_connection (self, connection);
+	if (NM_IS_VPN_CONNECTION (existing_ac)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
+		             "Connection '%s' is already active",
+		             nm_connection_get_id (connection));
+		return NULL;
+	}
+
 	if (existing_ac) {
 		NMDevice *existing_device = nm_active_connection_get_device (existing_ac);
 
-		if (NM_IS_VPN_CONNECTION (existing_ac) || existing_device == device) {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
-			             "Connection '%s' is already active",
-			             nm_connection_get_id (connection));
-		} else {
+		if (existing_device != device) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
 			             "Connection '%s' is already active on %s",
 			             nm_connection_get_id (connection),
 			             nm_device_get_iface (existing_device));
+			return NULL;
 		}
-		return NULL;
 	}
 
 	/* Normalize the specific object */
