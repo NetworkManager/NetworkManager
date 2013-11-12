@@ -280,8 +280,8 @@ typedef struct {
 	gint32         ip6_accept_ra_save;
 
 	/* IPv6 privacy extensions (RFC4941) */
-	char *         ip6_privacy_tempaddr_path;
-	gint32         ip6_privacy_tempaddr_save;
+	char *         ip6_use_tempaddr_path;
+	gint32         ip6_use_tempaddr_save;
 
 	NMDHCPClient *  dhcp6_client;
 	NMRDiscDHCPLevel dhcp6_mode;
@@ -441,21 +441,21 @@ update_ip6_privacy_save (NMDevice *self)
 	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/use_tempaddr", ip_iface);
 	g_assert (new_path);
 
-	if (priv->ip6_privacy_tempaddr_path) {
+	if (priv->ip6_use_tempaddr_path) {
 		/* If the IP iface is different from before, use the new value */
-		if (!strcmp (new_path, priv->ip6_privacy_tempaddr_path)) {
+		if (!strcmp (new_path, priv->ip6_use_tempaddr_path)) {
 			g_free (new_path);
 			return;
 		}
-		g_free (priv->ip6_privacy_tempaddr_path);
+		g_free (priv->ip6_use_tempaddr_path);
 	}
 
 	/* Grab the original value of "use_tempaddr" so we can restore it when NM exits */
-	priv->ip6_privacy_tempaddr_path = new_path;
-	priv->ip6_privacy_tempaddr_save = nm_platform_sysctl_get_uint (priv->ip6_privacy_tempaddr_path);
-	if (priv->ip6_privacy_tempaddr_save < 0 || priv->ip6_privacy_tempaddr_save > 2) {
-		g_free (priv->ip6_privacy_tempaddr_path);
-		priv->ip6_privacy_tempaddr_path = NULL;
+	priv->ip6_use_tempaddr_path = new_path;
+	priv->ip6_use_tempaddr_save = nm_platform_sysctl_get_uint (priv->ip6_use_tempaddr_path);
+	if (priv->ip6_use_tempaddr_save < 0 || priv->ip6_use_tempaddr_save > 2) {
+		g_free (priv->ip6_use_tempaddr_path);
+		priv->ip6_use_tempaddr_path = NULL;
 	}
 }
 
@@ -3579,8 +3579,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 		ip6_privacy_str = "2";
 	break;
 	}
-	if (priv->ip6_privacy_tempaddr_path)
-		nm_platform_sysctl_set (priv->ip6_privacy_tempaddr_path, ip6_privacy_str);
+	if (priv->ip6_use_tempaddr_path)
+		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, ip6_privacy_str);
 
 	return ret;
 }
@@ -4508,8 +4508,8 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 		nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 
 	/* Turn off IPv6 privacy extensions */
-	if (priv->ip6_privacy_tempaddr_path)
-		nm_platform_sysctl_set (priv->ip6_privacy_tempaddr_path, "0");
+	if (priv->ip6_use_tempaddr_path)
+		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
@@ -5269,16 +5269,16 @@ dispose (GObject *object)
 		}
 
 		/* reset the saved use_tempaddr value */
-		if (   priv->ip6_privacy_tempaddr_path
-			&& g_file_test (priv->ip6_privacy_tempaddr_path, G_FILE_TEST_EXISTS)) {
+		if (   priv->ip6_use_tempaddr_path
+			&& g_file_test (priv->ip6_use_tempaddr_path, G_FILE_TEST_EXISTS)) {
 			char tmp[16];
 
-			snprintf (tmp, sizeof (tmp), "%d", priv->ip6_privacy_tempaddr_save);
-			nm_platform_sysctl_set (priv->ip6_privacy_tempaddr_path, tmp);
+			snprintf (tmp, sizeof (tmp), "%d", priv->ip6_use_tempaddr_save);
+			nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, tmp);
 		}
 	}
 	g_free (priv->ip6_accept_ra_path);
-	g_free (priv->ip6_privacy_tempaddr_path);
+	g_free (priv->ip6_use_tempaddr_path);
 
 	if (priv->carrier_defer_id) {
 		g_source_remove (priv->carrier_defer_id);
