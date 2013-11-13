@@ -547,7 +547,7 @@ _nmcli()
     # In case the cursor is not at the end of the line,
     # $cur consists of spaces that we want do remove.
     # For example: `nmcli connection modify id  <TAB>  lo`
-    if [[ "$cur" =~ [[:space:]]+ ]]; then
+    if [[ "$cur" =~ ^[[:space:]]+ ]]; then
         cur=''
     fi
 
