@@ -312,7 +312,7 @@ verify_wpa_psk (NMSettingWirelessSecurity *s_wsec,
 
 			n = nm_setting_wireless_security_get_num_pairwise (s_wsec);
 			tmp = (n > 0) ? nm_setting_wireless_security_get_pairwise (s_wsec, 0) : NULL;
-			if (n > 1 || !tmp || strcmp (tmp, "none")) {
+			if (n > 1 || g_strcmp0 (tmp, "none")) {
 				g_set_error_literal (error,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 				                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,

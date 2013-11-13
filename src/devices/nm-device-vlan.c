@@ -318,7 +318,12 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, nm_device_get_iface (device), NULL);
 	}
 
-	(void) nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id);
+	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
+		nm_log_warn (LOGD_VLAN, "(%s): failed to get VLAN interface info while updating connection.",
+		             nm_device_get_iface (device));
+		return;
+	}
+
 	if (priv->vlan_id != vlan_id) {
 		priv->vlan_id = vlan_id;
 		g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_ID);

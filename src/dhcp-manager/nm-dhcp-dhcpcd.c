@@ -173,9 +173,10 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 	/* Chain up to parent */
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client, release, duid);
 
-	if (priv->pid_file)
+	if (priv->pid_file) {
 		if (remove (priv->pid_file) == -1)
 			nm_log_dbg (LOGD_DHCP, "Could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
+	}
 
 	/* FIXME: implement release... */
 }
