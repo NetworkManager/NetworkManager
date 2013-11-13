@@ -434,7 +434,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                      "InterfaceName",
 		                      "The name of the virtual in-kernel bridging network interface",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:stp:
@@ -450,7 +450,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                        "Controls whether Spanning Tree Protocol (STP) "
 		                        "is enabled for this bridge.",
 		                        TRUE,
-		                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:priority:
@@ -470,7 +470,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                     "lowest priority bridge will be elected the root "
 		                     "bridge.",
 		                     0, G_MAXUINT16, 0x80,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:forward-delay:
@@ -486,7 +486,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                     "The Spanning Tree Protocol (STP) forwarding "
 		                     "delay, in seconds.",
 		                     0, BR_MAX_FORWARD_DELAY, 15,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:hello-time:
@@ -502,7 +502,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                     "The Spanning Tree Protocol (STP) hello time, in "
 		                     "seconds.",
 		                     0, BR_MAX_HELLO_TIME, 2,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:max-age:
@@ -518,7 +518,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                     "The Spanning Tree Protocol (STP) maximum message "
 		                     "age, in seconds.",
 		                     0, BR_MAX_MAX_AGE, 20,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:ageing-time:
@@ -533,6 +533,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                     "AgeingTime",
 		                     "The ethernet MAC address aging time, in seconds.",
 		                     0, BR_MAX_AGEING_TIME, 300,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 }
 

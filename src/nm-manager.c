@@ -1755,7 +1755,7 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
 
-		if (nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_CANDIDATE)) {
+		if (nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
 			nm_log_info (LOGD_DEVICE, "(%s): found matching connection '%s'",
 						 nm_device_get_iface (device),
 						 nm_connection_get_id (candidate));

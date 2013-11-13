@@ -238,7 +238,7 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		                      "InterfaceName",
 		                      "The name of the virtual in-kernel team network interface",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingTeam:config:
@@ -259,5 +259,5 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		                      "teamd. If not specified, the default configuration is used. "
 		                      "See man teamd.conf for the format details.",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 }

@@ -248,7 +248,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                             "SSID",
 		                             "SSID of the mesh network to join.",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingOlpcMesh:channel:
@@ -261,7 +261,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                    "Channel",
 		                    "Channel on which the mesh network to join is located.",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingOlpcMesh:dhcp-anycast-address:

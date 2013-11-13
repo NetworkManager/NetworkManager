@@ -569,6 +569,9 @@ nm_setting_compare (NMSetting *a,
 			&& (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
 
+		if ((flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_spec->flags & NM_SETTING_PARAM_INFERRABLE))
+			continue;
+
 		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
 		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
 			continue;
@@ -589,6 +592,9 @@ should_compare_prop (NMSetting *setting,
 	/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
 	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_FUZZY)
 	    && (prop_flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
+		return FALSE;
+
+	if ((comp_flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_flags & NM_SETTING_PARAM_INFERRABLE))
 		return FALSE;
 
 	if (prop_flags & NM_SETTING_PARAM_SECRET) {
