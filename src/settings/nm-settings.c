@@ -1591,14 +1591,19 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 }
 
 void
-nm_settings_device_removed (NMSettings *self, NMDevice *device)
+nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting)
 {
 	NMSettingsConnection *connection;
 
 	connection = g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG);
 	if (connection) {
 		default_wired_clear_tag (self, device, connection, FALSE);
-		nm_settings_connection_delete (connection, NULL, NULL);
+
+		/* Don't delete the default wired connection on shutdown, so that it
+		 * remains up and can be assumed if NM starts again.
+		 */
+		if (quitting == FALSE)
+			nm_settings_connection_delete (connection, NULL, NULL);
 	}
 }
 

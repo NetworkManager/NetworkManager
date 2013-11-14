@@ -814,7 +814,7 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 
 	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
 
-	nm_settings_device_removed (priv->settings, device);
+	nm_settings_device_removed (priv->settings, device, quitting);
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_unref (device);
 

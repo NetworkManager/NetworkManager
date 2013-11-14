@@ -120,6 +120,6 @@ char *nm_settings_get_hostname (NMSettings *self);
 
 void nm_settings_device_added (NMSettings *self, NMDevice *device);
 
-void nm_settings_device_removed (NMSettings *self, NMDevice *device);
+void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
 
 #endif  /* __NM_SETTINGS_H__ */
