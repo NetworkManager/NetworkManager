@@ -1104,6 +1104,10 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 	auto_nl_object struct nl_object *object = obj;
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
+	struct nl_dump_params dp = {
+		.dp_type = NL_DUMP_DETAILS,
+		.dp_fd = stderr,
+	};
 
 	nle = add_kernel_object (priv->nlh, object);
 
@@ -1117,6 +1121,7 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 		break;
 	default:
 		error ("Netlink error: %s", nl_geterror (nle));
+		nl_object_dump (object, &dp);
 		return FALSE;
 	}
 
