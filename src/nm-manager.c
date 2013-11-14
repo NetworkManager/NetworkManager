@@ -1755,18 +1755,22 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	for (iter = connections; iter; iter = iter->next) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
 
-		if (nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
-			nm_log_info (LOGD_DEVICE, "(%s): found matching connection '%s'",
-						 nm_device_get_iface (device),
-						 nm_connection_get_id (candidate));
-			g_object_unref (connection);
-			return candidate;
-		}
+		if (!nm_device_check_connection_compatible (device, candidate, NULL))
+			continue;
+
+		if (!nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+			continue;
+
+		nm_log_info (LOGD_DEVICE, "(%s): found matching connection '%s'",
+		             nm_device_get_iface (device),
+		             nm_connection_get_id (candidate));
+		g_object_unref (connection);
+		return candidate;
 	}
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): generated connection '%s'",
-				nm_device_get_iface (device),
-				nm_connection_get_id (connection));
+	            nm_device_get_iface (device),
+	            nm_connection_get_id (connection));
 
 	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
 	if (!added) {
