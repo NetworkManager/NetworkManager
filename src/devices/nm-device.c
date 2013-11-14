@@ -1676,8 +1676,10 @@ nm_device_generate_connection (NMDevice *device)
 		return NULL;
 
 	/* Return NULL if device is unconfigured. */
-	if (!device_has_config (device))
+	if (!device_has_config (device)) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): device has no existing configuration", ifname);
 		return NULL;
+	}
 
 	connection = nm_connection_new ();
 	s_con = nm_setting_connection_new ();
@@ -1697,7 +1699,7 @@ nm_device_generate_connection (NMDevice *device)
 	/* If the device is a slave, update various slave settings */
 	if (ifindex)
 		master_ifindex = nm_platform_link_get_master (ifindex);
-	if (master_ifindex) {
+	if (master_ifindex > 0) {
 		const char *master_iface = nm_platform_link_get_name (master_ifindex);
 		const char *slave_type = NULL;
 		gboolean success = FALSE;
@@ -1727,21 +1729,22 @@ nm_device_generate_connection (NMDevice *device)
 		              NM_SETTING_CONNECTION_MASTER, master_iface,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		              NULL);
+	} else {
+		/* Only regular and master devices get IP configuration; slaves do not */
+		s_ip4 = nm_setting_ip4_config_new ();
+		nm_connection_add_setting (connection, s_ip4);
+		if (priv->ip4_config)
+			nm_ip4_config_update_setting (priv->ip4_config, (NMSettingIP4Config *) s_ip4);
+		else
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NULL);
+
+		s_ip6 = nm_setting_ip6_config_new ();
+		nm_connection_add_setting (connection, s_ip6);
+		if (priv->ip6_config)
+			nm_ip6_config_update_setting (priv->ip6_config, (NMSettingIP6Config *) s_ip6);
+		else
+			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 	}
-
-	s_ip4 = nm_setting_ip4_config_new ();
-	nm_connection_add_setting (connection, s_ip4);
-	if (priv->ip4_config)
-		nm_ip4_config_update_setting (priv->ip4_config, (NMSettingIP4Config *) s_ip4);
-	else
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NULL);
-
-	s_ip6 = nm_setting_ip6_config_new ();
-	nm_connection_add_setting (connection, s_ip6);
-	if (priv->ip6_config)
-		nm_ip6_config_update_setting (priv->ip6_config, (NMSettingIP6Config *) s_ip6);
-	else
-		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 
 	klass->update_connection (device, connection);
 
@@ -1751,12 +1754,13 @@ nm_device_generate_connection (NMDevice *device)
 	/* Ignore the connection if it has no IP configuration,
 	 * no slave configuration, and is not a master interface.
 	 */
-	ip4_method = nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (s_ip4));
-	ip6_method = nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (s_ip6));
-	if (   strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
-	    && strcmp (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
+	ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	ip6_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	if (   g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
+	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && !nm_platform_link_supports_slaves (priv->ifindex)) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): ignoring generated connection (no IP, not master, no slaves)", ifname);
 		g_object_unref (connection);
 		connection = NULL;
 	}
