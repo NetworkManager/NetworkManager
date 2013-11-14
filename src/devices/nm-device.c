@@ -1694,12 +1694,6 @@ nm_device_generate_connection (NMDevice *device)
 		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type, NULL);
 	nm_connection_add_setting (connection, s_con);
 
-	/* Bind loopback connection to 'lo' device */
-	if (nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_LOOPBACK)
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
-		              NULL);
-
 	/* If the device is a slave, update various slave settings */
 	if (ifindex)
 		master_ifindex = nm_platform_link_get_master (ifindex);
