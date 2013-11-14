@@ -98,8 +98,16 @@ check_connection_compatible (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
+	NMSettingConnection *s_con;
+
 	if (!nm_connection_get_setting_generic (connection))
 		nm_connection_add_setting (connection, nm_setting_generic_new ());
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, nm_device_get_iface (device),
+	              NULL);
 }
 
 /**************************************************************/
