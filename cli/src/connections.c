@@ -2063,7 +2063,7 @@ get_valid_settings_array (const char *con_type)
 
 	num = G_N_ELEMENTS (nmc_valid_connection_types);
         for (i = 0; i < num; i++) {
-		if (!strcmp (con_type, nmc_valid_connection_types[i].name))
+		if (!g_strcmp0 (con_type, nmc_valid_connection_types[i].name))
 			return nmc_valid_connection_types[i].settings;
 	}
 	return NULL;
