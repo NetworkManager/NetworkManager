@@ -524,10 +524,13 @@ deferred_notify_cb (gpointer data)
 	props = g_slist_reverse (priv->notify_props);
 	priv->notify_props = NULL;
 
+	g_object_ref (object);
 	for (iter = props; iter; iter = g_slist_next (iter)) {
 		g_object_notify (G_OBJECT (object), (const char *) iter->data);
 		g_free (iter->data);
 	}
+	g_object_unref (object);
+
 	g_slist_free (props);
 	return FALSE;
 }
