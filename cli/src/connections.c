@@ -1758,6 +1758,13 @@ typedef struct NameItem {
 	gboolean mandatory;
 } NameItem;
 
+static const NameItem nmc_generic_settings [] = {
+	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
+	{ NULL, NULL, NULL, FALSE }
+};
+
 static const NameItem nmc_ethernet_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
@@ -1924,6 +1931,7 @@ static const NameItem nmc_bridge_slave_settings [] = {
 
 /* Available connection types */
 static const NameItem nmc_valid_connection_types[] = {
+	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet",  nmc_ethernet_settings     },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,   "wifi",      nmc_wifi_settings         },
 	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,        nmc_wimax_settings        },
