@@ -676,46 +676,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	return success;
 }
 
-#define REMOVED_ID_TAG "removed-id-tag"
-#define UPDATED_ID_TAG "updated-id-tag"
-#define VISIBLE_ID_TAG "visible-id-tag"
-
-static void
-connection_removed (NMSettingsConnection *obj, gpointer user_data)
-{
-	GObject *connection = G_OBJECT (obj);
-	guint id;
-
-	g_object_ref (connection);
-
-	/* Disconnect signal handlers, as plugins might still keep references
-	 * to the connection (and thus the signal handlers would still be live)
-	 * even after NMSettings has dropped all its references.
-	 */
-
-	id = GPOINTER_TO_UINT (g_object_get_data (connection, REMOVED_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (connection, id);
-
-	id = GPOINTER_TO_UINT (g_object_get_data (connection, UPDATED_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (connection, id);
-
-	id = GPOINTER_TO_UINT (g_object_get_data (connection, VISIBLE_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (connection, id);
-
-	/* Forget about the connection internally */
-	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
-	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
-
-	/* Re-emit for listeners like NMPolicy */
-	g_signal_emit (NM_SETTINGS (user_data), signals[CONNECTION_REMOVED], 0, connection);
-	g_signal_emit_by_name (NM_SETTINGS (user_data), NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
-
-	g_object_unref (connection);
-}
-
 static void
 connection_updated (NMSettingsConnection *connection, gpointer user_data)
 {
@@ -737,6 +697,33 @@ connection_visibility_changed (NMSettingsConnection *connection,
 	               signals[CONNECTION_VISIBILITY_CHANGED],
 	               0,
 	               connection);
+}
+
+static void
+connection_removed (NMSettingsConnection *connection, gpointer user_data)
+{
+	NMSettings *self = NM_SETTINGS (user_data);
+
+	g_object_ref (connection);
+
+	/* Disconnect signal handlers, as plugins might still keep references
+	 * to the connection (and thus the signal handlers would still be live)
+	 * even after NMSettings has dropped all its references.
+	 */
+
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
+
+	/* Forget about the connection internally */
+	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
+	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
+
+	/* Re-emit for listeners like NMPolicy */
+	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
+
+	g_object_unref (connection);
 }
 
 static void
@@ -802,7 +789,6 @@ claim_connection (NMSettings *self,
 	GHashTableIter iter;
 	gpointer data;
 	char *path;
-	guint id;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -836,20 +822,13 @@ claim_connection (NMSettings *self,
 	/* Evil openconnect migration hack */
 	openconnect_migrate_hack (NM_CONNECTION (connection));
 
-	id = g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
-	                       G_CALLBACK (connection_removed),
-	                       self);
-	g_object_set_data (G_OBJECT (connection), REMOVED_ID_TAG, GUINT_TO_POINTER (id));
-
-	id = g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED,
-	                       G_CALLBACK (connection_updated),
-	                       self);
-	g_object_set_data (G_OBJECT (connection), UPDATED_ID_TAG, GUINT_TO_POINTER (id));
-
-	id = g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
-	                       G_CALLBACK (connection_visibility_changed),
-	                       self);
-	g_object_set_data (G_OBJECT (connection), VISIBLE_ID_TAG, GUINT_TO_POINTER (id));
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
+	                  G_CALLBACK (connection_removed), self);
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED,
+	                  G_CALLBACK (connection_updated), self);
+	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
+	                  G_CALLBACK (connection_visibility_changed),
+	                  self);
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
