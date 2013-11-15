@@ -4,6 +4,9 @@
 get_timestamp() {
     date --utc '+%Y%m%d-%H%M%S'
 }
+log_timestamp() {
+    echo "STARTING_NEXT_PHASE: `get_timestamp`"
+}
 DATE="`get_timestamp`"
 REPO=ssh://Jenkins-nm-user/var/lib/git/NetworkManager.git
 
@@ -42,6 +45,7 @@ temporary_workaround_01() {
     git apply valgrind.suppressions.patch
 }
 
+log_timestamp
 git reset --hard HEAD
 git clean -fdx
 git submodule foreach git clean -fdx
@@ -51,12 +55,31 @@ temporary_workaround_01
 
 
 #export CFLAGS="-Wall -g -O0 -fstack-protector-strong -Wno-deprecated-declarations"
-
 # yum install ppp-devel polkit-devel vala-compat-tools gcc-c++
+
+
+log_timestamp
 ./autogen.sh --enable-maintainer-mode --prefix=$PWD/.INSTALL/ --with-dhclient=yes --with-dhcpcd=yes --with-crypto=nss --enable-more-warnings=error --enable-ppp=yes --enable-polkit=yes --with-session-tracking=systemd --with-suspend-resume=systemd --with-tests=yes --enable-tests=yes --with-valgrind=yes --enable-ifcfg-rh=yes --enable-ifupdown=yes --enable-ifnet=yes --enable-gtk-doc --enable-qt=yes --with-system-libndp=no --enable-static=libndp --enable-bluez4=no --enable-wimax=no --enable-vala=no --enable-modify-system=no
 
+
+log_timestamp
 make
+
+
+log_timestamp
 make check
+
+
+log_timestamp
 make distcheck
 
+
+log_timestamp
+wget http://file.brq.redhat.com/~thaller/nmtui-0.0.1.tar.xz
+git checkout origin/th/automation -- :/contrib/
+./contrib/rpm/build.sh
+
+
+log_timestamp
 git_notes_ok
+
