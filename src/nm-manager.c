@@ -57,7 +57,6 @@
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-gre.h"
-#include "nm-setting-private.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
@@ -1713,6 +1712,12 @@ local_slist_free (void *loc)
 		g_slist_free (*location);
 }
 
+static gboolean
+match_connection_filter (NMConnection *connection, gpointer user_data)
+{
+	return nm_device_check_connection_compatible (NM_DEVICE (user_data), connection, NULL);
+}
+
 /**
  * get_existing_connection:
  * @manager: #NMManager instance
@@ -1726,9 +1731,8 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
-	NMConnection *connection = NULL;
+	NMConnection *connection = NULL, *matched;
 	NMSettingsConnection *added = NULL;
-	GSList *iter;
 	GError *error = NULL;
 
 	nm_device_capture_initial_config (device);
@@ -1752,20 +1756,17 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	 * When no configured connection matches the generated connection, we keep
 	 * the generated connection instead.
 	 */
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (!nm_device_check_connection_compatible (device, candidate, NULL))
-			continue;
-
-		if (!nm_connection_compare (connection, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE))
-			continue;
-
+	connections = g_slist_sort (connections, nm_settings_sort_connections);
+	matched = nm_utils_match_connection (connections,
+	                                     connection,
+	                                     match_connection_filter,
+	                                     device);
+	if (matched) {
 		nm_log_info (LOGD_DEVICE, "(%s): found matching connection '%s'",
 		             nm_device_get_iface (device),
-		             nm_connection_get_id (candidate));
+		             nm_connection_get_id (matched));
 		g_object_unref (connection);
-		return candidate;
+		return matched;
 	}
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): generated connection '%s'",

@@ -31,6 +31,7 @@
 #include "nm-ip6-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-connection.h"
+#include "nm-setting-private.h"
 
 gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr);
 
@@ -85,5 +86,12 @@ void nm_utils_complete_generic (NMConnection *connection,
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 
 GPtrArray *nm_utils_read_resolv_conf_nameservers (const char *rc_contents);
+
+typedef gboolean (NMUtilsMatchFilterFunc) (NMConnection *connection, gpointer user_data);
+
+NMConnection *nm_utils_match_connection (GSList *connections,
+                                         NMConnection *original,
+                                         NMUtilsMatchFilterFunc match_filter_func,
+                                         gpointer match_filter_data);
 
 #endif /* NETWORK_MANAGER_UTILS_H */
