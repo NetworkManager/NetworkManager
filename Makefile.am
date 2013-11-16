@@ -14,8 +14,8 @@ SUBDIRS = \
 	data \
 	test \
 	po \
-	man \
 	docs \
+	man \
 	examples \
 	vapi
 
