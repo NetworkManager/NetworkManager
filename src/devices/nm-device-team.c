@@ -513,7 +513,8 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 
 	if (!*teamd_binary) {
 		nm_log_warn (LOGD_TEAM,
-		             "Activation (%s) to start teamd: not found", iface);
+		             "Activation (%s) failed to start teamd: teamd binary not found",
+		             iface);
 		return FALSE;
 	}
 
