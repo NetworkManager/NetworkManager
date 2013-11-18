@@ -664,8 +664,8 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 	char **my_failures = NULL;
 	gboolean ret = FALSE;
 
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
-	g_return_val_if_fail (filenames != NULL, NULL);
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_val_if_fail (filenames != NULL, FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
