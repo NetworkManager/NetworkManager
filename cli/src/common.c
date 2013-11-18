@@ -797,7 +797,14 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED:
 		return _("A secondary connection of the base connection failed");
 
+	case NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED:
+		return _("DCB or FCoE setup failed");
+
+	case NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED:
+		return _("teamd control failed");
+
 	default:
+		/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
 		return _("Unknown");
 	}
 }
