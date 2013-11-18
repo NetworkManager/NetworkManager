@@ -149,7 +149,7 @@ gboolean
 nm_system_config_interface_load_connection (NMSystemConfigInterface *config,
                                             const char *filename)
 {
-	g_return_val_if_fail (config != NULL, NULL);
+	g_return_val_if_fail (config != NULL, FALSE);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->load_connection)
 		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->load_connection (config, filename);
