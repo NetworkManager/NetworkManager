@@ -730,7 +730,7 @@ _nmcli()
                                     OPTIONS_TYPED=(config)
                                     ;;
                                 team-|team-s|team-sl|team-sla|team-slav|team-slave)
-                                    OPTIONS_TYPED=(master)
+                                    OPTIONS_TYPED=(master config)
                                     OPTIONS_MANDATORY=(master)
                                     ;;
                                 bridge)
