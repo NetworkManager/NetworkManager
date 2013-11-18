@@ -11,7 +11,8 @@ PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-de
     bash-completion man-db man-pages vim-minimal
     firewald
     gdb valgrind lsof strace nmap-ncat tcpdump
-    net-tools bridge-utils vconfig"
+    net-tools bridge-utils vconfig
+    teamd libteam"
 KERNEL_URL=http://kojipkgs.fedoraproject.org/packages/kernel/3.8.5/201.fc18/i686/kernel-3.8.5-201.fc18.i686.rpm
 KERNEL=`basename "${KERNEL_URL%.rpm}"`
 #RELEASE="http://kojipkgs.fedoraproject.org/packages/fedora-release/18/1/noarch/fedora-release-18-1.noarch.rpm"
