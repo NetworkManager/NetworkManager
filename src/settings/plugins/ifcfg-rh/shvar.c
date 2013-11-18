@@ -148,10 +148,7 @@ svEscape(const char *s) {
     char *new;
     int i, j, mangle = 0, space = 0, newline = 0;
     int newlen, slen;
-    static int esclen, splen;
 
-    if (!esclen) esclen = strlen(escapees);
-    if (!splen) splen = strlen(spaces);
     slen = strlen(s);
 
     for (i = 0; i < slen; i++) {
