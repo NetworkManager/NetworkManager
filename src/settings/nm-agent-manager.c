@@ -604,7 +604,8 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 
 	/* If this agent is being asked right now, cancel the request */
 	if (agent == req->current) {
-		req->cancel_callback (req);
+		if (req->cancel_callback)
+			req->cancel_callback (req);
 		req->current_has_modify = FALSE;
 		req->current = NULL;
 		req->current_call_id = NULL;
