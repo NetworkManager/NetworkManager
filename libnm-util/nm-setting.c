@@ -1050,7 +1050,7 @@ set_secret_flags (NMSetting *setting,
  * @flags: the #NMSettingSecretFlags for the secret
  * @error: location to store error, or %NULL
  *
- * For a given secret, retrieves the #NMSettingSecretFlags describing how to
+ * For a given secret, stores the #NMSettingSecretFlags describing how to
  * handle that secret.
  *
  * Returns: TRUE on success (if the given secret name was a valid property of
