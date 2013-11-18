@@ -1233,7 +1233,6 @@ slave_state_changed (NMDevice *slave,
 	            state_to_string (slave_new_state));
 
 	g_assert (priv->state > NM_DEVICE_STATE_DISCONNECTED);
-	g_assert (priv->state <= NM_DEVICE_STATE_ACTIVATED);
 
 	/* Don't try to enslave slaves until the master is ready */
 	if (priv->state < NM_DEVICE_STATE_CONFIG)
