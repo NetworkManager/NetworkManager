@@ -376,6 +376,13 @@ _nmcli_complete_COMMAND_ARGS()
                     return 0
                 fi
                 ;;
+            config)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    compopt -o default
+                    COMPREPLY=()
+                    return 0
+                fi
+                ;;
             ip4| \
             ip6| \
             gw4| \
@@ -391,7 +398,6 @@ _nmcli_complete_COMMAND_ARGS()
             mtu| \
             cloned-mac| \
             addr| \
-            config| \
             parent| \
             miimon| \
             arp-interval| \
