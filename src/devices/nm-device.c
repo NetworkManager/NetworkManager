@@ -1412,7 +1412,7 @@ nm_device_master_release_slaves (NMDevice *self, gboolean failed)
  * Notifies a slave that either it has been enslaved, or else its master tried
  * to enslave it and failed.
  */
-void
+static void
 nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
@@ -1452,7 +1452,7 @@ nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
  * Notifies a slave that it has been released, and whether this was expected
  * or not.
  */
-void
+static void
 nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
