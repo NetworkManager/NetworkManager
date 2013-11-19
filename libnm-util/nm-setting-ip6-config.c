@@ -924,7 +924,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						      "property must be set.  Note: the 'shared' method "
 						      "is not yet supported.",
 						      NULL,
-						      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						      G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingIP6Config:dhcp-hostname:
@@ -940,7 +940,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                      "The specified name will be sent to the DHCP server "
 		                      "when acquiring a lease.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                      G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingIP6Config:dns:
@@ -968,7 +968,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 							   "these DNS servers are used as the only DNS "
 							   "servers for this connection.",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingIP6Config:dns-search:
@@ -992,7 +992,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 							   "domains are used as the only search domains for "
 							   "this connection.",
 							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingIP6Config:addresses:
@@ -1028,7 +1028,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 							   "as the interface is automatically assigned an "
 							   "address with these methods.",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingIP6Config:routes:
@@ -1059,7 +1059,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 							   "used with the 'shared' or 'link-local' methods "
 							   "because there is no upstream network.",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:
@@ -1077,7 +1077,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "routes are ignored and only routes specified in the "
 						   "'routes' property, if any, are used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-dns:
@@ -1098,7 +1098,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "nameservers and search domains specified in the 'dns' "
 						   "and 'dns-search' properties, if any, are used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingIP6Config:never-default:
@@ -1114,7 +1114,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "IPv6 connection, meaning it will never be assigned "
 						   "the default IPv6 route by NetworkManager.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingIP6Config:may-fail:
@@ -1139,7 +1139,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "configuration to succeed if IPv6 configuration "
 						   "fails but IPv4 configuration completes successfully.",
 						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
@@ -1167,8 +1167,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
-
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 }
 
 /********************************************************************/

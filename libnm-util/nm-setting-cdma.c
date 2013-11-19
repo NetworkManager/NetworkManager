@@ -316,7 +316,7 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 						  "specified, the default number (#777) is used when "
 						  "required.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingCdma:username:
@@ -333,7 +333,7 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 						  "required.  Note that many providers do not require "
 						  "a username or accept any username.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingCdma:password:
@@ -350,7 +350,7 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 						  "required.  Note that many providers do not require "
 						  "a password or accept any password.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingCdma:password-flags:
@@ -364,5 +364,5 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 }

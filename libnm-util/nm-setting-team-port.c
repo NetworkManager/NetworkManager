@@ -179,5 +179,5 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 		                      "teamd. If not specified, the dafault configuration is used. "
 		                      "See man teamd.conf for the format details.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                      G_PARAM_READWRITE));
 }

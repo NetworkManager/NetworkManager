@@ -3042,7 +3042,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "this setting; refer to wpa_supplicant "
 							   "documentation for the allowed combinations.",
 							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:identity:
@@ -3057,7 +3057,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "Identity string for EAP authentication methods.  "
 						  "Often the user's user or login name.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:anonymous-identity:
@@ -3075,7 +3075,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "types that support different tunneled identity like "
 						  "EAP-TTLS.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:pac-file:
@@ -3088,7 +3088,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "PAC file",
 						  "UTF-8 encoded file path containing PAC for EAP-FAST.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:ca-cert:
@@ -3116,7 +3116,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "supports CA certificates, but this allows "
 							   "man-in-the-middle attacks and is NOT recommended.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:ca-path:
@@ -3134,7 +3134,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "verification chain in addition to the certificate "
 						  "specified in the 'ca-cert' property.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:subject-match:
@@ -3154,7 +3154,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							  "authentication server certificate's subject is "
 							  "performed.",
 							  NULL,
-							  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:altsubject-matches:
@@ -3175,7 +3175,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 									  "of the server certificate's "
 									  "altSubjectName is performed.",
 									  DBUS_TYPE_G_LIST_OF_STRING,
-									  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+									  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:client-cert:
@@ -3200,7 +3200,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "certificate, prefixed with the string 'file://' "
 							   "and ending with a terminating NULL byte.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase1-peapver:
@@ -3224,7 +3224,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "PEAP version.  To do so, this property may be set to "
 						  "'0' or '1' to force that specific PEAP version.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase1-peaplabel:
@@ -3244,7 +3244,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "Set to '1' to force use of the new PEAP label.  See "
 						  "the wpa_supplicant documentation for more details.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase1-fast-provisioning:
@@ -3269,7 +3269,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "provisioning).  See the wpa_supplicant documentation "
 						  "for more details.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-auth:
@@ -3294,7 +3294,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "specific parameters for successful authentication; "
 						  "see the wpa_supplicant documentation for more details.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-autheap:
@@ -3319,7 +3319,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "for successful authentication; see the wpa_supplicant "
 						  "documentation for more details.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-ca-cert:
@@ -3349,7 +3349,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "certificates, but this allows man-in-the-middle "
 							   "attacks and is NOT recommended.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-ca-path:
@@ -3367,7 +3367,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "verification chain in addition to the certificate "
 						  "specified in the 'phase2-ca-cert' property.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-subject-match:
@@ -3388,7 +3388,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							  "the authentication server certificate's subject "
 							  "is performed.",
 							  NULL,
-							  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-altsubject-matches:
@@ -3412,7 +3412,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 									  "verification of the server certificate's "
 									  "altSubjectName is performed.",
 									  DBUS_TYPE_G_LIST_OF_STRING,
-									  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+									  G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-client-cert:
@@ -3439,7 +3439,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "certificate, prefixed with the string 'file://' "
 							   "and ending with a terminating NULL byte.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:password:
@@ -3454,7 +3454,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "Password",
 						  "UTF-8 encoded password used for EAP authentication methods.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSetting8021x:password-flags:
@@ -3468,7 +3468,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:password-raw:
@@ -3489,7 +3489,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                             "'password-raw' are given, 'password' is "
 		                             "preferred.",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSetting8021x:password-raw-flags:
@@ -3503,7 +3503,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:private-key:
@@ -3546,7 +3546,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "the password used to decode the PKCS#12 private "
 							   "key and certificate.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:private-key-password:
@@ -3567,7 +3567,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "private key either uses the path scheme, or if the "
 						  "private key is a PKCS#12 format key.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSetting8021x:private-key-password-flags:
@@ -3582,7 +3582,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-private-key:
@@ -3623,7 +3623,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "set to the password used to decode the PKCS#12 "
 							   "private key and certificate.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password:
@@ -3644,7 +3644,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "phase2 private key either uses the path scheme, or "
 						  "if the phase2 private key is a PKCS#12 format key.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password-flags:
@@ -3659,7 +3659,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:pin:
@@ -3672,7 +3672,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                      "PIN",
 		                      "PIN used for EAP authentication methods.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSetting8021x:pin-flags:
@@ -3686,7 +3686,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSetting8021x:system-ca-certs:
@@ -3710,7 +3710,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "chain in addition to any certificates specified "
 							   "by the 'ca-cert' and 'phase2-ca-cert' properties.",
 							   FALSE,
-							   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/* Initialize crypto lbrary. */
 	if (!nm_utils_init (&error)) {

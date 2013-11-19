@@ -1265,7 +1265,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "or 'wpa-eap' (WPA-Enterprise).  This property must "
 						  "be set for any WiFi connection that uses security.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_REQUIRED));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_REQUIRED));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-tx-keyidx:
@@ -1285,7 +1285,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						"through 3.  Note that some consumer access points "
 						"(like the Linksys WRT54G) number the keys 1 - 4.",
 						0, 3, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingWirelessSecurity:auth-alg:
@@ -1308,7 +1308,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "'ieee8021x' and auth-alg = 'leap') the 'leap-username' "
 						  "and 'leap-password' properties must be specified.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:proto:
@@ -1327,7 +1327,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 							   "WPA2/RSN).  If not specified, both WPA and RSN "
 							   "connections are allowed.",
 							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:pairwise:
@@ -1348,7 +1348,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                       "empty.  Each list element may be one of 'tkip' "
 		                       "or 'ccmp'.",
 		                       DBUS_TYPE_G_LIST_OF_STRING,
-		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                       G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:group:
@@ -1369,7 +1369,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                       "property empty.  Each list element may be one "
 		                       " of 'wep40', 'wep104', 'tkip', or 'ccmp'.",
 		                       DBUS_TYPE_G_LIST_OF_STRING,
-		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                       G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-username:
@@ -1384,7 +1384,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "The login username for legacy LEAP connections "
 						  "(ie, key-mgmt = 'ieee8021x' and auth-alg = 'leap').",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key0:
@@ -1400,7 +1400,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "networks.  See the 'wep-key-type' property for a "
 						  "description of how this key is interpreted.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key1:
@@ -1416,7 +1416,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "networks.  See the 'wep-key-type' property for a "
 						  "description of how this key is interpreted.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key2:
@@ -1432,7 +1432,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "networks.  See the 'wep-key-type' property for a "
 						  "description of how this key is interpreted.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key3:
@@ -1448,7 +1448,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "networks.  See the 'wep-key-type' property for a "
 						  "description of how this key is interpreted.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key-flags:
@@ -1462,7 +1462,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:psk:
@@ -1487,7 +1487,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "to derive the actual WPA-PSK used when connecting to "
 						  "the WiFi network.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingWirelessSecurity:psk-flags:
@@ -1501,7 +1501,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-password:
@@ -1516,7 +1516,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "The login password for legacy LEAP connections "
 						  "(ie, key-mgmt = 'ieee8021x' and auth-alg = 'leap').",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-password-flags:
@@ -1530,7 +1530,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key-type:
@@ -1557,5 +1557,5 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						NM_WEP_KEY_TYPE_UNKNOWN,
 						NM_WEP_KEY_TYPE_LAST,
 						NM_WEP_KEY_TYPE_UNKNOWN,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 }

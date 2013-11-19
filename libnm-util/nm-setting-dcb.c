@@ -974,7 +974,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                    "Flags may be any combination of 0x1 (enable), 0x2 "
 		                    "(advertise), and 0x4 (willing).",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:app-fcoe-priority:
@@ -994,7 +994,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                   "used when the 'app-fcoe-flags' property includes "
 		                   "the 'enabled' flag.",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingDcb:app-fcoe-mode:
@@ -1011,7 +1011,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                      "The FCoe controller mode; either 'fabric' (default) "
 		                      "or 'vn2vn'.",
 		                      NM_SETTING_DCB_FCOE_MODE_FABRIC,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingDcb:app-iscsi-flags:
@@ -1028,7 +1028,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                    "Flags may be any combination of 0x1 (enable), 0x2 "
 		                    "(advertise), and 0x4 (willing).",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:app-iscsi-priority:
@@ -1047,7 +1047,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                   "used when the 'app-iscsi-flags' property includes "
 		                   "the 'enabled' flag.",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingDcb:app-fip-flags:
@@ -1064,7 +1064,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                    "Flags may be any combination of 0x1 (enable), 0x2 "
 		                    "(advertise), and 0x4 (willing).",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:app-fip-priority:
@@ -1083,7 +1083,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                   "used when the 'app-fip-flags' property includes "
 		                   "the 'enabled' flag.",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingDcb:priority-flow-control-flags:
@@ -1100,7 +1100,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                    "Flags may be any combination of 0x1 (enable), 0x2 "
 		                    "(advertise), and 0x4 (willing).",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-flow-control:
@@ -1123,7 +1123,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             "values are 0 (do not transmit pause) and 1 "
 		                             "(transmit pause).",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-group-flags:
@@ -1140,7 +1140,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                    "Flags may be any combination of 0x1 (enable), 0x2 "
 		                    "(advertise), and 0x4 (willing).",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-group-id:
@@ -1162,7 +1162,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             "Allowed Priority Group ID values are 0 - 7 or "
 		                             "15 for the unrestricted group.",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-group-bandwidth:
@@ -1184,7 +1184,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             "allocated to that group.  Allowed values are 0 - 100, "
 		                             "and the sum of all values must total 100 percent.",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-bandwidth:
@@ -1208,7 +1208,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             "use.  The sum of all percentages for priorities which "
 		                             "belong to the same group must total 100 percent.",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-strict:
@@ -1233,7 +1233,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             "utilize all bandwidth) or 1 (the priority may "
 		                             "utilize all bandwidth).",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingDcb:priority-traffic-class:
@@ -1253,6 +1253,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             "value indicates the traffic class (0 - 7) to which "
 		                             "the priority is mapped.",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 }
 

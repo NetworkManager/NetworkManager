@@ -831,7 +831,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  "Interface.  If the device supports only one port "
 						  "type, this setting is ignored.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWired:speed:
@@ -846,7 +846,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						"If non-zero, request that the device use only the "
 						"specified speed.  In Mbit/s, ie 100 == 100Mbit/s.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingWired:duplex:
@@ -861,7 +861,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  "If specified, request that the device only use the "
 						  "specified duplex mode.  Either 'half' or 'full'.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingEthernet:auto-negotiate:
@@ -879,7 +879,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						   "in which case the 'speed' and 'duplex' properties "
 						   "should be set.",
 						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingWired:mac-address:
@@ -897,7 +897,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 							   "This property does not change the MAC address "
 							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWired:cloned-mac-address:
@@ -913,7 +913,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	                                     "this MAC address instead of its permanent MAC address.  "
 	                                     "This is known as MAC cloning or spoofing.",
 	                                     DBUS_TYPE_G_UCHAR_ARRAY,
-	                                     G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+	                                     G_PARAM_READWRITE));
     
 	/**
 	 * NMSettingWired:mac-address-blacklist:
@@ -932,7 +932,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                             "an address in the list.  Each MAC address is in the "
 		                             "standard hex-digits-and-colons notation (00:11:22:33:44:55).",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWired:mtu:
@@ -948,7 +948,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						"size or smaller, breaking larger packets up into "
 						"multiple Ethernet frames.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWired:s390-subchannels:
@@ -974,7 +974,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                       "string may only be composed of hexadecimal "
 		                       "characters and the period (.) character.",
 		                       DBUS_TYPE_G_ARRAY_OF_STRING,
-		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                       G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWired:s390-nettype:
@@ -990,7 +990,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  "'ctc', representing the different types of virtual "
 						  "network devices available on s390 systems.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWired:s390-options:
@@ -1009,6 +1009,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 							   "strings.  Allowed keys include 'portno', "
 							   "'layer2', 'portname', 'protocol', among others.",
 							   DBUS_TYPE_G_MAP_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 }
 

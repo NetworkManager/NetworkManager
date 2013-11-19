@@ -309,7 +309,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 						  "access concentrators or a specific service is known "
 						  "to be required.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingPPPOE:username:
@@ -322,7 +322,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 						  "Username",
 						  "Username used to authenticate with the PPPoE service.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingPPPOE:password:
@@ -335,7 +335,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 						  "Password",
 						  "Password used to authenticate with the PPPoE service.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingPPPOE:password-flags:
@@ -349,5 +349,5 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 }

@@ -64,7 +64,7 @@ typedef enum
 GQuark nm_setting_error_quark (void);
 
 
-/* The property of the #NMSetting should be serialized */
+/* DEPRECATED AND UNUSED */
 #define NM_SETTING_PARAM_SERIALIZE    (1 << (0 + G_PARAM_USER_SHIFT))
 
 /* The property of the #NMSetting is required for the setting to be valid */

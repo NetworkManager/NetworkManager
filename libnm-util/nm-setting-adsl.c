@@ -392,7 +392,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  "Username",
 						  "Username used to authenticate with the pppoa service.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingAdsl:password:
@@ -405,7 +405,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  "Password",
 						  "Password used to authenticate with the pppoa service.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingAdsl:password-flags:
@@ -419,7 +419,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingAdsl:protocol:
@@ -432,7 +432,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  "Protocol",
 						  "ADSL connection protocol.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingAdsl:encapsulation:
@@ -445,7 +445,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  "Encapsulation",
 						  "Encapsulation of ADSL connection",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingAdsl:vpi:
@@ -458,7 +458,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  "VPI",
 						  "VPI of ADSL connection",
 						  0, 65536, 0,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingAdsl:vci:
@@ -471,5 +471,5 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 						  "VCI",
 						  "VCI of ADSL connection",
 						  0, 65536, 0,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 }

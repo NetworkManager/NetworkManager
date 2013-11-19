@@ -247,7 +247,7 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 							  "Network Service Provider (NSP) name of the WiMAX "
 							  "network this connection should use.",
 							  NULL,
-							  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWimax:mac-address:
@@ -265,5 +265,5 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 							   "This property does not change the MAC address "
 							   "of the device (known as MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 }

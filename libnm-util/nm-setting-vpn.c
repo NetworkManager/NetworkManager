@@ -820,7 +820,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 						  "org.freedesktop.NetworkManager.vpnc for the vpnc "
 						  "plugin.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingVPN:user-name:
@@ -845,7 +845,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 		                      "automatically supply the username of the user which "
 		                      "requested the VPN connection.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                      G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingVPN:data:
@@ -861,7 +861,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 							   "specific data.  Both keys and values must be "
 							   "strings.",
 							   DBUS_TYPE_G_MAP_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingVPN:secrets:
@@ -877,6 +877,6 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 							   "specific secrets like passwords or private keys."
 							   "  Both keys and values must be strings.",
 							   DBUS_TYPE_G_MAP_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 }
 
