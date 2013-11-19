@@ -1,0 +1,61 @@
+<job product="cpe:/o:redhat:enterprise_linux:7.0" retention_tag="active+1">
+	<whiteboard>
+		$WHITEBOARD
+	</whiteboard>
+	<recipeSet priority="Normal">
+		<recipe kernel_options="" kernel_options_post="" ks_meta="method=nfs" role="None" whiteboard="NM Hell">
+			<autopick random="false"/>
+			<watchdog panic="ignore"/>
+			<packages/>
+			<ks_appends/>
+			<repos/>
+			<distroRequires>
+				<and>
+					<distro_family op="=" value="$DISTRO_FAMILY"/>
+					<distro_variant op="=" value="$DISTRO_VARIANT"/>
+					<distro_name op="=" value="$DISTRO_NAME"/>
+					<distro_arch op="=" value="$DISTRO_ARCH"/>
+				</and>
+			</distroRequires>
+			<hostRequires>
+				<and>
+					<group op="=" value="desktopqe-net"/>
+					<system_type op="=" value="Machine"/>
+				</and>
+			</hostRequires>
+			<partitions/>
+			<task name="/distribution/install" role="STANDALONE">
+				<params/>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="git clone git://github.com/roignac/behave &amp;&amp; cd behave &amp;&amp; git checkout html_formatter &amp;&amp; python setup.py install"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="easy_install pip; pip install pexpect"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="yum -y install wireshark"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="rpm -Uvh $RPM_LIST; service NetworkManager restart"/>
+				</params>
+			</task>
+			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
+				<params>
+					<param name="COMPONENT" value="NetworkManager"/>
+					<param name="WGET_URL" value="$TEST_URL"/>
+					<param name="TYPE" value="TEST"/>
+					<param name="TEST_MAPPER" value="True"/>
+				</params>
+			</task>
+		</recipe>
+	</recipeSet>
+</job>
+
