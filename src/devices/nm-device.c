@@ -3287,12 +3287,18 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 			NMRDiscRoute *discovered_route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
 			NMPlatformIP6Route route;
 
-			memset (&route, 0, sizeof (route));
-			route.network = discovered_route->network;
-			route.plen = discovered_route->plen;
-			route.gateway = discovered_route->gateway;
+			/* Only accept non-default routes.  The router has no idea what the
+			 * local configuration or user preferences are, so sending routes
+			 * with a prefix length of 0 is quite rude and thus ignored.
+			 */
+			if (discovered_route->plen > 0) {
+				memset (&route, 0, sizeof (route));
+				route.network = discovered_route->network;
+				route.plen = discovered_route->plen;
+				route.gateway = discovered_route->gateway;
 
-			nm_ip6_config_add_route (priv->ac_ip6_config, &route);
+				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
+			}
 		}
 	}
 
