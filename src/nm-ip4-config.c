@@ -29,6 +29,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip4-config-glue.h"
+#include "NetworkManagerUtils.h"
 
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
@@ -111,6 +112,52 @@ same_prefix (guint32 address1, guint32 address2, int plen)
 
 /******************************************************************/
 
+/**
+ * nm_ip4_config_capture_resolv_conf():
+ * @nameservers: array of guint32
+ * @rc_contents: the contents of a resolv.conf or %NULL to read /etc/resolv.conf
+ *
+ * Reads all resolv.conf IPv6 nameservers and adds them to @nameservers.
+ *
+ * Returns: %TRUE if nameservers were added, %FALSE if @nameservers is unchanged
+ */
+gboolean
+nm_ip4_config_capture_resolv_conf (GArray *nameservers,
+                                   const char *rc_contents)
+{
+	GPtrArray *read_ns;
+	guint i, j;
+	gboolean changed = FALSE;
+
+	g_return_val_if_fail (nameservers != NULL, FALSE);
+
+	read_ns = nm_utils_read_resolv_conf_nameservers (rc_contents);
+	if (!read_ns)
+		return FALSE;
+
+	for (i = 0; i < read_ns->len; i++) {
+		const char *s = g_ptr_array_index (read_ns, i);
+		guint32 ns = 0;
+
+		if (!inet_pton (AF_INET, s, (void *) &ns) || !ns)
+			continue;
+
+		/* Ignore duplicates */
+		for (j = 0; j < nameservers->len; j++) {
+			if (g_array_index (nameservers, guint32, j) == ns)
+				break;
+		}
+
+		if (j == nameservers->len) {
+			g_array_append_val (nameservers, ns);
+			changed = TRUE;
+		}
+	}
+
+	g_ptr_array_unref (read_ns);
+	return changed;
+}
+
 static gboolean
 addresses_are_duplicate (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b, gboolean consider_plen)
 {
@@ -125,12 +172,13 @@ routes_are_duplicate (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, 
 }
 
 NMIP4Config *
-nm_ip4_config_capture (int ifindex)
+nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 {
 	NMIP4Config *config;
 	NMIP4ConfigPrivate *priv;
 	guint i;
 	gboolean gateway_changed = FALSE;
+	gboolean has_gateway = FALSE;
 
 	/* Slaves have no IP configuration */
 	if (nm_platform_link_get_master (ifindex) > 0)
@@ -154,10 +202,19 @@ nm_ip4_config_capture (int ifindex)
 				priv->gateway = route->gateway;
 				gateway_changed = TRUE;
 			}
+			has_gateway = TRUE;
 			/* Remove the default route from the list */
 			g_array_remove_index (priv->routes, i);
 			break;
 		}
+	}
+
+	/* If the interface has the default route, and has IPv4 addresses, capture
+	 * nameservers from /etc/resolv.conf.
+	 */
+	if (priv->addresses->len && has_gateway && capture_resolv_conf) {
+		if (nm_ip4_config_capture_resolv_conf (priv->nameservers, NULL))
+			_NOTIFY (config, PROP_NAMESERVERS);
 	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */

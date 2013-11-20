@@ -25,6 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <resolv.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -609,5 +610,52 @@ nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id)
 {
 	/* Basically VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD */
 	return g_strdup_printf ("%s.%d", parent_iface, vlan_id);
+}
+
+/**
+ * nm_utils_read_resolv_conf_nameservers():
+ * @rc_contents: contents of a resolv.conf; or %NULL to read /etc/resolv.conf
+ *
+ * Reads all nameservers out of @rc_contents or /etc/resolv.conf and returns
+ * them.
+ *
+ * Returns: a #GPtrArray of 'char *' elements of each nameserver line from
+ * @contents or resolv.conf
+ */
+GPtrArray *
+nm_utils_read_resolv_conf_nameservers (const char *rc_contents)
+{
+	GPtrArray *nameservers = NULL;
+	char *contents = NULL;
+	char **lines, **iter;
+	char *p;
+
+	if (rc_contents)
+		contents = g_strdup (rc_contents);
+	else {
+		if (!g_file_get_contents (_PATH_RESCONF, &contents, NULL, NULL))
+			return NULL;
+	}
+
+	nameservers = g_ptr_array_new_full (3, g_free);
+
+	lines = g_strsplit_set (contents, "\r\n", -1);
+	for (iter = lines; *iter; iter++) {
+		if (!g_str_has_prefix (*iter, "nameserver"))
+			continue;
+		p = *iter + strlen ("nameserver");
+		if (!g_ascii_isspace (*p++))
+			continue;
+		/* Skip intermediate whitespace */
+		while (g_ascii_isspace (*p))
+			p++;
+		g_strchomp (p);
+
+		g_ptr_array_add (nameservers, g_strdup (p));
+	}
+	g_strfreev (lines);
+	g_free (contents);
+
+	return nameservers;
 }
 

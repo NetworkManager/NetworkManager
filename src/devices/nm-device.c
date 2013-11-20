@@ -357,7 +357,7 @@ static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *
 static void check_carrier (NMDevice *device);
 
 static void nm_device_queued_ip_config_change_clear (NMDevice *self);
-static void update_ip_config (NMDevice *self, gboolean capture_dhcp);
+static void update_ip_config (NMDevice *self, gboolean initial);
 static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
 
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
@@ -6503,7 +6503,7 @@ capture_lease_config (NMDevice *device,
 }
 
 static void
-update_ip_config (NMDevice *self, gboolean capture_dhcp)
+update_ip_config (NMDevice *self, gboolean initial)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
@@ -6515,10 +6515,10 @@ update_ip_config (NMDevice *self, gboolean capture_dhcp)
 
 	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
-	priv->ext_ip4_config = nm_ip4_config_capture (ifindex);
+	priv->ext_ip4_config = nm_ip4_config_capture (ifindex, initial);
 
 	if (priv->ext_ip4_config) {
-		if (capture_dhcp) {
+		if (initial) {
 			g_clear_object (&priv->dev_ip4_config);
 			capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
 		}
@@ -6532,7 +6532,7 @@ update_ip_config (NMDevice *self, gboolean capture_dhcp)
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
-	priv->ext_ip6_config = nm_ip6_config_capture (ifindex);
+	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, initial);
 	if (priv->ext_ip6_config) {
 
 		/* Check this before modifying ext_ip6_config */
