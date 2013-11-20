@@ -177,7 +177,8 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	NMIP4Config *config;
 	NMIP4ConfigPrivate *priv;
 	guint i;
-	gboolean gateway_changed = FALSE;
+	guint lowest_metric = G_MAXUINT;
+	guint32 old_gateway = 0;
 	gboolean has_gateway = FALSE;
 
 	/* Slaves have no IP configuration */
@@ -194,18 +195,19 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	priv->routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
 
 	/* Extract gateway from default route */
+	old_gateway = priv->gateway;
 	for (i = 0; i < priv->routes->len; i++) {
 		const NMPlatformIP4Route *route = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
 		if (route->network == 0) {
-			if (priv->gateway != route->gateway) {
+			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
-				gateway_changed = TRUE;
+				lowest_metric = route->metric;
 			}
 			has_gateway = TRUE;
 			/* Remove the default route from the list */
 			g_array_remove_index (priv->routes, i);
-			break;
+			i--;
 		}
 	}
 
@@ -220,7 +222,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
-	if (gateway_changed)
+	if (priv->gateway != old_gateway)
 		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;

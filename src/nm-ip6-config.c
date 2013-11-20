@@ -179,7 +179,8 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 	NMIP6Config *config;
 	NMIP6ConfigPrivate *priv;
 	guint i;
-	gboolean gateway_changed = FALSE;
+	guint lowest_metric = G_MAXUINT;
+	struct in6_addr old_gateway = IN6ADDR_ANY_INIT;
 	gboolean has_gateway = FALSE;
 
 	/* Slaves have no IP configuration */
@@ -196,18 +197,20 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 	priv->routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
 
 	/* Extract gateway from default route */
+	old_gateway = priv->gateway;
 	for (i = 0; i < priv->routes->len; i++) {
 		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
 		if (IN6_IS_ADDR_UNSPECIFIED (&route->network)) {
-			if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &route->gateway)) {
+			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
-				gateway_changed = TRUE;
+				lowest_metric = route->metric;
+				has_gateway = TRUE;
 			}
 			has_gateway = TRUE;
 			/* Remove the default route from the list */
 			g_array_remove_index (priv->routes, i);
-			break;
+			i--;
 		}
 	}
 
@@ -222,7 +225,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
-	if (gateway_changed)
+	if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &old_gateway))
 		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;
