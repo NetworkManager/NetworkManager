@@ -151,7 +151,7 @@ static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
                                              const char *object_path,
                                              gpointer user_data);
 
-static void add_device (NMManager *self, NMDevice *device, gboolean nm_created);
+static void add_device (NMManager *self, NMDevice *device, gboolean generate_con);
 static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
 
 static void hostname_provider_init (NMHostnameProvider *provider_class);
@@ -581,7 +581,7 @@ modem_added (NMModemManager *modem_manager,
 	/* Make the new modem device */
 	device = nm_device_modem_new (modem, driver);
 	if (device)
-		add_device (self, device, TRUE);
+		add_device (self, device, FALSE);
 }
 
 static void
@@ -1188,7 +1188,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	if (device) {
 		nm_device_set_is_nm_owned (device, TRUE);
-		add_device (self, device, TRUE);
+		add_device (self, device, FALSE);
 	}
 
 	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
@@ -1769,7 +1769,7 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 }
 
 static void
-add_device (NMManager *self, NMDevice *device, gboolean nm_created)
+add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
@@ -1862,8 +1862,9 @@ add_device (NMManager *self, NMDevice *device, gboolean nm_created)
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
-	/* Don't bother generating a connection for devices NM just created */
-	if (!nm_created)
+	/* Don't generate a connection e.g. for devices NM just created, or
+	 * for the loopback */
+	if (generate_con)
 		connection = get_existing_connection (self, device);
 
 	/* Start the device if it's supposed to be managed */
@@ -1963,7 +1964,7 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 		             has_dun && has_nap ? " " : "",
 		             has_nap ? "NAP" : "");
 
-		add_device (manager, device, TRUE);
+		add_device (manager, device, FALSE);
 	}
 }
 
@@ -2263,7 +2264,7 @@ platform_link_added_cb (NMPlatform *platform,
 	}
 
 	if (device)
-		add_device (self, device, FALSE);
+		add_device (self, device, plink->type != NM_LINK_TYPE_LOOPBACK);
 }
 
 static void
@@ -2300,7 +2301,7 @@ atm_device_added_cb (NMAtmManager *atm_mgr,
 
 	device = nm_device_adsl_new (sysfs_path, iface, driver);
 	if (device)
-		add_device (self, device, FALSE);
+		add_device (self, device, TRUE);
 }
 
 static void
