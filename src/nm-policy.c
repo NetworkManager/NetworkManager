@@ -369,6 +369,8 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	char *configured_hostname = NULL;
 	const char *dhcp_hostname, *p;
+	NMIP4Config *ip4_config;
+	NMIP6Config *ip6_config;
 
 	g_return_if_fail (policy != NULL);
 
@@ -459,42 +461,37 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	/* No configured hostname, no automatically determined hostname, and no
 	 * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
 	 */
-	if (best4) {
-		NMIP4Config *ip4_config;
-		const NMPlatformIP4Address *addr4;
+	ip4_config = best4 ? nm_device_get_ip4_config (best4) : NULL;
+	ip6_config = best6 ? nm_device_get_ip6_config (best6) : NULL;
 
-		ip4_config = nm_device_get_ip4_config (best4);
-		if (   !ip4_config
-		    || (nm_ip4_config_get_num_nameservers (ip4_config) == 0)
-		    || (nm_ip4_config_get_num_addresses (ip4_config) == 0)) {
-			/* No valid IP4 config (!!); fall back to localhost.localdomain */
-			_set_hostname (policy, NULL, "no IPv4 config");
-			return;
-		}
+	if (   (!ip4_config || (nm_ip4_config_get_num_addresses (ip4_config) == 0))
+	    && (!ip6_config || (nm_ip6_config_get_num_addresses (ip6_config) == 0))) {
+		/* No valid IP config; fall back to localhost.localdomain */
+		_set_hostname (policy, NULL, "no IP config");
+		return;
+	}
+
+	if (ip4_config) {
+		const NMPlatformIP4Address *addr4;
 
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
 		g_assert (addr4); /* checked for > 1 address above */
 
 		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
 		                                                     G_SOCKET_FAMILY_IPV4);
-	} else {
-		NMIP6Config *ip6_config;
+	} else if (ip6_config) {
 		const NMPlatformIP6Address *addr6;
-
-		ip6_config = nm_device_get_ip6_config (best6);
-		if (   !ip6_config
-		    || (nm_ip6_config_get_num_nameservers (ip6_config) == 0)
-		    || (nm_ip6_config_get_num_addresses (ip6_config) == 0)) {
-			/* No valid IP6 config (!!); fall back to localhost.localdomain */
-			_set_hostname (policy, NULL, "no IPv6 config");
-			return;
-		}
 
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
 		g_assert (addr6); /* checked for > 1 address above */
 
 		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
 		                                                     G_SOCKET_FAMILY_IPV6);
+	} else {
+		/* Should never get here... */
+		g_warn_if_reached ();
+		_set_hostname (policy, NULL, "no IP config");
+		return;
 	}
 
 	priv->lookup_cancellable = g_cancellable_new ();
