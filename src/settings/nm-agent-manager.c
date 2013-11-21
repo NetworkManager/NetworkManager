@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 - 2011 Red Hat, Inc.
+ * Copyright (C) 2010 - 2013 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -74,7 +74,9 @@ static void request_add_agent (Request *req,
                                NMSecretAgent *agent,
                                NMSessionMonitor *session_monitor);
 
-static void request_remove_agent (Request *req, NMSecretAgent *agent);
+static void request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs);
+
+static void request_next_agent (Request *req);
 
 static void impl_agent_manager_register (NMAgentManager *self,
                                          const char *identifier,
@@ -113,6 +115,7 @@ remove_agent (NMAgentManager *self, const char *owner)
 	NMSecretAgent *agent;
 	GHashTableIter iter;
 	gpointer data;
+	GSList *pending_reqs = NULL;
 
 	g_return_val_if_fail (owner != NULL, FALSE);
 
@@ -124,10 +127,17 @@ remove_agent (NMAgentManager *self, const char *owner)
 	nm_log_dbg (LOGD_AGENTS, "(%s) agent unregistered or disappeared",
 	            nm_secret_agent_get_description (agent));
 
-	/* Remove this agent to any in-progress secrets requests */
+	/* Remove this agent from any in-progress secrets requests */
 	g_hash_table_iter_init (&iter, priv->requests);
 	while (g_hash_table_iter_next (&iter, NULL, &data))
-		request_remove_agent ((Request *) data, agent);
+		request_remove_agent ((Request *) data, agent, &pending_reqs);
+
+	/* We cannot call request_next_agent() from from within hash iterating loop,
+	 * because it may remove the request from the hash table, which invalidates
+	 * the iterator. So, only remove the agent from requests. And store the requests
+	 * that should be sent to other agent to a temporary list to proceed afterwards.
+	 */
+	g_slist_free_full (pending_reqs, (GDestroyNotify) request_next_agent);
 
 	/* And dispose of the agent */
 	g_hash_table_remove (priv->agents, owner);
@@ -619,7 +629,7 @@ request_next_agent (Request *req)
 }
 
 static void
-request_remove_agent (Request *req, NMSecretAgent *agent)
+request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs)
 {
 	g_return_if_fail (req != NULL);
 	g_return_if_fail (agent != NULL);
@@ -629,7 +639,7 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 	if (agent == req->current) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) current agent removed from secrets request %p/%s",
 		            nm_secret_agent_get_description (agent), req, req->detail);
-		request_next_agent (req);
+		*pending_reqs = g_slist_prepend (*pending_reqs, req);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent removed from secrets request %p/%s",
 		            nm_secret_agent_get_description (agent), req, req->detail);
