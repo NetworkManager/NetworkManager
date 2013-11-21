@@ -8,6 +8,9 @@ import re
 import kobo.xmlrpc
 import xmlrpclib
 import termcolor
+from sets import Set
+import ast
+import datetime
 
 
 devnull = open(os.devnull, 'w')
@@ -20,19 +23,77 @@ def _call(args):
         sys.exit(1)
     return output
 
-def _read_config_file(filename):
-    values = {}
-    with open(filename) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line[0] == '#':
-                continue
-            name, var = line.partition("=")[::2]
-            var = var.strip()
-            if var and ((var[0]=='"' and var[-1]=='"') or (var[0]=="'" and var[-1]=="'")):
-               var = var[1:-1]
-            values[name.strip()] = var
-    return values
+class ConfigStore:
+    NAME_RHBZ_USER = 'rhbz_user'
+    NAME_RHBZ_PASSWD = 'rhbz_passwd'
+    NAMES = [
+            NAME_RHBZ_USER,
+            NAME_RHBZ_PASSWD,
+        ]
+    DEFAULT_FILE = '%s/.bzutil.conf' % os.path.expanduser("~")
+
+    def __init__(self):
+        self._initialized = False
+    def setup(self, filename):
+        if self._initialized:
+            raise Exception("config: cannot initialize more then once")
+        values = {}
+        if not filename:
+            if os.path.isfile(ConfigStore.DEFAULT_FILE):
+                filename = ConfigStore.DEFAULT_FILE
+        if filename:
+            if not os.path.isfile(filename):
+                raise Exception('config: file does not exist: %s. Use --conf to specify another file. Supported keys: [%s]' % (file,','.join(ConfigStore.NAMES)))
+            with open(filename) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line[0] == '#':
+                        continue
+                    name, var = line.partition("=")[::2]
+                    var = var.strip()
+                    if var and ((var[0]=='"' and var[-1]=='"') or (var[0]=="'" and var[-1]=="'")):
+                       var = var[1:-1]
+                    values[name.strip()] = var
+        self.filename = filename
+        self.values = values
+        self.v = {}
+        self._initialized = True
+    def get(self, key, default=None):
+        if not self._initialized:
+            raise Exception("config: cannot access the configuration before setup")
+        if key in self.v:
+            v = self.v[key]
+            return v if v is not None else default
+
+        ekey = "CONF_" + key
+        v = os.environ.get(ekey)
+        if v is None:
+            v = self.values.get(key, None)
+            if v is None:
+                if default is None:
+                    if self.filename:
+                        raise Exception('config: Missing configuration value \'%s\': set it in the config file \'%s\' or set the environment variable \'%s\'' % (key, self.filename, ec))
+                    else:
+                        raise Exception('config: Missing configuration value \'%s\': set it in the config file or set the environment variable \'%s\'' % (key, ec))
+        self.v[key] = v
+        return v if v is not None else default
+config = ConfigStore()
+
+_colormap_flag = {
+        '+': 'green',
+        '?': 'yellow',
+    }
+_colormap_status = {
+        'POST': 'green',
+        'MODIFIED': 'yellow',
+        'CLOSED': 'green',
+    }
+def _colored(colored, value, colormapping, prefix="", defaultcolor='red'):
+    if not colored:
+        return prefix + value
+    color = colormapping.get(value, defaultcolor)
+    return termcolor.colored(prefix+value, color)
+
 
 def git_ref_list(commit):
     return _call(['git', 'rev-list', '--no-walk', commit]).splitlines()
@@ -44,13 +105,17 @@ def git_commit_message(shaid):
     return _git_commit_message[shaid]
 
 _git_summary = {}
-def git_summary(commit, color=False):
-    tag = (commit,color)
+def git_summary(commit, color=False, truncate_s=0):
+    tag = (commit,color,truncate_s)
     if not _git_summary.has_key(tag):
-        if color:
-            pretty = '--pretty=format:%Cred%h%Creset - %Cgreen(%ci)%Creset [%C(yellow)%an%Creset] %s%C(yellow)%d%Creset'
+        if truncate_s and truncate_s >= 2:
+            truncate_s = '%%<(%s,trunc)' % truncate_s
         else:
-            pretty = '--pretty=format:%h - (%ci) [%an] %s%d'
+            truncate_s = ''
+        if color:
+            pretty = '--pretty=format:%Cred%h%Creset - %Cgreen(%ci)%Creset [%C(yellow)%an%Creset] '+truncate_s+'%s%C(yellow)%d%Creset'
+        else:
+            pretty = '--pretty=format:%h - (%ci) [%an] ' + truncate_s + '%s%d'
         _git_summary[tag] = _call(['git', 'log', '-n1', pretty, '--abbrev-commit', '--date=local', commit])
     return _git_summary[tag]
 
@@ -76,9 +141,9 @@ class CmdBase:
 
 class BzClient:
     COMMON_FIELDS = ['id', 'depends_on', 'blocks', 'flags', 'keywords', 'status', 'component']
-    DEFAULT_FIELDS = ['summary', 'status', 'flags', 'cf_fixed_in']
+    DEFAULT_FIELDS = ['summary', 'status', 'flags', 'cf_fixed_in', 'component']
 
-    def __init__(self, url, config):
+    def __init__(self, url):
         transport = None
         use_https = False
         if url.startswith('https://'):
@@ -88,46 +153,54 @@ class BzClient:
             transport = kobo.xmlrpc.CookieTransport()
         self._key_part = (url, use_https)
         self._client = xmlrpclib.ServerProxy(url, transport=transport)
-        self._config = config
 
-    def _login(self, user, password):
-        self._client.User.login({'login': user,
-                                'password': password})
+    def _login(self):
+        if hasattr(self, '_login_called'):
+            return
+        self._user = config.get(ConfigStore.NAME_RHBZ_USER)
+        self._password = config.get(ConfigStore.NAME_RHBZ_PASSWD)
+        self._login_called = True
+        self._client.User.login({'login': self._user,
+                                 'password': self._password})
 
     _getBZDataCache = {}
-    def getBZData(self, bzid, include_fields = DEFAULT_FIELDS):
-        if not self._config.get('rhbz_passwd', None) or not self._config.get('rhbz_user', None):
-            raise PasswordError('The Bugzilla password has not been set')
-        user = self._config['rhbz_user'];
-        passwd = self._config['rhbz_passwd']
+    def getBZData(self, bzid):
+        self._login()
 
-        key = sorted(include_fields)
-        key.append(self._key_part)
-        key.append(user)
-        key.append(passwd)
-        key.append(bzid)
-        key = tuple(key)
-
+        key = ( bzid, self._key_part, self._user, self._password )
         if BzClient._getBZDataCache.has_key(key):
             return BzClient._getBZDataCache[key]
 
-        self._login(user, passwd)
-
         params = {'ids': bzid}
-        if include_fields is not None:
-            params['include_fields'] = include_fields
+        params['include_fields'] = BzClient.DEFAULT_FIELDS
 
         bugs_data = self._client.Bug.get(params)
+        #print(bugs_data)
         bug_data = bugs_data['bugs'][0]
         BzClient._getBZDataCache[key] = bug_data
         return bug_data
 
+    def search(self, search_params):
+        self._login()
+        bugs_data = self._client.Bug.search(search_params)['bugs']
+        for bug_data in bugs_data:
+            key = ( bug_data['id'], self._key_part, self._user, self._password )
+            BzClient._getBZDataCache[key] = bug_data
+        return bugs_data
+
+
+def is_sequence(arg):
+    return (not hasattr(arg, "strip") and
+        hasattr(arg, "__getitem__") or
+        hasattr(arg, "__iter__"))
 
 
 # class to hold information about a bugzilla entry
 class BzInfo:
-    def __init__(self, bzid):
+    def __init__(self, bzid, bzdata=None):
         self.bzid = bzid
+        if bzdata is not None:
+            self._bzdata = bzdata
     @property
     def bztype(self):
         return None
@@ -153,12 +226,26 @@ class BzInfo:
         return self._bzdata.get(field, None)
     def _fetchBZData(self):
         return None
-
+    def to_string_tight(self, verbose, colored):
+        if verbose == 1:
+            return None
+        return self.url
+    def to_string(self, prefix, verbose, colored):
+        i = "%-4s #%-8s" % (self.bztype, self.bzid)
+        if colored:
+            i = termcolor.colored(i, 'cyan')
+        s = self.to_string_tight(verbose, colored)
+        if s is None:
+            s = ""
+        else:
+            s = " " + s
+        s = prefix + ("bug: %s%s" % (i, s))
+        return s
 
 
 class BzInfoBgo(BzInfo):
     def __init__(self, bzid):
-        BzInfo.__init__(self, bzid)
+        BzInfo.__init__(self, int(bzid))
     @BzInfo.bztype.getter
     def bztype(self):
         return "bgo"
@@ -166,10 +253,9 @@ class BzInfoBgo(BzInfo):
     def url(self):
         return "https://bugzilla.gnome.org/show_bug.cgi?id=%s" % self.bzid
 
-
 class BzInfoRhbz(BzInfo):
-    def __init__(self, bzid):
-        BzInfo.__init__(self, bzid)
+    def __init__(self, bzid, bzdata=None):
+        BzInfo.__init__(self, int(bzid), bzdata)
     @BzInfo.bztype.getter
     def bztype(self):
         return "rhbz"
@@ -177,8 +263,66 @@ class BzInfoRhbz(BzInfo):
     def url(self):
         return "https://bugzilla.redhat.com/show_bug.cgi?id=%s" % self.bzid
 
+    BzClient = BzClient('https://bugzilla.redhat.com/xmlrpc.cgi')
     def _fetchBZData(self):
-        return BzClient('https://bugzilla.redhat.com/xmlrpc.cgi', config).getBZData(self.bzid)
+        return BzInfoRhbz.BzClient.getBZData(self.bzid)
+
+    def to_string_tight(self, verbose, colored):
+        if verbose != 1:
+            return BzInfo.to_string_tight(self, verbose, colored)
+        bzdata = self.getBZData()
+        s = ''
+        v = bzdata.get('status', None)
+        if v:
+            s = s +_colored(colored, v, _colormap_status)
+        else:
+            s = s + '??'
+        v = bzdata.get('flags', None)
+        if v is not None:
+            d = dict([ (flag['name'], flag['status']) for flag in v ])
+            fl = []
+            for k in [
+                        ('rhel-7.0.0','7'),
+                        ('rhel-6.5.0', '6'),
+                        ('pm_ack', 'p'),
+                        ('devel_ack', 'd'),
+                        ('qa_ack', 'q'),
+                    ]:
+                val = d.get(k[0], None)
+                if val is not None:
+                    fl.append(k[1] + val)
+            s = s + ' ' + ' '.join(fl)
+        v = bzdata.get('summary', None)
+        if v is not None:
+            s = s + ' - ' + v
+        return s
+    def to_string(self, prefix, verbose, colored):
+        if verbose <= 1:
+            s = BzInfo.to_string(self, prefix, verbose, colored)
+        elif verbose == 2:
+            s = BzInfo.to_string(self, prefix, verbose, colored)
+            s = s + '\n' + prefix + "     " + self.to_string_tight(1, colored)
+        else:
+            s = BzInfo.to_string(self, prefix, verbose, colored)
+            bzdata = self.getBZData()
+            for k in CmdParseCommitMessage._order_keys(bzdata.keys(), BzClient.DEFAULT_FIELDS):
+                if k == 'flags':
+                    for flag in bzdata[k]:
+                        s = s + '\n' + prefix + ("     %-20s = %s" % ('#'+flag['name'], _colored(colored,flag['status'], _colormap_flag, ">> ")))
+                elif k == 'summary':
+                    s = s + '\n' + prefix + ("     %-20s = \"%s\"" % (k, bzdata[k]))
+                elif k == 'status':
+                    s = s + '\n' + prefix + ("     %-20s = %s" % (k, _colored(colored, bzdata[k], _colormap_status, ">> ")))
+                elif k == 'cf_fixed_in':
+                    if bzdata[k]:
+                        s = s + '\n' + prefix + ("     %-20s = %s" % (k, bzdata[k]))
+                else:
+                    v = bzdata[k]
+                    if is_sequence(v):
+                        v = ', '.join(v)
+                    s = s + '\n' + prefix + ("     %-20s = %s" % (k, v))
+        return s
+
 
 
 
@@ -245,10 +389,17 @@ class UtilParseCommitMessage:
     def __repr__(self):
         return str(self)
 
-    def commit_summary(self, color):
+    def commit_summary(self, colored, shorten=False):
         if self._git_backend:
-            return git_summary(self.commit, color)
-        return self.commit
+            return "ref: " + git_summary(self.commit, colored, 50 if shorten else 0)
+        s = self.commit
+        if shorten and len(s) > 100:
+            s = s[0:98] + ".."
+        if colored:
+            s = "ref: " + termcolor.colored(s, 'red')
+        else:
+            s = "ref: " + s
+        return s
     def get_commit_date(self):
         if self._git_backend:
             return git_get_commit_date(self.commit)
@@ -263,101 +414,162 @@ class CmdParseCommitMessage(CmdBase):
     def __init__(self, name):
         CmdBase.__init__(self, name)
 
-        self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Parse commit messages.')
-        self.parser.add_argument('--color', '-c', dest='color', action='store_true')
-        self.parser.add_argument('--conf', metavar='conf', default=('%s/.bzutil.conf' % os.path.expanduser("~")))
-        self.parser.add_argument('--bz', action='append')
-        self.parser.add_argument('commit', metavar='commit', type=str, nargs='*',
-                                 help='commit ids to parse')
+
+        self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description="Parse commit messages.")
+        self.parser.add_argument('--color', '-c', dest='color', action='store_true', help='colorize output')
+        self.parser.add_argument('--conf', metavar='conf', default=None, help='config file (defaults to %s). Supported keys: [%s]' % (ConfigStore.DEFAULT_FILE, ','.join(ConfigStore.NAMES)))
+        self.parser.add_argument('--ref', action='append', help='Specify refs to parse bz ids from the commit message, this can be any ref, including ranges.')
+        self.parser.add_argument('--bz', action='append', help='Specify additional bugzilla numbers on command line '
+                                                               'This is a coma separated list of bugs, in the format [type:]num, eg. rh:100000,bg:70000')
+        self.parser.add_argument('--rh-search', action='append', help='Search Red Hat bugzilla with the given search expression. This is a dictionary in python syntax')
+        self.parser.add_argument('--rh-search-since', default=None, help="A shortcut for --rh-search that sets some default options and 'last_change_time' }\"")
+        self.parser.add_argument('--verbose', '-v', action='count', help='Increase verbosity (use more then once)')
+        self.parser.add_argument('--list-refs', dest='list_refs', action='store_const', const=True, help='List the refs in the output')
+        self.parser.add_argument('--list-by-ref', dest='list_by_refs', action='store_const', const=True, help='List sorted by refs')
+        self.parser.add_argument('--list-by-bz', dest='list_by_bz', action='store_const', const=True, help='List sorted by BZ')
+        self.parser.add_argument('--no-list-refs', dest='list_refs', action='store_const', const=False, help='disable --list-refs')
+        self.parser.add_argument('--no-list-by-ref', dest='list_by_refs', action='store_const', const=False, help='disable --list-by-ref')
+        self.parser.add_argument('--no-list-by-bz', dest='list_by_bz', action='store_const', const=False, help='disable --list-by-bz')
+        self.parser.add_argument('--show-empty-refs', '-e', action='store_true', help='Show refs without bugs')
 
     @staticmethod
     def _order_keys(keys, ordered):
         return [o for o in ordered if o in keys]
 
-    _colormap_flag = {
-            '+': 'green',
-            '?': 'yellow',
-        }
-    _colormap_status = {
-            'POST': 'green',
-            'MODIFIED': 'yellow',
-            'CLOSED': 'green',
-        }
+    def _parse_bz(self, obz):
+        bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
+        result_man2 = []
+        for bzii in bz_tuples:
+            bzi = bzii.partition(':')
+            if not bzi[1] and not bzi[2]:
+                bzi = ['rh',bzi[0]]
+            else:
+                bzi = bzi[::2]
+            if not bzi[0] or not bzi[1] or not re.match('^[0-9]{4,7}$', bzi[1]):
+                raise Exception('invalid bug specifier \"%s\" (%s)' % (obz, bzii))
+            if bzi[0] == 'rhbz' or bzi[0] == 'rh':
+                result_man2.append(BzInfoRhbz(bzi[1]))
+            elif bzi[0] == 'bgo' or bzi[0] == 'bg':
+                result_man2.append(BzInfoBgo(bzi[1]))
+            else:
+                raise Exception('invalid bug specifier \"%s\"' % obz)
+        if not result_man2:
+            raise Exception('invalid bug specifier \"%s\"' % obz)
+        return result_man2
+    def _parse_bzlist(self, bzlist):
+        i = 0
+        result_man = []
+        for obz in (bzlist if bzlist else []):
+            result_man2 = self._parse_bz(obz)
+            result_man.append(UtilParseCommitMessage('bz: \"%s\"' % obz, result_man2, git_backend=False, commit_date=-1000+i))
+            i = i + 1
+        return result_man
 
-
-    def _colored(self, value, colormapping, defaultcolor='red'):
-        v = '>> ' + value
-        if not self.options.color:
-            return v
-        color = colormapping.get(value, defaultcolor)
-        return termcolor.colored(v, color)
+    def _rh_search(self, params):
+        searches = BzInfoRhbz.BzClient.search(params)
+        result = []
+        for s in searches:
+            result.append(BzInfoRhbz(s['id'], bzdata=s))
+        return result
+    def _rh_searchlist(self, rh_searches):
+        i = 0
+        result = []
+        for (name,params) in rh_searches:
+            result2 = self._rh_search(params)
+            name = name + ': ' + repr(params)
+            result.append(UtilParseCommitMessage(name, result2, git_backend=False, commit_date=-2000+i))
+            i = i + 1
+        return result
 
     def run(self, argv):
+        printed_something = False
+
         self.options = self.parser.parse_args(argv)
 
-        global config
-        if not os.path.exists(self.options.conf):
-            self.parser.error('config file does not exist: %s' % self.options.conf)
-        config = _read_config_file(self.options.conf)
+        config.setup(self.options.conf)
 
-        result_man = []
-        obzi = 0
-        for obz in (self.options.bz if self.options.bz else []):
-            bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
-            result_man2 = []
-            for bzii in bz_tuples:
-                bzi = bzii.partition(':')[::2]
-                if not bzi[0] or not bzi[1] or not re.match('^[0-9]{4,7}$', bzi[1]):
-                    raise self.parser.error('Invalid bugzilla option --bz \"%s\" (%s)' % (obz, bzii))
-                if bzi[0] == 'rhbz' or bzi[0] == 'rh':
-                    result_man2.append(BzInfoRhbz(bzi[1]))
-                elif bzi[0] == 'bgo' or bzi[0] == 'bg':
-                    result_man2.append(BzInfoBgo(bzi[1]))
-                else:
-                    raise self.parser.error('Invalid bugzilla option --bz \"%s\"' % obz)
-            if not result_man2:
-                raise self.parser.error('Invalid bugzilla option --bz \"%s\"' % obz)
-            result_man.append(UtilParseCommitMessage('bz \"%s\"' % obz, result_man2, git_backend=False, commit_date=-obzi))
-            obzi = obzi + 1
+        rh_searches = []
+        for s in (self.options.rh_search if self.options.rh_search else []):
+            v = ast.literal_eval(s)
+            rh_searches.append(('search', v))
+        if self.options.rh_search_since:
+            s = self.options.rh_search_since
+            if re.match('^20[0-9]{6}$', s):
+                d = datetime.datetime.strptime(s, '%Y%m%d')
+            elif re.match('^[0-9]{6}$', s):
+                d = datetime.datetime.strptime(s, '%y%m%d')
+            elif re.match('^[0-9]{1,3}$', s):
+                d = datetime.date.today() - datetime.timedelta(days=int(s))
+            else:
+                raise Exception("Invalid RH_SEARCH_SINCE value %s" % s)
+            rh_searches.append(('since ' + s,  {
+                    'component': ['NetworkManager'],
+                    'status': ['MODIFIED','POST','ON_QA'],
+                    'last_change_time': d.strftime('%Y%m%d'),
+                }))
 
-        result_all = [ (ref, [UtilParseCommitMessage(commit) for commit in git_ref_list(ref)]) for ref in self.options.commit]
+        result_man = self._parse_bzlist(self.options.bz)
+        result_all = [ (ref, [UtilParseCommitMessage(commit) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
+        result_search = self._rh_searchlist(rh_searches)
 
-        for ref_data in result_all:
-            print("ref: %s" % ref_data[0])
-            for commit_data in ref_data[1]:
-                print("  %s" % commit_data.commit_summary(self.options.color))
-                for result in commit_data.result:
-                    print("    %-4s #%-8s %s" % (result.bztype, result.bzid, result.url))
+        if self.options.list_refs or (self.options.list_refs is None and result_all):
+            print("=== List refs ===")
+            for ref_data in result_all:
+                print("refs: %s" % ref_data[0])
+                for commit_data in ref_data[1]:
+                    if self.options.show_empty_refs or commit_data.result:
+                        print("  %s" % commit_data.commit_summary(self.options.color))
+                        for result in commit_data.result:
+                            print(result.to_string("    ", self.options.verbose, self.options.color))
+            printed_something = True
 
 
-        result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if commit_data.result ]
-        result_reduced = result_reduced + result_man
+        result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if (commit_data.result or self.options.show_empty_refs) ]
+        result_reduced = result_reduced \
+                + result_man \
+                + [ commit_data for commit_data in result_search if (commit_data.result or self.options.show_empty_refs)]
         result_reduced = sorted(set(result_reduced), key=lambda commit_data: commit_data.get_commit_date(), reverse=True)
 
-        if result_all:
-            print
-        print('sorted:')
-        for commit_data in result_reduced:
-            print("  %s" % commit_data.commit_summary(self.options.color))
+        if self.options.list_by_refs or (self.options.list_by_refs is None and result_reduced):
+            if printed_something:
+                print
+            print('=== List BZ by ref ===')
+            for commit_data in result_reduced:
+                print("  %s" % commit_data.commit_summary(self.options.color))
+                for result in commit_data.result:
+                    print(result.to_string("    ", self.options.verbose, self.options.color))
+            printed_something = True
+
+        result_bz0 = result_man \
+                + [ commit_data for ref_data in result_all for commit_data in ref_data[1] if commit_data.result] \
+                + result_search
+        result_bz = {}
+        for commit_data in result_bz0:
             for result in commit_data.result:
-                print("    %-4s #%-8s %s" % (result.bztype, result.bzid, result.url))
-                bzdata = result.getBZData()
-                for k in CmdParseCommitMessage._order_keys(bzdata.keys(), BzClient.DEFAULT_FIELDS):
-                    if k == 'flags':
-                        for flag in bzdata[k]:
-                            print("         %-20s = %s" % ('#'+flag['name'], self._colored(flag['status'], CmdParseCommitMessage._colormap_flag)))
-                    elif k == 'summary':
-                        print("         %-20s = \"%s\"" % (k, bzdata[k]))
-                    elif k == 'status':
-                        print("         %-20s = %s" % (k, self._colored(bzdata[k], CmdParseCommitMessage._colormap_status)))
-                    elif k == 'cf_fixed_in':
-                        if bzdata[k]:
-                            print("         %-20s = %s" % (k, bzdata[k]))
-                    else:
-                        print("         %-20s = %s" % (k, bzdata[k]))
-            print
-
-
+                l = result_bz.get(result, None)
+                if not l:
+                    l = Set()
+                    result_bz[result] = l
+                l.add(commit_data)
+        result_bz_keys = sorted(result_bz.keys(), key=lambda result: (result.bztype, result.bzid), reverse=True)
+        if self.options.show_empty_refs:
+            result_bz0 = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if not commit_data.result] \
+                    + [ commit_data for commit_data in result_search if not commit_data.result]
+        else:
+            result_bz0 = []
+        if self.options.list_by_bz or (self.options.list_by_bz is None and result_bz):
+            if printed_something:
+                print
+            print('=== List by BZ ===')
+            for result in result_bz_keys:
+                print(result.to_string("    ", self.options.verbose, self.options.color))
+                for commit_data in sorted(result_bz[result], key=lambda commit_data: commit_data.get_commit_date(), reverse=True):
+                    print("        %s" % commit_data.commit_summary(self.options.color, shorten=True))
+            if result_bz0:
+                print("    bug: --")
+                for commit_data in result_bz0:
+                    print("        %s" % commit_data.commit_summary(self.options.color, shorten=True))
+            printed_something = True
 
 class CmdHelp(CmdBase):
 
