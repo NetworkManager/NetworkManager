@@ -75,9 +75,11 @@ make distcheck
 
 
 log_timestamp
-wget http://file.brq.redhat.com/~thaller/nmtui-0.0.1.tar.xz
-git checkout origin/th/automation -- :/contrib/
-./contrib/rpm/build.sh
+if [[ "$RPM" == true ]]; then
+    wget http://file.brq.redhat.com/~thaller/nmtui-0.0.1.tar.xz
+    git checkout origin/automation -- :/contrib/
+    ./contrib/rpm/build.sh
+fi
 
 
 log_timestamp
