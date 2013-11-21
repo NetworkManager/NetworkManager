@@ -113,9 +113,9 @@ def git_summary(commit, color=False, truncate_s=0):
         else:
             truncate_s = ''
         if color:
-            pretty = '--pretty=format:%Cred%h%Creset - %Cgreen(%ci)%Creset [%C(yellow)%an%Creset] '+truncate_s+'%s%C(yellow)%d%Creset'
+            pretty = '--pretty=format:%Cred%h%Creset %Cgreen(%ci)%Creset [%C(yellow)%an%Creset] '+truncate_s+'%s%C(yellow)%d%Creset'
         else:
-            pretty = '--pretty=format:%h - (%ci) [%an] ' + truncate_s + '%s%d'
+            pretty = '--pretty=format:%h (%ci) [%an] ' + truncate_s + '%s%d'
         _git_summary[tag] = _call(['git', 'log', '-n1', pretty, '--abbrev-commit', '--date=local', commit])
     return _git_summary[tag]
 
@@ -338,11 +338,12 @@ class UtilParseCommitMessage:
         ]
     _patterns = [(re.compile(p[0]), p[1]) for p in _patterns]
 
-    def __init__(self, commit, result=None, git_backend=True, commit_date=0):
+    def __init__(self, commit, result=None, git_backend=True, commit_date=0, no_bz=None):
         self.commit = commit
         self._result = result
         self._git_backend = git_backend
         self._commit_date = commit_date
+        self._no_bz = no_bz
 
     @property
     def result(self):
@@ -368,7 +369,8 @@ class UtilParseCommitMessage:
                     break
                 m = match_ctor(match)
                 if m:
-                    data.append(m)
+                    if self._no_bz is None or m not in self._no_bz:
+                        data.append(m)
 
                 # remove everything before the end of the match 'replace' group.
                 group = match.group('replace')
@@ -391,7 +393,10 @@ class UtilParseCommitMessage:
 
     def commit_summary(self, colored, shorten=False):
         if self._git_backend:
-            return "ref: " + git_summary(self.commit, colored, 50 if shorten else 0)
+            s = "git:"
+            if colored:
+                s = termcolor.colored(s, 'red')
+            return "ref: " + s + ' ' + git_summary(self.commit, colored, 50 if shorten else 0)
         s = self.commit
         if shorten and len(s) > 100:
             s = s[0:98] + ".."
@@ -420,9 +425,10 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--conf', metavar='conf', default=None, help='config file (defaults to %s). Supported keys: [%s]' % (ConfigStore.DEFAULT_FILE, ','.join(ConfigStore.NAMES)))
         self.parser.add_argument('--ref', action='append', help='Specify refs to parse bz ids from the commit message, this can be any ref, including ranges.')
         self.parser.add_argument('--bz', action='append', help='Specify additional bugzilla numbers on command line '
-                                                               'This is a coma separated list of bugs, in the format [type:]num, eg. rh:100000,bg:70000')
-        self.parser.add_argument('--rh-search', action='append', help='Search Red Hat bugzilla with the given search expression. This is a dictionary in python syntax')
-        self.parser.add_argument('--rh-search-since', default=None, help="A shortcut for --rh-search that sets some default options and 'last_change_time' }\"")
+                                                               'This is a comma separated list of bugs, in the format [type:]num, eg. rh:100000,bg:70000')
+        self.parser.add_argument('--rh-search', action='append', help='Search Red Hat bugzilla with the given search expression. RH_SEARCH is a dictionary with search options in python syntax.')
+        self.parser.add_argument('--rh-search-since', default=None, help="A shortcut for --rh-search that sets some default options and 'last_change_time'. Set it to a date in form '%%Y%%m%%d' or the number of days.")
+        self.parser.add_argument('--no-bz', action='append', help='Specify bugzilla numbers that should be ignored.')
         self.parser.add_argument('--verbose', '-v', action='count', help='Increase verbosity (use more then once)')
         self.parser.add_argument('--list-refs', dest='list_refs', action='store_const', const=True, help='List the refs in the output')
         self.parser.add_argument('--list-by-ref', dest='list_by_refs', action='store_const', const=True, help='List sorted by refs')
@@ -436,48 +442,60 @@ class CmdParseCommitMessage(CmdBase):
     def _order_keys(keys, ordered):
         return [o for o in ordered if o in keys]
 
-    def _parse_bz(self, obz):
+    def _parse_bz(self, obz, no_bz):
         bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
         result_man2 = []
+        has_any = False
         for bzii in bz_tuples:
             bzi = bzii.partition(':')
+            if not bzi[1] and not bzi[2]:
+                bzi = bzii.partition('#')
             if not bzi[1] and not bzi[2]:
                 bzi = ['rh',bzi[0]]
             else:
                 bzi = bzi[::2]
             if not bzi[0] or not bzi[1] or not re.match('^[0-9]{4,7}$', bzi[1]):
                 raise Exception('invalid bug specifier \"%s\" (%s)' % (obz, bzii))
+            bz = None
             if bzi[0] == 'rhbz' or bzi[0] == 'rh':
-                result_man2.append(BzInfoRhbz(bzi[1]))
+                bz = BzInfoRhbz(bzi[1])
             elif bzi[0] == 'bgo' or bzi[0] == 'bg':
-                result_man2.append(BzInfoBgo(bzi[1]))
+                bz = BzInfoBgo(bzi[1])
             else:
                 raise Exception('invalid bug specifier \"%s\"' % obz)
-        if not result_man2:
-            raise Exception('invalid bug specifier \"%s\"' % obz)
+            if no_bz is None or bz not in no_bz:
+                result_man2.append(bz)
+            has_any = True
+        if not has_any:
+            raise Exception('invalid bug specifier \"%s\": contains no bugs' % obz)
         return result_man2
-    def _parse_bzlist(self, bzlist):
+    def _parse_bzlist(self, bzlist, no_bz=None):
         i = 0
         result_man = []
         for obz in (bzlist if bzlist else []):
-            result_man2 = self._parse_bz(obz)
-            result_man.append(UtilParseCommitMessage('bz: \"%s\"' % obz, result_man2, git_backend=False, commit_date=-1000+i))
+            result_man2 = self._parse_bz(obz, no_bz)
+            result_man.append(UtilParseCommitMessage('bz:\"%s\"' % obz, result_man2, git_backend=False, commit_date=-1000+i))
             i = i + 1
         return result_man
 
-    def _rh_search(self, params):
+    def _rh_search(self, params, no_bz=None):
         searches = BzInfoRhbz.BzClient.search(params)
         result = []
         for s in searches:
-            result.append(BzInfoRhbz(s['id'], bzdata=s))
+            bz = BzInfoRhbz(s['id'], bzdata=s)
+            if no_bz is None or bz not in no_bz:
+                result.append(bz)
         return result
-    def _rh_searchlist(self, rh_searches):
+    def _rh_searchlist(self, rh_searches, no_bz=None):
         i = 0
         result = []
         for (name,params) in rh_searches:
-            result2 = self._rh_search(params)
-            name = name + ': ' + repr(params)
-            result.append(UtilParseCommitMessage(name, result2, git_backend=False, commit_date=-2000+i))
+            result2 = self._rh_search(params, no_bz)
+            if not name:
+                name = ' ' + repr(params)
+            else:
+                name = name + ': ' + repr(params)
+            result.append(UtilParseCommitMessage('srch:' + name, result2, git_backend=False, commit_date=-2000+i))
             i = i + 1
         return result
 
@@ -488,10 +506,29 @@ class CmdParseCommitMessage(CmdBase):
 
         config.setup(self.options.conf)
 
+
+        if  self.options.list_refs is not None or \
+            self.options.list_by_refs is not None or \
+            self.options.list_by_bz is not None:
+            if self.options.list_refs is None:
+                self.options.list_refs = False
+            if self.options.list_by_refs is None:
+                self.options.list_by_refs = False
+            if self.options.list_by_bz is None:
+                self.options.list_by_bz = False
+
+        no_bz = self._parse_bzlist(self.options.no_bz)
+        no_bz = set([bz for commit_data in no_bz for bz in commit_data.result])
+
         rh_searches = []
         for s in (self.options.rh_search if self.options.rh_search else []):
-            v = ast.literal_eval(s)
-            rh_searches.append(('search', v))
+            try:
+                v = ast.literal_eval(s)
+            except Exception, e:
+                raise Exception("Error parsing --rh-search option as python dictionary (\"%s\")" % (s), e)
+            if type(v) != dict:
+                raise Exception("Error parsing --rh-search option: expects a python dictionary, instead found %s: \'%s\'" % (type(v), repr(v)));
+            rh_searches.append(('full', v))
         if self.options.rh_search_since:
             s = self.options.rh_search_since
             if re.match('^20[0-9]{6}$', s):
@@ -508,12 +545,12 @@ class CmdParseCommitMessage(CmdBase):
                     'last_change_time': d.strftime('%Y%m%d'),
                 }))
 
-        result_man = self._parse_bzlist(self.options.bz)
-        result_all = [ (ref, [UtilParseCommitMessage(commit) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
-        result_search = self._rh_searchlist(rh_searches)
+        result_man = self._parse_bzlist(self.options.bz, no_bz)
+        result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
+        result_search = self._rh_searchlist(rh_searches, no_bz)
 
         if self.options.list_refs or (self.options.list_refs is None and result_all):
-            print("=== List refs ===")
+            print("=== List commit refs ===")
             for ref_data in result_all:
                 print("refs: %s" % ref_data[0])
                 for commit_data in ref_data[1]:
@@ -526,7 +563,7 @@ class CmdParseCommitMessage(CmdBase):
 
         result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if (commit_data.result or self.options.show_empty_refs) ]
         result_reduced = result_reduced \
-                + result_man \
+                + [ commit_data for commit_data in result_man if (commit_data.result or self.options.show_empty_refs)] \
                 + [ commit_data for commit_data in result_search if (commit_data.result or self.options.show_empty_refs)]
         result_reduced = sorted(set(result_reduced), key=lambda commit_data: commit_data.get_commit_date(), reverse=True)
 
@@ -554,6 +591,7 @@ class CmdParseCommitMessage(CmdBase):
         result_bz_keys = sorted(result_bz.keys(), key=lambda result: (result.bztype, result.bzid), reverse=True)
         if self.options.show_empty_refs:
             result_bz0 = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if not commit_data.result] \
+                    + [ commit_data for commit_data in result_man if not commit_data.result] \
                     + [ commit_data for commit_data in result_search if not commit_data.result]
         else:
             result_bz0 = []
