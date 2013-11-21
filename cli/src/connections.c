@@ -536,7 +536,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 				printed = nmc_connection_detail (con, nmc);
 			} else {
 				g_string_printf (nmc->return_text, _("Error: %s - no such connection."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 				return nmc->return_value;
 			}
 
@@ -1065,7 +1065,7 @@ do_connections_show_active (NmCli *nmc, int argc, char **argv)
 				printed = nmc_active_connection_detail (acon, nmc); /* separate connections by blank line */
 			} else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 				return nmc->return_value;
 			}
 
@@ -1536,12 +1536,12 @@ nmc_activate_connection (NmCli *nmc,
 	} else if (ifname) {
 		device = nm_client_get_device_by_iface (nmc->client, ifname);
 		if (!device) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
 			             _("unknown device '%s'."), ifname);
 			return FALSE;
 		}
 	} else {
-		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
+		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
 		                     _("neither a valid connection nor device given"));
 		return FALSE;
 	}
@@ -1662,7 +1662,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, activate_connection_cb, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."),
 		                 error ? error->message : _("unknown error"));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		nmc->return_value = error ? error->code : NMC_RESULT_ERROR_CON_ACTIVATION;
 		g_clear_error (&error);
 		goto error;
 	}
@@ -1734,7 +1734,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			nm_client_deactivate_connection (nmc->client, active);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *arg_ptr);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			goto error;
 		}
 
@@ -7018,7 +7018,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		found_con = find_connection (nmc->system_connections, selector, con);
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			goto error;
 		}
 
@@ -7214,7 +7214,7 @@ do_connection_modify (NmCli *nmc, int argc, char **argv)
 	connection = find_connection (nmc->system_connections, selector, name);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
 	strv = g_strsplit (set_prop, ".", 2);
@@ -7397,7 +7397,7 @@ finish:
 		g_string_truncate (invalid_cons, invalid_cons->len-2);  /* truncate trailing ", " */
 		g_string_printf (nmc->return_text, _("Error: cannot delete unknown connection(s): %s."),
 		                 invalid_cons->str);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		g_string_free (invalid_cons, TRUE);
 	}
 	return nmc->return_value;

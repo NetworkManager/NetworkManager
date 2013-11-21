@@ -755,6 +755,8 @@ Connection deletion failed
 NetworkManager is not running
 .IP "9" 4
 \fInmcli\fP and \fINetworkManager\fP versions mismatch
+.IP "10" 4
+Connection, device, or access point does not exist.
 
 .SH EXAMPLES
 .PP
