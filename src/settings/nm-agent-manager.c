@@ -516,7 +516,7 @@ request_free (Request *req)
 	if (req->cancel_callback)
 		req->cancel_callback (req);
 
-	g_slist_free (req->pending);
+	g_slist_free_full (req->pending, g_object_unref);
 	g_slist_free (req->asked);
 	g_object_unref (req->connection);
 	g_free (req->setting_name);
@@ -621,7 +621,7 @@ request_add_agent (Request *req,
 
 	/* Add this agent to the list, preferring active sessions */
 	req->pending = g_slist_insert_sorted_with_data (req->pending,
-	                                                agent,
+	                                                g_object_ref (agent),
 	                                                (GCompareDataFunc) agent_compare_func,
 	                                                session_monitor);
 }
@@ -645,6 +645,7 @@ request_remove_agent (gpointer key, gpointer value, gpointer user_data)
 	NMSecretAgent *agent = (NMSecretAgent *) user_data;
 	gboolean try_next = FALSE;
 	const char *detail = "";
+	GSList *found;
 
 	g_return_if_fail (req != NULL);
 	g_return_if_fail (agent != NULL);
@@ -664,7 +665,12 @@ request_remove_agent (gpointer key, gpointer value, gpointer user_data)
 				nm_secret_agent_get_description (agent),
 				detail, req, req->setting_name);
 
-	req->pending = g_slist_remove (req->pending, agent);
+	found = g_slist_find (req->pending, agent);
+	if (found) {
+		req->pending = g_slist_remove_link (req->pending, found);
+		g_object_unref (found->data);
+		g_slist_free_1 (found);
+	}
 
 	if (try_next) {
 		/* If the agent serving the in-progress secrets request went away then
@@ -690,6 +696,8 @@ next_generic (Request *req, const char *detail)
 	} else {
 		/* Send a secrets request to the next agent */
 		req->current_has_modify = FALSE;
+		if (req->current)
+			g_object_unref (req->current);
 		req->current = req->pending->data;
 		req->pending = g_slist_remove (req->pending, req->current);
 
