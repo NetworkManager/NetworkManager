@@ -492,7 +492,7 @@ request_free (Request *req)
 
 	g_free (req->detail);
 	g_free (req->verb);
-	g_slist_free (req->pending);
+	g_slist_free_full (req->pending, g_object_unref);
 	g_slist_free (req->asked);
 	memset (req, 0, sizeof (Request));
 	g_free (req);
@@ -582,7 +582,7 @@ request_add_agent (Request *req,
 
 	/* Add this agent to the list, preferring active sessions */
 	req->pending = g_slist_insert_sorted_with_data (req->pending,
-	                                                agent,
+	                                                g_object_ref (agent),
 	                                                (GCompareDataFunc) agent_compare_func,
 	                                                session_monitor);
 }
@@ -607,6 +607,8 @@ request_next_agent (Request *req)
 	if (req->pending) {
 		/* Send the request to the next agent */
 		req->current_call_id = NULL;
+		if (req->current)
+			g_object_unref (req->current);
 		req->current = req->pending->data;
 		req->pending = g_slist_remove (req->pending, req->current);
 
