@@ -30,6 +30,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, G_TYPE_OBJECT)
 
@@ -111,6 +112,54 @@ same_prefix (const struct in6_addr *address1, const struct in6_addr *address2, i
 
 /******************************************************************/
 
+/**
+ * nm_ip6_config_capture_resolv_conf():
+ * @nameservers: array of struct in6_addr
+ * @rc_contents: the contents of a resolv.conf or %NULL to read /etc/resolv.conf
+ *
+ * Reads all resolv.conf IPv6 nameservers and adds them to @nameservers.
+ *
+ * Returns: %TRUE if nameservers were added, %FALSE if @nameservers is unchanged
+ */
+gboolean
+nm_ip6_config_capture_resolv_conf (GArray *nameservers,
+                                   const char *rc_contents)
+{
+	GPtrArray *read_ns;
+	guint i, j;
+	gboolean changed = FALSE;
+
+	g_return_val_if_fail (nameservers != NULL, FALSE);
+
+	read_ns = nm_utils_read_resolv_conf_nameservers (rc_contents);
+	if (!read_ns)
+		return FALSE;
+
+	for (i = 0; i < read_ns->len; i++) {
+		const char *s = g_ptr_array_index (read_ns, i);
+		struct in6_addr ns = IN6ADDR_ANY_INIT;
+
+		if (!inet_pton (AF_INET6, s, (void *) &ns) || IN6_IS_ADDR_UNSPECIFIED (&ns))
+			continue;
+
+		/* Ignore duplicates */
+		for (j = 0; j < nameservers->len; j++) {
+			struct in6_addr *t = &g_array_index (nameservers, struct in6_addr, j);
+
+			if (IN6_ARE_ADDR_EQUAL (t, &ns))
+				break;
+		}
+
+		if (j == nameservers->len) {
+			g_array_append_val (nameservers, ns);
+			changed = TRUE;
+		}
+	}
+
+	g_ptr_array_unref (read_ns);
+	return changed;
+}
+
 static gboolean
 addresses_are_duplicate (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b, gboolean consider_plen)
 {
@@ -125,12 +174,14 @@ routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, 
 }
 
 NMIP6Config *
-nm_ip6_config_capture (int ifindex)
+nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 {
 	NMIP6Config *config;
 	NMIP6ConfigPrivate *priv;
 	guint i;
-	gboolean gateway_changed = FALSE;
+	guint lowest_metric = G_MAXUINT;
+	struct in6_addr old_gateway = IN6ADDR_ANY_INIT;
+	gboolean has_gateway = FALSE;
 
 	/* Slaves have no IP configuration */
 	if (nm_platform_link_get_master (ifindex) > 0)
@@ -146,24 +197,35 @@ nm_ip6_config_capture (int ifindex)
 	priv->routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
 
 	/* Extract gateway from default route */
+	old_gateway = priv->gateway;
 	for (i = 0; i < priv->routes->len; i++) {
 		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
 		if (IN6_IS_ADDR_UNSPECIFIED (&route->network)) {
-			if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &route->gateway)) {
+			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
-				gateway_changed = TRUE;
+				lowest_metric = route->metric;
+				has_gateway = TRUE;
 			}
+			has_gateway = TRUE;
 			/* Remove the default route from the list */
 			g_array_remove_index (priv->routes, i);
-			break;
+			i--;
 		}
+	}
+
+	/* If the interface has the default route, and has IPv4 addresses, capture
+	 * nameservers from /etc/resolv.conf.
+	 */
+	if (priv->addresses->len && has_gateway && capture_resolv_conf) {
+		if (nm_ip6_config_capture_resolv_conf (priv->nameservers, NULL))
+			_NOTIFY (config, PROP_NAMESERVERS);
 	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
-	if (gateway_changed)
+	if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &old_gateway))
 		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;

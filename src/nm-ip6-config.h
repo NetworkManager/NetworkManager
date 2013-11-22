@@ -58,7 +58,7 @@ void nm_ip6_config_export (NMIP6Config *config);
 const char * nm_ip6_config_get_dbus_path (const NMIP6Config *config);
 
 /* Integration with nm-platform and nm-setting */
-NMIP6Config *nm_ip6_config_capture (int ifindex);
+NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority);
 void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting);
 void nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *setting);
@@ -122,5 +122,11 @@ const struct in6_addr *nm_ip6_config_get_ptp_address (const NMIP6Config *config)
 
 void nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
+
+/******************************************************/
+/* Testing-only functions */
+
+gboolean nm_ip6_config_capture_resolv_conf (GArray *nameservers,
+                                            const char *rc_contents);
 
 #endif /* NM_IP6_CONFIG_H */

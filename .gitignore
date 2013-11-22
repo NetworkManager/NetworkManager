@@ -184,6 +184,7 @@ valgrind-*.log
 /src/tests/test-ip6-config
 /src/tests/test-policy-hosts
 /src/tests/test-wifi-ap-utils
+/src/tests/test-resolvconf-capture
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/config/tests/test-config
 

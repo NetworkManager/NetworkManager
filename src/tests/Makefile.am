@@ -16,7 +16,8 @@ noinst_PROGRAMS = \
 	test-wifi-ap-utils \
 	test-ip4-config \
 	test-ip6-config \
-	test-dcb
+	test-dcb \
+	test-resolvconf-capture
 
 ####### DHCP options test #######
 
@@ -71,6 +72,14 @@ test_dcb_SOURCES = \
 test_dcb_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### resolv.conf capture test #######
+
+test_resolvconf_capture_SOURCES = \
+	test-resolvconf-capture.c
+
+test_resolvconf_capture_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
 ####### secret agent interface test #######
 
 EXTRA_DIST = test-secret-agent.py
@@ -84,4 +93,5 @@ check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils test-ip4-con
 	$(abs_builddir)/test-ip4-config
 	$(abs_builddir)/test-ip6-config
 	$(abs_builddir)/test-dcb
+	$(abs_builddir)/test-resolvconf-capture
 

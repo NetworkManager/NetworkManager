@@ -59,7 +59,7 @@ void nm_ip4_config_export (NMIP4Config *config);
 const char * nm_ip4_config_get_dbus_path (const NMIP4Config *config);
 
 /* Integration with nm-platform and nm-setting */
-NMIP4Config *nm_ip4_config_capture (int ifindex);
+NMIP4Config *nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip4_config_commit (const NMIP4Config *config, int ifindex, int priority);
 void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting);
 void nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *setting);
@@ -143,5 +143,11 @@ guint32 nm_ip4_config_get_mtu (const NMIP4Config *config);
 
 void nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
+
+/******************************************************/
+/* Testing-only functions */
+
+gboolean nm_ip4_config_capture_resolv_conf (GArray *nameservers,
+                                            const char *rc_contents);
 
 #endif /* NM_IP4_CONFIG_H */

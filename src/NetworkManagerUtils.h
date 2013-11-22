@@ -84,4 +84,6 @@ void nm_utils_complete_generic (NMConnection *connection,
 
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 
+GPtrArray *nm_utils_read_resolv_conf_nameservers (const char *rc_contents);
+
 #endif /* NETWORK_MANAGER_UTILS_H */
