@@ -2314,7 +2314,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		 */
 		if (devstate == NM_DEVICE_STATE_CONFIG) {
 			NMAccessPoint *ap = nm_device_wifi_get_activation_ap (self);
-			const GByteArray *ssid = ap ? nm_ap_get_ssid (ap) : NULL;
+			const GByteArray *ssid = nm_ap_get_ssid (ap);
 
 			nm_log_info (LOGD_DEVICE | LOGD_WIFI,
 			             "Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
@@ -2594,8 +2594,9 @@ supplicant_connection_timeout_cb (gpointer user_data)
 
 	g_assert (priv->mode == NM_802_11_MODE_INFRA);
 	ap = nm_device_wifi_get_activation_ap (self);
+	g_assert (ap);
 
-	if (priv->ssid_found && ap && is_encrypted (ap, connection)) {
+	if (priv->ssid_found && is_encrypted (ap, connection)) {
 		guint64 timestamp = 0;
 		gboolean new_secrets = TRUE;
 
@@ -2944,11 +2945,7 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	g_assert (req);
 
 	ap = nm_device_wifi_get_activation_ap (self);
-	if (!ap) {
-		nm_log_warn (LOGD_DEVICE | LOGD_WIFI, "act_stage2_config failed due to unexpected missing activation_ap. Abort");
-		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT;
-		goto out;
-	}
+	g_assert (ap);
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
@@ -3106,6 +3103,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	}
 
 	ap = nm_device_wifi_get_activation_ap (self);
+	g_assert (ap);
 
 	/* If IP configuration times out and it's a static WEP connection, that
 	 * usually means the WEP key is wrong.  WEP's Open System auth mode has
@@ -3114,7 +3112,7 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	 * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
 	 * connection would have failed before IP configuration.
 	 */
-	if (ap && is_static_wep (ap, connection) && (may_fail == FALSE)) {
+	if (is_static_wep (ap, connection) && (may_fail == FALSE)) {
 		/* Activation failed, we must have bad encryption key */
 		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
 		             "Activation (%s/wireless): could not get IP configuration for "
@@ -3206,7 +3204,7 @@ activation_success_handler (NMDevice *dev)
 	/* If the AP isn't fake, it was found in the scan list and all its
 	 * details are known.
 	 */
-	if (!ap || !nm_ap_get_fake (ap))
+	if (!nm_ap_get_fake (ap))
 		goto done;
 
 	/* If the activate AP was fake, it probably won't have a BSSID at all.
