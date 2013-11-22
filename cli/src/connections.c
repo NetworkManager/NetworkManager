@@ -6857,10 +6857,14 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 			return;
 		nm_connection_add_setting (connection, base_setting);
 
-		/* Set a sensible bond/bridge interface name by default */
+		/* Set a sensible bond/team/bridge interface name by default */
 		if (g_strcmp0 (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
 			g_object_set (NM_SETTING_BOND (base_setting),
 			              NM_SETTING_BOND_INTERFACE_NAME, "nm-bond",
+			              NULL);
+		if (g_strcmp0 (con_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
+			g_object_set (NM_SETTING_TEAM (base_setting),
+			              NM_SETTING_TEAM_INTERFACE_NAME, "nm-team",
 			              NULL);
 		if (g_strcmp0 (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
 			g_object_set (NM_SETTING_BRIDGE (base_setting),
