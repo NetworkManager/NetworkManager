@@ -794,7 +794,7 @@ nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if ((ssid == priv->ssid) && ssid == NULL)
+	if (ssid == priv->ssid)
 		return;
 
 	/* same SSID */
