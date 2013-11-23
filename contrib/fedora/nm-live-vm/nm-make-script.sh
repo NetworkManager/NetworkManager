@@ -32,5 +32,11 @@ git checkout -f "$COMMIT" || exit 1
 make || exit 1
 #make check || exit 1
 make install || exit 1
-echo -e "[main]\nplugins=ifcfg-rh\n" > /etc/NetworkManager/NetworkManager.conf
+cat <<EOF > /etc/NetworkManager/NetworkManager.conf
+[main]
+plugins=ifcfg-rh
+[logging]
+level=DEBUG
+domains=ALL
+EOF
 /bin/systemctl enable NetworkManager.service || exit 1
