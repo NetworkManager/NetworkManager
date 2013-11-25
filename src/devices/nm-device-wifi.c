@@ -58,6 +58,8 @@
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
 #include "wifi-utils.h"
+#include "nm-dbus-glib-types.h"
+
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
@@ -87,6 +89,7 @@ enum {
 	PROP_PERM_HW_ADDRESS,
 	PROP_MODE,
 	PROP_BITRATE,
+	PROP_ACCESS_POINTS,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
 	PROP_SCANNING,
@@ -808,6 +811,7 @@ remove_access_point (NMDeviceWifi *device,
 
 	priv->ap_list = g_slist_remove (priv->ap_list, ap);
 	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_ACCESS_POINTS);
 	g_object_unref (ap);
 }
 
@@ -1865,6 +1869,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
 		nm_ap_export_to_dbus (merge_ap);
 		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, merge_ap);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
 		nm_device_recheck_available_connections (NM_DEVICE (self));
 	}
 }
@@ -2875,6 +2880,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	g_object_freeze_notify (G_OBJECT (self));
 	set_current_ap (self, ap, FALSE, FALSE);
 	g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
 	g_object_thaw_notify (G_OBJECT (self));
 	nm_device_recheck_available_connections (NM_DEVICE (self));
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
@@ -3462,6 +3468,8 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDeviceWifi *device = NM_DEVICE_WIFI (object);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	GPtrArray *array;
+	GSList *iter;
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
@@ -3475,6 +3483,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
+		break;
+	case PROP_ACCESS_POINTS:
+		array = g_ptr_array_sized_new (4);
+		for (iter = priv->ap_list; iter; iter = g_slist_next (iter))
+			g_ptr_array_add (array, g_strdup (nm_ap_get_dbus_path (NM_AP (iter->data))));
+		g_value_take_boxed (value, array);
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
 		if (priv->current_ap)
@@ -3570,6 +3584,14 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Bitrate",
 		                   0, G_MAXUINT32, 0,
 		                   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_ACCESS_POINTS,
+		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS,
+		                     "Access points",
+		                     "Access points",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, PROP_ACTIVE_ACCESS_POINT,
 		g_param_spec_boxed (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,

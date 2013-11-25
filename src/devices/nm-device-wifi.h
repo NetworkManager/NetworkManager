@@ -54,6 +54,7 @@ typedef enum {
 #define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_WIFI_MODE                "mode"
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
+#define NM_DEVICE_WIFI_ACCESS_POINTS       "access-points"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"

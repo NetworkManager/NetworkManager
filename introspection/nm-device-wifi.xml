@@ -50,11 +50,19 @@
         The bit rate currently used by the wireless device, in kilobits/second (Kb/s).
       </tp:docstring>
     </property>
+
+    <property name="AccessPoints" type="ao" access="read">
+      <tp:docstring>
+        List of object paths of access point visible to this wireless device.
+      </tp:docstring>
+    </property>
+
     <property name="ActiveAccessPoint" type="o" access="read">
       <tp:docstring>
         Object path of the access point currently used by the wireless device.
       </tp:docstring>
     </property>
+
     <property name="WirelessCapabilities" type="u" access="read" tp:type="NM_802_11_DEVICE_CAP">
       <tp:docstring>
         The capabilities of the wireless device.
