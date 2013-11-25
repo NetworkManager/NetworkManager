@@ -147,6 +147,12 @@
       </arg>
     </method>
 
+    <property name="Connections" type="ao" access="read">
+      <tp:docstring>
+        List of object paths of available network connection profiles.
+      </tp:docstring>
+    </property>
+
     <property name="Hostname" type="s" access="read">
       <tp:docstring>
         The machine hostname stored in persistent configuration.
