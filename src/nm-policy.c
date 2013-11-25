@@ -1939,8 +1939,10 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
 	if (priv->lookup_addr) {
-		nm_log_dbg (LOGD_DNS, "restarting reverse-lookup thread for address %s'",
-		            g_inet_address_to_string (priv->lookup_addr));
+		char *str = g_inet_address_to_string (priv->lookup_addr);
+
+		nm_log_dbg (LOGD_DNS, "restarting reverse-lookup thread for address %s", str);
+		g_free (str);
 
 		priv->lookup_cancellable = g_cancellable_new ();
 		g_resolver_lookup_by_address_async (priv->resolver,
