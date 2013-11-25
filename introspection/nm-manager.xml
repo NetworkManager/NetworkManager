@@ -320,12 +320,6 @@
       </tp:docstring>
     </property>
 
-    <property name="Devices" type="ao" access="read">
-      <tp:docstring>
-        List of network device object paths.
-      </tp:docstring>
-    </property>
-
     <property name="PrimaryConnection" type="o" access="read">
       <tp:docstring>
         The object path of the "primary" active connection being used
