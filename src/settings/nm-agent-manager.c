@@ -815,8 +815,17 @@ get_done_cb (NMSecretAgent *agent,
 		            req, parent->detail, req->setting_name,
 		            error ? error->code : -1,
 		            (error && error->message) ? error->message : "(unknown)");
-		/* Try the next agent */
-		request_next_agent (parent);
+
+		if (!dbus_g_error_has_name (error, NM_DBUS_INTERFACE_SECRET_AGENT ".UserCanceled")) {
+			error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
+			                             NM_AGENT_MANAGER_ERROR_USER_CANCELED,
+			                             "User canceled the secrets request.");
+			req_complete_error (parent, error);
+			g_error_free (error);
+		} else {
+			/* Try the next agent */
+			request_next_agent (parent);
+		}
 		return;
 	}
 

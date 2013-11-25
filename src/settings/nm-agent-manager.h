@@ -41,7 +41,8 @@ typedef enum {
 	NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER, /*< nick=InvalidIdentifier >*/
 	NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,     /*< nick=NotRegistered >*/
 	NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,     /*< nick=InternalError >*/
-	NM_AGENT_MANAGER_ERROR_NO_SECRETS          /*< nick=NoSecrets >*/
+	NM_AGENT_MANAGER_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
+	NM_AGENT_MANAGER_ERROR_USER_CANCELED       /*< nick=UserCanceled >*/
 } NMAgentManagerError;
 
 typedef struct {
