@@ -115,8 +115,9 @@
             <tp:docstring>
                 Emitted when this connection is no longer available.  This
                 happens when the connection is deleted or if it is no longer
-                accessable by any of the system's logged-in users.  After
-                receipt of this signal, the object no longer exists.
+                accessible by any of the system's logged-in users.  After
+                receipt of this signal, the object no longer exists.  Also
+                see the Settings.ConnectionRemoved signal.
             </tp:docstring>
         </signal>
 

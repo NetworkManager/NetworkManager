@@ -749,8 +749,10 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
 
-	/* Re-emit for listeners like NMPolicy */
+	/* Notify D-Bus */
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+
+	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
 

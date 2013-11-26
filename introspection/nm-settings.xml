@@ -191,6 +191,21 @@
       </arg>
     </signal>
 
+    <signal name="ConnectionRemoved">
+      <tp:docstring>
+        Emitted when a connection is no longer available.  This happens when
+        the connection is deleted or if it is no longer accessible by any of
+        the system's logged-in users.  After receipt of this signal, the
+        connection no longer exists and cannot be used.  Also see the
+        Settings.Connection.Removed signal.
+      </tp:docstring>
+      <arg name="connection" type="o">
+        <tp:docstring>
+          Object path of the removed connection.
+        </tp:docstring>
+      </arg>
+    </signal>
+
   </interface>
 </node>
 
