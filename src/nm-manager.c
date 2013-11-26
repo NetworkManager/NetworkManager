@@ -3981,7 +3981,7 @@ impl_manager_set_logging (NMManager *manager,
                           const char *domains,
                           GError **error)
 {
-	if (nm_logging_setup (level, domains, error)) {
+	if (nm_logging_setup (level, domains, NULL, error)) {
 		char *new_domains = nm_logging_domains_to_string ();
 
 		nm_log_info (LOGD_CORE, "logging: level '%s' domains '%s'",

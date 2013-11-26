@@ -151,8 +151,12 @@ match_log_level (const char  *level,
 }
 
 gboolean
-nm_logging_setup (const char *level, const char *domains, GError **error)
+nm_logging_setup (const char  *level,
+                  const char  *domains,
+                  char       **bad_domains,
+                  GError     **error)
 {
+	GString *unrecognized = NULL;
 	guint64 new_logging[LOGL_MAX];
 	guint32 new_log_level = log_level;
 	int i;
@@ -219,9 +223,18 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 			}
 
 			if (!bits) {
-				g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
-				             _("Unknown log domain '%s'"), *iter);
-				return FALSE;
+				if (!bad_domains) {
+					g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
+					             _("Unknown log domain '%s'"), *iter);
+					return FALSE;
+				}
+
+				if (unrecognized)
+					g_string_append (unrecognized, ", ");
+				else
+					unrecognized = g_string_new (NULL);
+				g_string_append (unrecognized, *iter);
+				continue;
 			}
 
 			for (i = 0; i < domain_log_level; i++)
@@ -241,6 +254,9 @@ nm_logging_setup (const char *level, const char *domains, GError **error)
 	}
 
 	log_level = new_log_level;
+
+	if (unrecognized)
+		*bad_domains = g_string_free (unrecognized, FALSE);
 
 	return TRUE;
 }

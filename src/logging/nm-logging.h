@@ -127,7 +127,10 @@ const char *nm_logging_all_domains_to_string (void);
 #undef nm_error
 #undef nm_error_str
 
-gboolean nm_logging_setup     (const char *level, const char *domains, GError **error);
+gboolean nm_logging_setup (const char  *level,
+                           const char  *domains,
+                           char       **bad_domains,
+                           GError     **error);
 void     nm_logging_syslog_openlog   (gboolean debug);
 void     nm_logging_syslog_closelog  (void);
 
