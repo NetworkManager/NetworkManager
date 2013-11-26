@@ -3734,6 +3734,11 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	if (!nm_device_activate_stage3_ip6_start (self))
 		goto out;
 
+	if (priv->ip4_state == IP_FAIL && priv->ip6_state == IP_FAIL) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+	}
+
 out:
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
 	return FALSE;
