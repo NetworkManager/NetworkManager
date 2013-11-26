@@ -43,6 +43,7 @@ typedef enum
 	NM_WIMAX_ERROR_NSP_NOT_FOUND,            /*< nick=NspNotFound >*/
 } NMWimaxError;
 
+#define NM_DEVICE_WIMAX_NSPS             "nsps"
 #define NM_DEVICE_WIMAX_ACTIVE_NSP       "active-nsp"
 #define NM_DEVICE_WIMAX_CENTER_FREQUENCY "center-frequency"
 #define NM_DEVICE_WIMAX_RSSI             "rssi"
