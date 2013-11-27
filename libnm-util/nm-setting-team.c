@@ -179,9 +179,11 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
+		g_free (priv->interface_name);
 		priv->interface_name = g_value_dup_string (value);
 		break;
 	case PROP_CONFIG:
+		g_free (priv->config);
 		priv->config = g_value_dup_string (value);
 		break;
 	default:
