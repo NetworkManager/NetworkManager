@@ -1165,30 +1165,6 @@ nm_setting_init (NMSetting *setting)
 {
 }
 
-static GObject*
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMSettingPrivate *priv;
-
-	object = G_OBJECT_CLASS (nm_setting_parent_class)->constructor (type,
-													    n_construct_params,
-													    construct_params);
-	if (!object)
-		return NULL;
-
-	priv = NM_SETTING_GET_PRIVATE (object);
-	if (!priv->name) {
-		g_warning ("Setting name is not set.");
-		g_object_unref (object);
-		object = NULL;
-	}
-
-	return object;
-}
-
 static void
 finalize (GObject *object)
 {
@@ -1207,8 +1183,9 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_NAME:
-		g_free (priv->name);
+		/* construct only */
 		priv->name = g_value_dup_string (value);
+		g_assert (priv->name && *priv->name);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1240,7 +1217,6 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 
 	/* virtual methods */
-	object_class->constructor  = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
@@ -1269,6 +1245,6 @@ nm_setting_class_init (NMSettingClass *setting_class)
 						  "has been created.  Each setting class has a name, and "
 						  "all objects of that class share the same name.",
 						  NULL,
-						  G_PARAM_READWRITE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
