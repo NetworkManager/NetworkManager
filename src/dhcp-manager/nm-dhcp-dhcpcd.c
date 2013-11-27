@@ -21,6 +21,7 @@
  */
 
 
+#include <config.h>
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
@@ -139,6 +140,14 @@ ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
 	g_ptr_array_add (argv, (gpointer) ACTION_SCRIPT_PATH );
+
+#ifdef DHCPCD_SUPPORTS_IPV6
+	/* IPv4-only for now.  NetworkManager knows better than dhcpcd when to
+	 * run IPv6, and dhcpcd's automatic Router Solicitations cause problems
+	 * with devices that don't expect them.
+	 */
+	g_ptr_array_add (argv, (gpointer) "-4");
+#endif
 
 	if (hostname && strlen (hostname)) {
 		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
