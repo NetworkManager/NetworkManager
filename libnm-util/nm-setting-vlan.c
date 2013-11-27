@@ -69,7 +69,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VLAN)
 #define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
 
 typedef struct {
-	char *iface_name;
+	char *interface_name;
 	char *parent;
 	guint32 id;
 	guint32 flags;
@@ -79,7 +79,7 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_IFACE_NAME,
+	PROP_INTERFACE_NAME,
 	PROP_PARENT,
 	PROP_ID,
 	PROP_FLAGS,
@@ -119,7 +119,7 @@ const char *
 nm_setting_vlan_get_interface_name (NMSettingVlan *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), NULL);
-	return NM_SETTING_VLAN_GET_PRIVATE (setting)->iface_name;
+	return NM_SETTING_VLAN_GET_PRIVATE (setting)->interface_name;
 }
 
 /**
@@ -465,16 +465,16 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			s_wired = iter->data;
 	}
 
-	/* If iface_name is specified, it must be a valid interface name. We
+	/* If interface_name is specified, it must be a valid interface name. We
 	 * don't check that it matches parent and/or id, because we allowing
 	 * renaming vlans to arbitrary names.
 	 */
-	if (priv->iface_name && !nm_utils_iface_valid_name (priv->iface_name)) {
+	if (priv->interface_name && !nm_utils_iface_valid_name (priv->interface_name)) {
 		g_set_error (error,
 		             NM_SETTING_VLAN_ERROR,
 		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid interface name"),
-		             priv->iface_name);
+		             priv->interface_name);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_INTERFACE_NAME);
 		return FALSE;
 	}
@@ -569,9 +569,9 @@ set_property (GObject *object, guint prop_id,
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
 	switch (prop_id) {
-	case PROP_IFACE_NAME:
-		g_free (priv->iface_name);
-		priv->iface_name = g_value_dup_string (value);
+	case PROP_INTERFACE_NAME:
+		g_free (priv->interface_name);
+		priv->interface_name = g_value_dup_string (value);
 		break;
 	case PROP_PARENT:
 		g_free (priv->parent);
@@ -620,8 +620,8 @@ get_property (GObject *object, guint prop_id,
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
 	switch (prop_id) {
-	case PROP_IFACE_NAME:
-		g_value_set_string (value, priv->iface_name);
+	case PROP_INTERFACE_NAME:
+		g_value_set_string (value, priv->interface_name);
 		break;
 	case PROP_PARENT:
 		g_value_set_string (value, priv->parent);
@@ -650,7 +650,7 @@ finalize (GObject *object)
 	NMSettingVlan *setting = NM_SETTING_VLAN (object);
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
-	g_free (priv->iface_name);
+	g_free (priv->interface_name);
 	g_free (priv->parent);
 	g_slist_free_full (priv->ingress_priority_map, g_free);
 	g_slist_free_full (priv->egress_priority_map, g_free);
@@ -685,7 +685,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * #NMSettingWired:mac-address property of an #NMSettingWired.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_IFACE_NAME,
+		(object_class, PROP_INTERFACE_NAME,
 		g_param_spec_string (NM_SETTING_VLAN_INTERFACE_NAME,
 		                     "InterfaceName",
 		                     "If given, specifies the kernel name of the VLAN "
