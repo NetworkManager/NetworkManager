@@ -296,6 +296,7 @@ set_property (GObject *object, guint prop_id,
 		g_clear_pointer (&priv->virtual_iface_name, NULL);
 		break;
 	case PROP_PARENT:
+		g_free (priv->parent);
 		priv->parent = g_value_dup_string (value);
 		g_clear_pointer (&priv->virtual_iface_name, NULL);
 		break;
