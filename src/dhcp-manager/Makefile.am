@@ -10,7 +10,8 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/posix-signals \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-util \
-	-I${top_srcdir}/src
+	-I${top_srcdir}/src \
+	-DRUNDIR=\"$(rundir)\"
 
 noinst_LTLIBRARIES = libdhcp-manager.la libdhcp-dhclient.la
 
