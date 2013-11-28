@@ -368,6 +368,7 @@ AM_CPPFLAGS += \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DRUNDIR=\"$(rundir)\" \
 	\
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\" \

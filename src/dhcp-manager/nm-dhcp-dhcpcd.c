@@ -103,7 +103,10 @@ ip4_start (NMDHCPClient *client,
 
 	iface = nm_dhcp_client_get_iface (client);
 
-	priv->pid_file = g_strdup_printf (NMSTATEDIR "/dhcpcd-%s.pid", iface);
+	/* dhcpcd does not allow custom pidfiles; the pidfile is always
+	 * RUNDIR "dhcpcd-<ifname>.pid".
+	 */
+	priv->pid_file = g_strdup_printf (RUNDIR "/dhcpcd-%s.pid", iface);
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
 		nm_log_warn (LOGD_DHCP4, "%s does not exist.", priv->path);
