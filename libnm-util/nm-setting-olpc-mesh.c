@@ -89,7 +89,6 @@ NMSetting *nm_setting_olpc_mesh_new (void)
 static void
 nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_OLPC_MESH_SETTING_NAME, NULL);
 }
 
 const GByteArray *

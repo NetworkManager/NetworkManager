@@ -66,7 +66,14 @@ G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 #define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
 
 typedef struct {
-	char *name;
+	const char *name;
+	GType type;
+	guint32 priority;
+	GQuark error_quark;
+} SettingInfo;
+
+typedef struct {
+	const SettingInfo *info;
 } NMSettingPrivate;
 
 enum {
@@ -79,21 +86,38 @@ enum {
 /*************************************************************/
 
 static GHashTable *registered_settings = NULL;
+static GHashTable *registered_settings_by_type = NULL;
+
+static gboolean
+_nm_gtype_equal (gconstpointer v1, gconstpointer v2)
+{
+	return *((const GType *) v1) == *((const GType *) v2);
+}
+static guint
+_nm_gtype_hash (gconstpointer v)
+{
+	return *((const GType *) v);
+}
 
 static void __attribute__((constructor))
 _ensure_registered (void)
 {
-	g_type_init ();
-	_nm_value_transforms_register ();
-	if (G_UNLIKELY (registered_settings == NULL))
+	if (G_UNLIKELY (registered_settings == NULL)) {
+		g_type_init ();
+		_nm_value_transforms_register ();
 		registered_settings = g_hash_table_new (g_str_hash, g_str_equal);
+		registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
+	}
 }
 
-typedef struct {
-	GType type;
-	guint32 priority;
-	GQuark error_quark;
-} SettingInfo;
+#define _ensure_setting_info(self, priv) \
+	G_STMT_START { \
+		NMSettingPrivate *_priv_esi = (priv); \
+		if (G_UNLIKELY (!_priv_esi->info)) { \
+			_priv_esi->info = _nm_setting_lookup_setting_by_type (G_OBJECT_TYPE (self)); \
+			g_assert (_priv_esi->info); \
+		} \
+	} G_STMT_END
 
 /*************************************************************/
 
@@ -131,14 +155,14 @@ typedef struct {
  * 4: IP-level stuff
  */
 void
-_nm_register_setting (const char *name,
-                      const GType type,
-                      const guint32 priority,
-                      const GQuark error_quark)
+(_nm_register_setting) (const char *name,
+                        const GType type,
+                        const guint32 priority,
+                        const GQuark error_quark)
 {
 	SettingInfo *info;
 
-	g_return_if_fail (name != NULL);
+	g_return_if_fail (name != NULL && *name);
 	g_return_if_fail (type != G_TYPE_INVALID);
 	g_return_if_fail (type != G_TYPE_NONE);
 	g_return_if_fail (error_quark != 0);
@@ -146,8 +170,14 @@ _nm_register_setting (const char *name,
 
 	_ensure_registered ();
 
-	if (G_LIKELY (g_hash_table_lookup (registered_settings, name)))
+	if (G_LIKELY ((info = g_hash_table_lookup (registered_settings, name)))) {
+		g_return_if_fail (info->type == type);
+		g_return_if_fail (info->error_quark == error_quark);
+		g_return_if_fail (info->priority == priority);
+		g_return_if_fail (g_strcmp0 (info->name, name) == 0);
 		return;
+	}
+	g_return_if_fail (g_hash_table_lookup (registered_settings_by_type, &type) == NULL);
 
 	if (priority == 0)
 		g_assert_cmpstr (name, ==, NM_SETTING_CONNECTION_SETTING_NAME);
@@ -156,23 +186,27 @@ _nm_register_setting (const char *name,
 	info->type = type;
 	info->priority = priority;
 	info->error_quark = error_quark;
-	g_hash_table_insert (registered_settings, (gpointer) name, info);
+	info->name = name;
+	g_hash_table_insert (registered_settings, (void *) info->name, info);
+	g_hash_table_insert (registered_settings_by_type, &info->type, info);
+}
+
+static const SettingInfo *
+_nm_setting_lookup_setting_by_type (GType type)
+{
+	_ensure_registered ();
+	return g_hash_table_lookup (registered_settings_by_type, &type);
 }
 
 static guint32
 _get_setting_priority (NMSetting *setting)
 {
-	GHashTableIter iter;
-	SettingInfo *info;
+	NMSettingPrivate *priv;
 
-	_ensure_registered ();
-
-	g_hash_table_iter_init (&iter, registered_settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
-		if (G_OBJECT_TYPE (setting) == info->type)
-			return info->priority;
-	}
-	return G_MAXUINT32;
+	g_return_val_if_fail (NM_IS_SETTING (setting), G_MAXUINT32);
+	priv = NM_SETTING_GET_PRIVATE (setting);
+	_ensure_setting_info (setting, priv);
+	return priv->info->priority;
 }
 
 gboolean
@@ -387,7 +421,7 @@ duplicate_setting (NMSetting *setting,
                    GParamFlags flags,
                    gpointer user_data)
 {
-	if (flags & G_PARAM_WRITABLE)
+	if ((flags & (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)) == G_PARAM_WRITABLE)
 		g_object_set_property (G_OBJECT (user_data), name, value);
 }
 
@@ -450,9 +484,12 @@ nm_setting_find_in_list (GSList     *settings_list,
 const char *
 nm_setting_get_name (NMSetting *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+	NMSettingPrivate *priv;
 
-	return NM_SETTING_GET_PRIVATE (setting)->name;
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+	priv = NM_SETTING_GET_PRIVATE (setting);
+	_ensure_setting_info (setting, priv);
+	return priv->info->name;
 }
 
 /**
@@ -473,8 +510,7 @@ gboolean
 nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || *error == NULL, FALSE);
 
 	if (NM_SETTING_GET_CLASS (setting)->verify)
 		return NM_SETTING_GET_CLASS (setting)->verify (setting, all_settings, error);
@@ -1167,48 +1203,34 @@ nm_setting_init (NMSetting *setting)
 
 static GObject*
 constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMSettingPrivate *priv;
 
 	object = G_OBJECT_CLASS (nm_setting_parent_class)->constructor (type,
-													    n_construct_params,
-													    construct_params);
-	if (!object)
-		return NULL;
+	                                                                n_construct_params,
+	                                                                construct_params);
 
-	priv = NM_SETTING_GET_PRIVATE (object);
-	if (!priv->name) {
-		g_warning ("Setting name is not set.");
-		g_object_unref (object);
-		object = NULL;
-	}
-
+	_ensure_setting_info (object, NM_SETTING_GET_PRIVATE (object));
 	return object;
 }
 
 static void
-finalize (GObject *object)
-{
-	NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE (object);
-
-	g_free (priv->name);
-
-	G_OBJECT_CLASS (nm_setting_parent_class)->finalize (object);
-}
-
-static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_NAME:
-		g_free (priv->name);
-		priv->name = g_value_dup_string (value);
+		/* The setter for NAME is deprecated and should not be used anymore.
+		 * Keep the setter for NAME to remain backward compatible.
+		 * Only assert that the caller does not try to set the name to a different value
+		 * then the registered name, which would be extra wrong.
+		 **/
+		_ensure_setting_info (object, priv);
+		g_return_if_fail (!g_strcmp0 (priv->info->name, g_value_get_string (value)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1218,7 +1240,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSetting *setting = NM_SETTING (object);
 
@@ -1243,7 +1265,6 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	object_class->constructor  = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
 	setting_class->update_one_secret = update_one_secret;
 	setting_class->get_secret_flags = get_secret_flags;

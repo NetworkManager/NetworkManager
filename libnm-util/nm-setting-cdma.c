@@ -215,7 +215,6 @@ need_secrets (NMSetting *setting)
 static void
 nm_setting_cdma_init (NMSettingCdma *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME, NULL);
 }
 
 static void

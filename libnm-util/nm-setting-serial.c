@@ -179,7 +179,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_serial_init (NMSettingSerial *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_SERIAL_SETTING_NAME, NULL);
 }
 
 static void

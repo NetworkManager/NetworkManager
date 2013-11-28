@@ -91,7 +91,6 @@ nm_setting_generic_new (void)
 static void
 nm_setting_generic_init (NMSettingGeneric *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_GENERIC_SETTING_NAME, NULL);
 }
 
 static void

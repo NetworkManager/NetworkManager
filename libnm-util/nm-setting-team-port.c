@@ -110,7 +110,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_team_port_init (NMSettingTeamPort *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_TEAM_PORT_SETTING_NAME, NULL);
 }
 
 static void

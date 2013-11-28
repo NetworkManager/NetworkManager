@@ -195,7 +195,6 @@ nm_setting_bridge_port_new (void)
 static void
 nm_setting_bridge_port_init (NMSettingBridgePort *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_BRIDGE_PORT_SETTING_NAME, NULL);
 }
 
 static void

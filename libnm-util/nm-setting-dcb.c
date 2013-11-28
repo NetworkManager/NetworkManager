@@ -802,7 +802,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_dcb_init (NMSettingDcb *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_DCB_SETTING_NAME, NULL);
 }
 
 static inline void

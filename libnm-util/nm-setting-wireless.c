@@ -811,7 +811,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_wireless_init (NMSettingWireless *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_WIRELESS_SETTING_NAME, NULL);
 }
 
 static void

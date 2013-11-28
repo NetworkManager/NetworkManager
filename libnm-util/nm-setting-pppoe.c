@@ -206,7 +206,6 @@ need_secrets (NMSetting *setting)
 static void
 nm_setting_pppoe_init (NMSettingPPPOE *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_PPPOE_SETTING_NAME, NULL);
 }
 
 static void

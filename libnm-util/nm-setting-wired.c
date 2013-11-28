@@ -650,7 +650,6 @@ nm_setting_wired_init (NMSettingWired *setting)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 

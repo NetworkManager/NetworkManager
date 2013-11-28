@@ -53,7 +53,6 @@ verify (NMSetting *setting, GSList *all_settings)
 static void
 nm_setting_template_init (NMSettingTemplate *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_TEMPLATE_SETTING_NAME, NULL);
 }
 
 static void

@@ -276,7 +276,6 @@ need_secrets (NMSetting *setting)
 static void
 nm_setting_adsl_init (NMSettingAdsl *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_ADSL_SETTING_NAME, NULL);
 }
 
 static void

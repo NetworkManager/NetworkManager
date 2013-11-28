@@ -2639,7 +2639,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_802_1x_init (NMSetting8021x *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_802_1X_SETTING_NAME, NULL);
 }
 
 static void

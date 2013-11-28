@@ -156,8 +156,6 @@ get_virtual_iface_name (NMSetting *setting)
 static void
 nm_setting_team_init (NMSettingTeam *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_TEAM_SETTING_NAME,
-	              NULL);
 }
 
 static void

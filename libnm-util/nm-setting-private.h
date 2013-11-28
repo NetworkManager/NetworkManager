@@ -33,6 +33,10 @@ void _nm_register_setting (const char *name,
                            const GType type,
                            const guint32 priority,
                            const GQuark error_quark);
+
+/* Ensure, that name is a compile time constant string. Put the function name in parenthesis to suppress expansion. */
+#define _nm_register_setting(name, type, priority, error_quark)    _nm_register_setting ((name ""), type, priority, error_quark)
+
 gboolean _nm_setting_is_base_type (NMSetting *setting);
 GType _nm_setting_lookup_setting_type (const char *name);
 GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
