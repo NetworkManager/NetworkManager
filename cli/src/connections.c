@@ -1504,6 +1504,30 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 	g_free (info);
 }
 
+/* We were using nm_connection_get_virtual_iface_name() to determine whether the
+ * connection is virtual or not. But it did't work for VLANs without 
+ * vlan.interface-name. nm_connection_get_virtual_iface_name() returns NULL for those.
+ * So we need to use our own implementation for now.
+ */
+static gboolean
+is_connection_virtual (NMConnection *connection)
+{
+	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)
+	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
+		return TRUE;
+	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		NMSettingInfiniband *s_infi = nm_connection_get_setting_infiniband (connection);
+		int p_key = nm_setting_infiniband_get_p_key (s_infi);
+		const char *parent = nm_setting_infiniband_get_parent (s_infi);
+
+		if (p_key != -1 && parent)
+			return TRUE;
+	}
+	return FALSE;
+}
+
 static gboolean
 nmc_activate_connection (NmCli *nmc,
                          NMConnection *connection,
@@ -1517,19 +1541,16 @@ nmc_activate_connection (NmCli *nmc,
 	NMDevice *device = NULL;
 	const char *spec_object = NULL;
 	gboolean device_found;
-	gboolean is_virtual = FALSE;
 	GError *local = NULL;
 
 	g_return_val_if_fail (nmc != NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	if (connection) {
-		if (nm_connection_get_virtual_iface_name (connection))
-			is_virtual = TRUE;
-
 		device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &local);
+
 		/* Virtual connection may not have their interfaces created yet */
-		if (!device_found && !is_virtual) {
+		if (!device_found && !is_connection_virtual (connection)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION,
 				     "%s", local && local->message ? local->message : _("unknown error"));
 			g_clear_error (&local);
