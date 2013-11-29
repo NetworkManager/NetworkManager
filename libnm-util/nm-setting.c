@@ -517,13 +517,24 @@ nm_setting_get_name (NMSetting *setting)
 gboolean
 nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (!error || *error == NULL, FALSE);
+	NMSettingVerifyResult result = _nm_setting_verify (setting, all_settings, error);
+
+	if (result == NM_SETTING_VERIFY_NORMALIZABLE)
+		g_clear_error (error);
+
+	return result == NM_SETTING_VERIFY_SUCCESS || result == NM_SETTING_VERIFY_NORMALIZABLE;
+}
+
+NMSettingVerifyResult
+_nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
+{
+	g_return_val_if_fail (NM_IS_SETTING (setting), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!error || *error == NULL, NM_SETTING_VERIFY_ERROR);
 
 	if (NM_SETTING_GET_CLASS (setting)->verify)
 		return NM_SETTING_GET_CLASS (setting)->verify (setting, all_settings, error);
 
-	return TRUE;
+	return NM_SETTING_VERIFY_SUCCESS;
 }
 
 static gboolean

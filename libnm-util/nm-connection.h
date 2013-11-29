@@ -159,6 +159,11 @@ gboolean      nm_connection_diff          (NMConnection *a,
                                            GHashTable **out_settings);
 
 gboolean      nm_connection_verify        (NMConnection *connection, GError **error);
+NM_AVAILABLE_IN_1_0
+gboolean      nm_connection_normalize     (NMConnection *connection,
+                                           GHashTable *parameters,
+                                           gboolean *modified,
+                                           GError **error);
 
 const char *  nm_connection_need_secrets  (NMConnection *connection,
                                            GPtrArray **hints);

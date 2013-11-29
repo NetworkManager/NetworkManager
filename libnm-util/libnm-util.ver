@@ -53,6 +53,7 @@ global:
 	nm_connection_need_secrets;
 	nm_connection_new;
 	nm_connection_new_from_hash;
+	nm_connection_normalize;
 	nm_connection_remove_setting;
 	nm_connection_replace_settings;
 	nm_connection_replace_settings_from_connection;

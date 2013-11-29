@@ -122,6 +122,10 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+
+static NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
+
+
 /*************************************************************/
 
 /**
@@ -584,7 +588,7 @@ nm_connection_diff (NMConnection *a,
  * have allowed values, and some values are dependent on other values.  For
  * example, if a Wi-Fi connection is security enabled, the #NMSettingWireless
  * setting object's 'security' property must contain the setting name of the
- * #NMSettingWirelessSecurity object, which must also be present in the 
+ * #NMSettingWirelessSecurity object, which must also be present in the
  * connection for the connection to be valid.  As another example, the
  * #NMSettingWired object's 'mac-address' property must be a validly formatted
  * MAC address.  The returned #GError contains information about which
@@ -595,24 +599,40 @@ nm_connection_diff (NMConnection *a,
 gboolean
 nm_connection_verify (NMConnection *connection, GError **error)
 {
+	NMSettingVerifyResult result;
+
+	result = _nm_connection_verify (connection, error);
+
+	/* we treat normalizable connections as valid. */
+	if (result == NM_SETTING_VERIFY_NORMALIZABLE)
+		g_clear_error (error);
+
+	return result == NM_SETTING_VERIFY_SUCCESS || result == NM_SETTING_VERIFY_NORMALIZABLE;
+}
+
+static NMSettingVerifyResult
+_nm_connection_verify (NMConnection *connection, GError **error)
+{
 	NMConnectionPrivate *priv;
 	NMSettingConnection *s_con;
 	GHashTableIter iter;
 	gpointer value;
-	GSList *all_settings = NULL;
-	gboolean success = TRUE;
+	GSList *all_settings = NULL, *setting_i;
+	NMSettingVerifyResult success = NM_SETTING_VERIFY_ERROR;
 	NMSetting *base;
 	const char *ctype;
+	GError *normalizable_error = NULL;
+	NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
 
 	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+		g_return_val_if_fail (*error == NULL, NM_SETTING_VERIFY_ERROR);
 
 	if (!NM_IS_CONNECTION (connection)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_UNKNOWN,
 		                     "invalid connection; failed verification");
-		g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+		g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
 	}
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
@@ -624,22 +644,61 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
 		                     "connection setting not found");
-		return FALSE;
+		goto EXIT;
 	}
 
 	/* Build up the list of settings */
 	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		all_settings = g_slist_append (all_settings, value);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		/* Order NMSettingConnection so that it will be verified first.
+		 * The reason is, that NMSettingConnection:verify() modifies the connection
+		 * by setting NMSettingConnection:interface_name. So we want to call that
+		 * verify() first, because the order can affect the outcome.
+		 * Another reason is, that errors in this setting might be more fundamental
+		 * and should be checked and reported with higher priority.
+		 * Another reason is, that some settings look especially at the
+		 * NMSettingConnection, so they find it first in the all_settings list. */
+		if (value == s_con)
+			all_settings = g_slist_append (all_settings, value);
+		else
+			all_settings = g_slist_prepend (all_settings, value);
+	}
+	all_settings = g_slist_reverse (all_settings);
 
 	/* Now, run the verify function of each setting */
-	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, &value) && success)
-		success = nm_setting_verify (NM_SETTING (value), all_settings, error);
-	g_slist_free (all_settings);
+	for (setting_i = all_settings; setting_i; setting_i = setting_i->next) {
+		GError *verify_error = NULL;
+		NMSettingVerifyResult verify_result;
 
-	if (success == FALSE)
-		return FALSE;
+		/* verify all settings. We stop if we find the first non-normalizable
+		 * @NM_SETTING_VERIFY_ERROR. If we find normalizable errors we continue
+		 * but remember the error to return it to the user.
+		 * @NM_SETTING_VERIFY_NORMALIZABLE_ERROR has a higher priority then
+		 * @NM_SETTING_VERIFY_NORMALIZABLE, so, if we encounter such an error type,
+		 * we remember it instead (to return it as output).
+		 **/
+		verify_result = _nm_setting_verify (NM_SETTING (setting_i->data), all_settings, &verify_error);
+		if (verify_result == NM_SETTING_VERIFY_NORMALIZABLE ||
+		    verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR) {
+			if (   verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR
+			    && normalizable_error_type == NM_SETTING_VERIFY_NORMALIZABLE) {
+				/* NORMALIZABLE_ERROR has higher priority. */
+				g_clear_error (&normalizable_error);
+			}
+			if (!normalizable_error) {
+				g_propagate_error (&normalizable_error, verify_error);
+				verify_error = NULL;
+				normalizable_error_type = verify_result;
+			}
+		} else if (verify_result != NM_SETTING_VERIFY_SUCCESS) {
+			g_propagate_error (error, verify_error);
+			g_slist_free (all_settings);
+			g_return_val_if_fail (verify_result == NM_SETTING_VERIFY_ERROR, success);
+			goto EXIT;
+		}
+		g_clear_error (&verify_error);
+	}
+	g_slist_free (all_settings);
 
 	/* Now make sure the given 'type' setting can actually be the base setting
 	 * of the connection.  Can't have type=ppp for example.
@@ -650,7 +709,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
 		                     "connection type missing");
-		return FALSE;
+		goto EXIT;
 	}
 
 	base = nm_connection_get_setting_by_name (connection, ctype);
@@ -659,7 +718,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
 		                     "base setting GType not found");
-		return FALSE;
+		goto EXIT;
 	}
 
 	if (!_nm_setting_is_base_type (base)) {
@@ -668,10 +727,87 @@ nm_connection_verify (NMConnection *connection, GError **error)
 			         NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
 			         "connection type '%s' is not a base type",
 			         ctype);
-		return FALSE;
+		goto EXIT;
 	}
 
-	return TRUE;
+	if (normalizable_error_type != NM_SETTING_VERIFY_SUCCESS) {
+		g_propagate_error (error, normalizable_error);
+		normalizable_error = NULL;
+		success = normalizable_error_type;
+	} else
+		success = NM_SETTING_VERIFY_SUCCESS;
+
+EXIT:
+	g_clear_error (&normalizable_error);
+	return success;
+}
+
+/**
+ * nm_connection_normalize:
+ * @connection: the #NMConnection to normalize
+ * @parameters: (allow-none) (element-type utf8 gpointer): a #GHashTable with
+ * normalization parameters to allow customization of the normalization by providing
+ * specific arguments. Unknown arguments will be ignored and the default will be
+ * used. The keys must be strings, hashed by g_str_hash() and g_str_equal() functions.
+ * The values are opaque and depend on the parameter name.
+ * @modified: (out) (allow-none): outputs whether any settings were modified.
+ * @error: location to store error, or %NULL. Contains the reason,
+ * why the connection is invalid, if the function returns an error.
+ *
+ * Does some basic normalization and fixup of well known inconsistencies
+ * and deprecated fields. If the connection was modified in any way,
+ * the output parameter @modified is set %TRUE.
+ *
+ * Finally the connection will be verified and %TRUE returns if the connection
+ * is valid. As this function only performs some specific normalization steps
+ * it cannot repair all connections. If the connection has errors that
+ * cannot be normalized, the connection will not be modified.
+ *
+ * Returns: %TRUE if the connection is valid, %FALSE if it is not
+ *
+ * Since: 1.0
+ **/
+gboolean
+nm_connection_normalize (NMConnection *connection,
+                         GHashTable *parameters,
+                         gboolean *modified,
+                         GError **error)
+{
+	NMSettingVerifyResult success;
+	gboolean was_modified = FALSE;
+	GError *normalizable_error = NULL;
+
+	success = _nm_connection_verify (connection, &normalizable_error);
+
+	if (success == NM_SETTING_VERIFY_ERROR ||
+	    success == NM_SETTING_VERIFY_SUCCESS) {
+		if (normalizable_error)
+			g_propagate_error (error, normalizable_error);
+		goto EXIT;
+	}
+	g_assert (success == NM_SETTING_VERIFY_NORMALIZABLE || success == NM_SETTING_VERIFY_NORMALIZABLE_ERROR);
+	g_clear_error (&normalizable_error);
+
+	/* Try to perform all kind of normalizations on the settings to fix it.
+	 * We only do this, after verifying that the connection contains no un-normalizable
+	 * errors, because in that case we rather fail without touching the settings. */
+
+	/* TODO: no normalizations implemented yet */
+
+	/* Verify anew. */
+	success = _nm_connection_verify (connection, error);
+
+	/* we would expect, that after normalization, the connection can be verified. */
+	g_return_val_if_fail (success == NM_SETTING_VERIFY_SUCCESS, success);
+
+	/* we would expect, that the connection was modified during normalization. */
+	g_return_val_if_fail (was_modified, success);
+
+EXIT:
+	if (modified)
+		*modified = was_modified;
+
+	return success == NM_SETTING_VERIFY_SUCCESS;
 }
 
 /**
