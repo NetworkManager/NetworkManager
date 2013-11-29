@@ -796,29 +796,35 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	/* If the connection has a virtual interface name, it must match
-	 * the connection setting's interface name.
+	/* FIXME: previously, verify() set the NMSettingConnection:interface_name property,
+	 * thus modifying the setting. verify() should not do this, but keep this not to change
+	 * behaviour.
 	 */
-	for (iter = all_settings; iter; iter = iter->next) {
-		const char *virtual_iface;
+	if (!priv->interface_name) {
+		for (iter = all_settings; iter; iter = iter->next) {
+			NMSetting *s_current = iter->data;
+			char *virtual_iface_name = NULL;
 
-		virtual_iface = nm_setting_get_virtual_iface_name (iter->data);
-		if (virtual_iface) {
-			if (priv->interface_name) {
-				if (strcmp (priv->interface_name, virtual_iface) != 0) {
-					g_set_error (error,
-					             NM_SETTING_CONNECTION_ERROR,
-					             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-					             _("'%s' doesn't match the virtual interface name '%s'"),
-					             priv->interface_name, virtual_iface);
-					g_prefix_error (error, "%s.%s: ",
-					                NM_SETTING_CONNECTION_SETTING_NAME,
-					                NM_SETTING_CONNECTION_INTERFACE_NAME);
-					return FALSE;
+			if (NM_IS_SETTING_BOND (s_current))
+				g_object_get (s_current, NM_SETTING_BOND_INTERFACE_NAME, &virtual_iface_name, NULL);
+			else if (NM_IS_SETTING_BRIDGE (s_current))
+				g_object_get (s_current, NM_SETTING_BRIDGE_INTERFACE_NAME, &virtual_iface_name, NULL);
+			else if (NM_IS_SETTING_TEAM (s_current))
+				g_object_get (s_current, NM_SETTING_TEAM_INTERFACE_NAME, &virtual_iface_name, NULL);
+			else if (NM_IS_SETTING_VLAN (s_current))
+				g_object_get (s_current, NM_SETTING_VLAN_INTERFACE_NAME, &virtual_iface_name, NULL);
+			/* For NMSettingInfiniband, virtual_iface_name has no backing field.
+			 * No need to set the (unset) interface_name to the default value.
+			 **/
+
+			if (virtual_iface_name) {
+				if (nm_utils_iface_valid_name (virtual_iface_name)) {
+					/* found a new interface name. */
+					priv->interface_name = virtual_iface_name;
+					break;
 				}
-			} else
-				priv->interface_name = g_strdup (virtual_iface);
-			break;
+				g_free (virtual_iface_name);
+			}
 		}
 	}
 

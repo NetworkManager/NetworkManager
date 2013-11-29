@@ -134,25 +134,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
-	if (!priv->interface_name || !strlen(priv->interface_name)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_TEAM_ERROR,
-		                     NM_SETTING_TEAM_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_TEAM_SETTING_NAME, NM_SETTING_TEAM_INTERFACE_NAME);
-		return FALSE;
-	}
-
-	if (!nm_utils_iface_valid_name (priv->interface_name)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_TEAM_ERROR,
-		                     NM_SETTING_TEAM_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_TEAM_SETTING_NAME, NM_SETTING_TEAM_INTERFACE_NAME);
-		return FALSE;
-	}
-
-	return TRUE;
+	return _nm_setting_verify_deprecated_virtual_iface_name (
+	         priv->interface_name, FALSE,
+	         NM_SETTING_TEAM_SETTING_NAME, NM_SETTING_TEAM_INTERFACE_NAME,
+	         NM_SETTING_TEAM_ERROR,
+	         NM_SETTING_TEAM_ERROR_INVALID_PROPERTY,
+	         NM_SETTING_TEAM_ERROR_MISSING_PROPERTY,
+	         all_settings, error);
 }
 
 static const char *
