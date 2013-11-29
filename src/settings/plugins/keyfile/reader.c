@@ -49,10 +49,9 @@
 
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
- * connection, eg ethernet or wifi) or the 802-11-wireless setting's
- * 'security' property which specifies whether or not the AP requires
- * encrpytion.  This function handles translating those properties' values
- * to the real setting name if they are an alias.
+ * connection, e.g. ethernet or wifi) or 'slave-type' (specifies type of slave
+ * connection, e.g. bond or bridge). This function handles translating those
+ * properties' values to the real setting name if they are an alias.
  */
 static void
 setting_alias_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
