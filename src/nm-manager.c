@@ -429,6 +429,12 @@ find_ac_for_connection (NMManager *manager, NMConnection *connection)
 	return NULL;
 }
 
+/* Filter out connections that are already active.
+ * nm_settings_get_connections() returns sorted list. We need to preserve the
+ * order so that we didn't change auto-activation order (recent timestamps
+ * are first).
+ * Caller is responsible for freeing the returned list with g_slist_free().
+ */
 GSList *
 nm_manager_get_activatable_connections (NMManager *manager)
 {
@@ -445,7 +451,7 @@ nm_manager_get_activatable_connections (NMManager *manager)
 	}
 
 	g_slist_free (all_connections);
-	return connections;
+	return g_slist_reverse (connections);
 }
 
 static NMActiveConnection *

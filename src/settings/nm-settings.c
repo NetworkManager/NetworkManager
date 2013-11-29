@@ -331,8 +331,10 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	return 1;
 }
 
-/* Returns a list of NMSettingsConnections.  Caller must free the list with
- * g_slist_free().
+/* Returns a list of NMSettingsConnections.
+ * The list is sorted in the order suitable for auto-connecting, i.e.
+ * first go connections with autoconnect=yes and most recent timestamp.
+ * Caller must free the list with g_slist_free().
  */
 GSList *
 nm_settings_get_connections (NMSettings *self)
