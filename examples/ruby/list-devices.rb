@@ -25,6 +25,7 @@ require 'dbus'
 # This example lists basic information about network interfaces known to NM
 #
 
+# For the types see include/NetworkManager.h
 devtypes = { 1 => "Ethernet",
              2 => "Wi-Fi",
              5 => "Bluetooth",
@@ -34,7 +35,11 @@ devtypes = { 1 => "Ethernet",
              9 => "InfiniBand",
              10 => "Bond",
              11 => "VLAN",
-             12 => "ADSL" }
+             12 => "ADSL",
+             13 => "Bridge",
+             14 => "Generic",
+             15 => "Team"
+           }
 
 states = { 0   => "Unknown",
            10  => "Unmanaged",

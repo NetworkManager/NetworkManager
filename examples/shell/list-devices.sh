@@ -31,6 +31,7 @@ DEVICE_IFACE="org.freedesktop.NetworkManager.Device"
 NM_GET_DEVICES="org.freedesktop.NetworkManager.GetDevices"
 DBUS_PROPERTIES_GET="org.freedesktop.DBus.Properties.Get"
 
+# For the types see include/NetworkManager.h
 devtype_to_name()
 {
   case $1 in
@@ -44,6 +45,9 @@ devtype_to_name()
    10) echo "Bond" ;;
    11) echo "VLAN" ;;
    12) echo "ADSL" ;;
+   13) echo "Bridge" ;;
+   14) echo "Generic" ;;
+   15) echo "Team" ;;
     *) echo "Unknown" ;;
   esac
 }
