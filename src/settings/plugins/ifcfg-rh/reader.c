@@ -5245,9 +5245,7 @@ connection_from_file (const char *filename,
 	}
 	g_free (bootproto);
 
-	nm_utils_normalize_connection (connection, TRUE);
-
-	if (!nm_connection_verify (connection, error)) {
+	if (!nm_connection_normalize (connection, NULL, NULL, error)) {
 		g_object_unref (connection);
 		connection = NULL;
 	}
