@@ -882,9 +882,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	if (is_slave) {
-		NMSettingIP4Config *s_ip4;
-		NMSettingIP6Config *s_ip6;
-
 		if (!priv->master) {
 			g_set_error_literal (error,
 			                     NM_SETTING_CONNECTION_ERROR,
@@ -892,33 +889,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
 			return NM_SETTING_VERIFY_ERROR;
-		}
-
-		/* Bond/bridge/team slaves are not allowed to have any IP configuration. */
-		s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_find_in_list (all_settings, NM_SETTING_IP4_CONFIG_SETTING_NAME));
-		if (s_ip4) {
-			if (strcmp (nm_setting_ip4_config_get_method (s_ip4),
-			            NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-				g_set_error_literal (error,
-				                     NM_SETTING_CONNECTION_ERROR,
-				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
-				                     _("IPv4 configuration is not allowed for slave"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
-				return FALSE;
-			}
-		}
-
-		s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_find_in_list (all_settings, NM_SETTING_IP6_CONFIG_SETTING_NAME));
-		if (s_ip6) {
-			if (strcmp (nm_setting_ip6_config_get_method (s_ip6),
-			            NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
-				g_set_error_literal (error,
-				                     NM_SETTING_CONNECTION_ERROR,
-				                     NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,
-				                     _("IPv6 configuration is not allowed for slave"));
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
-				return FALSE;
-			}
 		}
 	} else {
 		if (priv->master) {

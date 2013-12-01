@@ -631,6 +631,61 @@ _normalize_virtual_iface_name (NMConnection *self)
 	return was_modified;
 }
 
+static gboolean
+_normalize_ip_config (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+	const char *default_ip6_method = NULL;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	NMSetting *setting;
+
+	if (parameters)
+		default_ip6_method = g_hash_table_lookup (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
+	if (!default_ip6_method)
+		default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (self);
+	s_ip6 = nm_connection_get_setting_ip6_config (self);
+
+	if (nm_setting_connection_get_master (s_con)) {
+		/* Slave connections don't have IP configuration. */
+
+		if (s_ip4)
+			nm_connection_remove_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
+
+		if (s_ip6)
+			nm_connection_remove_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+
+		return s_ip4 || s_ip6;
+	} else {
+		/* Ensure all non-slave connections have IP4 and IP6 settings objects. If no
+		 * IP6 setting was specified, then assume that means IP6 config is allowed
+		 * to fail. But if no IP4 setting was specified, assume the caller was just
+		 * being lazy.
+		 */
+		if (!s_ip4) {
+			setting = nm_setting_ip4_config_new ();
+
+			g_object_set (setting,
+			              NM_SETTING_IP4_CONFIG_METHOD, default_ip4_method,
+			              NULL);
+			nm_connection_add_setting (self, setting);
+		}
+		if (!s_ip6) {
+			setting = nm_setting_ip6_config_new ();
+
+			g_object_set (setting,
+			              NM_SETTING_IP6_CONFIG_METHOD, default_ip6_method,
+			              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+			              NULL);
+			nm_connection_add_setting (self, setting);
+		}
+		return !s_ip4 || !s_ip6;
+	}
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -667,6 +722,8 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
 	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	GHashTableIter iter;
 	gpointer value;
 	GSList *all_settings = NULL, *setting_i;
@@ -782,6 +839,34 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		goto EXIT;
 	}
 
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+	if (nm_setting_connection_get_master (s_con)) {
+		if ((normalizable_error_type == NM_SETTING_VERIFY_SUCCESS ||
+		    (normalizable_error_type == NM_SETTING_VERIFY_NORMALIZABLE))  && (s_ip4 || s_ip6)) {
+			g_clear_error (&normalizable_error);
+			g_set_error (&normalizable_error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             "slave connection cannot have an IP%c setting",
+			             s_ip4 ? '4' : '6');
+			/* having a slave with IP config *was* and is a verify() error. */
+			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+	} else {
+		if (normalizable_error_type == NM_SETTING_VERIFY_SUCCESS && (!s_ip4 || !s_ip6)) {
+			g_set_error (&normalizable_error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+			             "connection needs an IP%c setting",
+			             !s_ip4 ? '4' : '6');
+			/* having a master without IP config was not a verify() error, accept
+			 * it for backward compatibility. */
+			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
+		}
+	}
+
 	if (normalizable_error_type != NM_SETTING_VERIFY_SUCCESS) {
 		g_propagate_error (error, normalizable_error);
 		normalizable_error = NULL;
@@ -845,6 +930,7 @@ nm_connection_normalize (NMConnection *connection,
 	 * errors, because in that case we rather fail without touching the settings. */
 
 	was_modified |= _normalize_virtual_iface_name (connection);
+	was_modified |= _normalize_ip_config (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);

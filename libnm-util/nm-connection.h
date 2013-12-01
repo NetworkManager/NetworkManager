@@ -86,6 +86,8 @@ G_BEGIN_DECLS
  *   #NMSettingWireless.
  * @NM_CONNECTION_ERROR_SETTING_NOT_FOUND: the #NMConnection object
  *   did not contain the specified #NMSetting object
+ *@NM_CONNECTION_ERROR_INVALID_SETTING: the #NMConnection object contains
+ *   a conflicting setting object
  *
  * Describes errors that may result from operations involving a #NMConnection.
  *
@@ -95,8 +97,16 @@ typedef enum
 	NM_CONNECTION_ERROR_UNKNOWN = 0,                  /*< nick=UnknownError >*/
 	NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND, /*< nick=ConnectionSettingNotFound >*/
 	NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,      /*< nick=ConnectionTypeInvalid >*/
-	NM_CONNECTION_ERROR_SETTING_NOT_FOUND             /*< nick=SettingNotFound >*/
+	NM_CONNECTION_ERROR_SETTING_NOT_FOUND,            /*< nick=SettingNotFound >*/
+	NM_CONNECTION_ERROR_INVALID_SETTING,              /*< nick=InvalidSetting >*/
 } NMConnectionError;
+
+/*
+ * NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD: overwrite the ip6 method
+ * when normalizing ip6 configuration. If omited, this defaults to
+ * @NM_SETTING_IP6_CONFIG_METHOD_AUTO.
+ */
+#define NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD "ip6-config-method"
 
 #define NM_CONNECTION_ERROR nm_connection_error_quark ()
 GQuark nm_connection_error_quark (void);
