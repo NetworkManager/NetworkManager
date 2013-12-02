@@ -204,7 +204,6 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
 				lowest_metric = route->metric;
-				has_gateway = TRUE;
 			}
 			has_gateway = TRUE;
 			/* Remove the default route from the list */
