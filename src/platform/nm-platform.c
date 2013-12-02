@@ -1694,21 +1694,30 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 {
 	static char buffer[256];
 	char s_address[INET_ADDRSTRLEN];
+	char s_peer[INET_ADDRSTRLEN];
 	const char *s_dev;
 	char *str_dev;
+	char *str_peer = NULL;
 
 	g_return_val_if_fail (address, "(unknown)");
 
 	inet_ntop (AF_INET, &address->address, s_address, sizeof (s_address));
 
+	if (address->peer_address) {
+		inet_ntop (AF_INET, &address->peer_address, s_peer, sizeof (s_peer));
+		str_peer = g_strconcat (" ptp ", s_peer, NULL);
+	}
+
 	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s",
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
+	            str_peer ? str_peer : "",
 	            str_dev ? str_dev : "");
 	g_free (str_dev);
+	g_free (str_peer);
 	return buffer;
 }
 
@@ -1730,13 +1739,20 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	static char buffer[256];
 	char s_flags[256];
 	char s_address[INET6_ADDRSTRLEN];
+	char s_peer[INET6_ADDRSTRLEN];
 	const char *s_dev;
 	char *str_flags;
 	char *str_dev;
+	char *str_peer = NULL;
 
 	g_return_val_if_fail (address, "(unknown)");
 
 	inet_ntop (AF_INET6, &address->address, s_address, sizeof (s_address));
+
+	if (!IN6_IS_ADDR_UNSPECIFIED (&address->peer_address)) {
+		inet_ntop (AF_INET6, &address->peer_address, s_peer, sizeof (s_peer));
+		str_peer = g_strconcat (" ptp ", s_peer, NULL);
+	}
 
 	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
@@ -1744,13 +1760,15 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	rtnl_addr_flags2str(address->flags, s_flags, sizeof(s_flags));
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s",
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s%s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
+	            str_peer ? str_peer : "",
 	            str_dev ? str_dev : "",
 	            str_flags ? str_flags : "");
 	g_free (str_flags);
 	g_free (str_dev);
+	g_free (str_peer);
 	return buffer;
 }
 
