@@ -9,6 +9,7 @@ SUBDIRS = \
 	src \
 	callouts \
 	cli \
+	tui \
 	tools \
 	policy \
 	data \

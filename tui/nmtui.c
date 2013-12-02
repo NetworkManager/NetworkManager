@@ -1,0 +1,274 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/*
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2013 Red Hat, Inc.
+ */
+
+/**
+ * SECTION:nmtui
+ * @short_description: nmtui toplevel
+ *
+ * The top level of nmtui. Exists mostly just to call nmtui_connect(),
+ * nmtui_edit(), and nmtui_hostname().
+ */
+
+#include "config.h"
+
+#include <locale.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <glib.h>
+#include <glib/gi18n-lib.h>
+
+#include <nm-client.h>
+#include <nm-connection.h>
+#include <nm-remote-settings.h>
+#include <nm-utils.h>
+
+#include "nmt-newt.h"
+
+#include "nmtui.h"
+#include "nmtui-edit.h"
+#include "nmtui-connect.h"
+#include "nmtui-hostname.h"
+#include "nm-editor-bindings.h"
+
+NMClient *nm_client;
+NMRemoteSettings *nm_settings;
+static GMainLoop *loop;
+
+typedef void (*NmtuiSubprogram) (int argc, char **argv);
+
+static const struct {
+	const char *name, *shortcut, *usage;
+	const char *display_name;
+	NmtuiSubprogram func;
+} subprograms[] = {
+	{ "edit",     "nmtui-edit",     " [connection]",
+	  N_("Edit a connection"),
+	  nmtui_edit },
+	{ "connect",  "nmtui-connect",  " [connection]",
+	  N_("Activate a connection"),
+	  nmtui_connect },
+	{ "hostname", "nmtui-hostname", " [new hostname]",
+	  N_("Set system hostname"),
+	  nmtui_hostname }
+};
+static const int num_subprograms = G_N_ELEMENTS (subprograms);
+
+static void
+nmtui_main (int argc, char **argv)
+{
+	NmtNewtForm *form;
+	NmtNewtWidget *widget, *cancel, *ok;
+	NmtNewtGrid *grid;
+	NmtNewtListbox *listbox;
+	NmtNewtButtonBox *bbox;
+	int i;
+
+	form = g_object_new (NMT_TYPE_NEWT_FORM,
+	                     "title", _("NetworkManager TUI"),
+	                     "escape-exits", TRUE,
+	                     NULL);
+
+	widget = nmt_newt_grid_new ();
+	nmt_newt_form_set_content (form, widget);
+	grid = NMT_NEWT_GRID (widget);
+
+	widget = nmt_newt_label_new (_("Please select an option"));
+	nmt_newt_grid_add (grid, widget, 0, 0);
+
+	widget = nmt_newt_listbox_new (num_subprograms, 0);
+	nmt_newt_grid_add (grid, widget, 0, 1);
+	nmt_newt_widget_set_padding (widget, 0, 1, 0, 1);
+	nmt_newt_widget_set_exit_on_activate (widget, TRUE);
+	listbox = NMT_NEWT_LISTBOX (widget);
+
+	for (i = 0; i < num_subprograms; i++) {
+		nmt_newt_listbox_append (listbox, _(subprograms[i].display_name),
+		                         subprograms[i].func);
+	}
+
+	widget = nmt_newt_button_box_new (NMT_NEWT_BUTTON_BOX_HORIZONTAL);
+	nmt_newt_grid_add (grid, widget, 0, 2);
+	bbox = NMT_NEWT_BUTTON_BOX (widget);
+
+	cancel = nmt_newt_button_box_add_end (bbox, _("Cancel"));
+	nmt_newt_widget_set_exit_on_activate (cancel, TRUE);
+	ok = nmt_newt_button_box_add_end (bbox, _("OK"));
+	nmt_newt_widget_set_exit_on_activate (ok, TRUE);
+
+	widget = nmt_newt_form_run_sync (form);
+	if (widget == ok || widget == (NmtNewtWidget *)listbox) {
+		NmtuiSubprogram subprogram = nmt_newt_listbox_get_active_key (listbox);
+
+		subprogram (argc, argv);
+	} else
+		nmtui_quit ();
+	g_object_unref (form);
+}
+
+/**
+ * nmtui_quit:
+ *
+ * Causes nmtui to exit.
+ */
+void
+nmtui_quit (void)
+{
+	g_main_loop_quit (loop);
+}
+
+static void
+connections_read (NMRemoteSettings *settings,
+                  gpointer          user_data)
+{
+	gboolean *got_connections = user_data;
+
+	*got_connections = TRUE;
+}
+
+static void
+usage (void)
+{
+	const char *argv0 = g_get_prgname ();
+	int i;
+
+	for (i = 0; i < num_subprograms; i++) {
+		if (!strcmp (argv0, subprograms[i].shortcut)) {
+			g_printerr ("Usage: %s%s\n", argv0, subprograms[i].usage);
+			exit (1);
+		}
+	}
+
+	g_printerr ("Usage: nmtui\n");
+	for (i = 0; i < num_subprograms; i++) {
+		g_printerr ("       nmtui %s%s\n", subprograms[i].name,
+		            subprograms[i].usage);
+	}
+	exit (1);
+}
+
+typedef struct {
+	NmtuiSubprogram subprogram;
+	int argc;
+	char **argv;
+} NmtuiStartupData;
+
+static gboolean
+idle_run_subprogram (gpointer user_data)
+{
+	NmtuiStartupData *data = user_data;
+
+	data->subprogram (data->argc, data->argv);
+	return FALSE;
+}
+
+gboolean sleep_on_startup = FALSE;
+gboolean noinit = FALSE;
+
+GOptionEntry entries[] = {
+	{ "sleep", 's', 0, G_OPTION_ARG_NONE, &sleep_on_startup,
+	  "Sleep on startup", NULL },
+	{ "noinit", 'n', 0, G_OPTION_ARG_NONE, &noinit,
+	  "Don't initialize newt", NULL },
+	{ NULL }
+};
+
+int
+main (int argc, char **argv)
+{
+	gboolean got_connections = FALSE;
+	GOptionContext *opts;
+	GError *error = NULL;
+	NmtuiStartupData startup_data;
+	const char *prgname;
+	int i;
+
+	setlocale (LC_ALL, "");
+	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
+
+	opts = g_option_context_new (NULL);
+	g_option_context_add_main_entries (opts, entries, NULL);
+
+	if (!g_option_context_parse (opts, &argc, &argv, &error)) {
+		g_printerr ("%s: Could not parse arguments: %s\n",
+		            argv[0], error->message);
+		exit (1);
+	}
+	g_option_context_free (opts);
+
+	nm_client = nm_client_new ();
+
+	nm_settings = nm_remote_settings_new (NULL);
+	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
+	                  G_CALLBACK (connections_read), &got_connections);
+	while (!got_connections)
+		g_main_context_iteration (NULL, TRUE);
+
+	if (sleep_on_startup)
+		sleep (5);
+
+	nm_editor_bindings_init ();
+
+	startup_data.subprogram = NULL;
+	prgname = g_get_prgname ();
+	if (g_str_has_prefix (prgname, "lt-"))
+		prgname += 3;
+	if (!strcmp (prgname, "nmtui")) {
+		if (argc > 1) {
+			for (i = 0; i < num_subprograms; i++) {
+				if (!strcmp (argv[1], subprograms[i].name)) {
+					argc--;
+					argv[0] = (char *) subprograms[i].shortcut;
+					memmove (&argv[1], &argv[2], argc * sizeof (char *));
+					startup_data.subprogram = subprograms[i].func;
+					break;
+				}
+			}
+		} else
+			startup_data.subprogram = nmtui_main;
+	} else {
+		for (i = 0; i < num_subprograms; i++) {
+			if (!strcmp (prgname, subprograms[i].shortcut)) {
+				startup_data.subprogram = subprograms[i].func;
+				break;
+			}
+		}
+	}
+	if (!startup_data.subprogram)
+		usage ();
+
+	if (!noinit)
+		nmt_newt_init ();
+
+	startup_data.argc = argc;
+	startup_data.argv = argv;
+	g_idle_add (idle_run_subprogram, &startup_data);
+	loop = g_main_loop_new (NULL, FALSE);
+	g_main_loop_run (loop);
+	g_main_loop_unref (loop);
+
+	if (!noinit)
+		nmt_newt_finished ();
+
+	g_object_unref (nm_client);
+	g_object_unref (nm_settings);
+
+	return 0;
+}

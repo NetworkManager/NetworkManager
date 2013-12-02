@@ -653,6 +653,17 @@ else
     libndp_location=system
 fi
 
+AC_ARG_WITH(nmtui, AS_HELP_STRING([--with-nmtui=yes|no], [Build nmtui]))
+if test "$with_nmtui" != no; then
+    PKG_CHECK_MODULES(NEWT, [libnewt >= 0.52.15], [build_nmtui=yes], [build_nmtui=no])
+else
+    build_nmtui=no
+fi
+if test "$with_nmtui" = yes -a "$build_nmtui" = no; then
+    AC_MSG_ERROR([You must have libnewt installed to build nmtui.])
+fi
+AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
+
 
 NM_COMPILER_WARNINGS
 
@@ -741,6 +752,8 @@ tools/Makefile
 cli/Makefile
 cli/src/Makefile
 cli/completion/Makefile
+tui/Makefile
+tui/newt/Makefile
 test/Makefile
 initscript/RedHat/NetworkManager
 initscript/Debian/NetworkManager
@@ -817,6 +830,7 @@ echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
 echo "  libndp: $libndp_location"
 echo "  libteamdctl: $enable_teamdctl"
+echo "  nmtui: $build_nmtui"
 echo
 
 echo "Configuration plugins"
