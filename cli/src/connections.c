@@ -216,7 +216,7 @@ usage (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli connection { COMMAND | help }\n"
-	         "  COMMAND := { show | up | down | delete }\n\n"
+	         "  COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
 	         "  show configured [[ id | uuid | path ] <ID>]\n\n"
 	         "  show active     [[ id | uuid | path | apath ] <ID>]\n\n"
 #if WITH_WIMAX
