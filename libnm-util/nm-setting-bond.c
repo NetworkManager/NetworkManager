@@ -802,7 +802,7 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		                      "InterfaceName",
 		                      "The name of the virtual in-kernel bonding network interface",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                      G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingBond:options:
@@ -820,5 +820,5 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		                             "strings.  Option names must contain only "
 		                             "alphanumeric characters (ie, [a-zA-Z0-9]).",
 		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 }

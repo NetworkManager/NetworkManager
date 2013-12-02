@@ -1032,7 +1032,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "one or more characters and may change over the lifetime "
 						  "of the connection if the user decides to rename it.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:uuid:
@@ -1065,7 +1065,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "WiFi SSID, mobile broadband network provider, or the "
 						  "connection type changes.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:interface-name:
@@ -1099,7 +1099,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "reordered the connection may be applied to the wrong "
 		                      "interface.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                      G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingConnection:type:
@@ -1121,7 +1121,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "otherwise, should contain the setting name of that "
 						  "setting type (ie, 'vpn' or 'bridge', etc).",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingConnection:permissions:
@@ -1160,7 +1160,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                  "use.  All of [type], [id], and [reserved] must be "
 		                  "valid UTF-8.",
 		                  DBUS_TYPE_G_LIST_OF_STRING,
-		                  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingConnection:autoconnect:
@@ -1179,7 +1179,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						   "the connection must be manually activated by the user "
 						   "or some other mechanism.",
 						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:timestamp:
@@ -1198,7 +1198,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "has the latest timestamp. The property is only meant for "
 		                      "reading (changes to this property will not be preserved).",
 		                      0, G_MAXUINT64, 0,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:read-only:
@@ -1216,7 +1216,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                      "normally set for system connections whose plugin "
 	                      "cannot yet write updated connections back out.",
 	                      FALSE,
-	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:zone:
@@ -1237,7 +1237,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "placed in the default zone as defined by the "
 						  "firewall.",
 						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:master:
@@ -1251,7 +1251,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "Interface name of the master device or UUID of "
 		                      "the master connection",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:slave-type:
@@ -1267,7 +1267,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "this connection is (ie, 'bond') or NULL if this "
 		                      "connection is not a slave.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:secondaries:
@@ -1284,7 +1284,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                             "List of connection UUIDs that should be activated "
 		                             "when the base connection itself is activated.",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:gateway-ping-timeout:
@@ -1302,5 +1302,5 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                    "addressing until either the timeout is reached, or "
 		                    "an IP gateway replies to a ping.",
 		                    0, 30, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 }

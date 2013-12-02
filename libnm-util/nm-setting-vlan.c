@@ -696,7 +696,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     "the 'parent' property or by the 'mac-address' "
 		                     "property of a 'wired' setting.",
 		                     NULL,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingVlan:parent:
@@ -716,7 +716,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     "not specified, the connection must contain a "
 		                     "'wired' setting with a 'mac-address' property.",
 		                     NULL,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingVlan:id:
@@ -731,7 +731,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                    "The VLAN indentifier the interface created by "
 		                    "this connection should be assigned.",
 		                    0, 4095, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingVlan:flags:
@@ -750,7 +750,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                    "of the interface to its master device's operating "
 		                    "state (0x04).",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
@@ -769,7 +769,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                            "format 'from:to' where both 'from' and "
 		                            "'to' are unsigned integers, ie '7:3'.",
 		                            DBUS_TYPE_G_LIST_OF_STRING,
-		                            G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                            G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingVlan:egress-priority-map:
@@ -788,5 +788,5 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                            "format 'from:to' where both 'from' and "
 		                            "'to' are unsigned integers, ie '7:3'.",
 		                            DBUS_TYPE_G_LIST_OF_STRING,
-		                            G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                            G_PARAM_READWRITE));
 }

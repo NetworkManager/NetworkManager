@@ -1375,7 +1375,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		svSetValue (ifcfg, "STP", "yes", FALSE);
 
 		i = nm_setting_bridge_get_forward_delay (s_bridge);
-		if (i && i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY)) {
+		if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY)) {
 			s = g_strdup_printf ("%u", i);
 			svSetValue (ifcfg, "DELAY", s, FALSE);
 			g_free (s);
@@ -1384,14 +1384,14 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		g_string_append_printf (opts, "priority=%u", nm_setting_bridge_get_priority (s_bridge));
 
 		i = nm_setting_bridge_get_hello_time (s_bridge);
-		if (i && i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
+		if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "hello_time=%u", i);
 		}
 
 		i = nm_setting_bridge_get_max_age (s_bridge);
-		if (i && i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
+		if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "max_age=%u", i);
@@ -1431,11 +1431,11 @@ write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **
 	opts = g_string_sized_new (32);
 
 	i = nm_setting_bridge_port_get_priority (s_port);
-	if (i && i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
+	if (i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
 		g_string_append_printf (opts, "priority=%u", i);
 
 	i = nm_setting_bridge_port_get_path_cost (s_port);
-	if (i && i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
+	if (i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "path_cost=%u", i);

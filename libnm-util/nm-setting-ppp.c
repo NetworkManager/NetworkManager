@@ -580,7 +580,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "If FALSE, require authentication from the remote "
 						   "side.  In almost all cases, this should be TRUE.",
 						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:refuse-eap:
@@ -593,7 +593,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse EAP",
 						   "If TRUE, the EAP authentication method will not be used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:refuse-pap:
@@ -606,7 +606,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse PAP",
 						   "If TRUE, the PAP authentication method will not be used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:refuse-chap:
@@ -619,7 +619,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse CHAP",
 						   "If TRUE, the CHAP authentication method will not be used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:refuse-mschap:
@@ -632,7 +632,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse MSCHAP",
 						   "If TRUE, the MSCHAP authentication method will not be used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:refuse-mschapv2:
@@ -645,7 +645,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse MSCHAPv2",
 						   "If TRUE, the MSCHAPv2 authentication method will not be used.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:nobsdcomp:
@@ -658,7 +658,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No BSD compression",
 						   "If TRUE, BSD compression will not be requested.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingPPP:nodeflate:
@@ -671,7 +671,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No deflate",
 						   "If TRUE, 'deflate' compression will not be requested.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingPPP:no-vj-comp:
@@ -684,7 +684,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No VJ compression",
 						   "If TRUE, Van Jacobsen TCP header compression will not be requested.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingPPP:require-mppe:
@@ -704,7 +704,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "will fail.  Note that MPPE is not used on mobile "
 						   "broadband connections.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:require-mppe-128:
@@ -723,7 +723,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "must also be set to TRUE.  If 128-bit MPPE is not "
 						   "available the session will fail.",
 						   FALSE,
-						   G_PARAM_READWRITE  | G_PARAM_CONSTRUCT| NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE  | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:mppe-stateful:
@@ -738,7 +738,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "If TRUE, stateful MPPE is used.  See pppd documentation "
 						   "for more information on stateful MPPE.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:crtscts:
@@ -756,7 +756,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "signals.  This value should normally be set to "
 						   "FALSE.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:baud:
@@ -773,7 +773,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"the specified baudrate.  This value should normally be "
 						"left as 0 to automatically choose the speed.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingPPP:mru:
@@ -790,7 +790,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"send packets no larger than the specified size.  If "
 						"non-zero, the MRU should be between 128 and 16384.",
 						0, 16384, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingPPP:mtu:
@@ -805,7 +805,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"If non-zero, instruct pppd to send packets no larger "
 						"than the specified size.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingPPP:lcp-echo-failure:
@@ -826,7 +826,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"also be set to a non-zero value if this property is "
 						"used.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingPPP:lcp-echo-interval:
@@ -846,5 +846,5 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"to echo requests and some will not, and it is not "
 						"possible to autodetect this.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 }

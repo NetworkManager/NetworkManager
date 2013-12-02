@@ -986,7 +986,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 							   "SSID",
 							   "SSID of the WiFi network.  Must be specified.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:mode:
@@ -1001,7 +1001,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						  "WiFi network mode; one of 'infrastructure', "
 						  "'adhoc' or 'ap'.  If blank, infrastructure is assumed.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:band:
@@ -1026,7 +1026,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						  "compatible.  This setting depends on specific driver "
 						  "capability and may not work with all drivers.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:channel:
@@ -1046,7 +1046,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"channel numbers overlap between bands, this property "
 						"also requires the 'band' property to be set.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingWireless:bssid:
@@ -1067,7 +1067,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 							   "the BSSID used when creating an Ad-Hoc network "
 							   "and is unlikely to in the future.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:rate:
@@ -1087,7 +1087,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"property is highly driver dependent and not all devices "
 						"support setting a static bitrate.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWireless:tx-power:
@@ -1105,7 +1105,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"driver dependent and not all devices support setting a "
 						"static transmit power.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWireless:mac-address:
@@ -1123,7 +1123,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 							   "This property does not change the MAC address "
 							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:cloned-mac-address:
@@ -1139,7 +1139,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	                                     "this MAC address instead of its permanent MAC address.  "
 	                                     "This is known as MAC cloning or spoofing.",
 	                                     DBUS_TYPE_G_UCHAR_ARRAY,
-	                                     G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+	                                     G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:mac-address-blacklist:
@@ -1158,7 +1158,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                             "given in the standard hex-digits-and-colons "
 		                             "notation (eg '00:11:22:33:44:55').",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWireless:seen-bssids:
@@ -1182,7 +1182,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                             "The changes you make to this property will not be "
 		                             "preserved.",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWireless:mtu:
@@ -1198,7 +1198,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"size or smaller, breaking larger packets up into "
 						"multiple Ethernet frames.",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingWireless:security:
@@ -1220,7 +1220,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						  "and ensure the connection contains a valid "
 						  NM_SETTING_WIRELESS_SECURITY_SETTING_NAME " setting.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:hidden:
@@ -1243,5 +1243,5 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                       "insecurities with hidden SSID networks, and thus "
 		                       "hidden SSID networks should be used with caution.",
 		                       FALSE,
-		                       G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                       G_PARAM_READWRITE));
 }

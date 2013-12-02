@@ -564,7 +564,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                  "blank, which allows NetworkManager to select the "
 		                  "appropriate settings automatically.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingGsm:username:
@@ -581,7 +581,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "required.  Note that many providers do not require "
 						  "a username or accept any username.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingGsm:password:
@@ -598,7 +598,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "required.  Note that many providers do not require "
 						  "a password or accept any password.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingGsm:password-flags:
@@ -612,7 +612,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingGsm:apn:
@@ -639,7 +639,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "plan.  The APN may only be composed of the characters "
 						  "a-z, 0-9, ., and - per GSM 03.60 Section 14.9.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingGsm:network-id:
@@ -662,7 +662,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "roam when direct roaming control of the device is "
 						  "not otherwise possible.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingGsm:network-type:
@@ -688,7 +688,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
 		                   NM_SETTING_GSM_NETWORK_TYPE_4G,
 		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingGsm:allowed-bands:
@@ -710,7 +710,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    NM_SETTING_GSM_BAND_UNKNOWN,
 		                    NM_SETTING_GSM_BANDS_MAX,
 		                    NM_SETTING_GSM_BAND_ANY,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingGsm:pin:
@@ -727,7 +727,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "before any other operations are requested.  Specify "
 						  "the PIN here to allow operation of the device.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
 	/**
 	 * NMSettingGsm:pin-flags:
@@ -741,7 +741,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                    G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingGsm:home-only:
@@ -757,5 +757,5 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 						  "be allowed.  Connections to roaming networks will "
 						  "not be made.",
 						  FALSE,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 }

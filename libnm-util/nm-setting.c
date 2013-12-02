@@ -277,7 +277,8 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 		GParamSpec *prop_spec = property_specs[i];
 		GValue *value;
 
-		if (!(prop_spec->flags & NM_SETTING_PARAM_SERIALIZE))
+		/* 'name' doesn't get serialized */
+		if (strcmp (g_param_spec_get_name (prop_spec), NM_SETTING_NAME) == 0)
 			continue;
 
 		if (   (flags & NM_SETTING_HASH_FLAG_NO_SECRETS)
@@ -352,7 +353,7 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 		GParamSpec *param_spec;
 
 		param_spec = g_object_class_find_property (class, prop_name);
-		if (!param_spec || !(param_spec->flags & NM_SETTING_PARAM_SERIALIZE)) {
+		if (!param_spec) {
 			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
 			g_warning ("Ignoring invalid property '%s'", prop_name);
 			continue;
@@ -1102,8 +1103,10 @@ nm_setting_to_string (NMSetting *setting)
 		GParamSpec *prop_spec = property_specs[i];
 		GValue value = G_VALUE_INIT;
 		char *value_str;
-		gboolean is_serializable;
 		gboolean is_default;
+
+		if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
+			continue;
 
 		g_value_init (&value, prop_spec->value_type);
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
@@ -1112,22 +1115,14 @@ nm_setting_to_string (NMSetting *setting)
 		g_string_append_printf (string, "\t%s : %s", prop_spec->name, value_str);
 		g_free (value_str);
 
-		is_serializable = prop_spec->flags & NM_SETTING_PARAM_SERIALIZE;
 		is_default = g_param_value_defaults (prop_spec, &value);
-
 		g_value_unset (&value);
 
-		if (is_serializable || is_default) {
-			g_string_append (string, " (");
-
-			if (is_serializable)
-				g_string_append_c (string, 's');
-			if (is_default)
-				g_string_append_c (string, 'd');
-
-			g_string_append_c (string, ')');
-		}
-
+		g_string_append (string, " (");
+		g_string_append_c (string, 's');
+		if (is_default)
+			g_string_append_c (string, 'd');
+		g_string_append_c (string, ')');
 		g_string_append_c (string, '\n');
 	}
 

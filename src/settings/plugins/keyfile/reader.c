@@ -1141,6 +1141,30 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 	g_strfreev (keys);
 }
 
+static void
+ensure_slave_setting (NMConnection *connection)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+	const char *slave_type;
+	GType slave_gtype = G_TYPE_INVALID;
+	NMSetting *setting;
+
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (!slave_type)
+		return;
+
+	if (g_strcmp0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
+		slave_gtype = NM_TYPE_SETTING_BRIDGE_PORT;
+	else if (g_strcmp0 (slave_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
+		slave_gtype = NM_TYPE_SETTING_TEAM_PORT;
+
+	if (slave_gtype != G_TYPE_INVALID && !nm_connection_get_setting (connection, slave_gtype)) {
+		setting = (NMSetting *) g_object_new (slave_gtype, NULL);
+		g_assert (setting);
+		nm_connection_add_setting (connection, setting);
+	}
+}
+
 NMConnection *
 nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 {
@@ -1191,10 +1215,11 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 			nm_connection_add_setting (connection, setting);
 	}
 
-	/* Make sure that we have the base device type setting even if
-	 * the keyfile didn't include it, which can happen when the base
-	 * device type setting is all default values (like ethernet where
-	 * the MAC address isn't given, or VLAN when the VLAN ID is zero).
+	/* Make sure that we have the base device type and slave type settings
+	 * even if the keyfile didn't include it, which can happen when the
+	 * setting in question is all default values (like ethernet where
+	 * the MAC address isn't given, or VLAN when the VLAN ID is zero, or
+	 * bridge port with all default settings).
 	 */
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
@@ -1211,6 +1236,8 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 				nm_connection_add_setting (connection, base_setting);
 			}
 		}
+
+		ensure_slave_setting (connection);
 	}
 
 	/* Handle vpn secrets after the 'vpn' setting was read */

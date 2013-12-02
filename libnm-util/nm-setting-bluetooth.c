@@ -284,7 +284,7 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 		                             "Bluetooth address",
 		                             "The Bluetooth address of the device",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		                             G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingBluetooth:type:
@@ -301,5 +301,5 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 						  "'" NM_SETTING_BLUETOOTH_TYPE_PANU "' for "
 						  "Personal Area Networking connections.",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE));
 }
