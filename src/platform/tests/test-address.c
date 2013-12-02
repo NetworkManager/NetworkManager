@@ -60,14 +60,14 @@ test_ip4_address (void)
 	/* Add address */
 	g_assert (!nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	no_error ();
-	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
+	g_assert (nm_platform_ip4_address_add (ifindex, addr, 0, IP4_PLEN, lifetime, preferred));
 	no_error ();
 	g_assert (nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	no_error ();
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
+	g_assert (nm_platform_ip4_address_add (ifindex, addr, 0, IP4_PLEN, lifetime, preferred));
 	no_error ();
 	accept_signal (address_changed);
 
@@ -116,14 +116,14 @@ test_ip6_address (void)
 	/* Add address */
 	g_assert (!nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	no_error ();
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred, flags));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	no_error ();
 	accept_signal (address_added);
 
 	/* Add address again (aka update) */
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred, flags));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
 	accept_signal (address_changed);
 
@@ -183,7 +183,7 @@ test_ip4_address_external (void)
 	/* Add/delete conflict */
 	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
 			IP4_ADDRESS, IP4_PLEN, DEVICE_NAME, lifetime, preferred);
-	g_assert (nm_platform_ip4_address_add (ifindex, addr, IP4_PLEN, lifetime, preferred));
+	g_assert (nm_platform_ip4_address_add (ifindex, addr, 0, IP4_PLEN, lifetime, preferred));
 	no_error ();
 	g_assert (nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	accept_signal (address_added);
@@ -222,7 +222,7 @@ test_ip6_address_external (void)
 	/* Add/delete conflict */
 	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",
 			IP6_ADDRESS, IP6_PLEN, DEVICE_NAME, lifetime, preferred);
-	g_assert (nm_platform_ip6_address_add (ifindex, addr, IP6_PLEN, lifetime, preferred, flags));
+	g_assert (nm_platform_ip6_address_add (ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
 	g_assert (nm_platform_ip6_address_exists (ifindex, addr, IP6_PLEN));
 	accept_signal (address_added);

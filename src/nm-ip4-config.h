@@ -117,10 +117,6 @@ const char * nm_ip4_config_get_search (const NMIP4Config *config, guint i);
 void nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss);
 guint32 nm_ip4_config_get_mss (const NMIP4Config *config);
 
-/* PTP */
-void nm_ip4_config_set_ptp_address (NMIP4Config *config, guint32 ptp_addr);
-guint32 nm_ip4_config_get_ptp_address (const NMIP4Config *config);
-
 /* NIS */
 void nm_ip4_config_reset_nis_servers (NMIP4Config *config);
 void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis);

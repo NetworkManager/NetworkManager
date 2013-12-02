@@ -25,10 +25,12 @@
 #include "nm-ip4-config.h"
 
 static void
-addr_init (NMPlatformIP4Address *a, const char *addr, guint plen)
+addr_init (NMPlatformIP4Address *a, const char *addr, const char *peer, guint plen)
 {
 	memset (a, 0, sizeof (*a));
 	g_assert (inet_pton (AF_INET, addr, (void *) &a->address) == 1);
+	if (peer)
+		g_assert (inet_pton (AF_INET, peer, (void *) &a->peer_address) == 1);
 	a->plen = plen;
 }
 
@@ -68,7 +70,7 @@ build_test_config (void)
 	/* Build up the config to subtract */
 	config = nm_ip4_config_new ();
 
-	addr_init (&addr, "192.168.1.10", 24);
+	addr_init (&addr, "192.168.1.10", "1.2.3.4", 24);
 	nm_ip4_config_add_address (config, &addr);
 	
 	route_new (&route, "10.0.0.0", 8, "192.168.1.1");
@@ -85,8 +87,6 @@ build_test_config (void)
 	nm_ip4_config_add_domain (config, "baz.com");
 	nm_ip4_config_add_search (config, "blahblah.com");
 	nm_ip4_config_add_search (config, "beatbox.com");
-
-	nm_ip4_config_set_ptp_address (config, addr_to_num ("1.2.3.4"));
 
 	nm_ip4_config_add_nis_server (config, addr_to_num ("1.2.3.9"));
 	nm_ip4_config_add_nis_server (config, addr_to_num ("1.2.3.10"));
@@ -121,7 +121,7 @@ test_subtract (void)
 
 	/* add a couple more things to the test config */
 	dst = build_test_config ();
-	addr_init (&addr, expected_addr, expected_addr_plen);
+	addr_init (&addr, expected_addr, NULL, expected_addr_plen);
 	nm_ip4_config_add_address (dst, &addr);
 	
 	route_new (&route, expected_route_dest, expected_route_plen, expected_route_next_hop);
@@ -142,9 +142,9 @@ test_subtract (void)
 	test_addr = nm_ip4_config_get_address (dst, 0);
 	g_assert (test_addr != NULL);
 	g_assert_cmpuint (test_addr->address, ==, addr_to_num (expected_addr));
+	g_assert_cmpuint (test_addr->peer_address, ==, 0);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
-	g_assert_cmpuint (nm_ip4_config_get_ptp_address (dst), ==, 0);
 	g_assert_cmpuint (nm_ip4_config_get_gateway (dst), ==, 0);
 
 	g_assert_cmpuint (nm_ip4_config_get_num_routes (dst), ==, 1);

@@ -116,10 +116,6 @@ const char * nm_ip6_config_get_search (const NMIP6Config *config, guint i);
 void nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss);
 guint32 nm_ip6_config_get_mss (const NMIP6Config *config);
 
-/* PTP */
-void nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_addr);
-const struct in6_addr *nm_ip6_config_get_ptp_address (const NMIP6Config *config);
-
 void nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
 

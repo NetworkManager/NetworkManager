@@ -129,6 +129,8 @@ test_generic_options (const char *client)
 	        "dhcp-generic", "couldn't convert expected IP address");
 	ASSERT (address->address == tmp,
 	        "dhcp-generic", "unexpected IP address");
+	ASSERT (address->peer_address == 0,
+	        "dhcp-generic", "unexpected PTP address");
 
 	ASSERT (address->plen == 24,
 	        "dhcp-generic", "unexpected IP address prefix length");
@@ -138,9 +140,6 @@ test_generic_options (const char *client)
 	        "dhcp-generic", "couldn't convert expected IP gateway");
 	ASSERT (nm_ip4_config_get_gateway (ip4_config) == tmp,
 	        "dhcp-generic", "unexpected IP gateway");
-
-	ASSERT (nm_ip4_config_get_ptp_address (ip4_config) == 0,
-	        "dhcp-generic", "unexpected PTP address");
 
 	ASSERT (nm_ip4_config_get_num_wins (ip4_config) == 0,
 	        "dhcp-generic", "unexpected number of WINS servers");

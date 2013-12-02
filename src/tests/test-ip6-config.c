@@ -25,10 +25,12 @@
 #include "nm-ip6-config.h"
 
 static void
-addr_init (NMPlatformIP6Address *a, const char *addr, guint plen)
+addr_init (NMPlatformIP6Address *a, const char *addr, const char *peer, guint plen)
 {
 	memset (a, 0, sizeof (*a));
 	g_assert (inet_pton (AF_INET6, addr, (void *) &a->address) == 1);
+	if (peer)
+		g_assert (inet_pton (AF_INET6, peer, (void *) &a->peer_address) == 1);
 	a->plen = plen;
 }
 
@@ -61,7 +63,7 @@ build_test_config (void)
 	/* Build up the config to subtract */
 	config = nm_ip6_config_new ();
 
-	addr_init (&addr, "abcd:1234:4321::cdde", 64);
+	addr_init (&addr, "abcd:1234:4321::cdde", "1:2:3:4::5", 64);
 	nm_ip6_config_add_address (config, &addr);
 
 	route_new (&route, "abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");
@@ -81,9 +83,6 @@ build_test_config (void)
 	nm_ip6_config_add_domain (config, "baz.com");
 	nm_ip6_config_add_search (config, "blahblah.com");
 	nm_ip6_config_add_search (config, "beatbox.com");
-
-	addr_to_num ("1:2:3:4::5", &tmp);
-	nm_ip6_config_set_ptp_address (config, &tmp);
 
 	return config;
 }
@@ -111,7 +110,7 @@ test_subtract (void)
 
 	/* add a couple more things to the test config */
 	dst = build_test_config ();
-	addr_init (&addr, expected_addr, expected_addr_plen);
+	addr_init (&addr, expected_addr, NULL, expected_addr_plen);
 	nm_ip6_config_add_address (dst, &addr);
 
 	route_new (&route, expected_route_dest, expected_route_plen, expected_route_next_hop);
@@ -133,9 +132,9 @@ test_subtract (void)
 	g_assert (test_addr != NULL);
 	addr_to_num (expected_addr, &tmp);
 	g_assert (memcmp (&test_addr->address, &tmp, sizeof (tmp)) == 0);
+	g_assert (memcmp (&test_addr->peer_address, &in6addr_any, sizeof (tmp)) == 0);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
-	g_assert (nm_ip6_config_get_ptp_address (dst) == NULL);
 	g_assert (nm_ip6_config_get_gateway (dst) == NULL);
 
 	g_assert_cmpuint (nm_ip6_config_get_num_routes (dst), ==, 1);

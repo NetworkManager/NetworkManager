@@ -47,7 +47,6 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 	guint32 mss;
-	struct in6_addr ptp_address;
 } NMIP6ConfigPrivate;
 
 
@@ -457,10 +456,6 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
 	for (i = 0; i < nm_ip6_config_get_num_addresses (src); i++)
 		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
 
-	/* ptp address; only replace if src doesn't have one */
-	if (!nm_ip6_config_get_ptp_address (dst))
-		nm_ip6_config_set_ptp_address (dst, nm_ip6_config_get_ptp_address (src));
-
 	/* nameservers */
 	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
 		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
@@ -534,12 +529,6 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 			}
 		}
 	}
-
-	/* ptp address */
-	src_tmp = nm_ip6_config_get_ptp_address (src);
-	dst_tmp = nm_ip6_config_get_ptp_address (dst);
-	if (src_tmp && dst_tmp && IN6_ARE_ADDR_EQUAL (src_tmp, dst_tmp))
-		nm_ip6_config_set_ptp_address (dst, NULL);
 
 	/* nameservers */
 	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++) {
@@ -769,12 +758,6 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 	}
 
-	/* ptp address */
-	if (!IN6_ARE_ADDR_EQUAL (&src_priv->ptp_address, &dst_priv->ptp_address)) {
-		nm_ip6_config_set_ptp_address (dst, &src_priv->ptp_address);
-		has_relevant_changes = TRUE;
-	}
-
 	/* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
 	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
 	g_assert (config_equal == !has_relevant_changes);
@@ -806,11 +789,6 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 	/* addresses */
 	for (i = 0; i < nm_ip6_config_get_num_addresses (config); i++)
 		g_message ("      a: %s", nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i)));
-
-	/* ptp address */
-	tmp = nm_ip6_config_get_ptp_address (config);
-	if (tmp && inet_ntop (AF_INET6, tmp, buf, sizeof (buf)))
-		g_message ("    ptp: %s", buf);
 
 	/* default gateway */
 	tmp = nm_ip6_config_get_gateway (config);
@@ -1219,28 +1197,6 @@ nm_ip6_config_get_mss (const NMIP6Config *config)
 
 /******************************************************************/
 
-void
-nm_ip6_config_set_ptp_address (NMIP6Config *config, const struct in6_addr *ptp_address)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-
-	if (ptp_address)
-		priv->ptp_address = *ptp_address;
-	else
-		memset (&priv->ptp_address, 0, sizeof (priv->ptp_address));
-
-}
-
-const struct in6_addr *
-nm_ip6_config_get_ptp_address (const NMIP6Config *config)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-
-	return IN6_IS_ADDR_UNSPECIFIED (&priv->ptp_address) ? NULL : &priv->ptp_address;
-}
-
-/******************************************************************/
-
 static inline void
 hash_u32 (GChecksum *sum, guint32 n)
 {
@@ -1260,7 +1216,6 @@ void
 nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only)
 {
 	guint32 i;
-	const struct in6_addr *in6a;
 	const char *s;
 
 	g_return_if_fail (config);
@@ -1284,10 +1239,6 @@ nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only
 			hash_in6addr (sum, &route->gateway);
 			hash_u32 (sum, route->metric);
 		}
-
-		in6a = nm_ip6_config_get_ptp_address (config);
-		if (in6a)
-			hash_in6addr (sum, in6a);
 	}
 
 	for (i = 0; i < nm_ip6_config_get_num_nameservers (config); i++)
