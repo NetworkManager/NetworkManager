@@ -212,6 +212,22 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 		}
 	}
 
+	/* If there is a host route to the gateway, ignore that route.  It is
+	 * automatically added by NetworkManager when needed.
+	 */
+	if (has_gateway) {
+		for (i = 0; i < priv->routes->len; i++) {
+			const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
+
+			if (   route->plen == 128
+			    && IN6_ARE_ADDR_EQUAL (&route->network, &priv->gateway)
+			    && IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
+				g_array_remove_index (priv->routes, i);
+				i--;
+			}
+		}
+	}
+
 	/* If the interface has the default route, and has IPv4 addresses, capture
 	 * nameservers from /etc/resolv.conf.
 	 */
