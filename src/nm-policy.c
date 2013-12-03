@@ -1454,7 +1454,6 @@ device_state_changed (NMDevice *device,
 			}
 			nm_connection_clear_secrets (connection);
 		}
-		schedule_activate_check (policy, device, 3);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		if (connection) {
