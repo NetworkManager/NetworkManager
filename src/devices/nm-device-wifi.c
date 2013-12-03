@@ -600,6 +600,7 @@ find_active_ap (NMDeviceWifi *self,
 		            ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
 
 		active_ap = match_nofreq;
+		goto done;
 	}
 
 	nm_log_dbg (LOGD_WIFI, "  No matching AP found.");
