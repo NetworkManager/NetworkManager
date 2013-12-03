@@ -415,9 +415,13 @@ set_address_masked (struct in6_addr *dst, struct in6_addr *src, guint8 plen)
 	g_assert (src);
 	g_assert (dst);
 
-	memset (dst, 0, sizeof (*dst));
-	memcpy (dst, src, nbytes);
-	dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+	if (plen >= 128)
+		*dst = *src;
+	else {
+		memset (dst, 0, sizeof (*dst));
+		memcpy (dst, src, nbytes);
+		dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+	}
 }
 
 static int
