@@ -4429,6 +4429,8 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 		return;
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED)
 		return;
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNAVAILABLE)
+		return;
 	nm_log_dbg (LOGD_DEVICE, "Schedule cleanup and delete virtual link #%d for [%s]",
 	                         ifindex, nm_device_get_iface (self));
 	priv = NM_DEVICE_GET_PRIVATE (self);
