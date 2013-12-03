@@ -2217,6 +2217,25 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	return addresses;
 }
 
+static void
+addr4_to_broadcast (struct in_addr *dst, const struct in_addr *src, guint8 plen)
+{
+	guint nbytes = plen / 8;
+	guint nbits = plen % 8;
+
+	g_return_if_fail (plen <= 32);
+	g_assert (src);
+	g_assert (dst);
+
+	if (plen >= 32)
+		*dst = *src;
+	else {
+		dst->s_addr = 0xFFFFFFFF;
+		memcpy (dst, src, nbytes);
+		((guint8 *) dst)[nbytes] = (((const guint8 *) src)[nbytes] | (0xFF >> nbits));
+	}
+}
+
 static struct nl_object *
 build_rtnl_addr (int family,
                  int ifindex,
@@ -2234,10 +2253,23 @@ build_rtnl_addr (int family,
 
 	g_assert (rtnladdr && nladdr);
 
+	/* IP address */
 	rtnl_addr_set_ifindex (rtnladdr, ifindex);
 	nle = rtnl_addr_set_local (rtnladdr, nladdr);
 	g_assert (!nle);
 
+	/* IPv4 Broadcast address */
+	if (family == AF_INET) {
+		struct in_addr bcast;
+		auto_nl_addr struct nl_addr *bcaddr;
+
+		addr4_to_broadcast (&bcast, addr, plen);
+		bcaddr = nl_addr_build (family, &bcast, addrlen);
+		g_assert (bcaddr);
+		rtnl_addr_set_broadcast (rtnladdr, bcaddr);
+	}
+
+	/* Peer/point-to-point address */
 	if (peer_addr) {
 		auto_nl_addr struct nl_addr *nlpeer = nl_addr_build (family, peer_addr, addrlen);
 
