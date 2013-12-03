@@ -230,9 +230,9 @@ class CmdSubmit(CmdBase):
             if name == '$':
                 r = r + '$'
             elif m.group('name0'):
-                r = r + self._process_line_get(m.group('name0'), replacements, none='$'+name)
+                r = r + self._process_line_get(m.group('name0'), replacements, none='')
             elif m.group('name1'):
-                r = r + self._process_line_get(m.group('name1'), m.group('index1'), replacements, none='$'+name)
+                r = r + self._process_line_get(m.group('name1'), m.group('index1'), replacements, none='')
             else:
                 r = r + '$' + name
             l = m.group('rest')

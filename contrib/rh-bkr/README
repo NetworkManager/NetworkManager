@@ -48,8 +48,8 @@ If a placeholder cannot be found, it will try to look into the environment
 variables to find a match. So, you can set additional variables by setting
 the environtment. As last attempt, it will lookup for a hard coded list of
 default values. If the name for a placeholder cannot be substituted, it
-will not be removed and kepy unchanged (including the $ sign). You can
-wrap the name in braces to separate it from the following text (${NAME}).
+will be replaced by the empty word "". You can wrap the name in braces to
+separate it from the following text (${NAME}).
 
 
 You can specify any number of RPMs to the script using the '-r/--rpm'
