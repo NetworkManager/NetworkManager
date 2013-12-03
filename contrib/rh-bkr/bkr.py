@@ -15,6 +15,7 @@ import random
 import string
 import urllib
 import glob
+import uuid
 
 
 devnull = open(os.devnull, 'w')
@@ -184,11 +185,13 @@ class CmdSubmit(CmdBase):
 
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
-            'DISTRO_VARIANT'    : 'Workstation',
-            'DISTRO_ARCH'       : 'x86_64',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
-            'DISTRO_NAME'       : 'RHEL-7.0-20131107.1',
+            'DISTRO_VARIANT'    : 'Workstation',
+            'DISTRO_NAME'       : 'RHEL-7.0-20131122.0',
+            'DISTRO_METHOD'     : 'nfs',
+            'DISTRO_ARCH'       : 'x86_64',
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
+            'UUID'              : str(uuid.uuid4()),
         }
     def _process_line_get(self, key, replacement, index=None, none=None):
         if key in replacement:
