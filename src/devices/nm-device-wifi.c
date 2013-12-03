@@ -134,7 +134,7 @@ struct _NMDeviceWifiPrivate {
 	NMAccessPoint *   current_ap;
 	guint32           rate;
 	gboolean          enabled; /* rfkilled or not */
-	
+
 	time_t            scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
@@ -618,7 +618,7 @@ update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 	NMConnection *connection;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
-	
+
 	if (ap == NULL)
 		return;
 
@@ -2764,7 +2764,7 @@ update_initial_hw_address (NMDevice *dev)
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
 	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
- 
+
 	mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER);
 	nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): read initial MAC address %s",
 	            nm_device_get_iface (dev), mac_str);
