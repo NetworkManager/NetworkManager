@@ -128,7 +128,8 @@ class UploadFileJenkins(UploadFile):
             m = re.match('^artifact/.*' + self.pattern + '.*$', a.group(1))
             if m:
                 u = mainpage + m.group(0)
-                if not u.endswith('/*fingerprint*/'):
+                if not u.endswith('/*fingerprint*/') and \
+                   not u.endswith('/*view*/'):
                     urls.append(u)
         if not urls:
             raise Exception("Could not detect any URLs on jenkins for '%s' (see %s%s/)" % (self.uri, UploadFileJenkins.jenkins_base_url, self.jid))
