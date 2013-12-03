@@ -206,6 +206,12 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	old_vpn_state = priv->vpn_state;
 	priv->vpn_state = vpn_state;
 
+	/* The device gets destroyed by active connection when it enters
+	 * the deactivated state, so we need to ref it for usage below.
+	 */
+	if (parent_dev)
+		g_object_ref (parent_dev);
+
 	/* Update active connection base class state */
 	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (connection),
 	                                ac_state_from_vpn_state (vpn_state));
@@ -271,6 +277,8 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	}
 
 	g_object_unref (connection);
+	if (parent_dev)
+		g_object_unref (parent_dev);
 }
 
 static void

@@ -86,6 +86,7 @@ enum {
 };
 
 static void check_master_ready (NMActiveConnection *self);
+static void _device_cleanup (NMActiveConnectionPrivate *priv);
 
 /****************************************************************/
 
@@ -146,10 +147,11 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	}
 
 	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
-		/* Device is no longer relevant when deactivated; emit property change
-		 * notification so clients re-read the value, which will be NULL due to
-		 * conditions in get_property().
+		/* Device is no longer relevant when deactivated. So remove it and
+		 * emit property change notification so clients re-read the value,
+		 * which will be NULL due to conditions in get_property().
 		 */
+		_device_cleanup (priv);
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEVICES);
 	}
 }
@@ -727,6 +729,17 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+_device_cleanup (NMActiveConnectionPrivate *priv)
+{
+	if (priv->device_state_id) {
+		g_assert (priv->device);
+		g_signal_handler_disconnect (priv->device, priv->device_state_id);
+		priv->device_state_id = 0;
+	}
+	g_clear_object (&priv->device);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
@@ -743,12 +756,7 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->connection);
 
-	if (priv->device_state_id) {
-		g_assert (priv->device);
-		g_signal_handler_disconnect (priv->device, priv->device_state_id);
-		priv->device_state_id = 0;
-	}
-	g_clear_object (&priv->device);
+	_device_cleanup (priv);
 
 	if (priv->master) {
 		g_signal_handlers_disconnect_by_func (priv->master,
