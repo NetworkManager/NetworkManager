@@ -275,16 +275,28 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_IP4_CONFIG_DNS);
 
 	/* IPv4 addresses */
-	g_assert (nm_setting_ip4_config_get_num_addresses (s_ip4) == 4);
+	g_assert (nm_setting_ip4_config_get_num_addresses (s_ip4) == 6);
 	check_ip4_address (s_ip4, 0, "2.3.4.5", 24, "2.3.4.6");
 	check_ip4_address (s_ip4, 1, "192.168.0.5", 24, "192.168.0.1");
 	check_ip4_address (s_ip4, 2, "1.2.3.4", 16, "1.2.1.1");
 	check_ip4_address (s_ip4, 3, "3.4.5.6", 16, "0.0.0.0");
+	check_ip4_address (s_ip4, 4, "4.5.6.7", 24, "1.2.3.4");
+	check_ip4_address (s_ip4, 5, "5.6.7.8", 24, "0.0.0.0");
 
 	/* IPv4 routes */
-	g_assert (nm_setting_ip4_config_get_num_routes (s_ip4) == 2);
+	g_assert (nm_setting_ip4_config_get_num_routes (s_ip4) == 12);
 	check_ip4_route (s_ip4, 0, "5.6.7.8", 32, "0.0.0.0", 0);
 	check_ip4_route (s_ip4, 1, "1.2.3.0", 24, "2.3.4.8", 99);
+	check_ip4_route (s_ip4, 2, "1.1.1.2", 12, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 3, "1.1.1.3", 13, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 4, "1.1.1.4", 14, "2.2.2.4", 0);
+	check_ip4_route (s_ip4, 5, "1.1.1.5", 15, "2.2.2.5", 0);
+	check_ip4_route (s_ip4, 6, "1.1.1.6", 16, "2.2.2.6", 0);
+	check_ip4_route (s_ip4, 7, "1.1.1.7", 17, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 8, "1.1.1.8", 18, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 9, "1.1.1.9", 19, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 10, "1.1.1.10", 20, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 11, "1.1.1.11", 21, "0.0.0.0", 21);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -355,17 +367,27 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_IP6_CONFIG_DNS_SEARCH);
 
 	/* IPv6 addresses */
-	g_assert (nm_setting_ip6_config_get_num_addresses (s_ip6) == 4);
+	g_assert (nm_setting_ip6_config_get_num_addresses (s_ip6) == 10);
 	check_ip6_address (s_ip6, 0, "2:3:4:5:6:7:8:9", 64, "2:3:4:5:1:2:3:4");
 	check_ip6_address (s_ip6, 1, "abcd:1234:ffff::cdde", 64, "::");
 	check_ip6_address (s_ip6, 2, "1:2:3:4:5:6:7:8", 96, "::");
 	check_ip6_address (s_ip6, 3, "3:4:5:6:7:8:9:0", 128, "::");
+	check_ip6_address (s_ip6, 4, "3:4:5:6:7:8:9:14", 64, "::");
+	check_ip6_address (s_ip6, 5, "3:4:5:6:7:8:9:15", 64, "::");
+	check_ip6_address (s_ip6, 6, "3:4:5:6:7:8:9:16", 66, "::");
+	check_ip6_address (s_ip6, 7, "3:4:5:6:7:8:9:17", 67, "::");
+	check_ip6_address (s_ip6, 8, "3:4:5:6:7:8:9:18", 68, "::");
+	check_ip6_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69, "1::09");
 
 	/* Route #1 */
-	g_assert (nm_setting_ip6_config_get_num_routes (s_ip6) == 3);
+	g_assert (nm_setting_ip6_config_get_num_routes (s_ip6) == 7);
 	check_ip6_route (s_ip6, 0, "d:e:f:0:1:2:3:4", 64, "f:e:d:c:1:2:3:4", 0);
 	check_ip6_route (s_ip6, 1, "a:b:c:d::", 64, "f:e:d:c:1:2:3:4", 99);
 	check_ip6_route (s_ip6, 2, "8:7:6:5:4:3:2:1", 128, "::", 0);
+	check_ip6_route (s_ip6, 3, "6:7:8:9:0:1:2:3", 126, "::", 1);
+	check_ip6_route (s_ip6, 4, "7:8:9:0:1:2:3:4", 125, "::", 5);
+	check_ip6_route (s_ip6, 5, "8:9:0:1:2:3:4:5", 124, "::", 6);
+	check_ip6_route (s_ip6, 6, "8:9:0:1:2:3:4:6", 123, "::", 0);
 	g_object_unref (connection);
 }
 
