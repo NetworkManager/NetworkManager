@@ -515,6 +515,10 @@ test_write_wired_connection (void)
 	const char *route1_nh = "10.10.10.1";
 	const char *route2 = "1.1.1.1";
 	const char *route2_nh = "1.2.1.1";
+	const char *route3 = "2.2.2.2";
+	const char *route3_nh = "0.0.0.0";
+	const char *route4 = "3.3.3.3";
+	const char *route4_nh = "0.0.0.0";
 	const char *dns6_1 = "1::cafe";
 	const char *dns6_2 = "2::cafe";
 	const char *address6_1 = "abcd::beef";
@@ -523,6 +527,10 @@ test_write_wired_connection (void)
 	const char *route6_1_nh = "8:7:6:5:4:3:2:1";
 	const char *route6_2 = "2001::1000";
 	const char *route6_2_nh = "2001::1111";
+	const char *route6_3 = "4:5:6:7:8:9:0:1";
+	const char *route6_3_nh = "::";
+	const char *route6_4 = "5:6:7:8:9:0:1:2";
+	const char *route6_4_nh = "::";
 	guint64 timestamp = 0x12345678L;
 
 	connection = nm_connection_new ();
@@ -571,6 +579,8 @@ test_write_wired_connection (void)
 	/* Routes */
 	add_one_ip4_route (s_ip4, route1, route1_nh, 24, 3);
 	add_one_ip4_route (s_ip4, route2, route2_nh, 8, 1);
+	add_one_ip4_route (s_ip4, route3, route3_nh, 7, 0);
+	add_one_ip4_route (s_ip4, route4, route4_nh, 6, 4);
 
 	/* DNS servers */
 	inet_pton (AF_INET, dns1, &addr);
@@ -594,6 +604,8 @@ test_write_wired_connection (void)
 	/* Routes */
 	add_one_ip6_route (s_ip6, route6_1, route6_1_nh, 64, 3);
 	add_one_ip6_route (s_ip6, route6_2, route6_2_nh, 56, 1);
+	add_one_ip6_route (s_ip6, route6_3, route6_3_nh, 63, 5);
+	add_one_ip6_route (s_ip6, route6_4, route6_4_nh, 62, 0);
 
 	/* DNS servers */
 	inet_pton (AF_INET6, dns6_1, &addr6);

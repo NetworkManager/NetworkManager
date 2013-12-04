@@ -99,10 +99,17 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 	long tmp;
 	char *endptr;
 
+	if (!str || !str[0]) {
+		if (key_name)
+			g_warning ("%s: ignoring missing number %s", __func__, key_name);
+		return FALSE;
+	}
+
 	errno = 0;
 	tmp = strtol (str, &endptr, 10);
 	if (errno || (tmp < 0) || (tmp > max_val) || *endptr != 0) {
-		g_warning ("%s: ignoring invalid IP %s item '%s'", __func__, key_name, str);
+		if (key_name)
+			g_warning ("%s: ignoring invalid number %s '%s'", __func__, key_name, str);
 		return FALSE;
 	}
 
@@ -111,12 +118,13 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 }
 
 static gpointer
-build_ip4_address_or_route (const char *address_str, guint32 plen, const char *gateway_str, guint32 metric, gboolean route)
+build_ip4_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, gboolean route)
 {
 	GArray *result;
 	guint32 addr;
 	guint32 address = 0;
 	guint32 gateway = 0;
+	guint32 metric = 0;
 	int err;
 
 	g_return_val_if_fail (address_str, NULL);
@@ -128,8 +136,9 @@ build_ip4_address_or_route (const char *address_str, guint32 plen, const char *g
 		return NULL;
 	}
 	address = addr;
+
 	/* Gateway */
-	if (gateway_str) {
+	if (gateway_str && gateway_str[0]) {
 		err = inet_pton (AF_INET, gateway_str, &addr);
 		if (err <= 0) {
 			g_warning ("%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
@@ -140,7 +149,13 @@ build_ip4_address_or_route (const char *address_str, guint32 plen, const char *g
 	else
 		gateway = 0;
 
-	result = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+	/* parse metric, default to 0 */
+	if (metric_str) {
+		if (!get_one_int (metric_str, G_MAXUINT32, key_name, &metric))
+			return NULL;
+	}
+
+	result = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3 + !!route);
 	g_array_append_val (result, address);
 	g_array_append_val (result, plen);
 	g_array_append_val (result, gateway);
@@ -151,12 +166,13 @@ build_ip4_address_or_route (const char *address_str, guint32 plen, const char *g
 }
 
 static gpointer
-build_ip6_address_or_route (const char *address_str, guint32 plen, const char *gateway_str, guint32 metric, gboolean route)
+build_ip6_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, gboolean route)
 {
 	GValueArray *result;
 	struct in6_addr addr;
 	GByteArray *address;
 	GByteArray *gateway;
+	guint32 metric = 0;
 	GValue value = G_VALUE_INIT;
 	int err;
 
@@ -168,8 +184,7 @@ build_ip6_address_or_route (const char *address_str, guint32 plen, const char *g
 	err = inet_pton (AF_INET6, address_str, &addr);
 	if (err <= 0) {
 		g_warning ("%s: ignoring invalid IPv6 address '%s'", __func__, address_str);
-		g_value_array_free (result);
-		return NULL;
+		goto error_out;
 	}
 	address = g_byte_array_new ();
 	g_byte_array_append (address, (guint8 *) addr.s6_addr, 16);
@@ -185,15 +200,33 @@ build_ip6_address_or_route (const char *address_str, guint32 plen, const char *g
 	g_value_unset (&value);
 
 	/* add gateway */
-	if (gateway_str) {
+	if (gateway_str && gateway_str[0]) {
 		err = inet_pton (AF_INET6, gateway_str, &addr);
 		if (err <= 0) {
-			g_warning ("%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
-			g_value_array_free (result);
-			return NULL;
+			/* Try workaround for routes written by broken keyfile writer.
+			 * Due to bug bgo#719851, an older version of writer would have
+			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
+			 * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
+			 * Try workaround by interepeting gateway_str as metric to accept such
+			 * invalid routes. This broken syntax should not be not officially
+			 * supported.
+			 **/
+			if (route && !metric_str && get_one_int (gateway_str, G_MAXUINT32, NULL, &metric))
+				addr = in6addr_any;
+			else {
+				g_warning ("%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
+				goto error_out;
+			}
 		}
 	} else
-		memset (&addr, 0, 16);
+		addr = in6addr_any;
+
+	/* parse metric, default to 0 */
+	if (metric_str) {
+		if (!get_one_int (metric_str, G_MAXUINT32, key_name, &metric))
+			goto error_out;
+	}
+
 	gateway = g_byte_array_new ();
 	g_byte_array_append (gateway, (guint8 *) addr.s6_addr, 16);
 	g_value_init (&value, DBUS_TYPE_G_UCHAR_ARRAY);
@@ -210,6 +243,10 @@ build_ip6_address_or_route (const char *address_str, guint32 plen, const char *g
 	}
 
 	return result;
+
+error_out:
+	g_value_array_free (result);
+	return NULL;
 }
 
 /* On success, returns pointer to the zero-terminated field (original @current).
@@ -277,18 +314,18 @@ read_field (char **current, char **error, const char *characters, const char *de
  * address (DEPRECATED)
  * address/plen
  * address/gateway (DEPRECATED)
- * address/plen/gateway
+ * address/plen,gateway
  *
  * The following IPv4 and IPv6 route formats are supported:
  *
  * address/plen (NETWORK dev DEVICE)
- * address/plen/gateway (NETWORK via GATEWAY dev DEVICE)
- * address/plen//gateway (NETWORK dev DEVICE metric METRIC)
- * address/plen/gateway/metric (NETWORK via GATEWAY dev DEVICE metric METRIC)
+ * address/plen,gateway (NETWORK via GATEWAY dev DEVICE)
+ * address/plen,,metric (NETWORK dev DEVICE metric METRIC)
+ * address/plen,gateway,metric (NETWORK via GATEWAY dev DEVICE metric METRIC)
  *
  * For backward, forward and sideward compatibility, slash (/),
- * semicolon (;) and comma (,) are interchangable. The use of
- * slash in the above examples is therefore not significant.
+ * semicolon (;) and comma (,) are interchangable. The choice of
+ * separator in the above examples is therefore not significant.
  *
  * Leaving out the prefix length is discouraged and DEPRECATED. The
  * default value of IPv6 prefix length was 64 and has not been
@@ -305,7 +342,7 @@ read_one_ip_address_or_route (GKeyFile *file,
 	gboolean ipv6,
 	gboolean route)
 {
-	guint32 plen, metric;
+	guint32 plen;
 	gpointer result;
 	char *address_str, *plen_str, *gateway_str, *metric_str, *value, *current, *error;
 
@@ -368,15 +405,9 @@ read_one_ip_address_or_route (GKeyFile *file,
 			setting_name, key_name, plen);
 	}
 
-	/* parse metric, default to 0 */
-	metric = 0;
-	if (metric_str)
-		g_return_val_if_fail (get_one_int (metric_str, G_MAXUINT32,
-			key_name, &metric), NULL);
-
 	/* build the appropriate data structure for NetworkManager settings */
 	result = (ipv6 ? build_ip6_address_or_route : build_ip4_address_or_route) (
-		address_str, plen, gateway_str, metric, route);
+	    key_name, address_str, plen, gateway_str, metric_str, route);
 
 	g_free (value);
 	return result;

@@ -117,15 +117,12 @@ ip4_dns_writer (GKeyFile *file,
 	list = g_new0 (char *, array->len + 1);
 
 	for (i = 0; i < array->len; i++) {
-		char buf[INET_ADDRSTRLEN + 1];
+		char *buf = g_new (char, INET_ADDRSTRLEN);
 		guint32 addr;
 
 		addr = g_array_index (array, guint32, i);
-		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-			g_warning ("%s: error converting IP4 address 0x%X",
-			           __func__, ntohl (addr));
-		} else
-			list[num++] = g_strdup (buf);
+		nm_utils_inet4_ntop (addr, buf);
+		list[num++] = buf;
 	}
 
 	nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
@@ -135,53 +132,48 @@ ip4_dns_writer (GKeyFile *file,
 static void
 write_ip4_values (GKeyFile *file,
                   const char *setting_name,
-                  const char *key,
                   GPtrArray *array,
-                  guint32 tuple_len,
-                  guint32 addr1_pos,
-                  guint32 addr2_pos)
+                  gboolean is_route)
 {
 	GString *output;
-	int i, j;
+	int i;
+	guint32 addr, gw, plen, metric;
+	char key_name[30], *key_name_idx;
 
-	for (i = 0, j = 0; i < array->len; i++, j++) {
+	if (!array->len)
+		return;
+
+	strcpy (key_name, is_route ? "route" : "address");
+	key_name_idx = key_name + strlen (key_name);
+
+	output = g_string_sized_new (2*INET_ADDRSTRLEN + 10);
+	for (i = 0; i < array->len; i++) {
 		GArray *tuple = g_ptr_array_index (array, i);
-		gboolean success = TRUE;
-		char *key_name;
-		int k;
 
-		output = g_string_new ("");
+		addr = g_array_index (tuple, guint32, 0);
+		plen = g_array_index (tuple, guint32, 1);
+		gw = g_array_index (tuple, guint32, 2);
+		metric = is_route ? g_array_index (tuple, guint32, 3) : 0;
 
-		for (k = 0; k < tuple_len; k++) {
-			if (k == addr1_pos || k == addr2_pos) {
-				char buf[INET_ADDRSTRLEN + 1];
-				guint32 addr;
-
-				/* IP addresses */
-				addr = g_array_index (tuple, guint32, k);
-				if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-					g_warning ("%s: error converting IP4 address 0x%X",
-					           __func__, ntohl (addr));
-					success = FALSE;
-					break;
-				} else {
-					g_string_append_printf (output, "%s%s", k == 0 ? "" : ",", buf);
-				}
-			} else {
-				/* prefix, metric */
-				g_string_append_printf (output, "%c%d", k == 1 ? '/' : ',', g_array_index (tuple, guint32, k));
-			}
+		g_string_set_size (output, 0);
+		g_string_append_printf (output, "%s/%u",
+		                        nm_utils_inet4_ntop (addr, NULL),
+		                        (unsigned) plen);
+		if (metric || gw) {
+			/* Older versions of the plugin do not support the form
+			 * "a.b.c.d/plen,,metric", so, we always have to write the
+			 * gateway, even if it's 0.0.0.0.
+			 * The current version support reading of the above form. */
+			g_string_append_c (output, ',');
+			g_string_append (output, nm_utils_inet4_ntop (gw, NULL));
+			if (metric)
+				g_string_append_printf (output, ",%lu", (unsigned long) metric);
 		}
 
-		if (success) {
-			key_name = g_strdup_printf ("%s%d", key, j + 1);
-			nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
-			g_free (key_name);
-		}
-
-		g_string_free (output, TRUE);
-
+		sprintf (key_name_idx, "%d", i + 1);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
 	}
+	g_string_free (output, TRUE);
 }
 
 static void
@@ -199,7 +191,7 @@ ip4_addr_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip4_values (file, setting_name, "address", array, 3, 0, 2);
+		write_ip4_values (file, setting_name, array, FALSE);
 }
 
 static void
@@ -217,7 +209,7 @@ ip4_route_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip4_values (file, setting_name, "route", array, 4, 0, 2);
+		write_ip4_values (file, setting_name, array, TRUE);
 }
 
 static void
@@ -242,90 +234,63 @@ ip6_dns_writer (GKeyFile *file,
 	list = g_new0 (char *, array->len + 1);
 
 	for (i = 0; i < array->len; i++) {
-		char buf[INET6_ADDRSTRLEN];
+		char *buf = g_new (char, INET6_ADDRSTRLEN);
 
 		byte_array = g_ptr_array_index (array, i);
-		if (!inet_ntop (AF_INET6, (struct in6_addr *) byte_array->data, buf, sizeof (buf))) {
-			int j;
-			GString *ip6_str = g_string_new (NULL);
-			g_string_append_printf (ip6_str, "%02X", byte_array->data[0]);
-			for (j = 1; j < 16; j++)
-				g_string_append_printf (ip6_str, " %02X", byte_array->data[j]);
-			g_warning ("%s: error converting IP6 address %s",
-			           __func__, ip6_str->str);
-			g_string_free (ip6_str, TRUE);
-		} else
-			list[num++] = g_strdup (buf);
+		nm_utils_inet6_ntop ((const struct in6_addr *) byte_array->data, buf);
+		list[num++] = buf;
 	}
 
 	nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
 	g_strfreev (list);
 }
 
-static gboolean
+static void
 ip6_array_to_addr (GValueArray *values,
                    guint32 idx,
                    char *buf,
-                   size_t buflen,
-                   gboolean *out_is_unspec)
+                   struct in6_addr *out_addr)
 {
 	GByteArray *byte_array;
 	GValue *addr_val;
-	struct in6_addr *addr;
-
-	g_return_val_if_fail (buflen >= INET6_ADDRSTRLEN, FALSE);
+	const struct in6_addr *addr;
 
 	addr_val = g_value_array_get_nth (values, idx);
 	byte_array = g_value_get_boxed (addr_val);
-	addr = (struct in6_addr *) byte_array->data;
+	addr = (const struct in6_addr *) byte_array->data;
 
-	if (out_is_unspec && IN6_IS_ADDR_UNSPECIFIED (addr))
-		*out_is_unspec = TRUE;
+	nm_utils_inet6_ntop (addr, buf);
 
-	errno = 0;
-	if (!inet_ntop (AF_INET6, addr, buf, buflen)) {
-		GString *ip6_str = g_string_sized_new (INET6_ADDRSTRLEN + 10);
-
-		/* error converting the address */
-		g_string_append_printf (ip6_str, "%02X", byte_array->data[0]);
-		for (idx = 1; idx < 16; idx++)
-			g_string_append_printf (ip6_str, " %02X", byte_array->data[idx]);
-		g_warning ("%s: error %d converting IP6 address %s",
-		           __func__, errno, ip6_str->str);
-		g_string_free (ip6_str, TRUE);
-		return FALSE;
-	}
-
-	return TRUE;
+	if (out_addr)
+		*out_addr = *addr;
 }
 
 static char *
-ip6_array_to_addr_prefix (GValueArray *values)
+ip6_array_to_addr_prefix (GValueArray *values, gboolean force_write_gateway)
 {
 	GValue *prefix_val;
 	char *ret = NULL;
 	GString *ip6_str;
-	char buf[INET6_ADDRSTRLEN + 1];
-	gboolean is_unspec = FALSE;
+	char buf[INET6_ADDRSTRLEN];
+	struct in6_addr addr;
 
 	/* address */
-	if (ip6_array_to_addr (values, 0, buf, sizeof (buf), NULL)) {
-		/* Enough space for the address, '/', and the prefix */
-		ip6_str = g_string_sized_new ((INET6_ADDRSTRLEN * 2) + 5);
+	ip6_array_to_addr (values, 0, buf, NULL);
 
-		/* prefix */
-		g_string_append (ip6_str, buf);
-		prefix_val = g_value_array_get_nth (values, 1);
-		g_string_append_printf (ip6_str, "/%u", g_value_get_uint (prefix_val));
+	/* Enough space for the address, '/', and the prefix */
+	ip6_str = g_string_sized_new ((INET6_ADDRSTRLEN * 2) + 5);
 
-		if (ip6_array_to_addr (values, 2, buf, sizeof (buf), &is_unspec)) {
-			if (!is_unspec)
-				g_string_append_printf (ip6_str, ",%s", buf);
-		}
+	/* prefix */
+	g_string_append (ip6_str, buf);
+	prefix_val = g_value_array_get_nth (values, 1);
+	g_string_append_printf (ip6_str, "/%u", g_value_get_uint (prefix_val));
 
-		ret = ip6_str->str;
-		g_string_free (ip6_str, FALSE);
-	}
+	ip6_array_to_addr (values, 2, buf, &addr);
+	if (force_write_gateway || !IN6_IS_ADDR_UNSPECIFIED (&addr))
+		g_string_append_printf (ip6_str, ",%s", buf);
+
+	ret = ip6_str->str;
+	g_string_free (ip6_str, FALSE);
 
 	return ret;
 }
@@ -359,14 +324,13 @@ ip6_addr_writer (GKeyFile *file,
 			continue;
 		}
 
-		ip6_addr = ip6_array_to_addr_prefix (values);
-		if (ip6_addr) {
-			/* Write it out */
-			key_name = g_strdup_printf ("address%d", j++);
-			nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, ip6_addr);
-			g_free (key_name);
-			g_free (ip6_addr);
-		}
+		/* we allow omitting the gateway if it's :: */
+		ip6_addr = ip6_array_to_addr_prefix (values, FALSE);
+		/* Write it out */
+		key_name = g_strdup_printf ("address%d", j++);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, ip6_addr);
+		g_free (key_name);
+		g_free (ip6_addr);
 	}
 }
 
@@ -392,17 +356,31 @@ ip6_route_writer (GKeyFile *file,
 	for (i = 0, j = 1; i < array->len; i++) {
 		GValueArray *values = g_ptr_array_index (array, i);
 		char *key_name;
-		guint32 int_val;
+		char *addr_str;
+		guint metric;
 
 		output = g_string_new ("");
 
-		/* Address, prefix and next hop*/
-		g_string_append (output, ip6_array_to_addr_prefix (values));
-
 		/* Metric */
 		value = g_value_array_get_nth (values, 3);
-		int_val = g_value_get_uint (value);
-		g_string_append_printf (output, ",%d", int_val);
+		metric = g_value_get_uint (value);
+
+		/* Address, prefix and next hop
+		 * We allow omitting the gateway ::, if we also omit the metric
+		 * and force writing of the gateway, if we add a non zero metric.
+		 * The current version of the reader also supports the syntax
+		 * "a:b:c::/plen,,metric" for a gateway ::.
+		 * As older versions of the plugin, cannot read this form,
+		 * we always write the gateway, whenever we also write the metric.
+		 * But if possible, we omit them both (",::,0") or only the metric
+		 * (",0").
+		 **/
+		addr_str = ip6_array_to_addr_prefix (values, metric != 0);
+		g_string_append (output, addr_str);
+		g_free (addr_str);
+
+		if (metric != 0)
+			g_string_append_printf (output, ",%u", metric);
 
 		/* Write it out */
 		key_name = g_strdup_printf ("route%d", j++);
