@@ -477,8 +477,10 @@ nm_dbus_manager_init (NMDBusManager *self)
 
 #if HAVE_DBUS_GLIB_100
 	/* Set up our main private DBus socket */
-	if (mkdir (NMRUNDIR, 0700) == -1)
-		nm_log_warn (LOGD_CORE, "Error creating directory \"%s\": %d (%s)", NMRUNDIR, errno, g_strerror (errno));
+	if (mkdir (NMRUNDIR, 0700) == -1) {
+		if (errno != EEXIST)
+			nm_log_warn (LOGD_CORE, "Error creating directory \"%s\": %d (%s)", NMRUNDIR, errno, g_strerror (errno));
+	}
 	priv->priv_server = private_server_new (PRIV_SOCK_PATH, PRIV_SOCK_TAG, self);
 	if (priv->priv_server) {
 		priv->private_servers = g_slist_append (priv->private_servers, priv->priv_server);
