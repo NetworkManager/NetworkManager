@@ -1219,9 +1219,16 @@ system_create_virtual_devices (NMManager *self)
 
 		g_assert (s_con);
 		if (connection_needs_virtual_device (connection)) {
-			/* We only create a virtual interface if the connection can autoconnect */
-			if (nm_setting_connection_get_autoconnect (s_con))
+			char *iface = get_virtual_iface_name (self, connection, NULL);
+
+			/* We only create a virtual interface if the connection can autoconnect
+			 * and the interface was not manually disconnected before.
+			 */
+			if (   nm_setting_connection_get_autoconnect (s_con)
+			    && iface
+			    && nm_manager_can_device_auto_connect (self, iface))
 				system_create_virtual_device (self, connection);
+			g_free (iface);
 		}
 	}
 	g_slist_free (connections);
