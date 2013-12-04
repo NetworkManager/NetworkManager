@@ -97,10 +97,11 @@ static gboolean
 get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *out)
 {
 	long tmp;
+	char *endptr;
 
 	errno = 0;
-	tmp = strtol (str, NULL, 10);
-	if (errno || (tmp < 0) || (tmp > max_val)) {
+	tmp = strtol (str, &endptr, 10);
+	if (errno || (tmp < 0) || (tmp > max_val) || *endptr != 0) {
 		g_warning ("%s: ignoring invalid IP %s item '%s'", __func__, key_name, str);
 		return FALSE;
 	}
