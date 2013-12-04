@@ -3554,6 +3554,9 @@ nm_manager_can_device_auto_connect (NMManager *manager, const char *ifname)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
+	if (!ifname)
+		return FALSE;
+
 	return !g_hash_table_contains (priv->noauto_sw_devices, ifname);
 }
 
