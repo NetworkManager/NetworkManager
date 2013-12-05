@@ -152,7 +152,6 @@ enum {
 	CONNECTION_UPDATED_BY_USER,
 	CONNECTION_REMOVED,
 	CONNECTION_VISIBILITY_CHANGED,
-	CONNECTIONS_LOADED,
 	AGENT_REGISTERED,
 
 	NEW_CONNECTION, /* exported, not used internally */
@@ -183,9 +182,6 @@ load_connections (NMSettings *self)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 
-	if (priv->connections_loaded)
-		return;
-
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
 		GSList *plugin_connections;
@@ -214,9 +210,6 @@ load_connections (NMSettings *self)
 
 	unmanaged_specs_changed (NULL, self);
 	unrecognized_specs_changed (NULL, self);
-
-	g_signal_emit (self, signals[CONNECTIONS_LOADED], 0);
-	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTIONS_LOADED);
 }
 
 void
@@ -233,8 +226,6 @@ nm_settings_for_each_connection (NMSettings *self,
 	
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	load_connections (self);
-
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data))
 		for_each_func (self, NM_SETTINGS_CONNECTION (data), user_data);
@@ -248,8 +239,6 @@ impl_settings_list_connections (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
 	gpointer key;
-
-	load_connections (self);
 
 	*connections = g_ptr_array_sized_new (g_hash_table_size (priv->connections) + 1);
 	g_hash_table_iter_init (&iter, priv->connections);
@@ -269,8 +258,6 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	load_connections (self);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
@@ -361,8 +348,6 @@ nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	load_connections (self);
-
 	return (NMSettingsConnection *) g_hash_table_lookup (priv->connections, path);
 }
 
@@ -416,7 +401,6 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	load_connections (self);
 	return priv->unmanaged_specs;
 }
 
@@ -861,9 +845,7 @@ claim_connection (NMSettings *self,
 	                     g_object_ref (connection));
 
 	/* Only emit the individual connection-added signal after connections
-	 * have been initially loaded.  While getting the first list of connections
-	 * we suppress it, then send the connections-loaded signal after we're all
-	 * done to minimize processing.
+	 * have been initially loaded.
 	 */
 	if (priv->connections_loaded) {
 		/* Internal added signal */
@@ -1314,14 +1296,10 @@ impl_settings_reload_connections (NMSettings *self,
 	if (!ensure_root (priv->dbus_mgr, context))
 		return;
 
-	if (!priv->connections_loaded) {
-		load_connections (self);
-	} else {
-		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
 
-			nm_system_config_interface_reload_connections (plugin);
-		}
+		nm_system_config_interface_reload_connections (plugin);
 	}
 
 	dbus_g_method_return (context, TRUE);
@@ -1770,14 +1748,6 @@ get_connections (NMConnectionProvider *provider)
 	return list;
 }
 
-static gboolean
-has_connections_loaded (NMConnectionProvider *provider)
-{
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (provider);
-
-	return priv->connections_loaded;
-}
-
 static NMConnection *
 cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
 {
@@ -1805,8 +1775,7 @@ nm_settings_new (GError **error)
 		return NULL;
 	}
 
-	unmanaged_specs_changed (NULL, self);
-	unrecognized_specs_changed (NULL, self);
+	load_connections (self);
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
@@ -1817,7 +1786,6 @@ connection_provider_init (NMConnectionProvider *cp_class)
 {
     cp_class->get_best_connections = get_best_connections;
     cp_class->get_connections = get_connections;
-    cp_class->has_connections_loaded = has_connections_loaded;
     cp_class->add_connection = _nm_connection_provider_add_connection;
     cp_class->get_connection_by_uuid = cp_get_connection_by_uuid;
 }
@@ -1995,15 +1963,6 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__OBJECT,
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
-
-	signals[CONNECTIONS_LOADED] = 
-	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMSettingsClass, connections_loaded),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__VOID,
-	                              G_TYPE_NONE, 0);
 
 	signals[AGENT_REGISTERED] =
 		g_signal_new (NM_SETTINGS_SIGNAL_AGENT_REGISTERED,

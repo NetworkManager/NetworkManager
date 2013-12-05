@@ -351,7 +351,6 @@ static const char *reason_to_string (NMDeviceStateReason reason);
 static void ip_check_gw_ping_cleanup (NMDevice *self);
 
 static void cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
-static void cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 static void cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 
@@ -906,11 +905,6 @@ nm_device_set_connection_provider (NMDevice *device,
 	                                      NM_CP_SIGNAL_CONNECTION_ADDED,
 	                                      G_CALLBACK (cp_connection_added),
 	                                      device);
-
-	priv->cp_loaded_id = g_signal_connect (priv->con_provider,
-	                                       NM_CP_SIGNAL_CONNECTIONS_LOADED,
-	                                       G_CALLBACK (cp_connections_loaded),
-	                                       device);
 
 	priv->cp_removed_id = g_signal_connect (priv->con_provider,
 	                                        NM_CP_SIGNAL_CONNECTION_REMOVED,
@@ -7039,20 +7033,6 @@ static void
 cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
 	if (_try_add_available_connection (NM_DEVICE (user_data), connection))
-		_signal_available_connections_changed (NM_DEVICE (user_data));
-}
-
-static void
-cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
-{
-	const GSList *connections, *iter;
-	gboolean added = FALSE;
-
-	connections = nm_connection_provider_get_connections (cp);
-	for (iter = connections; iter; iter = g_slist_next (iter))
-		added |= _try_add_available_connection (NM_DEVICE (user_data), NM_CONNECTION (iter->data));
-
-	if (added)
 		_signal_available_connections_changed (NM_DEVICE (user_data));
 }
 

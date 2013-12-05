@@ -180,11 +180,6 @@ pan_connection_check_create (NMBluezDevice *self)
 		return;
 	}
 
-	if (!nm_connection_provider_has_connections_loaded (priv->provider)) {
-		/* do not try to create any connections until the connection provider is ready. */
-		return;
-	}
-
 	/* Only try once to create a connection. If it does not succeed, we do not try again. Also,
 	 * if the connection gets deleted later, do not create another one for this device. */
 	priv->pan_connection_no_autocreate = TRUE;
@@ -387,13 +382,14 @@ cp_connection_updated (NMConnectionProvider *provider,
 }
 
 static void
-cp_connections_loaded (NMConnectionProvider *provider, NMBluezDevice *self)
+load_connections (NMBluezDevice *self)
 {
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	const GSList *connections, *iter;
 
-	connections = nm_connection_provider_get_connections (provider);
+	connections = nm_connection_provider_get_connections (priv->provider);
 	for (iter = connections; iter; iter = g_slist_next (iter))
-		cp_connection_added (provider, NM_CONNECTION (iter->data), self);
+		cp_connection_added (priv->provider, NM_CONNECTION (iter->data), self);
 }
 
 /***********************************************************/
@@ -832,7 +828,7 @@ get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_da
 	g_variant_unref (v_properties);
 
 	/* Check if any connections match this device */
-	cp_connections_loaded (priv->provider, self);
+	load_connections (self);
 
 	priv->initialized = TRUE;
 	g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
@@ -883,7 +879,7 @@ query_properties (NMBluezDevice *self)
 		}
 
 		/* Check if any connections match this device */
-		cp_connections_loaded (priv->provider, self);
+		load_connections (self);
 
 		break;
 	}
@@ -970,11 +966,6 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider, int bluez
 	                  G_CALLBACK (cp_connection_updated),
 	                  self);
 
-	g_signal_connect (priv->provider,
-	                  NM_CP_SIGNAL_CONNECTIONS_LOADED,
-	                  G_CALLBACK (cp_connections_loaded),
-	                  self);
-
 	g_bus_get (G_BUS_TYPE_SYSTEM,
 	           NULL,
 	           (GAsyncReadyCallback) on_bus_acquired,
@@ -1027,7 +1018,6 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
-	g_signal_handlers_disconnect_by_func (priv->provider, cp_connections_loaded, self);
 
 	g_slist_free_full (priv->connections, g_object_unref);
 	priv->connections = NULL;

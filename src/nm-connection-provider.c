@@ -41,15 +41,6 @@ nm_connection_provider_get_connections (NMConnectionProvider *self)
 	return NULL;
 }
 
-gboolean
-nm_connection_provider_has_connections_loaded (NMConnectionProvider *self)
-{
-	g_return_val_if_fail (NM_IS_CONNECTION_PROVIDER (self), FALSE);
-
-	g_assert (NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->has_connections_loaded);
-	return NM_CONNECTION_PROVIDER_GET_INTERFACE (self)->has_connections_loaded (self);
-}
-
 /**
  * nm_connection_provider_add_connection:
  * @self: the #NMConnectionProvider
@@ -131,14 +122,6 @@ nm_connection_provider_init (gpointer g_iface)
 	              NULL, NULL,
 	              g_cclosure_marshal_VOID__OBJECT,
 	              G_TYPE_NONE, 1, G_TYPE_OBJECT);
-
-	g_signal_new (NM_CP_SIGNAL_CONNECTIONS_LOADED,
-	              iface_type,
-	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMConnectionProvider, connections_loaded),
-	              NULL, NULL,
-	              g_cclosure_marshal_VOID__VOID,
-	              G_TYPE_NONE, 0);
 }
 
 GType

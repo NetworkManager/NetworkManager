@@ -1835,19 +1835,6 @@ connection_added (NMSettings *settings,
 }
 
 static void
-connections_loaded (NMSettings *settings, gpointer user_data)
-{
-	// FIXME: "connections-loaded" signal is emmitted *before* we connect to it
-	// in nm_policy_new(). So this function is never called. Currently we work around
-	// that by calling reset_retries_all() in nm_policy_new()
-	
-	/* Initialize connections' auto-retries */
-	reset_retries_all (settings, NULL);
-
-	schedule_activate_all ((NMPolicy *) user_data);
-}
-
-static void
 add_or_change_zone_cb (GError *error, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
@@ -2099,7 +2086,6 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	_connect_manager_signal (policy, NM_MANAGER_ACTIVE_CONNECTION_ADDED, active_connection_added);
 	_connect_manager_signal (policy, NM_MANAGER_ACTIVE_CONNECTION_REMOVED, active_connection_removed);
 
-	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED, connections_loaded);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_ADDED, connection_added);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, connection_updated);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER, connection_updated_by_user);
