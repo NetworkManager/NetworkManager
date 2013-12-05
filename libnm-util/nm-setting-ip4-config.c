@@ -1027,7 +1027,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						      "connection.  'disabled' means IPv4 will not be "
 						      "used on this connection.  This property must be set.",
 						      NULL,
-						      G_PARAM_READWRITE));
+						      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP4Config:dns:
@@ -1107,7 +1107,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "'disabled' methods as addressing is either "
 							   "automatic or disabled with these methods.",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-							   G_PARAM_READWRITE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP4Config:routes:
@@ -1138,7 +1138,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "'shared', 'link-local', or 'disabled', methods "
 							   "as there is no upstream network.",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-							   G_PARAM_READWRITE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:
@@ -1231,7 +1231,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "the specified name will be sent to the DHCP server "
 						   "when acquiring a lease.",
 						   NULL,
-						   G_PARAM_READWRITE));
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP4Config:never-default:
@@ -1247,7 +1247,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "IPv4 connection, meaning it will never be assigned "
 						   "the default route by NetworkManager.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP4Config:may-fail:
@@ -1272,7 +1272,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "configuration to succeed if IPv4 configuration "
 						   "fails but IPv6 configuration completes successfully.",
 						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 }
 
 

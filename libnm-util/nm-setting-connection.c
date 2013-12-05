@@ -1099,7 +1099,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "reordered the connection may be applied to the wrong "
 		                      "interface.",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingConnection:type:
@@ -1121,7 +1121,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "otherwise, should contain the setting name of that "
 						  "setting type (ie, 'vpn' or 'bridge', etc).",
 						  NULL,
-						  G_PARAM_READWRITE));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingConnection:permissions:
@@ -1251,7 +1251,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "Interface name of the master device or UUID of "
 		                      "the master connection",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingConnection:slave-type:
@@ -1267,7 +1267,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "this connection is (ie, 'bond') or NULL if this "
 		                      "connection is not a slave.",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingConnection:secondaries:

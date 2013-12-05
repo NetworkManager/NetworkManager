@@ -1660,21 +1660,20 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quittin
 
 /***************************************************************/
 
-static gint
-best_connection_sort (gconstpointer a, gconstpointer b, gpointer user_data)
+/* GCompareFunc helper for sorting "best" connections */
+gint
+nm_settings_sort_connections (gconstpointer a, gconstpointer b)
 {
 	NMSettingsConnection *ac = (NMSettingsConnection *) a;
 	NMSettingsConnection *bc = (NMSettingsConnection *) b;
 	guint64 ats = 0, bts = 0;
 
-	if (!ac && bc)
-		return -1;
-	else if (ac && !bc)
-		return 1;
-	else if (!ac && !bc)
+	if (ac == bc)
 		return 0;
-
-	g_assert (ac && bc);
+	if (!ac)
+		return -1;
+	if (!bc)
+		return 1;
 
 	/* In the future we may use connection priorities in addition to timestamps */
 	nm_settings_connection_get_timestamp (ac, &ats);
@@ -1722,7 +1721,7 @@ get_best_connections (NMConnectionProvider *provider,
 		}
 
 		/* List is sorted with oldest first */
-		sorted = g_slist_insert_sorted_with_data (sorted, connection, best_connection_sort, NULL);
+		sorted = g_slist_insert_sorted (sorted, connection, nm_settings_sort_connections);
 		added++;
 
 		if (max_requested && added > max_requested) {

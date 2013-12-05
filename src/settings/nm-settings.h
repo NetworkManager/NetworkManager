@@ -122,4 +122,6 @@ void nm_settings_device_added (NMSettings *self, NMDevice *device);
 
 void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
 
+gint nm_settings_sort_connections (gconstpointer a, gconstpointer b);
+
 #endif  /* __NM_SETTINGS_H__ */

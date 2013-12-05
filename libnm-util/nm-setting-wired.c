@@ -897,7 +897,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 							   "This property does not change the MAC address "
 							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingWired:cloned-mac-address:
@@ -913,7 +913,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	                                     "this MAC address instead of its permanent MAC address.  "
 	                                     "This is known as MAC cloning or spoofing.",
 	                                     DBUS_TYPE_G_UCHAR_ARRAY,
-	                                     G_PARAM_READWRITE));
+	                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
     
 	/**
 	 * NMSettingWired:mac-address-blacklist:
@@ -974,7 +974,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                       "string may only be composed of hexadecimal "
 		                       "characters and the period (.) character.",
 		                       DBUS_TYPE_G_ARRAY_OF_STRING,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingWired:s390-nettype:
@@ -990,7 +990,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  "'ctc', representing the different types of virtual "
 						  "network devices available on s390 systems.",
 						  NULL,
-						  G_PARAM_READWRITE));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingWired:s390-options:
@@ -1009,6 +1009,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 							   "strings.  Allowed keys include 'portno', "
 							   "'layer2', 'portname', 'protocol', among others.",
 							   DBUS_TYPE_G_MAP_OF_STRING,
-							   G_PARAM_READWRITE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 }
 

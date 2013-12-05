@@ -451,10 +451,6 @@ nm_connection_compare (NMConnection *a,
 	if (!a || !b)
 		return FALSE;
 
-	/* CANDIDATE flag also implies FUZZY */
-	if (flags & NM_SETTING_COMPARE_FLAG_CANDIDATE)
-		flags |= NM_SETTING_COMPARE_FLAG_FUZZY;
-
 	/* A / B: ensure all settings in A match corresponding ones in B */
 	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (a)->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &src)) {

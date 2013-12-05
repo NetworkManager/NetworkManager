@@ -78,6 +78,9 @@ GQuark nm_setting_error_quark (void);
  */
 #define NM_SETTING_PARAM_FUZZY_IGNORE (1 << (3 + G_PARAM_USER_SHIFT))
 
+/* Note: all non-glib GParamFlags bits are reserved by NetworkManager */
+
+
 #define NM_SETTING_NAME "name"
 
 /**

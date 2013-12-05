@@ -924,7 +924,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						      "property must be set.  Note: the 'shared' method "
 						      "is not yet supported.",
 						      NULL,
-						      G_PARAM_READWRITE));
+						      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP6Config:dhcp-hostname:
@@ -1028,7 +1028,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 							   "as the interface is automatically assigned an "
 							   "address with these methods.",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-							   G_PARAM_READWRITE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP6Config:routes:
@@ -1059,7 +1059,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 							   "used with the 'shared' or 'link-local' methods "
 							   "because there is no upstream network.",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-							   G_PARAM_READWRITE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:
@@ -1167,7 +1167,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 }
 
 /********************************************************************/

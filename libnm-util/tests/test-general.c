@@ -28,6 +28,7 @@
 #include "nm-test-helpers.h"
 #include <nm-utils.h>
 
+#include "nm-setting-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-gsm.h"
@@ -1062,7 +1063,7 @@ test_connection_compare_key_only_in_a (void)
 	b = nm_connection_duplicate (a);
 	s_con = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
-	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (gulong) 0, NULL);
+	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 0, NULL);
 
 	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
 	g_object_unref (a);
@@ -1092,7 +1093,7 @@ test_connection_compare_key_only_in_b (void)
 	b = nm_connection_duplicate (a);
 	s_con = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
-	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (gulong) 0, NULL);
+	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 0, NULL);
 
 	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
 	g_object_unref (a);
@@ -1309,6 +1310,65 @@ test_connection_diff_no_secrets (void)
 
 	/* Now make sure the diff returns results if secrets are not ignored */
 	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
+	g_assert (same == FALSE);
+	g_assert (out_diffs != NULL);
+	g_assert (g_hash_table_size (out_diffs) > 0);
+
+	ensure_diffs (out_diffs, settings, ARRAY_LEN (settings));
+
+	g_hash_table_destroy (out_diffs);
+	g_object_unref (a);
+	g_object_unref (b);
+}
+
+static void
+test_connection_diff_inferrable (void)
+{
+	NMConnection *a, *b;
+	GHashTable *out_diffs = NULL;
+	gboolean same;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	const DiffSetting settings[] = {
+		{ NM_SETTING_CONNECTION_SETTING_NAME, {
+			{ NM_SETTING_CONNECTION_INTERFACE_NAME, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
+		} },
+	};
+
+	a = new_test_connection ();
+	b = nm_connection_duplicate (a);
+
+	/* Change the UUID, wired MTU, and set ignore-auto-dns */
+	s_con = nm_connection_get_setting_connection (a);
+	g_assert (s_con);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_ID, "really neat connection",
+	              NULL);
+	g_free (uuid);
+
+	s_wired = nm_connection_get_setting_wired (a);
+	g_assert (s_wired);
+	g_object_set (G_OBJECT (s_wired), NM_SETTING_WIRED_MTU, 300, NULL);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (a);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, TRUE, NULL);
+
+	/* Make sure the diff returns no results as secrets are ignored */
+	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_INFERRABLE, &out_diffs);
+	g_assert (same == TRUE);
+	g_assert (out_diffs == NULL);
+
+	/* And change a INFERRABLE property to ensure that it shows up in the diff results */
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, "usb0", NULL);
+
+	/* Make sure the diff returns no results as secrets are ignored */
+	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_INFERRABLE, &out_diffs);
 	g_assert (same == FALSE);
 	g_assert (out_diffs != NULL);
 	g_assert (g_hash_table_size (out_diffs) > 0);
@@ -2150,6 +2210,7 @@ int main (int argc, char **argv)
 	test_connection_diff_same ();
 	test_connection_diff_different ();
 	test_connection_diff_no_secrets ();
+	test_connection_diff_inferrable ();
 	test_connection_good_base_types ();
 	test_connection_bad_base_types ();
 

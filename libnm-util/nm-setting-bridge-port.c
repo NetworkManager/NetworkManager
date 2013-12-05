@@ -269,7 +269,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 		                    "Priority",
 		                    "The Spanning Tree Protocol (STP) priority of this bridge port",
 		                    0, BR_MAX_PORT_PRIORITY, BR_DEF_PRIORITY,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridgePort:path-cost:
@@ -285,7 +285,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 		                    "The Spanning Tree Protocol (STP) port cost for "
 		                    "destinations via this port.",
 		                    0, BR_MAX_PATH_COST, 100,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridgePort:hairpin-mode:
@@ -303,6 +303,5 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 		                       "port, which allows frames to be sent back out "
 		                       "through the port the frame was received on.",
 		                       FALSE,
-		                       G_PARAM_READWRITE));
-
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 }

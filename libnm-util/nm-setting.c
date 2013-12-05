@@ -569,6 +569,9 @@ nm_setting_compare (NMSetting *a,
 			&& (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
 
+		if ((flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_spec->flags & NM_SETTING_PARAM_INFERRABLE))
+			continue;
+
 		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
 		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
 			continue;
@@ -589,6 +592,9 @@ should_compare_prop (NMSetting *setting,
 	/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
 	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_FUZZY)
 	    && (prop_flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
+		return FALSE;
+
+	if ((comp_flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_flags & NM_SETTING_PARAM_INFERRABLE))
 		return FALSE;
 
 	if (prop_flags & NM_SETTING_PARAM_SECRET) {
@@ -693,22 +699,19 @@ nm_setting_diff (NMSetting *a,
 			continue;
 
 		if (b) {
-			g_value_init (&a_value, prop_spec->value_type);
-			g_object_get_property (G_OBJECT (a), prop_spec->name, &a_value);
-
-			g_value_init (&b_value, prop_spec->value_type);
-			g_object_get_property (G_OBJECT (b), prop_spec->name, &b_value);
-
-			different = !!g_param_values_cmp (prop_spec, &a_value, &b_value);
+			different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
 			if (different) {
+				g_value_init (&a_value, prop_spec->value_type);
+				g_value_init (&b_value, prop_spec->value_type);
+
 				if (!g_param_value_defaults (prop_spec, &a_value))
 					r |= a_result;
 				if (!g_param_value_defaults (prop_spec, &b_value))
 					r |= b_result;
-			}
 
-			g_value_unset (&a_value);
-			g_value_unset (&b_value);
+				g_value_unset (&a_value);
+				g_value_unset (&b_value);
+			}
 		} else
 			r = a_result;  /* only in A */
 
