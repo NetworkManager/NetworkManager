@@ -908,9 +908,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DHCP_HOSTNAME:
 		g_free (priv->dhcp_hostname);
 		priv->dhcp_hostname = g_value_dup_string (value);
-		/* FIXME: Is this a good idea? */
-		if (priv->dhcp_hostname)
-			priv->dhcp_send_hostname = TRUE;
 		break;
 	case PROP_NEVER_DEFAULT:
 		priv->never_default = g_value_get_boolean (value);
