@@ -365,7 +365,7 @@ static void update_ip_config (NMDevice *self, gboolean initial);
 static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
 
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
-static void nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed);
+static void nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason);
 
 static void addrconf6_start_with_link_ready (NMDevice *self);
 
@@ -1007,7 +1007,6 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  * nm_device_release_one_slave:
  * @dev: the master device
  * @slave: the slave device to release
- * @master_failed: %TRUE if the release was unexpected, ie the master failed
  *
  * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function releases the previously enslaved @slave.
@@ -1016,11 +1015,12 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  *  other devices, or if @slave was never enslaved.
  */
 static gboolean
-nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean master_failed)
+nm_device_release_one_slave (NMDevice *dev, NMDevice *slave)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	SlaveInfo *info;
 	gboolean success = FALSE;
+	NMDeviceStateReason reason;
 
 	g_return_val_if_fail (slave != NULL, FALSE);
 	g_return_val_if_fail (NM_DEVICE_GET_CLASS (dev)->release_slave != NULL, FALSE);
@@ -1033,7 +1033,12 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean master_fai
 		success = NM_DEVICE_GET_CLASS (dev)->release_slave (dev, slave);
 		g_warn_if_fail (success);
 	}
-	nm_device_slave_notify_release (info->slave, master_failed);
+
+	if (priv->state == NM_DEVICE_STATE_FAILED)
+		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+	else
+		reason = priv->state_reason;
+	nm_device_slave_notify_release (info->slave, reason);
 
 	priv->slaves = g_slist_remove (priv->slaves, info);
 	free_slave_info (info);
@@ -1263,7 +1268,7 @@ slave_state_changed (NMDevice *slave,
 	}
 
 	if (release) {
-		nm_device_release_one_slave (self, slave, FALSE);
+		nm_device_release_one_slave (self, slave);
 		/* Bridge/bond/team interfaces are left up until manually deactivated */
 		if (priv->slaves == NULL && priv->state == NM_DEVICE_STATE_ACTIVATED) {
 			nm_log_dbg (LOGD_DEVICE, "(%s): last slave removed; remaining activated",
@@ -1405,14 +1410,14 @@ nm_device_is_master (NMDevice *dev)
 
 /* release all slaves */
 static void
-nm_device_master_release_slaves (NMDevice *self, gboolean failed)
+nm_device_master_release_slaves (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	while (priv->slaves) {
 		SlaveInfo *info = priv->slaves->data;
 
-		nm_device_release_one_slave (self, info->slave, failed);
+		nm_device_release_one_slave (self, info->slave);
 	}
 }
 
@@ -1481,39 +1486,36 @@ nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
 /**
  * nm_device_slave_notify_release:
  * @dev: the slave device
- * @master_failed: indicates whether the release was unexpected,
- *   ie the master device failed.
+ * @reason: the reason associated with the state change
  *
- * Notifies a slave that it has been released, and whether this was expected
- * or not.
+ * Notifies a slave that it has been released, and why.
  */
 static void
-nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed)
+nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	NMConnection *connection = nm_device_get_connection (dev);
 	NMDeviceState new_state;
-	NMDeviceStateReason reason;
+	const char *master_status;
 
 	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 	    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
-		if (master_failed) {
+		if (reason == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
 			new_state = NM_DEVICE_STATE_FAILED;
-			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
-
-			nm_log_warn (LOGD_DEVICE,
-			             "Activation (%s) connection '%s' master failed",
-			             nm_device_get_iface (dev),
-			             nm_connection_get_id (connection));
+			master_status = "failed";
+		} else if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
+			new_state = NM_DEVICE_STATE_DEACTIVATING;
+			master_status = "deactivated by user request";
 		} else {
 			new_state = NM_DEVICE_STATE_DISCONNECTED;
-			reason = NM_DEVICE_STATE_REASON_NONE;
-
-			nm_log_dbg (LOGD_DEVICE,
-			            "Activation (%s) connection '%s' master deactivated",
-			            nm_device_get_iface (dev),
-			            nm_connection_get_id (connection));
+			master_status = "deactivated";
 		}
+
+		nm_log_dbg (LOGD_DEVICE,
+		            "Activation (%s) connection '%s' master %s",
+		            nm_device_get_iface (dev),
+		            nm_connection_get_id (connection),
+		            master_status);
 
 		nm_device_queue_state (dev, new_state, reason);
 	}
@@ -4574,7 +4576,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
 	/* master: release slaves */
-	nm_device_master_release_slaves (self, FALSE);
+	nm_device_master_release_slaves (self);
 
 	/* slave: mark no longer enslaved */
 	g_clear_object (&priv->master);
@@ -6357,7 +6359,7 @@ nm_device_state_changed (NMDevice *device,
 		             connection ? nm_connection_get_id (connection) : "<unknown>");
 
 		/* Notify any slaves of the unexpected failure */
-		nm_device_master_release_slaves (device, TRUE);
+		nm_device_master_release_slaves (device);
 
 		/* If the connection doesn't yet have a timestamp, set it to zero so that
 		 * we can distinguish between connections we've tried to activate and have
