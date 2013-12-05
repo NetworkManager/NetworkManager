@@ -96,6 +96,10 @@ else
     _RPM=false
 fi
 
+if [[ "${#REFS[@]}" -eq 0 ]]; then
+    REFS=("$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse HEAD)")
+fi
+
 echo "USER                  : \"$_USER\""
 echo "TOKEN                 : \"$_TOKEN\""
 echo "DRY_RUN               : $DRY_RUN"
