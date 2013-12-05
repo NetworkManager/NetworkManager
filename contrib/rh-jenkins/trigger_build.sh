@@ -50,7 +50,7 @@ for i in ${!ARGV[@]}; do
             -R|--no-rpm)
                 RPM=false
                 ;;
-            --n|--dry-run|--test)
+            -n|--dry-run|--test)
                 DRY_RUN=yes
                 ;;
             -N|--no-test|--no-dry-run)
