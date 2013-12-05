@@ -63,7 +63,7 @@ for i in ${!ARGV[@]}; do
                 NO_CHECK_UPSTREAM=yes
                 ;;
             -h|--help|'-?')
-                echo "$0 [-h|-r|--rpm|-R|--no-rpm|-n|--dry-run|--no-test] [--] REFS"
+                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|-N|--no-test | -c|--check-upstream|-C|--no-check-upstream ] [--] REFS"
                 exit 1
                 ;;
             --)
