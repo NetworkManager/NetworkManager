@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2012 Red Hat, Inc.
+ * Copyright (C) 2009 - 2013 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -1970,6 +1970,13 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		value = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
 		if (value)
 			svSetValue (ifcfg, "DHCP_HOSTNAME", value, FALSE);
+
+		/* Missing DHCP_SEND_HOSTNAME means TRUE, and we prefer not write it explicitly
+		 * in that case, because it is NM-specific variable
+		 */
+		svSetValue (ifcfg, "DHCP_SEND_HOSTNAME",
+		            nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) ? NULL : "no",
+		            FALSE);
 
 		value = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
 		if (value)

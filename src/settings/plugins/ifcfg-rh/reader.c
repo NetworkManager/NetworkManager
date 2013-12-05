@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2012 Red Hat, Inc.
+ * Copyright (C) 2008 - 2013 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -1365,7 +1365,11 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
-			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
+			g_object_set (s_ip4,
+			              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value,
+			              NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
+			                  svTrueValue (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
+			              NULL);
 		g_free (value);
 
 		value = svGetValue (ifcfg, "DHCP_CLIENT_ID", FALSE);

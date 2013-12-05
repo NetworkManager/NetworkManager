@@ -6562,6 +6562,75 @@ test_write_wired_dhcp_plus_ip (void)
 }
 
 static void
+test_read_write_wired_dhcp_send_hostname (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	const char * dhcp_hostname = "kamil-patka";
+	char *written = NULL;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-send-hostname",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	/* Check dhcp-hostname and dhcp-send-hostname */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip4);
+	g_assert (s_ip6);
+	g_assert (nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) == TRUE);
+	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_hostname (s_ip4), ==, "svata-pulec");
+	g_assert_cmpstr (nm_setting_ip6_config_get_dhcp_hostname (s_ip6), ==, "svata-pulec");
+
+	/* Set dhcp-send-hostname=false dhcp-hostname="kamil-patka" and write the connection. */
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, FALSE, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
+	g_object_set (s_ip6, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
+
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &written,
+	                                 &error);
+	g_assert (success);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL, NULL,
+	                               NULL, NULL, NULL, &error, NULL);
+	unlink (written);
+	g_free (written);
+
+	g_assert_no_error (error);
+	g_assert (reread != NULL);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	/* Check dhcp-hostname and dhcp-send-hostname from the re-read connection. */
+	s_ip4 = nm_connection_get_setting_ip4_config (reread);
+	s_ip6 = nm_connection_get_setting_ip6_config (reread);
+	g_assert (s_ip4);
+	g_assert (s_ip6);
+	g_assert (nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) == FALSE);
+	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_hostname (s_ip4), ==, dhcp_hostname);
+	g_assert_cmpstr (nm_setting_ip6_config_get_dhcp_hostname (s_ip6), ==, dhcp_hostname);
+
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
 test_write_wired_static_ip6_only (void)
 {
 	NMConnection *connection;
@@ -13215,6 +13284,7 @@ int main (int argc, char **argv)
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
 	test_read_wired_dhcp ();
 	g_test_add_func (TPATH "dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
+	g_test_add_func (TPATH "dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
 	test_read_wired_defroute_no ();
