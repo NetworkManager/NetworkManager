@@ -2261,7 +2261,7 @@ build_rtnl_addr (int family,
 	/* IPv4 Broadcast address */
 	if (family == AF_INET) {
 		struct in_addr bcast;
-		auto_nl_addr struct nl_addr *bcaddr;
+		auto_nl_addr struct nl_addr *bcaddr = NULL;
 
 		addr4_to_broadcast (&bcast, addr, plen);
 		bcaddr = nl_addr_build (family, &bcast, addrlen);
