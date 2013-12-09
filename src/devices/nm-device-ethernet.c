@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2012 Red Hat, Inc.
+ * Copyright (C) 2005 - 2013 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -66,7 +66,11 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
 #define WIRED_SECRETS_TRIES "wired-secrets-tries"
 
+#define PPPOE_RECONNECT_DELAY 7
+
 #define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
+
+static NMSetting *device_get_setting (NMDevice *device, GType setting_type);
 
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
@@ -99,6 +103,8 @@ typedef struct {
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
+	time_t        last_pppoe_time;
+	guint         pppoe_wait_id;
 } NMDeviceEthernetPrivate;
 
 enum {
@@ -272,15 +278,10 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	switch (new_state) {
-	case NM_DEVICE_STATE_ACTIVATED:
-	case NM_DEVICE_STATE_FAILED:
-	case NM_DEVICE_STATE_DISCONNECTED:
+	if (   new_state == NM_DEVICE_STATE_ACTIVATED
+	    || new_state == NM_DEVICE_STATE_FAILED
+	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
 		clear_secrets_tries (device);
-		break;
-	default:
-		break;
-	}
 }
 
 static void
@@ -891,10 +892,24 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	return TRUE;
 }
 
+static gboolean
+pppoe_reconnect_delay (gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+
+	priv->pppoe_wait_id = 0;
+	nm_log_info (LOGD_DEVICE, "(%s) PPPoE reconnect delay complete, resuming connection...",
+	             nm_device_get_iface (device));
+	nm_device_activate_schedule_stage2_device_config (device);
+	return FALSE;
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMActRequest *req;
 	NMSettingWired *s_wired;
 	const GByteArray *cloned_mac;
@@ -913,6 +928,26 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 			cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 			if (cloned_mac && (cloned_mac->len == ETH_ALEN))
 				nm_device_set_hw_addr (dev, cloned_mac->data, "set", LOGD_ETHER);
+		}
+
+		/* If we're re-activating a PPPoE connection a short while after
+		 * a previous PPPoE connection was torn down, wait a bit to allow the
+		 * remote side to handle the disconnection.  Otherwise the peer may
+		 * get confused and fail to negotiate the new connection. (rh #1023503)
+		 */
+		if (priv->last_pppoe_time) {
+			time_t delay = time (NULL) - priv->last_pppoe_time;
+
+			if (delay < PPPOE_RECONNECT_DELAY && device_get_setting (dev, NM_TYPE_SETTING_PPPOE)) {
+				nm_log_info (LOGD_DEVICE, "(%s) delaying PPPoE reconnect to ensure peer is ready...",
+				             nm_device_get_iface (dev));
+				g_assert (!priv->pppoe_wait_id);
+				priv->pppoe_wait_id = g_timeout_add_seconds (delay,
+				                                             pppoe_reconnect_delay,
+				                                             self);
+				ret = NM_ACT_STAGE_RETURN_POSTPONE;
+			} else
+				priv->last_pppoe_time = 0;
 		}
 	}
 
@@ -1141,6 +1176,11 @@ deactivate (NMDevice *device)
 	/* Clear wired secrets tries when deactivating */
 	clear_secrets_tries (device);
 
+	if (priv->pppoe_wait_id) {
+		g_source_remove (priv->pppoe_wait_id);
+		priv->pppoe_wait_id = 0;
+	}
+
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
 		priv->pending_ip4_config = NULL;
@@ -1163,6 +1203,10 @@ deactivate (NMDevice *device)
 			g_clear_error (&error);
 		}
 	}
+
+	/* Set last PPPoE connection time */
+	if (device_get_setting (device, NM_TYPE_SETTING_PPPOE))
+			NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = time (NULL);
 
 	/* Reset MAC address back to initial address */
 	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);
@@ -1346,6 +1390,11 @@ dispose (GObject *object)
 	g_free (priv->subchan2);
 	g_free (priv->subchan3);
 	g_free (priv->subchannels);
+
+	if (priv->pppoe_wait_id) {
+		g_source_remove (priv->pppoe_wait_id);
+		priv->pppoe_wait_id = 0;
+	}
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }
