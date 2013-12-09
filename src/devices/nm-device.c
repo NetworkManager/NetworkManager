@@ -188,7 +188,7 @@ typedef struct {
 	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
 	guint queued_ip_config_id;
-	guint pending_actions;
+	GArray *pending_actions;
 
 	char *        udi;
 	char *        path;
@@ -394,6 +394,7 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
+	priv->pending_actions = g_array_sized_new (FALSE, TRUE, sizeof (GQuark), 4);
 }
 
 static void
@@ -5335,6 +5336,8 @@ finalize (GObject *object)
 	if (priv->fw_manager)
 		g_object_unref (priv->fw_manager);
 
+	g_array_free (priv->pending_actions, TRUE);
+
 	g_free (priv->udi);
 	g_free (priv->path);
 	g_free (priv->iface);
@@ -5935,38 +5938,46 @@ nm_device_get_firmware_missing (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->firmware_missing;
 }
 
+#define QUEUED_PREFIX "queued state change to "
+
 static const char *
-state_to_string (NMDeviceState state)
+queued_state_to_string (NMDeviceState state)
 {
 	switch (state) {
 	case NM_DEVICE_STATE_UNMANAGED:
-		return "unmanaged";
+		return QUEUED_PREFIX "unmanaged";
 	case NM_DEVICE_STATE_UNAVAILABLE:
-		return "unavailable";
+		return QUEUED_PREFIX "unavailable";
 	case NM_DEVICE_STATE_DISCONNECTED:
-		return "disconnected";
+		return QUEUED_PREFIX "disconnected";
 	case NM_DEVICE_STATE_PREPARE:
-		return "prepare";
+		return QUEUED_PREFIX "prepare";
 	case NM_DEVICE_STATE_CONFIG:
-		return "config";
+		return QUEUED_PREFIX "config";
 	case NM_DEVICE_STATE_NEED_AUTH:
-		return "need-auth";
+		return QUEUED_PREFIX "need-auth";
 	case NM_DEVICE_STATE_IP_CONFIG:
-		return "ip-config";
+		return QUEUED_PREFIX "ip-config";
 	case NM_DEVICE_STATE_IP_CHECK:
-		return "ip-check";
+		return QUEUED_PREFIX "ip-check";
 	case NM_DEVICE_STATE_SECONDARIES:
-		return "secondaries";
+		return QUEUED_PREFIX "secondaries";
 	case NM_DEVICE_STATE_ACTIVATED:
-		return "activated";
+		return QUEUED_PREFIX "activated";
 	case NM_DEVICE_STATE_DEACTIVATING:
-		return "deactivating";
+		return QUEUED_PREFIX "deactivating";
 	case NM_DEVICE_STATE_FAILED:
-		return "failed";
+		return QUEUED_PREFIX "failed";
 	default:
 		break;
 	}
-	return "unknown";
+	return QUEUED_PREFIX "unknown";
+}
+
+static const char *
+state_to_string (NMDeviceState state)
+{
+	return queued_state_to_string (state) + strlen (QUEUED_PREFIX);
 }
 
 static const char *
@@ -6334,7 +6345,7 @@ queued_set_state (gpointer user_data)
 		nm_device_queued_state_clear (self);
 
 		nm_device_state_changed (self, new_state, new_reason);
-		nm_device_remove_pending_action (self, "queued state change");
+		nm_device_remove_pending_action (self, queued_state_to_string (new_state));
 	} else {
 		g_warn_if_fail (priv->queued_state.state == NM_DEVICE_STATE_UNKNOWN);
 		g_warn_if_fail (priv->queued_state.reason == NM_DEVICE_STATE_REASON_NONE);
@@ -6353,6 +6364,12 @@ nm_device_queue_state (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	/* "lock" the pending actions so that if there was a previously
+	 * queued action that's about to be cleared, that doesn't drop
+	 * the pending actions to 0 before we add the new pending action.
+	 */
+	nm_device_add_pending_action (self, "queued state lock");
+
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
 		if (priv->queued_state.state == state)
@@ -6367,7 +6384,9 @@ nm_device_queue_state (NMDevice *self,
 	priv->queued_state.state = state;
 	priv->queued_state.reason = reason;
 	priv->queued_state.id = g_idle_add (queued_set_state, self);
-	nm_device_add_pending_action (self, "queued state change");
+	nm_device_add_pending_action (self, queued_state_to_string (state));
+
+	nm_device_remove_pending_action (self, "queued state lock");
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s due to %s (id %d)",
 	            nm_device_get_iface (self), state_to_string (state), reason_to_string (reason),
@@ -6395,7 +6414,7 @@ nm_device_queued_state_clear (NMDevice *self)
 		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued state transition (id %d)",
 		            nm_device_get_iface (self), priv->queued_state.id);
 		g_source_remove (priv->queued_state.id);
-		nm_device_remove_pending_action (self, "queued state change");
+		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state));
 	}
 	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
 }
@@ -7106,30 +7125,79 @@ nm_device_set_hw_addr (NMDevice *device, const guint8 *addr,
 	return success;
 }
 
+/**
+ * nm_device_add_pending_action():
+ * @device: the #NMDevice to add the pending action to
+ * @action: a static string that identifies the action
+ *
+ * Adds a pending action to the device.
+ */
 void
 nm_device_add_pending_action (NMDevice *device, const char *action)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	GQuark qaction;
+	guint i;
 
-	priv->pending_actions++;
-	nm_log_dbg (LOGD_DEVICE, "(%s): add_pending_action (%d): %s",
-	            nm_device_get_iface (device), priv->pending_actions, action);
+	qaction = g_quark_from_static_string (action);
 
-	if (priv->pending_actions == 1)
+	/* Shouldn't ever add the same pending action twice */
+	for (i = 0; i < priv->pending_actions->len; i++) {
+		if (qaction == g_array_index (priv->pending_actions, GQuark, i)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s' already added",
+			             nm_device_get_iface (device),
+			             priv->pending_actions->len,
+			             action);
+			g_warn_if_reached ();
+			return;
+		}
+	}
+
+	g_array_append_val (priv->pending_actions, qaction);
+	nm_log_dbg (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s'",
+	            nm_device_get_iface (device),
+	            priv->pending_actions->len,
+	            action);
+
+	if (priv->pending_actions->len == 1)
 		g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
 }
 
+/**
+ * nm_device_remove_pending_action():
+ * @device: the #NMDevice to remove the pending action from
+ * @action: a static string that identifies the action
+ *
+ * Removes a pending action previously added by nm_device_add_pending_action().
+ */
 void
 nm_device_remove_pending_action (NMDevice *device, const char *action)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	GQuark qaction;
+	guint i;
 
-	priv->pending_actions--;
-	nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): %s",
-	            nm_device_get_iface (device), priv->pending_actions, action);
+	qaction = g_quark_from_static_string (action);
 
-	if (priv->pending_actions == 0)
-		g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
+	/* Shouldn't ever add the same pending action twice */
+	for (i = 0; i < priv->pending_actions->len; i++) {
+		if (qaction == g_array_index (priv->pending_actions, GQuark, i)) {
+			g_array_remove_index (priv->pending_actions, i);
+			nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s'",
+			            nm_device_get_iface (device),
+			            priv->pending_actions->len,
+			            action);
+
+			if (priv->pending_actions->len == 0)
+				g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
+			return;
+		}
+	}
+
+	nm_log_warn (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s' never added",
+	             nm_device_get_iface (device),
+	             priv->pending_actions->len,
+	             action);
 }
 
 gboolean
@@ -7137,7 +7205,7 @@ nm_device_has_pending_action (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	return priv->pending_actions > 0;
+	return priv->pending_actions->len > 0;
 }
 
 const char *
