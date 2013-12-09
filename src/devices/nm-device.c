@@ -228,6 +228,7 @@ typedef struct {
 	guint           link_disconnected_id;
 	guint           carrier_defer_id;
 	gboolean        carrier;
+	guint           carrier_wait_id;
 	gboolean        ignore_carrier;
 
 	/* Generic DHCP stuff */
@@ -1159,6 +1160,12 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 			priv->carrier_defer_id = 0;
 		}
 		klass->carrier_changed (device, TRUE);
+
+		if (priv->carrier_wait_id) {
+			g_source_remove (priv->carrier_wait_id);
+			priv->carrier_wait_id = 0;
+			nm_device_remove_pending_action (device, "carrier wait");
+		}
 	} else if (state <= NM_DEVICE_STATE_DISCONNECTED) {
 		nm_log_info (LOGD_DEVICE, "(%s): link disconnected", iface);
 		klass->carrier_changed (device, FALSE);
@@ -5115,9 +5122,20 @@ nm_device_start_ip_check (NMDevice *self)
 
 /****************************************************************/
 
+static gboolean
+carrier_wait_timeout (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
+	nm_device_remove_pending_action (self, "carrier wait");
+	return G_SOURCE_REMOVE;
+}
+
 gboolean
 nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean success;
 	guint32 tries = 0;
 
@@ -5141,6 +5159,20 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	if (!nm_device_is_up (self)) {
 		nm_log_warn (LOGD_HW, "(%s): device not up after timeout!", nm_device_get_iface (self));
 		return FALSE;
+	}
+
+	/* Devices that support carrier detect must be IFF_UP to report carrier
+	 * changes; so after setting the device IFF_UP we must suppress startup
+	 * complete (via a pending action) until either the carrier turns on, or
+	 * a timeout is reached.
+	 */
+	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+		if (priv->carrier_wait_id) {
+			g_source_remove (priv->carrier_wait_id);
+			nm_device_remove_pending_action (self, "carrier wait");
+		}
+		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
+		nm_device_add_pending_action (self, "carrier wait");
 	}
 
 out:
@@ -5304,6 +5336,11 @@ dispose (GObject *object)
 	if (priv->cp_updated_id) {
 	    g_signal_handler_disconnect (priv->con_provider, priv->cp_updated_id);
 	    priv->cp_updated_id = 0;
+	}
+
+	if (priv->carrier_wait_id) {
+		g_source_remove (priv->carrier_wait_id);
+		priv->carrier_wait_id = 0;
 	}
 
 	g_hash_table_unref (priv->available_connections);
