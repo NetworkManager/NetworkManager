@@ -53,7 +53,7 @@ for i in ${!ARGV[@]}; do
             -n|--dry-run|--test)
                 DRY_RUN=yes
                 ;;
-            -N|--no-test|--no-dry-run)
+            -N|-f|--no-test|--no-dry-run|--force)
                 DRY_RUN=no
                 ;;
             -c|--check-upstream)
@@ -63,7 +63,7 @@ for i in ${!ARGV[@]}; do
                 NO_CHECK_UPSTREAM=yes
                 ;;
             -h|--help|'-?')
-                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|-N|--no-test | -c|--check-upstream|-C|--no-check-upstream ] [--] REFS"
+                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|--test|-N|-f|--no-test|--force | -c|--check-upstream|-C|--no-check-upstream ] [--] REFS"
                 exit 1
                 ;;
             --)
