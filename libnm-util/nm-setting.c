@@ -688,7 +688,6 @@ nm_setting_diff (NMSetting *a,
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue a_value = G_VALUE_INIT, b_value = G_VALUE_INIT;
 		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN, tmp;
 		gboolean different = TRUE;
 
@@ -701,16 +700,19 @@ nm_setting_diff (NMSetting *a,
 		if (b) {
 			different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
 			if (different) {
-				g_value_init (&a_value, prop_spec->value_type);
-				g_value_init (&b_value, prop_spec->value_type);
+				GValue value = G_VALUE_INIT;
 
-				if (!g_param_value_defaults (prop_spec, &a_value))
+				g_value_init (&value, prop_spec->value_type);
+				g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
+				if (!g_param_value_defaults (prop_spec, &value))
 					r |= a_result;
-				if (!g_param_value_defaults (prop_spec, &b_value))
+
+				g_value_reset (&value);
+				g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
+				if (!g_param_value_defaults (prop_spec, &value))
 					r |= b_result;
 
-				g_value_unset (&a_value);
-				g_value_unset (&b_value);
+				g_value_unset (&value);
 			}
 		} else
 			r = a_result;  /* only in A */
