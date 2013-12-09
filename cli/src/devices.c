@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -68,14 +68,17 @@
 
 /* Available fields for 'device status' */
 static NmcOutputField nmc_fields_dev_status[] = {
-	{"DEVICE",    N_("DEVICE"),    10},  /* 0 */
-	{"TYPE",      N_("TYPE"),      17},  /* 1 */
-	{"STATE",     N_("STATE"),     13},  /* 2 */
-	{"DBUS-PATH", N_("DBUS-PATH"), 43},  /* 3 */
-	{NULL,        NULL,             0}
+	{"DEVICE",     N_("DEVICE"),     10},  /* 0 */
+	{"TYPE",       N_("TYPE"),       17},  /* 1 */
+	{"STATE",      N_("STATE"),      13},  /* 2 */
+	{"DBUS-PATH",  N_("DBUS-PATH"),  43},  /* 3 */
+	{"CONNECTION", N_("CONNECTION"), 20},  /* 4 */
+	{"CON-UUID",   N_("CON-UUID"),   38},  /* 5 */
+	{"CON-PATH",   N_("CON-PATH"),   51},  /* 6 */
+	{NULL,         NULL,              0}
 };
-#define NMC_FIELDS_DEV_STATUS_ALL     "DEVICE,TYPE,STATE,DBUS-PATH"
-#define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE"
+#define NMC_FIELDS_DEV_STATUS_ALL     "DEVICE,TYPE,STATE,DBUS-PATH,CONNECTION,CON-UUID,CON-PATH"
+#define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE,CONNECTION"
 
 
 /* Available sections for 'device show' */
@@ -998,17 +1001,47 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		g_array_free (sections_array, TRUE);
 }
 
+static const char *
+get_active_connection_id (NMDevice *device)
+{
+	const GPtrArray *avail_cons;
+	NMActiveConnection *ac;
+	const char *ac_uuid;
+	int i;
+
+	ac = nm_device_get_active_connection (device);
+	if (!ac)
+		return NULL;
+	ac_uuid = nm_active_connection_get_uuid (ac);
+
+	avail_cons = nm_device_get_available_connections (device);
+	for (i = 0; avail_cons && (i < avail_cons->len); i++) {
+		NMRemoteConnection *candidate = g_ptr_array_index (avail_cons, i);
+		const char *test_uuid = nm_connection_get_uuid (NM_CONNECTION (candidate));
+
+		if (g_strcmp0 (ac_uuid, test_uuid) == 0)
+			return nm_connection_get_id (NM_CONNECTION (candidate));
+	}
+	return NULL;
+}
+
 static void
 fill_output_device_status (NMDevice *device, NmCli *nmc)
 {
+	NMActiveConnection *ac;
 	NmcOutputField *arr = nmc_dup_fields_array (nmc_fields_dev_status,
 	                                            sizeof (nmc_fields_dev_status),
 	                                            0);
+
+	ac = nm_device_get_active_connection (device);
 
 	set_val_strc (arr, 0, nm_device_get_iface (device));
 	set_val_strc (arr, 1, nm_device_get_type_description (device));
 	set_val_strc (arr, 2, nmc_device_state_to_string (nm_device_get_state (device)));
 	set_val_strc (arr, 3, nm_object_get_path (NM_OBJECT (device)));
+	set_val_strc (arr, 4, get_active_connection_id (device));
+	set_val_strc (arr, 5, ac ? nm_active_connection_get_uuid (ac) : NULL);
+	set_val_strc (arr, 6, ac ? nm_object_get_path (NM_OBJECT (ac)) : NULL);
 
 	g_ptr_array_add (nmc->output_data, arr);
 }
