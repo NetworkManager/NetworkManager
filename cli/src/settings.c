@@ -5840,7 +5840,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_connection;
 	tmpl_len = sizeof (nmc_fields_setting_connection);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CONNECTION_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CONNECTION_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5877,7 +5877,7 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wired;
 	tmpl_len = sizeof (nmc_fields_setting_wired);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRED_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRED_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5912,7 +5912,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_8021X;
 	tmpl_len = sizeof (nmc_fields_setting_8021X);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_802_1X_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_802_1X_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5968,7 +5968,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wireless;
 	tmpl_len = sizeof (nmc_fields_setting_wireless);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6005,7 +6005,7 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wireless_security;
 	tmpl_len = sizeof (nmc_fields_setting_wireless_security);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6046,7 +6046,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_ip4_config;
 	tmpl_len = sizeof (nmc_fields_setting_ip4_config);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP4_CONFIG_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP4_CONFIG_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6082,7 +6082,7 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_ip6_config;
 	tmpl_len = sizeof (nmc_fields_setting_ip6_config);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP6_CONFIG_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP6_CONFIG_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6117,7 +6117,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_serial;
 	tmpl_len = sizeof (nmc_fields_setting_serial);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_SERIAL_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_SERIAL_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6146,7 +6146,7 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_ppp;
 	tmpl_len = sizeof (nmc_fields_setting_ppp);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPP_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPP_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6188,7 +6188,7 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_pppoe;
 	tmpl_len = sizeof (nmc_fields_setting_pppoe);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPPOE_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPPOE_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6216,7 +6216,7 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_gsm;
 	tmpl_len = sizeof (nmc_fields_setting_gsm);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_GSM_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_GSM_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6251,7 +6251,7 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_cdma;
 	tmpl_len = sizeof (nmc_fields_setting_cdma);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CDMA_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CDMA_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6279,7 +6279,7 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bluetooth;
 	tmpl_len = sizeof (nmc_fields_setting_bluetooth);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BLUETOOTH_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BLUETOOTH_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6305,7 +6305,7 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_olpc_mesh;
 	tmpl_len = sizeof (nmc_fields_setting_olpc_mesh);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_OLPC_MESH_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_OLPC_MESH_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6332,7 +6332,7 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_vpn;
 	tmpl_len = sizeof (nmc_fields_setting_vpn);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VPN_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VPN_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6360,7 +6360,7 @@ setting_wimax_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wimax;
 	tmpl_len = sizeof (nmc_fields_setting_wimax);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIMAX_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIMAX_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6386,7 +6386,7 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_infiniband;
 	tmpl_len = sizeof (nmc_fields_setting_infiniband);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_INFINIBAND_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_INFINIBAND_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6415,7 +6415,7 @@ setting_bond_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bond;
 	tmpl_len = sizeof (nmc_fields_setting_bond);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BOND_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BOND_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6441,7 +6441,7 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_vlan;
 	tmpl_len = sizeof (nmc_fields_setting_vlan);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VLAN_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VLAN_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6471,7 +6471,7 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_adsl;
 	tmpl_len = sizeof (nmc_fields_setting_adsl);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_ADSL_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_ADSL_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6502,7 +6502,7 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bridge;
 	tmpl_len = sizeof (nmc_fields_setting_bridge);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6533,7 +6533,7 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bridge_port;
 	tmpl_len = sizeof (nmc_fields_setting_bridge_port);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_PORT_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_PORT_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6560,7 +6560,7 @@ setting_team_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_team;
 	tmpl_len = sizeof (nmc_fields_setting_team);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6586,7 +6586,7 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_team_port;
 	tmpl_len = sizeof (nmc_fields_setting_team_port);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_PORT_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_PORT_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6611,7 +6611,7 @@ setting_dcb_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_dcb;
 	tmpl_len = sizeof (nmc_fields_setting_dcb);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_DCB_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_DCB_ALL, tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 

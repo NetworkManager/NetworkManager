@@ -608,41 +608,126 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 	}
 }
 
-/*
- * Parse comma separated fields in 'fields_str' according to 'fields_array'.
- * IN:  'field_str':    comma-separated fields names
- *      'fields_array': array of allowed fields
- * RETURN: GArray with indices representing fields in 'fields_array'.
- *         Caller is responsible to free it.
+/**
+ * parse_output_fields:
+ * @field_str: comma-separated field names to parse
+ * @fields_array: array of allowed fields
+ * @parse_groups: whether the fields can contain group prefix (e.g. general.driver)
+ * @group_fields: (out) (allow-none): array of field names for particular groups
+ * @error: (out) (allow-none): location to store error, or %NULL
+ *
+ * Parses comma separated fields in @fields_str according to @fields_array.
+ * When @parse_groups is %TRUE, fields can be in the form 'group.field'. Then
+ * @group_fields will be filled with the required field for particular group.
+ * @group_fields array corresponds to the returned array.
+ * Examples:
+ *   @field_str:     "type,name,uuid" | "ip4,general.device" | "ip4.address,ip6"
+ *   returned array:   2    0    1    |   7         0        |     7         9
+ *   @group_fields:   NULL NULL NULL  |  NULL    "device"    | "address"    NULL
+ *
+ * Returns: #GArray with indices representing fields in @fields_array.
+ *   Caller is responsible for freeing the array.
  */
 GArray *
-parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error)
+parse_output_fields (const char *fields_str,
+                     const NmcOutputField fields_array[],
+                     gboolean parse_groups,
+                     GPtrArray **group_fields,
+                     GError **error)
 {
 	char **fields, **iter;
 	GArray *array;
-	int i;
+	int i, j;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+	g_return_val_if_fail (group_fields == NULL || *group_fields == NULL, NULL);
 
 	array = g_array_new (FALSE, FALSE, sizeof (int));
+	if (parse_groups && group_fields)
+		*group_fields = g_ptr_array_new_full (20, (GDestroyNotify) g_free);
 
 	/* Split supplied fields string */
 	fields = g_strsplit_set (fields_str, ",", -1);
 	for (iter = fields; iter && *iter; iter++) {
-		for (i = 0; fields_array[i].name; i++) {
-			if (strcasecmp (*iter, fields_array[i].name) == 0) {
-				g_array_append_val (array, i);
-				break;
+		int idx = -1;
+
+		g_strstrip (*iter);
+		if (parse_groups) {
+			/* e.g. "general.device,general.driver,ip4,ip6" */
+			gboolean found = FALSE;
+			char *left = *iter;
+			char *right = strchr (*iter, '.');
+
+			if (right)
+				*right++ = '\0';
+
+			for (i = 0; fields_array[i].name; i++) {
+				if (strcasecmp (left, fields_array[i].name) == 0) {
+					NmcOutputField *valid_names = fields_array[i].group;
+					idx = i;
+					if (!right && !valid_names) {
+						found = TRUE;
+						break;
+					}
+					for (j = 0; valid_names && valid_names[j].name; j++) {
+						if (!right || strcasecmp (right, valid_names[j].name) == 0) {
+							found = TRUE;
+							break;
+						}
+					}
+				}
+				if (found)
+					break;
+			}
+			if (found) {
+				/* Add index to array, and field name (or NULL) to group_fields array */
+				g_array_append_val (array, idx);
+				if (*group_fields)
+					g_ptr_array_add (*group_fields, g_strdup (right));
+			}
+			if (right)
+				*(right-1) = '.';  /* Restore the original string */
+		} else {
+			/* e.g. "general,ip4,ip6" */
+			for (i = 0; fields_array[i].name; i++) {
+				if (strcasecmp (*iter, fields_array[i].name) == 0) {
+					g_array_append_val (array, i);
+					break;
+				}
 			}
 		}
+
+		/* Field was not found - error case */
 		if (fields_array[i].name == NULL) {
+			GString *allowed_fields = g_string_sized_new (256);
+			int k;
+
+			/* Set GError */
+			if (idx != -1 && fields_array[idx].group) {
+				NmcOutputField *second_level = fields_array[idx].group;
+				for (k = 0; second_level[k].name; k++)
+					g_string_append_printf (allowed_fields, "%s.%s,",
+					                        fields_array[idx].name, second_level[k].name);
+			} else {
+				for (k = 0; fields_array[k].name; k++)
+					g_string_append_printf (allowed_fields, "%s,", fields_array[k].name);
+			}
+			g_string_truncate (allowed_fields, allowed_fields->len - 1);
+
 			if (!strcasecmp (*iter, "all") || !strcasecmp (*iter, "common"))
 				g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), *iter);
-
 			else
-				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'"), *iter);
+				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'; allowed fields: %s"),
+				             *iter, allowed_fields->str);
+			g_string_free (allowed_fields, TRUE);
+
+			/* Free arrays on error */
 			g_array_free (array, TRUE);
 			array = NULL;
+			if (group_fields && *group_fields) {
+				g_ptr_array_free (*group_fields, TRUE);
+				*group_fields = NULL;
+			}
 			goto done;
 		}
 	}

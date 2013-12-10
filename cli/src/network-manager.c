@@ -205,13 +205,10 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	tmpl = nmc_fields_nm_status;
 	tmpl_len = sizeof (nmc_fields_nm_status);
-	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
-		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: %s"), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: %s (allowed fields: %s)"), error->message, fields_all);
+		g_string_printf (nmc->return_text, _("Error: only these fields are allowed: %s"), fields_all);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
@@ -351,14 +348,10 @@ show_nm_permissions (NmCli *nmc)
 
 	tmpl = nmc_fields_nm_permissions;
 	tmpl_len = sizeof (nmc_fields_nm_permissions);
-	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
-		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'general permissions': %s; allowed fields: %s"),
-			                 error->message, NMC_FIELDS_NM_PERMISSIONS_ALL);
+		g_string_printf (nmc->return_text, _("Error: 'general permissions': %s"), error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
@@ -410,14 +403,10 @@ show_general_logging (NmCli *nmc)
 
 	tmpl = nmc_fields_nm_logging;
 	tmpl_len = sizeof (nmc_fields_nm_logging);
-	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error);
+	nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
 
 	if (error) {
-		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'general logging': %s; allowed fields: %s"),
-			                 error->message, NMC_FIELDS_NM_LOGGING_ALL);
+		g_string_printf (nmc->return_text, _("Error: 'general logging': %s"), error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;

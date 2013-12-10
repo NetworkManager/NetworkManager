@@ -351,13 +351,9 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, &error);
+	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, FALSE, NULL, &error);
 	if (error) {
-		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'list configured': %s"), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'list configured': %s; allowed fields: %s"),
-			                 error->message, NMC_FIELDS_SETTINGS_NAMES_ALL);
+		g_string_printf (nmc->return_text, _("Error: 'list configured': %s"), error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
@@ -367,7 +363,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	/* Main header */
 	nmc->print_fields.header_name = _("Connection details");
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTINGS_NAMES_ALL,
-	                                                 nmc_fields_settings_names, NULL);
+	                                                 nmc_fields_settings_names, FALSE, NULL, NULL);
 
 	nmc_fields_settings_names[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
 	print_required_fields (nmc, nmc_fields_settings_names);
@@ -499,7 +495,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 		tmpl = nmc_fields_con_show;
 		tmpl_len = sizeof (nmc_fields_con_show);
-		nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &error1);
+		nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error1);
 		if (error1)
 			goto error;
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error2))
@@ -549,11 +545,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 error:
 	if (error1) {
-		if (error1->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'show configured': %s"), error1->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'show configured': %s; allowed fields: %s"),
-			                 error1->message, NMC_FIELDS_CON_SHOW_ALL);
+		g_string_printf (nmc->return_text, _("Error: 'show configured': %s"), error1->message);
 		g_error_free (error1);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}
@@ -852,13 +844,9 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	print_groups = parse_output_fields (fields_str, nmc_fields_con_active_details_groups, &error);
+	print_groups = parse_output_fields (fields_str, nmc_fields_con_active_details_groups, FALSE, NULL, &error);
 	if (error) {
-		if (error->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'list active': %s"), error->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'list active': %s; allowed fields: %s"),
-			                 error->message, NMC_FIELDS_CON_ACTIVE_DETAILS_ALL);
+		g_string_printf (nmc->return_text, _("Error: 'list active': %s"), error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		return FALSE;
@@ -868,7 +856,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	/* Main header */
 	nmc->print_fields.header_name = _("Active connection details");
 	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_ALL,
-	                                                 nmc_fields_con_active_details_groups, NULL);
+	                                                 nmc_fields_con_active_details_groups, FALSE, NULL, NULL);
 
 	nmc_fields_con_active_details_groups[0].flags = NMC_OF_FLAG_MAIN_HEADER_ONLY;
 	print_required_fields (nmc, nmc_fields_con_active_details_groups);
@@ -890,7 +878,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 			/* Add field names */
 			tmpl = nmc_fields_con_show_active;
 			tmpl_len = sizeof (nmc_fields_con_show_active);
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL, tmpl, NULL);
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL, tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (nmc->output_data, arr);
 
@@ -916,10 +904,10 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 				NMDHCP4Config *dhcp4 = nm_device_get_dhcp4_config (device);
 				NMDHCP6Config *dhcp6 = nm_device_get_dhcp6_config (device);
 
-				b1 = print_ip4_config (cfg4, nmc, "IP4");
-				b2 = print_dhcp4_config (dhcp4, nmc, "DHCP4");
-				b3 = print_ip6_config (cfg6, nmc, "IP6");
-				b4 = print_dhcp6_config (dhcp6, nmc, "DHCP6");
+				b1 = print_ip4_config (cfg4, nmc, "IP4", NULL);
+				b2 = print_dhcp4_config (dhcp4, nmc, "DHCP4", NULL);
+				b3 = print_ip6_config (cfg6, nmc, "IP6", NULL);
+				b4 = print_dhcp6_config (dhcp6, nmc, "DHCP6", NULL);
 				was_output = was_output || b1 || b2 || b3 || b4;
 			}
 		}
@@ -943,7 +931,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 
 			tmpl = nmc_fields_con_active_details_vpn;
 			tmpl_len = sizeof (nmc_fields_con_active_details_vpn);
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL, tmpl, NULL);
+			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL, tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (nmc->output_data, arr);
 
@@ -1025,7 +1013,7 @@ do_connections_show_active (NmCli *nmc, int argc, char **argv)
 
 		tmpl = nmc_fields_con_show_active + 1;
 		tmpl_len = sizeof (nmc_fields_con_show_active) - sizeof (NmcOutputField);
-		nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, &err1);
+		nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err1);
 		if (err1)
 			goto error;
 
@@ -1078,10 +1066,7 @@ do_connections_show_active (NmCli *nmc, int argc, char **argv)
 
 error:
 	if (err1) {
-		if (err1->code == 0)
-			g_string_printf (nmc->return_text, _("Error: 'show active': %s"), err1->message);
-		else
-			g_string_printf (nmc->return_text, _("Error: 'show active': %s; allowed fields: %s"), err1->message, NMC_FIELDS_CON_ACTIVE_ALL);
+		g_string_printf (nmc->return_text, _("Error: 'show active': %s"), err1->message);
 		g_error_free (err1);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	}

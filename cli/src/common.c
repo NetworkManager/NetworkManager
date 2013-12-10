@@ -30,7 +30,7 @@
 #include "utils.h"
 
 /* Available fields for IPv4 group */
-static NmcOutputField nmc_fields_ip4_config[] = {
+NmcOutputField nmc_fields_ip4_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     68},  /* 1 */
 	{"ROUTE",      N_("ROUTE"),       68},  /* 2 */
@@ -42,7 +42,7 @@ static NmcOutputField nmc_fields_ip4_config[] = {
 #define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,ROUTE,DNS,DOMAIN,WINS"
 
 /* Available fields for DHCPv4 group */
-static NmcOutputField nmc_fields_dhcp4_config[] = {
+NmcOutputField nmc_fields_dhcp4_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"OPTION",     N_("OPTION"),      80},  /* 1 */
 	{NULL,         NULL,               0}
@@ -50,7 +50,7 @@ static NmcOutputField nmc_fields_dhcp4_config[] = {
 #define NMC_FIELDS_DHCP4_CONFIG_ALL     "GROUP,OPTION"
 
 /* Available fields for IPv6 group */
-static NmcOutputField nmc_fields_ip6_config[] = {
+NmcOutputField nmc_fields_ip6_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     95},  /* 1 */
 	{"ROUTE",      N_("ROUTE"),       95},  /* 2 */
@@ -61,7 +61,7 @@ static NmcOutputField nmc_fields_ip6_config[] = {
 #define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,ROUTE,DNS,DOMAIN"
 
 /* Available fields for DHCPv6 group */
-static NmcOutputField nmc_fields_dhcp6_config[] = {
+NmcOutputField nmc_fields_dhcp6_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"OPTION",     N_("OPTION"),      80},  /* 1 */
 	{NULL,         NULL,               0}
@@ -70,7 +70,10 @@ static NmcOutputField nmc_fields_dhcp6_config[] = {
 
 
 gboolean
-print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
+print_ip4_config (NMIP4Config *cfg4,
+                  NmCli *nmc,
+                  const char *group_prefix,
+                  const char *one_field)
 {
 	GSList *list, *iter;
 	const GArray *array;
@@ -89,7 +92,8 @@ print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
 
 	tmpl = nmc_fields_ip4_config;
 	tmpl_len = sizeof (nmc_fields_ip4_config);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_IP4_CONFIG_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP4_CONFIG_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -179,7 +183,10 @@ print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix)
 }
 
 gboolean
-print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix)
+print_ip6_config (NMIP6Config *cfg6,
+                  NmCli *nmc,
+                  const char *group_prefix,
+                  const char *one_field)
 {
 	GSList *list, *iter;
 	const GPtrArray *ptr_array;
@@ -196,7 +203,8 @@ print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix)
 
 	tmpl = nmc_fields_ip6_config;
 	tmpl_len = sizeof (nmc_fields_ip6_config);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_IP6_CONFIG_ALL, tmpl, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_IP6_CONFIG_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -274,7 +282,10 @@ print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix)
 }
 
 gboolean
-print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
+print_dhcp4_config (NMDHCP4Config *dhcp4,
+                    NmCli *nmc,
+                    const char *group_prefix,
+                    const char *one_field)
 {
 	GHashTable *table;
 	NmcOutputField *tmpl, *arr;
@@ -292,7 +303,8 @@ print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
 
 		tmpl = nmc_fields_dhcp4_config;
 		tmpl_len = sizeof (nmc_fields_dhcp4_config);
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DHCP4_CONFIG_ALL, tmpl, NULL);
+		nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP4_CONFIG_ALL,
+		                                                 tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (nmc->output_data, arr);
 
@@ -318,7 +330,10 @@ print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix)
 }
 
 gboolean
-print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
+print_dhcp6_config (NMDHCP6Config *dhcp6,
+                    NmCli *nmc,
+                    const char *group_prefix,
+                    const char *one_field)
 {
 	GHashTable *table;
 	NmcOutputField *tmpl, *arr;
@@ -336,7 +351,8 @@ print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix)
 
 		tmpl = nmc_fields_dhcp6_config;
 		tmpl_len = sizeof (nmc_fields_dhcp6_config);
-		nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_DHCP6_CONFIG_ALL, tmpl, NULL);
+		nmc->print_fields.indices = parse_output_fields (one_field ? one_field : NMC_FIELDS_DHCP6_CONFIG_ALL,
+		                                                 tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (nmc->output_data, arr);
 

@@ -80,7 +80,11 @@ void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *val
 void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
 void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
-GArray *parse_output_fields (const char *fields_str, const NmcOutputField fields_array[], GError **error);
+GArray *parse_output_fields (const char *fields_str,
+                             const NmcOutputField fields_array[],
+                             gboolean parse_groups,
+                             GPtrArray **group_fields,
+                             GError **error);
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
 NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags);
 void nmc_empty_output_fields (NmCli *nmc);
