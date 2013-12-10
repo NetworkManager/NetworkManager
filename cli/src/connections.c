@@ -162,14 +162,6 @@ static NmcOutputField nmc_fields_con_show_active[] = {
 #define NMC_FIELDS_CON_ACTIVE_ALL     "NAME,UUID,DEVICES,STATE,DEFAULT,DEFAULT6,VPN,ZONE,DBUS-PATH,CON-PATH,SPEC-OBJECT,MASTER-PATH"
 #define NMC_FIELDS_CON_ACTIVE_COMMON  "NAME,UUID,DEVICES,DEFAULT,VPN,MASTER-PATH"
 
-/* Available fields for 'connection show active <con>' */
-static NmcOutputField nmc_fields_con_active_details_groups[] = {
-	{"GENERAL",  N_("GENERAL"), 9},  /* 0 */
-	{"IP",       N_("IP"),      5},  /* 1 */
-	{"VPN",      N_("VPN"),     5},  /* 2 */
-	{NULL, NULL, 0}
-};
-#define NMC_FIELDS_CON_ACTIVE_DETAILS_ALL  "GENERAL,IP,VPN"
 
 /* GENERAL group is the same as nmc_fields_con_show_active */
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL  "GROUP,"NMC_FIELDS_CON_ACTIVE_ALL
@@ -188,6 +180,24 @@ static NmcOutputField nmc_fields_con_active_details_vpn[] = {
 	{NULL, NULL, 0}
 };
 #define NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL  "GROUP,TYPE,USERNAME,GATEWAY,BANNER,VPN-STATE,CFG"
+
+/* defined in common.c */
+extern NmcOutputField nmc_fields_ip4_config[];
+extern NmcOutputField nmc_fields_ip6_config[];
+extern NmcOutputField nmc_fields_dhcp4_config[];
+extern NmcOutputField nmc_fields_dhcp6_config[];
+
+/* Available fields for 'connection show active <con>' */
+static NmcOutputField nmc_fields_con_active_details_groups[] = {
+	{"GENERAL",  N_("GENERAL"), 0, nmc_fields_con_show_active + 1       },  /* 0 */
+	{"IP4",      N_("IP4"),     0, nmc_fields_ip4_config + 1            },  /* 1 */
+	{"DHCP4",    N_("DHCP4"),   0, nmc_fields_dhcp4_config + 1          },  /* 2 */
+	{"IP6",      N_("IP6"),     0, nmc_fields_ip6_config + 1            },  /* 3 */
+	{"DHCP6",    N_("DHCP6"),   0, nmc_fields_dhcp6_config + 1          },  /* 4 */
+	{"VPN",      N_("VPN"),     0, nmc_fields_con_active_details_vpn + 1},  /* 5 */
+	{NULL, NULL, 0, NULL}
+};
+#define NMC_FIELDS_CON_ACTIVE_DETAILS_ALL  "GENERAL,IP4,DHCP4,IP6,DHCP6,VPN"
 
 
 typedef struct {
@@ -829,6 +839,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 {
 	GError *error = NULL;
 	GArray *print_groups;
+	GPtrArray *group_fields = NULL;
 	int i;
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_CON_ACTIVE_DETAILS_ALL;
@@ -844,7 +855,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	print_groups = parse_output_fields (fields_str, nmc_fields_con_active_details_groups, FALSE, NULL, &error);
+	print_groups = parse_output_fields (fields_str, nmc_fields_con_active_details_groups, TRUE, &group_fields, &error);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'list active': %s"), error->message);
 		g_error_free (error);
@@ -864,6 +875,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	/* Loop through the groups and print them. */
 	for (i = 0; i < print_groups->len; i++) {
 		int group_idx = g_array_index (print_groups, int, i);
+		char *group_fld = (char *) g_ptr_array_index (group_fields, i);
 
 		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
 			printf ("\n"); /* Empty line */
@@ -878,7 +890,8 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 			/* Add field names */
 			tmpl = nmc_fields_con_show_active;
 			tmpl_len = sizeof (nmc_fields_con_show_active);
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL, tmpl, FALSE, NULL, NULL);
+			nmc->print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_GENERAL_ALL,
+			                                                 tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (nmc->output_data, arr);
 
@@ -890,31 +903,73 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 			was_output = TRUE;
 		}
 
-		/* IP */
+		/* IP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[1].name) == 0) {
 			const GPtrArray *devices;
 			int j;
 
 			devices = nm_active_connection_get_devices (acon);
 			for (j = 0; devices && (j < devices->len); j++) {
-				gboolean b1 = FALSE, b2 = FALSE, b3 = FALSE, b4 = FALSE;
+				gboolean b1 = FALSE;
 				NMDevice *device = g_ptr_array_index (devices, j);
 				NMIP4Config *cfg4 = nm_device_get_ip4_config (device);
-				NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
+
+				b1 = print_ip4_config (cfg4, nmc, "IP4", group_fld);
+				was_output = was_output || b1;
+			}
+		}
+
+		/* DHCP4 */
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
+			const GPtrArray *devices;
+			int j;
+
+			devices = nm_active_connection_get_devices (acon);
+			for (j = 0; devices && (j < devices->len); j++) {
+				gboolean b1 = FALSE;
+				NMDevice *device = g_ptr_array_index (devices, j);
 				NMDHCP4Config *dhcp4 = nm_device_get_dhcp4_config (device);
+
+				b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
+				was_output = was_output || b1;
+			}
+		}
+
+		/* IP6 */
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[3].name) == 0) {
+			const GPtrArray *devices;
+			int j;
+
+			devices = nm_active_connection_get_devices (acon);
+			for (j = 0; devices && (j < devices->len); j++) {
+				gboolean b1 = FALSE;
+				NMDevice *device = g_ptr_array_index (devices, j);
+				NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
+
+				b1 = print_ip6_config (cfg6, nmc, "IP6", group_fld);
+				was_output = was_output || b1;
+			}
+		}
+
+		/* DHCP6 */
+		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[4].name) == 0) {
+			const GPtrArray *devices;
+			int j;
+
+			devices = nm_active_connection_get_devices (acon);
+			for (j = 0; devices && (j < devices->len); j++) {
+				gboolean b1 = FALSE;
+				NMDevice *device = g_ptr_array_index (devices, j);
 				NMDHCP6Config *dhcp6 = nm_device_get_dhcp6_config (device);
 
-				b1 = print_ip4_config (cfg4, nmc, "IP4", NULL);
-				b2 = print_dhcp4_config (dhcp4, nmc, "DHCP4", NULL);
-				b3 = print_ip6_config (cfg6, nmc, "IP6", NULL);
-				b4 = print_dhcp6_config (dhcp6, nmc, "DHCP6", NULL);
-				was_output = was_output || b1 || b2 || b3 || b4;
+				b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
+				was_output = was_output || b1;
 			}
 		}
 
 		/* VPN */
 		if (NM_IS_VPN_CONNECTION (acon) &&
-		    strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
+		    strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[5].name) == 0) {
 			NMConnection *con;
 			NMSettingConnection *s_con;
 			NMSettingVPN *s_vpn;
@@ -931,7 +986,8 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 
 			tmpl = nmc_fields_con_active_details_vpn;
 			tmpl_len = sizeof (nmc_fields_con_active_details_vpn);
-			nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL, tmpl, FALSE, NULL, NULL);
+			nmc->print_fields.indices = parse_output_fields (group_fld ? group_fld : NMC_FIELDS_CON_ACTIVE_DETAILS_VPN_ALL,
+			                                                 tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (nmc->output_data, arr);
 
@@ -957,7 +1013,7 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 
 			/* Add values */
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-			set_val_strc (arr, 0, nmc_fields_con_active_details_groups[2].name);
+			set_val_strc (arr, 0, nmc_fields_con_active_details_groups[5].name);
 			set_val_str  (arr, 1, type_str);
 			set_val_strc (arr, 2, username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
 			set_val_strc (arr, 3, get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
@@ -972,6 +1028,8 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 	}
 
 	g_array_free (print_groups, TRUE);
+	if (group_fields)
+		g_ptr_array_free (group_fields, TRUE);
 
 	return TRUE;
 }
