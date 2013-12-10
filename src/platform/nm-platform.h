@@ -133,6 +133,10 @@ typedef enum {
 	NM_PLATFORM_SOURCE_USER,
 } NMPlatformSource;
 
+/**
+ * NMPlatformIP4Address:
+ * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
+ **/
 typedef struct {
 	int ifindex;
 	NMPlatformSource source;
@@ -144,6 +148,10 @@ typedef struct {
 	guint32 preferred;  /* seconds */
 } NMPlatformIP4Address;
 
+/**
+ * NMPlatformIP6Address:
+ * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
+ **/
 typedef struct {
 	int ifindex;
 	NMPlatformSource source;

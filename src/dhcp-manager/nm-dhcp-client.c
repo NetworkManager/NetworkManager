@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <uuid/uuid.h>
 
+#include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
@@ -802,16 +803,6 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 	return TRUE;
 }
 
-static guint32
-get_time (void)
-{
-	struct timespec tp;
-
-	clock_gettime (CLOCK_MONOTONIC, &tp);
-
-	return tp.tv_sec;
-}
-
 /********************************************/
 
 static gboolean
@@ -1163,7 +1154,7 @@ ip4_options_to_config (NMDHCPClient *self)
 
 	ip4_config = nm_ip4_config_new ();
 	memset (&address, 0, sizeof (address));
-	address.timestamp = get_time ();
+	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 
 	str = g_hash_table_lookup (priv->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
@@ -1395,7 +1386,7 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 128;
-	address.timestamp = get_time ();
+	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->options != NULL, NULL);

@@ -26,6 +26,7 @@
 
 #include "nm-lndp-rdisc.h"
 
+#include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
 #define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
@@ -384,20 +385,10 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 	}
 }
 
-static guint32
-get_time (void)
-{
-	struct timespec tp;
-
-	clock_gettime (CLOCK_MONOTONIC, &tp);
-
-	return tp.tv_sec;
-}
-
 static gboolean
 timeout_cb (gpointer user_data)
 {
-	check_timestamps (user_data, get_time (), 0);
+	check_timestamps (user_data, nm_utils_get_monotonic_timestamp_s (), 0);
 
 	return TRUE;
 }
@@ -470,7 +461,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	const char *lladdr = NULL;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	NMRDiscGateway gateway;
-	guint32 now = get_time ();
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int offset;
 
 	if (rdisc->lladdr)

@@ -23,6 +23,7 @@
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 
+#include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
 #include "nm-logging.h"
 
@@ -728,16 +729,6 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	return addresses;
 }
 
-static guint32
-get_time (void)
-{
-	struct timespec tp;
-
-	clock_gettime (CLOCK_MONOTONIC, &tp);
-
-	return tp.tv_sec;
-}
-
 static gboolean
 ip4_address_add (NMPlatform *platform, int ifindex,
                  in_addr_t addr, in_addr_t peer_addr,
@@ -752,7 +743,7 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 	address.address = addr;
 	address.peer_address = peer_addr;
 	address.plen = plen;
-	address.timestamp = get_time ();
+	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
 
@@ -791,7 +782,7 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 	address.address = addr;
 	address.peer_address = peer_addr;
 	address.plen = plen;
-	address.timestamp = get_time ();
+	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
 	address.flags = flags;
