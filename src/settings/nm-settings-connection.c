@@ -126,7 +126,7 @@ typedef struct {
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
 
 	int autoconnect_retries;
-	time_t autoconnect_retry_time;
+	gint32 autoconnect_retry_time;
 	NMDeviceStateReason autoconnect_blocked_reason;
 
 } NMSettingsConnectionPrivate;
@@ -1923,7 +1923,7 @@ nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *connection
 	if (retries)
 		priv->autoconnect_retry_time = 0;
 	else
-		priv->autoconnect_retry_time = time (NULL) + AUTOCONNECT_RESET_RETRIES_TIMER;
+		priv->autoconnect_retry_time = nm_utils_get_monotonic_timestamp_s () + AUTOCONNECT_RESET_RETRIES_TIMER;
 }
 
 void
@@ -1932,7 +1932,7 @@ nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *connecti
 	nm_settings_connection_set_autoconnect_retries (connection, AUTOCONNECT_RETRIES_DEFAULT);
 }
 
-time_t
+gint32
 nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *connection)
 {
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_retry_time;
