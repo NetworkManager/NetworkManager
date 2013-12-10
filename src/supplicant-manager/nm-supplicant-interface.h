@@ -144,7 +144,7 @@ const char *nm_supplicant_interface_state_to_string (guint32 state);
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
-time_t nm_supplicant_interface_get_last_scan_time (NMSupplicantInterface *self);
+gint32 nm_supplicant_interface_get_last_scan_time (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 

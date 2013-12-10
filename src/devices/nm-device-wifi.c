@@ -1438,7 +1438,7 @@ impl_device_request_scan (NMDeviceWifi *self,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
-	time_t last_scan;
+	gint32 last_scan;
 	GError *error;
 
 	if (   !priv->enabled
@@ -1459,7 +1459,7 @@ impl_device_request_scan (NMDeviceWifi *self,
 	}
 
 	last_scan = nm_supplicant_interface_get_last_scan_time (priv->supplicant.iface);
-	if ((time (NULL) - last_scan) < 10) {
+	if (last_scan && (nm_utils_get_monotonic_timestamp_s () - last_scan) < 10) {
 		error = g_error_new_literal (NM_WIFI_ERROR,
 		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
 		                             "Scanning not allowed immediately following previous scan");
