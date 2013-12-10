@@ -104,7 +104,7 @@ typedef struct {
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
-	time_t        last_pppoe_time;
+	gint32        last_pppoe_time;
 	guint         pppoe_wait_id;
 } NMDeviceEthernetPrivate;
 
@@ -949,11 +949,11 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		 * get confused and fail to negotiate the new connection. (rh #1023503)
 		 */
 		if (priv->last_pppoe_time) {
-			time_t delay = time (NULL) - priv->last_pppoe_time;
+			gint32 delay = nm_utils_get_monotonic_timestamp_s () - priv->last_pppoe_time;
 
 			if (delay < PPPOE_RECONNECT_DELAY && device_get_setting (dev, NM_TYPE_SETTING_PPPOE)) {
-				nm_log_info (LOGD_DEVICE, "(%s) delaying PPPoE reconnect to ensure peer is ready...",
-				             nm_device_get_iface (dev));
+				nm_log_info (LOGD_DEVICE, "(%s) delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
+				             nm_device_get_iface (dev), delay);
 				g_assert (!priv->pppoe_wait_id);
 				priv->pppoe_wait_id = g_timeout_add_seconds (delay,
 				                                             pppoe_reconnect_delay,
@@ -1219,7 +1219,7 @@ deactivate (NMDevice *device)
 
 	/* Set last PPPoE connection time */
 	if (device_get_setting (device, NM_TYPE_SETTING_PPPOE))
-			NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = time (NULL);
+		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Reset MAC address back to initial address */
 	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);
