@@ -79,36 +79,63 @@ static NmcOutputField nmc_fields_con_show[] = {
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,TIMESTAMP-REAL"
 
 /* Helper macro to define fields */
-#define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, FALSE, FALSE, 0 }
+#define SETTING_FIELD(setting, props) { setting, N_(setting), 0, props, NULL, FALSE, FALSE, 0 }
+
+/* defined in settings.c */
+extern NmcOutputField nmc_fields_setting_connection[];
+extern NmcOutputField nmc_fields_setting_wired[];
+extern NmcOutputField nmc_fields_setting_8021X[];
+extern NmcOutputField nmc_fields_setting_wireless[];
+extern NmcOutputField nmc_fields_setting_wireless_security[];
+extern NmcOutputField nmc_fields_setting_ip4_config[];
+extern NmcOutputField nmc_fields_setting_ip6_config[];
+extern NmcOutputField nmc_fields_setting_serial[];
+extern NmcOutputField nmc_fields_setting_ppp[];
+extern NmcOutputField nmc_fields_setting_pppoe[];
+extern NmcOutputField nmc_fields_setting_adsl[];
+extern NmcOutputField nmc_fields_setting_gsm[];
+extern NmcOutputField nmc_fields_setting_cdma[];
+extern NmcOutputField nmc_fields_setting_bluetooth[];
+extern NmcOutputField nmc_fields_setting_olpc_mesh[];
+extern NmcOutputField nmc_fields_setting_vpn[];
+extern NmcOutputField nmc_fields_setting_wimax[];
+extern NmcOutputField nmc_fields_setting_infiniband[];
+extern NmcOutputField nmc_fields_setting_bond[];
+extern NmcOutputField nmc_fields_setting_vlan[];
+extern NmcOutputField nmc_fields_setting_bridge[];
+extern NmcOutputField nmc_fields_setting_bridge_port[];
+extern NmcOutputField nmc_fields_setting_team[];
+extern NmcOutputField nmc_fields_setting_team_port[];
+extern NmcOutputField nmc_fields_setting_dcb[];
 
 /* Available settings for 'connection show configured <con>' */
 static NmcOutputField nmc_fields_settings_names[] = {
-	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME, 0),            /* 0 */
-	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME, 0),                 /* 1 */
-	SETTING_FIELD (NM_SETTING_802_1X_SETTING_NAME, 0),                /* 2 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SETTING_NAME, 0),              /* 3 */
-	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, 0),     /* 4 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_SETTING_NAME, 0),            /* 5 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_SETTING_NAME, 0),            /* 6 */
-	SETTING_FIELD (NM_SETTING_SERIAL_SETTING_NAME, 0),                /* 7 */
-	SETTING_FIELD (NM_SETTING_PPP_SETTING_NAME, 0),                   /* 8 */
-	SETTING_FIELD (NM_SETTING_PPPOE_SETTING_NAME, 0),                 /* 9 */
-	SETTING_FIELD (NM_SETTING_GSM_SETTING_NAME, 0),                   /* 10 */
-	SETTING_FIELD (NM_SETTING_CDMA_SETTING_NAME, 0),                  /* 11 */
-	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME, 0),             /* 12 */
-	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME, 0),             /* 13 */
-	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME, 0),                   /* 14 */
-	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME, 0),                 /* 15 */
-	SETTING_FIELD (NM_SETTING_INFINIBAND_SETTING_NAME, 0),            /* 16 */
-	SETTING_FIELD (NM_SETTING_BOND_SETTING_NAME, 0),                  /* 17 */
-	SETTING_FIELD (NM_SETTING_VLAN_SETTING_NAME, 0),                  /* 18 */
-	SETTING_FIELD (NM_SETTING_ADSL_SETTING_NAME, 0),                  /* 19 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_SETTING_NAME, 0),                /* 20 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME, 0),           /* 21 */
-	SETTING_FIELD (NM_SETTING_TEAM_SETTING_NAME, 0),                  /* 22 */
-	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME, 0),             /* 23 */
-	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME, 0),                   /* 24 */
-	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
+	SETTING_FIELD (NM_SETTING_CONNECTION_SETTING_NAME,        nmc_fields_setting_connection + 1),        /* 0 */
+	SETTING_FIELD (NM_SETTING_WIRED_SETTING_NAME,             nmc_fields_setting_wired + 1),             /* 1 */
+	SETTING_FIELD (NM_SETTING_802_1X_SETTING_NAME,            nmc_fields_setting_8021X + 1),             /* 2 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SETTING_NAME,          nmc_fields_setting_wireless + 1),          /* 3 */
+	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, nmc_fields_setting_wireless_security + 1), /* 4 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_SETTING_NAME,        nmc_fields_setting_ip4_config + 1),        /* 5 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_SETTING_NAME,        nmc_fields_setting_ip6_config + 1),        /* 6 */
+	SETTING_FIELD (NM_SETTING_SERIAL_SETTING_NAME,            nmc_fields_setting_serial + 1),            /* 7 */
+	SETTING_FIELD (NM_SETTING_PPP_SETTING_NAME,               nmc_fields_setting_ppp + 1),               /* 8 */
+	SETTING_FIELD (NM_SETTING_PPPOE_SETTING_NAME,             nmc_fields_setting_pppoe + 1),             /* 9 */
+	SETTING_FIELD (NM_SETTING_GSM_SETTING_NAME,               nmc_fields_setting_gsm + 1),               /* 10 */
+	SETTING_FIELD (NM_SETTING_CDMA_SETTING_NAME,              nmc_fields_setting_cdma + 1),              /* 11 */
+	SETTING_FIELD (NM_SETTING_BLUETOOTH_SETTING_NAME,         nmc_fields_setting_bluetooth + 1),         /* 12 */
+	SETTING_FIELD (NM_SETTING_OLPC_MESH_SETTING_NAME,         nmc_fields_setting_olpc_mesh + 1),         /* 13 */
+	SETTING_FIELD (NM_SETTING_VPN_SETTING_NAME,               nmc_fields_setting_vpn + 1),               /* 14 */
+	SETTING_FIELD (NM_SETTING_WIMAX_SETTING_NAME,             nmc_fields_setting_wimax + 1),             /* 15 */
+	SETTING_FIELD (NM_SETTING_INFINIBAND_SETTING_NAME,        nmc_fields_setting_infiniband + 1),        /* 16 */
+	SETTING_FIELD (NM_SETTING_BOND_SETTING_NAME,              nmc_fields_setting_bond + 1),              /* 17 */
+	SETTING_FIELD (NM_SETTING_VLAN_SETTING_NAME,              nmc_fields_setting_vlan + 1),              /* 18 */
+	SETTING_FIELD (NM_SETTING_ADSL_SETTING_NAME,              nmc_fields_setting_adsl + 1),              /* 19 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_SETTING_NAME,            nmc_fields_setting_bridge + 1),            /* 20 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_SETTING_NAME,       nmc_fields_setting_bridge_port + 1),       /* 21 */
+	SETTING_FIELD (NM_SETTING_TEAM_SETTING_NAME,              nmc_fields_setting_team + 1),              /* 22 */
+	SETTING_FIELD (NM_SETTING_TEAM_PORT_SETTING_NAME,         nmc_fields_setting_team_port + 1),         /* 23 */
+	SETTING_FIELD (NM_SETTING_DCB_SETTING_NAME,               nmc_fields_setting_dcb + 1),               /* 24 */
+	{NULL, NULL, 0, NULL, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTINGS_NAMES_ALL_X  NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
@@ -348,6 +375,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 {
 	GError *error = NULL;
 	GArray *print_settings_array;
+	GPtrArray *prop_array = NULL;
 	int i;
 	char *fields_str;
 	char *fields_all =    NMC_FIELDS_SETTINGS_NAMES_ALL;
@@ -361,7 +389,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	else
 		fields_str = nmc->required_fields;
 
-	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, FALSE, NULL, &error);
+	print_settings_array = parse_output_fields (fields_str, nmc_fields_settings_names, TRUE, &prop_array, &error);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: 'list configured': %s"), error->message);
 		g_error_free (error);
@@ -382,6 +410,7 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 	for (i = 0; i < print_settings_array->len; i++) {
 		NMSetting *setting;
 		int section_idx = g_array_index (print_settings_array, int, i);
+		const char *prop_name = (const char *) g_ptr_array_index (prop_array, i);
 
 		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
 			printf ("\n"); /* Empty line */
@@ -393,13 +422,15 @@ nmc_connection_detail (NMConnection *connection, NmCli *nmc)
 
 		setting = nm_connection_get_setting_by_name (connection, nmc_fields_settings_names[section_idx].name);
 		if (setting) {
-			setting_details (setting, nmc);
+			setting_details (setting, nmc, prop_name);
 			was_output = TRUE;
 			continue;
 		}
 	}
 
 	g_array_free (print_settings_array, TRUE);
+	if (prop_array)
+		g_ptr_array_free (prop_array, TRUE);
 
 	return TRUE;
 }
@@ -5382,7 +5413,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	setting_details (setting, nmc);
+	setting_details (setting, nmc, NULL);
 }
 
 typedef enum {

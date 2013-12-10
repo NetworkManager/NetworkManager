@@ -37,7 +37,7 @@ static char *wep_key_type_to_string (NMWepKeyType type);
 #define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, FALSE, FALSE, 0 }
 
 /* Available fields for NM_SETTING_CONNECTION_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_connection[] = {
+NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD ("name",  15),                                     /* 0 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_ID, 25),                    /* 1 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_UUID, 38),                  /* 2 */
@@ -71,7 +71,7 @@ static NmcOutputField nmc_fields_setting_connection[] = {
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_wired[] = {
+NmcOutputField nmc_fields_setting_wired[] = {
 	SETTING_FIELD ("name",  17),                                  /* 0 */
 	SETTING_FIELD (NM_SETTING_WIRED_PORT, 8),                     /* 1 */
 	SETTING_FIELD (NM_SETTING_WIRED_SPEED, 10),                   /* 2 */
@@ -101,7 +101,7 @@ static NmcOutputField nmc_fields_setting_wired[] = {
 #define NMC_FIELDS_SETTING_WIRED_COMMON  NMC_FIELDS_SETTING_WIRED_ALL
 
 /* Available fields for NM_SETTING_802_1X_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_8021X[] = {
+NmcOutputField nmc_fields_setting_8021X[] = {
 	SETTING_FIELD ("name", 10),                                              /* 0 */
 	SETTING_FIELD (NM_SETTING_802_1X_EAP, 10),                               /* 1 */
 	SETTING_FIELD (NM_SETTING_802_1X_IDENTITY, 15),                          /* 2 */
@@ -173,7 +173,7 @@ static NmcOutputField nmc_fields_setting_8021X[] = {
 #define NMC_FIELDS_SETTING_802_1X_COMMON  NMC_FIELDS_SETTING_802_1X_ALL
 
 /* Available fields for NM_SETTING_WIRELESS_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_wireless[] = {
+NmcOutputField nmc_fields_setting_wireless[] = {
 	SETTING_FIELD ("name", 17),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SSID, 34),                      /* 1 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_MODE, 15),                      /* 2 */
@@ -207,7 +207,7 @@ static NmcOutputField nmc_fields_setting_wireless[] = {
 #define NMC_FIELDS_SETTING_WIRELESS_COMMON  NMC_FIELDS_SETTING_WIRELESS_ALL
 
 /* Available fields for NM_SETTING_WIRELESS_SECURITY_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_wireless_security[] = {
+NmcOutputField nmc_fields_setting_wireless_security[] = {
 	SETTING_FIELD ("name", 25),                                           /* 0 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, 10),            /* 1 */
 	SETTING_FIELD (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 15),       /* 2 */
@@ -249,7 +249,7 @@ static NmcOutputField nmc_fields_setting_wireless_security[] = {
 #define NMC_FIELDS_SETTING_WIRELESS_SECURITY_COMMON  NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL
 
 /* Available fields for NM_SETTING_IP4_CONFIG_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_ip4_config[] = {
+NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD ("name", 8),                                         /* 0 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_METHOD, 10),                  /* 1 */
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DNS, 20),                     /* 2 */
@@ -281,7 +281,7 @@ static NmcOutputField nmc_fields_setting_ip4_config[] = {
 #define NMC_FIELDS_SETTING_IP4_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_IP6_CONFIG_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_ip6_config[] = {
+NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD ("name", 8),                                         /* 0 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_METHOD, 10),                  /* 1 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_DNS, 20),                     /* 2 */
@@ -311,7 +311,7 @@ static NmcOutputField nmc_fields_setting_ip6_config[] = {
 #define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_serial[] = {
+NmcOutputField nmc_fields_setting_serial[] = {
 	SETTING_FIELD ("name", 10),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_SERIAL_BAUD, 10),                        /* 1 */
 	SETTING_FIELD (NM_SETTING_SERIAL_BITS, 10),                        /* 2 */
@@ -329,7 +329,7 @@ static NmcOutputField nmc_fields_setting_serial[] = {
 #define NMC_FIELDS_SETTING_SERIAL_COMMON  NMC_FIELDS_SETTING_SERIAL_ALL
 
 /* Available fields for NM_SETTING_PPP_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_ppp[] = {
+NmcOutputField nmc_fields_setting_ppp[] = {
 	SETTING_FIELD ("name", 10),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_PPP_NOAUTH, 10),                         /* 1 */
 	SETTING_FIELD (NM_SETTING_PPP_REFUSE_EAP, 10),                     /* 2 */
@@ -373,7 +373,7 @@ static NmcOutputField nmc_fields_setting_ppp[] = {
 #define NMC_FIELDS_SETTING_PPP_COMMON  NMC_FIELDS_SETTING_PPP_ALL
 
 /* Available fields for NM_SETTING_PPPOE_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_pppoe[] = {
+NmcOutputField nmc_fields_setting_pppoe[] = {
 	SETTING_FIELD ("name", 10),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_PPPOE_SERVICE, 12),                      /* 1 */
 	SETTING_FIELD (NM_SETTING_PPPOE_USERNAME, 15),                     /* 2 */
@@ -389,7 +389,7 @@ static NmcOutputField nmc_fields_setting_pppoe[] = {
 #define NMC_FIELDS_SETTING_PPPOE_COMMON  NMC_FIELDS_SETTING_PPPOE_ALL
 
 /* Available fields for NM_SETTING_ADSL_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_adsl[] = {
+NmcOutputField nmc_fields_setting_adsl[] = {
 	SETTING_FIELD ("name", 10),                                /* 0 */
 	SETTING_FIELD (NM_SETTING_ADSL_USERNAME, 15),              /* 1 */
 	SETTING_FIELD (NM_SETTING_ADSL_PASSWORD, 15),              /* 2 */
@@ -411,7 +411,7 @@ static NmcOutputField nmc_fields_setting_adsl[] = {
 #define NMC_FIELDS_SETTING_ADSL_COMMON  NMC_FIELDS_SETTING_ADSL_ALL
 
 /* Available fields for NM_SETTING_GSM_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_gsm[] = {
+NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD ("name", 10),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_GSM_NUMBER, 10),                         /* 1 */
 	SETTING_FIELD (NM_SETTING_GSM_USERNAME, 15),                       /* 2 */
@@ -441,7 +441,7 @@ static NmcOutputField nmc_fields_setting_gsm[] = {
 #define NMC_FIELDS_SETTING_GSM_COMMON  NMC_FIELDS_SETTING_GSM_ALL
 
 /* Available fields for NM_SETTING_CDMA_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_cdma[] = {
+NmcOutputField nmc_fields_setting_cdma[] = {
 	SETTING_FIELD ("name", 10),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_CDMA_NUMBER, 15),                        /* 1 */
 	SETTING_FIELD (NM_SETTING_CDMA_USERNAME, 15),                      /* 2 */
@@ -457,7 +457,7 @@ static NmcOutputField nmc_fields_setting_cdma[] = {
 #define NMC_FIELDS_SETTING_CDMA_COMMON  NMC_FIELDS_SETTING_CDMA_ALL
 
 /* Available fields for NM_SETTING_BLUETOOTH_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_bluetooth[] = {
+NmcOutputField nmc_fields_setting_bluetooth[] = {
 	SETTING_FIELD ("name", 11),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_BDADDR, 19),                   /* 1 */
 	SETTING_FIELD (NM_SETTING_BLUETOOTH_TYPE, 10),                     /* 2 */
@@ -469,7 +469,7 @@ static NmcOutputField nmc_fields_setting_bluetooth[] = {
 #define NMC_FIELDS_SETTING_BLUETOOTH_COMMON  NMC_FIELDS_SETTING_BLUETOOTH_ALL
 
 /* Available fields for NM_SETTING_OLPC_MESH_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_olpc_mesh[] = {
+NmcOutputField nmc_fields_setting_olpc_mesh[] = {
 	SETTING_FIELD ("name", 18),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_SSID, 34),                     /* 1 */
 	SETTING_FIELD (NM_SETTING_OLPC_MESH_CHANNEL, 12),                  /* 2 */
@@ -483,7 +483,7 @@ static NmcOutputField nmc_fields_setting_olpc_mesh[] = {
 #define NMC_FIELDS_SETTING_OLPC_MESH_COMMON  NMC_FIELDS_SETTING_OLPC_MESH_ALL
 
 /* Available fields for NM_SETTING_VPN_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_vpn[] = {
+NmcOutputField nmc_fields_setting_vpn[] = {
 	SETTING_FIELD ("name", 6),                                         /* 0 */
 	SETTING_FIELD (NM_SETTING_VPN_SERVICE_TYPE, 40),                   /* 1 */
 	SETTING_FIELD (NM_SETTING_VPN_USER_NAME, 12),                      /* 2 */
@@ -499,7 +499,7 @@ static NmcOutputField nmc_fields_setting_vpn[] = {
 #define NMC_FIELDS_SETTING_VPN_COMMON  NMC_FIELDS_SETTING_VPN_ALL
 
 /* Available fields for NM_SETTING_WIMAX_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_wimax[] = {
+NmcOutputField nmc_fields_setting_wimax[] = {
 	SETTING_FIELD ("name", 6),                                         /* 0 */
 	SETTING_FIELD (NM_SETTING_WIMAX_MAC_ADDRESS, 19),                  /* 1 */
 	SETTING_FIELD (NM_SETTING_WIMAX_NETWORK_NAME, 40),                 /* 2 */
@@ -511,7 +511,7 @@ static NmcOutputField nmc_fields_setting_wimax[] = {
 #define NMC_FIELDS_SETTING_WIMAX_COMMON  NMC_FIELDS_SETTING_WIMAX_ALL
 
 /* Available fields for NM_SETTING_INFINIBAND_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_infiniband[] = {
+NmcOutputField nmc_fields_setting_infiniband[] = {
 	SETTING_FIELD ("name",  12),                                       /* 0 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MAC_ADDRESS, 61),             /* 1 */
 	SETTING_FIELD (NM_SETTING_INFINIBAND_MTU, 6),                      /* 2 */
@@ -529,7 +529,7 @@ static NmcOutputField nmc_fields_setting_infiniband[] = {
 #define NMC_FIELDS_SETTING_INFINIBAND_COMMON  NMC_FIELDS_SETTING_INFINIBAND_ALL \
 
 /* Available fields for NM_SETTING_BOND_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_bond[] = {
+NmcOutputField nmc_fields_setting_bond[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BOND_INTERFACE_NAME, 15),                /* 1 */
 	SETTING_FIELD (NM_SETTING_BOND_OPTIONS, 30),                       /* 2 */
@@ -541,7 +541,7 @@ static NmcOutputField nmc_fields_setting_bond[] = {
 #define NMC_FIELDS_SETTING_BOND_COMMON  NMC_FIELDS_SETTING_BOND_ALL
 
 /* Available fields for NM_SETTING_VLAN_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_vlan[] = {
+NmcOutputField nmc_fields_setting_vlan[] = {
 	SETTING_FIELD ("name",  6),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_VLAN_INTERFACE_NAME, 15),                /* 1 */
 	SETTING_FIELD (NM_SETTING_VLAN_PARENT, 8),                         /* 2 */
@@ -561,7 +561,7 @@ static NmcOutputField nmc_fields_setting_vlan[] = {
 #define NMC_FIELDS_SETTING_VLAN_COMMON  NMC_FIELDS_SETTING_VLAN_ALL
 
 /* Available fields for NM_SETTING_BRIDGE_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_bridge[] = {
+NmcOutputField nmc_fields_setting_bridge[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_INTERFACE_NAME, 15),              /* 1 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_STP, 5),                          /* 2 */
@@ -583,7 +583,7 @@ static NmcOutputField nmc_fields_setting_bridge[] = {
 #define NMC_FIELDS_SETTING_BRIDGE_COMMON NMC_FIELDS_SETTING_BRIDGE_ALL
 
 /* Available fields for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_bridge_port[] = {
+NmcOutputField nmc_fields_setting_bridge_port[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PRIORITY, 10),               /* 1 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_PORT_PATH_COST, 12),              /* 2 */
@@ -597,7 +597,7 @@ static NmcOutputField nmc_fields_setting_bridge_port[] = {
 #define NMC_FIELDS_SETTING_BRIDGE_PORT_COMMON NMC_FIELDS_SETTING_BRIDGE_PORT_ALL
 
 /* Available fields for NM_SETTING_TEAM_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_team[] = {
+NmcOutputField nmc_fields_setting_team[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_TEAM_INTERFACE_NAME, 15),                /* 1 */
 	SETTING_FIELD (NM_SETTING_TEAM_CONFIG, 30),                        /* 2 */
@@ -609,7 +609,7 @@ static NmcOutputField nmc_fields_setting_team[] = {
 #define NMC_FIELDS_SETTING_TEAM_COMMON  NMC_FIELDS_SETTING_TEAM_ALL
 
 /* Available fields for NM_SETTING_TEAM_PORT_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_team_port[] = {
+NmcOutputField nmc_fields_setting_team_port[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_TEAM_PORT_CONFIG, 30),                   /* 1 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
@@ -619,7 +619,7 @@ static NmcOutputField nmc_fields_setting_team_port[] = {
 #define NMC_FIELDS_SETTING_TEAM_PORT_COMMON  NMC_FIELDS_SETTING_TEAM_PORT_ALL
 
 /* Available fields for NM_SETTING_DCB_SETTING_NAME */
-static NmcOutputField nmc_fields_setting_dcb[] = {
+NmcOutputField nmc_fields_setting_dcb[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_FLAGS, 5),                  /* 1 */
 	SETTING_FIELD (NM_SETTING_DCB_APP_FCOE_PRIORITY, 5),               /* 2 */
@@ -5830,7 +5830,7 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 /*----------------------------------------------------------------------------*/
 
 static gboolean
-setting_connection_details (NMSetting *setting, NmCli *nmc)
+setting_connection_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	NmcOutputField *tmpl, *arr;
@@ -5840,7 +5840,8 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_connection;
 	tmpl_len = sizeof (nmc_fields_setting_connection);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CONNECTION_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_CONNECTION_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5867,7 +5868,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_wired_details (NMSetting *setting, NmCli *nmc)
+setting_wired_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NmcOutputField *tmpl, *arr;
@@ -5877,7 +5878,8 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wired;
 	tmpl_len = sizeof (nmc_fields_setting_wired);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRED_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIRED_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5902,7 +5904,7 @@ setting_wired_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_802_1X_details (NMSetting *setting, NmCli *nmc)
+setting_802_1X_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSetting8021x *s_8021x = NM_SETTING_802_1X (setting);
 	NmcOutputField *tmpl, *arr;
@@ -5912,7 +5914,8 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_8021X;
 	tmpl_len = sizeof (nmc_fields_setting_8021X);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_802_1X_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_802_1X_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5958,7 +5961,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_wireless_details (NMSetting *setting, NmCli *nmc)
+setting_wireless_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	NmcOutputField *tmpl, *arr;
@@ -5968,7 +5971,8 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wireless;
 	tmpl_len = sizeof (nmc_fields_setting_wireless);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIRELESS_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -5995,7 +5999,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
+setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6005,7 +6009,8 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wireless_security;
 	tmpl_len = sizeof (nmc_fields_setting_wireless_security);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIRELESS_SECURITY_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6036,7 +6041,7 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
+setting_ip4_config_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6046,7 +6051,8 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_ip4_config;
 	tmpl_len = sizeof (nmc_fields_setting_ip4_config);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP4_CONFIG_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_IP4_CONFIG_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6072,7 +6078,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
+setting_ip6_config_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6082,7 +6088,8 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_ip6_config;
 	tmpl_len = sizeof (nmc_fields_setting_ip6_config);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_IP6_CONFIG_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_IP6_CONFIG_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6107,7 +6114,7 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_serial_details (NMSetting *setting, NmCli *nmc)
+setting_serial_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6117,7 +6124,8 @@ setting_serial_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_serial;
 	tmpl_len = sizeof (nmc_fields_setting_serial);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_SERIAL_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_SERIAL_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6136,7 +6144,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_ppp_details (NMSetting *setting, NmCli *nmc)
+setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingPPP *s_ppp = NM_SETTING_PPP (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6146,7 +6154,8 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_ppp;
 	tmpl_len = sizeof (nmc_fields_setting_ppp);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPP_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_PPP_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6178,7 +6187,7 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_pppoe_details (NMSetting *setting, NmCli *nmc)
+setting_pppoe_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingPPPOE *s_pppoe = NM_SETTING_PPPOE (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6188,7 +6197,8 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_pppoe;
 	tmpl_len = sizeof (nmc_fields_setting_pppoe);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_PPPOE_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_PPPOE_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6206,7 +6216,7 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_gsm_details (NMSetting *setting, NmCli *nmc)
+setting_gsm_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6216,7 +6226,8 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_gsm;
 	tmpl_len = sizeof (nmc_fields_setting_gsm);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_GSM_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_GSM_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6241,7 +6252,7 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_cdma_details (NMSetting *setting, NmCli *nmc)
+setting_cdma_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingCdma *s_cdma = NM_SETTING_CDMA (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6251,7 +6262,8 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_cdma;
 	tmpl_len = sizeof (nmc_fields_setting_cdma);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_CDMA_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_CDMA_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6269,7 +6281,7 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
+setting_bluetooth_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingBluetooth *s_bluetooth = NM_SETTING_BLUETOOTH (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6279,7 +6291,8 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bluetooth;
 	tmpl_len = sizeof (nmc_fields_setting_bluetooth);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BLUETOOTH_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BLUETOOTH_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6295,7 +6308,7 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc)
+setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6305,7 +6318,8 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_olpc_mesh;
 	tmpl_len = sizeof (nmc_fields_setting_olpc_mesh);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_OLPC_MESH_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_OLPC_MESH_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6322,7 +6336,7 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_vpn_details (NMSetting *setting, NmCli *nmc)
+setting_vpn_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6332,7 +6346,8 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_vpn;
 	tmpl_len = sizeof (nmc_fields_setting_vpn);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VPN_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_VPN_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6350,7 +6365,7 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_wimax_details (NMSetting *setting, NmCli *nmc)
+setting_wimax_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingWimax *s_wimax = NM_SETTING_WIMAX (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6360,7 +6375,8 @@ setting_wimax_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_wimax;
 	tmpl_len = sizeof (nmc_fields_setting_wimax);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_WIMAX_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_WIMAX_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6376,7 +6392,7 @@ setting_wimax_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_infiniband_details (NMSetting *setting, NmCli *nmc)
+setting_infiniband_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6386,7 +6402,8 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_infiniband;
 	tmpl_len = sizeof (nmc_fields_setting_infiniband);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_INFINIBAND_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_INFINIBAND_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6405,7 +6422,7 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_bond_details (NMSetting *setting, NmCli *nmc)
+setting_bond_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6415,7 +6432,8 @@ setting_bond_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bond;
 	tmpl_len = sizeof (nmc_fields_setting_bond);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BOND_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BOND_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6431,7 +6449,7 @@ setting_bond_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_vlan_details (NMSetting *setting, NmCli *nmc)
+setting_vlan_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6441,7 +6459,8 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_vlan;
 	tmpl_len = sizeof (nmc_fields_setting_vlan);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_VLAN_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_VLAN_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6461,7 +6480,7 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_adsl_details (NMSetting *setting, NmCli *nmc)
+setting_adsl_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingAdsl *s_adsl = NM_SETTING_ADSL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6471,7 +6490,8 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_adsl;
 	tmpl_len = sizeof (nmc_fields_setting_adsl);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_ADSL_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_ADSL_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6492,7 +6512,7 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_bridge_details (NMSetting *setting, NmCli *nmc)
+setting_bridge_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingBridge *s_bridge = NM_SETTING_BRIDGE (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6502,7 +6522,8 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bridge;
 	tmpl_len = sizeof (nmc_fields_setting_bridge);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BRIDGE_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6523,7 +6544,7 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_bridge_port_details (NMSetting *setting, NmCli *nmc)
+setting_bridge_port_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingBridgePort *s_bridge_port = NM_SETTING_BRIDGE_PORT (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6533,7 +6554,8 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_bridge_port;
 	tmpl_len = sizeof (nmc_fields_setting_bridge_port);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_BRIDGE_PORT_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_BRIDGE_PORT_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6550,7 +6572,7 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_team_details (NMSetting *setting, NmCli *nmc)
+setting_team_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6560,7 +6582,8 @@ setting_team_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_team;
 	tmpl_len = sizeof (nmc_fields_setting_team);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_TEAM_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6576,7 +6599,7 @@ setting_team_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_team_port_details (NMSetting *setting, NmCli *nmc)
+setting_team_port_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6586,7 +6609,8 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_team_port;
 	tmpl_len = sizeof (nmc_fields_setting_team_port);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_TEAM_PORT_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_TEAM_PORT_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6601,7 +6625,7 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc)
 }
 
 static gboolean
-setting_dcb_details (NMSetting *setting, NmCli *nmc)
+setting_dcb_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6611,7 +6635,8 @@ setting_dcb_details (NMSetting *setting, NmCli *nmc)
 
 	tmpl = nmc_fields_setting_dcb;
 	tmpl_len = sizeof (nmc_fields_setting_dcb);
-	nmc->print_fields.indices = parse_output_fields (NMC_FIELDS_SETTING_DCB_ALL, tmpl, FALSE, NULL, NULL);
+	nmc->print_fields.indices = parse_output_fields (one_prop ? one_prop : NMC_FIELDS_SETTING_DCB_ALL,
+	                                                 tmpl, FALSE, NULL, NULL);
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6641,7 +6666,7 @@ setting_dcb_details (NMSetting *setting, NmCli *nmc)
 
 typedef struct {
 	const char *sname;
-	gboolean (*func) (NMSetting *setting, NmCli *nmc);
+	gboolean (*func) (NMSetting *setting, NmCli *nmc, const char *one_prop);
 } SettingDetails;
 
 static const SettingDetails detail_printers[] = {
@@ -6674,7 +6699,7 @@ static const SettingDetails detail_printers[] = {
 };
 
 gboolean
-setting_details (NMSetting *setting, NmCli *nmc)
+setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
 	const SettingDetails *iter = &detail_printers[0];
 
@@ -6682,7 +6707,7 @@ setting_details (NMSetting *setting, NmCli *nmc)
 
 	while (iter->sname) {
 		if (nm_connection_lookup_setting_type (iter->sname) == G_OBJECT_TYPE (setting))
-			return iter->func (setting, nmc);
+			return iter->func (setting, nmc, one_prop);
 		iter++;
 	}
 

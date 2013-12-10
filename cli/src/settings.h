@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2013 Red Hat, Inc.
  */
 
 #ifndef NMC_SETTINGS_H
@@ -83,6 +83,6 @@ void nmc_property_set_default_value (NMSetting *setting, const char *prop);
 gboolean nmc_property_get_gvalue (NMSetting *setting, const char *prop, GValue *value);
 gboolean nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value);
 
-gboolean setting_details (NMSetting *ssetting, NmCli *nmc);
+gboolean setting_details (NMSetting *ssetting, NmCli *nmc, const char *one_prop);
 
 #endif /* NMC_SETTINGS_H */
