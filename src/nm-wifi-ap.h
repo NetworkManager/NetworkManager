@@ -101,8 +101,8 @@ void				nm_ap_set_fake	(NMAccessPoint *ap, gboolean fake);
 gboolean			nm_ap_get_broadcast		(NMAccessPoint *ap);
 void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
 
-glong			nm_ap_get_last_seen		(const NMAccessPoint *ap);
-void				nm_ap_set_last_seen		(NMAccessPoint *ap, const glong last_seen);
+gint32                  nm_ap_get_last_seen     (const NMAccessPoint *ap);
+void                    nm_ap_set_last_seen     (NMAccessPoint *ap, gint32 last_seen);
 
 gboolean			nm_ap_check_compatible (NMAccessPoint *self,
                                             NMConnection *connection);
