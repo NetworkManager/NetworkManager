@@ -142,7 +142,7 @@ struct _NMDeviceWifiPrivate {
 	guint32           rate;
 	gboolean          enabled; /* rfkilled or not */
 
-	time_t            scheduled_scan_time;
+	gint32            scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             scanlist_cull_id;
@@ -1709,7 +1709,7 @@ static void
 schedule_scan (NMDeviceWifi *self, gboolean backoff)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	time_t now = time (NULL);
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Cancel the pending scan if it would happen later than (now + the scan_interval) */
 	if (priv->pending_scan_id) {
