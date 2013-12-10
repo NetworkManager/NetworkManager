@@ -754,4 +754,90 @@ nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max
 }
 
 
+static gint64 monotonic_timestamp_offset_sec;
+
+static void
+monotonic_timestamp_get (struct timespec *tp)
+{
+	static gboolean initialized = FALSE;
+	int err;
+
+	err = clock_gettime (CLOCK_BOOTTIME, tp);
+
+	g_assert (err == 0); (void)err;
+	g_assert (tp->tv_nsec >= 0 && tp->tv_nsec < NM_UTILS_NS_PER_SECOND);
+
+	if (G_LIKELY (initialized))
+		return;
+
+	/* Calculate an offset for the time stamp.
+	 *
+	 * We always want positive values, because then we can initialize
+	 * a timestamp with 0 and be sure, that it will be less then any
+	 * value nm_utils_get_monotonic_timestamp_*() might return.
+	 * For this to be true also for nm_utils_get_monotonic_timestamp_s() at
+	 * early boot, we have to shift the timestamp to start counting at
+	 * least from 1 second onward.
+	 *
+	 * Another advantage of shifting is, that this way we make use of the whole 31 bit
+	 * range of signed int, before the time stamp for nm_utils_get_monotonic_timestamp_s()
+	 * wraps (~68 years).
+	 **/
+	monotonic_timestamp_offset_sec = (- ((gint64) tp->tv_sec)) + 1;
+	initialized = TRUE;
+
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
+		time_t now = time (NULL);
+		struct tm tm;
+		char s[255];
+
+		strftime (s, sizeof (s), "%Y-%m-%d %H:%M:%S", localtime_r (&now, &tm));
+		nm_log_dbg (LOGD_CORE, "monotonic timestamp starts counting with 1.%09ld seconds at "
+		                       "CLOCK_BOOTTIME=%lld.%09ld (local time is %s)",
+		                       tp->tv_nsec, (long long)tp->tv_sec, tp->tv_nsec, s);
+	}
+}
+
+/**
+ * nm_utils_get_monotonic_timestamp_ms:
+ *
+ * Returns: a monotonically increasing time stamp in milliseconds,
+ * starting at an unspecified offset. See clock_gettime(), %CLOCK_BOOTTIME.
+ *
+ * The returned value will start counting at an undefined point
+ * in the past and will always be positive.
+ **/
+gint64
+nm_utils_get_monotonic_timestamp_ms (void)
+{
+	struct timespec tp;
+
+	monotonic_timestamp_get (&tp);
+
+	/* Although the result will always be positive, we return a signed
+	 * integer, which makes it easier to calculate time differences (when
+	 * you want to subtract signed values).
+	 **/
+	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec) * ((gint64) 1000) +
+	       (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
+}
+
+/**
+ * nm_utils_get_monotonic_timestamp_s:
+ *
+ * Returns: nm_utils_get_monotonic_timestamp_ms() in seconds (throwing
+ * away sub second parts). The returned value will always be positive.
+ *
+ * This value wraps after roughly 68 years which should be fine for any
+ * practical purpose.
+ **/
+gint32
+nm_utils_get_monotonic_timestamp_s (void)
+{
+	struct timespec tp;
+
+	monotonic_timestamp_get (&tp);
+	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec);
+}
+
 
