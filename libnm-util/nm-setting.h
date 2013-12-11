@@ -200,7 +200,7 @@ typedef struct {
 	                                  const GParamSpec *prop_spec,
 	                                  NMSettingCompareFlags flags);
 
-	void        (*clear_secrets_with_flags) (NMSetting *setting,
+	gboolean    (*clear_secrets_with_flags) (NMSetting *setting,
 	                                         GParamSpec *pspec,
 	                                         NMSettingClearSecretsWithFlagsFn func,
 	                                         gpointer user_data);

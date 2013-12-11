@@ -42,6 +42,12 @@ GType _nm_setting_lookup_setting_type (const char *name);
 GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
+gboolean _nm_setting_clear_secrets (NMSetting *setting);
+gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
+                                               NMSettingClearSecretsWithFlagsFn func,
+                                               gpointer user_data);
+
+
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE

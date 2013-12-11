@@ -649,7 +649,7 @@ compare_property (NMSetting *setting,
 	return same;
 }
 
-static void
+static gboolean
 clear_secrets_with_flags (NMSetting *setting,
 	                      GParamSpec *pspec,
 	                      NMSettingClearSecretsWithFlagsFn func,
@@ -661,7 +661,7 @@ clear_secrets_with_flags (NMSetting *setting,
 	gboolean changed = TRUE;
 
 	if (priv->secrets == NULL)
-		return;
+		return FALSE;
 
 	/* Iterate through secrets hash and check each entry */
 	g_hash_table_iter_init (&iter, priv->secrets);
@@ -677,6 +677,8 @@ clear_secrets_with_flags (NMSetting *setting,
 
 	if (changed)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
+
+	return changed;
 }
 
 static void

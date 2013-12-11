@@ -815,46 +815,68 @@ nm_setting_enumerate_values (NMSetting *setting,
 void
 nm_setting_clear_secrets (NMSetting *setting)
 {
+	_nm_setting_clear_secrets (setting);
+}
+
+gboolean
+_nm_setting_clear_secrets (NMSetting *setting)
+{
 	GParamSpec **property_specs;
 	guint n_property_specs;
 	guint i;
+	gboolean changed = FALSE;
 
-	g_return_if_fail (NM_IS_SETTING (setting));
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		GValue value = G_VALUE_INIT;
 
 		if (prop_spec->flags & NM_SETTING_PARAM_SECRET) {
+			GValue value = G_VALUE_INIT;
+
 			g_value_init (&value, prop_spec->value_type);
-			g_param_value_set_default (prop_spec, &value);
-			g_object_set_property (G_OBJECT (setting), prop_spec->name, &value);
+			g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
+			if (!g_param_value_defaults (prop_spec, &value)) {
+				g_param_value_set_default (prop_spec, &value);
+				g_object_set_property (G_OBJECT (setting), prop_spec->name, &value);
+				changed = TRUE;
+			}
 			g_value_unset (&value);
 		}
 	}
 
 	g_free (property_specs);
+
+	return changed;
 }
 
-static void
+static gboolean
 clear_secrets_with_flags (NMSetting *setting,
 	                      GParamSpec *pspec,
 	                      NMSettingClearSecretsWithFlagsFn func,
 	                      gpointer user_data)
 {
-	GValue value = G_VALUE_INIT;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
+	gboolean changed = FALSE;
 
 	/* Clear the secret if the user function says to do so */
 	nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL);
 	if (func (setting, pspec->name, flags, user_data) == TRUE) {
+		GValue value = G_VALUE_INIT;
+
 		g_value_init (&value, pspec->value_type);
-		g_param_value_set_default (pspec, &value);
-		g_object_set_property (G_OBJECT (setting), pspec->name, &value);
+		g_object_get_property (G_OBJECT (setting), pspec->name, &value);
+		if (!g_param_value_defaults (pspec, &value)) {
+			g_param_value_set_default (pspec, &value);
+			g_object_set_property (G_OBJECT (setting), pspec->name, &value);
+			changed = TRUE;
+		}
 		g_value_unset (&value);
 	}
+
+	return changed;
 }
 
 /**
@@ -871,25 +893,35 @@ nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                      NMSettingClearSecretsWithFlagsFn func,
                                      gpointer user_data)
 {
+	_nm_setting_clear_secrets_with_flags (setting, func, user_data);
+}
+
+gboolean
+_nm_setting_clear_secrets_with_flags (NMSetting *setting,
+                                      NMSettingClearSecretsWithFlagsFn func,
+                                      gpointer user_data)
+{
 	GParamSpec **property_specs;
 	guint n_property_specs;
 	guint i;
+	gboolean changed = FALSE;
 
-	g_return_if_fail (setting);
-	g_return_if_fail (NM_IS_SETTING (setting));
-	g_return_if_fail (func != NULL);
+	g_return_val_if_fail (setting, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (func != NULL, FALSE);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
 	for (i = 0; i < n_property_specs; i++) {
 		if (property_specs[i]->flags & NM_SETTING_PARAM_SECRET) {
-			NM_SETTING_GET_CLASS (setting)->clear_secrets_with_flags (setting,
-			                                                          property_specs[i],
-			                                                          func,
-			                                                          user_data);
+			changed |= NM_SETTING_GET_CLASS (setting)->clear_secrets_with_flags (setting,
+			                                                                     property_specs[i],
+			                                                                     func,
+			                                                                     user_data);
 		}
 	}
 
 	g_free (property_specs);
+	return changed;
 }
 
 /**
