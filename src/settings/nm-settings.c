@@ -1525,7 +1525,7 @@ default_wired_connection_removed_cb (NMSettingsConnection *connection, NMSetting
 }
 
 static void
-default_wired_connection_dbus_updated_cb (NMSettingsConnection *connection, NMSettings *self)
+default_wired_connection_updated_by_user_cb (NMSettingsConnection *connection, NMSettings *self)
 {
 	NMDevice *device;
 
@@ -1554,7 +1554,7 @@ default_wired_clear_tag (NMSettings *self,
 	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, NULL);
 
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_removed_cb), self);
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_dbus_updated_cb), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 
 	if (add_to_no_auto_default)
 		nm_config_set_ethernet_no_auto_default (NM_SETTINGS_GET_PRIVATE (self)->config, NM_CONFIG_DEVICE (device));
@@ -1631,8 +1631,8 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	g_object_set_data (G_OBJECT (added), DEFAULT_WIRED_DEVICE_TAG, device);
 	g_object_set_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG, added);
 
-	g_signal_connect (added, NM_SETTINGS_CONNECTION_DBUS_UPDATED,
-	                  G_CALLBACK (default_wired_connection_dbus_updated_cb), self);
+	g_signal_connect (added, NM_SETTINGS_CONNECTION_UPDATED_BY_USER,
+	                  G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 	g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (default_wired_connection_removed_cb), self);
 
