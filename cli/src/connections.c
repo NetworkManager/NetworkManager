@@ -1869,11 +1869,15 @@ static const NameItem nmc_adsl_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
-static const NameItem nmc_ppoe_settings [] = {
+/* PPPoE is a base connection type from historical reasons.
+ * See libnm-util/nm-setting.c:_nm_setting_is_base_type()
+ */
+static const NameItem nmc_pppoe_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
-	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, FALSE },
+	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet", NULL, TRUE  },
 	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,       NULL, TRUE  },
 	{ NM_SETTING_PPP_SETTING_NAME,        NULL,       NULL, FALSE },
+	{ NM_SETTING_802_1X_SETTING_NAME,     NULL,       NULL, FALSE },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,       NULL, FALSE },
 	{ NULL, NULL, NULL, FALSE }
@@ -1959,6 +1963,7 @@ static const NameItem nmc_bridge_slave_settings [] = {
 static const NameItem nmc_valid_connection_types[] = {
 	{ NM_SETTING_GENERIC_SETTING_NAME,    NULL,        nmc_generic_settings      },
 	{ NM_SETTING_WIRED_SETTING_NAME,      "ethernet",  nmc_ethernet_settings     },
+	{ NM_SETTING_PPPOE_SETTING_NAME,      NULL,        nmc_pppoe_settings        },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,   "wifi",      nmc_wifi_settings         },
 	{ NM_SETTING_WIMAX_SETTING_NAME,      NULL,        nmc_wimax_settings        },
 	{ NM_SETTING_GSM_SETTING_NAME,        NULL,        nmc_gsm_settings          },
