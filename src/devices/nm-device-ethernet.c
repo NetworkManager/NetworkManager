@@ -56,6 +56,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
 #include "nm-dcb.h"
+#include "nm-settings-connection.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -811,10 +812,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	if (setting_name) {
 		NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
-		/* If the caller doesn't necessarily want completely new secrets,
-		 * only ask for new secrets after the first failure.
-		 */
-		if (new_secrets || tries)
+		if (new_secrets)
 			flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wired_secrets_cb, self);
 
@@ -833,13 +831,18 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
+	NMConnection *connection;
 	const char *iface;
+	guint64 timestamp = 0;
+	gboolean new_secrets = TRUE;
 
 	priv->supplicant.con_timeout_id = 0;
 
 	iface = nm_device_get_iface (device);
 
-	/* Authentication failed, encryption key is probably bad */
+	/* Authentication failed; either driver problems, the encryption key is
+	 * wrong, the passwords or certificates were wrong or the Ethernet switch's
+	 * port is not configured for 802.1x. */
 	nm_log_warn (LOGD_DEVICE | LOGD_ETHER,
 	             "Activation (%s/wired): association took too long.", iface);
 
@@ -847,7 +850,17 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE) {
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Ask for new secrets only if we've never activated this connection
+	 * before.  If we've connected before, don't bother the user with dialogs,
+	 * just retry or fail, and if we never connect the user can fix the
+	 * password somewhere else. */
+	if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp))
+		new_secrets = !timestamp;
+
+	if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE) {
 		nm_log_info (LOGD_DEVICE | LOGD_ETHER,
 		             "Activation (%s/wired): asking for new secrets", iface);
 	} else
