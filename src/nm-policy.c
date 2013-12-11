@@ -1961,8 +1961,11 @@ connection_updated (NMSettings *settings,
 
 	firewall_update_zone (policy, connection);
 
-	/* Reset auto retries back to default since connection was updated */
-	set_connection_auto_retries (connection, RETRIES_DEFAULT);
+	/* FIXME: previously, we set_connection_auto_retries() again to
+	 * RETRIES_DEFAULT, in order to re-enable a connection when it is changed
+	 * by the user. This caused a serious problem, so remove it for now
+	 * (rh #1040528).
+	 **/
 
 	schedule_activate_all (policy);
 }
