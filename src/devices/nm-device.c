@@ -6135,13 +6135,6 @@ reason_to_string (NMDeviceStateReason reason)
 	return "unknown";
 }
 
-static inline gboolean
-state_implies_pending_action (NMDeviceState state)
-{
-	return (   state >= NM_DEVICE_STATE_PREPARE
-	        && state < NM_DEVICE_STATE_ACTIVATED);
-}
-
 static void
 notify_ip_properties (NMDevice *device)
 {
@@ -6182,10 +6175,6 @@ nm_device_state_changed (NMDevice *device,
 	old_state = priv->state;
 	priv->state = state;
 	priv->state_reason = reason;
-
-	if (    state_implies_pending_action (state)
-	    && !state_implies_pending_action (old_state))
-		nm_device_add_pending_action (device, "activation");
 
 	nm_log_info (LOGD_DEVICE, "(%s): device state change: %s -> %s (reason '%s') [%d %d %d]",
 	             nm_device_get_iface (device),
@@ -6351,10 +6340,6 @@ nm_device_state_changed (NMDevice *device,
 	/* Dispose of the cached activation request */
 	if (req)
 		g_object_unref (req);
-
-	if (    state_implies_pending_action (old_state)
-	    && !state_implies_pending_action (state))
-		nm_device_remove_pending_action (device, "activation");
 
 	priv->in_state_changed = FALSE;
 }
