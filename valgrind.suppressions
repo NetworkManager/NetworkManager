@@ -83,4 +83,29 @@
    fun:g_signal_new_class_handler
    ...
 }
+{
+   _dl_init_g_type_register_fundamental
+   Memcheck:Leak
+   ...
+   fun:g_type_register_fundamental
+   ...
+   obj:/*/libgobject*
+   fun:_dl_init
+   obj:/*/ld-*.so
+}
+{
+   _dl_init_g_malloc0
+   Memcheck:Leak
+   fun:calloc
+   fun:g_malloc0
+   ...
+   obj:/*/libgobject*
+   fun:_dl_init
+   obj:/*/ld-*.so
+}
+{
+    ...
+    fun:gobject_init_ctor
+    ...
+}
 
