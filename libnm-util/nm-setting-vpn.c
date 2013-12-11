@@ -429,7 +429,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-static gboolean
+static NMSettingUpdateSecretResult
 update_secret_string (NMSetting *setting,
                       const char *key,
                       const char *value,
@@ -437,21 +437,24 @@ update_secret_string (NMSetting *setting,
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
+	g_return_val_if_fail (key != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
+	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	if (!value || !strlen (value)) {
 		g_set_error (error, NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
 		             "Secret %s was empty", key);
-		return FALSE;
+		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
+	if (g_strcmp0 (g_hash_table_lookup (priv->secrets, key), value) == 0)
+		return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
+
 	g_hash_table_insert (priv->secrets, g_strdup (key), g_strdup (value));
-	return TRUE;
+	return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 }
 
-static gboolean
+static NMSettingUpdateSecretResult
 update_secret_hash (NMSetting *setting,
                     GHashTable *secrets,
                     GError **error)
@@ -459,8 +462,9 @@ update_secret_hash (NMSetting *setting,
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	GHashTableIter iter;
 	const char *name, *value;
+	NMSettingUpdateSecretResult result = NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
-	g_return_val_if_fail (secrets != NULL, FALSE);
+	g_return_val_if_fail (secrets != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	/* Make sure the items are valid */
 	g_hash_table_iter_init (&iter, secrets);
@@ -469,14 +473,14 @@ update_secret_hash (NMSetting *setting,
 			g_set_error_literal (error, NM_SETTING_ERROR,
 			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
 			                     "Secret name was empty");
-			return FALSE;
+			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 
 		if (!value || !strlen (value)) {
 			g_set_error (error, NM_SETTING_ERROR,
 			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
 				         "Secret %s value was empty", name);
-			return FALSE;
+			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 	}
 
@@ -492,19 +496,23 @@ update_secret_hash (NMSetting *setting,
 			continue;
 		}
 
+		if (g_strcmp0 (g_hash_table_lookup (priv->secrets, name), value) == 0)
+			continue;
+
 		g_hash_table_insert (priv->secrets, g_strdup (name), g_strdup (value));
+		result = NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 	}
 
-	return TRUE;
+	return result;
 }
 
-static gboolean
+static int
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
-	gboolean success = FALSE;
+	NMSettingUpdateSecretResult success = NM_SETTING_UPDATE_SECRET_ERROR;
 
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
+	g_return_val_if_fail (key != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
+	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	if (G_VALUE_HOLDS_STRING (value)) {
 		/* Passing the string properties individually isn't correct, and won't
@@ -522,7 +530,7 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 	} else
 		g_set_error_literal (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, key);
 
-	if (success)
+	if (success == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
 
 	return success;

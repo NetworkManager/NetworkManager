@@ -177,7 +177,7 @@ typedef struct {
 
 	GPtrArray  *(*need_secrets)      (NMSetting  *setting);
 
-	gboolean    (*update_one_secret) (NMSetting  *setting,
+	int         (*update_one_secret) (NMSetting  *setting,
 	                                  const char *key,
 	                                  GValue     *value,
 	                                  GError    **error);

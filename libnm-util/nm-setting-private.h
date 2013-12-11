@@ -42,6 +42,15 @@ GType _nm_setting_lookup_setting_type (const char *name);
 GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
+typedef enum NMSettingUpdateSecretResult {
+	NM_SETTING_UPDATE_SECRET_ERROR              = FALSE,
+	NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED   = TRUE,
+	NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED  = 2,
+} NMSettingUpdateSecretResult;
+
+NMSettingUpdateSecretResult _nm_setting_update_secrets (NMSetting *setting,
+                                                        GHashTable *secrets,
+                                                        GError **error);
 gboolean _nm_setting_clear_secrets (NMSetting *setting);
 gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                                NMSettingClearSecretsWithFlagsFn func,

@@ -951,12 +951,11 @@ nm_setting_need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static gboolean
+static int
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
 	GParamSpec *prop_spec;
 	GValue transformed_value = G_VALUE_INIT;
-	gboolean success = FALSE;
 
 	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	if (!prop_spec) {
@@ -964,27 +963,40 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 		             NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
 		             "%s", key);
-		return FALSE;
+		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
 	/* Silently ignore non-secrets */
 	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET))
-		return TRUE;
+		return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
 	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec))) {
+		if (G_VALUE_HOLDS_STRING (value) && G_IS_PARAM_SPEC_STRING (prop_spec)) {
+			/* String is expected to be a common case. Handle it specially and check whether
+			 * the value is already set. Otherwise, we just reset the property and
+			 * assume the value got modified. */
+			char *v;
+
+			g_object_get (G_OBJECT (setting), prop_spec->name, &v, NULL);
+			if (g_strcmp0 (v, g_value_get_string (value)) == 0) {
+				g_free (v);
+				return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
+			}
+			g_free (v);
+		}
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
-		success = TRUE;
-	} else if (g_value_transform (value, &transformed_value)) {
+		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
+	}
+	if (g_value_transform (value, &transformed_value)) {
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, &transformed_value);
 		g_value_unset (&transformed_value);
-		success = TRUE;
-	} else {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-		             "%s", key);
+		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 	}
-	return success;
+	g_set_error (error,
+	             NM_SETTING_ERROR,
+	             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+	             "%s", key);
+	return NM_SETTING_UPDATE_SECRET_ERROR;
 }
 
 /**
@@ -1003,28 +1015,41 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 gboolean
 nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {
+	return _nm_setting_update_secrets (setting, secrets, error) != NM_SETTING_UPDATE_SECRET_ERROR;
+}
+
+NMSettingUpdateSecretResult
+_nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
+{
 	GHashTableIter iter;
 	gpointer key, data;
 	GError *tmp_error = NULL;
+	NMSettingUpdateSecretResult result = NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (secrets != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), NM_SETTING_UPDATE_SECRET_ERROR);
+	g_return_val_if_fail (secrets != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+		g_return_val_if_fail (*error == NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	g_hash_table_iter_init (&iter, secrets);
 	while (g_hash_table_iter_next (&iter, &key, &data)) {
+		int success;
 		const char *secret_key = (const char *) key;
 		GValue *secret_value = (GValue *) data;
 
-		NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
-		if (tmp_error) {
+		success = NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value, &tmp_error);
+		g_assert (!((success == NM_SETTING_UPDATE_SECRET_ERROR) ^ (!!tmp_error)));
+
+		if (success == NM_SETTING_UPDATE_SECRET_ERROR) {
 			g_propagate_error (error, tmp_error);
-			return FALSE;
+			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
+
+		if (success == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
+			result = NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 	}
 
-	return TRUE;
+	return result;
 }
 
 static gboolean

@@ -676,11 +676,12 @@ nm_connection_update_secrets (NMConnection *connection,
                               GError **error)
 {
 	NMSetting *setting;
-	gboolean success = FALSE, updated = FALSE;
+	gboolean success = TRUE, updated = FALSE;
 	GHashTable *setting_hash = NULL;
 	GHashTableIter iter;
 	const char *key;
 	gboolean hashed_connection = FALSE;
+	int success_detail;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);
@@ -721,15 +722,20 @@ nm_connection_update_secrets (NMConnection *connection,
 				/* The hashed connection that didn't contain any secrets for
 				 * @setting_name; just return success.
 				 */
-				success = TRUE;
+				return TRUE;
 			}
 		}
 
-		if (!success) {
-			updated = success = nm_setting_update_secrets (setting,
-			                                               setting_hash ? setting_hash : secrets,
-			                                               error);
-		}
+		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
+		success_detail = _nm_setting_update_secrets (setting,
+		                                      setting_hash ? setting_hash : secrets,
+		                                      error);
+		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
+
+		if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR)
+			return FALSE;
+		if (success_detail == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
+			updated = TRUE;
 	} else {
 		if (!hashed_connection) {
 			g_set_error_literal (error,
@@ -739,9 +745,9 @@ nm_connection_update_secrets (NMConnection *connection,
 			return FALSE;
 		}
 
-		/* Update each setting with any secrets from the hashed connection */
+		/* check first, whether all the settings exist... */
 		g_hash_table_iter_init (&iter, secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &setting_hash)) {
+		while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
 			setting = nm_connection_get_setting_by_name (connection, key);
 			if (!setting) {
 				g_set_error_literal (error,
@@ -750,13 +756,24 @@ nm_connection_update_secrets (NMConnection *connection,
 				                     key);
 				return FALSE;
 			}
+		}
 
+		/* Update each setting with any secrets from the hashed connection */
+		g_hash_table_iter_init (&iter, secrets);
+		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &setting_hash)) {
 			/* Update the secrets for this setting */
-			success = nm_setting_update_secrets (setting, setting_hash, error);
-			if (success)
-				updated = TRUE;
-			else
+			setting = nm_connection_get_setting_by_name (connection, key);
+
+			g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
+			success_detail = _nm_setting_update_secrets (setting, setting_hash, error);
+			g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
+
+			if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR) {
+				success = FALSE;
 				break;
+			}
+			if (success_detail == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
+				updated = TRUE;
 		}
 	}
 
