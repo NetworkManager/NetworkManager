@@ -183,6 +183,16 @@ setting_changed_cb (NMSetting *setting,
 	g_signal_emit (self, signals[CHANGED], 0);
 }
 
+static void
+_nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
+{
+	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
+	                     (gpointer) G_OBJECT_TYPE_NAME (setting),
+	                     setting);
+	/* Listen for property changes so we can emit the 'changed' signal */
+	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
+}
+
 /**
  * nm_connection_add_setting:
  * @connection: a #NMConnection
@@ -199,12 +209,7 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (NM_IS_SETTING (setting));
 
-	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-	                     (gpointer) G_OBJECT_TYPE_NAME (setting),
-	                     setting);
-	/* Listen for property changes so we can emit the 'changed' signal */
-	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
-
+	_nm_connection_add_setting (connection, setting);
 	g_signal_emit (connection, signals[CHANGED], 0);
 }
 
@@ -336,19 +341,30 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 	GHashTableIter iter;
 	const char *setting_name;
 	GHashTable *setting_hash;
-	NMSetting *setting = NULL;
-	GType type;
+	gboolean changed, valid;
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
+	if ((changed = g_hash_table_size (priv->settings) > 0))
+		g_hash_table_remove_all (priv->settings);
+
 	g_hash_table_iter_init (&iter, new);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
-		type = nm_connection_lookup_setting_type (setting_name);
-		if (type)
-			setting = nm_setting_new_from_hash (type, setting_hash);
-		if (setting)
-			nm_connection_add_setting (connection, setting);
+		GType type = nm_connection_lookup_setting_type (setting_name);
+
+		if (type) {
+			NMSetting *setting = nm_setting_new_from_hash (type, setting_hash);
+
+			if (setting) {
+				_nm_connection_add_setting (connection, setting);
+				changed = TRUE;
+			}
+		}
 	}
-	return nm_connection_verify (connection, error);
+
+	valid = nm_connection_verify (connection, error);
+	if (changed)
+		g_signal_emit (connection, signals[CHANGED], 0);
+	return valid;
 }
 
 /**
@@ -372,10 +388,8 @@ nm_connection_replace_settings (NMConnection *connection,
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	if (validate_permissions_type (new_settings, error)) {
+	if (validate_permissions_type (new_settings, error))
 		valid = hash_to_connection (connection, new_settings, error);
-		g_signal_emit (connection, signals[CHANGED], 0);
-	}
 	return valid;
 }
 
@@ -398,8 +412,10 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
                                                 NMConnection *new_connection,
                                                 GError **error)
 {
+	NMConnectionPrivate *priv;
 	GHashTableIter iter;
 	NMSetting *setting;
+	gboolean changed, valid;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
@@ -414,16 +430,22 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	/* No need to validate permissions like nm_connection_replace_settings()
 	 * since we're dealing with an NMConnection which has already done that.
 	 */
-	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	if ((changed = g_hash_table_size (priv->settings) > 0))
+		g_hash_table_remove_all (priv->settings);
 
 	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (new_connection)->settings)) {
 		g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
-			nm_connection_add_setting (connection, nm_setting_duplicate (setting));
-	} else
-		g_signal_emit (connection, signals[CHANGED], 0);
+			_nm_connection_add_setting (connection, nm_setting_duplicate (setting));
+		changed = TRUE;
+	}
 
-	return nm_connection_verify (connection, error);
+	valid =  nm_connection_verify (connection, error);
+	if (changed)
+		g_signal_emit (connection, signals[CHANGED], 0);
+	return valid;
 }
 
 /**
