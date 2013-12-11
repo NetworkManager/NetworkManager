@@ -41,8 +41,10 @@ trap "git_notes_fail; exit 1" ERR
 temporary_workaround_01() {
     # https://bugzilla.gnome.org/show_bug.cgi?id=705160
     # otherwise current mem leaks check fail...
-    wget 'https://bugzilla.gnome.org/attachment.cgi?id=256245' -O valgrind.suppressions.patch
-    git apply valgrind.suppressions.patch
+    if [[ "$(git merge-base 2540966492340ad87cd5a894d544580b8e20c558 HEAD 2>/dev/null || true)" != "2540966492340ad87cd5a894d544580b8e20c558" ]]; then
+        wget 'https://bugzilla.gnome.org/attachment.cgi?id=256245' -O valgrind.suppressions.patch
+        git apply valgrind.suppressions.patch || true
+    fi
 }
 
 log_timestamp
