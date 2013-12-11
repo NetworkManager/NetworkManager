@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2013 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "7 November 2013"
+.TH NMCLI "1" "12 December 2013"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -408,6 +408,20 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 \(en MAC address of the device this connection is locked to
 .IP "\fI[nsp <NSP>]\fP" 42
 \(en Network Service Provider name
+.RE
+.RS
+.TP
+.B pppoe:
+.IP "\fIusername <PPPoE username>\fP" 42
+\(en PPPoE username
+.IP "\fI[password <PPPoE password>]\fP" 42
+\(en Password for the PPPoE username
+.IP "\fI[service <PPPoE service name>]\fP" 42
+\(en PPPoE service name (if required by concentrator)
+.IP "\fI[mtu <MTU>]\fP" 42
+\(en MTU
+.IP "\fI[mac <MAC address>]\fP" 42
+\(en MAC address of the device this connection is locked to
 .RE
 .RS
 .TP

@@ -292,6 +292,11 @@ usage_connection_add (void)
 	         "                  [mtu <MTU>]\n\n"
 	         "    wimax:        [mac <MAC address>]\n"
 	         "                  [nsp <NSP>]\n\n"
+	         "    pppoe:        username <PPPoE username>\n"
+	         "                  [password <PPPoE password>]\n"
+	         "                  [service <PPPoE service name>]\n"
+	         "                  [mtu <MTU>]\n"
+	         "                  [mac <MAC address>]\n\n"
 	         "    gsm:          apn <APN>\n"
 	         "                  [user <username>]\n"
 	         "                  [password <password>]\n\n"
@@ -2630,6 +2635,54 @@ do_questionnaire_wimax (char **mac)
 }
 
 static void
+do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
+{
+	char *answer;
+	gboolean answer_bool;
+	gboolean once_more;
+	GError *error = NULL;
+
+	/* Ask for optional 'pppoe' arguments. */
+	printf (_("There are 4 optional arguments for 'PPPoE' connection type.\n"));
+	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
+	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
+		g_free (answer);
+		return;
+	}
+
+	if (!*password)
+		*password = nmc_get_user_input (_("Password [none]: "));
+	if (!*service)
+		*service = nmc_get_user_input (_("Service [none]: "));
+
+	if (!*mtu) {
+		do {
+			*mtu = nmc_get_user_input (_("MTU [auto]: "));
+			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
+			if (once_more) {
+				printf ("%s\n", error->message);
+				g_clear_error (&error);
+				g_free (*mtu);
+			}
+		} while (once_more);
+	}
+	if (!*mac) {
+		do {
+			*mac = nmc_get_user_input (_("MAC [none]: "));
+			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
+			if (once_more) {
+				printf ("%s\n", error->message);
+				g_clear_error (&error);
+				g_free (*mac);
+			}
+		} while (once_more);
+	}
+
+	g_free (answer);
+	return;
+}
+
+static void
 do_questionnaire_mobile (char **user, char **password)
 {
 	char *answer;
@@ -3246,6 +3299,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingInfiniband *s_infiniband;
 	NMSettingWireless *s_wifi;
 	NMSettingWimax *s_wimax;
+	NMSettingPPPOE *s_pppoe;
 	NMSettingGsm *s_gsm;
 	NMSettingCdma *s_cdma;
 	NMSettingBluetooth *s_bt;
@@ -3520,6 +3574,79 @@ cleanup_wifi:
 cleanup_wimax:
 		g_free (nsp_name_ask);
 		g_free (mac);
+		if (!success)
+			return FALSE;
+
+	} else if (!strcmp (con_type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		/* Build up the settings required for 'pppoe' */
+		gboolean success = FALSE;
+		const char *username = NULL;
+		char *username_ask = NULL;
+		const char *password_c = NULL;
+		char *password = NULL;
+		const char *service_c = NULL;
+		char *service = NULL;
+		const char *mtu_c = NULL;
+		char *mtu = NULL;
+		guint32 mtu_int = 0;
+		const char *mac_c = NULL;
+		char *mac = NULL;
+		GByteArray *mac_array = NULL;
+		nmc_arg_t exp_args[] = { {"username", TRUE, &username,   !ask},
+		                         {"password", TRUE, &password_c, FALSE},
+		                         {"service",  TRUE, &service_c,  FALSE},
+		                         {"mtu",      TRUE, &mtu_c,      FALSE},
+		                         {"mac",      TRUE, &mac_c,      FALSE},
+		                         {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!username && ask)
+			username = username_ask = nmc_get_user_input (_("PPPoE username: "));
+		if (!username) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'username' is required."));
+			goto cleanup_pppoe;
+		}
+
+		/* Also ask for all optional arguments if '--ask' is specified. */
+		password = g_strdup (password_c);
+		service = g_strdup (service_c);
+		mtu = g_strdup (mtu_c);
+		mac = g_strdup (mac_c);
+		if (ask)
+			do_questionnaire_pppoe (&password, &service, &mtu, &mac);
+
+		if (!check_and_convert_mtu (mtu, &mtu_int, error))
+			goto cleanup_pppoe;
+		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+			goto cleanup_pppoe;
+
+		/* Add 'pppoe' setting */
+		s_pppoe = (NMSettingPPPOE *) nm_setting_pppoe_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_pppoe));
+		g_object_set (s_pppoe, NM_SETTING_PPPOE_USERNAME, username, NULL);
+		g_object_set (s_pppoe, NM_SETTING_PPPOE_PASSWORD, password, NULL);
+		g_object_set (s_pppoe, NM_SETTING_PPPOE_SERVICE, service, NULL);
+
+		/* Add ethernet setting */
+		s_wired = (NMSettingWired *) nm_setting_wired_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_wired));
+		if (mtu)
+			g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu_int, NULL);
+		if (mac_array)
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac_array, NULL);
+
+		success = TRUE;
+cleanup_pppoe:
+		g_free (username_ask);
+		g_free (password);
+		g_free (service);
+		g_free (mtu);
+		g_free (mac);
+		if (mac_array)
+			g_byte_array_free (mac_array, TRUE);
 		if (!success)
 			return FALSE;
 
