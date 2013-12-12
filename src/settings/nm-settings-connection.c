@@ -474,6 +474,8 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		 * only update Unsaved if the caller wanted us to.
 		 */
 		changed_cb (self, GUINT_TO_POINTER (update_unsaved));
+
+		g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 	}
 
 	g_signal_handlers_unblock_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
@@ -1232,8 +1234,6 @@ con_update_cb (NMSettingsConnection *self,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, info->subject);
 		g_object_unref (for_agent);
-
-		g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 	}
 
 	update_complete (self, info, error);
