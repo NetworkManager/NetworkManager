@@ -294,7 +294,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 	 * NMSettingPPPOE:service:
 	 *
 	 * If specified, instruct PPPoE to only initiate sessions with access
-	 * concentrators that provide the specified serivce.  For most providers,
+	 * concentrators that provide the specified service.  For most providers,
 	 * this should be left blank.  It is only required if there are multiple
 	 * access concentrators or a specific service is known to be required.
 	 **/
@@ -304,7 +304,7 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 						  "Service",
 						  "If specified, instruct PPPoE to only initiate sessions "
 						  "with access concentrators that provide the specified "
-						  "serivce.  For most providers, this should be left "
+						  "service.  For most providers, this should be left "
 						  "blank.  It is only required if there are multiple "
 						  "access concentrators or a specific service is known "
 						  "to be required.",
