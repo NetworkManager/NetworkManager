@@ -46,6 +46,7 @@
 
 #define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
+#define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER    "connection-updated-by-user"
 #define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
 #define NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED            "connections-loaded"

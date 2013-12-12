@@ -149,6 +149,7 @@ enum {
 	PROPERTIES_CHANGED,
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
+	CONNECTION_UPDATED_BY_USER,
 	CONNECTION_REMOVED,
 	CONNECTION_VISIBILITY_CHANGED,
 	CONNECTIONS_LOADED,
@@ -693,6 +694,16 @@ connection_updated (NMSettingsConnection *connection, gpointer user_data)
 }
 
 static void
+connection_updated_by_user (NMSettingsConnection *connection, gpointer user_data)
+{
+	/* Re-emit for listeners like NMPolicy */
+	g_signal_emit (NM_SETTINGS (user_data),
+	               signals[CONNECTION_UPDATED_BY_USER],
+	               0,
+	               connection);
+}
+
+static void
 connection_visibility_changed (NMSettingsConnection *connection,
                                GParamSpec *pspec,
                                gpointer user_data)
@@ -718,6 +729,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated_by_user), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
 
 	/* Forget about the connection internally */
@@ -831,6 +843,8 @@ claim_connection (NMSettings *self,
 	                  G_CALLBACK (connection_removed), self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED,
 	                  G_CALLBACK (connection_updated), self);
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_BY_USER,
+	                  G_CALLBACK (connection_updated_by_user), self);
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
 	                  G_CALLBACK (connection_visibility_changed),
 	                  self);
@@ -1951,6 +1965,15 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              G_OBJECT_CLASS_TYPE (object_class),
 	                              G_SIGNAL_RUN_FIRST,
 	                              G_STRUCT_OFFSET (NMSettingsClass, connection_updated),
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__OBJECT,
+	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[CONNECTION_UPDATED_BY_USER] =
+	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER,
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              0,
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__OBJECT,
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
