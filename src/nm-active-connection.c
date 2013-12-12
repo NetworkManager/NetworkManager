@@ -139,6 +139,12 @@ nm_active_connection_set_state (NMActiveConnection *self,
 		                                         (guint64) time (NULL), TRUE);
 	}
 
+	if (priv->device) {
+		if (   old_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+		    && new_state >= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+			nm_device_remove_pending_action (priv->device, "activation");
+	}
+
 	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
 		/* Device is no longer relevant when deactivated; emit property change
 		 * notification so clients re-read the value, which will be NULL due to
@@ -352,6 +358,8 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		                                          "state-changed",
 		                                          G_CALLBACK (device_state_changed),
 		                                          self);
+
+		nm_device_add_pending_action (device, "activation");
 	}
 	return TRUE;
 }
