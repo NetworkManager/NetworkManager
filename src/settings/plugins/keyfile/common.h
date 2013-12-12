@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2010 Red Hat, Inc.
+ * (C) Copyright 2008 - 2013 Red Hat, Inc.
  */
 
 #ifndef __COMMON_H__
@@ -24,7 +24,7 @@
 #include <glib.h>
 
 #define KEYFILE_PLUGIN_NAME "keyfile"
-#define KEYFILE_PLUGIN_INFO "(c) 2007 - 2010 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
+#define KEYFILE_PLUGIN_INFO "(c) 2007 - 2013 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
 #define KEYFILE_DIR NMCONFDIR "/system-connections"
 
