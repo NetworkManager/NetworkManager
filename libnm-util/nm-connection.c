@@ -446,9 +446,14 @@ nm_connection_compare (NMConnection *a,
 	GHashTableIter iter;
 	NMSetting *src;
 
-	if (!a && !b)
+	if (a == b)
 		return TRUE;
 	if (!a || !b)
+		return FALSE;
+
+	/* B / A: ensure settings in B that are not in A make the comparison fail */
+	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (a)->settings) !=
+		g_hash_table_size (NM_CONNECTION_GET_PRIVATE (b)->settings))
 		return FALSE;
 
 	/* A / B: ensure all settings in A match corresponding ones in B */
@@ -459,11 +464,6 @@ nm_connection_compare (NMConnection *a,
 		if (!cmp || !nm_setting_compare (src, cmp, flags))
 			return FALSE;
 	}
-
-	/* B / A: ensure settings in B that are not in A make the comparison fail */
-	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (a)->settings) !=
-		g_hash_table_size (NM_CONNECTION_GET_PRIVATE (b)->settings))
-		return FALSE;
 
 	return TRUE;
 }
