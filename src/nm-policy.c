@@ -1627,14 +1627,21 @@ typedef struct {
 } DeviceSignalId;
 
 static void
-_connect_device_signal (NMPolicy *policy, NMDevice *device, const char *name, gpointer callback)
+_connect_device_signal (NMPolicy *policy,
+                        NMDevice *device,
+                        const char *name,
+                        gpointer callback,
+                        gboolean after)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	DeviceSignalId *data;
 
 	data = g_slice_new0 (DeviceSignalId);
 	g_assert (data);
-	data->id = g_signal_connect (device, name, callback, policy);
+	if (after)
+		data->id = g_signal_connect_after (device, name, callback, policy);
+	else
+		data->id = g_signal_connect (device, name, callback, policy);
 	data->device = device;
 	priv->dev_ids = g_slist_prepend (priv->dev_ids, data);
 }
@@ -1644,22 +1651,23 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
-	_connect_device_signal (policy, device, "state-changed", device_state_changed);
-	_connect_device_signal (policy, device, NM_DEVICE_IP4_CONFIG_CHANGED, device_ip4_config_changed);
-	_connect_device_signal (policy, device, NM_DEVICE_IP6_CONFIG_CHANGED, device_ip6_config_changed);
-	_connect_device_signal (policy, device, "notify::" NM_DEVICE_AUTOCONNECT, device_autoconnect_changed);
+	/* Connect state-changed with _after, so that the handler is invoked after other handlers. */
+	_connect_device_signal (policy, device, "state-changed", device_state_changed, TRUE);
+	_connect_device_signal (policy, device, NM_DEVICE_IP4_CONFIG_CHANGED, device_ip4_config_changed, FALSE);
+	_connect_device_signal (policy, device, NM_DEVICE_IP6_CONFIG_CHANGED, device_ip6_config_changed, FALSE);
+	_connect_device_signal (policy, device, "notify::" NM_DEVICE_AUTOCONNECT, device_autoconnect_changed, FALSE);
 
 	switch (nm_device_get_device_type (device)) {
 	case NM_DEVICE_TYPE_WIFI:
-		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed);
-		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed);
+		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed, FALSE);
+		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed, FALSE);
 		break;
 	case NM_DEVICE_TYPE_WIMAX:
-		_connect_device_signal (policy, device, "nsp-added", nsps_changed);
-		_connect_device_signal (policy, device, "nsp-removed", nsps_changed);
+		_connect_device_signal (policy, device, "nsp-added", nsps_changed, FALSE);
+		_connect_device_signal (policy, device, "nsp-removed", nsps_changed, FALSE);
 		break;
 	case NM_DEVICE_TYPE_MODEM:
-		_connect_device_signal (policy, device, "enable-changed", modem_enabled_changed);
+		_connect_device_signal (policy, device, "enable-changed", modem_enabled_changed, FALSE);
 		break;
 	default:
 		break;
