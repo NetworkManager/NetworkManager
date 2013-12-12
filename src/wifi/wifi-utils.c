@@ -78,13 +78,6 @@ wifi_utils_get_caps (WifiData *data)
 	return data->caps;	
 }
 
-gboolean
-wifi_utils_can_scan_ssid (WifiData *data)
-{
-	g_return_val_if_fail (data != NULL, FALSE);
-	return data->can_scan_ssid;
-}
-
 NM80211Mode
 wifi_utils_get_mode (WifiData *data)
 {

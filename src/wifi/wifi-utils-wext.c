@@ -630,7 +630,6 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	 */
 	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
 	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
-		wext->parent.can_scan_ssid = TRUE;
 		nm_log_info (LOGD_HW | LOGD_WIFI,
 		             "(%s): driver supports SSID scans (scan_capa 0x%02X).",
 		             wext->parent.iface,

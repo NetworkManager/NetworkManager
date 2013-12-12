@@ -91,8 +91,6 @@ GType nm_device_wifi_get_type (void);
 
 NMDevice *nm_device_wifi_new (NMPlatformLink *platform_device);
 
-NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
-
 RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);
 
 G_END_DECLS

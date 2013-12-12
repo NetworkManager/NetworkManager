@@ -30,7 +30,6 @@ struct WifiData {
 	char *iface;
 	int ifindex;
 	NMDeviceWifiCapabilities caps;
-	gboolean can_scan_ssid;
 
 	NM80211Mode (*get_mode) (WifiData *data);
 

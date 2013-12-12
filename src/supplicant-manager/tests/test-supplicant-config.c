@@ -173,7 +173,7 @@ test_wifi_open (void)
 
 	config = nm_supplicant_config_new ();
 
-	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, TRUE, 0, TRUE);
+	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, 0);
 	ASSERT (success == TRUE,
 	        "wifi-open", "failed to add wireless setting to supplicant config.");
 
@@ -272,7 +272,7 @@ test_wifi_wep_key (const char *detail,
 
 	config = nm_supplicant_config_new ();
 
-	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, TRUE, 0, TRUE);
+	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, 0);
 	ASSERT (success == TRUE,
 	        detail, "failed to add wireless setting to supplicant config.");
 
@@ -405,7 +405,7 @@ test_wifi_wpa_psk (const char *detail,
 
 	config = nm_supplicant_config_new ();
 
-	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, TRUE, 0, TRUE);
+	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, 0);
 	ASSERT (success == TRUE,
 	        detail, "failed to add wireless setting to supplicant config.");
 
