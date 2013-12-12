@@ -399,7 +399,7 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .IP "\fI[cloned-mac <cloned MAC address>]\fP" 42
 \(en cloned MAC
 .IP "\fI[mtu <MTU>]\fP" 42
-\(en MAC
+\(en MTU
 .RE
 .RS
 .TP
@@ -493,14 +493,16 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .RS
 .TP
 .B team:
-.IP "\fI[config <json config>]\fP" 42
-\(en configuration file
+.IP "\fI[config <file>|<raw JSON data>]\fP" 42
+\(en JSON configuration for team
 .RE
 .RS
 .TP
 .B team-slave:
 .IP "\fImaster <master (ifname or connection UUID)>\fP" 42
 \(en name of team master interface
+.IP "\fI[config <file>|<raw JSON data>]\fP" 42
+\(en JSON configuration for team
 .RE
 .RS
 .TP
