@@ -1963,13 +1963,16 @@ connection_updated (NMSettings *settings,
 
 	firewall_update_zone (policy, connection);
 
-	/* FIXME: previously, we set_connection_auto_retries() again to
-	 * RETRIES_DEFAULT, in order to re-enable a connection when it is changed
-	 * by the user. This caused a serious problem, so remove it for now
-	 * (rh #1040528).
-	 **/
-
 	schedule_activate_all (policy);
+}
+
+static void
+connection_updated_by_user (NMSettings *settings,
+                            NMConnection *connection,
+                            gpointer user_data)
+{
+	/* Reset auto retries back to default since connection was updated */
+	set_connection_auto_retries (connection, RETRIES_DEFAULT);
 }
 
 static void
@@ -2110,6 +2113,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED, connections_loaded);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_ADDED, connection_added);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED, connection_updated);
+	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER, connection_updated_by_user);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED, connection_removed);
 	_connect_settings_signal (policy, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                          connection_visibility_changed);
