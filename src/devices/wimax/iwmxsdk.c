@@ -1430,9 +1430,10 @@ static void iwmx_sdk_addremove_cb(WIMAX_API_DEVICE_ID *devid,
 		iwmx_sdk_dev_add(devid->deviceIndex, dev->deviceIndex, dev->deviceName);
 	} else {
 		/* Remove the device from our internal list */
-		cnt = deviceid_to_index(devid);
-		if (cnt >= 0)
-			iwmx_sdk_dev_rm(cnt);
+		int idx = deviceid_to_index(devid);
+
+		if (idx >= 0)
+			iwmx_sdk_dev_rm(idx);
 	}
 
 out:
