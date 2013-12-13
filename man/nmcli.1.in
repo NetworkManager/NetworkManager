@@ -470,17 +470,17 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .B bond:
 .IP "\fI[mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\fP"
 .IP "\fI      802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\fP" 42
-\(en bonding mode
+\(en bonding mode (default: balance-rr)
 .IP "\fI[primary <ifname>]\fP" 42
 \(en primary interface name (for "active-backup" mode)
 .IP "\fI[miimon <num>]\fP" 42
-\(en miimon
+\(en miimon (default: 100)
 .IP "\fI[downdelay <num>]\fP" 42
-\(en downdelay
+\(en downdelay (default: 0)
 .IP "\fI[updelay <num>]\fP" 42
-\(en updelay
+\(en updelay (default: 0)
 .IP "\fI[arp-interval <num>]\fP" 42
-\(en ARP interval
+\(en ARP interval (default: 0)
 .IP "\fI[arp-ip-target <num>]\fP" 42
 \(en ARP IP target
 .RE
@@ -507,18 +507,18 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .RS
 .TP
 .B bridge:
-.IP "\fI[stp yes|no>]\fP" 42
-\(en controls whether Spanning Tree Protocol (STP) is enabled for this bridge
+.IP "\fI[stp yes|no]\fP" 42
+\(en controls whether Spanning Tree Protocol (STP) is enabled for this bridge (default: yes)
 .IP "\fI[priority <num>]\fP" 42
-\(en sets STP priority
+\(en sets STP priority (default: 128)
 .IP "\fI[forward-delay <2-30>]\fP" 42
-\(en STP forwarding delay, in seconds
+\(en STP forwarding delay, in seconds (default: 15)
 .IP "\fI[hello-time <1-10>]\fP" 42
-\(en STP hello time, in seconds
+\(en STP hello time, in seconds (default: 2)
 .IP "\fI[max-age <6-42>]\fP" 42
-\(en STP maximum message age, in seconds
+\(en STP maximum message age, in seconds (default: 20)
 .IP "\fI[ageing-time <0-1000000>]\fP" 42
-\(en the Ethernet MAC address aging time, in seconds
+\(en the Ethernet MAC address aging time, in seconds (default: 300)
 .RE
 .RS
 .TP
@@ -526,12 +526,12 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .IP "\fImaster <master (ifname or connection UUID)>\fP" 42
 \(en name of bridge master interface
 .IP "\fI[priority <0-63>]\fP" 42
-\(en STP priority of this slave
+\(en STP priority of this slave (default: 32)
 .IP "\fI[path-cost <1-65535>]\fP" 42
-\(en STP port cost for destinations via this slave
+\(en STP port cost for destinations via this slave (default: 100)
 .IP "\fI[hairpin yes|no]\fP" 42
 \(en 'hairpin mode' for the slave, which allows frames
-to be sent back out through the slave the frame was received on
+to be sent back out through the slave the frame was received on (default: yes)
 .RE
 .RS
 .TP
