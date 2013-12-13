@@ -3432,7 +3432,6 @@ static int
 ip6_use_tempaddr (void)
 {
 	char *contents = NULL;
-	gsize len = 0;
 	const char *group_name = "[forged_group]\n";
 	char *sysctl_data = NULL;
 	GKeyFile *keyfile;
@@ -3440,15 +3439,15 @@ ip6_use_tempaddr (void)
 	int tmp, ret = -1;
 
 	/* Read file contents to a string. */
-	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, &len, NULL))
-		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, &len, NULL))
+	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, NULL, NULL))
+		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, NULL, NULL))
 			return -1;
 
 	/* Prepend a group so that we can use GKeyFile parser. */
 	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
 
 	keyfile = g_key_file_new ();
-	if (!g_key_file_load_from_data (keyfile, sysctl_data, len + strlen (group_name), G_KEY_FILE_NONE, NULL))
+	if (!g_key_file_load_from_data (keyfile, sysctl_data, -1, G_KEY_FILE_NONE, NULL))
 		goto done;
 
 	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
