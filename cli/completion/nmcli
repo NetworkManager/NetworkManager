@@ -304,7 +304,7 @@ _nmcli_complete_COMMAND_ARGS()
                         # user friendly. Only complete them, if the current word already starts with an "8".
                         _nmcli_list "802-3-ethernet 802-11-wireless 802-11-olpc-mesh"
                     else
-                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bond-slave bridge bridge-slave team team-slave"
+                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband adsl bluetooth vpn olpc-mesh vlan bond bond-slave bridge bridge-slave team team-slave pppoe"
                     fi
                    return 0
                 fi
@@ -415,6 +415,8 @@ _nmcli_complete_COMMAND_ARGS()
             apn| \
             con-name| \
             user| \
+            username| \
+            service| \
             password)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     return 0
@@ -757,6 +759,10 @@ _nmcli()
                                 o|ol|olp|olpc|olpc-|olpc-m|olpc-me|olpc-mes|olpc-mesh)
                                     OPTIONS_TYPED=(ssid channel dhcp-anycast)
                                     OPTIONS_MANDATORY=(ssid)
+                                    ;;
+                                p|pp|ppp|pppo|pppoe)
+                                    OPTIONS_TYPED=(username password service mtu mac)
+                                    OPTIONS_MANDATORY=(username)
                                     ;;
                                 *)
                                     # for an unknown connection type, we stop completion here
