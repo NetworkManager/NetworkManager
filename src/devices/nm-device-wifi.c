@@ -2846,28 +2846,34 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		}
 	}
 
+	if (ap) {
+		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
+		goto done;
+	}
+
 	/* If the user is trying to connect to an AP that NM doesn't yet know about
 	 * (hidden network or something) or starting a Hotspot, create an fake AP
 	 * from the security settings in the connection.  This "fake" AP gets used
 	 * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
 	 * the device is deactivated (Hotspot).
 	 */
-	if (!ap) {
-		ap = nm_ap_new_fake_from_connection (connection);
-		g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	ap = nm_ap_new_fake_from_connection (connection);
+	g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-		if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
-			nm_ap_set_broadcast (ap, FALSE);
-		else if (nm_ap_is_hotspot (ap))
-			nm_ap_set_address (ap, (const struct ether_addr *) nm_device_get_hw_address (dev, NULL));
+	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
+		nm_ap_set_broadcast (ap, FALSE);
+	else if (nm_ap_is_hotspot (ap))
+		nm_ap_set_address (ap, (const struct ether_addr *) nm_device_get_hw_address (dev, NULL));
 
-		priv->ap_list = g_slist_prepend (priv->ap_list, ap);
-		nm_ap_export_to_dbus (ap);
-		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
-		nm_device_recheck_available_connections (NM_DEVICE (self));
-	}
-
+	priv->ap_list = g_slist_prepend (priv->ap_list, ap);
+	nm_ap_export_to_dbus (ap);
+	g_object_freeze_notify (G_OBJECT (self));
+	set_current_ap (self, ap, FALSE, FALSE);
+	g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
+	g_object_thaw_notify (G_OBJECT (self));
+	nm_device_recheck_available_connections (NM_DEVICE (self));
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 
 done:
 	set_current_ap (self, ap, TRUE, FALSE);
