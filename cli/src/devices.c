@@ -99,11 +99,13 @@ static NmcOutputField nmc_fields_dev_show_general[] = {
 	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 13 */
 	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 14 */
 	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 15 */
-	{"CONNECTION",        N_("CONNECTION"),        51},  /* 16 */
+	{"CONNECTION",        N_("CONNECTION"),        20},  /* 16 */
+	{"CON-UUID",          N_("CON-UUID"),          38},  /* 17 */
+	{"CON-PATH",          N_("CON-PATH"),          51},  /* 18 */
 	{NULL, NULL, 0}
 };
-#define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,STATE,REASON,UDI,IP-IFACE,"\
-                                            "NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,CONNECTION"
+#define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,STATE,REASON,"\
+                                            "UDI,IP-IFACE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,CONNECTION,CON-UUID,CON-PATH"
 #define NMC_FIELDS_DEV_SHOW_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
 /* Available fields for 'device show' - CONNECTIONS part */
@@ -247,11 +249,15 @@ static NmcOutputField nmc_fields_dev_show_sections[] = {
 	{NULL,                NULL,                    0, NULL                                }
 };
 #if WITH_WIMAX
-#define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,"\
+                                             "WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-PATH,"\
+                                             "WIRED-PROPERTIES,IP4,IP6"
 #else
-#define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,"\
+                                             "IP4,DHCP4,IP6,DHCP6"
+#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-PATH,"\
+                                             "WIRED-PROPERTIES,IP4,IP6"
 #endif
 
 
@@ -564,6 +570,30 @@ construct_header_name (const char *base, const char *spec)
 	return header_name;
 }
 
+static const char *
+get_active_connection_id (NMDevice *device)
+{
+	const GPtrArray *avail_cons;
+	NMActiveConnection *ac;
+	const char *ac_uuid;
+	int i;
+
+	ac = nm_device_get_active_connection (device);
+	if (!ac)
+		return NULL;
+	ac_uuid = nm_active_connection_get_uuid (ac);
+
+	avail_cons = nm_device_get_available_connections (device);
+	for (i = 0; avail_cons && (i < avail_cons->len); i++) {
+		NMRemoteConnection *candidate = g_ptr_array_index (avail_cons, i);
+		const char *test_uuid = nm_connection_get_uuid (NM_CONNECTION (candidate));
+
+		if (g_strcmp0 (ac_uuid, test_uuid) == 0)
+			return nm_connection_get_id (NM_CONNECTION (candidate));
+	}
+	return NULL;
+}
+
 static void
 show_device_info (NMDevice *device, NmCli *nmc)
 {
@@ -659,6 +689,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 			state_str = g_strdup_printf ("%d (%s)", state, nmc_device_state_to_string (state));
 			reason_str = g_strdup_printf ("%d (%s)", reason, nmc_device_reason_to_string (reason));
+			acon = nm_device_get_active_connection (device);
 
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 			set_val_strc (arr, 0, nmc_fields_dev_show_sections[0].name);  /* "GENERAL"*/
@@ -677,8 +708,9 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 13, nm_device_get_managed (device) ? _("yes") : _("no"));
 			set_val_strc (arr, 14, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
 			set_val_strc (arr, 15, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 16, ((acon = nm_device_get_active_connection (device)) ?
-			                         nm_object_get_path (NM_OBJECT (acon)) : _("not connected")));
+			set_val_strc (arr, 16, get_active_connection_id (device));
+			set_val_strc (arr, 17, acon ? nm_active_connection_get_uuid (acon) : NULL);
+			set_val_strc (arr, 18, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
 			g_ptr_array_add (nmc->output_data, arr);
 
 			print_data (nmc);  /* Print all data */
@@ -1010,30 +1042,6 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		g_array_free (sections_array, TRUE);
 	if (fields_in_section)
 		g_ptr_array_free (fields_in_section, TRUE);
-}
-
-static const char *
-get_active_connection_id (NMDevice *device)
-{
-	const GPtrArray *avail_cons;
-	NMActiveConnection *ac;
-	const char *ac_uuid;
-	int i;
-
-	ac = nm_device_get_active_connection (device);
-	if (!ac)
-		return NULL;
-	ac_uuid = nm_active_connection_get_uuid (ac);
-
-	avail_cons = nm_device_get_available_connections (device);
-	for (i = 0; avail_cons && (i < avail_cons->len); i++) {
-		NMRemoteConnection *candidate = g_ptr_array_index (avail_cons, i);
-		const char *test_uuid = nm_connection_get_uuid (NM_CONNECTION (candidate));
-
-		if (g_strcmp0 (ac_uuid, test_uuid) == 0)
-			return nm_connection_get_id (NM_CONNECTION (candidate));
-	}
-	return NULL;
 }
 
 static void
