@@ -92,3 +92,4 @@ tui/nmtui-connect.c
 tui/nmtui-edit.c
 tui/nmtui-hostname.c
 tui/nmtui.c
+tui/vpn-helpers.c
