@@ -167,14 +167,9 @@ impl_device_get_nsp_list (NMDeviceWimax *self, GPtrArray **nsps, GError **error)
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	GSList *iter;
 
-	*nsps = g_ptr_array_sized_new (g_slist_length (priv->nsp_list));
-	for (iter = priv->nsp_list; iter; iter = iter->next) {
-		const char *path;
-
-		path = nm_wimax_nsp_get_dbus_path (NM_WIMAX_NSP (iter->data));
-		if (path)
-			g_ptr_array_add (*nsps, g_strdup (path));
-	}
+	*nsps = g_ptr_array_sized_new (4);
+	for (iter = priv->nsp_list; iter; iter = iter->next)
+		g_ptr_array_add (*nsps, g_strdup (nm_wimax_nsp_get_dbus_path (NM_WIMAX_NSP (iter->data))));
 
 	return TRUE;
 }
@@ -231,7 +226,7 @@ remove_all_nsps (NMDeviceWimax *self)
 
 	set_current_nsp (self, NULL);
 
-	while (g_slist_length (priv->nsp_list)) {
+	while (priv->nsp_list) {
 		NMWimaxNsp *nsp = NM_WIMAX_NSP (priv->nsp_list->data);
 
 		priv->nsp_list = g_slist_remove (priv->nsp_list, nsp);
@@ -240,9 +235,6 @@ remove_all_nsps (NMDeviceWimax *self)
 	}
 
 	nm_device_recheck_available_connections (NM_DEVICE (self));
-
-	g_slist_free (priv->nsp_list);
-	priv->nsp_list = NULL;
 }
 
 static NMWimaxNsp *
@@ -250,6 +242,8 @@ get_nsp_by_name (NMDeviceWimax *self, const char *name)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	GSList *iter;
+
+	g_return_val_if_fail (name, NULL);
 
 	for (iter = priv->nsp_list; iter; iter = iter->next) {
 		NMWimaxNsp *nsp = NM_WIMAX_NSP (iter->data);
@@ -267,10 +261,12 @@ get_nsp_by_path (NMDeviceWimax *self, const char *path)
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	GSList *iter;
 
+	g_return_val_if_fail (path, NULL);
+
 	for (iter = priv->nsp_list; iter; iter = iter->next) {
 		NMWimaxNsp *nsp = NM_WIMAX_NSP (iter->data);
 
-		if (!g_strcmp0 (nm_wimax_nsp_get_dbus_path (nsp), path))
+		if (!strcmp (nm_wimax_nsp_get_dbus_path (nsp), path))
 			return nsp;
 	}
 
