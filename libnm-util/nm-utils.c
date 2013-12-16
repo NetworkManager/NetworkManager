@@ -2277,7 +2277,7 @@ nm_utils_is_uuid (const char *str)
 static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 
 /**
- * nm_utils_inet4_ntop:
+ * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.
  * @dst: the destination buffer, it must contain at least %INET_ADDRSTRLEN
  *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
@@ -2302,7 +2302,7 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 }
 
 /**
- * nm_utils_inet6_ntop:
+ * nm_utils_inet6_ntop: (skip)
  * @in6addr: the address that should be converted to string.
  * @dst: the destination buffer, it must contain at least %INET6_ADDRSTRLEN
  *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
