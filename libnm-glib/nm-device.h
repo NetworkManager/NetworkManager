@@ -100,13 +100,13 @@ typedef struct {
 	                                   GError **error);
 
 	const char * (*get_type_description) (NMDevice *device);
+	const char * (*get_hw_address) (NMDevice *device);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
-	void (*_reserved5) (void);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);
@@ -121,6 +121,7 @@ const char *         nm_device_get_driver           (NMDevice *device);
 const char *         nm_device_get_driver_version   (NMDevice *device);
 const char *         nm_device_get_firmware_version (NMDevice *device);
 const char *         nm_device_get_type_description (NMDevice *device);
+const char *         nm_device_get_hw_address       (NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities     (NMDevice *device);
 gboolean             nm_device_get_managed          (NMDevice *device);
 gboolean             nm_device_get_autoconnect      (NMDevice *device);

@@ -154,6 +154,12 @@ nm_device_team_get_slaves (NMDeviceTeam *device)
 	return handle_ptr_array_return (NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves);
 }
 
+static const char *
+get_hw_address (NMDevice *device)
+{
+	return nm_device_team_get_hw_address (NM_DEVICE_TEAM (device));
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -292,6 +298,7 @@ nm_device_team_class_init (NMDeviceTeamClass *eth_class)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_hw_address = get_hw_address;
 
 	/* properties */
 

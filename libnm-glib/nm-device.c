@@ -1152,6 +1152,28 @@ nm_device_get_type_description (NMDevice *device)
 }
 
 /**
+ * nm_device_get_hw_address:
+ * @device: a #NMDevice
+ *
+ * Gets the current a hardware address (MAC) for the @device.
+ *
+ * Returns: the current MAC of the device, or %NULL.
+ * This is the internal string used by the device, and must not be modified.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_device_get_hw_address (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	if (NM_DEVICE_GET_CLASS (device)->get_hw_address)
+		return NM_DEVICE_GET_CLASS (device)->get_hw_address (device);
+
+	return NULL;
+}
+
+/**
  * nm_device_get_capabilities:
  * @device: a #NMDevice
  *

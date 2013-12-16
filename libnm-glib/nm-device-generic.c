@@ -128,6 +128,12 @@ get_type_description (NMDevice *device)
 	return priv->type_description;
 }
 
+static const char *
+get_hw_address (NMDevice *device)
+{
+	return nm_device_generic_get_hw_address (NM_DEVICE_GENERIC (device));
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -246,6 +252,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->get_property = get_property;
 
 	device_class->get_type_description = get_type_description;
+	device_class->get_hw_address = get_hw_address;
 	device_class->connection_compatible = connection_compatible;
 
 	/**

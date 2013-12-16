@@ -555,6 +555,12 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->connection_compatible (device, connection, error);
 }
 
+static const char *
+get_hw_address (NMDevice *device)
+{
+	return nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
+}
+
 /**************************************************************/
 
 static void
@@ -719,6 +725,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_hw_address = get_hw_address;
 
 	/* properties */
 
