@@ -188,7 +188,7 @@ typedef struct {
 	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
 	guint queued_ip_config_id;
-	GArray *pending_actions;
+	GSList *pending_actions;
 
 	char *        udi;
 	char *        path;
@@ -395,7 +395,6 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
-	priv->pending_actions = g_array_sized_new (FALSE, TRUE, sizeof (GQuark), 4);
 }
 
 static void
@@ -5372,7 +5371,7 @@ finalize (GObject *object)
 	if (priv->fw_manager)
 		g_object_unref (priv->fw_manager);
 
-	g_array_free (priv->pending_actions, TRUE);
+	g_slist_free_full (priv->pending_actions, g_free);
 
 	g_free (priv->udi);
 	g_free (priv->path);
@@ -7157,30 +7156,31 @@ void
 nm_device_add_pending_action (NMDevice *device, const char *action)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	GQuark qaction;
-	guint i;
+	GSList *iter;
+	guint count;
 
-	qaction = g_quark_from_static_string (action);
+	g_return_if_fail (action);
 
 	/* Shouldn't ever add the same pending action twice */
-	for (i = 0; i < priv->pending_actions->len; i++) {
-		if (qaction == g_array_index (priv->pending_actions, GQuark, i)) {
+	for (iter = priv->pending_actions; iter; iter = iter->next) {
+		if (!strcmp (action, iter->data)) {
 			nm_log_warn (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s' already added",
 			             nm_device_get_iface (device),
-			             priv->pending_actions->len,
+			             g_slist_length (priv->pending_actions),
 			             action);
-			g_warn_if_reached ();
-			return;
+			g_return_val_if_reached (FALSE);
 		}
 	}
 
-	g_array_append_val (priv->pending_actions, qaction);
+	priv->pending_actions = g_slist_append (priv->pending_actions, g_strdup (action));
+	count = g_slist_length (priv->pending_actions);
+
 	nm_log_dbg (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s'",
 	            nm_device_get_iface (device),
-	            priv->pending_actions->len,
+	            count,
 	            action);
 
-	if (priv->pending_actions->len == 1)
+	if (count == 1)
 		g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
 }
 
@@ -7195,21 +7195,21 @@ void
 nm_device_remove_pending_action (NMDevice *device, const char *action)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	GQuark qaction;
-	guint i;
+	GSList *iter;
 
-	qaction = g_quark_from_static_string (action);
+	g_return_if_fail (action);
 
 	/* Shouldn't ever add the same pending action twice */
-	for (i = 0; i < priv->pending_actions->len; i++) {
-		if (qaction == g_array_index (priv->pending_actions, GQuark, i)) {
-			g_array_remove_index (priv->pending_actions, i);
+	for (iter = priv->pending_actions; iter; iter = iter->next) {
+		if (!strcmp (action, iter->data)) {
+			g_free (iter->data);
+			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s'",
 			            nm_device_get_iface (device),
-			            priv->pending_actions->len,
+			            g_slist_length (priv->pending_actions),
 			            action);
 
-			if (priv->pending_actions->len == 0)
+			if (priv->pending_actions == NULL)
 				g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
 			return;
 		}
@@ -7217,8 +7217,9 @@ nm_device_remove_pending_action (NMDevice *device, const char *action)
 
 	nm_log_warn (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s' never added",
 	             nm_device_get_iface (device),
-	             priv->pending_actions->len,
+	             g_slist_length (priv->pending_actions),
 	             action);
+	g_return_if_reached ();
 }
 
 gboolean
@@ -7226,7 +7227,7 @@ nm_device_has_pending_action (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	return priv->pending_actions->len > 0;
+	return !!priv->pending_actions;
 }
 
 const char *
