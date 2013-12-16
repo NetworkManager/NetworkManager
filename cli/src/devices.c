@@ -92,19 +92,20 @@ static NmcOutputField nmc_fields_dev_show_general[] = {
 	{"DRIVER-VERSION",    N_("DRIVER-VERSION"),    18},  /* 6 */
 	{"FIRMWARE-VERSION",  N_("FIRMWARE-VERSION"),  18},  /* 7 */
 	{"HWADDR",            N_("HWADDR"),            19},  /* 8 */
-	{"STATE",             N_("STATE"),             14},  /* 9 */
-	{"REASON",            N_("REASON"),            25},  /* 10 */
-	{"UDI",               N_("UDI"),               64},  /* 11 */
-	{"IP-IFACE",          N_("IP-IFACE"),          10},  /* 12 */
-	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 13 */
-	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 14 */
-	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 15 */
-	{"CONNECTION",        N_("CONNECTION"),        20},  /* 16 */
-	{"CON-UUID",          N_("CON-UUID"),          38},  /* 17 */
-	{"CON-PATH",          N_("CON-PATH"),          51},  /* 18 */
+	{"MTU",               N_("MTU"),               10},  /* 9 */
+	{"STATE",             N_("STATE"),             14},  /* 10 */
+	{"REASON",            N_("REASON"),            25},  /* 11 */
+	{"UDI",               N_("UDI"),               64},  /* 12 */
+	{"IP-IFACE",          N_("IP-IFACE"),          10},  /* 13 */
+	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 14 */
+	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 15 */
+	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 16 */
+	{"CONNECTION",        N_("CONNECTION"),        20},  /* 17 */
+	{"CON-UUID",          N_("CON-UUID"),          38},  /* 18 */
+	{"CON-PATH",          N_("CON-PATH"),          51},  /* 19 */
 	{NULL, NULL, 0}
 };
-#define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,STATE,REASON,"\
+#define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,MTU,STATE,REASON,"\
                                             "UDI,IP-IFACE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,CONNECTION,CON-UUID,CON-PATH"
 #define NMC_FIELDS_DEV_SHOW_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
@@ -251,13 +252,13 @@ static NmcOutputField nmc_fields_dev_show_sections[] = {
 #if WITH_WIMAX
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,"\
                                              "WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-PATH,"\
-                                             "WIRED-PROPERTIES,IP4,IP6"
+#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
+                                             "GENERAL.CONNECTION,GENERAL.CON-PATH,WIRED-PROPERTIES,IP4,IP6"
 #else
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,"\
                                              "IP4,DHCP4,IP6,DHCP6"
-#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-PATH,"\
-                                             "WIRED-PROPERTIES,IP4,IP6"
+#define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
+                                             "GENERAL.CONNECTION,GENERAL.CON-PATH,WIRED-PROPERTIES,IP4,IP6"
 #endif
 
 
@@ -605,9 +606,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	NMDeviceCapabilities caps;
 	NMActiveConnection *acon;
 	guint32 speed;
-	char *speed_str = NULL;
-	char *state_str = NULL;
-	char *reason_str = NULL;
+	char *speed_str, *state_str, *reason_str, *mtu_str;
 	GArray *sections_array;
 	int k;
 	char *fields_str;
@@ -673,6 +672,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			state_str = g_strdup_printf ("%d (%s)", state, nmc_device_state_to_string (state));
 			reason_str = g_strdup_printf ("%d (%s)", reason, nmc_device_reason_to_string (reason));
 			hwaddr = nm_device_get_hw_address (device);
+			mtu_str = g_strdup_printf ("%u", nm_device_get_mtu (device));
 			acon = nm_device_get_active_connection (device);
 
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
@@ -685,16 +685,17 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 6, nm_device_get_driver_version (device));
 			set_val_strc (arr, 7, nm_device_get_firmware_version (device));
 			set_val_strc (arr, 8, hwaddr ? hwaddr : _("(unknown)"));
-			set_val_str  (arr, 9, state_str);
-			set_val_str  (arr, 10, reason_str);
-			set_val_strc (arr, 11, nm_device_get_udi (device));
-			set_val_strc (arr, 12, nm_device_get_ip_iface (device));
-			set_val_strc (arr, 13, nm_device_get_managed (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 14, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 15, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 16, get_active_connection_id (device));
-			set_val_strc (arr, 17, acon ? nm_active_connection_get_uuid (acon) : NULL);
-			set_val_strc (arr, 18, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
+			set_val_str  (arr, 9, mtu_str);
+			set_val_str  (arr, 10, state_str);
+			set_val_str  (arr, 11, reason_str);
+			set_val_strc (arr, 12, nm_device_get_udi (device));
+			set_val_strc (arr, 13, nm_device_get_ip_iface (device));
+			set_val_strc (arr, 14, nm_device_get_managed (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 15, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 16, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 17, get_active_connection_id (device));
+			set_val_strc (arr, 18, acon ? nm_active_connection_get_uuid (acon) : NULL);
+			set_val_strc (arr, 19, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
 			g_ptr_array_add (nmc->output_data, arr);
 
 			print_data (nmc);  /* Print all data */
