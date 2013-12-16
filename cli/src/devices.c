@@ -670,25 +670,9 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
 			g_ptr_array_add (nmc->output_data, arr);
 
-			if (NM_IS_DEVICE_ETHERNET (device))
-				hwaddr = nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device));
-			else if (NM_IS_DEVICE_WIFI (device))
-				hwaddr = nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device));
-#if WITH_WIMAX
-			else if (NM_IS_DEVICE_WIMAX (device))
-				hwaddr = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
-#endif
-			else if (NM_IS_DEVICE_INFINIBAND (device))
-				hwaddr = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
-			else if (NM_IS_DEVICE_BOND (device))
-				hwaddr = nm_device_bond_get_hw_address (NM_DEVICE_BOND (device));
-			else if (NM_IS_DEVICE_VLAN (device))
-				hwaddr = nm_device_vlan_get_hw_address (NM_DEVICE_VLAN (device));
-			else if (NM_IS_DEVICE_BRIDGE (device))
-				hwaddr = nm_device_bridge_get_hw_address (NM_DEVICE_BRIDGE (device));
-
 			state_str = g_strdup_printf ("%d (%s)", state, nmc_device_state_to_string (state));
 			reason_str = g_strdup_printf ("%d (%s)", reason, nmc_device_reason_to_string (reason));
+			hwaddr = nm_device_get_hw_address (device);
 			acon = nm_device_get_active_connection (device);
 
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
