@@ -46,6 +46,8 @@ typedef struct {
 	NMDevice *device;
 	guint32 device_state_id;
 
+	char *pending_activation_id;
+
 	gboolean is_default;
 	gboolean is_default6;
 	NMActiveConnectionState state;
@@ -142,8 +144,12 @@ nm_active_connection_set_state (NMActiveConnection *self,
 
 	if (priv->device) {
 		if (   old_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATED
-		    && new_state >= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-			nm_device_remove_pending_action (priv->device, "activation");
+		    && new_state >= NM_ACTIVE_CONNECTION_STATE_ACTIVATED &&
+		    priv->pending_activation_id)
+		{
+			nm_device_remove_pending_action (priv->device, priv->pending_activation_id);
+			g_clear_pointer (&priv->pending_activation_id, g_free);
+		}
 	}
 
 	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
@@ -361,7 +367,8 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		                                          G_CALLBACK (device_state_changed),
 		                                          self);
 
-		nm_device_add_pending_action (device, "activation");
+		priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
+		nm_device_add_pending_action (device, priv->pending_activation_id);
 	}
 	return TRUE;
 }
@@ -735,6 +742,10 @@ _device_cleanup (NMActiveConnectionPrivate *priv)
 		g_assert (priv->device);
 		g_signal_handler_disconnect (priv->device, priv->device_state_id);
 		priv->device_state_id = 0;
+	}
+	if (priv->pending_activation_id) {
+		nm_device_remove_pending_action (priv->device, priv->pending_activation_id);
+		g_clear_pointer (&priv->pending_activation_id, g_free);
 	}
 	g_clear_object (&priv->device);
 }
