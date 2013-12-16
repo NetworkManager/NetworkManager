@@ -38,7 +38,8 @@ edit = sed \
 	-e 's|@sbindir[@]|$(sbindir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@localstatedir[@]|$(localstatedir)|g' \
-	-e 's|@libexecdir[@]|$(libexecdir)|g'
+	-e 's|@libexecdir[@]|$(libexecdir)|g' \
+	-e 's|@DISTRO_NETWORK_SERVICE[@]|$(DISTRO_NETWORK_SERVICE)|g'
 
 EXTRA_DIST = \
 	NetworkManager.service.in \

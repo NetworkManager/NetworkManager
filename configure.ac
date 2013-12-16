@@ -110,6 +110,12 @@ AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_SUSE, test "$enable_ifcfg_suse" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFUPDOWN, test "$enable_ifupdown" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFNET, test "$enable_ifnet" = "yes")
+
+if test "$enable_ifcfg_rh" = "yes"; then
+    DISTRO_NETWORK_SERVICE=network.service
+fi
+AC_SUBST(DISTRO_NETWORK_SERVICE)
+
 # Code coverage
 GNOME_CODE_COVERAGE
 
