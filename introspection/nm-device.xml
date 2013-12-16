@@ -297,6 +297,16 @@
           The device is a bridge interface.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="GENERIC" value="14">
+        <tp:docstring>
+          The device is a generic interface type unrecognized by NetworkManager.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="TEAM" value="15">
+        <tp:docstring>
+          The device is a team master interface.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">
