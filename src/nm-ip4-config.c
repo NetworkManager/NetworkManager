@@ -116,7 +116,7 @@ same_prefix (guint32 address1, guint32 address2, int plen)
  * @nameservers: array of guint32
  * @rc_contents: the contents of a resolv.conf or %NULL to read /etc/resolv.conf
  *
- * Reads all resolv.conf IPv6 nameservers and adds them to @nameservers.
+ * Reads all resolv.conf IPv4 nameservers and adds them to @nameservers.
  *
  * Returns: %TRUE if nameservers were added, %FALSE if @nameservers is unchanged
  */
