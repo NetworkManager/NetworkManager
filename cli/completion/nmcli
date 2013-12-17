@@ -612,7 +612,7 @@ _nmcli()
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" show up down add modify edit delete reload
+                _nmcli_complete_commands "$command" show up down add modify edit delete reload load
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
