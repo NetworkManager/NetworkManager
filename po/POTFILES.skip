@@ -4,3 +4,4 @@ policy/org.freedesktop.NetworkManager.policy.in
 vpn-daemons/openvpn
 vpn-daemons/pptp
 vpn-daemons/vpnc
+tui/vpn-helpers.c
