@@ -28,7 +28,7 @@ require 'ipaddr'
 # and "clone-mac-address".
 #
 # Configuration settings are described here:
-# http://projects.gnome.org/NetworkManager/developers/api/09/ref-settings.html
+# https://developer.gnome.org/NetworkManager/0.9/ref-settings.html
 #
 
 # Helper functions
