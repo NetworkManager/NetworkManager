@@ -68,6 +68,7 @@
 #include "nm-config-device.h"
 #include "nm-config.h"
 #include "nm-platform.h"
+#include "nm-dns-manager.h"
 
 #include "nm-device-bridge.h"
 #include "nm-device-bond.h"
@@ -6584,14 +6585,19 @@ update_ip_config (NMDevice *self, gboolean initial)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
 	gboolean linklocal6_just_completed = FALSE;
+	gboolean capture_resolv_conf;
+	NMDnsManagerResolvConfMode resolv_conf_mode;
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
 		return;
 
+	resolv_conf_mode = nm_dns_manager_get_resolv_conf_mode (nm_dns_manager_get ());
+	capture_resolv_conf = initial && (resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT);
+
 	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
-	priv->ext_ip4_config = nm_ip4_config_capture (ifindex, initial);
+	priv->ext_ip4_config = nm_ip4_config_capture (ifindex, capture_resolv_conf);
 
 	if (priv->ext_ip4_config) {
 		if (initial) {
@@ -6608,7 +6614,7 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
-	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, initial);
+	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, capture_resolv_conf);
 	if (priv->ext_ip6_config) {
 
 		/* Check this before modifying ext_ip6_config */
