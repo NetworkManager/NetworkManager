@@ -181,9 +181,9 @@ gboolean sleep_on_startup = FALSE;
 gboolean noinit = FALSE;
 
 GOptionEntry entries[] = {
-	{ "sleep", 's', 0, G_OPTION_ARG_NONE, &sleep_on_startup,
+	{ "sleep", 's', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &sleep_on_startup,
 	  "Sleep on startup", NULL },
-	{ "noinit", 'n', 0, G_OPTION_ARG_NONE, &noinit,
+	{ "noinit", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &noinit,
 	  "Don't initialize newt", NULL },
 	{ NULL }
 };
