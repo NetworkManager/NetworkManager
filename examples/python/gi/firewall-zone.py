@@ -32,7 +32,7 @@ from gi.repository import GLib, NetworkManager, NMClient
 # If you used D-Bus calls, you would call GetSettings() and then Update().
 #
 # Links:
-# https://projects.gnome.org/NetworkManager/developers/libnm-glib/09/index.html
+# https://developer.gnome.org/libnm-glib/0.9/
 # https://wiki.gnome.org/GObjectIntrospection
 # https://wiki.gnome.org/PyGObject
 #

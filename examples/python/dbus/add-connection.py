@@ -21,7 +21,7 @@
 # This example adds a new ethernet connection via AddConnection() D-Bus call.
 #
 # Configuration settings are described at
-# http://projects.gnome.org/NetworkManager/developers/api/09/ref-settings.html
+# https://developer.gnome.org/NetworkManager/0.9/ref-settings.html
 #
 
 import socket, struct, dbus, uuid

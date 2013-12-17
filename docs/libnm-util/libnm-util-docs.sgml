@@ -11,7 +11,7 @@
     <releaseinfo>
       for libnm-util &version;
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://projects.gnome.org/NetworkManager/developers/libnm-util/09/">http://projects.gnome.org/NetworkManager/developers/libnm-util/09/</ulink>.
+      <ulink role="online-location" url="https://developer.gnome.org/libnm-util/0.9/">https://developer.gnome.org/libnm-util/0.9/</ulink>.
     </releaseinfo>
 
     <copyright>
