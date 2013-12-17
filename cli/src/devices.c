@@ -150,7 +150,6 @@ static NmcOutputField nmc_fields_dev_show_wifi_prop[] = {
 #define NMC_FIELDS_DEV_SHOW_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
 #define NMC_FIELDS_DEV_SHOW_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
 
-#if WITH_WIMAX
 /* Available fields for 'device show' - wimax properties part */
 static NmcOutputField nmc_fields_dev_show_wimax_prop[] = {
 	{"NAME",       N_("NAME"),     18},  /* 0 */
@@ -163,8 +162,6 @@ static NmcOutputField nmc_fields_dev_show_wimax_prop[] = {
 };
 #define NMC_FIELDS_DEV_SHOW_WIMAX_PROP_ALL     "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
 #define NMC_FIELDS_DEV_SHOW_WIMAX_PROP_COMMON  "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
-#endif
-
 
 /* Available fields for 'device wifi list' */
 static NmcOutputField nmc_fields_dev_wifi_list[] = {
@@ -192,7 +189,6 @@ static NmcOutputField nmc_fields_dev_wifi_list[] = {
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON        "IN-USE,SSID,MODE,CHAN,RATE,SIGNAL,BARS,SECURITY"
 #define NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIFI_LIST_COMMON
 
-#if WITH_WIMAX
 /* Available fields for 'device wimax list' */
 static NmcOutputField nmc_fields_dev_wimax_list[] = {
 	{"NAME",       N_("NAME"),        15},  /* 0 */
@@ -207,7 +203,6 @@ static NmcOutputField nmc_fields_dev_wimax_list[] = {
 #define NMC_FIELDS_DEV_WIMAX_LIST_ALL           "NSP,SIGNAL,TYPE,DEVICE,ACTIVE,DBUS-PATH"
 #define NMC_FIELDS_DEV_WIMAX_LIST_COMMON        "NSP,SIGNAL,TYPE,DEVICE,ACTIVE"
 #define NMC_FIELDS_DEV_WIMAX_LIST_FOR_DEV_LIST  "NAME,"NMC_FIELDS_DEV_WIMAX_LIST_COMMON
-#endif
 
 /* Available fields for 'device show' - BOND part */
 static NmcOutputField nmc_fields_dev_show_bond_prop[] = {
