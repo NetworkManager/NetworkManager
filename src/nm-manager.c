@@ -3575,13 +3575,16 @@ do_sleep_wake (NMManager *self)
 	if (manager_sleeping (self)) {
 		nm_log_info (LOGD_SUSPEND, "sleeping or disabling...");
 
-		/* Just deactivate and down all devices from the device list,
+		/* Just deactivate and down all physical devices from the device list,
 		 * to keep things fast the device list will get resynced when
 		 * the manager wakes up.
 		 */
-		for (iter = priv->devices; iter; iter = iter->next)
-			nm_device_set_manager_managed (NM_DEVICE (iter->data), FALSE, NM_DEVICE_STATE_REASON_SLEEPING);
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDevice *device = iter->data;
 
+			if (!nm_device_is_software (device))
+				nm_device_set_manager_managed (device, FALSE, NM_DEVICE_STATE_REASON_SLEEPING);
+		}
 	} else {
 		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
 
@@ -3596,6 +3599,9 @@ do_sleep_wake (NMManager *self)
 		for (iter = priv->devices; iter; iter = iter->next) {
 			NMDevice *device = NM_DEVICE (iter->data);
 			guint i;
+
+			if (nm_device_is_software (device))
+				continue;
 
 			/* enable/disable wireless devices since that we don't respond
 			 * to killswitch changes during sleep.
