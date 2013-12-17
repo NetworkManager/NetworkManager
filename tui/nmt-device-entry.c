@@ -269,7 +269,7 @@ update_entry (NmtDeviceEntry *deventry)
 
 	if (!ifname && mac_device)
 		ifname = nm_device_get_iface (mac_device);
-	if (!mac && ifname_device)
+	if (!mac && ifname_device && (priv->hardware_type != G_TYPE_NONE))
 		g_object_get (G_OBJECT (ifname_device), "hw-address", &mac, NULL);
 
 	if (ifname_device && mac_device && ifname_device != mac_device) {
