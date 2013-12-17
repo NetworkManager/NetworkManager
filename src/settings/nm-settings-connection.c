@@ -1955,11 +1955,16 @@ gboolean
 nm_settings_connection_can_autoconnect (NMSettingsConnection *connection)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingConnection *s_con;
 	const char *permission;
 
 	if (   !priv->visible
 	    || priv->autoconnect_retries == 0
 	    || priv->autoconnect_blocked_reason != NM_DEVICE_STATE_REASON_NONE)
+		return FALSE;
+
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+	if (!nm_setting_connection_get_autoconnect (s_con))
 		return FALSE;
 
 	permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (connection));

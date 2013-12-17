@@ -1161,6 +1161,28 @@ reset_autoconnect_for_failed_secrets (NMPolicy *policy)
 }
 
 static void
+block_autoconnect_for_device (NMPolicy *policy, NMDevice *device)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	GSList *connections, *iter;
+
+	/* NMDevice keeps its own autoconnect-able-ness state; we only need to
+	 * explicitly block connections for software devices, where the NMDevice
+	 * might be destroyed and recreated later.
+	 */
+	if (!nm_device_is_software (device))
+		return;
+
+	connections = nm_settings_get_connections (priv->settings);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		if (nm_device_check_connection_compatible (device, iter->data, NULL)) {
+			nm_settings_connection_set_autoconnect_blocked_reason (NM_SETTINGS_CONNECTION (iter->data),
+			                                                       NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		}
+	}
+}
+
+static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicy *policy = user_data;
@@ -1432,8 +1454,15 @@ device_state_changed (NMDevice *device,
 			update_routing_and_dns (policy, FALSE);
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED)
-			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
+			if (!nm_device_get_autoconnect (device)) {
+				/* The device was disconnected; block all connections on it */
+				block_autoconnect_for_device (policy, device);
+			} else {
+				/* The connection was deactivated, so block just this connection */
+				nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			}
+		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Reset retry counts for a device's connections when carrier on; if cable

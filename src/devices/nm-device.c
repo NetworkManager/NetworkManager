@@ -4610,13 +4610,6 @@ disconnect_cb (NMDevice *device,
 	} else {
 		priv->autoconnect = FALSE;
 
-		/* Software devices are removed when manually disconnected and thus
-		 * we need to track the autoconnect flag outside the device.
-		 */
-		nm_manager_prevent_device_auto_connect (nm_manager_get (),
-		                                        nm_device_get_ip_iface (device),
-		                                        TRUE);
-
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);

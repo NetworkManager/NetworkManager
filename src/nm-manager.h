@@ -128,12 +128,6 @@ gboolean nm_manager_deactivate_connection (NMManager *manager,
                                            NMDeviceStateReason reason,
                                            GError **error);
 
-void nm_manager_prevent_device_auto_connect (NMManager *manager,
-                                             const char *ifname,
-                                             gboolean prevent);
-gboolean nm_manager_can_device_auto_connect (NMManager *manager,
-                                             const char *ifname);
-
 /* State handling */
 
 NMState nm_manager_get_state (NMManager *manager);
