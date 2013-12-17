@@ -1132,6 +1132,12 @@ reset_autoconnect_all (NMPolicy *policy, NMDevice *device)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	GSList *connections, *iter;
 
+	if (device) {
+		nm_log_dbg (LOGD_DEVICE, "Re-enabling autoconnect for all connections on %s",
+		            nm_device_get_iface (device));
+	} else
+		nm_log_dbg (LOGD_DEVICE, "Re-enabling autoconnect for all connections");
+
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		if (!device || nm_device_check_connection_compatible (device, iter->data, NULL)) {
@@ -1147,6 +1153,8 @@ reset_autoconnect_for_failed_secrets (NMPolicy *policy)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	GSList *connections, *iter;
+
+	nm_log_dbg (LOGD_DEVICE, "Re-enabling autoconnect for all connections with failed secrets");
 
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
@@ -1165,6 +1173,9 @@ block_autoconnect_for_device (NMPolicy *policy, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	GSList *connections, *iter;
+
+	nm_log_dbg (LOGD_DEVICE, "Blocking autoconnect for all connections on %s",
+	            nm_device_get_iface (device));
 
 	/* NMDevice keeps its own autoconnect-able-ness state; we only need to
 	 * explicitly block connections for software devices, where the NMDevice
@@ -1396,20 +1407,18 @@ device_state_changed (NMDevice *device,
 			guint32 tries = nm_settings_connection_get_autoconnect_retries (connection);
 
 			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
-				/* Mark the connection as failed due to missing secrets so that we can
-				 * automatically re-try when an secret agent registers.
-				 */
+				nm_log_dbg (LOGD_DEVICE, "Connection '%s' now blocked from autoconnect due to no secrets",
+				            nm_connection_get_id (NM_CONNECTION (connection)));
+
 				nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NO_SECRETS);
 			} else if (tries > 0) {
-				/* Otherwise if it's a random failure, just decrease the number
-				 * of automatic retries so that the connection gets tried again
-				 * if it still has a retry count.
-				 */
+				nm_log_dbg (LOGD_DEVICE, "Connection '%s' failed to autoconnect; %d tries left",
+				            nm_connection_get_id (NM_CONNECTION (connection)), tries);
 				nm_settings_connection_set_autoconnect_retries (connection, tries - 1);
 			}
 
 			if (nm_settings_connection_get_autoconnect_retries (connection) == 0) {
-				nm_log_info (LOGD_DEVICE, "Marking connection '%s' invalid.",
+				nm_log_info (LOGD_DEVICE, "Disabling autoconnect for connection '%s'.",
 				             nm_connection_get_id (NM_CONNECTION (connection)));
 				/* Schedule a handler to reset retries count */
 				if (!priv->reset_retries_id) {
@@ -1460,6 +1469,8 @@ device_state_changed (NMDevice *device,
 				block_autoconnect_for_device (policy, device);
 			} else {
 				/* The connection was deactivated, so block just this connection */
+				nm_log_dbg (LOGD_DEVICE, "Blocking autoconnect of connection '%s' by user request",
+				            nm_connection_get_id (NM_CONNECTION (connection)));
 				nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
 		}
