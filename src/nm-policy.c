@@ -2092,6 +2092,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	priv->fw_started_id = id;
 
 	priv->dns_manager = nm_dns_manager_get ();
+	nm_dns_manager_set_initial_hostname (priv->dns_manager, priv->orig_hostname);
 	priv->config_changed_id = g_signal_connect (priv->dns_manager, "config-changed",
 	                                            G_CALLBACK (dns_config_changed), policy);
 

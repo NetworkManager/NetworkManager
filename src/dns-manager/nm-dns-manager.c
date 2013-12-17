@@ -945,8 +945,17 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config)
 }
 
 void
+nm_dns_manager_set_initial_hostname (NMDnsManager *mgr,
+                                     const char *hostname)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+
+	priv->hostname = g_strdup (hostname);
+}
+
+void
 nm_dns_manager_set_hostname (NMDnsManager *mgr,
-                               const char *hostname)
+                             const char *hostname)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
 	GError *error = NULL;
