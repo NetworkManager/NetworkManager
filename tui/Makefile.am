@@ -47,7 +47,6 @@ nmtui_SOURCES = \
 	nm-editor-bindings.h \
 	nm-editor-utils.c \
 	nm-editor-utils.h \
-	nm-gvaluearray-compat.h \
 	nm-ui-utils.c \
 	nm-ui-utils.h \
 	\
