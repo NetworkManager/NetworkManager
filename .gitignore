@@ -217,9 +217,6 @@ valgrind-*.log
 
 /tui/newt/libnmt-newt.a
 /tui/nmtui
-/tui/nmtui-connect
-/tui/nmtui-edit
-/tui/nmtui-hostname
 
 /tools/generate-settings-spec
 

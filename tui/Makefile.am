@@ -18,18 +18,15 @@ AM_CPPFLAGS= \
 	$(NULL)
 
 bin_PROGRAMS = nmtui
-noinst_SCRIPTS = nmtui-edit nmtui-connect nmtui-hostname
-
-$(noinst_SCRIPTS):
-	ln -s nmtui $@
+links = nmtui-edit nmtui-connect nmtui-hostname
 
 install-exec-hook:
-	for link in $(noinst_SCRIPTS); do \
+	for link in $(links); do \
 		ln -f $(DESTDIR)$(bindir)/nmtui $(DESTDIR)$(bindir)/$$link; \
 	done
 
 uninstall-hook:
-	for link in $(noinst_SCRIPTS); do \
+	for link in $(links); do \
 		rm -f $(DESTDIR)$(bindir)/$$link; \
 	done
 
@@ -125,7 +122,5 @@ nmtui_LDADD = \
 	$(NEWT_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
-
-CLEANFILES = $(noinst_SCRIPTS)
 
 endif
