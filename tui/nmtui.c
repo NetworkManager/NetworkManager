@@ -214,6 +214,10 @@ main (int argc, char **argv)
 	g_option_context_free (opts);
 
 	nm_client = nm_client_new ();
+	if (!nm_client_get_manager_running (nm_client)) {
+		g_printerr (_("NetworkManager is not running.\n"));
+		exit (1);
+	}
 
 	nm_settings = nm_remote_settings_new (NULL);
 	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
