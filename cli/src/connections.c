@@ -305,7 +305,7 @@ usage_connection_add (void)
 	         "    bluetooth:    [addr <bluetooth address>]\n"
 	         "                  [bt-type panu|dun-gsm|dun-cdma]\n\n"
 	         "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
-	         "                  [id <VLAN id>]\n"
+	         "                  id <VLAN ID>\n"
 	         "                  [flags <VLAN flags>]\n"
 	         "                  [ingress <ingress priority mapping>]\n"
 	         "                  [egress <egress priority mapping>]\n"

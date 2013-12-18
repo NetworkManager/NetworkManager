@@ -454,8 +454,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .B vlan:
 .IP "\fIdev <parent device (connection UUID, ifname, or MAC)>\fP" 42
 \(en parent device this VLAN is on
-.IP "\fI[id <VLAN id>]\fP" 42
-\(en VLAN ID
+.IP "\fIid <VLAN ID>\fP" 42
+\(en VLAN ID in range <0-4095>
 .IP "\fI[flags <VLAN flags>]\fP" 42
 \(en flags
 .IP "\fI[ingress <ingress priority mapping>]\fP" 42
