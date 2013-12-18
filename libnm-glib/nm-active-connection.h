@@ -29,6 +29,10 @@
 #include "nm-object.h"
 #include <nm-connection.h>
 #include <NetworkManager.h>
+#include "nm-ip4-config.h"
+#include "nm-dhcp4-config.h"
+#include "nm-ip6-config.h"
+#include "nm-dhcp6-config.h"
 
 G_BEGIN_DECLS
 
@@ -45,7 +49,11 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_DEVICES             "devices"
 #define NM_ACTIVE_CONNECTION_STATE               "state"
 #define NM_ACTIVE_CONNECTION_DEFAULT             "default"
+#define NM_ACTIVE_CONNECTION_IP4_CONFIG          "ip4-config"
+#define NM_ACTIVE_CONNECTION_DHCP4_CONFIG        "dhcp4-config"
 #define NM_ACTIVE_CONNECTION_DEFAULT6            "default6"
+#define NM_ACTIVE_CONNECTION_IP6_CONFIG          "ip6-config"
+#define NM_ACTIVE_CONNECTION_DHCP6_CONFIG        "dhcp6-config"
 #define NM_ACTIVE_CONNECTION_MASTER              "master"
 
 typedef struct {
@@ -73,9 +81,13 @@ const char * nm_active_connection_get_uuid                (NMActiveConnection *c
 const char * nm_active_connection_get_specific_object     (NMActiveConnection *connection);
 const GPtrArray *nm_active_connection_get_devices         (NMActiveConnection *connection);
 NMActiveConnectionState nm_active_connection_get_state    (NMActiveConnection *connection);
-gboolean nm_active_connection_get_default                 (NMActiveConnection *connection);
-gboolean nm_active_connection_get_default6                (NMActiveConnection *connection);
 const char * nm_active_connection_get_master              (NMActiveConnection *connection);
+gboolean       nm_active_connection_get_default           (NMActiveConnection *connection);
+NMIP4Config *  nm_active_connection_get_ip4_config        (NMActiveConnection *connection);
+NMDHCP4Config *nm_active_connection_get_dhcp4_config      (NMActiveConnection *connection);
+gboolean       nm_active_connection_get_default6          (NMActiveConnection *connection);
+NMIP6Config *  nm_active_connection_get_ip6_config        (NMActiveConnection *connection);
+NMDHCP6Config *nm_active_connection_get_dhcp6_config      (NMActiveConnection *connection);
 
 G_END_DECLS
 
