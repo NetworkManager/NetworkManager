@@ -273,8 +273,6 @@ nmt_newt_form_iterate (NmtNewtForm *form)
 
 	newtFormSetTimer (priv->form, 1);
 	newtFormRun (priv->form, &es);
-	if (es.reason == NEWT_EXIT_TIMER)
-		return;
 
 	if (   es.reason == NEWT_EXIT_HOTKEY
 	    || es.reason == NEWT_EXIT_ERROR) {
