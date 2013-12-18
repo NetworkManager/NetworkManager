@@ -70,13 +70,20 @@ static const struct {
 static const int num_subprograms = G_N_ELEMENTS (subprograms);
 
 static void
+quit_func (int argc, char **argv)
+{
+	nmtui_quit ();
+}
+
+static void
 nmtui_main (int argc, char **argv)
 {
 	NmtNewtForm *form;
-	NmtNewtWidget *widget, *cancel, *ok;
+	NmtNewtWidget *widget, *ok;
 	NmtNewtGrid *grid;
 	NmtNewtListbox *listbox;
 	NmtNewtButtonBox *bbox;
+	NmtuiSubprogram subprogram;
 	int i;
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM,
@@ -91,7 +98,10 @@ nmtui_main (int argc, char **argv)
 	widget = nmt_newt_label_new (_("Please select an option"));
 	nmt_newt_grid_add (grid, widget, 0, 0);
 
-	widget = nmt_newt_listbox_new (num_subprograms, 0);
+	widget = g_object_new (NMT_TYPE_NEWT_LISTBOX,
+	                       "height", num_subprograms + 2,
+	                       "skip-null-keys", TRUE,
+	                       NULL);
 	nmt_newt_grid_add (grid, widget, 0, 1);
 	nmt_newt_widget_set_padding (widget, 0, 1, 0, 1);
 	nmt_newt_widget_set_exit_on_activate (widget, TRUE);
@@ -101,24 +111,21 @@ nmtui_main (int argc, char **argv)
 		nmt_newt_listbox_append (listbox, _(subprograms[i].display_name),
 		                         subprograms[i].func);
 	}
+	nmt_newt_listbox_append (listbox, "", NULL);
+	nmt_newt_listbox_append (listbox, _("Quit"), quit_func);
 
 	widget = nmt_newt_button_box_new (NMT_NEWT_BUTTON_BOX_HORIZONTAL);
 	nmt_newt_grid_add (grid, widget, 0, 2);
 	bbox = NMT_NEWT_BUTTON_BOX (widget);
 
-	cancel = nmt_newt_button_box_add_end (bbox, _("Cancel"));
-	nmt_newt_widget_set_exit_on_activate (cancel, TRUE);
 	ok = nmt_newt_button_box_add_end (bbox, _("OK"));
 	nmt_newt_widget_set_exit_on_activate (ok, TRUE);
 
-	widget = nmt_newt_form_run_sync (form);
-	if (widget == ok || widget == (NmtNewtWidget *)listbox) {
-		NmtuiSubprogram subprogram = nmt_newt_listbox_get_active_key (listbox);
-
-		subprogram (argc, argv);
-	} else
-		nmtui_quit ();
+	nmt_newt_form_run_sync (form);
+	subprogram = nmt_newt_listbox_get_active_key (listbox);
 	g_object_unref (form);
+
+	subprogram (argc, argv);
 }
 
 /**
