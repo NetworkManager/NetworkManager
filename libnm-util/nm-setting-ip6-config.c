@@ -727,7 +727,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_IP6_CONFIG_ERROR,
 			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
 			             _("this property is not allowed for '%s=%s'"),
-			             NM_SETTING_IP4_CONFIG_METHOD, priv->method);
+			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
 			return FALSE;
 		}
