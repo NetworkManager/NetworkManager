@@ -53,17 +53,17 @@ static GMainLoop *loop;
 typedef void (*NmtuiSubprogram) (int argc, char **argv);
 
 static const struct {
-	const char *name, *shortcut, *usage;
+	const char *name, *shortcut, *arg;
 	const char *display_name;
 	NmtuiSubprogram func;
 } subprograms[] = {
-	{ "edit",     "nmtui-edit",     " [connection]",
+	{ "edit",     "nmtui-edit",     N_("connection"),
 	  N_("Edit a connection"),
 	  nmtui_edit },
-	{ "connect",  "nmtui-connect",  " [connection]",
+	{ "connect",  "nmtui-connect",  N_("connection"),
 	  N_("Activate a connection"),
 	  nmtui_connect },
-	{ "hostname", "nmtui-hostname", " [new hostname]",
+	{ "hostname", "nmtui-hostname", N_("new hostname"),
 	  N_("Set system hostname"),
 	  nmtui_hostname }
 };
@@ -145,19 +145,22 @@ static void
 usage (void)
 {
 	const char *argv0 = g_get_prgname ();
+	const char *usage = _("Usage");
 	int i;
 
 	for (i = 0; i < num_subprograms; i++) {
 		if (!strcmp (argv0, subprograms[i].shortcut)) {
-			g_printerr ("Usage: %s%s\n", argv0, subprograms[i].usage);
+			g_printerr ("%s: %s [%s]\n", usage, argv0, _(subprograms[i].arg));
 			exit (1);
 		}
 	}
 
-	g_printerr ("Usage: nmtui\n");
+	g_printerr ("%s: nmtui\n", usage);
 	for (i = 0; i < num_subprograms; i++) {
-		g_printerr ("       nmtui %s%s\n", subprograms[i].name,
-		            subprograms[i].usage);
+		g_printerr ("%*s  nmtui %s [%s]\n",
+		            (int) g_utf8_strlen (usage, -1), " ",
+		            subprograms[i].name,
+		            _(subprograms[i].arg));
 	}
 	exit (1);
 }
@@ -207,15 +210,17 @@ main (int argc, char **argv)
 	g_option_context_add_main_entries (opts, entries, NULL);
 
 	if (!g_option_context_parse (opts, &argc, &argv, &error)) {
-		g_printerr ("%s: Could not parse arguments: %s\n",
-		            argv[0], error->message);
+		g_printerr ("%s: %s: %s\n",
+		            argv[0],
+		            _("Could not parse arguments"),
+		            error->message);
 		exit (1);
 	}
 	g_option_context_free (opts);
 
 	nm_client = nm_client_new ();
 	if (!nm_client_get_manager_running (nm_client)) {
-		g_printerr (_("NetworkManager is not running.\n"));
+		g_printerr ("%s\n", _("NetworkManager is not running."));
 		exit (1);
 	}
 
