@@ -517,8 +517,9 @@ nmtui_edit (int argc, char **argv)
 		}
 
 		if (!conn) {
-			g_printerr ("%s: no such connection '%s'\n", argv[0], argv[1]);
-			exit (1);
+			nmt_newt_error_dialog ("%s: no such connection '%s'\n", argv[0], argv[1]);
+			nmtui_quit ();
+			return;
 		}
 
 		nmt_edit_connection (conn);

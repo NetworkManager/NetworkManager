@@ -779,14 +779,16 @@ nmt_connect_connection_list_activate_async (NmtConnectConnectionList *list,
 				goto activate;
 		}
 
-		if (!conn && !nmtdev->device && !strcmp (identifier, nm_device_get_ip_iface (nmtdev->device))) {
+		if (!conn && nmtdev->device && !strcmp (identifier, nm_device_get_ip_iface (nmtdev->device))) {
 			nmtconn = nmtdev->conns->data;
 			goto activate;
 		}
 	}
 
-	g_printerr ("%s: no such connection '%s'\n", g_get_prgname (), identifier);
-	exit (1);
+	g_simple_async_report_error_in_idle (G_OBJECT (list), callback, user_data,
+	                                     NM_CLIENT_ERROR, NM_CLIENT_ERROR_UNKNOWN,
+	                                     _("No such connection '%s'"), identifier);
+	return;
 
  activate:
 	activate_nmt_connection_async (list, nmtconn, callback, user_data);
@@ -807,5 +809,5 @@ nmt_connect_connection_list_activate_finish (NmtConnectConnectionList  *list,
                                              GAsyncResult              *result,
                                              GError                   **error)
 {
-	return g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
 }

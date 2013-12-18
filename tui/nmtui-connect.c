@@ -71,6 +71,7 @@ nmt_connect_connection (const char *identifier)
 	if (!nmt_sync_op_wait_boolean (&op, &error)) {
 		nmt_newt_error_dialog (_("Could not activate connection: %s"), error->message);
 		g_error_free (error);
+		nmtui_quit ();
 	}
 	g_object_unref (list);
 }
