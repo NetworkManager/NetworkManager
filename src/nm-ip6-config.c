@@ -228,7 +228,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 		}
 	}
 
-	/* If the interface has the default route, and has IPv4 addresses, capture
+	/* If the interface has the default route, and has IPv6 addresses, capture
 	 * nameservers from /etc/resolv.conf.
 	 */
 	if (priv->addresses->len && has_gateway && capture_resolv_conf) {
