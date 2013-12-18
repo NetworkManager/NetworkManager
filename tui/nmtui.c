@@ -44,7 +44,6 @@
 #include "nmtui-edit.h"
 #include "nmtui-connect.h"
 #include "nmtui-hostname.h"
-#include "nm-editor-bindings.h"
 
 NMClient *nm_client;
 NMRemoteSettings *nm_settings;
@@ -239,8 +238,6 @@ main (int argc, char **argv)
 
 	if (sleep_on_startup)
 		sleep (5);
-
-	nm_editor_bindings_init ();
 
 	startup_data.subprogram = NULL;
 	prgname = g_get_prgname ();
