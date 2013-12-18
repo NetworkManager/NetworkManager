@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2013 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -93,12 +93,57 @@ usage_general (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli general { COMMAND | help }\n\n"
-	         "  COMMAND := { status | hostname | permissions | logging }\n\n"
-	         "  status\n\n"
-	         "  hostname [<hostname>]\n\n"
-	         "  permissions\n\n"
-	         "  logging [level <log level>] [domains <log domains>]\n\n"
-	         ));
+	           "COMMAND := { status | hostname | permissions | logging }\n\n"
+	           "  status\n\n"
+	           "  hostname [<hostname>]\n\n"
+	           "  permissions\n\n"
+	           "  logging [level <log level>] [domains <log domains>]\n\n"));
+}
+
+static void
+usage_general_status (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli general status { help }\n"
+	           "\n"
+	           "Show overall status of NetworkManager.\n"
+	           "'status' is the default action, which means 'nmcli gen' calls 'nmcli gen status'\n\n"));
+}
+
+static void
+usage_general_hostname (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli general hostname { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [<hostname>]\n"
+	           "\n"
+	           "Get or change persistent system hostname.\n"
+	           "With no arguments, this prints currently configured hostname. When you pass\n"
+	           "a hostname, NetworkManager will set it as the new persistent system hostname.\n\n"));
+}
+
+static void
+usage_general_permissions (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli general permissions { help }\n"
+	           "\n"
+	           "Show caller permissions for authenticated operations.\n\n"));
+}
+
+static void
+usage_general_logging (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli general logging { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [level <log level>] [domains <log domains>]\n"
+	           "\n"
+	           "Get or change NetworkManager logging level and domains.\n"
+	           "Without any argument current logging level and domains are shown. In order to\n"
+	           "change logging state, provide level and/or domain. Please refer to the man page\n"
+	           "for the list of possible logging domains.\n\n"));
 }
 
 static void
@@ -106,11 +151,41 @@ usage_networking (void)
 {
 	fprintf (stderr,
 	         _("Usage: nmcli networking { COMMAND | help }\n\n"
-	         "  COMMAND := { on | off | connectivity }\n\n"
-	         "  on\n\n"
-	         "  off\n\n"
-	         "  connectivity [check]\n\n"
-	         ));
+	           "COMMAND := { [ on | off | connectivity ] }\n\n"
+	           "  on\n\n"
+	           "  off\n\n"
+	           "  connectivity [check]\n\n"));
+}
+
+static void
+usage_networking_on (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli networking on { help }\n"
+	           "\n"
+	           "Switch networking on.\n\n"));
+}
+
+static void
+usage_networking_off (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli networking off { help }\n"
+	           "\n"
+	           "Switch networking off.\n\n"));
+}
+
+static void
+usage_networking_connectivity (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli networking connectivity { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [check]\n"
+	           "\n"
+	           "Get network connectivity state.\n"
+	           "The optional 'check' argument makes NetworkManager re-check the connectivity.\n\n"));
+
 }
 
 static void
@@ -119,14 +194,60 @@ usage_radio (void)
 	fprintf (stderr,
 	         _("Usage: nmcli radio { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	         "  COMMAND := { all | wifi | wwan | wimax }\n\n"
-	         "  all | wifi | wwan | wimax [ on | off ]\n\n"
+	           "COMMAND := { all | wifi | wwan | wimax }\n\n"
+	           "  all | wifi | wwan | wimax [ on | off ]\n\n"
 #else
-	         "  COMMAND := { all | wifi | wwan }\n\n"
-	         "  all | wifi | wwan [ on | off ]\n\n"
+	           "COMMAND := { all | wifi | wwan }\n\n"
+	           "  all | wifi | wwan [ on | off ]\n\n"
 #endif
 	         ));
 }
+
+static void
+usage_radio_all (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli radio all { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [on | off]\n"
+	           "\n"
+	           "Get status of all radio switches, or turn them on/off.\n\n"));
+}
+
+static void
+usage_radio_wifi (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli radio wifi { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [on | off]\n"
+	           "\n"
+	           "Get status of Wi-Fi radio switch, or turn it on/off.\n\n"));
+}
+
+static void
+usage_radio_wwan (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli radio wwan { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [on | off]\n"
+	           "\n"
+	           "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
+}
+
+#if WITH_WIMAX
+static void
+usage_radio_wimax (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli radio wimax { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [on | off]\n"
+	           "\n"
+	           "Get status of WiMAX radio switch, or turn it on/off.\n\n"));
+}
+#endif
 
 /* quit main loop */
 static void
@@ -470,6 +591,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 			usage_general ();
 		}
 		else if (matches (*argv, "status") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_general_status ();
+				goto finish;
+			}
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -479,6 +604,11 @@ do_general (NmCli *nmc, int argc, char **argv)
 		}
 		else if (matches (*argv, "hostname") == 0) {
 			NMRemoteSettings *rem_settings;
+
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_general_hostname ();
+				goto finish;
+			}
 
 			/* get system settings */
 			if (!(rem_settings = nm_remote_settings_new (NULL))) {
@@ -507,6 +637,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 			}
 		}
 		else if (matches (*argv, "permissions") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_general_permissions ();
+				goto finish;
+			}
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 				g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -515,6 +649,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 			show_nm_permissions (nmc);
 		}
 		else if (matches (*argv, "logging") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_general_logging ();
+				goto finish;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				/* no arguments -> get logging level and domains */
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
@@ -622,6 +760,10 @@ do_networking (NmCli *nmc, int argc, char **argv)
 		if (nmc_arg_is_help (*argv)) {
 			usage_networking ();
 		} else if (matches (*argv, "connectivity") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_networking_connectivity ();
+				goto finish;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				/* no arguments -> get current state */
 				show_networking_connectivity (nmc);
@@ -642,6 +784,13 @@ do_networking (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			}
 		} else if (nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag)) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				if (enable_flag)
+					usage_networking_on ();
+				else
+					usage_networking_off ();
+				goto finish;
+			}
 
 			nmc->get_client (nmc); /* create NMClient */
 			nm_client_networking_set_enabled (nmc->client, enable_flag);
@@ -652,6 +801,7 @@ do_networking (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+finish:
 	quit ();
 	return nmc->return_value;
 }
@@ -680,6 +830,10 @@ do_radio (NmCli *nmc, int argc, char **argv)
 			usage_radio ();
 		}
 		else if (matches (*argv, "all") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_radio_all ();
+				goto finish;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show all radio switches */
 				if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
@@ -700,6 +854,10 @@ do_radio (NmCli *nmc, int argc, char **argv)
 			}
 		}
 		else if (matches (*argv, "wifi") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_radio_wifi ();
+				goto finish;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WiFi state */
 				nmc_switch_show (nmc, NMC_FIELDS_NM_WIFI, _("Wi-Fi radio switch"));
@@ -712,6 +870,10 @@ do_radio (NmCli *nmc, int argc, char **argv)
 			}
 		}
 		else if (matches (*argv, "wwan") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_radio_wwan ();
+				goto finish;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WWAN (mobile broadband) state */
 				nmc_switch_show (nmc, NMC_FIELDS_NM_WWAN, _("WWAN radio switch"));
@@ -725,6 +887,10 @@ do_radio (NmCli *nmc, int argc, char **argv)
 		}
 #if WITH_WIMAX
 		else if (matches (*argv, "wimax") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_radio_wimax ();
+				goto finish;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				/* no argument, show current WiMAX state */
 				nmc_switch_show (nmc, NMC_FIELDS_NM_WIMAX, _("WiMAX radio switch"));

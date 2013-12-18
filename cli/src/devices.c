@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2013 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -273,23 +273,126 @@ usage (void)
 	fprintf (stderr,
 	         _("Usage: nmcli device { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	         "  COMMAND := { status | show | connect | disconnect | wifi | wimax }\n\n"
+	           "COMMAND := { status | show | connect | disconnect | wifi | wimax }\n\n"
 #else
-	         "  COMMAND := { status | show | connect | disconnect | wifi }\n\n"
+	           "COMMAND := { status | show | connect | disconnect | wifi }\n\n"
 #endif
-	         "  status\n\n"
-	         "  show [<ifname>]\n\n"
-	         "  connect <ifname>\n\n"
-	         "  disconnect <ifname>\n\n"
-	         "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
-	         "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]\n\n"
-	         "               [private yes|no]\n\n"
-	         "  wifi rescan [[ifname] <ifname>]\n\n"
+	           "  status\n\n"
+	           "  show [<ifname>]\n\n"
+	           "  connect <ifname>\n\n"
+	           "  disconnect <ifname>\n\n"
+	           "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
+	           "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
+	           "                         [bssid <BSSID>] [name <name>] [private yes|no]\n\n"
+	           "  wifi rescan [[ifname] <ifname>]\n\n"
 #if WITH_WIMAX
-	         "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
+	           "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
 #endif
 	         ));
 }
+
+static void
+usage_device_status (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device status { help }\n"
+	           "\n"
+	           "Show status for all devices.\n"
+	           "By default, the following columns are shown:\n"
+	           " DEVICE     - interface name\n"
+	           " TYPE       - device type\n"
+	           " STATE      - device state\n"
+	           " CONNECTION - connection activated on device (if any)\n"
+	           "Displayed columns can be changed using '--fields' global option. 'status' is\n"
+	           "the default command, which means 'nmcli device' calls 'nmcli device status'.\n\n"));
+}
+
+static void
+usage_device_show (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device show { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [<ifname>]\n"
+	           "\n"
+	           "Show details of device(s).\n"
+	           "The command lists details for all devices, or for a given device.\n\n"));
+}
+
+static void
+usage_device_connect (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device connect { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := <ifname>\n"
+	           "\n"
+	           "Connect the device.\n"
+	           "NetworkManager will try to find a suitable connection that will be activated.\n"
+	           "It will also consider connections that are not set to auto-connect.\n\n"));
+}
+
+static void
+usage_device_disconnect (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device disconnect { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := <ifname>\n"
+	           "\n"
+	           "Disconnect the device.\n"
+	           "The command disconnects the device and prevents it from auto-activating\n"
+	           "further connections without user/manual intervention.\n\n"));
+}
+
+static void
+usage_device_wifi (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device wifi { ARGUMENTS | help }\n"
+	           "\n"
+	           "Perform operation on Wi-Fi devices.\n"
+	           "\n"
+	           "ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>]]\n"
+	           "\n"
+	           "List available Wi-Fi access points. The 'ifname' and 'bssid' options can be\n"
+	           "used to list APs for a particular interface, or with a specific BSSID.\n"
+	           "\n"
+	           "ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
+	           "                    [bssid <BSSID>] [name <name>] [private yes|no]\n"
+	           "\n"
+	           "Connect to a Wi-Fi network specified by SSID or BSSID. The command creates\n"
+	           "a new connection and then activates it on a device. This is a command-line\n"
+	           "counterpart of clicking an SSID in a GUI client. The command always creates\n"
+	           "a new connection and thus it is mainly useful for connecting to new Wi-Fi\n"
+	           "networks. If a connection for the network already exists, it is better to\n"
+	           "bring up the existing profile as follows: nmcli con up id <name>. Note that\n"
+	           "only open, WEP and WPA-PSK networks are supported at the moment. It is also\n"
+	           "assumed that IP configuration is obtained via DHCP.\n"
+	           "\n"
+	           "ARGUMENTS := rescan [[ifname] <ifname>]\n"
+	           "\n"
+	           "Request that NetworkManager immediately re-scan for available access points.\n"
+	           "NetworkManager scans Wi-Fi networks periodically, but in some cases it might\n"
+	           "be useful to start scanning manually. Note that this command does not show\n"
+	           "the APs, use 'nmcli device wifi list' for that.\n\n"));
+}
+
+#if WITH_WIMAX
+static void
+usage_device_wimax (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device wimax { ARGUMENTS | help }\n"
+	           "\n"
+	           "Perform operation on WiMAX devices.\n"
+	           "\n"
+	           "ARGUMENTS := [list [ifname <ifname>] [nsp <name>]]\n"
+	           "\n"
+	           "List available WiMAX NSPs. The 'ifname' and 'nsp' options can be used to\n"
+	           "list networks for a particular interface, or with a specific NSP.\n\n"));
+}
+#endif
 
 /* quit main loop */
 static void
@@ -2454,30 +2557,55 @@ do_devices (NmCli *nmc, int argc, char **argv)
 	if (argc > 0) {
 		if (nmc_arg_is_help (*argv)) {
 			usage ();
+			goto usage_exit;
 		}
 		else if (matches (*argv, "status") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_status ();
+				goto usage_exit;
+			}
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = do_devices_status (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "show") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_show ();
+				goto usage_exit;
+			}
 			if (!nmc->mode_specified)
 				nmc->multiline_output = TRUE;  /* multiline mode is default for 'device show' */
 			nmc->return_value = do_devices_show (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "connect") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_connect ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_device_connect (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "disconnect") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_disconnect ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_device_disconnect (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "wifi") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_wifi ();
+				goto usage_exit;
+			}
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = do_device_wifi (nmc, argc-1, argv+1);
 		}
 #if WITH_WIMAX
 		else if (matches (*argv, "wimax") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_wimax ();
+				goto usage_exit;
+			}
 			if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 				goto opt_error;
 			nmc->return_value = do_device_wimax (nmc, argc-1, argv+1);
@@ -2490,6 +2618,7 @@ do_devices (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+usage_exit:
 	return nmc->return_value;
 
 opt_error:

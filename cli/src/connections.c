@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2013 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -252,101 +252,217 @@ static void
 usage (void)
 {
 	fprintf (stderr,
-	         _("Usage: nmcli connection { COMMAND | help }\n"
-	         "  COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
-	         "  show configured [[ id | uuid | path ] <ID>]\n\n"
-	         "  show active     [[ id | uuid | path | apath ] <ID>]\n\n"
+	         _("Usage: nmcli connection { COMMAND | help }\n\n"
+	           "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
+	           "  show configured [[id | uuid | path] <ID>]\n"
+	           "  show active     [[id | uuid | path | apath] <ID>]\n\n"
 #if WITH_WIMAX
-	         "  up [[ id | uuid | path ] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
+	           "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
 #else
-	         "  up [[ id | uuid | path ] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
+	           "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
 #endif
-	         "  down [ id | uuid | path | apath ] <ID>\n\n"
-	         "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	         "  modify [ id | uuid | path ] <ID> <setting>.<property> <value>\n\n"
-	         "  edit [ id | uuid | path ] <ID>  |  [type <new_con_type>] [con-name <new_con_name>]\n\n"
-	         "  delete [ id | uuid | path ] <ID>\n\n"
-	         "  reload\n\n"
-	         "  load <filename> [ <filename>... ]\n\n\n"
-	         ));
+	           "  down [id | uuid | path | apath] <ID>\n\n"
+	           "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	           "  modify [id | uuid | path] <ID> <setting>.<property> <value>\n\n"
+	           "  edit [id | uuid | path] <ID>\n"
+	           "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
+	           "  delete [id | uuid | path] <ID>\n\n"
+	           "  reload\n\n"
+	           "  load <filename> [ <filename>... ]\n\n"));
+}
+
+static void
+usage_connection_show (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection show { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := active [[id | uuid | path | apath] <ID>]\n"
+	           "\n"
+	           "Show connections which are currently used by a device to connect to a network.\n"
+	           "Without a parameter, all active connections are listed. When <ID> is provided,\n"
+	           "the connection details are displayed instead.\n"
+	           "\n"
+	           "ARGUMENTS := configured [[id | uuid | path] <ID>]\n"
+	           "\n"
+	           "Show in-memory and on-disk connections, some of which may also be active if\n"
+	           "a device is using that connection profile. Without a parameter, all profiles\n"
+	           "are listed. When <ID> is provided, the profile details are displayed instead.\n\n"));
+}
+
+static void
+usage_connection_up (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection up { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
+	           "\n"
+	           "Activate a connection on a device. The profile to activate is identified by its\n"
+	           "name, UUID or D-Bus path.\n"
+	           "\n"
+	           "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
+	           "\n"
+	           "Activate a device with a connection. The connection profile is selected\n"
+	           "automatically by NetworkManager.\n"
+	           "\n"
+	           "ifname - specifies the device to active the connection on\n"
+	           "ap     - specifies AP to connect to (only valid for Wi-Fi)\n"
+	           "nsp    - specifies NSP to connect to (only valid for WiMAX)\n\n"));
+}
+
+static void
+usage_connection_down (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection down { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [id | uuid | path | apath] <ID>\n"
+	           "\n"
+	           "Deactivate a connection from a device (without preventing the device from\n"
+	           "further auto-activation). The profile to deactivate is identified by its name,\n"
+	           "UUID or D-Bus path.\n\n"));
 }
 
 static void
 usage_connection_add (void)
 {
 	fprintf (stderr,
-	         _("Usage: nmcli connection add { OPTIONS | help }\n"
-	         "  OPTIONS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	         "  COMMON_OPTIONS:\n"
-	         "                  type <type>\n"
-	         "                  ifname <interface name> | \"*\"\n"
-	         "                  [con-name <connection name>]\n"
-	         "                  [autoconnect yes|no]\n\n"
-	         "  TYPE_SPECIFIC_OPTIONS:\n"
-	         "    ethernet:     [mac <MAC address>]\n"
-	         "                  [cloned-mac <cloned MAC address>]\n"
-	         "                  [mtu <MTU>]\n\n"
-	         "    wifi:         ssid <SSID>\n"
-	         "                  [mac <MAC address>]\n"
-	         "                  [cloned-mac <cloned MAC address>]\n"
-	         "                  [mtu <MTU>]\n\n"
-	         "    wimax:        [mac <MAC address>]\n"
-	         "                  [nsp <NSP>]\n\n"
-	         "    pppoe:        username <PPPoE username>\n"
-	         "                  [password <PPPoE password>]\n"
-	         "                  [service <PPPoE service name>]\n"
-	         "                  [mtu <MTU>]\n"
-	         "                  [mac <MAC address>]\n\n"
-	         "    gsm:          apn <APN>\n"
-	         "                  [user <username>]\n"
-	         "                  [password <password>]\n\n"
-	         "    cdma:         [user <username>]\n"
-	         "                  [password <password>]\n\n"
-	         "    infiniband:   [mac <MAC address>]\n"
-	         "                  [mtu <MTU>]\n"
-	         "                  [transport-mode datagram | connected]\n"
-	         "                  [parent <ifname>]\n"
-	         "                  [p-key <IPoIB P_Key>]\n\n"
-	         "    bluetooth:    [addr <bluetooth address>]\n"
-	         "                  [bt-type panu|dun-gsm|dun-cdma]\n\n"
-	         "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
-	         "                  id <VLAN ID>\n"
-	         "                  [flags <VLAN flags>]\n"
-	         "                  [ingress <ingress priority mapping>]\n"
-	         "                  [egress <egress priority mapping>]\n"
-	         "                  [mtu <MTU>]\n\n"
-	         "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\n"
-	         "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
-	         "                  [primary <ifname>]\n"
-	         "                  [miimon <num>]\n"
-	         "                  [downdelay <num>]\n"
-	         "                  [updelay <num>]\n"
-	         "                  [arp-interval <num>]\n"
-	         "                  [arp-ip-target <num>]\n\n"
-	         "    bond-slave:   master <master (ifname or connection UUID)>\n\n"
-	         "    team:         [config <file>|<raw JSON data>]\n\n"
-	         "    team-slave:   master <master (ifname or connection UUID)>\n"
-	         "                  [config <file>|<raw JSON data>]\n\n"
-	         "    bridge:       [stp yes|no]\n"
-	         "                  [priority <num>]\n"
-	         "                  [forward-delay <2-30>]\n"
-	         "                  [hello-time <1-10>]\n"
-	         "                  [max-age <6-40>]\n"
-	         "                  [ageing-time <0-1000000>]\n\n"
-	         "    bridge-slave: master <master (ifname or connection UUID)>\n"
-	         "                  [priority <0-63>]\n"
-	         "                  [path-cost <1-65535>]\n"
-	         "                  [hairpin yes|no]\n\n"
-	         "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
-	         "                  [user <username>]\n\n"
-	         "    olpc-mesh:    ssid <SSID>\n"
-	         "                  [channel <1-13>]\n"
-	         "                  [dhcp-anycast <MAC address>]\n\n"
-	         "  IP_OPTIONS:\n"
-	         "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-	         "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
-	         ));
+	         _("Usage: nmcli connection add { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	           "  COMMON_OPTIONS:\n"
+	           "                  type <type>\n"
+	           "                  ifname <interface name> | \"*\"\n"
+	           "                  [con-name <connection name>]\n"
+	           "                  [autoconnect yes|no]\n\n"
+	           "  TYPE_SPECIFIC_OPTIONS:\n"
+	           "    ethernet:     [mac <MAC address>]\n"
+	           "                  [cloned-mac <cloned MAC address>]\n"
+	           "                  [mtu <MTU>]\n\n"
+	           "    wifi:         ssid <SSID>\n"
+	           "                  [mac <MAC address>]\n"
+	           "                  [cloned-mac <cloned MAC address>]\n"
+	           "                  [mtu <MTU>]\n\n"
+	           "    wimax:        [mac <MAC address>]\n"
+	           "                  [nsp <NSP>]\n\n"
+	           "    pppoe:        username <PPPoE username>\n"
+	           "                  [password <PPPoE password>]\n"
+	           "                  [service <PPPoE service name>]\n"
+	           "                  [mtu <MTU>]\n"
+	           "                  [mac <MAC address>]\n\n"
+	           "    gsm:          apn <APN>\n"
+	           "                  [user <username>]\n"
+	           "                  [password <password>]\n\n"
+	           "    cdma:         [user <username>]\n"
+	           "                  [password <password>]\n\n"
+	           "    infiniband:   [mac <MAC address>]\n"
+	           "                  [mtu <MTU>]\n"
+	           "                  [transport-mode datagram | connected]\n"
+	           "                  [parent <ifname>]\n"
+	           "                  [p-key <IPoIB P_Key>]\n\n"
+	           "    bluetooth:    [addr <bluetooth address>]\n"
+	           "                  [bt-type panu|dun-gsm|dun-cdma]\n\n"
+	           "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
+	           "                  id <VLAN ID>\n"
+	           "                  [flags <VLAN flags>]\n"
+	           "                  [ingress <ingress priority mapping>]\n"
+	           "                  [egress <egress priority mapping>]\n"
+	           "                  [mtu <MTU>]\n\n"
+	           "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\n"
+	           "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
+	           "                  [primary <ifname>]\n"
+	           "                  [miimon <num>]\n"
+	           "                  [downdelay <num>]\n"
+	           "                  [updelay <num>]\n"
+	           "                  [arp-interval <num>]\n"
+	           "                  [arp-ip-target <num>]\n\n"
+	           "    bond-slave:   master <master (ifname or connection UUID)>\n\n"
+	           "    team:         [config <file>|<raw JSON data>]\n\n"
+	           "    team-slave:   master <master (ifname or connection UUID)>\n"
+	           "                  [config <file>|<raw JSON data>]\n\n"
+	           "    bridge:       [stp yes|no]\n"
+	           "                  [priority <num>]\n"
+	           "                  [forward-delay <2-30>]\n"
+	           "                  [hello-time <1-10>]\n"
+	           "                  [max-age <6-40>]\n"
+	           "                  [ageing-time <0-1000000>]\n\n"
+	           "    bridge-slave: master <master (ifname or connection UUID)>\n"
+	           "                  [priority <0-63>]\n"
+	           "                  [path-cost <1-65535>]\n"
+	           "                  [hairpin yes|no]\n\n"
+	           "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+	           "                  [user <username>]\n\n"
+	           "    olpc-mesh:    ssid <SSID>\n"
+	           "                  [channel <1-13>]\n"
+	           "                  [dhcp-anycast <MAC address>]\n\n"
+	           "  IP_OPTIONS:\n"
+	           "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+	           "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
 }
+
+static void
+usage_connection_modify (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection modify { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [id | uuid | path] <ID> <setting name>.<property name> [<value>]\n"
+	           "\n"
+	           "Modify a single property in the connection profile.\n"
+	           "The profile is identified by its name, UUID or D-Bus path.\n\n"));
+}
+
+static void
+usage_connection_edit (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection edit { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [id | uuid | path] <ID>\n"
+	           "\n"
+	           "Edit an existing connection profile in an interactive editor.\n"
+	           "The profile is identified by its name, UUID or D-Bus path\n"
+	           "\n"
+	           "ARGUMENTS := [type <new connection type>] [con-name <new connection name>]\n"
+	           "\n"
+	           "Add a new connection profile in an interactive editor.\n\n"));
+}
+
+static void
+usage_connection_delete (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection delete { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := [id | uuid | path] <ID>\n"
+	           "\n"
+	           "Delete a connection profile.\n"
+	           "The profile is identified by its name, UUID or D-Bus path.\n\n"));
+}
+
+static void
+usage_connection_reload (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection reload { help }\n"
+	           "\n"
+	           "Reload all connection files from disk.\n\n"));
+}
+
+static void
+usage_connection_load (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli connection load { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := <filename> [<filename>...]\n"
+	           "\n"
+	           "Load/reload one or more connection files from disk. Use this after manually\n"
+	           "editing a connection file to ensure that NetworkManager is aware of its latest\n"
+	           "state.\n\n"));
+}
+
 
 /* The real commands that do something - i.e. not 'help', etc. */
 static const char *real_con_commands[] = {
@@ -7722,9 +7838,13 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 	} else {
 		if (nmc_arg_is_help (*argv)) {
 			usage ();
-			nmc->should_wait = FALSE;
+			goto usage_exit;
 		}
 		else if (matches (*argv, "show") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_show ();
+				goto usage_exit;
+			}
 			arg_ret = next_arg (&argc, &argv);
 			if (arg_ret != 0 || matches (*argv, "configured") == 0) {
 				next_arg (&argc, &argv);
@@ -7740,19 +7860,31 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 			}
 		}
 		else if (matches(*argv, "up") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_up ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "down") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_down ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_connection_down (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "add") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
 				usage_connection_add ();
-				nmc->should_wait = FALSE;
-			} else
-				nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
+				goto usage_exit;
+			}
+			nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "edit") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_edit ();
+				goto usage_exit;
+			}
 			editor_thread_data.nmc = nmc;
 			editor_thread_data.argc = argc - 1;
 			editor_thread_data.argv = argv + 1;
@@ -7760,15 +7892,31 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 			g_thread_unref (editor_thread);
 		}
 		else if (matches(*argv, "delete") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_delete ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "reload") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_reload ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
 		}
 		else if (matches(*argv, "load") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_load ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_connection_load (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "modify") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_connection_modify ();
+				goto usage_exit;
+			}
 			nmc->return_value = do_connection_modify (nmc, argc-1, argv+1);
 		}
 		else {
@@ -7779,6 +7927,10 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+	return nmc->return_value;
+
+usage_exit:
+	nmc->should_wait = FALSE;
 	return nmc->return_value;
 
 opt_error:
