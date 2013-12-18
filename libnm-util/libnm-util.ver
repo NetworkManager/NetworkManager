@@ -43,6 +43,7 @@ global:
 	nm_connection_get_setting_wireless_security;
 	nm_connection_get_type;
 	nm_connection_get_uuid;
+	nm_connection_get_virtual_device_description;
 	nm_connection_get_virtual_iface_name;
 	nm_connection_is_type;
 	nm_connection_lookup_setting_type;

@@ -102,6 +102,7 @@ global:
 	nm_device_bt_new;
 	nm_device_connection_compatible;
 	nm_device_connection_valid;
+	nm_device_disambiguate_names;
 	nm_device_disconnect;
 	nm_device_error_get_type;
 	nm_device_error_quark;
@@ -123,6 +124,7 @@ global:
 	nm_device_get_autoconnect;
 	nm_device_get_available_connections;
 	nm_device_get_capabilities;
+	nm_device_get_description;
 	nm_device_get_device_type;
 	nm_device_get_dhcp4_config;
 	nm_device_get_dhcp6_config;

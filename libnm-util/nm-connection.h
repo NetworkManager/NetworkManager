@@ -196,9 +196,11 @@ GType         nm_connection_lookup_setting_type (const char *name);
 GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 
 /* Helpers */
-const char *  nm_connection_get_uuid      (NMConnection *connection);
+const char *  nm_connection_get_uuid        (NMConnection *connection);
 
-const char *  nm_connection_get_id        (NMConnection *connection);
+const char *  nm_connection_get_id          (NMConnection *connection);
+
+char *        nm_connection_get_virtual_device_description (NMConnection *connection);
 
 NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);
 NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
